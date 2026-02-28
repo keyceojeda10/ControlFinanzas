@@ -2,12 +2,10 @@
 // Ejecutar: npx prisma db seed
 
 require('dotenv').config()
-const { PrismaClient } = require('../app/generated/prisma')
+const { PrismaClient } = require('@prisma/client')
 const bcrypt = require('bcryptjs')
 
-const prisma = new PrismaClient({
-  datasourceUrl: process.env.DATABASE_URL,
-})
+const prisma = new PrismaClient()
 
 async function main() {
   console.log('🌱 Iniciando seed...\n')
