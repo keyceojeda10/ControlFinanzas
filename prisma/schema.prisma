@@ -1,8 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// Control Finanzas - Schema de Prisma
+// SaaS multi-tenant para gestión de cartera de crédito informal
 
 generator client {
   provider = "prisma-client"
@@ -11,4 +8,203 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+// ─── ENUMS ───────────────────────────────────────────────
+
+enum Plan {
+  basic
+  standard
+  professional
+}
+
+enum Rol {
+  owner
+  cobrador
+  superadmin
+}
+
+enum EstadoCliente {
+  activo
+  mora
+  cancelado
+}
+
+enum EstadoPrestamo {
+  activo
+  completado
+  cancelado
+}
+
+enum TipoPago {
+  completo
+  parcial
+}
+
+enum EstadoSuscripcion {
+  activa
+  vencida
+  cancelada
+}
+
+// ─── MODELOS ─────────────────────────────────────────────
+
+model Organization {
+  id            String        @id @default(cuid())
+  nombre        String
+  plan          Plan          @default(basic)
+  telefono      String?
+  ciudad        String?
+  activo        Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+
+  users         User[]
+  rutas         Ruta[]
+  clientes      Cliente[]
+  prestamos     Prestamo[]
+  pagos         Pago[]
+  cierresCaja   CierreCaja[]
+  suscripciones Suscripcion[]
+  adminLogs     AdminLog[]
+}
+
+model User {
+  id             String        @id @default(cuid())
+  organizationId String?
+  nombre         String
+  email          String        @unique
+  password       String
+  rol            Rol
+  activo         Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  rutas          Ruta[]        @relation("CobradorRuta")
+  pagos          Pago[]
+  cierresCaja    CierreCaja[]
+  adminLogs      AdminLog[]    @relation("AdminLogs")
+
+  @@index([organizationId])
+}
+
+model Ruta {
+  id             String       @id @default(cuid())
+  organizationId String
+  cobradorId     String?
+  nombre         String
+  activo         Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  cobrador       User?        @relation("CobradorRuta", fields: [cobradorId], references: [id])
+  clientes       Cliente[]
+
+  @@index([organizationId])
+}
+
+model Cliente {
+  id             String        @id @default(cuid())
+  organizationId String
+  rutaId         String?
+  nombre         String
+  cedula         String
+  telefono       String?
+  direccion      String?
+  fotoUrl        String?
+  estado         EstadoCliente @default(activo)
+  createdAt      DateTime      @default(now())
+
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  ruta           Ruta?         @relation(fields: [rutaId], references: [id])
+  prestamos      Prestamo[]
+
+  @@unique([organizationId, cedula])
+  @@index([organizationId])
+}
+
+model Prestamo {
+  id             String         @id @default(cuid())
+  clienteId      String
+  organizationId String
+  montoPrestado  Float
+  tasaInteres    Float
+  totalAPagar    Float
+  cuotaDiaria    Float
+  fechaInicio    DateTime
+  fechaFin       DateTime
+  diasPlazo      Int
+  estado         EstadoPrestamo @default(activo)
+  createdAt      DateTime       @default(now())
+
+  cliente        Cliente        @relation(fields: [clienteId], references: [id])
+  organization   Organization   @relation(fields: [organizationId], references: [id])
+  pagos          Pago[]
+
+  @@index([organizationId])
+  @@index([clienteId])
+}
+
+model Pago {
+  id             String       @id @default(cuid())
+  prestamoId     String
+  organizationId String
+  cobradorId     String?
+  montoPagado    Float
+  fechaPago      DateTime     @default(now())
+  tipo           TipoPago
+  nota           String?
+  createdAt      DateTime     @default(now())
+
+  prestamo       Prestamo     @relation(fields: [prestamoId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  cobrador       User?        @relation(fields: [cobradorId], references: [id])
+
+  @@index([organizationId])
+  @@index([prestamoId])
+}
+
+model CierreCaja {
+  id             String       @id @default(cuid())
+  organizationId String
+  cobradorId     String
+  fecha          DateTime
+  totalEsperado  Float
+  totalRecogido  Float
+  diferencia     Float
+  createdAt      DateTime     @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  cobrador       User         @relation(fields: [cobradorId], references: [id])
+
+  @@index([organizationId])
+}
+
+model Suscripcion {
+  id               String            @id @default(cuid())
+  organizationId   String
+  plan             Plan
+  estado           EstadoSuscripcion @default(activa)
+  fechaInicio      DateTime
+  fechaVencimiento DateTime
+  montoCOP         Int
+  mercadopagoId    String?
+  createdAt        DateTime          @default(now())
+
+  organization     Organization      @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+}
+
+model AdminLog {
+  id             String        @id @default(cuid())
+  adminId        String
+  accion         String
+  organizacionId String?
+  detalle        String?
+  createdAt      DateTime      @default(now())
+
+  admin          User          @relation("AdminLogs", fields: [adminId], references: [id])
+  organizacion   Organization? @relation(fields: [organizacionId], references: [id])
+
+  @@index([adminId])
 }
