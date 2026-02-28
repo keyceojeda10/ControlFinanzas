@@ -1,0 +1,127 @@
+// app/api/cobradores/route.js
+
+import { getServerSession } from 'next-auth'
+import { authOptions }      from '@/lib/auth'
+import { prisma }           from '@/lib/prisma'
+import bcrypt               from 'bcryptjs'
+
+// Límites de usuarios totales por plan (owner + cobradores)
+const LIMITES_USUARIOS = { basic: 1, standard: 3, professional: Infinity }
+
+const hoy = () => {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+const manana = () => {
+  const d = new Date()
+  d.setDate(d.getDate() + 1)
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
+// ─── GET /api/cobradores ────────────────────────────────────────
+export async function GET(request) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.organizationId) {
+    return Response.json({ error: 'No autorizado' }, { status: 401 })
+  }
+  if (session.user.rol !== 'owner') {
+    return Response.json({ error: 'Solo los owners pueden ver cobradores' }, { status: 403 })
+  }
+
+  const { organizationId } = session.user
+
+  const cobradores = await prisma.user.findMany({
+    where: { organizationId, rol: 'cobrador' },
+    select: {
+      id:        true,
+      nombre:    true,
+      email:     true,
+      activo:    true,
+      rutas:     {
+        where:  { activo: true },
+        select: {
+          id:      true,
+          nombre:  true,
+          clientes: { select: { id: true } },
+        },
+      },
+      pagos: {
+        where:      { fechaPago: { gte: hoy(), lt: manana() } },
+        select:     { montoPagado: true },
+      },
+    },
+    orderBy: { nombre: 'asc' },
+  })
+
+  const resultado = cobradores.map((c) => ({
+    id:              c.id,
+    nombre:          c.nombre,
+    email:           c.email,
+    activo:          c.activo,
+    ruta:            c.rutas[0] ?? null,
+    cantidadClientes: c.rutas[0]?.clientes?.length ?? 0,
+    recaudadoHoy:    c.pagos.reduce((a, p) => a + p.montoPagado, 0),
+  }))
+
+  return Response.json(resultado)
+}
+
+// ─── POST /api/cobradores ───────────────────────────────────────
+export async function POST(request) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.organizationId) {
+    return Response.json({ error: 'No autorizado' }, { status: 401 })
+  }
+  if (session.user.rol !== 'owner') {
+    return Response.json({ error: 'Solo los owners pueden crear cobradores' }, { status: 403 })
+  }
+
+  const { organizationId, plan } = session.user
+
+  // Plan basic no puede tener cobradores
+  if (plan === 'basic') {
+    return Response.json(
+      { error: 'Tu plan basic no incluye cobradores. Actualiza a standard o professional.' },
+      { status: 403 }
+    )
+  }
+
+  // Verificar límite de usuarios
+  const limite = LIMITES_USUARIOS[plan] ?? 1
+  if (isFinite(limite)) {
+    const totalUsuarios = await prisma.user.count({ where: { organizationId } })
+    if (totalUsuarios >= limite) {
+      return Response.json(
+        { error: `Tu plan ${plan} permite máximo ${limite} usuarios. Considera actualizar.` },
+        { status: 403 }
+      )
+    }
+  }
+
+  const { nombre, email, password } = await request.json()
+
+  if (!nombre?.trim())   return Response.json({ error: 'El nombre es requerido' },    { status: 400 })
+  if (!email?.trim())    return Response.json({ error: 'El email es requerido' },     { status: 400 })
+  if (!password?.trim()) return Response.json({ error: 'La contraseña es requerida' }, { status: 400 })
+
+  // Email único global
+  const existeEmail = await prisma.user.findUnique({ where: { email: email.trim() } })
+  if (existeEmail) return Response.json({ error: 'Este email ya está registrado' }, { status: 409 })
+
+  const hashedPassword = await bcrypt.hash(password.trim(), 10)
+
+  const cobrador = await prisma.user.create({
+    data: {
+      organizationId,
+      nombre:   nombre.trim(),
+      email:    email.trim().toLowerCase(),
+      password: hashedPassword,
+      rol:      'cobrador',
+    },
+    select: { id: true, nombre: true, email: true, activo: true, rol: true },
+  })
+
+  return Response.json(cobrador, { status: 201 })
+}

@@ -1,1 +1,148 @@
-export default function Page() { return <div className="p-4">cobradores</div> }
+'use client'
+// app/(dashboard)/cobradores/page.jsx - Lista de cobradores
+
+import { useState, useEffect } from 'react'
+import Link                    from 'next/link'
+import { useAuth }             from '@/hooks/useAuth'
+import { Badge }               from '@/components/ui/Badge'
+import { Button }              from '@/components/ui/Button'
+import { SkeletonCard }        from '@/components/ui/Skeleton'
+import { formatCOP }           from '@/lib/calculos'
+
+export default function CobradoresPage() {
+  const { session, esOwner, loading: authLoading } = useAuth()
+  const [cobradores, setCobradores] = useState([])
+  const [loading,    setLoading]    = useState(true)
+  const [error,      setError]      = useState('')
+
+  const plan = session?.user?.plan ?? 'basic'
+
+  useEffect(() => {
+    if (authLoading || !esOwner) { setLoading(false); return }
+    fetch('/api/cobradores')
+      .then((r) => r.json())
+      .then((d) => setCobradores(Array.isArray(d) ? d : []))
+      .catch(() => setError('No se pudieron cargar los cobradores.'))
+      .finally(() => setLoading(false))
+  }, [authLoading, esOwner])
+
+  // Plan basic — bloquear
+  if (!authLoading && plan === 'basic') {
+    return (
+      <div className="max-w-xl mx-auto">
+        <h1 className="text-xl font-bold text-[#f1f5f9] mb-6">Cobradores</h1>
+        <div className="bg-[#1c2333] border border-[#2a3245] rounded-[14px] p-8 text-center">
+          <div className="w-14 h-14 rounded-full bg-[rgba(245,158,11,0.12)] flex items-center justify-center mx-auto mb-4">
+            <svg className="w-7 h-7 text-[#f59e0b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <p className="text-base font-bold text-[#f1f5f9] mb-2">Función de plan premium</p>
+          <p className="text-sm text-[#64748b] mb-5">
+            Actualiza tu plan para agregar cobradores y gestionar rutas de cobro.
+          </p>
+          <div className="inline-flex flex-col gap-2 text-xs text-[#94a3b8]">
+            <span>✓ Standard: hasta 2 cobradores</span>
+            <span>✓ Professional: cobradores ilimitados</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="max-w-3xl mx-auto">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-xl font-bold text-[#f1f5f9]">Cobradores</h1>
+          <p className="text-sm text-[#64748b] mt-0.5">
+            {loading ? '…' : `${cobradores.length} cobrador${cobradores.length !== 1 ? 'es' : ''}`}
+          </p>
+        </div>
+        {!authLoading && esOwner && (
+          <Link href="/cobradores/nuevo">
+            <Button
+              icon={
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              }
+            >
+              Nuevo cobrador
+            </Button>
+          </Link>
+        )}
+      </div>
+
+      {error && (
+        <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[10px] px-4 py-3 mb-4">
+          {error}
+        </div>
+      )}
+
+      {loading && (
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)}
+        </div>
+      )}
+
+      {!loading && cobradores.length === 0 && !error && (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="w-14 h-14 rounded-full bg-[rgba(59,130,246,0.1)] flex items-center justify-center mb-4">
+            <svg className="w-7 h-7 text-[#3b82f6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </div>
+          <p className="text-sm font-medium text-[#f1f5f9]">Sin cobradores aún</p>
+          <p className="text-xs text-[#64748b] mt-1">Crea el primer cobrador para asignarle una ruta</p>
+          <Link href="/cobradores/nuevo" className="mt-4">
+            <Button size="sm">Crear cobrador</Button>
+          </Link>
+        </div>
+      )}
+
+      {!loading && cobradores.length > 0 && (
+        <div className="space-y-3">
+          {cobradores.map((c) => (
+            <div
+              key={c.id}
+              className="bg-[#1c2333] border border-[#2a3245] rounded-[14px] p-4"
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[rgba(139,92,246,0.15)] flex items-center justify-center shrink-0">
+                    <span className="text-[#8b5cf6] font-bold text-sm">{c.nombre?.[0]?.toUpperCase()}</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-[#f1f5f9]">{c.nombre}</p>
+                    <p className="text-xs text-[#64748b]">{c.email}</p>
+                  </div>
+                </div>
+                <Badge variant={c.activo ? 'green' : 'gray'}>{c.activo ? 'Activo' : 'Inactivo'}</Badge>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 pt-3 border-t border-[#2a3245] text-center">
+                <div>
+                  <p className="text-[10px] text-[#64748b]">Ruta</p>
+                  <p className="text-xs font-medium text-[#f1f5f9] truncate">
+                    {c.ruta?.nombre ?? <span className="text-[#64748b]">Sin ruta</span>}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-[#64748b]">Clientes</p>
+                  <p className="text-xs font-bold text-[#f1f5f9]">{c.cantidadClientes}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-[#64748b]">Recaudado hoy</p>
+                  <p className="text-xs font-bold text-[#10b981]">{formatCOP(c.recaudadoHoy)}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
