@@ -1,26 +1,80 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ─── Design Tokens ─────────────────────────────────────────── */
+@theme {
+  /* Backgrounds */
+  --color-bg-main:    #0f1117;
+  --color-bg-surface: #161b27;
+  --color-bg-card:    #1c2333;
+  --color-bg-hover:   #222a3d;
+
+  /* Borders */
+  --color-border:     #2a3245;
+  --color-border-dim: #1e2738;
+
+  /* Text */
+  --color-text-primary:   #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted:     #64748b;
+
+  /* Accent – Blue */
+  --color-blue:        #3b82f6;
+  --color-blue-dim:    rgba(59, 130, 246, 0.15);
+  --color-blue-hover:  #2563eb;
+
+  /* Accent – Green */
+  --color-green:       #10b981;
+  --color-green-dim:   rgba(16, 185, 129, 0.15);
+
+  /* Accent – Yellow */
+  --color-yellow:      #f59e0b;
+  --color-yellow-dim:  rgba(245, 158, 11, 0.15);
+
+  /* Accent – Red */
+  --color-red:         #ef4444;
+  --color-red-dim:     rgba(239, 68, 68, 0.15);
+
+  /* Accent – Purple */
+  --color-purple:      #8b5cf6;
+  --color-purple-dim:  rgba(139, 92, 246, 0.15);
+
+  /* Radius */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  18px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ─── Base ──────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #0f1117;
+  color: #f1f5f9;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  margin: 0;
+  min-height: 100dvh;
 }
+
+/* ─── Scrollbar ─────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #0f1117; }
+::-webkit-scrollbar-thumb { background: #2a3245; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #3b4a64; }
+
+/* ─── Focus visible global ──────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* ─── Utility: hide scrollbar visually but keep scroll ──────── */
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
