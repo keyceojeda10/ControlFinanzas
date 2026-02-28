@@ -18,8 +18,15 @@ export async function proxy(request) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
     if (token.rol !== 'superadmin') {
-      // owner o cobrador intentando entrar a /admin → dashboard
       return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+    return NextResponse.next()
+  }
+
+  // ─── /suscripcion-vencida → solo si hay sesión ────────
+  if (pathname === '/suscripcion-vencida') {
+    if (!token) {
+      return NextResponse.redirect(new URL('/login', request.url))
     }
     return NextResponse.next()
   }
@@ -33,14 +40,34 @@ export async function proxy(request) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
     if (token.rol === 'superadmin') {
-      // superadmin no accede al dashboard de organizaciones
       return NextResponse.redirect(new URL('/admin/dashboard', request.url))
     }
+
+    // ─── Verificar suscripción vencida ────────────────
+    // Excepciones: /configuracion/plan puede acceder aunque esté vencida
+    if (pathname !== '/configuracion/plan' && token.suscripcionVencimiento) {
+      const vencimiento = new Date(token.suscripcionVencimiento)
+      if (vencimiento < new Date()) {
+        return NextResponse.redirect(new URL('/suscripcion-vencida', request.url))
+      }
+    }
+
     return NextResponse.next()
   }
 
   // ─── /login → redirigir si ya hay sesión activa ─────────
   if (pathname === '/login') {
+    if (token) {
+      if (token.rol === 'superadmin') {
+        return NextResponse.redirect(new URL('/admin/dashboard', request.url))
+      }
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+    return NextResponse.next()
+  }
+
+  // ─── /registro → redirigir si ya hay sesión ────────────
+  if (pathname === '/registro') {
     if (token) {
       if (token.rol === 'superadmin') {
         return NextResponse.redirect(new URL('/admin/dashboard', request.url))
@@ -64,6 +91,8 @@ export const config = {
     '/caja/:path*',
     '/reportes/:path*',
     '/configuracion/:path*',
+    '/suscripcion-vencida',
     '/login',
+    '/registro',
   ],
 }

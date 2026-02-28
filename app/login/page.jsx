@@ -116,8 +116,11 @@ export default function LoginPage() {
           </button>
         </div>
 
-        <p className="mt-6 text-center text-xs text-[#64748b]">
-          Control Finanzas © {new Date().getFullYear()}
+        <p className="mt-6 text-center text-sm text-[#64748b]">
+          ¿No tienes cuenta?{' '}
+          <a href="/registro" className="text-[#3b82f6] hover:underline font-medium">
+            Regístrate gratis
+          </a>
         </p>
       </div>
     </div>
