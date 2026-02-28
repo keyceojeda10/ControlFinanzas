@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/app/generated/prisma
+
+# claude agents (contain sensitive credentials)
+.claude/
+
+# env local
+.env.local
