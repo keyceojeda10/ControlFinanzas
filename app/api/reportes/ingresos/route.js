@@ -27,7 +27,7 @@ export async function GET(req) {
       prestamo: { organizationId: orgId },
       fechaPago: { gte: fechaDesde, lte: fechaHasta },
     },
-    select: { monto: true, fechaPago: true },
+    select: { montoPagado: true, fechaPago: true },
     orderBy: { fechaPago: 'asc' },
   })
 
@@ -46,7 +46,7 @@ export async function GET(req) {
     } else {
       key = f.toISOString().slice(0, 10)
     }
-    grupos[key] = (grupos[key] ?? 0) + p.monto
+    grupos[key] = (grupos[key] ?? 0) + p.montoPagado
   }
 
   const data = Object.entries(grupos).map(([fecha, total]) => ({ fecha, total }))

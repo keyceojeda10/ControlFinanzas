@@ -36,7 +36,7 @@ export async function GET(req) {
         prestamo: { organizationId: orgId },
         fechaPago: { gte: fechaDesde, lte: fechaHasta },
       },
-      _sum: { monto: true },
+      _sum: { montoPagado: true },
       _count: true,
     }),
 
@@ -59,7 +59,7 @@ export async function GET(req) {
       capitalPrestado: activos?._sum?.montoPrestado ?? 0,
     },
     pagos: {
-      totalPeriodo: pagos._sum.monto   ?? 0,
+      totalPeriodo: pagos._sum.montoPagado ?? 0,
       cantidad:     pagos._count        ?? 0,
     },
     periodo: { desde: fechaDesde, hasta: fechaHasta },

@@ -72,7 +72,7 @@ export async function GET(req) {
 
     const header = ['Cliente', 'Monto Prestado', 'Total a Pagar', 'Cuota Diaria', 'Tasa %', 'Días', 'Inicio', 'Vence', 'Estado', 'Pagado', 'Saldo']
     const dataRows = rows.map((p) => {
-      const pagado = p.pagos.reduce((a, pg) => a + pg.monto, 0)
+      const pagado = p.pagos.reduce((a, pg) => a + pg.montoPagado, 0)
       const saldo  = Math.max(0, p.totalAPagar - pagado)
       return [
         p.cliente.nombre,
@@ -118,7 +118,7 @@ export async function GET(req) {
       new Date(p.fechaPago).toLocaleDateString('es-CO'),
       p.prestamo.cliente.nombre,
       p.cobrador?.nombre ?? '',
-      p.monto,
+      p.montoPagado,
     ])
 
     const data = [...headerRow('Pagos', desde, hasta), header, ...dataRows]

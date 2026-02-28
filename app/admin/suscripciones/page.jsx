@@ -1,1 +1,166 @@
-export default function Page() { return <div className="p-4">suscripciones</div> }
+'use client'
+
+import { useState, useEffect } from 'react'
+import Link                    from 'next/link'
+import { Badge }               from '@/components/ui/Badge'
+import { Button }              from '@/components/ui/Button'
+import { SkeletonTable }       from '@/components/ui/Skeleton'
+import { formatCOP }           from '@/lib/calculos'
+
+const planBadge = { basic: 'gray', standard: 'blue', professional: 'purple' }
+const tabs = [
+  { key: '',          label: 'Todas'     },
+  { key: 'activa',    label: 'Activas'   },
+  { key: 'porVencer', label: 'Por vencer' },
+  { key: 'vencida',   label: 'Vencidas'  },
+  { key: 'cancelada', label: 'Canceladas' },
+]
+
+export default function SuscripcionesPage() {
+  const [subs,    setSubs]    = useState([])
+  const [loading, setLoading] = useState(true)
+  const [tab,     setTab]     = useState('')
+  const [accionando, setAccionando] = useState('')
+
+  const fetchSubs = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/admin/suscripciones${tab ? `?estado=${tab}` : ''}`)
+      const data = await res.json()
+      setSubs(Array.isArray(data) ? data : [])
+    } catch { /* ignore */ } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { fetchSubs() }, [tab])
+
+  const ejecutar = async (subId, accion) => {
+    setAccionando(`${subId}-${accion}`)
+    try {
+      const res = await fetch(`/api/admin/suscripciones/${subId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accion }),
+      })
+      if (res.ok) await fetchSubs()
+      else alert((await res.json()).error ?? 'Error')
+    } catch { alert('Error') } finally {
+      setAccionando('')
+    }
+  }
+
+  // Contadores
+  const activas   = subs.filter((s) => s.estado === 'activa' && s.diasRestantes > 7).length
+  const porVencer = subs.filter((s) => s.estado === 'activa' && s.diasRestantes <= 7 && s.diasRestantes > 0).length
+  const vencidas  = subs.filter((s) => s.estado === 'vencida' || s.diasRestantes <= 0).length
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-5">
+      <div>
+        <h1 className="text-xl font-bold text-[#f1f5f9]">Suscripciones</h1>
+        <p className="text-sm text-[#64748b] mt-0.5">Gestión de suscripciones de la plataforma</p>
+      </div>
+
+      {/* Resumen */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-[#1c2333] border border-[#2a3245] rounded-[12px] px-3 py-3 text-center">
+          <p className="text-[10px] text-[#64748b]">Activas</p>
+          <p className="text-lg font-bold text-[#10b981]">{activas}</p>
+        </div>
+        <div className="bg-[#1c2333] border border-[#2a3245] rounded-[12px] px-3 py-3 text-center">
+          <p className="text-[10px] text-[#64748b]">Por vencer</p>
+          <p className="text-lg font-bold text-[#f59e0b]">{porVencer}</p>
+        </div>
+        <div className="bg-[#1c2333] border border-[#2a3245] rounded-[12px] px-3 py-3 text-center">
+          <p className="text-[10px] text-[#64748b]">Vencidas</p>
+          <p className="text-lg font-bold text-[#ef4444]">{vencidas}</p>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1.5 overflow-x-auto pb-1">
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`px-3 py-1.5 rounded-[8px] text-xs font-medium whitespace-nowrap transition-all ${
+              tab === t.key
+                ? 'bg-[#3b82f6] text-white'
+                : 'bg-[#2a3245] text-[#64748b] hover:text-[#f1f5f9]'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tabla */}
+      {loading ? <SkeletonTable rows={5} /> : subs.length === 0 ? (
+        <p className="text-sm text-[#64748b] text-center py-8">No hay suscripciones</p>
+      ) : (
+        <div className="bg-[#1c2333] border border-[#2a3245] rounded-[14px] overflow-hidden">
+          <div className="hidden sm:grid grid-cols-6 gap-2 px-4 py-2.5 text-[10px] text-[#64748b] font-medium uppercase border-b border-[#2a3245]">
+            <span className="col-span-2">Organización</span>
+            <span className="text-center">Plan</span>
+            <span className="text-center">Vencimiento</span>
+            <span className="text-center">Estado</span>
+            <span className="text-right">Acciones</span>
+          </div>
+
+          {subs.map((s) => (
+            <div key={s.id} className="grid grid-cols-2 sm:grid-cols-6 gap-2 px-4 py-3 border-b border-[#2a3245] last:border-0 items-center">
+              <div className="col-span-2">
+                <Link href={`/admin/organizaciones/${s.organizacionId}`} className="text-sm font-medium text-[#f1f5f9] hover:text-[#3b82f6]">
+                  {s.organizacion}
+                </Link>
+                <p className="text-[10px] text-[#64748b]">{formatCOP(s.montoCOP)}/mes</p>
+              </div>
+              <div className="text-center">
+                <Badge variant={planBadge[s.plan]}>{s.plan}</Badge>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-[#94a3b8]">
+                  {new Date(s.fechaVencimiento).toLocaleDateString('es-CO')}
+                </p>
+                <p className={`text-[10px] font-bold ${s.diasRestantes > 7 ? 'text-[#10b981]' : s.diasRestantes > 0 ? 'text-[#f59e0b]' : 'text-[#ef4444]'}`}>
+                  {s.diasRestantes > 0 ? `${s.diasRestantes}d` : `${Math.abs(s.diasRestantes)}d vencida`}
+                </p>
+              </div>
+              <div className="text-center">
+                <Badge variant={s.estado === 'activa' ? 'green' : s.estado === 'vencida' ? 'red' : 'gray'}>
+                  {s.estado}
+                </Badge>
+              </div>
+              <div className="flex gap-1.5 justify-end flex-wrap">
+                <button
+                  onClick={() => ejecutar(s.id, 'renovar')}
+                  disabled={!!accionando}
+                  className="px-2 py-1 rounded-[6px] text-[10px] font-medium bg-[rgba(16,185,129,0.12)] text-[#10b981] hover:bg-[rgba(16,185,129,0.2)] transition-all disabled:opacity-50"
+                >
+                  {accionando === `${s.id}-renovar` ? '…' : '+30d'}
+                </button>
+                <button
+                  onClick={() => ejecutar(s.id, 'gracia')}
+                  disabled={!!accionando}
+                  className="px-2 py-1 rounded-[6px] text-[10px] font-medium bg-[rgba(245,158,11,0.12)] text-[#f59e0b] hover:bg-[rgba(245,158,11,0.2)] transition-all disabled:opacity-50"
+                >
+                  {accionando === `${s.id}-gracia` ? '…' : '+7d'}
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm(`¿Cancelar suscripción de "${s.organizacion}"?`)) ejecutar(s.id, 'cancelar')
+                  }}
+                  disabled={!!accionando || s.estado === 'cancelada'}
+                  className="px-2 py-1 rounded-[6px] text-[10px] font-medium bg-[rgba(239,68,68,0.12)] text-[#ef4444] hover:bg-[rgba(239,68,68,0.2)] transition-all disabled:opacity-50"
+                >
+                  {accionando === `${s.id}-cancelar` ? '…' : 'Cancelar'}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
