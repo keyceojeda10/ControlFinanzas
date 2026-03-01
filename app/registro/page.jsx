@@ -55,7 +55,6 @@ export default function RegistroPage() {
         return
       }
 
-      // Auto-login
       const result = await signIn('credentials', {
         email: form.email,
         password: form.password,
@@ -96,9 +95,9 @@ export default function RegistroPage() {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[24px] p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[24px] p-8 space-y-4">
           {error && (
-            <div className="flex items-center gap-2.5 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3">
+            <div className="flex items-center gap-2.5 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[10px] px-4 py-3">
               <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>
@@ -107,7 +106,7 @@ export default function RegistroPage() {
           )}
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-[#888888]">Nombre del negocio</label>
+            <label className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em]">Nombre del negocio</label>
             <input
               type="text"
               value={form.nombreOrganizacion}
@@ -118,7 +117,7 @@ export default function RegistroPage() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-[#888888]">Tu nombre</label>
+            <label className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em]">Tu nombre</label>
             <input
               type="text"
               value={form.nombre}
@@ -129,7 +128,7 @@ export default function RegistroPage() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-[#888888]">Correo electrónico</label>
+            <label className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em]">Correo electrónico</label>
             <input
               type="email"
               value={form.email}
@@ -141,7 +140,7 @@ export default function RegistroPage() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-[#888888]">Contraseña</label>
+            <label className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em]">Contraseña</label>
             <input
               type="password"
               value={form.password}
@@ -153,7 +152,7 @@ export default function RegistroPage() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-[#888888]">Confirmar contraseña</label>
+            <label className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em]">Confirmar contraseña</label>
             <input
               type="password"
               value={form.confirmar}
@@ -167,7 +166,7 @@ export default function RegistroPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-11 mt-1 rounded-[12px] bg-[#f5c518] hover:bg-[#f0b800] disabled:opacity-60 text-[#0a0a0a] font-bold text-sm transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full h-11 mt-1 rounded-[12px] bg-[#f5c518] hover:bg-[#f0b800] disabled:opacity-60 text-[#0a0a0a] font-bold text-sm transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer hover:shadow-[0_0_20px_rgba(245,197,24,0.3)]"
           >
             {loading ? (
               <>
