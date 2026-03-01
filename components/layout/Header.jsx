@@ -1,6 +1,7 @@
 'use client'
 // components/layout/Header.jsx - Header superior para móvil
 
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { useAuth } from '@/hooks/useAuth'
@@ -29,12 +30,7 @@ export default function Header() {
     <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 h-14 bg-[#111111] border-b border-[#2a2a2a]">
       {/* Logo + Title */}
       <div className="flex items-center gap-2.5">
-        <div className="w-7 h-7 rounded-[7px] bg-[#f5c518] flex items-center justify-center shrink-0">
-          <svg className="w-4 h-4 text-[#0a0a0a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
+        <Image src="/logo-icon.svg" alt="CF" width={28} height={28} className="shrink-0" />
         <span className="text-sm font-semibold text-white">{title}</span>
       </div>
 

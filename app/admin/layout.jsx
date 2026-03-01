@@ -2,6 +2,7 @@
 // app/admin/layout.jsx — Layout del panel de administración
 
 import Link            from 'next/link'
+import Image           from 'next/image'
 import { usePathname } from 'next/navigation'
 import { signOut }     from 'next-auth/react'
 import { Badge }       from '@/components/ui/Badge'
@@ -57,9 +58,11 @@ export default function AdminLayout({ children }) {
       {/* Sidebar */}
       <aside className="hidden lg:flex w-60 flex-col border-r border-[#2a2a2a] bg-[#0a0a0a] shrink-0">
         <div className="px-5 py-5 border-b border-[#2a2a2a]">
-          <p className="text-sm font-bold text-[white]">Control Finanzas</p>
-          <p className="text-[10px] text-[#555555]">Panel de Administración</p>
-          <Badge variant="purple" className="mt-2">SUPERADMIN</Badge>
+          <Image src="/logo-full.svg" alt="Control Finanzas" width={150} height={38} priority />
+          <div className="flex items-center gap-2 mt-2">
+            <Badge variant="purple">SUPERADMIN</Badge>
+            <span className="text-[10px] text-[#555555]">Admin</span>
+          </div>
         </div>
 
         <nav className="flex-1 py-4 px-3 space-y-1">
@@ -100,7 +103,8 @@ export default function AdminLayout({ children }) {
       {/* Mobile header */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-[#2a2a2a] bg-[#0a0a0a]">
-          <p className="text-sm font-bold text-[white]">CF Admin</p>
+          <Image src="/logo-icon.svg" alt="CF" width={28} height={28} />
+          <span className="text-sm font-bold text-white ml-1">Admin</span>
           <Badge variant="purple">SUPERADMIN</Badge>
         </header>
 

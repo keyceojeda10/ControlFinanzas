@@ -10,6 +10,10 @@ const geistSans = Geist({
 export const metadata = {
   title: "Control Finanzas",
   description: "Gestión de cartera de crédito informal",
+  icons: {
+    icon: '/icon.svg',
+    apple: '/logo-icon.svg',
+  },
 };
 
 export default function RootLayout({ children }) {
