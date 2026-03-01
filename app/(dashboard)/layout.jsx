@@ -16,7 +16,7 @@ export default function DashboardLayout({ children }) {
         <Header />
 
         {/* Contenido de la página */}
-        <main className="flex-1 px-4 py-5 lg:px-6 lg:py-6 pb-24 lg:pb-6 overflow-y-auto">
+        <main className="flex-1 px-4 py-5 lg:px-6 lg:py-6 pb-24 lg:pb-6 overflow-y-auto page-transition">
           {children}
         </main>
       </div>

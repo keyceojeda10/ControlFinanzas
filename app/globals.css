@@ -80,3 +80,13 @@ body {
 /* ─── Scrollbar oculto ──────────────────────────────────────── */
 .scrollbar-none { scrollbar-width: none; }
 .scrollbar-none::-webkit-scrollbar { display: none; }
+
+/* ─── Transición suave entre páginas ───────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+.page-transition {
+  animation: fadeIn 0.15s ease-out;
+}
