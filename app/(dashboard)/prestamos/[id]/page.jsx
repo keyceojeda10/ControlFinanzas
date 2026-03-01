@@ -10,6 +10,7 @@ import { Button }                     from '@/components/ui/Button'
 import { Card }                       from '@/components/ui/Card'
 import { SkeletonCard }               from '@/components/ui/Skeleton'
 import RegistrarPago                  from '@/components/prestamos/RegistrarPago'
+import BotonWhatsApp                  from '@/components/ui/BotonWhatsApp'
 import { formatCOP }                  from '@/lib/calculos'
 
 // ─── Helpers de formato ──────────────────────────────────────────
@@ -39,6 +40,7 @@ export default function PrestamoDetallePage({ params }) {
   const [modalPago,    setModalPago]    = useState(false)
   const [exito,        setExito]        = useState(false)   // animación de éxito
   const [completado,   setCompletado]   = useState(false)   // celebración
+  const [ultimoPago,   setUltimoPago]   = useState(null)    // para botón WA pago
 
   const fetchPrestamo = async () => {
     try {
@@ -55,8 +57,9 @@ export default function PrestamoDetallePage({ params }) {
 
   useEffect(() => { fetchPrestamo() }, [id])
 
-  const handlePagoExito = (prestamoActualizado) => {
+  const handlePagoExito = (prestamoActualizado, pagoRegistrado) => {
     setPrestamo(prestamoActualizado)
+    setUltimoPago(pagoRegistrado ?? null)
     setExito(true)
     if (prestamoActualizado.estado === 'completado') setCompletado(true)
     setTimeout(() => setExito(false), 3000)
@@ -130,12 +133,27 @@ export default function PrestamoDetallePage({ params }) {
 
       {/* ── ANIMACIÓN ÉXITO PAGO ────────────────────────────────── */}
       {exito && !completado && (
-        <div className="flex items-center gap-3 bg-[rgba(16,185,129,0.12)] border border-[rgba(16,185,129,0.3)] rounded-[16px] px-4 py-3">
-          <svg className="w-5 h-5 text-[#22c55e] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <p className="text-sm text-[#22c55e] font-medium">Pago registrado exitosamente</p>
+        <div className="space-y-2">
+          <div className="flex items-center gap-3 bg-[rgba(16,185,129,0.12)] border border-[rgba(16,185,129,0.3)] rounded-[16px] px-4 py-3">
+            <svg className="w-5 h-5 text-[#22c55e] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-sm text-[#22c55e] font-medium">Pago registrado exitosamente</p>
+          </div>
+          {ultimoPago && cliente?.telefono && (
+            <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamo} pago={ultimoPago} />
+          )}
         </div>
+      )}
+
+      {/* ── WA PAGO (persiste después de cerrar animación) ───────── */}
+      {!exito && ultimoPago && !completado && cliente?.telefono && (
+        <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamo} pago={ultimoPago} />
+      )}
+
+      {/* ── WA PRÉSTAMO COMPLETADO ───────────────────────────────── */}
+      {completado && cliente?.telefono && ultimoPago && (
+        <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamo} pago={ultimoPago} />
       )}
 
       {/* ── HEADER CLIENTE ───────────────────────────────────────── */}
@@ -246,6 +264,14 @@ export default function PrestamoDetallePage({ params }) {
         </div>
       </Card>
 
+      {/* ── BOTONES WHATSAPP ─────────────────────────────────────── */}
+      {cliente?.telefono && estaActivo && enMora && !completado && (
+        <BotonWhatsApp tipo="mora" cliente={cliente} prestamo={prestamo} />
+      )}
+      {cliente?.telefono && estaActivo && !enMora && !ultimoPago && (
+        <BotonWhatsApp tipo="prestamo" cliente={cliente} prestamo={prestamo} />
+      )}
+
       {/* ── HISTORIAL DE PAGOS ───────────────────────────────────── */}
       <Card>
         <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">
@@ -287,6 +313,8 @@ export default function PrestamoDetallePage({ params }) {
         open={modalPago}
         onClose={() => setModalPago(false)}
         onSuccess={handlePagoExito}
+        cliente={cliente}
+        prestamo={prestamo}
       />
     </div>
   )

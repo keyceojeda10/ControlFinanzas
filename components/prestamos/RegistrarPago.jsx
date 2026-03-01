@@ -1,18 +1,26 @@
 'use client'
 // components/prestamos/RegistrarPago.jsx - Modal de registro de pago
 
-import { useState } from 'react'
-import { Modal }    from '@/components/ui/Modal'
-import { Button }   from '@/components/ui/Button'
-import { Input }    from '@/components/ui/Input'
-import { formatCOP } from '@/lib/calculos'
+import { useState }    from 'react'
+import { Modal }       from '@/components/ui/Modal'
+import { Button }      from '@/components/ui/Button'
+import { Input }       from '@/components/ui/Input'
+import BotonWhatsApp   from '@/components/ui/BotonWhatsApp'
+import { formatCOP }   from '@/lib/calculos'
 
-export default function RegistrarPago({ prestamoId, cuotaDiaria, saldoPendiente, open, onClose, onSuccess }) {
-  const [monto,   setMonto]   = useState(String(Math.round(cuotaDiaria ?? 0)))
-  const [tipo,    setTipo]    = useState('completo')
-  const [nota,    setNota]    = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error,   setError]   = useState('')
+export default function RegistrarPago({
+  prestamoId, cuotaDiaria, saldoPendiente,
+  open, onClose, onSuccess,
+  cliente, prestamo,
+}) {
+  const [monto,        setMonto]        = useState(String(Math.round(cuotaDiaria ?? 0)))
+  const [tipo,         setTipo]         = useState('completo')
+  const [nota,         setNota]         = useState('')
+  const [loading,      setLoading]      = useState(false)
+  const [error,        setError]        = useState('')
+  const [exitoso,      setExitoso]      = useState(false)
+  const [pagoGuardado, setPagoGuardado] = useState(null)
+  const [prestamoAct,  setPrestamoAct]  = useState(null)
 
   const handleSubmit = async () => {
     const m = Number(monto)
@@ -33,11 +41,11 @@ export default function RegistrarPago({ prestamoId, cuotaDiaria, saldoPendiente,
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Error al registrar el pago'); return }
 
-      onSuccess?.(data)
-      onClose?.()
-      setMonto(String(Math.round(cuotaDiaria ?? 0)))
-      setTipo('completo')
-      setNota('')
+      const pagoParaWA = { montoPagado: m, fechaPago: new Date().toISOString() }
+      setPagoGuardado(pagoParaWA)
+      setPrestamoAct(data)
+      setExitoso(true)
+      onSuccess?.(data, pagoParaWA)
     } catch {
       setError('Error de conexión. Intenta de nuevo.')
     } finally {
@@ -45,6 +53,60 @@ export default function RegistrarPago({ prestamoId, cuotaDiaria, saldoPendiente,
     }
   }
 
+  const handleCerrar = () => {
+    setExitoso(false)
+    setPagoGuardado(null)
+    setPrestamoAct(null)
+    setMonto(String(Math.round(cuotaDiaria ?? 0)))
+    setTipo('completo')
+    setNota('')
+    setError('')
+    onClose?.()
+  }
+
+  // ── Vista éxito ───────────────────────────────────────────────
+  if (exitoso && pagoGuardado) {
+    const prestamoWA = prestamoAct ?? prestamo
+    return (
+      <Modal
+        open={open}
+        onClose={handleCerrar}
+        title="¡Pago registrado!"
+        footer={<Button onClick={handleCerrar} className="w-full">Cerrar</Button>}
+      >
+        <div className="space-y-4">
+          <div className="flex flex-col items-center gap-2 py-3">
+            <div className="w-14 h-14 rounded-full bg-[rgba(34,197,94,0.15)] flex items-center justify-center">
+              <svg className="w-7 h-7 text-[#22c55e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <p className="text-white font-bold text-lg">{formatCOP(pagoGuardado.montoPagado)}</p>
+            <p className="text-[#555555] text-sm">pagado correctamente</p>
+          </div>
+
+          {prestamoWA && (
+            <div className="bg-[#111111] rounded-[12px] px-4 py-3 space-y-1.5 text-sm">
+              <div className="flex justify-between">
+                <span className="text-[#555555]">Saldo pendiente</span>
+                <span className="text-white font-medium">{formatCOP(prestamoWA.saldoPendiente)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#555555]">Progreso</span>
+                <span className="text-[#22c55e] font-medium">{prestamoWA.porcentajePagado}%</span>
+              </div>
+            </div>
+          )}
+
+          {cliente?.telefono && prestamoWA && (
+            <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamoWA} pago={pagoGuardado} />
+          )}
+        </div>
+      </Modal>
+    )
+  }
+
+  // ── Vista formulario ──────────────────────────────────────────
   return (
     <Modal
       open={open}
@@ -65,15 +127,15 @@ export default function RegistrarPago({ prestamoId, cuotaDiaria, saldoPendiente,
         )}
 
         <div className="flex justify-between items-center text-sm">
-          <span className="text-[#64748b]">Cuota diaria</span>
-          <span className="font-semibold text-[#f1f5f9]">{formatCOP(cuotaDiaria)}</span>
+          <span className="text-[#888888]">Cuota diaria</span>
+          <span className="font-semibold text-white">{formatCOP(cuotaDiaria)}</span>
         </div>
         <div className="flex justify-between items-center text-sm">
-          <span className="text-[#64748b]">Saldo pendiente</span>
-          <span className="font-semibold text-[#f1f5f9]">{formatCOP(saldoPendiente)}</span>
+          <span className="text-[#888888]">Saldo pendiente</span>
+          <span className="font-semibold text-white">{formatCOP(saldoPendiente)}</span>
         </div>
 
-        <div className="border-t border-[#2a3245] pt-4 space-y-4">
+        <div className="border-t border-[#2a2a2a] pt-4 space-y-4">
           <Input
             label="Monto del pago *"
             type="number"
@@ -84,7 +146,7 @@ export default function RegistrarPago({ prestamoId, cuotaDiaria, saldoPendiente,
           />
 
           <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-[#94a3b8]">Tipo de pago</span>
+            <span className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em]">Tipo de pago</span>
             <div className="flex gap-2">
               {['completo', 'parcial'].map((t) => (
                 <button
@@ -94,8 +156,8 @@ export default function RegistrarPago({ prestamoId, cuotaDiaria, saldoPendiente,
                   className={[
                     'flex-1 h-9 rounded-[10px] border text-sm font-medium transition-all capitalize cursor-pointer',
                     tipo === t
-                      ? 'bg-[rgba(59,130,246,0.15)] border-[#3b82f6] text-[#3b82f6]'
-                      : 'bg-transparent border-[#2a3245] text-[#94a3b8] hover:bg-[#222a3d]',
+                      ? 'bg-[rgba(245,197,24,0.15)] border-[#f5c518] text-[#f5c518]'
+                      : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#1a1a1a]',
                   ].join(' ')}
                 >
                   {t}

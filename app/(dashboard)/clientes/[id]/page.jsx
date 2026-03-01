@@ -9,6 +9,7 @@ import { Badge }                     from '@/components/ui/Badge'
 import { Button }                    from '@/components/ui/Button'
 import { Card }                      from '@/components/ui/Card'
 import { SkeletonCard }              from '@/components/ui/Skeleton'
+import BotonWhatsApp                 from '@/components/ui/BotonWhatsApp'
 import { formatCOP }                 from '@/lib/calculos'
 
 const estadoBadge = {
@@ -158,7 +159,7 @@ export default function ClienteDetallePage({ params }) {
           </h2>
           <div className="space-y-3">
             {prestamosActivos.map((p) => (
-              <PrestamoCard key={p.id} prestamo={p} clienteId={id} />
+              <PrestamoCard key={p.id} prestamo={p} clienteId={id} cliente={cliente} />
             ))}
           </div>
         </div>
@@ -191,7 +192,7 @@ export default function ClienteDetallePage({ params }) {
 }
 
 // ─── Sub-componente: tarjeta de préstamo ─────────────────────────
-function PrestamoCard({ prestamo: p, clienteId, mini = false }) {
+function PrestamoCard({ prestamo: p, clienteId, cliente, mini = false }) {
   const badge  = estadoPrestamoBadge[p.estado] ?? estadoPrestamoBadge.activo
   const porcentaje = p.porcentajePagado ?? 0
 
@@ -250,11 +251,16 @@ function PrestamoCard({ prestamo: p, clienteId, mini = false }) {
         </div>
       </div>
 
-      <Link href={`/prestamos/${p.id}`}>
-        <Button size="sm" variant="secondary" className="w-full">
-          Ver préstamo
-        </Button>
-      </Link>
+      <div className="flex flex-col gap-2">
+        <Link href={`/prestamos/${p.id}`}>
+          <Button size="sm" variant="secondary" className="w-full">
+            Ver préstamo
+          </Button>
+        </Link>
+        {p.diasMora > 0 && cliente?.telefono && (
+          <BotonWhatsApp tipo="mora" cliente={cliente} prestamo={p} />
+        )}
+      </div>
     </Card>
   )
 }
