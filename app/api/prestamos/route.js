@@ -36,8 +36,8 @@ export async function GET(request) {
     ...(buscar    && {
       cliente: {
         OR: [
-          { nombre: { contains: buscar, mode: 'insensitive' } },
-          { cedula: { contains: buscar, mode: 'insensitive' } },
+          { nombre: { contains: buscar } },
+          { cedula: { contains: buscar } },
         ],
       },
     }),

@@ -197,16 +197,21 @@ function NuevoPrestamo() {
 
           <div className="grid grid-cols-2 gap-3">
             {/* Tasa */}
-            <Input
-              label="Tasa diaria (%) *"
-              type="number"
-              inputMode="decimal"
-              step="0.5"
-              placeholder="Ej: 20"
-              value={tasa}
-              onChange={(e) => setTasa(e.target.value)}
-              suffix="%"
-            />
+            <div className="flex flex-col gap-1">
+              <Input
+                label="Tasa de interés del crédito (%) *"
+                type="number"
+                inputMode="decimal"
+                step="0.5"
+                placeholder="Ej: 20"
+                value={tasa}
+                onChange={(e) => setTasa(e.target.value)}
+                suffix="%"
+              />
+              <p className="text-[10px] text-[#555555] leading-snug px-0.5">
+                % total sobre el monto. Ej: 20% sobre $100.000 = $20.000 de interés
+              </p>
+            </div>
             {/* Plazo */}
             <Input
               label="Plazo (días) *"
