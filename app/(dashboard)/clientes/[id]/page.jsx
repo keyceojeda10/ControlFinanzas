@@ -56,7 +56,7 @@ export default function ClienteDetallePage({ params }) {
   if (error || !cliente) {
     return (
       <div className="max-w-2xl mx-auto">
-        <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] rounded-[14px] p-6 text-center">
+        <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] rounded-[16px] p-6 text-center">
           <p className="font-semibold mb-2">Cliente no encontrado</p>
           <button onClick={() => router.back()} className="text-sm underline">Volver</button>
         </div>
@@ -73,7 +73,7 @@ export default function ClienteDetallePage({ params }) {
       {/* Back */}
       <button
         onClick={() => router.back()}
-        className="flex items-center gap-1.5 text-sm text-[#64748b] hover:text-[#f1f5f9] transition-colors"
+        className="flex items-center gap-1.5 text-sm text-[#555555] hover:text-[white] transition-colors"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -93,7 +93,7 @@ export default function ClienteDetallePage({ params }) {
                         : 'rgba(100,116,139,0.15)',
               color: cliente.estado === 'mora'    ? '#ef4444'
                    : cliente.estado === 'activo'  ? '#3b82f6'
-                   : '#64748b',
+                   : '#555555',
             }}
           >
             {cliente.nombre?.[0]?.toUpperCase() ?? '?'}
@@ -102,26 +102,26 @@ export default function ClienteDetallePage({ params }) {
           {/* Info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-lg font-bold text-[#f1f5f9]">{cliente.nombre}</h1>
+              <h1 className="text-lg font-bold text-[white]">{cliente.nombre}</h1>
               <Badge variant={badge.variant}>{badge.label}</Badge>
             </div>
             <div className="mt-2 space-y-1">
-              <p className="text-sm text-[#94a3b8]">
-                <span className="text-[#64748b]">CC</span> {cliente.cedula}
+              <p className="text-sm text-[#888888]">
+                <span className="text-[#555555]">CC</span> {cliente.cedula}
               </p>
               {cliente.telefono && (
-                <p className="text-sm text-[#94a3b8]">
-                  <span className="text-[#64748b]">Tel.</span> {cliente.telefono}
+                <p className="text-sm text-[#888888]">
+                  <span className="text-[#555555]">Tel.</span> {cliente.telefono}
                 </p>
               )}
               {cliente.direccion && (
-                <p className="text-sm text-[#94a3b8]">
-                  <span className="text-[#64748b]">Dir.</span> {cliente.direccion}
+                <p className="text-sm text-[#888888]">
+                  <span className="text-[#555555]">Dir.</span> {cliente.direccion}
                 </p>
               )}
               {cliente.ruta && (
-                <p className="text-sm text-[#94a3b8]">
-                  <span className="text-[#64748b]">Ruta</span> {cliente.ruta.nombre}
+                <p className="text-sm text-[#888888]">
+                  <span className="text-[#555555]">Ruta</span> {cliente.ruta.nombre}
                 </p>
               )}
             </div>
@@ -130,7 +130,7 @@ export default function ClienteDetallePage({ params }) {
 
         {/* Actions */}
         {esOwner && (
-          <div className="flex gap-2 mt-4 pt-4 border-t border-[#2a3245]">
+          <div className="flex gap-2 mt-4 pt-4 border-t border-[#2a2a2a]">
             <Link href={`/prestamos/nuevo?clienteId=${cliente.id}`}>
               <Button
                 size="sm"
@@ -153,7 +153,7 @@ export default function ClienteDetallePage({ params }) {
       {/* Préstamos activos */}
       {prestamosActivos.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-[#94a3b8] mb-3 uppercase tracking-wide">
+          <h2 className="text-sm font-semibold text-[#888888] mb-3 uppercase tracking-wide">
             Préstamos activos
           </h2>
           <div className="space-y-3">
@@ -168,7 +168,7 @@ export default function ClienteDetallePage({ params }) {
       {prestamosActivos.length === 0 && (
         <Card>
           <div className="text-center py-4">
-            <p className="text-sm text-[#64748b]">Sin préstamos activos</p>
+            <p className="text-sm text-[#555555]">Sin préstamos activos</p>
           </div>
         </Card>
       )}
@@ -176,7 +176,7 @@ export default function ClienteDetallePage({ params }) {
       {/* Historial */}
       {historial.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-[#94a3b8] mb-3 uppercase tracking-wide">
+          <h2 className="text-sm font-semibold text-[#888888] mb-3 uppercase tracking-wide">
             Historial
           </h2>
           <div className="space-y-2.5">
@@ -199,16 +199,16 @@ function PrestamoCard({ prestamo: p, clienteId, mini = false }) {
     return (
       <Link
         href={`/prestamos/${p.id}`}
-        className="flex items-center gap-3 bg-[#1c2333] border border-[#2a3245] rounded-[12px] px-4 py-3 hover:border-[#2a3245]/70 transition-colors group"
+        className="flex items-center gap-3 bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-4 py-3 hover:border-[#2a2a2a]/70 transition-colors group"
       >
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-[#f1f5f9]">{formatCOP(p.montoPrestado)}</p>
-          <p className="text-xs text-[#64748b]">
+          <p className="text-sm text-[white]">{formatCOP(p.montoPrestado)}</p>
+          <p className="text-xs text-[#555555]">
             {new Date(p.fechaInicio).toLocaleDateString('es-CO')}
           </p>
         </div>
         <Badge variant={badge.variant}>{badge.label}</Badge>
-        <svg className="w-4 h-4 text-[#2a3245] group-hover:text-[#64748b] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-4 h-4 text-[#2a2a2a] group-hover:text-[#555555] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
       </Link>
@@ -219,8 +219,8 @@ function PrestamoCard({ prestamo: p, clienteId, mini = false }) {
     <Card>
       <div className="flex items-start justify-between mb-3">
         <div>
-          <p className="text-base font-bold text-[#f1f5f9]">{formatCOP(p.montoPrestado)}</p>
-          <p className="text-xs text-[#64748b] mt-0.5">
+          <p className="text-base font-bold text-[white]">{formatCOP(p.montoPrestado)}</p>
+          <p className="text-xs text-[#555555] mt-0.5">
             Prestado el {new Date(p.fechaInicio).toLocaleDateString('es-CO')}
           </p>
         </div>
@@ -229,21 +229,21 @@ function PrestamoCard({ prestamo: p, clienteId, mini = false }) {
 
       {/* Barra de progreso */}
       <div className="mb-3">
-        <div className="flex justify-between text-xs text-[#64748b] mb-1.5">
+        <div className="flex justify-between text-xs text-[#555555] mb-1.5">
           <span>Pagado: {formatCOP(p.montoPrestado - (p.saldoPendiente ?? 0))}</span>
           <span>{porcentaje}%</span>
         </div>
-        <div className="h-1.5 bg-[#2a3245] rounded-full overflow-hidden">
+        <div className="h-1.5 bg-[#2a2a2a] rounded-full overflow-hidden">
           <div
             className="h-full rounded-full transition-all"
             style={{
               width: `${porcentaje}%`,
-              background: porcentaje === 100 ? '#10b981' : p.diasMora > 0 ? '#ef4444' : '#3b82f6',
+              background: porcentaje === 100 ? '#22c55e' : p.diasMora > 0 ? '#ef4444' : '#3b82f6',
             }}
           />
         </div>
         <div className="flex justify-between text-xs mt-1.5">
-          <span className="text-[#64748b]">Saldo: <span className="text-[#f1f5f9] font-medium">{formatCOP(p.saldoPendiente)}</span></span>
+          <span className="text-[#555555]">Saldo: <span className="text-[white] font-medium">{formatCOP(p.saldoPendiente)}</span></span>
           {p.diasMora > 0 && (
             <span className="text-[#ef4444] font-medium">{p.diasMora} días en mora</span>
           )}

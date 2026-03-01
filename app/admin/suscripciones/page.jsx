@@ -58,22 +58,22 @@ export default function SuscripcionesPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-[#f1f5f9]">Suscripciones</h1>
-        <p className="text-sm text-[#64748b] mt-0.5">Gestión de suscripciones de la plataforma</p>
+        <h1 className="text-xl font-bold text-[white]">Suscripciones</h1>
+        <p className="text-sm text-[#555555] mt-0.5">Gestión de suscripciones de la plataforma</p>
       </div>
 
       {/* Resumen */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-[#1c2333] border border-[#2a3245] rounded-[12px] px-3 py-3 text-center">
-          <p className="text-[10px] text-[#64748b]">Activas</p>
-          <p className="text-lg font-bold text-[#10b981]">{activas}</p>
+        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-3 text-center">
+          <p className="text-[10px] text-[#555555]">Activas</p>
+          <p className="text-lg font-bold text-[#22c55e]">{activas}</p>
         </div>
-        <div className="bg-[#1c2333] border border-[#2a3245] rounded-[12px] px-3 py-3 text-center">
-          <p className="text-[10px] text-[#64748b]">Por vencer</p>
+        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-3 text-center">
+          <p className="text-[10px] text-[#555555]">Por vencer</p>
           <p className="text-lg font-bold text-[#f59e0b]">{porVencer}</p>
         </div>
-        <div className="bg-[#1c2333] border border-[#2a3245] rounded-[12px] px-3 py-3 text-center">
-          <p className="text-[10px] text-[#64748b]">Vencidas</p>
+        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-3 text-center">
+          <p className="text-[10px] text-[#555555]">Vencidas</p>
           <p className="text-lg font-bold text-[#ef4444]">{vencidas}</p>
         </div>
       </div>
@@ -87,7 +87,7 @@ export default function SuscripcionesPage() {
             className={`px-3 py-1.5 rounded-[8px] text-xs font-medium whitespace-nowrap transition-all ${
               tab === t.key
                 ? 'bg-[#3b82f6] text-white'
-                : 'bg-[#2a3245] text-[#64748b] hover:text-[#f1f5f9]'
+                : 'bg-[#2a2a2a] text-[#555555] hover:text-[white]'
             }`}
           >
             {t.label}
@@ -97,10 +97,10 @@ export default function SuscripcionesPage() {
 
       {/* Tabla */}
       {loading ? <SkeletonTable rows={5} /> : subs.length === 0 ? (
-        <p className="text-sm text-[#64748b] text-center py-8">No hay suscripciones</p>
+        <p className="text-sm text-[#555555] text-center py-8">No hay suscripciones</p>
       ) : (
-        <div className="bg-[#1c2333] border border-[#2a3245] rounded-[14px] overflow-hidden">
-          <div className="hidden sm:grid grid-cols-6 gap-2 px-4 py-2.5 text-[10px] text-[#64748b] font-medium uppercase border-b border-[#2a3245]">
+        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] overflow-hidden">
+          <div className="hidden sm:grid grid-cols-6 gap-2 px-4 py-2.5 text-[10px] text-[#555555] font-medium uppercase border-b border-[#2a2a2a]">
             <span className="col-span-2">Organización</span>
             <span className="text-center">Plan</span>
             <span className="text-center">Vencimiento</span>
@@ -109,21 +109,21 @@ export default function SuscripcionesPage() {
           </div>
 
           {subs.map((s) => (
-            <div key={s.id} className="grid grid-cols-2 sm:grid-cols-6 gap-2 px-4 py-3 border-b border-[#2a3245] last:border-0 items-center">
+            <div key={s.id} className="grid grid-cols-2 sm:grid-cols-6 gap-2 px-4 py-3 border-b border-[#2a2a2a] last:border-0 items-center">
               <div className="col-span-2">
-                <Link href={`/admin/organizaciones/${s.organizacionId}`} className="text-sm font-medium text-[#f1f5f9] hover:text-[#3b82f6]">
+                <Link href={`/admin/organizaciones/${s.organizacionId}`} className="text-sm font-medium text-[white] hover:text-[#3b82f6]">
                   {s.organizacion}
                 </Link>
-                <p className="text-[10px] text-[#64748b]">{formatCOP(s.montoCOP)}/mes</p>
+                <p className="text-[10px] text-[#555555]">{formatCOP(s.montoCOP)}/mes</p>
               </div>
               <div className="text-center">
                 <Badge variant={planBadge[s.plan]}>{s.plan}</Badge>
               </div>
               <div className="text-center">
-                <p className="text-xs text-[#94a3b8]">
+                <p className="text-xs text-[#888888]">
                   {new Date(s.fechaVencimiento).toLocaleDateString('es-CO')}
                 </p>
-                <p className={`text-[10px] font-bold ${s.diasRestantes > 7 ? 'text-[#10b981]' : s.diasRestantes > 0 ? 'text-[#f59e0b]' : 'text-[#ef4444]'}`}>
+                <p className={`text-[10px] font-bold ${s.diasRestantes > 7 ? 'text-[#22c55e]' : s.diasRestantes > 0 ? 'text-[#f59e0b]' : 'text-[#ef4444]'}`}>
                   {s.diasRestantes > 0 ? `${s.diasRestantes}d` : `${Math.abs(s.diasRestantes)}d vencida`}
                 </p>
               </div>
@@ -136,7 +136,7 @@ export default function SuscripcionesPage() {
                 <button
                   onClick={() => ejecutar(s.id, 'renovar')}
                   disabled={!!accionando}
-                  className="px-2 py-1 rounded-[6px] text-[10px] font-medium bg-[rgba(16,185,129,0.12)] text-[#10b981] hover:bg-[rgba(16,185,129,0.2)] transition-all disabled:opacity-50"
+                  className="px-2 py-1 rounded-[6px] text-[10px] font-medium bg-[rgba(16,185,129,0.12)] text-[#22c55e] hover:bg-[rgba(16,185,129,0.2)] transition-all disabled:opacity-50"
                 >
                   {accionando === `${s.id}-renovar` ? '…' : '+30d'}
                 </button>

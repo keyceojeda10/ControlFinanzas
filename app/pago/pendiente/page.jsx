@@ -4,7 +4,7 @@ import Link from 'next/link'
 
 export default function PagoPendiente() {
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center bg-[#0f1117] px-4">
+    <div className="min-h-dvh flex flex-col items-center justify-center bg-[#0a0a0a] px-4">
       <div className="w-full max-w-sm text-center">
         <div
           className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-6"
@@ -15,19 +15,19 @@ export default function PagoPendiente() {
           </svg>
         </div>
 
-        <h1 className="text-2xl font-bold text-[#f1f5f9] mb-2">
+        <h1 className="text-2xl font-bold text-[white] mb-2">
           Pago en proceso
         </h1>
-        <p className="text-sm text-[#94a3b8] mb-2">
+        <p className="text-sm text-[#888888] mb-2">
           Tu pago está siendo procesado por MercadoPago.
         </p>
-        <p className="text-xs text-[#64748b] mb-8">
+        <p className="text-xs text-[#555555] mb-8">
           Puede tardar hasta 2 días hábiles. Te notificaremos cuando se confirme y tu plan se activará automáticamente.
         </p>
 
         <Link
           href="/dashboard"
-          className="inline-flex items-center justify-center h-11 px-8 rounded-[10px] bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold text-sm transition-all"
+          className="inline-flex items-center justify-center h-11 px-8 rounded-[12px] bg-[#f5c518] hover:bg-[#f0b800] text-white font-semibold text-sm transition-all"
         >
           Ir al dashboard
         </Link>

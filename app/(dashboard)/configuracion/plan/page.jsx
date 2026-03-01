@@ -101,14 +101,14 @@ export default function PlanPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="text-center">
-        <h1 className="text-xl font-bold text-[#f1f5f9]">Elige tu plan</h1>
-        <p className="text-sm text-[#64748b] mt-1">
+        <h1 className="text-xl font-bold text-[white]">Elige tu plan</h1>
+        <p className="text-sm text-[#555555] mt-1">
           {estado?.estado === 'activa'
             ? `Tu plan actual: ${planActual}. Cambia cuando quieras.`
             : 'Selecciona el plan que mejor se adapte a tu negocio.'}
         </p>
         {estado?.diasRestantes != null && estado.estado === 'activa' && (
-          <p className="text-xs text-[#10b981] mt-1">
+          <p className="text-xs text-[#22c55e] mt-1">
             {estado.diasRestantes} días restantes en tu suscripción
           </p>
         )}
@@ -123,10 +123,10 @@ export default function PlanPage() {
             <div
               key={p.key}
               className={[
-                'relative bg-[#1c2333] border rounded-[14px] p-5 flex flex-col transition-all',
+                'relative bg-[#1a1a1a] border rounded-[16px] p-5 flex flex-col transition-all',
                 esPopular
-                  ? 'border-[#3b82f6] ring-1 ring-[rgba(59,130,246,0.3)]'
-                  : 'border-[#2a3245]',
+                  ? 'border-[#3b82f6] ring-1 ring-[rgba(245,197,24,0.3)]'
+                  : 'border-[#2a2a2a]',
               ].join(' ')}
             >
               {esPopular && (
@@ -136,17 +136,17 @@ export default function PlanPage() {
               )}
 
               <div className="mb-4 mt-1">
-                <p className="text-sm font-semibold text-[#f1f5f9]">{p.nombre}</p>
-                <p className="text-2xl font-bold text-[#f1f5f9] mt-1">
+                <p className="text-sm font-semibold text-[white]">{p.nombre}</p>
+                <p className="text-2xl font-bold text-[white] mt-1">
                   {formatCOP(p.precio)}
-                  <span className="text-xs text-[#64748b] font-normal">/mes</span>
+                  <span className="text-xs text-[#555555] font-normal">/mes</span>
                 </p>
               </div>
 
               <ul className="space-y-2 flex-1 mb-5">
                 {p.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-xs text-[#94a3b8]">
-                    <svg className="w-4 h-4 text-[#10b981] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <li key={f} className="flex items-start gap-2 text-xs text-[#888888]">
+                    <svg className="w-4 h-4 text-[#22c55e] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     {f}
@@ -158,10 +158,10 @@ export default function PlanPage() {
                 onClick={() => elegirPlan(p.key)}
                 disabled={esPlanActual || !!cargando}
                 className={[
-                  'w-full h-10 rounded-[10px] text-sm font-semibold transition-all flex items-center justify-center gap-2',
+                  'w-full h-10 rounded-[12px] text-sm font-semibold transition-all flex items-center justify-center gap-2',
                   esPlanActual
-                    ? 'bg-[#2a3245] text-[#64748b] cursor-default'
-                    : 'bg-[#3b82f6] hover:bg-[#2563eb] text-white cursor-pointer disabled:opacity-60',
+                    ? 'bg-[#2a2a2a] text-[#555555] cursor-default'
+                    : 'bg-[#f5c518] hover:bg-[#f0b800] text-white cursor-pointer disabled:opacity-60',
                 ].join(' ')}
               >
                 {cargando === p.key ? (

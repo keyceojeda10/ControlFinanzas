@@ -3,11 +3,11 @@
 import { forwardRef } from 'react'
 
 const variants = {
-  primary:   'bg-[#3b82f6] hover:bg-[#2563eb] text-white border-transparent',
-  secondary: 'bg-[#1c2333] hover:bg-[#222a3d] text-[#f1f5f9] border-[#2a3245]',
+  primary:   'bg-[#f5c518] hover:bg-[#f0b800] text-[#0a0a0a] font-bold border-transparent hover:shadow-[0_0_20px_rgba(245,197,24,0.3)]',
+  secondary: 'bg-transparent hover:bg-[#1a1a1a] text-white border-[#2a2a2a] hover:border-[#f5c518] hover:text-[#f5c518]',
   danger:    'bg-[#ef4444] hover:bg-[#dc2626] text-white border-transparent',
-  ghost:     'bg-transparent hover:bg-[#222a3d] text-[#94a3b8] hover:text-[#f1f5f9] border-transparent',
-  success:   'bg-[#10b981] hover:bg-[#059669] text-white border-transparent',
+  ghost:     'bg-transparent hover:bg-[#1a1a1a] text-[#888888] hover:text-white border-transparent',
+  success:   'bg-[#22c55e] hover:bg-[#16a34a] text-white border-transparent',
 }
 
 const sizes = {
@@ -29,8 +29,8 @@ export const Button = forwardRef(function Button(
   ref
 ) {
   const base = [
-    'inline-flex items-center justify-center font-medium rounded-[10px]',
-    'border transition-all duration-150 cursor-pointer select-none',
+    'inline-flex items-center justify-center font-medium rounded-[12px]',
+    'border transition-all duration-200 cursor-pointer select-none',
     'disabled:opacity-50 disabled:cursor-not-allowed',
     variants[variant] ?? variants.primary,
     sizes[size]       ?? sizes.md,

@@ -6,7 +6,7 @@ import BottomNav from '@/components/layout/BottomNav'
 
 export default function DashboardLayout({ children }) {
   return (
-    <div className="flex min-h-dvh bg-[#0f1117]">
+    <div className="flex min-h-dvh bg-[#0a0a0a]">
       {/* Sidebar – visible solo en lg+ */}
       <Sidebar />
 

@@ -117,51 +117,51 @@ function NuevoPrestamo() {
       <div className="mb-6">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm text-[#64748b] hover:text-[#f1f5f9] transition-colors mb-4"
+          className="flex items-center gap-1.5 text-sm text-[#555555] hover:text-[white] transition-colors mb-4"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
           Volver
         </button>
-        <h1 className="text-xl font-bold text-[#f1f5f9]">Nuevo préstamo</h1>
-        <p className="text-sm text-[#64748b] mt-0.5">Completa los datos para registrar el préstamo</p>
+        <h1 className="text-xl font-bold text-[white]">Nuevo préstamo</h1>
+        <p className="text-sm text-[#555555] mt-0.5">Completa los datos para registrar el préstamo</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="flex items-center gap-2 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[10px] px-4 py-3">
+          <div className="flex items-center gap-2 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3">
             {error}
           </div>
         )}
 
         {/* Card formulario */}
-        <div className="bg-[#1c2333] border border-[#2a3245] rounded-[14px] p-5 space-y-4">
+        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-5 space-y-4">
 
           {/* Selector de cliente */}
           {clienteIdParam ? (
             <div>
-              <p className="text-xs font-medium text-[#94a3b8] mb-1.5">Cliente</p>
-              <div className="flex items-center gap-2 h-10 px-3 rounded-[10px] border border-[#2a3245] bg-[#161b27]">
+              <p className="text-xs font-medium text-[#888888] mb-1.5">Cliente</p>
+              <div className="flex items-center gap-2 h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111]">
                 <div className="w-5 h-5 rounded-full bg-[rgba(59,130,246,0.2)] flex items-center justify-center shrink-0">
                   <span className="text-[#3b82f6] text-[9px] font-bold">{clienteNombre?.[0]?.toUpperCase()}</span>
                 </div>
-                <span className="text-sm text-[#f1f5f9]">{clienteNombre || clienteIdParam}</span>
+                <span className="text-sm text-[white]">{clienteNombre || clienteIdParam}</span>
               </div>
             </div>
           ) : (
             <div className="flex flex-col gap-1.5">
-              <p className="text-xs font-medium text-[#94a3b8]">Cliente *</p>
+              <p className="text-xs font-medium text-[#888888]">Cliente *</p>
               <input
                 placeholder="Buscar cliente por nombre o cédula…"
                 value={buscadorCliente}
                 onChange={(e) => { setBuscadorCliente(e.target.value); setClienteId('') }}
-                className="w-full h-10 px-3 rounded-[10px] border border-[#2a3245] bg-[#161b27] text-sm text-[#f1f5f9] placeholder-[#64748b] focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[rgba(59,130,246,0.3)] transition-all"
+                className="w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] placeholder-[#555555] focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[rgba(59,130,246,0.3)] transition-all"
               />
               {buscadorCliente && (
-                <div className="bg-[#161b27] border border-[#2a3245] rounded-[10px] overflow-hidden max-h-40 overflow-y-auto">
+                <div className="bg-[#111111] border border-[#2a2a2a] rounded-[12px] overflow-hidden max-h-40 overflow-y-auto">
                   {clientesFiltrados.length === 0 ? (
-                    <p className="px-3 py-2.5 text-sm text-[#64748b]">Sin resultados</p>
+                    <p className="px-3 py-2.5 text-sm text-[#555555]">Sin resultados</p>
                   ) : clientesFiltrados.map((c) => (
                     <button
                       key={c.id}
@@ -171,12 +171,12 @@ function NuevoPrestamo() {
                         setBuscadorCliente(c.nombre)
                       }}
                       className={[
-                        'w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-[#222a3d] transition-colors',
-                        clienteId === c.id ? 'bg-[rgba(59,130,246,0.1)] text-[#3b82f6]' : 'text-[#f1f5f9]',
+                        'w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-[#222222] transition-colors',
+                        clienteId === c.id ? 'bg-[rgba(59,130,246,0.1)] text-[#3b82f6]' : 'text-[white]',
                       ].join(' ')}
                     >
                       <span className="font-medium">{c.nombre}</span>
-                      <span className="text-[#64748b] text-xs">CC {c.cedula}</span>
+                      <span className="text-[#555555] text-xs">CC {c.cedula}</span>
                     </button>
                   ))}
                 </div>

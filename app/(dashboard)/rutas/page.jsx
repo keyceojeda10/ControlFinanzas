@@ -57,8 +57,8 @@ export default function RutasPage() {
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-[#f1f5f9]">Rutas</h1>
-          <p className="text-sm text-[#64748b] mt-0.5">
+          <h1 className="text-xl font-bold text-[white]">Rutas</h1>
+          <p className="text-sm text-[#555555] mt-0.5">
             {loading ? '…' : `${rutas.length} ruta${rutas.length !== 1 ? 's' : ''}`}
           </p>
         </div>
@@ -78,7 +78,7 @@ export default function RutasPage() {
 
       {/* Mini formulario inline */}
       {showForm && (
-        <form onSubmit={crearRuta} className="bg-[#1c2333] border border-[#3b82f6]/30 rounded-[14px] p-4 mb-4 flex gap-3">
+        <form onSubmit={crearRuta} className="bg-[#1a1a1a] border border-[#3b82f6]/30 rounded-[16px] p-4 mb-4 flex gap-3">
           <Input
             placeholder="Nombre de la ruta (ej: Zona Norte)"
             value={nombre}
@@ -93,7 +93,7 @@ export default function RutasPage() {
       )}
 
       {error && (
-        <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[10px] px-4 py-3 mb-4">
+        <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3 mb-4">
           {error}
         </div>
       )}
@@ -112,8 +112,8 @@ export default function RutasPage() {
                 d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
             </svg>
           </div>
-          <p className="text-sm font-medium text-[#f1f5f9]">Sin rutas aún</p>
-          <p className="text-xs text-[#64748b] mt-1">Crea una ruta y asígnale un cobrador</p>
+          <p className="text-sm font-medium text-[white]">Sin rutas aún</p>
+          <p className="text-xs text-[#555555] mt-1">Crea una ruta y asígnale un cobrador</p>
           <button onClick={() => setShowForm(true)} className="mt-4 text-sm text-[#3b82f6] hover:underline">
             Crear primera ruta
           </button>
@@ -130,37 +130,37 @@ export default function RutasPage() {
               <Link
                 key={r.id}
                 href={`/rutas/${r.id}`}
-                className="block bg-[#1c2333] border border-[#2a3245] rounded-[14px] p-4 hover:border-[#3b82f6]/40 hover:bg-[#222a3d] transition-all group"
+                className="block bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-4 hover:border-[#3b82f6]/40 hover:bg-[#222222] transition-all group"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <p className="text-sm font-semibold text-[#f1f5f9]">{r.nombre}</p>
-                    <p className="text-xs text-[#64748b] mt-0.5">
+                    <p className="text-sm font-semibold text-[white]">{r.nombre}</p>
+                    <p className="text-xs text-[#555555] mt-0.5">
                       {r.cobrador
-                        ? <span className="text-[#8b5cf6]">{r.cobrador.nombre}</span>
-                        : <span className="text-[#64748b]">Sin cobrador asignado</span>
+                        ? <span className="text-[#a855f7]">{r.cobrador.nombre}</span>
+                        : <span className="text-[#555555]">Sin cobrador asignado</span>
                       }
                     </p>
                   </div>
-                  <span className="text-xs text-[#64748b]">
+                  <span className="text-xs text-[#555555]">
                     {r.cantidadClientes} cliente{r.cantidadClientes !== 1 ? 's' : ''}
                   </span>
                 </div>
 
-                <div className="flex justify-between text-xs text-[#64748b] mb-1.5">
-                  <span>Recaudado: <span className="text-[#10b981] font-medium">{formatCOP(r.recaudadoHoy)}</span></span>
+                <div className="flex justify-between text-xs text-[#555555] mb-1.5">
+                  <span>Recaudado: <span className="text-[#22c55e] font-medium">{formatCOP(r.recaudadoHoy)}</span></span>
                   <span>Esperado: {formatCOP(r.esperadoHoy)}</span>
                 </div>
-                <div className="h-1.5 bg-[#2a3245] rounded-full overflow-hidden">
+                <div className="h-1.5 bg-[#2a2a2a] rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all"
                     style={{
                       width: `${progreso}%`,
-                      background: progreso >= 100 ? '#10b981' : '#3b82f6',
+                      background: progreso >= 100 ? '#22c55e' : '#3b82f6',
                     }}
                   />
                 </div>
-                <p className="text-[10px] text-[#64748b] mt-1 text-right">{progreso}% del día</p>
+                <p className="text-[10px] text-[#555555] mt-1 text-right">{progreso}% del día</p>
               </Link>
             )
           })}

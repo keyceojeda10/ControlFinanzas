@@ -53,12 +53,12 @@ export default function AdminLayout({ children }) {
   const pathname = usePathname()
 
   return (
-    <div className="flex min-h-dvh bg-[#0f1117]">
+    <div className="flex min-h-dvh bg-[#0a0a0a]">
       {/* Sidebar */}
-      <aside className="hidden lg:flex w-60 flex-col border-r border-[#2a3245] bg-[#0f1117] shrink-0">
-        <div className="px-5 py-5 border-b border-[#2a3245]">
-          <p className="text-sm font-bold text-[#f1f5f9]">Control Finanzas</p>
-          <p className="text-[10px] text-[#64748b]">Panel de Administración</p>
+      <aside className="hidden lg:flex w-60 flex-col border-r border-[#2a2a2a] bg-[#0a0a0a] shrink-0">
+        <div className="px-5 py-5 border-b border-[#2a2a2a]">
+          <p className="text-sm font-bold text-[white]">Control Finanzas</p>
+          <p className="text-[10px] text-[#555555]">Panel de Administración</p>
           <Badge variant="purple" className="mt-2">SUPERADMIN</Badge>
         </div>
 
@@ -70,10 +70,10 @@ export default function AdminLayout({ children }) {
                 key={href}
                 href={href}
                 className={[
-                  'flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm font-medium transition-all',
+                  'flex items-center gap-3 px-3 py-2.5 rounded-[12px] text-sm font-medium transition-all',
                   active
-                    ? 'bg-[rgba(59,130,246,0.12)] text-[#3b82f6]'
-                    : 'text-[#94a3b8] hover:text-[#f1f5f9] hover:bg-[#1c2333]',
+                    ? 'bg-[rgba(245,197,24,0.12)] text-[#f5c518]'
+                    : 'text-[#888888] hover:text-[white] hover:bg-[#1a1a1a]',
                 ].join(' ')}
               >
                 {icon}
@@ -83,10 +83,10 @@ export default function AdminLayout({ children }) {
           })}
         </nav>
 
-        <div className="px-3 py-4 border-t border-[#2a3245]">
+        <div className="px-3 py-4 border-t border-[#2a2a2a]">
           <button
             onClick={() => signOut({ callbackUrl: '/login' })}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm font-medium text-[#94a3b8] hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.08)] transition-all w-full"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-[12px] text-sm font-medium text-[#888888] hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.08)] transition-all w-full"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -99,13 +99,13 @@ export default function AdminLayout({ children }) {
 
       {/* Mobile header */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-[#2a3245] bg-[#0f1117]">
-          <p className="text-sm font-bold text-[#f1f5f9]">CF Admin</p>
+        <header className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-[#2a2a2a] bg-[#0a0a0a]">
+          <p className="text-sm font-bold text-[white]">CF Admin</p>
           <Badge variant="purple">SUPERADMIN</Badge>
         </header>
 
         {/* Mobile bottom nav */}
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 flex border-t border-[#2a3245] bg-[#0f1117] z-50">
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 flex border-t border-[#2a2a2a] bg-[#0a0a0a] z-50">
           {nav.map(({ href, label, icon }) => {
             const active = pathname === href || (href !== '/admin/dashboard' && pathname.startsWith(href))
             return (
@@ -114,7 +114,7 @@ export default function AdminLayout({ children }) {
                 href={href}
                 className={[
                   'flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-all',
-                  active ? 'text-[#3b82f6]' : 'text-[#64748b]',
+                  active ? 'text-[#f5c518]' : 'text-[#555555]',
                 ].join(' ')}
               >
                 {icon}

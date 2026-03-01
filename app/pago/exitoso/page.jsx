@@ -8,7 +8,7 @@ export default function PagoExitoso() {
 
   // Confetti simple
   useEffect(() => {
-    const colors = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ef4444']
+    const colors = ['#22c55e', '#3b82f6', '#f59e0b', '#a855f7', '#ef4444']
     const items = Array.from({ length: 40 }, (_, i) => ({
       id: i,
       left: Math.random() * 100,
@@ -21,7 +21,7 @@ export default function PagoExitoso() {
   }, [])
 
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center bg-[#0f1117] px-4 relative overflow-hidden">
+    <div className="min-h-dvh flex flex-col items-center justify-center bg-[#0a0a0a] px-4 relative overflow-hidden">
       {/* Confetti */}
       {dots.map((d) => (
         <div
@@ -45,24 +45,24 @@ export default function PagoExitoso() {
           className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-6"
           style={{ background: 'rgba(16,185,129,0.15)', border: '2px solid rgba(16,185,129,0.3)' }}
         >
-          <svg className="w-10 h-10 text-[#10b981]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-10 h-10 text-[#22c55e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
 
-        <h1 className="text-2xl font-bold text-[#f1f5f9] mb-2">
+        <h1 className="text-2xl font-bold text-[white] mb-2">
           ¡Pago exitoso!
         </h1>
-        <p className="text-sm text-[#94a3b8] mb-2">
+        <p className="text-sm text-[#888888] mb-2">
           Tu suscripción ha sido activada correctamente.
         </p>
-        <p className="text-xs text-[#64748b] mb-8">
+        <p className="text-xs text-[#555555] mb-8">
           Tu plan estará activo por 30 días a partir de hoy.
         </p>
 
         <Link
           href="/dashboard"
-          className="inline-flex items-center justify-center h-11 px-8 rounded-[10px] bg-[#10b981] hover:bg-[#059669] text-white font-semibold text-sm transition-all"
+          className="inline-flex items-center justify-center h-11 px-8 rounded-[12px] bg-[#22c55e] hover:bg-[#16a34a] text-white font-semibold text-sm transition-all"
         >
           Ir al dashboard
         </Link>

@@ -34,19 +34,19 @@ export default function NuevoClientePage() {
       <div className="mb-6">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm text-[#64748b] hover:text-[#f1f5f9] transition-colors mb-4"
+          className="flex items-center gap-1.5 text-sm text-[#555555] hover:text-[white] transition-colors mb-4"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
           Volver
         </button>
-        <h1 className="text-xl font-bold text-[#f1f5f9]">Nuevo cliente</h1>
-        <p className="text-sm text-[#64748b] mt-0.5">Registra los datos del cliente</p>
+        <h1 className="text-xl font-bold text-[white]">Nuevo cliente</h1>
+        <p className="text-sm text-[#555555] mt-0.5">Registra los datos del cliente</p>
       </div>
 
       {/* Form card */}
-      <div className="bg-[#1c2333] border border-[#2a3245] rounded-[14px] p-5 lg:p-6">
+      <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-5 lg:p-6">
         <ClienteForm plan={session?.user?.plan ?? 'basic'} />
       </div>
     </div>

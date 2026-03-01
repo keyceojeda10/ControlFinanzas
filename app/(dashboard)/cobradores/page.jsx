@@ -30,19 +30,19 @@ export default function CobradoresPage() {
   if (!authLoading && plan === 'basic') {
     return (
       <div className="max-w-xl mx-auto">
-        <h1 className="text-xl font-bold text-[#f1f5f9] mb-6">Cobradores</h1>
-        <div className="bg-[#1c2333] border border-[#2a3245] rounded-[14px] p-8 text-center">
+        <h1 className="text-xl font-bold text-[white] mb-6">Cobradores</h1>
+        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-8 text-center">
           <div className="w-14 h-14 rounded-full bg-[rgba(245,158,11,0.12)] flex items-center justify-center mx-auto mb-4">
             <svg className="w-7 h-7 text-[#f59e0b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                 d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
           </div>
-          <p className="text-base font-bold text-[#f1f5f9] mb-2">Función de plan premium</p>
-          <p className="text-sm text-[#64748b] mb-5">
+          <p className="text-base font-bold text-[white] mb-2">Función de plan premium</p>
+          <p className="text-sm text-[#555555] mb-5">
             Actualiza tu plan para agregar cobradores y gestionar rutas de cobro.
           </p>
-          <div className="inline-flex flex-col gap-2 text-xs text-[#94a3b8]">
+          <div className="inline-flex flex-col gap-2 text-xs text-[#888888]">
             <span>✓ Standard: hasta 2 cobradores</span>
             <span>✓ Professional: cobradores ilimitados</span>
           </div>
@@ -55,8 +55,8 @@ export default function CobradoresPage() {
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-[#f1f5f9]">Cobradores</h1>
-          <p className="text-sm text-[#64748b] mt-0.5">
+          <h1 className="text-xl font-bold text-[white]">Cobradores</h1>
+          <p className="text-sm text-[#555555] mt-0.5">
             {loading ? '…' : `${cobradores.length} cobrador${cobradores.length !== 1 ? 'es' : ''}`}
           </p>
         </div>
@@ -76,7 +76,7 @@ export default function CobradoresPage() {
       </div>
 
       {error && (
-        <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[10px] px-4 py-3 mb-4">
+        <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3 mb-4">
           {error}
         </div>
       )}
@@ -95,8 +95,8 @@ export default function CobradoresPage() {
                 d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
           </div>
-          <p className="text-sm font-medium text-[#f1f5f9]">Sin cobradores aún</p>
-          <p className="text-xs text-[#64748b] mt-1">Crea el primer cobrador para asignarle una ruta</p>
+          <p className="text-sm font-medium text-[white]">Sin cobradores aún</p>
+          <p className="text-xs text-[#555555] mt-1">Crea el primer cobrador para asignarle una ruta</p>
           <Link href="/cobradores/nuevo" className="mt-4">
             <Button size="sm">Crear cobrador</Button>
           </Link>
@@ -108,35 +108,35 @@ export default function CobradoresPage() {
           {cobradores.map((c) => (
             <div
               key={c.id}
-              className="bg-[#1c2333] border border-[#2a3245] rounded-[14px] p-4"
+              className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-4"
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-[rgba(139,92,246,0.15)] flex items-center justify-center shrink-0">
-                    <span className="text-[#8b5cf6] font-bold text-sm">{c.nombre?.[0]?.toUpperCase()}</span>
+                    <span className="text-[#a855f7] font-bold text-sm">{c.nombre?.[0]?.toUpperCase()}</span>
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-[#f1f5f9]">{c.nombre}</p>
-                    <p className="text-xs text-[#64748b]">{c.email}</p>
+                    <p className="text-sm font-semibold text-[white]">{c.nombre}</p>
+                    <p className="text-xs text-[#555555]">{c.email}</p>
                   </div>
                 </div>
                 <Badge variant={c.activo ? 'green' : 'gray'}>{c.activo ? 'Activo' : 'Inactivo'}</Badge>
               </div>
 
-              <div className="grid grid-cols-3 gap-3 pt-3 border-t border-[#2a3245] text-center">
+              <div className="grid grid-cols-3 gap-3 pt-3 border-t border-[#2a2a2a] text-center">
                 <div>
-                  <p className="text-[10px] text-[#64748b]">Ruta</p>
-                  <p className="text-xs font-medium text-[#f1f5f9] truncate">
-                    {c.ruta?.nombre ?? <span className="text-[#64748b]">Sin ruta</span>}
+                  <p className="text-[10px] text-[#555555]">Ruta</p>
+                  <p className="text-xs font-medium text-[white] truncate">
+                    {c.ruta?.nombre ?? <span className="text-[#555555]">Sin ruta</span>}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-[#64748b]">Clientes</p>
-                  <p className="text-xs font-bold text-[#f1f5f9]">{c.cantidadClientes}</p>
+                  <p className="text-[10px] text-[#555555]">Clientes</p>
+                  <p className="text-xs font-bold text-[white]">{c.cantidadClientes}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-[#64748b]">Recaudado hoy</p>
-                  <p className="text-xs font-bold text-[#10b981]">{formatCOP(c.recaudadoHoy)}</p>
+                  <p className="text-[10px] text-[#555555]">Recaudado hoy</p>
+                  <p className="text-xs font-bold text-[#22c55e]">{formatCOP(c.recaudadoHoy)}</p>
                 </div>
               </div>
             </div>

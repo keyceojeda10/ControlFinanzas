@@ -1,48 +1,44 @@
 @import "tailwindcss";
 
-/* ─── Design Tokens ─────────────────────────────────────────── */
+/* ─── Design Tokens – Negro & Dorado Premium ──────────────────── */
 @theme {
   /* Backgrounds */
-  --color-bg-main:    #0f1117;
-  --color-bg-surface: #161b27;
-  --color-bg-card:    #1c2333;
-  --color-bg-hover:   #222a3d;
+  --color-bg-base:    #0a0a0a;
+  --color-bg-surface: #111111;
+  --color-bg-card:    #1a1a1a;
+  --color-bg-hover:   #222222;
 
   /* Borders */
-  --color-border:     #2a3245;
-  --color-border-dim: #1e2738;
+  --color-border:     #2a2a2a;
+  --color-border-hover: #3a3a3a;
 
   /* Text */
-  --color-text-primary:   #f1f5f9;
-  --color-text-secondary: #94a3b8;
-  --color-text-muted:     #64748b;
+  --color-text-primary:   #ffffff;
+  --color-text-secondary: #888888;
+  --color-text-muted:     #555555;
 
-  /* Accent – Blue */
-  --color-blue:        #3b82f6;
-  --color-blue-dim:    rgba(59, 130, 246, 0.15);
-  --color-blue-hover:  #2563eb;
+  /* Accent – Dorado */
+  --color-accent:       #f5c518;
+  --color-accent-hover: #f0b800;
+  --color-accent-soft:  rgba(245, 197, 24, 0.08);
 
-  /* Accent – Green */
-  --color-green:       #10b981;
-  --color-green-dim:   rgba(16, 185, 129, 0.15);
-
-  /* Accent – Yellow */
-  --color-yellow:      #f59e0b;
-  --color-yellow-dim:  rgba(245, 158, 11, 0.15);
-
-  /* Accent – Red */
-  --color-red:         #ef4444;
-  --color-red-dim:     rgba(239, 68, 68, 0.15);
-
-  /* Accent – Purple */
-  --color-purple:      #8b5cf6;
-  --color-purple-dim:  rgba(139, 92, 246, 0.15);
+  /* Status */
+  --color-success:     #22c55e;
+  --color-success-dim: rgba(34, 197, 94, 0.10);
+  --color-danger:      #ef4444;
+  --color-danger-dim:  rgba(239, 68, 68, 0.10);
+  --color-warning:     #f59e0b;
+  --color-warning-dim: rgba(245, 158, 11, 0.10);
+  --color-info:        #3b82f6;
+  --color-info-dim:    rgba(59, 130, 246, 0.10);
+  --color-purple:      #a855f7;
+  --color-purple-dim:  rgba(168, 85, 247, 0.10);
 
   /* Radius */
-  --radius-sm:  6px;
-  --radius-md:  10px;
-  --radius-lg:  14px;
-  --radius-xl:  18px;
+  --radius-sm:  8px;
+  --radius-md:  12px;
+  --radius-lg:  16px;
+  --radius-xl:  20px;
 }
 
 /* ─── Base ──────────────────────────────────────────────────── */
@@ -56,25 +52,31 @@ html {
 }
 
 body {
-  background-color: #0f1117;
-  color: #f1f5f9;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background-color: #0a0a0a;
+  color: #ffffff;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   margin: 0;
   min-height: 100dvh;
 }
 
 /* ─── Scrollbar ─────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #0f1117; }
-::-webkit-scrollbar-thumb { background: #2a3245; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #3b4a64; }
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: #111111; }
+::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #f5c518; }
 
-/* ─── Focus visible global ──────────────────────────────────── */
+/* ─── Selección ─────────────────────────────────────────────── */
+::selection {
+  background: rgba(245, 197, 24, 0.2);
+  color: #ffffff;
+}
+
+/* ─── Focus visible ─────────────────────────────────────────── */
 :focus-visible {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid #f5c518;
   outline-offset: 2px;
 }
 
-/* ─── Utility: hide scrollbar visually but keep scroll ──────── */
+/* ─── Scrollbar oculto ──────────────────────────────────────── */
 .scrollbar-none { scrollbar-width: none; }
 .scrollbar-none::-webkit-scrollbar { display: none; }

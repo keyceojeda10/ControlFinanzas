@@ -121,7 +121,7 @@ export default function RutaDetallePage({ params }) {
 
   if (error || !ruta) return (
     <div className="max-w-2xl mx-auto">
-      <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] rounded-[14px] p-6 text-center">
+      <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] rounded-[16px] p-6 text-center">
         <p className="font-semibold">Ruta no encontrada</p>
         <button onClick={() => router.back()} className="text-sm underline mt-2">Volver</button>
       </div>
@@ -133,7 +133,7 @@ export default function RutaDetallePage({ params }) {
 
   return (
     <div className="max-w-2xl mx-auto space-y-4">
-      <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-[#64748b] hover:text-[#f1f5f9] transition-colors">
+      <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-[#555555] hover:text-[white] transition-colors">
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
@@ -144,18 +144,18 @@ export default function RutaDetallePage({ params }) {
       <Card>
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h1 className="text-lg font-bold text-[#f1f5f9]">{ruta.nombre}</h1>
+            <h1 className="text-lg font-bold text-[white]">{ruta.nombre}</h1>
           </div>
         </div>
 
         {/* Selector de cobrador (solo owner) */}
         {esOwner && (
           <div className="flex flex-col gap-1.5">
-            <p className="text-xs font-medium text-[#94a3b8]">Cobrador asignado</p>
+            <p className="text-xs font-medium text-[#888888]">Cobrador asignado</p>
             <select
               value={ruta.cobrador?.id ?? ''}
               onChange={(e) => cambiarCobrador(e.target.value)}
-              className="w-full h-9 rounded-[10px] border border-[#2a3245] bg-[#161b27] text-sm text-[#f1f5f9] px-3 focus:outline-none focus:border-[#3b82f6] transition-all cursor-pointer"
+              className="w-full h-9 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] px-3 focus:outline-none focus:border-[#3b82f6] transition-all cursor-pointer"
             >
               <option value="">Sin cobrador asignado</option>
               {cobradores.map((c) => (
@@ -165,20 +165,20 @@ export default function RutaDetallePage({ params }) {
           </div>
         )}
         {!esOwner && ruta.cobrador && (
-          <p className="text-sm text-[#94a3b8]">Cobrador: <span className="text-[#f1f5f9] font-medium">{ruta.cobrador.nombre}</span></p>
+          <p className="text-sm text-[#888888]">Cobrador: <span className="text-[white] font-medium">{ruta.cobrador.nombre}</span></p>
         )}
       </Card>
 
       {/* Métricas del día */}
       <div className="grid grid-cols-2 gap-3">
         {[
-          { label: 'Esperado hoy',      value: formatCOP(ruta.esperadoHoy),   color: '#f1f5f9' },
-          { label: 'Recaudado hoy',     value: formatCOP(ruta.recaudadoHoy),  color: '#10b981' },
-          { label: 'Pendientes de pago', value: `${ruta.pendientesHoy} cliente${ruta.pendientesHoy !== 1 ? 's' : ''}`, color: ruta.pendientesHoy > 0 ? '#f59e0b' : '#10b981' },
-          { label: 'En mora',           value: `${ruta.enMora} cliente${ruta.enMora !== 1 ? 's' : ''}`, color: ruta.enMora > 0 ? '#ef4444' : '#10b981' },
+          { label: 'Esperado hoy',      value: formatCOP(ruta.esperadoHoy),   color: 'white' },
+          { label: 'Recaudado hoy',     value: formatCOP(ruta.recaudadoHoy),  color: '#22c55e' },
+          { label: 'Pendientes de pago', value: `${ruta.pendientesHoy} cliente${ruta.pendientesHoy !== 1 ? 's' : ''}`, color: ruta.pendientesHoy > 0 ? '#f59e0b' : '#22c55e' },
+          { label: 'En mora',           value: `${ruta.enMora} cliente${ruta.enMora !== 1 ? 's' : ''}`, color: ruta.enMora > 0 ? '#ef4444' : '#22c55e' },
         ].map(({ label, value, color }) => (
-          <div key={label} className="bg-[#1c2333] border border-[#2a3245] rounded-[12px] px-3 py-3">
-            <p className="text-[10px] text-[#64748b]">{label}</p>
+          <div key={label} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-3">
+            <p className="text-[10px] text-[#555555]">{label}</p>
             <p className="text-base font-bold mt-0.5" style={{ color }}>{value}</p>
           </div>
         ))}
@@ -187,16 +187,16 @@ export default function RutaDetallePage({ params }) {
       {/* Barra de progreso del día */}
       <Card padding={false}>
         <div className="px-4 py-3">
-          <div className="flex justify-between text-xs text-[#64748b] mb-1.5">
+          <div className="flex justify-between text-xs text-[#555555] mb-1.5">
             <span>Progreso del día</span>
             <span>{progreso}%</span>
           </div>
-          <div className="h-2 bg-[#2a3245] rounded-full overflow-hidden">
+          <div className="h-2 bg-[#2a2a2a] rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-500"
               style={{
                 width: `${progreso}%`,
-                background: progreso >= 100 ? '#10b981' : 'linear-gradient(90deg, #3b82f6, #6366f1)',
+                background: progreso >= 100 ? '#22c55e' : 'linear-gradient(90deg, #3b82f6, #6366f1)',
               }}
             />
           </div>
@@ -206,7 +206,7 @@ export default function RutaDetallePage({ params }) {
       {/* Clientes de la ruta */}
       <Card>
         <div className="flex items-center justify-between mb-4">
-          <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide">
+          <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide">
             Clientes ({ruta.clientes?.length ?? 0})
           </p>
           {esOwner && (
@@ -217,28 +217,28 @@ export default function RutaDetallePage({ params }) {
         </div>
 
         {(!ruta.clientes || ruta.clientes.length === 0) ? (
-          <p className="text-sm text-[#64748b] text-center py-4">Sin clientes asignados</p>
+          <p className="text-sm text-[#555555] text-center py-4">Sin clientes asignados</p>
         ) : (
           <div className="space-y-2.5">
             {ruta.clientes.map((c) => (
-              <div key={c.id} className="flex items-center gap-3 py-2 border-b border-[#2a3245] last:border-0">
+              <div key={c.id} className="flex items-center gap-3 py-2 border-b border-[#2a2a2a] last:border-0">
                 <div className="w-7 h-7 rounded-full bg-[rgba(59,130,246,0.15)] flex items-center justify-center shrink-0">
                   <span className="text-[#3b82f6] text-[10px] font-bold">{c.nombre?.[0]?.toUpperCase()}</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-[#f1f5f9] truncate">{c.nombre}</p>
-                  <p className="text-[10px] text-[#64748b]">
+                  <p className="text-sm font-medium text-[white] truncate">{c.nombre}</p>
+                  <p className="text-[10px] text-[#555555]">
                     {c.diasMora > 0 ? `${c.diasMora} días en mora` : c.pagoHoy ? 'Pagó hoy' : 'Pendiente'}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  {c.pagoHoy && <span className="w-2 h-2 rounded-full bg-[#10b981]" />}
+                  {c.pagoHoy && <span className="w-2 h-2 rounded-full bg-[#22c55e]" />}
                   {c.diasMora > 0 && <Badge variant="red">{c.diasMora}d</Badge>}
                   {esOwner && (
                     <button
                       onClick={() => quitarCliente(c.id)}
                       disabled={quitando === c.id}
-                      className="text-[#64748b] hover:text-[#ef4444] transition-colors disabled:opacity-50"
+                      className="text-[#555555] hover:text-[#ef4444] transition-colors disabled:opacity-50"
                       title="Quitar de la ruta"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -255,29 +255,29 @@ export default function RutaDetallePage({ params }) {
 
       {/* Cierre de caja */}
       <Card>
-        <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide mb-4">
+        <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">
           Cierre de caja del día
         </p>
         {ruta.cierre ? (
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-[#64748b]">Esperado</span>
-              <span className="text-[#f1f5f9] font-medium">{formatCOP(ruta.cierre.totalEsperado)}</span>
+              <span className="text-[#555555]">Esperado</span>
+              <span className="text-[white] font-medium">{formatCOP(ruta.cierre.totalEsperado)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-[#64748b]">Entregado</span>
-              <span className="text-[#f1f5f9] font-medium">{formatCOP(ruta.cierre.totalRecogido)}</span>
+              <span className="text-[#555555]">Entregado</span>
+              <span className="text-[white] font-medium">{formatCOP(ruta.cierre.totalRecogido)}</span>
             </div>
-            <div className="flex justify-between text-sm font-bold border-t border-[#2a3245] pt-2 mt-2">
-              <span className="text-[#64748b]">Diferencia</span>
-              <span style={{ color: ruta.cierre.diferencia >= 0 ? '#10b981' : '#ef4444' }}>
+            <div className="flex justify-between text-sm font-bold border-t border-[#2a2a2a] pt-2 mt-2">
+              <span className="text-[#555555]">Diferencia</span>
+              <span style={{ color: ruta.cierre.diferencia >= 0 ? '#22c55e' : '#ef4444' }}>
                 {ruta.cierre.diferencia >= 0 ? '+' : ''}{formatCOP(ruta.cierre.diferencia)}
               </span>
             </div>
           </div>
         ) : (
           <div className="text-center py-2">
-            <p className="text-sm text-[#64748b] mb-3">No se ha registrado el cierre de hoy</p>
+            <p className="text-sm text-[#555555] mb-3">No se ha registrado el cierre de hoy</p>
             <Button onClick={() => { setTotalRecogido(''); setModalCaja(true) }}>
               Registrar cierre de caja
             </Button>
@@ -300,15 +300,15 @@ export default function RutaDetallePage({ params }) {
         }
       >
         {clientesSinRuta.length === 0 ? (
-          <p className="text-sm text-[#64748b] text-center py-4">Todos los clientes ya tienen ruta asignada</p>
+          <p className="text-sm text-[#555555] text-center py-4">Todos los clientes ya tienen ruta asignada</p>
         ) : (
           <div className="space-y-2">
             {clientesSinRuta.map((c) => (
               <label
                 key={c.id}
                 className={[
-                  'flex items-center gap-3 px-3 py-2.5 rounded-[10px] cursor-pointer transition-colors',
-                  seleccionados.includes(c.id) ? 'bg-[rgba(59,130,246,0.1)]' : 'hover:bg-[#222a3d]',
+                  'flex items-center gap-3 px-3 py-2.5 rounded-[12px] cursor-pointer transition-colors',
+                  seleccionados.includes(c.id) ? 'bg-[rgba(59,130,246,0.1)]' : 'hover:bg-[#222222]',
                 ].join(' ')}
               >
                 <input
@@ -318,8 +318,8 @@ export default function RutaDetallePage({ params }) {
                   className="accent-[#3b82f6]"
                 />
                 <div>
-                  <p className="text-sm font-medium text-[#f1f5f9]">{c.nombre}</p>
-                  <p className="text-xs text-[#64748b]">CC {c.cedula}</p>
+                  <p className="text-sm font-medium text-[white]">{c.nombre}</p>
+                  <p className="text-xs text-[#555555]">CC {c.cedula}</p>
                 </div>
               </label>
             ))}
@@ -341,30 +341,30 @@ export default function RutaDetallePage({ params }) {
       >
         <div className="space-y-4">
           {errorCaja && (
-            <div className="text-[#ef4444] text-sm bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] rounded-[10px] px-4 py-3">
+            <div className="text-[#ef4444] text-sm bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] rounded-[12px] px-4 py-3">
               {errorCaja}
             </div>
           )}
           <div className="flex justify-between text-sm">
-            <span className="text-[#64748b]">Total esperado hoy</span>
-            <span className="font-semibold text-[#f1f5f9]">{formatCOP(ruta.esperadoHoy)}</span>
+            <span className="text-[#555555]">Total esperado hoy</span>
+            <span className="font-semibold text-[white]">{formatCOP(ruta.esperadoHoy)}</span>
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-[#94a3b8]">Dinero recogido (COP)</label>
+            <label className="text-xs font-medium text-[#888888]">Dinero recogido (COP)</label>
             <input
               type="number"
               inputMode="numeric"
               placeholder="Ej: 250000"
               value={totalRecogido}
               onChange={(e) => setTotalRecogido(e.target.value)}
-              className="w-full h-10 px-3 rounded-[10px] border border-[#2a3245] bg-[#161b27] text-sm text-[#f1f5f9] placeholder-[#64748b] focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[rgba(59,130,246,0.3)] transition-all"
+              className="w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] placeholder-[#555555] focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[rgba(59,130,246,0.3)] transition-all"
               autoFocus
             />
           </div>
           {totalRecogido && (
             <div className="text-sm">
-              <span className="text-[#64748b]">Diferencia: </span>
-              <span style={{ color: Number(totalRecogido) >= ruta.esperadoHoy ? '#10b981' : '#ef4444', fontWeight: 700 }}>
+              <span className="text-[#555555]">Diferencia: </span>
+              <span style={{ color: Number(totalRecogido) >= ruta.esperadoHoy ? '#22c55e' : '#ef4444', fontWeight: 700 }}>
                 {Number(totalRecogido) >= ruta.esperadoHoy ? '+' : ''}{formatCOP(Number(totalRecogido) - ruta.esperadoHoy)}
               </span>
             </div>

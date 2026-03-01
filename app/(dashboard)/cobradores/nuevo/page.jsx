@@ -72,28 +72,28 @@ export default function NuevoCobrador() {
   if (creado) {
     return (
       <div className="max-w-md mx-auto">
-        <div className="bg-[#1c2333] border border-[rgba(16,185,129,0.3)] rounded-[14px] p-6 text-center">
+        <div className="bg-[#1a1a1a] border border-[rgba(16,185,129,0.3)] rounded-[16px] p-6 text-center">
           <div className="w-12 h-12 rounded-full bg-[rgba(16,185,129,0.12)] flex items-center justify-center mx-auto mb-4">
-            <svg className="w-6 h-6 text-[#10b981]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-[#22c55e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-base font-bold text-[#f1f5f9] mb-1">¡Cobrador creado!</h2>
-          <p className="text-xs text-[#64748b] mb-5">
+          <h2 className="text-base font-bold text-[white] mb-1">¡Cobrador creado!</h2>
+          <p className="text-xs text-[#555555] mb-5">
             Guarda estas credenciales — la contraseña no se mostrará de nuevo.
           </p>
 
-          <div className="bg-[#161b27] border border-[#2a3245] rounded-[10px] p-4 text-left mb-4 space-y-2">
+          <div className="bg-[#111111] border border-[#2a2a2a] rounded-[12px] p-4 text-left mb-4 space-y-2">
             <div>
-              <p className="text-[10px] text-[#64748b]">Nombre</p>
-              <p className="text-sm font-medium text-[#f1f5f9]">{creado.nombre}</p>
+              <p className="text-[10px] text-[#555555]">Nombre</p>
+              <p className="text-sm font-medium text-[white]">{creado.nombre}</p>
             </div>
             <div>
-              <p className="text-[10px] text-[#64748b]">Email</p>
-              <p className="text-sm font-medium text-[#f1f5f9]">{creado.email}</p>
+              <p className="text-[10px] text-[#555555]">Email</p>
+              <p className="text-sm font-medium text-[white]">{creado.email}</p>
             </div>
             <div>
-              <p className="text-[10px] text-[#64748b]">Contraseña temporal</p>
+              <p className="text-[10px] text-[#555555]">Contraseña temporal</p>
               <p className="text-sm font-bold text-[#3b82f6] font-mono">{creado.password}</p>
             </div>
           </div>
@@ -116,18 +116,18 @@ export default function NuevoCobrador() {
       <div className="mb-6">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm text-[#64748b] hover:text-[#f1f5f9] transition-colors mb-4"
+          className="flex items-center gap-1.5 text-sm text-[#555555] hover:text-[white] transition-colors mb-4"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
           Volver
         </button>
-        <h1 className="text-xl font-bold text-[#f1f5f9]">Nuevo cobrador</h1>
+        <h1 className="text-xl font-bold text-[white]">Nuevo cobrador</h1>
         {restantes !== null && (
-          <p className="text-xs text-[#64748b] mt-1">
+          <p className="text-xs text-[#555555] mt-1">
             Puedes agregar{' '}
-            <span className={restantes > 0 ? 'text-[#10b981]' : 'text-[#ef4444]'}>
+            <span className={restantes > 0 ? 'text-[#22c55e]' : 'text-[#ef4444]'}>
               {restantes} cobrador{restantes !== 1 ? 'es' : ''}
             </span>{' '}
             más (plan {plan})
@@ -135,9 +135,9 @@ export default function NuevoCobrador() {
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-[#1c2333] border border-[#2a3245] rounded-[14px] p-5 space-y-4">
+      <form onSubmit={handleSubmit} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-5 space-y-4">
         {error && (
-          <div className="flex items-center gap-2 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[10px] px-4 py-3">
+          <div className="flex items-center gap-2 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3">
             {error}
           </div>
         )}
@@ -162,7 +162,7 @@ export default function NuevoCobrador() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <p className="text-[10px] text-[#64748b]">
+        <p className="text-[10px] text-[#555555]">
           El cobrador deberá usar estas credenciales para ingresar al sistema.
         </p>
 

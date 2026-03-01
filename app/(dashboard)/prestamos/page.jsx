@@ -54,8 +54,8 @@ export default function PrestamosPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-xl font-bold text-[#f1f5f9]">Préstamos</h1>
-          <p className="text-sm text-[#64748b] mt-0.5">
+          <h1 className="text-xl font-bold text-[white]">Préstamos</h1>
+          <p className="text-sm text-[#555555] mt-0.5">
             {loading ? '…' : `${prestamos.length} préstamo${prestamos.length !== 1 ? 's' : ''}`}
             {enMoraCount > 0 && (
               <span className="ml-2 text-[#ef4444]">· {enMoraCount} en mora</span>
@@ -87,7 +87,7 @@ export default function PrestamosPage() {
               'shrink-0 px-3 h-8 rounded-full text-xs font-medium border transition-all',
               estado === value
                 ? 'bg-[rgba(59,130,246,0.15)] border-[#3b82f6] text-[#3b82f6]'
-                : 'bg-transparent border-[#2a3245] text-[#64748b] hover:bg-[#222a3d] hover:text-[#f1f5f9]',
+                : 'bg-transparent border-[#2a2a2a] text-[#555555] hover:bg-[#222222] hover:text-[white]',
             ].join(' ')}
           >
             {label}
@@ -98,7 +98,7 @@ export default function PrestamosPage() {
       {/* Buscador */}
       <div className="relative mb-5">
         <svg
-          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748b] pointer-events-none"
+          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#555555] pointer-events-none"
           fill="none" stroke="currentColor" viewBox="0 0 24 24"
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
@@ -109,12 +109,12 @@ export default function PrestamosPage() {
           value={buscar}
           onChange={(e) => setBuscar(e.target.value)}
           placeholder="Buscar por nombre o cédula del cliente…"
-          className="w-full h-10 pl-9 pr-4 rounded-[10px] border border-[#2a3245] bg-[#1c2333] text-sm text-[#f1f5f9] placeholder-[#64748b] focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[rgba(59,130,246,0.3)] transition-all"
+          className="w-full h-10 pl-9 pr-4 rounded-[12px] border border-[#2a2a2a] bg-[#1a1a1a] text-sm text-[white] placeholder-[#555555] focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[rgba(59,130,246,0.3)] transition-all"
         />
         {buscar && (
           <button
             onClick={() => setBuscar('')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748b] hover:text-[#f1f5f9]"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#555555] hover:text-[white]"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -125,7 +125,7 @@ export default function PrestamosPage() {
 
       {/* Error */}
       {error && (
-        <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[10px] px-4 py-3 mb-4">
+        <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3 mb-4">
           {error}
         </div>
       )}
@@ -155,18 +155,18 @@ export default function PrestamosPage() {
           </div>
           {buscar ? (
             <>
-              <p className="text-sm font-medium text-[#f1f5f9]">Sin resultados</p>
-              <p className="text-xs text-[#64748b] mt-1">No hay préstamos para "{buscar}"</p>
+              <p className="text-sm font-medium text-[white]">Sin resultados</p>
+              <p className="text-xs text-[#555555] mt-1">No hay préstamos para "{buscar}"</p>
               <button onClick={() => setBuscar('')} className="mt-3 text-xs text-[#3b82f6] hover:underline">
                 Limpiar búsqueda
               </button>
             </>
           ) : (
             <>
-              <p className="text-sm font-medium text-[#f1f5f9]">
+              <p className="text-sm font-medium text-[white]">
                 {estado === 'activo' ? 'No hay préstamos activos' : 'Sin préstamos'}
               </p>
-              <p className="text-xs text-[#64748b] mt-1">
+              <p className="text-xs text-[#555555] mt-1">
                 {estado !== '' && (
                   <button onClick={() => setEstado('')} className="text-[#3b82f6] hover:underline">
                     Ver todos los estados

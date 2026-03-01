@@ -143,18 +143,18 @@ export default function Sidebar() {
     href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
 
   return (
-    <aside className="hidden lg:flex flex-col w-60 bg-[#161b27] border-r border-[#2a3245] min-h-dvh shrink-0">
+    <aside className="hidden lg:flex flex-col w-60 bg-[#111111] border-r border-[#2a2a2a] min-h-dvh shrink-0">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-5 h-16 border-b border-[#2a3245]">
-        <div className="w-8 h-8 rounded-[8px] bg-[#3b82f6] flex items-center justify-center shrink-0">
-          <svg className="w-4.5 h-4.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="flex items-center gap-3 px-5 h-16 border-b border-[#2a2a2a]">
+        <div className="w-8 h-8 rounded-[8px] bg-[#f5c518] flex items-center justify-center shrink-0">
+          <svg className="w-4.5 h-4.5 text-[#0a0a0a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
         <div>
-          <p className="text-sm font-bold text-[#f1f5f9] leading-none">Control</p>
-          <p className="text-xs text-[#3b82f6] font-semibold">Finanzas</p>
+          <p className="text-sm font-bold text-white leading-none">Control</p>
+          <p className="text-xs text-[#f5c518] font-semibold">Finanzas</p>
         </div>
       </div>
 
@@ -169,8 +169,8 @@ export default function Sidebar() {
               className={[
                 'flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm font-medium transition-all duration-150',
                 active
-                  ? 'bg-[rgba(59,130,246,0.15)] text-[#3b82f6]'
-                  : 'text-[#94a3b8] hover:bg-[#222a3d] hover:text-[#f1f5f9]',
+                  ? 'bg-[rgba(245,197,24,0.08)] text-[#f5c518] border-l-2 border-[#f5c518]'
+                  : 'text-[#555555] hover:bg-[#1a1a1a] hover:text-[#888888]',
               ].join(' ')}
             >
               {item.icon}
@@ -181,19 +181,19 @@ export default function Sidebar() {
       </nav>
 
       {/* User info + sign out */}
-      <div className="px-3 pb-5 border-t border-[#2a3245] pt-4">
+      <div className="px-3 pb-5 border-t border-[#2a2a2a] pt-4">
         <div className="flex items-center gap-3 px-3 py-2 mb-2">
-          <div className="w-8 h-8 rounded-full bg-[#3b82f6] flex items-center justify-center text-white text-xs font-bold shrink-0">
+          <div className="w-8 h-8 rounded-full bg-[#f5c518] flex items-center justify-center text-[#0a0a0a] text-xs font-bold shrink-0">
             {session?.user?.nombre?.[0]?.toUpperCase() ?? 'U'}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-[#f1f5f9] truncate">{session?.user?.nombre}</p>
-            <p className="text-[10px] text-[#64748b] capitalize">{session?.user?.rol}</p>
+            <p className="text-xs font-semibold text-white truncate">{session?.user?.nombre}</p>
+            <p className="text-[10px] text-[#555555] capitalize">{session?.user?.rol}</p>
           </div>
         </div>
         <button
           onClick={() => signOut({ callbackUrl: '/login' })}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm text-[#94a3b8] hover:bg-[#222a3d] hover:text-[#ef4444] transition-all duration-150"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm text-[#888888] hover:bg-[#1a1a1a] hover:text-[#ef4444] transition-all duration-150"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}

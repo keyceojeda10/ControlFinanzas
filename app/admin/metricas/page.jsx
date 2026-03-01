@@ -10,13 +10,13 @@ import {
 } from 'recharts'
 
 const PRECIOS = { basic: 80000, standard: 150000, professional: 250000 }
-const COLORES = { basic: '#94a3b8', standard: '#3b82f6', professional: '#8b5cf6' }
+const COLORES = { basic: '#888888', standard: '#3b82f6', professional: '#a855f7' }
 
 const CopTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-[#1c2333] border border-[#2a3245] rounded-[10px] px-3 py-2 text-xs shadow-xl">
-      <p className="text-[#94a3b8] mb-1">{label}</p>
+    <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-2 text-xs shadow-xl">
+      <p className="text-[#888888] mb-1">{label}</p>
       {payload.map((p, i) => (
         <p key={i} className="font-bold" style={{ color: p.color }}>{p.name}: {formatCOP(p.value)}</p>
       ))}
@@ -27,8 +27,8 @@ const CopTooltip = ({ active, payload, label }) => {
 const NumTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-[#1c2333] border border-[#2a3245] rounded-[10px] px-3 py-2 text-xs shadow-xl">
-      <p className="text-[#94a3b8] mb-1">{label}</p>
+    <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-2 text-xs shadow-xl">
+      <p className="text-[#888888] mb-1">{label}</p>
       {payload.map((p, i) => (
         <p key={i} className="font-bold" style={{ color: p.color }}>{p.name}: {p.value}</p>
       ))}
@@ -126,20 +126,20 @@ export default function MetricasPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-[#f1f5f9]">Métricas de negocio</h1>
-        <p className="text-sm text-[#64748b] mt-0.5">Análisis detallado de la plataforma</p>
+        <h1 className="text-xl font-bold text-[white]">Métricas de negocio</h1>
+        <p className="text-sm text-[#555555] mt-0.5">Análisis detallado de la plataforma</p>
       </div>
 
       {/* MRR por mes — barras apiladas */}
       <Card>
-        <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide mb-4">MRR por mes — Últimos 12 meses</p>
+        <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">MRR por mes — Últimos 12 meses</p>
         <ResponsiveContainer width="100%" height={260}>
           <BarChart data={mrrPorMes} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#2a3245" vertical={false} />
-            <XAxis dataKey="mes" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
-            <YAxis tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" vertical={false} />
+            <XAxis dataKey="mes" tick={{ fill: '#555555', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+            <YAxis tick={{ fill: '#555555', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
             <Tooltip content={<CopTooltip />} />
-            <Legend wrapperStyle={{ fontSize: 10, color: '#64748b' }} />
+            <Legend wrapperStyle={{ fontSize: 10, color: '#555555' }} />
             <Bar dataKey="basic" name="Basic" stackId="a" fill={COLORES.basic} />
             <Bar dataKey="standard" name="Standard" stackId="a" fill={COLORES.standard} />
             <Bar dataKey="professional" name="Professional" stackId="a" fill={COLORES.professional} radius={[4, 4, 0, 0]} />
@@ -149,16 +149,16 @@ export default function MetricasPage() {
 
       {/* Crecimiento de organizaciones */}
       <Card>
-        <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide mb-4">Crecimiento de organizaciones</p>
+        <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">Crecimiento de organizaciones</p>
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={crecimiento} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#2a3245" vertical={false} />
-            <XAxis dataKey="mes" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
-            <YAxis tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" vertical={false} />
+            <XAxis dataKey="mes" tick={{ fill: '#555555', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+            <YAxis tick={{ fill: '#555555', fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
             <Tooltip content={<NumTooltip />} />
-            <Legend wrapperStyle={{ fontSize: 10, color: '#64748b' }} />
+            <Legend wrapperStyle={{ fontSize: 10, color: '#555555' }} />
             <Line type="monotone" dataKey="total" name="Total" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
-            <Line type="monotone" dataKey="nuevas" name="Nuevas" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
+            <Line type="monotone" dataKey="nuevas" name="Nuevas" stroke="#22c55e" strokeWidth={2} dot={{ r: 3 }} />
           </LineChart>
         </ResponsiveContainer>
       </Card>
@@ -166,7 +166,7 @@ export default function MetricasPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         {/* Distribución de planes — dona */}
         <Card>
-          <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide mb-4">Distribución de planes</p>
+          <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">Distribución de planes</p>
           {planDist.length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
@@ -185,27 +185,27 @@ export default function MetricasPage() {
                 </Pie>
                 <Legend
                   wrapperStyle={{ fontSize: 10 }}
-                  formatter={(value) => <span className="text-[#94a3b8]">{value}</span>}
+                  formatter={(value) => <span className="text-[#888888]">{value}</span>}
                 />
                 <Tooltip
-                  contentStyle={{ background: '#1c2333', border: '1px solid #2a3245', borderRadius: 10, fontSize: 12 }}
-                  itemStyle={{ color: '#f1f5f9' }}
+                  contentStyle={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 10, fontSize: 12 }}
+                  itemStyle={{ color: 'white' }}
                 />
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <p className="text-sm text-[#64748b] text-center py-8">Sin datos</p>
+            <p className="text-sm text-[#555555] text-center py-8">Sin datos</p>
           )}
         </Card>
 
         {/* Churn mensual */}
         <Card>
-          <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide mb-4">Churn mensual</p>
+          <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">Churn mensual</p>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={churn} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2a3245" vertical={false} />
-              <XAxis dataKey="mes" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
-              <YAxis tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" vertical={false} />
+              <XAxis dataKey="mes" tick={{ fill: '#555555', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+              <YAxis tick={{ fill: '#555555', fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
               <Tooltip content={<NumTooltip />} />
               <Bar dataKey="canceladas" name="Canceladas" fill="#ef4444" radius={[4, 4, 0, 0]} />
             </BarChart>

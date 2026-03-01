@@ -75,30 +75,30 @@ export default function RegistroPage() {
     }
   }
 
-  const inputClass = 'w-full h-10 px-3 rounded-[10px] border border-[#2a3245] bg-[#161b27] text-sm text-[#f1f5f9] placeholder-[#64748b] focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[rgba(59,130,246,0.3)] transition-all'
+  const inputClass = 'w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-white placeholder-[#555555] focus:outline-none focus:border-[#f5c518] focus:ring-1 focus:ring-[rgba(245,197,24,0.2)] transition-all'
 
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center bg-[#0f1117] px-4 py-8">
+    <div className="min-h-dvh flex flex-col items-center justify-center bg-[#0a0a0a] px-4 py-8">
       <div className="w-full max-w-sm">
         {/* Header */}
         <div className="text-center mb-8">
           <div
             className="inline-flex items-center justify-center w-14 h-14 rounded-[14px] mb-5"
-            style={{ background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.25)' }}
+            style={{ background: 'rgba(245,197,24,0.1)', border: '1px solid rgba(245,197,24,0.2)' }}
           >
-            <svg className="w-7 h-7 text-[#3b82f6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-7 h-7 text-[#f5c518]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
                 d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-[#f1f5f9] tracking-tight">Crear cuenta</h1>
-          <p className="text-sm text-[#64748b] mt-1">15 días gratis para probar la plataforma</p>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Crear cuenta</h1>
+          <p className="text-sm text-[#888888] mt-1">15 días gratis para probar la plataforma</p>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-[#1c2333] border border-[#2a3245] rounded-[18px] p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[24px] p-6 space-y-4">
           {error && (
-            <div className="flex items-center gap-2.5 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[10px] px-4 py-3">
+            <div className="flex items-center gap-2.5 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3">
               <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>
@@ -107,7 +107,7 @@ export default function RegistroPage() {
           )}
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-[#94a3b8]">Nombre del negocio</label>
+            <label className="text-xs font-medium text-[#888888]">Nombre del negocio</label>
             <input
               type="text"
               value={form.nombreOrganizacion}
@@ -118,7 +118,7 @@ export default function RegistroPage() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-[#94a3b8]">Tu nombre</label>
+            <label className="text-xs font-medium text-[#888888]">Tu nombre</label>
             <input
               type="text"
               value={form.nombre}
@@ -129,7 +129,7 @@ export default function RegistroPage() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-[#94a3b8]">Correo electrónico</label>
+            <label className="text-xs font-medium text-[#888888]">Correo electrónico</label>
             <input
               type="email"
               value={form.email}
@@ -141,7 +141,7 @@ export default function RegistroPage() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-[#94a3b8]">Contraseña</label>
+            <label className="text-xs font-medium text-[#888888]">Contraseña</label>
             <input
               type="password"
               value={form.password}
@@ -153,7 +153,7 @@ export default function RegistroPage() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-[#94a3b8]">Confirmar contraseña</label>
+            <label className="text-xs font-medium text-[#888888]">Confirmar contraseña</label>
             <input
               type="password"
               value={form.confirmar}
@@ -167,7 +167,7 @@ export default function RegistroPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-11 mt-1 rounded-[10px] bg-[#3b82f6] hover:bg-[#2563eb] disabled:opacity-60 text-white font-semibold text-sm transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full h-11 mt-1 rounded-[12px] bg-[#f5c518] hover:bg-[#f0b800] disabled:opacity-60 text-[#0a0a0a] font-bold text-sm transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer"
           >
             {loading ? (
               <>
@@ -181,9 +181,9 @@ export default function RegistroPage() {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-[#64748b]">
+        <p className="mt-6 text-center text-sm text-[#888888]">
           ¿Ya tienes cuenta?{' '}
-          <Link href="/login" className="text-[#3b82f6] hover:underline font-medium">
+          <Link href="/login" className="text-[#f5c518] hover:underline font-medium">
             Inicia sesión
           </Link>
         </p>

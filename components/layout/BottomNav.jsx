@@ -111,7 +111,7 @@ export default function BottomNav() {
     href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
 
   return (
-    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[#161b27] border-t border-[#2a3245]">
+    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[#111111] border-t border-[#2a2a2a]">
       <div
         className="flex items-stretch"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
@@ -124,7 +124,7 @@ export default function BottomNav() {
               href={item.href}
               className={[
                 'flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors',
-                active ? 'text-[#3b82f6]' : 'text-[#64748b]',
+                active ? 'text-[#f5c518]' : 'text-[#555555]',
               ].join(' ')}
             >
               {item.icon(active)}

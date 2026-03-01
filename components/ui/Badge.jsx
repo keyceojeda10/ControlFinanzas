@@ -1,12 +1,12 @@
 // components/ui/Badge.jsx
 
 const variants = {
-  blue:   'bg-[rgba(59,130,246,0.15)]   text-[#3b82f6]  border-[rgba(59,130,246,0.2)]',
-  green:  'bg-[rgba(16,185,129,0.15)]   text-[#10b981]  border-[rgba(16,185,129,0.2)]',
-  yellow: 'bg-[rgba(245,158,11,0.15)]   text-[#f59e0b]  border-[rgba(245,158,11,0.2)]',
-  red:    'bg-[rgba(239,68,68,0.15)]    text-[#ef4444]  border-[rgba(239,68,68,0.2)]',
-  purple: 'bg-[rgba(139,92,246,0.15)]   text-[#8b5cf6]  border-[rgba(139,92,246,0.2)]',
-  gray:   'bg-[rgba(148,163,184,0.1)]   text-[#94a3b8]  border-[rgba(148,163,184,0.15)]',
+  blue:   'bg-[rgba(59,130,246,0.1)]   text-[#3b82f6]  border-[rgba(59,130,246,0.15)]',
+  green:  'bg-[rgba(34,197,94,0.1)]    text-[#22c55e]  border-[rgba(34,197,94,0.15)]',
+  yellow: 'bg-[rgba(245,197,24,0.1)]   text-[#f5c518]  border-[rgba(245,197,24,0.15)]',
+  red:    'bg-[rgba(239,68,68,0.1)]    text-[#ef4444]  border-[rgba(239,68,68,0.15)]',
+  purple: 'bg-[rgba(168,85,247,0.1)]   text-[#a855f7]  border-[rgba(168,85,247,0.15)]',
+  gray:   'bg-[rgba(85,85,85,0.1)]     text-[#555555]  border-[rgba(85,85,85,0.15)]',
 }
 
 export function Badge({ children, variant = 'blue', className = '' }) {
@@ -25,11 +25,11 @@ export function Badge({ children, variant = 'blue', className = '' }) {
 
 export function StatusDot({ variant = 'green' }) {
   const colors = {
-    green:  'bg-[#10b981]',
+    green:  'bg-[#22c55e]',
     yellow: 'bg-[#f59e0b]',
     red:    'bg-[#ef4444]',
     blue:   'bg-[#3b82f6]',
-    gray:   'bg-[#64748b]',
+    gray:   'bg-[#555555]',
   }
   return (
     <span className={`inline-block w-2 h-2 rounded-full ${colors[variant] ?? colors.gray}`} />

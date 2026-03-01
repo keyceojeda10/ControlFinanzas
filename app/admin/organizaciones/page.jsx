@@ -39,8 +39,8 @@ export default function OrganizacionesPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-[#f1f5f9]">Organizaciones</h1>
-        <p className="text-sm text-[#64748b] mt-0.5">Todas las organizaciones de la plataforma</p>
+        <h1 className="text-xl font-bold text-[white]">Organizaciones</h1>
+        <p className="text-sm text-[#555555] mt-0.5">Todas las organizaciones de la plataforma</p>
       </div>
 
       {/* Buscador + filtros */}
@@ -51,16 +51,16 @@ export default function OrganizacionesPage() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Buscar por nombre…"
-            className="flex-1 h-9 px-3 rounded-[10px] border border-[#2a3245] bg-[#161b27] text-sm text-[#f1f5f9] placeholder-[#64748b] focus:outline-none focus:border-[#3b82f6]"
+            className="flex-1 h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] placeholder-[#555555] focus:outline-none focus:border-[#3b82f6]"
           />
-          <button type="submit" className="h-9 px-4 rounded-[10px] bg-[#3b82f6] text-white text-xs font-medium hover:bg-[#2563eb] transition-all">
+          <button type="submit" className="h-9 px-4 rounded-[12px] bg-[#3b82f6] text-white text-xs font-medium hover:bg-[#2563eb] transition-all">
             Buscar
           </button>
         </form>
         <select
           value={filtPlan}
           onChange={(e) => setFiltPlan(e.target.value)}
-          className="h-9 px-3 rounded-[10px] border border-[#2a3245] bg-[#161b27] text-xs text-[#f1f5f9] focus:outline-none focus:border-[#3b82f6]"
+          className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#3b82f6]"
         >
           <option value="">Todos los planes</option>
           <option value="basic">Basic</option>
@@ -70,7 +70,7 @@ export default function OrganizacionesPage() {
         <select
           value={filtEstado}
           onChange={(e) => setFiltEstado(e.target.value)}
-          className="h-9 px-3 rounded-[10px] border border-[#2a3245] bg-[#161b27] text-xs text-[#f1f5f9] focus:outline-none focus:border-[#3b82f6]"
+          className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#3b82f6]"
         >
           <option value="">Todos los estados</option>
           <option value="activa">Activas</option>
@@ -80,11 +80,11 @@ export default function OrganizacionesPage() {
 
       {/* Tabla */}
       {loading ? <SkeletonTable rows={5} /> : orgs.length === 0 ? (
-        <p className="text-sm text-[#64748b] text-center py-8">No se encontraron organizaciones</p>
+        <p className="text-sm text-[#555555] text-center py-8">No se encontraron organizaciones</p>
       ) : (
-        <div className="bg-[#1c2333] border border-[#2a3245] rounded-[14px] overflow-hidden">
+        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] overflow-hidden">
           {/* Header */}
-          <div className="hidden sm:grid grid-cols-6 gap-2 px-4 py-2.5 text-[10px] text-[#64748b] font-medium uppercase border-b border-[#2a3245]">
+          <div className="hidden sm:grid grid-cols-6 gap-2 px-4 py-2.5 text-[10px] text-[#555555] font-medium uppercase border-b border-[#2a2a2a]">
             <span className="col-span-2">Organización</span>
             <span className="text-center">Plan</span>
             <span className="text-center">Usuarios</span>
@@ -97,15 +97,15 @@ export default function OrganizacionesPage() {
             <Link
               key={o.id}
               href={`/admin/organizaciones/${o.id}`}
-              className="grid grid-cols-2 sm:grid-cols-6 gap-2 px-4 py-3 border-b border-[#2a3245] last:border-0 hover:bg-[#222a3d] transition-all items-center"
+              className="grid grid-cols-2 sm:grid-cols-6 gap-2 px-4 py-3 border-b border-[#2a2a2a] last:border-0 hover:bg-[#222222] transition-all items-center"
             >
               <div className="col-span-2">
-                <p className="text-sm font-medium text-[#f1f5f9]">{o.nombre}</p>
+                <p className="text-sm font-medium text-[white]">{o.nombre}</p>
                 <div className="flex items-center gap-2 mt-0.5">
                   <Badge variant={o.activo ? 'green' : 'red'}>
                     {o.activo ? 'Activa' : 'Suspendida'}
                   </Badge>
-                  <span className="text-[10px] text-[#64748b]">
+                  <span className="text-[10px] text-[#555555]">
                     {new Date(o.createdAt).toLocaleDateString('es-CO')}
                   </span>
                 </div>
@@ -113,8 +113,8 @@ export default function OrganizacionesPage() {
               <div className="text-center">
                 <Badge variant={planBadge[o.plan]}>{o.plan}</Badge>
               </div>
-              <p className="text-sm text-[#94a3b8] text-center">{o.usuarios}</p>
-              <p className="text-sm text-[#94a3b8] text-center">{o.clientes}</p>
+              <p className="text-sm text-[#888888] text-center">{o.usuarios}</p>
+              <p className="text-sm text-[#888888] text-center">{o.clientes}</p>
               <div className="text-right">
                 {o.suscripcion ? (
                   <div>
@@ -125,7 +125,7 @@ export default function OrganizacionesPage() {
                     </Badge>
                   </div>
                 ) : (
-                  <span className="text-[10px] text-[#64748b]">Sin suscripción</span>
+                  <span className="text-[10px] text-[#555555]">Sin suscripción</span>
                 )}
               </div>
             </Link>

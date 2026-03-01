@@ -95,45 +95,45 @@ export default function CajaPage() {
     return (
       <div className="max-w-xl mx-auto space-y-4">
         <div className="mb-2">
-          <h1 className="text-xl font-bold text-[#f1f5f9]">Cierre de caja</h1>
-          <p className="text-sm text-[#64748b] mt-0.5">{fmtFecha(new Date())}</p>
+          <h1 className="text-xl font-bold text-[white]">Cierre de caja</h1>
+          <p className="text-sm text-[#555555] mt-0.5">{fmtFecha(new Date())}</p>
         </div>
 
         {error && (
-          <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[10px] px-4 py-3">
+          <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3">
             {error}
           </div>
         )}
 
         {/* Resumen del día */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-[#1c2333] border border-[#2a3245] rounded-[12px] px-4 py-3">
-            <p className="text-[10px] text-[#64748b]">Esperado hoy</p>
-            <p className="text-xl font-bold text-[#f1f5f9] mt-1">{formatCOP(esperadoHoy)}</p>
+          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-4 py-3">
+            <p className="text-[10px] text-[#555555]">Esperado hoy</p>
+            <p className="text-xl font-bold text-[white] mt-1">{formatCOP(esperadoHoy)}</p>
           </div>
-          <div className="bg-[#1c2333] border border-[#2a3245] rounded-[12px] px-4 py-3">
-            <p className="text-[10px] text-[#64748b]">Recaudado hoy</p>
-            <p className="text-xl font-bold text-[#10b981] mt-1">{formatCOP(recaudadoHoy)}</p>
+          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-4 py-3">
+            <p className="text-[10px] text-[#555555]">Recaudado hoy</p>
+            <p className="text-xl font-bold text-[#22c55e] mt-1">{formatCOP(recaudadoHoy)}</p>
           </div>
         </div>
 
         {/* Lista de préstamos activos del cobrador */}
         <Card>
-          <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide mb-4">
+          <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">
             Clientes del día ({prestamos.length})
           </p>
           {prestamos.length === 0 ? (
-            <p className="text-sm text-[#64748b] text-center py-4">Sin cobros asignados hoy</p>
+            <p className="text-sm text-[#555555] text-center py-4">Sin cobros asignados hoy</p>
           ) : (
             <div className="space-y-2.5">
               {prestamos.map((p) => (
-                <div key={p.id} className="flex items-center gap-3 py-2 border-b border-[#2a3245] last:border-0">
+                <div key={p.id} className="flex items-center gap-3 py-2 border-b border-[#2a2a2a] last:border-0">
                   <div className="w-7 h-7 rounded-full bg-[rgba(59,130,246,0.15)] flex items-center justify-center shrink-0">
                     <span className="text-[#3b82f6] text-[10px] font-bold">{p.cliente?.nombre?.[0]?.toUpperCase()}</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[#f1f5f9] truncate">{p.cliente?.nombre}</p>
-                    <p className="text-xs text-[#64748b]">{formatCOP(p.cuotaDiaria)}/día</p>
+                    <p className="text-sm font-medium text-[white] truncate">{p.cliente?.nombre}</p>
+                    <p className="text-xs text-[#555555]">{formatCOP(p.cuotaDiaria)}/día</p>
                   </div>
                   {p.pagoHoy
                     ? <Badge variant="green">Pagó</Badge>
@@ -148,34 +148,34 @@ export default function CajaPage() {
         {/* Cierre */}
         {cierreHoy ? (
           <Card>
-            <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide mb-4">Cierre registrado</p>
+            <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">Cierre registrado</p>
             <div className="space-y-2">
               {[
                 { label: 'Esperado',  value: formatCOP(cierreHoy.totalEsperado)  },
                 { label: 'Entregado', value: formatCOP(cierreHoy.totalRecogido)  },
               ].map(({ label, value }) => (
                 <div key={label} className="flex justify-between text-sm">
-                  <span className="text-[#64748b]">{label}</span>
-                  <span className="font-medium text-[#f1f5f9]">{value}</span>
+                  <span className="text-[#555555]">{label}</span>
+                  <span className="font-medium text-[white]">{value}</span>
                 </div>
               ))}
-              <div className="flex justify-between text-sm font-bold border-t border-[#2a3245] pt-2 mt-2">
-                <span className="text-[#64748b]">Diferencia</span>
-                <span style={{ color: diferencia >= 0 ? '#10b981' : '#ef4444' }}>
+              <div className="flex justify-between text-sm font-bold border-t border-[#2a2a2a] pt-2 mt-2">
+                <span className="text-[#555555]">Diferencia</span>
+                <span style={{ color: diferencia >= 0 ? '#22c55e' : '#ef4444' }}>
                   {diferencia >= 0 ? '+' : ''}{formatCOP(diferencia)}
                 </span>
               </div>
             </div>
             {diferencia < 0 && (
-              <div className="mt-3 flex items-center gap-2 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] rounded-[10px] px-3 py-2.5">
+              <div className="mt-3 flex items-center gap-2 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] rounded-[12px] px-3 py-2.5">
                 <span className="text-[#ef4444] text-sm font-semibold">
                   Faltaron {formatCOP(Math.abs(diferencia))}
                 </span>
               </div>
             )}
             {diferencia >= 0 && (
-              <div className="mt-3 flex items-center gap-2 bg-[rgba(16,185,129,0.1)] border border-[rgba(16,185,129,0.2)] rounded-[10px] px-3 py-2.5">
-                <span className="text-[#10b981] text-sm font-semibold">
+              <div className="mt-3 flex items-center gap-2 bg-[rgba(16,185,129,0.1)] border border-[rgba(16,185,129,0.2)] rounded-[12px] px-3 py-2.5">
+                <span className="text-[#22c55e] text-sm font-semibold">
                   ✓ Cierre correcto
                 </span>
               </div>
@@ -183,39 +183,39 @@ export default function CajaPage() {
           </Card>
         ) : (
           <Card>
-            <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide mb-4">
+            <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">
               Registrar cierre del día
             </p>
             {exito && (
-              <div className="mb-4 flex items-center gap-2 bg-[rgba(16,185,129,0.1)] border border-[rgba(16,185,129,0.2)] text-[#10b981] text-sm rounded-[10px] px-4 py-3">
+              <div className="mb-4 flex items-center gap-2 bg-[rgba(16,185,129,0.1)] border border-[rgba(16,185,129,0.2)] text-[#22c55e] text-sm rounded-[12px] px-4 py-3">
                 ✓ Cierre registrado exitosamente
               </div>
             )}
             {errorCaja && (
-              <div className="mb-4 flex items-center gap-2 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[10px] px-4 py-3">
+              <div className="mb-4 flex items-center gap-2 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3">
                 {errorCaja}
               </div>
             )}
             <form onSubmit={registrarCierre} className="space-y-4">
               <div className="flex justify-between text-sm">
-                <span className="text-[#64748b]">Total esperado hoy</span>
-                <span className="font-semibold text-[#f1f5f9]">{formatCOP(esperadoHoy)}</span>
+                <span className="text-[#555555]">Total esperado hoy</span>
+                <span className="font-semibold text-[white]">{formatCOP(esperadoHoy)}</span>
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-[#94a3b8]">Dinero que vas a entregar (COP)</label>
+                <label className="text-xs font-medium text-[#888888]">Dinero que vas a entregar (COP)</label>
                 <input
                   type="number"
                   inputMode="numeric"
                   placeholder="Ej: 250000"
                   value={totalRecogido}
                   onChange={(e) => setTotalRecogido(e.target.value)}
-                  className="w-full h-10 px-3 rounded-[10px] border border-[#2a3245] bg-[#161b27] text-sm text-[#f1f5f9] placeholder-[#64748b] focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[rgba(59,130,246,0.3)] transition-all"
+                  className="w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] placeholder-[#555555] focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[rgba(59,130,246,0.3)] transition-all"
                 />
               </div>
               {totalRecogido && (
                 <div className="text-sm">
-                  <span className="text-[#64748b]">Diferencia: </span>
-                  <span style={{ color: Number(totalRecogido) >= esperadoHoy ? '#10b981' : '#ef4444', fontWeight: 700 }}>
+                  <span className="text-[#555555]">Diferencia: </span>
+                  <span style={{ color: Number(totalRecogido) >= esperadoHoy ? '#22c55e' : '#ef4444', fontWeight: 700 }}>
                     {Number(totalRecogido) >= esperadoHoy ? '+' : ''}{formatCOP(Number(totalRecogido) - esperadoHoy)}
                   </span>
                 </div>
@@ -238,12 +238,12 @@ export default function CajaPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-4">
       <div className="mb-2">
-        <h1 className="text-xl font-bold text-[#f1f5f9]">Cierre de caja</h1>
-        <p className="text-sm text-[#64748b] mt-0.5">{fmtFecha(new Date())} — resumen de la organización</p>
+        <h1 className="text-xl font-bold text-[white]">Cierre de caja</h1>
+        <p className="text-sm text-[#555555] mt-0.5">{fmtFecha(new Date())} — resumen de la organización</p>
       </div>
 
       {error && (
-        <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[10px] px-4 py-3">
+        <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3">
           {error}
         </div>
       )}
@@ -252,16 +252,16 @@ export default function CajaPage() {
       {cierres.length > 0 && (
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: 'Total esperado',  value: formatCOP(totalEsperadoOrg),  color: '#f1f5f9' },
-            { label: 'Total recogido',  value: formatCOP(totalRecogidoOrg),  color: '#10b981' },
+            { label: 'Total esperado',  value: formatCOP(totalEsperadoOrg),  color: 'white' },
+            { label: 'Total recogido',  value: formatCOP(totalRecogidoOrg),  color: '#22c55e' },
             {
               label: 'Diferencia',
               value: (totalDiferenciaOrg >= 0 ? '+' : '') + formatCOP(totalDiferenciaOrg),
-              color: totalDiferenciaOrg >= 0 ? '#10b981' : '#ef4444',
+              color: totalDiferenciaOrg >= 0 ? '#22c55e' : '#ef4444',
             },
           ].map(({ label, value, color }) => (
-            <div key={label} className="bg-[#1c2333] border border-[#2a3245] rounded-[12px] px-3 py-3 text-center">
-              <p className="text-[10px] text-[#64748b]">{label}</p>
+            <div key={label} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-3 text-center">
+              <p className="text-[10px] text-[#555555]">{label}</p>
               <p className="text-base font-bold mt-0.5" style={{ color }}>{value}</p>
             </div>
           ))}
@@ -270,16 +270,16 @@ export default function CajaPage() {
 
       {/* Tabla de cobradores */}
       <Card>
-        <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide mb-4">
+        <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">
           Cierres del día ({cierres.length})
         </p>
         {cierres.length === 0 ? (
-          <p className="text-sm text-[#64748b] text-center py-4">
+          <p className="text-sm text-[#555555] text-center py-4">
             Ningún cobrador ha registrado cierre de caja hoy
           </p>
         ) : (
           <div className="space-y-0">
-            <div className="grid grid-cols-4 gap-2 text-[10px] text-[#64748b] font-medium uppercase pb-2 border-b border-[#2a3245]">
+            <div className="grid grid-cols-4 gap-2 text-[10px] text-[#555555] font-medium uppercase pb-2 border-b border-[#2a2a2a]">
               <span>Cobrador</span>
               <span className="text-right">Esperado</span>
               <span className="text-right">Recogido</span>
@@ -288,13 +288,13 @@ export default function CajaPage() {
             {cierres.map((c) => {
               const diff = c.totalRecogido - c.totalEsperado
               return (
-                <div key={c.id} className="grid grid-cols-4 gap-2 py-2.5 border-b border-[#2a3245] last:border-0 items-center">
-                  <span className="text-sm font-medium text-[#f1f5f9] truncate">{c.cobrador?.nombre}</span>
-                  <span className="text-sm text-[#94a3b8] text-right">{formatCOP(c.totalEsperado)}</span>
-                  <span className="text-sm text-[#f1f5f9] text-right">{formatCOP(c.totalRecogido)}</span>
+                <div key={c.id} className="grid grid-cols-4 gap-2 py-2.5 border-b border-[#2a2a2a] last:border-0 items-center">
+                  <span className="text-sm font-medium text-[white] truncate">{c.cobrador?.nombre}</span>
+                  <span className="text-sm text-[#888888] text-right">{formatCOP(c.totalEsperado)}</span>
+                  <span className="text-sm text-[white] text-right">{formatCOP(c.totalRecogido)}</span>
                   <span
                     className="text-sm font-bold text-right"
-                    style={{ color: diff >= 0 ? '#10b981' : '#ef4444' }}
+                    style={{ color: diff >= 0 ? '#22c55e' : '#ef4444' }}
                   >
                     {diff >= 0 ? '+' : ''}{formatCOP(diff)}
                   </span>

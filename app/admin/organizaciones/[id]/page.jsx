@@ -91,13 +91,13 @@ export default function OrgDetallePage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-xl font-bold text-[#f1f5f9]">{org.nombre}</h1>
+            <h1 className="text-xl font-bold text-[white]">{org.nombre}</h1>
             <Badge variant={planBadge[org.plan]}>{org.plan}</Badge>
             <Badge variant={org.activo ? 'green' : 'red'}>
               {org.activo ? 'Activa' : 'Suspendida'}
             </Badge>
           </div>
-          <p className="text-sm text-[#64748b] mt-0.5">
+          <p className="text-sm text-[#555555] mt-0.5">
             Registrada: {new Date(org.createdAt).toLocaleDateString('es-CO')}
             {org.ciudad && ` · ${org.ciudad}`}
           </p>
@@ -108,7 +108,7 @@ export default function OrgDetallePage() {
             value={org.plan}
             onChange={(e) => ejecutarAccion('cambiarPlan', { plan: e.target.value })}
             disabled={!!accionando}
-            className="h-9 px-3 rounded-[10px] border border-[#2a3245] bg-[#161b27] text-xs text-[#f1f5f9] focus:outline-none focus:border-[#3b82f6]"
+            className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#3b82f6]"
           >
             <option value="basic">Basic</option>
             <option value="standard">Standard</option>
@@ -143,34 +143,34 @@ export default function OrgDetallePage() {
 
       {/* Métricas de uso */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-[#1c2333] border border-[#2a3245] rounded-[12px] px-3 py-3 text-center">
-          <p className="text-[10px] text-[#64748b]">Usuarios</p>
-          <p className="text-base font-bold text-[#f1f5f9]">
+        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-3 text-center">
+          <p className="text-[10px] text-[#555555]">Usuarios</p>
+          <p className="text-base font-bold text-[white]">
             {org.users?.length ?? 0}
-            <span className="text-[10px] text-[#64748b] font-normal"> / {limite.usuarios === 999 ? '∞' : limite.usuarios}</span>
+            <span className="text-[10px] text-[#555555] font-normal"> / {limite.usuarios === 999 ? '∞' : limite.usuarios}</span>
           </p>
         </div>
-        <div className="bg-[#1c2333] border border-[#2a3245] rounded-[12px] px-3 py-3 text-center">
-          <p className="text-[10px] text-[#64748b]">Clientes</p>
-          <p className="text-base font-bold text-[#f1f5f9]">
+        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-3 text-center">
+          <p className="text-[10px] text-[#555555]">Clientes</p>
+          <p className="text-base font-bold text-[white]">
             {org._count?.clientes ?? 0}
-            <span className="text-[10px] text-[#64748b] font-normal"> / {limite.clientes > 9999 ? '∞' : limite.clientes}</span>
+            <span className="text-[10px] text-[#555555] font-normal"> / {limite.clientes > 9999 ? '∞' : limite.clientes}</span>
           </p>
         </div>
-        <div className="bg-[#1c2333] border border-[#2a3245] rounded-[12px] px-3 py-3 text-center">
-          <p className="text-[10px] text-[#64748b]">Préstamos activos</p>
+        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-3 text-center">
+          <p className="text-[10px] text-[#555555]">Préstamos activos</p>
           <p className="text-base font-bold text-[#3b82f6]">{org.prestamosActivos}</p>
         </div>
-        <div className="bg-[#1c2333] border border-[#2a3245] rounded-[12px] px-3 py-3 text-center">
-          <p className="text-[10px] text-[#64748b]">Cartera activa</p>
-          <p className="text-base font-bold text-[#10b981]">{formatCOP(org.carteraActiva)}</p>
+        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-3 text-center">
+          <p className="text-[10px] text-[#555555]">Cartera activa</p>
+          <p className="text-base font-bold text-[#22c55e]">{formatCOP(org.carteraActiva)}</p>
         </div>
       </div>
 
       {/* Suscripción actual */}
       {sub && (
         <Card>
-          <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide mb-4">Suscripción actual</p>
+          <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">Suscripción actual</p>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
@@ -179,17 +179,17 @@ export default function OrgDetallePage() {
                   {sub.estado}
                 </Badge>
               </div>
-              <p className="text-xs text-[#94a3b8]">
+              <p className="text-xs text-[#888888]">
                 {new Date(sub.fechaInicio).toLocaleDateString('es-CO')} → {new Date(sub.fechaVencimiento).toLocaleDateString('es-CO')}
               </p>
               {diasRestantes !== null && (
-                <p className={`text-sm font-bold ${diasRestantes > 0 ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
+                <p className={`text-sm font-bold ${diasRestantes > 0 ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
                   {diasRestantes > 0
                     ? `${diasRestantes} días restantes`
                     : `${Math.abs(diasRestantes)} días vencida`}
                 </p>
               )}
-              <p className="text-xs text-[#64748b]">Monto: {formatCOP(sub.montoCOP)}</p>
+              <p className="text-xs text-[#555555]">Monto: {formatCOP(sub.montoCOP)}</p>
             </div>
             <div className="flex gap-2 flex-wrap">
               <Button
@@ -225,18 +225,18 @@ export default function OrgDetallePage() {
 
       {/* Usuarios de la organización */}
       <Card>
-        <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide mb-4">Usuarios</p>
+        <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">Usuarios</p>
         <div className="space-y-0">
-          <div className="hidden sm:grid grid-cols-4 gap-2 text-[10px] text-[#64748b] font-medium uppercase pb-2 border-b border-[#2a3245]">
+          <div className="hidden sm:grid grid-cols-4 gap-2 text-[10px] text-[#555555] font-medium uppercase pb-2 border-b border-[#2a2a2a]">
             <span>Nombre</span>
             <span>Email</span>
             <span className="text-center">Rol</span>
             <span className="text-center">Estado</span>
           </div>
           {(org.users ?? []).map((u) => (
-            <div key={u.id} className="grid grid-cols-2 sm:grid-cols-4 gap-2 py-2.5 border-b border-[#2a3245] last:border-0 items-center">
-              <p className="text-sm font-medium text-[#f1f5f9]">{u.nombre}</p>
-              <p className="text-xs text-[#94a3b8] truncate">{u.email}</p>
+            <div key={u.id} className="grid grid-cols-2 sm:grid-cols-4 gap-2 py-2.5 border-b border-[#2a2a2a] last:border-0 items-center">
+              <p className="text-sm font-medium text-[white]">{u.nombre}</p>
+              <p className="text-xs text-[#888888] truncate">{u.email}</p>
               <div className="text-center">
                 <Badge variant={u.rol === 'owner' ? 'blue' : 'gray'}>{u.rol}</Badge>
               </div>
@@ -253,14 +253,14 @@ export default function OrgDetallePage() {
       {/* Historial de acciones admin */}
       {org.adminLogs?.length > 0 && (
         <Card>
-          <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide mb-4">Historial de acciones</p>
+          <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">Historial de acciones</p>
           <div className="space-y-2">
             {org.adminLogs.map((log) => (
-              <div key={log.id} className="flex items-start gap-3 py-2 border-b border-[#2a3245] last:border-0">
+              <div key={log.id} className="flex items-start gap-3 py-2 border-b border-[#2a2a2a] last:border-0">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#3b82f6] mt-1.5 shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[#f1f5f9]">{log.detalle ?? log.accion}</p>
-                  <p className="text-[10px] text-[#64748b]">
+                  <p className="text-sm text-[white]">{log.detalle ?? log.accion}</p>
+                  <p className="text-[10px] text-[#555555]">
                     {log.admin?.nombre ?? 'Admin'} · {new Date(log.createdAt).toLocaleString('es-CO')}
                   </p>
                 </div>

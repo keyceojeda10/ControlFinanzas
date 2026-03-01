@@ -77,7 +77,7 @@ export default function PrestamoDetallePage({ params }) {
   if (error || !prestamo) {
     return (
       <div className="max-w-xl mx-auto">
-        <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] rounded-[14px] p-6 text-center">
+        <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] rounded-[16px] p-6 text-center">
           <p className="font-semibold mb-2">Préstamo no encontrado</p>
           <button onClick={() => router.back()} className="text-sm underline">Volver</button>
         </div>
@@ -101,7 +101,7 @@ export default function PrestamoDetallePage({ params }) {
       {/* Back */}
       <button
         onClick={() => router.back()}
-        className="flex items-center gap-1.5 text-sm text-[#64748b] hover:text-[#f1f5f9] transition-colors"
+        className="flex items-center gap-1.5 text-sm text-[#555555] hover:text-[white] transition-colors"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -111,16 +111,16 @@ export default function PrestamoDetallePage({ params }) {
 
       {/* ── CELEBRACIÓN ──────────────────────────────────────────── */}
       {completado && (
-        <div className="bg-[rgba(16,185,129,0.12)] border border-[rgba(16,185,129,0.3)] rounded-[14px] p-4 text-center animate-pulse">
+        <div className="bg-[rgba(16,185,129,0.12)] border border-[rgba(16,185,129,0.3)] rounded-[16px] p-4 text-center animate-pulse">
           <p className="text-2xl mb-1">🎉</p>
-          <p className="text-[#10b981] font-bold">¡Préstamo completado!</p>
-          <p className="text-xs text-[#64748b] mt-0.5">El cliente terminó de pagar</p>
+          <p className="text-[#22c55e] font-bold">¡Préstamo completado!</p>
+          <p className="text-xs text-[#555555] mt-0.5">El cliente terminó de pagar</p>
         </div>
       )}
 
       {/* ── ALERTA MORA ──────────────────────────────────────────── */}
       {enMora && estaActivo && !completado && (
-        <div className="flex items-center gap-3 bg-[rgba(239,68,68,0.12)] border border-[rgba(239,68,68,0.3)] rounded-[14px] px-4 py-3">
+        <div className="flex items-center gap-3 bg-[rgba(239,68,68,0.12)] border border-[rgba(239,68,68,0.3)] rounded-[16px] px-4 py-3">
           <div className="w-2 h-2 rounded-full bg-[#ef4444] animate-pulse shrink-0" />
           <p className="text-sm text-[#ef4444] font-semibold">
             {diasMora} días en mora — requiere atención inmediata
@@ -130,11 +130,11 @@ export default function PrestamoDetallePage({ params }) {
 
       {/* ── ANIMACIÓN ÉXITO PAGO ────────────────────────────────── */}
       {exito && !completado && (
-        <div className="flex items-center gap-3 bg-[rgba(16,185,129,0.12)] border border-[rgba(16,185,129,0.3)] rounded-[14px] px-4 py-3">
-          <svg className="w-5 h-5 text-[#10b981] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="flex items-center gap-3 bg-[rgba(16,185,129,0.12)] border border-[rgba(16,185,129,0.3)] rounded-[16px] px-4 py-3">
+          <svg className="w-5 h-5 text-[#22c55e] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <p className="text-sm text-[#10b981] font-medium">Pago registrado exitosamente</p>
+          <p className="text-sm text-[#22c55e] font-medium">Pago registrado exitosamente</p>
         </div>
       )}
 
@@ -143,9 +143,9 @@ export default function PrestamoDetallePage({ params }) {
         <div className="flex items-center justify-between">
           <div>
             <Link href={`/clientes/${cliente.id}`} className="hover:text-[#3b82f6] transition-colors">
-              <h1 className="text-lg font-bold text-[#f1f5f9]">{cliente.nombre}</h1>
+              <h1 className="text-lg font-bold text-[white]">{cliente.nombre}</h1>
             </Link>
-            <p className="text-sm text-[#64748b]">CC {cliente.cedula}</p>
+            <p className="text-sm text-[#555555]">CC {cliente.cedula}</p>
           </div>
           <Badge variant={badge.variant}>{badge.label}</Badge>
         </div>
@@ -155,9 +155,9 @@ export default function PrestamoDetallePage({ params }) {
       {estaActivo && !yaPagoHoy && !completado && (
         <button
           onClick={() => setModalPago(true)}
-          className="w-full h-14 rounded-[14px] font-bold text-base text-white transition-all duration-150 active:scale-[0.98] shadow-lg"
+          className="w-full h-14 rounded-[16px] font-bold text-base text-white transition-all duration-200 active:scale-[0.98] shadow-lg"
           style={{
-            background: 'linear-gradient(135deg, #10b981, #059669)',
+            background: 'linear-gradient(135deg, #22c55e, #16a34a)',
             boxShadow: '0 4px 24px rgba(16,185,129,0.35)',
           }}
         >
@@ -174,28 +174,28 @@ export default function PrestamoDetallePage({ params }) {
       {/* ── PAGÓ HOY ─────────────────────────────────────────────── */}
       {estaActivo && yaPagoHoy && !completado && (
         <div
-          className="w-full h-14 rounded-[14px] flex items-center justify-center gap-2.5"
+          className="w-full h-14 rounded-[16px] flex items-center justify-center gap-2.5"
           style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)' }}
         >
-          <svg className="w-5 h-5 text-[#10b981]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-[#22c55e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
           </svg>
-          <span className="text-[#10b981] font-bold">Pagó hoy — {formatCOP(cuotaDiaria)}</span>
+          <span className="text-[#22c55e] font-bold">Pagó hoy — {formatCOP(cuotaDiaria)}</span>
         </div>
       )}
 
       {/* ── RESUMEN FINANCIERO ───────────────────────────────────── */}
       <Card>
-        <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide mb-4">
+        <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">
           Resumen financiero
         </p>
 
         {/* Saldo pendiente — número grande */}
         <div className="text-center mb-4">
-          <p className="text-xs text-[#64748b] mb-1">Saldo pendiente</p>
+          <p className="text-xs text-[#555555] mb-1">Saldo pendiente</p>
           <p
             className="text-4xl font-bold leading-none"
-            style={{ color: saldoPendiente === 0 ? '#10b981' : diasMora > 0 ? '#ef4444' : '#f1f5f9' }}
+            style={{ color: saldoPendiente === 0 ? '#22c55e' : diasMora > 0 ? '#ef4444' : 'white' }}
           >
             {formatCOP(saldoPendiente)}
           </p>
@@ -203,16 +203,16 @@ export default function PrestamoDetallePage({ params }) {
 
         {/* Barra de progreso */}
         <div className="mb-4">
-          <div className="flex justify-between text-xs text-[#64748b] mb-1.5">
+          <div className="flex justify-between text-xs text-[#555555] mb-1.5">
             <span>{porcentajePagado}% pagado</span>
             <span>{formatCOP(totalPagado)} de {formatCOP(totalAPagar)}</span>
           </div>
-          <div className="h-2 bg-[#2a3245] rounded-full overflow-hidden">
+          <div className="h-2 bg-[#2a2a2a] rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-500"
               style={{
                 width: `${porcentajePagado}%`,
-                background: porcentajePagado === 100 ? '#10b981'
+                background: porcentajePagado === 100 ? '#22c55e'
                   : diasMora > 0 ? '#ef4444'
                   : 'linear-gradient(90deg, #3b82f6, #6366f1)',
               }}
@@ -233,12 +233,12 @@ export default function PrestamoDetallePage({ params }) {
             {
               label: diasMora > 0 ? 'Días en mora' : 'Estado',
               value: diasMora > 0 ? `${diasMora} días` : 'Al día',
-              color: diasMora > 0 ? '#ef4444' : '#10b981',
+              color: diasMora > 0 ? '#ef4444' : '#22c55e',
             },
           ].map(({ label, value, color }) => (
-            <div key={label} className="bg-[#161b27] rounded-[10px] px-3 py-2.5">
-              <p className="text-[10px] text-[#64748b]">{label}</p>
-              <p className="text-sm font-semibold mt-0.5" style={{ color: color ?? '#f1f5f9' }}>
+            <div key={label} className="bg-[#111111] rounded-[12px] px-3 py-2.5">
+              <p className="text-[10px] text-[#555555]">{label}</p>
+              <p className="text-sm font-semibold mt-0.5" style={{ color: color ?? 'white' }}>
                 {value}
               </p>
             </div>
@@ -248,12 +248,12 @@ export default function PrestamoDetallePage({ params }) {
 
       {/* ── HISTORIAL DE PAGOS ───────────────────────────────────── */}
       <Card>
-        <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide mb-4">
+        <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">
           Historial de pagos ({pagos.length})
         </p>
 
         {pagos.length === 0 ? (
-          <p className="text-sm text-[#64748b] text-center py-4">Sin pagos registrados</p>
+          <p className="text-sm text-[#555555] text-center py-4">Sin pagos registrados</p>
         ) : (
           <div className="space-y-2.5">
             {pagos.map((pago) => {
@@ -261,15 +261,15 @@ export default function PrestamoDetallePage({ params }) {
               return (
                 <div
                   key={pago.id}
-                  className="flex items-center gap-3 py-2.5 border-b border-[#2a3245] last:border-0"
+                  className="flex items-center gap-3 py-2.5 border-b border-[#2a2a2a] last:border-0"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-[#f1f5f9]">{formatCOP(pago.montoPagado)}</p>
-                    <p className="text-[10px] text-[#64748b] mt-0.5">
+                    <p className="text-sm font-semibold text-[white]">{formatCOP(pago.montoPagado)}</p>
+                    <p className="text-[10px] text-[#555555] mt-0.5">
                       {fmtFecha(pago.fechaPago)}
                       {pago.cobrador && ` · ${pago.cobrador.nombre}`}
                     </p>
-                    {pago.nota && <p className="text-[10px] text-[#94a3b8] mt-0.5">{pago.nota}</p>}
+                    {pago.nota && <p className="text-[10px] text-[#888888] mt-0.5">{pago.nota}</p>}
                   </div>
                   <Badge variant={tipoBadge.variant}>{tipoBadge.label}</Badge>
                 </div>

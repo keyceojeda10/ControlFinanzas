@@ -9,21 +9,21 @@ export const Input = forwardRef(function Input(
   return (
     <div className={`flex flex-col gap-1.5 ${containerClassName}`}>
       {label && (
-        <label className="text-xs font-medium text-[#94a3b8]">{label}</label>
+        <label className="text-xs font-medium text-[#888888]">{label}</label>
       )}
       <div className="relative flex items-center">
         {prefix && (
-          <span className="absolute left-3 text-[#64748b] text-sm pointer-events-none select-none">
+          <span className="absolute left-3 text-[#555555] text-sm pointer-events-none select-none">
             {prefix}
           </span>
         )}
         <input
           ref={ref}
           className={[
-            'w-full h-10 rounded-[10px] border text-sm text-[#f1f5f9] placeholder-[#64748b]',
-            'bg-[#161b27] border-[#2a3245]',
-            'focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[rgba(59,130,246,0.3)]',
-            'transition-all duration-150',
+            'w-full h-10 rounded-[12px] border text-sm text-white placeholder-[#555555]',
+            'bg-[#111111] border-[#2a2a2a]',
+            'focus:outline-none focus:border-[#f5c518] focus:ring-1 focus:ring-[rgba(245,197,24,0.2)]',
+            'transition-all duration-200',
             'disabled:opacity-50 disabled:cursor-not-allowed',
             prefix ? 'pl-8' : 'pl-3',
             suffix ? 'pr-8' : 'pr-3',
@@ -33,7 +33,7 @@ export const Input = forwardRef(function Input(
           {...props}
         />
         {suffix && (
-          <span className="absolute right-3 text-[#64748b] text-sm pointer-events-none select-none">
+          <span className="absolute right-3 text-[#555555] text-sm pointer-events-none select-none">
             {suffix}
           </span>
         )}
@@ -49,14 +49,14 @@ export const Select = forwardRef(function Select(
 ) {
   return (
     <div className={`flex flex-col gap-1.5 ${containerClassName}`}>
-      {label && <label className="text-xs font-medium text-[#94a3b8]">{label}</label>}
+      {label && <label className="text-xs font-medium text-[#888888]">{label}</label>}
       <select
         ref={ref}
         className={[
-          'w-full h-10 rounded-[10px] border text-sm text-[#f1f5f9] px-3',
-          'bg-[#161b27] border-[#2a3245]',
-          'focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[rgba(59,130,246,0.3)]',
-          'transition-all duration-150 cursor-pointer',
+          'w-full h-10 rounded-[12px] border text-sm text-white px-3',
+          'bg-[#111111] border-[#2a2a2a]',
+          'focus:outline-none focus:border-[#f5c518] focus:ring-1 focus:ring-[rgba(245,197,24,0.2)]',
+          'transition-all duration-200 cursor-pointer',
           error ? 'border-[#ef4444]' : '',
           className,
         ].join(' ')}
@@ -75,14 +75,14 @@ export const Textarea = forwardRef(function Textarea(
 ) {
   return (
     <div className={`flex flex-col gap-1.5 ${containerClassName}`}>
-      {label && <label className="text-xs font-medium text-[#94a3b8]">{label}</label>}
+      {label && <label className="text-xs font-medium text-[#888888]">{label}</label>}
       <textarea
         ref={ref}
         className={[
-          'w-full rounded-[10px] border text-sm text-[#f1f5f9] px-3 py-2.5 placeholder-[#64748b]',
-          'bg-[#161b27] border-[#2a3245]',
-          'focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[rgba(59,130,246,0.3)]',
-          'transition-all duration-150 resize-none',
+          'w-full rounded-[12px] border text-sm text-white px-3 py-2.5 placeholder-[#555555]',
+          'bg-[#111111] border-[#2a2a2a]',
+          'focus:outline-none focus:border-[#f5c518] focus:ring-1 focus:ring-[rgba(245,197,24,0.2)]',
+          'transition-all duration-200 resize-none',
           error ? 'border-[#ef4444]' : '',
           className,
         ].join(' ')}
