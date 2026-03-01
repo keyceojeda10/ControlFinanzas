@@ -10,6 +10,7 @@ export default function SessionProvider({ children, session }) {
       session={session}
       refetchInterval={0}
       refetchOnWindowFocus={false}
+      refetchWhenOffline={false}
     >
       {children}
     </NextAuthSessionProvider>

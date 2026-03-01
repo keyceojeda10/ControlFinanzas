@@ -1,8 +1,9 @@
 // app/(dashboard)/layout.jsx - Layout del dashboard con Sidebar, Header y BottomNav
 
-import Sidebar   from '@/components/layout/Sidebar'
-import Header    from '@/components/layout/Header'
-import BottomNav from '@/components/layout/BottomNav'
+import Sidebar     from '@/components/layout/Sidebar'
+import Header      from '@/components/layout/Header'
+import BottomNav   from '@/components/layout/BottomNav'
+import PageWrapper from '@/components/layout/PageWrapper'
 
 export default function DashboardLayout({ children }) {
   return (
@@ -15,9 +16,9 @@ export default function DashboardLayout({ children }) {
         {/* Header – visible solo en mobile */}
         <Header />
 
-        {/* Contenido de la página */}
-        <main className="flex-1 px-4 py-5 lg:px-6 lg:py-6 pb-24 lg:pb-6 overflow-y-auto page-transition">
-          {children}
+        {/* Contenido de la página – PageWrapper anima solo al cambiar ruta */}
+        <main className="flex-1 px-4 py-5 lg:px-6 lg:py-6 pb-24 lg:pb-6 overflow-y-auto">
+          <PageWrapper>{children}</PageWrapper>
         </main>
       </div>
 
