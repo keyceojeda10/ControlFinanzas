@@ -120,6 +120,11 @@ export default function ClienteDetallePage({ params }) {
                   <span className="text-[#555555]">Dir.</span> {cliente.direccion}
                 </p>
               )}
+              {cliente.referencia && (
+                <p className="text-sm text-[#888888]">
+                  <span className="text-[#555555]">Ref.</span> {cliente.referencia}
+                </p>
+              )}
               {cliente.ruta && (
                 <p className="text-sm text-[#888888]">
                   <span className="text-[#555555]">Ruta</span> {cliente.ruta.nombre}

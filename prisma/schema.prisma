@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -110,6 +110,7 @@ model Cliente {
   cedula         String
   telefono       String?
   direccion      String?
+  referencia     String?       @db.VarChar(100)
   fotoUrl        String?
   estado         EstadoCliente @default(activo)
   createdAt      DateTime      @default(now())

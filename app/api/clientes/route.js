@@ -22,13 +22,14 @@ export async function GET(request) {
     ? { rutaId }
     : {}
 
-  // Filtro de búsqueda por nombre o cédula
+  // Filtro de búsqueda por nombre, cédula, teléfono o referencia
   const filtroBuscar = buscar
     ? {
         OR: [
-          { nombre:   { contains: buscar } },
-          { cedula:   { contains: buscar } },
-          { telefono: { contains: buscar } },
+          { nombre:    { contains: buscar } },
+          { cedula:    { contains: buscar } },
+          { telefono:  { contains: buscar } },
+          { referencia: { contains: buscar } },
         ],
       }
     : {}
@@ -40,12 +41,13 @@ export async function GET(request) {
       ...filtroBuscar,
     },
     select: {
-      id:       true,
-      nombre:   true,
-      cedula:   true,
-      telefono: true,
-      estado:   true,
-      rutaId:   true,
+      id:         true,
+      nombre:     true,
+      cedula:     true,
+      telefono:   true,
+      referencia: true,
+      estado:     true,
+      rutaId:     true,
       prestamos: {
         where:  { estado: 'activo' },
         select: { id: true },
@@ -60,6 +62,7 @@ export async function GET(request) {
     nombre:           c.nombre,
     cedula:           c.cedula,
     telefono:         c.telefono,
+    referencia:       c.referencia,
     estado:           c.estado,
     rutaId:           c.rutaId,
     prestamosActivos: c.prestamos.length,
@@ -93,7 +96,7 @@ export async function POST(request) {
   }
 
   const body = await request.json()
-  const { nombre, cedula, telefono, direccion, fotoUrl, rutaId } = body
+  const { nombre, cedula, telefono, direccion, referencia, fotoUrl, rutaId } = body
 
   // Validaciones básicas
   if (!nombre?.trim())   return Response.json({ error: 'El nombre es requerido' },  { status: 400 })
@@ -126,12 +129,13 @@ export async function POST(request) {
   const cliente = await prisma.cliente.create({
     data: {
       organizationId,
-      nombre:    nombre.trim(),
-      cedula:    cedula.trim(),
-      telefono:  telefono.trim(),
-      direccion: direccion?.trim() || null,
-      fotoUrl:   fotoUrl?.trim()   || null,
-      rutaId:    rutaId            || null,
+      nombre:     nombre.trim(),
+      cedula:     cedula.trim(),
+      telefono:   telefono.trim(),
+      direccion:  direccion?.trim()  || null,
+      referencia: referencia?.trim()  || null,
+      fotoUrl:    fotoUrl?.trim()    || null,
+      rutaId:     rutaId             || null,
     },
   })
 

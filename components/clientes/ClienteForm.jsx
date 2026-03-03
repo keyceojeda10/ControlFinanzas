@@ -14,11 +14,12 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
   const esEdicion = !!clienteInicial
 
   const [form, setForm] = useState({
-    nombre:    clienteInicial?.nombre    ?? '',
-    cedula:    clienteInicial?.cedula    ?? '',
-    telefono:  clienteInicial?.telefono  ?? '',
-    direccion: clienteInicial?.direccion ?? '',
-    rutaId:    clienteInicial?.rutaId    ?? '',
+    nombre:     clienteInicial?.nombre     ?? '',
+    cedula:     clienteInicial?.cedula     ?? '',
+    telefono:   clienteInicial?.telefono   ?? '',
+    direccion:  clienteInicial?.direccion  ?? '',
+    referencia: clienteInicial?.referencia ?? '',
+    rutaId:     clienteInicial?.rutaId     ?? '',
   })
   const [errores, setErrores]   = useState({})
   const [rutas,   setRutas]     = useState([])
@@ -70,11 +71,12 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
         method,
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({
-          nombre:    form.nombre.trim(),
-          cedula:    form.cedula.trim(),
-          telefono:  form.telefono.trim(),
-          direccion: form.direccion.trim() || undefined,
-          rutaId:    form.rutaId || undefined,
+          nombre:     form.nombre.trim(),
+          cedula:     form.cedula.trim(),
+          telefono:   form.telefono.trim(),
+          direccion:  form.direccion.trim() || undefined,
+          referencia: form.referencia.trim() || undefined,
+          rutaId:     form.rutaId || undefined,
         }),
       })
 
@@ -133,6 +135,14 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
           value={form.direccion}
           onChange={set('direccion')}
           error={errores.direccion}
+        />
+        <Input
+          label="Referencia"
+          placeholder="Ej: Tienda La Esquina"
+          value={form.referencia}
+          onChange={set('referencia')}
+          error={errores.referencia}
+          maxLength={100}
         />
 
         {/* Ruta – solo plan standard+ */}

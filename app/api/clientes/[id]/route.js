@@ -75,7 +75,7 @@ export async function PATCH(request, { params }) {
   }
 
   const body = await request.json()
-  const { nombre, cedula, telefono, direccion, fotoUrl, rutaId } = body
+  const { nombre, cedula, telefono, direccion, referencia, fotoUrl, rutaId } = body
 
   // Si cambia la cédula, verificar que no exista otra igual
   if (cedula && cedula.trim() !== clienteBase.cedula) {
@@ -98,12 +98,13 @@ export async function PATCH(request, { params }) {
   const actualizado = await prisma.cliente.update({
     where: { id },
     data: {
-      ...(nombre    && { nombre:    nombre.trim()    }),
-      ...(cedula    && { cedula:    cedula.trim()    }),
-      ...(telefono  && { telefono:  telefono.trim()  }),
-      ...(direccion !== undefined && { direccion: direccion?.trim() || null }),
-      ...(fotoUrl   !== undefined && { fotoUrl:   fotoUrl?.trim()   || null }),
-      ...(rutaId    !== undefined && { rutaId:    rutaId            || null }),
+      ...(nombre     && { nombre:     nombre.trim()     }),
+      ...(cedula     && { cedula:     cedula.trim()     }),
+      ...(telefono   && { telefono:   telefono.trim()   }),
+      ...(direccion  !== undefined && { direccion:  direccion?.trim()  || null }),
+      ...(referencia !== undefined && { referencia: referencia?.trim() || null }),
+      ...(fotoUrl    !== undefined && { fotoUrl:    fotoUrl?.trim()    || null }),
+      ...(rutaId     !== undefined && { rutaId:     rutaId             || null }),
     },
   })
 

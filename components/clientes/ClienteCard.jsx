@@ -40,6 +40,11 @@ export default function ClienteCard({ cliente }) {
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-[#f1f5f9] truncate">{cliente.nombre}</p>
         <p className="text-xs text-[#64748b] mt-0.5">CC {cliente.cedula}</p>
+        {cliente.referencia && (
+          <p className="text-xs text-[#64748b] mt-0.5 truncate" title={cliente.referencia}>
+            📍 {cliente.referencia}
+          </p>
+        )}
       </div>
 
       {/* Right side */}
