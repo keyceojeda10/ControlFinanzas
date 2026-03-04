@@ -197,12 +197,6 @@ export default function CajaPage() {
               Reportar gasto menor
             </button>
           </Card>
-
-          <ReportarGasto
-            open={showGasto}
-            onClose={() => setShowGasto(false)}
-            onSuccess={() => fetchData()}
-          />
         ) : (
           <Card>
             <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">
@@ -339,6 +333,12 @@ export default function CajaPage() {
           <ListaGastos soloPendientes={false} onCountChange={setGastosPendientes} />
         </Card>
       </Card>
+
+      <ReportarGasto
+        open={showGasto}
+        onClose={() => setShowGasto(false)}
+        onSuccess={() => fetchData()}
+      />
     </div>
   )
 }
