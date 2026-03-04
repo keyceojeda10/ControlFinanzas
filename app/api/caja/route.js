@@ -76,10 +76,29 @@ async function getStatsDia(organizationId, fecha, cobradorId = null) {
     }
   })
 
+  // Obtener pagos del día (ajustar a Colombia)
+  const inicioCol = new Date(inicio.getTime() - 5 * 60 * 60 * 1000)
+  const finCol = new Date(fin.getTime() - 5 * 60 * 60 * 1000)
+  
+  const wherePagos = {
+    prestamo: { organizationId },
+    fechaPago: { gte: inicioCol, lt: finCol },
+  }
+  if (cobradorId) {
+    wherePagos.cobradorId = cobradorId
+  }
+  
+  const pagosDia = await prisma.pago.findMany({
+    where: wherePagos,
+    select: { montoPagado: true }
+  })
+  
+  const pagosDirectos = pagosDia.reduce((a, p) => a + p.montoPagado, 0)
+
   const esperado = cierres.reduce((a, c) => a + c.totalEsperado, 0)
-  const recogida = cierres.reduce((a, c) => a + c.totalRecogido, 0)
+  const recogida = cierres.reduce((a, c) => a + c.totalRecogido, 0) + pagosDirectos
   const gastos = cierres.reduce((a, c) => a + (c.totalGastos || 0), 0)
-  const diferencia = cierres.reduce((a, c) => a + c.diferencia, 0)
+  const diferencia = recogida - esperado
   const disponible = recogida - gastos
 
   // Calcular tasa de recaudo
@@ -91,7 +110,8 @@ async function getStatsDia(organizationId, fecha, cobradorId = null) {
     gastos,
     diferencia,
     disponible,
-    tasaRecaudo
+    tasaRecaudo,
+    pagosDirectos
   }
 }
 
