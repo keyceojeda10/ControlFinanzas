@@ -9,7 +9,8 @@ import { Input }                                   from '@/components/ui/Input'
 import { calcularPrestamo, formatCOP }             from '@/lib/calculos'
 import ResumenCalculo                              from '@/components/prestamos/ResumenCalculo'
 
-const hoyISO = () => new Date().toISOString().slice(0, 10)
+const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
+const hoyISO = () => getColombiaDate().toISOString().slice(0, 10)
 
 // Wrapper con Suspense requerido por useSearchParams en Next.js build
 export default function NuevoPrestamoPage() {

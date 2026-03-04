@@ -54,8 +54,11 @@ export default function CajaPage() {
     if (!authLoading) fetchData()
   }, [authLoading])
 
+  // Función para obtener fecha actual en Colombia
+  const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
+
   const cierreHoy = cierres.find((c) => {
-    const hoy  = new Date().toISOString().slice(0, 10)
+    const hoy = getColombiaDate().toISOString().slice(0, 10)
     return new Date(c.fecha).toISOString().slice(0, 10) === hoy
   })
 

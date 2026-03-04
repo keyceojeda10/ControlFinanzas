@@ -11,10 +11,11 @@ import {
   ResponsiveContainer, Cell,
 } from 'recharts'
 
-// ── Fechas helper ──────────────────────────────────────────────
-const hoy       = () => new Date().toISOString().slice(0, 10)
+// ── Fechas helper (timezone Colombia UTC-5) ─────────────────────
+const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
+const hoy       = () => getColombiaDate().toISOString().slice(0, 10)
 const inicioMes = () => {
-  const d = new Date(); d.setDate(1)
+  const d = getColombiaDate(); d.setDate(1)
   return d.toISOString().slice(0, 10)
 }
 

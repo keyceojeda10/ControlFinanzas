@@ -8,13 +8,15 @@ import bcrypt               from 'bcryptjs'
 // Límites de usuarios totales por plan (owner + cobradores)
 const LIMITES_USUARIOS = { basic: 1, standard: 3, professional: Infinity }
 
+// Funciones de fecha en timezone Colombia (UTC-5)
+const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
 const hoy = () => {
-  const d = new Date()
+  const d = getColombiaDate()
   d.setHours(0, 0, 0, 0)
   return d
 }
 const manana = () => {
-  const d = new Date()
+  const d = getColombiaDate()
   d.setDate(d.getDate() + 1)
   d.setHours(0, 0, 0, 0)
   return d

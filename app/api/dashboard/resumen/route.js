@@ -4,6 +4,11 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 
+// Obtener fecha actual en timezone Colombia (UTC-5)
+function getColombiaDate() {
+  return new Date(Date.now() - 5 * 60 * 60 * 1000)
+}
+
 export async function GET() {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
@@ -11,9 +16,11 @@ export async function GET() {
   const orgId = session.user.organizationId
   if (!orgId) return NextResponse.json({ error: 'Sin organización' }, { status: 403 })
 
-  const hoy     = new Date()
+  const hoy = getColombiaDate()
+  const inicioDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())
+  const finDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 23, 59, 59)
   const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1)
-  const finMes    = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0, 23, 59, 59)
+  const finMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0, 23, 59, 59)
 
   const [
     clientesTotal,
@@ -45,8 +52,8 @@ export async function GET() {
       where: {
         organizationId: orgId,
         fechaPago: {
-          gte: new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()),
-          lte: new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 23, 59, 59),
+          gte: inicioDia,
+          lte: finDia,
         },
       },
       _sum: { montoPagado: true },
