@@ -4,8 +4,18 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 
-// Función para ajustar fecha UTC a Colombia
-const toColombiaDate = (date) => new Date(date.getTime() - 5 * 60 * 60 * 1000)
+const COLOMBIA_OFFSET = 5 * 60 * 60 * 1000 // UTC-5
+
+// Convierte una fecha YYYY-MM-DD de Colombia a rango UTC
+const getColombiaDayRange = (fechaColombia) => {
+  const fecha = new Date(fechaColombia + 'T00:00:00-05:00')
+  const inicioUTC = new Date(fecha.getTime() + COLOMBIA_OFFSET)
+  const finUTC = new Date(inicioUTC.getTime() + 24 * 60 * 60 * 1000 - 1)
+  return { inicio: inicioUTC, fin: finUTC }
+}
+
+// Ajusta fecha UTC a Colombia para mostrar
+const toColombiaDate = (date) => new Date(date.getTime() - COLOMBIA_OFFSET)
 
 // Función para formatear fecha a YYYY-MM-DD en hora de Colombia
 const formatColombiaDate = (date) => {
@@ -28,18 +38,31 @@ export async function GET(req) {
   const desde   = searchParams.get('desde')
   const hasta   = searchParams.get('hasta')
 
-  // Default: últimos 30 días - ajustar a Colombia
-  const fechaHasta = hasta 
-    ? new Date(hasta + 'T23:59:59-05:00') 
-    : toColombiaDate(new Date())
-  const fechaDesde = desde
-    ? new Date(desde + 'T00:00:00-05:00')
-    : new Date(fechaHasta.getTime() - 30 * 24 * 60 * 60 * 1000)
+  // Obtener rango de fechas en UTC
+  let fechaDesde, fechaHasta
+  
+  if (desde && hasta) {
+    const rangeDesde = getColombiaDayRange(desde)
+    const rangeHasta = getColombiaDayRange(hasta)
+    fechaDesde = rangeDesde.inicio
+    // Para "hasta", queremos incluir todo el día
+    fechaHasta = new Date(rangeHasta.fin.getTime() + 1)
+  } else {
+    // Default: últimos 30 días desde hoy en Colombia
+    const ahoraColombia = new Date(Date.now() + COLOMBIA_OFFSET)
+    const fechaFinColombia = ahoraColombia.toISOString().slice(0, 10)
+    const rangeFin = getColombiaDayRange(fechaFinColombia)
+    fechaHasta = new Date(rangeFin.fin.getTime() + 1)
+    
+    const fechaIniColombia = new Date(ahoraColombia.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+    const rangeIni = getColombiaDayRange(fechaIniColombia)
+    fechaDesde = rangeIni.inicio
+  }
 
   const pagos = await prisma.pago.findMany({
     where: {
       prestamo: { organizationId: orgId },
-      fechaPago: { gte: fechaDesde, lte: fechaHasta },
+      fechaPago: { gte: fechaDesde, lt: fechaHasta },
     },
     select: { montoPagado: true, fechaPago: true },
     orderBy: { fechaPago: 'asc' },
@@ -64,5 +87,5 @@ export async function GET(req) {
 
   const data = Object.entries(grupos).map(([fecha, total]) => ({ fecha, total }))
 
-  return NextResponse.json({ periodo, data, desde: fechaDesde.toISOString(), hasta: fechaHasta.toISOString() })
+  return NextResponse.json({ periodo, data, desde: desde ?? fechaDesde.toISOString().slice(0, 10), hasta: hasta ?? fechaHasta.toISOString().slice(0, 10) })
 }

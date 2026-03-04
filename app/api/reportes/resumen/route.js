@@ -4,8 +4,17 @@ import { getServerSession } from 'next-auth'
 import { authOptions }   from '@/lib/auth'
 import { prisma }        from '@/lib/prisma'
 
-// Función para ajustar fecha UTC a Colombia
-const toColombiaDate = (date) => new Date(date.getTime() - 5 * 60 * 60 * 1000)
+const COLOMBIA_OFFSET = 5 * 60 * 60 * 1000 // UTC-5
+
+// Convierte una fecha YYYY-MM-DD de Colombia a rango UTC
+const getColombiaDayRange = (fechaColombia) => {
+  const fecha = new Date(fechaColombia + 'T00:00:00-05:00')
+  const inicioUTC = new Date(fecha.getTime() + COLOMBIA_OFFSET)
+  const finUTC = new Date(inicioUTC.getTime() + 24 * 60 * 60 * 1000 - 1)
+  return { inicio: inicioUTC, fin: finUTC }
+}
+
+const toColombiaDate = (date) => new Date(date.getTime() - COLOMBIA_OFFSET)
 
 export async function GET(req) {
   const session = await getServerSession(authOptions)
@@ -18,8 +27,25 @@ export async function GET(req) {
   const desde = searchParams.get('desde') // YYYY-MM-DD
   const hasta = searchParams.get('hasta') // YYYY-MM-DD
 
-  const fechaDesde = desde ? new Date(desde + 'T00:00:00-05:00') : toColombiaDate(new Date(new Date().setDate(1)))
-  const fechaHasta = hasta ? new Date(hasta + 'T23:59:59-05:00') : toColombiaDate(new Date())
+  let fechaDesde, fechaHasta
+  
+  if (desde && hasta) {
+    const rangeDesde = getColombiaDayRange(desde)
+    const rangeHasta = getColombiaDayRange(hasta)
+    fechaDesde = rangeDesde.inicio
+    fechaHasta = new Date(rangeHasta.fin.getTime() + 1)
+  } else {
+    // Default: inicio del mes en Colombia
+    const ahoraColombia = new Date(Date.now() + COLOMBIA_OFFSET)
+    const primerDiaMes = new Date(ahoraColombia.getFullYear(), ahoraColombia.getMonth(), 1)
+    const fechaIniColombia = primerDiaMes.toISOString().slice(0, 10)
+    const rangeIni = getColombiaDayRange(fechaIniColombia)
+    fechaDesde = rangeIni.inicio
+    
+    const fechaFinColombia = ahoraColombia.toISOString().slice(0, 10)
+    const rangeFin = getColombiaDayRange(fechaFinColombia)
+    fechaHasta = new Date(rangeFin.fin.getTime() + 1)
+  }
 
   const [clientes, prestamos, pagos, mora] = await Promise.all([
     // Total clientes activos
@@ -37,7 +63,7 @@ export async function GET(req) {
     prisma.pago.aggregate({
       where: {
         prestamo: { organizationId: orgId },
-        fechaPago: { gte: fechaDesde, lte: fechaHasta },
+        fechaPago: { gte: fechaDesde, lt: fechaHasta },
       },
       _sum: { montoPagado: true },
       _count: true,
@@ -65,6 +91,6 @@ export async function GET(req) {
       totalPeriodo: pagos._sum.montoPagado ?? 0,
       cantidad:     pagos._count        ?? 0,
     },
-    periodo: { desde: fechaDesde, hasta: fechaHasta },
+    periodo: { desde: desde ?? fechaDesde.toISOString().slice(0, 10), hasta: hasta ?? fechaHasta.toISOString().slice(0, 10) },
   })
 }

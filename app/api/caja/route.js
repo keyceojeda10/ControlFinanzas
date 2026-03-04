@@ -4,8 +4,26 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 
+const COLOMBIA_OFFSET = 5 * 60 * 60 * 1000 // UTC-5
+
 const fmtFechaColombia = (d) => {
   return new Date(d).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'America/Bogota' })
+}
+
+// Convierte una fecha YYYY-MM-DD de Colombia a rango UTC
+// Ej: "2026-03-04" -> { inicio: 2026-03-04T05:00:00Z, fin: 2026-03-05T04:59:59Z }
+const getColombiaDayRange = (fechaColombia) => {
+  const fecha = new Date(fechaColombia + 'T00:00:00-05:00')
+  const inicioUTC = new Date(fecha.getTime() + COLOMBIA_OFFSET)
+  const finUTC = new Date(inicioUTC.getTime() + 24 * 60 * 60 * 1000 - 1)
+  return { inicio: inicioUTC, fin: finUTC }
+}
+
+// Obtiene el rango de hoy en Colombia (en UTC)
+const getTodayColombiaRange = () => {
+  const ahora = new Date(Date.now() + COLOMBIA_OFFSET)
+  const fechaColombia = ahora.toISOString().slice(0, 10)
+  return getColombiaDayRange(fechaColombia)
 }
 
 const inicioDia = (fecha) => {
@@ -55,8 +73,9 @@ async function getStatsCartera(organizationId) {
 
 // Calcula estadísticas del día
 async function getStatsDia(organizationId, fecha, cobradorId = null) {
-  const inicio = inicioDia(fecha)
-  const fin = finDia(fecha)
+  // Convertir fecha Colombia a UTC
+  const fechaStr = typeof fecha === 'string' ? fecha : fecha.toISOString().slice(0, 10)
+  const { inicio, fin } = getColombiaDayRange(fechaStr)
 
   const whereCierres = {
     organizationId,
@@ -76,13 +95,10 @@ async function getStatsDia(organizationId, fecha, cobradorId = null) {
     }
   })
 
-  // Obtener pagos del día (ajustar a Colombia)
-  const inicioCol = new Date(inicio.getTime() - 5 * 60 * 60 * 1000)
-  const finCol = new Date(fin.getTime() - 5 * 60 * 60 * 1000)
-  
+  // Obtener pagos del día usando rango UTC correcto
   const wherePagos = {
     prestamo: { organizationId },
-    fechaPago: { gte: inicioCol, lt: finCol },
+    fechaPago: { gte: inicio, lt: fin },
   }
   if (cobradorId) {
     wherePagos.cobradorId = cobradorId
@@ -130,11 +146,10 @@ export async function GET(request) {
 
   // Usar fecha de Colombia (hoy por defecto)
   const fechaBase = fechaParam 
-    ? new Date(fechaParam + 'T00:00:00-05:00')
-    : new Date(Date.now() - 5 * 60 * 60 * 1000)
+    ? fechaParam 
+    : new Date(Date.now() + COLOMBIA_OFFSET).toISOString().slice(0, 10)
 
-  const inicio = inicioDia(fechaBase)
-  const fin = finDia(fechaBase)
+  const { inicio, fin } = getColombiaDayRange(fechaBase)
 
   const whereCierres = {
     organizationId,
@@ -206,9 +221,9 @@ export async function POST(request) {
   })
   if (!cobrador) return Response.json({ error: 'Cobrador no encontrado' }, { status: 404 })
 
-  const fechaBase = new Date(Date.now() - 5 * 60 * 60 * 1000)
-  const inicio = inicioDia(fechaBase)
-  const fin = finDia(fechaBase)
+  // Usar fecha de Colombia hoy
+  const fechaColombia = new Date(Date.now() + COLOMBIA_OFFSET).toISOString().slice(0, 10)
+  const { inicio, fin } = getColombiaDayRange(fechaColombia)
 
   const existeCierre = await prisma.cierreCaja.findFirst({
     where: {
