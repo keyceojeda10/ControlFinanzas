@@ -45,7 +45,7 @@ function fechaCorta(iso) {
 
 export default function DashboardPage() {
   const [data, setData] = useState(null)
-  const [moraData, setMoraData] = useState(null)
+  const [moraData, setMoraData] = useState(undefined)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -61,7 +61,7 @@ export default function DashboardPage() {
     fetch('/api/mora')
       .then((r) => r.json())
       .then((d) => setMoraData(d))
-      .catch(() => {})
+      .catch(() => setMoraData({ total: 0, agrupado: {} }))
   }, [])
 
   const moraPct = data ? (data.clientes.total > 0 ? Math.round((data.clientes.enMora / data.clientes.total) * 100) : 0) : 0
@@ -123,7 +123,7 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-      {!loading && moraData && moraData.total > 0 && (
+      {!loading && moraData !== undefined && moraData.total > 0 && (
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] px-4 py-4">
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Alertas de mora</p>
