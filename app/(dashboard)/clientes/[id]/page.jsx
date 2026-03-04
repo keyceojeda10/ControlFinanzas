@@ -125,6 +125,11 @@ export default function ClienteDetallePage({ params }) {
                   <span className="text-[#555555]">Ref.</span> {cliente.referencia}
                 </p>
               )}
+              {cliente.notas && (
+                <p className="text-sm text-[#888888] whitespace-pre-wrap">
+                  <span className="text-[#555555]">Notas:</span> {cliente.notas}
+                </p>
+              )}
               {cliente.ruta && (
                 <p className="text-sm text-[#888888]">
                   <span className="text-[#555555]">Ruta</span> {cliente.ruta.nombre}
@@ -149,8 +154,11 @@ export default function ClienteDetallePage({ params }) {
                 Nuevo préstamo
               </Button>
             </Link>
+            <Link href={`/clientes/${id}/historial`}>
+              <Button size="sm" variant="secondary">Historial</Button>
+            </Link>
             <Link href={`/clientes/${id}/editar`}>
-              <Button size="sm" variant="secondary">Editar datos</Button>
+              <Button size="sm" variant="secondary">Editar</Button>
             </Link>
           </div>
         )}

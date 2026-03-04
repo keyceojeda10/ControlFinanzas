@@ -19,6 +19,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
     telefono:   clienteInicial?.telefono   ?? '',
     direccion:  clienteInicial?.direccion  ?? '',
     referencia: clienteInicial?.referencia ?? '',
+    notas:      clienteInicial?.notas      ?? '',
     rutaId:     clienteInicial?.rutaId     ?? '',
   })
   const [errores, setErrores]   = useState({})
@@ -76,6 +77,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
           telefono:   form.telefono.trim(),
           direccion:  form.direccion.trim() || undefined,
           referencia: form.referencia.trim() || undefined,
+          notas:      form.notas.trim()      || undefined,
           rutaId:     form.rutaId || undefined,
         }),
       })
@@ -144,6 +146,20 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
           error={errores.referencia}
           maxLength={100}
         />
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em]">
+            Notas
+          </label>
+          <textarea
+            value={form.notas}
+            onChange={(e) => setForm({ ...form, notas: e.target.value })}
+            placeholder="Notas adicionales sobre el cliente..."
+            maxLength={500}
+            rows={3}
+            className="w-full px-3 py-2 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] placeholder-[#555555] focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[rgba(59,130,246,0.3)] transition-all resize-none"
+          />
+          <span className="text-[10px] text-[#555555] text-right">{form.notas.length}/500</span>
+        </div>
 
         {/* Ruta – solo plan standard+ */}
         {plan !== 'basic' && rutas.length > 0 && (

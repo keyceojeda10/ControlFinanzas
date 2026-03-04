@@ -111,6 +111,7 @@ model Cliente {
   telefono       String?
   direccion      String?
   referencia     String?       @db.VarChar(100)
+  notas          String?       @db.Text
   fotoUrl        String?
   estado         EstadoCliente @default(activo)
   createdAt      DateTime      @default(now())

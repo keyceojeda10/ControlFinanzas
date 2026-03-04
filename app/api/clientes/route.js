@@ -96,7 +96,7 @@ export async function POST(request) {
   }
 
   const body = await request.json()
-  const { nombre, cedula, telefono, direccion, referencia, fotoUrl, rutaId } = body
+  const { nombre, cedula, telefono, direccion, referencia, notas, fotoUrl, rutaId } = body
 
   // Validaciones básicas
   if (!nombre?.trim())   return Response.json({ error: 'El nombre es requerido' },  { status: 400 })
@@ -134,6 +134,7 @@ export async function POST(request) {
       telefono:   telefono.trim(),
       direccion:  direccion?.trim()  || null,
       referencia: referencia?.trim()  || null,
+      notas:      notas?.trim()      || null,
       fotoUrl:    fotoUrl?.trim()    || null,
       rutaId:     rutaId             || null,
     },
