@@ -56,7 +56,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const updateFecha = () => {
-      const now = new Date(Date.now() - 5 * 60 * 60 * 1000)
+      const now = new Date()
       const fecha = now.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/Bogota' })
       setFechaActual(fecha)
     }
