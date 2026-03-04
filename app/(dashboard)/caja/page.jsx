@@ -326,9 +326,21 @@ export default function CajaPage() {
             <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide">
               Gastos Menores
             </p>
-            {gastosPendientes > 0 && (
-              <Badge variant="yellow">{gastosPendientes} pendientes</Badge>
-            )}
+            <div className="flex items-center gap-2">
+              {gastosPendientes > 0 && (
+                <Badge variant="yellow">{gastosPendientes} pendientes</Badge>
+              )}
+              <button
+                onClick={() => setShowGasto(true)}
+                className="p-1.5 rounded-[8px] text-[#888888] hover:text-[#3b82f6] hover:bg-[rgba(59,130,246,0.1)] transition-all"
+                title="Reportar gasto"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                    d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
+            </div>
           </div>
           <ListaGastos soloPendientes={false} onCountChange={setGastosPendientes} />
         </Card>
