@@ -4,9 +4,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 
-const inicioHoy    = () => { const d = new Date(); d.setHours(0,0,0,0); return d }
-const inicioManana = () => { const d = new Date(); d.setDate(d.getDate()+1); d.setHours(0,0,0,0); return d }
-
 const getColombiaDate = () => {
   return new Date(Date.now() - 5 * 60 * 60 * 1000)
 }
@@ -15,27 +12,91 @@ const fmtFechaColombia = (d) => {
   return d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'America/Bogota' })
 }
 
-// Calcula el total esperado del día para un cobrador
-// (suma de cuotaDiaria de todos los préstamos activos de los clientes de su ruta)
-async function calcularEsperado(organizationId, cobradorId) {
-  const ruta = await prisma.ruta.findFirst({
-    where: { organizationId, cobradorId, activo: true },
-    select: {
-      clientes: {
-        select: {
-          prestamos: {
-            where:  { estado: 'activo' },
-            select: { cuotaDiaria: true },
-          },
-        },
-      },
+const inicioDia = (fecha) => {
+  const d = new Date(fecha)
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
+const finDia = (fecha) => {
+  const d = new Date(fecha)
+  d.setDate(d.getDate() + 1)
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
+// Calcula estadísticas de cartera de la organización
+async function getStatsCartera(organizationId) {
+  const prestamos = await prisma.prestamo.findMany({
+    where: { 
+      cliente: { organizationId },
+      estado: 'activo'
     },
+    select: {
+      capital: true,
+      montoTotal: true,
+      pagos: {
+        select: { monto: true }
+      }
+    }
   })
 
-  if (!ruta) return 0
-  return ruta.clientes.reduce(
-    (total, c) => total + c.prestamos.reduce((a, p) => a + p.cuotaDiaria, 0), 0
-  )
+  const capitalPrestado = prestamos.reduce((a, p) => a + p.capital, 0)
+  const capitalRecuperado = prestamos.reduce((a, p) => {
+    return a + p.pagos.reduce((sum, pago) => sum + pago.monto, 0)
+  }, 0)
+  
+  const porcentajeRecuperacion = capitalPrestado > 0 
+    ? Math.round((capitalRecuperado / capitalPrestado) * 100) 
+    : 0
+
+  return {
+    capitalPrestado,
+    capitalRecuperado,
+    porcentajeRecuperacion
+  }
+}
+
+// Calcula estadísticas del día
+async function getStatsDia(organizationId, fecha, cobradorId = null) {
+  const inicio = inicioDia(fecha)
+  const fin = finDia(fecha)
+
+  const whereCierres = {
+    organizationId,
+    fecha: { gte: inicio, lt: fin },
+  }
+  if (cobradorId) {
+    whereCierres.cobradorId = cobradorId
+  }
+
+  const cierres = await prisma.cierreCaja.findMany({
+    where: whereCierres,
+    select: {
+      totalEsperado: true,
+      totalRecogido: true,
+      totalGastos: true,
+      diferencia: true
+    }
+  })
+
+  const esperado = cierres.reduce((a, c) => a + c.totalEsperado, 0)
+  const recogida = cierres.reduce((a, c) => a + c.totalRecogido, 0)
+  const gastos = cierres.reduce((a, c) => a + (c.totalGastos || 0), 0)
+  const diferencia = cierres.reduce((a, c) => a + c.diferencia, 0)
+  const disponible = recogida - gastos
+
+  // Calcular tasa de recaudo
+  const tasaRecaudo = esperado > 0 ? Math.round((recogida / esperado) * 100) : 0
+
+  return {
+    esperado,
+    recogida,
+    gastos,
+    diferencia,
+    disponible,
+    tasaRecaudo
+  }
 }
 
 // ─── GET /api/caja ──────────────────────────────────────────────
@@ -47,36 +108,69 @@ export async function GET(request) {
 
   const { organizationId, rol, id: userId } = session.user
   const { searchParams } = new URL(request.url)
-  const fechaParam    = searchParams.get('fecha')
+  
+  const fechaParam = searchParams.get('fecha')
   const cobradorParam = searchParams.get('cobradorId')
 
-  let fechaInicio = inicioHoy()
-  let fechaFin    = inicioManana()
+  // Usar fecha de Colombia (hoy por defecto)
+  const fechaBase = fechaParam 
+    ? new Date(fechaParam)
+    : getColombiaDate()
 
-  if (fechaParam) {
-    fechaInicio = new Date(fechaParam)
-    fechaInicio.setHours(0,0,0,0)
-    fechaFin    = new Date(fechaParam)
-    fechaFin.setDate(fechaFin.getDate() + 1)
-    fechaFin.setHours(0,0,0,0)
-  }
+  const inicio = inicioDia(fechaBase)
+  const fin = finDia(fechaBase)
 
-  const where = {
+  const whereCierres = {
     organizationId,
-    fecha: { gte: fechaInicio, lt: fechaFin },
+    fecha: { gte: inicio, lt: fin },
     ...(rol === 'cobrador' && { cobradorId: userId }),
     ...(rol === 'owner' && cobradorParam && { cobradorId: cobradorParam }),
   }
 
+  // Obtener cierres del día
   const cierres = await prisma.cierreCaja.findMany({
-    where,
+    where: whereCierres,
     include: {
       cobrador: { select: { id: true, nombre: true } },
     },
     orderBy: { createdAt: 'desc' },
   })
 
-  return Response.json({ cierres, fechaDisplay: fmtFechaColombia(getColombiaDate()) })
+  // Obtener stats del día
+  const statsDia = await getStatsDia(organizationId, fechaBase, rol === 'cobrador' ? userId : null)
+  
+  // Obtener stats de cartera (solo para owner)
+  const statsCartera = rol === 'owner' 
+    ? await getStatsCartera(organizationId)
+    : { capitalPrestado: 0, capitalRecuperado: 0, porcentajeRecuperacion: 0 }
+
+  // Obtener gastos del día para mostrar en lista
+  const whereGastos = {
+    organizationId,
+    fecha: { gte: inicio, lt: fin },
+  }
+  if (rol === 'cobrador') {
+    whereGastos.cobradorId = userId
+  }
+
+  const gastos = await prisma.gastoMenor.findMany({
+    where: whereGastos,
+    include: {
+      cobrador: { select: { id: true, nombre: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  })
+
+  return Response.json({
+    cierres,
+    gastos,
+    stats: {
+      dia: statsDia,
+      cartera: statsCartera
+    },
+    fechaDisplay: fmtFechaColombia(fechaBase),
+    fecha: fechaBase.toISOString().slice(0, 10)
+  })
 }
 
 // ─── POST /api/caja ─────────────────────────────────────────────
@@ -89,21 +183,22 @@ export async function POST(request) {
   const { organizationId, rol, id: userId } = session.user
   const body = await request.json()
 
-  // Owner puede registrar cierre para cualquier cobrador; cobrador para sí mismo
   const cobradorId = rol === 'owner' ? (body.cobradorId ?? userId) : userId
 
-  // Verificar que el cobrador pertenece a la organización
   const cobrador = await prisma.user.findFirst({
     where: { id: cobradorId, organizationId },
   })
   if (!cobrador) return Response.json({ error: 'Cobrador no encontrado' }, { status: 404 })
 
-  // Solo un cierre por cobrador por día
+  const fechaBase = getColombiaDate()
+  const inicio = inicioDia(fechaBase)
+  const fin = finDia(fechaBase)
+
   const existeCierre = await prisma.cierreCaja.findFirst({
     where: {
       organizationId,
       cobradorId,
-      fecha: { gte: inicioHoy(), lt: inicioManana() },
+      fecha: { gte: inicio, lt: fin },
     },
   })
   if (existeCierre) {
@@ -115,17 +210,48 @@ export async function POST(request) {
     return Response.json({ error: 'El total recogido no puede ser negativo' }, { status: 400 })
   }
 
-  const totalEsperado = await calcularEsperado(organizationId, cobradorId)
-  const diferencia    = totalRecogido - totalEsperado
+  // Calcular esperado
+  const ruta = await prisma.ruta.findFirst({
+    where: { organizationId, cobradorId, activo: true },
+    select: {
+      clientes: {
+        select: {
+          prestamos: {
+            where: { estado: 'activo' },
+            select: { cuotaDiaria: true },
+          },
+        },
+      },
+    },
+  })
+
+  const totalEsperado = ruta 
+    ? ruta.clientes.reduce((total, c) => 
+        total + c.prestamos.reduce((a, p) => a + p.cuotaDiaria, 0), 0)
+    : 0
+
+  // Obtener gastos del día
+  const gastosDia = await prisma.gastoMenor.aggregate({
+    where: {
+      organizationId,
+      cobradorId,
+      fecha: { gte: inicio, lt: fin },
+    },
+    _sum: { monto: true },
+  })
+
+  const totalGastos = gastosDia._sum?.monto || 0
+  const diferencia = totalRecogido - totalEsperado
 
   const cierre = await prisma.cierreCaja.create({
     data: {
       organizationId,
       cobradorId,
-      fecha:         new Date(),
+      fecha: fechaBase,
       totalEsperado: Math.round(totalEsperado),
       totalRecogido: Math.round(totalRecogido),
-      diferencia:    Math.round(diferencia),
+      totalGastos: Math.round(totalGastos),
+      diferencia: Math.round(diferencia),
     },
     include: { cobrador: { select: { id: true, nombre: true } } },
   })
