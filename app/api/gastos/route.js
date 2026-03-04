@@ -4,14 +4,37 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-export async function GET() {
+// Funciones de fecha en timezone Colombia (UTC-5)
+const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
+const getColombiaDateOnly = () => {
+  const d = getColombiaDate()
+  return d.toISOString().slice(0, 10)
+}
+
+export async function GET(request) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
-  const orgId = session.user.organizationId
+  const { organizationId, rol, id: userId } = session.user
+  const { searchParams } = new URL(request.url)
+  const fechaParam = searchParams.get('fecha') || getColombiaDateOnly()
+
+  // Convertir fechaParam a fechas UTC para Colombia
+  const fecha = new Date(fechaParam + 'T00:00:00')
+  const fechaInicio = new Date(fecha)
+  fechaInicio.setHours(5, 0, 0, 0) // Colombia midnight = UTC 5:00
+  const fechaFin = new Date(fecha)
+  fechaFin.setDate(fechaFin.getDate() + 1)
+  fechaFin.setHours(4, 59, 59, 999) // Colombia 23:59:59 = UTC 4:59:59
+
+  const where = {
+    organizationId,
+    fecha: { gte: fechaInicio, lt: fechaFin },
+    ...(rol === 'cobrador' && { cobradorId: userId }),
+  }
 
   const gastos = await prisma.gastoMenor.findMany({
-    where: { organizationId: orgId },
+    where,
     include: { cobrador: { select: { nombre: true } } },
     orderBy: { fecha: 'desc' },
   })

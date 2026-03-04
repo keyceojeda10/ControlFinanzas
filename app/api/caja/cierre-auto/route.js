@@ -97,6 +97,18 @@ export async function POST(request) {
         // Calcular esperado
         const totalEsperado = await calcularEsperado(org.id, cobrador.id)
 
+        // Obtener gastos del día para este cobrador
+        const gastosDia = await prisma.gastoMenor.aggregate({
+          where: {
+            organizationId: org.id,
+            cobradorId: cobrador.id,
+            fecha: { gte: fechaCierre, lte: fechaCierreFin },
+          },
+          _sum: { monto: true },
+        })
+
+        const totalGastos = gastosDia._sum?.monto || 0
+
         // Crear cierre automático (con totalRecogido = 0 si no hubo)
         const cierre = await prisma.cierreCaja.create({
           data: {
@@ -105,6 +117,7 @@ export async function POST(request) {
             fecha: fechaCierre,
             totalEsperado: Math.round(totalEsperado),
             totalRecogido: 0,
+            totalGastos: Math.round(totalGastos),
             diferencia: Math.round(-totalEsperado), // Negativo = no se registró
           },
         })

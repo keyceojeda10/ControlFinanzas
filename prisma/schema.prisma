@@ -175,6 +175,7 @@ model CierreCaja {
   fecha          DateTime
   totalEsperado  Float
   totalRecogido  Float
+  totalGastos    Float        @default(0)
   diferencia     Float
   createdAt      DateTime     @default(now())
 

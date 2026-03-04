@@ -11,14 +11,16 @@ const ESTADO_COLORS = {
   rechazado: 'bg-[rgba(239,68,68,0.15)] text-[#ef4444] border-[rgba(239,68,68,0.3)]',
 }
 
-export default function ListaGastos({ soloPendientes = false, onCountChange }) {
+export default function ListaGastos({ soloPendientes = false, onCountChange, fecha }) {
   const [gastos, setGastos] = useState([])
   const [loading, setLoading] = useState(true)
 
   const fetchGastos = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/gastos')
+      const fechaParam = fecha || ''
+      const url = fechaParam ? `/api/gastos?fecha=${fechaParam}` : '/api/gastos'
+      const res = await fetch(url)
       if (!res.ok) {
         setGastos([])
         return
@@ -42,7 +44,7 @@ export default function ListaGastos({ soloPendientes = false, onCountChange }) {
     }
   }
 
-  useEffect(() => { fetchGastos() }, [])
+  useEffect(() => { fetchGastos() }, [fecha])
 
   const handleAprobar = async (id, estado) => {
     await fetch(`/api/gastos/${id}`, {
