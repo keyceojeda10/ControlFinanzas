@@ -33,15 +33,15 @@ async function getStatsCartera(organizationId) {
       estado: 'activo'
     },
     select: {
-      capital: true,
-      montoTotal: true,
+      montoPrestado: true,
+      totalAPagar: true,
       pagos: {
         select: { monto: true }
       }
     }
   })
 
-  const capitalPrestado = prestamos.reduce((a, p) => a + p.capital, 0)
+  const capitalPrestado = prestamos.reduce((a, p) => a + p.montoPrestado, 0)
   const capitalRecuperado = prestamos.reduce((a, p) => {
     return a + p.pagos.reduce((sum, pago) => sum + pago.monto, 0)
   }, 0)
