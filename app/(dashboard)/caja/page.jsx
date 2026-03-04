@@ -8,6 +8,8 @@ import { Button }              from '@/components/ui/Button'
 import { Badge }               from '@/components/ui/Badge'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
 import { formatCOP }           from '@/lib/calculos'
+import ReportarGasto          from '@/components/gastos/ReportarGasto'
+import ListaGastos            from '@/components/gastos/ListaGastos'
 
 const fmtFecha = (d) => d
   ? new Date(d).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -24,6 +26,8 @@ export default function CajaPage() {
   const [guardando,    setGuardando]    = useState(false)
   const [errorCaja,    setErrorCaja]    = useState('')
   const [exito,        setExito]        = useState(false)
+  const [showGasto,    setShowGasto]    = useState(false)
+  const [gastosPendientes, setGastosPendientes] = useState(0)
 
   const fetchData = async () => {
     setLoading(true)
@@ -180,7 +184,25 @@ export default function CajaPage() {
                 </span>
               </div>
             )}
+
+            {/* Botón Reportar Gasto */}
+            <button
+              onClick={() => setShowGasto(true)}
+              className="mt-4 w-full flex items-center justify-center gap-2 h-11 rounded-[12px] border border-[#2a2a2a] text-sm font-medium text-[#888888] hover:bg-[#1a1a1a] transition-all"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                  d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Reportar gasto menor
+            </button>
           </Card>
+
+          <ReportarGasto
+            open={showGasto}
+            onClose={() => setShowGasto(false)}
+            onSuccess={() => fetchData()}
+          />
         ) : (
           <Card>
             <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">
@@ -303,6 +325,19 @@ export default function CajaPage() {
             })}
           </div>
         )}
+
+        {/* Sección de Gastos Menores */}
+        <Card>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide">
+              Gastos Menores
+            </p>
+            {gastosPendientes > 0 && (
+              <Badge variant="yellow">{gastosPendientes} pendientes</Badge>
+            )}
+          </div>
+          <ListaGastos soloPendientes={false} onCountChange={setGastosPendientes} />
+        </Card>
       </Card>
     </div>
   )

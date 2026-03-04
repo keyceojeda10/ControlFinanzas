@@ -197,6 +197,28 @@ model Suscripcion {
   @@index([organizationId])
 }
 
+model GastoMenor {
+  id             String          @id @default(cuid())
+  description    String
+  monto          Float
+  fecha          DateTime        @default(now())
+  estado         GastoEstado     @default(pendiente)
+  cobradorId     String
+  organizationId String
+
+  cobrador       User          @relation(fields: [cobradorId], references: [id])
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([cobradorId])
+}
+
+enum GastoEstado {
+  pendiente
+  aprobado
+  rechazado
+}
+
 model AdminLog {
   id             String        @id @default(cuid())
   adminId        String
