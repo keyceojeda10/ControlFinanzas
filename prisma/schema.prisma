@@ -66,6 +66,7 @@ model Organization {
   cierresCaja   CierreCaja[]
   suscripciones Suscripcion[]
   adminLogs     AdminLog[]
+  gastosMenores GastoMenor[]
 }
 
 model User {
@@ -83,6 +84,7 @@ model User {
   pagos          Pago[]
   cierresCaja    CierreCaja[]
   adminLogs      AdminLog[]    @relation("AdminLogs")
+  gastosMenores  GastoMenor[]  @relation("CobradorGastos")
 
   @@index([organizationId])
 }
@@ -204,11 +206,11 @@ model GastoMenor {
   monto          Float
   fecha          DateTime        @default(now())
   estado         GastoEstado     @default(pendiente)
-  cobradorId     String
+  cobradorId     String?
   organizationId String
 
-  cobrador       User          @relation(fields: [cobradorId], references: [id])
-  organization   Organization  @relation(fields: [organizationId], references: [id])
+  cobrador       User?          @relation("CobradorGastos", fields: [cobradorId], references: [id])
+  organization   Organization   @relation(fields: [organizationId], references: [id])
 
   @@index([organizationId])
   @@index([cobradorId])
