@@ -53,7 +53,6 @@ export async function GET(req) {
     if (periodo === 'mensual') {
       key = `${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, '0')}`
     } else if (periodo === 'semanal') {
-      // Semana ISO: año + número de semana
       const startOfYear = new Date(f.getFullYear(), 0, 1)
       const week = Math.ceil(((f - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7)
       key = `${f.getFullYear()}-S${String(week).padStart(2, '0')}`
@@ -66,11 +65,4 @@ export async function GET(req) {
   const data = Object.entries(grupos).map(([fecha, total]) => ({ fecha, total }))
 
   return NextResponse.json({ periodo, data, desde: fechaDesde.toISOString(), hasta: fechaHasta.toISOString() })
-}
-    grupos[key] = (grupos[key] ?? 0) + p.montoPagado
-  }
-
-  const data = Object.entries(grupos).map(([fecha, total]) => ({ fecha, total }))
-
-  return NextResponse.json({ periodo, data, desde: fechaDesde, hasta: fechaHasta })
 }
