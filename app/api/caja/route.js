@@ -4,12 +4,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 
-const getColombiaDate = () => {
-  return new Date(Date.now() - 5 * 60 * 60 * 1000)
-}
-
 const fmtFechaColombia = (d) => {
-  return d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'America/Bogota' })
+  return new Date(d).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'America/Bogota' })
 }
 
 const inicioDia = (fecha) => {
@@ -115,7 +111,7 @@ export async function GET(request) {
   // Usar fecha de Colombia (hoy por defecto)
   const fechaBase = fechaParam 
     ? new Date(fechaParam)
-    : getColombiaDate()
+    : new Date()
 
   const inicio = inicioDia(fechaBase)
   const fin = finDia(fechaBase)
@@ -190,7 +186,7 @@ export async function POST(request) {
   })
   if (!cobrador) return Response.json({ error: 'Cobrador no encontrado' }, { status: 404 })
 
-  const fechaBase = getColombiaDate()
+  const fechaBase = new Date()
   const inicio = inicioDia(fechaBase)
   const fin = finDia(fechaBase)
 
