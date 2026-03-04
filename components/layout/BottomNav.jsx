@@ -4,6 +4,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
+import { useState, useEffect } from 'react'
 
 const ITEMS_OWNER = [
   {
@@ -104,14 +105,43 @@ const ITEMS_COBRADOR = [
 export default function BottomNav() {
   const pathname = usePathname()
   const { esCobrador } = useAuth()
+  const [cierreWarning, setCierreWarning] = useState(null)
 
   const items = esCobrador ? ITEMS_COBRADOR : ITEMS_OWNER
 
   const isActive = (href) =>
     href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
 
+  useEffect(() => {
+    const checkCierreWarning = async () => {
+      try {
+        const res = await fetch('/api/caja/warning')
+        const data = await res.json()
+        if (data.showWarning) {
+          setCierreWarning(data)
+        } else {
+          setCierreWarning(null)
+        }
+      } catch (e) {}
+    }
+    checkCierreWarning()
+    const interval = setInterval(checkCierreWarning, 60000)
+    return () => clearInterval(interval)
+  }, [])
+
   return (
-    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[#111111] border-t border-[#2a2a2a]">
+    <>
+      {cierreWarning && (
+        <div className="lg:hidden fixed bottom-16 inset-x-0 z-40 bg-[#f59e0b] text-black text-xs font-medium px-4 py-2 flex items-center justify-center gap-2">
+          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span>Cierre en {cierreWarning.minutesUntilClose} min</span>
+          <Link href="/caja" className="underline font-bold">Cerrar</Link>
+        </div>
+      )}
+
+    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[#111111] border-t border-[#2a2a2a]" style={{ paddingBottom: cierreWarning ? 'env(safe-area-inset-bottom)' : 'env(safe-area-inset-bottom)' }}>
       <div
         className="flex items-stretch"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
@@ -137,5 +167,6 @@ export default function BottomNav() {
         })}
       </div>
     </nav>
+    </>
   )
 }

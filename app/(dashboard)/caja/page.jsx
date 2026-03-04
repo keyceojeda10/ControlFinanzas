@@ -202,6 +202,7 @@ export default function CajaPage() {
             <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">
               Registrar cierre del día
             </p>
+            
             {exito && (
               <div className="mb-4 flex items-center gap-2 bg-[rgba(16,185,129,0.1)] border border-[rgba(16,185,129,0.2)] text-[#22c55e] text-sm rounded-[12px] px-4 py-3">
                 ✓ Cierre registrado exitosamente
@@ -212,6 +213,21 @@ export default function CajaPage() {
                 {errorCaja}
               </div>
             )}
+
+            {/* Botón de cierre rápido */}
+            <button
+              onClick={async () => {
+                setTotalRecogido(String(esperadoHoy))
+                setErrorCaja('')
+              }}
+              className="mb-4 w-full flex items-center justify-center gap-2 h-10 rounded-[12px] bg-[rgba(245,197,24,0.1)] border border-[rgba(245,197,24,0.2)] text-sm font-medium text-[#f5c518] hover:bg-[rgba(245,197,24,0.15)] transition-all"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Cierre rápido (usar esperado)
+            </button>
+
             <form onSubmit={registrarCierre} className="space-y-4">
               <div className="flex justify-between text-sm">
                 <span className="text-[#555555]">Total esperado hoy</span>
