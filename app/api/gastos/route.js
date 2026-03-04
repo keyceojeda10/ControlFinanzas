@@ -32,7 +32,7 @@ export async function GET() {
 export async function POST(req) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-  if (session.user.rol !== 'cobrador') {
+  if (session.user.rol !== 'cobrador' && session.user.rol !== 'owner') {
     return NextResponse.json({ error: 'Solo cobradores pueden reportar gastos' }, { status: 403 })
   }
 
@@ -50,7 +50,7 @@ export async function POST(req) {
     data: {
       description: description.trim(),
       monto: Number(monto),
-      cobradorId: session.user.id,
+      cobradorId: session.user.rol === 'cobrador' ? session.user.id : null,
       organizationId: session.user.organizationId,
     },
   })
