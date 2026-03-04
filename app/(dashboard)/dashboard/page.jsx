@@ -50,8 +50,18 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [mounted, setMounted] = useState(false)
   const [error, setError] = useState('')
+  const [fechaActual, setFechaActual] = useState('')
 
   useEffect(() => { setMounted(true) }, [])
+
+  useEffect(() => {
+    const updateFecha = () => {
+      const now = new Date(Date.now() - 5 * 60 * 60 * 1000)
+      const fecha = now.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+      setFechaActual(fecha)
+    }
+    updateFecha()
+  }, [])
 
   useEffect(() => {
     fetch('/api/dashboard/resumen')
@@ -74,7 +84,7 @@ export default function DashboardPage() {
     <div className="max-w-3xl mx-auto space-y-5">
       <div>
         <h1 className="text-xl font-bold text-white">Dashboard</h1>
-        <p className="text-sm text-[#555555] mt-0.5">Resumen de tu cartera hoy</p>
+        <p className="text-sm text-[#555555] mt-0.5">{fechaActual || 'Resumen de tu cartera hoy'}</p>
       </div>
       {error && <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3">{error}</div>}
       {loading || !mounted ? (

@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { useAuth } from '@/hooks/useAuth'
+import { useState, useEffect } from 'react'
 
 const NAV_OWNER = [
   {
@@ -137,8 +138,22 @@ const NAV_COBRADOR = [
 export default function Sidebar() {
   const pathname   = usePathname()
   const { session, esCobrador } = useAuth()
+  const [fechaHora, setFechaHora] = useState('')
 
   const nav = esCobrador ? NAV_COBRADOR : NAV_OWNER
+
+  // Actualizar fecha/hora cada minuto (timezone Colombia UTC-5)
+  useEffect(() => {
+    const updateFechaHora = () => {
+      const now = new Date(Date.now() - 5 * 60 * 60 * 1000)
+      const fecha = now.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })
+      const hora = now.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
+      setFechaHora(`${fecha} • ${hora}`)
+    }
+    updateFechaHora()
+    const interval = setInterval(updateFechaHora, 60000)
+    return () => clearInterval(interval)
+  }, [])
 
   const isActive = (href) =>
     href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
@@ -146,8 +161,9 @@ export default function Sidebar() {
   return (
     <aside className="hidden lg:flex flex-col w-60 bg-[#111111] border-r border-[#2a2a2a] min-h-dvh shrink-0">
       {/* Logo */}
-      <div className="flex items-center px-5 h-16 border-b border-[#2a2a2a]">
+      <div className="flex flex-col items-center px-5 py-4 border-b border-[#2a2a2a]">
         <Image src="/logo-full.svg" alt="Control Finanzas" width={160} height={40} priority />
+        {fechaHora && <span className="text-[10px] text-[#555555] mt-2">{fechaHora}</span>}
       </div>
 
       {/* Nav links */}

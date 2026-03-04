@@ -46,8 +46,22 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [userOpen, setUserOpen] = useState(false)
   const [cierreWarning, setCierreWarning] = useState(null)
+  const [fechaHora, setFechaHora] = useState('')
   const menuRef = useRef(null)
   const userRef = useRef(null)
+
+  // Actualizar fecha/hora cada minuto (timezone Colombia UTC-5)
+  useEffect(() => {
+    const updateFechaHora = () => {
+      const now = new Date(Date.now() - 5 * 60 * 60 * 1000)
+      const fecha = now.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })
+      const hora = now.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
+      setFechaHora(`${fecha} • ${hora}`)
+    }
+    updateFechaHora()
+    const interval = setInterval(updateFechaHora, 60000)
+    return () => clearInterval(interval)
+  }, [])
 
   // Verificar advertencia de cierre de caja cada minuto
   useEffect(() => {
@@ -113,9 +127,12 @@ export default function Header() {
 
     <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 h-14 bg-[#111111] border-b border-[#2a2a2a]" style={{ marginTop: cierreWarning ? '32px' : 0 }}>
       {/* Logo + Title */}
-      <div className="flex items-center gap-2.5">
-        <Image src="/logo-icon.svg" alt="CF" width={28} height={28} className="shrink-0" />
-        <span className="text-sm font-semibold text-white">{title}</span>
+      <div className="flex flex-col">
+        <div className="flex items-center gap-2.5">
+          <Image src="/logo-icon.svg" alt="CF" width={28} height={28} className="shrink-0" />
+          <span className="text-sm font-semibold text-white">{title}</span>
+        </div>
+        {fechaHora && <span className="text-[10px] text-[#555555] ml-1">{fechaHora}</span>}
       </div>
 
       {/* Actions */}
