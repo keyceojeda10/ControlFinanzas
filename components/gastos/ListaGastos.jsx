@@ -19,12 +19,24 @@ export default function ListaGastos({ soloPendientes = false, onCountChange }) {
     setLoading(true)
     try {
       const res = await fetch('/api/gastos')
-      const data = await res.json()
+      if (!res.ok) {
+        setGastos([])
+        return
+      }
+      const text = await res.text()
+      if (!text) {
+        setGastos([])
+        return
+      }
+      const data = JSON.parse(text)
       const filtered = soloPendientes 
         ? data.filter(g => g.estado === 'pendiente')
         : data
       setGastos(filtered)
       if (onCountChange) onCountChange(data.filter(g => g.estado === 'pendiente').length)
+    } catch (e) {
+      console.error('Error fetching gastos:', e)
+      setGastos([])
     } finally {
       setLoading(false)
     }

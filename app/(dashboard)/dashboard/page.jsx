@@ -39,6 +39,7 @@ function QuickLink({ href, label, desc, color }) {
 }
 
 function fechaCorta(iso) {
+  if (!iso) return ''
   const d = new Date(iso)
   return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })
 }
@@ -47,7 +48,10 @@ export default function DashboardPage() {
   const [data, setData] = useState(null)
   const [moraData, setMoraData] = useState(undefined)
   const [loading, setLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
     fetch('/api/dashboard/resumen')
@@ -73,7 +77,7 @@ export default function DashboardPage() {
         <p className="text-sm text-[#555555] mt-0.5">Resumen de tu cartera hoy</p>
       </div>
       {error && <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3">{error}</div>}
-      {loading ? (
+      {loading || !mounted ? (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24" />)}</div>
       ) : data && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -83,7 +87,7 @@ export default function DashboardPage() {
           <KpiCard label="Cuota diaria total" value={formatCOP(data.prestamos.cuotaDiariaTotal)} sub="Esperado por dia" color="#a855f7" icon="📅" />
         </div>
       )}
-      {loading ? (
+      {loading || !mounted ? (
         <div className="grid grid-cols-2 gap-3"><Skeleton className="h-24" /><Skeleton className="h-24" /></div>
       ) : data && (
         <div className="grid grid-cols-2 gap-3">
@@ -104,7 +108,7 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-      {loading ? <Skeleton className="h-44" /> : data && data.ultimosPagos.length > 0 && (
+      {(loading || !mounted) ? <Skeleton className="h-44" /> : data && data.ultimosPagos.length > 0 && (
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] px-4 py-4">
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Ultimos pagos</p>
@@ -123,7 +127,7 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-      {!loading && moraData !== undefined && moraData.total > 0 && (
+      {!loading && mounted && moraData !== undefined && moraData.total > 0 && (
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] px-4 py-4">
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Alertas de mora</p>
