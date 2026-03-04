@@ -50,12 +50,12 @@ export default function Header() {
   const menuRef = useRef(null)
   const userRef = useRef(null)
 
-  // Actualizar fecha/hora cada minuto (timezone Colombia UTC-5)
+  // Actualizar fecha/hora cada minuto (timezone Colombia)
   useEffect(() => {
     const updateFechaHora = () => {
       const now = new Date(Date.now() - 5 * 60 * 60 * 1000)
-      const fecha = now.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })
-      const hora = now.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
+      const fecha = now.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'America/Bogota' })
+      const hora = now.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' })
       setFechaHora(`${fecha} • ${hora}`)
     }
     updateFechaHora()
