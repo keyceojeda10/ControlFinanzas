@@ -158,7 +158,7 @@ export async function GET(request) {
     include: {
       cobrador: { select: { id: true, nombre: true } },
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { fecha: 'desc' },
   })
 
   return Response.json({
