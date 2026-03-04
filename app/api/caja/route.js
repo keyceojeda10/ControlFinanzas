@@ -110,8 +110,8 @@ export async function GET(request) {
 
   // Usar fecha de Colombia (hoy por defecto)
   const fechaBase = fechaParam 
-    ? new Date(fechaParam)
-    : new Date()
+    ? new Date(fechaParam + 'T00:00:00-05:00')
+    : new Date(Date.now() - 5 * 60 * 60 * 1000)
 
   const inicio = inicioDia(fechaBase)
   const fin = finDia(fechaBase)
@@ -165,7 +165,7 @@ export async function GET(request) {
       cartera: statsCartera
     },
     fechaDisplay: fmtFechaColombia(fechaBase),
-    fecha: fechaBase.toISOString().slice(0, 10)
+    fecha: new Date(fechaBase.getTime() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10)
   })
 }
 
@@ -186,7 +186,7 @@ export async function POST(request) {
   })
   if (!cobrador) return Response.json({ error: 'Cobrador no encontrado' }, { status: 404 })
 
-  const fechaBase = new Date()
+  const fechaBase = new Date(Date.now() - 5 * 60 * 60 * 1000)
   const inicio = inicioDia(fechaBase)
   const fin = finDia(fechaBase)
 
