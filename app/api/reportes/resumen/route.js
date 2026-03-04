@@ -4,6 +4,9 @@ import { getServerSession } from 'next-auth'
 import { authOptions }   from '@/lib/auth'
 import { prisma }        from '@/lib/prisma'
 
+// Función para ajustar fecha UTC a Colombia
+const toColombiaDate = (date) => new Date(date.getTime() - 5 * 60 * 60 * 1000)
+
 export async function GET(req) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
@@ -15,8 +18,8 @@ export async function GET(req) {
   const desde = searchParams.get('desde') // YYYY-MM-DD
   const hasta = searchParams.get('hasta') // YYYY-MM-DD
 
-  const fechaDesde = desde ? new Date(desde) : new Date(new Date().setDate(1)) // inicio del mes
-  const fechaHasta = hasta ? new Date(hasta + 'T23:59:59') : new Date()
+  const fechaDesde = desde ? new Date(desde + 'T00:00:00-05:00') : toColombiaDate(new Date(new Date().setDate(1)))
+  const fechaHasta = hasta ? new Date(hasta + 'T23:59:59-05:00') : toColombiaDate(new Date())
 
   const [clientes, prestamos, pagos, mora] = await Promise.all([
     // Total clientes activos

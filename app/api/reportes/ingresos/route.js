@@ -4,6 +4,9 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 
+// Función para ajustar fecha UTC a Colombia
+const toColombiaDate = (date) => new Date(date.getTime() - 5 * 60 * 60 * 1000)
+
 export async function GET(req) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
@@ -16,10 +19,12 @@ export async function GET(req) {
   const desde   = searchParams.get('desde')
   const hasta   = searchParams.get('hasta')
 
-  // Default: últimos 30 días
-  const fechaHasta = hasta ? new Date(hasta + 'T23:59:59') : new Date()
+  // Default: últimos 30 días - ajustar a Colombia
+  const fechaHasta = hasta 
+    ? new Date(hasta + 'T23:59:59-05:00') 
+    : toColombiaDate(new Date())
   const fechaDesde = desde
-    ? new Date(desde)
+    ? new Date(desde + 'T00:00:00-05:00')
     : new Date(fechaHasta.getTime() - 30 * 24 * 60 * 60 * 1000)
 
   const pagos = await prisma.pago.findMany({
@@ -31,11 +36,11 @@ export async function GET(req) {
     orderBy: { fechaPago: 'asc' },
   })
 
-  // Agrupar por período
+  // Agrupar por período - ajustar a Colombia
   const grupos = {}
   for (const p of pagos) {
     let key
-    const f = new Date(p.fechaPago)
+    const f = toColombiaDate(new Date(p.fechaPago))
     if (periodo === 'mensual') {
       key = `${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, '0')}`
     } else if (periodo === 'semanal') {
@@ -46,6 +51,13 @@ export async function GET(req) {
     } else {
       key = f.toISOString().slice(0, 10)
     }
+    grupos[key] = (grupos[key] ?? 0) + p.montoPagado
+  }
+
+  const data = Object.entries(grupos).map(([fecha, total]) => ({ fecha, total }))
+
+  return NextResponse.json({ periodo, data, desde: fechaDesde.toISOString(), hasta: fechaHasta.toISOString() })
+}
     grupos[key] = (grupos[key] ?? 0) + p.montoPagado
   }
 
