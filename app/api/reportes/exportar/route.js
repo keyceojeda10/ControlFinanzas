@@ -65,7 +65,7 @@ export async function GET(req) {
       where: { organizationId: orgId },
       include: {
         cliente: { select: { nombre: true } },
-        pagos:   { select: { monto: true } },
+        pagos:   { select: { montoPagado: true } },
       },
       orderBy: { fechaInicio: 'desc' },
     })

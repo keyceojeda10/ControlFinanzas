@@ -20,13 +20,10 @@ export async function GET(req) {
 
   const cobradores = await prisma.user.findMany({
     where: { organizationId: orgId, rol: 'cobrador', activo: true },
-    select: {
-      id:     true,
-      nombre: true,
+    include: {
       ruta: {
-        select: {
-          nombre: true,
-          _count: { select: { clientes: { where: { activo: true } } } },
+        include: {
+          clientes: { where: { estado: 'activo' }, select: { id: true } },
         },
       },
       cierresCaja: {
@@ -41,12 +38,13 @@ export async function GET(req) {
     const totalRecogido  = c.cierresCaja.reduce((a, ci) => a + ci.totalRecogido, 0)
     const diasTrabajados = c.cierresCaja.length
     const eficiencia     = totalEsperado > 0 ? Math.round((totalRecogido / totalEsperado) * 100) : 0
+    const clientesCount  = c.ruta?.clientes?.length ?? 0
 
     return {
       id:           c.id,
       nombre:       c.nombre,
       ruta:         c.ruta?.nombre ?? 'Sin ruta',
-      clientes:     c.ruta?._count?.clientes ?? 0,
+      clientes:     clientesCount,
       totalEsperado,
       totalRecogido,
       diferencia:   totalRecogido - totalEsperado,

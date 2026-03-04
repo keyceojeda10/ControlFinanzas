@@ -14,14 +14,11 @@ export async function GET() {
 
   const rutas = await prisma.ruta.findMany({
     where: { organizationId: orgId },
-    select: {
-      id: true,
-      nombre: true,
+    include: {
       cobrador: { select: { nombre: true } },
-      _count: { select: { clientes: { where: { activo: true } } } },
       clientes: {
-        where: { activo: true },
-        select: {
+        where: { estado: 'activo' },
+        include: {
           prestamos: {
             where: { estado: 'activo' },
             select: {
@@ -40,6 +37,7 @@ export async function GET() {
     let capitalActivo = 0
     let saldoPendiente = 0
     let cuotaDiariaTotal = 0
+    const clientesActivos = r.clientes.length
 
     for (const cliente of r.clientes) {
       for (const p of cliente.prestamos) {
@@ -55,7 +53,7 @@ export async function GET() {
       id:           r.id,
       ruta:         r.nombre,
       cobrador:     r.cobrador?.nombre ?? 'Sin cobrador',
-      clientes:     r._count.clientes,
+      clientes:     clientesActivos,
       capitalActivo,
       saldoPendiente,
       cuotaDiariaTotal,

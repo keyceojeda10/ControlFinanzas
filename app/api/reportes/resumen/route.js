@@ -20,7 +20,7 @@ export async function GET(req) {
 
   const [clientes, prestamos, pagos, mora] = await Promise.all([
     // Total clientes activos
-    prisma.cliente.count({ where: { organizationId: orgId, activo: true } }),
+    prisma.cliente.count({ where: { organizationId: orgId, estado: 'activo' } }),
 
     // Préstamos activos vs completados
     prisma.prestamo.groupBy({
