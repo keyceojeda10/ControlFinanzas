@@ -45,6 +45,7 @@ function fechaCorta(iso) {
 
 export default function DashboardPage() {
   const [data, setData] = useState(null)
+  const [moraData, setMoraData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -54,6 +55,13 @@ export default function DashboardPage() {
       .then((d) => { if (d.error) setError(d.error); else setData(d) })
       .catch(() => setError('No se pudo cargar el resumen.'))
       .finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/mora')
+      .then((r) => r.json())
+      .then((d) => setMoraData(d))
+      .catch(() => {})
   }, [])
 
   const moraPct = data ? (data.clientes.total > 0 ? Math.round((data.clientes.enMora / data.clientes.total) * 100) : 0) : 0
@@ -112,6 +120,72 @@ export default function DashboardPage() {
                 <p className="text-sm font-bold text-[#22c55e] shrink-0 ml-3">+{formatCOP(p.monto)}</p>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+      {!loading && moraData && moraData.total > 0 && (
+        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] px-4 py-4">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Alertas de mora</p>
+            <span className="text-[11px] bg-[#ef4444] text-white px-2 py-0.5 rounded-full">{moraData.total} clientes</span>
+          </div>
+          <div className="space-y-2">
+            {moraData.agrupado.mora31plus.length > 0 && (
+              <div className="bg-[#7f1d1d] border border-[#991b1b] rounded-[12px] p-3">
+                <p className="text-[11px] text-[#fca5a5] font-medium mb-2">Más de 30 días ({moraData.agrupado.mora31plus.length})</p>
+                {moraData.agrupado.mora31plus.slice(0, 3).map((c) => (
+                  <Link key={c.prestamoId} href={`/clientes/${c.cliente.id}`} className="flex items-center justify-between py-1.5 hover:bg-[#991b1b] rounded px-1 -mx-1">
+                    <div className="min-w-0">
+                      <p className="text-sm text-white truncate">{c.cliente.nombre}</p>
+                      <p className="text-[10px] text-[#fca5a5]">{c.diasMora} días de mora</p>
+                    </div>
+                    <p className="text-sm font-bold text-[#fca5a5] shrink-0 ml-2">{formatCOP(c.saldoPendiente)}</p>
+                  </Link>
+                ))}
+              </div>
+            )}
+            {moraData.agrupado.mora16a30.length > 0 && (
+              <div className="bg-[#78350f] border border-[#92400e] rounded-[12px] p-3">
+                <p className="text-[11px] text-[#fcd34d] font-medium mb-2">16-30 días ({moraData.agrupado.mora16a30.length})</p>
+                {moraData.agrupado.mora16a30.slice(0, 3).map((c) => (
+                  <Link key={c.prestamoId} href={`/clientes/${c.cliente.id}`} className="flex items-center justify-between py-1.5 hover:bg-[#92400e] rounded px-1 -mx-1">
+                    <div className="min-w-0">
+                      <p className="text-sm text-white truncate">{c.cliente.nombre}</p>
+                      <p className="text-[10px] text-[#fcd34d]">{c.diasMora} días de mora</p>
+                    </div>
+                    <p className="text-sm font-bold text-[#fcd34d] shrink-0 ml-2">{formatCOP(c.saldoPendiente)}</p>
+                  </Link>
+                ))}
+              </div>
+            )}
+            {moraData.agrupado.mora8a15.length > 0 && (
+              <div className="bg-[#713f12] border border-[#854d0e] rounded-[12px] p-3">
+                <p className="text-[11px] text-[#fde047] font-medium mb-2">8-15 días ({moraData.agrupado.mora8a15.length})</p>
+                {moraData.agrupado.mora8a15.slice(0, 3).map((c) => (
+                  <Link key={c.prestamoId} href={`/clientes/${c.cliente.id}`} className="flex items-center justify-between py-1.5 hover:bg-[#854d0e] rounded px-1 -mx-1">
+                    <div className="min-w-0">
+                      <p className="text-sm text-white truncate">{c.cliente.nombre}</p>
+                      <p className="text-[10px] text-[#fde047]">{c.diasMora} días de mora</p>
+                    </div>
+                    <p className="text-sm font-bold text-[#fde047] shrink-0 ml-2">{formatCOP(c.saldoPendiente)}</p>
+                  </Link>
+                ))}
+              </div>
+            )}
+            {moraData.agrupado.mora1a7.length > 0 && (
+              <div className="bg-[#365314] border border-[#3f6212] rounded-[12px] p-3">
+                <p className="text-[11px] text-[#a3e635] font-medium mb-2">1-7 días ({moraData.agrupado.mora1a7.length})</p>
+                {moraData.agrupado.mora1a7.slice(0, 3).map((c) => (
+                  <Link key={c.prestamoId} href={`/clientes/${c.cliente.id}`} className="flex items-center justify-between py-1.5 hover:bg-[#3f6212] rounded px-1 -mx-1">
+                    <div className="min-w-0">
+                      <p className="text-sm text-white truncate">{c.cliente.nombre}</p>
+                      <p className="text-[10px] text-[#a3e635]">{c.diasMora} días de mora</p>
+                    </div>
+                    <p className="text-sm font-bold text-[#a3e635] shrink-0 ml-2">{formatCOP(c.saldoPendiente)}</p>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
