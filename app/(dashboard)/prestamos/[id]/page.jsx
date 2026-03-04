@@ -89,11 +89,18 @@ export default function PrestamoDetallePage({ params }) {
   }
 
   const {
-    cliente, estado, montoPrestado, totalAPagar, cuotaDiaria,
+    cliente, estado, montoPrestado, totalAPagar, cuotaDiaria, frecuencia,
     tasaInteres, diasPlazo, fechaInicio, fechaFin,
     totalPagado, saldoPendiente, porcentajePagado, diasMora,
     pagoHoy: yaPagoHoy, pagos = [],
   } = prestamo
+
+  const frecuenciaLabel = {
+    diario: 'diario',
+    semanal: 'semanal',
+    quincenal: 'quincenal',
+    mensual: 'mensual',
+  }[frecuencia] || 'diario'
 
   const badge      = estadoBadge[estado] ?? estadoBadge.activo
   const estaActivo = estado === 'activo'
@@ -179,13 +186,13 @@ export default function PrestamoDetallePage({ params }) {
             boxShadow: '0 4px 24px rgba(16,185,129,0.35)',
           }}
         >
-          <span className="flex items-center justify-center gap-2.5">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5}
-                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Registrar pago de hoy — {formatCOP(cuotaDiaria)}
-          </span>
+            <span className="flex items-center justify-center gap-2.5">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5}
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Registrar pago {frecuenciaLabel} — {formatCOP(cuotaDiaria)}
+            </span>
         </button>
       )}
 
@@ -198,7 +205,7 @@ export default function PrestamoDetallePage({ params }) {
           <svg className="w-5 h-5 text-[#22c55e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
           </svg>
-          <span className="text-[#22c55e] font-bold">Pagó hoy — {formatCOP(cuotaDiaria)}</span>
+          <span className="text-[#22c55e] font-bold">Pagó {frecuenciaLabel} — {formatCOP(cuotaDiaria)}</span>
         </div>
       )}
 
@@ -243,7 +250,7 @@ export default function PrestamoDetallePage({ params }) {
           {[
             { label: 'Prestado',     value: formatCOP(montoPrestado) },
             { label: 'Total a pagar', value: formatCOP(totalAPagar)  },
-            { label: 'Cuota diaria', value: formatCOP(cuotaDiaria)   },
+            { label: `Cuota ${frecuenciaLabel}`, value: formatCOP(cuotaDiaria)   },
             { label: 'Tasa diaria',  value: `${tasaInteres}%`        },
             { label: 'Plazo',        value: `${diasPlazo} días`      },
             { label: 'Inicio',       value: fmtFecha(fechaInicio)    },

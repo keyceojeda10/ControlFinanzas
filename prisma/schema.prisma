@@ -131,6 +131,7 @@ model Prestamo {
   tasaInteres    Float
   totalAPagar    Float
   cuotaDiaria    Float
+  frecuencia     String         @default("diario")
   fechaInicio    DateTime
   fechaFin       DateTime
   diasPlazo      Int

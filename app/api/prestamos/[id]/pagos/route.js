@@ -41,9 +41,15 @@ export async function POST(request, { params }) {
   }
 
   const body = await request.json()
-  const { montoPagado, tipo, nota } = body
+  const { montoPagado, tipo, nota, diasAbonados } = body
 
-  if (!montoPagado || Number(montoPagado) <= 0) {
+  let montoFinal = Number(montoPagado)
+
+  if (diasAbonados && Number(diasAbonados) > 0) {
+    montoFinal = prestamo.cuotaDiaria * Number(diasAbonados)
+  }
+
+  if (!montoFinal || montoFinal <= 0) {
     return Response.json({ error: 'El monto del pago debe ser mayor a 0' }, { status: 400 })
   }
   if (!['completo', 'parcial'].includes(tipo)) {
@@ -51,7 +57,7 @@ export async function POST(request, { params }) {
   }
 
   const saldoActual = calcularSaldoPendiente(prestamo)
-  const montoFinal  = Math.min(Number(montoPagado), saldoActual) // No cobrar más del saldo
+  montoFinal = Math.min(montoFinal, saldoActual)
 
   // Registrar pago y actualizar estados en transacción
   const resultado = await prisma.$transaction(async (tx) => {

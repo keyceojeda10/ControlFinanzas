@@ -6,7 +6,7 @@ import { Modal }       from '@/components/ui/Modal'
 import { Button }      from '@/components/ui/Button'
 import { Input }       from '@/components/ui/Input'
 import BotonWhatsApp   from '@/components/ui/BotonWhatsApp'
-import { formatCOP }   from '@/lib/calculos'
+import { formatCOP, DIAS_ABONO } from '@/lib/calculos'
 
 export default function RegistrarPago({
   prestamoId, cuotaDiaria, saldoPendiente,
@@ -16,6 +16,7 @@ export default function RegistrarPago({
   const [monto,        setMonto]        = useState(String(Math.round(cuotaDiaria ?? 0)))
   const [tipo,         setTipo]         = useState('completo')
   const [nota,         setNota]         = useState('')
+  const [diasAbonados, setDiasAbonados] = useState(null)
   const [loading,      setLoading]      = useState(false)
   const [error,        setError]        = useState('')
   const [exitoso,      setExitoso]      = useState(false)
@@ -36,7 +37,7 @@ export default function RegistrarPago({
       const res  = await fetch(`/api/prestamos/${prestamoId}/pagos`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ montoPagado: m, tipo, nota }),
+        body:    JSON.stringify({ montoPagado: m, tipo, nota, diasAbonados }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Error al registrar el pago'); return }
@@ -60,8 +61,16 @@ export default function RegistrarPago({
     setMonto(String(Math.round(cuotaDiaria ?? 0)))
     setTipo('completo')
     setNota('')
+    setDiasAbonados(null)
     setError('')
     onClose?.()
+  }
+
+  const handleAbonoDias = (dias) => {
+    const montoAbono = cuotaDiaria * dias
+    setMonto(String(montoAbono))
+    setDiasAbonados(dias)
+    setError('')
   }
 
   // ── Vista éxito ───────────────────────────────────────────────
@@ -127,12 +136,36 @@ export default function RegistrarPago({
         )}
 
         <div className="flex justify-between items-center text-sm">
-          <span className="text-[#888888]">Cuota diaria</span>
+          <span className="text-[#888888]">Cuota</span>
           <span className="font-semibold text-white">{formatCOP(cuotaDiaria)}</span>
         </div>
         <div className="flex justify-between items-center text-sm">
           <span className="text-[#888888]">Saldo pendiente</span>
           <span className="font-semibold text-white">{formatCOP(saldoPendiente)}</span>
+        </div>
+
+        {/* Botones de abono rápido por días */}
+        <div className="border-t border-[#2a2a2a] pt-4">
+          <p className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em] mb-2">
+            Abono rápido por días
+          </p>
+          <div className="grid grid-cols-5 gap-2">
+            {DIAS_ABONO.map((dias) => (
+              <button
+                key={dias}
+                type="button"
+                onClick={() => handleAbonoDias(dias)}
+                className={[
+                  'h-9 rounded-[10px] border text-sm font-medium transition-all cursor-pointer',
+                  diasAbonados === dias
+                    ? 'bg-[rgba(34,197,94,0.15)] border-[#22c55e] text-[#22c55e]'
+                    : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#1a1a1a]',
+                ].join(' ')}
+              >
+                {dias}d
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="border-t border-[#2a2a2a] pt-4 space-y-4">

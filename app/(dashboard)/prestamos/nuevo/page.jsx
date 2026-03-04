@@ -40,6 +40,7 @@ function NuevoPrestamo() {
   const [monto,        setMonto]        = useState('')
   const [tasa,         setTasa]         = useState('20')
   const [plazo,        setPlazo]        = useState('30')
+  const [frecuencia,   setFrecuencia]   = useState('diario')
   const [fechaInicio,  setFechaInicio]  = useState(hoyISO())
   const [loading,      setLoading]      = useState(false)
   const [error,        setError]        = useState('')
@@ -70,8 +71,8 @@ function NuevoPrestamo() {
     const t = Number(tasa)
     const p = Number(plazo)
     if (!m || !t || !p || !fechaInicio) return null
-    return calcularPrestamo({ montoPrestado: m, tasaInteres: t, diasPlazo: p, fechaInicio })
-  }, [monto, tasa, plazo, fechaInicio])
+    return calcularPrestamo({ montoPrestado: m, tasaInteres: t, diasPlazo: p, fechaInicio, frecuencia })
+  }, [monto, tasa, plazo, fechaInicio, frecuencia])
 
   const clientesFiltrados = clientes.filter((c) =>
     c.nombre.toLowerCase().includes(buscadorCliente.toLowerCase()) ||
@@ -96,6 +97,7 @@ function NuevoPrestamo() {
           tasaInteres:   Number(tasa),
           diasPlazo:     Number(plazo),
           fechaInicio,
+          frecuencia,
         }),
       })
       const data = await res.json()
@@ -222,6 +224,33 @@ function NuevoPrestamo() {
               onChange={(e) => setPlazo(e.target.value)}
               suffix="días"
             />
+          </div>
+
+          {/* Frecuencia */}
+          <div className="flex flex-col gap-1.5">
+            <p className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em]">Frecuencia de cobro</p>
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { value: 'diario', label: 'Diario' },
+                { value: 'semanal', label: 'Semanal' },
+                { value: 'quincenal', label: 'Quincenal' },
+                { value: 'mensual', label: 'Mensual' },
+              ].map((f) => (
+                <button
+                  key={f.value}
+                  type="button"
+                  onClick={() => setFrecuencia(f.value)}
+                  className={[
+                    'h-9 rounded-[10px] border text-sm font-medium transition-all cursor-pointer',
+                    frecuencia === f.value
+                      ? 'bg-[rgba(59,130,246,0.15)] border-[#3b82f6] text-[#3b82f6]'
+                      : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#1a1a1a]',
+                  ].join(' ')}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Fecha inicio */}

@@ -62,6 +62,7 @@ export async function GET(request) {
     montoPrestado:    p.montoPrestado,
     totalAPagar:      p.totalAPagar,
     cuotaDiaria:      p.cuotaDiaria,
+    frecuencia:       p.frecuencia,
     tasaInteres:      p.tasaInteres,
     diasPlazo:        p.diasPlazo,
     fechaInicio:      p.fechaInicio,
@@ -89,7 +90,13 @@ export async function POST(request) {
 
   const { organizationId } = session.user
   const body = await request.json()
-  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio } = body
+  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia } = body
+
+  const freq = frecuencia || 'diario'
+  const frecuenciasValidas = ['diario', 'semanal', 'quincenal', 'mensual']
+  if (!frecuenciasValidas.includes(freq)) {
+    return Response.json({ error: 'Frecuencia no válida' }, { status: 400 })
+  }
 
   // Validaciones
   if (!clienteId)     return Response.json({ error: 'El cliente es requerido' },          { status: 400 })
@@ -110,7 +117,7 @@ export async function POST(request) {
 
   // Calcular valores del préstamo
   const { totalAPagar, cuotaDiaria, fechaFin } = calcularPrestamo({
-    montoPrestado, tasaInteres, diasPlazo, fechaInicio,
+    montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia: freq,
   })
 
   // Crear préstamo y actualizar estado del cliente en transacción
@@ -123,6 +130,7 @@ export async function POST(request) {
         tasaInteres:   Number(tasaInteres),
         totalAPagar,
         cuotaDiaria,
+        frecuencia:    freq,
         diasPlazo:     Number(diasPlazo),
         fechaInicio:   new Date(fechaInicio),
         fechaFin,
