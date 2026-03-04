@@ -48,8 +48,10 @@ export default function Header() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [open])
 
-  // Cierra el dropdown al navegar
-  useEffect(() => { setOpen(false) }, [pathname])
+  // Resetear el estado del dropdown cuando cambia la ruta
+  useEffect(() => {
+    if (open) setOpen(false)
+  }, [pathname])
 
   return (
     <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 h-14 bg-[#111111] border-b border-[#2a2a2a]">
