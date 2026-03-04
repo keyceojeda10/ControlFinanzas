@@ -7,6 +7,15 @@ import { prisma }           from '@/lib/prisma'
 // Función para ajustar fecha UTC a Colombia
 const toColombiaDate = (date) => new Date(date.getTime() - 5 * 60 * 60 * 1000)
 
+// Función para formatear fecha a YYYY-MM-DD en hora de Colombia
+const formatColombiaDate = (date) => {
+  const d = toColombiaDate(new Date(date))
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 export async function GET(req) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
@@ -49,7 +58,7 @@ export async function GET(req) {
       const week = Math.ceil(((f - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7)
       key = `${f.getFullYear()}-S${String(week).padStart(2, '0')}`
     } else {
-      key = f.toISOString().slice(0, 10)
+      key = formatColombiaDate(p.fechaPago)
     }
     grupos[key] = (grupos[key] ?? 0) + p.montoPagado
   }
