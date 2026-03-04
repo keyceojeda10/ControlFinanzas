@@ -183,6 +183,8 @@ model CierreCaja {
   cobrador       User         @relation(fields: [cobradorId], references: [id])
 
   @@index([organizationId])
+  @@index([organizationId, fecha])
+  @@index([cobradorId, fecha])
 }
 
 model Suscripcion {
@@ -215,6 +217,7 @@ model GastoMenor {
 
   @@index([organizationId])
   @@index([cobradorId])
+  @@index([organizationId, fecha])
 }
 
 enum GastoEstado {
