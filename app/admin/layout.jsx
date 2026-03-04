@@ -100,12 +100,23 @@ export default function AdminLayout({ children }) {
         </div>
       </aside>
 
-      {/* Mobile header */}
-      <div className="flex-1 flex flex-col min-w-0">
+        {/* Mobile header */}
         <header className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-[#2a2a2a] bg-[#0a0a0a]">
           <Image src="/logo-icon.svg" alt="CF" width={28} height={28} />
           <span className="text-sm font-bold text-white ml-1">Admin</span>
-          <Badge variant="purple">SUPERADMIN</Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="purple">SUPERADMIN</Badge>
+            <button
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="p-1.5 rounded-[8px] text-[#888888] hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.08)] transition-all"
+              title="Cerrar sesión"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
+          </div>
         </header>
 
         {/* Mobile bottom nav */}
