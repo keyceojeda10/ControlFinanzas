@@ -16,10 +16,13 @@ export async function GET() {
   const orgId = session.user.organizationId
   if (!orgId) return NextResponse.json({ error: 'Sin organización' }, { status: 403 })
 
+  // Get Colombia date and convert to UTC for database queries
   const hoy = getColombiaDate()
-  const inicioDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())
-  const finDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 23, 59, 59)
-  const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1)
+  // Colombia midnight = UTC 5:00
+  // We need to query from Colombia midnight (UTC 5:00) to Colombia 23:59:59 (UTC next day 4:59:59)
+  const inicioDiaUTC = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 5, 0, 0)
+  const finDiaUTC = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 1, 4, 59, 59)
+  const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1, 5, 0, 0) // Colombia midnight
   const finMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0, 23, 59, 59)
 
   const [
@@ -47,13 +50,13 @@ export async function GET() {
     // Préstamos completados
     prisma.prestamo.count({ where: { organizationId: orgId, estado: 'completado' } }),
 
-    // Pagos de hoy
+    // Pagos de hoy (usar fechas UTC para сравнение con datos en DB)
     prisma.pago.aggregate({
       where: {
         organizationId: orgId,
         fechaPago: {
-          gte: inicioDia,
-          lte: finDia,
+          gte: inicioDiaUTC,
+          lte: finDiaUTC,
         },
       },
       _sum: { montoPagado: true },
