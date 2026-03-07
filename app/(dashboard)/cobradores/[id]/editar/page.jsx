@@ -1,0 +1,144 @@
+'use client'
+// app/(dashboard)/cobradores/[id]/editar/page.jsx
+
+import { useState, useEffect, use } from 'react'
+import { useRouter }                from 'next/navigation'
+import { useAuth }                  from '@/hooks/useAuth'
+import { Input }                    from '@/components/ui/Input'
+import { Button }                   from '@/components/ui/Button'
+
+export default function EditarCobrador({ params }) {
+  const { id } = use(params)
+  const router = useRouter()
+  const { esOwner, loading: authLoading } = useAuth()
+
+  const [nombre,   setNombre]   = useState('')
+  const [email,    setEmail]    = useState('')
+  const [password, setPassword] = useState('')
+  const [loading,  setLoading]  = useState(true)
+  const [saving,   setSaving]   = useState(false)
+  const [error,    setError]    = useState('')
+  const [exito,    setExito]    = useState(false)
+
+  useEffect(() => {
+    if (!authLoading && !esOwner) router.replace('/cobradores')
+  }, [authLoading, esOwner, router])
+
+  useEffect(() => {
+    fetch(`/api/cobradores/${id}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) { setError(data.error); return }
+        setNombre(data.nombre || '')
+        setEmail(data.email || '')
+      })
+      .catch(() => setError('No se pudo cargar el cobrador'))
+      .finally(() => setLoading(false))
+  }, [id])
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!nombre.trim()) { setError('El nombre es requerido'); return }
+    if (!email.trim())  { setError('El correo es requerido'); return }
+    if (password && password.length < 6) { setError('La contraseña debe tener al menos 6 caracteres'); return }
+
+    setSaving(true)
+    setError('')
+    setExito(false)
+
+    const body = { nombre: nombre.trim(), email: email.trim() }
+    if (password) body.password = password
+
+    try {
+      const res = await fetch(`/api/cobradores/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error ?? 'Error al guardar'); return }
+      setExito(true)
+      setPassword('')
+      setTimeout(() => setExito(false), 3000)
+    } catch {
+      setError('Error de conexión')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (authLoading || loading) {
+    return (
+      <div className="max-w-md mx-auto">
+        <div className="animate-pulse space-y-4">
+          <div className="h-6 bg-[#1a1a1a] rounded w-40" />
+          <div className="h-48 bg-[#1a1a1a] rounded-[16px]" />
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="max-w-md mx-auto">
+      <div className="mb-6">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-1.5 text-sm text-[#888888] hover:text-[white] transition-colors mb-4"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Volver
+        </button>
+        <h1 className="text-xl font-bold text-[white]">Editar cobrador</h1>
+      </div>
+
+      <form onSubmit={handleSubmit} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-5 space-y-4">
+        {error && (
+          <div className="flex items-center gap-2 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3">
+            {error}
+          </div>
+        )}
+        {exito && (
+          <div className="flex items-center gap-2 bg-[rgba(16,185,129,0.1)] border border-[rgba(16,185,129,0.2)] text-[#22c55e] text-sm rounded-[12px] px-4 py-3">
+            Cambios guardados correctamente
+          </div>
+        )}
+
+        <Input
+          label="Nombre completo"
+          placeholder="Ej: Pedro Ramírez"
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
+        />
+        <Input
+          label="Correo electrónico"
+          type="email"
+          placeholder="cobrador@ejemplo.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <div>
+          <Input
+            label="Nueva contraseña (opcional)"
+            placeholder="Dejar vacío para no cambiar"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <p className="text-[10px] text-[#888888] mt-1">
+            Solo llena este campo si quieres cambiar la contraseña del cobrador.
+          </p>
+        </div>
+
+        <div className="flex gap-3 pt-2">
+          <Button type="button" variant="secondary" onClick={() => router.back()} disabled={saving}>
+            Cancelar
+          </Button>
+          <Button type="submit" loading={saving}>
+            Guardar cambios
+          </Button>
+        </div>
+      </form>
+    </div>
+  )
+}

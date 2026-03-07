@@ -3,6 +3,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import bcrypt               from 'bcryptjs'
 
 // Funciones de fecha en timezone Colombia (UTC-5)
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
@@ -63,10 +64,48 @@ export async function PATCH(request, { params }) {
   })
   if (!cobrador) return Response.json({ error: 'Cobrador no encontrado' }, { status: 404 })
 
-  const { activo } = await request.json()
+  const body = await request.json()
+  const data = {}
+
+  // Nombre
+  if (body.nombre !== undefined) {
+    const nombre = body.nombre.trim()
+    if (!nombre) return Response.json({ error: 'El nombre no puede estar vacío' }, { status: 400 })
+    data.nombre = nombre
+  }
+
+  // Email
+  if (body.email !== undefined) {
+    const email = body.email.trim().toLowerCase()
+    if (!email) return Response.json({ error: 'El correo no puede estar vacío' }, { status: 400 })
+    // Verificar unicidad global (excluyendo al propio cobrador)
+    const existe = await prisma.user.findFirst({ where: { email, id: { not: id } } })
+    if (existe) {
+      return Response.json({ error: 'Este correo ya está registrado por otro usuario' }, { status: 409 })
+    }
+    data.email = email
+  }
+
+  // Password
+  if (body.password !== undefined && body.password !== '') {
+    if (body.password.length < 6) {
+      return Response.json({ error: 'La contraseña debe tener al menos 6 caracteres' }, { status: 400 })
+    }
+    data.password = await bcrypt.hash(body.password, 10)
+  }
+
+  // Activo
+  if (body.activo !== undefined) {
+    data.activo = Boolean(body.activo)
+  }
+
+  if (Object.keys(data).length === 0) {
+    return Response.json({ error: 'No hay datos para actualizar' }, { status: 400 })
+  }
+
   const actualizado = await prisma.user.update({
     where: { id },
-    data:  { activo: Boolean(activo) },
+    data,
     select: { id: true, nombre: true, email: true, activo: true },
   })
 

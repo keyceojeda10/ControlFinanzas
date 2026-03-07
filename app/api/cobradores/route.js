@@ -110,7 +110,7 @@ export async function POST(request) {
 
   // Email único global
   const existeEmail = await prisma.user.findUnique({ where: { email: email.trim() } })
-  if (existeEmail) return Response.json({ error: 'Este email ya está registrado' }, { status: 409 })
+  if (existeEmail) return Response.json({ error: 'Este correo ya está en uso. Si la persona ya tiene cuenta, intenta con otro correo o edita un cobrador existente.' }, { status: 409 })
 
   const hashedPassword = await bcrypt.hash(password.trim(), 10)
 
