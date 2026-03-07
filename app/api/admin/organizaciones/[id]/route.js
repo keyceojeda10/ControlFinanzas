@@ -106,5 +106,27 @@ export async function PATCH(req, { params }) {
     return NextResponse.json({ ok: true, mensaje: `Plan cambiado a ${plan}` })
   }
 
+  if (accion === 'toggleUsuario' && body.userId) {
+    const user = await prisma.user.findFirst({
+      where: { id: body.userId, organizationId: id },
+    })
+    if (!user) return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
+
+    const nuevoEstado = !user.activo
+    await prisma.user.update({
+      where: { id: body.userId },
+      data: { activo: nuevoEstado },
+    })
+    await prisma.adminLog.create({
+      data: {
+        adminId:        session.user.id,
+        organizacionId: id,
+        accion:         nuevoEstado ? 'activar_usuario' : 'desactivar_usuario',
+        detalle:        `Usuario "${user.nombre}" (${user.email}) ${nuevoEstado ? 'activado' : 'desactivado'}`,
+      },
+    })
+    return NextResponse.json({ ok: true, mensaje: `Usuario ${nuevoEstado ? 'activado' : 'desactivado'}` })
+  }
+
   return NextResponse.json({ error: 'Acción no válida' }, { status: 400 })
 }

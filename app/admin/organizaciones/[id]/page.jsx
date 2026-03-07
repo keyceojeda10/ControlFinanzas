@@ -241,9 +241,15 @@ export default function OrgDetallePage() {
                 <Badge variant={u.rol === 'owner' ? 'blue' : 'gray'}>{{ owner: 'Admin', cobrador: 'Cobrador' }[u.rol] ?? u.rol}</Badge>
               </div>
               <div className="text-center">
-                <Badge variant={u.activo ? 'green' : 'red'}>
-                  {u.activo ? 'Activo' : 'Inactivo'}
-                </Badge>
+                <button
+                  onClick={() => ejecutarAccion('toggleUsuario', { userId: u.id })}
+                  disabled={!!accionando}
+                  title={u.activo ? 'Click para desactivar' : 'Click para activar'}
+                >
+                  <Badge variant={u.activo ? 'green' : 'red'}>
+                    {u.activo ? 'Activo' : 'Inactivo'}
+                  </Badge>
+                </button>
               </div>
             </div>
           ))}
