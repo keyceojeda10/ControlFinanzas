@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import bcrypt               from 'bcryptjs'
+import { calcularEstadoCliente } from '@/lib/calculos'
 
 // Funciones de fecha en timezone Colombia (UTC-5)
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
@@ -26,7 +27,26 @@ export async function GET(request, { params }) {
     include: {
       rutas: {
         where:  { activo: true },
-        include: { clientes: { select: { id: true, nombre: true, estado: true } } },
+        include: {
+          clientes: {
+            select: {
+              id: true,
+              nombre: true,
+              estado: true,
+              prestamos: {
+                where: { estado: 'activo' },
+                select: {
+                  estado: true,
+                  fechaInicio: true,
+                  cuotaDiaria: true,
+                  diasPlazo: true,
+                  frecuencia: true,
+                  pagos: { select: { montoPagado: true } },
+                },
+              },
+            },
+          },
+        },
       },
       pagos: {
         where:  { fechaPago: { gte: hoy(), lt: manana() } },
@@ -37,12 +57,22 @@ export async function GET(request, { params }) {
 
   if (!cobrador) return Response.json({ error: 'Cobrador no encontrado' }, { status: 404 })
 
+  // Recalcular estado real de cada cliente
+  const ruta = cobrador.rutas[0] ?? null
+  if (ruta) {
+    ruta.clientes = ruta.clientes.map(c => ({
+      id: c.id,
+      nombre: c.nombre,
+      estado: calcularEstadoCliente(c.prestamos),
+    }))
+  }
+
   return Response.json({
     id:           cobrador.id,
     nombre:       cobrador.nombre,
     email:        cobrador.email,
     activo:       cobrador.activo,
-    ruta:         cobrador.rutas[0] ?? null,
+    ruta,
     recaudadoHoy: cobrador.pagos.reduce((a, p) => a + p.montoPagado, 0),
     pagosMes:     cobrador.pagos.length,
   })

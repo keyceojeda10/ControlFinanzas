@@ -79,7 +79,7 @@ export async function GET(request, { params }) {
       id:       c.id,
       nombre:   c.nombre,
       cedula:   c.cedula,
-      estado:   c.estado,
+      estado:   mora > 0 ? 'mora' : (c.prestamos.length > 0 ? 'activo' : 'cancelado'),
       pagoHoy:  yaPageHoy,
       diasMora: mora,
     }

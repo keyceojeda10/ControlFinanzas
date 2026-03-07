@@ -3,7 +3,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { LIMITES_PLAN }     from '@/lib/calculos'
+import { LIMITES_PLAN, calcularEstadoCliente } from '@/lib/calculos'
 
 // ─── GET /api/clientes ──────────────────────────────────────────
 export async function GET(request) {
@@ -50,20 +50,28 @@ export async function GET(request) {
       rutaId:     true,
       prestamos: {
         where:  { estado: 'activo' },
-        select: { id: true },
+        select: {
+          id: true,
+          estado: true,
+          fechaInicio: true,
+          cuotaDiaria: true,
+          diasPlazo: true,
+          frecuencia: true,
+          pagos: { select: { montoPagado: true } },
+        },
       },
     },
     orderBy: { nombre: 'asc' },
   })
 
-  // Añadir conteo de préstamos activos
+  // Recalcular estado real del cliente basado en sus préstamos activos
   const resultado = clientes.map((c) => ({
     id:               c.id,
     nombre:           c.nombre,
     cedula:           c.cedula,
     telefono:         c.telefono,
     referencia:       c.referencia,
-    estado:           c.estado,
+    estado:           calcularEstadoCliente(c.prestamos),
     rutaId:           c.rutaId,
     prestamosActivos: c.prestamos.length,
   }))
