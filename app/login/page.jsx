@@ -24,7 +24,13 @@ export default function LoginPage() {
       })
 
       if (result?.error) {
-        setError('Correo o contraseña incorrectos')
+        // NextAuth pasa el mensaje de throw new Error() en result.error
+        const msg = result.error
+        if (msg.includes('desactivada') || msg.includes('suspendida')) {
+          setError(msg)
+        } else {
+          setError('Correo o contraseña incorrectos')
+        }
         return
       }
 
