@@ -7,7 +7,11 @@ import { prisma }           from '@/lib/prisma'
 const COLOMBIA_OFFSET = 5 * 60 * 60 * 1000 // UTC-5
 
 const fmtFechaColombia = (d) => {
-  return new Date(d).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'America/Bogota' })
+  // Si recibimos YYYY-MM-DD, agregar timezone Colombia para evitar que se interprete como UTC
+  const fecha = typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)
+    ? new Date(d + 'T12:00:00-05:00')
+    : new Date(d)
+  return fecha.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'America/Bogota' })
 }
 
 // Convierte una fecha YYYY-MM-DD de Colombia a rango UTC

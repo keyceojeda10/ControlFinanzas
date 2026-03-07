@@ -11,9 +11,14 @@ import { formatCOP }           from '@/lib/calculos'
 import ReportarGasto          from '@/components/gastos/ReportarGasto'
 import ListaGastos            from '@/components/gastos/ListaGastos'
 
-const fmtFecha = (d) => d
-  ? new Date(d).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })
-  : '—'
+const fmtFecha = (d) => {
+  if (!d) return '—'
+  // Si recibimos YYYY-MM-DD, agregar timezone Colombia para evitar desfase UTC
+  const fecha = typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)
+    ? new Date(d + 'T12:00:00-05:00')
+    : new Date(d)
+  return fecha.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'America/Bogota' })
+}
 
 // Obtener fecha actual en formato YYYY-MM-DD (Colombia)
 const getColombiaDateStr = () => {
