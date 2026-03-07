@@ -13,17 +13,15 @@ const fmtFechaColombia = (d) => {
 // Convierte una fecha YYYY-MM-DD de Colombia a rango UTC
 // Ej: "2026-03-04" -> { inicio: 2026-03-04T05:00:00Z, fin: 2026-03-05T04:59:59Z }
 const getColombiaDayRange = (fechaColombia) => {
-  const fecha = new Date(fechaColombia + 'T00:00:00-05:00')
-  const inicioUTC = new Date(fecha.getTime() + COLOMBIA_OFFSET)
-  const finUTC = new Date(inicioUTC.getTime() + 24 * 60 * 60 * 1000 - 1)
-  return { inicio: inicioUTC, fin: finUTC }
+  const inicio = new Date(fechaColombia + 'T00:00:00-05:00')
+  const fin    = new Date(fechaColombia + 'T23:59:59.999-05:00')
+  return { inicio, fin }
 }
 
-// Obtiene el rango de hoy en Colombia (en UTC)
-const getTodayColombiaRange = () => {
-  const ahora = new Date(Date.now() + COLOMBIA_OFFSET)
-  const fechaColombia = ahora.toISOString().slice(0, 10)
-  return getColombiaDayRange(fechaColombia)
+// Obtiene la fecha de hoy en Colombia como YYYY-MM-DD
+const getHoyColombia = () => {
+  const ahora = new Date(Date.now() - COLOMBIA_OFFSET)
+  return ahora.toISOString().slice(0, 10)
 }
 
 const inicioDia = (fecha) => {
@@ -145,9 +143,7 @@ export async function GET(request) {
   const cobradorParam = searchParams.get('cobradorId')
 
   // Usar fecha de Colombia (hoy por defecto)
-  const fechaBase = fechaParam 
-    ? fechaParam 
-    : new Date(Date.now() + COLOMBIA_OFFSET).toISOString().slice(0, 10)
+  const fechaBase = fechaParam || getHoyColombia()
 
   const { inicio, fin } = getColombiaDayRange(fechaBase)
 
@@ -222,7 +218,7 @@ export async function POST(request) {
   if (!cobrador) return Response.json({ error: 'Cobrador no encontrado' }, { status: 404 })
 
   // Usar fecha de Colombia hoy
-  const fechaColombia = new Date(Date.now() + COLOMBIA_OFFSET).toISOString().slice(0, 10)
+  const fechaColombia = getHoyColombia()
   const { inicio, fin } = getColombiaDayRange(fechaColombia)
 
   const existeCierre = await prisma.cierreCaja.findFirst({
@@ -278,7 +274,7 @@ export async function POST(request) {
     data: {
       organizationId,
       cobradorId,
-      fecha: fechaBase,
+      fecha: new Date(fechaColombia + 'T00:00:00-05:00'),
       totalEsperado: Math.round(totalEsperado),
       totalRecogido: Math.round(totalRecogido),
       totalGastos: Math.round(totalGastos),

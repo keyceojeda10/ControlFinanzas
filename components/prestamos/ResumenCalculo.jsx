@@ -14,11 +14,18 @@ const fmtFecha = (d) => {
 export default function ResumenCalculo({ calculo, visible = true }) {
   if (!visible) return null
 
-  const { totalAPagar, cuotaDiaria, totalInteres, fechaFin } = calculo ?? {}
+  const { totalAPagar, cuotaDiaria, totalInteres, fechaFin, frecuencia } = calculo ?? {}
+
+  const labelCuota = {
+    diario:    'Cuota diaria',
+    semanal:   'Cuota semanal',
+    quincenal: 'Cuota quincenal',
+    mensual:   'Cuota mensual',
+  }[frecuencia] ?? 'Cuota'
 
   const items = [
     { label: 'Total a pagar',  value: fmt(totalAPagar),  accent: '#3b82f6' },
-    { label: 'Cuota diaria',   value: fmt(cuotaDiaria),  accent: '#10b981' },
+    { label: labelCuota,       value: fmt(cuotaDiaria),  accent: '#10b981' },
     { label: 'Total interés',  value: fmt(totalInteres), accent: '#f59e0b' },
     { label: 'Fecha de cierre', value: fmtFecha(fechaFin), accent: '#8b5cf6' },
   ]

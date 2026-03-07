@@ -8,10 +8,9 @@ const COLOMBIA_OFFSET = 5 * 60 * 60 * 1000 // UTC-5
 
 // Convierte una fecha YYYY-MM-DD de Colombia a rango UTC
 const getColombiaDayRange = (fechaColombia) => {
-  const fecha = new Date(fechaColombia + 'T00:00:00-05:00')
-  const inicioUTC = new Date(fecha.getTime() + COLOMBIA_OFFSET)
-  const finUTC = new Date(inicioUTC.getTime() + 24 * 60 * 60 * 1000 - 1)
-  return { inicio: inicioUTC, fin: finUTC }
+  const inicio = new Date(fechaColombia + 'T00:00:00-05:00')
+  const fin    = new Date(fechaColombia + 'T23:59:59.999-05:00')
+  return { inicio, fin }
 }
 
 // Ajusta fecha UTC a Colombia para mostrar
@@ -49,7 +48,7 @@ export async function GET(req) {
     fechaHasta = new Date(rangeHasta.fin.getTime() + 1)
   } else {
     // Default: últimos 30 días desde hoy en Colombia
-    const ahoraColombia = new Date(Date.now() + COLOMBIA_OFFSET)
+    const ahoraColombia = new Date(Date.now() - COLOMBIA_OFFSET)
     const fechaFinColombia = ahoraColombia.toISOString().slice(0, 10)
     const rangeFin = getColombiaDayRange(fechaFinColombia)
     fechaHasta = new Date(rangeFin.fin.getTime() + 1)

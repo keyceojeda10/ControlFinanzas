@@ -49,11 +49,11 @@ export async function GET(req) {
       orderBy: { nombre: 'asc' },
     })
 
-    const header = ['Nombre', 'Cédula', 'Teléfono', 'Dirección', 'Ruta', 'Estado', 'Activo']
+    const header = ['Nombre', 'Cédula', 'Teléfono', 'Dirección', 'Ruta', 'Estado']
     const data = [
       ...headerRow('Clientes', desde, hasta),
       header,
-      ...rows.map((c) => [c.nombre, c.cedula, c.telefono, c.direccion, c.ruta?.nombre ?? '', c.estado, c.activo ? 'Sí' : 'No']),
+      ...rows.map((c) => [c.nombre, c.cedula, c.telefono, c.direccion, c.ruta?.nombre ?? '', c.estado]),
     ]
     const ws = XLSX.utils.aoa_to_sheet(data)
     XLSX.utils.book_append_sheet(wb, ws, 'Clientes')
@@ -133,7 +133,7 @@ export async function GET(req) {
     const rows = await prisma.user.findMany({
       where: { organizationId: orgId, rol: 'cobrador' },
       include: {
-        ruta: { select: { nombre: true } },
+        rutas: { where: { activo: true }, take: 1, select: { nombre: true } },
         cierresCaja: {
           where: { fecha: { gte: fechaDesde, lte: fechaHasta } },
           select: { totalRecogido: true, totalEsperado: true },
@@ -146,7 +146,7 @@ export async function GET(req) {
       const esperado  = c.cierresCaja.reduce((a, ci) => a + ci.totalEsperado, 0)
       const recogido  = c.cierresCaja.reduce((a, ci) => a + ci.totalRecogido, 0)
       const eficiencia = esperado > 0 ? Math.round((recogido / esperado) * 100) : 0
-      return [c.nombre, c.ruta?.nombre ?? '', c.cierresCaja.length, esperado, recogido, recogido - esperado, eficiencia]
+      return [c.nombre, c.rutas[0]?.nombre ?? '', c.cierresCaja.length, esperado, recogido, recogido - esperado, eficiencia]
     })
 
     const data = [...headerRow('Cobradores', desde, hasta), header, ...dataRows]

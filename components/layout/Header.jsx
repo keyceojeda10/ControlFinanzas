@@ -161,7 +161,7 @@ export default function Header() {
                       pathname === item.href || pathname.startsWith(item.href + '/')
                         ? 'text-[#f5c518] bg-[rgba(245,197,24,0.1)]'
                         : 'text-[#cccccc] hover:bg-[#2a2a2a]'
-                    ]}
+                    ].join(' ')}
                     onClick={() => setMenuOpen(false)}
                   >
                     <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

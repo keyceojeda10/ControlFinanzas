@@ -16,7 +16,7 @@ export async function GET(req) {
   const estado   = searchParams.get('estado')   ?? '' // activa, suspendida
 
   const where = {}
-  if (busqueda) where.nombre = { contains: busqueda, mode: 'insensitive' }
+  if (busqueda) where.nombre = { contains: busqueda }
   if (plan)     where.plan   = plan
   if (estado === 'activa')    where.activo = true
   if (estado === 'suspendida') where.activo = false

@@ -8,10 +8,9 @@ const COLOMBIA_OFFSET = 5 * 60 * 60 * 1000 // UTC-5
 
 // Convierte una fecha YYYY-MM-DD de Colombia a rango UTC
 const getColombiaDayRange = (fechaColombia) => {
-  const fecha = new Date(fechaColombia + 'T00:00:00-05:00')
-  const inicioUTC = new Date(fecha.getTime() + COLOMBIA_OFFSET)
-  const finUTC = new Date(inicioUTC.getTime() + 24 * 60 * 60 * 1000 - 1)
-  return { inicio: inicioUTC, fin: finUTC }
+  const inicio = new Date(fechaColombia + 'T00:00:00-05:00')
+  const fin    = new Date(fechaColombia + 'T23:59:59.999-05:00')
+  return { inicio, fin }
 }
 
 const toColombiaDate = (date) => new Date(date.getTime() - COLOMBIA_OFFSET)
@@ -36,7 +35,7 @@ export async function GET(req) {
     fechaHasta = new Date(rangeHasta.fin.getTime() + 1)
   } else {
     // Default: inicio del mes en Colombia
-    const ahoraColombia = new Date(Date.now() + COLOMBIA_OFFSET)
+    const ahoraColombia = new Date(Date.now() - COLOMBIA_OFFSET)
     const primerDiaMes = new Date(ahoraColombia.getFullYear(), ahoraColombia.getMonth(), 1)
     const fechaIniColombia = primerDiaMes.toISOString().slice(0, 10)
     const rangeIni = getColombiaDayRange(fechaIniColombia)

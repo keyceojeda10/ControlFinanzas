@@ -19,6 +19,14 @@ export async function PATCH(req, { params }) {
     return NextResponse.json({ error: 'Estado inválido' }, { status: 400 })
   }
 
+  // Verificar que el gasto pertenece a la organización del usuario
+  const gastoExistente = await prisma.gastoMenor.findFirst({
+    where: { id, organizationId: session.user.organizationId },
+  })
+  if (!gastoExistente) {
+    return NextResponse.json({ error: 'Gasto no encontrado' }, { status: 404 })
+  }
+
   const gasto = await prisma.gastoMenor.update({
     where: { id },
     data: { estado },
