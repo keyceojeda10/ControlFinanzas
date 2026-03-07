@@ -11,6 +11,7 @@ import PrestamoCard                           from '@/components/prestamos/Prest
 const ESTADOS = [
   { value: '',           label: 'Todos'     },
   { value: 'activo',     label: 'Activos'   },
+  { value: 'mora',       label: 'En mora',  color: '#ef4444' },
   { value: 'completado', label: 'Completados' },
   { value: 'cancelado',  label: 'Cancelados' },
 ]
@@ -28,11 +29,15 @@ export default function PrestamosPage() {
     setError('')
     try {
       const params = new URLSearchParams()
-      if (q)   params.set('buscar', q)
-      if (est) params.set('estado', est)
+      if (q) params.set('buscar', q)
+      // "mora" no es un estado en BD — pedimos activos y filtramos client-side
+      const apiEstado = est === 'mora' ? 'activo' : est
+      if (apiEstado) params.set('estado', apiEstado)
       const res = await fetch(`/api/prestamos?${params}`)
       if (!res.ok) throw new Error()
-      setPrestamos(await res.json())
+      let data = await res.json()
+      if (est === 'mora') data = data.filter((p) => p.diasMora > 0)
+      setPrestamos(data)
     } catch {
       setError('No se pudieron cargar los préstamos.')
     } finally {
@@ -79,20 +84,25 @@ export default function PrestamosPage() {
 
       {/* Filtro de estado */}
       <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-none pb-1">
-        {ESTADOS.map(({ value, label }) => (
-          <button
-            key={value}
-            onClick={() => setEstado(value)}
-            className={[
-              'shrink-0 px-3 h-8 rounded-full text-xs font-medium border transition-all',
-              estado === value
-                ? 'bg-[rgba(59,130,246,0.15)] border-[#3b82f6] text-[#3b82f6]'
-                : 'bg-transparent border-[#2a2a2a] text-[#555555] hover:bg-[#222222] hover:text-[white]',
-            ].join(' ')}
-          >
-            {label}
-          </button>
-        ))}
+        {ESTADOS.map(({ value, label, color }) => {
+          const isActive = estado === value
+          const accent = color ?? '#3b82f6'
+          return (
+            <button
+              key={value}
+              onClick={() => setEstado(value)}
+              className={[
+                'shrink-0 px-3 h-8 rounded-full text-xs font-medium border transition-all',
+                isActive
+                  ? 'border-current'
+                  : 'bg-transparent border-[#2a2a2a] text-[#555555] hover:bg-[#222222] hover:text-[white]',
+              ].join(' ')}
+              style={isActive ? { color: accent, backgroundColor: `${accent}20` } : undefined}
+            >
+              {label}
+            </button>
+          )
+        })}
       </div>
 
       {/* Buscador */}
@@ -164,7 +174,7 @@ export default function PrestamosPage() {
           ) : (
             <>
               <p className="text-sm font-medium text-[white]">
-                {estado === 'activo' ? 'No hay préstamos activos' : 'Sin préstamos'}
+                {estado === 'activo' ? 'No hay préstamos activos' : estado === 'mora' ? 'No hay préstamos en mora' : 'Sin préstamos'}
               </p>
               <p className="text-xs text-[#555555] mt-1">
                 {estado !== '' && (

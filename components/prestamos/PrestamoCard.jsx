@@ -18,13 +18,33 @@ export default function PrestamoCard({ prestamo: p }) {
   return (
     <Link
       href={`/prestamos/${p.id}`}
-      className="block bg-[#1c2333] border border-[#2a3245] rounded-[14px] p-4 hover:border-[#3b82f6]/40 hover:bg-[#222a3d] transition-all duration-150 group"
+      className={[
+        'block rounded-[14px] p-4 transition-all duration-150 group',
+        enMora
+          ? 'bg-[rgba(239,68,68,0.06)] border-2 border-[rgba(239,68,68,0.3)] hover:border-[rgba(239,68,68,0.5)]'
+          : 'bg-[#1c2333] border border-[#2a3245] hover:border-[#3b82f6]/40 hover:bg-[#222a3d]',
+      ].join(' ')}
     >
+      {/* Alerta de mora */}
+      {enMora && (
+        <div className="flex items-center gap-2 mb-3 px-2.5 py-1.5 rounded-[8px] bg-[rgba(239,68,68,0.1)]">
+          <svg className="w-3.5 h-3.5 text-[#ef4444] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span className="text-xs font-semibold text-[#ef4444]">
+            {p.diasMora} {p.diasMora === 1 ? 'día' : 'días'} en mora
+          </span>
+        </div>
+      )}
+
       {/* Top row */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-[rgba(59,130,246,0.15)] flex items-center justify-center shrink-0">
-            <span className="text-[#3b82f6] text-xs font-bold">
+          <div className={[
+            'w-8 h-8 rounded-full flex items-center justify-center shrink-0',
+            enMora ? 'bg-[rgba(239,68,68,0.15)]' : 'bg-[rgba(59,130,246,0.15)]',
+          ].join(' ')}>
+            <span className={['text-xs font-bold', enMora ? 'text-[#ef4444]' : 'text-[#3b82f6]'].join(' ')}>
               {p.cliente?.nombre?.[0]?.toUpperCase() ?? '?'}
             </span>
           </div>
@@ -34,7 +54,10 @@ export default function PrestamoCard({ prestamo: p }) {
           </div>
         </div>
         <div className="flex flex-col items-end gap-1">
-          <Badge variant={badge.variant}>{badge.label}</Badge>
+          {enMora
+            ? <Badge variant="red">En mora</Badge>
+            : <Badge variant={badge.variant}>{badge.label}</Badge>
+          }
           {p.pagoHoy && (
             <span className="flex items-center gap-1 text-[10px] text-[#10b981]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] inline-block" />
@@ -48,7 +71,9 @@ export default function PrestamoCard({ prestamo: p }) {
       <div className="flex items-end justify-between mb-2">
         <div>
           <p className="text-[10px] text-[#64748b]">Saldo pendiente</p>
-          <p className="text-lg font-bold text-[#f1f5f9] leading-none">{formatCOP(p.saldoPendiente)}</p>
+          <p className={['text-lg font-bold leading-none', enMora ? 'text-[#ef4444]' : 'text-[#f1f5f9]'].join(' ')}>
+            {formatCOP(p.saldoPendiente)}
+          </p>
         </div>
         <div className="text-right">
           <p className="text-[10px] text-[#64748b]">Prestado</p>
@@ -70,11 +95,7 @@ export default function PrestamoCard({ prestamo: p }) {
       {/* Footer */}
       <div className="flex items-center justify-between text-[10px]">
         <span className="text-[#64748b]">{porcentaje}% pagado</span>
-        {enMora ? (
-          <span className="text-[#ef4444] font-semibold">{p.diasMora} días en mora</span>
-        ) : (
-          <span className="text-[#64748b]">Cuota {formatCOP(p.cuotaDiaria)}/día</span>
-        )}
+        <span className="text-[#64748b]">Cuota {formatCOP(p.cuotaDiaria)}</span>
       </div>
     </Link>
   )
