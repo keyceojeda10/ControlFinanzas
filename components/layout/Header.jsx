@@ -132,7 +132,7 @@ export default function Header() {
           <Image src="/logo-icon.svg" alt="CF" width={28} height={28} className="shrink-0" />
           <span className="text-sm font-semibold text-white">{title}</span>
         </div>
-        {fechaHora && <span className="text-[10px] text-[#555555] ml-1">{fechaHora}</span>}
+        {fechaHora && <span className="text-[10px] text-[#888888] ml-1">{fechaHora}</span>}
       </div>
 
       {/* Actions */}
@@ -141,7 +141,7 @@ export default function Header() {
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setMenuOpen((v) => !v)}
-            className="w-9 h-9 flex items-center justify-center rounded-lg text-[#555555] hover:text-white hover:bg-[#1a1a1a] transition-colors"
+            className="w-9 h-9 flex items-center justify-center rounded-lg text-[#888888] hover:text-white hover:bg-[#1a1a1a] transition-colors"
             aria-label="Menú de navegación"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -194,7 +194,7 @@ export default function Header() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-white truncate">{nombre}</p>
-                    <p className="text-[11px] text-[#555555] truncate">{email}</p>
+                    <p className="text-[11px] text-[#888888] truncate">{email}</p>
                   </div>
                 </div>
                 <div className="mt-2">

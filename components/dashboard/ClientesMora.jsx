@@ -30,7 +30,7 @@ export default function ClientesMora({ clientes = [], loading = false }) {
           </svg>
         </div>
         <p className="text-sm font-medium text-[#f1f5f9]">Sin clientes en mora</p>
-        <p className="text-xs text-[#64748b] mt-1">Todos los pagos al día</p>
+        <p className="text-xs text-[#8b95a5] mt-1">Todos los pagos al día</p>
       </div>
     )
   }
@@ -46,7 +46,7 @@ export default function ClientesMora({ clientes = [], loading = false }) {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-[#f1f5f9] truncate">{c.nombre}</p>
-            <p className="text-xs text-[#64748b]">{c.diasMora} días en mora</p>
+            <p className="text-xs text-[#8b95a5]">{c.diasMora} días en mora</p>
           </div>
           <Badge variant="red">
             ${c.saldoPendiente?.toLocaleString('es-CO') ?? 0}

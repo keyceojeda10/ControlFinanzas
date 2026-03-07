@@ -58,7 +58,7 @@ export default function RutasPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold text-[white]">Rutas</h1>
-          <p className="text-sm text-[#555555] mt-0.5">
+          <p className="text-sm text-[#888888] mt-0.5">
             {loading ? '…' : `${rutas.length} ruta${rutas.length !== 1 ? 's' : ''}`}
           </p>
         </div>
@@ -113,7 +113,7 @@ export default function RutasPage() {
             </svg>
           </div>
           <p className="text-sm font-medium text-[white]">Sin rutas aún</p>
-          <p className="text-xs text-[#555555] mt-1">Crea una ruta y asígnale un cobrador</p>
+          <p className="text-xs text-[#888888] mt-1">Crea una ruta y asígnale un cobrador</p>
           <button onClick={() => setShowForm(true)} className="mt-4 text-sm text-[#3b82f6] hover:underline">
             Crear primera ruta
           </button>
@@ -135,19 +135,19 @@ export default function RutasPage() {
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <p className="text-sm font-semibold text-[white]">{r.nombre}</p>
-                    <p className="text-xs text-[#555555] mt-0.5">
+                    <p className="text-xs text-[#888888] mt-0.5">
                       {r.cobrador
                         ? <span className="text-[#a855f7]">{r.cobrador.nombre}</span>
-                        : <span className="text-[#555555]">Sin cobrador asignado</span>
+                        : <span className="text-[#888888]">Sin cobrador asignado</span>
                       }
                     </p>
                   </div>
-                  <span className="text-xs text-[#555555]">
+                  <span className="text-xs text-[#888888]">
                     {r.cantidadClientes} cliente{r.cantidadClientes !== 1 ? 's' : ''}
                   </span>
                 </div>
 
-                <div className="flex justify-between text-xs text-[#555555] mb-1.5">
+                <div className="flex justify-between text-xs text-[#888888] mb-1.5">
                   <span>Recaudado: <span className="text-[#22c55e] font-medium">{formatCOP(r.recaudadoHoy)}</span></span>
                   <span>Esperado: {formatCOP(r.esperadoHoy)}</span>
                 </div>
@@ -160,7 +160,7 @@ export default function RutasPage() {
                     }}
                   />
                 </div>
-                <p className="text-[10px] text-[#555555] mt-1 text-right">{progreso}% del día</p>
+                <p className="text-[10px] text-[#888888] mt-1 text-right">{progreso}% del día</p>
               </Link>
             )
           })}

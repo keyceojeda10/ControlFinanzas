@@ -8,7 +8,7 @@ export async function PATCH(req, { params }) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   if (session.user.rol !== 'owner') {
-    return NextResponse.json({ error: 'Solo owners pueden aprobar/rechazar gastos' }, { status: 403 })
+    return NextResponse.json({ error: 'Solo el administrador puede aprobar/rechazar gastos' }, { status: 403 })
   }
 
   const { id } = params

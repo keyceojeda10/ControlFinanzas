@@ -26,7 +26,7 @@ function Alerta({ tipo = 'success', children }) {
 }
 
 const inputClass =
-  'w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] placeholder-[#555555] focus:outline-none focus:border-[#3b82f6] transition-all disabled:opacity-50 disabled:cursor-not-allowed'
+  'w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] placeholder-[#777777] focus:outline-none focus:border-[#3b82f6] transition-all disabled:opacity-50 disabled:cursor-not-allowed'
 
 // ══════════════════════════════════════════════════════════════
 // TAB 1 — MI PERFIL
@@ -105,7 +105,7 @@ function TabPerfil() {
   return (
     <div className="space-y-5">
       <Card>
-        <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">Información personal</p>
+        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">Información personal</p>
         <div className="space-y-4">
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-[#888888]">Nombre</label>
@@ -114,13 +114,13 @@ function TabPerfil() {
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-[#888888]">Email</label>
             <input type="email" value={perfil?.email ?? ''} readOnly disabled className={inputClass} />
-            <p className="text-[10px] text-[#555555]">El email no se puede cambiar</p>
+            <p className="text-[10px] text-[#888888]">El email no se puede cambiar</p>
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-[#888888]">Rol</label>
             <div className="flex items-center gap-2">
               <Badge variant={session?.user?.rol === 'owner' ? 'blue' : 'gray'}>
-                {session?.user?.rol ?? 'usuario'}
+                {{ owner: 'Administrador', cobrador: 'Cobrador', superadmin: 'Super Admin' }[session?.user?.rol] ?? 'Usuario'}
               </Badge>
             </div>
           </div>
@@ -130,7 +130,7 @@ function TabPerfil() {
       </Card>
 
       <Card>
-        <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">Cambiar contraseña</p>
+        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">Cambiar contraseña</p>
         <div className="space-y-4">
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-[#888888]">Contraseña actual</label>
@@ -205,7 +205,7 @@ function TabOrganizacion() {
   return (
     <div className="space-y-5">
       <Card>
-        <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">Datos del negocio</p>
+        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">Datos del negocio</p>
         <div className="space-y-4">
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-[#888888]">Nombre del negocio</label>
@@ -225,7 +225,7 @@ function TabOrganizacion() {
       </Card>
 
       <Card>
-        <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">Plan y suscripción</p>
+        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">Plan y suscripción</p>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
@@ -234,7 +234,7 @@ function TabOrganizacion() {
                 <Badge variant={planBadge[org?.plan ?? 'basic']}>
                   {(org?.plan ?? 'basic').charAt(0).toUpperCase() + (org?.plan ?? 'basic').slice(1)}
                 </Badge>
-                <span className="text-xs text-[#555555]">{formatCOP(PRECIOS[org?.plan ?? 'basic'])}/mes</span>
+                <span className="text-xs text-[#888888]">{formatCOP(PRECIOS[org?.plan ?? 'basic'])}/mes</span>
               </div>
             </div>
             <Link
@@ -248,7 +248,7 @@ function TabOrganizacion() {
           {suscripcion && (
             <div className="pt-3 border-t border-[#2a2a2a] space-y-2">
               <div className="flex justify-between text-xs">
-                <span className="text-[#555555]">Vencimiento</span>
+                <span className="text-[#888888]">Vencimiento</span>
                 <span className="text-[#888888]">
                   {new Date(suscripcion.fechaVencimiento).toLocaleDateString('es-CO', {
                     day: 'numeric', month: 'long', year: 'numeric',
@@ -309,12 +309,12 @@ function TabSuscripcion() {
       <Card>
         <div className="flex items-start justify-between mb-5">
           <div>
-            <p className="text-xs text-[#555555] mb-1">Plan actual</p>
+            <p className="text-xs text-[#888888] mb-1">Plan actual</p>
             <div className="flex items-center gap-2">
               <Badge variant={planBadge[org?.plan ?? 'basic']}>
                 {(org?.plan ?? 'basic').charAt(0).toUpperCase() + (org?.plan ?? 'basic').slice(1)}
               </Badge>
-              <span className="text-xs text-[#555555]">{formatCOP(PRECIOS[org?.plan ?? 'basic'])}/mes</span>
+              <span className="text-xs text-[#888888]">{formatCOP(PRECIOS[org?.plan ?? 'basic'])}/mes</span>
             </div>
           </div>
           <Link
@@ -329,18 +329,18 @@ function TabSuscripcion() {
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div>
-                <p className="text-[#555555]">Inicio</p>
+                <p className="text-[#888888]">Inicio</p>
                 <p className="text-[#888888] mt-0.5">{new Date(suscripcion.fechaInicio).toLocaleDateString('es-CO')}</p>
               </div>
               <div>
-                <p className="text-[#555555]">Vencimiento</p>
+                <p className="text-[#888888]">Vencimiento</p>
                 <p className="text-[#888888] mt-0.5">{new Date(suscripcion.fechaVencimiento).toLocaleDateString('es-CO')}</p>
               </div>
             </div>
 
             <div className="space-y-1.5">
               <div className="flex justify-between text-xs">
-                <span className="text-[#555555]">Tiempo restante</span>
+                <span className="text-[#888888]">Tiempo restante</span>
                 <span className="font-medium" style={{ color: barColor }}>
                   {diasRestantes != null
                     ? diasRestantes > 0
@@ -368,15 +368,15 @@ function TabSuscripcion() {
             )}
           </div>
         ) : (
-          <p className="text-sm text-[#555555]">No hay información de suscripción disponible.</p>
+          <p className="text-sm text-[#888888]">No hay información de suscripción disponible.</p>
         )}
       </Card>
 
       {historial?.length > 0 && (
         <Card>
-          <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">Historial de suscripciones</p>
+          <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">Historial de suscripciones</p>
           <div className="space-y-0">
-            <div className="hidden sm:grid grid-cols-4 gap-2 text-[10px] text-[#555555] font-medium uppercase pb-2 border-b border-[#2a2a2a]">
+            <div className="hidden sm:grid grid-cols-4 gap-2 text-[10px] text-[#888888] font-medium uppercase pb-2 border-b border-[#2a2a2a]">
               <span>Período</span>
               <span className="text-center">Plan</span>
               <span className="text-center">Estado</span>
@@ -426,7 +426,7 @@ export default function ConfiguracionPage() {
     <div className="max-w-2xl mx-auto space-y-5">
       <div>
         <h1 className="text-xl font-bold text-[white]">Configuración</h1>
-        <p className="text-sm text-[#555555] mt-0.5">Gestiona tu perfil y tu organización</p>
+        <p className="text-sm text-[#888888] mt-0.5">Gestiona tu perfil y tu organización</p>
       </div>
 
       {/* Tabs */}
@@ -439,7 +439,7 @@ export default function ConfiguracionPage() {
               'px-4 py-2.5 text-sm font-medium transition-all border-b-2 -mb-px',
               tab === t.key
                 ? 'text-[#3b82f6] border-[#3b82f6]'
-                : 'text-[#555555] border-transparent hover:text-[#888888]',
+                : 'text-[#888888] border-transparent hover:text-[#888888]',
             ].join(' ')}
           >
             {t.label}

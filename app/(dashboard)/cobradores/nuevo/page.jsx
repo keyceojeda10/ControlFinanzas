@@ -79,21 +79,21 @@ export default function NuevoCobrador() {
             </svg>
           </div>
           <h2 className="text-base font-bold text-[white] mb-1">¡Cobrador creado!</h2>
-          <p className="text-xs text-[#555555] mb-5">
+          <p className="text-xs text-[#888888] mb-5">
             Guarda estas credenciales — la contraseña no se mostrará de nuevo.
           </p>
 
           <div className="bg-[#111111] border border-[#2a2a2a] rounded-[12px] p-4 text-left mb-4 space-y-2">
             <div>
-              <p className="text-[10px] text-[#555555]">Nombre</p>
+              <p className="text-[10px] text-[#888888]">Nombre</p>
               <p className="text-sm font-medium text-[white]">{creado.nombre}</p>
             </div>
             <div>
-              <p className="text-[10px] text-[#555555]">Email</p>
+              <p className="text-[10px] text-[#888888]">Email</p>
               <p className="text-sm font-medium text-[white]">{creado.email}</p>
             </div>
             <div>
-              <p className="text-[10px] text-[#555555]">Contraseña temporal</p>
+              <p className="text-[10px] text-[#888888]">Contraseña temporal</p>
               <p className="text-sm font-bold text-[#3b82f6] font-mono">{creado.password}</p>
             </div>
           </div>
@@ -116,7 +116,7 @@ export default function NuevoCobrador() {
       <div className="mb-6">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm text-[#555555] hover:text-[white] transition-colors mb-4"
+          className="flex items-center gap-1.5 text-sm text-[#888888] hover:text-[white] transition-colors mb-4"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -125,7 +125,7 @@ export default function NuevoCobrador() {
         </button>
         <h1 className="text-xl font-bold text-[white]">Nuevo cobrador</h1>
         {restantes !== null && (
-          <p className="text-xs text-[#555555] mt-1">
+          <p className="text-xs text-[#888888] mt-1">
             Puedes agregar{' '}
             <span className={restantes > 0 ? 'text-[#22c55e]' : 'text-[#ef4444]'}>
               {restantes} cobrador{restantes !== 1 ? 'es' : ''}
@@ -162,7 +162,7 @@ export default function NuevoCobrador() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <p className="text-[10px] text-[#555555]">
+        <p className="text-[10px] text-[#888888]">
           El cobrador deberá usar estas credenciales para ingresar al sistema.
         </p>
 

@@ -238,7 +238,7 @@ export default function OrgDetallePage() {
               <p className="text-sm font-medium text-[white]">{u.nombre}</p>
               <p className="text-xs text-[#888888] truncate">{u.email}</p>
               <div className="text-center">
-                <Badge variant={u.rol === 'owner' ? 'blue' : 'gray'}>{u.rol}</Badge>
+                <Badge variant={u.rol === 'owner' ? 'blue' : 'gray'}>{{ owner: 'Admin', cobrador: 'Cobrador' }[u.rol] ?? u.rol}</Badge>
               </div>
               <div className="text-center">
                 <Badge variant={u.activo ? 'green' : 'red'}>

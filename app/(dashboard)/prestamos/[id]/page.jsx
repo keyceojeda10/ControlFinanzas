@@ -114,7 +114,7 @@ export default function PrestamoDetallePage({ params }) {
       {/* Back */}
       <button
         onClick={() => router.back()}
-        className="flex items-center gap-1.5 text-sm text-[#555555] hover:text-[white] transition-colors"
+        className="flex items-center gap-1.5 text-sm text-[#888888] hover:text-[white] transition-colors"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -127,7 +127,7 @@ export default function PrestamoDetallePage({ params }) {
         <div className="bg-[rgba(16,185,129,0.12)] border border-[rgba(16,185,129,0.3)] rounded-[16px] p-4 text-center animate-pulse">
           <p className="text-2xl mb-1">🎉</p>
           <p className="text-[#22c55e] font-bold">¡Préstamo completado!</p>
-          <p className="text-xs text-[#555555] mt-0.5">El cliente terminó de pagar</p>
+          <p className="text-xs text-[#888888] mt-0.5">El cliente terminó de pagar</p>
         </div>
       )}
 
@@ -173,7 +173,7 @@ export default function PrestamoDetallePage({ params }) {
             <Link href={`/clientes/${cliente.id}`} className="hover:text-[#3b82f6] transition-colors">
               <h1 className="text-lg font-bold text-[white]">{cliente.nombre}</h1>
             </Link>
-            <p className="text-sm text-[#555555]">CC {cliente.cedula}</p>
+            <p className="text-sm text-[#888888]">CC {cliente.cedula}</p>
           </div>
           <Badge variant={badge.variant}>{badge.label}</Badge>
         </div>
@@ -229,13 +229,13 @@ export default function PrestamoDetallePage({ params }) {
 
       {/* ── RESUMEN FINANCIERO ───────────────────────────────────── */}
       <Card>
-        <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">
+        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">
           Resumen financiero
         </p>
 
         {/* Saldo pendiente — número grande */}
         <div className="text-center mb-4">
-          <p className="text-xs text-[#555555] mb-1">Saldo pendiente</p>
+          <p className="text-xs text-[#888888] mb-1">Saldo pendiente</p>
           <p
             className="text-4xl font-bold leading-none"
             style={{ color: saldoPendiente === 0 ? '#22c55e' : diasMora > 0 ? '#ef4444' : 'white' }}
@@ -246,7 +246,7 @@ export default function PrestamoDetallePage({ params }) {
 
         {/* Barra de progreso */}
         <div className="mb-4">
-          <div className="flex justify-between text-xs text-[#555555] mb-1.5">
+          <div className="flex justify-between text-xs text-[#888888] mb-1.5">
             <span>{porcentajePagado}% pagado</span>
             <span>{formatCOP(totalPagado)} de {formatCOP(totalAPagar)}</span>
           </div>
@@ -280,7 +280,7 @@ export default function PrestamoDetallePage({ params }) {
             },
           ].map(({ label, value, color }) => (
             <div key={label} className="bg-[#111111] rounded-[12px] px-3 py-2.5">
-              <p className="text-[10px] text-[#555555]">{label}</p>
+              <p className="text-[10px] text-[#888888]">{label}</p>
               <p className="text-sm font-semibold mt-0.5" style={{ color: color ?? 'white' }}>
                 {value}
               </p>
@@ -299,12 +299,12 @@ export default function PrestamoDetallePage({ params }) {
 
       {/* ── HISTORIAL DE PAGOS ───────────────────────────────────── */}
       <Card>
-        <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">
+        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">
           Historial de pagos ({pagos.length})
         </p>
 
         {pagos.length === 0 ? (
-          <p className="text-sm text-[#555555] text-center py-4">Sin pagos registrados</p>
+          <p className="text-sm text-[#888888] text-center py-4">Sin pagos registrados</p>
         ) : (
           <div className="space-y-2.5">
             {pagos.map((pago) => {
@@ -316,7 +316,7 @@ export default function PrestamoDetallePage({ params }) {
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-[white]">{formatCOP(pago.montoPagado)}</p>
-                    <p className="text-[10px] text-[#555555] mt-0.5">
+                    <p className="text-[10px] text-[#888888] mt-0.5">
                       {fmtFecha(pago.fechaPago)}
                       {pago.cobrador && ` · ${pago.cobrador.nombre}`}
                     </p>
@@ -340,7 +340,7 @@ export default function PrestamoDetallePage({ params }) {
                         }
                       }}
                       disabled={anulando === pago.id}
-                      className="shrink-0 p-1.5 rounded-lg text-[#555555] hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] transition-colors disabled:opacity-50"
+                      className="shrink-0 p-1.5 rounded-lg text-[#888888] hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] transition-colors disabled:opacity-50"
                       title="Anular pago"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -361,7 +361,7 @@ export default function PrestamoDetallePage({ params }) {
           {!confirmCancel ? (
             <button
               onClick={() => setConfirmCancel(true)}
-              className="w-full flex items-center justify-center gap-2 h-11 rounded-[12px] text-sm font-medium text-[#555555] hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.08)] border border-[#2a2a2a] hover:border-[rgba(239,68,68,0.3)] transition-all"
+              className="w-full flex items-center justify-center gap-2 h-11 rounded-[12px] text-sm font-medium text-[#888888] hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.08)] border border-[#2a2a2a] hover:border-[rgba(239,68,68,0.3)] transition-all"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />

@@ -59,7 +59,7 @@ export default function CobradoresPage() {
             </svg>
           </div>
           <p className="text-base font-bold text-[white] mb-2">Función de plan premium</p>
-          <p className="text-sm text-[#555555] mb-5">
+          <p className="text-sm text-[#888888] mb-5">
             Actualiza tu plan para agregar cobradores y gestionar rutas de cobro.
           </p>
           <div className="inline-flex flex-col gap-2 text-xs text-[#888888]">
@@ -76,7 +76,7 @@ export default function CobradoresPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold text-[white]">Cobradores</h1>
-          <p className="text-sm text-[#555555] mt-0.5">
+          <p className="text-sm text-[#888888] mt-0.5">
             {loading ? '…' : `${cobradores.length} cobrador${cobradores.length !== 1 ? 'es' : ''}`}
           </p>
         </div>
@@ -116,7 +116,7 @@ export default function CobradoresPage() {
             </svg>
           </div>
           <p className="text-sm font-medium text-[white]">Sin cobradores aún</p>
-          <p className="text-xs text-[#555555] mt-1">Crea el primer cobrador para asignarle una ruta</p>
+          <p className="text-xs text-[#888888] mt-1">Crea el primer cobrador para asignarle una ruta</p>
           <Link href="/cobradores/nuevo" className="mt-4">
             <Button size="sm">Crear cobrador</Button>
           </Link>
@@ -138,7 +138,7 @@ export default function CobradoresPage() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-[white]">{c.nombre}</p>
-                    <p className="text-xs text-[#555555]">{c.email}</p>
+                    <p className="text-xs text-[#888888]">{c.email}</p>
                   </div>
                 </div>
                 <button
@@ -153,17 +153,17 @@ export default function CobradoresPage() {
 
               <div className="grid grid-cols-3 gap-3 pt-3 border-t border-[#2a2a2a] text-center">
                 <div>
-                  <p className="text-[10px] text-[#555555]">Ruta</p>
+                  <p className="text-[10px] text-[#888888]">Ruta</p>
                   <p className="text-xs font-medium text-[white] truncate">
-                    {c.ruta?.nombre ?? <span className="text-[#555555]">Sin ruta</span>}
+                    {c.ruta?.nombre ?? <span className="text-[#888888]">Sin ruta</span>}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-[#555555]">Clientes</p>
+                  <p className="text-[10px] text-[#888888]">Clientes</p>
                   <p className="text-xs font-bold text-[white]">{c.cantidadClientes}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-[#555555]">Recaudado hoy</p>
+                  <p className="text-[10px] text-[#888888]">Recaudado hoy</p>
                   <p className="text-xs font-bold text-[#22c55e]">{formatCOP(c.recaudadoHoy)}</p>
                 </div>
               </div>

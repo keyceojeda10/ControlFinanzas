@@ -13,14 +13,14 @@ export const Input = forwardRef(function Input(
       )}
       <div className="relative flex items-center">
         {prefix && (
-          <span className="absolute left-3 text-[#555555] text-sm pointer-events-none select-none">
+          <span className="absolute left-3 text-[#888888] text-sm pointer-events-none select-none">
             {prefix}
           </span>
         )}
         <input
           ref={ref}
           className={[
-            'w-full h-10 rounded-[12px] border text-sm text-white placeholder-[#555555]',
+            'w-full h-10 rounded-[12px] border text-sm text-white placeholder-[#777777]',
             'bg-[#111111] border-[#2a2a2a]',
             'focus:outline-none focus:border-[#f5c518] focus:ring-1 focus:ring-[rgba(245,197,24,0.2)]',
             'transition-all duration-200',
@@ -33,7 +33,7 @@ export const Input = forwardRef(function Input(
           {...props}
         />
         {suffix && (
-          <span className="absolute right-3 text-[#555555] text-sm pointer-events-none select-none">
+          <span className="absolute right-3 text-[#888888] text-sm pointer-events-none select-none">
             {suffix}
           </span>
         )}
@@ -79,7 +79,7 @@ export const Textarea = forwardRef(function Textarea(
       <textarea
         ref={ref}
         className={[
-          'w-full rounded-[12px] border text-sm text-white px-3 py-2.5 placeholder-[#555555]',
+          'w-full rounded-[12px] border text-sm text-white px-3 py-2.5 placeholder-[#777777]',
           'bg-[#111111] border-[#2a2a2a]',
           'focus:outline-none focus:border-[#f5c518] focus:ring-1 focus:ring-[rgba(245,197,24,0.2)]',
           'transition-all duration-200 resize-none',

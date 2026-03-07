@@ -16,7 +16,7 @@ export async function POST(request, { params }) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
   }
   if (session.user.rol !== 'owner') {
-    return Response.json({ error: 'Solo los owners pueden asignar clientes a rutas' }, { status: 403 })
+    return Response.json({ error: 'Solo el administrador puede asignar clientes a rutas' }, { status: 403 })
   }
 
   const { id } = await params
@@ -54,7 +54,7 @@ export async function DELETE(request, { params }) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
   }
   if (session.user.rol !== 'owner') {
-    return Response.json({ error: 'Solo los owners pueden gestionar rutas' }, { status: 403 })
+    return Response.json({ error: 'Solo el administrador puede gestionar rutas' }, { status: 403 })
   }
 
   const { id } = await params

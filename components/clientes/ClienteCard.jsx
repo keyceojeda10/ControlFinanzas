@@ -39,9 +39,9 @@ export default function ClienteCard({ cliente }) {
       {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-[#f1f5f9] truncate">{cliente.nombre}</p>
-        <p className="text-xs text-[#64748b] mt-0.5">CC {cliente.cedula}</p>
+        <p className="text-xs text-[#8b95a5] mt-0.5">CC {cliente.cedula}</p>
         {cliente.referencia && (
-          <p className="text-xs text-[#64748b] mt-0.5 truncate" title={cliente.referencia}>
+          <p className="text-xs text-[#8b95a5] mt-0.5 truncate" title={cliente.referencia}>
             📍 {cliente.referencia}
           </p>
         )}
@@ -51,7 +51,7 @@ export default function ClienteCard({ cliente }) {
       <div className="flex flex-col items-end gap-1.5 shrink-0">
         <Badge variant={badge.variant}>{badge.label}</Badge>
         {cliente.prestamosActivos > 0 && (
-          <span className="text-[10px] text-[#64748b]">
+          <span className="text-[10px] text-[#8b95a5]">
             {cliente.prestamosActivos} préstamo{cliente.prestamosActivos > 1 ? 's' : ''} activo{cliente.prestamosActivos > 1 ? 's' : ''}
           </span>
         )}

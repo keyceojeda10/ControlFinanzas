@@ -32,7 +32,7 @@ export default function ResumenCalculo({ calculo, visible = true }) {
 
   return (
     <div className="bg-[#161b27] border border-[#2a3245] rounded-[14px] p-4 space-y-3">
-      <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide">
+      <p className="text-xs font-semibold text-[#8b95a5] uppercase tracking-wide">
         Resumen del préstamo
       </p>
       <div className="grid grid-cols-2 gap-3">
@@ -41,7 +41,7 @@ export default function ResumenCalculo({ calculo, visible = true }) {
             key={label}
             className="bg-[#1c2333] border border-[#2a3245] rounded-[10px] px-3 py-2.5"
           >
-            <p className="text-[10px] text-[#64748b] mb-0.5">{label}</p>
+            <p className="text-[10px] text-[#8b95a5] mb-0.5">{label}</p>
             <p
               className="text-base font-bold leading-tight"
               style={{ color: value === '$0' || value === '—' ? '#64748b' : accent }}

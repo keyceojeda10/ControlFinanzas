@@ -91,17 +91,17 @@ export default function RegistrarPago({
               </svg>
             </div>
             <p className="text-white font-bold text-lg">{formatCOP(pagoGuardado.montoPagado)}</p>
-            <p className="text-[#555555] text-sm">pagado correctamente</p>
+            <p className="text-[#888888] text-sm">pagado correctamente</p>
           </div>
 
           {prestamoWA && (
             <div className="bg-[#111111] rounded-[12px] px-4 py-3 space-y-1.5 text-sm">
               <div className="flex justify-between">
-                <span className="text-[#555555]">Saldo pendiente</span>
+                <span className="text-[#888888]">Saldo pendiente</span>
                 <span className="text-white font-medium">{formatCOP(prestamoWA.saldoPendiente)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#555555]">Progreso</span>
+                <span className="text-[#888888]">Progreso</span>
                 <span className="text-[#22c55e] font-medium">{prestamoWA.porcentajePagado}%</span>
               </div>
             </div>

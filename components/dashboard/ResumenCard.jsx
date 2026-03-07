@@ -62,10 +62,10 @@ export default function ResumenCard({
 
       {/* Label + Value */}
       <div>
-        <p className="text-xs text-[#64748b] font-medium mb-1">{title}</p>
+        <p className="text-xs text-[#8b95a5] font-medium mb-1">{title}</p>
         <p className="text-2xl font-bold text-[#f1f5f9] leading-none tracking-tight">{value}</p>
         {subtitle && (
-          <p className="text-xs text-[#64748b] mt-1">{subtitle}</p>
+          <p className="text-xs text-[#8b95a5] mt-1">{subtitle}</p>
         )}
       </div>
     </div>

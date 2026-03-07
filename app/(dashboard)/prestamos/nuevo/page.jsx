@@ -120,7 +120,7 @@ function NuevoPrestamo() {
       <div className="mb-6">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm text-[#555555] hover:text-[white] transition-colors mb-4"
+          className="flex items-center gap-1.5 text-sm text-[#888888] hover:text-[white] transition-colors mb-4"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -128,7 +128,7 @@ function NuevoPrestamo() {
           Volver
         </button>
         <h1 className="text-xl font-bold text-[white]">Nuevo préstamo</h1>
-        <p className="text-sm text-[#555555] mt-0.5">Completa los datos para registrar el préstamo</p>
+        <p className="text-sm text-[#888888] mt-0.5">Completa los datos para registrar el préstamo</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -159,12 +159,12 @@ function NuevoPrestamo() {
                 placeholder="Buscar cliente por nombre o cédula…"
                 value={buscadorCliente}
                 onChange={(e) => { setBuscadorCliente(e.target.value); setClienteId('') }}
-                className="w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] placeholder-[#555555] focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[rgba(59,130,246,0.3)] transition-all"
+                className="w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] placeholder-[#777777] focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[rgba(59,130,246,0.3)] transition-all"
               />
               {buscadorCliente && (
                 <div className="bg-[#111111] border border-[#2a2a2a] rounded-[12px] overflow-hidden max-h-40 overflow-y-auto">
                   {clientesFiltrados.length === 0 ? (
-                    <p className="px-3 py-2.5 text-sm text-[#555555]">Sin resultados</p>
+                    <p className="px-3 py-2.5 text-sm text-[#888888]">Sin resultados</p>
                   ) : clientesFiltrados.map((c) => (
                     <button
                       key={c.id}
@@ -179,7 +179,7 @@ function NuevoPrestamo() {
                       ].join(' ')}
                     >
                       <span className="font-medium">{c.nombre}</span>
-                      <span className="text-[#555555] text-xs">CC {c.cedula}</span>
+                      <span className="text-[#888888] text-xs">CC {c.cedula}</span>
                     </button>
                   ))}
                 </div>
@@ -211,7 +211,7 @@ function NuevoPrestamo() {
                 onChange={(e) => setTasa(e.target.value)}
                 suffix="%"
               />
-              <p className="text-[10px] text-[#555555] leading-snug px-0.5">
+              <p className="text-[10px] text-[#888888] leading-snug px-0.5">
                 % total sobre el monto. Ej: 20% sobre $100.000 = $20.000 de interés
               </p>
             </div>

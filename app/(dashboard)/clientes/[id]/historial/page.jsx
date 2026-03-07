@@ -46,7 +46,7 @@ export default function HistorialPage() {
     <div className="max-w-2xl mx-auto space-y-4">
       <button
         onClick={() => router.back()}
-        className="flex items-center gap-1.5 text-sm text-[#555555] hover:text-[white] transition-colors"
+        className="flex items-center gap-1.5 text-sm text-[#888888] hover:text-[white] transition-colors"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -56,7 +56,7 @@ export default function HistorialPage() {
 
       <div className="mb-4">
         <h1 className="text-xl font-bold text-[white]">Historial de Pagos</h1>
-        <p className="text-sm text-[#555555] mt-0.5">
+        <p className="text-sm text-[#888888] mt-0.5">
           Todos los pagos de todos los préstamos
         </p>
       </div>
@@ -64,11 +64,11 @@ export default function HistorialPage() {
       {/* Resumen */}
       <div className="grid grid-cols-2 gap-3">
         <Card>
-          <p className="text-[10px] text-[#555555]">Total pagado</p>
+          <p className="text-[10px] text-[#888888]">Total pagado</p>
           <p className="text-xl font-bold text-[white] mt-1">{formatCOP(totalPagado)}</p>
         </Card>
         <Card>
-          <p className="text-[10px] text-[#555555]">Cantidad de pagos</p>
+          <p className="text-[10px] text-[#888888]">Cantidad de pagos</p>
           <p className="text-xl font-bold text-[white] mt-1">{totalPagos}</p>
         </Card>
       </div>
@@ -76,14 +76,14 @@ export default function HistorialPage() {
       {/* Lista de pagos */}
       {historial.length === 0 ? (
         <Card>
-          <p className="text-sm text-[#555555] text-center py-6">
+          <p className="text-sm text-[#888888] text-center py-6">
             No hay pagos registrados
           </p>
         </Card>
       ) : (
         <Card>
           <div className="space-y-0">
-            <div className="grid grid-cols-4 gap-2 text-[10px] text-[#555555] font-medium uppercase pb-2 border-b border-[#2a2a2a]">
+            <div className="grid grid-cols-4 gap-2 text-[10px] text-[#888888] font-medium uppercase pb-2 border-b border-[#2a2a2a]">
               <span>Fecha</span>
               <span className="text-right">Monto</span>
               <span className="text-right">Tipo</span>
@@ -101,7 +101,7 @@ export default function HistorialPage() {
                 ]}>
                   {h.tipo === 'completo' ? 'Completo' : 'Parcial'}
                 </span>
-                <span className="text-xs text-[#555555] text-right truncate">
+                <span className="text-xs text-[#888888] text-right truncate">
                   {h.cobrador || '—'}
                 </span>
               </div>

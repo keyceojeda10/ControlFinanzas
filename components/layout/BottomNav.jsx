@@ -154,7 +154,7 @@ export default function BottomNav() {
               href={item.href}
               className={[
                 'flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors relative',
-                active ? 'text-[#f5c518]' : 'text-[#555555]',
+                active ? 'text-[#f5c518]' : 'text-[#888888]',
               ].join(' ')}
             >
               {active && (

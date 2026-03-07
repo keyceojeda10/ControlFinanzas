@@ -56,13 +56,13 @@ export default function ListaGastos({ soloPendientes = false, onCountChange, fec
   }
 
   if (loading) {
-    return <p className="text-sm text-[#555555]">Cargando...</p>
+    return <p className="text-sm text-[#888888]">Cargando...</p>
   }
 
   if (gastos.length === 0) {
     return (
       <div className="text-center py-6">
-        <p className="text-sm text-[#555555]">
+        <p className="text-sm text-[#888888]">
           {soloPendientes ? 'No hay gastos pendientes' : 'No hay gastos reportados'}
         </p>
       </div>
@@ -76,7 +76,7 @@ export default function ListaGastos({ soloPendientes = false, onCountChange, fec
           <div className="flex items-center justify-between mb-2">
             <div>
               <p className="text-sm font-medium text-white">{g.description}</p>
-              <p className="text-xs text-[#555555]">
+              <p className="text-xs text-[#888888]">
                 {g.cobradorNombre} • {new Date(g.fecha).toLocaleDateString('es-CO')}
               </p>
             </div>

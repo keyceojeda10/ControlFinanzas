@@ -178,7 +178,7 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="flex flex-col items-center px-5 py-4 border-b border-[#2a2a2a]">
         <Image src="/logo-full.svg" alt="Control Finanzas" width={160} height={40} priority />
-        {fechaHora && <span className="text-[10px] text-[#555555] mt-2">{fechaHora}</span>}
+        {fechaHora && <span className="text-[10px] text-[#888888] mt-2">{fechaHora}</span>}
       </div>
 
       {/* Nav links */}
@@ -193,7 +193,7 @@ export default function Sidebar() {
                 'flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm font-medium transition-all duration-150',
                 active
                   ? 'bg-[rgba(245,197,24,0.08)] text-[#f5c518] border-l-2 border-[#f5c518]'
-                  : 'text-[#555555] hover:bg-[#1a1a1a] hover:text-[#888888]',
+                  : 'text-[#888888] hover:bg-[#1a1a1a] hover:text-[#888888]',
               ].join(' ')}
             >
               {item.icon}
@@ -229,7 +229,7 @@ export default function Sidebar() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-white truncate">{session?.user?.nombre}</p>
-            <p className="text-[10px] text-[#555555] capitalize">{session?.user?.rol}</p>
+            <p className="text-[10px] text-[#888888]">{{ owner: 'Administrador', cobrador: 'Cobrador', superadmin: 'Super Admin' }[session?.user?.rol] ?? session?.user?.rol}</p>
           </div>
         </div>
         <button

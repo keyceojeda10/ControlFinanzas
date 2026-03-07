@@ -79,7 +79,7 @@ export async function POST(request) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
   }
   if (session.user.rol !== 'owner') {
-    return Response.json({ error: 'Solo los owners pueden crear rutas' }, { status: 403 })
+    return Response.json({ error: 'Solo el administrador puede crear rutas' }, { status: 403 })
   }
 
   const { organizationId } = session.user

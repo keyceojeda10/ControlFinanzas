@@ -50,7 +50,7 @@ export default function PrestamoCard({ prestamo: p }) {
           </div>
           <div>
             <p className="text-sm font-semibold text-[#f1f5f9] leading-none">{p.cliente?.nombre}</p>
-            <p className="text-[10px] text-[#64748b] mt-0.5">CC {p.cliente?.cedula}</p>
+            <p className="text-[10px] text-[#8b95a5] mt-0.5">CC {p.cliente?.cedula}</p>
           </div>
         </div>
         <div className="flex flex-col items-end gap-1">
@@ -70,13 +70,13 @@ export default function PrestamoCard({ prestamo: p }) {
       {/* Saldo */}
       <div className="flex items-end justify-between mb-2">
         <div>
-          <p className="text-[10px] text-[#64748b]">Saldo pendiente</p>
+          <p className="text-[10px] text-[#8b95a5]">Saldo pendiente</p>
           <p className={['text-lg font-bold leading-none', enMora ? 'text-[#ef4444]' : 'text-[#f1f5f9]'].join(' ')}>
             {formatCOP(p.saldoPendiente)}
           </p>
         </div>
         <div className="text-right">
-          <p className="text-[10px] text-[#64748b]">Prestado</p>
+          <p className="text-[10px] text-[#8b95a5]">Prestado</p>
           <p className="text-sm font-medium text-[#94a3b8]">{formatCOP(p.montoPrestado)}</p>
         </div>
       </div>
@@ -94,8 +94,8 @@ export default function PrestamoCard({ prestamo: p }) {
 
       {/* Footer */}
       <div className="flex items-center justify-between text-[10px]">
-        <span className="text-[#64748b]">{porcentaje}% pagado</span>
-        <span className="text-[#64748b]">Cuota {formatCOP(p.cuotaDiaria)}</span>
+        <span className="text-[#8b95a5]">{porcentaje}% pagado</span>
+        <span className="text-[#8b95a5]">Cuota {formatCOP(p.cuotaDiaria)}</span>
       </div>
     </Link>
   )

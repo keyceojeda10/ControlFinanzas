@@ -11,7 +11,7 @@ function KpiCard({ label, value, sub, color = '#ffffff', icon }) {
   return (
     <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] px-4 py-4">
       <div className="flex items-start justify-between gap-2 mb-2">
-        <p className="text-[11px] text-[#555555] leading-tight">{label}</p>
+        <p className="text-[11px] text-[#888888] leading-tight">{label}</p>
         {icon && (
           <div className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0" style={{ background: `${color}18` }}>
             <span style={{ color }} className="text-sm">{icon}</span>
@@ -19,7 +19,7 @@ function KpiCard({ label, value, sub, color = '#ffffff', icon }) {
         )}
       </div>
       <p className="text-xl font-bold leading-tight" style={{ color }}>{value}</p>
-      {sub && <p className="text-[10px] text-[#555555] mt-1">{sub}</p>}
+      {sub && <p className="text-[10px] text-[#888888] mt-1">{sub}</p>}
     </div>
   )
 }
@@ -32,7 +32,7 @@ function QuickLink({ href, label, desc, color }) {
       </div>
       <div className="min-w-0">
         <p className="text-sm font-medium text-white truncate">{label}</p>
-        <p className="text-[10px] text-[#555555] truncate">{desc}</p>
+        <p className="text-[10px] text-[#888888] truncate">{desc}</p>
       </div>
     </Link>
   )
@@ -84,7 +84,7 @@ export default function DashboardPage() {
     <div className="max-w-3xl mx-auto space-y-5">
       <div>
         <h1 className="text-xl font-bold text-white">Dashboard</h1>
-        <p className="text-sm text-[#555555] mt-0.5">{fechaActual || 'Resumen de tu cartera hoy'}</p>
+        <p className="text-sm text-[#888888] mt-0.5">{fechaActual || 'Resumen de tu cartera hoy'}</p>
       </div>
       {error && <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3">{error}</div>}
       {loading || !mounted ? (
@@ -102,18 +102,18 @@ export default function DashboardPage() {
       ) : data && (
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] px-4 py-4">
-            <p className="text-[11px] text-[#555555] mb-1">Recaudado hoy</p>
+            <p className="text-[11px] text-[#888888] mb-1">Recaudado hoy</p>
             <p className="text-2xl font-bold text-[#22c55e]">{formatCOP(data.cobros.hoy)}</p>
-            <p className="text-[10px] text-[#555555] mt-1">{data.cobros.cantidadHoy} pagos registrados</p>
+            <p className="text-[10px] text-[#888888] mt-1">{data.cobros.cantidadHoy} pagos registrados</p>
             <div className="mt-2 h-1.5 bg-[#2a2a2a] rounded-full overflow-hidden">
               <div className="h-full rounded-full bg-[#22c55e] transition-all" style={{ width: data.prestamos.cuotaDiariaTotal > 0 ? `${Math.min(100, Math.round((data.cobros.hoy / data.prestamos.cuotaDiariaTotal) * 100))}%` : '0%' }} />
             </div>
-            <p className="text-[10px] text-[#555555] mt-1">{data.prestamos.cuotaDiariaTotal > 0 ? `${Math.min(100, Math.round((data.cobros.hoy / data.prestamos.cuotaDiariaTotal) * 100))}% de la cuota diaria` : 'Sin cuotas esperadas'}</p>
+            <p className="text-[10px] text-[#888888] mt-1">{data.prestamos.cuotaDiariaTotal > 0 ? `${Math.min(100, Math.round((data.cobros.hoy / data.prestamos.cuotaDiariaTotal) * 100))}% de la cuota diaria` : 'Sin cuotas esperadas'}</p>
           </div>
           <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] px-4 py-4">
-            <p className="text-[11px] text-[#555555] mb-1">Recaudado este mes</p>
+            <p className="text-[11px] text-[#888888] mb-1">Recaudado este mes</p>
             <p className="text-2xl font-bold text-[#3b82f6]">{formatCOP(data.cobros.mes)}</p>
-            <p className="text-[10px] text-[#555555] mt-1">{data.cobros.cantidadMes} pagos en el mes</p>
+            <p className="text-[10px] text-[#888888] mt-1">{data.cobros.cantidadMes} pagos en el mes</p>
             {data.clientes.enMora > 0 && (<div className="mt-2 flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#ef4444]" /><p className="text-[10px] text-[#ef4444]">{moraPct}% de clientes en mora</p></div>)}
           </div>
         </div>
@@ -129,7 +129,7 @@ export default function DashboardPage() {
               <div key={p.id} className="flex items-center justify-between py-2.5">
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-white truncate">{p.cliente}</p>
-                  <p className="text-[10px] text-[#555555]">{fechaCorta(p.fecha)} · {p.tipo}</p>
+                  <p className="text-[10px] text-[#888888]">{fechaCorta(p.fecha)} · {p.tipo}</p>
                 </div>
                 <p className="text-sm font-bold text-[#22c55e] shrink-0 ml-3">+{formatCOP(p.monto)}</p>
               </div>

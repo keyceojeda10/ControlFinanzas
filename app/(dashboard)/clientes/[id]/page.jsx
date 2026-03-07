@@ -74,7 +74,7 @@ export default function ClienteDetallePage({ params }) {
       {/* Back */}
       <button
         onClick={() => router.back()}
-        className="flex items-center gap-1.5 text-sm text-[#555555] hover:text-[white] transition-colors"
+        className="flex items-center gap-1.5 text-sm text-[#888888] hover:text-[white] transition-colors"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -108,31 +108,31 @@ export default function ClienteDetallePage({ params }) {
             </div>
             <div className="mt-2 space-y-1">
               <p className="text-sm text-[#888888]">
-                <span className="text-[#555555]">CC</span> {cliente.cedula}
+                <span className="text-[#888888]">CC</span> {cliente.cedula}
               </p>
               {cliente.telefono && (
                 <p className="text-sm text-[#888888]">
-                  <span className="text-[#555555]">Tel.</span> {cliente.telefono}
+                  <span className="text-[#888888]">Tel.</span> {cliente.telefono}
                 </p>
               )}
               {cliente.direccion && (
                 <p className="text-sm text-[#888888]">
-                  <span className="text-[#555555]">Dir.</span> {cliente.direccion}
+                  <span className="text-[#888888]">Dir.</span> {cliente.direccion}
                 </p>
               )}
               {cliente.referencia && (
                 <p className="text-sm text-[#888888]">
-                  <span className="text-[#555555]">Ref.</span> {cliente.referencia}
+                  <span className="text-[#888888]">Ref.</span> {cliente.referencia}
                 </p>
               )}
               {cliente.notas && (
                 <p className="text-sm text-[#888888] whitespace-pre-wrap">
-                  <span className="text-[#555555]">Notas:</span> {cliente.notas}
+                  <span className="text-[#888888]">Notas:</span> {cliente.notas}
                 </p>
               )}
               {cliente.ruta && (
                 <p className="text-sm text-[#888888]">
-                  <span className="text-[#555555]">Ruta</span> {cliente.ruta.nombre}
+                  <span className="text-[#888888]">Ruta</span> {cliente.ruta.nombre}
                 </p>
               )}
             </div>
@@ -182,7 +182,7 @@ export default function ClienteDetallePage({ params }) {
       {prestamosActivos.length === 0 && (
         <Card>
           <div className="text-center py-4">
-            <p className="text-sm text-[#555555]">Sin préstamos activos</p>
+            <p className="text-sm text-[#888888]">Sin préstamos activos</p>
           </div>
         </Card>
       )}
@@ -217,12 +217,12 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, mini = false }) {
       >
         <div className="flex-1 min-w-0">
           <p className="text-sm text-[white]">{formatCOP(p.montoPrestado)}</p>
-          <p className="text-xs text-[#555555]">
+          <p className="text-xs text-[#888888]">
             {new Date(p.fechaInicio).toLocaleDateString('es-CO')}
           </p>
         </div>
         <Badge variant={badge.variant}>{badge.label}</Badge>
-        <svg className="w-4 h-4 text-[#2a2a2a] group-hover:text-[#555555] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-4 h-4 text-[#2a2a2a] group-hover:text-[#888888] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
       </Link>
@@ -234,7 +234,7 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, mini = false }) {
       <div className="flex items-start justify-between mb-3">
         <div>
           <p className="text-base font-bold text-[white]">{formatCOP(p.montoPrestado)}</p>
-          <p className="text-xs text-[#555555] mt-0.5">
+          <p className="text-xs text-[#888888] mt-0.5">
             Prestado el {new Date(p.fechaInicio).toLocaleDateString('es-CO')}
           </p>
         </div>
@@ -243,7 +243,7 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, mini = false }) {
 
       {/* Barra de progreso */}
       <div className="mb-3">
-        <div className="flex justify-between text-xs text-[#555555] mb-1.5">
+        <div className="flex justify-between text-xs text-[#888888] mb-1.5">
           <span>Pagado: {formatCOP(p.montoPrestado - (p.saldoPendiente ?? 0))}</span>
           <span>{porcentaje}%</span>
         </div>
@@ -257,7 +257,7 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, mini = false }) {
           />
         </div>
         <div className="flex justify-between text-xs mt-1.5">
-          <span className="text-[#555555]">Saldo: <span className="text-[white] font-medium">{formatCOP(p.saldoPendiente)}</span></span>
+          <span className="text-[#888888]">Saldo: <span className="text-[white] font-medium">{formatCOP(p.saldoPendiente)}</span></span>
           {p.diasMora > 0 && (
             <span className="text-[#ef4444] font-medium">{p.diasMora} días en mora</span>
           )}

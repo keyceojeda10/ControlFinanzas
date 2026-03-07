@@ -43,7 +43,7 @@ function PlanGate() {
           </svg>
         </div>
         <p className="text-base font-bold text-[white] mb-2">Reportes avanzados</p>
-        <p className="text-sm text-[#555555] mb-5">
+        <p className="text-sm text-[#888888] mb-5">
           Accede a gráficas de ingresos, métricas de cobradores, análisis de cartera y exportación a Excel.
         </p>
         <div className="inline-flex flex-col gap-2 text-xs text-[#888888] text-left">
@@ -141,7 +141,7 @@ export default function ReportesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2">
         <div>
           <h1 className="text-xl font-bold text-[white]">Reportes</h1>
-          <p className="text-sm text-[#555555] mt-0.5">Análisis de tu cartera y cobradores</p>
+          <p className="text-sm text-[#888888] mt-0.5">Análisis de tu cartera y cobradores</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <input
@@ -150,7 +150,7 @@ export default function ReportesPage() {
             onChange={(e) => setDesde(e.target.value)}
             className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#3b82f6]"
           />
-          <span className="text-[#555555] text-xs">—</span>
+          <span className="text-[#888888] text-xs">—</span>
           <input
             type="date"
             value={hasta}
@@ -177,7 +177,7 @@ export default function ReportesPage() {
               { label: 'Cartera activa',    value: formatCOP(resumen.prestamos.carteraActiva), color: '#22c55e' },
             ].map(({ label, value, color }) => (
               <div key={label} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-3 text-center">
-                <p className="text-[10px] text-[#555555]">{label}</p>
+                <p className="text-[10px] text-[#888888]">{label}</p>
                 <p className="text-base font-bold mt-0.5" style={{ color }}>{value}</p>
               </div>
             ))}
@@ -185,14 +185,14 @@ export default function ReportesPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-4 py-3">
-              <p className="text-[10px] text-[#555555]">Ingresos del período</p>
+              <p className="text-[10px] text-[#888888]">Ingresos del período</p>
               <p className="text-lg font-bold text-[#22c55e] mt-0.5">{formatCOP(resumen.pagos.totalPeriodo)}</p>
-              <p className="text-[10px] text-[#555555] mt-0.5">{resumen.pagos.cantidad} pagos</p>
+              <p className="text-[10px] text-[#888888] mt-0.5">{resumen.pagos.cantidad} pagos</p>
             </div>
             <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-4 py-3">
-              <p className="text-[10px] text-[#555555]">Capital prestado activo</p>
+              <p className="text-[10px] text-[#888888]">Capital prestado activo</p>
               <p className="text-lg font-bold text-[#3b82f6] mt-0.5">{formatCOP(resumen.prestamos.capitalPrestado)}</p>
-              <p className="text-[10px] text-[#555555] mt-0.5">{resumen.prestamos.completados} completados</p>
+              <p className="text-[10px] text-[#888888] mt-0.5">{resumen.prestamos.completados} completados</p>
             </div>
           </div>
         </>
@@ -201,7 +201,7 @@ export default function ReportesPage() {
       {/* ── 2. Gráfica de ingresos ───────────────────────────── */}
       <Card>
         <div className="flex items-center justify-between mb-4">
-          <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide">Ingresos</p>
+          <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Ingresos</p>
           <div className="flex gap-1.5">
             {['diario', 'semanal', 'mensual'].map((p) => (
               <button
@@ -210,7 +210,7 @@ export default function ReportesPage() {
                 className={`px-2.5 py-1 rounded-[8px] text-[10px] font-medium capitalize transition-all ${
                   periodoIngresos === p
                     ? 'bg-[#3b82f6] text-white'
-                    : 'bg-[#2a2a2a] text-[#555555] hover:text-[white]'
+                    : 'bg-[#2a2a2a] text-[#888888] hover:text-[white]'
                 }`}
               >
                 {p}
@@ -220,7 +220,7 @@ export default function ReportesPage() {
         </div>
 
         {ingresos.length === 0 ? (
-          <p className="text-sm text-[#555555] text-center py-8">Sin pagos en el período</p>
+          <p className="text-sm text-[#888888] text-center py-8">Sin pagos en el período</p>
         ) : (
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={ingresos} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
@@ -252,11 +252,11 @@ export default function ReportesPage() {
       {/* ── 3. Cartera por ruta ──────────────────────────────── */}
       {cartera.length > 0 && (
         <Card>
-          <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">
+          <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">
             Cartera por ruta
           </p>
           <div className="space-y-0">
-            <div className="grid grid-cols-4 gap-2 text-[10px] text-[#555555] font-medium uppercase pb-2 border-b border-[#2a2a2a]">
+            <div className="grid grid-cols-4 gap-2 text-[10px] text-[#888888] font-medium uppercase pb-2 border-b border-[#2a2a2a]">
               <span>Ruta / Cobrador</span>
               <span className="text-right">Clientes</span>
               <span className="text-right">Cartera</span>
@@ -280,7 +280,7 @@ export default function ReportesPage() {
       {/* ── 4. Rendimiento cobradores ────────────────────────── */}
       {cobsData.length > 0 && (
         <Card>
-          <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">
+          <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">
             Rendimiento de cobradores
           </p>
           <div className="space-y-3">
@@ -289,7 +289,7 @@ export default function ReportesPage() {
                 <div className="flex justify-between text-sm">
                   <div>
                     <span className="font-medium text-[white]">{c.nombre}</span>
-                    <span className="text-[10px] text-[#555555] ml-2">{c.ruta}</span>
+                    <span className="text-[10px] text-[#888888] ml-2">{c.ruta}</span>
                   </div>
                   <span
                     className="text-xs font-bold"
@@ -307,7 +307,7 @@ export default function ReportesPage() {
                     }}
                   />
                 </div>
-                <div className="flex justify-between text-[10px] text-[#555555]">
+                <div className="flex justify-between text-[10px] text-[#888888]">
                   <span>Esperado: {formatCOP(c.totalEsperado)}</span>
                   <span>Recogido: {formatCOP(c.totalRecogido)}</span>
                   <span>{c.diasTrabajados} días</span>
@@ -320,7 +320,7 @@ export default function ReportesPage() {
 
       {/* ── 5. Exportar a Excel ──────────────────────────────── */}
       <Card>
-        <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">
+        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">
           Exportar a Excel
         </p>
         <div className="grid grid-cols-2 gap-3">
@@ -345,7 +345,7 @@ export default function ReportesPage() {
                   {descargando === tipo ? 'Descargando…' : label}
                 </span>
               </div>
-              <p className="text-[10px] text-[#555555] pl-6">{desc}</p>
+              <p className="text-[10px] text-[#888888] pl-6">{desc}</p>
             </button>
           ))}
         </div>

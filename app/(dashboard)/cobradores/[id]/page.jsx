@@ -76,7 +76,7 @@ export default function CobradorDetallePage({ params }) {
       {/* Back */}
       <button
         onClick={() => router.back()}
-        className="flex items-center gap-1.5 text-sm text-[#555555] hover:text-[white] transition-colors"
+        className="flex items-center gap-1.5 text-sm text-[#888888] hover:text-[white] transition-colors"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -93,7 +93,7 @@ export default function CobradorDetallePage({ params }) {
             </div>
             <div>
               <h1 className="text-lg font-bold text-[white]">{data.nombre}</h1>
-              <p className="text-sm text-[#555555]">{data.email}</p>
+              <p className="text-sm text-[#888888]">{data.email}</p>
             </div>
           </div>
           <button onClick={toggleActivo} disabled={toggling} title={data.activo ? 'Desactivar' : 'Activar'}>
@@ -105,22 +105,22 @@ export default function CobradorDetallePage({ params }) {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         <Card>
-          <p className="text-[10px] text-[#555555]">Recaudado hoy</p>
+          <p className="text-[10px] text-[#888888]">Recaudado hoy</p>
           <p className="text-lg font-bold text-[#22c55e]">{formatCOP(data.recaudadoHoy)}</p>
         </Card>
         <Card>
-          <p className="text-[10px] text-[#555555]">Cobros hoy</p>
+          <p className="text-[10px] text-[#888888]">Cobros hoy</p>
           <p className="text-lg font-bold text-[white]">{data.pagosMes}</p>
         </Card>
         <Card>
-          <p className="text-[10px] text-[#555555]">Clientes</p>
+          <p className="text-[10px] text-[#888888]">Clientes</p>
           <p className="text-lg font-bold text-[white]">{clientes.length}</p>
         </Card>
       </div>
 
       {/* Ruta */}
       <Card>
-        <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-3">Ruta asignada</p>
+        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-3">Ruta asignada</p>
         {ruta ? (
           <Link href={`/rutas/${ruta.id}`} className="flex items-center gap-3 hover:bg-[#111111] -mx-1 px-1 py-2 rounded-[10px] transition-colors">
             <div className="w-9 h-9 rounded-full bg-[rgba(59,130,246,0.15)] flex items-center justify-center shrink-0">
@@ -130,7 +130,7 @@ export default function CobradorDetallePage({ params }) {
             </div>
             <div>
               <p className="text-sm font-semibold text-[white]">{ruta.nombre}</p>
-              <p className="text-xs text-[#555555]">{clientes.length} clientes</p>
+              <p className="text-xs text-[#888888]">{clientes.length} clientes</p>
             </div>
           </Link>
         ) : (
@@ -141,7 +141,7 @@ export default function CobradorDetallePage({ params }) {
       {/* Clientes de la ruta */}
       {clientes.length > 0 && (
         <Card>
-          <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-3">
+          <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-3">
             Clientes ({clientes.length})
           </p>
           <div className="space-y-2">

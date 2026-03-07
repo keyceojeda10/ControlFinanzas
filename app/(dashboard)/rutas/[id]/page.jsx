@@ -133,7 +133,7 @@ export default function RutaDetallePage({ params }) {
 
   return (
     <div className="max-w-2xl mx-auto space-y-4">
-      <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-[#555555] hover:text-[white] transition-colors">
+      <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-[#888888] hover:text-[white] transition-colors">
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
@@ -178,7 +178,7 @@ export default function RutaDetallePage({ params }) {
           { label: 'En mora',           value: `${ruta.enMora} cliente${ruta.enMora !== 1 ? 's' : ''}`, color: ruta.enMora > 0 ? '#ef4444' : '#22c55e' },
         ].map(({ label, value, color }) => (
           <div key={label} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-3">
-            <p className="text-[10px] text-[#555555]">{label}</p>
+            <p className="text-[10px] text-[#888888]">{label}</p>
             <p className="text-base font-bold mt-0.5" style={{ color }}>{value}</p>
           </div>
         ))}
@@ -187,7 +187,7 @@ export default function RutaDetallePage({ params }) {
       {/* Barra de progreso del día */}
       <Card padding={false}>
         <div className="px-4 py-3">
-          <div className="flex justify-between text-xs text-[#555555] mb-1.5">
+          <div className="flex justify-between text-xs text-[#888888] mb-1.5">
             <span>Progreso del día</span>
             <span>{progreso}%</span>
           </div>
@@ -206,7 +206,7 @@ export default function RutaDetallePage({ params }) {
       {/* Clientes de la ruta */}
       <Card>
         <div className="flex items-center justify-between mb-4">
-          <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide">
+          <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">
             Clientes ({ruta.clientes?.length ?? 0})
           </p>
           {esOwner && (
@@ -217,7 +217,7 @@ export default function RutaDetallePage({ params }) {
         </div>
 
         {(!ruta.clientes || ruta.clientes.length === 0) ? (
-          <p className="text-sm text-[#555555] text-center py-4">Sin clientes asignados</p>
+          <p className="text-sm text-[#888888] text-center py-4">Sin clientes asignados</p>
         ) : (
           <div className="space-y-2.5">
             {ruta.clientes.map((c) => (
@@ -227,7 +227,7 @@ export default function RutaDetallePage({ params }) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-[white] truncate">{c.nombre}</p>
-                  <p className="text-[10px] text-[#555555]">
+                  <p className="text-[10px] text-[#888888]">
                     {c.diasMora > 0 ? `${c.diasMora} días en mora` : c.pagoHoy ? 'Pagó hoy' : 'Pendiente'}
                   </p>
                 </div>
@@ -238,7 +238,7 @@ export default function RutaDetallePage({ params }) {
                     <button
                       onClick={() => quitarCliente(c.id)}
                       disabled={quitando === c.id}
-                      className="text-[#555555] hover:text-[#ef4444] transition-colors disabled:opacity-50"
+                      className="text-[#888888] hover:text-[#ef4444] transition-colors disabled:opacity-50"
                       title="Quitar de la ruta"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -255,21 +255,21 @@ export default function RutaDetallePage({ params }) {
 
       {/* Cierre de caja */}
       <Card>
-        <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">
+        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">
           Cierre de caja del día
         </p>
         {ruta.cierre ? (
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-[#555555]">Esperado</span>
+              <span className="text-[#888888]">Esperado</span>
               <span className="text-[white] font-medium">{formatCOP(ruta.cierre.totalEsperado)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-[#555555]">Entregado</span>
+              <span className="text-[#888888]">Entregado</span>
               <span className="text-[white] font-medium">{formatCOP(ruta.cierre.totalRecogido)}</span>
             </div>
             <div className="flex justify-between text-sm font-bold border-t border-[#2a2a2a] pt-2 mt-2">
-              <span className="text-[#555555]">Diferencia</span>
+              <span className="text-[#888888]">Diferencia</span>
               <span style={{ color: ruta.cierre.diferencia >= 0 ? '#22c55e' : '#ef4444' }}>
                 {ruta.cierre.diferencia >= 0 ? '+' : ''}{formatCOP(ruta.cierre.diferencia)}
               </span>
@@ -277,7 +277,7 @@ export default function RutaDetallePage({ params }) {
           </div>
         ) : (
           <div className="text-center py-2">
-            <p className="text-sm text-[#555555] mb-3">No se ha registrado el cierre de hoy</p>
+            <p className="text-sm text-[#888888] mb-3">No se ha registrado el cierre de hoy</p>
             <Button onClick={() => { setTotalRecogido(''); setModalCaja(true) }}>
               Registrar cierre de caja
             </Button>
@@ -300,7 +300,7 @@ export default function RutaDetallePage({ params }) {
         }
       >
         {clientesSinRuta.length === 0 ? (
-          <p className="text-sm text-[#555555] text-center py-4">Todos los clientes ya tienen ruta asignada</p>
+          <p className="text-sm text-[#888888] text-center py-4">Todos los clientes ya tienen ruta asignada</p>
         ) : (
           <div className="space-y-2">
             {clientesSinRuta.map((c) => (
@@ -319,7 +319,7 @@ export default function RutaDetallePage({ params }) {
                 />
                 <div>
                   <p className="text-sm font-medium text-[white]">{c.nombre}</p>
-                  <p className="text-xs text-[#555555]">CC {c.cedula}</p>
+                  <p className="text-xs text-[#888888]">CC {c.cedula}</p>
                 </div>
               </label>
             ))}
@@ -346,7 +346,7 @@ export default function RutaDetallePage({ params }) {
             </div>
           )}
           <div className="flex justify-between text-sm">
-            <span className="text-[#555555]">Total esperado hoy</span>
+            <span className="text-[#888888]">Total esperado hoy</span>
             <span className="font-semibold text-[white]">{formatCOP(ruta.esperadoHoy)}</span>
           </div>
           <div className="flex flex-col gap-1.5">
@@ -357,13 +357,13 @@ export default function RutaDetallePage({ params }) {
               placeholder="Ej: 250000"
               value={totalRecogido}
               onChange={(e) => setTotalRecogido(e.target.value)}
-              className="w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] placeholder-[#555555] focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[rgba(59,130,246,0.3)] transition-all"
+              className="w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] placeholder-[#777777] focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[rgba(59,130,246,0.3)] transition-all"
               autoFocus
             />
           </div>
           {totalRecogido && (
             <div className="text-sm">
-              <span className="text-[#555555]">Diferencia: </span>
+              <span className="text-[#888888]">Diferencia: </span>
               <span style={{ color: Number(totalRecogido) >= ruta.esperadoHoy ? '#22c55e' : '#ef4444', fontWeight: 700 }}>
                 {Number(totalRecogido) >= ruta.esperadoHoy ? '+' : ''}{formatCOP(Number(totalRecogido) - ruta.esperadoHoy)}
               </span>

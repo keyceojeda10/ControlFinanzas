@@ -53,7 +53,7 @@ export default function ClientesPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold text-[white]">Clientes</h1>
-          <p className="text-sm text-[#555555] mt-0.5">
+          <p className="text-sm text-[#888888] mt-0.5">
             {loading ? '...' : `${clientes.length} cliente${clientes.length !== 1 ? 's' : ''}`}
             {!loading && clientes.filter((c) => c.estado === 'mora').length > 0 && (
               <span className="ml-2 text-[#ef4444]">· {clientes.filter((c) => c.estado === 'mora').length} en mora</span>
@@ -88,7 +88,7 @@ export default function ClientesPage() {
                 'shrink-0 px-3 h-8 rounded-full text-xs font-medium border transition-all',
                 isActive
                   ? 'border-current'
-                  : 'bg-transparent border-[#2a2a2a] text-[#555555] hover:bg-[#222222] hover:text-[white]',
+                  : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#222222] hover:text-[white]',
               ].join(' ')}
               style={isActive ? { color: accent, backgroundColor: `${accent}20` } : undefined}
             >
@@ -101,7 +101,7 @@ export default function ClientesPage() {
       {/* Buscador */}
       <div className="relative mb-5">
         <svg
-          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#555555] pointer-events-none"
+          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#888888] pointer-events-none"
           fill="none" stroke="currentColor" viewBox="0 0 24 24"
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
@@ -112,12 +112,12 @@ export default function ClientesPage() {
           value={buscar}
           onChange={(e) => setBuscar(e.target.value)}
           placeholder="Buscar por nombre, cédula o teléfono…"
-          className="w-full h-10 pl-9 pr-4 rounded-[12px] border border-[#2a2a2a] bg-[#1a1a1a] text-sm text-[white] placeholder-[#555555] focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[rgba(59,130,246,0.3)] transition-all"
+          className="w-full h-10 pl-9 pr-4 rounded-[12px] border border-[#2a2a2a] bg-[#1a1a1a] text-sm text-[white] placeholder-[#777777] focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[rgba(59,130,246,0.3)] transition-all"
         />
         {buscar && (
           <button
             onClick={() => setBuscar('')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#555555] hover:text-[white]"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#888888] hover:text-[white]"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -169,7 +169,7 @@ export default function ClientesPage() {
           {buscar ? (
             <>
               <p className="text-sm font-medium text-[white]">Sin resultados</p>
-              <p className="text-xs text-[#555555] mt-1">No se encontró ningún cliente con "{buscar}"</p>
+              <p className="text-xs text-[#888888] mt-1">No se encontró ningún cliente con "{buscar}"</p>
               <button onClick={() => setBuscar('')} className="mt-3 text-xs text-[#3b82f6] hover:underline">
                 Limpiar búsqueda
               </button>
@@ -177,7 +177,7 @@ export default function ClientesPage() {
           ) : (
             <>
               <p className="text-sm font-medium text-[white]">No hay clientes aún</p>
-              <p className="text-xs text-[#555555] mt-1">Crea el primer cliente para comenzar</p>
+              <p className="text-xs text-[#888888] mt-1">Crea el primer cliente para comenzar</p>
               {!authLoading && esOwner && (
                 <Link href="/clientes/nuevo" className="mt-4">
                   <Button size="sm">Crear primer cliente</Button>
