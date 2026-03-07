@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server'
 import bcrypt           from 'bcryptjs'
 import { prisma }       from '@/lib/prisma'
+import { enviarEmail, emailBienvenida } from '@/lib/email'
 
 export async function POST(req) {
   const body = await req.json()
@@ -60,8 +61,19 @@ export async function POST(req) {
       },
     })
 
-    return { org, user }
+    return { org, user, vencimiento }
   })
+
+  // Enviar email de bienvenida (no bloquea la respuesta)
+  const vencimiento = new Date()
+  vencimiento.setDate(vencimiento.getDate() + 15)
+  const { subject, html } = emailBienvenida({
+    nombre: nombre.trim(),
+    email: email.trim().toLowerCase(),
+    nombreOrg: nombreOrganizacion.trim(),
+    fechaVencimiento: vencimiento,
+  })
+  enviarEmail({ to: email.trim().toLowerCase(), subject, html }).catch(() => {})
 
   return NextResponse.json({
     ok: true,

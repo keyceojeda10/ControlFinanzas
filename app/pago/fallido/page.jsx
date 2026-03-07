@@ -30,9 +30,7 @@ export default function PagoFallido() {
             Intentar de nuevo
           </Link>
           <a
-            href="https://wa.me/573001234567"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="mailto:soporte@control-finanzas.com"
             className="inline-flex items-center justify-center h-11 px-8 rounded-[12px] bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222222] text-[#888888] font-medium text-sm transition-all"
           >
             Contactar soporte

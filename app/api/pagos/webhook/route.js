@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { prisma }       from '@/lib/prisma'
 import { paymentApi }   from '@/lib/mercadopago'
 import crypto           from 'crypto'
+import { enviarEmail, emailPagoAprobado, emailPagoFallido } from '@/lib/email'
 
 function verificarFirma(req, body) {
   const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET
@@ -126,6 +127,23 @@ export async function POST(req) {
           },
         })
       }
+      // Enviar email de confirmación al owner
+      const owner = await prisma.user.findFirst({
+        where: { organizationId: orgId, rol: 'owner' },
+        select: { nombre: true, email: true },
+      })
+      if (owner) {
+        const fechaVenc = subExistente
+          ? (await prisma.suscripcion.findFirst({ where: { organizationId: orgId }, orderBy: { createdAt: 'desc' } }))?.fechaVencimiento
+          : vencimiento
+        const { subject, html } = emailPagoAprobado({
+          nombre: owner.nombre,
+          plan: plan || 'basic',
+          monto: payment.transaction_amount ?? 0,
+          fechaVencimiento: fechaVenc,
+        })
+        enviarEmail({ to: owner.email, subject, html }).catch(() => {})
+      }
     } else if (status === 'rejected' || status === 'cancelled') {
       // Registrar intento fallido
       const admin = await prisma.user.findFirst({ where: { rol: 'superadmin' } })
@@ -138,6 +156,19 @@ export async function POST(req) {
             detalle:        `Pago ${status} en MercadoPago #${data.id}. Plan: ${plan}`,
           },
         })
+      }
+      // Enviar email de pago fallido
+      const ownerFallido = await prisma.user.findFirst({
+        where: { organizationId: orgId, rol: 'owner' },
+        select: { nombre: true, email: true },
+      })
+      if (ownerFallido) {
+        const { subject, html } = emailPagoFallido({
+          nombre: ownerFallido.nombre,
+          plan: plan || 'basic',
+          monto: payment.transaction_amount ?? 0,
+        })
+        enviarEmail({ to: ownerFallido.email, subject, html }).catch(() => {})
       }
     }
     // pending e in_process: no hacer nada, esperar siguiente notificación
