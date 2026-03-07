@@ -29,29 +29,35 @@ const getHoyColombia = () => {
 }
 
 
+// Calcula el total esperado real desde los préstamos activos de las rutas
+async function calcularEsperadoReal(organizationId, cobradorId = null) {
+  const whereRuta = { organizationId, activo: true }
+  if (cobradorId) whereRuta.cobradorId = cobradorId
+
+  const rutas = await prisma.ruta.findMany({
+    where: whereRuta,
+    select: {
+      clientes: {
+        select: {
+          prestamos: {
+            where: { estado: 'activo' },
+            select: { cuotaDiaria: true },
+          },
+        },
+      },
+    },
+  })
+
+  return rutas.reduce((total, ruta) =>
+    total + ruta.clientes.reduce((a, c) =>
+      a + c.prestamos.reduce((b, p) => b + p.cuotaDiaria, 0), 0), 0)
+}
+
 // Calcula estadísticas del día
 async function getStatsDia(organizationId, fecha, cobradorId = null) {
   // Convertir fecha Colombia a UTC
   const fechaStr = typeof fecha === 'string' ? fecha : fecha.toISOString().slice(0, 10)
   const { inicio, fin } = getColombiaDayRange(fechaStr)
-
-  const whereCierres = {
-    organizationId,
-    fecha: { gte: inicio, lt: fin },
-  }
-  if (cobradorId) {
-    whereCierres.cobradorId = cobradorId
-  }
-
-  const cierres = await prisma.cierreCaja.findMany({
-    where: whereCierres,
-    select: {
-      totalEsperado: true,
-      totalRecogido: true,
-      totalGastos: true,
-      diferencia: true
-    }
-  })
 
   // Obtener pagos del día usando rango UTC correcto
   const wherePagos = {
@@ -61,17 +67,31 @@ async function getStatsDia(organizationId, fecha, cobradorId = null) {
   if (cobradorId) {
     wherePagos.cobradorId = cobradorId
   }
-  
+
   const pagosDia = await prisma.pago.findMany({
     where: wherePagos,
     select: { montoPagado: true }
   })
-  
-  const pagosDirectos = pagosDia.reduce((a, p) => a + p.montoPagado, 0)
 
-  const esperado = cierres.reduce((a, c) => a + c.totalEsperado, 0)
-  const recogida = cierres.reduce((a, c) => a + c.totalRecogido, 0) + pagosDirectos
-  const gastos = cierres.reduce((a, c) => a + (c.totalGastos || 0), 0)
+  const recogida = pagosDia.reduce((a, p) => a + p.montoPagado, 0)
+
+  // Calcular esperado real desde las cuotas diarias de préstamos activos
+  const esperado = Math.round(await calcularEsperadoReal(organizationId, cobradorId))
+
+  // Obtener gastos del día
+  const whereGastosDia = {
+    organizationId,
+    fecha: { gte: inicio, lt: fin },
+    estado: 'aprobado',
+  }
+  if (cobradorId) whereGastosDia.cobradorId = cobradorId
+
+  const gastosDia = await prisma.gastoMenor.aggregate({
+    where: whereGastosDia,
+    _sum: { monto: true },
+  })
+
+  const gastos = gastosDia._sum?.monto || 0
   const diferencia = recogida - esperado
   const disponible = recogida - gastos
 
@@ -85,7 +105,6 @@ async function getStatsDia(organizationId, fecha, cobradorId = null) {
     diferencia,
     disponible,
     tasaRecaudo,
-    pagosDirectos
   }
 }
 

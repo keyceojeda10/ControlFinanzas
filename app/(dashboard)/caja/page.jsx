@@ -123,7 +123,7 @@ export default function CajaPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-white">Caja del d\u00eda</h1>
+            <h1 className="text-xl font-bold text-white">Caja del día</h1>
             <p className="text-sm text-[#888888] mt-0.5">{cajaData?.fechaDisplay || '—'}</p>
           </div>
           <input
@@ -143,7 +143,7 @@ export default function CajaPage() {
         {/* Resumen de recaudo */}
         <Card>
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Recaudo del d\u00eda</p>
+            <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Recaudo del día</p>
             {tasaRecaudo > 0 && (
               <span className="text-sm font-bold" style={{ color: colorRecaudo }}>
                 {tasaRecaudo}%
@@ -200,7 +200,7 @@ export default function CajaPage() {
         ) : esHoy ? (
           <Card>
             <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">
-              Registrar cierre del d\u00eda
+              Registrar cierre del día
             </p>
             {exito && (
               <div className="mb-4 flex items-center gap-2 bg-[rgba(16,185,129,0.1)] border border-[rgba(16,185,129,0.2)] text-[#22c55e] text-sm rounded-[12px] px-4 py-3">
@@ -244,7 +244,7 @@ export default function CajaPage() {
         ) : (
           <Card>
             <div className="text-center py-4">
-              <p className="text-sm text-[#888888]">No se registr\u00f3 cierre este d\u00eda</p>
+              <p className="text-sm text-[#888888]">No se registró cierre este día</p>
             </div>
           </Card>
         )}
@@ -298,10 +298,10 @@ export default function CajaPage() {
         </div>
       )}
 
-      {/* Resumen del d\u00eda */}
+      {/* Resumen del día */}
       <Card>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Resumen del d\u00eda</p>
+          <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Resumen del día</p>
           {tasaRecaudo > 0 && (
             <span className="text-sm font-bold" style={{ color: colorRecaudo }}>
               {tasaRecaudo}% recaudo
@@ -385,7 +385,7 @@ export default function CajaPage() {
                       </div>
                     </div>
                   ) : (
-                    <p className="text-xs text-[#555555] mt-1">A\u00fan no ha registrado cierre</p>
+                    <p className="text-xs text-[#555555] mt-1">Aún no ha registrado cierre</p>
                   )}
                 </div>
               )
