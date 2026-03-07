@@ -14,8 +14,28 @@ export default function CobradoresPage() {
   const [cobradores, setCobradores] = useState([])
   const [loading,    setLoading]    = useState(true)
   const [error,      setError]      = useState('')
+  const [toggling,   setToggling]   = useState(null)
 
   const plan = session?.user?.plan ?? 'basic'
+
+  const toggleCobrador = async (cobrador) => {
+    setToggling(cobrador.id)
+    try {
+      const res = await fetch(`/api/cobradores/${cobrador.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ activo: !cobrador.activo }),
+      })
+      if (!res.ok) throw new Error()
+      setCobradores((prev) =>
+        prev.map((c) => c.id === cobrador.id ? { ...c, activo: !c.activo } : c)
+      )
+    } catch {
+      setError('No se pudo cambiar el estado del cobrador.')
+    } finally {
+      setToggling(null)
+    }
+  }
 
   useEffect(() => {
     if (authLoading || !esOwner) { setLoading(false); return }
@@ -106,9 +126,10 @@ export default function CobradoresPage() {
       {!loading && cobradores.length > 0 && (
         <div className="space-y-3">
           {cobradores.map((c) => (
-            <div
+            <Link
               key={c.id}
-              className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-4"
+              href={`/cobradores/${c.id}`}
+              className="block bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-4 hover:border-[#3a3a3a] hover:bg-[#1e1e1e] transition-all"
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
@@ -120,7 +141,14 @@ export default function CobradoresPage() {
                     <p className="text-xs text-[#555555]">{c.email}</p>
                   </div>
                 </div>
-                <Badge variant={c.activo ? 'green' : 'gray'}>{c.activo ? 'Activo' : 'Inactivo'}</Badge>
+                <button
+                  onClick={(e) => { e.preventDefault(); toggleCobrador(c) }}
+                  disabled={toggling === c.id}
+                  className="shrink-0"
+                  title={c.activo ? 'Desactivar cobrador' : 'Activar cobrador'}
+                >
+                  <Badge variant={c.activo ? 'green' : 'gray'}>{c.activo ? 'Activo' : 'Inactivo'}</Badge>
+                </button>
               </div>
 
               <div className="grid grid-cols-3 gap-3 pt-3 border-t border-[#2a2a2a] text-center">
@@ -139,7 +167,7 @@ export default function CobradoresPage() {
                   <p className="text-xs font-bold text-[#22c55e]">{formatCOP(c.recaudadoHoy)}</p>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}

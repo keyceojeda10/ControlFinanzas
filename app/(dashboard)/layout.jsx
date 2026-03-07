@@ -1,9 +1,10 @@
 // app/(dashboard)/layout.jsx - Layout del dashboard con Sidebar, Header y BottomNav
 
-import Sidebar     from '@/components/layout/Sidebar'
-import Header      from '@/components/layout/Header'
-import BottomNav   from '@/components/layout/BottomNav'
-import PageWrapper from '@/components/layout/PageWrapper'
+import Sidebar        from '@/components/layout/Sidebar'
+import Header         from '@/components/layout/Header'
+import BottomNav      from '@/components/layout/BottomNav'
+import PageWrapper    from '@/components/layout/PageWrapper'
+import SinRutaBanner  from '@/components/layout/SinRutaBanner'
 
 export default function DashboardLayout({ children }) {
   return (
@@ -15,6 +16,9 @@ export default function DashboardLayout({ children }) {
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header – visible solo en mobile */}
         <Header />
+
+        {/* Aviso cobrador sin ruta */}
+        <SinRutaBanner />
 
         {/* Contenido de la página – PageWrapper anima solo al cambiar ruta */}
         <main className="flex-1 px-4 py-5 lg:px-6 lg:py-6 pb-24 lg:pb-6 overflow-y-auto">

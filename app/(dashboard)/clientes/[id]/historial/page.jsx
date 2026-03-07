@@ -2,7 +2,7 @@
 // app/(dashboard)/clientes/[id]/historial/page.jsx - Historial de pagos del cliente
 
 import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { Card } from '@/components/ui/Card'
 import { SkeletonCard } from '@/components/ui/Skeleton'
@@ -14,6 +14,7 @@ const fmtFecha = (d) => d
 
 export default function HistorialPage() {
   const params = useParams()
+  const router = useRouter()
   const { session, loading: authLoading } = useAuth()
   const [historial, setHistorial] = useState([])
   const [loading, setLoading] = useState(true)
@@ -43,6 +44,16 @@ export default function HistorialPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-4">
+      <button
+        onClick={() => router.back()}
+        className="flex items-center gap-1.5 text-sm text-[#555555] hover:text-[white] transition-colors"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+        Volver al cliente
+      </button>
+
       <div className="mb-4">
         <h1 className="text-xl font-bold text-[white]">Historial de Pagos</h1>
         <p className="text-sm text-[#555555] mt-0.5">

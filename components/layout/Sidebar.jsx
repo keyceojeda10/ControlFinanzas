@@ -139,8 +139,23 @@ export default function Sidebar() {
   const pathname   = usePathname()
   const { session, esCobrador } = useAuth()
   const [fechaHora, setFechaHora] = useState('')
+  const [cierreWarning, setCierreWarning] = useState(null)
 
   const nav = esCobrador ? NAV_COBRADOR : NAV_OWNER
+
+  // Verificar advertencia de cierre de caja cada minuto
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const res = await fetch('/api/caja/warning')
+        const data = await res.json()
+        setCierreWarning(data.showWarning ? data : null)
+      } catch {}
+    }
+    check()
+    const interval = setInterval(check, 60000)
+    return () => clearInterval(interval)
+  }, [])
 
   // Actualizar fecha/hora cada minuto (timezone Colombia)
   useEffect(() => {
@@ -187,6 +202,24 @@ export default function Sidebar() {
           )
         })}
       </nav>
+
+      {/* Warning cierre de caja */}
+      {cierreWarning && (
+        <div className="mx-3 mb-2">
+          <Link
+            href="/caja"
+            className="flex items-center gap-2 px-3 py-2.5 rounded-[10px] bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.3)] hover:bg-[rgba(245,158,11,0.15)] transition-colors"
+          >
+            <svg className="w-4 h-4 text-[#f59e0b] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div>
+              <p className="text-xs font-semibold text-[#f59e0b]">Cierre en {cierreWarning.minutesUntilClose} min</p>
+              <p className="text-[10px] text-[#f59e0b]/70">Ir a cerrar caja</p>
+            </div>
+          </Link>
+        </div>
+      )}
 
       {/* User info + sign out */}
       <div className="px-3 pb-5 border-t border-[#2a2a2a] pt-4">

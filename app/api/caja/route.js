@@ -237,7 +237,7 @@ export async function POST(request) {
     return Response.json({ error: 'El total recogido no puede ser negativo' }, { status: 400 })
   }
 
-  // Calcular esperado
+  // Verificar que el cobrador tiene ruta asignada
   const ruta = await prisma.ruta.findFirst({
     where: { organizationId, cobradorId, activo: true },
     select: {
@@ -252,10 +252,12 @@ export async function POST(request) {
     },
   })
 
-  const totalEsperado = ruta 
-    ? ruta.clientes.reduce((total, c) => 
-        total + c.prestamos.reduce((a, p) => a + p.cuotaDiaria, 0), 0)
-    : 0
+  if (!ruta) {
+    return Response.json({ error: 'No tienes una ruta asignada. Contacta al administrador.' }, { status: 400 })
+  }
+
+  const totalEsperado = ruta.clientes.reduce((total, c) =>
+    total + c.prestamos.reduce((a, p) => a + p.cuotaDiaria, 0), 0)
 
   // Obtener gastos del día
   const gastosDia = await prisma.gastoMenor.aggregate({
@@ -263,6 +265,7 @@ export async function POST(request) {
       organizationId,
       cobradorId,
       fecha: { gte: inicio, lt: fin },
+      estado: 'aprobado',
     },
     _sum: { monto: true },
   })

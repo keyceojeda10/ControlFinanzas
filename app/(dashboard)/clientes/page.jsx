@@ -8,10 +8,18 @@ import { Button }        from '@/components/ui/Button'
 import { SkeletonCard }  from '@/components/ui/Skeleton'
 import ClienteCard       from '@/components/clientes/ClienteCard'
 
+const ESTADOS_CLIENTE = [
+  { value: '',          label: 'Todos'     },
+  { value: 'activo',    label: 'Al día'    },
+  { value: 'mora',      label: 'En mora',  color: '#ef4444' },
+  { value: 'cancelado', label: 'Cancelados' },
+]
+
 export default function ClientesPage() {
   const { esOwner, loading: authLoading } = useAuth()
   const [clientes, setClientes]   = useState([])
   const [buscar,   setBuscar]     = useState('')
+  const [estado,   setEstado]     = useState('')
   const [loading,  setLoading]    = useState(true)
   const [error,    setError]      = useState('')
 
@@ -47,6 +55,9 @@ export default function ClientesPage() {
           <h1 className="text-xl font-bold text-[white]">Clientes</h1>
           <p className="text-sm text-[#555555] mt-0.5">
             {loading ? '...' : `${clientes.length} cliente${clientes.length !== 1 ? 's' : ''}`}
+            {!loading && clientes.filter((c) => c.estado === 'mora').length > 0 && (
+              <span className="ml-2 text-[#ef4444]">· {clientes.filter((c) => c.estado === 'mora').length} en mora</span>
+            )}
           </p>
         </div>
         {!authLoading && esOwner && (
@@ -62,6 +73,29 @@ export default function ClientesPage() {
             </Button>
           </Link>
         )}
+      </div>
+
+      {/* Filtro de estado */}
+      <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-none pb-1">
+        {ESTADOS_CLIENTE.map(({ value, label, color }) => {
+          const isActive = estado === value
+          const accent = color ?? '#3b82f6'
+          return (
+            <button
+              key={value}
+              onClick={() => setEstado(value)}
+              className={[
+                'shrink-0 px-3 h-8 rounded-full text-xs font-medium border transition-all',
+                isActive
+                  ? 'border-current'
+                  : 'bg-transparent border-[#2a2a2a] text-[#555555] hover:bg-[#222222] hover:text-[white]',
+              ].join(' ')}
+              style={isActive ? { color: accent, backgroundColor: `${accent}20` } : undefined}
+            >
+              {label}
+            </button>
+          )
+        })}
       </div>
 
       {/* Buscador */}
@@ -107,11 +141,21 @@ export default function ClientesPage() {
       )}
 
       {/* Lista */}
-      {!loading && clientes.length > 0 && (
-        <div className="space-y-2.5">
-          {clientes.map((c) => <ClienteCard key={c.id} cliente={c} />)}
-        </div>
-      )}
+      {!loading && clientes.length > 0 && (() => {
+        const filtrados = estado ? clientes.filter((c) => c.estado === estado) : clientes
+        return filtrados.length > 0 ? (
+          <div className="space-y-2.5">
+            {filtrados.map((c) => <ClienteCard key={c.id} cliente={c} />)}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <p className="text-sm font-medium text-[white]">Sin clientes {estado === 'mora' ? 'en mora' : estado === 'activo' ? 'al día' : 'cancelados'}</p>
+            <button onClick={() => setEstado('')} className="mt-2 text-xs text-[#3b82f6] hover:underline">
+              Ver todos
+            </button>
+          </div>
+        )
+      })()}
 
       {/* Estado vacío */}
       {!loading && clientes.length === 0 && !error && (

@@ -41,6 +41,9 @@ export default function PrestamoDetallePage({ params }) {
   const [exito,        setExito]        = useState(false)   // animación de éxito
   const [completado,   setCompletado]   = useState(false)   // celebración
   const [ultimoPago,   setUltimoPago]   = useState(null)    // para botón WA pago
+  const [cancelando,   setCancelando]   = useState(false)
+  const [confirmCancel, setConfirmCancel] = useState(false)
+  const [anulando,     setAnulando]     = useState(null)   // pagoId que se está anulando
 
   const fetchPrestamo = async () => {
     try {
@@ -320,12 +323,92 @@ export default function PrestamoDetallePage({ params }) {
                     {pago.nota && <p className="text-[10px] text-[#888888] mt-0.5">{pago.nota}</p>}
                   </div>
                   <Badge variant={tipoBadge.variant}>{tipoBadge.label}</Badge>
+                  {session?.user?.rol === 'owner' && (
+                    <button
+                      onClick={async () => {
+                        if (anulando) return
+                        if (!confirm(`¿Anular pago de ${formatCOP(pago.montoPagado)}?`)) return
+                        setAnulando(pago.id)
+                        try {
+                          const res = await fetch(`/api/pagos/${pago.id}`, { method: 'DELETE' })
+                          if (!res.ok) throw new Error()
+                          await fetchPrestamo()
+                        } catch {
+                          setError('No se pudo anular el pago.')
+                        } finally {
+                          setAnulando(null)
+                        }
+                      }}
+                      disabled={anulando === pago.id}
+                      className="shrink-0 p-1.5 rounded-lg text-[#555555] hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] transition-colors disabled:opacity-50"
+                      title="Anular pago"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
               )
             })}
           </div>
         )}
       </Card>
+
+      {/* ── CANCELAR PRÉSTAMO (solo owner, solo activo) ──────────── */}
+      {estaActivo && session?.user?.rol === 'owner' && !completado && (
+        <div className="pt-2">
+          {!confirmCancel ? (
+            <button
+              onClick={() => setConfirmCancel(true)}
+              className="w-full flex items-center justify-center gap-2 h-11 rounded-[12px] text-sm font-medium text-[#555555] hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.08)] border border-[#2a2a2a] hover:border-[rgba(239,68,68,0.3)] transition-all"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+              </svg>
+              Cancelar préstamo
+            </button>
+          ) : (
+            <div className="bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.3)] rounded-[14px] p-4 space-y-3">
+              <p className="text-sm text-[#ef4444] font-semibold">¿Cancelar este préstamo?</p>
+              <p className="text-xs text-[#888888]">
+                Se marcará como cancelado. El saldo pendiente de {formatCOP(saldoPendiente)} quedará sin cobrar.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setConfirmCancel(false)}
+                  className="flex-1 h-10 rounded-[10px] text-sm font-medium text-[#888888] border border-[#2a2a2a] hover:bg-[#1a1a1a] transition-colors"
+                >
+                  No, volver
+                </button>
+                <button
+                  onClick={async () => {
+                    setCancelando(true)
+                    try {
+                      const res = await fetch(`/api/prestamos/${id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ estado: 'cancelado' }),
+                      })
+                      if (!res.ok) throw new Error()
+                      await fetchPrestamo()
+                      setConfirmCancel(false)
+                    } catch {
+                      setError('No se pudo cancelar el préstamo.')
+                    } finally {
+                      setCancelando(false)
+                    }
+                  }}
+                  disabled={cancelando}
+                  className="flex-1 h-10 rounded-[10px] text-sm font-bold text-white bg-[#ef4444] hover:bg-[#dc2626] disabled:opacity-50 transition-colors"
+                >
+                  {cancelando ? 'Cancelando…' : 'Sí, cancelar'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Modal de pago */}
       <RegistrarPago
