@@ -6,7 +6,8 @@ import { prisma }           from '@/lib/prisma'
 import bcrypt               from 'bcryptjs'
 
 // Límites de usuarios totales por plan (owner + cobradores)
-const LIMITES_USUARIOS = { basic: 1, standard: 3, professional: Infinity }
+const LIMITES_USUARIOS = { basic: 1, standard: 3, professional: 7 }
+const NOMBRES_PLAN = { basic: 'Básico', standard: 'Profesional', professional: 'Empresarial' }
 
 // Funciones de fecha en timezone Colombia (UTC-5)
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
@@ -83,23 +84,22 @@ export async function POST(request) {
   const { organizationId, plan } = session.user
 
   // Plan basic no puede tener cobradores
+  const nombrePlan = NOMBRES_PLAN[plan] || plan
   if (plan === 'basic') {
     return Response.json(
-      { error: 'Tu plan basic no incluye cobradores. Actualiza a standard o professional.' },
+      { error: `Tu plan ${nombrePlan} no incluye cobradores. Actualiza al plan Profesional o Empresarial.` },
       { status: 403 }
     )
   }
 
   // Verificar límite de usuarios
   const limite = LIMITES_USUARIOS[plan] ?? 1
-  if (isFinite(limite)) {
-    const totalUsuarios = await prisma.user.count({ where: { organizationId } })
-    if (totalUsuarios >= limite) {
-      return Response.json(
-        { error: `Tu plan ${plan} permite máximo ${limite} usuarios. Considera actualizar.` },
-        { status: 403 }
-      )
-    }
+  const totalUsuarios = await prisma.user.count({ where: { organizationId } })
+  if (totalUsuarios >= limite) {
+    return Response.json(
+      { error: `Tu plan ${nombrePlan} permite máximo ${limite} usuarios. Para agregar más cobradores, actualiza tu plan o contacta soporte para agregar cobradores extra.` },
+      { status: 403 }
+    )
   }
 
   const { nombre, email, password } = await request.json()

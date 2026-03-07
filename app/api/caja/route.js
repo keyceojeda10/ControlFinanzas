@@ -28,50 +28,6 @@ const getHoyColombia = () => {
   return ahora.toISOString().slice(0, 10)
 }
 
-const inicioDia = (fecha) => {
-  const d = new Date(fecha)
-  d.setHours(0, 0, 0, 0)
-  return d
-}
-
-const finDia = (fecha) => {
-  const d = new Date(fecha)
-  d.setDate(d.getDate() + 1)
-  d.setHours(0, 0, 0, 0)
-  return d
-}
-
-// Calcula estadísticas de cartera de la organización
-async function getStatsCartera(organizationId) {
-  const prestamos = await prisma.prestamo.findMany({
-    where: { 
-      cliente: { organizationId },
-      estado: 'activo'
-    },
-    select: {
-      montoPrestado: true,
-      totalAPagar: true,
-      pagos: {
-        select: { montoPagado: true }
-      }
-    }
-  })
-
-  const capitalPrestado = prestamos.reduce((a, p) => a + p.montoPrestado, 0)
-  const capitalRecuperado = prestamos.reduce((a, p) => {
-    return a + p.pagos.reduce((sum, pago) => sum + pago.montoPagado, 0)
-  }, 0)
-  
-  const porcentajeRecuperacion = capitalPrestado > 0 
-    ? Math.round((capitalRecuperado / capitalPrestado) * 100) 
-    : 0
-
-  return {
-    capitalPrestado,
-    capitalRecuperado,
-    porcentajeRecuperacion
-  }
-}
 
 // Calcula estadísticas del día
 async function getStatsDia(organizationId, fecha, cobradorId = null) {
@@ -169,11 +125,6 @@ export async function GET(request) {
 
   // Obtener stats del día
   const statsDia = await getStatsDia(organizationId, fechaBase, rol === 'cobrador' ? userId : null)
-  
-  // Obtener stats de cartera (solo para owner)
-  const statsCartera = rol === 'owner' 
-    ? await getStatsCartera(organizationId)
-    : { capitalPrestado: 0, capitalRecuperado: 0, porcentajeRecuperacion: 0 }
 
   // Obtener gastos del día para mostrar en lista
   const whereGastos = {
@@ -192,12 +143,29 @@ export async function GET(request) {
     orderBy: { fecha: 'desc' },
   })
 
+  // Para owner: obtener lista de cobradores con estado de cierre
+  let cobradores = []
+  if (rol === 'owner') {
+    const todosCobradores = await prisma.user.findMany({
+      where: { organizationId, rol: 'cobrador', activo: true },
+      select: { id: true, nombre: true },
+    })
+
+    const cierreIds = new Set(cierres.map(c => c.cobradorId))
+    cobradores = todosCobradores.map(c => ({
+      id: c.id,
+      nombre: c.nombre,
+      cerrado: cierreIds.has(c.id),
+      cierre: cierres.find(ci => ci.cobradorId === c.id) || null,
+    }))
+  }
+
   return Response.json({
     cierres,
     gastos,
+    cobradores,
     stats: {
       dia: statsDia,
-      cartera: statsCartera
     },
     fechaDisplay: fmtFechaColombia(fechaBase),
     fecha: typeof fechaBase === 'string' ? fechaBase : new Date(fechaBase).toISOString().slice(0, 10)

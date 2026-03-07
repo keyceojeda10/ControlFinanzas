@@ -45,10 +45,10 @@ export async function POST(req) {
       },
     })
 
-    // Suscripción de prueba: 15 días gratis
+    // Suscripción de prueba: 7 días gratis
     const ahora = new Date()
     const vencimiento = new Date(ahora)
-    vencimiento.setDate(vencimiento.getDate() + 15)
+    vencimiento.setDate(vencimiento.getDate() + 7)
 
     await tx.suscripcion.create({
       data: {

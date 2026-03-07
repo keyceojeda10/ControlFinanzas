@@ -1,5 +1,5 @@
 'use client'
-// app/(dashboard)/caja/page.jsx - Cierre de caja
+// app/(dashboard)/caja/page.jsx - Caja del día
 
 import { useState, useEffect } from 'react'
 import { useAuth }             from '@/hooks/useAuth'
@@ -13,17 +13,28 @@ import ListaGastos            from '@/components/gastos/ListaGastos'
 
 const fmtFecha = (d) => {
   if (!d) return '—'
-  // Si recibimos YYYY-MM-DD, agregar timezone Colombia para evitar desfase UTC
   const fecha = typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)
     ? new Date(d + 'T12:00:00-05:00')
     : new Date(d)
   return fecha.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'America/Bogota' })
 }
 
-// Obtener fecha actual en formato YYYY-MM-DD (Colombia)
 const getColombiaDateStr = () => {
   const d = new Date(Date.now() - 5 * 60 * 60 * 1000)
   return d.toISOString().slice(0, 10)
+}
+
+// Barra de progreso visual
+function ProgressBar({ value, max, color = '#22c55e' }) {
+  const pct = max > 0 ? Math.min(Math.round((value / max) * 100), 100) : 0
+  return (
+    <div className="w-full h-2 bg-[#2a2a2a] rounded-full overflow-hidden">
+      <div
+        className="h-full rounded-full transition-all duration-500"
+        style={{ width: `${pct}%`, background: color }}
+      />
+    </div>
+  )
 }
 
 export default function CajaPage() {
@@ -39,6 +50,8 @@ export default function CajaPage() {
   const [showGasto, setShowGasto] = useState(false)
   const [gastosPendientes, setGastosPendientes] = useState(0)
   const [fechaSeleccionada, setFechaSeleccionada] = useState(getColombiaDateStr())
+
+  const esHoy = fechaSeleccionada === getColombiaDateStr()
 
   const fetchData = async () => {
     setLoading(true)
@@ -64,6 +77,7 @@ export default function CajaPage() {
 
   const handleFechaChange = (e) => {
     setFechaSeleccionada(e.target.value)
+    setExito(false)
   }
 
   const registrarCierre = async (e) => {
@@ -92,10 +106,12 @@ export default function CajaPage() {
     </div>
   )
 
-  const stats = cajaData?.stats || { dia: {}, cartera: {} }
+  const stats = cajaData?.stats?.dia || {}
   const cierres = cajaData?.cierres || []
-  const gastos = cajaData?.gastos || []
-  const disponible = stats.dia.recogida - stats.dia.gastos
+  const cobradores = cajaData?.cobradores || []
+  const disponible = (stats.recogida || 0) - (stats.gastos || 0)
+  const tasaRecaudo = stats.tasaRecaudo || 0
+  const colorRecaudo = tasaRecaudo >= 80 ? '#22c55e' : tasaRecaudo >= 50 ? '#f5c518' : '#ef4444'
 
   // ── VISTA DEL COBRADOR ────────────────────────────────────────
   if (esCobrador) {
@@ -104,9 +120,10 @@ export default function CajaPage() {
 
     return (
       <div className="max-w-xl mx-auto space-y-4">
-        <div className="mb-2 flex items-center justify-between">
+        {/* Header */}
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-[white]">Cierre de caja</h1>
+            <h1 className="text-xl font-bold text-white">Caja del d\u00eda</h1>
             <p className="text-sm text-[#888888] mt-0.5">{cajaData?.fechaDisplay || '—'}</p>
           </div>
           <input
@@ -123,27 +140,33 @@ export default function CajaPage() {
           </div>
         )}
 
-        {/* Resumen del día */}
+        {/* Resumen de recaudo */}
         <Card>
-          <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">
-            💰 Resumen del día
-          </p>
-          <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Recaudo del d\u00eda</p>
+            {tasaRecaudo > 0 && (
+              <span className="text-sm font-bold" style={{ color: colorRecaudo }}>
+                {tasaRecaudo}%
+              </span>
+            )}
+          </div>
+          <ProgressBar value={stats.recogida || 0} max={stats.esperado || 1} color={colorRecaudo} />
+          <div className="grid grid-cols-2 gap-3 mt-4">
             <div>
-              <p className="text-[10px] text-[#888888]">Total Esperado</p>
-              <p className="text-lg font-bold text-white">{formatCOP(stats.dia.esperado || 0)}</p>
+              <p className="text-[10px] text-[#888888] uppercase">Esperado</p>
+              <p className="text-lg font-bold text-white">{formatCOP(stats.esperado || 0)}</p>
             </div>
             <div>
-              <p className="text-[10px] text-[#888888]">Total Recaudado</p>
-              <p className="text-lg font-bold text-[#22c55e]">{formatCOP(stats.dia.recogida || 0)}</p>
+              <p className="text-[10px] text-[#888888] uppercase">Recaudado</p>
+              <p className="text-lg font-bold text-[#22c55e]">{formatCOP(stats.recogida || 0)}</p>
             </div>
             <div>
-              <p className="text-[10px] text-[#888888]">Gastos</p>
-              <p className="text-lg font-bold text-[#ef4444]">-{formatCOP(stats.dia.gastos || 0)}</p>
+              <p className="text-[10px] text-[#888888] uppercase">Gastos</p>
+              <p className="text-lg font-bold text-[#ef4444]">{stats.gastos > 0 ? '-' : ''}{formatCOP(stats.gastos || 0)}</p>
             </div>
             <div>
-              <p className="text-[10px] text-[#888888]">💵 DISPONIBLE</p>
-              <p className="text-lg font-bold text-[#f5c518]">{formatCOP(disponible || 0)}</p>
+              <p className="text-[10px] text-[#f5c518] uppercase font-semibold">Disponible</p>
+              <p className="text-lg font-bold text-[#f5c518]">{formatCOP(disponible)}</p>
             </div>
           </div>
         </Card>
@@ -151,16 +174,19 @@ export default function CajaPage() {
         {/* Cierre */}
         {cierreHoy ? (
           <Card>
-            <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">Cierre registrado</p>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Cierre registrado</p>
+              <Badge variant="green">Cerrado</Badge>
+            </div>
             <div className="space-y-2">
               {[
-                { label: 'Esperado', value: formatCOP(cierreHoy.totalEsperado) },
-                { label: 'Recogido', value: formatCOP(cierreHoy.totalRecogido) },
-                { label: 'Gastos', value: formatCOP(cierreHoy.totalGastos || 0) },
-              ].map(({ label, value }) => (
+                { label: 'Esperado', value: formatCOP(cierreHoy.totalEsperado), color: 'text-white' },
+                { label: 'Entregado', value: formatCOP(cierreHoy.totalRecogido), color: 'text-white' },
+                { label: 'Gastos', value: formatCOP(cierreHoy.totalGastos || 0), color: 'text-[#ef4444]' },
+              ].map(({ label, value, color }) => (
                 <div key={label} className="flex justify-between text-sm">
                   <span className="text-[#888888]">{label}</span>
-                  <span className="font-medium text-[white]">{value}</span>
+                  <span className={`font-medium ${color}`}>{value}</span>
                 </div>
               ))}
               <div className="flex justify-between text-sm font-bold border-t border-[#2a2a2a] pt-2 mt-2">
@@ -170,26 +196,15 @@ export default function CajaPage() {
                 </span>
               </div>
             </div>
-
-            <button
-              onClick={() => setShowGasto(true)}
-              className="mt-4 w-full flex items-center justify-center gap-2 h-11 rounded-[12px] border border-[#2a2a2a] text-sm font-medium text-[#888888] hover:bg-[#1a1a1a] transition-all"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                  d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Reportar gasto menor
-            </button>
           </Card>
-        ) : (
+        ) : esHoy ? (
           <Card>
             <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">
-              Registrar cierre del día
+              Registrar cierre del d\u00eda
             </p>
             {exito && (
               <div className="mb-4 flex items-center gap-2 bg-[rgba(16,185,129,0.1)] border border-[rgba(16,185,129,0.2)] text-[#22c55e] text-sm rounded-[12px] px-4 py-3">
-                ✓ Cierre registrado exitosamente
+                Cierre registrado exitosamente
               </div>
             )}
             {errorCaja && (
@@ -200,7 +215,7 @@ export default function CajaPage() {
             <form onSubmit={registrarCierre} className="space-y-4">
               <div className="flex justify-between text-sm">
                 <span className="text-[#888888]">Total esperado hoy</span>
-                <span className="font-semibold text-[white]">{formatCOP(stats.dia.esperado || 0)}</span>
+                <span className="font-semibold text-white">{formatCOP(stats.esperado || 0)}</span>
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-medium text-[#888888]">Dinero que vas a entregar (COP)</label>
@@ -210,14 +225,14 @@ export default function CajaPage() {
                   placeholder="Ej: 250000"
                   value={totalRecogido}
                   onChange={(e) => setTotalRecogido(e.target.value)}
-                  className="w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] placeholder-[#777777] focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[rgba(59,130,246,0.3)] transition-all"
+                  className="w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-white placeholder-[#777777] focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[rgba(59,130,246,0.3)] transition-all"
                 />
               </div>
               {totalRecogido && (
                 <div className="text-sm">
                   <span className="text-[#888888]">Diferencia: </span>
-                  <span style={{ color: Number(totalRecogido) >= (stats.dia.esperado || 0) ? '#22c55e' : '#ef4444', fontWeight: 700 }}>
-                    {Number(totalRecogido) >= (stats.dia.esperado || 0) ? '+' : ''}{formatCOP(Number(totalRecogido) - (stats.dia.esperado || 0))}
+                  <span style={{ color: Number(totalRecogido) >= (stats.esperado || 0) ? '#22c55e' : '#ef4444', fontWeight: 700 }}>
+                    {Number(totalRecogido) >= (stats.esperado || 0) ? '+' : ''}{formatCOP(Number(totalRecogido) - (stats.esperado || 0))}
                   </span>
                 </div>
               )}
@@ -226,18 +241,48 @@ export default function CajaPage() {
               </Button>
             </form>
           </Card>
+        ) : (
+          <Card>
+            <div className="text-center py-4">
+              <p className="text-sm text-[#888888]">No se registr\u00f3 cierre este d\u00eda</p>
+            </div>
+          </Card>
         )}
+
+        {/* Gastos */}
+        {esHoy && (
+          <button
+            onClick={() => setShowGasto(true)}
+            className="w-full flex items-center justify-center gap-2 h-11 rounded-[12px] border border-[#2a2a2a] bg-[#1a1a1a] text-sm font-medium text-[#888888] hover:bg-[#222222] transition-all"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Reportar gasto menor
+          </button>
+        )}
+
+        <ReportarGasto
+          open={showGasto}
+          onClose={() => setShowGasto(false)}
+          onSuccess={fetchData}
+        />
       </div>
     )
   }
 
   // ── VISTA DEL OWNER ───────────────────────────────────────────
+  const cobradoresCerrados = cobradores.filter(c => c.cerrado).length
+  const cobradoresTotal = cobradores.length
+
   return (
     <div className="max-w-2xl mx-auto space-y-4">
-      <div className="mb-2 flex items-center justify-between">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-[white]">Cierre de caja</h1>
-          <p className="text-sm text-[#888888] mt-0.5">{cajaData?.fechaDisplay || '—'} — resumen de la organización</p>
+          <h1 className="text-xl font-bold text-white">Caja</h1>
+          <p className="text-sm text-[#888888] mt-0.5">{cajaData?.fechaDisplay || '—'}</p>
         </div>
         <input
           type="date"
@@ -253,92 +298,95 @@ export default function CajaPage() {
         </div>
       )}
 
-      {/* Resumen del día */}
+      {/* Resumen del d\u00eda */}
       <Card>
-        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">
-          💰 Resumen del día
-        </p>
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <div>
-            <p className="text-[10px] text-[#888888]">Total Esperado</p>
-            <p className="text-lg font-bold text-white">{formatCOP(stats.dia.esperado || 0)}</p>
-          </div>
-          <div>
-            <p className="text-[10px] text-[#888888]">Total Recaudado</p>
-            <p className="text-lg font-bold text-[#22c55e]">{formatCOP(stats.dia.recogida || 0)}</p>
-          </div>
-          <div>
-            <p className="text-[10px] text-[#888888]">Gastos</p>
-            <p className="text-lg font-bold text-[#ef4444]">-{formatCOP(stats.dia.gastos || 0)}</p>
-          </div>
-          <div>
-            <p className="text-[10px] text-[#888888]">💵 DISPONIBLE</p>
-            <p className="text-lg font-bold text-[#f5c518]">{formatCOP(disponible || 0)}</p>
-          </div>
-        </div>
-        {stats.dia.tasaRecaudo > 0 && (
-          <div className="text-center">
-            <span className="text-xs text-[#888888]">Tasa de recaudo: </span>
-            <span className="text-sm font-bold" style={{ color: stats.dia.tasaRecaudo >= 80 ? '#22c55e' : stats.dia.tasaRecaudo >= 50 ? '#f5c518' : '#ef4444' }}>
-              {stats.dia.tasaRecaudo}%
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Resumen del d\u00eda</p>
+          {tasaRecaudo > 0 && (
+            <span className="text-sm font-bold" style={{ color: colorRecaudo }}>
+              {tasaRecaudo}% recaudo
             </span>
+          )}
+        </div>
+        <ProgressBar value={stats.recogida || 0} max={stats.esperado || 1} color={colorRecaudo} />
+        <div className="grid grid-cols-2 gap-3 mt-4">
+          <div>
+            <p className="text-[10px] text-[#888888] uppercase">Esperado</p>
+            <p className="text-lg font-bold text-white">{formatCOP(stats.esperado || 0)}</p>
           </div>
-        )}
-      </Card>
-
-      {/* Estadísticas de cartera */}
-      <Card>
-        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">
-          📊 Estadísticas de Cartera
-        </p>
-        <div className="space-y-3">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-[#888888]">Capital prestado actualmente</span>
-            <span className="text-sm font-bold text-white">{formatCOP(stats.cartera.capitalPrestado || 0)}</span>
+          <div>
+            <p className="text-[10px] text-[#888888] uppercase">Recaudado</p>
+            <p className="text-lg font-bold text-[#22c55e]">{formatCOP(stats.recogida || 0)}</p>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-[#888888]">Recuperado (histórico)</span>
-            <span className="text-sm font-bold text-[#22c55e]">{formatCOP(stats.cartera.capitalRecuperado || 0)}</span>
+          <div>
+            <p className="text-[10px] text-[#888888] uppercase">Gastos</p>
+            <p className="text-lg font-bold text-[#ef4444]">{stats.gastos > 0 ? '-' : ''}{formatCOP(stats.gastos || 0)}</p>
           </div>
-          <div className="flex justify-between items-center border-t border-[#2a2a2a] pt-3">
-            <span className="text-sm text-[#888888]">Recuperación</span>
-            <span className="text-sm font-bold text-[#f5c518]">{stats.cartera.porcentajeRecuperacion || 0}%</span>
+          <div>
+            <p className="text-[10px] text-[#f5c518] uppercase font-semibold">Disponible</p>
+            <p className="text-lg font-bold text-[#f5c518]">{formatCOP(disponible)}</p>
           </div>
         </div>
       </Card>
 
-      {/* Tabla de cobradores */}
+      {/* Cobradores */}
       <Card>
-        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">
-          Cierres del día ({cierres.length})
-        </p>
-        {cierres.length === 0 ? (
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">
+            Cobradores
+          </p>
+          {cobradoresTotal > 0 && (
+            <span className="text-xs text-[#888888]">
+              <span className="font-bold" style={{ color: cobradoresCerrados === cobradoresTotal ? '#22c55e' : '#f5c518' }}>
+                {cobradoresCerrados}/{cobradoresTotal}
+              </span> cerraron
+            </span>
+          )}
+        </div>
+
+        {cobradoresTotal === 0 ? (
           <p className="text-sm text-[#888888] text-center py-4">
-            Ningún cobrador ha registrado cierre de caja para esta fecha
+            No hay cobradores activos
           </p>
         ) : (
-          <div className="space-y-0">
-            <div className="grid grid-cols-5 gap-2 text-[10px] text-[#888888] font-medium uppercase pb-2 border-b border-[#2a2a2a]">
-              <span>Cobrador</span>
-              <span className="text-right">Esperado</span>
-              <span className="text-right">Recogido</span>
-              <span className="text-right">Gastos</span>
-              <span className="text-right">Diferencia</span>
-            </div>
-            {cierres.map((c) => {
-              const diff = c.totalRecogido - c.totalEsperado
+          <div className="space-y-2">
+            {cobradores.map((c) => {
+              const cierre = c.cierre
+              const diff = cierre ? cierre.totalRecogido - cierre.totalEsperado : null
               return (
-                <div key={c.id} className="grid grid-cols-5 gap-2 py-2.5 border-b border-[#2a2a2a] last:border-0 items-center">
-                  <span className="text-sm font-medium text-[white] truncate">{c.cobrador?.nombre}</span>
-                  <span className="text-sm text-[#888888] text-right">{formatCOP(c.totalEsperado)}</span>
-                  <span className="text-sm text-[white] text-right">{formatCOP(c.totalRecogido)}</span>
-                  <span className="text-sm text-[#ef4444] text-right">-{formatCOP(c.totalGastos || 0)}</span>
-                  <span
-                    className="text-sm font-bold text-right"
-                    style={{ color: diff >= 0 ? '#22c55e' : '#ef4444' }}
-                  >
-                    {diff >= 0 ? '+' : ''}{formatCOP(diff)}
-                  </span>
+                <div key={c.id} className="bg-[#111111] border border-[#2a2a2a] rounded-[12px] p-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-white">{c.nombre}</span>
+                    {c.cerrado ? (
+                      <Badge variant="green">Cerrado</Badge>
+                    ) : (
+                      <Badge variant="yellow">Pendiente</Badge>
+                    )}
+                  </div>
+                  {cierre ? (
+                    <div className="grid grid-cols-4 gap-2 mt-2">
+                      <div>
+                        <p className="text-[9px] text-[#888888] uppercase">Esperado</p>
+                        <p className="text-xs font-semibold text-white">{formatCOP(cierre.totalEsperado)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] text-[#888888] uppercase">Entregado</p>
+                        <p className="text-xs font-semibold text-white">{formatCOP(cierre.totalRecogido)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] text-[#888888] uppercase">Gastos</p>
+                        <p className="text-xs font-semibold text-[#ef4444]">{formatCOP(cierre.totalGastos || 0)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] text-[#888888] uppercase">Dif.</p>
+                        <p className="text-xs font-bold" style={{ color: diff >= 0 ? '#22c55e' : '#ef4444' }}>
+                          {diff >= 0 ? '+' : ''}{formatCOP(diff)}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-[#555555] mt-1">A\u00fan no ha registrado cierre</p>
+                  )}
                 </div>
               )
             })}
@@ -346,11 +394,11 @@ export default function CajaPage() {
         )}
       </Card>
 
-      {/* Sección de Gastos Menores */}
+      {/* Gastos Menores */}
       <Card>
         <div className="flex items-center justify-between mb-4">
           <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">
-            Gastos Menores
+            Gastos menores
           </p>
           <div className="flex items-center gap-2">
             {gastosPendientes > 0 && (

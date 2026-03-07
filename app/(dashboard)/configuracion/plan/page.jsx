@@ -9,40 +9,42 @@ import { formatCOP }           from '@/lib/calculos'
 const planes = [
   {
     key: 'basic',
-    nombre: 'Basic',
-    precio: 80000,
+    nombre: 'Basico',
+    precio: 59000,
     badge: null,
     features: [
-      '1 usuario',
+      '1 usuario (administrador)',
       'Hasta 50 clientes',
-      'Gestión de préstamos',
-      'Dashboard básico',
+      'Gestion de prestamos',
+      'Dashboard basico',
     ],
   },
   {
     key: 'standard',
-    nombre: 'Standard',
-    precio: 150000,
-    badge: 'Más popular',
+    nombre: 'Profesional',
+    precio: 119000,
+    badge: 'Mas popular',
     features: [
       'Hasta 3 usuarios',
-      'Hasta 200 clientes',
+      'Hasta 300 clientes',
       'Rutas y cobradores',
-      'Cierre de caja',
-      'Todo lo del plan Basic',
+      'Cierre de caja diario',
+      'Reportes completos',
+      'Cobrador extra: $29.000/mes',
     ],
   },
   {
     key: 'professional',
-    nombre: 'Professional',
-    precio: 250000,
+    nombre: 'Empresarial',
+    precio: 199000,
     badge: null,
     features: [
-      'Usuarios ilimitados',
+      'Hasta 7 usuarios',
       'Clientes ilimitados',
       'Reportes avanzados',
       'Exportar a Excel',
-      'Todo lo del plan Standard',
+      'Cobrador extra: $29.000/mes',
+      'Todo lo del plan Profesional',
     ],
   },
 ]
@@ -81,10 +83,9 @@ export default function PlanPage() {
         alert(data.error ?? 'Error al crear el pago')
         return
       }
-      // Redirigir a MercadoPago
       window.location.href = data.initPoint
     } catch {
-      alert('Error de conexión')
+      alert('Error de conexion')
     } finally {
       setCargando('')
     }
@@ -101,15 +102,15 @@ export default function PlanPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="text-center">
-        <h1 className="text-xl font-bold text-[white]">Elige tu plan</h1>
+        <h1 className="text-xl font-bold text-white">Elige tu plan</h1>
         <p className="text-sm text-[#555555] mt-1">
           {estado?.estado === 'activa'
-            ? `Tu plan actual: ${planActual}. Cambia cuando quieras.`
+            ? `Tu plan actual: ${planes.find(p => p.key === planActual)?.nombre || planActual}. Cambia cuando quieras.`
             : 'Selecciona el plan que mejor se adapte a tu negocio.'}
         </p>
         {estado?.diasRestantes != null && estado.estado === 'activa' && (
           <p className="text-xs text-[#22c55e] mt-1">
-            {estado.diasRestantes} días restantes en tu suscripción
+            {estado.diasRestantes} dias restantes en tu suscripcion
           </p>
         )}
       </div>
@@ -117,7 +118,7 @@ export default function PlanPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {planes.map((p) => {
           const esPlanActual = p.key === planActual
-          const esPopular    = p.badge === 'Más popular'
+          const esPopular    = p.badge === 'Mas popular'
 
           return (
             <div
@@ -131,13 +132,13 @@ export default function PlanPage() {
             >
               {esPopular && (
                 <div className="absolute -top-2.5 left-1/2 -translate-x-1/2">
-                  <Badge variant="blue">Más popular</Badge>
+                  <Badge variant="blue">Mas popular</Badge>
                 </div>
               )}
 
               <div className="mb-4 mt-1">
-                <p className="text-sm font-semibold text-[white]">{p.nombre}</p>
-                <p className="text-2xl font-bold text-[white] mt-1">
+                <p className="text-sm font-semibold text-white">{p.nombre}</p>
+                <p className="text-2xl font-bold text-white mt-1">
                   {formatCOP(p.precio)}
                   <span className="text-xs text-[#555555] font-normal">/mes</span>
                 </p>
