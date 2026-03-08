@@ -78,7 +78,7 @@ export default function RutasPage() {
 
       {/* Mini formulario inline */}
       {showForm && (
-        <form onSubmit={crearRuta} className="bg-[#1a1a1a] border border-[#3b82f6]/30 rounded-[16px] p-4 mb-4 flex gap-3">
+        <form onSubmit={crearRuta} className="bg-[#1a1a1a] border border-[#f5c518]/30 rounded-[16px] p-4 mb-4 flex gap-3">
           <Input
             placeholder="Nombre de la ruta (ej: Zona Norte)"
             value={nombre}
@@ -106,15 +106,15 @@ export default function RutasPage() {
 
       {!loading && rutas.length === 0 && !error && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-14 h-14 rounded-full bg-[rgba(59,130,246,0.1)] flex items-center justify-center mb-4">
-            <svg className="w-7 h-7 text-[#3b82f6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-14 h-14 rounded-full bg-[rgba(245,197,24,0.1)] flex items-center justify-center mb-4">
+            <svg className="w-7 h-7 text-[#f5c518]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                 d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
             </svg>
           </div>
           <p className="text-sm font-medium text-[white]">Sin rutas aún</p>
           <p className="text-xs text-[#888888] mt-1">Crea una ruta y asígnale un cobrador</p>
-          <button onClick={() => setShowForm(true)} className="mt-4 text-sm text-[#3b82f6] hover:underline">
+          <button onClick={() => setShowForm(true)} className="mt-4 text-sm text-[#f5c518] hover:underline">
             Crear primera ruta
           </button>
         </div>
@@ -130,7 +130,7 @@ export default function RutasPage() {
               <Link
                 key={r.id}
                 href={`/rutas/${r.id}`}
-                className="block bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-4 hover:border-[#3b82f6]/40 hover:bg-[#222222] transition-all group"
+                className="block bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-4 hover:border-[#f5c518]/40 hover:bg-[#222222] transition-all group"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div>
@@ -156,7 +156,7 @@ export default function RutasPage() {
                     className="h-full rounded-full transition-all"
                     style={{
                       width: `${progreso}%`,
-                      background: progreso >= 100 ? '#22c55e' : '#3b82f6',
+                      background: progreso >= 100 ? '#22c55e' : '#f5c518',
                     }}
                   />
                 </div>

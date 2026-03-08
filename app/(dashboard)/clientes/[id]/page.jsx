@@ -90,10 +90,10 @@ export default function ClienteDetallePage({ params }) {
             className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold shrink-0"
             style={{
               background: cliente.estado === 'mora'     ? 'rgba(239,68,68,0.15)'
-                        : cliente.estado === 'activo'   ? 'rgba(59,130,246,0.15)'
+                        : cliente.estado === 'activo'   ? 'rgba(245,197,24,0.15)'
                         : 'rgba(100,116,139,0.15)',
               color: cliente.estado === 'mora'    ? '#ef4444'
-                   : cliente.estado === 'activo'  ? '#3b82f6'
+                   : cliente.estado === 'activo'  ? '#f5c518'
                    : '#555555',
             }}
           >
@@ -252,7 +252,7 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, mini = false }) {
             className="h-full rounded-full transition-all"
             style={{
               width: `${porcentaje}%`,
-              background: porcentaje === 100 ? '#22c55e' : p.diasMora > 0 ? '#ef4444' : '#3b82f6',
+              background: porcentaje === 100 ? '#22c55e' : p.diasMora > 0 ? '#ef4444' : '#f5c518',
             }}
           />
         </div>

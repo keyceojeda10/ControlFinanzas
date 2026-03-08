@@ -99,7 +99,7 @@ export default function CobradorDetallePage({ params }) {
           <div className="flex items-center gap-2">
             <Link
               href={`/cobradores/${id}/editar`}
-              className="p-2 rounded-[10px] text-[#888888] hover:text-[#3b82f6] hover:bg-[rgba(59,130,246,0.1)] transition-all"
+              className="p-2 rounded-[10px] text-[#888888] hover:text-[#f5c518] hover:bg-[rgba(245,197,24,0.1)] transition-all"
               title="Editar cobrador"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -134,8 +134,8 @@ export default function CobradorDetallePage({ params }) {
         <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-3">Ruta asignada</p>
         {ruta ? (
           <Link href={`/rutas/${ruta.id}`} className="flex items-center gap-3 hover:bg-[#111111] -mx-1 px-1 py-2 rounded-[10px] transition-colors">
-            <div className="w-9 h-9 rounded-full bg-[rgba(59,130,246,0.15)] flex items-center justify-center shrink-0">
-              <svg className="w-4 h-4 text-[#3b82f6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-9 h-9 rounded-full bg-[rgba(245,197,24,0.15)] flex items-center justify-center shrink-0">
+              <svg className="w-4 h-4 text-[#f5c518]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
               </svg>
             </div>

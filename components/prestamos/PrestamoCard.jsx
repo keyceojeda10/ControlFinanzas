@@ -22,7 +22,7 @@ export default function PrestamoCard({ prestamo: p }) {
         'block rounded-[14px] p-4 transition-all duration-150 group',
         enMora
           ? 'bg-[rgba(239,68,68,0.06)] border-2 border-[rgba(239,68,68,0.3)] hover:border-[rgba(239,68,68,0.5)]'
-          : 'bg-[#1c2333] border border-[#2a3245] hover:border-[#3b82f6]/40 hover:bg-[#222a3d]',
+          : 'bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#f5c518]/40 hover:bg-[#222222]',
       ].join(' ')}
     >
       {/* Alerta de mora */}
@@ -42,9 +42,9 @@ export default function PrestamoCard({ prestamo: p }) {
         <div className="flex items-center gap-2.5">
           <div className={[
             'w-8 h-8 rounded-full flex items-center justify-center shrink-0',
-            enMora ? 'bg-[rgba(239,68,68,0.15)]' : 'bg-[rgba(59,130,246,0.15)]',
+            enMora ? 'bg-[rgba(239,68,68,0.15)]' : 'bg-[rgba(245,197,24,0.15)]',
           ].join(' ')}>
-            <span className={['text-xs font-bold', enMora ? 'text-[#ef4444]' : 'text-[#3b82f6]'].join(' ')}>
+            <span className={['text-xs font-bold', enMora ? 'text-[#ef4444]' : 'text-[#f5c518]'].join(' ')}>
               {p.cliente?.nombre?.[0]?.toUpperCase() ?? '?'}
             </span>
           </div>
@@ -82,12 +82,12 @@ export default function PrestamoCard({ prestamo: p }) {
       </div>
 
       {/* Barra de progreso */}
-      <div className="h-1.5 bg-[#2a3245] rounded-full overflow-hidden mb-2">
+      <div className="h-1.5 bg-[#2a2a2a] rounded-full overflow-hidden mb-2">
         <div
           className="h-full rounded-full transition-all"
           style={{
             width: `${porcentaje}%`,
-            background: porcentaje === 100 ? '#10b981' : enMora ? '#ef4444' : '#3b82f6',
+            background: porcentaje === 100 ? '#10b981' : enMora ? '#ef4444' : '#f5c518',
           }}
         />
       </div>

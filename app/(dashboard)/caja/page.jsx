@@ -225,7 +225,7 @@ export default function CajaPage() {
                   placeholder="Ej: 250000"
                   value={totalRecogido}
                   onChange={(e) => setTotalRecogido(e.target.value)}
-                  className="w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-white placeholder-[#777777] focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[rgba(59,130,246,0.3)] transition-all"
+                  className="w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-white placeholder-[#777777] focus:outline-none focus:border-[#f5c518] focus:ring-1 focus:ring-[rgba(245,197,24,0.3)] transition-all"
                 />
               </div>
               {totalRecogido && (
@@ -406,7 +406,7 @@ export default function CajaPage() {
             )}
             <button
               onClick={() => setShowGasto(true)}
-              className="p-1.5 rounded-[8px] text-[#888888] hover:text-[#3b82f6] hover:bg-[rgba(59,130,246,0.1)] transition-all"
+              className="p-1.5 rounded-[8px] text-[#888888] hover:text-[#f5c518] hover:bg-[rgba(245,197,24,0.1)] transition-all"
               title="Reportar gasto"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

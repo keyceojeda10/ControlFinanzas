@@ -26,7 +26,7 @@ function Alerta({ tipo = 'success', children }) {
 }
 
 const inputClass =
-  'w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] placeholder-[#777777] focus:outline-none focus:border-[#3b82f6] transition-all disabled:opacity-50 disabled:cursor-not-allowed'
+  'w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] placeholder-[#777777] focus:outline-none focus:border-[#f5c518] transition-all disabled:opacity-50 disabled:cursor-not-allowed'
 
 // ══════════════════════════════════════════════════════════════
 // TAB 1 — MI PERFIL
@@ -239,7 +239,7 @@ function TabOrganizacion() {
             </div>
             <Link
               href="/configuracion/plan"
-              className="px-3 py-1.5 rounded-[8px] text-xs font-medium bg-[#2a2a2a] text-[#888888] hover:text-[white] hover:bg-[#333d52] transition-all"
+              className="px-3 py-1.5 rounded-[8px] text-xs font-medium bg-[#2a2a2a] text-[#888888] hover:text-[white] hover:bg-[#333333] transition-all"
             >
               Cambiar plan
             </Link>
@@ -307,7 +307,7 @@ function TabSuscripcion() {
   return (
     <div className="space-y-5">
       <Card>
-        <div className="flex items-start justify-between mb-5">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5">
           <div>
             <p className="text-xs text-[#888888] mb-1">Plan actual</p>
             <div className="flex items-center gap-2">
@@ -319,7 +319,7 @@ function TabSuscripcion() {
           </div>
           <Link
             href="/configuracion/plan"
-            className="px-4 py-2 rounded-[12px] text-sm font-medium bg-[#3b82f6] text-white hover:bg-[#2563eb] transition-all"
+            className="inline-flex items-center justify-center h-10 px-5 rounded-[12px] text-sm font-semibold bg-[#f5c518] text-white hover:bg-[#f0b800] transition-all shrink-0"
           >
             Renovar / Cambiar
           </Link>
@@ -438,7 +438,7 @@ export default function ConfiguracionPage() {
             className={[
               'px-4 py-2.5 text-sm font-medium transition-all border-b-2 -mb-px',
               tab === t.key
-                ? 'text-[#3b82f6] border-[#3b82f6]'
+                ? 'text-[#f5c518] border-[#f5c518]'
                 : 'text-[#888888] border-transparent hover:text-[#888888]',
             ].join(' ')}
           >

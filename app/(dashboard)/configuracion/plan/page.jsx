@@ -126,13 +126,13 @@ export default function PlanPage() {
               className={[
                 'relative bg-[#1a1a1a] border rounded-[16px] p-5 flex flex-col transition-all',
                 esPopular
-                  ? 'border-[#3b82f6] ring-1 ring-[rgba(245,197,24,0.3)]'
+                  ? 'border-[#f5c518] ring-1 ring-[rgba(245,197,24,0.3)]'
                   : 'border-[#2a2a2a]',
               ].join(' ')}
             >
               {esPopular && (
                 <div className="absolute -top-2.5 left-1/2 -translate-x-1/2">
-                  <Badge variant="blue">Mas popular</Badge>
+                  <Badge variant="yellow">Mas popular</Badge>
                 </div>
               )}
 

@@ -155,7 +155,7 @@ export default function RutaDetallePage({ params }) {
             <select
               value={ruta.cobrador?.id ?? ''}
               onChange={(e) => cambiarCobrador(e.target.value)}
-              className="w-full h-9 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] px-3 focus:outline-none focus:border-[#3b82f6] transition-all cursor-pointer"
+              className="w-full h-9 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] px-3 focus:outline-none focus:border-[#f5c518] transition-all cursor-pointer"
             >
               <option value="">Sin cobrador asignado</option>
               {cobradores.map((c) => (
@@ -196,7 +196,7 @@ export default function RutaDetallePage({ params }) {
               className="h-full rounded-full transition-all duration-500"
               style={{
                 width: `${progreso}%`,
-                background: progreso >= 100 ? '#22c55e' : 'linear-gradient(90deg, #3b82f6, #6366f1)',
+                background: progreso >= 100 ? '#22c55e' : 'linear-gradient(90deg, #f5c518, #f0b800)',
               }}
             />
           </div>
@@ -222,8 +222,8 @@ export default function RutaDetallePage({ params }) {
           <div className="space-y-2.5">
             {ruta.clientes.map((c) => (
               <div key={c.id} className="flex items-center gap-3 py-2 border-b border-[#2a2a2a] last:border-0">
-                <div className="w-7 h-7 rounded-full bg-[rgba(59,130,246,0.15)] flex items-center justify-center shrink-0">
-                  <span className="text-[#3b82f6] text-[10px] font-bold">{c.nombre?.[0]?.toUpperCase()}</span>
+                <div className="w-7 h-7 rounded-full bg-[rgba(245,197,24,0.15)] flex items-center justify-center shrink-0">
+                  <span className="text-[#f5c518] text-[10px] font-bold">{c.nombre?.[0]?.toUpperCase()}</span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-[white] truncate">{c.nombre}</p>
@@ -308,14 +308,14 @@ export default function RutaDetallePage({ params }) {
                 key={c.id}
                 className={[
                   'flex items-center gap-3 px-3 py-2.5 rounded-[12px] cursor-pointer transition-colors',
-                  seleccionados.includes(c.id) ? 'bg-[rgba(59,130,246,0.1)]' : 'hover:bg-[#222222]',
+                  seleccionados.includes(c.id) ? 'bg-[rgba(245,197,24,0.1)]' : 'hover:bg-[#222222]',
                 ].join(' ')}
               >
                 <input
                   type="checkbox"
                   checked={seleccionados.includes(c.id)}
                   onChange={() => toggleSeleccion(c.id)}
-                  className="accent-[#3b82f6]"
+                  className="accent-[#f5c518]"
                 />
                 <div>
                   <p className="text-sm font-medium text-[white]">{c.nombre}</p>
@@ -357,7 +357,7 @@ export default function RutaDetallePage({ params }) {
               placeholder="Ej: 250000"
               value={totalRecogido}
               onChange={(e) => setTotalRecogido(e.target.value)}
-              className="w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] placeholder-[#777777] focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[rgba(59,130,246,0.3)] transition-all"
+              className="w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] placeholder-[#777777] focus:outline-none focus:border-[#f5c518] focus:ring-1 focus:ring-[rgba(245,197,24,0.3)] transition-all"
               autoFocus
             />
           </div>

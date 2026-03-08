@@ -156,7 +156,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
             placeholder="Notas adicionales sobre el cliente..."
             maxLength={500}
             rows={3}
-            className="w-full px-3 py-2 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] placeholder-[#777777] focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[rgba(59,130,246,0.3)] transition-all resize-none"
+            className="w-full px-3 py-2 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] placeholder-[#777777] focus:outline-none focus:border-[#f5c518] focus:ring-1 focus:ring-[rgba(245,197,24,0.3)] transition-all resize-none"
           />
           <span className="text-[10px] text-[#888888] text-right">{form.notas.length}/500</span>
         </div>

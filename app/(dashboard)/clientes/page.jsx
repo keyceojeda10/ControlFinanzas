@@ -79,7 +79,7 @@ export default function ClientesPage() {
       <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-none pb-1">
         {ESTADOS_CLIENTE.map(({ value, label, color }) => {
           const isActive = estado === value
-          const accent = color ?? '#3b82f6'
+          const accent = color ?? '#f5c518'
           return (
             <button
               key={value}
@@ -112,7 +112,7 @@ export default function ClientesPage() {
           value={buscar}
           onChange={(e) => setBuscar(e.target.value)}
           placeholder="Buscar por nombre, cédula o teléfono…"
-          className="w-full h-10 pl-9 pr-4 rounded-[12px] border border-[#2a2a2a] bg-[#1a1a1a] text-sm text-[white] placeholder-[#777777] focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[rgba(59,130,246,0.3)] transition-all"
+          className="w-full h-10 pl-9 pr-4 rounded-[12px] border border-[#2a2a2a] bg-[#1a1a1a] text-sm text-[white] placeholder-[#777777] focus:outline-none focus:border-[#f5c518] focus:ring-1 focus:ring-[rgba(245,197,24,0.3)] transition-all"
         />
         {buscar && (
           <button
@@ -150,7 +150,7 @@ export default function ClientesPage() {
         ) : (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <p className="text-sm font-medium text-[white]">Sin clientes {estado === 'mora' ? 'en mora' : estado === 'activo' ? 'al día' : 'cancelados'}</p>
-            <button onClick={() => setEstado('')} className="mt-2 text-xs text-[#3b82f6] hover:underline">
+            <button onClick={() => setEstado('')} className="mt-2 text-xs text-[#f5c518] hover:underline">
               Ver todos
             </button>
           </div>
@@ -160,8 +160,8 @@ export default function ClientesPage() {
       {/* Estado vacío */}
       {!loading && clientes.length === 0 && !error && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-14 h-14 rounded-full bg-[rgba(59,130,246,0.1)] flex items-center justify-center mb-4">
-            <svg className="w-7 h-7 text-[#3b82f6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-14 h-14 rounded-full bg-[rgba(245,197,24,0.1)] flex items-center justify-center mb-4">
+            <svg className="w-7 h-7 text-[#f5c518]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                 d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
@@ -170,7 +170,7 @@ export default function ClientesPage() {
             <>
               <p className="text-sm font-medium text-[white]">Sin resultados</p>
               <p className="text-xs text-[#888888] mt-1">No se encontró ningún cliente con "{buscar}"</p>
-              <button onClick={() => setBuscar('')} className="mt-3 text-xs text-[#3b82f6] hover:underline">
+              <button onClick={() => setBuscar('')} className="mt-3 text-xs text-[#f5c518] hover:underline">
                 Limpiar búsqueda
               </button>
             </>

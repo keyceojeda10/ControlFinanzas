@@ -68,7 +68,7 @@ export default function ReportarGasto({ open, onClose, onSuccess }) {
                 className={[
                   'h-10 rounded-[10px] border text-sm font-medium transition-all cursor-pointer',
                   tipo === t.value
-                    ? 'bg-[rgba(59,130,246,0.15)] border-[#3b82f6] text-[#3b82f6]'
+                    ? 'bg-[rgba(245,197,24,0.15)] border-[#f5c518] text-[#f5c518]'
                     : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#1a1a1a]',
                 ].join(' ')}
               >

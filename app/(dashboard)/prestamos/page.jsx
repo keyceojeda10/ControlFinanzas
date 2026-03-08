@@ -86,7 +86,7 @@ export default function PrestamosPage() {
       <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-none pb-1">
         {ESTADOS.map(({ value, label, color }) => {
           const isActive = estado === value
-          const accent = color ?? '#3b82f6'
+          const accent = color ?? '#f5c518'
           return (
             <button
               key={value}
@@ -119,7 +119,7 @@ export default function PrestamosPage() {
           value={buscar}
           onChange={(e) => setBuscar(e.target.value)}
           placeholder="Buscar por nombre o cédula del cliente…"
-          className="w-full h-10 pl-9 pr-4 rounded-[12px] border border-[#2a2a2a] bg-[#1a1a1a] text-sm text-[white] placeholder-[#777777] focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[rgba(59,130,246,0.3)] transition-all"
+          className="w-full h-10 pl-9 pr-4 rounded-[12px] border border-[#2a2a2a] bg-[#1a1a1a] text-sm text-[white] placeholder-[#777777] focus:outline-none focus:border-[#f5c518] focus:ring-1 focus:ring-[rgba(245,197,24,0.3)] transition-all"
         />
         {buscar && (
           <button
@@ -157,8 +157,8 @@ export default function PrestamosPage() {
       {/* Estado vacío */}
       {!loading && !error && prestamos.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-14 h-14 rounded-full bg-[rgba(59,130,246,0.1)] flex items-center justify-center mb-4">
-            <svg className="w-7 h-7 text-[#3b82f6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-14 h-14 rounded-full bg-[rgba(245,197,24,0.1)] flex items-center justify-center mb-4">
+            <svg className="w-7 h-7 text-[#f5c518]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                 d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -167,7 +167,7 @@ export default function PrestamosPage() {
             <>
               <p className="text-sm font-medium text-[white]">Sin resultados</p>
               <p className="text-xs text-[#888888] mt-1">No hay préstamos para "{buscar}"</p>
-              <button onClick={() => setBuscar('')} className="mt-3 text-xs text-[#3b82f6] hover:underline">
+              <button onClick={() => setBuscar('')} className="mt-3 text-xs text-[#f5c518] hover:underline">
                 Limpiar búsqueda
               </button>
             </>
@@ -178,7 +178,7 @@ export default function PrestamosPage() {
               </p>
               <p className="text-xs text-[#888888] mt-1">
                 {estado !== '' && (
-                  <button onClick={() => setEstado('')} className="text-[#3b82f6] hover:underline">
+                  <button onClick={() => setEstado('')} className="text-[#f5c518] hover:underline">
                     Ver todos los estados
                   </button>
                 )}

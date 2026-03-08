@@ -17,7 +17,7 @@ export default function NuevoPrestamoPage() {
   return (
     <Suspense fallback={
       <div className="flex items-center justify-center h-40">
-        <svg className="animate-spin w-6 h-6 text-[#3b82f6]" fill="none" viewBox="0 0 24 24">
+        <svg className="animate-spin w-6 h-6 text-[#f5c518]" fill="none" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
         </svg>
@@ -146,8 +146,8 @@ function NuevoPrestamo() {
             <div>
               <p className="text-xs font-medium text-[#888888] mb-1.5">Cliente</p>
               <div className="flex items-center gap-2 h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111]">
-                <div className="w-5 h-5 rounded-full bg-[rgba(59,130,246,0.2)] flex items-center justify-center shrink-0">
-                  <span className="text-[#3b82f6] text-[9px] font-bold">{clienteNombre?.[0]?.toUpperCase()}</span>
+                <div className="w-5 h-5 rounded-full bg-[rgba(245,197,24,0.2)] flex items-center justify-center shrink-0">
+                  <span className="text-[#f5c518] text-[9px] font-bold">{clienteNombre?.[0]?.toUpperCase()}</span>
                 </div>
                 <span className="text-sm text-[white]">{clienteNombre || clienteIdParam}</span>
               </div>
@@ -159,7 +159,7 @@ function NuevoPrestamo() {
                 placeholder="Buscar cliente por nombre o cédula…"
                 value={buscadorCliente}
                 onChange={(e) => { setBuscadorCliente(e.target.value); setClienteId('') }}
-                className="w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] placeholder-[#777777] focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[rgba(59,130,246,0.3)] transition-all"
+                className="w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] placeholder-[#777777] focus:outline-none focus:border-[#f5c518] focus:ring-1 focus:ring-[rgba(245,197,24,0.3)] transition-all"
               />
               {buscadorCliente && (
                 <div className="bg-[#111111] border border-[#2a2a2a] rounded-[12px] overflow-hidden max-h-40 overflow-y-auto">
@@ -175,7 +175,7 @@ function NuevoPrestamo() {
                       }}
                       className={[
                         'w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-[#222222] transition-colors',
-                        clienteId === c.id ? 'bg-[rgba(59,130,246,0.1)] text-[#3b82f6]' : 'text-[white]',
+                        clienteId === c.id ? 'bg-[rgba(245,197,24,0.1)] text-[#f5c518]' : 'text-[white]',
                       ].join(' ')}
                     >
                       <span className="font-medium">{c.nombre}</span>
@@ -244,7 +244,7 @@ function NuevoPrestamo() {
                   className={[
                     'h-9 rounded-[10px] border text-sm font-medium transition-all cursor-pointer',
                     frecuencia === f.value
-                      ? 'bg-[rgba(59,130,246,0.15)] border-[#3b82f6] text-[#3b82f6]'
+                      ? 'bg-[rgba(245,197,24,0.15)] border-[#f5c518] text-[#f5c518]'
                       : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#1a1a1a]',
                   ].join(' ')}
                 >

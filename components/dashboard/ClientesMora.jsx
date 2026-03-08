@@ -8,12 +8,12 @@ export default function ClientesMora({ clientes = [], loading = false }) {
       <div className="space-y-3">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="flex items-center gap-3 animate-pulse">
-            <div className="w-9 h-9 rounded-full bg-[#2a3245] shrink-0" />
+            <div className="w-9 h-9 rounded-full bg-[#2a2a2a] shrink-0" />
             <div className="flex-1 space-y-1.5">
-              <div className="h-3 w-28 rounded bg-[#2a3245]" />
-              <div className="h-2.5 w-20 rounded bg-[#2a3245]" />
+              <div className="h-3 w-28 rounded bg-[#2a2a2a]" />
+              <div className="h-2.5 w-20 rounded bg-[#2a2a2a]" />
             </div>
-            <div className="h-5 w-16 rounded-full bg-[#2a3245]" />
+            <div className="h-5 w-16 rounded-full bg-[#2a2a2a]" />
           </div>
         ))}
       </div>

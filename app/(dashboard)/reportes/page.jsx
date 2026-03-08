@@ -148,14 +148,14 @@ export default function ReportesPage() {
             type="date"
             value={desde}
             onChange={(e) => setDesde(e.target.value)}
-            className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#3b82f6]"
+            className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#f5c518]"
           />
           <span className="text-[#888888] text-xs">—</span>
           <input
             type="date"
             value={hasta}
             onChange={(e) => setHasta(e.target.value)}
-            className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#3b82f6]"
+            className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#f5c518]"
           />
         </div>
       </div>
@@ -173,7 +173,7 @@ export default function ReportesPage() {
             {[
               { label: 'Clientes activos',  value: resumen.clientes.total,                     color: 'white' },
               { label: 'En mora',           value: resumen.clientes.enMora,                    color: '#ef4444' },
-              { label: 'Préstamos activos', value: resumen.prestamos.activos,                  color: '#3b82f6' },
+              { label: 'Préstamos activos', value: resumen.prestamos.activos,                  color: '#f5c518' },
               { label: 'Cartera activa',    value: formatCOP(resumen.prestamos.carteraActiva), color: '#22c55e' },
             ].map(({ label, value, color }) => (
               <div key={label} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-3 text-center">
@@ -191,7 +191,7 @@ export default function ReportesPage() {
             </div>
             <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-4 py-3">
               <p className="text-[10px] text-[#888888]">Capital prestado activo</p>
-              <p className="text-lg font-bold text-[#3b82f6] mt-0.5">{formatCOP(resumen.prestamos.capitalPrestado)}</p>
+              <p className="text-lg font-bold text-[#f5c518] mt-0.5">{formatCOP(resumen.prestamos.capitalPrestado)}</p>
               <p className="text-[10px] text-[#888888] mt-0.5">{resumen.prestamos.completados} completados</p>
             </div>
           </div>
@@ -209,7 +209,7 @@ export default function ReportesPage() {
                 onClick={() => setPeriodoIngresos(p)}
                 className={`px-2.5 py-1 rounded-[8px] text-[10px] font-medium capitalize transition-all ${
                   periodoIngresos === p
-                    ? 'bg-[#3b82f6] text-white'
+                    ? 'bg-[#f5c518] text-white'
                     : 'bg-[#2a2a2a] text-[#888888] hover:text-[white]'
                 }`}
               >
@@ -238,10 +238,10 @@ export default function ReportesPage() {
                 tickLine={false}
                 tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
               />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(59,130,246,0.08)' }} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(245,197,24,0.08)' }} />
               <Bar dataKey="total" radius={[4, 4, 0, 0]}>
                 {ingresos.map((_, i) => (
-                  <Cell key={i} fill={i === ingresos.length - 1 ? '#3b82f6' : '#1e4d8c'} />
+                  <Cell key={i} fill={i === ingresos.length - 1 ? '#f5c518' : '#7a6210'} />
                 ))}
               </Bar>
             </BarChart>
@@ -334,7 +334,7 @@ export default function ReportesPage() {
               key={tipo}
               onClick={() => exportar(tipo)}
               disabled={!!descargando}
-              className="flex flex-col items-start gap-1 bg-[#111111] border border-[#2a2a2a] hover:border-[#3b82f6]/40 hover:bg-[#222222] rounded-[12px] px-4 py-3 transition-all text-left disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex flex-col items-start gap-1 bg-[#111111] border border-[#2a2a2a] hover:border-[#f5c518]/40 hover:bg-[#222222] rounded-[12px] px-4 py-3 transition-all text-left disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <div className="flex items-center gap-2 w-full">
                 <svg className="w-4 h-4 text-[#22c55e] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

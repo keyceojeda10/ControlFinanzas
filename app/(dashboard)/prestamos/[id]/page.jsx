@@ -170,7 +170,7 @@ export default function PrestamoDetallePage({ params }) {
       <Card>
         <div className="flex items-center justify-between">
           <div>
-            <Link href={`/clientes/${cliente.id}`} className="hover:text-[#3b82f6] transition-colors">
+            <Link href={`/clientes/${cliente.id}`} className="hover:text-[#f5c518] transition-colors">
               <h1 className="text-lg font-bold text-[white]">{cliente.nombre}</h1>
             </Link>
             <p className="text-sm text-[#888888]">CC {cliente.cedula}</p>
@@ -257,7 +257,7 @@ export default function PrestamoDetallePage({ params }) {
                 width: `${porcentajePagado}%`,
                 background: porcentajePagado === 100 ? '#22c55e'
                   : diasMora > 0 ? '#ef4444'
-                  : 'linear-gradient(90deg, #3b82f6, #6366f1)',
+                  : 'linear-gradient(90deg, #f5c518, #f0b800)',
               }}
             />
           </div>

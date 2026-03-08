@@ -15,7 +15,7 @@ export default function ClienteCard({ cliente }) {
   return (
     <Link
       href={`/clientes/${cliente.id}`}
-      className="flex items-center gap-3 bg-[#1c2333] border border-[#2a3245] rounded-[14px] p-4 hover:border-[#3b82f6]/40 hover:bg-[#222a3d] transition-all duration-150 group"
+      className="flex items-center gap-3 bg-[#1a1a1a] border border-[#2a2a2a] rounded-[14px] p-4 hover:border-[#f5c518]/40 hover:bg-[#222222] transition-all duration-150 group"
     >
       {/* Avatar */}
       <div
@@ -24,12 +24,12 @@ export default function ClienteCard({ cliente }) {
           background: cliente.estado === 'mora'
             ? 'rgba(239,68,68,0.2)'
             : cliente.estado === 'activo'
-            ? 'rgba(59,130,246,0.2)'
+            ? 'rgba(245,197,24,0.2)'
             : 'rgba(100,116,139,0.2)',
           color: cliente.estado === 'mora'
             ? '#ef4444'
             : cliente.estado === 'activo'
-            ? '#3b82f6'
+            ? '#f5c518'
             : '#64748b',
         }}
       >
@@ -59,7 +59,7 @@ export default function ClienteCard({ cliente }) {
 
       {/* Arrow */}
       <svg
-        className="w-4 h-4 text-[#2a3245] group-hover:text-[#3b82f6] transition-colors shrink-0 ml-1"
+        className="w-4 h-4 text-[#2a2a2a] group-hover:text-[#f5c518] transition-colors shrink-0 ml-1"
         fill="none" stroke="currentColor" viewBox="0 0 24 24"
       >
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

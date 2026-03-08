@@ -94,7 +94,7 @@ export default function NuevoCobrador() {
             </div>
             <div>
               <p className="text-[10px] text-[#888888]">Contraseña temporal</p>
-              <p className="text-sm font-bold text-[#3b82f6] font-mono">{creado.password}</p>
+              <p className="text-sm font-bold text-[#f5c518] font-mono">{creado.password}</p>
             </div>
           </div>
 

@@ -91,7 +91,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24" />)}</div>
       ) : data && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <KpiCard label="Clientes activos" value={data.clientes.total} sub={data.clientes.enMora > 0 ? `${data.clientes.enMora} en mora` : 'Sin mora'} color="#3b82f6" icon="👥" />
+          <KpiCard label="Clientes activos" value={data.clientes.total} sub={data.clientes.enMora > 0 ? `${data.clientes.enMora} en mora` : 'Sin mora'} color="#f5c518" icon="👥" />
           <KpiCard label="Prestamos activos" value={data.prestamos.activos} sub={`${data.prestamos.completados} completados`} color="#22c55e" icon="📋" />
           <KpiCard label="Cartera activa" value={formatCOP(data.prestamos.carteraActiva)} sub={`Capital: ${formatCOP(data.prestamos.capitalPrestado)}`} color="#f59e0b" icon="💰" />
           <KpiCard label="Cuota diaria total" value={formatCOP(data.prestamos.cuotaDiariaTotal)} sub="Esperado por dia" color="#a855f7" icon="📅" />
@@ -112,7 +112,7 @@ export default function DashboardPage() {
           </div>
           <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] px-4 py-4">
             <p className="text-[11px] text-[#888888] mb-1">Recaudado este mes</p>
-            <p className="text-2xl font-bold text-[#3b82f6]">{formatCOP(data.cobros.mes)}</p>
+            <p className="text-2xl font-bold text-[#f5c518]">{formatCOP(data.cobros.mes)}</p>
             <p className="text-[10px] text-[#888888] mt-1">{data.cobros.cantidadMes} pagos en el mes</p>
             {data.clientes.enMora > 0 && (<div className="mt-2 flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#ef4444]" /><p className="text-[10px] text-[#ef4444]">{moraPct}% de clientes en mora</p></div>)}
           </div>
@@ -206,7 +206,7 @@ export default function DashboardPage() {
       <div>
         <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-3">Accesos rapidos</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <QuickLink href="/clientes/nuevo" label="Nuevo cliente" desc="Registrar cliente" color="#3b82f6" />
+          <QuickLink href="/clientes/nuevo" label="Nuevo cliente" desc="Registrar cliente" color="#f5c518" />
           <QuickLink href="/prestamos/nuevo" label="Nuevo prestamo" desc="Crear prestamo" color="#22c55e" />
           <QuickLink href="/caja" label="Cierre de caja" desc="Registrar cierre del dia" color="#f59e0b" />
           <QuickLink href="/clientes" label="Clientes" desc="Ver cartera completa" color="#a855f7" />

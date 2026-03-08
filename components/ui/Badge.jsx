@@ -1,7 +1,7 @@
 // components/ui/Badge.jsx
 
 const variants = {
-  blue:   'bg-[rgba(59,130,246,0.1)]   text-[#3b82f6]  border-[rgba(59,130,246,0.15)]',
+  blue:   'bg-[rgba(245,197,24,0.1)]   text-[#f5c518]  border-[rgba(245,197,24,0.15)]',
   green:  'bg-[rgba(34,197,94,0.1)]    text-[#22c55e]  border-[rgba(34,197,94,0.15)]',
   yellow: 'bg-[rgba(245,197,24,0.1)]   text-[#f5c518]  border-[rgba(245,197,24,0.15)]',
   red:    'bg-[rgba(239,68,68,0.1)]    text-[#ef4444]  border-[rgba(239,68,68,0.15)]',
@@ -28,7 +28,7 @@ export function StatusDot({ variant = 'green' }) {
     green:  'bg-[#22c55e]',
     yellow: 'bg-[#f59e0b]',
     red:    'bg-[#ef4444]',
-    blue:   'bg-[#3b82f6]',
+    blue:   'bg-[#f5c518]',
     gray:   'bg-[#555555]',
   }
   return (
