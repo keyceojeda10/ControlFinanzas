@@ -59,6 +59,7 @@ export async function POST(req) {
     const metadata = payment.metadata || {}
     const orgId    = metadata.organization_id  // MP convierte camelCase a snake_case
     const plan     = metadata.plan
+    const periodo  = metadata.periodo || 'mensual'
     const status   = payment.status // approved, rejected, cancelled, pending, in_process
 
     if (!orgId) {
@@ -68,8 +69,9 @@ export async function POST(req) {
 
     if (status === 'approved') {
       const ahora     = new Date()
+      const diasExtension = periodo === 'trimestral' ? 90 : 30
       const vencimiento = new Date(ahora)
-      vencimiento.setDate(vencimiento.getDate() + 30)
+      vencimiento.setDate(vencimiento.getDate() + diasExtension)
 
       // Buscar suscripción existente o crear nueva
       const subExistente = await prisma.suscripcion.findFirst({
@@ -83,7 +85,7 @@ export async function POST(req) {
           ? new Date(subExistente.fechaVencimiento)
           : ahora
         const nuevaFecha = new Date(baseDate)
-        nuevaFecha.setDate(nuevaFecha.getDate() + 30)
+        nuevaFecha.setDate(nuevaFecha.getDate() + diasExtension)
 
         await prisma.suscripcion.update({
           where: { id: subExistente.id },

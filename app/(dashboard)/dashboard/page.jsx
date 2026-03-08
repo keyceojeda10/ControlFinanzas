@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { formatCOP } from '@/lib/calculos'
+import { useAuth } from '@/hooks/useAuth'
+import Onboarding from '@/components/Onboarding'
 
 function Skeleton({ className = '' }) {
   return <div className={`animate-pulse bg-[#2a2a2a] rounded-[12px] ${className}`} />
@@ -45,14 +47,25 @@ function fechaCorta(iso) {
 }
 
 export default function DashboardPage() {
+  const { session, loading: authLoading, esOwner } = useAuth()
+
   const [data, setData] = useState(null)
   const [moraData, setMoraData] = useState(undefined)
   const [loading, setLoading] = useState(true)
   const [mounted, setMounted] = useState(false)
   const [error, setError] = useState('')
   const [fechaActual, setFechaActual] = useState('')
+  const [showOnboarding, setShowOnboarding] = useState(false)
 
   useEffect(() => { setMounted(true) }, [])
+
+  // Mostrar onboarding solo a owners que no lo han completado
+  useEffect(() => {
+    if (authLoading) return
+    if (esOwner && session?.user?.onboardingCompletado === false) {
+      setShowOnboarding(true)
+    }
+  }, [authLoading, esOwner, session])
 
   useEffect(() => {
     const updateFecha = () => {
@@ -81,6 +94,10 @@ export default function DashboardPage() {
   const moraPct = data ? (data.clientes.total > 0 ? Math.round((data.clientes.enMora / data.clientes.total) * 100) : 0) : 0
 
   return (
+    <>
+    {showOnboarding && (
+      <Onboarding onComplete={() => setShowOnboarding(false)} />
+    )}
     <div className="max-w-3xl mx-auto space-y-5">
       <div>
         <h1 className="text-xl font-bold text-white">Dashboard</h1>
@@ -215,5 +232,6 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+    </>
   )
 }

@@ -26,6 +26,8 @@ export async function GET(req, { params }) {
           fechaInicio: true, fechaVencimiento: true, montoCOP: true,
         },
       },
+      referidoPor: { select: { id: true, nombre: true } },
+      referidos:   { select: { id: true, nombre: true, createdAt: true } },
       _count: {
         select: { clientes: true, prestamos: true },
       },
@@ -104,6 +106,23 @@ export async function PATCH(req, { params }) {
       },
     })
     return NextResponse.json({ ok: true, mensaje: `Plan cambiado a ${plan}` })
+  }
+
+  if (accion === 'cambiarDescuento') {
+    const descuento = parseInt(body.descuento)
+    if (isNaN(descuento) || descuento < 0 || descuento > 100) {
+      return NextResponse.json({ error: 'Descuento debe ser entre 0 y 100' }, { status: 400 })
+    }
+    await prisma.organization.update({ where: { id }, data: { descuento } })
+    await prisma.adminLog.create({
+      data: {
+        adminId:        session.user.id,
+        organizacionId: id,
+        accion:         'cambiar_descuento',
+        detalle:        `Descuento cambiado a ${descuento}% para "${org.nombre}"`,
+      },
+    })
+    return NextResponse.json({ ok: true, mensaje: `Descuento actualizado a ${descuento}%` })
   }
 
   if (accion === 'toggleUsuario' && body.userId) {

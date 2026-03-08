@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link                    from 'next/link'
+import { useSearchParams }     from 'next/navigation'
 import { useAuth }             from '@/hooks/useAuth'
 import { Card }                from '@/components/ui/Card'
 import { Button }              from '@/components/ui/Button'
@@ -409,11 +410,114 @@ function TabSuscripcion() {
 }
 
 // ══════════════════════════════════════════════════════════════
+// TAB 4 — REFERIDOS
+// ══════════════════════════════════════════════════════════════
+function TabReferidos() {
+  const [data,    setData]    = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [copiado, setCopiado] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/configuracion/referidos')
+      .then((r) => r.json())
+      .then((d) => setData(d.data ?? d))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  if (loading) return (
+    <div className="space-y-3">
+      <Skeleton className="h-32 w-full" /><Skeleton className="h-20 w-full" />
+    </div>
+  )
+
+  const codigo = data?.codigoReferido
+  const referidos = data?.referidos ?? []
+  const link = codigo ? `https://app.control-finanzas.com/registro?ref=${codigo}` : ''
+
+  const copiarLink = () => {
+    if (!link) return
+    navigator.clipboard.writeText(link).then(() => {
+      setCopiado(true)
+      setTimeout(() => setCopiado(false), 2000)
+    })
+  }
+
+  const compartirWhatsApp = () => {
+    if (!link) return
+    const msg = encodeURIComponent(`Prueba Control Finanzas, la mejor app para gestionar préstamos y cobros. Regístrate gratis: ${link}`)
+    window.open(`https://wa.me/?text=${msg}`, '_blank')
+  }
+
+  return (
+    <div className="space-y-5">
+      <Card>
+        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">Tu link de referido</p>
+        <div className="space-y-4">
+          <div className="bg-[#111111] border border-[#2a2a2a] rounded-[12px] px-4 py-3">
+            <p className="text-xs text-[#888888] mb-1">Código</p>
+            <p className="text-lg font-bold font-mono text-[#f5c518]">{codigo ?? 'Sin código'}</p>
+          </div>
+
+          {link && (
+            <div className="bg-[#111111] border border-[#2a2a2a] rounded-[12px] px-4 py-3">
+              <p className="text-xs text-[#888888] mb-1">Link de registro</p>
+              <p className="text-xs text-[#888888] break-all">{link}</p>
+            </div>
+          )}
+
+          <div className="flex gap-2 flex-wrap">
+            <Button onClick={copiarLink} size="sm" variant={copiado ? 'success' : 'primary'}>
+              {copiado ? 'Copiado' : 'Copiar link'}
+            </Button>
+            <Button onClick={compartirWhatsApp} size="sm" variant="secondary">
+              Compartir por WhatsApp
+            </Button>
+          </div>
+
+          <div className="bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.15)] rounded-[12px] px-4 py-3">
+            <p className="text-sm text-[#22c55e] font-medium">Por cada referido que se registre, ganas 1 mes gratis en tu suscripción.</p>
+          </div>
+        </div>
+      </Card>
+
+      <Card>
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Referidos</p>
+          <Badge variant="green">{referidos.length}</Badge>
+        </div>
+        {referidos.length === 0 ? (
+          <p className="text-sm text-[#555555]">Aún no tienes referidos. Comparte tu link para empezar a ganar meses gratis.</p>
+        ) : (
+          <div className="space-y-0">
+            {referidos.map((r) => (
+              <div key={r.id} className="flex items-center justify-between py-2.5 border-b border-[#2a2a2a] last:border-0">
+                <div>
+                  <p className="text-sm font-medium text-white">{r.nombre}</p>
+                  <p className="text-[10px] text-[#555555]">{new Date(r.createdAt).toLocaleDateString('es-CO')}</p>
+                </div>
+                <Badge variant="green">+30 días</Badge>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    </div>
+  )
+}
+
+// ══════════════════════════════════════════════════════════════
 // PÁGINA PRINCIPAL
 // ══════════════════════════════════════════════════════════════
-export default function ConfiguracionPage() {
+function ConfiguracionContent() {
   const { session, esOwner } = useAuth()
-  const [tab, setTab] = useState('perfil')
+  const searchParams = useSearchParams()
+  const tabParam = searchParams.get('tab')
+  const [tab, setTab] = useState(tabParam || 'perfil')
+
+  useEffect(() => {
+    if (tabParam) setTab(tabParam)
+  }, [tabParam])
 
   const rol = session?.user?.rol ?? 'cobrador'
 
@@ -421,6 +525,7 @@ export default function ConfiguracionPage() {
     { key: 'perfil',       label: 'Mi perfil',    visible: true },
     { key: 'organizacion', label: 'Organización', visible: rol === 'owner' },
     { key: 'suscripcion',  label: 'Suscripción',  visible: rol === 'owner' },
+    { key: 'referidos',    label: 'Referidos',     visible: rol === 'owner' },
   ].filter((t) => t.visible)
 
   return (
@@ -431,13 +536,13 @@ export default function ConfiguracionPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-0 border-b border-[#2a2a2a]">
+      <div className="flex gap-0 border-b border-[#2a2a2a] overflow-x-auto">
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
             className={[
-              'px-4 py-2.5 text-sm font-medium transition-all border-b-2 -mb-px',
+              'px-4 py-2.5 text-sm font-medium transition-all border-b-2 -mb-px whitespace-nowrap',
               tab === t.key
                 ? 'text-[#f5c518] border-[#f5c518]'
                 : 'text-[#888888] border-transparent hover:text-[#888888]',
@@ -451,6 +556,15 @@ export default function ConfiguracionPage() {
       {tab === 'perfil'       && <TabPerfil />}
       {tab === 'organizacion' && esOwner && <TabOrganizacion />}
       {tab === 'suscripcion'  && esOwner && <TabSuscripcion />}
+      {tab === 'referidos'    && esOwner && <TabReferidos />}
     </div>
+  )
+}
+
+export default function ConfiguracionPage() {
+  return (
+    <Suspense fallback={<div className="max-w-2xl mx-auto"><Skeleton className="h-10 w-full" /></div>}>
+      <ConfiguracionContent />
+    </Suspense>
   )
 }

@@ -50,34 +50,40 @@ enum EstadoSuscripcion {
 // ─── MODELOS ─────────────────────────────────────────────
 
 model Organization {
-  id            String        @id @default(cuid())
-  nombre        String
-  plan          Plan          @default(basic)
-  telefono      String?
-  ciudad        String?
-  activo        Boolean       @default(true)
-  createdAt     DateTime      @default(now())
+  id              String        @id @default(cuid())
+  nombre          String
+  plan            Plan          @default(basic)
+  telefono        String?
+  ciudad          String?
+  activo          Boolean       @default(true)
+  codigoReferido  String?       @unique
+  referidoPorId   String?
+  descuento       Int           @default(0)
+  createdAt       DateTime      @default(now())
 
-  users         User[]
-  rutas         Ruta[]
-  clientes      Cliente[]
-  prestamos     Prestamo[]
-  pagos         Pago[]
-  cierresCaja   CierreCaja[]
-  suscripciones Suscripcion[]
-  adminLogs     AdminLog[]
-  gastosMenores GastoMenor[]
+  referidoPor     Organization?  @relation("Referidos", fields: [referidoPorId], references: [id])
+  referidos       Organization[] @relation("Referidos")
+  users           User[]
+  rutas           Ruta[]
+  clientes        Cliente[]
+  prestamos       Prestamo[]
+  pagos           Pago[]
+  cierresCaja     CierreCaja[]
+  suscripciones   Suscripcion[]
+  adminLogs       AdminLog[]
+  gastosMenores   GastoMenor[]
 }
 
 model User {
-  id             String        @id @default(cuid())
-  organizationId String?
-  nombre         String
-  email          String        @unique
-  password       String
-  rol            Rol
-  activo         Boolean       @default(true)
-  createdAt      DateTime      @default(now())
+  id                    String        @id @default(cuid())
+  organizationId        String?
+  nombre                String
+  email                 String        @unique
+  password              String
+  rol                   Rol
+  activo                Boolean       @default(true)
+  onboardingCompletado  Boolean       @default(false)
+  createdAt             DateTime      @default(now())
 
   organization   Organization? @relation(fields: [organizationId], references: [id])
   rutas          Ruta[]        @relation("CobradorRuta")

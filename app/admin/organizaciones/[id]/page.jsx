@@ -22,6 +22,7 @@ export default function OrgDetallePage() {
   const [org,     setOrg]     = useState(null)
   const [loading, setLoading] = useState(true)
   const [accionando, setAccionando] = useState('')
+  const [descuentoInput, setDescuentoInput] = useState('')
 
   const fetchOrg = async () => {
     try {
@@ -108,7 +109,7 @@ export default function OrgDetallePage() {
             value={org.plan}
             onChange={(e) => ejecutarAccion('cambiarPlan', { plan: e.target.value })}
             disabled={!!accionando}
-            className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#3b82f6]"
+            className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#f5c518]"
           >
             <option value="basic">Basic</option>
             <option value="standard">Standard</option>
@@ -159,7 +160,7 @@ export default function OrgDetallePage() {
         </div>
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-3 text-center">
           <p className="text-[10px] text-[#555555]">Préstamos activos</p>
-          <p className="text-base font-bold text-[#3b82f6]">{org.prestamosActivos}</p>
+          <p className="text-base font-bold text-[#f5c518]">{org.prestamosActivos}</p>
         </div>
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-3 text-center">
           <p className="text-[10px] text-[#555555]">Cartera activa</p>
@@ -223,6 +224,64 @@ export default function OrgDetallePage() {
         </Card>
       )}
 
+      {/* Descuento y referidos */}
+      <Card>
+        <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">Descuento y referidos</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Descuento */}
+          <div className="space-y-2">
+            <p className="text-xs text-[#888888]">Descuento especial (%)</p>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={descuentoInput}
+                onChange={(e) => setDescuentoInput(e.target.value)}
+                placeholder={String(org.descuento ?? 0)}
+                className="w-20 h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] focus:outline-none focus:border-[#f5c518]"
+              />
+              <Button
+                size="sm"
+                loading={accionando === 'cambiarDescuento'}
+                onClick={() => {
+                  ejecutarAccion('cambiarDescuento', { descuento: descuentoInput || '0' })
+                  setDescuentoInput('')
+                }}
+              >
+                Aplicar
+              </Button>
+            </div>
+            {org.descuento > 0 && (
+              <p className="text-xs text-[#22c55e]">Descuento activo: {org.descuento}%</p>
+            )}
+          </div>
+
+          {/* Referidos */}
+          <div className="space-y-2">
+            <p className="text-xs text-[#888888]">Código de referido</p>
+            <p className="text-sm font-mono text-[#f5c518]">{org.codigoReferido ?? 'Sin código'}</p>
+            {org.referidoPor && (
+              <p className="text-xs text-[#888888]">
+                Referido por: <span className="text-[white]">{org.referidoPor.nombre}</span>
+              </p>
+            )}
+            {org.referidos?.length > 0 && (
+              <div>
+                <p className="text-xs text-[#888888]">Referidos: <span className="text-[#22c55e] font-bold">{org.referidos.length}</span></p>
+                <div className="mt-1 space-y-1">
+                  {org.referidos.slice(0, 5).map((r) => (
+                    <p key={r.id} className="text-[11px] text-[#888888]">
+                      {r.nombre} · {new Date(r.createdAt).toLocaleDateString('es-CO')}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </Card>
+
       {/* Usuarios de la organización */}
       <Card>
         <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">Usuarios</p>
@@ -263,7 +322,7 @@ export default function OrgDetallePage() {
           <div className="space-y-2">
             {org.adminLogs.map((log) => (
               <div key={log.id} className="flex items-start gap-3 py-2 border-b border-[#2a2a2a] last:border-0">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#3b82f6] mt-1.5 shrink-0" />
+                <div className="w-1.5 h-1.5 rounded-full bg-[#f5c518] mt-1.5 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-[white]">{log.detalle ?? log.accion}</p>
                   <p className="text-[10px] text-[#555555]">

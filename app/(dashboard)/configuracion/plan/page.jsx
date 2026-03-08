@@ -56,12 +56,18 @@ export default function PlanPage() {
   const [estado,     setEstado]     = useState(null)
   const [cargando,   setCargando]   = useState('')
   const [loadEstado, setLoadEstado] = useState(true)
+  const [periodo,    setPeriodo]    = useState('mensual')
+  const [descuentoOrg, setDescuentoOrg] = useState(0)
 
   useEffect(() => {
     const load = async () => {
       try {
         const res = await fetch('/api/pagos/estado')
-        if (res.ok) setEstado(await res.json())
+        if (res.ok) {
+          const data = await res.json()
+          setEstado(data)
+          setDescuentoOrg(data.descuento ?? 0)
+        }
       } catch { /* ignore */ } finally {
         setLoadEstado(false)
       }
@@ -69,14 +75,23 @@ export default function PlanPage() {
     if (!authLoading) load()
   }, [authLoading])
 
+  const calcularPrecio = (precioBase) => {
+    const meses = periodo === 'trimestral' ? 3 : 1
+    const descuentoTrimestral = periodo === 'trimestral' ? 10 : 0
+    const descuentoFinal = Math.max(descuentoOrg, descuentoTrimestral)
+    const total = precioBase * meses
+    const conDescuento = Math.round(total * (1 - descuentoFinal / 100))
+    return { total, conDescuento, descuentoFinal, meses }
+  }
+
   const elegirPlan = async (plan) => {
-    if (plan === planActual) return
+    if (plan === planActual && periodo === 'mensual') return
     setCargando(plan)
     try {
       const res = await fetch('/api/pagos/crear-preferencia', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, periodo }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -85,7 +100,7 @@ export default function PlanPage() {
       }
       window.location.href = data.initPoint
     } catch {
-      alert('Error de conexion')
+      alert('Error de conexión')
     } finally {
       setCargando('')
     }
@@ -110,15 +125,59 @@ export default function PlanPage() {
         </p>
         {estado?.diasRestantes != null && estado.estado === 'activa' && (
           <p className="text-xs text-[#22c55e] mt-1">
-            {estado.diasRestantes} dias restantes en tu suscripcion
+            {estado.diasRestantes} días restantes en tu suscripción
           </p>
         )}
       </div>
 
+      {/* Toggle Mensual / Trimestral */}
+      <div className="flex justify-center">
+        <div className="inline-flex bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] p-1">
+          <button
+            onClick={() => setPeriodo('mensual')}
+            className={[
+              'px-4 py-2 rounded-[10px] text-sm font-medium transition-all',
+              periodo === 'mensual'
+                ? 'bg-[#f5c518] text-[#0a0a0a]'
+                : 'text-[#888888] hover:text-white',
+            ].join(' ')}
+          >
+            Mensual
+          </button>
+          <button
+            onClick={() => setPeriodo('trimestral')}
+            className={[
+              'px-4 py-2 rounded-[10px] text-sm font-medium transition-all flex items-center gap-1.5',
+              periodo === 'trimestral'
+                ? 'bg-[#f5c518] text-[#0a0a0a]'
+                : 'text-[#888888] hover:text-white',
+            ].join(' ')}
+          >
+            Trimestral
+            <span className={[
+              'text-[10px] font-bold px-1.5 py-0.5 rounded-full',
+              periodo === 'trimestral'
+                ? 'bg-[#0a0a0a] text-[#f5c518]'
+                : 'bg-[#22c55e] text-white',
+            ].join(' ')}>
+              -10%
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {descuentoOrg > 0 && (
+        <div className="text-center">
+          <Badge variant="green">Descuento especial: {descuentoOrg}%</Badge>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {planes.map((p) => {
-          const esPlanActual = p.key === planActual
+          const esPlanActual = p.key === planActual && periodo === 'mensual'
           const esPopular    = p.badge === 'Más popular'
+          const { total, conDescuento, descuentoFinal, meses } = calcularPrecio(p.precio)
+          const tieneDescuento = descuentoFinal > 0
 
           return (
             <div
@@ -138,10 +197,22 @@ export default function PlanPage() {
 
               <div className="mb-4 mt-1">
                 <p className="text-sm font-semibold text-white">{p.nombre}</p>
-                <p className="text-2xl font-bold text-white mt-1">
-                  {formatCOP(p.precio)}
-                  <span className="text-xs text-[#555555] font-normal">/mes</span>
-                </p>
+                {tieneDescuento ? (
+                  <div className="mt-1">
+                    <p className="text-sm text-[#555555] line-through">{formatCOP(total)}</p>
+                    <p className="text-2xl font-bold text-white">
+                      {formatCOP(conDescuento)}
+                      <span className="text-xs text-[#555555] font-normal">
+                        /{meses === 3 ? '3 meses' : 'mes'}
+                      </span>
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-2xl font-bold text-white mt-1">
+                    {formatCOP(p.precio)}
+                    <span className="text-xs text-[#555555] font-normal">/mes</span>
+                  </p>
+                )}
               </div>
 
               <ul className="space-y-2 flex-1 mb-5">
@@ -173,7 +244,7 @@ export default function PlanPage() {
                     </svg>
                     Procesando...
                   </>
-                ) : esPlanActual ? 'Plan actual' : 'Elegir plan'}
+                ) : esPlanActual ? 'Plan actual' : periodo === 'trimestral' ? 'Pagar trimestre' : 'Elegir plan'}
               </button>
             </div>
           )

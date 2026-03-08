@@ -11,10 +11,18 @@ export async function GET() {
   const orgId = session.user.organizationId
   if (!orgId) return NextResponse.json({ error: 'Sin organización' }, { status: 400 })
 
-  const sub = await prisma.suscripcion.findFirst({
-    where: { organizationId: orgId },
-    orderBy: { createdAt: 'desc' },
-  })
+  const [sub, org] = await Promise.all([
+    prisma.suscripcion.findFirst({
+      where: { organizationId: orgId },
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.organization.findUnique({
+      where: { id: orgId },
+      select: { descuento: true },
+    }),
+  ])
+
+  const descuento = org?.descuento ?? 0
 
   if (!sub) {
     return NextResponse.json({
@@ -23,6 +31,7 @@ export async function GET() {
       fechaVencimiento: null,
       diasRestantes:    0,
       mercadopagoId:    null,
+      descuento,
     })
   }
 
@@ -36,5 +45,6 @@ export async function GET() {
     fechaVencimiento: sub.fechaVencimiento,
     diasRestantes,
     mercadopagoId:    sub.mercadopagoId,
+    descuento,
   })
 }
