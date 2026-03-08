@@ -11,6 +11,7 @@ import { Card }                      from '@/components/ui/Card'
 import { SkeletonCard }              from '@/components/ui/Skeleton'
 import BotonWhatsApp                 from '@/components/ui/BotonWhatsApp'
 import { formatCOP }                 from '@/lib/calculos'
+import ScoreCrediticio               from '@/components/clientes/ScoreCrediticio'
 
 const estadoBadge = {
   activo:    { variant: 'green',  label: 'Activo'    },
@@ -27,7 +28,7 @@ const estadoPrestamoBadge = {
 export default function ClienteDetallePage({ params }) {
   const { id }     = use(params)
   const router     = useRouter()
-  const { esOwner } = useAuth()
+  const { esOwner, plan } = useAuth()
 
   const [cliente, setCliente]   = useState(null)
   const [loading, setLoading]   = useState(true)
@@ -105,6 +106,7 @@ export default function ClienteDetallePage({ params }) {
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-lg font-bold text-[white]">{cliente.nombre}</h1>
               <Badge variant={badge.variant}>{badge.label}</Badge>
+              <ScoreCrediticio cedula={cliente.cedula} plan={plan} />
             </div>
             <div className="mt-2 space-y-1">
               <p className="text-sm text-[#888888]">

@@ -24,7 +24,7 @@ function normalizarEmail(email) {
 export async function POST(req) {
   try {
     const body = await req.json()
-    const { nombreOrganizacion, nombre, email, password, ref } = body
+    const { nombreOrganizacion, nombre, email, password, ref, terminosAceptados } = body
 
     // Validaciones
     if (!nombreOrganizacion?.trim() || !nombre?.trim() || !email?.trim() || !password) {
@@ -33,6 +33,10 @@ export async function POST(req) {
 
     if (password.length < 6) {
       return NextResponse.json({ success: false, error: 'La contraseña debe tener al menos 6 caracteres' }, { status: 400 })
+    }
+
+    if (!terminosAceptados) {
+      return NextResponse.json({ success: false, error: 'Debes aceptar los términos y condiciones' }, { status: 400 })
     }
 
     // Normalizar email (elimina puntos antes del @ para prevenir duplicados tipo Gmail)
@@ -84,14 +88,16 @@ export async function POST(req) {
 
       const user = await tx.user.create({
         data: {
-          nombre:            nombre.trim(),
-          email:             emailNorm,
-          password:          hash,
-          rol:               'owner',
-          organizationId:    org.id,
-          emailVerificado:   false,
+          nombre:                  nombre.trim(),
+          email:                   emailNorm,
+          password:                hash,
+          rol:                     'owner',
+          organizationId:          org.id,
+          emailVerificado:         false,
           tokenVerificacion,
           tokenExpira,
+          terminosAceptados:       true,
+          fechaAceptacionTerminos: new Date(),
         },
       })
 

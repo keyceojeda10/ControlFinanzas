@@ -17,6 +17,7 @@ function RegistroForm() {
     email:              '',
     password:           '',
     confirmar:          '',
+    terminosAceptados:  false,
   })
   const [error,    setError]    = useState('')
   const [loading,  setLoading]  = useState(false)
@@ -43,6 +44,10 @@ function RegistroForm() {
       setError('Todos los campos son obligatorios')
       return
     }
+    if (!form.terminosAceptados) {
+      setError('Debes aceptar los términos y condiciones para continuar')
+      return
+    }
     if (form.password.length < 6) {
       setError('La contraseña debe tener al menos 6 caracteres')
       return
@@ -62,6 +67,7 @@ function RegistroForm() {
           nombre:             form.nombre,
           email:              form.email,
           password:           form.password,
+          terminosAceptados:  form.terminosAceptados,
           ...(refCode ? { ref: refCode } : {}),
         }),
       })
@@ -178,6 +184,25 @@ function RegistroForm() {
               className={inputClass}
             />
           </div>
+
+          <label className="flex items-start gap-3 cursor-pointer mt-1">
+            <input
+              type="checkbox"
+              checked={form.terminosAceptados}
+              onChange={(e) => setForm({ ...form, terminosAceptados: e.target.checked })}
+              className="mt-0.5 w-4 h-4 rounded border-[#2a2a2a] bg-[#111111] text-[#f5c518] focus:ring-[#f5c518] focus:ring-offset-0 cursor-pointer accent-[#f5c518]"
+            />
+            <span className="text-xs text-[#888888] leading-relaxed">
+              Al crear tu cuenta, aceptas nuestros{' '}
+              <Link href="/terminos-uso" target="_blank" className="text-[#f5c518] hover:underline">
+                Términos de uso
+              </Link>{' '}
+              y nuestra{' '}
+              <Link href="/privacidad" target="_blank" className="text-[#f5c518] hover:underline">
+                Política de privacidad
+              </Link>
+            </span>
+          </label>
 
           <button
             type="submit"

@@ -26,6 +26,25 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
   const [rutas,   setRutas]     = useState([])
   const [loading, setLoading]   = useState(false)
   const [error,   setError]     = useState('')
+  const [scoreData, setScoreData] = useState(null)
+
+  // Consulta de score crediticio debounced al escribir cédula
+  const habilitadoScore = !esEdicion && ['standard', 'professional'].includes(plan)
+  useEffect(() => {
+    if (!habilitadoScore) return
+    const cedula = form.cedula.trim()
+    if (cedula.length < 6 || !/^\d{6,12}$/.test(cedula)) {
+      setScoreData(null)
+      return
+    }
+    const timer = setTimeout(() => {
+      fetch(`/api/clientes/score?cedula=${encodeURIComponent(cedula)}`)
+        .then(r => r.json())
+        .then(d => { if (!d.error) setScoreData(d); else setScoreData(null) })
+        .catch(() => setScoreData(null))
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [form.cedula, habilitadoScore])
 
   // Cargar rutas solo para plan standard+
   useEffect(() => {
@@ -114,15 +133,30 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
           error={errores.nombre}
           autoComplete="name"
         />
-        <Input
-          label="Cédula *"
-          placeholder="Ej: 1023456789"
-          value={form.cedula}
-          onChange={set('cedula')}
-          error={errores.cedula}
-          inputMode="numeric"
-          disabled={esEdicion}
-        />
+        <div>
+          <Input
+            label="Cédula *"
+            placeholder="Ej: 1023456789"
+            value={form.cedula}
+            onChange={set('cedula')}
+            error={errores.cedula}
+            inputMode="numeric"
+            disabled={esEdicion}
+          />
+          {scoreData?.encontrado && (
+            <div className={`mt-1.5 text-xs px-3 py-2 rounded-lg border ${
+              scoreData.score === 'rojo'
+                ? 'bg-[rgba(239,68,68,0.08)] border-[rgba(239,68,68,0.2)] text-[#ef4444]'
+                : scoreData.score === 'amarillo'
+                ? 'bg-[rgba(245,197,24,0.08)] border-[rgba(245,197,24,0.2)] text-[#f5c518]'
+                : 'bg-[rgba(34,197,94,0.08)] border-[rgba(34,197,94,0.2)] text-[#22c55e]'
+            }`}>
+              {scoreData.score === 'rojo' && 'Cliente con mora activa en otras entidades'}
+              {scoreData.score === 'amarillo' && 'Cliente con créditos activos en otras entidades'}
+              {scoreData.score === 'verde' && 'Sin historial negativo en la plataforma'}
+            </div>
+          )}
+        </div>
         <Input
           label="Teléfono *"
           placeholder="Ej: 3001234567"
