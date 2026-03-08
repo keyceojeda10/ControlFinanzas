@@ -2,6 +2,8 @@
 
 import { prisma } from '@/lib/prisma'
 
+const CRON_SECRET = process.env.CRON_SECRET || 'cron_controlfinanzas_2026'
+
 // Calcula el total esperado del día para un cobrador
 async function calcularEsperado(organizationId, cobradorId) {
   const ruta = await prisma.ruta.findFirst({
@@ -42,9 +44,12 @@ async function getCierresDelDia(organizationId, fecha) {
 
 // POST - Ejecuta cierre automático de caja para todas las organizaciones
 export async function POST(request) {
-  // Este endpoint es llamado por el scheduler (cron job)
-  // No requiere autenticación
-  
+  const { searchParams } = new URL(request.url)
+  const secret = searchParams.get('secret')
+  if (secret !== CRON_SECRET) {
+    return Response.json({ error: 'No autorizado' }, { status: 401 })
+  }
+
   try {
     // Obtener la fecha de ayer en Colombia (UTC-5)
     // Si son las 5:00 AM UTC, en Colombia son las 12:00 AM (medianoche)

@@ -9,21 +9,21 @@ import { formatCOP }           from '@/lib/calculos'
 const planes = [
   {
     key: 'basic',
-    nombre: 'Basico',
+    nombre: 'Básico',
     precio: 59000,
     badge: null,
     features: [
       '1 usuario (administrador)',
       'Hasta 50 clientes',
-      'Gestion de prestamos',
-      'Dashboard basico',
+      'Gestión de préstamos',
+      'Dashboard básico',
     ],
   },
   {
     key: 'standard',
     nombre: 'Profesional',
     precio: 119000,
-    badge: 'Mas popular',
+    badge: 'Más popular',
     features: [
       'Hasta 3 usuarios',
       'Hasta 300 clientes',
@@ -118,7 +118,7 @@ export default function PlanPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {planes.map((p) => {
           const esPlanActual = p.key === planActual
-          const esPopular    = p.badge === 'Mas popular'
+          const esPopular    = p.badge === 'Más popular'
 
           return (
             <div
@@ -132,7 +132,7 @@ export default function PlanPage() {
             >
               {esPopular && (
                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
-                  <Badge variant="yellow">Mas popular</Badge>
+                  <Badge variant="yellow">Más popular</Badge>
                 </div>
               )}
 

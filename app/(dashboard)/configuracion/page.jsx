@@ -10,7 +10,7 @@ import { Skeleton }            from '@/components/ui/Skeleton'
 import { formatCOP }           from '@/lib/calculos'
 
 const planBadge = { basic: 'gray', standard: 'blue', professional: 'purple' }
-const PRECIOS   = { basic: 80000, standard: 150000, professional: 250000 }
+const PRECIOS   = { basic: 59000, standard: 119000, professional: 199000 }
 
 function Alerta({ tipo = 'success', children }) {
   const styles = {

@@ -66,7 +66,7 @@ export async function POST(req) {
 
   // Enviar email de bienvenida (no bloquea la respuesta)
   const vencimiento = new Date()
-  vencimiento.setDate(vencimiento.getDate() + 15)
+  vencimiento.setDate(vencimiento.getDate() + 7)
   const { subject, html } = emailBienvenida({
     nombre: nombre.trim(),
     email: email.trim().toLowerCase(),
