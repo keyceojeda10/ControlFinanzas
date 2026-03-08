@@ -101,7 +101,7 @@ function RegistroForm() {
         <div className="text-center mb-8">
           <Image src="/logo-icon.svg" alt="Control Finanzas" width={56} height={56} className="mx-auto mb-5" priority />
           <h1 className="text-2xl font-bold text-white tracking-tight">Crear cuenta</h1>
-          <p className="text-sm text-[#888888] mt-1">7 días gratis para probar la plataforma</p>
+          <p className="text-sm text-[#888888] mt-1">14 días gratis para probar la plataforma</p>
         </div>
 
         {/* Referral badge */}

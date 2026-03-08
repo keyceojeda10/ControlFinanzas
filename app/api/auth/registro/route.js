@@ -75,10 +75,10 @@ export async function POST(req) {
         },
       })
 
-      // Suscripción de prueba: 7 días gratis
+      // Suscripción de prueba: 14 días gratis
       const ahora = new Date()
       const vencimiento = new Date(ahora)
-      vencimiento.setDate(vencimiento.getDate() + 7)
+      vencimiento.setDate(vencimiento.getDate() + 14)
 
       await tx.suscripcion.create({
         data: {
@@ -96,7 +96,7 @@ export async function POST(req) {
 
     // Enviar email de bienvenida al nuevo usuario (no bloquea la respuesta)
     const vencimiento = new Date()
-    vencimiento.setDate(vencimiento.getDate() + 7)
+    vencimiento.setDate(vencimiento.getDate() + 14)
     const { subject, html } = emailBienvenida({
       nombre:           nombre.trim(),
       email:            email.trim().toLowerCase(),
