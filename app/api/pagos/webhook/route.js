@@ -5,6 +5,18 @@ import { paymentApi }   from '@/lib/mercadopago'
 import crypto           from 'crypto'
 import { enviarEmail, emailPagoAprobado, emailPagoFallido } from '@/lib/email'
 
+// Valores válidos del enum Plan en Prisma/DB
+const PLANES_VALIDOS = ["test", "basic", "standard", "professional"]
+
+function sanitizarPlan(planRaw, fallback) {
+  fallback = fallback || "basic"
+  if (!planRaw) return fallback
+  const normalizado = String(planRaw).toLowerCase().trim()
+  if (PLANES_VALIDOS.includes(normalizado)) return normalizado
+  console.warn("[webhook] Plan desconocido: " + planRaw + " - usando fallback: " + fallback)
+  return fallback
+}
+
 function verificarFirma(req, body) {
   const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET
   if (!secret) return true // en dev sin secret, aceptar todo
@@ -58,9 +70,11 @@ export async function POST(req) {
 
     const metadata = payment.metadata || {}
     const orgId    = metadata.organization_id  // MP convierte camelCase a snake_case
-    const plan     = metadata.plan
+    const planRaw  = metadata.plan
     const periodo  = metadata.periodo || 'mensual'
     const status   = payment.status // approved, rejected, cancelled, pending, in_process
+
+    console.log('[webhook] id=' + data.id + ' status=' + status + ' org=' + orgId + ' planRaw=' + planRaw)
 
     if (!orgId) {
       console.warn('Webhook: pago sin organizationId en metadata', data.id)
@@ -68,6 +82,9 @@ export async function POST(req) {
     }
 
     if (status === 'approved') {
+      const plan = sanitizarPlan(planRaw)
+      console.log('[webhook] plan sanitizado: ' + planRaw + ' -> ' + plan)
+
       const ahora     = new Date()
       const diasExtension = periodo === 'trimestral' ? 90 : 30
       const vencimiento = new Date(ahora)
@@ -90,7 +107,7 @@ export async function POST(req) {
         await prisma.suscripcion.update({
           where: { id: subExistente.id },
           data: {
-            plan:             plan || subExistente.plan,
+            plan:             plan,
             estado:           'activa',
             fechaVencimiento: nuevaFecha,
             mercadopagoId:    String(data.id),
@@ -101,7 +118,7 @@ export async function POST(req) {
         await prisma.suscripcion.create({
           data: {
             organizationId:   orgId,
-            plan:             plan || 'basic',
+            plan:             plan,
             estado:           'activa',
             fechaInicio:      ahora,
             fechaVencimiento: vencimiento,
@@ -114,7 +131,7 @@ export async function POST(req) {
       // Actualizar plan de la organización y activarla
       await prisma.organization.update({
         where: { id: orgId },
-        data: { plan: plan || undefined, activo: true },
+        data: { plan: plan, activo: true },
       })
 
       // Registrar en AdminLog (buscar un superadmin para el log)
@@ -140,13 +157,14 @@ export async function POST(req) {
           : vencimiento
         const { subject, html } = emailPagoAprobado({
           nombre: owner.nombre,
-          plan: plan || 'basic',
+          plan: plan,
           monto: payment.transaction_amount ?? 0,
           fechaVencimiento: fechaVenc,
         })
         enviarEmail({ to: owner.email, subject, html }).catch(() => {})
       }
     } else if (status === 'rejected' || status === 'cancelled') {
+      const plan = sanitizarPlan(planRaw)
       // Registrar intento fallido
       const admin = await prisma.user.findFirst({ where: { rol: 'superadmin' } })
       if (admin) {
@@ -167,7 +185,7 @@ export async function POST(req) {
       if (ownerFallido) {
         const { subject, html } = emailPagoFallido({
           nombre: ownerFallido.nombre,
-          plan: plan || 'basic',
+          plan: plan,
           monto: payment.transaction_amount ?? 0,
         })
         enviarEmail({ to: ownerFallido.email, subject, html }).catch(() => {})
