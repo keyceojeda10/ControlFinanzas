@@ -9,8 +9,9 @@ import { Badge }               from '@/components/ui/Badge'
 import { Skeleton }            from '@/components/ui/Skeleton'
 import { formatCOP }           from '@/lib/calculos'
 
-const planBadge = { basic: 'gray', standard: 'blue', professional: 'purple' }
-const PRECIOS   = { basic: 59000, standard: 119000, professional: 199000 }
+const planBadge  = { basic: 'gray', standard: 'yellow', professional: 'purple' }
+const PRECIOS    = { basic: 59000, standard: 119000, professional: 199000 }
+const PLAN_NAMES = { basic: 'Básico', standard: 'Profesional', professional: 'Empresarial' }
 
 function Alerta({ tipo = 'success', children }) {
   const styles = {
@@ -232,7 +233,7 @@ function TabOrganizacion() {
               <p className="text-xs text-[#888888]">Plan actual</p>
               <div className="flex items-center gap-2 mt-1">
                 <Badge variant={planBadge[org?.plan ?? 'basic']}>
-                  {(org?.plan ?? 'basic').charAt(0).toUpperCase() + (org?.plan ?? 'basic').slice(1)}
+                  {PLAN_NAMES[org?.plan ?? 'basic']}
                 </Badge>
                 <span className="text-xs text-[#888888]">{formatCOP(PRECIOS[org?.plan ?? 'basic'])}/mes</span>
               </div>
@@ -312,7 +313,7 @@ function TabSuscripcion() {
             <p className="text-xs text-[#888888] mb-1">Plan actual</p>
             <div className="flex items-center gap-2">
               <Badge variant={planBadge[org?.plan ?? 'basic']}>
-                {(org?.plan ?? 'basic').charAt(0).toUpperCase() + (org?.plan ?? 'basic').slice(1)}
+                {PLAN_NAMES[org?.plan ?? 'basic']}
               </Badge>
               <span className="text-xs text-[#888888]">{formatCOP(PRECIOS[org?.plan ?? 'basic'])}/mes</span>
             </div>
@@ -389,7 +390,7 @@ function TabSuscripcion() {
                   {' → '}
                   {new Date(h.fechaVencimiento).toLocaleDateString('es-CO', { month: 'short', year: '2-digit' })}
                 </p>
-                <div className="text-center"><Badge variant={planBadge[h.plan]}>{h.plan}</Badge></div>
+                <div className="text-center"><Badge variant={planBadge[h.plan]}>{PLAN_NAMES[h.plan] ?? h.plan}</Badge></div>
                 <div className="text-center">
                   <Badge variant={h.estado === 'activa' ? 'green' : h.estado === 'vencida' ? 'red' : 'gray'}>
                     {h.estado}
