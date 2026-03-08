@@ -188,8 +188,14 @@ export default function PlanPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-        {[planTest, ...planes].map((p) => {
+      {esSuperadmin && (
+        <div className="border border-dashed border-[#3a3a3a] rounded-[12px] p-3 text-center">
+          <p className="text-xs text-[#555555]">Modo superadmin — plan de prueba disponible</p>
+        </div>
+      )}
+
+      <div className={`grid grid-cols-1 gap-4 ${esSuperadmin ? 'sm:grid-cols-4' : 'sm:grid-cols-3'}`}>
+        {(esSuperadmin ? [planTest, ...planes] : planes).map((p) => {
           const esPlanActual = p.key === planActual && periodo === 'mensual'
           const esPopular    = p.badge === 'Más popular'
           const esTest       = p.key === 'test'
