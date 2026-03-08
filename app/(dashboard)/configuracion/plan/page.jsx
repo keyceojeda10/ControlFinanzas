@@ -49,9 +49,22 @@ const planes = [
   },
 ]
 
+const planTest = {
+  key: 'test',
+  nombre: 'Test ($1.500)',
+  precio: 1500,
+  badge: '🧪 Solo pruebas',
+  features: [
+    'Solo para testing interno',
+    'NO usar en producción',
+    'Activa 30 días',
+  ],
+}
+
 export default function PlanPage() {
   const { session, loading: authLoading } = useAuth()
   const planActual = session?.user?.plan ?? 'basic'
+  const esSuperadmin = session?.user?.rol === 'superadmin'
 
   const [estado,     setEstado]     = useState(null)
   const [cargando,   setCargando]   = useState('')
@@ -172,10 +185,17 @@ export default function PlanPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {planes.map((p) => {
+      {esSuperadmin && (
+        <div className="border border-dashed border-[#3a3a3a] rounded-[12px] p-3 text-center">
+          <p className="text-xs text-[#555555]">Modo superadmin — plan de prueba disponible</p>
+        </div>
+      )}
+
+      <div className={`grid grid-cols-1 gap-4 ${esSuperadmin ? 'sm:grid-cols-4' : 'sm:grid-cols-3'}`}>
+        {(esSuperadmin ? [planTest, ...planes] : planes).map((p) => {
           const esPlanActual = p.key === planActual && periodo === 'mensual'
           const esPopular    = p.badge === 'Más popular'
+          const esTest       = p.key === 'test'
           const { total, conDescuento, descuentoFinal, meses } = calcularPrecio(p.precio)
           const tieneDescuento = descuentoFinal > 0
 
@@ -186,6 +206,8 @@ export default function PlanPage() {
                 'relative bg-[#1a1a1a] border rounded-[16px] p-5 flex flex-col transition-all',
                 esPopular
                   ? 'border-[#f5c518] ring-1 ring-[rgba(245,197,24,0.3)] mt-3'
+                  : esTest
+                  ? 'border-dashed border-[#3a3a3a]'
                   : 'border-[#2a2a2a]',
               ].join(' ')}
             >
@@ -197,6 +219,9 @@ export default function PlanPage() {
 
               <div className="mb-4 mt-1">
                 <p className="text-sm font-semibold text-white">{p.nombre}</p>
+                {esTest && (
+                  <p className="text-[10px] text-[#555555] mt-0.5">Solo superadmin · no usar en producción</p>
+                )}
                 {tieneDescuento ? (
                   <div className="mt-1">
                     <p className="text-sm text-[#555555] line-through">{formatCOP(total)}</p>
