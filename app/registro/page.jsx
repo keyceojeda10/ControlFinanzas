@@ -84,6 +84,10 @@ function RegistroForm() {
         return
       }
 
+      if (typeof window !== 'undefined' && window.fbq) {
+        window.fbq('track', 'Lead')
+      }
+
       router.push('/configuracion/plan')
     } catch {
       setError('Error de conexión. Intenta de nuevo.')

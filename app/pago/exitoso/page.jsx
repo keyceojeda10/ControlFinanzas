@@ -6,6 +6,13 @@ import Link from 'next/link'
 export default function PagoExitoso() {
   const [dots, setDots] = useState([])
 
+  // Pixel: Purchase
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.fbq) {
+      window.fbq('track', 'Purchase', { currency: 'COP', value: 0 })
+    }
+  }, [])
+
   // Confetti simple
   useEffect(() => {
     const colors = ['#22c55e', '#3b82f6', '#f59e0b', '#a855f7', '#ef4444']
