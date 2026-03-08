@@ -9,13 +9,16 @@ export async function POST(req) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
+  const orgId = session.user.organizationId
+  if (!orgId) return NextResponse.json({ error: 'Sin organización asociada' }, { status: 400 })
+
   const { plan, periodo = 'mensual' } = await req.json()
   const planInfo = PLANES[plan]
   if (!planInfo) return NextResponse.json({ error: 'Plan no válido' }, { status: 400 })
 
   // Consultar descuento de la organización
   const org = await prisma.organization.findUnique({
-    where: { id: session.user.organizationId },
+    where: { id: orgId },
     select: { descuento: true },
   })
 
@@ -45,7 +48,7 @@ export async function POST(req) {
       back_urls:   buildBackUrls(),
       auto_return: 'approved',
       metadata: {
-        organizationId: session.user.organizationId,
+        organizationId: orgId,
         plan,
         periodo,
         userId: session.user.id,
