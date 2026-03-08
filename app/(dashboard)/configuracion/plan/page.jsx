@@ -63,7 +63,6 @@ const planTest = {
 
 export default function PlanPage() {
   const { session, loading: authLoading } = useAuth()
-  const planActual = session?.user?.plan ?? 'basic'
   const esSuperadmin = session?.user?.rol === 'superadmin'
 
   const [estado,     setEstado]     = useState(null)
@@ -87,6 +86,10 @@ export default function PlanPage() {
     }
     if (!authLoading) load()
   }, [authLoading])
+
+  // Plan actual desde la API (DB real), no del JWT
+  const planActual = estado?.plan ?? session?.user?.plan ?? 'basic'
+  const todosPlanes = [planTest, ...planes]
 
   const calcularPrecio = (precioBase) => {
     const meses = periodo === 'trimestral' ? 3 : 1
@@ -133,7 +136,7 @@ export default function PlanPage() {
         <h1 className="text-xl font-bold text-white">Elige tu plan</h1>
         <p className="text-sm text-[#555555] mt-1">
           {estado?.estado === 'activa'
-            ? `Tu plan actual: ${planes.find(p => p.key === planActual)?.nombre || planActual}. Cambia cuando quieras.`
+            ? `Tu plan actual: ${todosPlanes.find(p => p.key === planActual)?.nombre || planActual}. Cambia cuando quieras.`
             : 'Selecciona el plan que mejor se adapte a tu negocio.'}
         </p>
         {estado?.diasRestantes != null && estado.estado === 'activa' && (
