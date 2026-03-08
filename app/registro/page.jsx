@@ -2,7 +2,6 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import Image                             from 'next/image'
-import { signIn }                        from 'next-auth/react'
 import { useRouter, useSearchParams }    from 'next/navigation'
 import Link                              from 'next/link'
 
@@ -73,22 +72,13 @@ function RegistroForm() {
         return
       }
 
-      const result = await signIn('credentials', {
-        email:    form.email,
-        password: form.password,
-        redirect: false,
-      })
-
-      if (result?.error) {
-        setError('Registro exitoso pero hubo un error al iniciar sesión. Intenta ingresar manualmente.')
-        return
-      }
-
+      // Pixel Lead antes de redirigir
       if (typeof window !== 'undefined' && window.fbq) {
         window.fbq('track', 'Lead')
       }
 
-      router.push('/configuracion/plan')
+      // Redirigir a verificar email — no hacer signIn hasta que esté verificado
+      router.push('/verificar-email')
     } catch {
       setError('Error de conexión. Intenta de nuevo.')
     } finally {

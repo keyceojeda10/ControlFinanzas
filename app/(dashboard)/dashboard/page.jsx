@@ -60,9 +60,12 @@ export default function DashboardPage() {
   useEffect(() => { setMounted(true) }, [])
 
   // Mostrar onboarding solo a owners que no lo han completado
+  // Usa localStorage como fuente de verdad local (el JWT no se refresca sin re-login)
   useEffect(() => {
-    if (authLoading) return
-    if (esOwner && session?.user?.onboardingCompletado === false) {
+    if (authLoading || !session?.user?.id) return
+    const userId = session.user.id
+    const yaVisto = localStorage.getItem(`cf_onboarding_done_${userId}`)
+    if (esOwner && !yaVisto && session?.user?.onboardingCompletado === false) {
       setShowOnboarding(true)
     }
   }, [authLoading, esOwner, session])
@@ -96,7 +99,7 @@ export default function DashboardPage() {
   return (
     <>
     {showOnboarding && (
-      <Onboarding onComplete={() => setShowOnboarding(false)} />
+      <Onboarding userId={session?.user?.id} onComplete={() => setShowOnboarding(false)} />
     )}
     <div className="max-w-3xl mx-auto space-y-5">
       <div>

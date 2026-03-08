@@ -1,14 +1,24 @@
 // app/api/auth/registro/route.js — Registro de nueva organización
 import { NextResponse } from 'next/server'
 import bcrypt           from 'bcryptjs'
+import crypto           from 'crypto'
 import { prisma }       from '@/lib/prisma'
-import { enviarEmail, emailBienvenida, emailReferidoExitoso } from '@/lib/email'
+import { enviarEmail, emailBienvenida, emailReferidoExitoso, emailVerificacion } from '@/lib/email'
 
 function generarCodigoReferido() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
   let code = 'CF-'
   for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)]
   return code
+}
+
+// Normaliza email: minúsculas + elimina puntos antes del @ (previene duplicados tipo Gmail)
+function normalizarEmail(email) {
+  const lower = email.trim().toLowerCase()
+  const [local, domain] = lower.split('@')
+  if (!domain) return lower
+  // Quitar puntos solo en la parte local (antes del @)
+  return `${local.replace(/\./g, '')}@${domain}`
 }
 
 export async function POST(req) {
@@ -25,8 +35,11 @@ export async function POST(req) {
       return NextResponse.json({ success: false, error: 'La contraseña debe tener al menos 6 caracteres' }, { status: 400 })
     }
 
-    // Verificar email único
-    const existente = await prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } })
+    // Normalizar email (elimina puntos antes del @ para prevenir duplicados tipo Gmail)
+    const emailNorm = normalizarEmail(email)
+
+    // Verificar email único (con email normalizado)
+    const existente = await prisma.user.findUnique({ where: { email: emailNorm } })
     if (existente) {
       return NextResponse.json({ success: false, error: 'Este email ya está registrado' }, { status: 400 })
     }
@@ -65,13 +78,20 @@ export async function POST(req) {
         },
       })
 
+      // Generar token de verificación de email (expira en 24h)
+      const tokenVerificacion = crypto.randomBytes(32).toString('hex')
+      const tokenExpira = new Date(Date.now() + 24 * 60 * 60 * 1000)
+
       const user = await tx.user.create({
         data: {
-          nombre:         nombre.trim(),
-          email:          email.trim().toLowerCase(),
-          password:       hash,
-          rol:            'owner',
-          organizationId: org.id,
+          nombre:            nombre.trim(),
+          email:             emailNorm,
+          password:          hash,
+          rol:               'owner',
+          organizationId:    org.id,
+          emailVerificado:   false,
+          tokenVerificacion,
+          tokenExpira,
         },
       })
 
@@ -94,16 +114,22 @@ export async function POST(req) {
       return { org, user, vencimiento }
     })
 
-    // Enviar email de bienvenida al nuevo usuario (no bloquea la respuesta)
+    // Enviar email de verificación (obligatorio antes de usar la app)
+    const BASE = process.env.NEXTAUTH_URL || 'https://app.control-finanzas.com'
+    const linkVerif = `${BASE}/api/auth/verificar-email?token=${resultado.user.tokenVerificacion}`
+    const { subject: svf, html: hvf } = emailVerificacion({ nombre: nombre.trim(), link: linkVerif })
+    enviarEmail({ to: emailNorm, subject: svf, html: hvf }).catch(() => {})
+
+    // Enviar email de bienvenida en background (no bloquea)
     const vencimiento = new Date()
     vencimiento.setDate(vencimiento.getDate() + 14)
     const { subject, html } = emailBienvenida({
       nombre:           nombre.trim(),
-      email:            email.trim().toLowerCase(),
+      email:            emailNorm,
       nombreOrg:        nombreOrganizacion.trim(),
       fechaVencimiento: vencimiento,
     })
-    enviarEmail({ to: email.trim().toLowerCase(), subject, html }).catch(() => {})
+    enviarEmail({ to: emailNorm, subject, html }).catch(() => {})
 
     // Si hubo referido: extender suscripción del referidor y notificarle
     if (orgReferidora) {

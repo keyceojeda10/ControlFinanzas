@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 
+export const LS_KEY = 'cf_onboarding_done'
+
 const pasos = [
   {
     icon: '🏦',
@@ -44,15 +46,15 @@ const pasos = [
 
 const TOTAL = pasos.length
 
-async function marcarCompletado() {
+async function marcarCompletadoEnDB() {
   try {
     await fetch('/api/configuracion/onboarding', { method: 'PATCH' })
   } catch {
-    // silenciar error de red; el onboarding no debe bloquear al usuario
+    // silenciar — no bloquea al usuario
   }
 }
 
-export default function Onboarding({ onComplete }) {
+export default function Onboarding({ userId, onComplete }) {
   const [paso, setPaso] = useState(0)
   const [saliendo, setSaliendo] = useState(false)
   const router = useRouter()
@@ -61,14 +63,11 @@ export default function Onboarding({ onComplete }) {
   const esUltimo = paso === TOTAL - 1
 
   async function handleFinalizar() {
+    if (saliendo) return
     setSaliendo(true)
-    await marcarCompletado()
-    onComplete?.()
-  }
-
-  async function handleOmitir() {
-    setSaliendo(true)
-    await marcarCompletado()
+    // Guardar en localStorage para no depender del JWT (que no se refresca sin re-login)
+    if (userId) localStorage.setItem(`${LS_KEY}_${userId}`, '1')
+    await marcarCompletadoEnDB()
     onComplete?.()
   }
 
@@ -81,9 +80,10 @@ export default function Onboarding({ onComplete }) {
   }
 
   function handleAccion() {
-    // Navegar sin cerrar el onboarding — el usuario puede seguir después
+    // Navega al recurso del paso pero NO cierra el onboarding
+    // Avanza al siguiente paso para que al volver continúe el tour
     router.push(actual.accion.href)
-    handleFinalizar()
+    if (paso < TOTAL - 1) setPaso((p) => p + 1)
   }
 
   return (
@@ -107,18 +107,14 @@ export default function Onboarding({ onComplete }) {
         {/* Puntos de progreso */}
         <div className="flex items-center justify-center gap-2 mb-8">
           {pasos.map((_, i) => (
-            <button
+            <div
               key={i}
-              onClick={() => setPaso(i)}
-              aria-label={`Ir al paso ${i + 1}`}
               style={{
                 width: i === paso ? '24px' : '8px',
                 height: '8px',
                 borderRadius: '99px',
-                background: i === paso ? '#f5c518' : '#2a2a2a',
-                border: 'none',
-                padding: 0,
-                cursor: 'pointer',
+                background: i <= paso ? '#f5c518' : '#2a2a2a',
+                opacity: i < paso ? 0.5 : 1,
                 transition: 'all 0.25s ease',
               }}
             />
@@ -158,7 +154,7 @@ export default function Onboarding({ onComplete }) {
           </p>
         </div>
 
-        {/* Botón de acción secundario (opcional) */}
+        {/* Botón de acción secundario */}
         {actual.accion && (
           <button
             onClick={handleAccion}
@@ -187,12 +183,12 @@ export default function Onboarding({ onComplete }) {
           <Button
             variant="ghost"
             size="md"
-            onClick={handleOmitir}
+            onClick={handleFinalizar}
             disabled={saliendo}
             className="flex-1"
             style={{ color: '#555555' }}
           >
-            Omitir
+            Omitir todo
           </Button>
 
           <Button
@@ -207,11 +203,8 @@ export default function Onboarding({ onComplete }) {
           </Button>
         </div>
 
-        {/* Contador de pasos */}
-        <p
-          className="text-center mt-4 text-[11px]"
-          style={{ color: '#555555' }}
-        >
+        {/* Contador */}
+        <p className="text-center mt-4 text-[11px]" style={{ color: '#555555' }}>
           {paso + 1} de {TOTAL}
         </p>
       </div>
