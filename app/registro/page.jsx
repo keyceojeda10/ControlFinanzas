@@ -194,13 +194,13 @@ function RegistroForm() {
             />
             <span className="text-xs text-[#888888] leading-relaxed">
               Al crear tu cuenta, aceptas nuestros{' '}
-              <Link href="/terminos-uso" target="_blank" className="text-[#f5c518] hover:underline">
+              <a href="https://control-finanzas.com/terminos-uso" target="_blank" rel="noopener noreferrer" className="text-[#f5c518] hover:underline">
                 Términos de uso
-              </Link>{' '}
+              </a>{' '}
               y nuestra{' '}
-              <Link href="/privacidad" target="_blank" className="text-[#f5c518] hover:underline">
+              <a href="https://control-finanzas.com/privacidad" target="_blank" rel="noopener noreferrer" className="text-[#f5c518] hover:underline">
                 Política de privacidad
-              </Link>
+              </a>
             </span>
           </label>
 
