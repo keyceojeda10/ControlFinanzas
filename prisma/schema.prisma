@@ -74,6 +74,7 @@ model Organization {
   suscripciones   Suscripcion[]
   adminLogs       AdminLog[]
   gastosMenores   GastoMenor[]
+  tickets         TicketSoporte[]
 }
 
 model User {
@@ -98,6 +99,8 @@ model User {
   cierresCaja    CierreCaja[]
   adminLogs      AdminLog[]    @relation("AdminLogs")
   gastosMenores  GastoMenor[]  @relation("CobradorGastos")
+  tickets        TicketSoporte[]
+  mensajesTicket MensajeTicket[]
 
   @@index([organizationId])
 }
@@ -252,4 +255,59 @@ model AdminLog {
   organizacion   Organization? @relation(fields: [organizacionId], references: [id])
 
   @@index([adminId])
+}
+
+// ─── SOPORTE ─────────────────────────────────────────────
+
+enum TipoTicket {
+  bug
+  pregunta
+  solicitud
+  problema_pago
+  otro
+}
+
+enum EstadoTicket {
+  abierto
+  en_progreso
+  resuelto
+  cerrado
+}
+
+model TicketSoporte {
+  id               String        @id @default(cuid())
+  organizationId   String
+  userId           String
+  tipo             TipoTicket
+  asunto           String
+  descripcion      String        @db.Text
+  estado           EstadoTicket  @default(abierto)
+  solicitaContacto Boolean       @default(false)
+  telefonoContacto String?
+  contactoAtendido Boolean       @default(false)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  organization     Organization  @relation(fields: [organizationId], references: [id])
+  user             User          @relation(fields: [userId], references: [id])
+  mensajes         MensajeTicket[]
+
+  @@index([organizationId])
+  @@index([estado])
+  @@index([userId])
+}
+
+model MensajeTicket {
+  id        String   @id @default(cuid())
+  ticketId  String
+  userId    String
+  contenido String   @db.Text
+  esAdmin   Boolean  @default(false)
+  leido     Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  ticket    TicketSoporte @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id])
+
+  @@index([ticketId])
 }
