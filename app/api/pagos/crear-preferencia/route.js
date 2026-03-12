@@ -23,14 +23,20 @@ export async function POST(req) {
   })
 
   const descuentoOrg       = org?.descuento ?? 0
+  const esAnual            = periodo === 'anual'
   const esTrimestral       = periodo === 'trimestral'
-  const descuentoTrimestral = esTrimestral ? 10 : 0
-  const descuentoFinal     = Math.max(descuentoOrg, descuentoTrimestral)
-  const meses              = esTrimestral ? 3 : 1
+  const descuentoPeriodo   = esAnual ? 17 : esTrimestral ? 10 : 0
+  const descuentoFinal     = esAnual ? 0 : Math.max(descuentoOrg, descuentoPeriodo)
+  const meses              = esAnual ? 12 : esTrimestral ? 3 : 1
+  const mesesCobrados      = esAnual ? 10 : meses
   const precioBase         = planInfo.precio * meses
-  const precioFinal        = Math.round(precioBase * (1 - descuentoFinal / 100))
+  const precioFinal        = esAnual
+    ? planInfo.precio * mesesCobrados
+    : Math.round(precioBase * (1 - descuentoFinal / 100))
 
-  const tituloItem = esTrimestral
+  const tituloItem = esAnual
+    ? `Control Finanzas - Plan ${planInfo.nombre} (12 meses — 2 gratis)`
+    : esTrimestral
     ? `Control Finanzas - Plan ${planInfo.nombre} (3 meses)`
     : `Control Finanzas - Plan ${planInfo.nombre}`
 

@@ -111,7 +111,7 @@ export async function POST(req) {
       console.log('[webhook] plan sanitizado: ' + planRaw + ' -> ' + plan)
 
       const ahora     = new Date()
-      const diasExtension = periodo === 'trimestral' ? 90 : 30
+      const diasExtension = periodo === 'anual' ? 365 : periodo === 'trimestral' ? 90 : 30
       const vencimiento = new Date(ahora)
       vencimiento.setDate(vencimiento.getDate() + diasExtension)
 
@@ -158,6 +158,38 @@ export async function POST(req) {
         where: { id: orgId },
         data: { plan: plan, activo: true },
       })
+
+      // ─── Recompensa de referido ──────────────────────────────
+      // Si esta org fue referida, verificar si es su primer pago y recompensar al referidor
+      const orgData = await prisma.organization.findUnique({
+        where: { id: orgId },
+        select: { referidoPorId: true },
+      })
+      if (orgData?.referidoPorId) {
+        // Contar pagos aprobados previos de esta org (excluyendo el actual)
+        const pagosAnteriores = await prisma.suscripcion.count({
+          where: { organizationId: orgId },
+        })
+        // Si solo hay 1 suscripción (la que acabamos de crear/actualizar), es el primer pago
+        if (pagosAnteriores <= 1) {
+          const subReferidor = await prisma.suscripcion.findFirst({
+            where: { organizationId: orgData.referidoPorId },
+            orderBy: { createdAt: 'desc' },
+          })
+          if (subReferidor) {
+            const baseRef = subReferidor.estado === 'activa' && new Date(subReferidor.fechaVencimiento) > ahora
+              ? new Date(subReferidor.fechaVencimiento)
+              : ahora
+            const nuevaFechaRef = new Date(baseRef)
+            nuevaFechaRef.setDate(nuevaFechaRef.getDate() + 30)
+            await prisma.suscripcion.update({
+              where: { id: subReferidor.id },
+              data: { fechaVencimiento: nuevaFechaRef },
+            })
+            console.log('[webhook] +30 días para referidor org=' + orgData.referidoPorId + ' por referido org=' + orgId)
+          }
+        }
+      }
 
       // Registrar en AdminLog (buscar un superadmin para el log)
       const admin = await prisma.user.findFirst({ where: { rol: 'superadmin' } })

@@ -92,12 +92,16 @@ export default function PlanPage() {
   const todosPlanes = [planTest, ...planes]
 
   const calcularPrecio = (precioBase) => {
-    const meses = periodo === 'trimestral' ? 3 : 1
-    const descuentoTrimestral = periodo === 'trimestral' ? 10 : 0
-    const descuentoFinal = Math.max(descuentoOrg, descuentoTrimestral)
+    const meses = periodo === 'anual' ? 12 : periodo === 'trimestral' ? 3 : 1
+    const mesesCobrados = periodo === 'anual' ? 10 : meses // Anual: paga 10, recibe 12
+    const descuentoPeriodo = periodo === 'anual' ? 17 : periodo === 'trimestral' ? 10 : 0
+    const descuentoFinal = Math.max(descuentoOrg, descuentoPeriodo)
     const total = precioBase * meses
-    const conDescuento = Math.round(total * (1 - descuentoFinal / 100))
-    return { total, conDescuento, descuentoFinal, meses }
+    const conDescuento = periodo === 'anual'
+      ? precioBase * mesesCobrados // Anual: precio x 10 meses (sin descuento adicional)
+      : Math.round(total * (1 - descuentoFinal / 100))
+    const ahorro = total - conDescuento
+    return { total, conDescuento, descuentoFinal, meses, ahorro }
   }
 
   const elegirPlan = async (plan) => {
@@ -146,39 +150,37 @@ export default function PlanPage() {
         )}
       </div>
 
-      {/* Toggle Mensual / Trimestral */}
+      {/* Toggle Mensual / Trimestral / Anual */}
       <div className="flex justify-center">
         <div className="inline-flex bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] p-1">
-          <button
-            onClick={() => setPeriodo('mensual')}
-            className={[
-              'px-4 py-2 rounded-[10px] text-sm font-medium transition-all',
-              periodo === 'mensual'
-                ? 'bg-[#f5c518] text-[#0a0a0a]'
-                : 'text-[#888888] hover:text-white',
-            ].join(' ')}
-          >
-            Mensual
-          </button>
-          <button
-            onClick={() => setPeriodo('trimestral')}
-            className={[
-              'px-4 py-2 rounded-[10px] text-sm font-medium transition-all flex items-center gap-1.5',
-              periodo === 'trimestral'
-                ? 'bg-[#f5c518] text-[#0a0a0a]'
-                : 'text-[#888888] hover:text-white',
-            ].join(' ')}
-          >
-            Trimestral
-            <span className={[
-              'text-[10px] font-bold px-1.5 py-0.5 rounded-full',
-              periodo === 'trimestral'
-                ? 'bg-[#0a0a0a] text-[#f5c518]'
-                : 'bg-[#22c55e] text-white',
-            ].join(' ')}>
-              -10%
-            </span>
-          </button>
+          {[
+            { key: 'mensual',    label: 'Mensual',    badge: null },
+            { key: 'trimestral', label: 'Trimestral', badge: '-10%' },
+            { key: 'anual',      label: 'Anual',      badge: '2 meses gratis' },
+          ].map((p) => (
+            <button
+              key={p.key}
+              onClick={() => setPeriodo(p.key)}
+              className={[
+                'px-3 sm:px-4 py-2 rounded-[10px] text-sm font-medium transition-all flex items-center gap-1.5',
+                periodo === p.key
+                  ? 'bg-[#f5c518] text-[#0a0a0a]'
+                  : 'text-[#888888] hover:text-white',
+              ].join(' ')}
+            >
+              {p.label}
+              {p.badge && (
+                <span className={[
+                  'text-[10px] font-bold px-1.5 py-0.5 rounded-full',
+                  periodo === p.key
+                    ? 'bg-[#0a0a0a] text-[#f5c518]'
+                    : 'bg-[#22c55e] text-white',
+                ].join(' ')}>
+                  {p.badge}
+                </span>
+              )}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -199,7 +201,7 @@ export default function PlanPage() {
           const esPlanActual = p.key === planActual && periodo === 'mensual'
           const esPopular    = p.badge === 'Más popular'
           const esTest       = p.key === 'test'
-          const { total, conDescuento, descuentoFinal, meses } = calcularPrecio(p.precio)
+          const { total, conDescuento, descuentoFinal, meses, ahorro } = calcularPrecio(p.precio)
           const tieneDescuento = descuentoFinal > 0
 
           return (
@@ -231,9 +233,14 @@ export default function PlanPage() {
                     <p className="text-2xl font-bold text-white">
                       {formatCOP(conDescuento)}
                       <span className="text-xs text-[#555555] font-normal">
-                        /{meses === 3 ? '3 meses' : 'mes'}
+                        /{meses === 12 ? 'año' : meses === 3 ? '3 meses' : 'mes'}
                       </span>
                     </p>
+                    {ahorro > 0 && (
+                      <p className="text-[10px] text-[#22c55e] font-medium mt-0.5">
+                        Ahorras {formatCOP(ahorro)}
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <p className="text-2xl font-bold text-white mt-1">
@@ -272,7 +279,7 @@ export default function PlanPage() {
                     </svg>
                     Procesando...
                   </>
-                ) : esPlanActual ? 'Plan actual' : periodo === 'trimestral' ? 'Pagar trimestre' : 'Elegir plan'}
+                ) : esPlanActual ? 'Plan actual' : periodo === 'anual' ? 'Pagar año' : periodo === 'trimestral' ? 'Pagar trimestre' : 'Elegir plan'}
               </button>
             </div>
           )
