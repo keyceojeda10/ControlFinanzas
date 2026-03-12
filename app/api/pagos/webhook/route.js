@@ -70,17 +70,42 @@ export async function POST(req) {
 
     const metadata = payment.metadata || {}
     const orgId    = metadata.organization_id  // MP convierte camelCase a snake_case
+    const tipo     = metadata.tipo             // 'cobrador_extra' o undefined (plan normal)
     const planRaw  = metadata.plan
     const periodo  = metadata.periodo || 'mensual'
     const status   = payment.status // approved, rejected, cancelled, pending, in_process
 
-    console.log('[webhook] id=' + data.id + ' status=' + status + ' org=' + orgId + ' planRaw=' + planRaw)
+    console.log('[webhook] id=' + data.id + ' status=' + status + ' org=' + orgId + ' tipo=' + tipo + ' planRaw=' + planRaw)
 
     if (!orgId) {
       console.warn('Webhook: pago sin organizationId en metadata', data.id)
       return NextResponse.json({ ok: true })
     }
 
+    // ─── Cobrador extra ─────────────────────────────────────
+    if (tipo === 'cobrador_extra') {
+      if (status === 'approved') {
+        await prisma.organization.update({
+          where: { id: orgId },
+          data: { cobradoresExtra: { increment: 1 } },
+        })
+        const admin = await prisma.user.findFirst({ where: { rol: 'superadmin' } })
+        if (admin) {
+          await prisma.adminLog.create({
+            data: {
+              adminId:        admin.id,
+              organizacionId: orgId,
+              accion:         'cobrador_extra_comprado',
+              detalle:        `Cobrador extra comprado. MercadoPago #${data.id}. Monto: $${payment.transaction_amount}`,
+            },
+          })
+        }
+        console.log('[webhook] cobrador extra agregado para org=' + orgId)
+      }
+      return NextResponse.json({ ok: true })
+    }
+
+    // ─── Pago de plan normal ────────────────────────────────
     if (status === 'approved') {
       const plan = sanitizarPlan(planRaw)
       console.log('[webhook] plan sanitizado: ' + planRaw + ' -> ' + plan)

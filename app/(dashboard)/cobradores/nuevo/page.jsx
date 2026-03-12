@@ -21,10 +21,13 @@ export default function NuevoCobrador() {
   const [creado,    setCreado]    = useState(null)   // { nombre, email, password }
   const [copiado,   setCopiado]   = useState(false)
   const [totalUsers, setTotalUsers] = useState(null)
+  const [limitReached, setLimitReached] = useState(false)
+  const [comprando, setComprando] = useState(false)
 
   const plan     = session?.user?.plan ?? 'basic'
   const limite   = LIMITES[plan] ?? 1
   const restantes = isFinite(limite) && totalUsers !== null ? Math.max(0, limite - totalUsers) : null
+  const puedeComprarExtra = plan === 'standard' || plan === 'professional'
 
   useEffect(() => {
     if (!authLoading && !esOwner) router.replace('/cobradores')
@@ -49,12 +52,30 @@ export default function NuevoCobrador() {
         body:    JSON.stringify({ nombre, email, password }),
       })
       const data = await res.json()
-      if (!res.ok) { setError(data.error ?? 'Error al crear el cobrador'); return }
+      if (!res.ok) {
+        if (data.limitReached) { setLimitReached(true) }
+        setError(data.error ?? 'Error al crear el cobrador')
+        return
+      }
       setCreado({ nombre, email, password })
     } catch {
       setError('Error de conexión.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const comprarCobradorExtra = async () => {
+    setComprando(true)
+    try {
+      const res = await fetch('/api/pagos/cobrador-extra', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error ?? 'Error al crear el pago'); return }
+      window.location.href = data.initPoint
+    } catch {
+      setError('Error de conexión')
+    } finally {
+      setComprando(false)
     }
   }
 
@@ -136,9 +157,58 @@ export default function NuevoCobrador() {
       </div>
 
       <form onSubmit={handleSubmit} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-5 space-y-4">
-        {error && (
+        {error && !limitReached && (
           <div className="flex items-center gap-2 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3">
             {error}
+          </div>
+        )}
+
+        {limitReached && puedeComprarExtra && (
+          <div className="bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.25)] rounded-[12px] p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-full bg-[rgba(245,197,24,0.15)] flex items-center justify-center shrink-0">
+                <svg className="w-5 h-5 text-[#f5c518]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                    d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">Limite alcanzado</p>
+                <p className="text-xs text-[#888888] mt-0.5">
+                  Has usado todos los espacios de tu plan. Agrega un cobrador adicional por <span className="text-[#f5c518] font-bold">$29.000/mes</span>.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={comprarCobradorExtra}
+              disabled={comprando}
+              className="w-full h-10 rounded-[12px] text-sm font-semibold bg-[#f5c518] hover:bg-[#f0b800] text-white transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+            >
+              {comprando ? (
+                <>
+                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Procesando...
+                </>
+              ) : 'Agregar cobrador extra — $29.000/mes'}
+            </button>
+          </div>
+        )}
+
+        {limitReached && !puedeComprarExtra && (
+          <div className="bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.2)] rounded-[12px] p-4 text-center">
+            <p className="text-sm text-[#ef4444] font-medium">Limite alcanzado</p>
+            <p className="text-xs text-[#888888] mt-1">
+              Tu plan no permite cobradores extra. Actualiza al plan Profesional o Empresarial.
+            </p>
+            <button
+              onClick={() => router.push('/configuracion/plan')}
+              className="mt-3 text-sm text-[#f5c518] hover:underline"
+            >
+              Ver planes
+            </button>
           </div>
         )}
 

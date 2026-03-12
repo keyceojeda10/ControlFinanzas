@@ -60,6 +60,7 @@ model Organization {
   codigoReferido  String?       @unique
   referidoPorId   String?
   descuento       Int           @default(0)
+  cobradoresExtra Int           @default(0)
   createdAt       DateTime      @default(now())
 
   referidoPor     Organization?  @relation("Referidos", fields: [referidoPorId], references: [id])

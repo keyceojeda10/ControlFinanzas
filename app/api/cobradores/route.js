@@ -92,12 +92,17 @@ export async function POST(request) {
     )
   }
 
-  // Verificar límite de usuarios
-  const limite = LIMITES_USUARIOS[plan] ?? 1
+  // Verificar límite de usuarios (base del plan + cobradores extra comprados)
+  const org = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { cobradoresExtra: true },
+  })
+  const limiteBase = LIMITES_USUARIOS[plan] ?? 1
+  const limite = limiteBase + (org?.cobradoresExtra ?? 0)
   const totalUsuarios = await prisma.user.count({ where: { organizationId } })
   if (totalUsuarios >= limite) {
     return Response.json(
-      { error: `Tu plan ${nombrePlan} permite máximo ${limite} usuarios. Para agregar más cobradores, actualiza tu plan o contacta soporte para agregar cobradores extra.` },
+      { error: `Has alcanzado el límite de ${limite} usuarios. Puedes comprar un cobrador adicional por $29.000/mes desde la sección de cobradores.`, limitReached: true, plan },
       { status: 403 }
     )
   }
