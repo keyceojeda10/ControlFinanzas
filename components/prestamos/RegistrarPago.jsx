@@ -7,6 +7,7 @@ import { Button }      from '@/components/ui/Button'
 import { Input }       from '@/components/ui/Input'
 import BotonWhatsApp   from '@/components/ui/BotonWhatsApp'
 import { formatCOP, DIAS_ABONO } from '@/lib/calculos'
+import { guardarPagoPendiente }  from '@/lib/offline'
 
 export default function RegistrarPago({
   prestamoId, cuotaDiaria, saldoPendiente,
@@ -48,6 +49,29 @@ export default function RegistrarPago({
       setExitoso(true)
       onSuccess?.(data, pagoParaWA)
     } catch {
+      // Offline: guardar en IndexedDB para sincronizar después
+      if (!navigator.onLine) {
+        try {
+          await guardarPagoPendiente({
+            prestamoId,
+            montoPagado: m,
+            tipo,
+            nota,
+            diasAbonados,
+            clienteNombre: cliente?.nombre,
+          })
+          window.dispatchEvent(new Event('paymentQueued'))
+          const pagoOffline = { montoPagado: m, fechaPago: new Date().toISOString(), offline: true }
+          setPagoGuardado(pagoOffline)
+          setExitoso(true)
+          setError('')
+          onSuccess?.(prestamo, pagoOffline)
+          return
+        } catch {
+          setError('No se pudo guardar el pago offline.')
+          return
+        }
+      }
       setError('Error de conexión. Intenta de nuevo.')
     } finally {
       setLoading(false)
@@ -85,13 +109,21 @@ export default function RegistrarPago({
       >
         <div className="space-y-4">
           <div className="flex flex-col items-center gap-2 py-3">
-            <div className="w-14 h-14 rounded-full bg-[rgba(34,197,94,0.15)] flex items-center justify-center">
-              <svg className="w-7 h-7 text-[#22c55e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-              </svg>
+            <div className={`w-14 h-14 rounded-full flex items-center justify-center ${pagoGuardado.offline ? 'bg-[rgba(245,197,24,0.15)]' : 'bg-[rgba(34,197,94,0.15)]'}`}>
+              {pagoGuardado.offline ? (
+                <svg className="w-7 h-7 text-[#f5c518]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              ) : (
+                <svg className="w-7 h-7 text-[#22c55e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
             </div>
             <p className="text-white font-bold text-lg">{formatCOP(pagoGuardado.montoPagado)}</p>
-            <p className="text-[#888888] text-sm">pagado correctamente</p>
+            <p className="text-[#888888] text-sm">
+              {pagoGuardado.offline ? 'guardado offline — se sincronizará al conectar' : 'pagado correctamente'}
+            </p>
           </div>
 
           {prestamoWA && (

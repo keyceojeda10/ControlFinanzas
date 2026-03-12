@@ -1,0 +1,156 @@
+// Service Worker — Control Finanzas PWA
+const CACHE_NAME = 'cf-v1'
+const API_CACHE  = 'cf-api-v1'
+
+// App shell: pages and static assets to precache
+const PRECACHE_URLS = [
+  '/dashboard',
+  '/prestamos',
+  '/clientes',
+  '/rutas',
+  '/caja',
+  '/icon.svg',
+  '/logo-icon.svg',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+]
+
+// API routes to cache for offline reads (GET only)
+const CACHEABLE_API = [
+  '/api/dashboard/resumen',
+  '/api/prestamos',
+  '/api/clientes',
+  '/api/rutas',
+  '/api/cobradores',
+]
+
+// ─── Install: precache app shell ────────────────────────────
+self.addEventListener('install', (e) => {
+  e.waitUntil(
+    caches.open(CACHE_NAME).then((cache) =>
+      cache.addAll(PRECACHE_URLS).catch(() => {
+        // Some pages may fail to cache during install (auth redirect), that's ok
+        console.log('[SW] Some precache URLs failed, continuing...')
+      })
+    )
+  )
+  self.skipWaiting()
+})
+
+// ─── Activate: clean old caches ─────────────────────────────
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys
+          .filter((k) => k !== CACHE_NAME && k !== API_CACHE)
+          .map((k) => caches.delete(k))
+      )
+    )
+  )
+  self.clients.claim()
+})
+
+// ─── Fetch: strategy per request type ───────────────────────
+self.addEventListener('fetch', (e) => {
+  const { request } = e
+  const url = new URL(request.url)
+
+  // Skip non-GET for caching (POST payments handled by IndexedDB queue in the app)
+  if (request.method !== 'GET') return
+
+  // Skip auth-related requests (never cache)
+  if (url.pathname.startsWith('/api/auth')) return
+
+  // API requests: network-first, fallback to cache
+  if (url.pathname.startsWith('/api/') && CACHEABLE_API.some((p) => url.pathname.startsWith(p))) {
+    e.respondWith(networkFirstAPI(request))
+    return
+  }
+
+  // Next.js static assets (_next/static): cache-first
+  if (url.pathname.startsWith('/_next/static')) {
+    e.respondWith(cacheFirst(request))
+    return
+  }
+
+  // Page navigations: network-first, fallback to cache
+  if (request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html')) {
+    e.respondWith(networkFirstPage(request))
+    return
+  }
+
+  // Everything else: network with cache fallback
+  e.respondWith(networkFirst(request))
+})
+
+// ─── Strategies ─────────────────────────────────────────────
+
+async function networkFirstAPI(request) {
+  try {
+    const response = await fetch(request)
+    if (response.ok) {
+      const cache = await caches.open(API_CACHE)
+      cache.put(request, response.clone())
+    }
+    return response
+  } catch {
+    const cached = await caches.match(request)
+    if (cached) return cached
+    return new Response(JSON.stringify({ error: 'Sin conexión', offline: true }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+}
+
+async function networkFirstPage(request) {
+  try {
+    const response = await fetch(request)
+    if (response.ok) {
+      const cache = await caches.open(CACHE_NAME)
+      cache.put(request, response.clone())
+    }
+    return response
+  } catch {
+    const cached = await caches.match(request)
+    if (cached) return cached
+    // Fallback to dashboard cache if available
+    const dashCached = await caches.match('/dashboard')
+    if (dashCached) return dashCached
+    return new Response('<html><body style="background:#0a0a0a;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif"><div style="text-align:center"><h2>Sin conexión</h2><p>Revisa tu conexión a internet</p></div></body></html>', {
+      headers: { 'Content-Type': 'text/html' },
+    })
+  }
+}
+
+async function cacheFirst(request) {
+  const cached = await caches.match(request)
+  if (cached) return cached
+  try {
+    const response = await fetch(request)
+    if (response.ok) {
+      const cache = await caches.open(CACHE_NAME)
+      cache.put(request, response.clone())
+    }
+    return response
+  } catch {
+    return new Response('', { status: 503 })
+  }
+}
+
+async function networkFirst(request) {
+  try {
+    return await fetch(request)
+  } catch {
+    const cached = await caches.match(request)
+    return cached || new Response('', { status: 503 })
+  }
+}
+
+// ─── Message handling (for sync trigger from app) ───────────
+self.addEventListener('message', (e) => {
+  if (e.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting()
+  }
+})

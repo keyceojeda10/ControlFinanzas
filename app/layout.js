@@ -1,6 +1,7 @@
 import { Geist } from "next/font/google";
 import "./globals.css";
 import SessionProvider from "@/components/providers/SessionProvider";
+import OfflineProvider from "@/components/providers/OfflineProvider";
 import Script from "next/script";
 
 const geistSans = Geist({
@@ -11,9 +12,16 @@ const geistSans = Geist({
 export const metadata = {
   title: "Control Finanzas",
   description: "Gestión de cartera de crédito informal",
+  manifest: '/manifest.json',
+  themeColor: '#1e3a5f',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Control Finanzas',
+  },
   icons: {
     icon: '/icon.svg',
-    apple: '/logo-icon.svg',
+    apple: '/icons/icon-192.png',
   },
 };
 
@@ -22,7 +30,9 @@ export default function RootLayout({ children }) {
     <html lang="es" suppressHydrationWarning>
       <body className={`${geistSans.variable} antialiased`} suppressHydrationWarning>
         <SessionProvider>
-          {children}
+          <OfflineProvider>
+            {children}
+          </OfflineProvider>
         </SessionProvider>
         <Script id="fb-pixel" strategy="afterInteractive">{`
           !function(f,b,e,v,n,t,s)
