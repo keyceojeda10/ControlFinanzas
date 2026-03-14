@@ -63,6 +63,8 @@ model Organization {
   cobradoresExtra Int            @default(0)
   estadoContacto  EstadoContacto @default(nuevo)
   fuenteRegistro  String?
+  planOriginal    Plan?
+  planDemoHasta   DateTime?
   createdAt       DateTime       @default(now())
 
   referidoPor      Organization?     @relation("Referidos", fields: [referidoPorId], references: [id])

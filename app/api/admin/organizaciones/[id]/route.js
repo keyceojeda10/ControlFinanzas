@@ -151,5 +151,66 @@ export async function PATCH(req, { params }) {
     return NextResponse.json({ ok: true, mensaje: `Usuario ${nuevoEstado ? 'activado' : 'desactivado'}` })
   }
 
+  if (accion === 'demoDay') {
+    const dias = parseInt(body.dias) || 1
+    if (dias < 1 || dias > 7) {
+      return NextResponse.json({ error: 'Demo entre 1 y 7 días' }, { status: 400 })
+    }
+    const planDemo = body.planDemo || 'professional'
+    if (!PLANES_VALIDOS.includes(planDemo)) {
+      return NextResponse.json({ error: 'Plan no válido' }, { status: 400 })
+    }
+
+    // Si ya tiene demo activa, no permitir otra
+    if (org.planDemoHasta && new Date(org.planDemoHasta) > new Date()) {
+      return NextResponse.json({ error: 'Ya tiene un demo activo' }, { status: 400 })
+    }
+
+    const hasta = new Date()
+    hasta.setDate(hasta.getDate() + dias)
+
+    await prisma.organization.update({
+      where: { id },
+      data: {
+        planOriginal: org.planOriginal ?? org.plan, // no sobreescribir si ya tenía uno
+        plan: planDemo,
+        planDemoHasta: hasta,
+      },
+    })
+    await prisma.adminLog.create({
+      data: {
+        adminId:        session.user.id,
+        organizacionId: id,
+        accion:         'demo_day',
+        detalle:        `Demo ${planDemo} por ${dias} día(s) para "${org.nombre}" (plan original: ${org.plan}). Expira: ${hasta.toLocaleDateString('es-CO')}`,
+      },
+    })
+    return NextResponse.json({ ok: true, mensaje: `Demo ${planDemo} activado por ${dias} día(s)` })
+  }
+
+  if (accion === 'revertirDemo') {
+    if (!org.planOriginal) {
+      return NextResponse.json({ error: 'No hay demo activo para revertir' }, { status: 400 })
+    }
+    const planDemo = org.plan
+    await prisma.organization.update({
+      where: { id },
+      data: {
+        plan: org.planOriginal,
+        planOriginal: null,
+        planDemoHasta: null,
+      },
+    })
+    await prisma.adminLog.create({
+      data: {
+        adminId:        session.user.id,
+        organizacionId: id,
+        accion:         'revertir_demo',
+        detalle:        `Demo revertido: ${planDemo} → ${org.planOriginal} para "${org.nombre}"`,
+      },
+    })
+    return NextResponse.json({ ok: true, mensaje: `Plan revertido a ${org.planOriginal}` })
+  }
+
   return NextResponse.json({ error: 'Acción no válida' }, { status: 400 })
 }

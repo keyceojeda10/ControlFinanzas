@@ -23,6 +23,7 @@ export default function OrgDetallePage() {
   const [loading, setLoading] = useState(true)
   const [accionando, setAccionando] = useState('')
   const [descuentoInput, setDescuentoInput] = useState('')
+  const [demoDias, setDemoDias] = useState('1')
 
   const fetchOrg = async () => {
     try {
@@ -223,6 +224,72 @@ export default function OrgDetallePage() {
           </div>
         </Card>
       )}
+
+      {/* Demo Day */}
+      <Card>
+        <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">Demo de plan</p>
+        {org.planOriginal && org.planDemoHasta ? (
+          <div className="space-y-3">
+            <div className="bg-[rgba(168,85,247,0.1)] border border-[rgba(168,85,247,0.2)] rounded-[12px] px-4 py-3">
+              <p className="text-sm text-[#a855f7] font-semibold">Demo activo</p>
+              <p className="text-xs text-[#888888] mt-1">
+                Plan actual: <span className="text-[white] font-medium">{org.plan}</span> ·
+                Plan original: <span className="text-[white] font-medium">{org.planOriginal}</span>
+              </p>
+              <p className="text-xs text-[#888888]">
+                Expira: <span className="text-[white]">{new Date(org.planDemoHasta).toLocaleString('es-CO')}</span>
+                {' '}({Math.max(0, Math.ceil((new Date(org.planDemoHasta) - new Date()) / (1000 * 60 * 60)))}h restantes)
+              </p>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              loading={accionando === 'revertirDemo'}
+              onClick={() => {
+                if (confirm(`¿Revertir demo? Volverá al plan ${org.planOriginal}`)) {
+                  ejecutarAccion('revertirDemo')
+                }
+              }}
+            >
+              Revertir ahora a {org.planOriginal}
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-xs text-[#888888]">
+              Asigna acceso temporal al plan Professional para que el cliente pruebe las funciones premium.
+              Al expirar, vuelve automáticamente a su plan actual ({org.plan}).
+            </p>
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-[#888888]">Días:</label>
+                <select
+                  value={demoDias}
+                  onChange={(e) => setDemoDias(e.target.value)}
+                  className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#f5c518]"
+                >
+                  <option value="1">1 día</option>
+                  <option value="2">2 días</option>
+                  <option value="3">3 días</option>
+                  <option value="5">5 días</option>
+                  <option value="7">7 días</option>
+                </select>
+              </div>
+              <Button
+                size="sm"
+                loading={accionando === 'demoDay'}
+                onClick={() => {
+                  if (confirm(`¿Activar demo Professional por ${demoDias} día(s) para "${org.nombre}"?`)) {
+                    ejecutarAccion('demoDay', { dias: demoDias, planDemo: 'professional' })
+                  }
+                }}
+              >
+                Activar Demo Pro
+              </Button>
+            </div>
+          </div>
+        )}
+      </Card>
 
       {/* Descuento y referidos */}
       <Card>
