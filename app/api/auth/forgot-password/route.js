@@ -4,7 +4,8 @@ import crypto           from 'crypto'
 import { prisma }       from '@/lib/prisma'
 import { enviarEmail, emailResetPassword } from '@/lib/email'
 
-const SECRET = process.env.NEXTAUTH_SECRET || 'fallback'
+const SECRET = process.env.NEXTAUTH_SECRET
+if (!SECRET) throw new Error('NEXTAUTH_SECRET no configurado')
 
 function generarToken(userId) {
   const payload = JSON.stringify({ userId, exp: Date.now() + 3600000 }) // 1 hora

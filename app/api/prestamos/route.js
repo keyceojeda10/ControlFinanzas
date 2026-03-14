@@ -101,12 +101,12 @@ export async function POST(request) {
   // Validaciones
   if (!clienteId)     return Response.json({ error: 'El cliente es requerido' },          { status: 400 })
   if (!montoPrestado) return Response.json({ error: 'El monto es requerido' },            { status: 400 })
-  if (!tasaInteres)   return Response.json({ error: 'La tasa de interés es requerida' },  { status: 400 })
+  if (tasaInteres == null || tasaInteres === '') return Response.json({ error: 'La tasa de interés es requerida' }, { status: 400 })
   if (!diasPlazo)     return Response.json({ error: 'El plazo es requerido' },            { status: 400 })
   if (!fechaInicio)   return Response.json({ error: 'La fecha de inicio es requerida' },  { status: 400 })
 
   if (Number(montoPrestado) <= 0) return Response.json({ error: 'El monto debe ser mayor a 0' }, { status: 400 })
-  if (Number(tasaInteres)   <= 0) return Response.json({ error: 'La tasa debe ser mayor a 0' },  { status: 400 })
+  if (Number(tasaInteres)   < 0)  return Response.json({ error: 'La tasa no puede ser negativa' },  { status: 400 })
   if (Number(diasPlazo)     <= 0) return Response.json({ error: 'El plazo debe ser mayor a 0' }, { status: 400 })
 
   // Verificar que el cliente pertenece a la organización

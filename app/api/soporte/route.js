@@ -81,16 +81,19 @@ export async function POST(request) {
     enviarEmail({
       to: 'soporte@control-finanzas.com',
       subject: `[Ticket #${ticket.id.slice(-6).toUpperCase()}] ${asunto}`,
-      html: `
+      html: (() => {
+        const esc = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+        return `
         <h2>Nuevo ticket de soporte</h2>
-        <p><b>Organización:</b> ${ticket.organization.nombre} (${ticket.organization.plan})</p>
-        <p><b>Usuario:</b> ${ticket.user.nombre} (${ticket.user.email})</p>
-        <p><b>Tipo:</b> ${tipo}</p>
-        <p><b>Asunto:</b> ${asunto}</p>
-        <p><b>Descripción:</b> ${descripcion}</p>
-        ${solicitaContacto ? `<p><b>Solicita contacto:</b> ${telefonoContacto || 'sin teléfono'}</p>` : ''}
+        <p><b>Organización:</b> ${esc(ticket.organization.nombre)} (${esc(ticket.organization.plan)})</p>
+        <p><b>Usuario:</b> ${esc(ticket.user.nombre)} (${esc(ticket.user.email)})</p>
+        <p><b>Tipo:</b> ${esc(tipo)}</p>
+        <p><b>Asunto:</b> ${esc(asunto)}</p>
+        <p><b>Descripción:</b> ${esc(descripcion)}</p>
+        ${solicitaContacto ? `<p><b>Solicita contacto:</b> ${esc(telefonoContacto || 'sin teléfono')}</p>` : ''}
         <p><a href="https://app.control-finanzas.com/admin/soporte/${ticket.id}">Ver en panel admin</a></p>
-      `,
+        `
+      })(),
     }).catch(() => {})
 
     return NextResponse.json(ticket, { status: 201 })

@@ -4,6 +4,10 @@ import { authOptions } from '@/lib/auth'
 import prisma from '@/lib/prisma'
 import { enviarEmail } from '@/lib/email'
 
+function escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+}
+
 export async function POST(req) {
   const session = await getServerSession(authOptions)
   if (!session || session.user.rol !== 'superadmin') {
@@ -29,7 +33,7 @@ export async function POST(req) {
       <tr><td align="center"><h1 style="color:#f5c518;font-size:20px;margin:0;">Control Finanzas</h1></td></tr>
     </table>
     <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:16px;padding:28px;">
-      <div style="color:#e0e0e0;font-size:14px;line-height:1.6;white-space:pre-wrap;">${body}</div>
+      <div style="color:#e0e0e0;font-size:14px;line-height:1.6;white-space:pre-wrap;">${escapeHtml(body)}</div>
     </div>
     <div style="text-align:center;margin-top:24px;">
       <p style="color:#555;font-size:11px;margin:0;">

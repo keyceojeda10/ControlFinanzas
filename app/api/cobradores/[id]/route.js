@@ -118,8 +118,8 @@ export async function PATCH(request, { params }) {
 
   // Password
   if (body.password !== undefined && body.password !== '') {
-    if (body.password.length < 6) {
-      return Response.json({ error: 'La contraseña debe tener al menos 6 caracteres' }, { status: 400 })
+    if (body.password.length < 8) {
+      return Response.json({ error: 'La contraseña debe tener al menos 8 caracteres' }, { status: 400 })
     }
     data.password = await bcrypt.hash(body.password, 10)
   }

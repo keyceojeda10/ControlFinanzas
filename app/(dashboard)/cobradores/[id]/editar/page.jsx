@@ -40,7 +40,7 @@ export default function EditarCobrador({ params }) {
     e.preventDefault()
     if (!nombre.trim()) { setError('El nombre es requerido'); return }
     if (!email.trim())  { setError('El correo es requerido'); return }
-    if (password && password.length < 6) { setError('La contraseña debe tener al menos 6 caracteres'); return }
+    if (password && password.length < 8) { setError('La contraseña debe tener al menos 8 caracteres'); return }
 
     setSaving(true)
     setError('')

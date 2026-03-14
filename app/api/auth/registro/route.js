@@ -31,8 +31,8 @@ export async function POST(req) {
       return NextResponse.json({ success: false, error: 'Todos los campos son obligatorios' }, { status: 400 })
     }
 
-    if (password.length < 6) {
-      return NextResponse.json({ success: false, error: 'La contraseña debe tener al menos 6 caracteres' }, { status: 400 })
+    if (password.length < 8) {
+      return NextResponse.json({ success: false, error: 'La contraseña debe tener al menos 8 caracteres' }, { status: 400 })
     }
 
     if (!terminosAceptados) {

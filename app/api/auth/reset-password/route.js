@@ -4,7 +4,8 @@ import crypto           from 'crypto'
 import bcrypt           from 'bcryptjs'
 import { prisma }       from '@/lib/prisma'
 
-const SECRET = process.env.NEXTAUTH_SECRET || 'fallback'
+const SECRET = process.env.NEXTAUTH_SECRET
+if (!SECRET) throw new Error('NEXTAUTH_SECRET no configurado')
 
 function verificarToken(token) {
   try {
@@ -32,8 +33,8 @@ export async function POST(req) {
     return NextResponse.json({ error: 'Token y contraseña son requeridos' }, { status: 400 })
   }
 
-  if (password.length < 6) {
-    return NextResponse.json({ error: 'La contraseña debe tener al menos 6 caracteres' }, { status: 400 })
+  if (password.length < 8) {
+    return NextResponse.json({ error: 'La contraseña debe tener al menos 8 caracteres' }, { status: 400 })
   }
 
   const data = verificarToken(token)

@@ -12,6 +12,8 @@ import ResumenCalculo                              from '@/components/prestamos/
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
 const hoyISO = () => getColombiaDate().toISOString().slice(0, 10)
 
+const DIAS_POR_PERIODO = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }
+
 // Wrapper con Suspense requerido por useSearchParams en Next.js build
 export default function NuevoPrestamoPage() {
   return (
@@ -47,6 +49,10 @@ function NuevoPrestamo() {
   const [error,        setError]        = useState('')
   const [buscadorCliente, setBuscadorCliente] = useState('')
 
+  // Modo: 'prestamo' (con interés) o 'mercancia' (cuota fija)
+  const [modo, setModo] = useState('prestamo')
+  const [numCuotas, setNumCuotas] = useState('10')
+
   // Guard de rol
   useEffect(() => {
     if (!authLoading && !esOwner) router.replace('/prestamos')
@@ -66,12 +72,36 @@ function NuevoPrestamo() {
       .catch(() => {})
   }, [clienteIdParam])
 
+  // Cuando cambia el modo, ajustar defaults
+  const handleModoChange = (nuevoModo) => {
+    setModo(nuevoModo)
+    if (nuevoModo === 'mercancia') {
+      setTasa('0')
+      setNumCuotas('10')
+      // Recalcular plazo basado en cuotas y frecuencia
+      const dias = 10 * (DIAS_POR_PERIODO[frecuencia] || 1)
+      setPlazo(String(dias))
+    } else {
+      setTasa('20')
+      setPlazo('30')
+    }
+  }
+
+  // Cuando cambia numCuotas o frecuencia en modo mercancía, recalcular plazo
+  useEffect(() => {
+    if (modo === 'mercancia') {
+      const cuotas = Number(numCuotas) || 0
+      const diasPeriodo = DIAS_POR_PERIODO[frecuencia] || 1
+      setPlazo(String(cuotas * diasPeriodo))
+    }
+  }, [numCuotas, frecuencia, modo])
+
   // Cálculo en tiempo real
   const calculo = useMemo(() => {
     const m = Number(monto)
     const t = Number(tasa)
     const p = Number(plazo)
-    if (!m || !t || !p || !fechaInicio) return null
+    if (!m || (tasa === '' || tasa == null) || !p || !fechaInicio) return null
     return calcularPrestamo({ montoPrestado: m, tasaInteres: t, diasPlazo: p, fechaInicio, frecuencia })
   }, [monto, tasa, plazo, fechaInicio, frecuencia])
 
@@ -138,6 +168,36 @@ function NuevoPrestamo() {
           </div>
         )}
 
+        {/* Selector de modo */}
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => handleModoChange('prestamo')}
+            className={[
+              'flex items-center justify-center gap-2 py-3 rounded-[12px] border text-sm font-medium transition-all',
+              modo === 'prestamo'
+                ? 'bg-[rgba(245,197,24,0.12)] border-[#f5c518] text-[#f5c518]'
+                : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#888888] hover:text-[white] hover:border-[#3a3a3a]',
+            ].join(' ')}
+          >
+            <span className="text-base">💰</span>
+            Préstamo
+          </button>
+          <button
+            type="button"
+            onClick={() => handleModoChange('mercancia')}
+            className={[
+              'flex items-center justify-center gap-2 py-3 rounded-[12px] border text-sm font-medium transition-all',
+              modo === 'mercancia'
+                ? 'bg-[rgba(59,130,246,0.12)] border-[#3b82f6] text-[#3b82f6]'
+                : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#888888] hover:text-[white] hover:border-[#3a3a3a]',
+            ].join(' ')}
+          >
+            <span className="text-base">📦</span>
+            Mercancía
+          </button>
+        </div>
+
         {/* Card formulario */}
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-5 space-y-4">
 
@@ -189,42 +249,72 @@ function NuevoPrestamo() {
 
           {/* Monto */}
           <Input
-            label="Monto prestado (COP) *"
+            label={modo === 'mercancia' ? 'Valor del artículo (COP) *' : 'Monto prestado (COP) *'}
             type="number"
             inputMode="numeric"
-            placeholder="Ej: 500000"
+            placeholder={modo === 'mercancia' ? 'Ej: 100000' : 'Ej: 500000'}
             value={monto}
             onChange={(e) => setMonto(e.target.value)}
             prefix="$"
           />
 
+          {/* Modo mercancía: # cuotas + frecuencia primero */}
+          {modo === 'mercancia' && (
+            <div className="flex flex-col gap-1">
+              <Input
+                label="Número de cuotas *"
+                type="number"
+                inputMode="numeric"
+                placeholder="Ej: 10"
+                value={numCuotas}
+                onChange={(e) => setNumCuotas(e.target.value)}
+                suffix="cuotas"
+              />
+              {calculo && Number(monto) > 0 && (
+                <p className="text-[10px] text-[#3b82f6] font-medium px-0.5">
+                  → {numCuotas} cuotas de {formatCOP(calculo.cuotaDiaria)}
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-3">
             {/* Tasa */}
             <div className="flex flex-col gap-1">
               <Input
-                label="Tasa de interés del crédito (%) *"
+                label="Tasa de interés (%) *"
                 type="number"
                 inputMode="decimal"
                 step="0.5"
-                placeholder="Ej: 20"
+                min="0"
+                placeholder={modo === 'mercancia' ? '0' : 'Ej: 20'}
                 value={tasa}
                 onChange={(e) => setTasa(e.target.value)}
                 suffix="%"
               />
               <p className="text-[10px] text-[#888888] leading-snug px-0.5">
-                % total sobre el monto. Ej: 20% sobre $100.000 = $20.000 de interés
+                {modo === 'mercancia'
+                  ? 'Déjalo en 0% para mercancía sin interés'
+                  : '% total sobre el monto. Ej: 20% sobre $100.000 = $20.000 de interés'}
               </p>
             </div>
             {/* Plazo */}
-            <Input
-              label="Plazo (días) *"
-              type="number"
-              inputMode="numeric"
-              placeholder="Ej: 30"
-              value={plazo}
-              onChange={(e) => setPlazo(e.target.value)}
-              suffix="días"
-            />
+            <div className="flex flex-col gap-1">
+              <Input
+                label="Plazo (días) *"
+                type="number"
+                inputMode="numeric"
+                placeholder="Ej: 30"
+                value={plazo}
+                onChange={(e) => setPlazo(e.target.value)}
+                suffix="días"
+              />
+              {modo === 'mercancia' && (
+                <p className="text-[10px] text-[#888888] leading-snug px-0.5">
+                  Calculado automáticamente según cuotas
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Frecuencia */}

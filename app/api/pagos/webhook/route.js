@@ -19,7 +19,7 @@ function sanitizarPlan(planRaw, fallback) {
 
 function verificarFirma(req, body) {
   const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET
-  if (!secret) return true // en dev sin secret, aceptar todo
+  if (!secret) return false // rechazar si no hay secret configurado
 
   const signature = req.headers.get('x-signature')
   const requestId = req.headers.get('x-request-id')

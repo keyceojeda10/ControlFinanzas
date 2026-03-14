@@ -48,8 +48,8 @@ function RegistroForm() {
       setError('Debes aceptar los términos y condiciones para continuar')
       return
     }
-    if (form.password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres')
+    if (form.password.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres')
       return
     }
     if (form.password !== form.confirmar) {
