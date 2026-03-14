@@ -5,6 +5,42 @@ import { useState, useCallback } from 'react'
 import Image from 'next/image'
 import { TUTORIALES } from '@/lib/tutorialesData'
 
+// ─── Parse WhatsApp formatting to React elements ─────────────
+// Converts *bold* → <strong>, keeps line breaks, removes raw WhatsApp symbols
+function parseWhatsAppText(text) {
+  return text.split('\n').map((line, i) => {
+    // Split line by *bold* markers and render accordingly
+    const parts = []
+    let remaining = line
+    let key = 0
+    while (remaining.length > 0) {
+      const startIdx = remaining.indexOf('*')
+      if (startIdx === -1) {
+        parts.push(remaining)
+        break
+      }
+      const endIdx = remaining.indexOf('*', startIdx + 1)
+      if (endIdx === -1) {
+        parts.push(remaining)
+        break
+      }
+      // Text before the bold
+      if (startIdx > 0) {
+        parts.push(remaining.slice(0, startIdx))
+      }
+      // Bold text
+      parts.push(<strong key={key++} className="text-white font-semibold">{remaining.slice(startIdx + 1, endIdx)}</strong>)
+      remaining = remaining.slice(endIdx + 1)
+    }
+    return (
+      <span key={i}>
+        {parts}
+        {i < text.split('\n').length - 1 && '\n'}
+      </span>
+    )
+  })
+}
+
 // ─── Lightbox ────────────────────────────────────────────────
 function Lightbox({ src, alt, onClose }) {
   if (!src) return null
@@ -80,7 +116,7 @@ function TutorialCard({ tutorial, index, showCopyButton, onImageClick }) {
             {/* Text */}
             <div className="flex-1 min-w-0">
               <div className="bg-[#111111] border border-[#2a2a2a] rounded-xl p-4 text-xs text-[#cccccc] whitespace-pre-wrap leading-relaxed max-h-[400px] overflow-y-auto">
-                {tutorial.text}
+                {showCopyButton ? tutorial.text : parseWhatsAppText(tutorial.text)}
               </div>
 
               {showCopyButton && (
@@ -135,18 +171,7 @@ export default function TutorialesList({ showCopyButton = false }) {
         />
       </div>
 
-      {/* Quick index */}
-      <div className="flex flex-wrap gap-1.5 mb-5">
-        {TUTORIALES.map((t) => (
-          <a
-            key={t.id}
-            href={`#tut-${t.id}`}
-            className="text-[10px] px-2.5 py-1 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] text-[#888888] hover:text-[#f5c518] hover:border-[#f5c518] transition-all whitespace-nowrap"
-          >
-            {t.emoji} {t.title.replace(/^Cómo /, '')}
-          </a>
-        ))}
-      </div>
+
 
       {/* Tutorials */}
       <div className="space-y-3">
