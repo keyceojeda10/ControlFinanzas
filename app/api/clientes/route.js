@@ -61,7 +61,7 @@ export async function GET(request) {
         },
       },
     },
-    orderBy: { nombre: 'asc' },
+    orderBy: [{ ordenRuta: 'asc' }, { nombre: 'asc' }],
   })
 
   // Recalcular estado real del cliente basado en sus préstamos activos

@@ -41,7 +41,7 @@ export async function GET(request, { params }) {
             },
           },
         },
-        orderBy: { nombre: 'asc' },
+        orderBy: [{ ordenRuta: 'asc' }, { nombre: 'asc' }],
       },
     },
   })

@@ -16,16 +16,17 @@ BACKUP_NAME="cf-backup-${DATE}"
 BACKUP_PATH="${BACKUP_DIR}/${BACKUP_NAME}"
 LOG_FILE="/home/backups/backup.log"
 
-# Cargar variables de entorno para DB
+# Cargar variables de entorno
+set -a
 source "${APP_DIR}/.env"
+set +a
 
-# Extraer credenciales de DATABASE_URL
-# Formato: mysql://user:password@host:port/database
-DB_USER=$(echo "$DATABASE_URL" | sed -n 's|mysql://\([^:]*\):.*|\1|p')
-DB_PASS=$(echo "$DATABASE_URL" | sed -n 's|mysql://[^:]*:\([^@]*\)@.*|\1|p')
-DB_HOST=$(echo "$DATABASE_URL" | sed -n 's|mysql://[^@]*@\([^:]*\):.*|\1|p')
-DB_PORT=$(echo "$DATABASE_URL" | sed -n 's|mysql://[^@]*@[^:]*:\([^/]*\)/.*|\1|p')
+# Limpiar comillas del DATABASE_URL
+DATABASE_URL=$(echo "$DATABASE_URL" | tr -d '"' | tr -d "'")
+
+# Extraer nombre de la base de datos del DATABASE_URL
 DB_NAME=$(echo "$DATABASE_URL" | sed -n 's|mysql://[^/]*/\([^?]*\).*|\1|p')
+# Usar root local (el script corre como root en el VPS via cron)
 
 # ─── FUNCIONES ──────────────────────────────────────────────
 log() {
@@ -56,10 +57,6 @@ mkdir -p "$BACKUP_DIR" "$BACKUP_PATH"
 # 1. Dump de la base de datos
 log "Exportando base de datos MySQL..."
 mysqldump \
-    --user="$DB_USER" \
-    --password="$DB_PASS" \
-    --host="$DB_HOST" \
-    --port="$DB_PORT" \
     --single-transaction \
     --routines \
     --triggers \

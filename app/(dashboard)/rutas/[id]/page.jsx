@@ -29,6 +29,9 @@ export default function RutaDetallePage({ params }) {
   const [totalRecogido, setTotalRecogido] = useState('')
   const [guardandoCaja, setGuardandoCaja] = useState(false)
   const [errorCaja,     setErrorCaja]     = useState('')
+  const [dragIndex,     setDragIndex]     = useState(null)
+  const [dragOverIdx,   setDragOverIdx]   = useState(null)
+  const [ordenGuardado, setOrdenGuardado] = useState(false)
 
   const fetchRuta = async () => {
     try {
@@ -112,6 +115,44 @@ export default function RutaDetallePage({ params }) {
       setGuardandoCaja(false)
     }
   }
+
+  const guardarOrden = async (nuevosClientes) => {
+    try {
+      const res = await fetch(`/api/rutas/${id}/reordenar`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clienteIds: nuevosClientes.map((c) => c.id) }),
+      })
+      if (res.ok) {
+        setOrdenGuardado(true)
+        setTimeout(() => setOrdenGuardado(false), 1500)
+      }
+    } catch {}
+  }
+
+  const moverCliente = (index, direccion) => {
+    const newIdx = index + direccion
+    if (newIdx < 0 || newIdx >= ruta.clientes.length) return
+    const clientes = [...ruta.clientes]
+    const [moved] = clientes.splice(index, 1)
+    clientes.splice(newIdx, 0, moved)
+    setRuta({ ...ruta, clientes })
+    guardarOrden(clientes)
+  }
+
+  const handleDragStart = (index) => setDragIndex(index)
+  const handleDragOver = (e, index) => { e.preventDefault(); setDragOverIdx(index) }
+  const handleDrop = (index) => {
+    if (dragIndex === null || dragIndex === index) { setDragIndex(null); setDragOverIdx(null); return }
+    const clientes = [...ruta.clientes]
+    const [moved] = clientes.splice(dragIndex, 1)
+    clientes.splice(index, 0, moved)
+    setRuta({ ...ruta, clientes })
+    guardarOrden(clientes)
+    setDragIndex(null)
+    setDragOverIdx(null)
+  }
+  const handleDragEnd = () => { setDragIndex(null); setDragOverIdx(null) }
 
   if (loading) return (
     <div className="max-w-2xl mx-auto space-y-4">
@@ -206,9 +247,14 @@ export default function RutaDetallePage({ params }) {
       {/* Clientes de la ruta */}
       <Card>
         <div className="flex items-center justify-between mb-4">
-          <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">
-            Clientes ({ruta.clientes?.length ?? 0})
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">
+              Clientes ({ruta.clientes?.length ?? 0})
+            </p>
+            {ordenGuardado && (
+              <span className="text-[10px] text-[#22c55e] animate-pulse">Orden guardado</span>
+            )}
+          </div>
           {esOwner && (
             <Button size="sm" variant="secondary" onClick={abrirModalClientes}>
               + Agregar clientes
@@ -219,13 +265,47 @@ export default function RutaDetallePage({ params }) {
         {(!ruta.clientes || ruta.clientes.length === 0) ? (
           <p className="text-sm text-[#888888] text-center py-4">Sin clientes asignados</p>
         ) : (
-          <div className="space-y-2.5">
-            {ruta.clientes.map((c) => (
-              <div key={c.id} className="flex items-center gap-3 py-2 border-b border-[#2a2a2a] last:border-0">
+          <div className="space-y-0">
+            {ruta.clientes.map((c, idx) => (
+              <div
+                key={c.id}
+                draggable
+                onDragStart={() => handleDragStart(idx)}
+                onDragOver={(e) => handleDragOver(e, idx)}
+                onDrop={() => handleDrop(idx)}
+                onDragEnd={handleDragEnd}
+                className={[
+                  'flex items-center gap-2 py-2.5 px-1 border-b border-[#2a2a2a] last:border-0 transition-all',
+                  dragIndex === idx ? 'opacity-40' : '',
+                  dragOverIdx === idx && dragIndex !== idx ? 'border-t-2 border-t-[#f5c518]' : '',
+                ].join(' ')}
+                style={{ cursor: 'grab' }}
+              >
+                {/* Botones mover (móvil-friendly) */}
+                <div className="flex flex-col gap-0.5 shrink-0">
+                  <button
+                    onClick={() => moverCliente(idx, -1)}
+                    disabled={idx === 0}
+                    className="text-[#555] hover:text-[#f5c518] disabled:opacity-20 transition-colors p-0.5"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => moverCliente(idx, 1)}
+                    disabled={idx === ruta.clientes.length - 1}
+                    className="text-[#555] hover:text-[#f5c518] disabled:opacity-20 transition-colors p-0.5"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                </div>
                 <div className="w-7 h-7 rounded-full bg-[rgba(245,197,24,0.15)] flex items-center justify-center shrink-0">
                   <span className="text-[#f5c518] text-[10px] font-bold">{c.nombre?.[0]?.toUpperCase()}</span>
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0" onClick={() => router.push(`/clientes/${c.id}`)}>
                   <p className="text-sm font-medium text-[white] truncate">{c.nombre}</p>
                   <p className="text-[10px] text-[#888888]">
                     {c.diasMora > 0 ? `${c.diasMora} días en mora` : c.pagoHoy ? 'Pagó hoy' : 'Pendiente'}

@@ -38,10 +38,22 @@ export async function POST(request, { params }) {
     return Response.json({ error: 'Uno o más clientes no son válidos' }, { status: 400 })
   }
 
-  await prisma.cliente.updateMany({
-    where: { id: { in: clienteIds }, organizationId },
-    data:  { rutaId: id },
+  // Obtener max ordenRuta actual en la ruta
+  const maxOrden = await prisma.cliente.aggregate({
+    where: { rutaId: id, organizationId },
+    _max: { ordenRuta: true },
   })
+  let nextOrden = (maxOrden._max.ordenRuta ?? -1) + 1
+
+  // Asignar cada cliente con orden consecutivo al final
+  await prisma.$transaction(
+    clienteIds.map((cid, i) =>
+      prisma.cliente.update({
+        where: { id: cid },
+        data: { rutaId: id, ordenRuta: nextOrden + i },
+      })
+    )
+  )
 
   return Response.json({ asignados: clienteIds.length })
 }
@@ -70,7 +82,7 @@ export async function DELETE(request, { params }) {
   })
   if (!cliente) return Response.json({ error: 'Cliente no encontrado en esta ruta' }, { status: 404 })
 
-  await prisma.cliente.update({ where: { id: clienteId }, data: { rutaId: null } })
+  await prisma.cliente.update({ where: { id: clienteId }, data: { rutaId: null, ordenRuta: null } })
 
   return Response.json({ quitado: clienteId })
 }
