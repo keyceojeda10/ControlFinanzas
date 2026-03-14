@@ -28,8 +28,13 @@ export default function AdminTicketDetallePage() {
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [updatingEstado, setUpdatingEstado] = useState(false)
+  const [modalEstado, setModalEstado] = useState(null)
+  const [notaResolucion, setNotaResolucion] = useState('')
+  const [imagenPreview, setImagenPreview] = useState(null)
+  const [imagenFile, setImagenFile] = useState(null)
   const chatRef = useRef(null)
   const lastTimestampRef = useRef(null)
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     fetch(`/api/soporte/${id}`)
@@ -68,27 +73,64 @@ export default function AdminTicketDetallePage() {
     if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight
   }, [mensajes])
 
+  const handleImageSelect = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
+      alert('Formato no permitido. Usa JPG, PNG, WebP o GIF')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('La imagen no puede superar 5MB')
+      return
+    }
+    setImagenFile(file)
+    setImagenPreview(URL.createObjectURL(file))
+  }
+
+  const cancelarImagen = () => {
+    setImagenFile(null)
+    setImagenPreview(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
   const enviarMensaje = async (e) => {
     e.preventDefault()
-    if (!mensaje.trim() || sending) return
+    if ((!mensaje.trim() && !imagenFile) || sending) return
     setSending(true)
     try {
-      const res = await fetch(`/api/soporte/${id}/mensajes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contenido: mensaje.trim() }),
-      })
-      const nuevo = await res.json()
+      let nuevo
+      if (imagenFile) {
+        const formData = new FormData()
+        formData.append('imagen', imagenFile)
+        formData.append('contenido', mensaje.trim())
+        const res = await fetch(`/api/soporte/${id}/upload`, { method: 'POST', body: formData })
+        nuevo = await res.json()
+      } else {
+        const res = await fetch(`/api/soporte/${id}/mensajes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contenido: mensaje.trim() }),
+        })
+        nuevo = await res.json()
+      }
       if (!nuevo.error) {
         setMensajes(prev => [...prev, nuevo])
         lastTimestampRef.current = nuevo.createdAt
         setMensaje('')
+        cancelarImagen()
       }
     } catch {}
     setSending(false)
   }
 
   const cambiarEstado = async (nuevoEstado) => {
+    // Para resuelto/cerrado, mostrar modal para agregar nota
+    if ((nuevoEstado === 'resuelto' || nuevoEstado === 'cerrado') && !modalEstado) {
+      setModalEstado(nuevoEstado)
+      setNotaResolucion('')
+      return
+    }
     setUpdatingEstado(true)
     try {
       const res = await fetch(`/api/soporte/${id}`, {
@@ -100,6 +142,37 @@ export default function AdminTicketDetallePage() {
       if (!data.error) setTicket(prev => ({ ...prev, estado: nuevoEstado }))
     } catch {}
     setUpdatingEstado(false)
+  }
+
+  const confirmarCambioEstado = async () => {
+    setUpdatingEstado(true)
+    try {
+      const body = { estado: modalEstado }
+      if (notaResolucion.trim()) body.notaResolucion = notaResolucion.trim()
+      const res = await fetch(`/api/soporte/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const data = await res.json()
+      if (!data.error) {
+        setTicket(prev => ({ ...prev, estado: modalEstado }))
+        // Agregar mensaje de sistema al chat local
+        if (notaResolucion.trim()) {
+          const etiqueta = modalEstado === 'resuelto' ? '✅ Ticket resuelto' : '🔒 Ticket cerrado'
+          setMensajes(prev => [...prev, {
+            id: `sys-${Date.now()}`,
+            esAdmin: true,
+            contenido: `${etiqueta}\n\n${notaResolucion.trim()}`,
+            createdAt: new Date().toISOString(),
+            esSistema: true,
+          }])
+        }
+      }
+    } catch {}
+    setUpdatingEstado(false)
+    setModalEstado(null)
+    setNotaResolucion('')
   }
 
   const marcarContactado = async () => {
@@ -193,6 +266,43 @@ export default function AdminTicketDetallePage() {
         </div>
       </Card>
 
+      {/* Modal nota de resolución */}
+      {modalEstado && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+          <div className="bg-[#0a0a0a] border border-[#2a2a2a] rounded-[16px] p-5 w-full max-w-md">
+            <h3 className="text-sm font-bold text-white mb-1">
+              {modalEstado === 'resuelto' ? 'Marcar como resuelto' : 'Cerrar ticket'}
+            </h3>
+            <p className="text-xs text-[#888888] mb-3">
+              Agrega una nota explicando la resolución. El cliente la verá en el chat.
+            </p>
+            <textarea
+              value={notaResolucion}
+              onChange={e => setNotaResolucion(e.target.value)}
+              placeholder="Ej: Se corrigió el error en la factura. El pago fue procesado correctamente."
+              rows={4}
+              className="w-full rounded-[10px] bg-[#111111] border border-[#2a2a2a] px-3 py-2 text-xs text-white placeholder-[#555555] focus:outline-none focus:border-[#f5c518] resize-none"
+              autoFocus
+            />
+            <div className="flex items-center justify-end gap-2 mt-3">
+              <button
+                onClick={() => { setModalEstado(null); setNotaResolucion('') }}
+                className="px-3 py-1.5 rounded-[10px] text-xs text-[#888888] hover:text-white border border-[#2a2a2a] transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarCambioEstado}
+                disabled={updatingEstado}
+                className="px-3 py-1.5 rounded-[10px] text-xs font-semibold bg-[#f5c518] text-[#0a0a0a] hover:bg-[#d4a817] transition-colors disabled:opacity-50"
+              >
+                {updatingEstado ? 'Guardando...' : modalEstado === 'resuelto' ? 'Marcar resuelto' : 'Cerrar ticket'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Chat */}
       <Card padding={false}>
         <div className="px-4 py-3 border-b border-[#2a2a2a]">
@@ -203,29 +313,82 @@ export default function AdminTicketDetallePage() {
           {mensajes.length === 0 ? (
             <p className="text-xs text-[#555555] text-center py-6">No hay mensajes. Responde al usuario aquí.</p>
           ) : (
-            mensajes.map(m => (
-              <div key={m.id} className={`flex ${m.esAdmin ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[80%] rounded-[12px] px-3.5 py-2.5 ${
-                  m.esAdmin
-                    ? 'bg-[rgba(245,197,24,0.1)] border border-[rgba(245,197,24,0.15)]'
-                    : 'bg-[#111111] border border-[#2a2a2a]'
-                }`}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-semibold text-[#888888]">
-                      {m.esAdmin ? 'Tú (Soporte)' : m.user?.nombre || 'Usuario'}
-                    </span>
+            mensajes.map(m => {
+              const esSistema = m.contenido?.startsWith('✅') || m.contenido?.startsWith('🔒')
+              if (esSistema) {
+                return (
+                  <div key={m.id} className="flex justify-center">
+                    <div className="max-w-[90%] rounded-[12px] px-4 py-3 bg-[rgba(139,92,246,0.08)] border border-[rgba(139,92,246,0.2)]">
+                      <p className="text-xs text-[#a855f7] leading-relaxed whitespace-pre-wrap font-medium">{m.contenido}</p>
+                      <p className="text-[9px] text-[#555555] mt-1 text-right">
+                        {new Date(m.createdAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-xs text-white leading-relaxed whitespace-pre-wrap">{m.contenido}</p>
-                  <p className="text-[9px] text-[#555555] mt-1 text-right">
-                    {new Date(m.createdAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
-                  </p>
+                )
+              }
+              return (
+                <div key={m.id} className={`flex ${m.esAdmin ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[80%] rounded-[12px] px-3.5 py-2.5 ${
+                    m.esAdmin
+                      ? 'bg-[rgba(245,197,24,0.1)] border border-[rgba(245,197,24,0.15)]'
+                      : 'bg-[#111111] border border-[#2a2a2a]'
+                  }`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[10px] font-semibold text-[#888888]">
+                        {m.esAdmin ? 'Tú (Soporte)' : m.user?.nombre || 'Usuario'}
+                      </span>
+                    </div>
+                    {m.imagenUrl && (
+                      <a href={m.imagenUrl} target="_blank" rel="noopener noreferrer" className="block mb-1.5">
+                        <img src={m.imagenUrl} alt="Imagen adjunta" className="max-w-full max-h-[200px] rounded-[8px] object-contain cursor-pointer hover:opacity-90 transition-opacity" />
+                      </a>
+                    )}
+                    {m.contenido && <p className="text-xs text-white leading-relaxed whitespace-pre-wrap">{m.contenido}</p>}
+                    <p className="text-[9px] text-[#555555] mt-1 text-right">
+                      {new Date(m.createdAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))
+              )
+            })
           )}
         </div>
 
+        {/* Preview imagen */}
+        {imagenPreview && (
+          <div className="px-4 py-2 border-t border-[#2a2a2a] flex items-center gap-2">
+            <div className="relative">
+              <img src={imagenPreview} alt="Preview" className="h-16 rounded-[8px] object-contain" />
+              <button
+                onClick={cancelarImagen}
+                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#ef4444] flex items-center justify-center text-white text-[10px]"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-[10px] text-[#888888]">{imagenFile?.name}</p>
+          </div>
+        )}
+
         <form onSubmit={enviarMensaje} className="px-4 py-3 border-t border-[#2a2a2a] flex items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            onChange={handleImageSelect}
+            className="hidden"
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="p-1.5 rounded-[8px] text-[#888888] hover:text-[#f5c518] hover:bg-[rgba(245,197,24,0.1)] transition-all shrink-0"
+            title="Adjuntar imagen"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </button>
           <input
             type="text"
             value={mensaje}
@@ -233,7 +396,7 @@ export default function AdminTicketDetallePage() {
             placeholder="Responder al usuario..."
             className="flex-1 h-9 rounded-[10px] bg-[#111111] border border-[#2a2a2a] px-3 text-xs text-white placeholder-[#555555] focus:outline-none focus:border-[#f5c518]"
           />
-          <Button type="submit" size="sm" loading={sending} disabled={!mensaje.trim()}>
+          <Button type="submit" size="sm" loading={sending} disabled={!mensaje.trim() && !imagenFile}>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
             </svg>

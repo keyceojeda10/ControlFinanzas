@@ -320,6 +320,7 @@ model MensajeTicket {
   ticketId  String
   userId    String
   contenido String   @db.Text
+  imagenUrl String?
   esAdmin   Boolean  @default(false)
   leido     Boolean  @default(false)
   createdAt DateTime @default(now())

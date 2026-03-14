@@ -151,25 +151,40 @@ export default function TicketDetallePage() {
               {cerrado ? 'No hay mensajes en este ticket' : 'Escribe un mensaje para comenzar la conversación'}
             </p>
           ) : (
-            mensajes.map(m => (
-              <div key={m.id} className={`flex ${m.esAdmin ? 'justify-start' : 'justify-end'}`}>
-                <div className={`max-w-[80%] rounded-[12px] px-3.5 py-2.5 ${
-                  m.esAdmin
-                    ? 'bg-[#111111] border border-[#2a2a2a]'
-                    : 'bg-[rgba(245,197,24,0.1)] border border-[rgba(245,197,24,0.15)]'
-                }`}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-semibold text-[#888888]">
-                      {m.esAdmin ? 'Soporte' : m.user?.nombre || 'Tú'}
-                    </span>
+            mensajes.map(m => {
+              const esSistema = m.contenido?.startsWith('✅') || m.contenido?.startsWith('🔒')
+              if (esSistema) {
+                return (
+                  <div key={m.id} className="flex justify-center">
+                    <div className="max-w-[90%] rounded-[12px] px-4 py-3 bg-[rgba(139,92,246,0.08)] border border-[rgba(139,92,246,0.2)]">
+                      <p className="text-xs text-[#a855f7] leading-relaxed whitespace-pre-wrap font-medium">{m.contenido}</p>
+                      <p className="text-[9px] text-[#555555] mt-1 text-right">
+                        {new Date(m.createdAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-xs text-white leading-relaxed whitespace-pre-wrap">{m.contenido}</p>
-                  <p className="text-[9px] text-[#555555] mt-1 text-right">
-                    {new Date(m.createdAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
-                  </p>
+                )
+              }
+              return (
+                <div key={m.id} className={`flex ${m.esAdmin ? 'justify-start' : 'justify-end'}`}>
+                  <div className={`max-w-[80%] rounded-[12px] px-3.5 py-2.5 ${
+                    m.esAdmin
+                      ? 'bg-[#111111] border border-[#2a2a2a]'
+                      : 'bg-[rgba(245,197,24,0.1)] border border-[rgba(245,197,24,0.15)]'
+                  }`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[10px] font-semibold text-[#888888]">
+                        {m.esAdmin ? 'Soporte' : m.user?.nombre || 'Tú'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-white leading-relaxed whitespace-pre-wrap">{m.contenido}</p>
+                    <p className="text-[9px] text-[#555555] mt-1 text-right">
+                      {new Date(m.createdAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))
+              )
+            })
           )}
         </div>
 

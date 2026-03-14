@@ -51,7 +51,7 @@ export async function PATCH(request, { params }) {
     if (session.user.rol !== 'superadmin') return NextResponse.json({ error: 'Solo superadmin' }, { status: 403 })
 
     const { id } = await params
-    const { estado, contactoAtendido } = await request.json()
+    const { estado, contactoAtendido, notaResolucion } = await request.json()
 
     const data = {}
     if (estado) data.estado = estado
@@ -65,6 +65,19 @@ export async function PATCH(request, { params }) {
         organization: { select: { nombre: true, plan: true } },
       },
     })
+
+    // Si se cambia estado a resuelto/cerrado y hay nota, crear mensaje de sistema
+    if (estado && (estado === 'resuelto' || estado === 'cerrado') && notaResolucion?.trim()) {
+      const etiqueta = estado === 'resuelto' ? '✅ Ticket resuelto' : '🔒 Ticket cerrado'
+      await prisma.mensajeTicket.create({
+        data: {
+          ticketId: id,
+          userId: session.user.id,
+          contenido: `${etiqueta}\n\n${notaResolucion.trim()}`,
+          esAdmin: true,
+        },
+      })
+    }
 
     return NextResponse.json(ticket)
   } catch (error) {

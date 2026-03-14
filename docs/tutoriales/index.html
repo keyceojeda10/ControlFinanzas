@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tutoriales Control Finanzas — Respuestas rápidas para WhatsApp</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      line-height: 1.6;
+    }
+    .header {
+      background: linear-gradient(135deg, #1a1a1a 0%, #111 100%);
+      border-bottom: 1px solid #2a2a2a;
+      padding: 24px 20px;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header h1 {
+      font-size: 22px;
+      color: #f5c518;
+      margin-bottom: 4px;
+    }
+    .header p {
+      font-size: 13px;
+      color: #888;
+    }
+
+    /* Search */
+    .search-bar {
+      max-width: 500px;
+      margin: 16px auto 0;
+      position: relative;
+    }
+    .search-bar input {
+      width: 100%;
+      padding: 10px 16px 10px 40px;
+      border-radius: 12px;
+      border: 1px solid #2a2a2a;
+      background: #111;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-bar input:focus { border-color: #f5c518; }
+    .search-bar svg {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      color: #888;
+    }
+
+    /* Navigation index */
+    .nav-index {
+      max-width: 900px;
+      margin: 24px auto;
+      padding: 0 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+    }
+    .nav-index a {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      color: #ccc;
+      text-decoration: none;
+      font-size: 12px;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .nav-index a:hover {
+      background: rgba(245, 197, 24, 0.15);
+      border-color: #f5c518;
+      color: #f5c518;
+    }
+
+    /* Tutorials container */
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* Tutorial card */
+    .tutorial {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .tutorial:hover { border-color: #3a3a3a; }
+    .tutorial-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      border-bottom: 1px solid #2a2a2a;
+      cursor: pointer;
+      user-select: none;
+    }
+    .tutorial-header:hover { background: #222; }
+    .tutorial-number {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: rgba(245, 197, 24, 0.15);
+      color: #f5c518;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .tutorial-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      flex: 1;
+    }
+    .tutorial-toggle {
+      color: #555;
+      transition: transform 0.3s;
+      flex-shrink: 0;
+    }
+    .tutorial.open .tutorial-toggle { transform: rotate(180deg); }
+
+    .tutorial-body {
+      display: none;
+      padding: 20px;
+    }
+    .tutorial.open .tutorial-body { display: block; }
+
+    .tutorial-content {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+
+    /* Screenshot */
+    .tutorial-image {
+      width: 220px;
+      flex-shrink: 0;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #2a2a2a;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .tutorial-image:hover { transform: scale(1.02); }
+    .tutorial-image img {
+      width: 100%;
+      display: block;
+    }
+    .img-caption {
+      padding: 6px 10px;
+      background: #111;
+      font-size: 10px;
+      color: #888;
+      text-align: center;
+    }
+
+    /* Text block */
+    .tutorial-text {
+      flex: 1;
+      min-width: 0;
+    }
+    .whatsapp-block {
+      background: #111;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 16px;
+      font-size: 13px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      color: #ddd;
+      line-height: 1.7;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    /* Copy button */
+    .copy-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      align-items: center;
+    }
+    .btn-copy {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 10px;
+      background: #25D366;
+      color: #fff;
+      border: none;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-copy:hover { background: #1fb855; transform: translateY(-1px); }
+    .btn-copy:active { transform: translateY(0); }
+    .btn-copy svg { width: 16px; height: 16px; }
+    .copy-feedback {
+      font-size: 12px;
+      color: #22c55e;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .copy-feedback.show { opacity: 1; }
+
+    .btn-copy-img {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 10px;
+      background: #f5c518;
+      color: #0a0a0a;
+      border: none;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-copy-img:hover { background: #f0b800; transform: translateY(-1px); }
+
+    /* Tips */
+    .tutorial-tip {
+      margin-top: 12px;
+      padding: 10px 14px;
+      background: rgba(245, 197, 24, 0.08);
+      border: 1px solid rgba(245, 197, 24, 0.2);
+      border-radius: 10px;
+      font-size: 12px;
+      color: #f5c518;
+    }
+
+    /* Lightbox */
+    .lightbox {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.9);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+    .lightbox.active { display: flex; }
+    .lightbox img {
+      max-width: 90vw;
+      max-height: 90vh;
+      border-radius: 12px;
+    }
+
+    /* Responsive */
+    @media (max-width: 680px) {
+      .tutorial-content {
+        flex-direction: column;
+      }
+      .tutorial-image {
+        width: 100%;
+        max-width: 300px;
+        margin: 0 auto;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📱 Tutoriales — Control Finanzas</h1>
+  <p>Respuestas rápidas para copiar y pegar en WhatsApp</p>
+  <div class="search-bar">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+    <input type="search" id="searchInput" placeholder="Buscar tutorial... (ej: préstamo, pago, ruta)">
+  </div>
+</div>
+
+<div class="nav-index" id="navIndex"></div>
+
+<div class="container" id="tutorialsContainer"></div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="this.classList.remove('active')">
+  <img id="lightboxImg" src="" alt="">
+</div>
+
+<script>
+const TUTORIALS = [
+  {
+    id: 'registrarse',
+    emoji: '📱',
+    title: 'Cómo registrarse en la plataforma',
+    images: [{ src: 'imagenes/01_login.png', caption: 'Pantalla de login — enlace "Regístrate gratis"' }],
+    text: `📱 *Cómo registrarse en Control Finanzas*
+
+1. Entra a *app.control-finanzas.com*
+2. En la pantalla de inicio, toca *"Regístrate gratis"* (abajo del botón Ingresar)
+3. Llena el formulario con tu nombre, correo y contraseña
+4. Toca *"Crear cuenta"*
+5. Revisa tu correo electrónico y confirma tu cuenta con el enlace que te llegó
+6. ¡Listo! Ya puedes iniciar sesión
+
+💡 *Tip:* Usa un correo que revises seguido porque ahí te llegarán las notificaciones del sistema.`,
+    tip: 'El enlace de "Regístrate gratis" está justo debajo del botón amarillo de Ingresar.'
+  },
+  {
+    id: 'login',
+    emoji: '🔑',
+    title: 'Cómo iniciar sesión',
+    images: [{ src: 'imagenes/01_login.png', caption: 'Pantalla de login' }],
+    text: `🔑 *Cómo iniciar sesión*
+
+1. Entra a *app.control-finanzas.com*
+2. Escribe tu *correo electrónico*
+3. Escribe tu *contraseña*
+4. Toca el botón amarillo *"Ingresar"*
+5. Te llevará al Dashboard (panel principal)
+
+⚠️ Si olvidaste tu contraseña, toca *"¿Olvidaste tu contraseña?"* y sigue los pasos.`
+  },
+  {
+    id: 'password',
+    emoji: '🔓',
+    title: 'Cómo recuperar tu contraseña',
+    images: [{ src: 'imagenes/01_login.png', caption: 'Enlace "¿Olvidaste tu contraseña?"' }],
+    text: `🔓 *Cómo recuperar tu contraseña*
+
+1. Entra a *app.control-finanzas.com*
+2. Toca *"¿Olvidaste tu contraseña?"* (debajo del campo de contraseña)
+3. Escribe el *correo electrónico* con el que te registraste
+4. Toca *"Enviar enlace"*
+5. Revisa tu correo (puede llegar a spam)
+6. Abre el correo y toca el enlace para crear una nueva contraseña
+7. Escribe tu nueva contraseña y confírmala
+8. ¡Listo! Ya puedes ingresar con tu nueva contraseña
+
+💡 *Tip:* La contraseña debe tener mínimo 6 caracteres.`
+  },
+  {
+    id: 'dashboard',
+    emoji: '📊',
+    title: 'Cómo usar el Dashboard',
+    images: [{ src: 'imagenes/02_dashboard.png', caption: 'Dashboard — Panel principal' }],
+    text: `📊 *Cómo usar el Dashboard (Panel principal)*
+
+El Dashboard es la pantalla principal que ves al entrar. Ahí encuentras el resumen de tu negocio:
+
+📌 *Lo que puedes ver:*
+• *Clientes activos* — cuántos clientes tienes y cuántos están en mora
+• *Préstamos activos* — cantidad de préstamos vigentes
+• *Cartera activa* — el total de dinero que te deben
+• *Cuota diaria total* — lo que esperas recibir por día
+• *Recaudado hoy* — lo que ya cobraste hoy con barra de progreso
+• *Recaudado este mes* — total cobrado en el mes
+• *Últimos pagos* — los pagos más recientes
+• *Alertas de mora* — clientes atrasados organizados por gravedad
+
+📌 *Accesos rápidos (abajo):*
+• Nuevo cliente
+• Nuevo préstamo
+• Cierre de caja
+• Ver clientes
+• Rutas
+• Configuración`
+  },
+  {
+    id: 'crear-cliente',
+    emoji: '👤',
+    title: 'Cómo crear un cliente nuevo',
+    images: [
+      { src: 'imagenes/03_clientes_lista.png', caption: 'Lista de clientes → botón "+ Nuevo cliente"' },
+      { src: 'imagenes/04_cliente_nuevo.png', caption: 'Formulario de nuevo cliente' }
+    ],
+    text: `👤 *Cómo crear un cliente nuevo*
+
+1. En el menú de abajo, toca *"Clientes"*
+2. Toca el botón amarillo *"+ Nuevo cliente"* (arriba a la derecha)
+3. Llena los datos:
+   • *Nombre completo* (obligatorio)
+   • *Cédula* (obligatorio, 6-12 dígitos)
+   • *Teléfono* (obligatorio)
+   • Dirección (opcional)
+   • Referencia (opcional, ej: "Tienda La Esquina")
+   • Notas (opcional)
+4. Toca *"Guardar cliente"*
+
+✅ El cliente queda registrado y listo para asignarle préstamos.
+
+💡 *Tip:* Si ya tienes una ruta creada, puedes asignarle la ruta al momento de crearlo.`
+  },
+  {
+    id: 'editar-cliente',
+    emoji: '✏️',
+    title: 'Cómo editar un cliente',
+    images: [{ src: 'imagenes/05_cliente_detalle.png', caption: 'Detalle del cliente → botón "Editar"' }],
+    text: `✏️ *Cómo editar un cliente*
+
+1. Ve a *"Clientes"* en el menú de abajo
+2. Toca el nombre del cliente que quieres editar
+3. En la ficha del cliente, toca el botón *"Editar"*
+4. Modifica los datos que necesites (nombre, teléfono, dirección, notas, etc.)
+5. Toca *"Guardar cambios"*
+
+✅ Los datos se actualizan al instante.
+
+⚠️ *Importante:* Si cambias la cédula, el sistema verifica que no esté repetida.`
+  },
+  {
+    id: 'crear-prestamo',
+    emoji: '💰',
+    title: 'Cómo crear un préstamo',
+    images: [
+      { src: 'imagenes/06_prestamos_lista.png', caption: 'Lista de préstamos' },
+      { src: 'imagenes/07_prestamo_nuevo.png', caption: 'Formulario nuevo préstamo' }
+    ],
+    text: `💰 *Cómo crear un préstamo*
+
+1. En el menú de abajo, toca *"Préstamos"*
+2. Toca el botón *"+ Nuevo préstamo"*
+3. Selecciona el tipo: *Préstamo* o *Mercancía*
+4. Llena los datos:
+   • *Cliente* — busca por nombre o cédula
+   • *Monto prestado* — la cantidad en pesos
+   • *Tasa de interés (%)* — ej: 20%
+   • *Plazo (días)* — ej: 30 días
+   • *Frecuencia de cobro* — Diario, Semanal, Quincenal o Mensual
+   • *Fecha de inicio*
+5. Revisa el resumen que aparece abajo (cuota, total a pagar, etc.)
+6. Toca *"Crear préstamo"*
+
+✅ El préstamo queda activo y las cuotas se calculan automáticamente.
+
+💡 *Ejemplo:* Si prestas $100.000 al 20% a 30 días diario:
+• Total a pagar: $120.000
+• Cuota diaria: $4.000`
+  },
+  {
+    id: 'registrar-pago',
+    emoji: '💵',
+    title: 'Cómo registrar un pago',
+    images: [{ src: 'imagenes/08_prestamo_pago.png', caption: 'Botón verde "Registrar pago"' }],
+    text: `💵 *Cómo registrar un pago*
+
+1. Ve a *"Préstamos"* en el menú de abajo
+2. Toca el préstamo del cliente al que le vas a registrar el pago
+3. En la pantalla del préstamo, verás el botón verde *"Registrar pago — $XX.XXX"*
+4. Toca ese botón para registrar la cuota completa
+
+   *¿Y si paga un monto diferente?*
+   Toca *"+ Hacer abono extraordinario"* y escribe el monto que pagó
+
+5. ¡Listo! El pago queda registrado, el saldo se actualiza automáticamente y se ve en el historial
+
+💡 *Tip:* En el resumen financiero puedes ver:
+• Saldo pendiente
+• Porcentaje pagado (barra de progreso)
+• Días en mora (si aplica)`
+  },
+  {
+    id: 'crear-ruta',
+    emoji: '🗺️',
+    title: 'Cómo crear una ruta',
+    images: [{ src: 'imagenes/09_rutas_lista.png', caption: 'Lista de rutas → botón "+ Nueva ruta"' }],
+    text: `🗺️ *Cómo crear una ruta*
+
+1. En el menú de abajo, toca *"Más"* → luego *"Rutas"*
+2. Toca el botón *"+ Nueva ruta"*
+3. Escribe el *nombre de la ruta* (ej: "Ruta Norte", "Zona Centro")
+4. Toca *"Crear"*
+
+✅ La ruta queda creada. Ahora puedes:
+• Asignarle un cobrador
+• Agregar clientes a la ruta
+
+💡 *Tip:* Puedes crear tantas rutas como necesites para organizar tus zonas de cobro.`
+  },
+  {
+    id: 'enrutar-desenrutar',
+    emoji: '📋',
+    title: 'Cómo enrutar y desenrutar clientes',
+    images: [{ src: 'imagenes/10_ruta_detalle.png', caption: 'Detalle de ruta con "+ Agregar clientes" y ✕' }],
+    text: `📋 *Cómo enrutar y desenrutar clientes*
+
+✅ *ENRUTAR un cliente (asignarlo a una ruta)*
+
+1. Ve a *Rutas* en el menú
+2. Selecciona la ruta donde quieres agregar el cliente
+3. Toca el botón *"+ Agregar clientes"*
+4. Te aparecen los clientes que no tienen ruta
+5. Marca los que quieres agregar con el checkbox ☑️
+6. Presiona *"Agregar"*
+
+¡Listo! El cliente queda asignado.
+
+---
+
+❌ *DESENRUTAR un cliente (quitarlo de una ruta)*
+
+1. Ve a *Rutas* → entra a la ruta donde está el cliente
+2. En la lista de clientes, al lado de cada uno hay una ✕
+3. Toca la ✕ del cliente que quieres quitar
+4. El cliente se quita de la ruta (no se elimina, solo se desvincula)
+
+Después lo puedes volver a asignar a cualquier otra ruta sin problema.
+
+---
+
+⚠️ *Importante*
+• Solo el *administrador* puede enrutar y desenrutar clientes
+• Si eliminas una ruta, los clientes quedan sin ruta pero no se borran`
+  },
+  {
+    id: 'reordenar-ruta',
+    emoji: '🔄',
+    title: 'Cómo reordenar clientes en una ruta',
+    images: [{ src: 'imagenes/10_ruta_detalle.png', caption: 'Flechas ↑↓ para reordenar clientes' }],
+    text: `🔄 *Cómo reordenar clientes en una ruta*
+
+El orden de los clientes en la ruta define el recorrido del cobrador. Puedes cambiarlo así:
+
+1. Ve a *Rutas* → selecciona la ruta
+2. En la lista de clientes verás unas *flechitas ↑ ↓* al lado izquierdo de cada cliente
+3. Toca *↑* para subir un cliente o *↓* para bajarlo
+4. El orden se *guarda automáticamente*
+
+💡 *Tip:* En computador también puedes *arrastrar y soltar* los clientes para reordenarlos.
+
+✅ Aparecerá brevemente el mensaje "Orden guardado" confirmando el cambio.`
+  },
+  {
+    id: 'crear-cobrador',
+    emoji: '👷',
+    title: 'Cómo crear un cobrador',
+    images: [
+      { src: 'imagenes/11_cobradores_lista.png', caption: 'Lista de cobradores' },
+      { src: 'imagenes/12_cobrador_nuevo.png', caption: 'Formulario nuevo cobrador con permisos' }
+    ],
+    text: `👷 *Cómo crear un cobrador*
+
+1. En el menú de abajo, toca *"Más"* → luego *"Cobradores"*
+2. Toca el botón *"+ Nuevo cobrador"*
+3. Llena los datos:
+   • *Nombre completo*
+   • *Correo electrónico* — con este correo el cobrador inicia sesión
+   • *Contraseña temporal* — mínimo 6 caracteres (luego la puede cambiar)
+4. Configura los *permisos* (están desactivados por defecto):
+   • Crear préstamos
+   • Crear clientes
+   • Editar clientes
+5. Toca *"Crear cobrador"*
+
+✅ El cobrador ya puede ingresar al sistema con su correo y contraseña.
+
+💡 *Tip:* Después de crearlo, asígnalo a una ruta para que vea solo los clientes de esa ruta.`
+  },
+  {
+    id: 'permisos-cobrador',
+    emoji: '🔐',
+    title: 'Cómo configurar permisos de un cobrador',
+    images: [{ src: 'imagenes/12_cobrador_nuevo.png', caption: 'Sección "PERMISOS DEL COBRADOR"' }],
+    text: `🔐 *Cómo configurar permisos de un cobrador*
+
+Los permisos controlan qué puede hacer cada cobrador en el sistema:
+
+1. Ve a *Cobradores*
+2. Toca el cobrador que quieres configurar
+3. Toca *"Editar"*
+4. Busca la sección *"PERMISOS DEL COBRADOR"*
+5. Activa o desactiva cada permiso:
+
+   🔘 *Crear préstamos* — Puede registrar nuevos préstamos para clientes de su ruta
+   🔘 *Crear clientes* — Puede registrar clientes nuevos (se asignan a su ruta automáticamente)
+   🔘 *Editar clientes* — Puede modificar datos como teléfono, dirección, etc.
+
+6. Guarda los cambios
+
+⚠️ *Importante:*
+• Los permisos vienen *desactivados* por defecto
+• El cobrador solo ve los clientes de *su ruta asignada*
+• Solo el *administrador* puede cambiar estos permisos`
+  },
+  {
+    id: 'cierre-caja',
+    emoji: '🏦',
+    title: 'Cómo hacer cierre de caja',
+    images: [{ src: 'imagenes/13_caja.png', caption: 'Página de Caja — Resumen del día' }],
+    text: `📊 *Cómo hacer cierre de caja*
+
+El cierre de caja te permite registrar cuánto dinero recogió el cobrador al final del día.
+
+1. En el menú de abajo, toca *"Caja"*
+2. Selecciona la *fecha* del cierre (por defecto es hoy)
+3. Verás el *resumen del día*:
+   • Esperado — lo que debieron cobrar
+   • Recaudado — lo que efectivamente pagaron los clientes
+   • Gastos — gastos menores del día
+   • Disponible — lo que debería tener el cobrador
+4. En la sección *COBRADORES*, al lado de cada cobrador verás si ya cerró o está *"Pendiente"*
+5. Toca el cobrador → ingresa el *monto que entregó*
+6. El sistema calcula automáticamente la diferencia
+
+💡 *Tip:* También puedes registrar *gastos menores* del día (gasolina, almuerzos, etc.) tocando el botón ➕ en "Gastos menores".`
+  },
+  {
+    id: 'reportes',
+    emoji: '📈',
+    title: 'Cómo ver reportes',
+    images: [{ src: 'imagenes/14_reportes.png', caption: 'Página de Reportes con gráficas' }],
+    text: `📈 *Cómo ver reportes*
+
+1. En el menú de abajo, toca *"Más"* → luego *"Reportes"*
+2. Selecciona el *rango de fechas* que quieres consultar
+3. Verás un resumen completo:
+
+📌 *Métricas principales:*
+   • Clientes activos y en mora
+   • Préstamos activos
+   • Cartera activa (cuánto te deben)
+   • Ingresos del período
+   • Capital prestado activo
+
+📌 *Gráficas de ingresos:*
+   • Vista Diaria, Semanal o Mensual
+   • Gráfica de barras con el cobro de cada día
+
+💡 *Tip:* Usa los reportes para identificar tus mejores días de cobro y los clientes que más se atrasan.`
+  },
+  {
+    id: 'plan',
+    emoji: '💳',
+    title: 'Cómo adquirir o cambiar de plan',
+    images: [{ src: 'imagenes/15_plan.png', caption: 'Página de planes y precios' }],
+    text: `💳 *Cómo adquirir o cambiar de plan*
+
+1. En el menú de abajo, toca *"Más"* → *"Configuración"*
+2. Toca la pestaña *"Suscripción"* o ve directo a *Configuración → Plan*
+3. Verás los planes disponibles:
+
+   📦 *Básico — $59.000/mes*
+   • 1 usuario (administrador)
+   • Hasta 50 clientes
+   • Gestión de préstamos y dashboard básico
+
+   ⭐ *Profesional — $119.000/mes* (Más popular)
+   • Hasta 3 usuarios
+   • Hasta 300 clientes
+   • Rutas, cobradores y cierre de caja
+   • Reportes completos
+
+   🏢 *Empresarial — $199.000/mes*
+   • Hasta 7 usuarios
+   • Clientes ilimitados
+   • Reportes avanzados y exportar a Excel
+
+4. Puedes elegir pago *Mensual*, *Trimestral (-10%)* o *Anual (2 meses gratis)*
+5. Toca *"Elegir plan"* en el plan que quieras
+6. Te lleva a Mercado Pago para completar el pago
+
+✅ Tu plan se activa inmediatamente después del pago.`
+  },
+  {
+    id: 'configuracion',
+    emoji: '⚙️',
+    title: 'Cómo ver la configuración y perfil',
+    images: [{ src: 'imagenes/16_configuracion.png', caption: 'Página de Configuración — Mi perfil' }],
+    text: `⚙️ *Cómo ver la configuración y perfil*
+
+1. En el menú de abajo, toca *"Más"* → luego *"Configuración"*
+2. Verás varias pestañas:
+
+   👤 *Mi perfil*
+   • Ver y editar tu nombre
+   • Ver tu correo
+   • Cambiar tu contraseña
+
+   🏢 *Organización*
+   • Nombre de tu negocio
+   • Configuraciones de la organización
+
+   💳 *Suscripción*
+   • Estado de tu plan actual
+   • Días restantes
+   • Cambiar de plan
+
+   🔗 *Referidos*
+   • Programa de referidos (si está disponible)
+
+💡 *Tip:* Si necesitas cambiar tu contraseña, ve a *Mi perfil* → sección "Cambiar contraseña".`
+  },
+  {
+    id: 'soporte',
+    emoji: '🆘',
+    title: 'Cómo enviar un ticket de soporte',
+    images: [
+      { src: 'imagenes/17_soporte_lista.png', caption: 'Lista de tickets de soporte' },
+      { src: 'imagenes/18_soporte_nuevo.png', caption: 'Formulario nuevo ticket' }
+    ],
+    text: `🆘 *Cómo enviar un ticket de soporte*
+
+Si tienes un problema o una pregunta, puedes crear un ticket de soporte:
+
+1. En el menú de abajo, toca *"Más"* → luego *"Soporte"*
+2. Toca el botón *"+ Nuevo ticket"*
+3. Llena el formulario:
+   • *Tipo de solicitud* — "Tengo una pregunta", "Reportar un error", etc.
+   • *Asunto* — título corto del problema (ej: "No puedo registrar un pago")
+   • *Descripción* — explica tu problema con el mayor detalle posible
+   • ☑️ Puedes marcar *"Solicitar que me contacten"* si quieres que te llamen
+4. Toca *"Enviar ticket"*
+
+✅ Tu ticket queda registrado. Puedes ver su estado (Abierto/Cerrado) en la lista de soporte.
+
+💡 *Tip:* Entre más detalle des en la descripción, más rápido podemos ayudarte.`
+  }
+];
+
+// Render tutorials
+const container = document.getElementById('tutorialsContainer');
+const navIndex = document.getElementById('navIndex');
+
+TUTORIALS.forEach((t, i) => {
+  // Nav link
+  const navLink = document.createElement('a');
+  navLink.href = `#${t.id}`;
+  navLink.textContent = `${t.emoji} ${t.title.replace(/^Cómo /, '')}`;
+  navIndex.appendChild(navLink);
+
+  // Card
+  const card = document.createElement('div');
+  card.className = 'tutorial';
+  card.id = t.id;
+  card.dataset.search = `${t.title} ${t.text}`.toLowerCase();
+
+  const imagesHtml = t.images.map(img =>
+    `<div class="tutorial-image" onclick="openLightbox('${img.src}')">
+      <img src="${img.src}" alt="${img.caption}" loading="lazy">
+      <div class="img-caption">${img.caption}</div>
+    </div>`
+  ).join('');
+
+  card.innerHTML = `
+    <div class="tutorial-header" onclick="toggleTutorial(this)">
+      <div class="tutorial-number">${i + 1}</div>
+      <div class="tutorial-title">${t.emoji} ${t.title}</div>
+      <svg class="tutorial-toggle" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+      </svg>
+    </div>
+    <div class="tutorial-body">
+      <div class="tutorial-content">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          ${imagesHtml}
+        </div>
+        <div class="tutorial-text">
+          <div class="whatsapp-block" id="text-${t.id}">${escapeHtml(t.text)}</div>
+          <div class="copy-row">
+            <button class="btn-copy" onclick="copyText('${t.id}')">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.612.616l4.529-1.474A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.232 0-4.299-.726-5.979-1.955l-.417-.306-2.688.875.864-2.643-.331-.434A9.96 9.96 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+              Copiar texto
+            </button>
+            <span class="copy-feedback" id="feedback-${t.id}">✓ ¡Copiado!</span>
+          </div>
+          ${t.tip ? `<div class="tutorial-tip">💡 ${t.tip}</div>` : ''}
+        </div>
+      </div>
+    </div>
+  `;
+  container.appendChild(card);
+});
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function toggleTutorial(header) {
+  header.parentElement.classList.toggle('open');
+}
+
+function copyText(id) {
+  const tutorial = TUTORIALS.find(t => t.id === id);
+  if (!tutorial) return;
+  navigator.clipboard.writeText(tutorial.text).then(() => {
+    const fb = document.getElementById(`feedback-${id}`);
+    fb.classList.add('show');
+    setTimeout(() => fb.classList.remove('show'), 2000);
+  });
+}
+
+function openLightbox(src) {
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightbox').classList.add('active');
+}
+
+// Search
+document.getElementById('searchInput').addEventListener('input', function() {
+  const q = this.value.toLowerCase().trim();
+  document.querySelectorAll('.tutorial').forEach(card => {
+    card.style.display = !q || card.dataset.search.includes(q) ? '' : 'none';
+  });
+});
+</script>
+</body>
+</html>
