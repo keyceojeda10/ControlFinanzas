@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input, Select, Textarea } from '@/components/ui/Input'
+
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 
 const TIPOS = [
   { value: 'pregunta', label: 'Tengo una pregunta' },
@@ -25,6 +27,31 @@ export default function NuevoTicketPage() {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [imagenes, setImagenes] = useState([])
+  const fileInputRef = useRef(null)
+
+  const handleImageSelect = (e) => {
+    const files = Array.from(e.target.files || [])
+    const nuevas = []
+    for (const file of files) {
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        setError('Solo se permiten imágenes JPG, PNG, WebP o GIF')
+        continue
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Cada imagen debe ser menor a 5MB')
+        continue
+      }
+      if (imagenes.length + nuevas.length >= 3) break
+      nuevas.push({ file, preview: URL.createObjectURL(file) })
+    }
+    if (nuevas.length) setImagenes(prev => [...prev, ...nuevas])
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const removeImage = (idx) => {
+    setImagenes(prev => prev.filter((_, i) => i !== idx))
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -50,6 +77,15 @@ export default function NuevoTicketPage() {
         throw new Error(data.error || 'Error al crear ticket')
       }
       const ticket = await res.json()
+
+      // Subir imágenes adjuntas como primeros mensajes
+      for (const img of imagenes) {
+        const fd = new FormData()
+        fd.append('imagen', img.file)
+        fd.append('contenido', '')
+        await fetch(`/api/soporte/${ticket.id}/upload`, { method: 'POST', body: fd })
+      }
+
       router.push(`/soporte/${ticket.id}`)
     } catch (err) {
       setError(err.message)
@@ -98,6 +134,47 @@ export default function NuevoTicketPage() {
             onChange={e => setForm({ ...form, descripcion: e.target.value })}
             rows={5}
           />
+
+          {/* Adjuntar imágenes */}
+          <div>
+            <label className="block text-xs font-medium text-[#888888] mb-1.5">
+              Capturas de pantalla (opcional, máx. 3)
+            </label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              multiple
+              onChange={handleImageSelect}
+              className="hidden"
+            />
+            <div className="flex items-center gap-2 flex-wrap">
+              {imagenes.map((img, idx) => (
+                <div key={idx} className="relative">
+                  <img src={img.preview} alt={`Adjunto ${idx + 1}`} className="h-20 w-20 object-cover rounded-[10px] border border-[#2a2a2a]" />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(idx)}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#ef4444] flex items-center justify-center text-white text-[10px]"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              {imagenes.length < 3 && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="h-20 w-20 rounded-[10px] border border-dashed border-[#2a2a2a] flex flex-col items-center justify-center gap-1 text-[#555555] hover:text-[#f5c518] hover:border-[#f5c518] transition-all"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span className="text-[9px]">Agregar</span>
+                </button>
+              )}
+            </div>
+          </div>
 
           {/* Toggle solicitar contacto */}
           <div className="bg-[#111111] border border-[#2a2a2a] rounded-[12px] p-4">

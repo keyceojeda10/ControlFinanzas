@@ -30,8 +30,11 @@ export default function TicketDetallePage() {
   const [mensaje, setMensaje] = useState('')
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
+  const [imagenPreview, setImagenPreview] = useState(null)
+  const [imagenFile, setImagenFile] = useState(null)
   const chatRef = useRef(null)
   const lastTimestampRef = useRef(null)
+  const fileInputRef = useRef(null)
 
   // Cargar ticket inicial
   useEffect(() => {
@@ -74,21 +77,52 @@ export default function TicketDetallePage() {
     }
   }, [mensajes])
 
+  const handleImageSelect = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
+      alert('Formato no permitido. Usa JPG, PNG, WebP o GIF')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('La imagen no puede superar 5MB')
+      return
+    }
+    setImagenFile(file)
+    setImagenPreview(URL.createObjectURL(file))
+  }
+
+  const cancelarImagen = () => {
+    setImagenFile(null)
+    setImagenPreview(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
   const enviarMensaje = async (e) => {
     e.preventDefault()
-    if (!mensaje.trim() || sending) return
+    if ((!mensaje.trim() && !imagenFile) || sending) return
     setSending(true)
     try {
-      const res = await fetch(`/api/soporte/${id}/mensajes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contenido: mensaje.trim() }),
-      })
-      const nuevo = await res.json()
+      let nuevo
+      if (imagenFile) {
+        const formData = new FormData()
+        formData.append('imagen', imagenFile)
+        formData.append('contenido', mensaje.trim())
+        const res = await fetch(`/api/soporte/${id}/upload`, { method: 'POST', body: formData })
+        nuevo = await res.json()
+      } else {
+        const res = await fetch(`/api/soporte/${id}/mensajes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contenido: mensaje.trim() }),
+        })
+        nuevo = await res.json()
+      }
       if (!nuevo.error) {
         setMensajes(prev => [...prev, nuevo])
         lastTimestampRef.current = nuevo.createdAt
         setMensaje('')
+        cancelarImagen()
       }
     } catch {}
     setSending(false)
@@ -177,7 +211,12 @@ export default function TicketDetallePage() {
                         {m.esAdmin ? 'Soporte' : m.user?.nombre || 'Tú'}
                       </span>
                     </div>
-                    <p className="text-xs text-white leading-relaxed whitespace-pre-wrap">{m.contenido}</p>
+                    {m.imagenUrl && (
+                      <a href={m.imagenUrl} target="_blank" rel="noopener noreferrer" className="block mb-1.5">
+                        <img src={m.imagenUrl} alt="Imagen adjunta" className="max-w-full max-h-[200px] rounded-[8px] object-contain cursor-pointer hover:opacity-90 transition-opacity" />
+                      </a>
+                    )}
+                    {m.contenido && <p className="text-xs text-white leading-relaxed whitespace-pre-wrap">{m.contenido}</p>}
                     <p className="text-[9px] text-[#555555] mt-1 text-right">
                       {new Date(m.createdAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
                     </p>
@@ -188,9 +227,42 @@ export default function TicketDetallePage() {
           )}
         </div>
 
+        {/* Preview imagen */}
+        {!cerrado && imagenPreview && (
+          <div className="px-4 py-2 border-t border-[#2a2a2a] flex items-center gap-2">
+            <div className="relative">
+              <img src={imagenPreview} alt="Preview" className="h-16 rounded-[8px] object-contain" />
+              <button
+                onClick={cancelarImagen}
+                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#ef4444] flex items-center justify-center text-white text-[10px]"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-[10px] text-[#888888]">{imagenFile?.name}</p>
+          </div>
+        )}
+
         {/* Input */}
         {!cerrado && (
           <form onSubmit={enviarMensaje} className="px-4 py-3 border-t border-[#2a2a2a] flex items-center gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onChange={handleImageSelect}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="p-1.5 rounded-[8px] text-[#888888] hover:text-[#f5c518] hover:bg-[rgba(245,197,24,0.1)] transition-all shrink-0"
+              title="Adjuntar imagen"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </button>
             <input
               type="text"
               value={mensaje}
@@ -198,7 +270,7 @@ export default function TicketDetallePage() {
               placeholder="Escribe un mensaje..."
               className="flex-1 h-9 rounded-[10px] bg-[#111111] border border-[#2a2a2a] px-3 text-xs text-white placeholder-[#555555] focus:outline-none focus:border-[#f5c518]"
             />
-            <Button type="submit" size="sm" loading={sending} disabled={!mensaje.trim()}>
+            <Button type="submit" size="sm" loading={sending} disabled={!mensaje.trim() && !imagenFile}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
               </svg>
