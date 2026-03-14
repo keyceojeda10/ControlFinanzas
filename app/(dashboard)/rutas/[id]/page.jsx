@@ -32,6 +32,9 @@ export default function RutaDetallePage({ params }) {
   const [dragIndex,     setDragIndex]     = useState(null)
   const [dragOverIdx,   setDragOverIdx]   = useState(null)
   const [ordenGuardado, setOrdenGuardado] = useState(false)
+  const [editandoNombre, setEditandoNombre] = useState(false)
+  const [nuevoNombre,    setNuevoNombre]    = useState('')
+  const [eliminando,     setEliminando]     = useState(false)
 
   const fetchRuta = async () => {
     try {
@@ -116,6 +119,29 @@ export default function RutaDetallePage({ params }) {
     }
   }
 
+  const guardarNombre = async () => {
+    if (!nuevoNombre.trim()) return
+    await fetch(`/api/rutas/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre: nuevoNombre.trim() }),
+    })
+    setEditandoNombre(false)
+    fetchRuta()
+  }
+
+  const eliminarRuta = async () => {
+    if (!confirm(`¿Eliminar la ruta "${ruta.nombre}"? Los clientes quedarán sin ruta asignada.`)) return
+    setEliminando(true)
+    const res = await fetch(`/api/rutas/${id}`, { method: 'DELETE' })
+    if (res.ok) {
+      router.push('/rutas')
+    } else {
+      alert('Error al eliminar la ruta')
+      setEliminando(false)
+    }
+  }
+
   const guardarOrden = async (nuevosClientes) => {
     try {
       const res = await fetch(`/api/rutas/${id}/reordenar`, {
@@ -184,9 +210,57 @@ export default function RutaDetallePage({ params }) {
       {/* Header */}
       <Card>
         <div className="flex items-start justify-between mb-4">
-          <div>
-            <h1 className="text-lg font-bold text-[white]">{ruta.nombre}</h1>
+          <div className="flex-1 min-w-0">
+            {editandoNombre ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={nuevoNombre}
+                  onChange={(e) => setNuevoNombre(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && guardarNombre()}
+                  className="flex-1 h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] focus:outline-none focus:border-[#f5c518]"
+                  autoFocus
+                />
+                <button onClick={guardarNombre} className="text-[#22c55e] hover:text-[#16a34a] p-1">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </button>
+                <button onClick={() => setEditandoNombre(false)} className="text-[#888888] hover:text-[white] p-1">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg font-bold text-[white]">{ruta.nombre}</h1>
+                {esOwner && (
+                  <button
+                    onClick={() => { setNuevoNombre(ruta.nombre); setEditandoNombre(true) }}
+                    className="text-[#555] hover:text-[#f5c518] transition-colors p-1"
+                    title="Editar nombre"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            )}
           </div>
+          {esOwner && !editandoNombre && (
+            <button
+              onClick={eliminarRuta}
+              disabled={eliminando}
+              className="text-[#555] hover:text-[#ef4444] transition-colors p-1 disabled:opacity-50"
+              title="Eliminar ruta"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          )}
         </div>
 
         {/* Selector de cobrador (solo owner) */}

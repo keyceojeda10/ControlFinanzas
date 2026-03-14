@@ -136,3 +136,33 @@ export async function PATCH(request, { params }) {
 
   return Response.json(actualizada)
 }
+
+// ─── DELETE /api/rutas/[id] ─────────────────────────────────────
+export async function DELETE(request, { params }) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.organizationId) {
+    return Response.json({ error: 'No autorizado' }, { status: 401 })
+  }
+  if (session.user.rol !== 'owner') {
+    return Response.json({ error: 'Solo el administrador puede eliminar rutas' }, { status: 403 })
+  }
+
+  const { id } = await params
+  const { organizationId } = session.user
+
+  const ruta = await prisma.ruta.findFirst({
+    where: { id, organizationId },
+    include: { _count: { select: { clientes: true } } },
+  })
+  if (!ruta) return Response.json({ error: 'Ruta no encontrada' }, { status: 404 })
+
+  // Desasignar clientes de la ruta antes de eliminar
+  await prisma.cliente.updateMany({
+    where: { rutaId: id, organizationId },
+    data: { rutaId: null, ordenRuta: null },
+  })
+
+  await prisma.ruta.delete({ where: { id } })
+
+  return Response.json({ eliminada: true, clientesDesasignados: ruta._count.clientes })
+}
