@@ -155,3 +155,48 @@ export async function PATCH(request, { params }) {
 
   return Response.json(actualizado)
 }
+
+// ─── DELETE /api/cobradores/[id] ──────────────────────────────────
+export async function DELETE(request, { params }) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.organizationId) {
+    return Response.json({ error: 'No autorizado' }, { status: 401 })
+  }
+  if (session.user.rol !== 'owner') {
+    return Response.json({ error: 'Solo el administrador puede eliminar cobradores' }, { status: 403 })
+  }
+
+  const { id } = await params
+  const { organizationId } = session.user
+
+  const cobrador = await prisma.user.findFirst({
+    where: { id, organizationId, rol: 'cobrador' },
+    include: {
+      rutas: { select: { id: true } },
+      _count: { select: { pagos: true } },
+    },
+  })
+  if (!cobrador) return Response.json({ error: 'Cobrador no encontrado' }, { status: 404 })
+
+  // Si tiene pagos registrados, solo desactivar (no borrar datos históricos)
+  if (cobrador._count.pagos > 0) {
+    await prisma.ruta.updateMany({
+      where: { cobradorId: id, organizationId },
+      data: { cobradorId: null },
+    })
+    await prisma.user.update({
+      where: { id },
+      data: { activo: false },
+    })
+    return Response.json({ eliminado: false, desactivado: true, mensaje: 'Cobrador desactivado (tiene historial de pagos)' })
+  }
+
+  // Sin historial: desasignar rutas y eliminar
+  await prisma.ruta.updateMany({
+    where: { cobradorId: id, organizationId },
+    data: { cobradorId: null },
+  })
+  await prisma.user.delete({ where: { id } })
+
+  return Response.json({ eliminado: true })
+}

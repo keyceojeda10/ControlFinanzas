@@ -16,6 +16,7 @@ export default function CobradorDetallePage({ params }) {
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState('')
   const [toggling, setToggling] = useState(false)
+  const [eliminando, setEliminando] = useState(false)
 
   const fetchCobrador = async () => {
     try {
@@ -108,6 +109,22 @@ export default function CobradorDetallePage({ params }) {
             </Link>
             <button onClick={toggleActivo} disabled={toggling} title={data.activo ? 'Desactivar' : 'Activar'}>
               <Badge variant={data.activo ? 'green' : 'gray'}>{data.activo ? 'Activo' : 'Inactivo'}</Badge>
+            </button>
+            <button
+              onClick={async () => {
+                if (!confirm(`¿Eliminar a "${data.nombre}"? ${data.recaudadoHoy > 0 || data.pagosMes > 0 ? 'Tiene historial de pagos, se desactivará en vez de eliminarse.' : 'Se eliminará permanentemente.'}`)) return
+                setEliminando(true)
+                const res = await fetch(`/api/cobradores/${id}`, { method: 'DELETE' })
+                if (res.ok) router.push('/cobradores')
+                else { alert('Error al eliminar'); setEliminando(false) }
+              }}
+              disabled={eliminando}
+              className="p-2 rounded-[10px] text-[#888888] hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] transition-all disabled:opacity-50"
+              title="Eliminar cobrador"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
             </button>
           </div>
         </div>
