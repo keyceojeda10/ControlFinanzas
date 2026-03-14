@@ -76,12 +76,15 @@ export async function GET(request, { params }) {
     if (mora > 0) enMora++
 
     return {
-      id:       c.id,
-      nombre:   c.nombre,
-      cedula:   c.cedula,
-      estado:   mora > 0 ? 'mora' : (c.prestamos.length > 0 ? 'activo' : 'cancelado'),
-      pagoHoy:  yaPageHoy,
-      diasMora: mora,
+      id:        c.id,
+      nombre:    c.nombre,
+      cedula:    c.cedula,
+      direccion: c.direccion,
+      latitud:   c.latitud,
+      longitud:  c.longitud,
+      estado:    mora > 0 ? 'mora' : (c.prestamos.length > 0 ? 'activo' : 'cancelado'),
+      pagoHoy:   yaPageHoy,
+      diasMora:  mora,
     }
   })
 

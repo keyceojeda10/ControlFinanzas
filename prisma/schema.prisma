@@ -141,6 +141,8 @@ model Cliente {
   referencia     String?       @db.VarChar(100)
   notas          String?       @db.Text
   fotoUrl        String?
+  latitud        Float?
+  longitud       Float?
   estado         EstadoCliente @default(activo)
   createdAt      DateTime      @default(now())
 

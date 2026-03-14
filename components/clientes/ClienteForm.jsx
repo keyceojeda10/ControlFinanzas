@@ -3,8 +3,11 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter }           from 'next/navigation'
+import dynamic                 from 'next/dynamic'
 import { Input, Select }       from '@/components/ui/Input'
 import { Button }              from '@/components/ui/Button'
+
+const LocationPicker = dynamic(() => import('@/components/clientes/LocationPicker'), { ssr: false })
 
 // Validación de teléfono colombiano: 10 dígitos, empieza en 3
 const validarTelefono = (v) => /^3\d{9}$/.test(v.replace(/\s/g, ''))
@@ -21,6 +24,8 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
     referencia: clienteInicial?.referencia ?? '',
     notas:      clienteInicial?.notas      ?? '',
     rutaId:     clienteInicial?.rutaId     ?? '',
+    latitud:    clienteInicial?.latitud    ?? null,
+    longitud:   clienteInicial?.longitud   ?? null,
   })
   const [errores, setErrores]   = useState({})
   const [rutas,   setRutas]     = useState([])
@@ -98,6 +103,8 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
           referencia: form.referencia.trim() || undefined,
           notas:      form.notas.trim()      || undefined,
           rutaId:     form.rutaId || undefined,
+          latitud:    form.latitud,
+          longitud:   form.longitud,
         }),
       })
 
@@ -165,13 +172,20 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
           error={errores.telefono}
           inputMode="tel"
         />
-        <Input
-          label="Dirección"
-          placeholder="Opcional"
-          value={form.direccion}
-          onChange={set('direccion')}
-          error={errores.direccion}
-        />
+        <div className="sm:col-span-2 space-y-2">
+          <Input
+            label="Dirección"
+            placeholder="Calle, barrio, ciudad..."
+            value={form.direccion}
+            onChange={set('direccion')}
+            error={errores.direccion}
+          />
+          <LocationPicker
+            latitud={form.latitud}
+            longitud={form.longitud}
+            onLocationChange={(lat, lng) => setForm((prev) => ({ ...prev, latitud: lat, longitud: lng }))}
+          />
+        </div>
         <Input
           label="Referencia"
           placeholder="Ej: Tienda La Esquina"

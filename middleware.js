@@ -34,7 +34,8 @@ export async function middleware(request) {
   if (pathname.startsWith('/dashboard') || pathname.startsWith('/clientes') ||
       pathname.startsWith('/prestamos') || pathname.startsWith('/rutas') ||
       pathname.startsWith('/cobradores') || pathname.startsWith('/caja') ||
-      pathname.startsWith('/reportes') || pathname.startsWith('/configuracion')) {
+      pathname.startsWith('/reportes') || pathname.startsWith('/configuracion') ||
+      pathname.startsWith('/tutoriales') || pathname.startsWith('/soporte')) {
     if (!token) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
@@ -90,6 +91,8 @@ export const config = {
     '/caja/:path*',
     '/reportes/:path*',
     '/configuracion/:path*',
+    '/tutoriales/:path*',
+    '/soporte/:path*',
     '/suscripcion-vencida',
     '/login',
     '/registro',

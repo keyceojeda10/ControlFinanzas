@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado } from '@/lib/calculos'
+import { geocodeAddress }   from '@/lib/geocoding'
 
 // Helper: verificar que el cliente pertenece a la organización (y a la ruta del cobrador)
 async function obtenerCliente(id, session) {
@@ -86,7 +87,7 @@ export async function PATCH(request, { params }) {
   }
 
   const body = await request.json()
-  const { nombre, cedula, telefono, direccion, referencia, notas, fotoUrl, rutaId } = body
+  const { nombre, cedula, telefono, direccion, referencia, notas, fotoUrl, rutaId, latitud, longitud } = body
 
   // Si cambia la cédula, verificar que no exista otra igual
   if (cedula && cedula.trim() !== clienteBase.cedula) {
@@ -106,6 +107,15 @@ export async function PATCH(request, { params }) {
     }
   }
 
+  // Resolver coordenadas
+  let lat = latitud !== undefined ? latitud : undefined
+  let lng = longitud !== undefined ? longitud : undefined
+  // Si se cambió dirección pero no se enviaron coords, geocodificar
+  if (lat === undefined && lng === undefined && direccion !== undefined && direccion?.trim()) {
+    const geo = await geocodeAddress(direccion.trim())
+    if (geo) { lat = geo.lat; lng = geo.lng }
+  }
+
   const actualizado = await prisma.cliente.update({
     where: { id },
     data: {
@@ -117,6 +127,8 @@ export async function PATCH(request, { params }) {
       ...(notas      !== undefined && { notas:      notas?.trim()      || null }),
       ...(fotoUrl    !== undefined && { fotoUrl:    fotoUrl?.trim() && /^https?:\/\/.+/i.test(fotoUrl.trim()) ? fotoUrl.trim() : null }),
       ...(rutaId     !== undefined && { rutaId:     rutaId             || null }),
+      ...(lat        !== undefined && { latitud:    lat }),
+      ...(lng        !== undefined && { longitud:   lng }),
     },
   })
 

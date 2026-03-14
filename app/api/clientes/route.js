@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { LIMITES_PLAN, calcularEstadoCliente } from '@/lib/calculos'
+import { geocodeAddress }   from '@/lib/geocoding'
 
 // ─── GET /api/clientes ──────────────────────────────────────────
 export async function GET(request) {
@@ -118,7 +119,7 @@ export async function POST(request) {
   }
 
   const body = await request.json()
-  const { nombre, cedula, telefono, direccion, referencia, notas, fotoUrl, rutaId } = body
+  const { nombre, cedula, telefono, direccion, referencia, notas, fotoUrl, rutaId, latitud, longitud } = body
 
   // Validaciones básicas
   if (!nombre?.trim())   return Response.json({ error: 'El nombre es requerido' },  { status: 400 })
@@ -148,6 +149,14 @@ export async function POST(request) {
     }
   }
 
+  // Resolver coordenadas: GPS directo > geocodificación de dirección
+  let lat = latitud ?? null
+  let lng = longitud ?? null
+  if (lat == null && lng == null && direccion?.trim()) {
+    const geo = await geocodeAddress(direccion.trim())
+    if (geo) { lat = geo.lat; lng = geo.lng }
+  }
+
   const cliente = await prisma.cliente.create({
     data: {
       organizationId,
@@ -159,6 +168,8 @@ export async function POST(request) {
       notas:      notas?.trim()      || null,
       fotoUrl:    fotoUrl?.trim() && /^https?:\/\/.+/i.test(fotoUrl.trim()) ? fotoUrl.trim() : null,
       rutaId:     rutaId || autoRutaId || null,
+      latitud:    lat,
+      longitud:   lng,
     },
   })
 

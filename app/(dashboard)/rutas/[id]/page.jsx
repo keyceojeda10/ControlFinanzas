@@ -3,6 +3,7 @@
 
 import { useState, useEffect, use } from 'react'
 import { useRouter }                 from 'next/navigation'
+import dynamic                       from 'next/dynamic'
 import { useAuth }                   from '@/hooks/useAuth'
 import { Badge }                     from '@/components/ui/Badge'
 import { Button }                    from '@/components/ui/Button'
@@ -10,6 +11,9 @@ import { Card }                      from '@/components/ui/Card'
 import { Modal }                     from '@/components/ui/Modal'
 import { SkeletonCard }              from '@/components/ui/Skeleton'
 import { formatCOP }                 from '@/lib/calculos'
+
+// Cargar mapa dinámicamente (evitar SSR con Leaflet)
+const RouteMap = dynamic(() => import('@/components/rutas/RouteMap'), { ssr: false })
 
 export default function RutaDetallePage({ params }) {
   const { id }    = use(params)
@@ -35,6 +39,9 @@ export default function RutaDetallePage({ params }) {
   const [editandoNombre, setEditandoNombre] = useState(false)
   const [nuevoNombre,    setNuevoNombre]    = useState('')
   const [eliminando,     setEliminando]     = useState(false)
+  const [optimizando,    setOptimizando]    = useState(false)
+  const [optimResult,    setOptimResult]    = useState(null)
+  const [showMap,        setShowMap]        = useState(false)
 
   const fetchRuta = async () => {
     try {
@@ -179,6 +186,34 @@ export default function RutaDetallePage({ params }) {
     setDragOverIdx(null)
   }
   const handleDragEnd = () => { setDragIndex(null); setDragOverIdx(null) }
+
+  // ─── Optimizar ruta ────────────────────────────────────
+  const optimizarRuta = async () => {
+    setOptimizando(true)
+    setOptimResult(null)
+    try {
+      const res = await fetch(`/api/rutas/${id}/optimizar`, { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) { alert(data.error ?? 'Error al optimizar'); return }
+      setOptimResult(data)
+      fetchRuta()
+      setTimeout(() => setOptimResult(null), 6000)
+    } catch {
+      alert('Error de conexión')
+    } finally {
+      setOptimizando(false)
+    }
+  }
+
+  // ─── Abrir ruta en Google Maps ─────────────────────────
+  const abrirGoogleMaps = () => {
+    const conCoords = ruta?.clientes?.filter((c) => c.latitud != null && c.longitud != null) ?? []
+    if (conCoords.length < 2) { alert('Se necesitan al menos 2 clientes con ubicación'); return }
+    const waypoints = conCoords.map((c) => `${c.latitud},${c.longitud}`).join('/')
+    window.open(`https://www.google.com/maps/dir/${waypoints}`, '_blank')
+  }
+
+  const clientesConCoords = ruta?.clientes?.filter((c) => c.latitud != null && c.longitud != null).length ?? 0
 
   if (loading) return (
     <div className="max-w-2xl mx-auto space-y-4">
@@ -329,12 +364,65 @@ export default function RutaDetallePage({ params }) {
               <span className="text-[10px] text-[#22c55e] animate-pulse">Orden guardado</span>
             )}
           </div>
-          {esOwner && (
-            <Button size="sm" variant="secondary" onClick={abrirModalClientes}>
-              + Agregar clientes
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {(ruta.clientes?.length ?? 0) >= 2 && clientesConCoords >= 2 && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={optimizarRuta}
+                loading={optimizando}
+              >
+                🗺️ Optimizar
+              </Button>
+            )}
+            {esOwner && (
+              <Button size="sm" variant="secondary" onClick={abrirModalClientes}>
+                + Agregar clientes
+              </Button>
+            )}
+          </div>
         </div>
+
+        {/* Resultado de optimización */}
+        {optimResult && (
+          <div className="mb-3 px-3 py-2.5 rounded-[12px] bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.15)]">
+            <p className="text-xs text-[#22c55e] font-semibold">✅ Ruta optimizada</p>
+            <p className="text-[11px] text-[#22c55e]/80 mt-0.5">
+              {optimResult.ahorro > 0 ? `${optimResult.ahorro}% más corta` : 'Orden aplicado'}
+              {optimResult.clientesSinUbicacion > 0 && ` • ${optimResult.clientesSinUbicacion} sin ubicación`}
+            </p>
+          </div>
+        )}
+
+        {/* Botón Google Maps + toggle mapa */}
+        {clientesConCoords >= 2 && (
+          <div className="flex gap-2 mb-3">
+            <button
+              type="button"
+              onClick={abrirGoogleMaps}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[rgba(66,133,244,0.1)] border border-[rgba(66,133,244,0.2)] text-[#4285f4] text-xs font-medium hover:bg-[rgba(66,133,244,0.15)] transition-all active:scale-95"
+            >
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+              </svg>
+              Iniciar ruta en Google Maps
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowMap((v) => !v)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[#1a1a1a] border border-[#2a2a2a] text-[#888888] text-xs font-medium hover:text-white hover:border-[#3a3a3a] transition-all active:scale-95"
+            >
+              {showMap ? 'Ocultar mapa' : '🗺️ Ver mapa'}
+            </button>
+          </div>
+        )}
+
+        {/* Mini-mapa de la ruta */}
+        {showMap && ruta.clientes && (
+          <div className="mb-4">
+            <RouteMap clientes={ruta.clientes} />
+          </div>
+        )}
 
         {(!ruta.clientes || ruta.clientes.length === 0) ? (
           <p className="text-sm text-[#888888] text-center py-4">Sin clientes asignados</p>
@@ -383,6 +471,7 @@ export default function RutaDetallePage({ params }) {
                   <p className="text-sm font-medium text-[white] truncate">{c.nombre}</p>
                   <p className="text-[10px] text-[#888888]">
                     {c.diasMora > 0 ? `${c.diasMora} días en mora` : c.pagoHoy ? 'Pagó hoy' : 'Pendiente'}
+                    {c.latitud != null && ' • 📍'}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
