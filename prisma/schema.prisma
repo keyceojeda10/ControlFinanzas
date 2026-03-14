@@ -51,71 +51,75 @@ enum EstadoSuscripcion {
 // ─── MODELOS ─────────────────────────────────────────────
 
 model Organization {
-  id              String        @id @default(cuid())
+  id              String         @id @default(cuid())
   nombre          String
-  plan            Plan          @default(basic)
+  plan            Plan           @default(basic)
   telefono        String?
   ciudad          String?
-  activo          Boolean       @default(true)
-  codigoReferido  String?       @unique
+  activo          Boolean        @default(true)
+  codigoReferido  String?        @unique
   referidoPorId   String?
-  descuento       Int           @default(0)
-  cobradoresExtra Int           @default(0)
-  createdAt       DateTime      @default(now())
+  descuento       Int            @default(0)
+  cobradoresExtra Int            @default(0)
+  estadoContacto  EstadoContacto @default(nuevo)
+  fuenteRegistro  String?
+  createdAt       DateTime       @default(now())
 
-  referidoPor     Organization?  @relation("Referidos", fields: [referidoPorId], references: [id])
-  referidos       Organization[] @relation("Referidos")
-  users           User[]
-  rutas           Ruta[]
-  clientes        Cliente[]
-  prestamos       Prestamo[]
-  pagos           Pago[]
-  cierresCaja     CierreCaja[]
-  suscripciones   Suscripcion[]
-  adminLogs       AdminLog[]
-  gastosMenores   GastoMenor[]
-  tickets         TicketSoporte[]
+  referidoPor      Organization?     @relation("Referidos", fields: [referidoPorId], references: [id])
+  referidos        Organization[]    @relation("Referidos")
+  users            User[]
+  rutas            Ruta[]
+  clientes         Cliente[]
+  prestamos        Prestamo[]
+  pagos            Pago[]
+  cierresCaja      CierreCaja[]
+  suscripciones    Suscripcion[]
+  adminLogs        AdminLog[]
+  gastosMenores    GastoMenor[]
+  tickets          TicketSoporte[]
+  notasSeguimiento NotaSeguimiento[]
 }
 
 model User {
-  id                    String        @id @default(cuid())
-  organizationId        String?
-  nombre                String
-  email                 String        @unique
-  password              String
-  rol                   Rol
-  activo                Boolean       @default(true)
-  emailVerificado       Boolean       @default(false)
-  tokenVerificacion     String?       @unique
-  tokenExpira           DateTime?
-  onboardingCompletado  Boolean       @default(false)
-  terminosAceptados        Boolean   @default(false)
-  fechaAceptacionTerminos  DateTime?
-  createdAt             DateTime      @default(now())
+  id                      String    @id @default(cuid())
+  organizationId          String?
+  nombre                  String
+  email                   String    @unique
+  password                String
+  rol                     Rol
+  activo                  Boolean   @default(true)
+  emailVerificado         Boolean   @default(false)
+  tokenVerificacion       String?   @unique
+  tokenExpira             DateTime?
+  onboardingCompletado    Boolean   @default(false)
+  terminosAceptados       Boolean   @default(false)
+  fechaAceptacionTerminos DateTime?
+  createdAt               DateTime  @default(now())
 
-  organization   Organization? @relation(fields: [organizationId], references: [id])
-  rutas          Ruta[]        @relation("CobradorRuta")
+  organization   Organization?     @relation(fields: [organizationId], references: [id])
+  rutas          Ruta[]            @relation("CobradorRuta")
   pagos          Pago[]
   cierresCaja    CierreCaja[]
-  adminLogs      AdminLog[]    @relation("AdminLogs")
-  gastosMenores  GastoMenor[]  @relation("CobradorGastos")
+  adminLogs      AdminLog[]        @relation("AdminLogs")
+  gastosMenores  GastoMenor[]      @relation("CobradorGastos")
   tickets        TicketSoporte[]
   mensajesTicket MensajeTicket[]
+  notasAdmin     NotaSeguimiento[] @relation("NotasAdmin")
 
   @@index([organizationId])
 }
 
 model Ruta {
-  id             String       @id @default(cuid())
+  id             String   @id @default(cuid())
   organizationId String
   cobradorId     String?
   nombre         String
-  activo         Boolean      @default(true)
-  createdAt      DateTime     @default(now())
+  activo         Boolean  @default(true)
+  createdAt      DateTime @default(now())
 
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  cobrador       User?        @relation("CobradorRuta", fields: [cobradorId], references: [id])
-  clientes       Cliente[]
+  organization Organization @relation(fields: [organizationId], references: [id])
+  cobrador     User?        @relation("CobradorRuta", fields: [cobradorId], references: [id])
+  clientes     Cliente[]
 
   @@index([organizationId])
 }
@@ -134,9 +138,9 @@ model Cliente {
   estado         EstadoCliente @default(activo)
   createdAt      DateTime      @default(now())
 
-  organization   Organization  @relation(fields: [organizationId], references: [id])
-  ruta           Ruta?         @relation(fields: [rutaId], references: [id])
-  prestamos      Prestamo[]
+  organization Organization @relation(fields: [organizationId], references: [id])
+  ruta         Ruta?        @relation(fields: [rutaId], references: [id])
+  prestamos    Prestamo[]
 
   @@unique([organizationId, cedula])
   @@index([organizationId])
@@ -158,46 +162,46 @@ model Prestamo {
   estado         EstadoPrestamo @default(activo)
   createdAt      DateTime       @default(now())
 
-  cliente        Cliente        @relation(fields: [clienteId], references: [id])
-  organization   Organization   @relation(fields: [organizationId], references: [id])
-  pagos          Pago[]
+  cliente      Cliente      @relation(fields: [clienteId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+  pagos        Pago[]
 
   @@index([organizationId])
   @@index([clienteId])
 }
 
 model Pago {
-  id             String       @id @default(cuid())
+  id             String   @id @default(cuid())
   prestamoId     String
   organizationId String
   cobradorId     String?
   montoPagado    Float
-  fechaPago      DateTime     @default(now())
+  fechaPago      DateTime @default(now())
   tipo           TipoPago
   nota           String?
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime @default(now())
 
-  prestamo       Prestamo     @relation(fields: [prestamoId], references: [id])
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  cobrador       User?        @relation(fields: [cobradorId], references: [id])
+  prestamo     Prestamo     @relation(fields: [prestamoId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+  cobrador     User?        @relation(fields: [cobradorId], references: [id])
 
   @@index([organizationId])
   @@index([prestamoId])
 }
 
 model CierreCaja {
-  id             String       @id @default(cuid())
+  id             String   @id @default(cuid())
   organizationId String
   cobradorId     String
   fecha          DateTime
   totalEsperado  Float
   totalRecogido  Float
-  totalGastos    Float        @default(0)
+  totalGastos    Float    @default(0)
   diferencia     Float
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime @default(now())
 
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  cobrador       User         @relation(fields: [cobradorId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+  cobrador     User         @relation(fields: [cobradorId], references: [id])
 
   @@index([organizationId])
   @@index([organizationId, fecha])
@@ -215,22 +219,22 @@ model Suscripcion {
   mercadopagoId    String?
   createdAt        DateTime          @default(now())
 
-  organization     Organization      @relation(fields: [organizationId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
 
   @@index([organizationId])
 }
 
 model GastoMenor {
-  id             String          @id @default(cuid())
+  id             String      @id @default(cuid())
   description    String
   monto          Float
-  fecha          DateTime        @default(now())
-  estado         GastoEstado     @default(pendiente)
+  fecha          DateTime    @default(now())
+  estado         GastoEstado @default(pendiente)
   cobradorId     String?
   organizationId String
 
-  cobrador       User?          @relation("CobradorGastos", fields: [cobradorId], references: [id])
-  organization   Organization   @relation(fields: [organizationId], references: [id])
+  cobrador     User?        @relation("CobradorGastos", fields: [cobradorId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
 
   @@index([organizationId])
   @@index([cobradorId])
@@ -243,16 +247,24 @@ enum GastoEstado {
   rechazado
 }
 
+enum EstadoContacto {
+  nuevo
+  contactado
+  interesado
+  activo_pagado
+  perdido
+}
+
 model AdminLog {
-  id             String        @id @default(cuid())
+  id             String   @id @default(cuid())
   adminId        String
   accion         String
   organizacionId String?
   detalle        String?
-  createdAt      DateTime      @default(now())
+  createdAt      DateTime @default(now())
 
-  admin          User          @relation("AdminLogs", fields: [adminId], references: [id])
-  organizacion   Organization? @relation(fields: [organizacionId], references: [id])
+  admin        User          @relation("AdminLogs", fields: [adminId], references: [id])
+  organizacion Organization? @relation(fields: [organizacionId], references: [id])
 
   @@index([adminId])
 }
@@ -275,22 +287,22 @@ enum EstadoTicket {
 }
 
 model TicketSoporte {
-  id               String        @id @default(cuid())
+  id               String       @id @default(cuid())
   organizationId   String
   userId           String
   tipo             TipoTicket
   asunto           String
-  descripcion      String        @db.Text
-  estado           EstadoTicket  @default(abierto)
-  solicitaContacto Boolean       @default(false)
+  descripcion      String       @db.Text
+  estado           EstadoTicket @default(abierto)
+  solicitaContacto Boolean      @default(false)
   telefonoContacto String?
-  contactoAtendido Boolean       @default(false)
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  contactoAtendido Boolean      @default(false)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 
-  organization     Organization  @relation(fields: [organizationId], references: [id])
-  user             User          @relation(fields: [userId], references: [id])
-  mensajes         MensajeTicket[]
+  organization Organization    @relation(fields: [organizationId], references: [id])
+  user         User            @relation(fields: [userId], references: [id])
+  mensajes     MensajeTicket[]
 
   @@index([organizationId])
   @@index([estado])
@@ -306,8 +318,24 @@ model MensajeTicket {
   leido     Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  ticket    TicketSoporte @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  user      User          @relation(fields: [userId], references: [id])
+  ticket TicketSoporte @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user   User          @relation(fields: [userId], references: [id])
 
   @@index([ticketId])
+}
+
+// ─── CRM ─────────────────────────────────────────────────
+
+model NotaSeguimiento {
+  id             String          @id @default(cuid())
+  organizationId String
+  adminId        String
+  contenido      String          @db.Text
+  estadoContacto EstadoContacto?
+  createdAt      DateTime        @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  admin        User         @relation("NotasAdmin", fields: [adminId], references: [id])
+
+  @@index([organizationId])
 }
