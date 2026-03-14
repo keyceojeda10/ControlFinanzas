@@ -64,8 +64,19 @@ export async function PATCH(request, { params }) {
   if (!session?.user?.organizationId) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
   }
+  // Verificar permisos: owner siempre puede, cobrador solo si tiene permiso
   if (session.user.rol !== 'owner') {
-    return Response.json({ error: 'Solo el administrador puede editar clientes' }, { status: 403 })
+    if (session.user.rol === 'cobrador') {
+      const cobrador = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { puedeEditarClientes: true },
+      })
+      if (!cobrador?.puedeEditarClientes) {
+        return Response.json({ error: 'No tienes permiso para editar clientes' }, { status: 403 })
+      }
+    } else {
+      return Response.json({ error: 'No autorizado' }, { status: 403 })
+    }
   }
 
   const { id } = await params
@@ -104,7 +115,7 @@ export async function PATCH(request, { params }) {
       ...(direccion  !== undefined && { direccion:  direccion?.trim()  || null }),
       ...(referencia !== undefined && { referencia: referencia?.trim() || null }),
       ...(notas      !== undefined && { notas:      notas?.trim()      || null }),
-      ...(fotoUrl    !== undefined && { fotoUrl:    fotoUrl?.trim()    || null }),
+      ...(fotoUrl    !== undefined && { fotoUrl:    fotoUrl?.trim() && /^https?:\/\/.+/i.test(fotoUrl.trim()) ? fotoUrl.trim() : null }),
       ...(rutaId     !== undefined && { rutaId:     rutaId             || null }),
     },
   })

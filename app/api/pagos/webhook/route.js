@@ -41,7 +41,15 @@ function verificarFirma(req, body) {
   const manifest = `id:${dataId};request-id:${requestId};ts:${ts};`
   const hmac = crypto.createHmac('sha256', secret).update(manifest).digest('hex')
 
-  return hmac === v1
+  // Comparación segura contra timing attacks
+  try {
+    const hmacBuf = Buffer.from(hmac, 'hex')
+    const v1Buf = Buffer.from(v1, 'hex')
+    if (hmacBuf.length !== v1Buf.length) return false
+    return crypto.timingSafeEqual(hmacBuf, v1Buf)
+  } catch {
+    return false
+  }
 }
 
 export async function POST(req) {

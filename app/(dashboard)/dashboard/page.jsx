@@ -47,7 +47,7 @@ function fechaCorta(iso) {
 }
 
 export default function DashboardPage() {
-  const { session, loading: authLoading, esOwner } = useAuth()
+  const { session, loading: authLoading, esOwner, puedeCrearClientes, puedeCrearPrestamos } = useAuth()
 
   const [data, setData] = useState(null)
   const [moraData, setMoraData] = useState(undefined)
@@ -226,12 +226,12 @@ export default function DashboardPage() {
       <div>
         <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-3">Accesos rapidos</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <QuickLink href="/clientes/nuevo" label="Nuevo cliente" desc="Registrar cliente" color="#f5c518" />
-          <QuickLink href="/prestamos/nuevo" label="Nuevo prestamo" desc="Crear prestamo" color="#22c55e" />
+          {puedeCrearClientes && <QuickLink href="/clientes/nuevo" label="Nuevo cliente" desc="Registrar cliente" color="#f5c518" />}
+          {puedeCrearPrestamos && <QuickLink href="/prestamos/nuevo" label="Nuevo prestamo" desc="Crear prestamo" color="#22c55e" />}
           <QuickLink href="/caja" label="Cierre de caja" desc="Registrar cierre del dia" color="#f59e0b" />
           <QuickLink href="/clientes" label="Clientes" desc="Ver cartera completa" color="#a855f7" />
-          <QuickLink href="/rutas" label="Rutas" desc="Gestionar rutas" color="#06b6d4" />
-          <QuickLink href="/configuracion" label="Configuracion" desc="Perfil y organizacion" color="#555555" />
+          {esOwner && <QuickLink href="/rutas" label="Rutas" desc="Gestionar rutas" color="#06b6d4" />}
+          {esOwner && <QuickLink href="/configuracion" label="Configuracion" desc="Perfil y organizacion" color="#555555" />}
         </div>
       </div>
     </div>

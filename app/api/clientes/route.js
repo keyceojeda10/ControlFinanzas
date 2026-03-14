@@ -85,8 +85,22 @@ export async function POST(request) {
   if (!session?.user?.organizationId) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
   }
+  // Verificar permisos: owner siempre puede, cobrador solo si tiene permiso
+  let autoRutaId = null
   if (session.user.rol !== 'owner') {
-    return Response.json({ error: 'Solo el administrador puede crear clientes' }, { status: 403 })
+    if (session.user.rol === 'cobrador') {
+      const cobrador = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { puedeCrearClientes: true },
+      })
+      if (!cobrador?.puedeCrearClientes) {
+        return Response.json({ error: 'No tienes permiso para crear clientes' }, { status: 403 })
+      }
+      // Auto-asignar a la ruta del cobrador
+      autoRutaId = session.user.rutaId || null
+    } else {
+      return Response.json({ error: 'No autorizado' }, { status: 403 })
+    }
   }
 
   const { organizationId, plan } = session.user
@@ -143,8 +157,8 @@ export async function POST(request) {
       direccion:  direccion?.trim()  || null,
       referencia: referencia?.trim()  || null,
       notas:      notas?.trim()      || null,
-      fotoUrl:    fotoUrl?.trim()    || null,
-      rutaId:     rutaId             || null,
+      fotoUrl:    fotoUrl?.trim() && /^https?:\/\/.+/i.test(fotoUrl.trim()) ? fotoUrl.trim() : null,
+      rutaId:     rutaId || autoRutaId || null,
     },
   })
 

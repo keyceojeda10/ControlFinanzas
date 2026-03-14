@@ -19,6 +19,11 @@ export default function EditarCobrador({ params }) {
   const [saving,   setSaving]   = useState(false)
   const [error,    setError]    = useState('')
   const [exito,    setExito]    = useState(false)
+  const [permisos, setPermisos] = useState({
+    crearPrestamos: false,
+    crearClientes:  false,
+    editarClientes: false,
+  })
 
   useEffect(() => {
     if (!authLoading && !esOwner) router.replace('/cobradores')
@@ -31,6 +36,13 @@ export default function EditarCobrador({ params }) {
         if (data.error) { setError(data.error); return }
         setNombre(data.nombre || '')
         setEmail(data.email || '')
+        if (data.permisos) {
+          setPermisos({
+            crearPrestamos: data.permisos.crearPrestamos ?? false,
+            crearClientes:  data.permisos.crearClientes  ?? false,
+            editarClientes: data.permisos.editarClientes ?? false,
+          })
+        }
       })
       .catch(() => setError('No se pudo cargar el cobrador'))
       .finally(() => setLoading(false))
@@ -46,7 +58,7 @@ export default function EditarCobrador({ params }) {
     setError('')
     setExito(false)
 
-    const body = { nombre: nombre.trim(), email: email.trim() }
+    const body = { nombre: nombre.trim(), email: email.trim(), permisos }
     if (password) body.password = password
 
     try {
@@ -128,6 +140,38 @@ export default function EditarCobrador({ params }) {
           <p className="text-[10px] text-[#888888] mt-1">
             Solo llena este campo si quieres cambiar la contraseña del cobrador.
           </p>
+        </div>
+
+        {/* Permisos */}
+        <div className="border-t border-[#2a2a2a] pt-4">
+          <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-3">Permisos del cobrador</p>
+          <div className="space-y-3">
+            {[
+              { key: 'crearPrestamos', label: 'Crear préstamos', desc: 'Puede registrar nuevos préstamos para clientes de su ruta' },
+              { key: 'crearClientes',  label: 'Crear clientes',  desc: 'Puede registrar nuevos clientes (se asignan a su ruta)' },
+              { key: 'editarClientes', label: 'Editar clientes', desc: 'Puede modificar datos como teléfono, dirección, etc.' },
+            ].map((p) => (
+              <div key={p.key} className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-[white]">{p.label}</p>
+                  <p className="text-[10px] text-[#666666] leading-snug">{p.desc}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPermisos(prev => ({ ...prev, [p.key]: !prev[p.key] }))}
+                  className={[
+                    'relative w-10 h-[22px] rounded-full transition-colors shrink-0 mt-0.5',
+                    permisos[p.key] ? 'bg-[#f5c518]' : 'bg-[#333333]',
+                  ].join(' ')}
+                >
+                  <span className={[
+                    'absolute top-[2px] w-[18px] h-[18px] rounded-full bg-white transition-transform shadow-sm',
+                    permisos[p.key] ? 'left-[20px]' : 'left-[2px]',
+                  ].join(' ')} />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="flex gap-3 pt-2">

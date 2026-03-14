@@ -42,6 +42,9 @@ export async function GET(request) {
       nombre:    true,
       email:     true,
       activo:    true,
+      puedeCrearPrestamos: true,
+      puedeCrearClientes:  true,
+      puedeEditarClientes: true,
       rutas:     {
         where:  { activo: true },
         select: {
@@ -63,6 +66,11 @@ export async function GET(request) {
     nombre:          c.nombre,
     email:           c.email,
     activo:          c.activo,
+    permisos: {
+      crearPrestamos: c.puedeCrearPrestamos,
+      crearClientes:  c.puedeCrearClientes,
+      editarClientes: c.puedeEditarClientes,
+    },
     ruta:            c.rutas[0] ?? null,
     cantidadClientes: c.rutas[0]?.clientes?.length ?? 0,
     recaudadoHoy:    c.pagos.reduce((a, p) => a + p.montoPagado, 0),
@@ -107,7 +115,7 @@ export async function POST(request) {
     )
   }
 
-  const { nombre, email, password } = await request.json()
+  const { nombre, email, password, permisos } = await request.json()
 
   if (!nombre?.trim())   return Response.json({ error: 'El nombre es requerido' },    { status: 400 })
   if (!email?.trim())    return Response.json({ error: 'El email es requerido' },     { status: 400 })
@@ -126,8 +134,12 @@ export async function POST(request) {
       email:    email.trim().toLowerCase(),
       password: hashedPassword,
       rol:      'cobrador',
+      puedeCrearPrestamos: Boolean(permisos?.crearPrestamos),
+      puedeCrearClientes:  Boolean(permisos?.crearClientes),
+      puedeEditarClientes: Boolean(permisos?.editarClientes),
     },
-    select: { id: true, nombre: true, email: true, activo: true, rol: true },
+    select: { id: true, nombre: true, email: true, activo: true, rol: true,
+      puedeCrearPrestamos: true, puedeCrearClientes: true, puedeEditarClientes: true },
   })
 
   return Response.json(cobrador, { status: 201 })

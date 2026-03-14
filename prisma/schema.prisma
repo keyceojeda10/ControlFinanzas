@@ -94,6 +94,9 @@ model User {
   onboardingCompletado    Boolean   @default(false)
   terminosAceptados       Boolean   @default(false)
   fechaAceptacionTerminos DateTime?
+  puedeCrearPrestamos     Boolean   @default(false)
+  puedeCrearClientes      Boolean   @default(false)
+  puedeEditarClientes     Boolean   @default(false)
   createdAt               DateTime  @default(now())
 
   organization   Organization?     @relation(fields: [organizationId], references: [id])

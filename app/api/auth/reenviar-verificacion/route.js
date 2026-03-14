@@ -3,11 +3,18 @@ import { NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { prisma } from '@/lib/prisma'
 import { enviarEmail, emailVerificacion } from '@/lib/email'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
+
+const reenvioLimiter = rateLimit('reenvio-verificacion', 3, 60 * 60 * 1000) // 3/hora
 
 const BASE = process.env.NEXTAUTH_URL || 'https://app.control-finanzas.com'
 
 export async function POST(req) {
   try {
+    const ip = getClientIp(req)
+    const rl = reenvioLimiter(ip)
+    if (!rl.ok) return NextResponse.json({ ok: true }) // silencioso
+
     const { email } = await req.json()
     if (!email) return NextResponse.json({ error: 'Email requerido' }, { status: 400 })
 

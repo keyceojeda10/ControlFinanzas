@@ -36,9 +36,15 @@ export async function PATCH(req, { params }) {
   }
 
   const { id } = await params
+  const ESTADOS_VALIDOS = ['nuevo', 'contactado', 'interesado', 'activo_pagado', 'perdido']
   const body = await req.json()
   const data = {}
-  if (body.estadoContacto) data.estadoContacto = body.estadoContacto
+  if (body.estadoContacto) {
+    if (!ESTADOS_VALIDOS.includes(body.estadoContacto)) {
+      return NextResponse.json({ error: 'Estado de contacto no válido' }, { status: 400 })
+    }
+    data.estadoContacto = body.estadoContacto
+  }
   if (body.fuenteRegistro !== undefined) data.fuenteRegistro = body.fuenteRegistro
 
   const org = await prisma.organization.update({ where: { id }, data })

@@ -94,7 +94,11 @@ export async function PATCH(req, { params }) {
     return NextResponse.json({ ok: true, mensaje: 'Organización activada' })
   }
 
+  const PLANES_VALIDOS = ['test', 'basic', 'standard', 'professional']
   if (accion === 'cambiarPlan' && plan) {
+    if (!PLANES_VALIDOS.includes(plan)) {
+      return NextResponse.json({ error: 'Plan no válido' }, { status: 400 })
+    }
     const planAnterior = org.plan
     await prisma.organization.update({ where: { id }, data: { plan } })
     await prisma.adminLog.create({

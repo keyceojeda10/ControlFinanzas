@@ -28,7 +28,7 @@ const estadoPrestamoBadge = {
 export default function ClienteDetallePage({ params }) {
   const { id }     = use(params)
   const router     = useRouter()
-  const { esOwner, plan } = useAuth()
+  const { esOwner, puedeCrearPrestamos, puedeEditarClientes, plan } = useAuth()
 
   const [cliente, setCliente]   = useState(null)
   const [loading, setLoading]   = useState(true)
@@ -142,26 +142,30 @@ export default function ClienteDetallePage({ params }) {
         </div>
 
         {/* Actions */}
-        {esOwner && (
+        {(puedeCrearPrestamos || puedeEditarClientes) && (
           <div className="flex gap-2 mt-4 pt-4 border-t border-[#2a2a2a]">
-            <Link href={`/prestamos/nuevo?clienteId=${cliente.id}`}>
-              <Button
-                size="sm"
-                icon={
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                }
-              >
-                Nuevo préstamo
-              </Button>
-            </Link>
+            {puedeCrearPrestamos && (
+              <Link href={`/prestamos/nuevo?clienteId=${cliente.id}`}>
+                <Button
+                  size="sm"
+                  icon={
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  }
+                >
+                  Nuevo préstamo
+                </Button>
+              </Link>
+            )}
             <Link href={`/clientes/${id}/historial`}>
               <Button size="sm" variant="secondary">Historial</Button>
             </Link>
-            <Link href={`/clientes/${id}/editar`}>
-              <Button size="sm" variant="secondary">Editar</Button>
-            </Link>
+            {puedeEditarClientes && (
+              <Link href={`/clientes/${id}/editar`}>
+                <Button size="sm" variant="secondary">Editar</Button>
+              </Link>
+            )}
           </div>
         )}
       </Card>

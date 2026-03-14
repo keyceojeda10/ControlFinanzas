@@ -35,7 +35,7 @@ export async function PATCH(req) {
   // Cambiar contraseña
   if (nuevoPassword !== undefined) {
     if (!passwordActual) return NextResponse.json({ error: 'Debes ingresar tu contraseña actual' }, { status: 400 })
-    if (nuevoPassword.length < 6) return NextResponse.json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' }, { status: 400 })
+    if (nuevoPassword.length < 8) return NextResponse.json({ error: 'La nueva contraseña debe tener al menos 8 caracteres' }, { status: 400 })
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },

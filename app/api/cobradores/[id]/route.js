@@ -72,6 +72,11 @@ export async function GET(request, { params }) {
     nombre:       cobrador.nombre,
     email:        cobrador.email,
     activo:       cobrador.activo,
+    permisos: {
+      crearPrestamos: cobrador.puedeCrearPrestamos,
+      crearClientes:  cobrador.puedeCrearClientes,
+      editarClientes: cobrador.puedeEditarClientes,
+    },
     ruta,
     recaudadoHoy: cobrador.pagos.reduce((a, p) => a + p.montoPagado, 0),
     pagosMes:     cobrador.pagos.length,
@@ -129,6 +134,14 @@ export async function PATCH(request, { params }) {
     data.activo = Boolean(body.activo)
   }
 
+  // Permisos
+  if (body.permisos !== undefined) {
+    const p = body.permisos
+    if (p.crearPrestamos !== undefined) data.puedeCrearPrestamos = Boolean(p.crearPrestamos)
+    if (p.crearClientes  !== undefined) data.puedeCrearClientes  = Boolean(p.crearClientes)
+    if (p.editarClientes !== undefined) data.puedeEditarClientes = Boolean(p.editarClientes)
+  }
+
   if (Object.keys(data).length === 0) {
     return Response.json({ error: 'No hay datos para actualizar' }, { status: 400 })
   }
@@ -136,7 +149,8 @@ export async function PATCH(request, { params }) {
   const actualizado = await prisma.user.update({
     where: { id },
     data,
-    select: { id: true, nombre: true, email: true, activo: true },
+    select: { id: true, nombre: true, email: true, activo: true,
+      puedeCrearPrestamos: true, puedeCrearClientes: true, puedeEditarClientes: true },
   })
 
   return Response.json(actualizado)

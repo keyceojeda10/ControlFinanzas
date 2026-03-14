@@ -16,7 +16,7 @@ const ESTADOS_CLIENTE = [
 ]
 
 export default function ClientesPage() {
-  const { esOwner, loading: authLoading } = useAuth()
+  const { esOwner, puedeCrearClientes, loading: authLoading } = useAuth()
   const [clientes, setClientes]   = useState([])
   const [buscar,   setBuscar]     = useState('')
   const [estado,   setEstado]     = useState('')
@@ -60,7 +60,7 @@ export default function ClientesPage() {
             )}
           </p>
         </div>
-        {!authLoading && esOwner && (
+        {!authLoading && puedeCrearClientes && (
           <Link href="/clientes/nuevo">
             <Button
               icon={
@@ -178,7 +178,7 @@ export default function ClientesPage() {
             <>
               <p className="text-sm font-medium text-[white]">No hay clientes aún</p>
               <p className="text-xs text-[#888888] mt-1">Crea el primer cliente para comenzar</p>
-              {!authLoading && esOwner && (
+              {!authLoading && puedeCrearClientes && (
                 <Link href="/clientes/nuevo" className="mt-4">
                   <Button size="sm">Crear primer cliente</Button>
                 </Link>

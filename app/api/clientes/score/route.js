@@ -4,10 +4,18 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { calcularDiasMora } from '@/lib/calculos'
+import { scoreLimiter, getClientIp } from '@/lib/rate-limit'
 
 export async function GET(req) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+
+  // Rate limiting: 10 consultas de score por hora
+  const ip = getClientIp(req)
+  const rl = scoreLimiter(ip)
+  if (!rl.ok) {
+    return NextResponse.json({ error: 'Demasiadas consultas. Intenta más tarde.' }, { status: 429 })
+  }
 
   const orgId = session.user.organizationId
   const plan  = session.user.plan

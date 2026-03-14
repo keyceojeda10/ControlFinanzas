@@ -18,11 +18,16 @@ export default function NuevoCobrador() {
   const [password,  setPassword]  = useState('')
   const [loading,   setLoading]   = useState(false)
   const [error,     setError]     = useState('')
-  const [creado,    setCreado]    = useState(null)   // { nombre, email, password }
+  const [creado,    setCreado]    = useState(null)
   const [copiado,   setCopiado]   = useState(false)
   const [totalUsers, setTotalUsers] = useState(null)
   const [limitReached, setLimitReached] = useState(false)
   const [comprando, setComprando] = useState(false)
+  const [permisos,  setPermisos]  = useState({
+    crearPrestamos: false,
+    crearClientes:  false,
+    editarClientes: false,
+  })
 
   const plan     = session?.user?.plan ?? 'basic'
   const limite   = LIMITES[plan] ?? 1
@@ -49,7 +54,7 @@ export default function NuevoCobrador() {
       const res  = await fetch('/api/cobradores', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ nombre, email, password }),
+        body:    JSON.stringify({ nombre, email, password, permisos }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -235,6 +240,39 @@ export default function NuevoCobrador() {
         <p className="text-[10px] text-[#888888]">
           El cobrador deberá usar estas credenciales para ingresar al sistema.
         </p>
+
+        {/* Permisos */}
+        <div className="border-t border-[#2a2a2a] pt-4 mt-2">
+          <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-3">Permisos del cobrador</p>
+          <div className="space-y-3">
+            {[
+              { key: 'crearPrestamos', label: 'Crear préstamos', desc: 'Puede registrar nuevos préstamos para clientes de su ruta' },
+              { key: 'crearClientes',  label: 'Crear clientes',  desc: 'Puede registrar nuevos clientes (se asignan a su ruta)' },
+              { key: 'editarClientes', label: 'Editar clientes', desc: 'Puede modificar datos como teléfono, dirección, etc.' },
+            ].map((p) => (
+              <div key={p.key} className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-[white]">{p.label}</p>
+                  <p className="text-[10px] text-[#666666] leading-snug">{p.desc}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPermisos(prev => ({ ...prev, [p.key]: !prev[p.key] }))}
+                  className={[
+                    'relative w-10 h-[22px] rounded-full transition-colors shrink-0 mt-0.5',
+                    permisos[p.key] ? 'bg-[#f5c518]' : 'bg-[#333333]',
+                  ].join(' ')}
+                >
+                  <span className={[
+                    'absolute top-[2px] w-[18px] h-[18px] rounded-full bg-white transition-transform shadow-sm',
+                    permisos[p.key] ? 'left-[20px]' : 'left-[2px]',
+                  ].join(' ')} />
+                </button>
+              </div>
+            ))}
+          </div>
+          <p className="text-[9px] text-[#555555] mt-2">Los permisos se pueden modificar después desde la edición del cobrador.</p>
+        </div>
 
         <div className="flex gap-3 pt-2">
           <Button type="button" variant="secondary" onClick={() => router.back()} disabled={loading}>

@@ -3,6 +3,9 @@ import { NextResponse } from 'next/server'
 import crypto           from 'crypto'
 import bcrypt           from 'bcryptjs'
 import { prisma }       from '@/lib/prisma'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
+
+const resetLimiter = rateLimit('reset-password', 5, 15 * 60 * 1000)
 
 const SECRET = process.env.NEXTAUTH_SECRET
 if (!SECRET) throw new Error('NEXTAUTH_SECRET no configurado')
@@ -15,7 +18,10 @@ function verificarToken(token) {
     const payload = Buffer.from(payloadB64, 'base64url').toString()
     const expectedHmac = crypto.createHmac('sha256', SECRET).update(payload).digest('hex')
 
-    if (hmac !== expectedHmac) return null
+    // Comparación segura contra timing attacks
+    const hmacBuf = Buffer.from(hmac, 'hex')
+    const expectedBuf = Buffer.from(expectedHmac, 'hex')
+    if (hmacBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(hmacBuf, expectedBuf)) return null
 
     const data = JSON.parse(payload)
     if (Date.now() > data.exp) return null
@@ -27,6 +33,12 @@ function verificarToken(token) {
 }
 
 export async function POST(req) {
+  const ip = getClientIp(req)
+  const rl = resetLimiter(ip)
+  if (!rl.ok) {
+    return NextResponse.json({ error: 'Demasiados intentos. Intenta más tarde.' }, { status: 429 })
+  }
+
   const { token, password } = await req.json()
 
   if (!token || !password) {

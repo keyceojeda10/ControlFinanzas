@@ -37,18 +37,20 @@ export async function GET(request) {
   })
 }
 
-// Endpoint para activar manualmente la advertencia (usado por scheduler)
+// POST protegido — solo superadmin o con CRON_SECRET
 export async function POST(request) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.organizationId) {
-    // Allow cron job (no session required for POST)
+  const { searchParams } = new URL(request.url)
+  const cronSecret = searchParams.get('secret')
+  const CRON_SECRET = process.env.CRON_SECRET
+
+  if (cronSecret && CRON_SECRET && cronSecret === CRON_SECRET) {
+    return Response.json({ success: true })
   }
 
-  // Este endpoint es llamado por el scheduler externo
-  // Solo retorna éxito
-  return Response.json({ 
-    success: true, 
-    message: 'Warning activated',
-    colombiaTime: new Date(new Date().getTime() - 5 * 60 * 60 * 1000).toISOString()
-  })
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.organizationId) {
+    return Response.json({ error: 'No autorizado' }, { status: 401 })
+  }
+
+  return Response.json({ success: true })
 }

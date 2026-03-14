@@ -2,7 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 
-const CRON_SECRET = process.env.CRON_SECRET || 'cron_controlfinanzas_2026'
+const CRON_SECRET = process.env.CRON_SECRET
 
 // Calcula el total esperado del día para un cobrador
 async function calcularEsperado(organizationId, cobradorId) {
@@ -46,7 +46,7 @@ async function getCierresDelDia(organizationId, fecha) {
 export async function POST(request) {
   const { searchParams } = new URL(request.url)
   const secret = searchParams.get('secret')
-  if (secret !== CRON_SECRET) {
+  if (!CRON_SECRET || secret !== CRON_SECRET) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
   }
 
@@ -151,11 +151,17 @@ export async function POST(request) {
   }
 }
 
-// GET - Endpoint de verificación (para testing)
-export async function GET(request) {
+// GET - Endpoint de verificación (solo superadmin)
+export async function GET() {
+  const { getServerSession } = await import('next-auth')
+  const { authOptions } = await import('@/lib/auth')
+  const session = await getServerSession(authOptions)
+  if (!session || session.user.rol !== 'superadmin') {
+    return Response.json({ error: 'No autorizado' }, { status: 401 })
+  }
+
   const now = new Date()
   const colombiaNow = new Date(now.getTime() - 5 * 60 * 60 * 1000)
-  
   return Response.json({
     serverTime: now.toISOString(),
     colombiaTime: colombiaNow.toISOString(),

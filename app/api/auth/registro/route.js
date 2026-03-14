@@ -4,6 +4,7 @@ import bcrypt           from 'bcryptjs'
 import crypto           from 'crypto'
 import { prisma }       from '@/lib/prisma'
 import { enviarEmail, emailBienvenida, emailReferidoExitoso, emailVerificacion } from '@/lib/email'
+import { registroLimiter, getClientIp } from '@/lib/rate-limit'
 
 function generarCodigoReferido() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -23,6 +24,13 @@ function normalizarEmail(email) {
 
 export async function POST(req) {
   try {
+    // Rate limiting: 3 registros por IP por hora
+    const ip = getClientIp(req)
+    const rl = registroLimiter(ip)
+    if (!rl.ok) {
+      return NextResponse.json({ success: false, error: 'Demasiados intentos. Intenta más tarde.' }, { status: 429 })
+    }
+
     const body = await req.json()
     const { nombreOrganizacion, nombre, email, password, ref, terminosAceptados } = body
 

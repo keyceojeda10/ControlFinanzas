@@ -5,13 +5,14 @@ import { NextResponse } from 'next/server'
 import { prisma }       from '@/lib/prisma'
 import { enviarEmail, emailAvisoVencimiento, emailSuscripcionVencida } from '@/lib/email'
 
-const CRON_SECRET = process.env.CRON_SECRET || 'cron_controlfinanzas_2026'
+const CRON_SECRET = process.env.CRON_SECRET
+if (!CRON_SECRET) console.error('[SEGURIDAD] CRON_SECRET no configurado - endpoint cron deshabilitado')
 
 export async function POST(req) {
   // Verificar secret para evitar llamadas no autorizadas
   const { searchParams } = new URL(req.url)
   const secret = searchParams.get('secret')
-  if (secret !== CRON_SECRET) {
+  if (!CRON_SECRET || secret !== CRON_SECRET) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 

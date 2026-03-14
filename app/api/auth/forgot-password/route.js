@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import crypto           from 'crypto'
 import { prisma }       from '@/lib/prisma'
 import { enviarEmail, emailResetPassword } from '@/lib/email'
+import { forgotLimiter, getClientIp } from '@/lib/rate-limit'
 
 const SECRET = process.env.NEXTAUTH_SECRET
 if (!SECRET) throw new Error('NEXTAUTH_SECRET no configurado')
@@ -15,6 +16,13 @@ function generarToken(userId) {
 }
 
 export async function POST(req) {
+  // Rate limiting: 3 intentos por IP por hora
+  const ip = getClientIp(req)
+  const rl = forgotLimiter(ip)
+  if (!rl.ok) {
+    return NextResponse.json({ ok: true }) // No revelar que fue rate limited
+  }
+
   const { email } = await req.json()
 
   if (!email?.trim()) {

@@ -17,7 +17,7 @@ const ESTADOS = [
 ]
 
 export default function PrestamosPage() {
-  const { esOwner, loading: authLoading } = useAuth()
+  const { esOwner, puedeCrearPrestamos, loading: authLoading } = useAuth()
   const [prestamos, setPrestamos] = useState([])
   const [buscar,    setBuscar]    = useState('')
   const [estado,    setEstado]    = useState('activo')
@@ -67,7 +67,7 @@ export default function PrestamosPage() {
             )}
           </p>
         </div>
-        {!authLoading && esOwner && (
+        {!authLoading && puedeCrearPrestamos && (
           <Link href="/prestamos/nuevo">
             <Button
               icon={
@@ -183,7 +183,7 @@ export default function PrestamosPage() {
                   </button>
                 )}
               </p>
-              {!authLoading && esOwner && (
+              {!authLoading && puedeCrearPrestamos && (
                 <Link href="/prestamos/nuevo" className="mt-4">
                   <Button size="sm">Crear préstamo</Button>
                 </Link>
