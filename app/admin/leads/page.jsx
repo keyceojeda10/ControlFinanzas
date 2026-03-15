@@ -38,6 +38,15 @@ function haceTiempo(fecha) {
   return `Hace ${dias}d`
 }
 
+function formatHora(fecha) {
+  return new Date(fecha).toLocaleString('es-CO', {
+    timeZone: 'America/Bogota',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  })
+}
+
 function buildWhatsappLink(lead) {
   if (!lead.telefono) return null
   const idx = (lead.cantClientes ?? 0) >= 50 ? 1 : 0
@@ -100,7 +109,7 @@ function LeadCard({ lead, onDelete }) {
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[11px] text-[#555555]">{haceTiempo(lead.createdAt)}</span>
+          <span className="text-[11px] text-[#555555]">{haceTiempo(lead.createdAt)} {formatHora(lead.createdAt)}</span>
           <Badge variant={cfg.variant}>{cfg.label}</Badge>
           {confirmDelete ? (
             <div className="flex gap-1">

@@ -39,10 +39,14 @@ function haceTiempo(fecha) {
 }
 
 function formatFechaLarga(fecha) {
-  return new Date(fecha).toLocaleDateString('es-CO', {
+  return new Date(fecha).toLocaleString('es-CO', {
+    timeZone: 'America/Bogota',
     day: 'numeric',
     month: 'long',
     year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
   })
 }
 

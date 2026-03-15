@@ -100,9 +100,10 @@ async function fetchLeadFromFacebook(leadgenId) {
 async function sendTelegramNotification({ nombre, telefono, cantClientes, anuncioId, createdTime, leadgenId }) {
   if (!BOT_TOKEN || !CHAT_ID) return
 
+  const fechaOpts = { timeZone: 'America/Bogota', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }
   const fecha = createdTime
-    ? new Date(createdTime * 1000).toLocaleString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-    : new Date().toLocaleString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    ? new Date(createdTime * 1000).toLocaleString('es-CO', fechaOpts)
+    : new Date().toLocaleString('es-CO', fechaOpts)
 
   const tel = telefono ? telefono.replace(/\D/g, '') : ''
 
