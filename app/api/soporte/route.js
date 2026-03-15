@@ -86,7 +86,7 @@ export async function POST(request) {
       to: 'soporte@control-finanzas.com',
       subject: `[Ticket #${ticket.id.slice(-6).toUpperCase()}] ${asunto}`,
       html: (() => {
-        const esc = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+        const esc = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;')
         return `
         <h2>Nuevo ticket de soporte</h2>
         <p><b>Organización:</b> ${esc(ticket.organization.nombre)} (${esc(ticket.organization.plan)})</p>

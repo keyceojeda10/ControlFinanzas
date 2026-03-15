@@ -3,11 +3,9 @@ import { prisma } from '@/lib/prisma'
 import { enviarEmail, emailOnboardingDia12, emailOnboardingDia14 } from '@/lib/email'
 
 const CRON_SECRET = process.env.CRON_SECRET
-if (!CRON_SECRET) console.error('[SEGURIDAD] CRON_SECRET no configurado')
 
 export async function POST(req) {
-  const { searchParams } = new URL(req.url)
-  const secret = searchParams.get('secret')
+  const secret = req.headers.get('x-cron-secret')
   if (!CRON_SECRET || secret !== CRON_SECRET) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
   }

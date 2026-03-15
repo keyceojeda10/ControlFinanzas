@@ -37,18 +37,12 @@ export async function GET(request) {
   })
 }
 
-// POST protegido — solo superadmin o con CRON_SECRET
+// POST protegido — solo con CRON_SECRET via header
 export async function POST(request) {
-  const { searchParams } = new URL(request.url)
-  const cronSecret = searchParams.get('secret')
   const CRON_SECRET = process.env.CRON_SECRET
+  const cronSecret = request.headers.get('x-cron-secret')
 
-  if (cronSecret && CRON_SECRET && cronSecret === CRON_SECRET) {
-    return Response.json({ success: true })
-  }
-
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.organizationId) {
+  if (!CRON_SECRET || cronSecret !== CRON_SECRET) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
   }
 

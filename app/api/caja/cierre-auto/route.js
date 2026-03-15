@@ -43,9 +43,9 @@ async function getCierresDelDia(organizationId, fecha) {
 }
 
 // POST - Ejecuta cierre automático de caja para todas las organizaciones
+// Llamar con: curl -X POST -H "x-cron-secret: $CRON_SECRET" https://app.control-finanzas.com/api/caja/cierre-auto
 export async function POST(request) {
-  const { searchParams } = new URL(request.url)
-  const secret = searchParams.get('secret')
+  const secret = request.headers.get('x-cron-secret')
   if (!CRON_SECRET || secret !== CRON_SECRET) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
   }

@@ -4,9 +4,32 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
+import crypto from 'crypto'
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const MAX_SIZE = 5 * 1024 * 1024 // 5MB
+
+// Magic bytes for image validation
+const MAGIC_BYTES = {
+  'image/jpeg': [0xFF, 0xD8, 0xFF],
+  'image/png':  [0x89, 0x50, 0x4E, 0x47],
+  'image/gif':  [0x47, 0x49, 0x46],
+  'image/webp': null, // RIFF....WEBP - checked separately
+}
+
+function validateMagicBytes(buffer, declaredType) {
+  if (buffer.length < 12) return false
+
+  // WebP: starts with RIFF and has WEBP at offset 8
+  if (declaredType === 'image/webp') {
+    return buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46 &&
+           buffer[8] === 0x57 && buffer[9] === 0x45 && buffer[10] === 0x42 && buffer[11] === 0x50
+  }
+
+  const expected = MAGIC_BYTES[declaredType]
+  if (!expected) return false
+  return expected.every((byte, i) => buffer[i] === byte)
+}
 
 export async function POST(request, { params }) {
   try {
@@ -45,14 +68,20 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: 'La imagen no puede superar 5MB' }, { status: 400 })
     }
 
-    // Generar nombre único
+    const bytes = new Uint8Array(await file.arrayBuffer())
+
+    // Validate magic bytes to prevent disguised files
+    if (!validateMagicBytes(bytes, file.type)) {
+      return NextResponse.json({ error: 'El archivo no es una imagen válida' }, { status: 400 })
+    }
+
+    // Generate cryptographically random filename
     const ext = file.type.split('/')[1] === 'jpeg' ? 'jpg' : file.type.split('/')[1]
-    const fileName = `${id}-${Date.now()}.${ext}`
+    const randomName = crypto.randomBytes(16).toString('hex')
+    const fileName = `${randomName}.${ext}`
     const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'tickets')
 
     await mkdir(uploadDir, { recursive: true })
-
-    const bytes = new Uint8Array(await file.arrayBuffer())
     await writeFile(path.join(uploadDir, fileName), bytes)
 
     const imagenUrl = `/uploads/tickets/${fileName}`

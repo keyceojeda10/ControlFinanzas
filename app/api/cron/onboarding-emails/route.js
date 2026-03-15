@@ -1,5 +1,5 @@
 // app/api/cron/onboarding-emails/route.js — Emails de onboarding secuenciados (14 días)
-// Llamar diariamente con: curl -X POST https://app.control-finanzas.com/api/cron/onboarding-emails?secret=CRON_SECRET
+// Llamar diariamente con: curl -X POST -H "x-cron-secret: $CRON_SECRET" https://app.control-finanzas.com/api/cron/onboarding-emails
 
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
@@ -15,8 +15,7 @@ import {
 const CRON_SECRET = process.env.CRON_SECRET
 
 export async function POST(req) {
-  const { searchParams } = new URL(req.url)
-  const secret = searchParams.get('secret')
+  const secret = req.headers.get('x-cron-secret')
   if (!CRON_SECRET || secret !== CRON_SECRET) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }

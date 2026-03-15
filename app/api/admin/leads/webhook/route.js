@@ -1,12 +1,19 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import crypto from 'crypto'
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID
-const VERIFY_TOKEN = process.env.FB_LEADS_VERIFY_TOKEN || 'cf_leads_2026_verify'
+const VERIFY_TOKEN = process.env.FB_LEADS_VERIFY_TOKEN
+const FB_APP_SECRET = process.env.FB_APP_SECRET
 
 // Facebook webhook verification (GET)
 export async function GET(request) {
+  if (!VERIFY_TOKEN) {
+    console.error('[Leads] FB_LEADS_VERIFY_TOKEN no configurado')
+    return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 })
+  }
+
   const { searchParams } = new URL(request.url)
   const mode = searchParams.get('hub.mode')
   const token = searchParams.get('hub.verify_token')
@@ -18,10 +25,41 @@ export async function GET(request) {
   return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 }
 
+// Validate X-Hub-Signature-256 from Facebook
+function verifyFacebookSignature(rawBody, signature) {
+  if (!FB_APP_SECRET) {
+    console.warn('[Leads] FB_APP_SECRET no configurado - aceptando sin validar firma (CONFIGURAR CUANTO ANTES)')
+    return true // Permisivo hasta que se configure
+  }
+  if (!signature) return false
+
+  const expectedSig = 'sha256=' + crypto
+    .createHmac('sha256', FB_APP_SECRET)
+    .update(rawBody)
+    .digest('hex')
+
+  try {
+    return crypto.timingSafeEqual(
+      Buffer.from(signature),
+      Buffer.from(expectedSig)
+    )
+  } catch {
+    return false
+  }
+}
+
 // Facebook webhook lead event (POST)
 export async function POST(request) {
   try {
-    const body = await request.json()
+    const rawBody = await request.text()
+    const signature = request.headers.get('x-hub-signature-256')
+
+    if (!verifyFacebookSignature(rawBody, signature)) {
+      console.warn('[Leads] Firma inválida o ausente - request rechazado')
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+    }
+
+    const body = JSON.parse(rawBody)
 
     // Facebook sends { object: 'page', entry: [...] }
     if (body.object !== 'page') {
