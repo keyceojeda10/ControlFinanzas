@@ -38,19 +38,22 @@ export async function POST(request) {
 
         // Fetch lead data from Facebook Graph API
         const leadData = await fetchLeadFromFacebook(leadgenId)
-        if (!leadData) continue
 
-        const nombre = leadData.nombre || 'Sin nombre'
-        const telefono = leadData.telefono || ''
-        const cantClientes = leadData.cantClientes || ''
+        const nombre = leadData?.nombre || 'Sin nombre'
+        const telefono = leadData?.telefono || ''
+        const cantClientes = leadData?.cantClientes || ''
 
         // Save to DB
-        await prisma.lead.create({
-          data: { nombre, telefono, cantClientes, anuncioId: adId }
-        })
+        try {
+          await prisma.lead.create({
+            data: { nombre, telefono, cantClientes, anuncioId: adId }
+          })
+        } catch (dbErr) {
+          console.error('[Leads] DB error:', dbErr.message)
+        }
 
-        // Send Telegram notification
-        await sendTelegramNotification({ nombre, telefono, cantClientes, anuncioId: adId, createdTime })
+        // Send Telegram notification (always, even if FB API failed)
+        await sendTelegramNotification({ nombre, telefono, cantClientes, anuncioId: adId, createdTime, leadgenId })
       }
     }
 
@@ -94,7 +97,7 @@ async function fetchLeadFromFacebook(leadgenId) {
   }
 }
 
-async function sendTelegramNotification({ nombre, telefono, cantClientes, anuncioId, createdTime }) {
+async function sendTelegramNotification({ nombre, telefono, cantClientes, anuncioId, createdTime, leadgenId }) {
   if (!BOT_TOKEN || !CHAT_ID) return
 
   const fecha = createdTime
