@@ -107,6 +107,7 @@ async function sendTelegramNotification({ nombre, telefono, cantClientes, anunci
 
   const tel = telefono ? telefono.replace(/\D/g, '') : ''
 
+  // Build WhatsApp quick-contact links (primary actions)
   let whatsappSection = ''
   if (tel) {
     const msgCorto = encodeURIComponent(
@@ -116,7 +117,16 @@ async function sendTelegramNotification({ nombre, telefono, cantClientes, anunci
     const msgLargo = encodeURIComponent(
       `Hola ${nombre}! Soy Carlos de Control Finanzas. Vi que manejas mas de ${cantLabel} clientes. Con ese volumen, un sistema te ahorra horas al dia. Como llevas el control de tu cartera?`
     )
-    whatsappSection = `\n\nWhatsApp (<50):\nhttps://wa.me/${tel}?text=${msgCorto}\n\nWhatsApp (50+):\nhttps://wa.me/${tel}?text=${msgLargo}`
+    whatsappSection = [
+      ``,
+      `--- Contactar rapido ---`,
+      ``,
+      `WhatsApp (<50 clientes):`,
+      `https://wa.me/${tel}?text=${msgCorto}`,
+      ``,
+      `WhatsApp (50+ clientes):`,
+      `https://wa.me/${tel}?text=${msgLargo}`,
+    ].join('\n')
   }
 
   const text = [
@@ -125,11 +135,11 @@ async function sendTelegramNotification({ nombre, telefono, cantClientes, anunci
     `Nombre: ${nombre}`,
     `Telefono: ${telefono || 'No disponible'}`,
     `Clientes: ${cantClientes || 'No especifico'}`,
-    `Anuncio: ${anuncioId || 'N/A'}`,
     `Fecha: ${fecha}`,
     whatsappSection,
     ``,
-    `Ver en panel: https://app.control-finanzas.com/admin/leads`,
+    `--- Ver en panel ---`,
+    `https://app.control-finanzas.com/admin/leads`,
   ].join('\n')
 
   try {
