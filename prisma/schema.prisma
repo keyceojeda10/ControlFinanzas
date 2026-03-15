@@ -65,6 +65,8 @@ model Organization {
   fuenteRegistro  String?
   planOriginal    Plan?
   planDemoHasta   DateTime?
+  onboardingStep  Int            @default(0)
+  trialReminderSent Boolean      @default(false)
   createdAt       DateTime       @default(now())
 
   referidoPor      Organization?     @relation("Referidos", fields: [referidoPorId], references: [id])
@@ -80,6 +82,8 @@ model Organization {
   gastosMenores    GastoMenor[]
   tickets          TicketSoporte[]
   notasSeguimiento NotaSeguimiento[]
+
+  @@index([createdAt])
 }
 
 model User {
@@ -347,4 +351,19 @@ model NotaSeguimiento {
   admin        User         @relation("NotasAdmin", fields: [adminId], references: [id])
 
   @@index([organizationId])
+}
+
+// ─── LEADS ──────────────────────────────────────────────
+
+model Lead {
+  id           String   @id @default(cuid())
+  nombre       String
+  telefono     String
+  cantClientes String?
+  anuncioId    String?
+  estado       String   @default("nuevo")
+  notas        String?  @db.Text
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
 }

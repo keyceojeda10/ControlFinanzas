@@ -1,212 +1,140 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 
 export const LS_KEY = 'cf_onboarding_done'
 
-const pasos = [
+const PASOS = [
   {
-    icon: '🏦',
-    titulo: 'Bienvenido a Control Finanzas',
-    descripcion:
-      'Tu plataforma para gestionar préstamos, clientes, cobros y rutas. Todo en un solo lugar, desde cualquier dispositivo.',
+    step: 0,
+    titulo: '¡Bienvenido a Control Finanzas!',
+    descripcion: 'Te vamos a guiar paso a paso para configurar tu negocio. Toma menos de 3 minutos.',
+    accion: { label: 'Empezar', href: '/clientes/nuevo' },
+    paginas: ['/dashboard'],
+  },
+  {
+    step: 1,
+    titulo: 'Paso 1 de 4 — Crea tu primer cliente',
+    descripcion: 'Llena los datos de tu primer cliente: nombre, cédula, teléfono y dirección. Luego guárdalo.',
     accion: null,
+    paginas: ['/clientes/nuevo', '/clientes'],
   },
   {
-    icon: '👤',
-    titulo: 'Registra tu primer cliente',
-    descripcion:
-      'Agrega clientes con su nombre, cédula, teléfono y dirección. Asígnalos a una ruta para organizar tus cobros.',
-    accion: { label: 'Nuevo Cliente', href: '/clientes/nuevo' },
+    step: 2,
+    titulo: 'Paso 2 de 4 — Crea tu primer préstamo',
+    descripcion: 'Define el monto, tasa, plazo y frecuencia. El sistema calcula las cuotas automáticamente.',
+    accion: { label: 'Crear préstamo', href: '/prestamos/nuevo' },
+    paginas: ['/clientes', '/prestamos/nuevo', '/prestamos'],
   },
   {
-    icon: '💰',
-    titulo: 'Crea tu primer préstamo',
-    descripcion:
-      'Define el monto, tasa de interés, plazo y frecuencia de pago. El sistema calcula automáticamente las cuotas.',
-    accion: { label: 'Crear Préstamo', href: '/prestamos/nuevo' },
+    step: 3,
+    titulo: 'Paso 3 de 4 — Tu panel principal',
+    descripcion: 'Aquí ves el resumen en tiempo real: cartera, cobros del día, clientes en mora. Todo actualizado.',
+    accion: { label: 'Siguiente', href: null },
+    paginas: ['/dashboard'],
   },
   {
-    icon: '🗺️',
-    titulo: 'Organiza tu equipo',
-    descripcion:
-      'Crea rutas de cobro y asigna cobradores. Cada cobrador ve solo sus clientes y puede registrar pagos desde su celular.',
-    accion: { label: 'Ver Rutas', href: '/rutas' },
-  },
-  {
-    icon: '🎁',
-    titulo: 'Invita y gana',
-    descripcion:
-      'Comparte tu link de referido. Por cada persona que se registre con tu código, recibes 1 mes gratis en tu suscripción.',
-    accion: { label: 'Ver mi link', href: '/configuracion?tab=referidos' },
+    step: 4,
+    titulo: 'Paso 4 de 4 — Explora más funciones',
+    descripcion: 'Crea rutas de cobro, agrega cobradores, envía recibos por WhatsApp. Revisa los Tutoriales en el menú.',
+    accion: { label: '¡Listo, ya entendí!', href: null },
+    paginas: ['/dashboard'],
   },
 ]
 
-const TOTAL = pasos.length
-
-async function marcarCompletadoEnDB() {
+async function guardarPaso(step) {
   try {
-    await fetch('/api/configuracion/onboarding', { method: 'PATCH' })
-  } catch {
-    // silenciar — no bloquea al usuario
-  }
+    await fetch('/api/configuracion/onboarding', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ step }),
+    })
+  } catch {}
 }
 
-export default function Onboarding({ userId, onComplete }) {
-  const [paso, setPaso] = useState(0)
-  const [saliendo, setSaliendo] = useState(false)
+export default function Onboarding({ userId, initialStep = 0, totalClientes = 0, totalPrestamos = 0 }) {
   const router = useRouter()
+  const pathname = usePathname()
+  const [paso, setPaso] = useState(initialStep)
+  const [visible, setVisible] = useState(true)
 
-  const actual = pasos[paso]
-  const esUltimo = paso === TOTAL - 1
+  // Auto-advance based on user actions
+  useEffect(() => {
+    if (paso === 1 && totalClientes > 0) {
+      setPaso(2)
+      guardarPaso(2)
+    } else if (paso === 2 && totalPrestamos > 0) {
+      setPaso(3)
+      guardarPaso(3)
+      router.push('/dashboard')
+    }
+  }, [totalClientes, totalPrestamos, paso, router])
 
-  async function handleFinalizar() {
-    if (saliendo) return
-    setSaliendo(true)
-    // Guardar en localStorage para no depender del JWT (que no se refresca sin re-login)
+  const actual = PASOS.find(p => p.step === paso) || PASOS[0]
+
+  const handleOmitir = () => {
     if (userId) localStorage.setItem(`${LS_KEY}_${userId}`, '1')
-    await marcarCompletadoEnDB()
-    onComplete?.()
+    guardarPaso(99)
+    setVisible(false)
   }
 
-  function handleSiguiente() {
-    if (esUltimo) {
-      handleFinalizar()
-    } else {
-      setPaso((p) => p + 1)
+  const handleAccion = () => {
+    if (paso === 3) {
+      // "Siguiente" → go to step 4
+      setPaso(4)
+      guardarPaso(4)
+    } else if (paso === 4) {
+      // "¡Listo!" → complete
+      handleOmitir()
+    } else if (actual.accion?.href) {
+      const nextStep = paso + 1
+      setPaso(nextStep)
+      guardarPaso(nextStep)
+      router.push(actual.accion.href)
     }
   }
 
-  function handleAccion() {
-    // Navega al recurso del paso pero NO cierra el onboarding
-    // Avanza al siguiente paso para que al volver continúe el tour
-    router.push(actual.accion.href)
-    if (paso < TOTAL - 1) setPaso((p) => p + 1)
-  }
+  if (!visible) return null
+  if (paso >= 99) return null
+
+  const progreso = Math.min(paso, 4)
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)' }}
-      aria-modal="true"
-      role="dialog"
-      aria-labelledby="onboarding-titulo"
-    >
-      <div
-        className="relative w-full max-w-md flex flex-col"
-        style={{
-          background: '#1a1a1a',
-          border: '1px solid #2a2a2a',
-          borderRadius: '24px',
-          padding: '32px',
-          minHeight: '420px',
-        }}
-      >
-        {/* Puntos de progreso */}
-        <div className="flex items-center justify-center gap-2 mb-8">
-          {pasos.map((_, i) => (
-            <div
-              key={i}
-              style={{
-                width: i === paso ? '24px' : '8px',
-                height: '8px',
-                borderRadius: '99px',
-                background: i <= paso ? '#f5c518' : '#2a2a2a',
-                opacity: i < paso ? 0.5 : 1,
-                transition: 'all 0.25s ease',
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Icono del paso */}
-        <div className="flex justify-center mb-5">
+    <div className="w-full bg-gradient-to-r from-[rgba(245,197,24,0.12)] to-[rgba(245,197,24,0.04)] border border-[rgba(245,197,24,0.2)] rounded-[14px] px-4 py-3 mb-4">
+      {/* Progress bar */}
+      <div className="flex items-center gap-1.5 mb-2">
+        {[1, 2, 3, 4].map(i => (
           <div
+            key={i}
+            className="h-1 flex-1 rounded-full transition-all duration-300"
             style={{
-              width: '80px',
-              height: '80px',
-              borderRadius: '20px',
-              background: 'rgba(245,197,24,0.1)',
-              border: '1px solid rgba(245,197,24,0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '40px',
-              lineHeight: 1,
+              background: i <= progreso ? '#f5c518' : 'rgba(245,197,24,0.15)',
             }}
-          >
-            {actual.icon}
-          </div>
+          />
+        ))}
+      </div>
+
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-[#f5c518] mb-0.5">{actual.titulo}</p>
+          <p className="text-xs text-[#888888] leading-relaxed">{actual.descripcion}</p>
         </div>
 
-        {/* Texto */}
-        <div className="flex-1 text-center mb-6">
-          <h2
-            id="onboarding-titulo"
-            className="text-xl font-bold text-white mb-3 leading-snug"
-          >
-            {actual.titulo}
-          </h2>
-          <p className="text-sm leading-relaxed" style={{ color: '#888888' }}>
-            {actual.descripcion}
-          </p>
-        </div>
-
-        {/* Botón de acción secundario */}
-        {actual.accion && (
+        <div className="flex items-center gap-2 shrink-0">
           <button
-            onClick={handleAccion}
-            className="w-full mb-3 text-sm font-medium rounded-[12px] border transition-all duration-200"
-            style={{
-              height: '44px',
-              background: 'transparent',
-              borderColor: '#2a2a2a',
-              color: '#f5c518',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#f5c518'
-              e.currentTarget.style.background = 'rgba(245,197,24,0.06)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = '#2a2a2a'
-              e.currentTarget.style.background = 'transparent'
-            }}
+            onClick={handleOmitir}
+            className="text-[10px] text-[#555555] hover:text-[#888888] transition-colors whitespace-nowrap"
           >
-            {actual.accion.label} →
+            Omitir guía
           </button>
-        )}
-
-        {/* Botones principales */}
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="md"
-            onClick={handleFinalizar}
-            disabled={saliendo}
-            className="flex-1"
-            style={{ color: '#555555' }}
-          >
-            Omitir todo
-          </Button>
-
-          <Button
-            variant="primary"
-            size="md"
-            onClick={handleSiguiente}
-            loading={saliendo && esUltimo}
-            disabled={saliendo}
-            className="flex-1"
-          >
-            {esUltimo ? 'Finalizar' : 'Siguiente'}
-          </Button>
+          {actual.accion && (
+            <Button size="sm" onClick={handleAccion}>
+              {actual.accion.label}
+            </Button>
+          )}
         </div>
-
-        {/* Contador */}
-        <p className="text-center mt-4 text-[11px]" style={{ color: '#555555' }}>
-          {paso + 1} de {TOTAL}
-        </p>
       </div>
     </div>
   )

@@ -56,17 +56,26 @@ export default function DashboardPage() {
   const [error, setError] = useState('')
   const [fechaActual, setFechaActual] = useState('')
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [onboardingStep, setOnboardingStep] = useState(0)
 
   useEffect(() => { setMounted(true) }, [])
 
   // Mostrar onboarding solo a owners que no lo han completado
-  // Usa localStorage como fuente de verdad local (el JWT no se refresca sin re-login)
   useEffect(() => {
     if (authLoading || !session?.user?.id) return
     const userId = session.user.id
     const yaVisto = localStorage.getItem(`cf_onboarding_done_${userId}`)
-    if (esOwner && !yaVisto && session?.user?.onboardingCompletado === false) {
-      setShowOnboarding(true)
+    if (esOwner && !yaVisto) {
+      // Fetch onboarding step from server
+      fetch('/api/configuracion/onboarding')
+        .then(r => r.json())
+        .then(d => {
+          if (d.step !== undefined && d.step < 99) {
+            setOnboardingStep(d.step)
+            setShowOnboarding(true)
+          }
+        })
+        .catch(() => {})
     }
   }, [authLoading, esOwner, session])
 
@@ -97,11 +106,15 @@ export default function DashboardPage() {
   const moraPct = data ? (data.clientes.total > 0 ? Math.round((data.clientes.enMora / data.clientes.total) * 100) : 0) : 0
 
   return (
-    <>
-    {showOnboarding && (
-      <Onboarding userId={session?.user?.id} onComplete={() => setShowOnboarding(false)} />
-    )}
     <div className="max-w-3xl mx-auto space-y-5">
+      {showOnboarding && (
+        <Onboarding
+          userId={session?.user?.id}
+          initialStep={onboardingStep}
+          totalClientes={data?.clientes?.total || 0}
+          totalPrestamos={data?.prestamos?.activos || 0}
+        />
+      )}
       <div>
         <h1 className="text-xl font-bold text-white">Dashboard</h1>
         <p className="text-sm text-[#888888] mt-0.5">{fechaActual || 'Resumen de tu cartera hoy'}</p>
@@ -235,6 +248,5 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
-    </>
   )
 }
