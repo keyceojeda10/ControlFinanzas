@@ -104,45 +104,45 @@ async function sendTelegramNotification({ nombre, telefono, cantClientes, anunci
     ? new Date(createdTime * 1000).toLocaleString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     : new Date().toLocaleString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 
-  const tel = telefono.replace(/\D/g, '')
+  const tel = telefono ? telefono.replace(/\D/g, '') : ''
 
-  // Mensaje corto para <50 clientes
-  const msgCorto = encodeURIComponent(
-    `Hola ${nombre}! Soy Carlos de Control Finanzas 👋\n\nVi que te interesó el sistema para manejar tu cartera de préstamos.\n\n¿Actualmente cómo llevas el control? ¿Cuaderno, Excel o alguna app?`
-  )
+  let whatsappSection = ''
+  if (tel) {
+    const msgCorto = encodeURIComponent(
+      `Hola ${nombre}! Soy Carlos de Control Finanzas. Vi que te intereso el sistema para manejar tu cartera de prestamos. Como llevas el control actualmente? Cuaderno, Excel o alguna app?`
+    )
+    const cantLabel = cantClientes || 'varios'
+    const msgLargo = encodeURIComponent(
+      `Hola ${nombre}! Soy Carlos de Control Finanzas. Vi que manejas mas de ${cantLabel} clientes. Con ese volumen, un sistema te ahorra horas al dia. Como llevas el control de tu cartera?`
+    )
+    whatsappSection = `\n\nWhatsApp (<50):\nhttps://wa.me/${tel}?text=${msgCorto}\n\nWhatsApp (50+):\nhttps://wa.me/${tel}?text=${msgLargo}`
+  }
 
-  // Mensaje para 50+ clientes
-  const cantLabel = cantClientes || 'varios'
-  const msgLargo = encodeURIComponent(
-    `Hola ${nombre}! Soy Carlos de Control Finanzas 👋\n\nVi que manejas más de ${cantLabel} clientes. Con ese volumen, un sistema te ahorra horas al día y evita errores en los cobros.\n\n¿Actualmente cómo llevas el control de tu cartera?`
-  )
-
-  const text = `🚨 *Nuevo Lead — Facebook Ads*
-
-👤 *Nombre:* ${nombre}
-📱 *Teléfono:* ${telefono}
-👥 *Clientes:* ${cantClientes || 'No especificó'}
-📢 *Anuncio:* ${anuncioId || 'N/A'}
-📅 ${fecha}
-
-──────────────────
-💬 *WhatsApp (<50 clientes):*
-https://wa.me/${tel}?text=${msgCorto}
-
-💬 *WhatsApp (50+ clientes):*
-https://wa.me/${tel}?text=${msgLargo}`
+  const text = [
+    `Nuevo Lead - Facebook Ads`,
+    ``,
+    `Nombre: ${nombre}`,
+    `Telefono: ${telefono || 'No disponible'}`,
+    `Clientes: ${cantClientes || 'No especifico'}`,
+    `Anuncio: ${anuncioId || 'N/A'}`,
+    `Fecha: ${fecha}`,
+    whatsappSection,
+    ``,
+    `Ver en panel: https://app.control-finanzas.com/admin/leads`,
+  ].join('\n')
 
   try {
-    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: CHAT_ID,
         text,
-        parse_mode: 'Markdown',
         disable_web_page_preview: true,
       }),
     })
+    const result = await res.json()
+    if (!result.ok) console.error('[Telegram] Error:', result.description)
   } catch (err) {
     console.error('[Telegram]', err)
   }
