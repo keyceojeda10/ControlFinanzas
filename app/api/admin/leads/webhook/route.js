@@ -111,11 +111,11 @@ async function sendTelegramNotification({ nombre, telefono, cantClientes, anunci
   let whatsappSection = ''
   if (tel) {
     const msgCorto = encodeURIComponent(
-      `Hola ${nombre}! Soy Carlos de Control Finanzas. Vi que te intereso el sistema para manejar tu cartera de prestamos. Como llevas el control actualmente? Cuaderno, Excel o alguna app?`
+      `Hola ${nombre}! Soy Carlos de Control Finanzas 👋\n\nVi que te interesó el sistema para manejar tu cartera de préstamos.\n\n¿Actualmente cómo llevas el control? ¿Cuaderno, Excel o alguna app?`
     )
-    const cantLabel = cantClientes || 'varios'
+    const cantLabel = cantClientes || '50'
     const msgLargo = encodeURIComponent(
-      `Hola ${nombre}! Soy Carlos de Control Finanzas. Vi que manejas mas de ${cantLabel} clientes. Con ese volumen, un sistema te ahorra horas al dia. Como llevas el control de tu cartera?`
+      `Hola ${nombre}! Soy Carlos de Control Finanzas 👋\n\nVi que manejas más de ${cantLabel} clientes. Con ese volumen, un sistema te ahorra horas al día y evita errores en los cobros.\n\n¿Actualmente cómo llevas el control de tu cartera?`
     )
     whatsappSection = [
       ``,
