@@ -82,6 +82,7 @@ model Organization {
   gastosMenores    GastoMenor[]
   tickets          TicketSoporte[]
   notasSeguimiento NotaSeguimiento[]
+  leads            Lead[]
 
   @@index([createdAt])
 }
@@ -356,14 +357,20 @@ model NotaSeguimiento {
 // ─── LEADS ──────────────────────────────────────────────
 
 model Lead {
-  id           String   @id @default(cuid())
-  nombre       String
-  telefono     String
-  cantClientes String?
-  anuncioId    String?
-  estado       String   @default("nuevo")
-  notas        String?  @db.Text
-  createdAt    DateTime @default(now())
+  id               String        @id @default(cuid())
+  nombre           String
+  telefono         String
+  cantClientes     String?
+  anuncioId        String?
+  estado           String        @default("nuevo")
+  notas            String?       @db.Text
+  organizationId   String?
+  mensajesEnviados String?       @db.Text
+  createdAt        DateTime      @default(now())
+
+  organization Organization? @relation(fields: [organizationId], references: [id])
 
   @@index([createdAt])
+  @@index([estado])
+  @@index([telefono])
 }

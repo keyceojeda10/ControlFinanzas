@@ -1,0 +1,51 @@
+import { NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
+
+export async function GET(_req, { params }) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (session?.user?.rol !== 'superadmin') {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
+    }
+
+    const { id } = await params
+    const lead = await prisma.lead.findUnique({
+      where: { id },
+      include: {
+        organization: { select: { id: true, nombre: true, plan: true } },
+      },
+    })
+
+    if (!lead) return NextResponse.json({ error: 'No encontrado' }, { status: 404 })
+    return NextResponse.json(lead)
+  } catch (error) {
+    console.error('[GET /api/admin/leads/[id]]', error)
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+  }
+}
+
+export async function PATCH(request, { params }) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (session?.user?.rol !== 'superadmin') {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
+    }
+
+    const { id } = await params
+    const body = await request.json()
+
+    const data = {}
+    if (body.estado) data.estado = body.estado
+    if (body.notas !== undefined) data.notas = body.notas
+    if (body.mensajesEnviados !== undefined) data.mensajesEnviados = body.mensajesEnviados
+    if (body.organizationId !== undefined) data.organizationId = body.organizationId
+
+    const lead = await prisma.lead.update({ where: { id }, data })
+    return NextResponse.json(lead)
+  } catch (error) {
+    console.error('[PATCH /api/admin/leads/[id]]', error)
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+  }
+}

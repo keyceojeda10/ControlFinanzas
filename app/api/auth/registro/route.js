@@ -4,6 +4,7 @@ import bcrypt           from 'bcryptjs'
 import crypto           from 'crypto'
 import { prisma }       from '@/lib/prisma'
 import { enviarEmail, emailBienvenida, emailReferidoExitoso, emailVerificacion } from '@/lib/email'
+import { sendConversionEvent } from '@/lib/facebook-capi'
 import { registroLimiter, getClientIp } from '@/lib/rate-limit'
 
 function generarCodigoReferido() {
@@ -183,6 +184,12 @@ export async function POST(req) {
         console.error('[registro] Error procesando recompensa de referido:', errRef)
       }
     }
+
+    // Facebook CAPI: reportar conversión real (fire-and-forget)
+    sendConversionEvent({
+      eventName: 'CompleteRegistration',
+      email: emailNorm,
+    }).catch(() => {})
 
     return NextResponse.json({
       success: true,
