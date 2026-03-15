@@ -119,26 +119,26 @@ async function sendTelegramNotification({ nombre, telefono, cantClientes, anunci
     )
     whatsappSection = [
       ``,
-      `--- Contactar rapido ---`,
+      `--- ⚡ Contactar rapido ---`,
       ``,
-      `WhatsApp (<50 clientes):`,
+      `💬 WhatsApp (<50 clientes):`,
       `https://wa.me/${tel}?text=${msgCorto}`,
       ``,
-      `WhatsApp (50+ clientes):`,
+      `💬 WhatsApp (50+ clientes):`,
       `https://wa.me/${tel}?text=${msgLargo}`,
     ].join('\n')
   }
 
   const text = [
-    `Nuevo Lead - Facebook Ads`,
+    `📢 Nuevo Lead - Facebook Ads`,
     ``,
-    `Nombre: ${nombre}`,
-    `Telefono: ${telefono || 'No disponible'}`,
-    `Clientes: ${cantClientes || 'No especifico'}`,
-    `Fecha: ${fecha}`,
+    `👤 Nombre: ${nombre}`,
+    `📱 Telefono: ${telefono || 'No disponible'}`,
+    `👥 Clientes: ${cantClientes || 'No especifico'}`,
+    `📅 Fecha: ${fecha}`,
     whatsappSection,
     ``,
-    `--- Ver en panel ---`,
+    `--- 🖥 Ver en panel ---`,
     `https://app.control-finanzas.com/admin/leads`,
   ].join('\n')
 
