@@ -1,6 +1,7 @@
 'use client'
 // app/admin/layout.jsx — Layout del panel de administración
 
+import { useState }     from 'react'
 import Link            from 'next/link'
 import Image           from 'next/image'
 import { usePathname } from 'next/navigation'
@@ -100,12 +101,20 @@ const nav = [
   },
 ]
 
+// Mobile: show first 4 + "More" button, rest in expandable menu
+const MOBILE_MAIN = 4
+
 export default function AdminLayout({ children }) {
   const pathname = usePathname()
+  const [moreOpen, setMoreOpen] = useState(false)
+
+  const mainNav = nav.slice(0, MOBILE_MAIN)
+  const moreNav = nav.slice(MOBILE_MAIN)
+  const moreActive = moreNav.some(n => pathname === n.href || (n.href !== '/admin/dashboard' && pathname.startsWith(n.href)))
 
   return (
     <div className="flex min-h-dvh bg-[#0a0a0a]">
-      {/* Sidebar */}
+      {/* Sidebar desktop */}
       <aside className="hidden lg:flex w-60 flex-col border-r border-[#2a2a2a] bg-[#0a0a0a] shrink-0">
         <div className="px-5 py-5 border-b border-[#2a2a2a]">
           <Image src="/logo-full.svg" alt="Control Finanzas" width={150} height={38} priority />
@@ -170,9 +179,46 @@ export default function AdminLayout({ children }) {
           </div>
         </header>
 
+        {/* Mobile "More" expandable menu */}
+        {moreOpen && (
+          <div
+            className="lg:hidden fixed inset-0 z-40"
+            onClick={() => setMoreOpen(false)}
+          >
+            <div className="absolute inset-0 bg-black/60" />
+            <div
+              className="absolute bottom-16 left-0 right-0 bg-[#111111] border-t border-[#2a2a2a] rounded-t-[20px] px-2 pt-3 pb-4"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="w-10 h-1 bg-[#333333] rounded-full mx-auto mb-3" />
+              <div className="grid grid-cols-4 gap-1">
+                {moreNav.map(({ href, label, icon }) => {
+                  const active = pathname === href || (href !== '/admin/dashboard' && pathname.startsWith(href))
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={() => setMoreOpen(false)}
+                      className={[
+                        'flex flex-col items-center gap-1 py-3 px-1 rounded-[12px] text-[11px] font-medium transition-all',
+                        active
+                          ? 'bg-[rgba(245,197,24,0.12)] text-[#f5c518]'
+                          : 'text-[#888888] hover:text-white hover:bg-[#1a1a1a]',
+                      ].join(' ')}
+                    >
+                      {icon}
+                      <span className="truncate w-full text-center">{label}</span>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Mobile bottom nav */}
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 flex border-t border-[#2a2a2a] bg-[#0a0a0a] z-50">
-          {nav.map(({ href, label, icon }) => {
+          {mainNav.map(({ href, label, icon }) => {
             const active = pathname === href || (href !== '/admin/dashboard' && pathname.startsWith(href))
             return (
               <Link
@@ -188,6 +234,20 @@ export default function AdminLayout({ children }) {
               </Link>
             )
           })}
+          {/* "More" button */}
+          <button
+            onClick={() => setMoreOpen(v => !v)}
+            className={[
+              'flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-all',
+              moreActive || moreOpen ? 'text-[#f5c518]' : 'text-[#555555]',
+            ].join(' ')}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+            Más
+          </button>
         </nav>
 
         <main className="flex-1 px-4 py-5 lg:px-6 lg:py-6 pb-24 lg:pb-6 overflow-y-auto">

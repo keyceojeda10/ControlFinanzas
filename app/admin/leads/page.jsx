@@ -75,9 +75,17 @@ function LeadCardSkeleton() {
 // Lead Card
 // ---------------------------------------------------------------------------
 
-function LeadCard({ lead }) {
+function LeadCard({ lead, onDelete }) {
   const cfg = estadoConfig[lead.estado] ?? { label: lead.estado, variant: 'gray' }
   const waLink = buildWhatsappLink(lead)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
+  const handleDelete = async () => {
+    try {
+      const res = await fetch(`/api/admin/leads/${lead.id}`, { method: 'DELETE' })
+      if (res.ok) onDelete?.(lead.id)
+    } catch {}
+  }
 
   return (
     <Card className="space-y-3">
@@ -91,9 +99,36 @@ function LeadCard({ lead }) {
             <p className="text-xs text-[#666666] mt-0.5">{lead.telefono}</p>
           )}
         </div>
-        <div className="flex flex-col items-end gap-1.5 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <span className="text-[11px] text-[#555555]">{haceTiempo(lead.createdAt)}</span>
           <Badge variant={cfg.variant}>{cfg.label}</Badge>
+          {confirmDelete ? (
+            <div className="flex gap-1">
+              <button
+                onClick={handleDelete}
+                className="p-1.5 rounded-[8px] bg-[rgba(239,68,68,0.15)] text-[#ef4444] text-[10px] font-bold"
+              >
+                Si
+              </button>
+              <button
+                onClick={() => setConfirmDelete(false)}
+                className="p-1.5 rounded-[8px] bg-[#2a2a2a] text-[#888888] text-[10px]"
+              >
+                No
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setConfirmDelete(true)}
+              className="p-1 rounded-[6px] text-[#555555] hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.08)] transition-all"
+              title="Eliminar"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
@@ -403,7 +438,11 @@ export default function LeadsPage() {
       ) : (
         <div className="space-y-3">
           {leads.map((lead) => (
-            <LeadCard key={lead.id} lead={lead} />
+            <LeadCard
+              key={lead.id}
+              lead={lead}
+              onDelete={(id) => setLeads(prev => prev.filter(l => l.id !== id))}
+            />
           ))}
         </div>
       )}

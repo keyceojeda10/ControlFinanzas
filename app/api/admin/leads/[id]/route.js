@@ -49,3 +49,19 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }
 }
+
+export async function DELETE(_req, { params }) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (session?.user?.rol !== 'superadmin') {
+      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 403 })
+    }
+
+    const { id } = await params
+    await prisma.lead.delete({ where: { id } })
+    return NextResponse.json({ success: true, data: { ok: true } })
+  } catch (error) {
+    console.error('[DELETE /api/admin/leads/[id]]', error)
+    return NextResponse.json({ success: false, error: 'Error interno' }, { status: 500 })
+  }
+}

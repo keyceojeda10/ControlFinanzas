@@ -15,7 +15,7 @@ export async function GET() {
       include: {
         users: {
           where: { rol: 'owner' },
-          select: { nombre: true, email: true, telefono: true, lastLogin: true },
+          select: { nombre: true, email: true },
           take: 1,
         },
         _count: {
@@ -60,8 +60,7 @@ export async function GET() {
         plan: org.plan,
         ownerNombre: owner.nombre || '',
         ownerEmail: owner.email || '',
-        ownerTelefono: owner.telefono || '',
-        lastLogin: owner.lastLogin,
+        ownerTelefono: org.telefono || '',
         createdAt: org.createdAt,
         clientes,
         prestamos,
