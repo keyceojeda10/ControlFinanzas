@@ -90,9 +90,9 @@ export default function InstallButton({ variant = 'mobile' }) {
   // iOS instructions modal
   if (showIOSGuide) {
     return (
-      <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/60" onClick={() => setShowIOSGuide(false)}>
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 px-4" onClick={() => setShowIOSGuide(false)}>
         <div
-          className="w-full max-w-sm bg-[#1a1a1a] border border-[#2a2a2a] rounded-t-[20px] sm:rounded-[20px] p-5 mx-4 mb-0 sm:mb-4"
+          className="w-full max-w-sm bg-[#1a1a1a] border border-[#2a2a2a] rounded-[20px] p-5"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-between mb-4">
