@@ -13,8 +13,6 @@ export default function OfflineProvider({ children }) {
   const [isOnline, setIsOnline]         = useState(true)
   const [pendingCount, setPendingCount] = useState(0)
   const [syncResult, setSyncResult]     = useState(null)
-  const [showInstall, setShowInstall]   = useState(false)
-  const [deferredPrompt, setDeferredPrompt] = useState(null)
 
   // Track online/offline
   useEffect(() => {
@@ -70,25 +68,6 @@ export default function OfflineProvider({ children }) {
     return () => window.removeEventListener('paymentQueued', onPaymentQueued)
   }, [refreshPending])
 
-  // PWA install prompt
-  useEffect(() => {
-    const handler = (e) => {
-      e.preventDefault()
-      setDeferredPrompt(e)
-      setShowInstall(true)
-    }
-    window.addEventListener('beforeinstallprompt', handler)
-    return () => window.removeEventListener('beforeinstallprompt', handler)
-  }, [])
-
-  const installApp = async () => {
-    if (!deferredPrompt) return
-    deferredPrompt.prompt()
-    await deferredPrompt.userChoice
-    setDeferredPrompt(null)
-    setShowInstall(false)
-  }
-
   const manualSync = async () => {
     if (!navigator.onLine) return
     const result = await sincronizarPagos()
@@ -140,28 +119,6 @@ export default function OfflineProvider({ children }) {
         </div>
       )}
 
-      {/* Install prompt */}
-      {showInstall && (
-        <div className="fixed bottom-4 left-4 right-4 z-[9998] bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-4 shadow-xl flex items-center gap-3 sm:left-auto sm:right-4 sm:max-w-sm">
-          <div className="w-10 h-10 rounded-[10px] bg-[#f5c518] flex items-center justify-center shrink-0">
-            <svg className="w-5 h-5 text-[#0a0a0a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-white">Instalar app</p>
-            <p className="text-[10px] text-[#888888]">Acceso rapido + funciona sin internet</p>
-          </div>
-          <div className="flex gap-2 shrink-0">
-            <button onClick={() => setShowInstall(false)} className="text-xs text-[#888888] hover:text-white">
-              No
-            </button>
-            <button onClick={installApp} className="text-xs font-bold text-[#f5c518] hover:text-[#f0b800]">
-              Instalar
-            </button>
-          </div>
-        </div>
-      )}
     </OfflineContext.Provider>
   )
 }

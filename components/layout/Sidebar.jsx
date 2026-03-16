@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { useAuth } from '@/hooks/useAuth'
 import { useState, useEffect } from 'react'
+import InstallButton from './InstallButton'
 
 const NAV_OWNER = [
   {
@@ -262,6 +263,7 @@ export default function Sidebar() {
             <p className="text-[10px] text-[#888888]">{{ owner: 'Administrador', cobrador: 'Cobrador', superadmin: 'Super Admin' }[session?.user?.rol] ?? session?.user?.rol}</p>
           </div>
         </div>
+        <InstallButton variant="desktop" />
         <button
           onClick={() => signOut({ callbackUrl: '/login' })}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm text-[#888888] hover:bg-[#1a1a1a] hover:text-[#ef4444] transition-all duration-150"

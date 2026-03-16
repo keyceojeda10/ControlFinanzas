@@ -7,6 +7,7 @@ import { usePathname }  from 'next/navigation'
 import { signOut }      from 'next-auth/react'
 import { useAuth }      from '@/hooks/useAuth'
 import { useEffect, useRef, useState } from 'react'
+import InstallButton    from './InstallButton'
 
 const PAGE_TITLES = {
   '/dashboard':     'Dashboard',
@@ -142,6 +143,8 @@ export default function Header() {
 
       {/* Actions */}
       <div className="flex items-center gap-2">
+        {/* Install app button */}
+        <InstallButton variant="mobile" />
         {/* Menu button */}
         <div className="relative" ref={menuRef}>
           <button
