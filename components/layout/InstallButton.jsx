@@ -102,21 +102,22 @@ export default function InstallButton({ variant = 'mobile' }) {
           className="w-full max-w-sm bg-[#1a1a1a] border border-[#2a2a2a] rounded-[20px] p-5"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-semibold text-white">Instalar Control Finanzas</h3>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-base font-semibold text-white">Usar sin internet</h3>
             <button onClick={() => setShowIOSGuide(false)} className="text-[#888] hover:text-white">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
+          <p className="text-xs text-[#888] mb-4">Instala la app para acceder a tus clientes, prestamos y cobros aunque no tengas conexion.</p>
 
           {isChromeIOS() ? (
             // Chrome on iOS — cannot install PWAs, must use Safari
             <div className="space-y-4">
               <div className="bg-[#2a2a2a] rounded-[12px] p-3.5">
                 <p className="text-sm text-[#ccc] leading-relaxed">
-                  En iPhone, solo <strong className="text-white">Safari</strong> permite instalar apps. Chrome no tiene esta opcion.
+                  En iPhone, solo <strong className="text-white">Safari</strong> permite instalar apps. Abre en Safari para poder usarla sin internet.
                 </p>
               </div>
 
@@ -182,14 +183,14 @@ export default function InstallButton({ variant = 'mobile' }) {
                 <div className="w-7 h-7 rounded-full bg-[#f5c518] flex items-center justify-center text-[#0a0a0a] text-xs font-bold shrink-0">3</div>
                 <div>
                   <p className="text-sm text-white">Toca <strong>&quot;Agregar&quot;</strong></p>
-                  <p className="text-xs text-[#888]">La app aparecera en tu pantalla de inicio como una app nativa</p>
+                  <p className="text-xs text-[#888]">La app se instalara y podras usarla sin internet</p>
                 </div>
               </div>
             </div>
           ) : (
             // Android/desktop fallback
             <div className="space-y-3">
-              <p className="text-sm text-[#ccc]">Abre el menu de tu navegador (tres puntos) y selecciona <strong className="text-white">&quot;Instalar app&quot;</strong> o <strong className="text-white">&quot;Agregar a pantalla de inicio&quot;</strong>.</p>
+              <p className="text-sm text-[#ccc]">Abre el menu de tu navegador (tres puntos) y selecciona <strong className="text-white">&quot;Instalar app&quot;</strong> o <strong className="text-white">&quot;Agregar a pantalla de inicio&quot;</strong> para usar el sistema sin conexion a internet.</p>
             </div>
           )}
 
@@ -210,12 +211,12 @@ export default function InstallButton({ variant = 'mobile' }) {
       <button
         onClick={handleInstall}
         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[rgba(245,197,24,0.1)] border border-[rgba(245,197,24,0.2)] text-[#f5c518] hover:bg-[rgba(245,197,24,0.15)] transition-colors"
-        title="Instalar app"
+        title="Instalar para usar sin internet"
       >
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.14 0M1.394 9.393c5.857-5.858 15.355-5.858 21.213 0" />
         </svg>
-        <span className="text-[11px] font-medium">App</span>
+        <span className="text-[11px] font-medium">Offline</span>
       </button>
     )
   }
@@ -225,12 +226,12 @@ export default function InstallButton({ variant = 'mobile' }) {
     <button
       onClick={handleInstall}
       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm text-[#888888] hover:bg-[rgba(245,197,24,0.08)] hover:text-[#f5c518] transition-all duration-150"
-      title="Instalar app offline"
+      title="Instalar para usar sin internet"
     >
       <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.14 0M1.394 9.393c5.857-5.858 15.355-5.858 21.213 0" />
       </svg>
-      Instalar app
+      Usar sin internet
     </button>
   )
 }
