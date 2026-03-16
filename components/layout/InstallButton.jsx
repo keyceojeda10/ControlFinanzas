@@ -15,11 +15,18 @@ function isIOS() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream
 }
 
+// Detect Chrome on iOS (CriOS) — Chrome on iOS cannot install PWAs, only Safari can
+function isChromeIOS() {
+  if (typeof navigator === 'undefined') return false
+  return isIOS() && /CriOS/.test(navigator.userAgent)
+}
+
 export default function InstallButton({ variant = 'mobile' }) {
   const [showButton, setShowButton] = useState(false)
   const [deferredPrompt, setDeferredPrompt] = useState(null)
   const [showIOSGuide, setShowIOSGuide] = useState(false)
   const [dismissed, setDismissed] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     // Don't show if already installed
@@ -104,13 +111,57 @@ export default function InstallButton({ variant = 'mobile' }) {
             </button>
           </div>
 
-          {isIOS() ? (
+          {isChromeIOS() ? (
+            // Chrome on iOS — cannot install PWAs, must use Safari
+            <div className="space-y-4">
+              <div className="bg-[#2a2a2a] rounded-[12px] p-3.5">
+                <p className="text-sm text-[#ccc] leading-relaxed">
+                  En iPhone, solo <strong className="text-white">Safari</strong> permite instalar apps. Chrome no tiene esta opcion.
+                </p>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="w-7 h-7 rounded-full bg-[#f5c518] flex items-center justify-center text-[#0a0a0a] text-xs font-bold shrink-0">1</div>
+                <div>
+                  <p className="text-sm text-white">Copia el enlace de la app</p>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(window.location.origin)
+                      setCopied(true)
+                      setTimeout(() => setCopied(false), 2000)
+                    }}
+                    className="mt-2 flex items-center gap-2 px-3 py-2 rounded-[8px] bg-[#333] text-xs text-white hover:bg-[#444] transition-colors"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                    </svg>
+                    {copied ? 'Copiado!' : 'Copiar enlace'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="w-7 h-7 rounded-full bg-[#f5c518] flex items-center justify-center text-[#0a0a0a] text-xs font-bold shrink-0">2</div>
+                <div>
+                  <p className="text-sm text-white">Abre <strong>Safari</strong> y pega el enlace</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="w-7 h-7 rounded-full bg-[#f5c518] flex items-center justify-center text-[#0a0a0a] text-xs font-bold shrink-0">3</div>
+                <div>
+                  <p className="text-sm text-white">En Safari, toca <strong>Compartir</strong> y luego <strong>&quot;Agregar a inicio&quot;</strong></p>
+                </div>
+              </div>
+            </div>
+          ) : isIOS() ? (
+            // Safari on iOS — standard install flow
             <div className="space-y-4">
               <div className="flex items-start gap-3">
                 <div className="w-7 h-7 rounded-full bg-[#f5c518] flex items-center justify-center text-[#0a0a0a] text-xs font-bold shrink-0">1</div>
                 <div>
                   <p className="text-sm text-white">Toca el boton de <strong>Compartir</strong></p>
-                  <p className="text-xs text-[#888]">El icono de cuadrado con flecha hacia arriba en la barra de Safari</p>
+                  <p className="text-xs text-[#888]">El icono de cuadrado con flecha hacia arriba en la barra inferior de Safari</p>
                   <div className="mt-1.5 flex items-center justify-center w-8 h-8 bg-[#2a2a2a] rounded-lg">
                     <svg className="w-5 h-5 text-[#007AFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -136,6 +187,7 @@ export default function InstallButton({ variant = 'mobile' }) {
               </div>
             </div>
           ) : (
+            // Android/desktop fallback
             <div className="space-y-3">
               <p className="text-sm text-[#ccc]">Abre el menu de tu navegador (tres puntos) y selecciona <strong className="text-white">&quot;Instalar app&quot;</strong> o <strong className="text-white">&quot;Agregar a pantalla de inicio&quot;</strong>.</p>
             </div>
