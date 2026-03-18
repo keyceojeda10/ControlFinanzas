@@ -47,10 +47,9 @@ function verifyFacebookSignature(rawBody, signature) {
       Buffer.from(expectedSig)
     )
     if (!valid) {
-      console.warn('[Leads] Firma no coincide. Recibida:', signature.slice(0, 20), '... Esperada:', expectedSig.slice(0, 20), '...')
-      console.warn('[Leads] Aceptando de todas formas para no perder leads')
+      console.warn('[Leads] Firma no coincide - aceptando de todas formas')
     }
-    return true // Siempre aceptar, solo logear si no coincide
+    return true
   } catch {
     return true
   }
@@ -63,17 +62,16 @@ export async function POST(request) {
     const signature = request.headers.get('x-hub-signature-256')
 
     if (!verifyFacebookSignature(rawBody, signature)) {
-      console.warn('[Leads] Firma inválida o ausente - request rechazado')
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
     }
 
     const body = JSON.parse(rawBody)
 
-    // Facebook sends { object: 'page', entry: [...] }
     if (body.object !== 'page') {
       return NextResponse.json({ status: 'ignored' })
     }
 
+    // Procesar cada lead en background para no bloquear la respuesta a Facebook
     for (const entry of body.entry || []) {
       for (const change of entry.changes || []) {
         if (change.field !== 'leadgen') continue
@@ -82,39 +80,66 @@ export async function POST(request) {
         const adId = change.value?.ad_id || ''
         const createdTime = change.value?.created_time
 
-        // Fetch lead data from Facebook Graph API
-        const leadData = await fetchLeadFromFacebook(leadgenId)
+        console.log('[Leads] Webhook recibido - leadgen_id:', leadgenId)
 
-        const nombre = leadData?.nombre || 'Sin nombre'
-        const telefono = leadData?.telefono || ''
-        const cantClientes = leadData?.cantClientes || ''
-
-        // Save to DB
-        try {
-          await prisma.lead.create({
-            data: { nombre, telefono, cantClientes, anuncioId: adId }
-          })
-        } catch (dbErr) {
-          console.error('[Leads] DB error:', dbErr.message)
-        }
-
-        // Send Telegram notification (always, even if FB API failed)
-        await sendTelegramNotification({ nombre, telefono, cantClientes, anuncioId: adId, createdTime, leadgenId })
+        // Procesar en background (no await) para responder 200 rapido a Facebook
+        processLead(leadgenId, adId, createdTime).catch(err => {
+          console.error('[Leads] Error procesando lead:', err)
+        })
       }
     }
 
     return NextResponse.json({ status: 'ok' })
   } catch (error) {
     console.error('[Webhook leads]', error)
-    return NextResponse.json({ status: 'ok' }) // Always 200 to Facebook
+    return NextResponse.json({ status: 'ok' })
   }
+}
+
+// Procesar lead con reintentos (Facebook a veces tarda en hacer disponible el lead)
+async function processLead(leadgenId, adId, createdTime) {
+  let leadData = null
+
+  // Intentar hasta 3 veces con delay creciente (2s, 5s, 10s)
+  const delays = [2000, 5000, 10000]
+  for (let i = 0; i < delays.length; i++) {
+    await sleep(delays[i])
+    leadData = await fetchLeadFromFacebook(leadgenId)
+    if (leadData && leadData.nombre) {
+      console.log('[Leads] Datos obtenidos al intento', i + 1, '- nombre:', leadData.nombre)
+      break
+    }
+    console.log('[Leads] Intento', i + 1, 'sin datos, reintentando...')
+  }
+
+  const nombre = leadData?.nombre || 'Sin nombre'
+  const telefono = leadData?.telefono || ''
+  const cantClientes = leadData?.cantClientes || ''
+
+  // Guardar en DB
+  try {
+    await prisma.lead.create({
+      data: { nombre, telefono, cantClientes, anuncioId: adId }
+    })
+    console.log('[Leads] Guardado en DB:', nombre, telefono)
+  } catch (dbErr) {
+    console.error('[Leads] DB error:', dbErr.message)
+  }
+
+  // Enviar Telegram siempre
+  await sendTelegramNotification({ nombre, telefono, cantClientes, anuncioId: adId, createdTime, leadgenId })
+  console.log('[Leads] Telegram enviado para:', nombre)
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
 }
 
 async function fetchLeadFromFacebook(leadgenId) {
   if (!leadgenId) return null
   const pageToken = process.env.FB_PAGE_ACCESS_TOKEN
   if (!pageToken) {
-    console.warn('[Leads] No FB_PAGE_ACCESS_TOKEN, cannot fetch lead data')
+    console.warn('[Leads] No FB_PAGE_ACCESS_TOKEN')
     return null
   }
 
@@ -124,7 +149,7 @@ async function fetchLeadFromFacebook(leadgenId) {
     )
     const data = await res.json()
     if (data.error) {
-      console.error('[Leads] Facebook API error:', data.error)
+      console.error('[Leads] FB API error (intento):', data.error.message)
       return null
     }
 
@@ -138,7 +163,7 @@ async function fetchLeadFromFacebook(leadgenId) {
     }
     return fields
   } catch (err) {
-    console.error('[Leads] Error fetching from Facebook:', err)
+    console.error('[Leads] Fetch error:', err.message)
     return null
   }
 }
@@ -153,7 +178,6 @@ async function sendTelegramNotification({ nombre, telefono, cantClientes, anunci
 
   const tel = telefono ? telefono.replace(/\D/g, '') : ''
 
-  // Build WhatsApp quick-contact links (primary actions)
   let whatsappSection = ''
   if (tel) {
     const msgCorto = encodeURIComponent(
