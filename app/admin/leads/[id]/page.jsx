@@ -217,6 +217,34 @@ function MensajeCard({ msg, lead, enviados, onToggleEnviado, onWhatsAppClick }) 
           {msg.condition}
         </p>
 
+        {/* Imagen adjunta (si aplica) */}
+        {msg.image && (
+          <div className="space-y-2">
+            <div className="relative rounded-[10px] overflow-hidden border border-[#222222]">
+              <img
+                src={msg.image}
+                alt="Imagen para adjuntar"
+                className="w-full h-auto"
+              />
+              <div className="absolute top-2 right-2 flex gap-1.5">
+                <a
+                  href={msg.image}
+                  download
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-[8px] bg-black/70 backdrop-blur-sm border border-[#333333] text-[10px] text-white font-medium hover:bg-black/90 transition-all"
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Descargar
+                </a>
+              </div>
+            </div>
+            <p className="text-[10px] text-[#f59e0b] font-medium">
+              Enviar esta imagen PRIMERO, luego el texto
+            </p>
+          </div>
+        )}
+
         {/* Preview del mensaje */}
         <div
           className={[
