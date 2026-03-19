@@ -191,42 +191,25 @@ async function sendTelegramNotification({ nombre, telefono, cantClientes, anunci
 
   let whatsappSection = ''
   if (tel) {
-    // Determinar volumen para personalizar mensaje
     const cant = (cantClientes || '').toLowerCase()
-    const esPoco = cant.includes('menos') || cant.includes('20')
-    const esMedio = cant.includes('50') || cant.includes('100')
     const esMucho = cant.includes('más') || cant.includes('mas') || cant.includes('100')
 
     let msgTexto = ''
-    if (esPoco) {
+    if (esMucho) {
       msgTexto = [
         `Hola ${nombreSaludo}, ¿cómo estás? 👋`,
         ``,
-        `Te saluda Carlos de *Control Finanzas*. Te escribo porque vimos que estás interesado en nuestro sistema de gestión de préstamos.`,
+        `Soy Carlos de *Control Finanzas*. Vi que te interesó nuestro sistema para prestamistas. Con el volumen de clientes que manejas, te ayudaría mucho tener tus préstamos, cobros, rutas y cobradores organizados en un solo lugar desde el celular.`,
         ``,
-        `Con Control Finanzas puedes llevar el control de tus clientes, préstamos, cobros y rutas desde el celular, todo organizado en un solo lugar.`,
-        ``,
-        `¿Actualmente cómo llevas el control de tu cartera? ¿Cuaderno, Excel o alguna otra forma?`,
-      ].join('\n')
-    } else if (esMucho) {
-      msgTexto = [
-        `Hola ${nombreSaludo}, ¿cómo estás? 👋`,
-        ``,
-        `Te saluda Carlos de *Control Finanzas*. Te escribo porque vimos que estás interesado en nuestro sistema y que manejas un volumen considerable de clientes.`,
-        ``,
-        `Con esa cantidad, llevar el control manual se vuelve complicado. Control Finanzas te permite gestionar préstamos, cobros, rutas y cobradores desde el celular, sin perder el rastro de ningún cliente.`,
-        ``,
-        `¿Actualmente cómo estás gestionando tu cartera? ¿Cuaderno, Excel o algún sistema?`,
+        `¿Actualmente cómo estás manejando tu cartera?`,
       ].join('\n')
     } else {
       msgTexto = [
         `Hola ${nombreSaludo}, ¿cómo estás? 👋`,
         ``,
-        `Te saluda Carlos de *Control Finanzas*. Te escribo porque vimos que estás interesado en nuestro sistema de gestión de préstamos.`,
+        `Soy Carlos de *Control Finanzas*. Vi que te interesó nuestro sistema para prestamistas. Es una app donde puedes gestionar tus préstamos, cobros, rutas y cobradores en un solo lugar desde el celular.`,
         ``,
-        `Control Finanzas te ayuda a organizar tus clientes, préstamos, cobros diarios y rutas de cobradores, todo desde el celular.`,
-        ``,
-        `¿Actualmente cómo llevas el control de tu cartera? ¿Cuaderno, Excel o alguna otra forma?`,
+        `¿Actualmente cómo estás manejando tus préstamos?`,
       ].join('\n')
     }
 
