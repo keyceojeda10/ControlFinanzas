@@ -116,8 +116,15 @@ async function processLead(leadgenId, adId, createdTime) {
   const telefono = leadData?.telefono || ''
   const cantClientes = leadData?.cantClientes || ''
 
-  // Guardar en DB
+  // Guardar en DB (con protección contra duplicados)
   try {
+    if (telefono) {
+      const exists = await prisma.lead.findFirst({ where: { telefono } })
+      if (exists) {
+        console.log('[Leads] Lead duplicado, ignorando:', nombre, telefono)
+        return
+      }
+    }
     await prisma.lead.create({
       data: { nombre, telefono, cantClientes, anuncioId: adId }
     })
@@ -177,25 +184,35 @@ async function sendTelegramNotification({ nombre, telefono, cantClientes, anunci
     : new Date().toLocaleString('es-CO', fechaOpts)
 
   const tel = telefono ? telefono.replace(/\D/g, '') : ''
+  // Extraer solo el primer nombre para que suene personal
+  const primerNombre = nombre.split(' ')[0]
+  // Capitalizar: "CARLOS" → "Carlos", "carlos" → "Carlos"
+  const nombreSaludo = primerNombre.charAt(0).toUpperCase() + primerNombre.slice(1).toLowerCase()
 
   let whatsappSection = ''
   if (tel) {
-    const msgCorto = encodeURIComponent(
-      `Hola ${nombre}! Soy Carlos de Control Finanzas 👋\n\nVi que te interesó el sistema para manejar tu cartera de préstamos.\n\n¿Actualmente cómo llevas el control? ¿Cuaderno, Excel o alguna app?`
-    )
-    const cantLabel = cantClientes || '50'
-    const msgLargo = encodeURIComponent(
-      `Hola ${nombre}! Soy Carlos de Control Finanzas 👋\n\nVi que manejas más de ${cantLabel} clientes. Con ese volumen, un sistema te ahorra horas al día y evita errores en los cobros.\n\n¿Actualmente cómo llevas el control de tu cartera?`
-    )
+    // Determinar volumen para personalizar mensaje
+    const cant = (cantClientes || '').toLowerCase()
+    const esPoco = cant.includes('menos') || cant.includes('20')
+    const esMedio = cant.includes('50') || cant.includes('100')
+    const esMucho = cant.includes('más') || cant.includes('mas') || cant.includes('100')
+
+    let msgTexto = ''
+    if (esPoco) {
+      msgTexto = `Hola ${nombreSaludo}, ¿cómo estás? 👋\n\nTe saluda Carlos de *Control Finanzas*. Te escribo porque vimos que estás interesado en nuestro sistema de gestión de préstamos.\n\nCon Control Finanzas puedes llevar el control de tus clientes, préstamos, cobros y rutas desde el celular, todo organizado en un solo lugar.\n\n¿Actualmente cómo llevas el control de tu cartera? ¿Cuaderno, Excel o alguna otra forma?`
+    } else if (esMucho) {
+      msgTexto = `Hola ${nombreSaludo}, ¿cómo estás? 👋\n\nTe saluda Carlos de *Control Finanzas*. Te escribo porque vimos que estás interesado en nuestro sistema y que manejas un volumen considerable de clientes.\n\nCon esa cantidad, llevar el control manual se vuelve complicado. Control Finanzas te permite gestionar préstamos, cobros, rutas y cobradores desde el celular, sin perder el rastro de ningún cliente.\n\n¿Actualmente cómo estás gestionando tu cartera? ¿Cuaderno, Excel o algún sistema?`
+    } else {
+      msgTexto = `Hola ${nombreSaludo}, ¿cómo estás? 👋\n\nTe saluda Carlos de *Control Finanzas*. Te escribo porque vimos que estás interesado en nuestro sistema de gestión de préstamos.\n\nControl Finanzas te ayuda a organizar tus clientes, préstamos, cobros diarios y rutas de cobradores, todo desde el celular.\n\n¿Actualmente cómo llevas el control de tu cartera? ¿Cuaderno, Excel o alguna otra forma?`
+    }
+
+    const msgEncoded = encodeURIComponent(msgTexto)
     whatsappSection = [
       ``,
       `--- ⚡ Contactar rapido ---`,
       ``,
-      `💬 WhatsApp (<50 clientes):`,
-      `https://wa.me/${tel}?text=${msgCorto}`,
-      ``,
-      `💬 WhatsApp (50+ clientes):`,
-      `https://wa.me/${tel}?text=${msgLargo}`,
+      `💬 WhatsApp:`,
+      `https://wa.me/${tel}?text=${msgEncoded}`,
     ].join('\n')
   }
 
