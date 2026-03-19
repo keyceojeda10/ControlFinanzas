@@ -105,11 +105,35 @@ async function sendTelegram(nombre, telefono, cantClientes, createdTime) {
 
     let msgTexto = ''
     if (esPoco) {
-      msgTexto = `Hola ${nombreSaludo}, ¿cómo estás? 👋\n\nTe saluda Carlos de *Control Finanzas*. Te escribo porque vimos que estás interesado en nuestro sistema de gestión de préstamos.\n\nCon Control Finanzas puedes llevar el control de tus clientes, préstamos, cobros y rutas desde el celular, todo organizado en un solo lugar.\n\n¿Actualmente cómo llevas el control de tu cartera? ¿Cuaderno, Excel o alguna otra forma?`
+      msgTexto = [
+        `Hola ${nombreSaludo}, ¿cómo estás? 👋`,
+        ``,
+        `Te saluda Carlos de *Control Finanzas*. Te escribo porque vimos que estás interesado en nuestro sistema de gestión de préstamos.`,
+        ``,
+        `Con Control Finanzas puedes llevar el control de tus clientes, préstamos, cobros y rutas desde el celular, todo organizado en un solo lugar.`,
+        ``,
+        `¿Actualmente cómo llevas el control de tu cartera? ¿Cuaderno, Excel o alguna otra forma?`,
+      ].join('\n')
     } else if (esMucho) {
-      msgTexto = `Hola ${nombreSaludo}, ¿cómo estás? 👋\n\nTe saluda Carlos de *Control Finanzas*. Te escribo porque vimos que estás interesado en nuestro sistema y que manejas un volumen considerable de clientes.\n\nCon esa cantidad, llevar el control manual se vuelve complicado. Control Finanzas te permite gestionar préstamos, cobros, rutas y cobradores desde el celular, sin perder el rastro de ningún cliente.\n\n¿Actualmente cómo estás gestionando tu cartera? ¿Cuaderno, Excel o algún sistema?`
+      msgTexto = [
+        `Hola ${nombreSaludo}, ¿cómo estás? 👋`,
+        ``,
+        `Te saluda Carlos de *Control Finanzas*. Te escribo porque vimos que estás interesado en nuestro sistema y que manejas un volumen considerable de clientes.`,
+        ``,
+        `Con esa cantidad, llevar el control manual se vuelve complicado. Control Finanzas te permite gestionar préstamos, cobros, rutas y cobradores desde el celular, sin perder el rastro de ningún cliente.`,
+        ``,
+        `¿Actualmente cómo estás gestionando tu cartera? ¿Cuaderno, Excel o algún sistema?`,
+      ].join('\n')
     } else {
-      msgTexto = `Hola ${nombreSaludo}, ¿cómo estás? 👋\n\nTe saluda Carlos de *Control Finanzas*. Te escribo porque vimos que estás interesado en nuestro sistema de gestión de préstamos.\n\nControl Finanzas te ayuda a organizar tus clientes, préstamos, cobros diarios y rutas de cobradores, todo desde el celular.\n\n¿Actualmente cómo llevas el control de tu cartera? ¿Cuaderno, Excel o alguna otra forma?`
+      msgTexto = [
+        `Hola ${nombreSaludo}, ¿cómo estás? 👋`,
+        ``,
+        `Te saluda Carlos de *Control Finanzas*. Te escribo porque vimos que estás interesado en nuestro sistema de gestión de préstamos.`,
+        ``,
+        `Control Finanzas te ayuda a organizar tus clientes, préstamos, cobros diarios y rutas de cobradores, todo desde el celular.`,
+        ``,
+        `¿Actualmente cómo llevas el control de tu cartera? ¿Cuaderno, Excel o alguna otra forma?`,
+      ].join('\n')
     }
 
     const msgEncoded = encodeURIComponent(msgTexto)
