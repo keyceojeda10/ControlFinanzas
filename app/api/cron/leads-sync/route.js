@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { sendLeadNotification } from '@/lib/telegram'
+import { sendLeadNotification, buildFirstMessage } from '@/lib/telegram'
+import { sendWhatsApp } from '@/lib/baileys-client'
 
 const PAGE_TOKEN = process.env.FB_PAGE_ACCESS_TOKEN
 const FORM_ID = process.env.FB_FORM_ID || '933400739047391'
@@ -63,6 +64,21 @@ export async function POST(req) {
         })
         console.log('[Leads Sync] Nuevo lead guardado:', nombre, telefono)
         nuevos++
+
+        // Enviar WhatsApp automático (fire-and-forget)
+        if (telefono) {
+          const primerMensaje = buildFirstMessage(nombre)
+          sendWhatsApp(telefono, primerMensaje)
+            .then(result => {
+              if (result.sent) {
+                prisma.lead.update({
+                  where: { id: lead.id },
+                  data: { mensajesEnviados: JSON.stringify([{ tipo: 'auto_primer_contacto', fecha: new Date().toISOString() }]) },
+                }).catch(() => {})
+              }
+            })
+            .catch(() => {})
+        }
 
         // Enviar Telegram con botones interactivos
         const createdTime = fbLead.created_time
