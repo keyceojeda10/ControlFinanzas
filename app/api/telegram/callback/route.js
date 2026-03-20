@@ -37,9 +37,6 @@ export async function POST(request) {
       case 'precio': {
         await answerCallback(callbackId, 'Enviando precios...')
         const precioMsg = buildPrecioMessage()
-        await editMessageText(messageId, null, null) // no-op, we send new message
-          .catch(() => {}) // ignore if edit fails
-        // Send precio as a new message (easier to copy)
         const { sendMessage } = await import('@/lib/telegram')
         await sendMessage(precioMsg)
         break
