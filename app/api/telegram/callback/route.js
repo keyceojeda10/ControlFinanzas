@@ -22,6 +22,11 @@ const RESP_MAP = {
   resp_solo: 8,      // Cobra solo
   resp_cobr: 9,      // Tiene cobradores
   resp_reg: 10,      // Ya se registró
+  resp_web: 11,      // No es app, es sistema web
+  resp_perm: 12,     // Permisos de cobradores
+  resp_seg: 13,      // Seguridad / robo de celular
+  resp_video: 14,    // Video / demostración
+  resp_cobro: 15,    // Sin cobros adicionales
 }
 
 // Telegram Bot webhook — receives button taps from inline keyboards
