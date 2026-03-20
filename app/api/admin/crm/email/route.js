@@ -28,9 +28,8 @@ export async function POST(req) {
   <div style="max-width:560px;margin:0 auto;padding:32px 20px;">
     <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;">
       <tr><td align="center" style="padding-bottom:12px;">
-        <img src="https://app.control-finanzas.com/Logo_CF_Mail.png" width="48" height="48" alt="Control Finanzas" style="border-radius:8px;display:block;" />
+        <img src="https://app.control-finanzas.com/Logo_CF_Mail2.png" width="200" alt="Control Finanzas" style="display:block;height:auto;margin:0 auto;" />
       </td></tr>
-      <tr><td align="center"><h1 style="color:#f5c518;font-size:20px;margin:0;">Control Finanzas</h1></td></tr>
     </table>
     <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:16px;padding:28px;">
       <div style="color:#e0e0e0;font-size:14px;line-height:1.6;white-space:pre-wrap;">${escapeHtml(body)}</div>
