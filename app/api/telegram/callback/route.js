@@ -13,6 +13,7 @@ import {
 import { MENSAJES } from '@/lib/leadMessages'
 
 const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET
+const NOTIF_WEBHOOK_SECRET = process.env.TELEGRAM_NOTIF_WEBHOOK_SECRET
 
 // Map callback actions to message template IDs
 const RESP_MAP = {
@@ -34,9 +35,15 @@ const RESP_MAP = {
 }
 
 // Telegram Bot webhook — receives button taps from inline keyboards
+// Supports both bots via ?bot=leads|notif query param
 export async function POST(request) {
   const { searchParams } = new URL(request.url)
-  if (WEBHOOK_SECRET && searchParams.get('secret') !== WEBHOOK_SECRET) {
+  const botType = searchParams.get('bot') || 'leads'
+  const secret = searchParams.get('secret')
+
+  // Validate secret based on which bot is calling
+  const expectedSecret = botType === 'notif' ? NOTIF_WEBHOOK_SECRET : WEBHOOK_SECRET
+  if (expectedSecret && secret !== expectedSecret) {
     return NextResponse.json({ ok: true })
   }
 
@@ -51,7 +58,7 @@ export async function POST(request) {
 
     const [action, leadId] = data.split(':')
     if (!action || !leadId) {
-      await answerCallback(callbackId, 'Accion no valida')
+      await answerCallback(callbackId, 'Accion no valida', botType)
       return NextResponse.json({ ok: true })
     }
 
@@ -59,48 +66,49 @@ export async function POST(request) {
     if (RESP_MAP[action] !== undefined) {
       const lead = await prisma.lead.findUnique({ where: { id: leadId } })
       if (!lead) {
-        await answerCallback(callbackId, 'Lead no encontrado')
+        await answerCallback(callbackId, 'Lead no encontrado', botType)
         return NextResponse.json({ ok: true })
       }
 
       const template = MENSAJES.find(m => m.id === RESP_MAP[action])
       if (!template) {
-        await answerCallback(callbackId, 'Template no encontrado')
+        await answerCallback(callbackId, 'Template no encontrado', botType)
         return NextResponse.json({ ok: true })
       }
 
-      await answerCallback(callbackId, template.label)
+      await answerCallback(callbackId, template.label, botType)
       const msg = template.generate({ nombre: lead.nombre })
 
-      // Send as copiable message
+      // Send as copiable message (to the same bot/chat that triggered it)
       const text = [
         `📋 <b>${template.label}</b> — ${formatNombreSaludo(lead.nombre)}`,
         ``,
         `<code>${msg}</code>`,
       ].join('\n')
-      await sendMessage(text)
+      await sendMessage(text, null, botType)
       return NextResponse.json({ ok: true })
     }
 
     switch (action) {
       case 'precio': {
-        await answerCallback(callbackId, 'Enviando precios...')
+        await answerCallback(callbackId, 'Enviando precios...', botType)
         const precioMsg = buildPrecioMessage()
-        await sendMessage(precioMsg)
+        await sendMessage(precioMsg, null, botType)
         break
       }
 
       case 'respuestas': {
         const lead = await prisma.lead.findUnique({ where: { id: leadId } })
         if (!lead) {
-          await answerCallback(callbackId, 'Lead no encontrado')
+          await answerCallback(callbackId, 'Lead no encontrado', botType)
           break
         }
-        await answerCallback(callbackId, 'Respuestas rápidas')
+        await answerCallback(callbackId, 'Respuestas rápidas', botType)
         const keyboard = buildRespuestasKeyboard(leadId)
         await sendMessage(
           `📋 <b>Respuestas rápidas</b> — ${formatNombreSaludo(lead.nombre)}`,
-          keyboard
+          keyboard,
+          botType
         )
         break
       }
@@ -108,7 +116,7 @@ export async function POST(request) {
       case 'contactado': {
         const lead = await prisma.lead.findUnique({ where: { id: leadId } })
         if (!lead) {
-          await answerCallback(callbackId, 'Lead no encontrado')
+          await answerCallback(callbackId, 'Lead no encontrado', botType)
           break
         }
 
@@ -117,7 +125,7 @@ export async function POST(request) {
           data: { estado: 'contactado' },
         })
 
-        await answerCallback(callbackId, `${formatNombreSaludo(lead.nombre)} marcado como contactado`)
+        await answerCallback(callbackId, `${formatNombreSaludo(lead.nombre)} marcado como contactado`, botType)
 
         // Mantener todos los botones pero agregar indicador de contactado
         if (messageId) {
@@ -138,7 +146,7 @@ export async function POST(request) {
             { text: '❌ Descartar', callback_data: `descartado:${leadId}` },
           ])
 
-          await editMessageReplyMarkup(messageId, { inline_keyboard: rows })
+          await editMessageReplyMarkup(messageId, { inline_keyboard: rows }, botType)
         }
         break
       }
@@ -146,7 +154,7 @@ export async function POST(request) {
       case 'descartado': {
         const lead = await prisma.lead.findUnique({ where: { id: leadId } })
         if (!lead) {
-          await answerCallback(callbackId, 'Lead no encontrado')
+          await answerCallback(callbackId, 'Lead no encontrado', botType)
           break
         }
 
@@ -155,24 +163,24 @@ export async function POST(request) {
           data: { estado: 'descartado' },
         })
 
-        await answerCallback(callbackId, `${formatNombreSaludo(lead.nombre)} descartado`)
+        await answerCallback(callbackId, `${formatNombreSaludo(lead.nombre)} descartado`, botType)
 
         if (messageId) {
           await editMessageReplyMarkup(messageId, {
             inline_keyboard: [[
               { text: '❌ DESCARTADO', callback_data: 'noop:0' },
             ]],
-          })
+          }, botType)
         }
         break
       }
 
       case 'noop':
-        await answerCallback(callbackId, '')
+        await answerCallback(callbackId, '', botType)
         break
 
       default:
-        await answerCallback(callbackId, 'Accion desconocida')
+        await answerCallback(callbackId, 'Accion desconocida', botType)
     }
 
     return NextResponse.json({ ok: true })
