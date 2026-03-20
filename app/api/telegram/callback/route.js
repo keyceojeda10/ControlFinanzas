@@ -5,6 +5,8 @@ import {
   editMessageReplyMarkup,
   buildPrecioMessage,
   buildRespuestasKeyboard,
+  buildFirstMessage,
+  whatsappLink,
   formatNombreSaludo,
   sendMessage,
 } from '@/lib/telegram'
@@ -27,6 +29,8 @@ const RESP_MAP = {
   resp_seg: 13,      // Seguridad / robo de celular
   resp_video: 14,    // Video / demostración
   resp_cobro: 15,    // Sin cobros adicionales
+  resp_otro: 19,     // Otro método (genérico)
+  resp_post: 20,     // Post-registro (ya verificó correo)
 }
 
 // Telegram Bot webhook — receives button taps from inline keyboards
@@ -115,12 +119,26 @@ export async function POST(request) {
 
         await answerCallback(callbackId, `${formatNombreSaludo(lead.nombre)} marcado como contactado`)
 
+        // Mantener todos los botones pero agregar indicador de contactado
         if (messageId) {
-          await editMessageReplyMarkup(messageId, {
-            inline_keyboard: [[
-              { text: '✅ CONTACTADO', callback_data: 'noop:0' },
-            ]],
-          })
+          const waMsg = buildFirstMessage(lead.nombre)
+          const tel = (lead.telefono || '').replace(/\D/g, '')
+          const waLink = tel ? whatsappLink(tel, waMsg) : null
+
+          const rows = []
+          if (waLink) {
+            rows.push([
+              { text: '📱 WhatsApp', url: waLink },
+              { text: '💬 Respuestas', callback_data: `respuestas:${leadId}` },
+            ])
+          }
+          rows.push([
+            { text: '💰 Precio', callback_data: `precio:${leadId}` },
+            { text: '✅ CONTACTADO', callback_data: `noop:${leadId}` },
+            { text: '❌ Descartar', callback_data: `descartado:${leadId}` },
+          ])
+
+          await editMessageReplyMarkup(messageId, { inline_keyboard: rows })
         }
         break
       }
