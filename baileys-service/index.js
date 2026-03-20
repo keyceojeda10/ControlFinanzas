@@ -1,33 +1,30 @@
 // baileys-service/index.js — Microservicio WhatsApp via Baileys
 // Corre como proceso PM2 separado en el VPS (puerto 3003)
-// Usa pairing code (más confiable desde servidores que QR)
+// Usa pairing code para vincular (más confiable desde servidores)
 
 const express = require('express')
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, delay, makeCacheableSignalKeyStore, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys')
 const pino = require('pino')
 const path = require('path')
 const fs = require('fs')
-const readline = require('readline')
 
 const app = express()
 app.use(express.json())
 
 const PORT = process.env.PORT || 3003
 const SECRET = process.env.BAILEYS_SECRET || 'baileys_cf_2026'
-const PHONE_NUMBER = process.env.PHONE_NUMBER || ''
 const AUTH_DIR = path.join(__dirname, 'auth_info')
 
 // ── Estado global ───────────────────────────────────────
 let sock = null
 let pairingCode = null
 let isConnected = false
-let reconnectAttempts = 0
-const MAX_RECONNECT = 10
+let isPairing = false // bloquea reconexión mientras se vincula
 
 // ── Rate limiter (20 mensajes/hora) ─────────────────────
 const sentTimestamps = []
 const RATE_LIMIT = 20
-const RATE_WINDOW = 3600000 // 1 hora
+const RATE_WINDOW = 3600000
 
 function canSend() {
   const now = Date.now()
@@ -44,7 +41,7 @@ function recordSend() {
 // ── Horario Colombia (8am-8pm) ──────────────────────────
 function isWithinSchedule() {
   const now = new Date()
-  const colombiaOffset = -5 * 60 // UTC-5
+  const colombiaOffset = -5 * 60
   const utcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes()
   const colombiaMinutes = utcMinutes + colombiaOffset
   const colombiaHour = Math.floor(((colombiaMinutes % 1440) + 1440) % 1440 / 60)
@@ -60,12 +57,18 @@ function formatPhone(phone) {
 }
 
 // ── Conectar a WhatsApp ─────────────────────────────────
-async function connectWhatsApp() {
+async function connectWhatsApp(phoneForPairing) {
+  // Cerrar socket anterior si existe
+  if (sock) {
+    try { sock.ev.removeAllListeners(); sock.end(); } catch {}
+    sock = null
+  }
+
   const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR)
   const logger = pino({ level: 'silent' })
-
   const { version } = await fetchLatestBaileysVersion()
-  console.log(`📡 Usando WA versión: ${version.join('.')}`)
+
+  console.log(`📡 Conectando WA v${version.join('.')}...`)
 
   sock = makeWASocket({
     auth: {
@@ -77,18 +80,25 @@ async function connectWhatsApp() {
     version,
     connectTimeoutMs: 60000,
     keepAliveIntervalMs: 25000,
-    retryRequestDelayMs: 2000,
   })
 
-  // Pairing code: si no está registrado, pedir código
-  if (!state.creds.registered) {
-    if (!PHONE_NUMBER) {
-      console.log('\n⚠️ No hay sesión guardada y no se configuró PHONE_NUMBER.')
-      console.log('📱 Configura PHONE_NUMBER en .env con tu número (ej: 573001234567)')
-      console.log('   O usa GET /pair?phone=573001234567 para vincular\n')
-    } else {
-      await requestPairingCode(PHONE_NUMBER)
+  // Si no hay sesión y se pasó un número, solicitar pairing code
+  if (!state.creds.registered && phoneForPairing) {
+    isPairing = true
+    try {
+      await delay(3000)
+      if (sock) {
+        const code = await sock.requestPairingCode(phoneForPairing)
+        pairingCode = code
+        console.log(`\n📱 CÓDIGO: ${code}`)
+        console.log(`   WhatsApp → Dispositivos vinculados → Vincular con número → ${code}\n`)
+      }
+    } catch (err) {
+      console.error('❌ Error pairing code:', err.message)
+      isPairing = false
     }
+  } else if (!state.creds.registered) {
+    console.log('\n⚠️ Sin sesión. Usa GET /pair?phone=573XXXXXXXXX para vincular.\n')
   }
 
   sock.ev.on('connection.update', (update) => {
@@ -96,7 +106,7 @@ async function connectWhatsApp() {
 
     if (connection === 'open') {
       isConnected = true
-      reconnectAttempts = 0
+      isPairing = false
       pairingCode = null
       console.log('✅ WhatsApp conectado exitosamente')
     }
@@ -104,47 +114,31 @@ async function connectWhatsApp() {
     if (connection === 'close') {
       isConnected = false
       const statusCode = lastDisconnect?.error?.output?.statusCode
-      const reason = lastDisconnect?.error?.data?.reason || statusCode
 
-      console.log(`❌ WhatsApp desconectado (código: ${reason})`)
+      console.log(`❌ Desconectado (${statusCode})`)
 
+      // Si estamos en proceso de pairing, NO reconectar automático
+      if (isPairing) {
+        console.log('⏳ Esperando pairing... no reconectar.')
+        return
+      }
+
+      // Si hay sesión guardada y se desconectó, reconectar
       if (statusCode === DisconnectReason.loggedOut || statusCode === 401) {
-        console.log('🔄 Sesión expirada. Limpiando auth para re-vincular...')
-        if (fs.existsSync(AUTH_DIR)) {
-          fs.rmSync(AUTH_DIR, { recursive: true })
-        }
-        pairingCode = null
-        reconnectAttempts = 0
-        setTimeout(connectWhatsApp, 3000)
-      } else if (reconnectAttempts < MAX_RECONNECT) {
-        reconnectAttempts++
-        const delayMs = Math.min(3000 * reconnectAttempts, 30000)
-        console.log(`🔄 Reconectando en ${delayMs / 1000}s (intento ${reconnectAttempts}/${MAX_RECONNECT})...`)
-        setTimeout(connectWhatsApp, delayMs)
+        console.log('🔓 Sesión cerrada. Limpiando auth...')
+        if (fs.existsSync(AUTH_DIR)) fs.rmSync(AUTH_DIR, { recursive: true })
+        console.log('⚠️ Usa GET /pair?phone=TUNUMERO para re-vincular.')
+      } else if (fs.existsSync(path.join(AUTH_DIR, 'creds.json'))) {
+        // Solo reconectar si HAY sesión guardada
+        console.log('🔄 Reconectando en 5s...')
+        setTimeout(() => connectWhatsApp(), 5000)
       } else {
-        console.log('⚠️ Máximo de reconexiones. Usa GET /pair?phone=TUNUMERO para re-vincular.')
+        console.log('⚠️ Sin sesión. Usa GET /pair?phone=573XXXXXXXXX para vincular.')
       }
     }
   })
 
   sock.ev.on('creds.update', saveCreds)
-}
-
-async function requestPairingCode(phone) {
-  try {
-    // Baileys necesita un momento para inicializar antes de pedir pairing code
-    await delay(3000)
-    if (!sock) return
-    const code = await sock.requestPairingCode(phone)
-    pairingCode = code
-    console.log(`\n📱 CÓDIGO DE VINCULACIÓN: ${code}`)
-    console.log(`   Abre WhatsApp → Dispositivos vinculados → Vincular dispositivo`)
-    console.log(`   Selecciona "Vincular con número de teléfono" e ingresa: ${code}\n`)
-    return code
-  } catch (err) {
-    console.error('❌ Error solicitando pairing code:', err.message)
-    return null
-  }
 }
 
 // ── Auth middleware ──────────────────────────────────────
@@ -161,7 +155,7 @@ function auth(req, res, next) {
 app.get('/status', auth, (req, res) => {
   res.json({
     connected: isConnected,
-    hasPairingCode: !!pairingCode,
+    isPairing,
     pairingCode: pairingCode || null,
     messagesThisHour: sentTimestamps.filter(t => t > Date.now() - RATE_WINDOW).length,
     rateLimit: RATE_LIMIT,
@@ -169,7 +163,7 @@ app.get('/status', auth, (req, res) => {
   })
 })
 
-// Solicitar pairing code para vincular
+// Vincular WhatsApp con pairing code
 app.get('/pair', auth, async (req, res) => {
   const phone = req.query.phone
   if (!phone) {
@@ -180,26 +174,27 @@ app.get('/pair', auth, async (req, res) => {
     return res.json({ connected: true, message: 'Ya está conectado' })
   }
 
-  // Limpiar sesión anterior y reconectar
-  if (fs.existsSync(AUTH_DIR)) {
-    fs.rmSync(AUTH_DIR, { recursive: true })
+  // Limpiar todo y empezar de cero
+  if (fs.existsSync(AUTH_DIR)) fs.rmSync(AUTH_DIR, { recursive: true })
+  pairingCode = null
+  isPairing = false
+
+  // Conectar con número para pairing
+  await connectWhatsApp(phone)
+
+  // Esperar hasta que tengamos el pairing code (máx 15s)
+  for (let i = 0; i < 30; i++) {
+    if (pairingCode) break
+    await delay(500)
   }
 
-  // Reiniciar conexión
-  reconnectAttempts = 0
-  await connectWhatsApp()
-
-  // Esperar a que se inicialice y pedir pairing code
-  await delay(5000)
-  const code = await requestPairingCode(phone)
-
-  if (code) {
+  if (pairingCode) {
     res.json({
-      pairingCode: code,
-      instructions: 'Abre WhatsApp → Dispositivos vinculados → Vincular dispositivo → "Vincular con número" → Ingresa el código',
+      pairingCode,
+      instructions: 'WhatsApp → Dispositivos vinculados → Vincular dispositivo → Vincular con número → Ingresa el código',
     })
   } else {
-    res.status(500).json({ error: 'No se pudo generar pairing code. Revisa los logs.' })
+    res.status(500).json({ error: 'No se pudo generar código. Revisa logs con: pm2 logs baileys' })
   }
 })
 
@@ -212,33 +207,25 @@ app.post('/send', auth, async (req, res) => {
   }
 
   if (!isConnected || !sock) {
-    return res.status(503).json({ error: 'WhatsApp no conectado', needsPairing: !isConnected })
+    return res.status(503).json({ error: 'WhatsApp no conectado', needsPairing: true })
   }
 
   if (!canSend()) {
-    return res.status(429).json({ error: 'Rate limit alcanzado (20/hora)', retryAfterMs: RATE_WINDOW })
+    return res.status(429).json({ error: 'Rate limit (20/hora)', retryAfterMs: RATE_WINDOW })
   }
 
   if (!isWithinSchedule()) {
-    return res.status(200).json({
-      sent: false,
-      reason: 'fuera_de_horario',
-      message: 'Solo se envían mensajes entre 8am-8pm Colombia',
-    })
+    return res.status(200).json({ sent: false, reason: 'fuera_de_horario' })
   }
 
   const jid = formatPhone(telefono)
-
-  // Responder inmediatamente, enviar con delay en background
   res.json({ queued: true, jid, estimatedDelay: '5-15s' })
 
-  // Delay aleatorio anti-ban (5-15 segundos)
   const randomDelay = 5000 + Math.random() * 10000
   console.log(`⏳ Enviando a ${jid} en ${Math.round(randomDelay / 1000)}s...`)
 
   setTimeout(async () => {
     try {
-      // Simular "escribiendo..." (anti-ban)
       await sock.presenceSubscribe(jid)
       await delay(500)
       await sock.sendPresenceUpdate('composing', jid)
@@ -248,7 +235,7 @@ app.post('/send', auth, async (req, res) => {
 
       await sock.sendMessage(jid, { text: mensaje })
       recordSend()
-      console.log(`✅ Mensaje enviado a ${jid}`)
+      console.log(`✅ Enviado a ${jid}`)
     } catch (err) {
       console.error(`❌ Error enviando a ${jid}:`, err.message)
     }
@@ -257,9 +244,14 @@ app.post('/send', auth, async (req, res) => {
 
 // ── Iniciar ─────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`\n🚀 Baileys Service corriendo en puerto ${PORT}`)
-  console.log(`🔑 Secret: ${SECRET.substring(0, 8)}...`)
-  console.log(`⏰ Horario: 8am-8pm Colombia`)
-  console.log(`📊 Rate limit: ${RATE_LIMIT} mensajes/hora\n`)
-  connectWhatsApp()
+  console.log(`\n🚀 Baileys Service puerto ${PORT}`)
+  console.log(`📊 Rate limit: ${RATE_LIMIT}/hora | Horario: 8am-8pm COL\n`)
+
+  // Si ya hay sesión guardada, conectar automáticamente
+  if (fs.existsSync(path.join(AUTH_DIR, 'creds.json'))) {
+    console.log('🔑 Sesión encontrada, conectando...')
+    connectWhatsApp()
+  } else {
+    console.log('⚠️ Sin sesión. Usa GET /pair?phone=573XXXXXXXXX para vincular.')
+  }
 })
