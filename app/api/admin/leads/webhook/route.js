@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
+import { sendLeadNotification } from '@/lib/telegram'
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
-const CHAT_ID = process.env.TELEGRAM_CHAT_ID
 const VERIFY_TOKEN = process.env.FB_LEADS_VERIFY_TOKEN
 const FB_APP_SECRET = process.env.FB_APP_SECRET
 
@@ -71,7 +70,6 @@ export async function POST(request) {
       return NextResponse.json({ status: 'ignored' })
     }
 
-    // Procesar cada lead en background para no bloquear la respuesta a Facebook
     for (const entry of body.entry || []) {
       for (const change of entry.changes || []) {
         if (change.field !== 'leadgen') continue
@@ -82,7 +80,6 @@ export async function POST(request) {
 
         console.log('[Leads] Webhook recibido - leadgen_id:', leadgenId)
 
-        // Procesar en background (no await) para responder 200 rapido a Facebook
         processLead(leadgenId, adId, createdTime).catch(err => {
           console.error('[Leads] Error procesando lead:', err)
         })
@@ -96,11 +93,9 @@ export async function POST(request) {
   }
 }
 
-// Procesar lead con reintentos (Facebook a veces tarda en hacer disponible el lead)
 async function processLead(leadgenId, adId, createdTime) {
   let leadData = null
 
-  // Intentar hasta 3 veces con delay creciente (2s, 5s, 10s)
   const delays = [2000, 5000, 10000]
   for (let i = 0; i < delays.length; i++) {
     await sleep(delays[i])
@@ -116,7 +111,8 @@ async function processLead(leadgenId, adId, createdTime) {
   const telefono = leadData?.telefono || ''
   const cantClientes = leadData?.cantClientes || ''
 
-  // Guardar en DB (con protección contra duplicados)
+  // Guardar en DB con protección contra duplicados
+  let lead = null
   try {
     if (telefono) {
       const exists = await prisma.lead.findFirst({ where: { telefono } })
@@ -125,7 +121,7 @@ async function processLead(leadgenId, adId, createdTime) {
         return
       }
     }
-    await prisma.lead.create({
+    lead = await prisma.lead.create({
       data: { nombre, telefono, cantClientes, anuncioId: adId }
     })
     console.log('[Leads] Guardado en DB:', nombre, telefono)
@@ -133,8 +129,20 @@ async function processLead(leadgenId, adId, createdTime) {
     console.error('[Leads] DB error:', dbErr.message)
   }
 
-  // Enviar Telegram siempre
-  await sendTelegramNotification({ nombre, telefono, cantClientes, anuncioId: adId, createdTime, leadgenId })
+  // Enviar Telegram con botones interactivos
+  const messageId = await sendLeadNotification(
+    { nombre, telefono, cantClientes, anuncioId: adId, createdTime, leadgenId },
+    lead?.id
+  )
+
+  // Guardar el ID del mensaje de Telegram para poder editarlo después
+  if (lead && messageId) {
+    await prisma.lead.update({
+      where: { id: lead.id },
+      data: { telegramMessageId: messageId },
+    }).catch(() => {})
+  }
+
   console.log('[Leads] Telegram enviado para:', nombre)
 }
 
@@ -172,83 +180,5 @@ async function fetchLeadFromFacebook(leadgenId) {
   } catch (err) {
     console.error('[Leads] Fetch error:', err.message)
     return null
-  }
-}
-
-async function sendTelegramNotification({ nombre, telefono, cantClientes, anuncioId, createdTime, leadgenId }) {
-  if (!BOT_TOKEN || !CHAT_ID) return
-
-  const fechaOpts = { timeZone: 'America/Bogota', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }
-  const fecha = createdTime
-    ? new Date(createdTime * 1000).toLocaleString('es-CO', fechaOpts)
-    : new Date().toLocaleString('es-CO', fechaOpts)
-
-  const tel = telefono ? telefono.replace(/\D/g, '') : ''
-  // Extraer solo el primer nombre para que suene personal
-  const primerNombre = nombre.split(' ')[0]
-  // Capitalizar: "CARLOS" → "Carlos", "carlos" → "Carlos"
-  const nombreSaludo = primerNombre.charAt(0).toUpperCase() + primerNombre.slice(1).toLowerCase()
-
-  let whatsappSection = ''
-  if (tel) {
-    const cant = (cantClientes || '').toLowerCase()
-    const esMucho = cant.includes('más') || cant.includes('mas') || cant.includes('100')
-
-    let msgTexto = ''
-    if (esMucho) {
-      msgTexto = [
-        `Hola ${nombreSaludo}, ¿cómo estás? 👋`,
-        ``,
-        `Soy Carlos de *Control Finanzas*. Vi que te interesó nuestro sistema para prestamistas. Con el volumen de clientes que manejas, te ayudaría mucho tener tus préstamos, cobros, rutas y cobradores organizados en un solo lugar desde el celular.`,
-        ``,
-        `¿Actualmente cómo estás manejando tu cartera?`,
-      ].join('\n')
-    } else {
-      msgTexto = [
-        `Hola ${nombreSaludo}, ¿cómo estás? 👋`,
-        ``,
-        `Soy Carlos de *Control Finanzas*. Vi que te interesó nuestro sistema para prestamistas. Es una app donde puedes gestionar tus préstamos, cobros, rutas y cobradores en un solo lugar desde el celular.`,
-        ``,
-        `¿Actualmente cómo estás manejando tus préstamos?`,
-      ].join('\n')
-    }
-
-    const msgEncoded = encodeURIComponent(msgTexto)
-    whatsappSection = [
-      ``,
-      `--- ⚡ Contactar rapido ---`,
-      ``,
-      `💬 WhatsApp:`,
-      `https://wa.me/${tel}?text=${msgEncoded}`,
-    ].join('\n')
-  }
-
-  const text = [
-    `📢 Nuevo Lead - Facebook Ads`,
-    ``,
-    `👤 Nombre: ${nombre}`,
-    `📱 Telefono: ${telefono || 'No disponible'}`,
-    `👥 Clientes: ${cantClientes || 'No especifico'}`,
-    `📅 Fecha: ${fecha}`,
-    whatsappSection,
-    ``,
-    `--- 🖥 Ver en panel ---`,
-    `https://app.control-finanzas.com/admin/leads`,
-  ].join('\n')
-
-  try {
-    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: CHAT_ID,
-        text,
-        disable_web_page_preview: true,
-      }),
-    })
-    const result = await res.json()
-    if (!result.ok) console.error('[Telegram] Error:', result.description)
-  } catch (err) {
-    console.error('[Telegram]', err)
   }
 }

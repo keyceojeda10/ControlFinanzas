@@ -365,8 +365,11 @@ model Lead {
   estado           String        @default("nuevo")
   notas            String?       @db.Text
   organizationId   String?
-  mensajesEnviados String?       @db.Text
-  createdAt        DateTime      @default(now())
+  mensajesEnviados      String?       @db.Text
+  ultimoRecordatorio    DateTime?
+  recordatoriosEnviados Int           @default(0)
+  telegramMessageId     Int?
+  createdAt             DateTime      @default(now())
 
   organization Organization? @relation(fields: [organizationId], references: [id])
 
