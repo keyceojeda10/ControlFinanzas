@@ -35,7 +35,7 @@ export async function GET() {
     proximosCobros,
   ] = await Promise.all([
     // Clientes totales
-    prisma.cliente.count({ where: { organizationId: orgId } }),
+    prisma.cliente.count({ where: { organizationId: orgId, estado: { notIn: ['eliminado'] } } }),
 
     // Clientes en mora
     prisma.cliente.count({ where: { organizationId: orgId, estado: 'mora' } }),

@@ -44,7 +44,7 @@ export async function GET(req) {
   // ── CLIENTES ──────────────────────────────────────────────────
   if (tipo === 'clientes') {
     const rows = await prisma.cliente.findMany({
-      where: { organizationId: orgId },
+      where: { organizationId: orgId, estado: { notIn: ['eliminado'] } },
       include: { ruta: { select: { nombre: true } } },
       orderBy: { nombre: 'asc' },
     })

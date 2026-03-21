@@ -87,6 +87,24 @@ export async function PATCH(request, { params }) {
   }
 
   const body = await request.json()
+
+  // Acción especial: inactivar / activar
+  if (body.accion === 'inactivar' || body.accion === 'activar') {
+    if (session.user.rol !== 'owner') {
+      return Response.json({ error: 'Solo el administrador puede cambiar el estado' }, { status: 403 })
+    }
+    const { id: cid } = await params
+    const cl = await obtenerCliente(cid, session)
+    if (!cl) return Response.json({ error: 'Cliente no encontrado' }, { status: 404 })
+
+    const nuevoEstado = body.accion === 'inactivar' ? 'inactivo' : 'activo'
+    const actualizado = await prisma.cliente.update({
+      where: { id: cid },
+      data: { estado: nuevoEstado },
+    })
+    return Response.json(actualizado)
+  }
+
   const { nombre, cedula, telefono, direccion, referencia, notas, fotoUrl, rutaId, latitud, longitud } = body
 
   // Si cambia la cédula, verificar que no exista otra igual
@@ -134,3 +152,64 @@ export async function PATCH(request, { params }) {
 
   return Response.json(actualizado)
 }
+
+// ─── DELETE /api/clientes/[id] ────────────────────────────────────
+// Soft delete: marca como eliminado. Solo owner.
+// Si tiene préstamos, devuelve la lista para que el usuario decida (trasladar o eliminar).
+export async function DELETE(request, { params }) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.organizationId) {
+    return Response.json({ error: 'No autorizado' }, { status: 401 })
+  }
+  if (session.user.rol !== 'owner') {
+    return Response.json({ error: 'Solo el administrador puede eliminar clientes' }, { status: 403 })
+  }
+
+  const { id } = await params
+
+  const cliente = await prisma.cliente.findFirst({
+    where: { id, organizationId: session.user.organizationId },
+    include: {
+      prestamos: {
+        select: { id: true, montoPrestado: true, totalAPagar: true, estado: true, pagos: { select: { montoPagado: true } } },
+      },
+    },
+  })
+
+  if (!cliente) {
+    return Response.json({ error: 'Cliente no encontrado' }, { status: 404 })
+  }
+
+  // Verificar si tiene préstamos
+  if (cliente.prestamos.length > 0) {
+    const prestamosInfo = cliente.prestamos.map(p => {
+      const totalPagado = p.pagos.reduce((sum, pago) => sum + pago.montoPagado, 0)
+      return {
+        id: p.id,
+        montoPrestado: p.montoPrestado,
+        totalAPagar: p.totalAPagar,
+        totalPagado,
+        saldoPendiente: p.totalAPagar - totalPagado,
+        estado: p.estado,
+      }
+    })
+
+    return Response.json({
+      error: 'tiene_prestamos',
+      message: 'Este cliente tiene préstamos asignados',
+      prestamos: prestamosInfo,
+    }, { status: 409 })
+  }
+
+  // Sin préstamos: soft delete
+  await prisma.cliente.update({
+    where: { id },
+    data: { estado: 'eliminado', eliminadoEn: new Date(), rutaId: null },
+  })
+
+  return Response.json({ ok: true, message: 'Cliente eliminado' })
+}
+
+// ─── PATCH /api/clientes/[id]/inactivar ───────────────────────────
+// Se maneja desde el mismo PATCH con body { accion: 'inactivar' | 'activar' }
+// (ver lógica en PATCH arriba - se agrega soporte)

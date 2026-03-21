@@ -24,7 +24,7 @@ export async function GET() {
 
   // Count actual data to auto-detect progress
   const [clientes, prestamos, pagos, rutas, cierres] = await Promise.all([
-    prisma.cliente.count({ where: { organizationId: orgId } }),
+    prisma.cliente.count({ where: { organizationId: orgId, estado: { notIn: ['eliminado'] } } }),
     prisma.prestamo.count({ where: { organizationId: orgId } }),
     prisma.pago.count({ where: { organizationId: orgId } }),
     prisma.ruta.count({ where: { organizationId: orgId } }),

@@ -38,6 +38,7 @@ export async function GET(request) {
   const clientes = await prisma.cliente.findMany({
     where: {
       organizationId,
+      estado: { notIn: ['eliminado'] },
       ...filtroRuta,
       ...filtroBuscar,
     },
@@ -109,7 +110,7 @@ export async function POST(request) {
   // Validar límite del plan
   const limite = LIMITES_PLAN[plan] ?? LIMITES_PLAN.basic
   if (isFinite(limite)) {
-    const total = await prisma.cliente.count({ where: { organizationId } })
+    const total = await prisma.cliente.count({ where: { organizationId, estado: { notIn: ['eliminado'] } } })
     if (total >= limite) {
       return Response.json(
         { error: `Tu plan ${plan} permite máximo ${limite} clientes. Considera actualizar.` },

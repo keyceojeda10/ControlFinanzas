@@ -29,6 +29,8 @@ enum EstadoCliente {
   activo
   mora
   cancelado
+  inactivo
+  eliminado
 }
 
 enum EstadoPrestamo {
@@ -151,6 +153,7 @@ model Cliente {
   latitud        Float?
   longitud       Float?
   estado         EstadoCliente @default(activo)
+  eliminadoEn    DateTime?
   createdAt      DateTime      @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id])
@@ -160,6 +163,7 @@ model Cliente {
   @@unique([organizationId, cedula])
   @@index([organizationId])
   @@index([cedula])
+  @@index([estado])
 }
 
 model Prestamo {

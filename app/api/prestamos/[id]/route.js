@@ -76,3 +76,26 @@ export async function PATCH(request, { params }) {
 
   return Response.json(actualizado)
 }
+
+// ─── DELETE /api/prestamos/[id] ────────────────────────────────────
+export async function DELETE(request, { params }) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.organizationId) {
+    return Response.json({ error: 'No autorizado' }, { status: 401 })
+  }
+  if (session.user.rol !== 'owner') {
+    return Response.json({ error: 'Solo el administrador puede eliminar préstamos' }, { status: 403 })
+  }
+
+  const { id } = await params
+  const p = await obtenerPrestamo(id, session)
+  if (!p) return Response.json({ error: 'Préstamo no encontrado' }, { status: 404 })
+
+  // Eliminar pagos asociados primero, luego el préstamo
+  await prisma.$transaction([
+    prisma.pago.deleteMany({ where: { prestamoId: id } }),
+    prisma.prestamo.delete({ where: { id } }),
+  ])
+
+  return Response.json({ ok: true, message: 'Préstamo eliminado' })
+}

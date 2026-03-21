@@ -17,6 +17,7 @@ const estadoBadge = {
   activo:    { variant: 'green',  label: 'Activo'    },
   mora:      { variant: 'red',    label: 'En mora'   },
   cancelado: { variant: 'gray',   label: 'Cancelado' },
+  inactivo:  { variant: 'gray',   label: 'Inactivo'  },
 }
 
 const estadoPrestamoBadge = {
@@ -33,6 +34,9 @@ export default function ClienteDetallePage({ params }) {
   const [cliente, setCliente]   = useState(null)
   const [loading, setLoading]   = useState(true)
   const [error,   setError]     = useState('')
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteData, setDeleteData] = useState(null) // prestamos info when has prestamos
+  const [actionLoading, setActionLoading] = useState(false)
 
   useEffect(() => {
     fetch(`/api/clientes/${id}`)
@@ -44,6 +48,66 @@ export default function ClienteDetallePage({ params }) {
       .catch(() => setError('No se pudo cargar el cliente.'))
       .finally(() => setLoading(false))
   }, [id])
+
+  const handleDelete = async () => {
+    setActionLoading(true)
+    try {
+      const res = await fetch(`/api/clientes/${id}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (data.error === 'tiene_prestamos') {
+        setDeleteData(data.prestamos)
+        return
+      }
+      if (!res.ok) { alert(data.error || 'Error'); return }
+      router.push('/clientes')
+    } catch { alert('Error de conexión') }
+    finally { setActionLoading(false) }
+  }
+
+  const handleToggleInactivo = async () => {
+    setActionLoading(true)
+    try {
+      const accion = cliente.estado === 'inactivo' ? 'activar' : 'inactivar'
+      const res = await fetch(`/api/clientes/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accion }),
+      })
+      if (!res.ok) { const d = await res.json(); alert(d.error || 'Error'); return }
+      const updated = await res.json()
+      setCliente(prev => ({ ...prev, estado: updated.estado }))
+    } catch { alert('Error de conexión') }
+    finally { setActionLoading(false) }
+  }
+
+  const handleDeletePrestamo = async (prestamoId) => {
+    if (!confirm('¿Eliminar este préstamo y todos sus pagos? Esta acción no se puede deshacer.')) return
+    setActionLoading(true)
+    try {
+      const res = await fetch(`/api/prestamos/${prestamoId}`, { method: 'DELETE' })
+      if (!res.ok) { const d = await res.json(); alert(d.error || 'Error'); return }
+      setDeleteData(prev => prev.filter(p => p.id !== prestamoId))
+      setCliente(prev => ({ ...prev, prestamos: prev.prestamos.filter(p => p.id !== prestamoId) }))
+    } catch { alert('Error de conexión') }
+    finally { setActionLoading(false) }
+  }
+
+  const handleTrasladar = async (prestamoId, clienteDestinoId) => {
+    setActionLoading(true)
+    try {
+      const res = await fetch(`/api/prestamos/${prestamoId}/trasladar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clienteDestinoId }),
+      })
+      const data = await res.json()
+      if (!res.ok) { alert(data.error || 'Error'); return }
+      alert(data.message)
+      setDeleteData(prev => prev.filter(p => p.id !== prestamoId))
+      setCliente(prev => ({ ...prev, prestamos: prev.prestamos.filter(p => p.id !== prestamoId) }))
+    } catch { alert('Error de conexión') }
+    finally { setActionLoading(false) }
+  }
 
   if (loading) {
     return (
@@ -166,6 +230,22 @@ export default function ClienteDetallePage({ params }) {
                 <Button size="sm" variant="secondary">Editar</Button>
               </Link>
             )}
+            {esOwner && (
+              <>
+                <Button size="sm" variant="secondary" onClick={handleToggleInactivo} disabled={actionLoading}>
+                  {cliente.estado === 'inactivo' ? 'Activar' : 'Inactivar'}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => { setShowDeleteModal(true); handleDelete() }}
+                  disabled={actionLoading}
+                  className="!text-[#ef4444] !border-[rgba(239,68,68,0.2)] hover:!bg-[rgba(239,68,68,0.1)]"
+                >
+                  Eliminar
+                </Button>
+              </>
+            )}
           </div>
         )}
       </Card>
@@ -206,6 +286,153 @@ export default function ClienteDetallePage({ params }) {
           </div>
         </div>
       )}
+
+      {/* Modal: cliente tiene préstamos */}
+      {showDeleteModal && deleteData && (
+        <DeleteClienteModal
+          cliente={cliente}
+          prestamos={deleteData}
+          onClose={() => { setShowDeleteModal(false); setDeleteData(null) }}
+          onDeletePrestamo={handleDeletePrestamo}
+          onTrasladar={handleTrasladar}
+          onRetryDelete={handleDelete}
+          loading={actionLoading}
+          clienteId={id}
+        />
+      )}
+    </div>
+  )
+}
+
+// ─── Modal: eliminar cliente con préstamos ───────────────────────
+function DeleteClienteModal({ cliente, prestamos, onClose, onDeletePrestamo, onTrasladar, onRetryDelete, loading, clienteId }) {
+  const [trasladarId, setTrasladarId] = useState(null) // prestamoId que se va a trasladar
+  const [clientes, setClientes] = useState([])
+  const [buscar, setBuscar] = useState('')
+  const [loadingClientes, setLoadingClientes] = useState(false)
+
+  // Buscar clientes para trasladar
+  useEffect(() => {
+    if (!trasladarId) return
+    setLoadingClientes(true)
+    fetch(`/api/clientes?buscar=${encodeURIComponent(buscar)}`)
+      .then(r => r.json())
+      .then(data => {
+        const lista = (data.clientes || data || []).filter(c => c.id !== clienteId)
+        setClientes(lista)
+      })
+      .catch(() => {})
+      .finally(() => setLoadingClientes(false))
+  }, [trasladarId, buscar, clienteId])
+
+  // Si ya no quedan préstamos, reintentar eliminar
+  useEffect(() => {
+    if (prestamos.length === 0) {
+      onRetryDelete()
+    }
+  }, [prestamos.length])
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/70 px-0 sm:px-4" onClick={onClose}>
+      <div
+        className="w-full sm:max-w-md bg-[#1a1a1a] border border-[#2a2a2a] rounded-t-[20px] sm:rounded-[20px] flex flex-col max-h-[85vh]"
+        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="px-5 pt-5 pb-3 shrink-0">
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="text-base font-semibold text-white">Eliminar cliente</h3>
+            <button onClick={onClose} className="text-[#888] hover:text-white p-1">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <p className="text-xs text-[#ef4444]">
+            {cliente.nombre} tiene {prestamos.length} prestamo{prestamos.length > 1 ? 's' : ''}.
+            Debes eliminarlos o trasladarlos antes de eliminar el cliente.
+          </p>
+        </div>
+
+        {/* Contenido */}
+        <div className="flex-1 overflow-y-auto px-5 pb-3">
+          {/* Vista de trasladar */}
+          {trasladarId && (
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-white font-medium">Trasladar a otro cliente</p>
+                <button onClick={() => setTrasladarId(null)} className="text-xs text-[#888] hover:text-white">Cancelar</button>
+              </div>
+              <input
+                type="text"
+                value={buscar}
+                onChange={e => setBuscar(e.target.value)}
+                placeholder="Buscar cliente por nombre o cedula..."
+                className="w-full mb-2 px-3 py-2 bg-[#111] border border-[#2a2a2a] rounded-[10px] text-sm text-white placeholder-[#555] focus:outline-none focus:border-[#f5c518]"
+              />
+              {loadingClientes ? (
+                <p className="text-xs text-[#888] text-center py-3">Buscando...</p>
+              ) : clientes.length === 0 ? (
+                <p className="text-xs text-[#888] text-center py-3">No se encontraron clientes</p>
+              ) : (
+                <div className="space-y-1 max-h-40 overflow-y-auto">
+                  {clientes.slice(0, 10).map(c => (
+                    <button
+                      key={c.id}
+                      onClick={() => { onTrasladar(trasladarId, c.id); setTrasladarId(null) }}
+                      disabled={loading}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-[8px] bg-[#111] hover:bg-[rgba(245,197,24,0.08)] text-left transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-[rgba(245,197,24,0.15)] flex items-center justify-center text-xs font-bold text-[#f5c518] shrink-0">
+                        {c.nombre?.[0]?.toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm text-white truncate">{c.nombre}</p>
+                        <p className="text-[10px] text-[#888]">CC {c.cedula}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Lista de préstamos */}
+          {!trasladarId && (
+            <div className="space-y-3">
+              {prestamos.map(p => (
+                <div key={p.id} className="p-3 rounded-[12px] bg-[#151515] border border-[#222]">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <p className="text-sm font-medium text-white">{formatCOP(p.montoPrestado)}</p>
+                      <p className="text-[10px] text-[#888]">
+                        Saldo: {formatCOP(p.saldoPendiente)} - {p.estado}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setTrasladarId(p.id)}
+                      disabled={loading}
+                      className="flex-1 py-2 rounded-[8px] bg-[rgba(245,197,24,0.1)] border border-[rgba(245,197,24,0.2)] text-[#f5c518] text-xs font-medium hover:bg-[rgba(245,197,24,0.15)] transition-colors"
+                    >
+                      Trasladar a otro cliente
+                    </button>
+                    <button
+                      onClick={() => onDeletePrestamo(p.id)}
+                      disabled={loading}
+                      className="flex-1 py-2 rounded-[8px] bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-xs font-medium hover:bg-[rgba(239,68,68,0.15)] transition-colors"
+                    >
+                      Eliminar prestamo
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

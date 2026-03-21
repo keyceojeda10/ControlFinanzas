@@ -31,7 +31,7 @@ export async function POST(request, { params }) {
 
   // Verificar que todos los clientes pertenecen a la organización
   const clientes = await prisma.cliente.findMany({
-    where: { id: { in: clienteIds }, organizationId },
+    where: { id: { in: clienteIds }, organizationId, estado: { notIn: ['eliminado'] } },
     select: { id: true },
   })
   if (clientes.length !== clienteIds.length) {
