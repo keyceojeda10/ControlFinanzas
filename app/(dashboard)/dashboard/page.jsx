@@ -3,7 +3,9 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { formatCOP } from '@/lib/calculos'
 import { useAuth } from '@/hooks/useAuth'
-import Onboarding from '@/components/Onboarding'
+import { useOnboarding } from '@/components/onboarding/useOnboarding'
+import OnboardingChecklist from '@/components/onboarding/OnboardingChecklist'
+import SpotlightOverlay from '@/components/onboarding/SpotlightOverlay'
 
 function Skeleton({ className = '' }) {
   return <div className={`animate-pulse bg-[#2a2a2a] rounded-[12px] ${className}`} />
@@ -26,9 +28,9 @@ function KpiCard({ label, value, sub, color = '#ffffff', icon }) {
   )
 }
 
-function QuickLink({ href, label, desc, color }) {
+function QuickLink({ href, label, desc, color, dataTour }) {
   return (
-    <Link href={href} className="bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#3a3a3a] hover:bg-[#222222] rounded-[16px] px-4 py-4 transition-all group flex items-center gap-3">
+    <Link href={href} data-tour={dataTour} className="bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#3a3a3a] hover:bg-[#222222] rounded-[16px] px-4 py-4 transition-all group flex items-center gap-3">
       <div className="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0" style={{ background: `${color}18` }}>
         <div className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
       </div>
@@ -56,29 +58,10 @@ export default function DashboardPage() {
   const [mounted, setMounted] = useState(false)
   const [error, setError] = useState('')
   const [fechaActual, setFechaActual] = useState('')
-  const [showOnboarding, setShowOnboarding] = useState(false)
-  const [onboardingStep, setOnboardingStep] = useState(0)
+
+  const onboarding = useOnboarding(esOwner && !authLoading)
 
   useEffect(() => { setMounted(true) }, [])
-
-  // Mostrar onboarding solo a owners que no lo han completado
-  useEffect(() => {
-    if (authLoading || !session?.user?.id) return
-    const userId = session.user.id
-    const yaVisto = localStorage.getItem(`cf_onboarding_done_${userId}`)
-    if (esOwner && !yaVisto) {
-      // Fetch onboarding step from server
-      fetch('/api/configuracion/onboarding')
-        .then(r => r.json())
-        .then(d => {
-          if (d.step !== undefined && d.step < 99) {
-            setOnboardingStep(d.step)
-            setShowOnboarding(true)
-          }
-        })
-        .catch(() => {})
-    }
-  }, [authLoading, esOwner, session])
 
   useEffect(() => {
     const updateFecha = () => {
@@ -117,14 +100,20 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-5">
-      {showOnboarding && (
-        <Onboarding
-          userId={session?.user?.id}
-          initialStep={onboardingStep}
-          totalClientes={data?.clientes?.total || 0}
-          totalPrestamos={data?.prestamos?.activos || 0}
+      {onboarding.visible && (
+        <OnboardingChecklist
+          misiones={onboarding.misiones}
+          completadas={onboarding.completadas}
+          total={onboarding.total}
+          progreso={onboarding.progreso}
+          onDismiss={onboarding.dismiss}
+          onSpotlight={onboarding.showSpotlight}
         />
       )}
+      <SpotlightOverlay
+        spotlight={onboarding.spotlight}
+        onClose={onboarding.hideSpotlight}
+      />
       <div>
         <h1 className="text-xl font-bold text-white">Dashboard</h1>
         <p className="text-sm text-[#888888] mt-0.5">{fechaActual || 'Resumen de tu cartera hoy'}</p>
@@ -258,12 +247,12 @@ export default function DashboardPage() {
       <div>
         <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-3">Accesos rapidos</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {puedeCrearClientes && <QuickLink href="/clientes/nuevo" label="Nuevo cliente" desc="Registrar cliente" color="#f5c518" />}
-          {puedeCrearPrestamos && <QuickLink href="/prestamos/nuevo" label="Nuevo prestamo" desc="Crear prestamo" color="#22c55e" />}
-          <QuickLink href="/caja" label="Cierre de caja" desc="Registrar cierre del dia" color="#f59e0b" />
-          <QuickLink href="/clientes" label="Clientes" desc="Ver cartera completa" color="#a855f7" />
+          {puedeCrearClientes && <QuickLink href="/clientes/nuevo" label="Nuevo cliente" desc="Registrar cliente" color="#f5c518" dataTour="nuevo-cliente" />}
+          {puedeCrearPrestamos && <QuickLink href="/prestamos/nuevo" label="Nuevo prestamo" desc="Crear prestamo" color="#22c55e" dataTour="nuevo-prestamo" />}
+          <QuickLink href="/caja" label="Cierre de caja" desc="Registrar cierre del dia" color="#f59e0b" dataTour="caja" />
+          <QuickLink href="/clientes" label="Clientes" desc="Ver cartera completa" color="#a855f7" dataTour="prestamos" />
           {esOwner && <QuickLink href="/capital" label="Capital" desc="Control de capital" color="#06b6d4" />}
-          {esOwner && <QuickLink href="/rutas" label="Rutas" desc="Gestionar rutas" color="#8b5cf6" />}
+          {esOwner && <QuickLink href="/rutas" label="Rutas" desc="Gestionar rutas" color="#8b5cf6" dataTour="rutas" />}
           {esOwner && <QuickLink href="/configuracion" label="Configuracion" desc="Perfil y organizacion" color="#555555" />}
         </div>
       </div>

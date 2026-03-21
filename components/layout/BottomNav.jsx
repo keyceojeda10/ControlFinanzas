@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useState, useEffect } from 'react'
+import { InstallBanner } from './InstallButton'
 
 const ITEMS_OWNER = [
   {
@@ -140,6 +141,9 @@ export default function BottomNav() {
           <Link href="/caja" className="underline font-bold">Cerrar</Link>
         </div>
       )}
+
+    {/* Banner de instalación */}
+    <InstallBanner />
 
     <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[#111111] border-t border-[#2a2a2a]" style={{ paddingBottom: cierreWarning ? 'env(safe-area-inset-bottom)' : 'env(safe-area-inset-bottom)' }}>
       <div

@@ -1,0 +1,72 @@
+'use client'
+
+import Link from 'next/link'
+
+const ICONOS = {
+  cliente: (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+  ),
+  prestamo: (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  pago: (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  ruta: (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+    </svg>
+  ),
+  caja: (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+    </svg>
+  ),
+}
+
+export default function MissionItem({ mision, onSpotlight }) {
+  const icono = ICONOS[mision.icono] || ICONOS.cliente
+
+  if (mision.completada) {
+    return (
+      <div className="flex items-center gap-3 px-3 py-2.5 rounded-[10px] bg-[rgba(34,197,94,0.06)]">
+        {/* Check animado */}
+        <div className="w-7 h-7 rounded-full bg-[#22c55e] flex items-center justify-center shrink-0 onboarding-check">
+          <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-[#22c55e] line-through opacity-70">{mision.titulo}</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <Link
+      href={mision.href}
+      onClick={() => onSpotlight?.(mision.id)}
+      className="flex items-center gap-3 px-3 py-2.5 rounded-[10px] hover:bg-[#222222] transition-all group"
+    >
+      {/* Icon circle */}
+      <div className="w-7 h-7 rounded-full border-2 border-[#3a3a3a] flex items-center justify-center shrink-0 text-[#888888] group-hover:border-[#f5c518] group-hover:text-[#f5c518] transition-colors">
+        {icono}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-white group-hover:text-[#f5c518] transition-colors">{mision.titulo}</p>
+        <p className="text-[10px] text-[#555555]">{mision.descripcion}</p>
+      </div>
+      {/* Arrow */}
+      <svg className="w-4 h-4 text-[#555555] group-hover:text-[#f5c518] transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+      </svg>
+    </Link>
+  )
+}
