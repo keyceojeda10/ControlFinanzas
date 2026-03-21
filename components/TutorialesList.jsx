@@ -61,7 +61,6 @@ function TutorialCard({ tutorial, showCopyButton, onImageClick, defaultOpen = fa
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-[#222222] transition-colors"
       >
-        <span className="text-lg shrink-0">{tutorial.emoji}</span>
         <span className="flex-1 text-sm font-semibold text-white leading-snug">
           {tutorial.title}
         </span>
@@ -133,7 +132,7 @@ function CategorySection({ categoria, tutoriales, showCopyButton, onImageClick }
   return (
     <div id={`cat-${categoria.id}`} className="scroll-mt-4">
       <div className="flex items-center gap-2.5 mb-3 mt-2">
-        <span className="text-base">{categoria.icon}</span>
+        <div className="w-2 h-2 rounded-full" style={{ background: categoria.color }} />
         <h2 className="text-sm font-bold text-white">{categoria.label}</h2>
         <span className="text-[10px] text-[#555] bg-[#1a1a1a] px-2 py-0.5 rounded-full">
           {tutoriales.length}
@@ -209,15 +208,14 @@ export default function TutorialesList({ showCopyButton = false }) {
           <button
             key={cat.id}
             onClick={() => { setActiveCategory(cat.id === activeCategory ? null : cat.id); setSearch('') }}
-            className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1.5 ${
+            className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
               activeCategory === cat.id
                 ? 'text-[#0a0a0a]'
                 : 'bg-[#1a1a1a] text-[#888] border border-[#2a2a2a] hover:border-[#444]'
             }`}
             style={activeCategory === cat.id ? { backgroundColor: cat.color } : undefined}
           >
-            <span>{cat.icon}</span>
-            <span className="hidden sm:inline">{cat.label}</span>
+            {cat.label}
           </button>
         ))}
       </div>
