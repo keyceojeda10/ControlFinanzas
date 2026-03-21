@@ -51,6 +51,7 @@ export default function DashboardPage() {
 
   const [data, setData] = useState(null)
   const [moraData, setMoraData] = useState(undefined)
+  const [capitalData, setCapitalData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [mounted, setMounted] = useState(false)
   const [error, setError] = useState('')
@@ -103,6 +104,15 @@ export default function DashboardPage() {
       .catch(() => setMoraData({ total: 0, agrupado: {} }))
   }, [])
 
+  // Cargar capital solo para owners
+  useEffect(() => {
+    if (authLoading || !esOwner) return
+    fetch('/api/capital/resumen')
+      .then((r) => r.json())
+      .then((d) => { if (d.configurado) setCapitalData(d) })
+      .catch(() => {})
+  }, [authLoading, esOwner])
+
   const moraPct = data ? (data.clientes.total > 0 ? Math.round((data.clientes.enMora / data.clientes.total) * 100) : 0) : 0
 
   return (
@@ -128,6 +138,15 @@ export default function DashboardPage() {
           <KpiCard label="Prestamos activos" value={data.prestamos.activos} sub={`${data.prestamos.completados} completados`} color="#22c55e" icon="📋" />
           <KpiCard label="Cartera activa" value={formatCOP(data.prestamos.carteraActiva)} sub={`Capital: ${formatCOP(data.prestamos.capitalPrestado)}`} color="#f59e0b" icon="💰" />
           <KpiCard label="Cuota diaria total" value={formatCOP(data.prestamos.cuotaDiariaTotal)} sub="Esperado por dia" color="#a855f7" icon="📅" />
+          {capitalData && (
+            <KpiCard
+              label="Saldo disponible"
+              value={formatCOP(capitalData.saldo)}
+              sub={capitalData.saldo < 0 ? 'Capital insuficiente' : 'Capital en caja'}
+              color={capitalData.saldo < 0 ? '#ef4444' : '#06b6d4'}
+              icon="🏦"
+            />
+          )}
         </div>
       )}
       {loading || !mounted ? (
@@ -243,7 +262,8 @@ export default function DashboardPage() {
           {puedeCrearPrestamos && <QuickLink href="/prestamos/nuevo" label="Nuevo prestamo" desc="Crear prestamo" color="#22c55e" />}
           <QuickLink href="/caja" label="Cierre de caja" desc="Registrar cierre del dia" color="#f59e0b" />
           <QuickLink href="/clientes" label="Clientes" desc="Ver cartera completa" color="#a855f7" />
-          {esOwner && <QuickLink href="/rutas" label="Rutas" desc="Gestionar rutas" color="#06b6d4" />}
+          {esOwner && <QuickLink href="/capital" label="Capital" desc="Control de capital" color="#06b6d4" />}
+          {esOwner && <QuickLink href="/rutas" label="Rutas" desc="Gestionar rutas" color="#8b5cf6" />}
           {esOwner && <QuickLink href="/configuracion" label="Configuracion" desc="Perfil y organizacion" color="#555555" />}
         </div>
       </div>

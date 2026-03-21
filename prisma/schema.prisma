@@ -83,6 +83,8 @@ model Organization {
   tickets          TicketSoporte[]
   notasSeguimiento NotaSeguimiento[]
   leads            Lead[]
+  capital          Capital?
+  movimientosCapital MovimientoCapital[]
 
   @@index([createdAt])
 }
@@ -258,6 +260,50 @@ enum GastoEstado {
   pendiente
   aprobado
   rechazado
+}
+
+enum TipoMovimiento {
+  capital_inicial
+  inyeccion
+  retiro
+  desembolso
+  recaudo
+  gasto
+  ajuste
+}
+
+model Capital {
+  id             String   @id @default(cuid())
+  organizationId String   @unique
+  saldo          Float    @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  movimientos    MovimientoCapital[]
+}
+
+model MovimientoCapital {
+  id             String          @id @default(cuid())
+  capitalId      String
+  organizationId String
+  tipo           TipoMovimiento
+  monto          Float
+  saldoAnterior  Float
+  saldoNuevo     Float
+  descripcion    String?
+  referenciaId   String?
+  referenciaTipo String?
+  creadoPorId    String?
+  createdAt      DateTime        @default(now())
+
+  capital        Capital          @relation(fields: [capitalId], references: [id])
+  organization   Organization     @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([organizationId, createdAt])
+  @@index([capitalId])
+  @@index([referenciaId])
 }
 
 enum EstadoContacto {

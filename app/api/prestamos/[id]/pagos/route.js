@@ -10,6 +10,7 @@ import {
   calcularEstadoCliente,
   pagoHoy,
 } from '@/lib/calculos'
+import { registrarMovimientoCapital } from '@/lib/capital'
 
 // ─── POST /api/prestamos/[id]/pagos ─────────────────────────────
 export async function POST(request, { params }) {
@@ -106,6 +107,17 @@ export async function POST(request, { params }) {
     await tx.cliente.update({
       where: { id: prestamo.cliente.id },
       data:  { estado: nuevoEstadoCliente },
+    })
+
+    // Registrar recaudo en capital (si está configurado)
+    await registrarMovimientoCapital(tx, {
+      organizationId,
+      tipo: 'recaudo',
+      monto: montoFinal,
+      descripcion: `Pago recibido - préstamo`,
+      referenciaId: prestamoId,
+      referenciaTipo: 'pago',
+      creadoPorId: userId,
     })
 
     return prestamoActualizado

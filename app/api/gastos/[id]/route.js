@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { registrarMovimientoCapital } from '@/lib/capital'
 
 export async function PATCH(req, { params }) {
   const session = await getServerSession(authOptions)
@@ -27,9 +28,26 @@ export async function PATCH(req, { params }) {
     return NextResponse.json({ error: 'Gasto no encontrado' }, { status: 404 })
   }
 
-  const gasto = await prisma.gastoMenor.update({
-    where: { id },
-    data: { estado },
+  const gasto = await prisma.$transaction(async (tx) => {
+    const gastoActualizado = await tx.gastoMenor.update({
+      where: { id },
+      data: { estado },
+    })
+
+    // Si se aprueba, registrar en capital
+    if (estado === 'aprobado') {
+      await registrarMovimientoCapital(tx, {
+        organizationId: session.user.organizationId,
+        tipo: 'gasto',
+        monto: gastoExistente.monto,
+        descripcion: `Gasto: ${gastoExistente.description}`,
+        referenciaId: id,
+        referenciaTipo: 'gasto',
+        creadoPorId: session.user.id,
+      })
+    }
+
+    return gastoActualizado
   })
 
   return NextResponse.json(gasto)

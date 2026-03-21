@@ -10,6 +10,7 @@ import {
   calcularPorcentajePagado,
   pagoHoy,
 } from '@/lib/calculos'
+import { registrarMovimientoCapital } from '@/lib/capital'
 
 // ─── GET /api/prestamos ─────────────────────────────────────────
 export async function GET(request) {
@@ -152,6 +153,17 @@ export async function POST(request) {
     await tx.cliente.update({
       where: { id: clienteId },
       data:  { estado: 'activo' },
+    })
+
+    // Registrar desembolso en capital (si está configurado)
+    await registrarMovimientoCapital(tx, {
+      organizationId,
+      tipo: 'desembolso',
+      monto: Number(montoPrestado),
+      descripcion: `Desembolso préstamo a ${cliente.nombre}`,
+      referenciaId: nuevo.id,
+      referenciaTipo: 'prestamo',
+      creadoPorId: session.user.id,
     })
 
     return nuevo
