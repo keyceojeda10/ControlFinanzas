@@ -8,9 +8,11 @@ import { prisma } from '@/lib/prisma'
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
   const leadId = searchParams.get('lead')
-  const waUrl = searchParams.get('wa') // URL de wa.me completa (encoded)
+  // searchParams.get() ya decodifica un nivel automáticamente
+  // NO usar decodeURIComponent adicional — destruye los %0A (saltos de línea) de la URL
+  const waMe = searchParams.get('wa')
 
-  if (!waUrl) {
+  if (!waMe) {
     return NextResponse.redirect('https://wa.me/')
   }
 
@@ -29,11 +31,9 @@ export async function GET(request) {
     }
   }
 
-  const decodedWaUrl = decodeURIComponent(waUrl)
-
   // Intent Android: usa la misma URL de wa.me pero forzando apertura con WA Business
-  // Mantiene el encoding original de la URL (preserva %0A para saltos de línea)
-  const intentUrl = decodedWaUrl.replace('https://', 'intent://') +
+  // waMe ya tiene %0A intactos para saltos de línea
+  const intentUrl = waMe.replace('https://', 'intent://') +
     '#Intent;scheme=https;package=com.whatsapp.w4b;end'
 
   const html = `<!DOCTYPE html>
@@ -51,11 +51,11 @@ export async function GET(request) {
 <body>
   <div class="container">
     <p>Abriendo WhatsApp Business...</p>
-    <p><a id="wa-link" href="${decodedWaUrl}">Abrir WhatsApp</a></p>
+    <p><a id="wa-link" href="${waMe}">Abrir WhatsApp</a></p>
   </div>
   <script>
     (function() {
-      var waMe = ${JSON.stringify(decodedWaUrl)};
+      var waMe = ${JSON.stringify(waMe)};
       var intentUrl = ${JSON.stringify(intentUrl)};
       var isAndroid = /android/i.test(navigator.userAgent);
 
