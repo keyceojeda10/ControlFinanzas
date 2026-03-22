@@ -54,26 +54,44 @@ export async function GET(request, { params }) {
   let pendientesHoy = 0
   let enMora = 0
 
+  // Cachear fechas para evitar recalcular en cada iteración
+  const _hoy = hoy(), _manana = manana()
+
   const clientesEnriquecidos = ruta.clientes.map((c) => {
     let cuotaCliente = 0
     let pagadoHoy    = 0
     let mora         = 0
+    let ultimaFechaPago = null
 
     for (const p of c.prestamos) {
       cuotaCliente  += p.cuotaDiaria
       esperadoHoy   += p.cuotaDiaria
       const pagosHoy = p.pagos.filter(
-        (pg) => new Date(pg.fechaPago) >= hoy() && new Date(pg.fechaPago) < manana()
+        (pg) => new Date(pg.fechaPago) >= _hoy && new Date(pg.fechaPago) < _manana
       )
       const montoPagadoHoy = pagosHoy.reduce((a, pg) => a + pg.montoPagado, 0)
       pagadoHoy    += montoPagadoHoy
       recaudadoHoy += montoPagadoHoy
       mora = Math.max(mora, calcularDiasMora(p))
+
+      // Último pago más reciente (pagos ya vienen ordenados por fechaPago desc)
+      if (p.pagos.length > 0) {
+        const fecha = new Date(p.pagos[0].fechaPago)
+        if (!ultimaFechaPago || fecha > ultimaFechaPago) ultimaFechaPago = fecha
+      }
     }
 
     const yaPageHoy = pagadoHoy > 0
     if (!yaPageHoy && c.prestamos.length > 0) pendientesHoy++
     if (mora > 0) enMora++
+
+    // Calcular días desde último pago
+    let diasDesdeUltimoPago = null
+    if (ultimaFechaPago) {
+      const ultimoDia = new Date(ultimaFechaPago)
+      ultimoDia.setHours(0, 0, 0, 0)
+      diasDesdeUltimoPago = Math.floor((_hoy - ultimoDia) / 86400000)
+    }
 
     return {
       id:        c.id,
@@ -85,6 +103,7 @@ export async function GET(request, { params }) {
       estado:    mora > 0 ? 'mora' : (c.prestamos.length > 0 ? 'activo' : 'cancelado'),
       pagoHoy:   yaPageHoy,
       diasMora:  mora,
+      diasDesdeUltimoPago,
     }
   })
 

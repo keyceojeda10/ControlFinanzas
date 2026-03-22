@@ -42,6 +42,14 @@ export default function RutaDetallePage({ params }) {
   const [optimizando,    setOptimizando]    = useState(false)
   const [optimResult,    setOptimResult]    = useState(null)
   const [showMap,        setShowMap]        = useState(false)
+  const [highlightId,    setHighlightId]    = useState(null)
+  const [banner,         setBanner]         = useState(null)
+
+  // Helper: fecha Colombia como string YYYY-MM-DD
+  const getColombiaDateStr = () => {
+    const d = new Date(Date.now() - 5 * 60 * 60 * 1000)
+    return d.toISOString().slice(0, 10)
+  }
 
   const fetchRuta = async () => {
     try {
@@ -61,6 +69,58 @@ export default function RutaDetallePage({ params }) {
       fetch('/api/cobradores').then((r) => r.json()).then(setCobradores).catch(() => {})
     }
   }, [id, esOwner])
+
+  // Feature 2: Auto-scroll al siguiente cliente al volver
+  useEffect(() => {
+    if (!ruta?.clientes?.length) return
+    const scrollTo = sessionStorage.getItem(`ruta-scroll-${id}`)
+    if (!scrollTo) return
+    sessionStorage.removeItem(`ruta-scroll-${id}`)
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`cliente-${scrollTo}`)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        setHighlightId(scrollTo)
+        setTimeout(() => setHighlightId(null), 2000)
+      }
+    })
+  }, [ruta, id])
+
+  // Feature 3: Banner "Continuar ruta" / "Nueva ruta"
+  useEffect(() => {
+    if (!ruta?.clientes?.length) return
+    // No mostrar banner si acabamos de volver de un cliente (scroll restoration)
+    if (sessionStorage.getItem(`ruta-scroll-${id}`)) return
+
+    const saved = localStorage.getItem(`cf-ruta-progress-${id}`)
+    if (!saved) return
+
+    try {
+      const { clienteId, clienteNombre, date } = JSON.parse(saved)
+      const today = getColombiaDateStr()
+      const savedDate = new Date(date + 'T12:00:00')
+      const todayDate = new Date(today + 'T12:00:00')
+      const diffDays = Math.round((todayDate - savedDate) / 86400000)
+
+      // Verificar que el cliente siga en la ruta
+      if (!ruta.clientes.some(c => c.id === clienteId)) {
+        localStorage.removeItem(`cf-ruta-progress-${id}`)
+        return
+      }
+
+      if (diffDays === 0) {
+        setBanner({ type: 'today', clienteId, clienteNombre, label: 'Dejaste la ruta en' })
+      } else if (diffDays === 1) {
+        setBanner({ type: 'yesterday', clienteId, clienteNombre, label: 'Ayer llegaste hasta' })
+      } else if (diffDays <= 7) {
+        setBanner({ type: 'days', clienteId, clienteNombre, label: `Hace ${diffDays} días llegaste hasta` })
+      } else {
+        localStorage.removeItem(`cf-ruta-progress-${id}`)
+      }
+    } catch {
+      localStorage.removeItem(`cf-ruta-progress-${id}`)
+    }
+  }, [ruta, id])
 
   const cambiarCobrador = async (cobradorId) => {
     await fetch(`/api/rutas/${id}`, {
@@ -353,6 +413,46 @@ export default function RutaDetallePage({ params }) {
         </div>
       </Card>
 
+      {/* Banner: Continuar ruta */}
+      {banner && (
+        <div className="bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.2)] rounded-[16px] px-4 py-3">
+          <p className="text-sm text-[white]">
+            {banner.label} <strong className="text-[#f5c518]">{banner.clienteNombre}</strong>
+          </p>
+          <div className="flex gap-2 mt-2">
+            <button
+              onClick={() => {
+                setBanner(null)
+                // Buscar el siguiente cliente después del guardado
+                const idx = ruta.clientes.findIndex(c => c.id === banner.clienteId)
+                const nextIdx = idx >= 0 ? Math.min(idx + 1, ruta.clientes.length - 1) : 0
+                const targetId = ruta.clientes[nextIdx].id
+                requestAnimationFrame(() => {
+                  const el = document.getElementById(`cliente-${targetId}`)
+                  if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                    setHighlightId(targetId)
+                    setTimeout(() => setHighlightId(null), 2000)
+                  }
+                })
+              }}
+              className="px-3 py-1.5 rounded-[10px] bg-[#f5c518] text-[#0a0a0a] text-xs font-semibold active:scale-95 transition-transform"
+            >
+              Continuar ruta
+            </button>
+            <button
+              onClick={() => {
+                setBanner(null)
+                localStorage.removeItem(`cf-ruta-progress-${id}`)
+              }}
+              className="px-3 py-1.5 rounded-[10px] bg-[#1a1a1a] border border-[#2a2a2a] text-[#888888] text-xs font-medium active:scale-95 transition-transform"
+            >
+              Nueva ruta
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Clientes de la ruta */}
       <Card>
         <div className="flex items-center justify-between mb-4">
@@ -431,6 +531,7 @@ export default function RutaDetallePage({ params }) {
             {ruta.clientes.map((c, idx) => (
               <div
                 key={c.id}
+                id={`cliente-${c.id}`}
                 draggable
                 onDragStart={() => handleDragStart(idx)}
                 onDragOver={(e) => handleDragOver(e, idx)}
@@ -440,6 +541,7 @@ export default function RutaDetallePage({ params }) {
                   'flex items-center gap-2 py-2.5 px-1 border-b border-[#2a2a2a] last:border-0 transition-all',
                   dragIndex === idx ? 'opacity-40' : '',
                   dragOverIdx === idx && dragIndex !== idx ? 'border-t-2 border-t-[#f5c518]' : '',
+                  highlightId === c.id ? 'bg-[rgba(245,197,24,0.12)] rounded-lg' : '',
                 ].join(' ')}
                 style={{ cursor: 'grab' }}
               >
@@ -467,15 +569,38 @@ export default function RutaDetallePage({ params }) {
                 <div className="w-7 h-7 rounded-full bg-[rgba(245,197,24,0.15)] flex items-center justify-center shrink-0">
                   <span className="text-[#f5c518] text-[10px] font-bold">{c.nombre?.[0]?.toUpperCase()}</span>
                 </div>
-                <div className="flex-1 min-w-0" onClick={() => router.push(`/clientes/${c.id}`)}>
+                <div className="flex-1 min-w-0" onClick={() => {
+                  // Auto-scroll al SIGUIENTE cliente al volver
+                  const nextIdx = Math.min(idx + 1, ruta.clientes.length - 1)
+                  sessionStorage.setItem(`ruta-scroll-${id}`, ruta.clientes[nextIdx].id)
+                  // Guardar progreso para banner "continuar ruta"
+                  localStorage.setItem(`cf-ruta-progress-${id}`, JSON.stringify({
+                    clienteId: c.id,
+                    clienteNombre: c.nombre,
+                    index: idx,
+                    date: getColombiaDateStr(),
+                  }))
+                  router.push(`/clientes/${c.id}`)
+                }}>
                   <p className="text-sm font-medium text-[white] truncate">{c.nombre}</p>
                   <p className="text-[10px] text-[#888888]">
-                    {c.diasMora > 0 ? `${c.diasMora} días en mora` : c.pagoHoy ? 'Pagó hoy' : 'Pendiente'}
-                    {c.latitud != null && ' • 📍'}
+                    {c.diasMora > 0
+                      ? `${c.diasMora} días en mora`
+                      : c.pagoHoy
+                        ? 'Pagó hoy'
+                        : c.diasDesdeUltimoPago === 1
+                          ? 'Pagó ayer · Falta hoy'
+                          : c.diasDesdeUltimoPago >= 2
+                            ? `Hace ${c.diasDesdeUltimoPago} días`
+                            : 'Pendiente'}
+                    {c.latitud != null && ' · 📍'}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   {c.pagoHoy && <span className="w-2 h-2 rounded-full bg-[#22c55e]" />}
+                  {!c.pagoHoy && c.diasDesdeUltimoPago != null && c.diasDesdeUltimoPago >= 1 && c.diasMora === 0 && (
+                    <span className="w-2 h-2 rounded-full bg-[#f59e0b]" />
+                  )}
                   {c.diasMora > 0 && <Badge variant="red">{c.diasMora}d</Badge>}
                   {esOwner && (
                     <button
