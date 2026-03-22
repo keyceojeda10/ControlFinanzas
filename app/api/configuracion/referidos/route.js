@@ -21,7 +21,16 @@ export async function GET() {
       select: {
         codigoReferido: true,
         referidos: {
-          select:  { id: true, nombre: true, createdAt: true },
+          select: {
+            id: true,
+            nombre: true,
+            createdAt: true,
+            suscripciones: {
+              where: { montoCOP: { gt: 0 } },
+              select: { id: true },
+              take: 1,
+            },
+          },
           orderBy: { createdAt: 'desc' },
         },
       },
@@ -35,7 +44,12 @@ export async function GET() {
       success: true,
       data: {
         codigoReferido: org.codigoReferido,
-        referidos:      org.referidos,
+        referidos:      org.referidos.map(r => ({
+          id: r.id,
+          nombre: r.nombre,
+          createdAt: r.createdAt,
+          pagado: r.suscripciones.length > 0,
+        })),
         totalReferidos: org.referidos.length,
       },
     })

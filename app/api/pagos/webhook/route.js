@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { prisma }       from '@/lib/prisma'
 import { paymentApi }   from '@/lib/mercadopago'
 import crypto           from 'crypto'
-import { enviarEmail, emailPagoAprobado, emailPagoFallido } from '@/lib/email'
+import { enviarEmail, emailPagoAprobado, emailPagoFallido, emailReferidoExitoso } from '@/lib/email'
 
 // Valores válidos del enum Plan en Prisma/DB
 const PLANES_VALIDOS = ["test", "basic", "standard", "professional"]
@@ -195,6 +195,23 @@ export async function POST(req) {
               data: { fechaVencimiento: nuevaFechaRef },
             })
             console.log('[webhook] +30 días para referidor org=' + orgData.referidoPorId + ' por referido org=' + orgId)
+
+            // Notificar al referidor por email
+            const ownerRef = await prisma.user.findFirst({
+              where: { organizationId: orgData.referidoPorId, rol: 'owner' },
+              select: { nombre: true, email: true },
+            })
+            if (ownerRef) {
+              const orgReferida = await prisma.organization.findUnique({
+                where: { id: orgId },
+                select: { nombre: true },
+              })
+              const { subject: sRef, html: hRef } = emailReferidoExitoso({
+                nombre: ownerRef.nombre,
+                nombreReferido: orgReferida?.nombre || 'Un referido',
+              })
+              enviarEmail({ to: ownerRef.email, subject: sRef, html: hRef }).catch(() => {})
+            }
           }
         }
       }

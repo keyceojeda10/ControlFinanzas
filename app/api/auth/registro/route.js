@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import bcrypt           from 'bcryptjs'
 import crypto           from 'crypto'
 import { prisma }       from '@/lib/prisma'
-import { enviarEmail, emailBienvenida, emailReferidoExitoso, emailVerificacion } from '@/lib/email'
+import { enviarEmail, emailBienvenida, emailVerificacion } from '@/lib/email'
 import { sendConversionEvent } from '@/lib/facebook-capi'
 import { registroLimiter, getClientIp } from '@/lib/rate-limit'
 
@@ -146,44 +146,8 @@ export async function POST(req) {
     })
     enviarEmail({ to: emailNorm, subject, html }).catch(() => {})
 
-    // Si hubo referido: extender suscripción del referidor y notificarle
-    if (orgReferidora) {
-      try {
-        const subRef = await prisma.suscripcion.findFirst({
-          where:   { organizationId: orgReferidora.id },
-          orderBy: { createdAt: 'desc' },
-        })
-
-        if (subRef) {
-          const baseDate =
-            subRef.estado === 'activa' && new Date(subRef.fechaVencimiento) > new Date()
-              ? new Date(subRef.fechaVencimiento)
-              : new Date()
-          const nuevaFecha = new Date(baseDate)
-          nuevaFecha.setDate(nuevaFecha.getDate() + 30)
-          await prisma.suscripcion.update({
-            where: { id: subRef.id },
-            data:  { fechaVencimiento: nuevaFecha, estado: 'activa' },
-          })
-        }
-
-        // Notificar al owner de la organización referidora
-        const ownerRef = await prisma.user.findFirst({
-          where:  { organizationId: orgReferidora.id, rol: 'owner' },
-          select: { nombre: true, email: true },
-        })
-        if (ownerRef) {
-          const { subject: subRef2, html: htmlRef } = emailReferidoExitoso({
-            nombre:         ownerRef.nombre,
-            nombreReferido: nombreOrganizacion.trim(),
-          })
-          enviarEmail({ to: ownerRef.email, subject: subRef2, html: htmlRef }).catch(() => {})
-        }
-      } catch (errRef) {
-        // El error en el flujo del referido no debe bloquear el registro exitoso
-        console.error('[registro] Error procesando recompensa de referido:', errRef)
-      }
-    }
+    // Nota: la recompensa de referido (+30 días) se otorga cuando el referido
+    // paga su primer plan, no al registrarse. Ver webhook de MercadoPago.
 
     // Facebook CAPI: reportar conversión real (fire-and-forget)
     sendConversionEvent({

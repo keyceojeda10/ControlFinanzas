@@ -1,0 +1,988 @@
+═══════════════════════════════════════════════════════════════
+  GUIONES DE VIDEOS TUTORIALES — CONTROL FINANZAS
+  Formato: Narracion + [lo que se muestra en pantalla]
+  Duracion estimada por video: 1-3 minutos
+═══════════════════════════════════════════════════════════════
+
+
+═══════════════════════════════════════════════════════════════
+  CATEGORIA 1: PRIMEROS PASOS
+═══════════════════════════════════════════════════════════════
+
+
+───────────────────────────────────────────────────────────────
+VIDEO 1: Como registrarse en la plataforma
+Duracion estimada: 1:30 min
+───────────────────────────────────────────────────────────────
+
+[Pantalla: pagina de login de app.control-finanzas.com]
+
+NARRADOR:
+"Bienvenido a Control Finanzas. Te voy a mostrar como crear tu cuenta en menos de un minuto."
+
+[Hacer zoom al enlace "Registrate gratis" debajo del boton Ingresar]
+
+"En la pantalla de inicio, toca donde dice Registrate gratis, aqui abajo del boton amarillo."
+
+[Click en Registrate gratis → se abre el formulario de registro]
+
+"Te aparece el formulario de registro. Llena tu nombre completo, tu correo electronico y una contrasena."
+
+[Llenar los campos uno por uno, pausadamente]
+
+"Ojo: usa un correo que revises seguido porque ahi te van a llegar las notificaciones del sistema."
+
+[Tocar boton "Crear cuenta"]
+
+"Toca Crear cuenta... y listo. Ahora revisa tu correo, te llego un mensaje de verificacion."
+
+[Mostrar bandeja de correo con el email de verificacion]
+
+"Abre ese correo y toca el enlace para confirmar tu cuenta."
+
+[Click en el enlace → redirige a login]
+
+"Ya esta. Tu cuenta quedo activa y puedes iniciar sesion."
+
+[Pantalla de login]
+
+"Escribe tu correo, tu contrasena, y toca Ingresar."
+
+CIERRE: "Asi de rapido. Ya tienes tu cuenta en Control Finanzas."
+
+
+───────────────────────────────────────────────────────────────
+VIDEO 2: Como iniciar sesion
+Duracion estimada: 0:45 min
+───────────────────────────────────────────────────────────────
+
+[Pantalla: pagina de login]
+
+NARRADOR:
+"Para entrar al sistema, ve a app.control-finanzas.com."
+
+[Hacer zoom a los campos de correo y contrasena]
+
+"Escribe tu correo electronico en el primer campo."
+
+[Escribir correo]
+
+"Y tu contrasena en el segundo campo."
+
+[Escribir contrasena]
+
+"Toca el boton amarillo Ingresar."
+
+[Click en Ingresar → se carga el Dashboard]
+
+"Y ya estas adentro. Te lleva directo al Dashboard, que es tu panel principal."
+
+[Senalar el Dashboard brevemente]
+
+"Si olvidaste tu contrasena, no te preocupes. Hay un enlace justo aqui abajo que dice Olvidaste tu contrasena. Toca ahi y sigue los pasos para recuperarla."
+
+CIERRE: "Eso es todo. Asi de simple es entrar."
+
+
+───────────────────────────────────────────────────────────────
+VIDEO 3: Como recuperar tu contrasena
+Duracion estimada: 1:00 min
+───────────────────────────────────────────────────────────────
+
+[Pantalla: pagina de login]
+
+NARRADOR:
+"Si olvidaste tu contrasena, te muestro como recuperarla."
+
+[Hacer zoom al enlace "Olvidaste tu contrasena?"]
+
+"En la pantalla de login, toca donde dice Olvidaste tu contrasena."
+
+[Click → se abre la pantalla de recuperacion]
+
+"Te pide tu correo electronico. Escribe el mismo correo con el que te registraste."
+
+[Escribir correo]
+
+"Toca Enviar enlace."
+
+[Click en Enviar enlace → mensaje de confirmacion]
+
+"Listo. Ahora ve a tu correo. Si no lo ves en la bandeja principal, revisa en spam."
+
+[Mostrar correo recibido]
+
+"Abre el correo y toca el enlace que te enviamos."
+
+[Click en enlace → pagina de nueva contrasena]
+
+"Aqui escribes tu nueva contrasena. Minimo 6 caracteres. La confirmas abajo."
+
+[Escribir contrasena nueva dos veces]
+
+"Toca Cambiar contrasena... y listo."
+
+[Click → redirige a login]
+
+CIERRE: "Ya puedes entrar con tu nueva contrasena."
+
+
+───────────────────────────────────────────────────────────────
+VIDEO 4: Como usar el Dashboard
+Duracion estimada: 2:00 min
+───────────────────────────────────────────────────────────────
+
+[Pantalla: Dashboard con datos reales]
+
+NARRADOR:
+"Este es el Dashboard, tu panel principal. Aqui ves todo el resumen de tu negocio en tiempo real."
+
+[Hacer zoom a las 4 tarjetas de KPIs arriba]
+
+"Arriba tienes los numeros clave. Clientes activos y cuantos estan en mora. Prestamos activos. La cartera activa, que es el total que te deben. Y la cuota diaria, lo que esperas cobrar por dia."
+
+[Senalar cada tarjeta mientras se nombra]
+
+"Si tienes el modulo de Capital activado, tambien ves tu saldo disponible aqui."
+
+[Bajar a la seccion de Recaudado]
+
+"Aqui abajo tienes dos cajas importantes: lo que recaudaste hoy, con una barra que muestra que porcentaje de la meta diaria llevas. Y al lado, lo recaudado en el mes."
+
+[Bajar a Ultimos pagos]
+
+"Mas abajo, los ultimos pagos registrados. Puedes ver quien pago, cuanto y cuando."
+
+[Bajar a Alertas de mora]
+
+"Y la seccion de alertas de mora. Esta organizada por gravedad: rojo para mas de 30 dias, naranja para 16 a 30, amarillo para 8 a 15, y verde para 1 a 7 dias. Asi identificas rapido quien se esta atrasando mas."
+
+[Bajar a Accesos rapidos]
+
+"Al final tienes los accesos rapidos. Desde aqui puedes ir directo a crear un cliente, un prestamo, cerrar caja, ver rutas o entrar a configuracion."
+
+CIERRE: "Este es tu centro de control. Cada vez que entres al sistema, empiezas aqui."
+
+
+═══════════════════════════════════════════════════════════════
+  CATEGORIA 2: CLIENTES Y PRESTAMOS
+═══════════════════════════════════════════════════════════════
+
+
+───────────────────────────────────────────────────────────────
+VIDEO 5: Como crear un cliente nuevo
+Duracion estimada: 1:30 min
+───────────────────────────────────────────────────────────────
+
+[Pantalla: Dashboard o cualquier pagina]
+
+NARRADOR:
+"Te voy a mostrar como registrar tu primer cliente."
+
+[Tocar "Clientes" en el menu inferior]
+
+"Ve a Clientes en el menu de abajo."
+
+[Pantalla: lista de clientes → hacer zoom al boton "+ Nuevo cliente"]
+
+"Arriba a la derecha, toca el boton amarillo Nuevo cliente."
+
+[Click → se abre el formulario]
+
+"Te aparece el formulario. Vamos a llenarlo."
+
+[Llenar campo Nombre]
+
+"Primero el nombre completo del cliente. Este es obligatorio."
+
+[Llenar campo Cedula]
+
+"La cedula. Entre 6 y 12 digitos. El sistema verifica que no este repetida."
+
+[Llenar campo Telefono]
+
+"El telefono. Tambien obligatorio."
+
+[Llenar campos opcionales]
+
+"Direccion, referencia y notas son opcionales. La referencia es util para ubicar al cliente, por ejemplo: Tienda La Esquina, Casa azul frente al parque."
+
+[Si hay rutas creadas, mostrar el selector de ruta]
+
+"Si ya tienes rutas creadas, aqui puedes asignarle la ruta directamente."
+
+[Tocar "Guardar cliente"]
+
+"Toca Guardar cliente..."
+
+[Se guarda y redirige a lista de clientes]
+
+"Y listo. El cliente ya quedo registrado y puedes crearle un prestamo."
+
+CIERRE: "Asi de facil. Nombre, cedula, telefono y guardar."
+
+
+───────────────────────────────────────────────────────────────
+VIDEO 6: Como editar un cliente
+Duracion estimada: 1:00 min
+───────────────────────────────────────────────────────────────
+
+[Pantalla: lista de clientes]
+
+NARRADOR:
+"Si necesitas cambiar los datos de un cliente, te muestro como."
+
+[Tocar un cliente de la lista]
+
+"Entra a la lista de clientes y toca el nombre del cliente que quieres editar."
+
+[Pantalla: ficha del cliente → hacer zoom al boton Editar]
+
+"En la ficha del cliente, toca el boton Editar."
+
+[Click en Editar → se abren los campos editables]
+
+"Ahora puedes modificar lo que necesites: nombre, telefono, direccion, notas."
+
+[Cambiar un campo, por ejemplo el telefono]
+
+"Vamos a cambiarle el telefono como ejemplo."
+
+[Tocar "Guardar cambios"]
+
+"Toca Guardar cambios."
+
+[Se guarda exitosamente]
+
+"Listo. Los datos se actualizan al instante."
+
+CIERRE: "Si cambias la cedula, el sistema verifica que no este repetida con otro cliente."
+
+
+───────────────────────────────────────────────────────────────
+VIDEO 7: Como crear un prestamo
+Duracion estimada: 2:30 min
+───────────────────────────────────────────────────────────────
+
+[Pantalla: menu principal]
+
+NARRADOR:
+"Ahora te muestro como crear un prestamo. Esta es la parte mas importante del sistema."
+
+[Tocar "Prestamos" en el menu]
+
+"Ve a Prestamos en el menu de abajo."
+
+[Pantalla: lista de prestamos → tocar "+ Nuevo prestamo"]
+
+"Toca el boton Nuevo prestamo."
+
+[Pantalla: formulario de nuevo prestamo]
+
+"Primero selecciona el tipo. Prestamo es para dinero en efectivo. Mercancia es cuando prestas un producto."
+
+[Seleccionar "Prestamo"]
+
+"Vamos con Prestamo."
+
+[Campo: Cliente → buscar por nombre]
+
+"Busca al cliente por nombre o cedula. Seleccionalo de la lista."
+
+[Seleccionar cliente]
+
+[Campo: Monto prestado]
+
+"Escribe el monto que le vas a prestar. Por ejemplo, cien mil pesos."
+
+[Escribir 100000]
+
+[Campo: Tasa de interes]
+
+"La tasa de interes. Si cobras el 20 por ciento, escribe 20."
+
+[Escribir 20]
+
+[Campo: Plazo en dias]
+
+"El plazo. Cuantos dias tiene para pagar. Ponemos 30 dias."
+
+[Escribir 30]
+
+[Campo: Frecuencia de cobro]
+
+"La frecuencia de cobro: diario, semanal, quincenal o mensual. Para este ejemplo, diario."
+
+[Seleccionar "Diario"]
+
+[Campo: Fecha de inicio]
+
+"Y la fecha de inicio. Por defecto es hoy, pero la puedes cambiar."
+
+[Hacer zoom al resumen que aparece abajo]
+
+"Mira lo que aparece abajo: el sistema ya calculo todo automaticamente. Total a pagar: 120 mil pesos. Cuota diaria: 4 mil pesos. 30 cuotas."
+
+[Tocar "Crear prestamo"]
+
+"Si todo esta bien, toca Crear prestamo."
+
+[Se crea el prestamo → redirige a detalle]
+
+"Listo. El prestamo quedo activo y las cuotas se generaron automaticamente."
+
+CIERRE: "El sistema hace todas las cuentas por ti. Tu solo pones el monto, la tasa y el plazo."
+
+
+───────────────────────────────────────────────────────────────
+VIDEO 8: Como registrar un pago
+Duracion estimada: 1:30 min
+───────────────────────────────────────────────────────────────
+
+[Pantalla: lista de prestamos]
+
+NARRADOR:
+"Te muestro como registrar un pago cuando un cliente te paga."
+
+[Tocar un prestamo activo de la lista]
+
+"Ve a Prestamos y toca el prestamo del cliente."
+
+[Pantalla: detalle del prestamo → hacer zoom al boton verde "Registrar pago"]
+
+"Aqui abajo ves el boton verde que dice Registrar pago con el monto de la cuota. En este caso dice Registrar pago, 4 mil pesos."
+
+[Tocar el boton verde]
+
+"Toca ese boton y el pago se registra automaticamente."
+
+[Se registra el pago → se actualiza el saldo]
+
+"Mira como se actualizo: el saldo pendiente bajo, la barra de progreso avanzo, y el pago aparece en el historial."
+
+[Hacer zoom al historial de pagos]
+
+"Aqui en el historial puedes ver todos los pagos registrados, con fecha y monto."
+
+[Volver a la vista del prestamo → senalar "Hacer abono extraordinario"]
+
+"Y si el cliente te paga un monto diferente a la cuota? Toca Hacer abono extraordinario. Ahi escribes el monto que te pago y se registra como un abono parcial o extra."
+
+CIERRE: "Asi de rapido. Un toque y el pago queda registrado."
+
+
+═══════════════════════════════════════════════════════════════
+  CATEGORIA 3: COBRO Y RUTAS
+═══════════════════════════════════════════════════════════════
+
+
+───────────────────────────────────────────────────────────────
+VIDEO 9: Como crear una ruta
+Duracion estimada: 1:00 min
+───────────────────────────────────────────────────────────────
+
+[Pantalla: menu principal]
+
+NARRADOR:
+"Las rutas te sirven para organizar tus clientes por zona. Te muestro como crear una."
+
+[Navegar a Rutas (en desktop: menu lateral. En movil: Mas → Rutas)]
+
+"Ve a Rutas en el menu."
+
+[Pantalla: lista de rutas → tocar "+ Nueva ruta"]
+
+"Toca Nueva ruta."
+
+[Escribir nombre de la ruta]
+
+"Ponle un nombre. Por ejemplo: Ruta Norte, o Zona Centro. Algo que te identifique la zona."
+
+[Escribir "Ruta Norte"]
+
+[Tocar "Crear"]
+
+"Toca Crear."
+
+[Se crea la ruta → aparece en la lista]
+
+"Listo. La ruta esta creada. Ahora puedes asignarle un cobrador y agregarle clientes."
+
+CIERRE: "Puedes crear tantas rutas como necesites. Una por zona, por barrio, como quieras organizarte."
+
+
+───────────────────────────────────────────────────────────────
+VIDEO 10: Como enrutar y desenrutar clientes
+Duracion estimada: 1:30 min
+───────────────────────────────────────────────────────────────
+
+[Pantalla: lista de rutas]
+
+NARRADOR:
+"Ahora te muestro como agregar y quitar clientes de una ruta."
+
+[Tocar una ruta existente]
+
+"Entra a la ruta donde quieres agregar clientes."
+
+[Pantalla: detalle de la ruta → hacer zoom a "+ Agregar clientes"]
+
+"Toca el boton Agregar clientes."
+
+[Se abre el selector de clientes sin ruta]
+
+"Te aparecen los clientes que no tienen ruta asignada. Marca los que quieres agregar con el checkbox."
+
+[Marcar 2 o 3 clientes]
+
+[Tocar "Agregar"]
+
+"Toca Agregar y listo, ya quedaron asignados a esta ruta."
+
+[Mostrar la lista de clientes en la ruta]
+
+"Ahora los ves aqui en la lista de la ruta."
+
+[Hacer zoom a la X al lado de un cliente]
+
+"Y si quieres quitar un cliente de la ruta? Ves esta equis al lado del nombre? Toca ahi."
+
+[Tocar la X]
+
+"El cliente se quita de la ruta, pero no se borra del sistema. Lo puedes asignar a otra ruta despues."
+
+CIERRE: "Solo el administrador puede enrutar y desenrutar clientes."
+
+
+───────────────────────────────────────────────────────────────
+VIDEO 11: Como reordenar clientes en una ruta
+Duracion estimada: 0:45 min
+───────────────────────────────────────────────────────────────
+
+[Pantalla: detalle de una ruta con varios clientes]
+
+NARRADOR:
+"El orden de los clientes en la ruta define el recorrido del cobrador. Te muestro como cambiarlo."
+
+[Hacer zoom a las flechas arriba/abajo al lado de los clientes]
+
+"Ves estas flechitas al lado izquierdo de cada cliente? La de arriba lo sube y la de abajo lo baja."
+
+[Tocar flecha arriba en un cliente que esta abajo]
+
+"Toco la flecha de arriba y el cliente sube una posicion."
+
+[Se mueve el cliente → aparece mensaje "Orden guardado"]
+
+"El orden se guarda automaticamente. Ves el mensaje: Orden guardado."
+
+[En desktop: mostrar arrastrar y soltar]
+
+"Si estas en computador, tambien puedes arrastrar y soltar los clientes para reordenarlos."
+
+CIERRE: "Organiza la ruta en el orden que mas le convenga al cobrador."
+
+
+───────────────────────────────────────────────────────────────
+VIDEO 12: Como recorrer una ruta de cobro
+Duracion estimada: 2:30 min
+───────────────────────────────────────────────────────────────
+
+[Pantalla: lista de rutas con una ruta que tiene clientes]
+
+NARRADOR:
+"Ahora te muestro lo mas importante: como recorrer una ruta de cobro paso a paso. El sistema te lleva de cliente en cliente para que no pierdas tiempo."
+
+[Tocar una ruta → se abre el detalle con la lista de clientes]
+
+"Entra a la ruta que vas a cobrar. Ves la lista de clientes? Fijate en los indicadores de colores al lado de cada uno."
+
+[Hacer zoom a un cliente con punto verde "Pago hoy"]
+
+"El punto verde significa que ya pago hoy. No necesitas visitarlo."
+
+[Hacer zoom a un cliente con punto amarillo "Pago ayer · Falta hoy"]
+
+"Amarillo: pago ayer pero hoy todavia no. Toca ir a cobrarle."
+
+[Hacer zoom a un cliente con punto naranja "Hace 3 dias"]
+
+"Naranja: lleva varios dias sin pagar. Entre mas dias, mas urgente."
+
+[Tocar el primer cliente de la lista]
+
+"Empecemos. Toca el primer cliente."
+
+[Pantalla: ficha del cliente → hacer zoom a la barra de navegacion arriba]
+
+"Mira arriba: aparece una barra que dice 1 de 15 con flechas para moverte. Eso te dice en que posicion vas de la ruta."
+
+[Senalar el boton "Volver a Ruta Norte"]
+
+"El boton de atras te dice el nombre de la ruta. Pero no necesitas volver a la lista, eso es lo bueno."
+
+[Tocar el prestamo del cliente → registrar pago]
+
+"Entra al prestamo y registra el pago como siempre."
+
+[Despues del pago → hacer zoom al boton "Siguiente → Juan Perez"]
+
+"Despues de registrar el pago, aparece este boton: Siguiente, y te dice el nombre del proximo cliente. Toca ahi."
+
+[Click en Siguiente → se abre la ficha del siguiente cliente]
+
+"Te lleva directo al siguiente cliente. Sin volver a la lista."
+
+[En la ficha del nuevo cliente → hacer zoom a "No pago · Siguiente"]
+
+"Si este cliente no esta y no le vas a cobrar, toca No pago, Siguiente. Lo saltas y avanzas al que sigue."
+
+[Click en "No pago · Siguiente" → avanza al siguiente]
+
+"Asi de facil. Saltas y sigues."
+
+[Avanzar hasta el ultimo cliente → hacer zoom a "Ruta finalizada"]
+
+"Cuando llegas al ultimo cliente, aparece el boton Ruta finalizada que te devuelve a la lista de la ruta."
+
+[Click → vuelve a la ruta. Cerrar la app]
+
+"Ahora imagina que tienes que parar a mitad de ruta. Cierras la app o haces otra cosa."
+
+[Volver a abrir la ruta → aparece el banner amarillo "Continuar ruta"]
+
+"Cuando vuelves a abrir la misma ruta, mira: te aparece un aviso que dice donde te quedaste. Toca Continuar ruta y te lleva justo a donde ibas."
+
+[La lista se desplaza automaticamente al siguiente cliente]
+
+"La lista se mueve sola al cliente que sigue. No tienes que buscarlo."
+
+[Senalar boton "Nueva ruta"]
+
+"Y si prefieres empezar desde cero, toca Nueva ruta."
+
+CIERRE: "Asi funciona el cobro en ruta. El sistema te guia de cliente en cliente, recuerda donde te quedaste, y te muestra quien ya pago. Solo sigue los botones."
+
+
+───────────────────────────────────────────────────────────────
+VIDEO 13: Como crear un cobrador
+Duracion estimada: 2:00 min
+───────────────────────────────────────────────────────────────
+
+[Pantalla: menu principal]
+
+NARRADOR:
+"Si tienes personas que te ayudan a cobrar, puedes crearles una cuenta. Te muestro como."
+
+[Navegar a Cobradores]
+
+"Ve a Cobradores en el menu."
+
+[Pantalla: lista de cobradores → tocar "+ Nuevo cobrador"]
+
+"Toca Nuevo cobrador."
+
+[Pantalla: formulario de nuevo cobrador]
+
+"Llena los datos. El nombre completo del cobrador."
+
+[Llenar nombre]
+
+"Su correo electronico. Con este correo va a iniciar sesion en el sistema."
+
+[Llenar correo]
+
+"Y una contrasena temporal. Minimo 6 caracteres. Despues el la puede cambiar."
+
+[Llenar contrasena]
+
+[Hacer zoom a la seccion de PERMISOS]
+
+"Abajo estan los permisos. Por defecto vienen todos desactivados. Aqui decides que puede hacer el cobrador:"
+
+[Senalar cada permiso]
+
+"Crear prestamos: si lo activas, puede registrar prestamos nuevos. Crear clientes: puede registrar clientes nuevos. Editar clientes: puede modificar datos como telefono o direccion."
+
+[Activar uno o dos permisos como ejemplo]
+
+"Activa solo los que necesites."
+
+[Tocar "Crear cobrador"]
+
+"Toca Crear cobrador."
+
+[Se crea exitosamente]
+
+"Listo. El cobrador ya puede entrar al sistema con su correo y contrasena."
+
+[Volver a la ruta → asignar cobrador]
+
+"Ahora ve a la ruta donde quieres que cobre y asignalo. Asi solo ve los clientes de su ruta."
+
+CIERRE: "El cobrador solo ve lo que tu le permitas. Tu tienes el control total."
+
+
+═══════════════════════════════════════════════════════════════
+  CATEGORIA 4: ADMINISTRACION
+═══════════════════════════════════════════════════════════════
+
+
+───────────────────────────────────────────────────────────────
+VIDEO 14: Como hacer cierre de caja
+Duracion estimada: 2:00 min
+───────────────────────────────────────────────────────────────
+
+[Pantalla: menu principal]
+
+NARRADOR:
+"El cierre de caja te permite cuadrar los numeros al final del dia. Te muestro como funciona."
+
+[Tocar "Caja" en el menu]
+
+"Ve a Caja en el menu de abajo."
+
+[Pantalla: pagina de Caja con resumen del dia]
+
+"Aqui ves el resumen del dia. Arriba esta la fecha, la puedes cambiar si necesitas cerrar un dia anterior."
+
+[Hacer zoom al resumen: Esperado, Recaudado, Gastos, Disponible]
+
+"Estas cuatro cajas te dicen todo. Esperado: lo que se debia cobrar. Recaudado: lo que efectivamente se cobro. Gastos: los gastos menores del dia. Y Disponible: la plata que deberia tener el cobrador."
+
+[Bajar a la seccion COBRADORES]
+
+"Abajo aparece la lista de cobradores. Al lado de cada uno dice si ya cerro o si esta Pendiente."
+
+[Tocar un cobrador pendiente]
+
+"Toca el cobrador que quieres cerrar."
+
+[Se abre el formulario de cierre → campo "Monto entregado"]
+
+"Escribe el monto que te entrego el cobrador."
+
+[Escribir un monto]
+
+"El sistema calcula automaticamente la diferencia. Si le falta plata o si entrego de mas, te lo dice aqui."
+
+[Guardar el cierre]
+
+"Guarda el cierre y listo."
+
+[Volver a la seccion de gastos menores]
+
+"Tambien puedes registrar gastos menores del dia. Gasolina, almuerzos, papeleria. Toca el boton de agregar gasto y llena los datos."
+
+CIERRE: "Haz el cierre de caja todos los dias. Asi siempre sabes exactamente cuanto dinero se cobro y cuanto te entregaron."
+
+
+───────────────────────────────────────────────────────────────
+VIDEO 15: Como usar el control de Capital
+Duracion estimada: 2:00 min
+───────────────────────────────────────────────────────────────
+
+[Pantalla: menu lateral o hamburguesa]
+
+NARRADOR:
+"El modulo de Capital te ayuda a llevar el control de cuanto dinero tienes disponible para prestar."
+
+[Tocar "Capital" en el menu]
+
+"Ve a Capital en el menu."
+
+[Pantalla: Capital sin configurar → prompt de configuracion]
+
+"La primera vez te pide que registres tu capital inicial. Es decir, cuanto dinero tienes disponible ahora mismo para prestar."
+
+[Escribir monto del capital inicial]
+
+"Escribes el monto. Por ejemplo, 5 millones."
+
+[Tocar "Registrar"]
+
+"Toca Registrar y listo. Tu capital quedo configurado."
+
+[Pantalla: Capital ya configurado con saldo]
+
+"Ahora ves tu saldo disponible aqui arriba. Este numero se actualiza solo con cada movimiento."
+
+[Hacer zoom a las stats del mes]
+
+"Abajo tienes las estadisticas del mes: cuanto desembolsaste en prestamos, cuanto recaudaste en pagos, gastos del mes y el flujo neto."
+
+[Senalar el historial de movimientos]
+
+"Y aqui el historial de todos los movimientos. Cada prestamo que creas resta del saldo. Cada pago que recibes suma. Los gastos aprobados tambien restan."
+
+[Tocar "+ Movimiento"]
+
+"Tambien puedes hacer movimientos manuales. Toca Movimiento. Puedes inyectar mas capital si agregas plata, retirar si sacas para uso personal, o hacer un ajuste manual si algo no cuadra."
+
+CIERRE: "Este modulo es totalmente opcional. Si no lo configuras, todo sigue funcionando igual. Pero si lo usas, siempre sabes exactamente cuanto tienes para prestar."
+
+
+───────────────────────────────────────────────────────────────
+VIDEO 16: Como ver reportes
+Duracion estimada: 1:30 min
+───────────────────────────────────────────────────────────────
+
+[Pantalla: menu principal]
+
+NARRADOR:
+"Los reportes te dan una vista completa de como va tu negocio."
+
+[Navegar a Reportes]
+
+"Ve a Reportes en el menu."
+
+[Pantalla: pagina de reportes]
+
+"Arriba puedes seleccionar el rango de fechas. Por defecto muestra el mes actual."
+
+[Cambiar rango de fechas]
+
+[Hacer zoom a las metricas principales]
+
+"Aqui ves las metricas principales: clientes activos, cuantos estan en mora, prestamos activos, cartera activa que es el total que te deben, los ingresos del periodo, y el capital prestado activo."
+
+[Bajar a las graficas]
+
+"Abajo tienes las graficas de ingresos. Puedes verlo en vista diaria, semanal o mensual."
+
+[Cambiar entre vistas: Diaria → Semanal → Mensual]
+
+"En la vista diaria ves cuanto cobraste cada dia con barras. En semanal se agrupa por semana. Y en mensual ves el panorama general."
+
+[Senalar un dia con barra alta]
+
+"Esto te sirve para identificar tus mejores dias de cobro y detectar patrones."
+
+CIERRE: "Revisa los reportes al menos una vez por semana para tener el pulso de tu negocio."
+
+
+───────────────────────────────────────────────────────────────
+VIDEO 17: Como adquirir o cambiar de plan
+Duracion estimada: 1:30 min
+───────────────────────────────────────────────────────────────
+
+[Pantalla: menu principal]
+
+NARRADOR:
+"Te muestro como ver los planes disponibles y como cambiar de plan."
+
+[Navegar a Configuracion → Suscripcion]
+
+"Ve a Configuracion y toca la pestana Suscripcion."
+
+[Pantalla: pagina de planes]
+
+"Aqui ves los tres planes disponibles."
+
+[Senalar cada plan]
+
+"Basico, 59 mil pesos al mes: un usuario, hasta 50 clientes, dashboard y gestion basica."
+
+"Profesional, 119 mil pesos al mes: hasta 3 usuarios, 300 clientes, rutas, cobradores, cierre de caja y reportes completos. Este es el mas popular."
+
+"Empresarial, 199 mil pesos al mes: hasta 7 usuarios, clientes ilimitados y reportes avanzados."
+
+[Senalar las opciones de periodo]
+
+"Puedes elegir pago mensual, trimestral con 10 por ciento de descuento, o anual que te sale con 2 meses gratis."
+
+[Tocar "Elegir plan" en un plan]
+
+"Toca Elegir plan en el que quieras."
+
+[Se abre Mercado Pago]
+
+"Te lleva a Mercado Pago para completar el pago. Puedes pagar con tarjeta, PSE o como prefieras."
+
+CIERRE: "Tu plan se activa inmediatamente despues del pago."
+
+
+───────────────────────────────────────────────────────────────
+VIDEO 18: Como enviar un ticket de soporte
+Duracion estimada: 1:00 min
+───────────────────────────────────────────────────────────────
+
+[Pantalla: menu principal]
+
+NARRADOR:
+"Si tienes un problema o una pregunta, puedes crear un ticket de soporte."
+
+[Navegar a Soporte]
+
+"Ve a Soporte en el menu."
+
+[Pantalla: lista de tickets → tocar "+ Nuevo ticket"]
+
+"Toca Nuevo ticket."
+
+[Pantalla: formulario de nuevo ticket]
+
+"Selecciona el tipo de solicitud. Puede ser una pregunta, reportar un error, solicitar una funcion o dar una sugerencia."
+
+[Seleccionar tipo]
+
+"Escribe un asunto corto que describa tu problema."
+
+[Escribir asunto: "No puedo registrar un pago"]
+
+"Y en la descripcion, explicalo con el mayor detalle posible. Mientras mas detalle des, mas rapido te podemos ayudar."
+
+[Escribir descripcion]
+
+"Si quieres que te contactemos directamente, marca esta casilla."
+
+[Marcar "Solicitar que me contacten"]
+
+[Tocar "Enviar ticket"]
+
+"Toca Enviar ticket y listo. Puedes ver el estado de tu ticket en la lista: si esta abierto o ya fue resuelto."
+
+CIERRE: "Usalo cuando necesites ayuda. Respondemos lo mas rapido posible."
+
+
+═══════════════════════════════════════════════════════════════
+  CATEGORIA 5: EXTRAS
+═══════════════════════════════════════════════════════════════
+
+
+───────────────────────────────────────────────────────────────
+VIDEO 19: Como instalar la app y usarla sin internet
+Duracion estimada: 2:30 min
+───────────────────────────────────────────────────────────────
+
+[Pantalla: celular mostrando el navegador]
+
+NARRADOR:
+"Control Finanzas funciona como una app en tu celular, y lo mejor es que tambien funciona sin internet. Te muestro como instalarla."
+
+[Seccion iPhone]
+
+"Si tienes iPhone, abre Safari. Tiene que ser Safari, Chrome no funciona para esto en iPhone."
+
+[Abrir app.control-finanzas.com en Safari]
+
+"Entra a app.control-finanzas.com. Toca el boton de compartir, el cuadrado con la flecha hacia arriba."
+
+[Tocar boton compartir]
+
+"Busca la opcion Agregar a pantalla de inicio."
+
+[Tocar "Agregar a pantalla de inicio"]
+
+"Toca Agregar. Ya tienes la app en tu pantalla de inicio como cualquier otra app."
+
+[Seccion Android]
+
+"Si tienes Android, abre Chrome y entra a la misma direccion."
+
+[Abrir en Chrome]
+
+"Te aparece un aviso para instalar la app. Toca Instalar. Si no aparece, toca los tres puntos del menu arriba y busca Instalar app."
+
+[Mostrar app instalada]
+
+"Listo. Ya la tienes instalada."
+
+[Seccion offline]
+
+"Ahora lo mejor: la app funciona sin internet. Cuando no tienes senal, puedes ver tu lista de clientes, los prestamos, saldos y cuotas."
+
+"Y puedes registrar pagos. Se guardan localmente en tu celular."
+
+[Mostrar aviso amarillo "X pagos pendientes"]
+
+"Cuando registras un pago sin internet, te aparece este aviso amarillo que dice cuantos pagos tienes pendientes de sincronizar."
+
+"Cuando vuelvas a tener senal, los pagos se envian automaticamente al servidor."
+
+CIERRE: "Instalala en tu celular y cobras tranquilo aunque no tengas internet."
+
+
+───────────────────────────────────────────────────────────────
+VIDEO 20: Como invitar personas y ganar meses gratis
+Duracion estimada: 1:00 min
+───────────────────────────────────────────────────────────────
+
+[Pantalla: Configuracion]
+
+NARRADOR:
+"Puedes ganar meses gratis invitando a otros prestamistas. Te muestro como."
+
+[Tocar pestana "Referidos"]
+
+"Ve a Configuracion y toca la pestana Referidos."
+
+[Pantalla: seccion de referidos con enlace]
+
+"Aqui tienes tu enlace personal de referido. Cada persona que se registre con este enlace te da un mes gratis en tu suscripcion."
+
+[Hacer zoom al boton "Copiar link"]
+
+"Toca Copiar link para copiar tu enlace y pegarlo donde quieras."
+
+[Hacer zoom al boton "Compartir por WhatsApp"]
+
+"O toca Compartir por WhatsApp. Te abre WhatsApp con un mensaje listo para enviar."
+
+[Mostrar lista de referidos si hay]
+
+"Abajo puedes ver la lista de todas las personas que se registraron con tu enlace."
+
+CIERRE: "Compartelo con otros prestamistas que conozcas. Cada referido que se registre, un mes gratis para ti."
+
+
+═══════════════════════════════════════════════════════════════
+  RESUMEN DE VIDEOS
+═══════════════════════════════════════════════════════════════
+
+Total: 20 videos
+Duracion total estimada: ~30 minutos
+
+PRIMEROS PASOS (4 videos):
+  1. Como registrarse (1:30)
+  2. Como iniciar sesion (0:45)
+  3. Como recuperar contrasena (1:00)
+  4. Como usar el Dashboard (2:00)
+
+CLIENTES Y PRESTAMOS (4 videos):
+  5. Como crear un cliente (1:30)
+  6. Como editar un cliente (1:00)
+  7. Como crear un prestamo (2:30)
+  8. Como registrar un pago (1:30)
+
+COBRO Y RUTAS (5 videos):
+  9. Como crear una ruta (1:00)
+  10. Como enrutar/desenrutar clientes (1:30)
+  11. Como reordenar clientes en una ruta (0:45)
+  12. Como recorrer una ruta de cobro (2:30) ← NUEVO
+  13. Como crear un cobrador (2:00)
+
+ADMINISTRACION (5 videos):
+  14. Como hacer cierre de caja (2:00)
+  15. Como usar el control de Capital (2:00)
+  16. Como ver reportes (1:30)
+  17. Como cambiar de plan (1:30)
+  18. Como enviar ticket de soporte (1:00)
+
+EXTRAS (2 videos):
+  19. Instalar app y modo offline (2:30)
+  20. Invitar personas y ganar meses gratis (1:00)
+
+
+═══════════════════════════════════════════════════════════════
+  TIPS PARA LA GRABACION
+═══════════════════════════════════════════════════════════════
+
+1. Usa Loom (gratis): graba pantalla + voz al mismo tiempo
+2. Habla pausado y claro, como explicandole a alguien que nunca ha usado una app
+3. Antes de grabar, ten datos de prueba en el sistema (clientes, prestamos, pagos)
+4. Graba en el celular para que se vea como lo usan los clientes (mayoria son movil)
+5. Si prefieres no usar tu voz, graba solo pantalla y agrega voz AI despues con CapCut o ElevenLabs
+6. Cada video debe empezar mostrando la pantalla desde donde el usuario normalmente esta (el Dashboard)
+7. Haz zoom a los botones importantes para que se vean claros
+8. No te preocupes si te equivocas, puedes editar despues en CapCut (gratis)

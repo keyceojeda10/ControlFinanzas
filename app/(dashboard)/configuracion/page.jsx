@@ -476,7 +476,7 @@ function TabReferidos() {
           </div>
 
           <div className="bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.15)] rounded-[12px] px-4 py-3">
-            <p className="text-sm text-[#22c55e] font-medium">Por cada referido que se registre, ganas 1 mes gratis en tu suscripción.</p>
+            <p className="text-sm text-[#22c55e] font-medium">Por cada referido que pague su primer plan, ganas 1 mes gratis en tu suscripción.</p>
           </div>
         </div>
       </Card>
@@ -496,7 +496,7 @@ function TabReferidos() {
                   <p className="text-sm font-medium text-white">{r.nombre}</p>
                   <p className="text-[10px] text-[#555555]">{new Date(r.createdAt).toLocaleDateString('es-CO')}</p>
                 </div>
-                <Badge variant="green">+30 días</Badge>
+                <Badge variant={r.pagado ? 'green' : 'gray'}>{r.pagado ? '+30 días' : 'Pendiente'}</Badge>
               </div>
             ))}
           </div>
