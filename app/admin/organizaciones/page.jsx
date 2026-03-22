@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link                    from 'next/link'
 import { Badge }               from '@/components/ui/Badge'
 import { SkeletonTable }       from '@/components/ui/Skeleton'
@@ -13,69 +13,115 @@ export default function OrganizacionesPage() {
   const [q,       setQ]       = useState('')
   const [filtPlan,   setFiltPlan]   = useState('')
   const [filtEstado, setFiltEstado] = useState('')
+  const [fechaDesde, setFechaDesde] = useState('')
+  const [fechaHasta, setFechaHasta] = useState('')
+  const [trigger, setTrigger] = useState(0) // force re-fetch
+  const isFirst = useRef(true)
 
-  const fetchOrgs = async () => {
-    setLoading(true)
-    const params = new URLSearchParams()
-    if (q)          params.set('q', q)
-    if (filtPlan)   params.set('plan', filtPlan)
-    if (filtEstado) params.set('estado', filtEstado)
-    try {
-      const res = await fetch(`/api/admin/organizaciones?${params}`)
-      const data = await res.json()
-      setOrgs(Array.isArray(data) ? data : [])
-    } catch { /* ignore */ } finally {
-      setLoading(false)
+  useEffect(() => {
+    const doFetch = async () => {
+      setLoading(true)
+      const params = new URLSearchParams()
+      if (q.trim())   params.set('q', q.trim())
+      if (filtPlan)   params.set('plan', filtPlan)
+      if (filtEstado) params.set('estado', filtEstado)
+      if (fechaDesde) params.set('desde', fechaDesde)
+      if (fechaHasta) params.set('hasta', fechaHasta)
+      try {
+        const res = await fetch(`/api/admin/organizaciones?${params}`)
+        const data = await res.json()
+        setOrgs(Array.isArray(data) ? data : [])
+      } catch { /* ignore */ } finally {
+        setLoading(false)
+      }
     }
-  }
-
-  useEffect(() => { fetchOrgs() }, [filtPlan, filtEstado])
+    doFetch()
+  }, [filtPlan, filtEstado, fechaDesde, fechaHasta, trigger])
 
   const handleSearch = (e) => {
     e.preventDefault()
-    fetchOrgs()
+    setTrigger(t => t + 1)
   }
+
+  const limpiarTodo = () => {
+    setQ('')
+    setFiltPlan('')
+    setFiltEstado('')
+    setFechaDesde('')
+    setFechaHasta('')
+    // The state changes above will trigger the useEffect
+  }
+
+  const hayFiltros = q || filtPlan || filtEstado || fechaDesde || fechaHasta
 
   return (
     <div className="max-w-4xl mx-auto space-y-5">
-      <div>
-        <h1 className="text-xl font-bold text-[white]">Organizaciones</h1>
-        <p className="text-sm text-[#555555] mt-0.5">Todas las organizaciones de la plataforma</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-[white]">Organizaciones</h1>
+          <p className="text-sm text-[#555555] mt-0.5">
+            {!loading && `${orgs.length} resultado${orgs.length !== 1 ? 's' : ''}`}
+          </p>
+        </div>
+        {hayFiltros && (
+          <button
+            onClick={limpiarTodo}
+            className="text-[11px] text-[#555555] hover:text-[white] transition-all"
+          >
+            Limpiar filtros
+          </button>
+        )}
       </div>
 
       {/* Buscador + filtros */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <form onSubmit={handleSearch} className="flex-1 flex gap-2">
+      <div className="space-y-3">
+        <form onSubmit={handleSearch} className="flex gap-2">
           <input
             type="text"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar por nombre…"
+            placeholder="Buscar por nombre, correo electrónico o teléfono…"
             className="flex-1 h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] placeholder-[#555555] focus:outline-none focus:border-[#3b82f6]"
           />
-          <button type="submit" className="h-9 px-4 rounded-[12px] bg-[#3b82f6] text-white text-xs font-medium hover:bg-[#2563eb] transition-all">
+          <button type="submit" className="h-9 px-4 rounded-[12px] bg-[#3b82f6] text-white text-xs font-medium hover:bg-[#2563eb] transition-all shrink-0">
             Buscar
           </button>
         </form>
-        <select
-          value={filtPlan}
-          onChange={(e) => setFiltPlan(e.target.value)}
-          className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#3b82f6]"
-        >
-          <option value="">Todos los planes</option>
-          <option value="basic">Basic</option>
-          <option value="standard">Standard</option>
-          <option value="professional">Professional</option>
-        </select>
-        <select
-          value={filtEstado}
-          onChange={(e) => setFiltEstado(e.target.value)}
-          className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#3b82f6]"
-        >
-          <option value="">Todos los estados</option>
-          <option value="activa">Activas</option>
-          <option value="suspendida">Suspendidas</option>
-        </select>
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={filtPlan}
+            onChange={(e) => setFiltPlan(e.target.value)}
+            className="h-8 px-2 rounded-[10px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#3b82f6]"
+          >
+            <option value="">Todos los planes</option>
+            <option value="basic">Basic</option>
+            <option value="standard">Standard</option>
+            <option value="professional">Professional</option>
+          </select>
+          <select
+            value={filtEstado}
+            onChange={(e) => setFiltEstado(e.target.value)}
+            className="h-8 px-2 rounded-[10px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#3b82f6]"
+          >
+            <option value="">Todos los estados</option>
+            <option value="activa">Activas</option>
+            <option value="suspendida">Suspendidas</option>
+          </select>
+          <span className="text-[10px] text-[#555555]">desde</span>
+          <input
+            type="date"
+            value={fechaDesde}
+            onChange={(e) => setFechaDesde(e.target.value)}
+            className="h-8 px-2 rounded-[10px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#3b82f6]"
+          />
+          <span className="text-[10px] text-[#555555]">hasta</span>
+          <input
+            type="date"
+            value={fechaHasta}
+            onChange={(e) => setFechaHasta(e.target.value)}
+            className="h-8 px-2 rounded-[10px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#3b82f6]"
+          />
+        </div>
       </div>
 
       {/* Tabla */}
@@ -101,6 +147,9 @@ export default function OrganizacionesPage() {
             >
               <div className="col-span-2">
                 <p className="text-sm font-medium text-[white]">{o.nombre}</p>
+                {o.ownerEmail && (
+                  <p className="text-[11px] text-[#888888] truncate">{o.ownerEmail}</p>
+                )}
                 <div className="flex items-center gap-2 mt-0.5">
                   <Badge variant={o.activo ? 'green' : 'red'}>
                     {o.activo ? 'Activa' : 'Suspendida'}

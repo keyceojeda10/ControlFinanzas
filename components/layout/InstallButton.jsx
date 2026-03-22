@@ -272,9 +272,10 @@ function InstallGuideModal({ onClose }) {
   const instructions = getInstructions()
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 px-4 py-6" onClick={onClose}>
+    <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/70 px-0 sm:px-4" onClick={onClose}>
       <div
-        className="w-full max-w-sm bg-[#1a1a1a] border border-[#2a2a2a] rounded-[20px] flex flex-col max-h-[80vh]"
+        className="w-full sm:max-w-sm bg-[#1a1a1a] border border-[#2a2a2a] rounded-t-[20px] sm:rounded-[20px] flex flex-col max-h-[85vh] sm:max-h-[80vh] mb-0 sm:mb-0"
+        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header fijo */}
@@ -292,24 +293,26 @@ function InstallGuideModal({ onClose }) {
 
         {/* Contenido scrollable */}
         <div className="flex-1 overflow-y-auto px-5 pb-2">
-          <div className="space-y-5">
+          <div className="space-y-4">
             {instructions.steps.map((step, i) => {
               const StepIconComponent = ICON_MAP[step.icon]
               return (
-                <div key={i} className="flex items-start gap-3">
-                  <div className="shrink-0 flex flex-col items-center gap-1">
-                    <div className="w-6 h-6 rounded-full bg-[#f5c518] flex items-center justify-center text-[#0a0a0a] text-xs font-bold">
+                <div key={i} className="flex items-start gap-3 p-3 rounded-[14px] bg-[#151515] border border-[#222]">
+                  {/* Numero + Icono en fila */}
+                  <div className="shrink-0 flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full bg-[#f5c518] flex items-center justify-center text-[#0a0a0a] text-xs font-bold">
                       {i + 1}
                     </div>
                     {StepIconComponent && (
-                      <div className="w-10 h-10 rounded-[10px] bg-[#2a2a2a] flex items-center justify-center">
+                      <div className="w-11 h-11 rounded-[12px] bg-[#2a2a2a] flex items-center justify-center">
                         <StepIconComponent />
                       </div>
                     )}
                   </div>
-                  <div className="pt-0.5 min-w-0">
-                    <p className="text-[13px] text-[#ccc] leading-relaxed">{renderBoldText(step.text)}</p>
-                    {step.sub && <p className="text-[11px] text-[#666] mt-0.5 leading-relaxed">{step.sub}</p>}
+                  {/* Texto */}
+                  <div className="pt-1 min-w-0 flex-1">
+                    <p className="text-[13px] text-[#ccc] leading-snug">{renderBoldText(step.text)}</p>
+                    {step.sub && <p className="text-[11px] text-[#666] mt-1 leading-snug">{step.sub}</p>}
                   </div>
                 </div>
               )
@@ -319,14 +322,9 @@ function InstallGuideModal({ onClose }) {
 
         {/* Footer fijo */}
         <div className="px-5 pb-5 pt-3 shrink-0">
-          <div className="p-2.5 rounded-[10px] bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.15)] mb-3">
-            <p className="text-[11px] text-[#ccc] leading-relaxed text-center">
-              Al instalarla, la app aparece en tu pantalla de inicio y funciona sin internet.
-            </p>
-          </div>
           <button
             onClick={onClose}
-            className="w-full py-3 rounded-[12px] bg-[#f5c518] text-[#0a0a0a] text-sm font-semibold hover:bg-[#f0b800] transition-colors"
+            className="w-full py-3.5 rounded-[12px] bg-[#f5c518] text-[#0a0a0a] text-sm font-bold hover:bg-[#f0b800] transition-colors"
           >
             Entendido
           </button>

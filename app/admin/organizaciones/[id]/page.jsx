@@ -24,6 +24,7 @@ export default function OrgDetallePage() {
   const [accionando, setAccionando] = useState('')
   const [descuentoInput, setDescuentoInput] = useState('')
   const [demoDias, setDemoDias] = useState('1')
+  const [pagoDirecto, setPagoDirecto] = useState({ plan: 'basic', periodo: 'mensual', monto: '', extender: false })
 
   const fetchOrg = async () => {
     try {
@@ -224,6 +225,98 @@ export default function OrgDetallePage() {
           </div>
         </Card>
       )}
+
+      {/* Asignar plan — Pago directo */}
+      <Card>
+        <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">Asignar plan (pago directo)</p>
+        <p className="text-xs text-[#888888] mb-4">
+          Usa esto cuando el cliente te paga directamente (transferencia, efectivo, etc.). Se activa igual que si pagara por MercadoPago: actualiza suscripción, le llega email de confirmación y se procesan referidos.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] text-[#555555]">Plan</label>
+            <select
+              value={pagoDirecto.plan}
+              onChange={(e) => setPagoDirecto(p => ({ ...p, plan: e.target.value }))}
+              className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#f5c518]"
+            >
+              <option value="basic">Basic ($59.000/mes)</option>
+              <option value="standard">Standard ($119.000/mes)</option>
+              <option value="professional">Professional ($199.000/mes)</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] text-[#555555]">Periodo</label>
+            <select
+              value={pagoDirecto.periodo}
+              onChange={(e) => setPagoDirecto(p => ({ ...p, periodo: e.target.value }))}
+              className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#f5c518]"
+            >
+              <option value="mensual">Mensual (30 días)</option>
+              <option value="trimestral">Trimestral (90 días)</option>
+              <option value="anual">Anual (365 días)</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] text-[#555555]">Monto recibido ($)</label>
+            <input
+              type="number"
+              min="0"
+              value={pagoDirecto.monto}
+              onChange={(e) => setPagoDirecto(p => ({ ...p, monto: e.target.value }))}
+              placeholder="Ej: 59000"
+              className="w-32 h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] focus:outline-none focus:border-[#f5c518]"
+            />
+          </div>
+          <div className="flex flex-col justify-end">
+            <Button
+              size="sm"
+              loading={accionando === 'asignarPlan'}
+              onClick={() => {
+                if (!pagoDirecto.monto || parseInt(pagoDirecto.monto) <= 0) {
+                  alert('Ingresa el monto que recibiste')
+                  return
+                }
+                const periodoLabel = { mensual: 'Mensual', trimestral: 'Trimestral', anual: 'Anual' }[pagoDirecto.periodo]
+                const extMsg = pagoDirecto.extender ? '\n(Se extiende desde la fecha de vencimiento actual)' : '\n(Empieza desde hoy)'
+                if (confirm(`¿Asignar plan ${pagoDirecto.plan} (${periodoLabel}) a "${org.nombre}" por $${parseInt(pagoDirecto.monto).toLocaleString('es-CO')}?${extMsg}\n\nSe le enviará email de confirmación al cliente.`)) {
+                  ejecutarAccion('asignarPlan', {
+                    plan: pagoDirecto.plan,
+                    periodo: pagoDirecto.periodo,
+                    monto: pagoDirecto.monto,
+                    extender: pagoDirecto.extender,
+                  })
+                  setPagoDirecto(p => ({ ...p, monto: '', extender: false }))
+                }
+              }}
+            >
+              Asignar plan
+            </Button>
+          </div>
+        </div>
+        {sub && sub.estado === 'activa' && diasRestantes > 0 && sub.plan === pagoDirecto.plan && (
+          <label className="mt-3 flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={pagoDirecto.extender}
+              onChange={(e) => setPagoDirecto(p => ({ ...p, extender: e.target.checked }))}
+              className="w-4 h-4 rounded border-[#2a2a2a] bg-[#111111] accent-[#f5c518]"
+            />
+            <span className="text-xs text-[#888888]">
+              Extender desde vencimiento actual ({new Date(sub.fechaVencimiento).toLocaleDateString('es-CO')}) en vez de empezar desde hoy
+            </span>
+          </label>
+        )}
+        {sub && (
+          <div className="mt-3 bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.15)] rounded-[12px] px-4 py-2">
+            <p className="text-[11px] text-[#f5c518]">
+              Suscripción actual: {sub.plan} · Vence: {new Date(sub.fechaVencimiento).toLocaleDateString('es-CO')}
+              {diasRestantes !== null && ` (${diasRestantes > 0 ? diasRestantes + ' días restantes' : Math.abs(diasRestantes) + ' días vencida'})`}
+              {' '}— El nuevo plan empieza desde hoy{sub.estado === 'activa' && diasRestantes > 0 && sub.plan === pagoDirecto.plan ? ' (o puedes extender desde el vencimiento actual marcando la casilla arriba)' : ''}.
+            </p>
+          </div>
+        )}
+      </Card>
 
       {/* Demo Day */}
       <Card>

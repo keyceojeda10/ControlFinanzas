@@ -207,7 +207,7 @@ export default function ClienteDetallePage({ params }) {
 
         {/* Actions */}
         {(puedeCrearPrestamos || puedeEditarClientes) && (
-          <div className="flex gap-2 mt-4 pt-4 border-t border-[#2a2a2a]">
+          <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-[#2a2a2a]">
             {puedeCrearPrestamos && (
               <Link href={`/prestamos/nuevo?clienteId=${cliente.id}`}>
                 <Button

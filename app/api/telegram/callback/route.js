@@ -7,6 +7,7 @@ import {
   buildRespuestasKeyboard,
   buildFirstMessage,
   whatsappLink,
+  whatsappRedirectLink,
   formatNombreSaludo,
   sendMessage,
 } from '@/lib/telegram'
@@ -32,6 +33,9 @@ const RESP_MAP = {
   resp_cobro: 15,    // Sin cobros adicionales
   resp_otro: 19,     // Otro método (genérico)
   resp_post: 20,     // Post-registro (ya verificó correo)
+  resp_seg2h: 16,    // Seguimiento: 2 horas sin respuesta
+  resp_seg24h: 17,   // Seguimiento: 24 horas sin respuesta
+  resp_seg48h: 18,   // Seguimiento: 48 horas (último)
 }
 
 // Telegram Bot webhook — receives button taps from inline keyboards
@@ -130,8 +134,7 @@ export async function POST(request) {
         // Mantener todos los botones pero agregar indicador de contactado
         if (messageId) {
           const waMsg = buildFirstMessage(lead.nombre)
-          const tel = (lead.telefono || '').replace(/\D/g, '')
-          const waLink = tel ? whatsappLink(tel, waMsg) : null
+          const waLink = whatsappRedirectLink(leadId, lead.telefono, waMsg)
 
           const rows = []
           if (waLink) {

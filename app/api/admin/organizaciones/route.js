@@ -15,15 +15,48 @@ export async function GET(req) {
   const plan     = searchParams.get('plan')     ?? ''
   const estado   = searchParams.get('estado')   ?? '' // activa, suspendida
 
-  const where = {}
-  if (busqueda) where.nombre = { contains: busqueda }
-  if (plan)     where.plan   = plan
-  if (estado === 'activa')    where.activo = true
-  if (estado === 'suspendida') where.activo = false
+  const fechaDesde = searchParams.get('desde') ?? ''
+  const fechaHasta = searchParams.get('hasta') ?? ''
+
+  const where = { AND: [] }
+
+  // Búsqueda por nombre de org, email de usuario o teléfono de usuario
+  if (busqueda && busqueda.trim()) {
+    const q = busqueda.trim()
+    where.AND.push({
+      OR: [
+        { nombre: { contains: q } },
+        { users: { some: { email: { contains: q } } } },
+        { users: { some: { nombre: { contains: q } } } },
+      ],
+    })
+  }
+
+  if (plan)     where.AND.push({ plan })
+  if (estado === 'activa')     where.AND.push({ activo: true })
+  if (estado === 'suspendida') where.AND.push({ activo: false })
+
+  // Filtro por fecha de registro (UTC-safe: margen amplio)
+  if (fechaDesde) {
+    where.AND.push({ createdAt: { gte: new Date(fechaDesde + 'T00:00:00.000Z') } })
+  }
+  if (fechaHasta) {
+    const siguiente = new Date(fechaHasta + 'T00:00:00.000Z')
+    siguiente.setDate(siguiente.getDate() + 1)
+    where.AND.push({ createdAt: { lt: siguiente } })
+  }
+
+  // Si no hay filtros, quitar AND vacío
+  if (where.AND.length === 0) delete where.AND
 
   const orgs = await prisma.organization.findMany({
     where,
     include: {
+      users: {
+        select: { email: true, nombre: true },
+        where: { rol: 'owner' },
+        take: 1,
+      },
       _count: {
         select: {
           users:     true,
@@ -53,9 +86,12 @@ export async function GET(req) {
       diasRestantes = Math.ceil((new Date(sub.fechaVencimiento) - ahora) / (1000 * 60 * 60 * 24))
     }
 
+    const owner = o.users?.[0]
     return {
       id:              o.id,
       nombre:          o.nombre,
+      ownerEmail:      owner?.email ?? '',
+      ownerNombre:     owner?.nombre ?? '',
       plan:            o.plan,
       activo:          o.activo,
       createdAt:       o.createdAt,

@@ -3,6 +3,7 @@ import { NextResponse }     from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { enviarEmail, emailPagoAprobado } from '@/lib/email'
 
 export async function GET(req, { params }) {
   const session = await getServerSession(authOptions)
@@ -210,6 +211,128 @@ export async function PATCH(req, { params }) {
       },
     })
     return NextResponse.json({ ok: true, mensaje: `Plan revertido a ${org.planOriginal}` })
+  }
+
+  // ─── Asignar plan (pago directo / transferencia bancaria) ───
+  if (accion === 'asignarPlan') {
+    const { plan: planNuevo, periodo, monto, extender } = body
+    if (!planNuevo || !PLANES_VALIDOS.includes(planNuevo)) {
+      return NextResponse.json({ error: 'Plan no válido' }, { status: 400 })
+    }
+    const periodoValido = ['mensual', 'trimestral', 'anual'].includes(periodo) ? periodo : 'mensual'
+    const diasExtension = periodoValido === 'anual' ? 365 : periodoValido === 'trimestral' ? 90 : 30
+    const montoCOP = parseInt(monto) || 0
+
+    const ahora = new Date()
+
+    // Buscar suscripción existente
+    const subExistente = await prisma.suscripcion.findFirst({
+      where: { organizationId: id },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    let fechaVencimiento
+
+    if (subExistente) {
+      // Por defecto: empezar desde HOY (nuevo plan pagado)
+      // Solo extender si el admin lo elige explícitamente Y es el mismo plan
+      const debeExtender = extender === true
+        && subExistente.estado === 'activa'
+        && new Date(subExistente.fechaVencimiento) > ahora
+        && subExistente.plan === planNuevo
+
+      const baseDate = debeExtender ? new Date(subExistente.fechaVencimiento) : ahora
+      fechaVencimiento = new Date(baseDate)
+      fechaVencimiento.setDate(fechaVencimiento.getDate() + diasExtension)
+
+      await prisma.suscripcion.update({
+        where: { id: subExistente.id },
+        data: {
+          plan:             planNuevo,
+          estado:           'activa',
+          fechaInicio:      debeExtender ? undefined : ahora,
+          fechaVencimiento,
+          mercadopagoId:    'pago_directo',
+          montoCOP,
+        },
+      })
+    } else {
+      fechaVencimiento = new Date(ahora)
+      fechaVencimiento.setDate(fechaVencimiento.getDate() + diasExtension)
+
+      await prisma.suscripcion.create({
+        data: {
+          organizationId:   id,
+          plan:             planNuevo,
+          estado:           'activa',
+          fechaInicio:      ahora,
+          fechaVencimiento,
+          mercadopagoId:    'pago_directo',
+          montoCOP,
+        },
+      })
+    }
+
+    // Actualizar plan de la organización y activarla
+    await prisma.organization.update({
+      where: { id },
+      data: { plan: planNuevo, activo: true },
+    })
+
+    // Recompensa de referido (mismo flujo que webhook MP)
+    if (org.referidoPorId) {
+      const pagosAnteriores = await prisma.suscripcion.count({
+        where: { organizationId: id },
+      })
+      if (pagosAnteriores <= 1) {
+        const subReferidor = await prisma.suscripcion.findFirst({
+          where: { organizationId: org.referidoPorId },
+          orderBy: { createdAt: 'desc' },
+        })
+        if (subReferidor) {
+          const baseRef = subReferidor.estado === 'activa' && new Date(subReferidor.fechaVencimiento) > ahora
+            ? new Date(subReferidor.fechaVencimiento)
+            : ahora
+          const nuevaFechaRef = new Date(baseRef)
+          nuevaFechaRef.setDate(nuevaFechaRef.getDate() + 30)
+          await prisma.suscripcion.update({
+            where: { id: subReferidor.id },
+            data: { fechaVencimiento: nuevaFechaRef },
+          })
+        }
+      }
+    }
+
+    // AdminLog
+    const periodoLabel = { mensual: 'Mensual', trimestral: 'Trimestral', anual: 'Anual' }[periodoValido]
+    await prisma.adminLog.create({
+      data: {
+        adminId:        session.user.id,
+        organizacionId: id,
+        accion:         'pago_directo',
+        detalle:        `Plan ${planNuevo} asignado (pago directo). Periodo: ${periodoLabel}. Monto: $${montoCOP.toLocaleString('es-CO')}. Vigente hasta: ${fechaVencimiento.toLocaleDateString('es-CO')}`,
+      },
+    })
+
+    // Enviar email de confirmación al owner (igual que webhook MP)
+    const owner = await prisma.user.findFirst({
+      where: { organizationId: id, rol: 'owner' },
+      select: { nombre: true, email: true },
+    })
+    if (owner) {
+      const { subject, html } = emailPagoAprobado({
+        nombre: owner.nombre,
+        plan: planNuevo,
+        monto: montoCOP,
+        fechaVencimiento,
+      })
+      enviarEmail({ to: owner.email, subject, html }).catch(() => {})
+    }
+
+    return NextResponse.json({
+      ok: true,
+      mensaje: `Plan ${planNuevo} (${periodoLabel}) asignado. Vigente hasta ${fechaVencimiento.toLocaleDateString('es-CO')}`,
+    })
   }
 
   return NextResponse.json({ error: 'Acción no válida' }, { status: 400 })
