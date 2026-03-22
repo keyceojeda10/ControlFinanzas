@@ -35,8 +35,22 @@ export default function ClienteDetallePage({ params }) {
   const [loading, setLoading]   = useState(true)
   const [error,   setError]     = useState('')
   const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [deleteData, setDeleteData] = useState(null) // prestamos info when has prestamos
+  const [deleteData, setDeleteData] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
+  const [rutaNav, setRutaNav]   = useState(null)
+
+  // Leer contexto de ruta activa
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem('cf-ruta-nav')
+      if (!saved) return
+      const nav = JSON.parse(saved)
+      const idx = nav.clientes.findIndex(c => c.id === id)
+      if (idx >= 0) {
+        setRutaNav({ ...nav, currentIndex: idx })
+      }
+    } catch {}
+  }, [id])
 
   useEffect(() => {
     fetch(`/api/clientes/${id}`)
@@ -134,6 +148,30 @@ export default function ClienteDetallePage({ params }) {
   const prestamosActivos = cliente.prestamos?.filter((p) => p.estado === 'activo') ?? []
   const historial        = cliente.prestamos?.filter((p) => p.estado !== 'activo')  ?? []
 
+  const navegarEnRuta = (direction) => {
+    if (!rutaNav) return
+    const newIdx = rutaNav.currentIndex + direction
+    if (newIdx < 0 || newIdx >= rutaNav.clientes.length) return
+    const next = rutaNav.clientes[newIdx]
+    // Actualizar contexto
+    sessionStorage.setItem('cf-ruta-nav', JSON.stringify({ ...rutaNav, currentIndex: newIdx }))
+    // Actualizar progreso de ruta
+    const getColombiaDateStr = () => new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10)
+    localStorage.setItem(`cf-ruta-progress-${rutaNav.rutaId}`, JSON.stringify({
+      clienteId: next.id,
+      clienteNombre: next.nombre,
+      index: newIdx,
+      date: getColombiaDateStr(),
+    }))
+    router.push(`/clientes/${next.id}`)
+  }
+
+  const irSiguienteEnRuta = () => navegarEnRuta(1)
+  const noPagoSiguiente = () => navegarEnRuta(1)
+
+  const esUltimoEnRuta = rutaNav && rutaNav.currentIndex >= rutaNav.clientes.length - 1
+  const esPrimeroEnRuta = rutaNav && rutaNav.currentIndex <= 0
+
   return (
     <div className="max-w-2xl mx-auto space-y-5">
       {/* Back */}
@@ -144,8 +182,36 @@ export default function ClienteDetallePage({ params }) {
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
-        Clientes
+        {rutaNav ? rutaNav.rutaNombre : 'Clientes'}
       </button>
+
+      {/* Barra de navegación de ruta */}
+      {rutaNav && (
+        <div className="bg-[rgba(245,197,24,0.06)] border border-[rgba(245,197,24,0.15)] rounded-[14px] px-3 py-2.5 flex items-center justify-between">
+          <button
+            onClick={() => navegarEnRuta(-1)}
+            disabled={esPrimeroEnRuta}
+            className="p-1.5 rounded-[8px] bg-[#1a1a1a] border border-[#2a2a2a] text-[#888] disabled:opacity-30 active:scale-95 transition-all"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div className="text-center min-w-0 px-2">
+            <p className="text-[10px] text-[#888] uppercase tracking-wide">{rutaNav.rutaNombre}</p>
+            <p className="text-xs text-white font-medium">{rutaNav.currentIndex + 1} de {rutaNav.clientes.length}</p>
+          </div>
+          <button
+            onClick={irSiguienteEnRuta}
+            disabled={esUltimoEnRuta}
+            className="p-1.5 rounded-[8px] bg-[#1a1a1a] border border-[#2a2a2a] text-[#888] disabled:opacity-30 active:scale-95 transition-all"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      )}
 
       {/* Header card */}
       <Card>
@@ -284,6 +350,38 @@ export default function ClienteDetallePage({ params }) {
               <PrestamoCard key={p.id} prestamo={p} clienteId={id} mini />
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Navegación ruta: botones de acción */}
+      {rutaNav && (
+        <div className="flex gap-2">
+          {!esUltimoEnRuta ? (
+            <>
+              <button
+                onClick={noPagoSiguiente}
+                className="flex-1 py-3 rounded-[14px] bg-[#1a1a1a] border border-[#2a2a2a] text-[#888] text-sm font-medium active:scale-[0.98] transition-all"
+              >
+                No pagó · Siguiente
+              </button>
+              <button
+                onClick={irSiguienteEnRuta}
+                className="flex-1 py-3 rounded-[14px] bg-[#f5c518] text-[#0a0a0a] text-sm font-semibold active:scale-[0.98] transition-all"
+              >
+                Siguiente cliente →
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => {
+                sessionStorage.removeItem('cf-ruta-nav')
+                router.push(`/rutas/${rutaNav.rutaId}`)
+              }}
+              className="flex-1 py-3 rounded-[14px] bg-[#22c55e] text-white text-sm font-semibold active:scale-[0.98] transition-all"
+            >
+              Ruta finalizada →
+            </button>
+          )}
         </div>
       )}
 

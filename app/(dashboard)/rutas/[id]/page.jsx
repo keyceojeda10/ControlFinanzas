@@ -580,6 +580,13 @@ export default function RutaDetallePage({ params }) {
                     index: idx,
                     date: getColombiaDateStr(),
                   }))
+                  // Guardar contexto de ruta para navegación directa entre clientes
+                  sessionStorage.setItem('cf-ruta-nav', JSON.stringify({
+                    rutaId: id,
+                    rutaNombre: ruta.nombre,
+                    clientes: ruta.clientes.map(cl => ({ id: cl.id, nombre: cl.nombre })),
+                    currentIndex: idx,
+                  }))
                   router.push(`/clientes/${c.id}`)
                 }}>
                   <p className="text-sm font-medium text-[white] truncate">{c.nombre}</p>

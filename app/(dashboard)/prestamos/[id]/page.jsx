@@ -44,6 +44,15 @@ export default function PrestamoDetallePage({ params }) {
   const [cancelando,   setCancelando]   = useState(false)
   const [confirmCancel, setConfirmCancel] = useState(false)
   const [anulando,     setAnulando]     = useState(null)   // pagoId que se está anulando
+  const [rutaNav,      setRutaNav]     = useState(null)
+
+  // Leer contexto de ruta activa
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem('cf-ruta-nav')
+      if (saved) setRutaNav(JSON.parse(saved))
+    } catch {}
+  }, [])
 
   const fetchPrestamo = async () => {
     try {
@@ -165,6 +174,41 @@ export default function PrestamoDetallePage({ params }) {
       {completado && cliente?.telefono && ultimoPago && (
         <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamo} pago={ultimoPago} />
       )}
+
+      {/* ── SIGUIENTE EN RUTA (después de pago) ──────────────────── */}
+      {rutaNav && (exito || yaPagoHoy) && (() => {
+        const idx = rutaNav.clientes.findIndex(c => c.id === cliente?.id)
+        const isLast = idx >= rutaNav.clientes.length - 1
+        const nextCliente = !isLast && idx >= 0 ? rutaNav.clientes[idx + 1] : null
+
+        const navigateNext = () => {
+          if (!nextCliente) return
+          const newNav = { ...rutaNav, currentIndex: idx + 1 }
+          sessionStorage.setItem('cf-ruta-nav', JSON.stringify(newNav))
+          const getDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10)
+          localStorage.setItem(`cf-ruta-progress-${rutaNav.rutaId}`, JSON.stringify({
+            clienteId: nextCliente.id, clienteNombre: nextCliente.nombre, index: idx + 1, date: getDate(),
+          }))
+          router.push(`/clientes/${nextCliente.id}`)
+        }
+
+        return isLast ? (
+          <button
+            onClick={() => { sessionStorage.removeItem('cf-ruta-nav'); router.push(`/rutas/${rutaNav.rutaId}`) }}
+            className="w-full py-3.5 rounded-[14px] bg-[#22c55e] text-white text-sm font-semibold active:scale-[0.98] transition-all"
+          >
+            Ruta finalizada · Volver a {rutaNav.rutaNombre}
+          </button>
+        ) : (
+          <button
+            onClick={navigateNext}
+            className="w-full py-3.5 rounded-[14px] text-sm font-semibold active:scale-[0.98] transition-all"
+            style={{ background: 'linear-gradient(135deg, #f5c518, #f0b800)', color: '#0a0a0a' }}
+          >
+            Siguiente → {nextCliente.nombre}
+          </button>
+        )
+      })()}
 
       {/* ── HEADER CLIENTE ───────────────────────────────────────── */}
       <Card>
