@@ -130,6 +130,24 @@ export async function PATCH(req, { params }) {
     return NextResponse.json({ ok: true, mensaje: `Descuento actualizado a ${descuento}%` })
   }
 
+  if (accion === 'cambiarCobradores') {
+    const cantidad = parseInt(body.cobradoresExtra)
+    if (isNaN(cantidad) || cantidad < 0 || cantidad > 50) {
+      return NextResponse.json({ error: 'Cantidad debe ser entre 0 y 50' }, { status: 400 })
+    }
+    const anterior = org.cobradoresExtra ?? 0
+    await prisma.organization.update({ where: { id }, data: { cobradoresExtra: cantidad } })
+    await prisma.adminLog.create({
+      data: {
+        adminId:        session.user.id,
+        organizacionId: id,
+        accion:         'cambiar_cobradores',
+        detalle:        `Cobradores extra: ${anterior} → ${cantidad} para "${org.nombre}"`,
+      },
+    })
+    return NextResponse.json({ ok: true, mensaje: `Cobradores extra actualizados a ${cantidad}` })
+  }
+
   if (accion === 'toggleUsuario' && body.userId) {
     const user = await prisma.user.findFirst({
       where: { id: body.userId, organizationId: id },

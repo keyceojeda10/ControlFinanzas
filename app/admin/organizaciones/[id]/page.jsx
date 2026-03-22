@@ -25,6 +25,7 @@ export default function OrgDetallePage() {
   const [descuentoInput, setDescuentoInput] = useState('')
   const [demoDias, setDemoDias] = useState('1')
   const [pagoDirecto, setPagoDirecto] = useState({ plan: 'basic', periodo: 'mensual', monto: '', extender: false })
+  const [cobradoresInput, setCobradoresInput] = useState('')
 
   const fetchOrg = async () => {
     try {
@@ -438,6 +439,56 @@ export default function OrgDetallePage() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      </Card>
+
+      {/* Cobradores extra */}
+      <Card>
+        <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">Cobradores extra</p>
+        <div className="space-y-3">
+          <div className="flex items-center gap-4">
+            <div>
+              <p className="text-xs text-[#888888]">Límite base del plan</p>
+              <p className="text-sm font-bold text-[white]">{limite.usuarios === 999 ? '∞' : limite.usuarios} usuario{limite.usuarios !== 1 ? 's' : ''}</p>
+            </div>
+            <div>
+              <p className="text-xs text-[#888888]">Cobradores extra</p>
+              <p className="text-sm font-bold text-[#f5c518]">{org.cobradoresExtra ?? 0}</p>
+            </div>
+            <div>
+              <p className="text-xs text-[#888888]">Total permitido</p>
+              <p className="text-sm font-bold text-[#22c55e]">{(limite.usuarios === 999 ? '∞' : limite.usuarios + (org.cobradoresExtra ?? 0))}</p>
+            </div>
+            <div>
+              <p className="text-xs text-[#888888]">Usuarios actuales</p>
+              <p className="text-sm font-bold text-[white]">{org.users?.length ?? 0}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-[#888888]">Asignar cobradores extra:</label>
+            <input
+              type="number"
+              min="0"
+              max="50"
+              value={cobradoresInput}
+              onChange={(e) => setCobradoresInput(e.target.value)}
+              placeholder={String(org.cobradoresExtra ?? 0)}
+              className="w-20 h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] focus:outline-none focus:border-[#f5c518]"
+            />
+            <Button
+              size="sm"
+              loading={accionando === 'cambiarCobradores'}
+              onClick={() => {
+                const val = cobradoresInput === '' ? org.cobradoresExtra ?? 0 : parseInt(cobradoresInput)
+                if (confirm(`¿Cambiar cobradores extra de ${org.cobradoresExtra ?? 0} a ${val} para "${org.nombre}"?`)) {
+                  ejecutarAccion('cambiarCobradores', { cobradoresExtra: val })
+                  setCobradoresInput('')
+                }
+              }}
+            >
+              Aplicar
+            </Button>
           </div>
         </div>
       </Card>
