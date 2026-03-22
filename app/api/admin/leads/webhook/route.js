@@ -116,6 +116,7 @@ async function processLead(leadgenId, adId, createdTime) {
   const nombre = leadData?.nombre || 'Sin nombre'
   const telefono = leadData?.telefono || ''
   const cantClientes = leadData?.cantClientes || ''
+  const esPrestamista = leadData?.esPrestamista || ''
 
   // Guardar en DB con protección contra duplicados
   let lead = null
@@ -137,7 +138,7 @@ async function processLead(leadgenId, adId, createdTime) {
       }
     }
     lead = await prisma.lead.create({
-      data: { nombre, telefono, cantClientes, anuncioId: adId, notas: leadgenId ? `leadgen_id: ${leadgenId}` : null }
+      data: { nombre, telefono, cantClientes, esPrestamista, anuncioId: adId, notas: leadgenId ? `leadgen_id: ${leadgenId}` : null }
     })
     console.log('[Leads] Guardado en DB:', nombre, telefono)
   } catch (dbErr) {
@@ -161,7 +162,7 @@ async function processLead(leadgenId, adId, createdTime) {
 
   // Enviar Telegram con botones interactivos
   const messageId = await sendLeadNotification(
-    { nombre, telefono, cantClientes, anuncioId: adId, createdTime, leadgenId },
+    { nombre, telefono, cantClientes, esPrestamista, anuncioId: adId, createdTime, leadgenId },
     lead?.id
   )
 
@@ -205,6 +206,7 @@ async function fetchLeadFromFacebook(leadgenId) {
       if (name === 'full_name' || name === 'nombre') fields.nombre = val
       else if (name === 'phone_number' || name === 'phone' || name === 'telefono') fields.telefono = val
       else if (name === 'how_many' || name?.includes('client') || name?.includes('cuant')) fields.cantClientes = val
+      else if (name === 'is_lender' || name?.includes('presta')) fields.esPrestamista = val
     }
     return fields
   } catch (err) {

@@ -419,7 +419,9 @@ model Lead {
   ultimoRecordatorio    DateTime?
   recordatoriosEnviados Int           @default(0)
   telegramMessageId     Int?
+  esPrestamista         String?
   createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
 
   organization Organization? @relation(fields: [organizationId], references: [id])
 

@@ -40,10 +40,12 @@ export async function POST(req) {
         if (name === 'full_name' || name === 'nombre') fields.nombre = val
         else if (name === 'phone_number' || name === 'phone' || name === 'telefono') fields.telefono = val
         else if (name === 'how_many' || name?.includes('client') || name?.includes('cuant')) fields.cantClientes = val
+        else if (name === 'is_lender' || name?.includes('presta')) fields.esPrestamista = val
       }
 
       const nombre = fields.nombre || 'Sin nombre'
       const telefono = fields.telefono || ''
+      const esPrestamista = fields.esPrestamista || ''
 
       if (nombre.includes('test lead') || nombre.includes('dummy')) continue
 
@@ -63,6 +65,7 @@ export async function POST(req) {
             nombre,
             telefono,
             cantClientes: fields.cantClientes || '',
+            esPrestamista,
             anuncioId: 'fb_sync',
             notas: `leadgen_id: ${fbLead.id}`,
           }
@@ -90,7 +93,7 @@ export async function POST(req) {
           ? Math.floor(new Date(fbLead.created_time).getTime() / 1000)
           : null
         const messageId = await sendLeadNotification(
-          { nombre, telefono, cantClientes: fields.cantClientes || '', anuncioId: 'fb_sync', createdTime, leadgenId: fbLead.id },
+          { nombre, telefono, cantClientes: fields.cantClientes || '', esPrestamista, anuncioId: 'fb_sync', createdTime, leadgenId: fbLead.id },
           lead.id
         )
 
