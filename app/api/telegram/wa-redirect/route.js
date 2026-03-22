@@ -31,14 +31,11 @@ export async function GET(request) {
 
   const decodedWaUrl = decodeURIComponent(waUrl)
 
-  // Extraer teléfono y texto del wa.me link
-  const urlObj = new URL(decodedWaUrl)
-  const phone = urlObj.pathname.replace('/', '')
-  const text = urlObj.searchParams.get('text') || ''
+  // Intent Android: usa la misma URL de wa.me pero forzando apertura con WA Business
+  // Mantiene el encoding original de la URL (preserva %0A para saltos de línea)
+  const intentUrl = decodedWaUrl.replace('https://', 'intent://') +
+    '#Intent;scheme=https;package=com.whatsapp.w4b;end'
 
-  // Página HTML que abre WhatsApp Business directamente
-  // En Android: intent:// fuerza WA Business (com.whatsapp.w4b)
-  // Fallback: abre wa.me normal (para iOS o si no tiene WA Business)
   const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -58,24 +55,14 @@ export async function GET(request) {
   </div>
   <script>
     (function() {
-      var phone = ${JSON.stringify(phone)};
-      var text = ${JSON.stringify(text)};
       var waMe = ${JSON.stringify(decodedWaUrl)};
-
-      // Intentar abrir WhatsApp Business primero (Android)
-      var intentUrl = 'intent://send/' + phone + '?text=' + encodeURIComponent(text)
-        + '#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end';
-
-      // Detectar si es Android
+      var intentUrl = ${JSON.stringify(intentUrl)};
       var isAndroid = /android/i.test(navigator.userAgent);
 
       if (isAndroid) {
-        // Intent para WA Business
         window.location.href = intentUrl;
-        // Fallback si WA Business no instalado: abrir wa.me después de 2s
         setTimeout(function() { window.location.href = waMe; }, 2000);
       } else {
-        // iOS y otros: abrir wa.me directamente
         window.location.href = waMe;
       }
     })();
