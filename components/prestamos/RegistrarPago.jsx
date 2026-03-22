@@ -5,7 +5,9 @@ import { useState }    from 'react'
 import { Modal }       from '@/components/ui/Modal'
 import { Button }      from '@/components/ui/Button'
 import { Input }       from '@/components/ui/Input'
-import BotonWhatsApp   from '@/components/ui/BotonWhatsApp'
+import BotonWhatsApp        from '@/components/ui/BotonWhatsApp'
+import BotonCompartir       from '@/components/ui/BotonCompartir'
+import BotonImprimirRecibo  from '@/components/ui/BotonImprimirRecibo'
 import { formatCOP, DIAS_ABONO } from '@/lib/calculos'
 import { guardarPagoPendiente }  from '@/lib/offline'
 
@@ -141,6 +143,13 @@ export default function RegistrarPago({
 
           {cliente?.telefono && prestamoWA && (
             <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamoWA} pago={pagoGuardado} />
+          )}
+
+          {prestamoWA && (
+            <div className="flex gap-2">
+              <BotonCompartir cliente={cliente} prestamo={prestamoWA} pago={pagoGuardado} />
+              <BotonImprimirRecibo cliente={cliente} prestamo={prestamoWA} pago={pagoGuardado} />
+            </div>
           )}
         </div>
       </Modal>

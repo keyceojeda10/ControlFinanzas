@@ -11,6 +11,8 @@ import { Card }                       from '@/components/ui/Card'
 import { SkeletonCard }               from '@/components/ui/Skeleton'
 import RegistrarPago                  from '@/components/prestamos/RegistrarPago'
 import BotonWhatsApp                  from '@/components/ui/BotonWhatsApp'
+import BotonCompartir                 from '@/components/ui/BotonCompartir'
+import BotonImprimirRecibo            from '@/components/ui/BotonImprimirRecibo'
 import { formatCOP }                  from '@/lib/calculos'
 
 // ─── Helpers de formato ──────────────────────────────────────────
@@ -162,17 +164,39 @@ export default function PrestamoDetallePage({ params }) {
           {ultimoPago && cliente?.telefono && (
             <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamo} pago={ultimoPago} />
           )}
+          {ultimoPago && (
+            <div className="flex gap-2">
+              <BotonCompartir cliente={cliente} prestamo={prestamo} pago={ultimoPago} />
+              <BotonImprimirRecibo cliente={cliente} prestamo={prestamo} pago={ultimoPago} />
+            </div>
+          )}
         </div>
       )}
 
       {/* ── WA PAGO (persiste después de cerrar animación) ───────── */}
-      {!exito && ultimoPago && !completado && cliente?.telefono && (
-        <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamo} pago={ultimoPago} />
+      {!exito && ultimoPago && !completado && (
+        <>
+          {cliente?.telefono && (
+            <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamo} pago={ultimoPago} />
+          )}
+          <div className="flex gap-2">
+            <BotonCompartir cliente={cliente} prestamo={prestamo} pago={ultimoPago} />
+            <BotonImprimirRecibo cliente={cliente} prestamo={prestamo} pago={ultimoPago} />
+          </div>
+        </>
       )}
 
       {/* ── WA PRÉSTAMO COMPLETADO ───────────────────────────────── */}
-      {completado && cliente?.telefono && ultimoPago && (
-        <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamo} pago={ultimoPago} />
+      {completado && ultimoPago && (
+        <>
+          {cliente?.telefono && (
+            <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamo} pago={ultimoPago} />
+          )}
+          <div className="flex gap-2">
+            <BotonCompartir cliente={cliente} prestamo={prestamo} pago={ultimoPago} />
+            <BotonImprimirRecibo cliente={cliente} prestamo={prestamo} pago={ultimoPago} />
+          </div>
+        </>
       )}
 
       {/* ── SIGUIENTE EN RUTA (después de pago) ──────────────────── */}
