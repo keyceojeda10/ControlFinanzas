@@ -87,7 +87,7 @@ export async function POST(request) {
       const text = [
         `📋 <b>${template.label}</b> — ${formatNombreSaludo(lead.nombre)}`,
         ``,
-        `<code>${msg}</code>`,
+        `<pre>${msg.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`,
       ].join('\n')
       await sendMessage(text, null, botType)
       return NextResponse.json({ ok: true })
