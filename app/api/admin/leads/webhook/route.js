@@ -71,11 +71,16 @@ export async function POST(request) {
       return NextResponse.json({ status: 'ignored' })
     }
 
+    // Deduplicar leadgen_ids en el mismo request (Facebook a veces envía duplicados)
+    const processedIds = new Set()
     for (const entry of body.entry || []) {
       for (const change of entry.changes || []) {
         if (change.field !== 'leadgen') continue
 
         const leadgenId = change.value?.leadgen_id
+        if (!leadgenId || processedIds.has(leadgenId)) continue
+        processedIds.add(leadgenId)
+
         const adId = change.value?.ad_id || ''
         const createdTime = change.value?.created_time
 
@@ -115,15 +120,24 @@ async function processLead(leadgenId, adId, createdTime) {
   // Guardar en DB con protección contra duplicados
   let lead = null
   try {
+    // Dedup por teléfono
     if (telefono) {
       const exists = await prisma.lead.findFirst({ where: { telefono } })
       if (exists) {
-        console.log('[Leads] Lead duplicado, ignorando:', nombre, telefono)
+        console.log('[Leads] Lead duplicado (tel), ignorando:', nombre, telefono)
+        return
+      }
+    }
+    // Dedup por leadgenId (notas contiene el ID)
+    if (leadgenId) {
+      const existsLg = await prisma.lead.findFirst({ where: { notas: { contains: leadgenId } } })
+      if (existsLg) {
+        console.log('[Leads] Lead duplicado (leadgenId), ignorando:', nombre, leadgenId)
         return
       }
     }
     lead = await prisma.lead.create({
-      data: { nombre, telefono, cantClientes, anuncioId: adId }
+      data: { nombre, telefono, cantClientes, anuncioId: adId, notas: leadgenId ? `leadgen_id: ${leadgenId}` : null }
     })
     console.log('[Leads] Guardado en DB:', nombre, telefono)
   } catch (dbErr) {
