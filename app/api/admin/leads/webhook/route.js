@@ -203,8 +203,8 @@ async function fetchLeadFromFacebook(leadgenId) {
       const name = f.name?.toLowerCase()
       const val = f.values?.[0] || ''
       if (name === 'full_name' || name === 'nombre') fields.nombre = val
-      else if (name === 'phone_number' || name === 'telefono') fields.telefono = val
-      else if (name?.includes('client') || name?.includes('cuant')) fields.cantClientes = val
+      else if (name === 'phone_number' || name === 'phone' || name === 'telefono') fields.telefono = val
+      else if (name === 'how_many' || name?.includes('client') || name?.includes('cuant')) fields.cantClientes = val
     }
     return fields
   } catch (err) {

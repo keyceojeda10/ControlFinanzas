@@ -38,8 +38,8 @@ export async function POST(req) {
         const name = f.name?.toLowerCase()
         const val = f.values?.[0] || ''
         if (name === 'full_name' || name === 'nombre') fields.nombre = val
-        else if (name === 'phone_number' || name === 'telefono') fields.telefono = val
-        else if (name?.includes('client') || name?.includes('cuant')) fields.cantClientes = val
+        else if (name === 'phone_number' || name === 'phone' || name === 'telefono') fields.telefono = val
+        else if (name === 'how_many' || name?.includes('client') || name?.includes('cuant')) fields.cantClientes = val
       }
 
       const nombre = fields.nombre || 'Sin nombre'
@@ -47,6 +47,11 @@ export async function POST(req) {
 
       if (nombre.includes('test lead') || nombre.includes('dummy')) continue
 
+      // Dedup por leadgen_id primero
+      const existsLg = await prisma.lead.findFirst({ where: { notas: { contains: fbLead.id } } })
+      if (existsLg) continue
+
+      // Dedup por teléfono
       if (telefono) {
         const exists = await prisma.lead.findFirst({ where: { telefono } })
         if (exists) continue
