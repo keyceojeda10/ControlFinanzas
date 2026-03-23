@@ -63,13 +63,16 @@ export default function HistorialPage() {
 
       {/* Resumen */}
       <div className="grid grid-cols-2 gap-3">
-        <Card>
+        <Card style={{
+          background: `linear-gradient(135deg, #22c55e0A 0%, #1a1a1a 40%, #1a1a1a 70%, #22c55e05 100%)`,
+          boxShadow: `0 0 30px #22c55e08, 0 1px 2px rgba(0,0,0,0.3)`,
+        }}>
           <p className="text-[10px] text-[#888888]">Total pagado</p>
-          <p className="text-xl font-bold text-[white] mt-1">{formatCOP(totalPagado)}</p>
+          <p className="text-xl font-bold text-[white] mt-1 font-mono-display">{formatCOP(totalPagado)}</p>
         </Card>
         <Card>
           <p className="text-[10px] text-[#888888]">Cantidad de pagos</p>
-          <p className="text-xl font-bold text-[white] mt-1">{totalPagos}</p>
+          <p className="text-xl font-bold text-[white] mt-1 font-mono-display">{totalPagos}</p>
         </Card>
       </div>
 
@@ -92,7 +95,7 @@ export default function HistorialPage() {
             {historial.map((h) => (
               <div key={h.id} className="grid grid-cols-4 gap-2 py-3 border-b border-[#2a2a2a] last:border-0 items-center">
                 <span className="text-sm text-[white]">{fmtFecha(h.fechaPago)}</span>
-                <span className="text-sm text-[white] text-right font-medium">
+                <span className="text-sm text-[white] text-right font-medium font-mono-display">
                   {formatCOP(h.montoPagado)}
                 </span>
                 <span className={[

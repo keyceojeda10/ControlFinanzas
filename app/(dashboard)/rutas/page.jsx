@@ -130,7 +130,11 @@ export default function RutasPage() {
               <Link
                 key={r.id}
                 href={`/rutas/${r.id}`}
-                className="block bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-4 hover:border-[#f5c518]/40 hover:bg-[#222222] transition-all group"
+                className="block border border-[#2a2a2a] rounded-[16px] p-4 hover:border-[#f5c518]/40 transition-all group"
+                style={{
+                  background: `linear-gradient(135deg, #22c55e0A 0%, #1a1a1a 40%, #1a1a1a 70%, #f5c5180A 100%)`,
+                  boxShadow: `0 0 30px #22c55e08, 0 1px 2px rgba(0,0,0,0.3)`,
+                }}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div>
@@ -148,8 +152,8 @@ export default function RutasPage() {
                 </div>
 
                 <div className="flex justify-between text-xs text-[#888888] mb-1.5">
-                  <span>Recaudado: <span className="text-[#22c55e] font-medium">{formatCOP(r.recaudadoHoy)}</span></span>
-                  <span>Esperado: {formatCOP(r.esperadoHoy)}</span>
+                  <span>Recaudado: <span className="text-[#22c55e] font-medium font-mono-display">{formatCOP(r.recaudadoHoy)}</span></span>
+                  <span>Esperado: <span className="font-mono-display">{formatCOP(r.esperadoHoy)}</span></span>
                 </div>
                 <div className="h-1.5 bg-[#2a2a2a] rounded-full overflow-hidden">
                   <div

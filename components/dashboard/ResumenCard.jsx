@@ -32,10 +32,17 @@ export default function ResumenCard({
     )
   }
 
+  // Extraemos el color RGB puro del icono para el glow (sin alpha)
+  const glowColor = colors.icon
+
   return (
     <div
-      className="bg-[#1a1a1a] border rounded-[14px] p-5 flex flex-col gap-3 transition-transform duration-150 hover:scale-[1.01]"
-      style={{ borderColor: colors.border }}
+      className="border rounded-[14px] p-5 flex flex-col gap-3 transition-transform duration-150 hover:scale-[1.01]"
+      style={{
+        borderColor: colors.border,
+        background: `linear-gradient(135deg, ${glowColor}0A 0%, #1a1a1a 40%, #1a1a1a 70%, ${glowColor}05 100%)`,
+        boxShadow: `0 0 30px ${glowColor}08, 0 1px 2px rgba(0,0,0,0.3)`,
+      }}
     >
       {/* Top row: icon + trend */}
       <div className="flex items-start justify-between">
@@ -63,7 +70,7 @@ export default function ResumenCard({
       {/* Label + Value */}
       <div>
         <p className="text-xs text-[#8b95a5] font-medium mb-1">{title}</p>
-        <p className="text-2xl font-bold text-[#f1f5f9] leading-none tracking-tight">{value}</p>
+        <p className="text-2xl font-bold text-[#f1f5f9] leading-none tracking-tight font-mono-display">{value}</p>
         {subtitle && (
           <p className="text-xs text-[#8b95a5] mt-1">{subtitle}</p>
         )}

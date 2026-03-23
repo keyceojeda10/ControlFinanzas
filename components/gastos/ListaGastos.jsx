@@ -80,7 +80,7 @@ export default function ListaGastos({ soloPendientes = false, onCountChange, fec
                 {g.cobradorNombre} • {new Date(g.fecha).toLocaleDateString('es-CO')}
               </p>
             </div>
-            <p className="text-sm font-bold text-white">{formatCOP(g.monto)}</p>
+            <p className="text-sm font-bold text-white font-mono-display">{formatCOP(g.monto)}</p>
           </div>
           
           <div className="flex items-center justify-between">

@@ -16,7 +16,7 @@ const MrrTooltip = ({ active, payload, label }) => {
   return (
     <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-2 text-xs shadow-xl">
       <p className="text-[#888888] mb-1">{label}</p>
-      <p className="text-[#22c55e] font-bold">{formatCOP(payload[0]?.value ?? 0)}</p>
+      <p className="text-[#22c55e] font-bold font-mono-display">{formatCOP(payload[0]?.value ?? 0)}</p>
     </div>
   )
 }
@@ -63,14 +63,21 @@ export default function AdminDashboard() {
       {/* Fila 1 — KPIs principales */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'MRR',               value: formatCOP(stats.mrr),       color: '#22c55e' },
-          { label: 'Orgs activas',       value: stats.totalOrgs,            color: 'white' },
-          { label: 'Por vencer (7d)',    value: stats.suscPorVencer,        color: '#f59e0b' },
-          { label: 'Vencidas',           value: stats.suscVencidas,         color: stats.suscVencidas > 0 ? '#ef4444' : '#888888' },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-3 text-center">
+          { label: 'MRR',               value: formatCOP(stats.mrr),       color: '#22c55e', mono: true  },
+          { label: 'Orgs activas',       value: stats.totalOrgs,            color: '#06b6d4', mono: false },
+          { label: 'Por vencer (7d)',    value: stats.suscPorVencer,        color: '#f59e0b', mono: false },
+          { label: 'Vencidas',           value: stats.suscVencidas,         color: stats.suscVencidas > 0 ? '#ef4444' : '#888888', mono: false },
+        ].map(({ label, value, color, mono }) => (
+          <div
+            key={label}
+            className="border border-[#2a2a2a] rounded-[12px] px-3 py-3 text-center"
+            style={{
+              background: `linear-gradient(135deg, ${color}0A 0%, #1a1a1a 40%, #1a1a1a 70%, ${color}05 100%)`,
+              boxShadow: `0 0 30px ${color}08, 0 1px 2px rgba(0,0,0,0.3)`,
+            }}
+          >
             <p className="text-[10px] text-[#555555]">{label}</p>
-            <p className="text-base font-bold mt-0.5" style={{ color }}>{value}</p>
+            <p className={`text-base font-bold mt-0.5${mono ? ' font-mono-display' : ''}`} style={{ color }}>{value}</p>
           </div>
         ))}
       </div>
@@ -88,7 +95,7 @@ export default function AdminDashboard() {
               <span className="text-xs text-[#888888]">{plan}</span>
             </div>
             <p className="text-lg font-bold text-[white]">{cantidad}</p>
-            <p className="text-[10px] text-[#555555]">MRR: {formatCOP(mrr)}</p>
+            <p className="text-[10px] text-[#555555]">MRR: <span className="font-mono-display">{formatCOP(mrr)}</span></p>
           </div>
         ))}
       </div>
@@ -126,9 +133,15 @@ export default function AdminDashboard() {
           <p className="text-[10px] text-[#555555]">Préstamos activos</p>
           <p className="text-lg font-bold text-[#3b82f6]">{stats.prestamosActivos}</p>
         </div>
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-4 py-3 text-center">
+        <div
+          className="border border-[#2a2a2a] rounded-[12px] px-4 py-3 text-center"
+          style={{
+            background: 'linear-gradient(135deg, #f5c5180A 0%, #1a1a1a 40%, #1a1a1a 70%, #f5c51805 100%)',
+            boxShadow: '0 0 30px #f5c51808, 0 1px 2px rgba(0,0,0,0.3)',
+          }}
+        >
           <p className="text-[10px] text-[#555555]">Cartera total</p>
-          <p className="text-lg font-bold text-[#22c55e]">{formatCOP(stats.carteraTotal)}</p>
+          <p className="text-lg font-bold text-[#22c55e] font-mono-display">{formatCOP(stats.carteraTotal)}</p>
         </div>
       </div>
 

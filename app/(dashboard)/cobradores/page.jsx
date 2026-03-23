@@ -129,7 +129,11 @@ export default function CobradoresPage() {
             <Link
               key={c.id}
               href={`/cobradores/${c.id}`}
-              className="block bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-4 hover:border-[#3a3a3a] hover:bg-[#1e1e1e] transition-all"
+              className="block border border-[#2a2a2a] rounded-[16px] p-4 hover:border-[#3a3a3a] transition-all"
+              style={{
+                background: `linear-gradient(135deg, #22c55e0A 0%, #1a1a1a 40%, #1a1a1a 70%, #a855f705 100%)`,
+                boxShadow: `0 0 30px #22c55e08, 0 1px 2px rgba(0,0,0,0.3)`,
+              }}
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
@@ -164,7 +168,7 @@ export default function CobradoresPage() {
                 </div>
                 <div>
                   <p className="text-[10px] text-[#888888]">Recaudado hoy</p>
-                  <p className="text-xs font-bold text-[#22c55e]">{formatCOP(c.recaudadoHoy)}</p>
+                  <p className="text-xs font-bold text-[#22c55e] font-mono-display">{formatCOP(c.recaudadoHoy)}</p>
                 </div>
               </div>
             </Link>

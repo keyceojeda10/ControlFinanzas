@@ -122,21 +122,27 @@ export default function RegistrarPago({
                 </svg>
               )}
             </div>
-            <p className="text-white font-bold text-lg">{formatCOP(pagoGuardado.montoPagado)}</p>
+            <p className="text-white font-bold text-lg font-mono-display">{formatCOP(pagoGuardado.montoPagado)}</p>
             <p className="text-[#888888] text-sm">
               {pagoGuardado.offline ? 'guardado offline — se sincronizará al conectar' : 'pagado correctamente'}
             </p>
           </div>
 
           {prestamoWA && (
-            <div className="bg-[#111111] rounded-[12px] px-4 py-3 space-y-1.5 text-sm">
+            <div
+              className="rounded-[12px] px-4 py-3 space-y-1.5 text-sm"
+              style={{
+                background: `linear-gradient(135deg, #22c55e0A 0%, #1a1a1a 40%, #1a1a1a 70%, #22c55e05 100%)`,
+                boxShadow: `0 0 30px #22c55e08, 0 1px 2px rgba(0,0,0,0.3)`,
+              }}
+            >
               <div className="flex justify-between">
                 <span className="text-[#888888]">Saldo pendiente</span>
-                <span className="text-white font-medium">{formatCOP(prestamoWA.saldoPendiente)}</span>
+                <span className="text-white font-medium font-mono-display">{formatCOP(prestamoWA.saldoPendiente)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-[#888888]">Progreso</span>
-                <span className="text-[#22c55e] font-medium">{prestamoWA.porcentajePagado}%</span>
+                <span className="text-[#22c55e] font-medium font-mono-display">{prestamoWA.porcentajePagado}%</span>
               </div>
             </div>
           )}
@@ -178,11 +184,11 @@ export default function RegistrarPago({
 
         <div className="flex justify-between items-center text-sm">
           <span className="text-[#888888]">Cuota</span>
-          <span className="font-semibold text-white">{formatCOP(cuotaDiaria)}</span>
+          <span className="font-semibold text-white font-mono-display">{formatCOP(cuotaDiaria)}</span>
         </div>
         <div className="flex justify-between items-center text-sm">
           <span className="text-[#888888]">Saldo pendiente</span>
-          <span className="font-semibold text-white">{formatCOP(saldoPendiente)}</span>
+          <span className="font-semibold text-white font-mono-display">{formatCOP(saldoPendiente)}</span>
         </div>
 
         {/* Botones de abono rápido por días */}
@@ -256,7 +262,7 @@ export default function RegistrarPago({
               <p className="text-[#888888]">
                 Reduce el capital y los intereses sobre ese monto. El préstamo termina antes.
                 {monto && Number(monto) > 0 && prestamo?.tasaInteres > 0 && (
-                  <> Ahorro en intereses: <span className="text-[#a855f7] font-medium">
+                  <> Ahorro en intereses: <span className="text-[#a855f7] font-medium font-mono-display">
                     {formatCOP(Math.round(Number(monto) * (prestamo.tasaInteres / 100)))}
                   </span></>
                 )}

@@ -49,11 +49,18 @@ const planes = [
   },
 ]
 
+const BeakerIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 inline-block mr-1 align-middle" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15M14.25 3.104c.251.023.501.05.75.082M19.8 15a2.25 2.25 0 0 1 .45 2.311l-.987 2.963c-.43 1.292-1.643 2.226-3.063 2.226H7.8c-1.42 0-2.633-.934-3.063-2.226L3.75 17.31A2.25 2.25 0 0 1 4.2 15h15.6Z" />
+  </svg>
+)
+
 const planTest = {
   key: 'test',
   nombre: 'Test ($1.500)',
   precio: 1500,
-  badge: '🧪 Solo pruebas',
+  badge: 'Solo pruebas',
+  badgeIcon: true,
   features: [
     'Solo para testing interno',
     'NO usar en producción',
@@ -171,7 +178,7 @@ export default function PlanPage() {
               {p.label}
               {p.badge && (
                 <span className={[
-                  'text-[10px] font-bold px-1.5 py-0.5 rounded-full',
+                  'text-[10px] font-bold px-1.5 py-0.5 rounded-full font-mono-display',
                   periodo === p.key
                     ? 'bg-[#0a0a0a] text-[#f5c518]'
                     : 'bg-[#22c55e] text-white',
@@ -204,17 +211,23 @@ export default function PlanPage() {
           const { total, conDescuento, descuentoFinal, meses, ahorro } = calcularPrecio(p.precio)
           const tieneDescuento = descuentoFinal > 0
 
+          const glowColor = esPopular ? '#22c55e' : esPlanActual ? '#f5c518' : esTest ? '#06b6d4' : null
+
           return (
             <div
               key={p.key}
               className={[
-                'relative bg-[#1a1a1a] border rounded-[16px] p-5 flex flex-col transition-all',
+                'relative border rounded-[16px] p-5 flex flex-col transition-all',
                 esPopular
                   ? 'border-[#f5c518] ring-1 ring-[rgba(245,197,24,0.3)] mt-3'
                   : esTest
                   ? 'border-dashed border-[#3a3a3a]'
                   : 'border-[#2a2a2a]',
               ].join(' ')}
+              style={glowColor ? {
+                background: `linear-gradient(135deg, ${glowColor}0A 0%, #1a1a1a 40%, #1a1a1a 70%, ${glowColor}05 100%)`,
+                boxShadow: `0 0 30px ${glowColor}08, 0 1px 2px rgba(0,0,0,0.3)`,
+              } : { background: '#1a1a1a' }}
             >
               {esPopular && (
                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
@@ -223,28 +236,31 @@ export default function PlanPage() {
               )}
 
               <div className="mb-4 mt-1">
-                <p className="text-sm font-semibold text-white">{p.nombre}</p>
+                <p className="text-sm font-semibold text-white">
+                  {esTest && <BeakerIcon />}
+                  {p.nombre}
+                </p>
                 {esTest && (
                   <p className="text-[10px] text-[#555555] mt-0.5">Solo superadmin · no usar en producción</p>
                 )}
                 {tieneDescuento ? (
                   <div className="mt-1">
-                    <p className="text-sm text-[#555555] line-through">{formatCOP(total)}</p>
+                    <p className="text-sm text-[#555555] line-through font-mono-display">{formatCOP(total)}</p>
                     <p className="text-2xl font-bold text-white">
-                      {formatCOP(conDescuento)}
+                      <span className="font-mono-display">{formatCOP(conDescuento)}</span>
                       <span className="text-xs text-[#555555] font-normal">
                         /{meses === 12 ? 'año' : meses === 3 ? '3 meses' : 'mes'}
                       </span>
                     </p>
                     {ahorro > 0 && (
                       <p className="text-[10px] text-[#22c55e] font-medium mt-0.5">
-                        Ahorras {formatCOP(ahorro)}
+                        Ahorras <span className="font-mono-display">{formatCOP(ahorro)}</span>
                       </p>
                     )}
                   </div>
                 ) : (
                   <p className="text-2xl font-bold text-white mt-1">
-                    {formatCOP(p.precio)}
+                    <span className="font-mono-display">{formatCOP(p.precio)}</span>
                     <span className="text-xs text-[#555555] font-normal">/mes</span>
                   </p>
                 )}

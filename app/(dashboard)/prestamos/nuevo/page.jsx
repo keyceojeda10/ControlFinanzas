@@ -180,7 +180,9 @@ function NuevoPrestamo() {
                 : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#888888] hover:text-[white] hover:border-[#3a3a3a]',
             ].join(' ')}
           >
-            <span className="text-base">💰</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
             Préstamo
           </button>
           <button
@@ -193,7 +195,9 @@ function NuevoPrestamo() {
                 : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#888888] hover:text-[white] hover:border-[#3a3a3a]',
             ].join(' ')}
           >
-            <span className="text-base">📦</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+            </svg>
             Mercancía
           </button>
         </div>
@@ -272,7 +276,7 @@ function NuevoPrestamo() {
               />
               {calculo && Number(monto) > 0 && (
                 <p className="text-[10px] text-[#3b82f6] font-medium px-0.5">
-                  → {numCuotas} cuotas de {formatCOP(calculo.cuotaDiaria)}
+                  → {numCuotas} cuotas de <span className="font-mono-display">{formatCOP(calculo.cuotaDiaria)}</span>
                 </p>
               )}
             </div>

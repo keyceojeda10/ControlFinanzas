@@ -1,6 +1,7 @@
 // components/dashboard/ClientesMora.jsx - Lista de clientes en mora
 
 import { Badge } from '@/components/ui/Badge'
+import { formatCOP } from '@/lib/calculos'
 
 export default function ClientesMora({ clientes = [], loading = false }) {
   if (loading) {
@@ -49,7 +50,7 @@ export default function ClientesMora({ clientes = [], loading = false }) {
             <p className="text-xs text-[#8b95a5]">{c.diasMora} días en mora</p>
           </div>
           <Badge variant="red">
-            ${c.saldoPendiente?.toLocaleString('es-CO') ?? 0}
+            <span className="font-mono-display">{formatCOP(c.saldoPendiente ?? 0)}</span>
           </Badge>
         </div>
       ))}

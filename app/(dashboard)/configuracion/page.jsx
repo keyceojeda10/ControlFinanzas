@@ -236,7 +236,7 @@ function TabOrganizacion() {
                 <Badge variant={planBadge[org?.plan ?? 'basic']}>
                   {PLAN_NAMES[org?.plan ?? 'basic']}
                 </Badge>
-                <span className="text-xs text-[#888888]">{formatCOP(PRECIOS[org?.plan ?? 'basic'])}/mes</span>
+                <span className="text-xs text-[#888888]"><span className="font-mono-display">{formatCOP(PRECIOS[org?.plan ?? 'basic'])}</span>/mes</span>
               </div>
             </div>
             <Link
@@ -308,7 +308,12 @@ function TabSuscripcion() {
 
   return (
     <div className="space-y-5">
-      <Card>
+      <Card
+        style={{
+          background: `linear-gradient(135deg, #f5c5180A 0%, #1a1a1a 40%, #1a1a1a 70%, #f5c51805 100%)`,
+          boxShadow: `0 0 30px #f5c51808, 0 1px 2px rgba(0,0,0,0.3)`,
+        }}
+      >
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5">
           <div>
             <p className="text-xs text-[#888888] mb-1">Plan actual</p>
@@ -316,7 +321,7 @@ function TabSuscripcion() {
               <Badge variant={planBadge[org?.plan ?? 'basic']}>
                 {PLAN_NAMES[org?.plan ?? 'basic']}
               </Badge>
-              <span className="text-xs text-[#888888]">{formatCOP(PRECIOS[org?.plan ?? 'basic'])}/mes</span>
+              <span className="text-xs text-[#888888]"><span className="font-mono-display">{formatCOP(PRECIOS[org?.plan ?? 'basic'])}</span>/mes</span>
             </div>
           </div>
           <Link
@@ -398,7 +403,7 @@ function TabSuscripcion() {
                   </Badge>
                 </div>
                 <p className="text-xs text-[#888888] text-right">
-                  {h.montoCOP > 0 ? formatCOP(h.montoCOP) : 'Gratis'}
+                  {h.montoCOP > 0 ? <span className="font-mono-display">{formatCOP(h.montoCOP)}</span> : 'Gratis'}
                 </p>
               </div>
             ))}

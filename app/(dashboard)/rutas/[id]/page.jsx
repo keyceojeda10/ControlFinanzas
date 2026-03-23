@@ -381,17 +381,50 @@ export default function RutaDetallePage({ params }) {
 
       {/* Métricas del día */}
       <div className="grid grid-cols-2 gap-3">
-        {[
-          { label: 'Esperado hoy',      value: formatCOP(ruta.esperadoHoy),   color: 'white' },
-          { label: 'Recaudado hoy',     value: formatCOP(ruta.recaudadoHoy),  color: '#22c55e' },
-          { label: 'Pendientes de pago', value: `${ruta.pendientesHoy} cliente${ruta.pendientesHoy !== 1 ? 's' : ''}`, color: ruta.pendientesHoy > 0 ? '#f59e0b' : '#22c55e' },
-          { label: 'En mora',           value: `${ruta.enMora} cliente${ruta.enMora !== 1 ? 's' : ''}`, color: ruta.enMora > 0 ? '#ef4444' : '#22c55e' },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-3">
-            <p className="text-[10px] text-[#888888]">{label}</p>
-            <p className="text-base font-bold mt-0.5" style={{ color }}>{value}</p>
-          </div>
-        ))}
+        <div
+          className="border border-[#2a2a2a] rounded-[12px] px-3 py-3"
+          style={{
+            background: `linear-gradient(135deg, #f5c5180A 0%, #1a1a1a 40%, #1a1a1a 70%, #f5c51805 100%)`,
+            boxShadow: `0 0 30px #f5c51808, 0 1px 2px rgba(0,0,0,0.3)`,
+          }}
+        >
+          <p className="text-[10px] text-[#888888]">Esperado hoy</p>
+          <p className="text-base font-bold mt-0.5 font-mono-display" style={{ color: 'white' }}>{formatCOP(ruta.esperadoHoy)}</p>
+        </div>
+        <div
+          className="border border-[#2a2a2a] rounded-[12px] px-3 py-3"
+          style={{
+            background: `linear-gradient(135deg, #22c55e0A 0%, #1a1a1a 40%, #1a1a1a 70%, #22c55e05 100%)`,
+            boxShadow: `0 0 30px #22c55e08, 0 1px 2px rgba(0,0,0,0.3)`,
+          }}
+        >
+          <p className="text-[10px] text-[#888888]">Recaudado hoy</p>
+          <p className="text-base font-bold mt-0.5 font-mono-display" style={{ color: '#22c55e' }}>{formatCOP(ruta.recaudadoHoy)}</p>
+        </div>
+        <div
+          className="border border-[#2a2a2a] rounded-[12px] px-3 py-3"
+          style={{
+            background: `linear-gradient(135deg, #06b6d40A 0%, #1a1a1a 40%, #1a1a1a 70%, #06b6d405 100%)`,
+            boxShadow: `0 0 30px #06b6d408, 0 1px 2px rgba(0,0,0,0.3)`,
+          }}
+        >
+          <p className="text-[10px] text-[#888888]">Pendientes de pago</p>
+          <p className="text-base font-bold mt-0.5" style={{ color: ruta.pendientesHoy > 0 ? '#f59e0b' : '#22c55e' }}>
+            {ruta.pendientesHoy} cliente{ruta.pendientesHoy !== 1 ? 's' : ''}
+          </p>
+        </div>
+        <div
+          className="border border-[#2a2a2a] rounded-[12px] px-3 py-3"
+          style={{
+            background: `linear-gradient(135deg, #06b6d40A 0%, #1a1a1a 40%, #1a1a1a 70%, #06b6d405 100%)`,
+            boxShadow: `0 0 30px #06b6d408, 0 1px 2px rgba(0,0,0,0.3)`,
+          }}
+        >
+          <p className="text-[10px] text-[#888888]">En mora</p>
+          <p className="text-base font-bold mt-0.5" style={{ color: ruta.enMora > 0 ? '#ef4444' : '#22c55e' }}>
+            {ruta.enMora} cliente{ruta.enMora !== 1 ? 's' : ''}
+          </p>
+        </div>
       </div>
 
       {/* Barra de progreso del día */}
@@ -471,8 +504,13 @@ export default function RutaDetallePage({ params }) {
                 variant="secondary"
                 onClick={optimizarRuta}
                 loading={optimizando}
+                icon={
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
+                  </svg>
+                }
               >
-                🗺️ Optimizar
+                Optimizar
               </Button>
             )}
             {esOwner && (
@@ -512,7 +550,10 @@ export default function RutaDetallePage({ params }) {
               onClick={() => setShowMap((v) => !v)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[#1a1a1a] border border-[#2a2a2a] text-[#888888] text-xs font-medium hover:text-white hover:border-[#3a3a3a] transition-all active:scale-95"
             >
-              {showMap ? 'Ocultar mapa' : '🗺️ Ver mapa'}
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
+              </svg>
+              {showMap ? 'Ocultar mapa' : 'Ver mapa'}
             </button>
           </div>
         )}
@@ -637,15 +678,15 @@ export default function RutaDetallePage({ params }) {
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-[#888888]">Esperado</span>
-              <span className="text-[white] font-medium">{formatCOP(ruta.cierre.totalEsperado)}</span>
+              <span className="text-[white] font-medium font-mono-display">{formatCOP(ruta.cierre.totalEsperado)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-[#888888]">Entregado</span>
-              <span className="text-[white] font-medium">{formatCOP(ruta.cierre.totalRecogido)}</span>
+              <span className="text-[white] font-medium font-mono-display">{formatCOP(ruta.cierre.totalRecogido)}</span>
             </div>
             <div className="flex justify-between text-sm font-bold border-t border-[#2a2a2a] pt-2 mt-2">
               <span className="text-[#888888]">Diferencia</span>
-              <span style={{ color: ruta.cierre.diferencia >= 0 ? '#22c55e' : '#ef4444' }}>
+              <span className="font-mono-display" style={{ color: ruta.cierre.diferencia >= 0 ? '#22c55e' : '#ef4444' }}>
                 {ruta.cierre.diferencia >= 0 ? '+' : ''}{formatCOP(ruta.cierre.diferencia)}
               </span>
             </div>
@@ -722,7 +763,7 @@ export default function RutaDetallePage({ params }) {
           )}
           <div className="flex justify-between text-sm">
             <span className="text-[#888888]">Total esperado hoy</span>
-            <span className="font-semibold text-[white]">{formatCOP(ruta.esperadoHoy)}</span>
+            <span className="font-semibold text-[white] font-mono-display">{formatCOP(ruta.esperadoHoy)}</span>
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium text-[#888888]">Dinero recogido (COP)</label>
@@ -739,7 +780,7 @@ export default function RutaDetallePage({ params }) {
           {totalRecogido && (
             <div className="text-sm">
               <span className="text-[#888888]">Diferencia: </span>
-              <span style={{ color: Number(totalRecogido) >= ruta.esperadoHoy ? '#22c55e' : '#ef4444', fontWeight: 700 }}>
+              <span className="font-mono-display" style={{ color: Number(totalRecogido) >= ruta.esperadoHoy ? '#22c55e' : '#ef4444', fontWeight: 700 }}>
                 {Number(totalRecogido) >= ruta.esperadoHoy ? '+' : ''}{formatCOP(Number(totalRecogido) - ruta.esperadoHoy)}
               </span>
             </div>

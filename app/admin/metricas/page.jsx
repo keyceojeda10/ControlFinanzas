@@ -18,7 +18,7 @@ const CopTooltip = ({ active, payload, label }) => {
     <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-2 text-xs shadow-xl">
       <p className="text-[#888888] mb-1">{label}</p>
       {payload.map((p, i) => (
-        <p key={i} className="font-bold" style={{ color: p.color }}>{p.name}: {formatCOP(p.value)}</p>
+        <p key={i} className="font-bold font-mono-display" style={{ color: p.color }}>{p.name}: {formatCOP(p.value)}</p>
       ))}
     </div>
   )
@@ -131,7 +131,10 @@ export default function MetricasPage() {
       </div>
 
       {/* MRR por mes — barras apiladas */}
-      <Card>
+      <Card style={{
+        background: 'linear-gradient(135deg, #22c55e0A 0%, #1a1a1a 40%, #1a1a1a 70%, #22c55e05 100%)',
+        boxShadow: '0 0 30px #22c55e08, 0 1px 2px rgba(0,0,0,0.3)',
+      }}>
         <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">MRR por mes — Últimos 12 meses</p>
         <ResponsiveContainer width="100%" height={260}>
           <BarChart data={mrrPorMes} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
@@ -148,7 +151,10 @@ export default function MetricasPage() {
       </Card>
 
       {/* Crecimiento de organizaciones */}
-      <Card>
+      <Card style={{
+        background: 'linear-gradient(135deg, #06b6d40A 0%, #1a1a1a 40%, #1a1a1a 70%, #06b6d405 100%)',
+        boxShadow: '0 0 30px #06b6d408, 0 1px 2px rgba(0,0,0,0.3)',
+      }}>
         <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">Crecimiento de organizaciones</p>
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={crecimiento} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
