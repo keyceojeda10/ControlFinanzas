@@ -39,6 +39,8 @@ export function useOnboarding(esOwner) {
   const [dismissed, setDismissed] = useState(false)
   const [loading, setLoading] = useState(true)
   const [spotlight, setSpotlight] = useState(null)
+  const [showWizard, setShowWizard] = useState(false)
+  const [wizardInitialStep, setWizardInitialStep] = useState(0)
 
   // Fetch progress
   const fetchProgreso = useCallback(async () => {
@@ -50,6 +52,8 @@ export function useOnboarding(esOwner) {
       setTotal(data.total || 5)
       setProgreso(data.progreso || 0)
       setCompletado(data.completado || false)
+      setShowWizard(data.showWizard || false)
+      setWizardInitialStep(data.wizardInitialStep || 0)
       if (data.completado) setDismissed(true)
     } catch {
       setCompletado(true)
@@ -117,6 +121,8 @@ export function useOnboarding(esOwner) {
     dismissed,
     loading,
     visible,
+    showWizard: showWizard && !dismissed && !loading,
+    wizardInitialStep,
     spotlight,
     dismiss,
     showSpotlight,

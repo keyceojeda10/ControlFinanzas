@@ -86,12 +86,20 @@ export async function GET() {
     }).catch(() => {})
   }
 
+  // Wizard shows only for brand-new orgs with zero clients
+  const showWizard = org?.onboardingStep === 0 && clientes === 0
+
+  // If user created a client in the wizard but left before creating a loan
+  const wizardInitialStep = (org?.onboardingStep === 0 && clientes > 0 && prestamos === 0) ? 2 : 0
+
   return NextResponse.json({
     completado,
     completadas,
     total,
     progreso: Math.round((completadas / total) * 100),
     misiones,
+    showWizard,
+    wizardInitialStep,
   })
 }
 

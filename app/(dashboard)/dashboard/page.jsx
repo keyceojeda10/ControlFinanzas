@@ -5,6 +5,7 @@ import { formatCOP } from '@/lib/calculos'
 import { useAuth } from '@/hooks/useAuth'
 import { useOnboarding } from '@/components/onboarding/useOnboarding'
 import OnboardingChecklist from '@/components/onboarding/OnboardingChecklist'
+import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
 import SpotlightOverlay from '@/components/onboarding/SpotlightOverlay'
 
 function Skeleton({ className = '' }) {
@@ -97,6 +98,25 @@ export default function DashboardPage() {
   }, [authLoading, esOwner])
 
   const moraPct = data ? (data.clientes.total > 0 ? Math.round((data.clientes.enMora / data.clientes.total) * 100) : 0) : 0
+
+  // Wizard: full-screen takeover for brand-new users
+  if (onboarding.showWizard && esOwner) {
+    return (
+      <div className="max-w-3xl mx-auto">
+        <OnboardingWizard
+          nombre={session?.user?.nombre || session?.user?.name}
+          initialStep={onboarding.wizardInitialStep}
+          onComplete={() => {
+            onboarding.dismiss()
+            window.location.reload()
+          }}
+          onDismiss={() => {
+            onboarding.dismiss()
+          }}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-3xl mx-auto space-y-5">
