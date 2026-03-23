@@ -8,6 +8,7 @@ import {
   calcularDiasMora,
   calcularPorcentajePagado,
   calcularEstadoCliente,
+  calcularCapitalRestante,
   pagoHoy,
 } from '@/lib/calculos'
 import { registrarMovimientoCapital } from '@/lib/capital'
@@ -27,7 +28,7 @@ export async function POST(request, { params }) {
     where: { id: prestamoId, organizationId },
     include: {
       cliente: { select: { id: true, rutaId: true } },
-      pagos:   { select: { id: true, montoPagado: true, fechaPago: true } },
+      pagos:   { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
     },
   })
 
@@ -53,11 +54,22 @@ export async function POST(request, { params }) {
   if (!montoFinal || montoFinal <= 0) {
     return Response.json({ error: 'El monto del pago debe ser mayor a 0' }, { status: 400 })
   }
-  if (!['completo', 'parcial'].includes(tipo)) {
+  if (!['completo', 'parcial', 'capital'].includes(tipo)) {
     return Response.json({ error: 'El tipo de pago no es válido' }, { status: 400 })
   }
 
   const saldoActual = calcularSaldoPendiente(prestamo)
+
+  // Validación específica para abono a capital
+  if (tipo === 'capital') {
+    const capitalRestante = calcularCapitalRestante(prestamo)
+    if (montoFinal > capitalRestante) {
+      return Response.json({
+        error: `El abono a capital no puede superar el capital restante: $${Math.round(capitalRestante).toLocaleString('es-CO')}`,
+      }, { status: 400 })
+    }
+  }
+
   montoFinal = Math.min(montoFinal, saldoActual)
 
   // Registrar pago y actualizar estados en transacción
@@ -76,12 +88,24 @@ export async function POST(request, { params }) {
     })
 
     // 2. Leer el préstamo actualizado con todos los pagos
-    const prestamoActualizado = await tx.prestamo.findUnique({
+    let prestamoActualizado = await tx.prestamo.findUnique({
       where: { id: prestamoId },
       include: {
-        pagos: { select: { id: true, montoPagado: true, fechaPago: true } },
+        pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
       },
     })
+
+    // 2b. Abono a capital: reducir totalAPagar por el ahorro de intereses
+    if (tipo === 'capital') {
+      const ahorroInteres = Math.round(montoFinal * (prestamo.tasaInteres / 100))
+      const totalPagadoActual = prestamoActualizado.pagos.reduce((a, p) => a + p.montoPagado, 0)
+      const nuevoTotal = Math.max(totalPagadoActual, prestamoActualizado.totalAPagar - ahorroInteres)
+      await tx.prestamo.update({ where: { id: prestamoId }, data: { totalAPagar: nuevoTotal } })
+      prestamoActualizado = await tx.prestamo.findUnique({
+        where: { id: prestamoId },
+        include: { pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } } },
+      })
+    }
 
     const nuevoSaldo = calcularSaldoPendiente(prestamoActualizado)
 
@@ -114,7 +138,7 @@ export async function POST(request, { params }) {
       organizationId,
       tipo: 'recaudo',
       monto: montoFinal,
-      descripcion: `Pago recibido - préstamo`,
+      descripcion: tipo === 'capital' ? `Abono a capital - préstamo` : `Pago recibido - préstamo`,
       referenciaId: prestamoId,
       referenciaTipo: 'pago',
       creadoPorId: userId,

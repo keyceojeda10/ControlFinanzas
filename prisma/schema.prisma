@@ -42,6 +42,7 @@ enum EstadoPrestamo {
 enum TipoPago {
   completo
   parcial
+  capital
 }
 
 enum EstadoSuscripcion {

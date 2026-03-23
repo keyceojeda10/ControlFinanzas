@@ -27,8 +27,9 @@ const estadoBadge = {
 }
 
 const tipoPagoBadge = {
-  completo: { variant: 'green',  label: 'Completo' },
-  parcial:  { variant: 'yellow', label: 'Parcial'  },
+  completo: { variant: 'green',  label: 'Completo'  },
+  parcial:  { variant: 'yellow', label: 'Parcial'   },
+  capital:  { variant: 'purple', label: 'A Capital' },
 }
 
 export default function PrestamoDetallePage({ params }) {
@@ -390,7 +391,14 @@ export default function PrestamoDetallePage({ params }) {
                     </p>
                     {pago.nota && <p className="text-[10px] text-[#888888] mt-0.5">{pago.nota}</p>}
                   </div>
-                  <Badge variant={tipoBadge.variant}>{tipoBadge.label}</Badge>
+                  <div className="flex flex-col items-end gap-0.5">
+                    <Badge variant={tipoBadge.variant}>{tipoBadge.label}</Badge>
+                    {pago.tipo === 'capital' && tasaInteres > 0 && (
+                      <span className="text-[10px] text-[#a855f7]">
+                        -{formatCOP(Math.round(pago.montoPagado * tasaInteres / 100))} int.
+                      </span>
+                    )}
+                  </div>
                   {session?.user?.rol === 'owner' && (
                     <button
                       onClick={async () => {

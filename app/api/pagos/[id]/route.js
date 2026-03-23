@@ -20,7 +20,7 @@ export async function DELETE(request, { params }) {
     where: { id: pagoId, organizationId },
     include: {
       prestamo: {
-        include: { pagos: { select: { id: true, montoPagado: true, fechaPago: true } } },
+        include: { pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } } },
       },
     },
   })
@@ -30,6 +30,15 @@ export async function DELETE(request, { params }) {
   await prisma.$transaction(async (tx) => {
     // 1. Eliminar el pago
     await tx.pago.delete({ where: { id: pagoId } })
+
+    // 1b. Si era abono a capital, reversar la reducción de totalAPagar
+    if (pago.tipo === 'capital') {
+      const ahorroInteres = Math.round(pago.montoPagado * (pago.prestamo.tasaInteres / 100))
+      await tx.prestamo.update({
+        where: { id: prestamo.id },
+        data: { totalAPagar: prestamo.totalAPagar + ahorroInteres },
+      })
+    }
 
     // 2. Si el préstamo estaba completado, reactivarlo
     const prestamo = pago.prestamo

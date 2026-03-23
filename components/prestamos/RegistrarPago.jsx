@@ -186,28 +186,30 @@ export default function RegistrarPago({
         </div>
 
         {/* Botones de abono rápido por días */}
-        <div className="border-t border-[#2a2a2a] pt-4">
-          <p className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em] mb-2">
-            Abono rápido por días
-          </p>
-          <div className="grid grid-cols-5 gap-2">
-            {DIAS_ABONO.map((dias) => (
-              <button
-                key={dias}
-                type="button"
-                onClick={() => handleAbonoDias(dias)}
-                className={[
-                  'h-9 rounded-[10px] border text-sm font-medium transition-all cursor-pointer',
-                  diasAbonados === dias
-                    ? 'bg-[rgba(34,197,94,0.15)] border-[#22c55e] text-[#22c55e]'
-                    : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#1a1a1a]',
-                ].join(' ')}
-              >
-                {dias}d
-              </button>
-            ))}
+        {tipo !== 'capital' && (
+          <div className="border-t border-[#2a2a2a] pt-4">
+            <p className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em] mb-2">
+              Abono rápido por días
+            </p>
+            <div className="grid grid-cols-5 gap-2">
+              {DIAS_ABONO.map((dias) => (
+                <button
+                  key={dias}
+                  type="button"
+                  onClick={() => handleAbonoDias(dias)}
+                  className={[
+                    'h-9 rounded-[10px] border text-sm font-medium transition-all cursor-pointer',
+                    diasAbonados === dias
+                      ? 'bg-[rgba(34,197,94,0.15)] border-[#22c55e] text-[#22c55e]'
+                      : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#1a1a1a]',
+                  ].join(' ')}
+                >
+                  {dias}d
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="border-t border-[#2a2a2a] pt-4 space-y-4">
           <Input
@@ -222,23 +224,45 @@ export default function RegistrarPago({
           <div className="flex flex-col gap-1.5">
             <span className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em]">Tipo de pago</span>
             <div className="flex gap-2">
-              {['completo', 'parcial'].map((t) => (
+              {[
+                { key: 'completo', label: 'Completo',  color: '#f5c518' },
+                { key: 'parcial',  label: 'Parcial',   color: '#f5c518' },
+                { key: 'capital',  label: 'A Capital',  color: '#a855f7' },
+              ].map(({ key, label, color }) => (
                 <button
-                  key={t}
+                  key={key}
                   type="button"
-                  onClick={() => setTipo(t)}
+                  onClick={() => {
+                    setTipo(key)
+                    if (key === 'capital') { setDiasAbonados(null); setMonto('') }
+                  }}
                   className={[
-                    'flex-1 h-9 rounded-[10px] border text-sm font-medium transition-all capitalize cursor-pointer',
-                    tipo === t
-                      ? 'bg-[rgba(245,197,24,0.15)] border-[#f5c518] text-[#f5c518]'
+                    'flex-1 h-9 rounded-[10px] border text-sm font-medium transition-all cursor-pointer',
+                    tipo === key
+                      ? `border-[${color}] text-[${color}]`
                       : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#1a1a1a]',
                   ].join(' ')}
+                  style={tipo === key ? { backgroundColor: `${color}15`, borderColor: color, color } : undefined}
                 >
-                  {t}
+                  {label}
                 </button>
               ))}
             </div>
           </div>
+
+          {tipo === 'capital' && (
+            <div className="bg-[rgba(168,85,247,0.08)] border border-[rgba(168,85,247,0.2)] rounded-[10px] px-3 py-2.5 text-xs">
+              <p className="font-medium text-[#a855f7] mb-1">Abono a capital</p>
+              <p className="text-[#888888]">
+                Reduce el capital y los intereses sobre ese monto. El préstamo termina antes.
+                {monto && Number(monto) > 0 && prestamo?.tasaInteres > 0 && (
+                  <> Ahorro en intereses: <span className="text-[#a855f7] font-medium">
+                    {formatCOP(Math.round(Number(monto) * (prestamo.tasaInteres / 100)))}
+                  </span></>
+                )}
+              </p>
+            </div>
+          )}
 
           <Input
             label="Nota (opcional)"
