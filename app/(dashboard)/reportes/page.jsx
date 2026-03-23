@@ -176,20 +176,39 @@ export default function ReportesPage() {
               { label: 'Préstamos activos', value: resumen.prestamos.activos,                  color: '#f5c518' },
               { label: 'Cartera activa',    value: formatCOP(resumen.prestamos.carteraActiva), color: '#22c55e' },
             ].map(({ label, value, color }) => (
-              <div key={label} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-3 text-center">
+              <div
+                key={label}
+                className="border border-[#2a2a2a] rounded-[12px] px-3 py-3 text-center"
+                style={{
+                  background: `linear-gradient(135deg, ${color === 'white' ? '#ffffff' : color}0A 0%, #1a1a1a 40%, #1a1a1a 70%, ${color === 'white' ? '#ffffff' : color}05 100%)`,
+                  boxShadow: `0 0 30px ${color === 'white' ? '#ffffff' : color}08, 0 1px 2px rgba(0,0,0,0.3)`,
+                }}
+              >
                 <p className="text-[10px] text-[#888888]">{label}</p>
-                <p className="text-base font-bold mt-0.5" style={{ color }}>{value}</p>
+                <p className="text-base font-bold mt-0.5 font-mono-display" style={{ color }}>{value}</p>
               </div>
             ))}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-4 py-3">
+            <div
+              className="border border-[#2a2a2a] rounded-[12px] px-4 py-3"
+              style={{
+                background: 'linear-gradient(135deg, #22c55e0A 0%, #1a1a1a 40%, #1a1a1a 70%, #22c55e05 100%)',
+                boxShadow: '0 0 30px #22c55e08, 0 1px 2px rgba(0,0,0,0.3)',
+              }}
+            >
               <p className="text-[10px] text-[#888888]">Ingresos del período</p>
               <p className="text-lg font-bold text-[#22c55e] mt-0.5 font-mono-display">{formatCOP(resumen.pagos.totalPeriodo)}</p>
               <p className="text-[10px] text-[#888888] mt-0.5">{resumen.pagos.cantidad} pagos</p>
             </div>
-            <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-4 py-3">
+            <div
+              className="border border-[#2a2a2a] rounded-[12px] px-4 py-3"
+              style={{
+                background: 'linear-gradient(135deg, #f5c5180A 0%, #1a1a1a 40%, #1a1a1a 70%, #f5c51805 100%)',
+                boxShadow: '0 0 30px #f5c51808, 0 1px 2px rgba(0,0,0,0.3)',
+              }}
+            >
               <p className="text-[10px] text-[#888888]">Capital prestado activo</p>
               <p className="text-lg font-bold text-[#f5c518] mt-0.5 font-mono-display">{formatCOP(resumen.prestamos.capitalPrestado)}</p>
               <p className="text-[10px] text-[#888888] mt-0.5">{resumen.prestamos.completados} completados</p>
@@ -269,8 +288,8 @@ export default function ReportesPage() {
                   <p className="text-[10px] text-[#a855f7]">{r.cobrador}</p>
                 </div>
                 <span className="text-sm text-[#888888] text-right">{r.clientes}</span>
-                <span className="text-sm text-[white] text-right">{formatCOP(r.saldoPendiente)}</span>
-                <span className="text-sm text-[#22c55e] font-medium text-right">{formatCOP(r.cuotaDiariaTotal)}</span>
+                <span className="text-sm text-[white] text-right font-mono-display">{formatCOP(r.saldoPendiente)}</span>
+                <span className="text-sm text-[#22c55e] font-medium text-right font-mono-display">{formatCOP(r.cuotaDiariaTotal)}</span>
               </div>
             ))}
           </div>
@@ -292,7 +311,7 @@ export default function ReportesPage() {
                     <span className="text-[10px] text-[#888888] ml-2">{c.ruta}</span>
                   </div>
                   <span
-                    className="text-xs font-bold"
+                    className="text-xs font-bold font-mono-display"
                     style={{ color: c.eficiencia >= 95 ? '#22c55e' : c.eficiencia >= 80 ? '#f59e0b' : '#ef4444' }}
                   >
                     {c.eficiencia}%
@@ -308,8 +327,8 @@ export default function ReportesPage() {
                   />
                 </div>
                 <div className="flex justify-between text-[10px] text-[#888888]">
-                  <span>Esperado: {formatCOP(c.totalEsperado)}</span>
-                  <span>Recogido: {formatCOP(c.totalRecogido)}</span>
+                  <span>Esperado: <span className="font-mono-display">{formatCOP(c.totalEsperado)}</span></span>
+                  <span>Recogido: <span className="font-mono-display">{formatCOP(c.totalRecogido)}</span></span>
                   <span>{c.diasTrabajados} días</span>
                 </div>
               </div>

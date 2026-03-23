@@ -77,7 +77,7 @@ export default function PrestamoCard({ prestamo: p }) {
         </div>
         <div className="text-right">
           <p className="text-[10px] text-[#8b95a5]">Prestado</p>
-          <p className="text-sm font-medium text-[#94a3b8]">{formatCOP(p.montoPrestado)}</p>
+          <p className="text-sm font-medium text-[#94a3b8] font-mono-display">{formatCOP(p.montoPrestado)}</p>
         </div>
       </div>
 
@@ -94,8 +94,8 @@ export default function PrestamoCard({ prestamo: p }) {
 
       {/* Footer */}
       <div className="flex items-center justify-between text-[10px]">
-        <span className="text-[#8b95a5]">{porcentaje}% pagado</span>
-        <span className="text-[#8b95a5]">Cuota {formatCOP(p.cuotaDiaria)}</span>
+        <span className="text-[#8b95a5]"><span className="font-mono-display">{porcentaje}%</span> pagado</span>
+        <span className="text-[#8b95a5]">Cuota <span className="font-mono-display">{formatCOP(p.cuotaDiaria)}</span></span>
       </div>
     </Link>
   )

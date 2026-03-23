@@ -42,7 +42,7 @@ export default function ClienteCard({ cliente }) {
         <p className="text-xs text-[#8b95a5] mt-0.5">CC {cliente.cedula}</p>
         {cliente.referencia && (
           <p className="text-xs text-[#8b95a5] mt-0.5 truncate" title={cliente.referencia}>
-            📍 {cliente.referencia}
+            <svg className="w-3 h-3 inline -mt-0.5 mr-0.5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg> {cliente.referencia}
           </p>
         )}
       </div>

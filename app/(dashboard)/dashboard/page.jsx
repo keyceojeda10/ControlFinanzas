@@ -37,7 +37,16 @@ function KpiCard({ label, value, sub, color = '#ffffff', icon }) {
 
 function QuickLink({ href, label, desc, color, dataTour }) {
   return (
-    <Link href={href} data-tour={dataTour} className="bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#3a3a3a] hover:bg-[#222222] rounded-[16px] px-4 py-4 transition-all group flex items-center gap-3">
+    <Link
+      href={href}
+      data-tour={dataTour}
+      className="border border-[#2a2a2a] hover:border-[#3a3a3a] rounded-[16px] px-4 py-4 transition-all group flex items-center gap-3"
+      style={{
+        background: `linear-gradient(135deg, ${color}08 0%, #1a1a1a 50%, #1a1a1a 100%)`,
+      }}
+      onMouseEnter={(e) => e.currentTarget.style.boxShadow = `0 0 20px ${color}12`}
+      onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
+    >
       <div className="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0" style={{ background: `${color}18` }}>
         <div className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
       </div>
@@ -210,7 +219,7 @@ export default function DashboardPage() {
                   <p className="text-sm font-medium text-white truncate">{p.cliente}</p>
                   <p className="text-[10px] text-[#888888]">{fechaCorta(p.fecha)} · {p.tipo}</p>
                 </div>
-                <p className="text-sm font-bold text-[#22c55e] shrink-0 ml-3">+{formatCOP(p.monto)}</p>
+                <p className="text-sm font-bold text-[#22c55e] shrink-0 ml-3 font-mono-display">+{formatCOP(p.monto)}</p>
               </div>
             ))}
           </div>
@@ -232,7 +241,7 @@ export default function DashboardPage() {
                       <p className="text-sm text-white truncate">{c.cliente.nombre}</p>
                       <p className="text-[10px] text-[#fca5a5]">{c.diasMora} días de mora</p>
                     </div>
-                    <p className="text-sm font-bold text-[#fca5a5] shrink-0 ml-2">{formatCOP(c.saldoPendiente)}</p>
+                    <p className="text-sm font-bold text-[#fca5a5] shrink-0 ml-2 font-mono-display">{formatCOP(c.saldoPendiente)}</p>
                   </Link>
                 ))}
               </div>
@@ -246,7 +255,7 @@ export default function DashboardPage() {
                       <p className="text-sm text-white truncate">{c.cliente.nombre}</p>
                       <p className="text-[10px] text-[#fcd34d]">{c.diasMora} días de mora</p>
                     </div>
-                    <p className="text-sm font-bold text-[#fcd34d] shrink-0 ml-2">{formatCOP(c.saldoPendiente)}</p>
+                    <p className="text-sm font-bold text-[#fcd34d] shrink-0 ml-2 font-mono-display">{formatCOP(c.saldoPendiente)}</p>
                   </Link>
                 ))}
               </div>
@@ -260,7 +269,7 @@ export default function DashboardPage() {
                       <p className="text-sm text-white truncate">{c.cliente.nombre}</p>
                       <p className="text-[10px] text-[#fde047]">{c.diasMora} días de mora</p>
                     </div>
-                    <p className="text-sm font-bold text-[#fde047] shrink-0 ml-2">{formatCOP(c.saldoPendiente)}</p>
+                    <p className="text-sm font-bold text-[#fde047] shrink-0 ml-2 font-mono-display">{formatCOP(c.saldoPendiente)}</p>
                   </Link>
                 ))}
               </div>
@@ -274,7 +283,7 @@ export default function DashboardPage() {
                       <p className="text-sm text-white truncate">{c.cliente.nombre}</p>
                       <p className="text-[10px] text-[#a3e635]">{c.diasMora} días de mora</p>
                     </div>
-                    <p className="text-sm font-bold text-[#a3e635] shrink-0 ml-2">{formatCOP(c.saldoPendiente)}</p>
+                    <p className="text-sm font-bold text-[#a3e635] shrink-0 ml-2 font-mono-display">{formatCOP(c.saldoPendiente)}</p>
                   </Link>
                 ))}
               </div>
