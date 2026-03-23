@@ -1,5 +1,5 @@
 // components/ui/BotonImprimirRecibo.jsx
-// Botón para imprimir recibo estilo térmico (58mm) via window.print() en iframe oculto.
+// Botón para imprimir recibo estilo térmico (58mm) via window.open + print.
 'use client'
 
 import { formatCOP } from '@/lib/calculos'
@@ -24,47 +24,77 @@ function fmtFechaHora(d) {
 
 function generarHTMLRecibo(cliente, prestamo, pago, orgNombre) {
   const saldo     = prestamo.saldoPendiente ?? 0
+  const totalPag  = prestamo.totalPagado ?? 0
   const progreso  = prestamo.porcentajePagado ?? 0
-  const linea     = '─'.repeat(32)
+  const totalAPagar = prestamo.totalAPagar ?? 0
+  const cuota     = prestamo.cuotaDiaria ?? 0
+  const linea     = '━'.repeat(30)
+  const lineaFina = '─'.repeat(30)
 
   return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Recibo</title>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recibo de Pago</title>
 <style>
   @page { margin: 4mm; size: 58mm auto; }
+  @media print { .no-print { display: none !important; } }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: 'Courier New', Courier, monospace;
-    font-size: 11px;
-    line-height: 1.4;
-    max-width: 280px;
+    font-size: 12px;
+    line-height: 1.5;
+    max-width: 300px;
     margin: 0 auto;
+    padding: 8px;
     color: #000;
+    background: #fff;
   }
   .center { text-align: center; }
   .bold { font-weight: bold; }
-  .linea { color: #666; margin: 4px 0; }
-  .row { display: flex; justify-content: space-between; }
+  .linea { color: #333; margin: 4px 0; font-size: 10px; }
+  .linea-fina { color: #999; margin: 3px 0; font-size: 10px; }
+  .row { display: flex; justify-content: space-between; padding: 1px 0; }
   .row span:last-child { font-weight: bold; }
   .mt { margin-top: 6px; }
-  .footer { font-size: 9px; color: #666; margin-top: 8px; text-align: center; }
+  .monto-grande { font-size: 18px; font-weight: bold; text-align: center; margin: 8px 0; }
+  .footer { font-size: 9px; color: #666; margin-top: 10px; text-align: center; }
+  .btn-cerrar {
+    display: block; margin: 20px auto 0; padding: 12px 32px;
+    background: #000; color: #fff; border: none; border-radius: 8px;
+    font-size: 14px; font-weight: bold; cursor: pointer;
+  }
 </style></head><body>
-  <div class="center bold" style="font-size:13px;">CONTROL FINANZAS</div>
-  ${orgNombre ? `<div class="center" style="font-size:10px;">${orgNombre}</div>` : ''}
+
+  <div class="center bold" style="font-size:15px; letter-spacing: 1px;">CONTROL FINANZAS</div>
+  ${orgNombre ? `<div class="center" style="font-size:11px; color:#555;">${orgNombre}</div>` : ''}
   <div class="linea">${linea}</div>
-  <div class="center bold">COMPROBANTE DE PAGO</div>
+
+  <div class="center bold" style="font-size:12px;">COMPROBANTE DE PAGO</div>
   <div class="linea">${linea}</div>
-  <div class="mt">Cliente: ${cliente?.nombre ?? 'N/A'}</div>
-  ${cliente?.cedula ? `<div>C&eacute;dula: ${cliente.cedula}</div>` : ''}
+
+  <div class="mt">Cliente: <strong>${cliente?.nombre ?? 'N/A'}</strong></div>
+  ${cliente?.cedula ? `<div>CC: ${cliente.cedula}</div>` : ''}
   <div>Fecha: ${fmtFecha(pago?.fechaPago)}</div>
-  <div class="linea">${linea}</div>
-  <div class="row"><span>Monto pagado:</span><span>${formatCOP(pago?.montoPagado ?? 0)}</span></div>
-  <div class="linea">${linea}</div>
-  <div class="row mt"><span>Total pagado:</span><span>${formatCOP(prestamo.totalPagado ?? 0)}</span></div>
-  <div class="row"><span>Saldo pend.:</span><span>${formatCOP(saldo)}</span></div>
+
+  <div class="linea-fina">${lineaFina}</div>
+
+  <div class="monto-grande">${formatCOP(pago?.montoPagado ?? 0)}</div>
+
+  <div class="linea-fina">${lineaFina}</div>
+
+  <div class="row mt"><span>Total pagado:</span><span>${formatCOP(totalPag)}</span></div>
+  <div class="row"><span>Saldo pendiente:</span><span>${formatCOP(saldo)}</span></div>
+  <div class="row"><span>Total a pagar:</span><span>${formatCOP(totalAPagar)}</span></div>
+  <div class="row"><span>Cuota:</span><span>${formatCOP(cuota)}</span></div>
   <div class="row"><span>Progreso:</span><span>${progreso}%</span></div>
+
   <div class="linea">${linea}</div>
+
   <div class="footer">${fmtFechaHora(pago?.fechaPago || new Date())}</div>
-  <div class="footer">Gracias por su pago</div>
+  <div class="footer" style="margin-top:4px;">Gracias por su pago</div>
+  <div class="footer" style="margin-top:2px;">www.control-finanzas.com</div>
+
+  <button class="btn-cerrar no-print" onclick="window.close()">Cerrar</button>
+
 </body></html>`
 }
 
@@ -72,28 +102,24 @@ export default function BotonImprimirRecibo({ cliente, prestamo, pago, orgNombre
   const handleClick = () => {
     const html = generarHTMLRecibo(cliente, prestamo, pago, orgNombre)
 
-    const iframe = document.createElement('iframe')
-    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:0;height:0;border:none;'
-    document.body.appendChild(iframe)
+    // Abrir ventana nueva (funciona en móvil y desktop)
+    const win = window.open('', '_blank')
+    if (!win) return // bloqueado por popup blocker
 
-    const doc = iframe.contentDocument || iframe.contentWindow.document
-    doc.open()
-    doc.write(html)
-    doc.close()
+    win.document.open()
+    win.document.write(html)
+    win.document.close()
 
-    // Esperar a que el contenido cargue antes de imprimir
-    iframe.contentWindow.onafterprint = () => {
-      document.body.removeChild(iframe)
+    // Imprimir después de que cargue
+    win.onload = () => {
+      win.focus()
+      win.print()
     }
-
+    // Fallback si onload no se dispara
     setTimeout(() => {
-      iframe.contentWindow.focus()
-      iframe.contentWindow.print()
-      // Limpiar después de un timeout por si onafterprint no se dispara
-      setTimeout(() => {
-        if (iframe.parentNode) document.body.removeChild(iframe)
-      }, 5000)
-    }, 250)
+      win.focus()
+      win.print()
+    }, 500)
   }
 
   return (
