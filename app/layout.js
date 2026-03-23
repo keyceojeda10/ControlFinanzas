@@ -1,4 +1,4 @@
-import { Geist } from "next/font/google";
+import { Geist, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import SessionProvider from "@/components/providers/SessionProvider";
 import OfflineProvider from "@/components/providers/OfflineProvider";
@@ -7,6 +7,12 @@ import Script from "next/script";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono-display",
+  subsets: ["latin"],
+  weight: ["700"],
 });
 
 export const metadata = {
@@ -28,7 +34,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`${geistSans.variable} antialiased`} suppressHydrationWarning>
+      <body className={`${geistSans.variable} ${jetbrainsMono.variable} antialiased`} suppressHydrationWarning>
         <SessionProvider>
           <OfflineProvider>
             {children}

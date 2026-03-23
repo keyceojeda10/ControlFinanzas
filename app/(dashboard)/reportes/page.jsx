@@ -186,12 +186,12 @@ export default function ReportesPage() {
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-4 py-3">
               <p className="text-[10px] text-[#888888]">Ingresos del período</p>
-              <p className="text-lg font-bold text-[#22c55e] mt-0.5">{formatCOP(resumen.pagos.totalPeriodo)}</p>
+              <p className="text-lg font-bold text-[#22c55e] mt-0.5 font-mono-display">{formatCOP(resumen.pagos.totalPeriodo)}</p>
               <p className="text-[10px] text-[#888888] mt-0.5">{resumen.pagos.cantidad} pagos</p>
             </div>
             <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-4 py-3">
               <p className="text-[10px] text-[#888888]">Capital prestado activo</p>
-              <p className="text-lg font-bold text-[#f5c518] mt-0.5">{formatCOP(resumen.prestamos.capitalPrestado)}</p>
+              <p className="text-lg font-bold text-[#f5c518] mt-0.5 font-mono-display">{formatCOP(resumen.prestamos.capitalPrestado)}</p>
               <p className="text-[10px] text-[#888888] mt-0.5">{resumen.prestamos.completados} completados</p>
             </div>
           </div>

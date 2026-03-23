@@ -297,7 +297,12 @@ export default function PrestamoDetallePage({ params }) {
       )}
 
       {/* ── RESUMEN FINANCIERO ───────────────────────────────────── */}
-      <Card>
+      <Card
+        style={{
+          background: `linear-gradient(135deg, #22c55e0A 0%, #1a1a1a 40%, #1a1a1a 70%, #22c55e05 100%)`,
+          boxShadow: `0 0 30px #22c55e08, 0 1px 2px rgba(0,0,0,0.3)`,
+        }}
+      >
         <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">
           Resumen financiero
         </p>
@@ -306,7 +311,7 @@ export default function PrestamoDetallePage({ params }) {
         <div className="text-center mb-4">
           <p className="text-xs text-[#888888] mb-1">Saldo pendiente</p>
           <p
-            className="text-4xl font-bold leading-none"
+            className="text-4xl font-bold leading-none font-mono-display"
             style={{ color: saldoPendiente === 0 ? '#22c55e' : diasMora > 0 ? '#ef4444' : 'white' }}
           >
             {formatCOP(saldoPendiente)}

@@ -147,9 +147,15 @@ export default function CapitalPage() {
 
       {/* Saldo grande */}
       {resumen?.configurado && (
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] px-5 py-5 text-center">
+        <div
+          className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] px-5 py-5 text-center"
+          style={{
+            background: `linear-gradient(135deg, #06b6d40A 0%, #1a1a1a 40%, #1a1a1a 70%, #06b6d405 100%)`,
+            boxShadow: `0 0 30px #06b6d408, 0 1px 2px rgba(0,0,0,0.3)`,
+          }}
+        >
           <p className="text-[11px] text-[#888888] mb-1">Saldo disponible</p>
-          <p className={`text-3xl font-bold ${resumen.saldo >= 0 ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
+          <p className={`text-3xl font-bold font-mono-display ${resumen.saldo >= 0 ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
             {formatCOP(resumen.saldo)}
           </p>
           {resumen.saldo < 0 && (
@@ -163,21 +169,21 @@ export default function CapitalPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] px-4 py-4">
             <p className="text-[11px] text-[#888888] mb-1">Desembolsado</p>
-            <p className="text-lg font-bold text-[#f59e0b]">{formatCOP(resumen.mes.desembolsado)}</p>
+            <p className="text-lg font-bold font-mono-display text-[#f59e0b]">{formatCOP(resumen.mes.desembolsado)}</p>
             <p className="text-[10px] text-[#888888]">{resumen.mes.prestamosOtorgados} prestamos</p>
           </div>
           <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] px-4 py-4">
             <p className="text-[11px] text-[#888888] mb-1">Recaudado</p>
-            <p className="text-lg font-bold text-[#06b6d4]">{formatCOP(resumen.mes.recaudado)}</p>
+            <p className="text-lg font-bold font-mono-display text-[#06b6d4]">{formatCOP(resumen.mes.recaudado)}</p>
             <p className="text-[10px] text-[#888888]">{resumen.mes.pagosRecibidos} pagos</p>
           </div>
           <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] px-4 py-4">
             <p className="text-[11px] text-[#888888] mb-1">Gastos</p>
-            <p className="text-lg font-bold text-[#ef4444]">{formatCOP(resumen.mes.gastos)}</p>
+            <p className="text-lg font-bold font-mono-display text-[#ef4444]">{formatCOP(resumen.mes.gastos)}</p>
           </div>
           <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] px-4 py-4">
             <p className="text-[11px] text-[#888888] mb-1">Flujo neto</p>
-            <p className={`text-lg font-bold ${resumen.mes.flujoNeto >= 0 ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
+            <p className={`text-lg font-bold font-mono-display ${resumen.mes.flujoNeto >= 0 ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
               {resumen.mes.flujoNeto >= 0 ? '+' : ''}{formatCOP(resumen.mes.flujoNeto)}
             </p>
             <p className="text-[10px] text-[#888888]">Este mes</p>

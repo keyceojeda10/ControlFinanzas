@@ -154,19 +154,19 @@ export default function CajaPage() {
           <div className="grid grid-cols-2 gap-3 mt-4">
             <div>
               <p className="text-[10px] text-[#888888] uppercase">Esperado</p>
-              <p className="text-lg font-bold text-white">{formatCOP(stats.esperado || 0)}</p>
+              <p className="text-lg font-bold font-mono-display text-white">{formatCOP(stats.esperado || 0)}</p>
             </div>
             <div>
               <p className="text-[10px] text-[#888888] uppercase">Recaudado</p>
-              <p className="text-lg font-bold text-[#22c55e]">{formatCOP(stats.recogida || 0)}</p>
+              <p className="text-lg font-bold font-mono-display text-[#22c55e]">{formatCOP(stats.recogida || 0)}</p>
             </div>
             <div>
               <p className="text-[10px] text-[#888888] uppercase">Gastos</p>
-              <p className="text-lg font-bold text-[#ef4444]">{stats.gastos > 0 ? '-' : ''}{formatCOP(stats.gastos || 0)}</p>
+              <p className="text-lg font-bold font-mono-display text-[#ef4444]">{stats.gastos > 0 ? '-' : ''}{formatCOP(stats.gastos || 0)}</p>
             </div>
             <div>
               <p className="text-[10px] text-[#f5c518] uppercase font-semibold">Disponible</p>
-              <p className="text-lg font-bold text-[#f5c518]">{formatCOP(disponible)}</p>
+              <p className="text-lg font-bold font-mono-display text-[#f5c518]">{formatCOP(disponible)}</p>
             </div>
           </div>
         </Card>
@@ -312,19 +312,19 @@ export default function CajaPage() {
         <div className="grid grid-cols-2 gap-3 mt-4">
           <div>
             <p className="text-[10px] text-[#888888] uppercase">Esperado</p>
-            <p className="text-lg font-bold text-white">{formatCOP(stats.esperado || 0)}</p>
+            <p className="text-lg font-bold font-mono-display text-white">{formatCOP(stats.esperado || 0)}</p>
           </div>
           <div>
             <p className="text-[10px] text-[#888888] uppercase">Recaudado</p>
-            <p className="text-lg font-bold text-[#22c55e]">{formatCOP(stats.recogida || 0)}</p>
+            <p className="text-lg font-bold font-mono-display text-[#22c55e]">{formatCOP(stats.recogida || 0)}</p>
           </div>
           <div>
             <p className="text-[10px] text-[#888888] uppercase">Gastos</p>
-            <p className="text-lg font-bold text-[#ef4444]">{stats.gastos > 0 ? '-' : ''}{formatCOP(stats.gastos || 0)}</p>
+            <p className="text-lg font-bold font-mono-display text-[#ef4444]">{stats.gastos > 0 ? '-' : ''}{formatCOP(stats.gastos || 0)}</p>
           </div>
           <div>
             <p className="text-[10px] text-[#f5c518] uppercase font-semibold">Disponible</p>
-            <p className="text-lg font-bold text-[#f5c518]">{formatCOP(disponible)}</p>
+            <p className="text-lg font-bold font-mono-display text-[#f5c518]">{formatCOP(disponible)}</p>
           </div>
         </div>
       </Card>

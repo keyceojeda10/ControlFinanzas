@@ -43,7 +43,7 @@ export default function ResumenCalculo({ calculo, visible = true }) {
           >
             <p className="text-[10px] text-[#8b95a5] mb-0.5">{label}</p>
             <p
-              className="text-base font-bold leading-tight"
+              className="text-base font-bold leading-tight font-mono-display"
               style={{ color: value === '$0' || value === '—' ? '#64748b' : accent }}
             >
               {value ?? '—'}

@@ -71,7 +71,7 @@ export default function PrestamoCard({ prestamo: p }) {
       <div className="flex items-end justify-between mb-2">
         <div>
           <p className="text-[10px] text-[#8b95a5]">Saldo pendiente</p>
-          <p className={['text-lg font-bold leading-none', enMora ? 'text-[#ef4444]' : 'text-[#f1f5f9]'].join(' ')}>
+          <p className={['text-lg font-bold leading-none font-mono-display', enMora ? 'text-[#ef4444]' : 'text-[#f1f5f9]'].join(' ')}>
             {formatCOP(p.saldoPendiente)}
           </p>
         </div>

@@ -139,3 +139,10 @@ body {
   50%  { opacity: 1; transform: scale(1.1); }
   100% { transform: scale(1); }
 }
+
+/* ─── Fintech number display ──────────────────────────────── */
+.font-mono-display {
+  font-family: var(--font-mono-display), ui-monospace, monospace;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.02em;
+}
