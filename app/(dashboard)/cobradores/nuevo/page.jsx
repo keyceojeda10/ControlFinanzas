@@ -98,7 +98,13 @@ export default function NuevoCobrador() {
   if (creado) {
     return (
       <div className="max-w-md mx-auto">
-        <div className="bg-[#1a1a1a] border border-[rgba(16,185,129,0.3)] rounded-[16px] p-6 text-center">
+        <div
+          className="border border-[rgba(16,185,129,0.3)] rounded-[16px] p-6 text-center"
+          style={{
+            background: 'linear-gradient(135deg, #22c55e0A 0%, #1a1a1a 40%, #1a1a1a 70%, #22c55e05 100%)',
+            boxShadow: '0 0 30px #22c55e08, 0 1px 2px rgba(0,0,0,0.3)',
+          }}
+        >
           <div className="w-12 h-12 rounded-full bg-[rgba(16,185,129,0.12)] flex items-center justify-center mx-auto mb-4">
             <svg className="w-6 h-6 text-[#22c55e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -161,7 +167,14 @@ export default function NuevoCobrador() {
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-5 space-y-4">
+      <form
+        onSubmit={handleSubmit}
+        className="border border-[#2a2a2a] rounded-[16px] p-5 space-y-4"
+        style={{
+          background: 'linear-gradient(135deg, #f5c5180A 0%, #1a1a1a 40%, #1a1a1a 70%, #f5c51805 100%)',
+          boxShadow: '0 0 30px #f5c51808, 0 1px 2px rgba(0,0,0,0.3)',
+        }}
+      >
         {error && !limitReached && (
           <div className="flex items-center gap-2 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3">
             {error}

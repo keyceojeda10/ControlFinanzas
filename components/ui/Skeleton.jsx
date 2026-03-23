@@ -11,7 +11,10 @@ export function Skeleton({ className = '', ...props }) {
 
 export function SkeletonCard() {
   return (
-    <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-5 space-y-3">
+    <div
+      className="border border-[#2a2a2a] rounded-[16px] p-5 space-y-3"
+      style={{ background: 'linear-gradient(135deg, #f5c51805 0%, #1a1a1a 50%, #1a1a1a 100%)' }}
+    >
       <div className="flex items-center gap-3">
         <Skeleton className="w-10 h-10 rounded-[12px]" />
         <div className="flex-1 space-y-2">

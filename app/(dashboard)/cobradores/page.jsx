@@ -51,7 +51,13 @@ export default function CobradoresPage() {
     return (
       <div className="max-w-xl mx-auto">
         <h1 className="text-xl font-bold text-[white] mb-6">Cobradores</h1>
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-8 text-center">
+        <div
+          className="border border-[#2a2a2a] rounded-[16px] p-8 text-center"
+          style={{
+            background: 'linear-gradient(135deg, #f59e0b0A 0%, #1a1a1a 40%, #1a1a1a 70%, #f59e0b05 100%)',
+            boxShadow: '0 0 30px #f59e0b08, 0 1px 2px rgba(0,0,0,0.3)',
+          }}
+        >
           <div className="w-14 h-14 rounded-full bg-[rgba(245,158,11,0.12)] flex items-center justify-center mx-auto mb-4">
             <svg className="w-7 h-7 text-[#f59e0b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -63,8 +69,8 @@ export default function CobradoresPage() {
             Actualiza tu plan para agregar cobradores y gestionar rutas de cobro.
           </p>
           <div className="inline-flex flex-col gap-2 text-xs text-[#888888]">
-            <span>✓ Standard: hasta 2 cobradores</span>
-            <span>✓ Professional: cobradores ilimitados</span>
+            <span className="flex items-center gap-1.5"><svg className="w-3.5 h-3.5 text-[#22c55e]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg> Standard: hasta 2 cobradores</span>
+            <span className="flex items-center gap-1.5"><svg className="w-3.5 h-3.5 text-[#22c55e]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg> Professional: cobradores ilimitados</span>
           </div>
         </div>
       </div>

@@ -38,11 +38,14 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }) {
 
       <div
         className={[
-          'relative w-full bg-[#1a1a1a] border border-[#2a2a2a]',
+          'relative w-full border border-[#2a2a2a]',
           'rounded-t-[20px] sm:rounded-[20px] shadow-2xl',
           'max-h-[90dvh] flex flex-col',
           sizes[size] ?? sizes.md,
         ].join(' ')}
+        style={{
+          background: 'linear-gradient(135deg, #f5c51806 0%, #1a1a1a 40%, #1a1a1a 70%, #f5c51803 100%)',
+        }}
       >
         {title && (
           <div className="flex items-center justify-between px-5 py-4 border-b border-[#2a2a2a] shrink-0">
