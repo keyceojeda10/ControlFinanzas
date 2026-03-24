@@ -42,7 +42,7 @@ export async function GET(request, { params }) {
 
   return Response.json({
     ...p,
-    totalPagado:      p.pagos.reduce((a, x) => a + x.montoPagado, 0),
+    totalPagado:      p.pagos.filter(x => !['recargo', 'descuento'].includes(x.tipo)).reduce((a, x) => a + x.montoPagado, 0),
     saldoPendiente:   calcularSaldoPendiente(p),
     porcentajePagado: calcularPorcentajePagado(p),
     diasMora:         calcularDiasMora(p),

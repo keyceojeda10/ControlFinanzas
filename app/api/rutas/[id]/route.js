@@ -35,7 +35,7 @@ export async function GET(request, { params }) {
             where:   { estado: 'activo' },
             include: {
               pagos: {
-                select:  { montoPagado: true, fechaPago: true },
+                select:  { montoPagado: true, fechaPago: true, tipo: true },
                 orderBy: { fechaPago: 'desc' },
               },
             },
@@ -69,7 +69,7 @@ export async function GET(request, { params }) {
       const pagosHoy = p.pagos.filter(
         (pg) => new Date(pg.fechaPago) >= _hoy && new Date(pg.fechaPago) < _manana
       )
-      const montoPagadoHoy = pagosHoy.reduce((a, pg) => a + pg.montoPagado, 0)
+      const montoPagadoHoy = pagosHoy.filter(pg => !['recargo', 'descuento'].includes(pg.tipo)).reduce((a, pg) => a + pg.montoPagado, 0)
       pagadoHoy    += montoPagadoHoy
       recaudadoHoy += montoPagadoHoy
       mora = Math.max(mora, calcularDiasMora(p))

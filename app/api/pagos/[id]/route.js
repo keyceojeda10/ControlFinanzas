@@ -28,6 +28,8 @@ export async function DELETE(request, { params }) {
   if (!pago) return Response.json({ error: 'Pago no encontrado' }, { status: 404 })
 
   await prisma.$transaction(async (tx) => {
+    const prestamo = pago.prestamo
+
     // 1. Eliminar el pago
     await tx.pago.delete({ where: { id: pagoId } })
 
@@ -40,10 +42,26 @@ export async function DELETE(request, { params }) {
       })
     }
 
+    // 1c. Reversar recargo: reducir totalAPagar
+    if (pago.tipo === 'recargo') {
+      await tx.prestamo.update({
+        where: { id: prestamo.id },
+        data: { totalAPagar: prestamo.totalAPagar - pago.montoPagado },
+      })
+    }
+
+    // 1d. Reversar descuento: incrementar totalAPagar
+    if (pago.tipo === 'descuento') {
+      await tx.prestamo.update({
+        where: { id: prestamo.id },
+        data: { totalAPagar: prestamo.totalAPagar + pago.montoPagado },
+      })
+    }
+
     // 2. Si el préstamo estaba completado, reactivarlo
-    const prestamo = pago.prestamo
-    const pagosRestantes = prestamo.pagos.filter((p) => p.id !== pagoId)
-    const saldoSinPago = prestamo.totalAPagar - pagosRestantes.reduce((a, p) => a + p.montoPagado, 0)
+    const pagosRestantes = prestamo.pagos.filter((p) => p.id !== pagoId && !['recargo', 'descuento'].includes(p.tipo))
+    const prestamoActual = await tx.prestamo.findUnique({ where: { id: prestamo.id } })
+    const saldoSinPago = (prestamoActual?.totalAPagar ?? prestamo.totalAPagar) - pagosRestantes.reduce((a, p) => a + p.montoPagado, 0)
 
     if (prestamo.estado === 'completado' && saldoSinPago > 0) {
       await tx.prestamo.update({ where: { id: prestamo.id }, data: { estado: 'activo' } })
@@ -52,7 +70,7 @@ export async function DELETE(request, { params }) {
     // 3. Recalcular estado del cliente
     const todosLosPrestamos = await tx.prestamo.findMany({
       where: { clienteId: prestamo.clienteId },
-      include: { pagos: { select: { montoPagado: true, fechaPago: true } } },
+      include: { pagos: { select: { montoPagado: true, fechaPago: true, tipo: true } } },
     })
     const nuevoEstado = calcularEstadoCliente(todosLosPrestamos)
     await tx.cliente.update({ where: { id: prestamo.clienteId }, data: { estado: nuevoEstado } })

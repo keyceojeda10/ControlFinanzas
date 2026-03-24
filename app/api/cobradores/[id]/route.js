@@ -50,7 +50,7 @@ export async function GET(request, { params }) {
       },
       pagos: {
         where:  { fechaPago: { gte: hoy(), lt: manana() } },
-        select: { montoPagado: true, prestamoId: true },
+        select: { montoPagado: true, prestamoId: true, tipo: true },
       },
     },
   })
@@ -78,7 +78,7 @@ export async function GET(request, { params }) {
       editarClientes: cobrador.puedeEditarClientes,
     },
     ruta,
-    recaudadoHoy: cobrador.pagos.reduce((a, p) => a + p.montoPagado, 0),
+    recaudadoHoy: cobrador.pagos.filter(p => !['recargo', 'descuento'].includes(p.tipo)).reduce((a, p) => a + p.montoPagado, 0),
     pagosMes:     cobrador.pagos.length,
   })
 }

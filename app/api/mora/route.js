@@ -60,7 +60,7 @@ export async function GET(request) {
         fechaFin: p.fechaFin,
         diasMora,
         saldoPendiente: calcularSaldoPendiente(p),
-        totalPagado: p.pagos.reduce((a, x) => a + x.montoPagado, 0),
+        totalPagado: p.pagos.filter(x => !['recargo', 'descuento'].includes(x.tipo)).reduce((a, x) => a + x.montoPagado, 0),
       }
     })
     .filter(Boolean)

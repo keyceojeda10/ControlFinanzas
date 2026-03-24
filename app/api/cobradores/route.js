@@ -55,7 +55,7 @@ export async function GET(request) {
       },
       pagos: {
         where:      { fechaPago: { gte: hoy(), lt: manana() } },
-        select:     { montoPagado: true },
+        select:     { montoPagado: true, tipo: true },
       },
     },
     orderBy: { nombre: 'asc' },
@@ -73,7 +73,7 @@ export async function GET(request) {
     },
     ruta:            c.rutas[0] ?? null,
     cantidadClientes: c.rutas[0]?.clientes?.length ?? 0,
-    recaudadoHoy:    c.pagos.reduce((a, p) => a + p.montoPagado, 0),
+    recaudadoHoy:    c.pagos.filter(p => !['recargo', 'descuento'].includes(p.tipo)).reduce((a, p) => a + p.montoPagado, 0),
   }))
 
   return Response.json(resultado)

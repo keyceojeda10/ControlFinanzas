@@ -52,10 +52,20 @@ export async function POST(request, { params }) {
   }
 
   if (!montoFinal || montoFinal <= 0) {
-    return Response.json({ error: 'El monto del pago debe ser mayor a 0' }, { status: 400 })
+    return Response.json({ error: 'El monto debe ser mayor a 0' }, { status: 400 })
   }
-  if (!['completo', 'parcial', 'capital'].includes(tipo)) {
+  if (!['completo', 'parcial', 'capital', 'recargo', 'descuento'].includes(tipo)) {
     return Response.json({ error: 'El tipo de pago no es válido' }, { status: 400 })
+  }
+
+  // Recargo y descuento: solo owner puede hacerlo y requiere nota
+  if (['recargo', 'descuento'].includes(tipo)) {
+    if (rol !== 'owner') {
+      return Response.json({ error: 'Solo el administrador puede aplicar recargos o descuentos' }, { status: 403 })
+    }
+    if (!nota?.trim()) {
+      return Response.json({ error: 'Debes indicar el motivo del ajuste' }, { status: 400 })
+    }
   }
 
   const saldoActual = calcularSaldoPendiente(prestamo)
@@ -70,7 +80,17 @@ export async function POST(request, { params }) {
     }
   }
 
-  montoFinal = Math.min(montoFinal, saldoActual)
+  // Descuento no puede superar el saldo pendiente
+  if (tipo === 'descuento' && montoFinal > saldoActual) {
+    return Response.json({
+      error: `El descuento no puede superar el saldo pendiente: $${Math.round(saldoActual).toLocaleString('es-CO')}`,
+    }, { status: 400 })
+  }
+
+  // Recargo no tiene límite de saldo; para pagos normales, limitar al saldo
+  if (!['recargo', 'descuento'].includes(tipo)) {
+    montoFinal = Math.min(montoFinal, saldoActual)
+  }
 
   // Registrar pago y actualizar estados en transacción
   const resultado = await prisma.$transaction(async (tx) => {
@@ -98,8 +118,35 @@ export async function POST(request, { params }) {
     // 2b. Abono a capital: reducir totalAPagar por el ahorro de intereses
     if (tipo === 'capital') {
       const ahorroInteres = Math.round(montoFinal * (prestamo.tasaInteres / 100))
-      const totalPagadoActual = prestamoActualizado.pagos.reduce((a, p) => a + p.montoPagado, 0)
+      const totalPagadoActual = prestamoActualizado.pagos
+        .filter(p => !['recargo', 'descuento'].includes(p.tipo))
+        .reduce((a, p) => a + p.montoPagado, 0)
       const nuevoTotal = Math.max(totalPagadoActual, prestamoActualizado.totalAPagar - ahorroInteres)
+      await tx.prestamo.update({ where: { id: prestamoId }, data: { totalAPagar: nuevoTotal } })
+      prestamoActualizado = await tx.prestamo.findUnique({
+        where: { id: prestamoId },
+        include: { pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } } },
+      })
+    }
+
+    // 2c. Recargo: incrementar totalAPagar
+    if (tipo === 'recargo') {
+      await tx.prestamo.update({
+        where: { id: prestamoId },
+        data: { totalAPagar: { increment: montoFinal } },
+      })
+      prestamoActualizado = await tx.prestamo.findUnique({
+        where: { id: prestamoId },
+        include: { pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } } },
+      })
+    }
+
+    // 2d. Descuento: decrementar totalAPagar (piso = total ya pagado)
+    if (tipo === 'descuento') {
+      const totalPagadoReal = prestamoActualizado.pagos
+        .filter(p => !['recargo', 'descuento'].includes(p.tipo))
+        .reduce((a, p) => a + p.montoPagado, 0)
+      const nuevoTotal = Math.max(totalPagadoReal, prestamoActualizado.totalAPagar - montoFinal)
       await tx.prestamo.update({ where: { id: prestamoId }, data: { totalAPagar: nuevoTotal } })
       prestamoActualizado = await tx.prestamo.findUnique({
         where: { id: prestamoId },
@@ -133,16 +180,18 @@ export async function POST(request, { params }) {
       data:  { estado: nuevoEstadoCliente },
     })
 
-    // Registrar recaudo en capital (si está configurado)
-    await registrarMovimientoCapital(tx, {
-      organizationId,
-      tipo: 'recaudo',
-      monto: montoFinal,
-      descripcion: tipo === 'capital' ? `Abono a capital - préstamo` : `Pago recibido - préstamo`,
-      referenciaId: prestamoId,
-      referenciaTipo: 'pago',
-      creadoPorId: userId,
-    })
+    // Registrar recaudo en capital (solo pagos reales, no ajustes)
+    if (!['recargo', 'descuento'].includes(tipo)) {
+      await registrarMovimientoCapital(tx, {
+        organizationId,
+        tipo: 'recaudo',
+        monto: montoFinal,
+        descripcion: tipo === 'capital' ? `Abono a capital - préstamo` : `Pago recibido - préstamo`,
+        referenciaId: prestamoId,
+        referenciaTipo: 'pago',
+        creadoPorId: userId,
+      })
+    }
 
     return prestamoActualizado
   })
@@ -161,7 +210,7 @@ export async function POST(request, { params }) {
 
   return Response.json({
     ...prestamoFinal,
-    totalPagado:      prestamoFinal.pagos.reduce((a, x) => a + x.montoPagado, 0),
+    totalPagado:      prestamoFinal.pagos.filter(p => !['recargo', 'descuento'].includes(p.tipo)).reduce((a, x) => a + x.montoPagado, 0),
     saldoPendiente:   calcularSaldoPendiente(prestamoFinal),
     porcentajePagado: calcularPorcentajePagado(prestamoFinal),
     diasMora:         calcularDiasMora(prestamoFinal),

@@ -25,7 +25,7 @@ export async function GET() {
               montoPrestado: true,
               totalAPagar: true,
               cuotaDiaria: true,
-              pagos: { select: { montoPagado: true } },
+              pagos: { select: { montoPagado: true, tipo: true } },
             },
           },
         },
@@ -41,7 +41,7 @@ export async function GET() {
 
     for (const cliente of r.clientes) {
       for (const p of cliente.prestamos) {
-        const pagado = p.pagos.reduce((a, pg) => a + pg.montoPagado, 0)
+        const pagado = p.pagos.filter(pg => !['recargo', 'descuento'].includes(pg.tipo)).reduce((a, pg) => a + pg.montoPagado, 0)
         const saldo  = Math.max(0, p.totalAPagar - pagado)
         capitalActivo   += p.montoPrestado
         saldoPendiente  += saldo

@@ -171,7 +171,7 @@ export async function DELETE(request, { params }) {
     where: { id, organizationId: session.user.organizationId },
     include: {
       prestamos: {
-        select: { id: true, montoPrestado: true, totalAPagar: true, estado: true, pagos: { select: { montoPagado: true } } },
+        select: { id: true, montoPrestado: true, totalAPagar: true, estado: true, pagos: { select: { montoPagado: true, tipo: true } } },
       },
     },
   })
@@ -183,7 +183,7 @@ export async function DELETE(request, { params }) {
   // Verificar si tiene préstamos
   if (cliente.prestamos.length > 0) {
     const prestamosInfo = cliente.prestamos.map(p => {
-      const totalPagado = p.pagos.reduce((sum, pago) => sum + pago.montoPagado, 0)
+      const totalPagado = p.pagos.filter(pago => !['recargo', 'descuento'].includes(pago.tipo)).reduce((sum, pago) => sum + pago.montoPagado, 0)
       return {
         id: p.id,
         montoPrestado: p.montoPrestado,

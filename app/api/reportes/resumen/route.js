@@ -58,11 +58,12 @@ export async function GET(req) {
       _sum: { montoPrestado: true, totalAPagar: true },
     }),
 
-    // Pagos en el período
+    // Pagos en el período (excluir ajustes)
     prisma.pago.aggregate({
       where: {
         prestamo: { organizationId: orgId },
         fechaPago: { gte: fechaDesde, lt: fechaHasta },
+        tipo: { notIn: ['recargo', 'descuento'] },
       },
       _sum: { montoPagado: true },
       _count: true,

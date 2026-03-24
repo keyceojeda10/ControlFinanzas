@@ -38,7 +38,7 @@ export async function GET(request) {
               cuotaDiaria: true,
               pagos: {
                 where:  { fechaPago: { gte: hoy(), lt: manana() } },
-                select: { montoPagado: true },
+                select: { montoPagado: true, tipo: true },
               },
             },
           },
@@ -55,7 +55,7 @@ export async function GET(request) {
     for (const cliente of r.clientes) {
       for (const prestamo of cliente.prestamos) {
         esperadoHoy  += prestamo.cuotaDiaria
-        recaudadoHoy += prestamo.pagos.reduce((a, p) => a + p.montoPagado, 0)
+        recaudadoHoy += prestamo.pagos.filter(p => !['recargo', 'descuento'].includes(p.tipo)).reduce((a, p) => a + p.montoPagado, 0)
       }
     }
 

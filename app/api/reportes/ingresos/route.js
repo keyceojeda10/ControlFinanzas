@@ -62,6 +62,7 @@ export async function GET(req) {
     where: {
       prestamo: { organizationId: orgId },
       fechaPago: { gte: fechaDesde, lt: fechaHasta },
+      tipo: { notIn: ['recargo', 'descuento'] },
     },
     select: { montoPagado: true, fechaPago: true },
     orderBy: { fechaPago: 'asc' },

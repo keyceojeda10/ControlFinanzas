@@ -65,14 +65,14 @@ export async function GET(req) {
       where: { organizationId: orgId },
       include: {
         cliente: { select: { nombre: true } },
-        pagos:   { select: { montoPagado: true } },
+        pagos:   { select: { montoPagado: true, tipo: true } },
       },
       orderBy: { fechaInicio: 'desc' },
     })
 
     const header = ['Cliente', 'Monto Prestado', 'Total a Pagar', 'Cuota Diaria', 'Tasa %', 'Días', 'Inicio', 'Vence', 'Estado', 'Pagado', 'Saldo']
     const dataRows = rows.map((p) => {
-      const pagado = p.pagos.reduce((a, pg) => a + pg.montoPagado, 0)
+      const pagado = p.pagos.filter(pg => !['recargo', 'descuento'].includes(pg.tipo)).reduce((a, pg) => a + pg.montoPagado, 0)
       const saldo  = Math.max(0, p.totalAPagar - pagado)
       return [
         p.cliente.nombre,

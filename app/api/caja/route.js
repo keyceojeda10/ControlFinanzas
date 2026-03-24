@@ -69,7 +69,7 @@ async function getStatsDia(organizationId, fecha, cobradorId = null) {
   }
 
   const pagosDia = await prisma.pago.findMany({
-    where: wherePagos,
+    where: { ...wherePagos, tipo: { notIn: ['recargo', 'descuento'] } },
     select: { montoPagado: true }
   })
 

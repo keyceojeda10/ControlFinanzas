@@ -10,6 +10,7 @@ import { Button }                     from '@/components/ui/Button'
 import { Card }                       from '@/components/ui/Card'
 import { SkeletonCard }               from '@/components/ui/Skeleton'
 import RegistrarPago                  from '@/components/prestamos/RegistrarPago'
+import AjusteSaldo                    from '@/components/prestamos/AjusteSaldo'
 import BotonWhatsApp                  from '@/components/ui/BotonWhatsApp'
 import BotonCompartir                 from '@/components/ui/BotonCompartir'
 import BotonImprimirRecibo            from '@/components/ui/BotonImprimirRecibo'
@@ -27,9 +28,11 @@ const estadoBadge = {
 }
 
 const tipoPagoBadge = {
-  completo: { variant: 'green',  label: 'Completo'  },
-  parcial:  { variant: 'yellow', label: 'Parcial'   },
-  capital:  { variant: 'purple', label: 'A Capital' },
+  completo:  { variant: 'green',  label: 'Completo'  },
+  parcial:   { variant: 'yellow', label: 'Parcial'   },
+  capital:   { variant: 'purple', label: 'A Capital' },
+  recargo:   { variant: 'red',    label: 'Recargo'   },
+  descuento: { variant: 'blue',   label: 'Descuento' },
 }
 
 export default function PrestamoDetallePage({ params }) {
@@ -48,6 +51,8 @@ export default function PrestamoDetallePage({ params }) {
   const [confirmCancel, setConfirmCancel] = useState(false)
   const [anulando,     setAnulando]     = useState(null)   // pagoId que se está anulando
   const [rutaNav,      setRutaNav]     = useState(null)
+  const [modalRecargo,  setModalRecargo]  = useState(false)
+  const [modalDescuento, setModalDescuento] = useState(false)
 
   // Leer contexto de ruta activa
   useEffect(() => {
@@ -296,6 +301,35 @@ export default function PrestamoDetallePage({ params }) {
         </button>
       )}
 
+      {/* ── RECARGO / DESCUENTO (solo owner, solo activo) ──────── */}
+      {estaActivo && !completado && session?.user?.rol === 'owner' && (
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => setModalRecargo(true)}
+            className="h-11 rounded-[14px] font-medium text-sm text-[#f97316] bg-[rgba(249,115,22,0.08)] border border-[rgba(249,115,22,0.2)] hover:bg-[rgba(249,115,22,0.15)] transition-all active:scale-[0.98]"
+          >
+            <span className="flex items-center justify-center gap-1.5">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              Recargo
+            </span>
+          </button>
+          <button
+            onClick={() => setModalDescuento(true)}
+            className="h-11 rounded-[14px] font-medium text-sm text-[#22c55e] bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.2)] hover:bg-[rgba(34,197,94,0.15)] transition-all active:scale-[0.98]"
+          >
+            <span className="flex items-center justify-center gap-1.5">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6z" />
+              </svg>
+              Descuento
+            </span>
+          </button>
+        </div>
+      )}
+
       {/* ── RESUMEN FINANCIERO ───────────────────────────────────── */}
       <Card
         style={{
@@ -389,12 +423,22 @@ export default function PrestamoDetallePage({ params }) {
                   className="flex items-center gap-3 py-2.5 border-b border-[#2a2a2a] last:border-0"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-[white]">{formatCOP(pago.montoPagado)}</p>
+                    <p className="text-sm font-semibold" style={{
+                      color: pago.tipo === 'recargo' ? '#f97316' : pago.tipo === 'descuento' ? '#22c55e' : 'white'
+                    }}>
+                      {pago.tipo === 'recargo' ? '+' : pago.tipo === 'descuento' ? '−' : ''}{formatCOP(pago.montoPagado)}
+                    </p>
                     <p className="text-[10px] text-[#888888] mt-0.5">
                       {fmtFecha(pago.fechaPago)}
                       {pago.cobrador && ` · ${pago.cobrador.nombre}`}
                     </p>
-                    {pago.nota && <p className="text-[10px] text-[#888888] mt-0.5">{pago.nota}</p>}
+                    {pago.nota && (
+                      <p className="text-[10px] mt-0.5" style={{
+                        color: ['recargo', 'descuento'].includes(pago.tipo) ? '#aaaaaa' : '#888888'
+                      }}>
+                        {pago.nota}
+                      </p>
+                    )}
                   </div>
                   <div className="flex flex-col items-end gap-0.5">
                     <Badge variant={tipoBadge.variant}>{tipoBadge.label}</Badge>
@@ -501,6 +545,31 @@ export default function PrestamoDetallePage({ params }) {
         onSuccess={handlePagoExito}
         cliente={cliente}
         prestamo={prestamo}
+      />
+
+      {/* Modales de ajuste */}
+      <AjusteSaldo
+        prestamoId={id}
+        saldoPendiente={saldoPendiente}
+        totalAPagar={totalAPagar}
+        tipoAjuste="recargo"
+        open={modalRecargo}
+        onClose={() => setModalRecargo(false)}
+        onSuccess={(prestamoActualizado) => {
+          setPrestamo(prestamoActualizado)
+        }}
+      />
+      <AjusteSaldo
+        prestamoId={id}
+        saldoPendiente={saldoPendiente}
+        totalAPagar={totalAPagar}
+        tipoAjuste="descuento"
+        open={modalDescuento}
+        onClose={() => setModalDescuento(false)}
+        onSuccess={(prestamoActualizado) => {
+          setPrestamo(prestamoActualizado)
+          if (prestamoActualizado.estado === 'completado') setCompletado(true)
+        }}
       />
     </div>
   )
