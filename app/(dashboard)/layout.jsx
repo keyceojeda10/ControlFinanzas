@@ -5,6 +5,9 @@ import Header         from '@/components/layout/Header'
 import BottomNav      from '@/components/layout/BottomNav'
 import PageWrapper    from '@/components/layout/PageWrapper'
 import SinRutaBanner  from '@/components/layout/SinRutaBanner'
+import GlobalSearch        from '@/components/layout/GlobalSearch'
+import NotificationPrompt from '@/components/NotificationPrompt'
+import Analytics          from '@/components/Analytics'
 
 export default function DashboardLayout({ children }) {
   return (
@@ -28,6 +31,15 @@ export default function DashboardLayout({ children }) {
 
       {/* BottomNav – visible solo en mobile */}
       <BottomNav />
+
+      {/* Búsqueda global (Ctrl+K) */}
+      <GlobalSearch />
+
+      {/* Prompt para activar notificaciones push */}
+      <NotificationPrompt />
+
+      {/* Analytics: page view tracking */}
+      <Analytics />
     </div>
   )
 }

@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { LIMITES_PLAN, calcularEstadoCliente } from '@/lib/calculos'
+import { logActividad } from '@/lib/activity-log'
 import { geocodeAddress }   from '@/lib/geocoding'
 
 // ─── GET /api/clientes ──────────────────────────────────────────
@@ -174,5 +175,6 @@ export async function POST(request) {
     },
   })
 
+  logActividad({ session, accion: 'crear_cliente', entidadTipo: 'cliente', entidadId: cliente.id, detalle: `Cliente ${nombre.trim()} (${cedula.trim()})`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
   return Response.json(cliente, { status: 201 })
 }

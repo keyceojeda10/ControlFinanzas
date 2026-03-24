@@ -90,6 +90,7 @@ model Organization {
   leads            Lead[]
   capital          Capital?
   movimientosCapital MovimientoCapital[]
+  actividadLogs    ActividadLog[]
 
   @@index([createdAt])
 }
@@ -122,6 +123,8 @@ model User {
   tickets        TicketSoporte[]
   mensajesTicket MensajeTicket[]
   notasAdmin     NotaSeguimiento[] @relation("NotasAdmin")
+  actividadLogs      ActividadLog[]
+  pushSubscriptions  PushSubscription[]
 
   @@index([organizationId])
 }
@@ -333,6 +336,57 @@ model AdminLog {
   organizacion Organization? @relation(fields: [organizacionId], references: [id])
 
   @@index([adminId])
+}
+
+// ─── ACTIVIDAD / AUDIT LOG ─────────────────────────────────
+
+model ActividadLog {
+  id              String   @id @default(cuid())
+  organizationId  String
+  userId          String
+  accion          String         // crear_prestamo, registrar_pago, crear_cliente, etc.
+  entidadTipo     String         // prestamo, pago, cliente, ruta, gasto, caja, capital
+  entidadId       String?
+  detalle         String?  @db.Text
+  ip              String?
+  createdAt       DateTime @default(now())
+
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  user            User         @relation(fields: [userId], references: [id])
+
+  @@index([organizationId, createdAt])
+  @@index([userId])
+}
+
+// ─── EVENTOS / ANALYTICS ───────────────────────────────
+
+model Evento {
+  id              String   @id @default(cuid())
+  organizationId  String?
+  userId          String?
+  evento          String         // page_view, feature_click, api_call
+  pagina          String?        // /dashboard, /prestamos, etc.
+  metadata        String?  @db.Text
+  createdAt       DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([organizationId, createdAt])
+  @@index([evento, createdAt])
+}
+
+// ─── PUSH NOTIFICATIONS ────────────────────────────────
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @db.Text
+  p256dh    String   @db.Text
+  auth      String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // ─── SOPORTE ─────────────────────────────────────────────

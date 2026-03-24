@@ -512,6 +512,120 @@ function TabReferidos() {
 }
 
 // ══════════════════════════════════════════════════════════════
+// TAB: NOTIFICACIONES
+// ══════════════════════════════════════════════════════════════
+function TabNotificaciones() {
+  const [status, setStatus] = useState('loading') // loading, unsupported, denied, subscribed, unsubscribed
+  const [working, setWorking] = useState(false)
+
+  useEffect(() => {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      setStatus('unsupported')
+      return
+    }
+    if (Notification.permission === 'denied') { setStatus('denied'); return }
+
+    navigator.serviceWorker.ready.then(async (reg) => {
+      const sub = await reg.pushManager.getSubscription()
+      setStatus(sub ? 'subscribed' : 'unsubscribed')
+    })
+  }, [])
+
+  const toggle = async () => {
+    setWorking(true)
+    try {
+      if (status === 'subscribed') {
+        const reg = await navigator.serviceWorker.ready
+        const sub = await reg.pushManager.getSubscription()
+        if (sub) {
+          await fetch('/api/push/unsubscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ endpoint: sub.endpoint }),
+          })
+          await sub.unsubscribe()
+        }
+        setStatus('unsubscribed')
+      } else {
+        const permission = await Notification.requestPermission()
+        if (permission !== 'granted') { setStatus('denied'); setWorking(false); return }
+
+        const reg = await navigator.serviceWorker.ready
+        const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+        if (!vapidKey) { setWorking(false); return }
+
+        const padding = '='.repeat((4 - (vapidKey.length % 4)) % 4)
+        const base64 = (vapidKey + padding).replace(/-/g, '+').replace(/_/g, '/')
+        const raw = atob(base64)
+        const arr = new Uint8Array(raw.length)
+        for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i)
+
+        const subscription = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: arr,
+        })
+        const { endpoint, keys } = subscription.toJSON()
+        await fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ endpoint, keys }),
+        })
+        setStatus('subscribed')
+      }
+    } catch (err) {
+      console.error('[push] Error:', err)
+    }
+    setWorking(false)
+  }
+
+  return (
+    <Card>
+      <div className="p-5 space-y-4">
+        <h2 className="text-sm font-semibold text-white">Notificaciones push</h2>
+        <p className="text-xs text-[#888]">
+          Recibe alertas cuando un cobrador registra pagos, clientes entran en mora o tu suscripción está por vencer.
+        </p>
+
+        {status === 'unsupported' && (
+          <p className="text-xs text-[#f59e0b] bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.2)] rounded-lg px-3 py-2">
+            Tu navegador no soporta notificaciones push. Usa Chrome, Edge o Firefox.
+          </p>
+        )}
+
+        {status === 'denied' && (
+          <p className="text-xs text-[#ef4444] bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] rounded-lg px-3 py-2">
+            Las notificaciones fueron bloqueadas. Habilítalas desde la configuración de tu navegador.
+          </p>
+        )}
+
+        {(status === 'subscribed' || status === 'unsubscribed') && (
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-white">{status === 'subscribed' ? 'Activadas' : 'Desactivadas'}</p>
+              <p className="text-[10px] text-[#666]">{status === 'subscribed' ? 'Recibirás notificaciones push' : 'No recibirás notificaciones'}</p>
+            </div>
+            <button
+              onClick={toggle}
+              disabled={working}
+              className={`relative w-12 h-6 rounded-full transition-colors ${status === 'subscribed' ? 'bg-[#f5c518]' : 'bg-[#2a2a2a]'}`}
+            >
+              <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${status === 'subscribed' ? 'left-[26px]' : 'left-0.5'}`} />
+            </button>
+          </div>
+        )}
+
+        {status === 'loading' && (
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 border-2 border-[#333] border-t-[#f5c518] rounded-full animate-spin" />
+            <span className="text-xs text-[#666]">Verificando...</span>
+          </div>
+        )}
+      </div>
+    </Card>
+  )
+}
+
+// ══════════════════════════════════════════════════════════════
 // PÁGINA PRINCIPAL
 // ══════════════════════════════════════════════════════════════
 function ConfiguracionContent() {
@@ -531,6 +645,7 @@ function ConfiguracionContent() {
     { key: 'organizacion', label: 'Organización', visible: rol === 'owner' },
     { key: 'suscripcion',  label: 'Suscripción',  visible: rol === 'owner' },
     { key: 'referidos',    label: 'Referidos',     visible: rol === 'owner' },
+    { key: 'notificaciones', label: 'Notificaciones', visible: true },
   ].filter((t) => t.visible)
 
   return (
@@ -562,6 +677,7 @@ function ConfiguracionContent() {
       {tab === 'organizacion' && esOwner && <TabOrganizacion />}
       {tab === 'suscripcion'  && esOwner && <TabSuscripcion />}
       {tab === 'referidos'    && esOwner && <TabReferidos />}
+      {tab === 'notificaciones' && <TabNotificaciones />}
     </div>
   )
 }

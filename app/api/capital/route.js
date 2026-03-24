@@ -2,6 +2,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logActividad } from '@/lib/activity-log'
 
 // GET — obtener saldo actual
 export async function GET() {
@@ -84,5 +85,6 @@ export async function POST(request) {
     return capitalActualizado
   })
 
+  logActividad({ session, accion: 'movimiento_capital', entidadTipo: 'capital', entidadId: resultado.id, detalle: `${tipo} $${montoNum.toLocaleString('es-CO')}${descripcion ? ` - ${descripcion}` : ''}`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
   return Response.json({ capital: resultado }, { status: 201 })
 }

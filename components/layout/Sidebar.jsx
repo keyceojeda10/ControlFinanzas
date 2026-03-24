@@ -81,6 +81,16 @@ const NAV_OWNER = [
     ),
   },
   {
+    label: 'Actividad',
+    href:  '/actividad',
+    icon: (
+      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+          d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+  },
+  {
     label: 'Reportes',
     href:  '/reportes',
     icon: (
@@ -220,6 +230,20 @@ export default function Sidebar() {
       <div className="flex flex-col items-center px-5 py-4 border-b border-[#2a2a2a]">
         <Image src="/logo-full.svg" alt="Control Finanzas" width={160} height={40} priority />
         {fechaHora && <span className="text-[10px] text-[#888888] mt-2">{fechaHora}</span>}
+      </div>
+
+      {/* Search shortcut */}
+      <div className="px-3 pt-3 pb-1">
+        <button
+          onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-[10px] bg-[#1a1a1a] border border-[#2a2a2a] text-[#666] hover:border-[#333] hover:text-[#888] transition-colors text-xs"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+          </svg>
+          <span className="flex-1 text-left">Buscar...</span>
+          <kbd className="text-[10px] bg-[#111] border border-[#333] px-1.5 py-0.5 rounded">Ctrl+K</kbd>
+        </button>
       </div>
 
       {/* Nav links */}

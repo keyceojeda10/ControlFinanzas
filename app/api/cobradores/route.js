@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import bcrypt               from 'bcryptjs'
+import { logActividad } from '@/lib/activity-log'
 
 // Límites de usuarios totales por plan (owner + cobradores)
 const LIMITES_USUARIOS = { basic: 1, standard: 3, professional: 7 }
@@ -142,5 +143,6 @@ export async function POST(request) {
       puedeCrearPrestamos: true, puedeCrearClientes: true, puedeEditarClientes: true },
   })
 
+  logActividad({ session, accion: 'crear_cobrador', entidadTipo: 'usuario', entidadId: cobrador.id, detalle: `Cobrador ${cobrador.nombre} creado`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
   return Response.json(cobrador, { status: 201 })
 }

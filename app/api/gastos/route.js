@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logActividad } from '@/lib/activity-log'
 
 // Funciones de fecha en timezone Colombia (UTC-5)
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
@@ -78,5 +79,6 @@ export async function POST(req) {
     },
   })
 
+  logActividad({ session, accion: 'registrar_gasto', entidadTipo: 'gasto', entidadId: gasto.id, detalle: `Gasto $${gasto.monto.toLocaleString('es-CO')} - ${gasto.description}`, ip: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
   return NextResponse.json(gasto)
 }

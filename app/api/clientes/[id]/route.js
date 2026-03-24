@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado } from '@/lib/calculos'
+import { logActividad } from '@/lib/activity-log'
 import { geocodeAddress }   from '@/lib/geocoding'
 
 // Helper: verificar que el cliente pertenece a la organización (y a la ruta del cobrador)
@@ -150,6 +151,7 @@ export async function PATCH(request, { params }) {
     },
   })
 
+  logActividad({ session, accion: 'editar_cliente', entidadTipo: 'cliente', entidadId: id, detalle: `Cliente ${actualizado.nombre} editado`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
   return Response.json(actualizado)
 }
 
@@ -207,6 +209,7 @@ export async function DELETE(request, { params }) {
     data: { estado: 'eliminado', eliminadoEn: new Date(), rutaId: null },
   })
 
+  logActividad({ session, accion: 'eliminar_cliente', entidadTipo: 'cliente', entidadId: id, detalle: `Cliente ${cliente.nombre} eliminado`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
   return Response.json({ ok: true, message: 'Cliente eliminado' })
 }
 

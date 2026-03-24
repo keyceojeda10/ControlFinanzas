@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendFollowupReminder } from '@/lib/telegram'
+import { cronLimiter, getClientIp } from '@/lib/rate-limit'
 
 // Cron cada 30 min — envía recordatorios escalonados de leads sin atender
 //
@@ -25,6 +26,8 @@ export async function POST(req) {
   if (!CRON_SECRET || cronSecret !== CRON_SECRET) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
+  const rl = cronLimiter(getClientIp(req))
+  if (!rl.ok) return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
 
   try {
     const now = Date.now()

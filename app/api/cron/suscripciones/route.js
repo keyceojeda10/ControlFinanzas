@@ -4,6 +4,7 @@
 import { NextResponse } from 'next/server'
 import { prisma }       from '@/lib/prisma'
 import { enviarEmail, emailAvisoVencimiento, emailSuscripcionVencida } from '@/lib/email'
+import { cronLimiter, getClientIp } from '@/lib/rate-limit'
 
 const CRON_SECRET = process.env.CRON_SECRET
 
@@ -12,6 +13,8 @@ export async function POST(req) {
   if (!CRON_SECRET || secret !== CRON_SECRET) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
+  const rl = cronLimiter(getClientIp(req))
+  if (!rl.ok) return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
 
   const ahora = new Date()
   const resultados = { avisos: 0, vencidas: 0, demosRevertidos: 0, errores: 0 }

@@ -3,6 +3,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { logActividad } from '@/lib/activity-log'
 
 const COLOMBIA_OFFSET = 5 * 60 * 60 * 1000 // UTC-5
 
@@ -277,5 +278,6 @@ export async function POST(request) {
     include: { cobrador: { select: { id: true, nombre: true } } },
   })
 
+  logActividad({ session, accion: 'cierre_caja', entidadTipo: 'caja', entidadId: cierre.id, detalle: `Cierre de caja ${cobrador.nombre} - recogido $${Math.round(totalRecogido).toLocaleString('es-CO')}`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
   return Response.json(cierre, { status: 201 })
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { formatCOP } from '@/lib/calculos'
+import Confetti from '../Confetti'
 
 const LABEL_FREQ = {
   diario: 'Cuota diaria',
@@ -13,6 +14,8 @@ export default function WizardExito({ cliente, prestamo, onFinish, onAddAnother 
   const labelCuota = LABEL_FREQ[prestamo?.frecuencia] ?? 'Cuota'
 
   return (
+    <>
+    <Confetti active={true} />
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
       {/* Success check */}
       <div className="w-20 h-20 rounded-full bg-[#22c55e] flex items-center justify-center mb-6 wizard-success-bounce">
@@ -61,5 +64,6 @@ export default function WizardExito({ cliente, prestamo, onFinish, onAddAnother 
         Puedes agregar mas clientes desde el dashboard
       </p>
     </div>
+    </>
   )
 }

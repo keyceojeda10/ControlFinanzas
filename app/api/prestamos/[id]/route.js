@@ -9,6 +9,7 @@ import {
   calcularPorcentajePagado,
   pagoHoy,
 } from '@/lib/calculos'
+import { logActividad } from '@/lib/activity-log'
 
 async function obtenerPrestamo(id, session) {
   const p = await prisma.prestamo.findFirst({
@@ -74,6 +75,7 @@ export async function PATCH(request, { params }) {
     data:  { estado },
   })
 
+  logActividad({ session, accion: 'editar_prestamo', entidadTipo: 'prestamo', entidadId: id, detalle: `Estado cambiado a ${estado}`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
   return Response.json(actualizado)
 }
 
@@ -97,5 +99,6 @@ export async function DELETE(request, { params }) {
     prisma.prestamo.delete({ where: { id } }),
   ])
 
+  logActividad({ session, accion: 'eliminar_prestamo', entidadTipo: 'prestamo', entidadId: id, detalle: `Préstamo de ${p.cliente.nombre} eliminado`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
   return Response.json({ ok: true, message: 'Préstamo eliminado' })
 }

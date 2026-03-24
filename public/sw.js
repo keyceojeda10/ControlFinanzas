@@ -148,6 +148,41 @@ async function networkFirst(request) {
   }
 }
 
+// ─── Push Notifications ───────────────────────────────────
+self.addEventListener('push', (e) => {
+  if (!e.data) return
+  try {
+    const data = e.data.json()
+    e.waitUntil(
+      self.registration.showNotification(data.title || 'Control Finanzas', {
+        body: data.body,
+        icon: data.icon || '/logo-icon.svg',
+        badge: '/icons/icon-192.png',
+        data: { url: data.url || '/dashboard' },
+        vibrate: [200, 100, 200],
+      })
+    )
+  } catch {}
+})
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close()
+  const url = e.notification.data?.url || '/dashboard'
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      // Focus existing tab if open
+      for (const client of clients) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          client.navigate(url)
+          return client.focus()
+        }
+      }
+      // Open new tab
+      return self.clients.openWindow(url)
+    })
+  )
+})
+
 // ─── Message handling (for sync trigger from app) ───────────
 self.addEventListener('message', (e) => {
   if (e.data?.type === 'SKIP_WAITING') {

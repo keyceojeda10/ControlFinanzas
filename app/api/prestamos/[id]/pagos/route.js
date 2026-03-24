@@ -12,6 +12,8 @@ import {
   pagoHoy,
 } from '@/lib/calculos'
 import { registrarMovimientoCapital } from '@/lib/capital'
+import { logActividad } from '@/lib/activity-log'
+import { enviarPushOrg } from '@/lib/push'
 
 // ─── POST /api/prestamos/[id]/pagos ─────────────────────────────
 export async function POST(request, { params }) {
@@ -207,6 +209,18 @@ export async function POST(request, { params }) {
       },
     },
   })
+
+  const tipoLabel = { completo: 'completo', parcial: 'parcial', capital: 'abono capital', recargo: 'recargo', descuento: 'descuento' }
+  logActividad({ session, accion: 'registrar_pago', entidadTipo: 'pago', entidadId: prestamoId, detalle: `Pago ${tipoLabel[tipo] || tipo} $${montoFinal.toLocaleString('es-CO')}`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
+
+  // Push notification: notificar al owner cuando un cobrador registra pago
+  if (rol === 'cobrador') {
+    enviarPushOrg(organizationId, {
+      title: 'Pago registrado',
+      body: `${session.user.nombre} cobró $${montoFinal.toLocaleString('es-CO')} — ${prestamoFinal.cliente.nombre}`,
+      url: `/prestamos/${prestamoId}`,
+    }).catch(() => {})
+  }
 
   return Response.json({
     ...prestamoFinal,

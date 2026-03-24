@@ -1,13 +1,27 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import ProgressRing from './ProgressRing'
 import MissionItem from './MissionItem'
+import Confetti from './Confetti'
 
 export default function OnboardingChecklist({ misiones, completadas, total, progreso, onDismiss, onSpotlight }) {
   const [expanded, setExpanded] = useState(true)
+  const [showConfetti, setShowConfetti] = useState(false)
+  const [prevCompleted, setPrevCompleted] = useState(completadas)
+
+  // Show confetti when all missions completed
+  useEffect(() => {
+    if (completadas === total && completadas > 0 && prevCompleted < total) {
+      setShowConfetti(true)
+      setTimeout(() => setShowConfetti(false), 4000)
+    }
+    setPrevCompleted(completadas)
+  }, [completadas, total, prevCompleted])
 
   return (
+    <>
+    <Confetti active={showConfetti} />
     <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] overflow-hidden onboarding-fadein">
       {/* Header - always visible */}
       <button
@@ -62,5 +76,6 @@ export default function OnboardingChecklist({ misiones, completadas, total, prog
         </div>
       )}
     </div>
+    </>
   )
 }

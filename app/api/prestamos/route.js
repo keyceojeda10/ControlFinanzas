@@ -11,6 +11,7 @@ import {
   pagoHoy,
 } from '@/lib/calculos'
 import { registrarMovimientoCapital } from '@/lib/capital'
+import { logActividad } from '@/lib/activity-log'
 
 // ─── GET /api/prestamos ─────────────────────────────────────────
 export async function GET(request) {
@@ -169,5 +170,6 @@ export async function POST(request) {
     return nuevo
   })
 
+  logActividad({ session, accion: 'crear_prestamo', entidadTipo: 'prestamo', entidadId: prestamo.id, detalle: `Préstamo $${Number(montoPrestado).toLocaleString('es-CO')} a ${cliente.nombre}`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
   return Response.json(prestamo, { status: 201 })
 }

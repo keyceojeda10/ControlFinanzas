@@ -4,6 +4,7 @@ import { prisma }       from '@/lib/prisma'
 import { paymentApi }   from '@/lib/mercadopago'
 import crypto           from 'crypto'
 import { enviarEmail, emailPagoAprobado, emailPagoFallido, emailReferidoExitoso } from '@/lib/email'
+import { webhookLimiter, getClientIp } from '@/lib/rate-limit'
 
 // Valores válidos del enum Plan en Prisma/DB
 const PLANES_VALIDOS = ["test", "basic", "standard", "professional"]
@@ -53,6 +54,9 @@ function verificarFirma(req, body) {
 }
 
 export async function POST(req) {
+  const rl = webhookLimiter(getClientIp(req))
+  if (!rl.ok) return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } })
+
   let body
   try {
     body = await req.json()

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendLeadNotification, buildFirstMessage } from '@/lib/telegram'
 import { sendWhatsApp } from '@/lib/baileys-client'
+import { cronLimiter, getClientIp } from '@/lib/rate-limit'
 
 const PAGE_TOKEN = process.env.FB_PAGE_ACCESS_TOKEN
 const FORM_ID = process.env.FB_FORM_ID || '933400739047391'
@@ -13,6 +14,8 @@ export async function POST(req) {
   if (!CRON_SECRET || cronSecret !== CRON_SECRET) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
+  const rl = cronLimiter(getClientIp(req))
+  if (!rl.ok) return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
 
   if (!PAGE_TOKEN) {
     return NextResponse.json({ error: 'FB_PAGE_ACCESS_TOKEN no configurado' }, { status: 500 })

@@ -3,6 +3,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { logActividad } from '@/lib/activity-log'
 
 // Funciones de fecha en timezone Colombia (UTC-5)
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
@@ -103,5 +104,6 @@ export async function POST(request) {
     },
   })
 
+  logActividad({ session, accion: 'crear_ruta', entidadTipo: 'ruta', entidadId: ruta.id, detalle: `Ruta "${ruta.nombre}" creada`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
   return Response.json(ruta, { status: 201 })
 }

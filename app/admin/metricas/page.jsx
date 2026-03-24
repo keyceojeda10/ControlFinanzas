@@ -40,20 +40,23 @@ export default function MetricasPage() {
   const [stats,   setStats]   = useState(null)
   const [orgs,    setOrgs]    = useState([])
   const [subs,    setSubs]    = useState([])
+  const [uso,     setUso]     = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [sRes, oRes, subRes] = await Promise.all([
+        const [sRes, oRes, subRes, uRes] = await Promise.all([
           fetch('/api/admin/stats'),
           fetch('/api/admin/organizaciones'),
           fetch('/api/admin/suscripciones'),
+          fetch('/api/admin/metricas/uso'),
         ])
         const [s, o, sub] = await Promise.all([sRes.json(), oRes.json(), subRes.json()])
         setStats(s)
         setOrgs(Array.isArray(o) ? o : [])
         setSubs(Array.isArray(sub) ? sub : [])
+        if (uRes.ok) setUso(await uRes.json())
       } catch { /* ignore */ } finally {
         setLoading(false)
       }
@@ -218,6 +221,80 @@ export default function MetricasPage() {
           </ResponsiveContainer>
         </Card>
       </div>
+
+      {/* ── Uso del producto ─────────────────────────────── */}
+      {uso && (
+        <>
+          <div className="pt-4">
+            <h2 className="text-lg font-bold text-white">Uso del producto</h2>
+            <p className="text-xs text-[#555555] mt-0.5">Usuarios activos y features más usados</p>
+          </div>
+
+          {/* DAU/WAU/MAU */}
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              { label: 'DAU', value: uso.dau, color: '#22c55e' },
+              { label: 'WAU', value: uso.wau, color: '#3b82f6' },
+              { label: 'MAU', value: uso.mau, color: '#a855f7' },
+            ].map(({ label, value, color }) => (
+              <Card key={label} style={{
+                background: `linear-gradient(135deg, ${color}0A 0%, #1a1a1a 40%, #1a1a1a 70%, ${color}05 100%)`,
+                boxShadow: `0 0 20px ${color}08`,
+              }}>
+                <p className="text-[10px] text-[#555555] uppercase tracking-wide">{label}</p>
+                <p className="text-2xl font-bold text-white font-mono-display mt-1">{value}</p>
+              </Card>
+            ))}
+          </div>
+
+          {/* DAU trend */}
+          <Card style={{
+            background: 'linear-gradient(135deg, #f5c5180A 0%, #1a1a1a 40%, #1a1a1a 70%, #f5c51805 100%)',
+            boxShadow: '0 0 30px #f5c51808, 0 1px 2px rgba(0,0,0,0.3)',
+          }}>
+            <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">Usuarios activos diarios — Últimos 14 días</p>
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={uso.dailyTrend} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" vertical={false} />
+                <XAxis dataKey="fecha" tick={{ fill: '#555555', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => v.slice(5)} />
+                <YAxis tick={{ fill: '#555555', fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <Tooltip content={<NumTooltip />} />
+                <Line type="monotone" dataKey="usuarios" name="Usuarios" stroke="#f5c518" strokeWidth={2} dot={{ r: 3, fill: '#f5c518' }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </Card>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {/* Top features */}
+            <Card>
+              <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-3">Features más usados</p>
+              <div className="space-y-2">
+                {uso.topFeatures.map((f) => (
+                  <div key={f.evento} className="flex items-center justify-between">
+                    <span className="text-xs text-[#999]">{f.evento}</span>
+                    <span className="text-xs font-bold text-white font-mono-display">{f.count}</span>
+                  </div>
+                ))}
+                {uso.topFeatures.length === 0 && <p className="text-xs text-[#555]">Sin datos aún</p>}
+              </div>
+            </Card>
+
+            {/* Top pages */}
+            <Card>
+              <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-3">Páginas más visitadas</p>
+              <div className="space-y-2">
+                {uso.topPages.map((p) => (
+                  <div key={p.pagina} className="flex items-center justify-between">
+                    <span className="text-xs text-[#999]">{p.pagina}</span>
+                    <span className="text-xs font-bold text-white font-mono-display">{p.count}</span>
+                  </div>
+                ))}
+                {uso.topPages.length === 0 && <p className="text-xs text-[#555]">Sin datos aún</p>}
+              </div>
+            </Card>
+          </div>
+        </>
+      )}
     </div>
   )
 }
