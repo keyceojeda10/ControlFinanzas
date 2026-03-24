@@ -29,7 +29,7 @@ function KpiCard({ label, value, sub, color = '#ffffff', icon }) {
           </div>
         )}
       </div>
-      <p className="text-xl font-bold leading-tight font-mono-display" style={{ color }}>{value}</p>
+      <p className="text-xl font-bold leading-tight font-mono-display truncate" style={{ color }}>{value}</p>
       {sub && <p className="text-[10px] text-[#888888] mt-1">{sub}</p>}
     </div>
   )
@@ -185,7 +185,7 @@ export default function DashboardPage() {
             }}
           >
             <p className="text-[11px] text-[#888888] mb-1">Recaudado hoy</p>
-            <p className="text-2xl font-bold text-[#22c55e] font-mono-display">{formatCOP(data.cobros.hoy)}</p>
+            <p className="text-xl font-bold text-[#22c55e] font-mono-display truncate">{formatCOP(data.cobros.hoy)}</p>
             <p className="text-[10px] text-[#888888] mt-1">{data.cobros.cantidadHoy} pagos registrados</p>
             <div className="mt-2 h-1.5 bg-[#2a2a2a] rounded-full overflow-hidden">
               <div className="h-full rounded-full transition-all" style={{ width: data.prestamos.cuotaDiariaTotal > 0 ? `${Math.min(100, Math.round((data.cobros.hoy / data.prestamos.cuotaDiariaTotal) * 100))}%` : '0%', background: 'linear-gradient(90deg, #22c55e, #f5c518)' }} />
@@ -200,7 +200,7 @@ export default function DashboardPage() {
             }}
           >
             <p className="text-[11px] text-[#888888] mb-1">Recaudado este mes</p>
-            <p className="text-2xl font-bold text-[#f5c518] font-mono-display">{formatCOP(data.cobros.mes)}</p>
+            <p className="text-xl font-bold text-[#f5c518] font-mono-display truncate">{formatCOP(data.cobros.mes)}</p>
             <p className="text-[10px] text-[#888888] mt-1">{data.cobros.cantidadMes} pagos en el mes</p>
             {data.clientes.enMora > 0 && (<div className="mt-2 flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#ef4444]" /><p className="text-[10px] text-[#ef4444]">{moraPct}% de clientes en mora</p></div>)}
           </div>
