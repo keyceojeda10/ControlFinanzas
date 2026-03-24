@@ -105,7 +105,14 @@ export default function EditarCobrador({ params }) {
         <h1 className="text-xl font-bold text-[white]">Editar cobrador</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-5 space-y-4">
+      <form
+        onSubmit={handleSubmit}
+        className="border border-[#2a2a2a] rounded-[16px] p-5 space-y-4"
+        style={{
+          background: 'linear-gradient(135deg, #f5c5180A 0%, #1a1a1a 40%, #1a1a1a 70%, #f5c51805 100%)',
+          boxShadow: '0 0 30px #f5c51808, 0 1px 2px rgba(0,0,0,0.3)',
+        }}
+      >
         {error && (
           <div className="flex items-center gap-2 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3">
             {error}

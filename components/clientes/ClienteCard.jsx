@@ -15,7 +15,14 @@ export default function ClienteCard({ cliente }) {
   return (
     <Link
       href={`/clientes/${cliente.id}`}
-      className="flex items-center gap-3 bg-[#1a1a1a] border border-[#2a2a2a] rounded-[14px] p-4 hover:border-[#f5c518]/40 hover:bg-[#222222] transition-all duration-150 group"
+      className="flex items-center gap-3 border border-[#2a2a2a] rounded-[14px] p-4 hover:border-[#f5c518]/40 transition-all duration-150 group"
+      style={{
+        background: cliente.estado === 'mora'
+          ? 'linear-gradient(135deg, #ef444406 0%, #1a1a1a 40%, #1a1a1a 70%, #ef444403 100%)'
+          : cliente.estado === 'activo'
+          ? 'linear-gradient(135deg, #f5c51806 0%, #1a1a1a 40%, #1a1a1a 70%, #f5c51803 100%)'
+          : '#1a1a1a',
+      }}
     >
       {/* Avatar */}
       <div

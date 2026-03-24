@@ -203,7 +203,13 @@ function NuevoPrestamo() {
         </div>
 
         {/* Card formulario */}
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-5 space-y-4">
+        <div
+          className="border border-[#2a2a2a] rounded-[16px] p-5 space-y-4"
+          style={{
+            background: 'linear-gradient(135deg, #f5c5180A 0%, #1a1a1a 40%, #1a1a1a 70%, #f5c51805 100%)',
+            boxShadow: '0 0 30px #f5c51808, 0 1px 2px rgba(0,0,0,0.3)',
+          }}
+        >
 
           {/* Selector de cliente */}
           {clienteIdParam ? (

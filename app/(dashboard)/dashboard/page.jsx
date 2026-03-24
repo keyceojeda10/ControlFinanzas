@@ -207,7 +207,13 @@ export default function DashboardPage() {
         </div>
       )}
       {(loading || !mounted) ? <Skeleton className="h-44" /> : data && data.ultimosPagos.length > 0 && (
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] px-4 py-4">
+        <div
+          className="border border-[#2a2a2a] rounded-[16px] px-4 py-4"
+          style={{
+            background: 'linear-gradient(135deg, #22c55e06 0%, #1a1a1a 40%, #1a1a1a 70%, #22c55e03 100%)',
+            boxShadow: '0 0 20px #22c55e05, 0 1px 2px rgba(0,0,0,0.2)',
+          }}
+        >
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Ultimos pagos</p>
             <Link href="/prestamos" className="text-[11px] text-[#f5c518] hover:underline">Ver todos →</Link>
@@ -226,7 +232,13 @@ export default function DashboardPage() {
         </div>
       )}
       {!loading && mounted && moraData !== undefined && moraData.total > 0 && (
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] px-4 py-4">
+        <div
+          className="border border-[#2a2a2a] rounded-[16px] px-4 py-4"
+          style={{
+            background: 'linear-gradient(135deg, #ef444406 0%, #1a1a1a 40%, #1a1a1a 70%, #ef444403 100%)',
+            boxShadow: '0 0 20px #ef444405, 0 1px 2px rgba(0,0,0,0.2)',
+          }}
+        >
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Alertas de mora</p>
             <span className="text-[11px] bg-[#ef4444] text-white px-2 py-0.5 rounded-full">{moraData.total} clientes</span>
