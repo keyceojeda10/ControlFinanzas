@@ -16,6 +16,8 @@ const ESTADOS = [
   { value: 'cancelado',  label: 'Cancelados' },
 ]
 
+const LIMIT = 50
+
 export default function PrestamosPage() {
   const { esOwner, puedeCrearPrestamos, loading: authLoading } = useAuth()
   const [prestamos, setPrestamos] = useState([])
@@ -23,8 +25,11 @@ export default function PrestamosPage() {
   const [estado,    setEstado]    = useState('activo')
   const [loading,   setLoading]   = useState(true)
   const [error,     setError]     = useState('')
+  const [page,      setPage]      = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [total,     setTotal]     = useState(0)
 
-  const fetchPrestamos = useCallback(async (q, est) => {
+  const fetchPrestamos = useCallback(async (q, est, p) => {
     setLoading(true)
     setError('')
     try {
@@ -33,11 +38,16 @@ export default function PrestamosPage() {
       // "mora" no es un estado en BD — pedimos activos y filtramos client-side
       const apiEstado = est === 'mora' ? 'activo' : est
       if (apiEstado) params.set('estado', apiEstado)
+      params.set('page', String(p))
+      params.set('limit', String(LIMIT))
       const res = await fetch(`/api/prestamos?${params}`)
       if (!res.ok) throw new Error()
-      let data = await res.json()
-      if (est === 'mora') data = data.filter((p) => p.diasMora > 0)
-      setPrestamos(data)
+      const data = await res.json()
+      let items = data.prestamos
+      if (est === 'mora') items = items.filter((pr) => pr.diasMora > 0)
+      setPrestamos(items)
+      setTotal(data.total)
+      setTotalPages(data.totalPages)
     } catch {
       setError('No se pudieron cargar los préstamos.')
     } finally {
@@ -45,12 +55,18 @@ export default function PrestamosPage() {
     }
   }, [])
 
-  useEffect(() => { fetchPrestamos('', estado) }, [fetchPrestamos, estado])
+  useEffect(() => { setPage(1); fetchPrestamos('', estado, 1) }, [fetchPrestamos, estado])
 
   useEffect(() => {
-    const t = setTimeout(() => fetchPrestamos(buscar, estado), 300)
+    setPage(1)
+    const t = setTimeout(() => fetchPrestamos(buscar, estado, 1), 300)
     return () => clearTimeout(t)
   }, [buscar, estado, fetchPrestamos])
+
+  // Cambio de página
+  useEffect(() => {
+    if (page > 1) fetchPrestamos(buscar, estado, page)
+  }, [page]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const enMoraCount = prestamos.filter((p) => p.diasMora > 0).length
 
@@ -61,7 +77,7 @@ export default function PrestamosPage() {
         <div>
           <h1 className="text-xl font-bold text-[white]">Préstamos</h1>
           <p className="text-sm text-[#888888] mt-0.5">
-            {loading ? '…' : `${prestamos.length} préstamo${prestamos.length !== 1 ? 's' : ''}`}
+            {loading ? '…' : `${total} préstamo${total !== 1 ? 's' : ''}`}
             {enMoraCount > 0 && (
               <span className="ml-2 text-[#ef4444]">· {enMoraCount} en mora</span>
             )}
@@ -190,6 +206,29 @@ export default function PrestamosPage() {
               )}
             </>
           )}
+        </div>
+      )}
+
+      {/* Paginación */}
+      {!loading && totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-6">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page <= 1}
+            className="px-3 py-1.5 text-xs rounded-lg border border-[#2a2a2a] text-[#888] hover:bg-[#222] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            Anterior
+          </button>
+          <span className="text-xs text-[#888]">
+            Página {page} de {totalPages}
+          </span>
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page >= totalPages}
+            className="px-3 py-1.5 text-xs rounded-lg border border-[#2a2a2a] text-[#888] hover:bg-[#222] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            Siguiente
+          </button>
         </div>
       )}
     </div>

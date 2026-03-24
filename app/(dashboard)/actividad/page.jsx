@@ -92,12 +92,30 @@ export default function ActividadPage() {
   const [cursor, setCursor] = useState(null)
   const [hasMore, setHasMore] = useState(true)
   const [filtroTipo, setFiltroTipo] = useState('')
+  const [filtroUsuario, setFiltroUsuario] = useState('')
+  const [desde, setDesde] = useState('')
+  const [hasta, setHasta] = useState('')
+  const [usuarios, setUsuarios] = useState([])
   const loaderRef = useRef(null)
+
+  // Fetch org users for filter dropdown
+  useEffect(() => {
+    fetch('/api/cobradores')
+      .then(r => r.ok ? r.json() : [])
+      .then(data => {
+        const lista = Array.isArray(data) ? data : data.cobradores || []
+        setUsuarios(lista)
+      })
+      .catch(() => {})
+  }, [])
 
   const fetchActividad = useCallback(async (cursorId, reset) => {
     const params = new URLSearchParams()
     if (cursorId && !reset) params.set('cursor', cursorId)
     if (filtroTipo) params.set('tipo', filtroTipo)
+    if (filtroUsuario) params.set('userId', filtroUsuario)
+    if (desde) params.set('desde', desde)
+    if (hasta) params.set('hasta', hasta)
     params.set('limit', '20')
 
     const res = await fetch(`/api/actividad?${params}`)
@@ -108,7 +126,7 @@ export default function ActividadPage() {
     setCursor(data.nextCursor)
     setHasMore(!!data.nextCursor)
     setLoading(false)
-  }, [filtroTipo])
+  }, [filtroTipo, filtroUsuario, desde, hasta])
 
   // Reset on filter change
   useEffect(() => {
@@ -143,8 +161,8 @@ export default function ActividadPage() {
         </div>
       </div>
 
-      {/* Filtro */}
-      <div className="mb-5">
+      {/* Filtros */}
+      <div className="mb-5 flex flex-wrap gap-2">
         <select
           value={filtroTipo}
           onChange={(e) => setFiltroTipo(e.target.value)}
@@ -154,6 +172,40 @@ export default function ActividadPage() {
             <option key={f.value} value={f.value}>{f.label}</option>
           ))}
         </select>
+
+        <select
+          value={filtroUsuario}
+          onChange={(e) => setFiltroUsuario(e.target.value)}
+          className="bg-[#1a1a1a] border border-[#2a2a2a] text-white text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-[#f5c518]"
+        >
+          <option value="">Todos los usuarios</option>
+          {usuarios.map(u => (
+            <option key={u.id} value={u.id}>{u.nombre}</option>
+          ))}
+        </select>
+
+        <input
+          type="date"
+          value={desde}
+          onChange={(e) => setDesde(e.target.value)}
+          className="bg-[#1a1a1a] border border-[#2a2a2a] text-white text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-[#f5c518] [color-scheme:dark]"
+          placeholder="Desde"
+        />
+        <input
+          type="date"
+          value={hasta}
+          onChange={(e) => setHasta(e.target.value)}
+          className="bg-[#1a1a1a] border border-[#2a2a2a] text-white text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-[#f5c518] [color-scheme:dark]"
+          placeholder="Hasta"
+        />
+        {(filtroTipo || filtroUsuario || desde || hasta) && (
+          <button
+            onClick={() => { setFiltroTipo(''); setFiltroUsuario(''); setDesde(''); setHasta('') }}
+            className="text-xs text-[#f5c518] hover:text-[#f5c518]/80 px-2 py-2"
+          >
+            Limpiar
+          </button>
+        )}
       </div>
 
       {/* Timeline */}

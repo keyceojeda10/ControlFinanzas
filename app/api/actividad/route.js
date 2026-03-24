@@ -17,12 +17,23 @@ export async function GET(request) {
   const cursor = searchParams.get('cursor')
   const tipo = searchParams.get('tipo')       // filtro por accion
   const userId = searchParams.get('userId')   // filtro por usuario
+  const desde = searchParams.get('desde')     // filtro fecha inicio (YYYY-MM-DD)
+  const hasta = searchParams.get('hasta')     // filtro fecha fin (YYYY-MM-DD)
   const limit = Math.min(Number(searchParams.get('limit')) || 20, 50)
+
+  const createdAtFilter = {}
+  if (desde) createdAtFilter.gte = new Date(desde)
+  if (hasta) {
+    const h = new Date(hasta)
+    h.setHours(23, 59, 59, 999)
+    createdAtFilter.lte = h
+  }
 
   const where = {
     organizationId: session.user.organizationId,
     ...(tipo && { accion: tipo }),
     ...(userId && { userId }),
+    ...(Object.keys(createdAtFilter).length > 0 && { createdAt: createdAtFilter }),
   }
 
   const actividad = await prisma.actividadLog.findMany({

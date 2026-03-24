@@ -6,6 +6,7 @@ import { prisma }           from '@/lib/prisma'
 import { LIMITES_PLAN, calcularEstadoCliente } from '@/lib/calculos'
 import { logActividad } from '@/lib/activity-log'
 import { geocodeAddress }   from '@/lib/geocoding'
+import { trackEvent } from '@/lib/analytics'
 
 // ─── GET /api/clientes ──────────────────────────────────────────
 export async function GET(request) {
@@ -16,6 +17,8 @@ export async function GET(request) {
 
   const { searchParams } = new URL(request.url)
   const buscar = searchParams.get('buscar')?.trim() ?? ''
+  const page = searchParams.get('page') ? Number(searchParams.get('page')) : null
+  const limit = Math.min(Number(searchParams.get('limit')) || 50, 100)
 
   const { organizationId, rol, rutaId } = session.user
 
@@ -36,13 +39,15 @@ export async function GET(request) {
       }
     : {}
 
+  const whereClause = {
+    organizationId,
+    estado: { notIn: ['eliminado'] },
+    ...filtroRuta,
+    ...filtroBuscar,
+  }
+
   const clientes = await prisma.cliente.findMany({
-    where: {
-      organizationId,
-      estado: { notIn: ['eliminado'] },
-      ...filtroRuta,
-      ...filtroBuscar,
-    },
+    where: whereClause,
     select: {
       id:         true,
       nombre:     true,
@@ -65,6 +70,7 @@ export async function GET(request) {
       },
     },
     orderBy: [{ ordenRuta: 'asc' }, { nombre: 'asc' }],
+    ...(page != null && { take: limit, skip: (page - 1) * limit }),
   })
 
   // Recalcular estado real del cliente basado en sus préstamos activos
@@ -79,6 +85,11 @@ export async function GET(request) {
     prestamosActivos: c.prestamos.length,
   }))
 
+  // If paginated, return object with total; otherwise array for backward compat
+  if (page != null) {
+    const total = await prisma.cliente.count({ where: whereClause })
+    return Response.json({ clientes: resultado, total, page, totalPages: Math.ceil(total / limit) })
+  }
   return Response.json(resultado)
 }
 
@@ -176,5 +187,6 @@ export async function POST(request) {
   })
 
   logActividad({ session, accion: 'crear_cliente', entidadTipo: 'cliente', entidadId: cliente.id, detalle: `Cliente ${nombre.trim()} (${cedula.trim()})`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
+  trackEvent({ organizationId, userId: session.user.id, evento: 'crear_cliente' })
   return Response.json(cliente, { status: 201 })
 }

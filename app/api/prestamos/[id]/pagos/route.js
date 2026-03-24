@@ -14,6 +14,7 @@ import {
 import { registrarMovimientoCapital } from '@/lib/capital'
 import { logActividad } from '@/lib/activity-log'
 import { enviarPushOrg } from '@/lib/push'
+import { trackEvent } from '@/lib/analytics'
 
 // ─── POST /api/prestamos/[id]/pagos ─────────────────────────────
 export async function POST(request, { params }) {
@@ -212,6 +213,7 @@ export async function POST(request, { params }) {
 
   const tipoLabel = { completo: 'completo', parcial: 'parcial', capital: 'abono capital', recargo: 'recargo', descuento: 'descuento' }
   logActividad({ session, accion: 'registrar_pago', entidadTipo: 'pago', entidadId: prestamoId, detalle: `Pago ${tipoLabel[tipo] || tipo} $${montoFinal.toLocaleString('es-CO')}`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
+  trackEvent({ organizationId, userId, evento: 'registrar_pago', metadata: { tipo, monto: montoFinal } })
 
   // Push notification: notificar al owner cuando un cobrador registra pago
   if (rol === 'cobrador') {

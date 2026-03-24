@@ -46,6 +46,12 @@ export default function GlobalSearch() {
         const data = await res.json()
         setResults(data)
         setSelected(0)
+        // Track search event
+        fetch('/api/analytics/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ evento: 'busqueda_global' }),
+        }).catch(() => {})
       }
     } catch {}
     setLoading(false)

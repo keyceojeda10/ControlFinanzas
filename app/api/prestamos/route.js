@@ -12,6 +12,7 @@ import {
 } from '@/lib/calculos'
 import { registrarMovimientoCapital } from '@/lib/capital'
 import { logActividad } from '@/lib/activity-log'
+import { trackEvent } from '@/lib/analytics'
 
 // ─── GET /api/prestamos ─────────────────────────────────────────
 export async function GET(request) {
@@ -25,6 +26,8 @@ export async function GET(request) {
   const clienteId = searchParams.get('clienteId')
   const estado    = searchParams.get('estado')
   const buscar    = searchParams.get('buscar')?.trim()
+  const page      = searchParams.get('page') ? Number(searchParams.get('page')) : null
+  const limit     = Math.min(Number(searchParams.get('limit')) || 50, 100)
 
   // Filtro de cliente (cobrador → solo su ruta)
   const filtroCliente = rol === 'cobrador' && rutaId
@@ -55,6 +58,7 @@ export async function GET(request) {
       pagos:   { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
     },
     orderBy: { createdAt: 'desc' },
+    ...(page != null && { take: limit, skip: (page - 1) * limit }),
   })
 
   const resultado = prestamos.map((p) => ({
@@ -77,6 +81,11 @@ export async function GET(request) {
     pagoHoy:          pagoHoy(p),
   }))
 
+  // If paginated, return object with total; otherwise array for backward compat
+  if (page != null) {
+    const total = await prisma.prestamo.count({ where })
+    return Response.json({ prestamos: resultado, total, page, totalPages: Math.ceil(total / limit) })
+  }
   return Response.json(resultado)
 }
 
@@ -171,5 +180,6 @@ export async function POST(request) {
   })
 
   logActividad({ session, accion: 'crear_prestamo', entidadTipo: 'prestamo', entidadId: prestamo.id, detalle: `Préstamo $${Number(montoPrestado).toLocaleString('es-CO')} a ${cliente.nombre}`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
+  trackEvent({ organizationId, userId: session.user.id, evento: 'crear_prestamo', metadata: { monto: Number(montoPrestado) } })
   return Response.json(prestamo, { status: 201 })
 }

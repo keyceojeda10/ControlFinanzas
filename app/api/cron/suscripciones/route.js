@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server'
 import { prisma }       from '@/lib/prisma'
 import { enviarEmail, emailAvisoVencimiento, emailSuscripcionVencida } from '@/lib/email'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
+import { enviarPushOrg } from '@/lib/push'
 
 const CRON_SECRET = process.env.CRON_SECRET
 
@@ -87,6 +88,13 @@ export async function POST(req) {
       const res = await enviarEmail({ to: owner.email, subject, html })
       if (res.ok) resultados.avisos++
       else resultados.errores++
+
+      // Push notification al owner
+      enviarPushOrg(sub.organizationId, {
+        title: 'Tu plan vence pronto',
+        body: `Tu plan ${sub.plan} vence en ${dias} día(s). Renueva para no perder acceso.`,
+        url: '/configuracion/plan',
+      }).catch(() => {})
     }
   }
 
@@ -130,6 +138,13 @@ export async function POST(req) {
     const res = await enviarEmail({ to: owner.email, subject, html })
     if (res.ok) resultados.vencidas++
     else resultados.errores++
+
+    // Push notification de suscripción vencida
+    enviarPushOrg(sub.organizationId, {
+      title: 'Plan vencido',
+      body: `Tu plan ${sub.plan} ha expirado. Renueva ahora para seguir usando la app.`,
+      url: '/configuracion/plan',
+    }).catch(() => {})
   }
 
   return NextResponse.json({

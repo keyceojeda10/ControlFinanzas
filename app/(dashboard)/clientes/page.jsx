@@ -15,6 +15,8 @@ const ESTADOS_CLIENTE = [
   { value: 'cancelado', label: 'Cancelados' },
 ]
 
+const LIMIT = 50
+
 export default function ClientesPage() {
   const { esOwner, puedeCrearClientes, loading: authLoading } = useAuth()
   const [clientes, setClientes]   = useState([])
@@ -22,15 +24,24 @@ export default function ClientesPage() {
   const [estado,   setEstado]     = useState('')
   const [loading,  setLoading]    = useState(true)
   const [error,    setError]      = useState('')
+  const [page,     setPage]       = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [total,    setTotal]      = useState(0)
 
-  const fetchClientes = useCallback(async (q) => {
+  const fetchClientes = useCallback(async (q, p) => {
     setLoading(true)
     setError('')
     try {
-      const url = q ? `/api/clientes?buscar=${encodeURIComponent(q)}` : '/api/clientes'
-      const res = await fetch(url)
+      const params = new URLSearchParams()
+      if (q) params.set('buscar', q)
+      params.set('page', String(p))
+      params.set('limit', String(LIMIT))
+      const res = await fetch(`/api/clientes?${params}`)
       if (!res.ok) throw new Error()
-      setClientes(await res.json())
+      const data = await res.json()
+      setClientes(data.clientes)
+      setTotal(data.total)
+      setTotalPages(data.totalPages)
     } catch {
       setError('No se pudieron cargar los clientes.')
     } finally {
@@ -39,13 +50,19 @@ export default function ClientesPage() {
   }, [])
 
   // Carga inicial
-  useEffect(() => { fetchClientes('') }, [fetchClientes])
+  useEffect(() => { fetchClientes('', 1) }, [fetchClientes])
 
-  // Búsqueda en tiempo real con debounce
+  // Búsqueda en tiempo real con debounce — reset to page 1
   useEffect(() => {
-    const t = setTimeout(() => fetchClientes(buscar), 300)
+    setPage(1)
+    const t = setTimeout(() => fetchClientes(buscar, 1), 300)
     return () => clearTimeout(t)
   }, [buscar, fetchClientes])
+
+  // Cambio de página
+  useEffect(() => {
+    if (page > 1) fetchClientes(buscar, page)
+  }, [page]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -54,7 +71,7 @@ export default function ClientesPage() {
         <div>
           <h1 className="text-xl font-bold text-[white]">Clientes</h1>
           <p className="text-sm text-[#888888] mt-0.5">
-            {loading ? '...' : `${clientes.length} cliente${clientes.length !== 1 ? 's' : ''}`}
+            {loading ? '...' : `${total} cliente${total !== 1 ? 's' : ''}`}
             {!loading && clientes.filter((c) => c.estado === 'mora').length > 0 && (
               <span className="ml-2 text-[#ef4444]">· {clientes.filter((c) => c.estado === 'mora').length} en mora</span>
             )}
@@ -185,6 +202,29 @@ export default function ClientesPage() {
               )}
             </>
           )}
+        </div>
+      )}
+
+      {/* Paginación */}
+      {!loading && totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-6">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page <= 1}
+            className="px-3 py-1.5 text-xs rounded-lg border border-[#2a2a2a] text-[#888] hover:bg-[#222] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            Anterior
+          </button>
+          <span className="text-xs text-[#888]">
+            Página {page} de {totalPages}
+          </span>
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page >= totalPages}
+            className="px-3 py-1.5 text-xs rounded-lg border border-[#2a2a2a] text-[#888] hover:bg-[#222] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            Siguiente
+          </button>
         </div>
       )}
     </div>
