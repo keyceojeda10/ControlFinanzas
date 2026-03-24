@@ -93,7 +93,7 @@ export default function RegistrarPago({
   }
 
   const handleAbonoDias = (dias) => {
-    const montoAbono = cuotaDiaria * dias
+    const montoAbono = Math.round(cuotaDiaria * dias)
     setMonto(String(montoAbono))
     setDiasAbonados(dias)
     setError('')

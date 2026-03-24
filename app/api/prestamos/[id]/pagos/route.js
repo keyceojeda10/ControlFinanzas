@@ -51,7 +51,7 @@ export async function POST(request, { params }) {
   let montoFinal = Number(montoPagado)
 
   if (diasAbonados && Number(diasAbonados) > 0) {
-    montoFinal = prestamo.cuotaDiaria * Number(diasAbonados)
+    montoFinal = Math.round(prestamo.cuotaDiaria * Number(diasAbonados))
   }
 
   if (!montoFinal || montoFinal <= 0) {
