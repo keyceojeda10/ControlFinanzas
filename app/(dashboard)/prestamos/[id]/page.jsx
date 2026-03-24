@@ -50,6 +50,7 @@ export default function PrestamoDetallePage({ params }) {
   const [cancelando,   setCancelando]   = useState(false)
   const [confirmCancel, setConfirmCancel] = useState(false)
   const [anulando,     setAnulando]     = useState(null)   // pagoId que se está anulando
+  const [comprobante,  setComprobante]  = useState(null)   // pagoId del comprobante expandido
   const [rutaNav,      setRutaNav]     = useState(null)
   const [modalRecargo,  setModalRecargo]  = useState(false)
   const [modalDescuento, setModalDescuento] = useState(false)
@@ -417,61 +418,104 @@ export default function PrestamoDetallePage({ params }) {
           <div className="space-y-2.5">
             {pagos.map((pago) => {
               const tipoBadge = tipoPagoBadge[pago.tipo] ?? tipoPagoBadge.parcial
+              const esAjuste = ['recargo', 'descuento'].includes(pago.tipo)
+              const comprobanteAbierto = comprobante === pago.id
               return (
-                <div
-                  key={pago.id}
-                  className="flex items-center gap-3 py-2.5 border-b border-[#2a2a2a] last:border-0"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold" style={{
-                      color: pago.tipo === 'recargo' ? '#f97316' : pago.tipo === 'descuento' ? '#22c55e' : 'white'
-                    }}>
-                      {pago.tipo === 'recargo' ? '+' : pago.tipo === 'descuento' ? '−' : ''}{formatCOP(pago.montoPagado)}
-                    </p>
-                    <p className="text-[10px] text-[#888888] mt-0.5">
-                      {fmtFecha(pago.fechaPago)}
-                      {pago.cobrador && ` · ${pago.cobrador.nombre}`}
-                    </p>
-                    {pago.nota && (
-                      <p className="text-[10px] mt-0.5" style={{
-                        color: ['recargo', 'descuento'].includes(pago.tipo) ? '#aaaaaa' : '#888888'
+                <div key={pago.id} className="border-b border-[#2a2a2a] last:border-0">
+                  <div className="flex items-center gap-3 py-2.5">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold" style={{
+                        color: pago.tipo === 'recargo' ? '#f97316' : pago.tipo === 'descuento' ? '#22c55e' : 'white'
                       }}>
-                        {pago.nota}
+                        {pago.tipo === 'recargo' ? '+' : pago.tipo === 'descuento' ? '−' : ''}{formatCOP(pago.montoPagado)}
                       </p>
+                      <p className="text-[10px] text-[#888888] mt-0.5">
+                        {fmtFecha(pago.fechaPago)}
+                        {pago.cobrador && ` · ${pago.cobrador.nombre}`}
+                      </p>
+                      {pago.nota && (
+                        <p className="text-[10px] mt-0.5" style={{
+                          color: esAjuste ? '#aaaaaa' : '#888888'
+                        }}>
+                          {pago.nota}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex flex-col items-end gap-0.5">
+                      <Badge variant={tipoBadge.variant}>{tipoBadge.label}</Badge>
+                      {pago.tipo === 'capital' && tasaInteres > 0 && (
+                        <span className="text-[10px] text-[#a855f7]">
+                          -{formatCOP(Math.round(pago.montoPagado * tasaInteres / 100))} int.
+                        </span>
+                      )}
+                    </div>
+                    {/* Botón comprobante */}
+                    {!esAjuste && (
+                      <button
+                        onClick={() => setComprobante(comprobanteAbierto ? null : pago.id)}
+                        className={[
+                          'shrink-0 p-1.5 rounded-lg transition-colors',
+                          comprobanteAbierto
+                            ? 'text-[#f5c518] bg-[rgba(245,197,24,0.1)]'
+                            : 'text-[#888888] hover:text-[#f5c518] hover:bg-[rgba(245,197,24,0.08)]',
+                        ].join(' ')}
+                        title="Enviar comprobante"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        </svg>
+                      </button>
+                    )}
+                    {session?.user?.rol === 'owner' && (
+                      <button
+                        onClick={async () => {
+                          if (anulando) return
+                          if (!confirm(`¿Anular pago de ${formatCOP(pago.montoPagado)}?`)) return
+                          setAnulando(pago.id)
+                          try {
+                            const res = await fetch(`/api/pagos/${pago.id}`, { method: 'DELETE' })
+                            if (!res.ok) throw new Error()
+                            await fetchPrestamo()
+                          } catch {
+                            setError('No se pudo anular el pago.')
+                          } finally {
+                            setAnulando(null)
+                          }
+                        }}
+                        disabled={anulando === pago.id}
+                        className="shrink-0 p-1.5 rounded-lg text-[#888888] hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] transition-colors disabled:opacity-50"
+                        title="Anular pago"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
                     )}
                   </div>
-                  <div className="flex flex-col items-end gap-0.5">
-                    <Badge variant={tipoBadge.variant}>{tipoBadge.label}</Badge>
-                    {pago.tipo === 'capital' && tasaInteres > 0 && (
-                      <span className="text-[10px] text-[#a855f7]">
-                        -{formatCOP(Math.round(pago.montoPagado * tasaInteres / 100))} int.
-                      </span>
-                    )}
-                  </div>
-                  {session?.user?.rol === 'owner' && (
-                    <button
-                      onClick={async () => {
-                        if (anulando) return
-                        if (!confirm(`¿Anular pago de ${formatCOP(pago.montoPagado)}?`)) return
-                        setAnulando(pago.id)
-                        try {
-                          const res = await fetch(`/api/pagos/${pago.id}`, { method: 'DELETE' })
-                          if (!res.ok) throw new Error()
-                          await fetchPrestamo()
-                        } catch {
-                          setError('No se pudo anular el pago.')
-                        } finally {
-                          setAnulando(null)
-                        }
-                      }}
-                      disabled={anulando === pago.id}
-                      className="shrink-0 p-1.5 rounded-lg text-[#888888] hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] transition-colors disabled:opacity-50"
-                      title="Anular pago"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
+                  {/* Panel de comprobante expandible */}
+                  {comprobanteAbierto && (
+                    <div className="pb-3 pl-1 flex flex-col gap-2">
+                      {cliente?.telefono && (
+                        <BotonWhatsApp
+                          tipo="pago"
+                          cliente={cliente}
+                          prestamo={prestamo}
+                          pago={{ montoPagado: pago.montoPagado, fechaPago: pago.fechaPago }}
+                        />
+                      )}
+                      <div className="flex gap-2">
+                        <BotonCompartir
+                          cliente={cliente}
+                          prestamo={prestamo}
+                          pago={{ montoPagado: pago.montoPagado, fechaPago: pago.fechaPago }}
+                        />
+                        <BotonImprimirRecibo
+                          cliente={cliente}
+                          prestamo={prestamo}
+                          pago={{ montoPagado: pago.montoPagado, fechaPago: pago.fechaPago }}
+                        />
+                      </div>
+                    </div>
                   )}
                 </div>
               )
