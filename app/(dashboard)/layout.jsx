@@ -8,6 +8,7 @@ import SinRutaBanner  from '@/components/layout/SinRutaBanner'
 import GlobalSearch        from '@/components/layout/GlobalSearch'
 import NotificationPrompt from '@/components/NotificationPrompt'
 import Analytics          from '@/components/Analytics'
+import { InstallBanner } from '@/components/layout/InstallButton'
 
 export default function DashboardLayout({ children }) {
   return (
@@ -37,6 +38,9 @@ export default function DashboardLayout({ children }) {
 
       {/* Prompt para activar notificaciones push */}
       <NotificationPrompt />
+
+      {/* Banner instalar app (una vez por sesion) */}
+      <InstallBanner />
 
       {/* Analytics: page view tracking */}
       <Analytics />

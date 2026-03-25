@@ -405,8 +405,7 @@ export function InstallBanner() {
 
   useEffect(() => {
     if (isStandalone()) return
-    const dismissedAt = localStorage.getItem('cf-install-banner-dismissed')
-    if (dismissedAt && Date.now() - parseInt(dismissedAt) < 7 * 24 * 60 * 60 * 1000) return
+    if (sessionStorage.getItem('cf-install-banner-dismissed')) return
 
     const handler = (e) => { e.preventDefault(); setDeferredPrompt(e) }
     window.addEventListener('beforeinstallprompt', handler)
@@ -428,7 +427,7 @@ export function InstallBanner() {
 
   const handleDismiss = () => {
     setAnimateIn(false)
-    setTimeout(() => { setShowBanner(false); localStorage.setItem('cf-install-banner-dismissed', Date.now().toString()) }, 300)
+    setTimeout(() => { setShowBanner(false); sessionStorage.setItem('cf-install-banner-dismissed', '1') }, 300)
   }
 
   if (!showBanner) return null

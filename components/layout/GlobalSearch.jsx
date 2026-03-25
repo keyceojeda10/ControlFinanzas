@@ -46,7 +46,6 @@ export default function GlobalSearch() {
         const data = await res.json()
         setResults(data)
         setSelected(0)
-        // Track search event
         fetch('/api/analytics/track', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -105,16 +104,23 @@ export default function GlobalSearch() {
 
   if (!open) return null
 
+  const SECTIONS = [
+    { key: 'clientes', label: 'Clientes', color: '#f5c518', icon: 'M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0' },
+    { key: 'prestamos', label: 'Préstamos', color: '#22c55e', icon: 'M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33' },
+    { key: 'rutas', label: 'Rutas', color: '#a855f7', icon: 'M9 6.75V15m0-8.25a1.5 1.5 0 0 1 3 0V15m-3 0a1.5 1.5 0 0 0 3 0m3-8.25V15m0-8.25a1.5 1.5 0 0 1 3 0V15m-3 0a1.5 1.5 0 0 0 3 0' },
+  ]
+
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] sm:pt-[15vh]">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setOpen(false)} />
 
       {/* Modal */}
-      <div className="relative w-full max-w-lg mx-4 bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-lg mx-3 sm:mx-4 bg-[#111111] border border-[#2a2a2a] rounded-[16px] shadow-2xl overflow-hidden"
+        style={{ boxShadow: '0 0 40px rgba(245,197,24,0.06), 0 8px 32px rgba(0,0,0,0.5)' }}>
         {/* Input */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-[#2a2a2a]">
-          <svg className="w-5 h-5 text-[#666] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[#2a2a2a]">
+          <svg className="w-5 h-5 text-[#f5c518] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
           </svg>
           <input
@@ -123,130 +129,111 @@ export default function GlobalSearch() {
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             placeholder="Buscar clientes, préstamos, rutas..."
-            className="flex-1 bg-transparent text-sm text-white placeholder-[#666] outline-none"
+            className="flex-1 bg-transparent text-sm text-white placeholder-[#555] outline-none"
           />
-          <kbd className="hidden sm:inline text-[10px] text-[#555] bg-[#111] border border-[#333] px-1.5 py-0.5 rounded">ESC</kbd>
+          {query && (
+            <button onClick={() => { setQuery(''); setResults(null) }} className="text-[#555] hover:text-white p-0.5">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+          <kbd className="hidden sm:inline text-[10px] text-[#555] bg-[#0a0a0a] border border-[#2a2a2a] px-1.5 py-0.5 rounded-md font-mono">ESC</kbd>
         </div>
 
         {/* Results */}
-        <div className="max-h-80 overflow-y-auto">
+        <div className="max-h-[60vh] sm:max-h-80 overflow-y-auto">
           {loading && (
             <div className="flex justify-center py-8">
-              <div className="w-5 h-5 border-2 border-[#333] border-t-[#f5c518] rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-[#2a2a2a] border-t-[#f5c518] rounded-full animate-spin" />
             </div>
           )}
 
           {!loading && results && allItems.length === 0 && (
             <div className="py-8 text-center">
-              <p className="text-sm text-[#666]">No se encontraron resultados</p>
+              <svg className="w-8 h-8 mx-auto text-[#333] mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+              </svg>
+              <p className="text-sm text-[#555]">Sin resultados para "{query}"</p>
             </div>
           )}
 
           {!loading && allItems.length > 0 && (
-            <div className="py-2">
-              {/* Clientes */}
-              {results.clientes?.length > 0 && (
-                <>
-                  <p className="px-4 py-1.5 text-[10px] font-semibold text-[#555] uppercase tracking-wider">Clientes</p>
-                  {results.clientes.map((c, i) => {
-                    const idx = allItems.findIndex((x) => x.type === 'cliente' && x.id === c.id)
-                    return (
-                      <button
-                        key={c.id}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${idx === selected ? 'bg-[#f5c518]/10' : 'hover:bg-[#222]'}`}
-                        onClick={() => navigate(`/clientes`)}
-                        onMouseEnter={() => setSelected(idx)}
-                      >
-                        <div className="w-7 h-7 rounded-full bg-[#3b82f6]/15 flex items-center justify-center shrink-0">
-                          <svg className="w-3.5 h-3.5 text-[#3b82f6]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0" />
-                          </svg>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-white truncate">{c.nombre}</p>
-                          <p className="text-[10px] text-[#666]">{c.cedula} {c.telefono ? `\u2022 ${c.telefono}` : ''}</p>
-                        </div>
-                      </button>
-                    )
-                  })}
-                </>
-              )}
-
-              {/* Préstamos */}
-              {results.prestamos?.length > 0 && (
-                <>
-                  <p className="px-4 py-1.5 text-[10px] font-semibold text-[#555] uppercase tracking-wider mt-1">Pr\u00e9stamos</p>
-                  {results.prestamos.map((p) => {
-                    const idx = allItems.findIndex((x) => x.type === 'prestamo' && x.id === p.id)
-                    return (
-                      <button
-                        key={p.id}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${idx === selected ? 'bg-[#f5c518]/10' : 'hover:bg-[#222]'}`}
-                        onClick={() => navigate(`/prestamos/${p.id}`)}
-                        onMouseEnter={() => setSelected(idx)}
-                      >
-                        <div className="w-7 h-7 rounded-full bg-[#22c55e]/15 flex items-center justify-center shrink-0">
-                          <svg className="w-3.5 h-3.5 text-[#22c55e]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33" />
-                          </svg>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-white truncate">{p.clienteNombre}</p>
-                          <p className="text-[10px] text-[#666] font-mono">${Math.round(p.saldoPendiente).toLocaleString('es-CO')} pendiente</p>
-                        </div>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${p.estado === 'activo' ? 'bg-[#22c55e]/10 text-[#22c55e]' : 'bg-[#666]/10 text-[#666]'}`}>
-                          {p.estado}
-                        </span>
-                      </button>
-                    )
-                  })}
-                </>
-              )}
-
-              {/* Rutas */}
-              {results.rutas?.length > 0 && (
-                <>
-                  <p className="px-4 py-1.5 text-[10px] font-semibold text-[#555] uppercase tracking-wider mt-1">Rutas</p>
-                  {results.rutas.map((r) => {
-                    const idx = allItems.findIndex((x) => x.type === 'ruta' && x.id === r.id)
-                    return (
-                      <button
-                        key={r.id}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${idx === selected ? 'bg-[#f5c518]/10' : 'hover:bg-[#222]'}`}
-                        onClick={() => navigate(`/rutas/${r.id}`)}
-                        onMouseEnter={() => setSelected(idx)}
-                      >
-                        <div className="w-7 h-7 rounded-full bg-[#8b5cf6]/15 flex items-center justify-center shrink-0">
-                          <svg className="w-3.5 h-3.5 text-[#8b5cf6]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m0-8.25a1.5 1.5 0 0 1 3 0V15m-3 0a1.5 1.5 0 0 0 3 0m3-8.25V15m0-8.25a1.5 1.5 0 0 1 3 0V15m-3 0a1.5 1.5 0 0 0 3 0" />
-                          </svg>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-white truncate">{r.nombre}</p>
-                          <p className="text-[10px] text-[#666]">{r._count?.clientes || 0} clientes</p>
-                        </div>
-                      </button>
-                    )
-                  })}
-                </>
-              )}
+            <div className="py-1.5">
+              {SECTIONS.map(({ key, label, color, icon }) => {
+                const items = key === 'clientes' ? results.clientes
+                  : key === 'prestamos' ? results.prestamos
+                  : results.rutas
+                if (!items?.length) return null
+                return (
+                  <div key={key}>
+                    <div className="flex items-center gap-2 px-4 py-2 mt-1">
+                      <div className="w-1 h-3 rounded-full" style={{ background: color }} />
+                      <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#666' }}>{label}</p>
+                    </div>
+                    {items.map((item) => {
+                      const itemId = item.id
+                      const idx = allItems.findIndex((x) => x.type === key.replace('s', '').replace('prestamo', 'prestamo') && x.id === itemId)
+                        || allItems.findIndex((x) => x.id === itemId)
+                      const isCliente = key === 'clientes'
+                      const isPrestamo = key === 'prestamos'
+                      const href = isCliente ? '/clientes' : isPrestamo ? `/prestamos/${item.id}` : `/rutas/${item.id}`
+                      return (
+                        <button
+                          key={item.id}
+                          className={[
+                            'w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all rounded-lg mx-0',
+                            idx === selected ? 'bg-[rgba(245,197,24,0.08)]' : 'hover:bg-[#1a1a1a]',
+                          ].join(' ')}
+                          onClick={() => navigate(href)}
+                          onMouseEnter={() => setSelected(idx)}
+                        >
+                          <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: `${color}15` }}>
+                            <svg className="w-4 h-4" style={{ color }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d={icon} />
+                            </svg>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-white truncate">{isCliente ? item.nombre : isPrestamo ? item.clienteNombre : item.nombre}</p>
+                            <p className="text-[10px] text-[#555]">
+                              {isCliente && <>{item.cedula}{item.telefono ? ` \u00B7 ${item.telefono}` : ''}</>}
+                              {isPrestamo && <span className="font-mono-display">${Math.round(item.saldoPendiente).toLocaleString('es-CO')} pendiente</span>}
+                              {key === 'rutas' && <>{item._count?.clientes || 0} clientes</>}
+                            </p>
+                          </div>
+                          {isPrestamo && (
+                            <span className={[
+                              'text-[10px] px-2 py-0.5 rounded-full font-medium',
+                              item.estado === 'activo' ? 'bg-[rgba(34,197,94,0.1)] text-[#22c55e]' : 'bg-[rgba(85,85,85,0.1)] text-[#666]',
+                            ].join(' ')}>
+                              {item.estado}
+                            </span>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )
+              })}
             </div>
           )}
 
           {/* Empty state */}
           {!loading && !results && (
-            <div className="py-8 text-center">
-              <p className="text-xs text-[#555]">Escribe para buscar clientes, préstamos o rutas</p>
-              <p className="text-[10px] text-[#444] mt-1 hidden sm:block">Ctrl+K para abrir en cualquier momento</p>
+            <div className="py-10 text-center">
+              <svg className="w-10 h-10 mx-auto text-[#2a2a2a] mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+              </svg>
+              <p className="text-xs text-[#555]">Busca clientes, préstamos o rutas</p>
             </div>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="hidden sm:flex items-center justify-between px-4 py-2 border-t border-[#2a2a2a] text-[10px] text-[#444]">
+        {/* Footer — solo desktop */}
+        <div className="hidden sm:flex items-center justify-between px-4 py-2 border-t border-[#1a1a1a] text-[10px] text-[#444]">
           <div className="flex items-center gap-3">
-            <span><kbd className="bg-[#111] border border-[#333] px-1 py-0.5 rounded">&uarr;</kbd> <kbd className="bg-[#111] border border-[#333] px-1 py-0.5 rounded">&darr;</kbd> navegar</span>
-            <span><kbd className="bg-[#111] border border-[#333] px-1 py-0.5 rounded">Enter</kbd> seleccionar</span>
+            <span><kbd className="bg-[#0a0a0a] border border-[#2a2a2a] px-1 py-0.5 rounded-md font-mono">&uarr;</kbd> <kbd className="bg-[#0a0a0a] border border-[#2a2a2a] px-1 py-0.5 rounded-md font-mono">&darr;</kbd> navegar</span>
+            <span><kbd className="bg-[#0a0a0a] border border-[#2a2a2a] px-1 py-0.5 rounded-md font-mono">Enter</kbd> seleccionar</span>
           </div>
         </div>
       </div>
