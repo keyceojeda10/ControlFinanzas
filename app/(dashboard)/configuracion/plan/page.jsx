@@ -55,6 +55,13 @@ const BeakerIcon = () => (
   </svg>
 )
 
+const Spinner = () => (
+  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+  </svg>
+)
+
 const planTest = {
   key: 'test',
   nombre: 'Test ($1.500)',
@@ -72,10 +79,11 @@ export default function PlanPage() {
   const { session, loading: authLoading } = useAuth()
   const esSuperadmin = session?.user?.rol === 'superadmin'
 
-  const [estado,     setEstado]     = useState(null)
-  const [cargando,   setCargando]   = useState('')
-  const [loadEstado, setLoadEstado] = useState(true)
-  const [periodo,    setPeriodo]    = useState('mensual')
+  const [estado,       setEstado]       = useState(null)
+  const [cargando,     setCargando]     = useState('')
+  const [loadEstado,   setLoadEstado]   = useState(true)
+  const [periodo,      setPeriodo]      = useState('mensual')
+  const [modoPago,     setModoPago]     = useState('suscripcion') // 'suscripcion' | 'pago_unico'
   const [descuentoOrg, setDescuentoOrg] = useState(0)
 
   useEffect(() => {
@@ -94,26 +102,27 @@ export default function PlanPage() {
     if (!authLoading) load()
   }, [authLoading])
 
-  // Plan actual desde la API (DB real), no del JWT
   const planActual = estado?.plan ?? session?.user?.plan ?? 'basic'
-  const todosPlanes = [planTest, ...planes]
+  const tieneRecurrente = estado?.tieneRecurrenteActiva
+  const subCancelada = !!estado?.canceladaAt && estado?.tipo === 'recurrente'
 
   const calcularPrecio = (precioBase) => {
     const meses = periodo === 'anual' ? 12 : periodo === 'trimestral' ? 3 : 1
-    const mesesCobrados = periodo === 'anual' ? 10 : meses // Anual: paga 10, recibe 12
+    const mesesCobrados = periodo === 'anual' ? 10 : meses
     const descuentoPeriodo = periodo === 'anual' ? 17 : periodo === 'trimestral' ? 10 : 0
     const descuentoFinal = Math.max(descuentoOrg, descuentoPeriodo)
     const total = precioBase * meses
     const conDescuento = periodo === 'anual'
-      ? precioBase * mesesCobrados // Anual: precio x 10 meses (sin descuento adicional)
+      ? precioBase * mesesCobrados
       : Math.round(total * (1 - descuentoFinal / 100))
     const ahorro = total - conDescuento
     return { total, conDescuento, descuentoFinal, meses, ahorro }
   }
 
+  // Pago único (flujo existente)
   const elegirPlan = async (plan) => {
     if (plan === planActual && periodo === 'mensual') return
-    setCargando(plan)
+    setCargando(plan + '-unico')
     try {
       const res = await fetch('/api/pagos/crear-preferencia', {
         method: 'POST',
@@ -133,6 +142,51 @@ export default function PlanPage() {
     }
   }
 
+  // Suscripción recurrente
+  const crearSuscripcion = async (plan) => {
+    setCargando(plan + '-sub')
+    try {
+      const res = await fetch('/api/pagos/crear-suscripcion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan, periodo }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        alert(data.error ?? 'Error al crear la suscripción')
+        return
+      }
+      window.location.href = data.initPoint
+    } catch {
+      alert('Error de conexión')
+    } finally {
+      setCargando('')
+    }
+  }
+
+  // Cancelar suscripción
+  const cancelarSuscripcion = async () => {
+    if (!confirm('Se cancelarán los cobros automáticos. Mantendrás acceso hasta la fecha de vencimiento.')) return
+    setCargando('cancelando')
+    try {
+      const res = await fetch('/api/pagos/cancelar-suscripcion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+      if (res.ok) {
+        window.location.reload()
+      } else {
+        const data = await res.json()
+        alert(data.error ?? 'Error al cancelar')
+      }
+    } catch {
+      alert('Error de conexión')
+    } finally {
+      setCargando('')
+    }
+  }
+
   if (authLoading || loadEstado) {
     return (
       <div className="max-w-3xl mx-auto space-y-4">
@@ -141,57 +195,116 @@ export default function PlanPage() {
     )
   }
 
+  const formatFecha = (fecha) => {
+    if (!fecha) return ''
+    return new Date(fecha).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })
+  }
+
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="text-center">
         <h1 className="text-xl font-bold text-white">Elige tu plan</h1>
         <p className="text-sm text-[#555555] mt-1">
           {estado?.estado === 'activa'
-            ? `Tu plan actual: ${todosPlanes.find(p => p.key === planActual)?.nombre || planActual}. Cambia cuando quieras.`
+            ? `Tu plan actual: ${[planTest, ...planes].find(p => p.key === planActual)?.nombre || planActual}. Cambia cuando quieras.`
             : 'Selecciona el plan que mejor se adapte a tu negocio.'}
         </p>
         {estado?.diasRestantes != null && estado.estado === 'activa' && (
           <p className="text-xs text-[#22c55e] mt-1">
             {estado.diasRestantes} días restantes en tu suscripción
+            {tieneRecurrente && ' (renovación automática)'}
+            {subCancelada && ' (cancelada, no se renovará)'}
+          </p>
+        )}
+        {tieneRecurrente && estado?.proximoCobroAt && !subCancelada && (
+          <p className="text-[10px] text-[#888888] mt-0.5">
+            Próximo cobro: {formatFecha(estado.proximoCobroAt)}
           </p>
         )}
       </div>
 
-      {/* Toggle Mensual / Trimestral / Anual */}
+      {/* Toggle Suscripción / Pago único */}
       <div className="flex justify-center">
         <div className="inline-flex bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] p-1">
-          {[
-            { key: 'mensual',    label: 'Mensual',    badge: null },
-            { key: 'trimestral', label: 'Trimestral', badge: '-10%' },
-            { key: 'anual',      label: 'Anual',      badge: '2 meses gratis' },
-          ].map((p) => (
-            <button
-              key={p.key}
-              onClick={() => setPeriodo(p.key)}
-              className={[
-                'px-3 sm:px-4 py-2 rounded-[10px] text-sm font-medium transition-all flex items-center gap-1.5',
-                periodo === p.key
-                  ? 'bg-[#f5c518] text-[#0a0a0a]'
-                  : 'text-[#888888] hover:text-white',
-              ].join(' ')}
-            >
-              {p.label}
-              {p.badge && (
-                <span className={[
-                  'text-[10px] font-bold px-1.5 py-0.5 rounded-full font-mono-display',
-                  periodo === p.key
-                    ? 'bg-[#0a0a0a] text-[#f5c518]'
-                    : 'bg-[#22c55e] text-white',
-                ].join(' ')}>
-                  {p.badge}
-                </span>
-              )}
-            </button>
-          ))}
+          <button
+            onClick={() => setModoPago('suscripcion')}
+            className={[
+              'px-4 py-2 rounded-[10px] text-sm font-medium transition-all flex items-center gap-1.5',
+              modoPago === 'suscripcion'
+                ? 'bg-[#f5c518] text-[#0a0a0a]'
+                : 'text-[#888888] hover:text-white',
+            ].join(' ')}
+          >
+            Suscripción
+            <span className={[
+              'text-[10px] font-bold px-1.5 py-0.5 rounded-full',
+              modoPago === 'suscripcion'
+                ? 'bg-[#0a0a0a] text-[#f5c518]'
+                : 'bg-[#22c55e] text-white',
+            ].join(' ')}>
+              Recomendado
+            </span>
+          </button>
+          <button
+            onClick={() => setModoPago('pago_unico')}
+            className={[
+              'px-4 py-2 rounded-[10px] text-sm font-medium transition-all',
+              modoPago === 'pago_unico'
+                ? 'bg-[#f5c518] text-[#0a0a0a]'
+                : 'text-[#888888] hover:text-white',
+            ].join(' ')}
+          >
+            Pago único
+          </button>
         </div>
       </div>
 
-      {descuentoOrg > 0 && (
+      {/* Periodo toggle — solo para pago único */}
+      {modoPago === 'pago_unico' && (
+        <div className="flex justify-center">
+          <div className="inline-flex bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] p-1">
+            {[
+              { key: 'mensual',    label: 'Mensual',    badge: null },
+              { key: 'trimestral', label: 'Trimestral', badge: '-10%' },
+              { key: 'anual',      label: 'Anual',      badge: '2 meses gratis' },
+            ].map((p) => (
+              <button
+                key={p.key}
+                onClick={() => setPeriodo(p.key)}
+                className={[
+                  'px-3 sm:px-4 py-2 rounded-[10px] text-sm font-medium transition-all flex items-center gap-1.5',
+                  periodo === p.key
+                    ? 'bg-[#f5c518] text-[#0a0a0a]'
+                    : 'text-[#888888] hover:text-white',
+                ].join(' ')}
+              >
+                {p.label}
+                {p.badge && (
+                  <span className={[
+                    'text-[10px] font-bold px-1.5 py-0.5 rounded-full font-mono-display',
+                    periodo === p.key
+                      ? 'bg-[#0a0a0a] text-[#f5c518]'
+                      : 'bg-[#22c55e] text-white',
+                  ].join(' ')}>
+                    {p.badge}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Info suscripción */}
+      {modoPago === 'suscripcion' && (
+        <div className="text-center">
+          <p className="text-xs text-[#888888]">
+            Se cobra automáticamente cada mes. Puedes cancelar en cualquier momento.
+          </p>
+        </div>
+      )}
+
+      {descuentoOrg > 0 && modoPago === 'pago_unico' && (
         <div className="text-center">
           <Badge variant="green">Descuento especial: {descuentoOrg}%</Badge>
         </div>
@@ -205,20 +318,27 @@ export default function PlanPage() {
 
       <div className={`grid grid-cols-1 gap-4 ${esSuperadmin ? 'sm:grid-cols-4' : 'sm:grid-cols-3'}`}>
         {(esSuperadmin ? [planTest, ...planes] : planes).map((p) => {
-          const esPlanActual = p.key === planActual && periodo === 'mensual'
+          const esPlanActual = p.key === planActual
           const esPopular    = p.badge === 'Más popular'
           const esTest       = p.key === 'test'
-          const { total, conDescuento, descuentoFinal, meses, ahorro } = calcularPrecio(p.precio)
-          const tieneDescuento = descuentoFinal > 0
+          const esRecurrenteActiva = tieneRecurrente && esPlanActual && !subCancelada
 
-          const glowColor = esPopular ? '#22c55e' : esPlanActual ? '#f5c518' : esTest ? '#06b6d4' : null
+          // Para suscripción: precio mensual del plan
+          // Para pago único: precio con descuento según periodo
+          const esSub = modoPago === 'suscripcion'
+          const { total, conDescuento, descuentoFinal, meses, ahorro } = calcularPrecio(p.precio)
+          const tieneDescuento = !esSub && descuentoFinal > 0
+
+          const glowColor = esRecurrenteActiva ? '#22c55e' : esPopular ? '#22c55e' : esPlanActual ? '#f5c518' : esTest ? '#06b6d4' : null
 
           return (
             <div
               key={p.key}
               className={[
                 'relative border rounded-[16px] p-5 flex flex-col transition-all',
-                esPopular
+                esRecurrenteActiva
+                  ? 'border-[#22c55e] ring-1 ring-[rgba(34,197,94,0.3)]'
+                  : esPopular
                   ? 'border-[#f5c518] ring-1 ring-[rgba(245,197,24,0.3)] mt-3'
                   : esTest
                   ? 'border-dashed border-[#3a3a3a]'
@@ -229,7 +349,12 @@ export default function PlanPage() {
                 boxShadow: `0 0 30px ${glowColor}08, 0 1px 2px rgba(0,0,0,0.3)`,
               } : { background: '#1a1a1a' }}
             >
-              {esPopular && (
+              {esRecurrenteActiva && (
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
+                  <Badge variant="green">Suscripción activa</Badge>
+                </div>
+              )}
+              {!esRecurrenteActiva && esPopular && (
                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
                   <Badge variant="yellow">Más popular</Badge>
                 </div>
@@ -243,7 +368,14 @@ export default function PlanPage() {
                 {esTest && (
                   <p className="text-[10px] text-[#555555] mt-0.5">Solo superadmin · no usar en producción</p>
                 )}
-                {tieneDescuento ? (
+
+                {esSub ? (
+                  // Suscripción: precio mensual simple
+                  <p className="text-2xl font-bold text-white mt-1">
+                    <span className="font-mono-display">{formatCOP(p.precio)}</span>
+                    <span className="text-xs text-[#555555] font-normal">/mes</span>
+                  </p>
+                ) : tieneDescuento ? (
                   <div className="mt-1">
                     <p className="text-sm text-[#555555] line-through font-mono-display">{formatCOP(total)}</p>
                     <p className="text-2xl font-bold text-white">
@@ -260,8 +392,10 @@ export default function PlanPage() {
                   </div>
                 ) : (
                   <p className="text-2xl font-bold text-white mt-1">
-                    <span className="font-mono-display">{formatCOP(p.precio)}</span>
-                    <span className="text-xs text-[#555555] font-normal">/mes</span>
+                    <span className="font-mono-display">{formatCOP(esSub ? p.precio : conDescuento)}</span>
+                    <span className="text-xs text-[#555555] font-normal">
+                      /{esSub ? 'mes' : meses === 12 ? 'año' : meses === 3 ? '3 meses' : 'mes'}
+                    </span>
                   </p>
                 )}
               </div>
@@ -277,26 +411,73 @@ export default function PlanPage() {
                 ))}
               </ul>
 
-              <button
-                onClick={() => elegirPlan(p.key)}
-                disabled={esPlanActual || !!cargando}
-                className={[
-                  'w-full h-10 rounded-[12px] text-sm font-semibold transition-all flex items-center justify-center gap-2',
-                  esPlanActual
-                    ? 'bg-[#2a2a2a] text-[#555555] cursor-default'
-                    : 'bg-[#f5c518] hover:bg-[#f0b800] text-white cursor-pointer disabled:opacity-60',
-                ].join(' ')}
-              >
-                {cargando === p.key ? (
+              {/* Botones según modo y estado */}
+              <div className="space-y-2">
+                {esRecurrenteActiva ? (
+                  // Suscripción activa en este plan
                   <>
-                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Procesando...
+                    <div className="w-full h-10 rounded-[12px] bg-[#2a2a2a] text-[#22c55e] text-sm font-semibold flex items-center justify-center gap-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Plan actual
+                    </div>
+                    <button
+                      onClick={cancelarSuscripcion}
+                      disabled={!!cargando}
+                      className="w-full h-8 rounded-[10px] text-xs font-medium text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] transition-all cursor-pointer disabled:opacity-60 flex items-center justify-center gap-1"
+                    >
+                      {cargando === 'cancelando' ? <><Spinner /> Cancelando...</> : 'Cancelar suscripción'}
+                    </button>
                   </>
-                ) : esPlanActual ? 'Plan actual' : periodo === 'anual' ? 'Pagar año' : periodo === 'trimestral' ? 'Pagar trimestre' : 'Elegir plan'}
-              </button>
+                ) : subCancelada && esPlanActual ? (
+                  // Suscripción cancelada pero aún activa
+                  <>
+                    <div className="w-full h-10 rounded-[12px] bg-[#2a2a2a] text-[#f59e0b] text-sm font-semibold flex items-center justify-center text-center px-2">
+                      Cancelada — acceso hasta {formatFecha(estado?.fechaVencimiento)}
+                    </div>
+                    <button
+                      onClick={() => esSub ? crearSuscripcion(p.key) : elegirPlan(p.key)}
+                      disabled={!!cargando}
+                      className="w-full h-8 rounded-[10px] text-xs font-medium bg-[#f5c518] hover:bg-[#f0b800] text-[#0a0a0a] transition-all cursor-pointer disabled:opacity-60 flex items-center justify-center gap-1"
+                    >
+                      {cargando ? <><Spinner /> Procesando...</> : 'Renovar'}
+                    </button>
+                  </>
+                ) : esSub && !esTest ? (
+                  // Modo suscripción — botón principal (no disponible para plan test)
+                  <button
+                    onClick={() => crearSuscripcion(p.key)}
+                    disabled={!!cargando}
+                    className={[
+                      'w-full h-10 rounded-[12px] text-sm font-semibold transition-all flex items-center justify-center gap-2',
+                      'bg-[#f5c518] hover:bg-[#f0b800] text-[#0a0a0a] cursor-pointer disabled:opacity-60',
+                    ].join(' ')}
+                  >
+                    {cargando === p.key + '-sub' ? (
+                      <><Spinner /> Procesando...</>
+                    ) : tieneRecurrente ? 'Cambiar a este plan' : 'Suscribirse'}
+                  </button>
+                ) : (
+                  // Modo pago único
+                  <button
+                    onClick={() => elegirPlan(p.key)}
+                    disabled={(esPlanActual && periodo === 'mensual') || !!cargando}
+                    className={[
+                      'w-full h-10 rounded-[12px] text-sm font-semibold transition-all flex items-center justify-center gap-2',
+                      esPlanActual && periodo === 'mensual'
+                        ? 'bg-[#2a2a2a] text-[#555555] cursor-default'
+                        : 'bg-[#f5c518] hover:bg-[#f0b800] text-[#0a0a0a] cursor-pointer disabled:opacity-60',
+                    ].join(' ')}
+                  >
+                    {cargando === p.key + '-unico' ? (
+                      <><Spinner /> Procesando...</>
+                    ) : esPlanActual && periodo === 'mensual'
+                      ? 'Plan actual'
+                      : periodo === 'anual' ? 'Pagar año' : periodo === 'trimestral' ? 'Pagar trimestre' : 'Pagar mes'}
+                  </button>
+                )}
+              </div>
             </div>
           )
         })}

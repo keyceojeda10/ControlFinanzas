@@ -53,6 +53,11 @@ enum EstadoSuscripcion {
   cancelada
 }
 
+enum TipoSuscripcion {
+  pago_unico
+  recurrente
+}
+
 // ─── MODELOS ─────────────────────────────────────────────
 
 model Organization {
@@ -242,11 +247,23 @@ model Suscripcion {
   fechaVencimiento DateTime
   montoCOP         Int
   mercadopagoId    String?
+
+  // Suscripción recurrente (MercadoPago PreApproval)
+  tipo              TipoSuscripcion  @default(pago_unico)
+  preapprovalId     String?          @unique
+  mpStatus          String?          // pending, authorized, paused, cancelled
+  frecuenciaMeses   Int              @default(1)
+  ultimoCobroAt     DateTime?
+  proximoCobroAt    DateTime?
+  canceladaAt       DateTime?
+  motivoCancelacion String?
+
   createdAt        DateTime          @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id])
 
   @@index([organizationId])
+  @@index([tipo, estado])
 }
 
 model GastoMenor {

@@ -1,7 +1,7 @@
 // app/api/pagos/webhook/route.js — Webhook de MercadoPago
 import { NextResponse } from 'next/server'
 import { prisma }       from '@/lib/prisma'
-import { paymentApi }   from '@/lib/mercadopago'
+import { paymentApi, preApprovalApi } from '@/lib/mercadopago'
 import crypto           from 'crypto'
 import { enviarEmail, emailPagoAprobado, emailPagoFallido, emailReferidoExitoso } from '@/lib/email'
 import { webhookLimiter, getClientIp } from '@/lib/rate-limit'
@@ -71,7 +71,192 @@ export async function POST(req) {
 
   const { type, data } = body
 
-  // Solo procesar eventos de pago
+  // ─── Suscripción recurrente: cambio de estado ─────────────
+  if (type === 'subscription_preapproval') {
+    try {
+      const preapproval = await preApprovalApi.get({ id: data.id })
+      const mpStatus = preapproval.status // authorized, paused, cancelled, pending
+
+      const sub = await prisma.suscripcion.findFirst({
+        where: { preapprovalId: String(data.id) },
+      })
+      if (!sub) {
+        console.warn('[webhook] subscription_preapproval sin suscripción local:', data.id)
+        return NextResponse.json({ ok: true })
+      }
+
+      console.log('[webhook] subscription_preapproval id=' + data.id + ' status=' + mpStatus + ' org=' + sub.organizationId)
+
+      await prisma.suscripcion.update({
+        where: { id: sub.id },
+        data: { mpStatus },
+      })
+
+      // Si MP canceló la suscripción (no el usuario)
+      if (mpStatus === 'cancelled' && !sub.canceladaAt) {
+        await prisma.suscripcion.update({
+          where: { id: sub.id },
+          data: { canceladaAt: new Date(), motivoCancelacion: 'Cancelada por MercadoPago' },
+        })
+      }
+
+      // Si fue autorizada (primer pago exitoso), activar la org y extender
+      if (mpStatus === 'authorized' && sub.mpStatus === 'pending') {
+        const ahora = new Date()
+        const nuevaFecha = new Date(ahora)
+        nuevaFecha.setMonth(nuevaFecha.getMonth() + sub.frecuenciaMeses)
+
+        const plan = sanitizarPlan(sub.plan)
+        await prisma.suscripcion.update({
+          where: { id: sub.id },
+          data: {
+            estado:           'activa',
+            fechaInicio:      ahora,
+            fechaVencimiento: nuevaFecha,
+            ultimoCobroAt:    ahora,
+            proximoCobroAt:   nuevaFecha,
+          },
+        })
+        await prisma.organization.update({
+          where: { id: sub.organizationId },
+          data: { plan, activo: true },
+        })
+        console.log('[webhook] suscripción autorizada para org=' + sub.organizationId + ' plan=' + plan)
+
+        // Email de confirmación
+        const owner = await prisma.user.findFirst({
+          where: { organizationId: sub.organizationId, rol: 'owner' },
+          select: { nombre: true, email: true },
+        })
+        if (owner) {
+          const { subject, html } = emailPagoAprobado({
+            nombre: owner.nombre,
+            plan,
+            monto: sub.montoCOP,
+            fechaVencimiento: nuevaFecha,
+          })
+          enviarEmail({ to: owner.email, subject, html }).catch(() => {})
+        }
+      }
+
+      return NextResponse.json({ ok: true })
+    } catch (err) {
+      console.error('[webhook] Error procesando subscription_preapproval:', err)
+      return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+    }
+  }
+
+  // ─── Suscripción recurrente: cobro periódico ──────────────
+  if (type === 'subscription_authorized_payment') {
+    try {
+      // Consultar el cobro de suscripción
+      const res = await fetch(
+        `https://api.mercadopago.com/authorized_payments/${data.id}`,
+        { headers: { Authorization: `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}` } }
+      )
+      const invoice = await res.json()
+
+      const preapprovalId = invoice.preapproval_id
+      const status = invoice.payment?.status || invoice.status // approved, rejected
+
+      console.log('[webhook] subscription_authorized_payment id=' + data.id + ' preapproval=' + preapprovalId + ' status=' + status)
+
+      const sub = await prisma.suscripcion.findFirst({
+        where: { preapprovalId: String(preapprovalId) },
+      })
+      if (!sub) {
+        console.warn('[webhook] cobro de suscripción sin registro local, preapproval=' + preapprovalId)
+        return NextResponse.json({ ok: true })
+      }
+
+      if (status === 'approved') {
+        const ahora = new Date()
+        const baseDate = sub.fechaVencimiento && new Date(sub.fechaVencimiento) > ahora
+          ? new Date(sub.fechaVencimiento)
+          : ahora
+        const nuevaFecha = new Date(baseDate)
+        nuevaFecha.setMonth(nuevaFecha.getMonth() + sub.frecuenciaMeses)
+
+        const plan = sanitizarPlan(sub.plan)
+        await prisma.suscripcion.update({
+          where: { id: sub.id },
+          data: {
+            estado:           'activa',
+            mpStatus:         'authorized',
+            fechaVencimiento: nuevaFecha,
+            ultimoCobroAt:    ahora,
+            proximoCobroAt:   nuevaFecha,
+            montoCOP:         invoice.transaction_amount ?? sub.montoCOP,
+            mercadopagoId:    String(data.id),
+          },
+        })
+        await prisma.organization.update({
+          where: { id: sub.organizationId },
+          data: { plan, activo: true },
+        })
+
+        // AdminLog
+        const admin = await prisma.user.findFirst({ where: { rol: 'superadmin' } })
+        if (admin) {
+          await prisma.adminLog.create({
+            data: {
+              adminId:        admin.id,
+              organizacionId: sub.organizationId,
+              accion:         'cobro_recurrente_aprobado',
+              detalle:        `Cobro recurrente aprobado. Suscripción #${preapprovalId}. Monto: $${invoice.transaction_amount}`,
+            },
+          })
+        }
+
+        // Email al owner
+        const owner = await prisma.user.findFirst({
+          where: { organizationId: sub.organizationId, rol: 'owner' },
+          select: { nombre: true, email: true },
+        })
+        if (owner) {
+          const { subject, html } = emailPagoAprobado({
+            nombre: owner.nombre,
+            plan,
+            monto: invoice.transaction_amount ?? sub.montoCOP,
+            fechaVencimiento: nuevaFecha,
+          })
+          enviarEmail({ to: owner.email, subject, html }).catch(() => {})
+        }
+      } else if (status === 'rejected') {
+        // No desactivar — MP reintenta automáticamente
+        const admin = await prisma.user.findFirst({ where: { rol: 'superadmin' } })
+        if (admin) {
+          await prisma.adminLog.create({
+            data: {
+              adminId:        admin.id,
+              organizacionId: sub.organizationId,
+              accion:         'cobro_recurrente_fallido',
+              detalle:        `Cobro recurrente rechazado. Suscripción #${preapprovalId}. MP reintentará.`,
+            },
+          })
+        }
+        const ownerFallido = await prisma.user.findFirst({
+          where: { organizationId: sub.organizationId, rol: 'owner' },
+          select: { nombre: true, email: true },
+        })
+        if (ownerFallido) {
+          const { subject, html } = emailPagoFallido({
+            nombre: ownerFallido.nombre,
+            plan: sub.plan,
+            monto: invoice.transaction_amount ?? sub.montoCOP,
+          })
+          enviarEmail({ to: ownerFallido.email, subject, html }).catch(() => {})
+        }
+      }
+
+      return NextResponse.json({ ok: true })
+    } catch (err) {
+      console.error('[webhook] Error procesando subscription_authorized_payment:', err)
+      return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+    }
+  }
+
+  // Solo procesar eventos de pago único
   if (type !== 'payment') {
     return NextResponse.json({ ok: true })
   }

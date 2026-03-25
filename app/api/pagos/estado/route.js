@@ -11,7 +11,7 @@ export async function GET() {
   const orgId = session.user.organizationId
   if (!orgId) return NextResponse.json({ error: 'Sin organización' }, { status: 400 })
 
-  const [sub, org] = await Promise.all([
+  const [sub, org, subRecurrente] = await Promise.all([
     prisma.suscripcion.findFirst({
       where: { organizationId: orgId },
       orderBy: { createdAt: 'desc' },
@@ -19,6 +19,14 @@ export async function GET() {
     prisma.organization.findUnique({
       where: { id: orgId },
       select: { descuento: true },
+    }),
+    prisma.suscripcion.findFirst({
+      where: {
+        organizationId: orgId,
+        tipo: 'recurrente',
+        estado: 'activa',
+      },
+      orderBy: { createdAt: 'desc' },
     }),
   ])
 
@@ -32,19 +40,34 @@ export async function GET() {
       diasRestantes:    0,
       mercadopagoId:    null,
       descuento,
+      tipo:             null,
+      mpStatus:         null,
+      proximoCobroAt:   null,
+      preapprovalId:    null,
+      canceladaAt:      null,
+      tieneRecurrenteActiva: false,
     })
   }
 
+  // Usar la suscripción recurrente si existe, si no la más reciente
+  const subPrincipal = subRecurrente || sub
+
   const diasRestantes = Math.ceil(
-    (new Date(sub.fechaVencimiento) - new Date()) / (1000 * 60 * 60 * 24)
+    (new Date(subPrincipal.fechaVencimiento) - new Date()) / (1000 * 60 * 60 * 24)
   )
 
   return NextResponse.json({
-    plan:             sub.plan,
-    estado:           sub.estado,
-    fechaVencimiento: sub.fechaVencimiento,
+    plan:             subPrincipal.plan,
+    estado:           subPrincipal.estado,
+    fechaVencimiento: subPrincipal.fechaVencimiento,
     diasRestantes,
-    mercadopagoId:    sub.mercadopagoId,
+    mercadopagoId:    subPrincipal.mercadopagoId,
     descuento,
+    tipo:             subPrincipal.tipo,
+    mpStatus:         subPrincipal.mpStatus,
+    proximoCobroAt:   subPrincipal.proximoCobroAt,
+    preapprovalId:    subPrincipal.preapprovalId,
+    canceladaAt:      subPrincipal.canceladaAt,
+    tieneRecurrenteActiva: !!subRecurrente && !subRecurrente.canceladaAt,
   })
 }

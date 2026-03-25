@@ -61,10 +61,10 @@ export default function PagoExitoso() {
           ¡Pago exitoso!
         </h1>
         <p className="text-sm text-[#888888] mb-2">
-          Tu suscripción ha sido activada correctamente.
+          Tu plan ha sido activado correctamente.
         </p>
         <p className="text-xs text-[#555555] mb-8">
-          Tu plan estará activo por 30 días a partir de hoy.
+          En unos segundos se actualizará tu cuenta.
         </p>
 
         <Link

@@ -60,6 +60,13 @@ export async function POST(req) {
       where: {
         estado: 'activa',
         fechaVencimiento: { gte: desde, lte: hasta },
+        // No avisar a suscripciones recurrentes autorizadas — MP cobra automáticamente
+        NOT: {
+          AND: [
+            { tipo: 'recurrente' },
+            { mpStatus: 'authorized' },
+          ],
+        },
       },
       include: {
         organization: {
@@ -99,13 +106,25 @@ export async function POST(req) {
   }
 
   // 2. Buscar suscripciones que vencieron hoy (marcar como vencidas y notificar)
+  // Dar 5 días de gracia a suscripciones recurrentes con mpStatus "authorized"
+  // porque MercadoPago puede estar reintentando el cobro
   const inicioHoy = new Date(ahora)
   inicioHoy.setHours(0, 0, 0, 0)
+
+  const cincoAtras = new Date(ahora)
+  cincoAtras.setDate(cincoAtras.getDate() - 5)
 
   const vencidas = await prisma.suscripcion.findMany({
     where: {
       estado: 'activa',
       fechaVencimiento: { lt: inicioHoy },
+      NOT: {
+        AND: [
+          { tipo: 'recurrente' },
+          { mpStatus: 'authorized' },
+          { fechaVencimiento: { gte: cincoAtras } },
+        ],
+      },
     },
     include: {
       organization: {
