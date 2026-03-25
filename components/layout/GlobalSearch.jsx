@@ -67,7 +67,7 @@ export default function GlobalSearch() {
   const allItems = []
   if (results) {
     results.clientes?.forEach((c) =>
-      allItems.push({ type: 'cliente', label: c.nombre, sub: c.cedula, href: `/clientes`, id: c.id })
+      allItems.push({ type: 'cliente', label: c.nombre, sub: c.cedula, href: `/clientes/${c.id}`, id: c.id })
     )
     results.prestamos?.forEach((p) =>
       allItems.push({
@@ -177,7 +177,7 @@ export default function GlobalSearch() {
                         || allItems.findIndex((x) => x.id === itemId)
                       const isCliente = key === 'clientes'
                       const isPrestamo = key === 'prestamos'
-                      const href = isCliente ? '/clientes' : isPrestamo ? `/prestamos/${item.id}` : `/rutas/${item.id}`
+                      const href = isCliente ? `/clientes/${item.id}` : isPrestamo ? `/prestamos/${item.id}` : `/rutas/${item.id}`
                       return (
                         <button
                           key={item.id}
