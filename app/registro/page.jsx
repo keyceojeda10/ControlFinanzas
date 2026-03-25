@@ -12,13 +12,16 @@ function RegistroForm() {
   const refCode        = searchParams.get('ref')
   const planParam      = searchParams.get('plan')
 
-  const PLANES_TRIAL = {
-    basic:        { nombre: 'Basico',       desc: '50 clientes, 1 usuario' },
-    standard:     { nombre: 'Profesional',  desc: '300 clientes, 3 usuarios, rutas' },
-    professional: { nombre: 'Empresarial',  desc: 'Clientes ilimitados, 7 usuarios' },
-  }
-  const planSeleccionado = PLANES_TRIAL[planParam] ? planParam : 'basic'
-  const infoPlan = PLANES_TRIAL[planSeleccionado]
+  const PLANES_TRIAL = [
+    { key: 'basic',        nombre: 'Basico',       desc: '50 clientes, 1 usuario',          precio: '$59.000' },
+    { key: 'standard',     nombre: 'Profesional',  desc: '300 clientes, 3 usuarios, rutas', precio: '$119.000' },
+    { key: 'professional', nombre: 'Empresarial',  desc: 'Clientes ilimitados, 7 usuarios', precio: '$199.000' },
+  ]
+  const PLANES_MAP = Object.fromEntries(PLANES_TRIAL.map((p) => [p.key, p]))
+  const planInicial = PLANES_MAP[planParam] ? planParam : 'basic'
+
+  const [planSeleccionado, setPlanSeleccionado] = useState(planInicial)
+  const infoPlan = PLANES_MAP[planSeleccionado]
 
   const [form, setForm] = useState({
     nombreOrganizacion: '',
@@ -118,17 +121,34 @@ function RegistroForm() {
           </p>
         </div>
 
-        {/* Plan badge */}
-        {planSeleccionado !== 'basic' && (
-          <div className="mb-4 flex items-center gap-2.5 bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.2)] text-[#22c55e] text-sm rounded-[10px] px-4 py-3">
-            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>
-              Plan <strong className="text-white">{infoPlan.nombre}</strong> — {infoPlan.desc} por 14 dias gratis
-            </span>
+        {/* Plan selector */}
+        <div className="mb-4">
+          <p className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em] mb-2">Elige tu plan de prueba</p>
+          <div className="grid grid-cols-3 gap-2">
+            {PLANES_TRIAL.map((p) => {
+              const activo = planSeleccionado === p.key
+              return (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => setPlanSeleccionado(p.key)}
+                  className={[
+                    'rounded-[12px] px-2 py-3 text-center transition-all cursor-pointer border',
+                    activo
+                      ? 'border-[#f5c518] bg-[rgba(245,197,24,0.08)]'
+                      : 'border-[#2a2a2a] bg-[#111111] hover:border-[#3a3a3a]',
+                  ].join(' ')}
+                >
+                  <p className={`text-xs font-semibold ${activo ? 'text-[#f5c518]' : 'text-white'}`}>{p.nombre}</p>
+                  <p className="text-[10px] text-[#888888] mt-0.5">{p.precio}/mes</p>
+                </button>
+              )
+            })}
           </div>
-        )}
+          <p className="text-[10px] text-[#22c55e] mt-2">
+            14 dias gratis del plan {infoPlan.nombre} — {infoPlan.desc}
+          </p>
+        </div>
 
         {/* Referral badge */}
         {referrer && (
