@@ -350,13 +350,17 @@ export default function PlanPage() {
               } : { background: '#1a1a1a' }}
             >
               {esRecurrenteActiva && (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
-                  <Badge variant="green">Suscripción activa</Badge>
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#0a0a0a] text-[#22c55e] border border-[#22c55e]">
+                    Suscripción activa
+                  </span>
                 </div>
               )}
               {!esRecurrenteActiva && esPopular && (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
-                  <Badge variant="yellow">Más popular</Badge>
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#0a0a0a] text-[#f5c518] border border-[#f5c518]">
+                    Más popular
+                  </span>
                 </div>
               )}
 

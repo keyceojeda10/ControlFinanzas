@@ -122,7 +122,7 @@ export default function GlobalSearch() {
             value={query}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
-            placeholder="Buscar clientes, pr\u00e9stamos, rutas..."
+            placeholder="Buscar clientes, préstamos, rutas..."
             className="flex-1 bg-transparent text-sm text-white placeholder-[#666] outline-none"
           />
           <kbd className="hidden sm:inline text-[10px] text-[#555] bg-[#111] border border-[#333] px-1.5 py-0.5 rounded">ESC</kbd>
@@ -236,14 +236,14 @@ export default function GlobalSearch() {
           {/* Empty state */}
           {!loading && !results && (
             <div className="py-8 text-center">
-              <p className="text-xs text-[#555]">Escribe para buscar clientes, pr\u00e9stamos o rutas</p>
-              <p className="text-[10px] text-[#444] mt-1">Ctrl+K para abrir en cualquier momento</p>
+              <p className="text-xs text-[#555]">Escribe para buscar clientes, préstamos o rutas</p>
+              <p className="text-[10px] text-[#444] mt-1 hidden sm:block">Ctrl+K para abrir en cualquier momento</p>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-4 py-2 border-t border-[#2a2a2a] text-[10px] text-[#444]">
+        <div className="hidden sm:flex items-center justify-between px-4 py-2 border-t border-[#2a2a2a] text-[10px] text-[#444]">
           <div className="flex items-center gap-3">
             <span><kbd className="bg-[#111] border border-[#333] px-1 py-0.5 rounded">&uarr;</kbd> <kbd className="bg-[#111] border border-[#333] px-1 py-0.5 rounded">&darr;</kbd> navegar</span>
             <span><kbd className="bg-[#111] border border-[#333] px-1 py-0.5 rounded">Enter</kbd> seleccionar</span>

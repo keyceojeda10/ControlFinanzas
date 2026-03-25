@@ -7,7 +7,7 @@ import { usePathname }  from 'next/navigation'
 import { signOut }      from 'next-auth/react'
 import { useAuth }      from '@/hooks/useAuth'
 import { useEffect, useRef, useState } from 'react'
-import InstallButton    from './InstallButton'
+
 
 const PAGE_TITLES = {
   '/dashboard':     'Dashboard',
@@ -56,22 +56,8 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [userOpen, setUserOpen] = useState(false)
   const [cierreWarning, setCierreWarning] = useState(null)
-  const [fechaHora, setFechaHora] = useState('')
   const menuRef = useRef(null)
   const userRef = useRef(null)
-
-  // Actualizar fecha/hora cada minuto (timezone Colombia)
-  useEffect(() => {
-    const updateFechaHora = () => {
-      const now = new Date()
-      const fecha = now.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'America/Bogota' })
-      const hora = now.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' })
-      setFechaHora(`${fecha} • ${hora}`)
-    }
-    updateFechaHora()
-    const interval = setInterval(updateFechaHora, 60000)
-    return () => clearInterval(interval)
-  }, [])
 
   // Verificar advertencia de cierre de caja cada minuto
   useEffect(() => {
@@ -137,12 +123,9 @@ export default function Header() {
 
     <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 h-14 bg-[#111111] border-b border-[#2a2a2a]" style={{ marginTop: cierreWarning ? '32px' : 0 }}>
       {/* Logo + Title */}
-      <div className="flex flex-col">
-        <div className="flex items-center gap-2.5">
-          <Image src="/logo-icon.svg" alt="CF" width={28} height={28} className="shrink-0" />
-          <span className="text-sm font-semibold text-white">{title}</span>
-        </div>
-        {fechaHora && <span className="text-[10px] text-[#888888] ml-1">{fechaHora}</span>}
+      <div className="flex items-center gap-2.5">
+        <Image src="/logo-icon.svg" alt="CF" width={28} height={28} className="shrink-0" />
+        <span className="text-sm font-semibold text-white">{title}</span>
       </div>
 
       {/* Actions */}
@@ -157,8 +140,6 @@ export default function Header() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
           </svg>
         </button>
-        {/* Install app button */}
-        <InstallButton variant="mobile" />
         {/* Menu button */}
         <div className="relative" ref={menuRef}>
           <button
