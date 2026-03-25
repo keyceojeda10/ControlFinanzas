@@ -10,6 +10,15 @@ function RegistroForm() {
   const router         = useRouter()
   const searchParams   = useSearchParams()
   const refCode        = searchParams.get('ref')
+  const planParam      = searchParams.get('plan')
+
+  const PLANES_TRIAL = {
+    basic:        { nombre: 'Basico',       desc: '50 clientes, 1 usuario' },
+    standard:     { nombre: 'Profesional',  desc: '300 clientes, 3 usuarios, rutas' },
+    professional: { nombre: 'Empresarial',  desc: 'Clientes ilimitados, 7 usuarios' },
+  }
+  const planSeleccionado = PLANES_TRIAL[planParam] ? planParam : 'basic'
+  const infoPlan = PLANES_TRIAL[planSeleccionado]
 
   const [form, setForm] = useState({
     nombreOrganizacion: '',
@@ -69,6 +78,7 @@ function RegistroForm() {
           password:           form.password,
           terminosAceptados:  form.terminosAceptados,
           ...(refCode ? { ref: refCode } : {}),
+          plan: planSeleccionado,
         }),
       })
       const data = await res.json()
@@ -101,8 +111,24 @@ function RegistroForm() {
         <div className="text-center mb-8">
           <Image src="/logo-icon.svg" alt="Control Finanzas" width={56} height={56} className="mx-auto mb-5" priority />
           <h1 className="text-2xl font-bold text-white tracking-tight">Crear cuenta</h1>
-          <p className="text-sm text-[#888888] mt-1">14 días gratis para probar la plataforma</p>
+          <p className="text-sm text-[#888888] mt-1">
+            {planSeleccionado !== 'basic'
+              ? `Prueba el plan ${infoPlan.nombre} gratis por 14 dias`
+              : '14 dias gratis para probar la plataforma'}
+          </p>
         </div>
+
+        {/* Plan badge */}
+        {planSeleccionado !== 'basic' && (
+          <div className="mb-4 flex items-center gap-2.5 bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.2)] text-[#22c55e] text-sm rounded-[10px] px-4 py-3">
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>
+              Plan <strong className="text-white">{infoPlan.nombre}</strong> — {infoPlan.desc} por 14 dias gratis
+            </span>
+          </div>
+        )}
 
         {/* Referral badge */}
         {referrer && (
@@ -217,7 +243,7 @@ function RegistroForm() {
                 </svg>
                 Creando cuenta...
               </>
-            ) : 'Crear cuenta gratis'}
+            ) : planSeleccionado !== 'basic' ? `Probar plan ${infoPlan.nombre} gratis` : 'Crear cuenta gratis'}
           </button>
         </form>
 

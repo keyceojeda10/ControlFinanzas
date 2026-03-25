@@ -33,7 +33,11 @@ export async function POST(req) {
     }
 
     const body = await req.json()
-    const { nombreOrganizacion, nombre, email, password, ref, terminosAceptados } = body
+    const { nombreOrganizacion, nombre, email, password, ref, terminosAceptados, plan } = body
+
+    // Validar plan: solo basic, standard, professional son válidos para trial
+    const VALID_TRIAL_PLANS = ['basic', 'standard', 'professional']
+    const planFinal = VALID_TRIAL_PLANS.includes(plan) ? plan : 'basic'
 
     // Validaciones
     if (!nombreOrganizacion?.trim() || !nombre?.trim() || !email?.trim() || !password) {
@@ -84,7 +88,7 @@ export async function POST(req) {
       const org = await tx.organization.create({
         data: {
           nombre:        nombreOrganizacion.trim(),
-          plan:          'basic',
+          plan:          planFinal,
           activo:        true,
           codigoReferido,
           ...(orgReferidora ? { referidoPorId: orgReferidora.id } : {}),
@@ -118,7 +122,7 @@ export async function POST(req) {
       await tx.suscripcion.create({
         data: {
           organizationId:   org.id,
-          plan:             'basic',
+          plan:             planFinal,
           estado:           'activa',
           fechaInicio:      ahora,
           fechaVencimiento: vencimiento,
