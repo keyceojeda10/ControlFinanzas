@@ -18,24 +18,38 @@ const NOTIF_WEBHOOK_SECRET = process.env.TELEGRAM_NOTIF_WEBHOOK_SECRET
 
 // Map callback actions to message template IDs
 const RESP_MAP = {
+  // Respuestas según lo que dijo
   resp_como: 2,      // Cómo funciona
-  resp_cuaderno: 3,  // Usa cuaderno
+  resp_solo: 8,      // Cobra solo
+  resp_cobr: 9,      // Tiene cobradores
+  resp_cuaderno: 3,  // Usa cuaderno / gota a gota
   resp_excel: 4,     // Usa Excel
   resp_wa: 5,        // Usa WhatsApp/notas
   resp_otraapp: 6,   // Usa otra app
-  resp_solo: 8,      // Cobra solo
-  resp_cobr: 9,      // Tiene cobradores
-  resp_reg: 10,      // Ya se registró
+  resp_grande: 21,   // Préstamos grandes (quincenal/mensual)
+  resp_precio: 7,    // Pregunta precios (corto)
   resp_web: 11,      // No es app, es sistema web
   resp_perm: 12,     // Permisos de cobradores
-  resp_seg: 13,      // Seguridad / robo de celular
+  resp_seg: 13,      // Seguridad / datos
   resp_video: 14,    // Video / demostración
   resp_cobro: 15,    // Sin cobros adicionales
   resp_otro: 19,     // Otro método (genérico)
-  resp_post: 20,     // Post-registro (ya verificó correo)
-  resp_seg2h: 16,    // Seguimiento: 2 horas sin respuesta
-  resp_seg24h: 17,   // Seguimiento: 24 horas sin respuesta
-  resp_seg48h: 18,   // Seguimiento: 48 horas (último)
+  // Objeciones
+  resp_caro: 22,     // Está muy caro
+  resp_pensar: 23,   // Déjame pensarlo
+  resp_yausa: 24,    // Ya tengo un sistema
+  // Post-registro / onboarding
+  resp_reg: 10,      // Ya se registró
+  resp_post: 20,     // Post-registro (verificó correo)
+  resp_onb24: 27,    // Onboarding: 24h sin usar
+  resp_onb3d: 28,    // Onboarding: 3 días sin usar
+  resp_onb10: 29,    // Onboarding: día 10 pre-vencimiento
+  // Seguimiento
+  resp_t2ps: 16,     // Toque 2: prueba social (24h)
+  resp_t2dolor: 25,  // Toque 2 alt: dolor directo (24h)
+  resp_t3: 17,       // Toque 3: beneficio concreto (48h)
+  resp_t4: 26,       // Toque 4: link + despedida (72h)
+  resp_t5: 18,       // Toque 5: cierre definitivo (7 días)
 }
 
 // Telegram Bot webhook — receives button taps from inline keyboards
