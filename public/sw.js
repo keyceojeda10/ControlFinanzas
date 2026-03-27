@@ -1,6 +1,6 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME = 'cf-v4'
-const API_CACHE  = 'cf-api-v4'
+const CACHE_NAME = 'cf-v5'
+const API_CACHE  = 'cf-api-v5'
 
 // Only precache static assets (NOT auth-protected pages)
 const PRECACHE_URLS = [
@@ -189,5 +189,22 @@ self.addEventListener('notificationclick', (e) => {
 self.addEventListener('message', (e) => {
   if (e.data?.type === 'SKIP_WAITING') {
     self.skipWaiting()
+  }
+
+  // Pre-cache pages for offline use after bulk sync
+  if (e.data?.type === 'CACHE_PAGES') {
+    const urls = e.data.urls || []
+    e.waitUntil(
+      caches.open(CACHE_NAME).then(async (cache) => {
+        for (const url of urls) {
+          try {
+            const res = await fetch(url, { credentials: 'same-origin' })
+            if (res.ok && !res.redirected) {
+              await cache.put(url, res)
+            }
+          } catch {}
+        }
+      })
+    )
   }
 })
