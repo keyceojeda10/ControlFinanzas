@@ -1,6 +1,6 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME = 'cf-v5'
-const API_CACHE  = 'cf-api-v5'
+const CACHE_NAME = 'cf-v6'
+const API_CACHE  = 'cf-api-v6'
 
 // Only precache static assets (NOT auth-protected pages)
 const PRECACHE_URLS = [
@@ -18,6 +18,16 @@ const CACHEABLE_API = [
   '/api/clientes',
   '/api/rutas',
   '/api/cobradores',
+  '/api/auth/session',
+]
+
+// Auth routes that should NEVER be cached (login/logout flows)
+const AUTH_SKIP = [
+  '/api/auth/callback',
+  '/api/auth/signin',
+  '/api/auth/signout',
+  '/api/auth/csrf',
+  '/api/auth/providers',
 ]
 
 // ─── Install: precache app shell ────────────────────────────
@@ -25,7 +35,6 @@ self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) =>
       cache.addAll(PRECACHE_URLS).catch(() => {
-        // Some pages may fail to cache during install (auth redirect), that's ok
         console.log('[SW] Some precache URLs failed, continuing...')
       })
     )
@@ -58,12 +67,18 @@ self.addEventListener('fetch', (e) => {
   // Skip non-GET for caching
   if (request.method !== 'GET') return
 
-  // Skip auth-related and offline sync requests (never cache)
-  if (url.pathname.startsWith('/api/auth')) return
+  // Skip auth flows (signin/signout/callback) — never cache these
+  if (AUTH_SKIP.some((p) => url.pathname.startsWith(p))) return
+
+  // Skip offline sync requests (never cache)
   if (url.pathname.startsWith('/api/offline')) return
 
-  // Skip _next/data requests that may redirect
-  if (url.pathname.startsWith('/_next/data')) return
+  // _next/data (RSC payloads for client-side navigation): network-first with fallback
+  // Without this, offline client-side navigation crashes Next.js Router
+  if (url.pathname.startsWith('/_next/data')) {
+    e.respondWith(networkFirstRSC(request))
+    return
+  }
 
   // API requests: network-first, fallback to cache
   if (url.pathname.startsWith('/api/') && CACHEABLE_API.some((p) => url.pathname.startsWith(p))) {
@@ -150,6 +165,27 @@ async function networkFirst(request) {
   }
 }
 
+// RSC payloads (_next/data): cache when online, serve cached when offline
+async function networkFirstRSC(request) {
+  try {
+    const response = await fetch(request)
+    if (response.ok && !response.redirected) {
+      const cache = await caches.open(CACHE_NAME)
+      cache.put(request, response.clone())
+    }
+    return response
+  } catch {
+    const cached = await caches.match(request)
+    if (cached) return cached
+    // No cached RSC payload — return empty JSON so Next.js doesn't hard-crash
+    // The page component will then fall back to IndexedDB via its own error handling
+    return new Response('{}', {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+}
+
 // ─── Push Notifications ───────────────────────────────────
 self.addEventListener('push', (e) => {
   if (!e.data) return
@@ -196,11 +232,39 @@ self.addEventListener('message', (e) => {
     const urls = e.data.urls || []
     e.waitUntil(
       caches.open(CACHE_NAME).then(async (cache) => {
+        const chunksToCache = new Set()
+
         for (const url of urls) {
           try {
             const res = await fetch(url, { credentials: 'same-origin' })
             if (res.ok && !res.redirected) {
-              await cache.put(url, res)
+              // Parse HTML to find JS chunks needed for this page
+              const clone = res.clone()
+              try {
+                const html = await clone.text()
+                const scriptMatches = html.matchAll(/src="(\/_next\/static\/[^"]+)"/g)
+                for (const m of scriptMatches) {
+                  chunksToCache.add(m[1])
+                }
+                // Re-create response from text for caching
+                await cache.put(url, new Response(html, {
+                  status: res.status,
+                  headers: res.headers,
+                }))
+              } catch {
+                await cache.put(url, res)
+              }
+            }
+          } catch {}
+        }
+
+        // Pre-cache discovered JS chunks
+        for (const chunk of chunksToCache) {
+          try {
+            const existing = await cache.match(chunk)
+            if (!existing) {
+              const res = await fetch(chunk)
+              if (res.ok) await cache.put(chunk, res)
             }
           } catch {}
         }

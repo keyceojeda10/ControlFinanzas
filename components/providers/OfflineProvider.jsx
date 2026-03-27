@@ -76,6 +76,38 @@ export default function OfflineProvider({ children }) {
     obtenerSyncMeta().then((meta) => { if (meta) setSyncMeta(meta) }).catch(() => {})
   }, [])
 
+  // ─── Offline navigation: force full-page loads when offline ───
+  // Next.js client-side navigation fetches RSC payloads from server,
+  // which fails offline and crashes the router. By forcing full-page
+  // loads (window.location.href), the SW serves cached HTML instead.
+  useEffect(() => {
+    const DASHBOARD_ROUTES = ['/dashboard', '/clientes', '/prestamos', '/rutas', '/caja', '/cobradores', '/reportes', '/configuracion']
+
+    const handleClick = (e) => {
+      if (navigator.onLine) return
+
+      // Walk up from target to find the nearest <a> tag
+      let el = e.target
+      while (el && el.tagName !== 'A') el = el.parentElement
+      if (!el || !el.href) return
+
+      const url = new URL(el.href, window.location.origin)
+
+      // Only intercept internal dashboard routes
+      if (url.origin !== window.location.origin) return
+      if (!DASHBOARD_ROUTES.some((r) => url.pathname.startsWith(r))) return
+
+      // Prevent Next.js client-side navigation, force full-page load
+      e.preventDefault()
+      e.stopPropagation()
+      window.location.href = url.pathname + url.search
+    }
+
+    // Use capture phase to intercept before Next.js Link handler
+    document.addEventListener('click', handleClick, true)
+    return () => document.removeEventListener('click', handleClick, true)
+  }, [])
+
   const manualSync = async () => {
     if (!navigator.onLine) return
     const result = await sincronizarPagos()

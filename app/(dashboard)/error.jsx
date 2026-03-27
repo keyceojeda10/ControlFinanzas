@@ -1,6 +1,53 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+
 export default function DashboardError({ error, reset }) {
+  const [isOffline, setIsOffline] = useState(false)
+  const [reloading, setReloading] = useState(false)
+
+  useEffect(() => {
+    const offline = !navigator.onLine
+    setIsOffline(offline)
+
+    // If offline, auto-reload ONCE so the SW serves cached HTML
+    // and the page can load data from IndexedDB
+    if (offline) {
+      const key = 'cf-offline-reload-' + window.location.pathname
+      const already = sessionStorage.getItem(key)
+      if (!already) {
+        sessionStorage.setItem(key, '1')
+        setReloading(true)
+        // Small delay so user sees the message
+        setTimeout(() => window.location.reload(), 300)
+      }
+    }
+  }, [])
+
+  // Clear the reload flag when back online
+  useEffect(() => {
+    const handleOnline = () => {
+      // Clear all offline reload flags
+      for (let i = sessionStorage.length - 1; i >= 0; i--) {
+        const k = sessionStorage.key(i)
+        if (k?.startsWith('cf-offline-reload-')) sessionStorage.removeItem(k)
+      }
+    }
+    window.addEventListener('online', handleOnline)
+    return () => window.removeEventListener('online', handleOnline)
+  }, [])
+
+  if (reloading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] px-4">
+        <div className="max-w-md w-full text-center">
+          <div className="w-10 h-10 mx-auto mb-4 border-2 border-[#f5c518] border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-[#888]">Cargando datos offline...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex items-center justify-center min-h-[60vh] px-4">
       <div className="max-w-md w-full text-center">
@@ -10,17 +57,28 @@ export default function DashboardError({ error, reset }) {
           </svg>
         </div>
 
-        <h2 className="text-lg font-bold text-white mb-2">Error en la página</h2>
+        <h2 className="text-lg font-bold text-white mb-2">
+          {isOffline ? 'Sin conexion' : 'Error en la pagina'}
+        </h2>
         <p className="text-sm text-[#888] mb-5">
-          No pudimos cargar esta sección. Intenta de nuevo.
+          {isOffline
+            ? 'No se pudo cargar esta seccion offline. Intenta recargar.'
+            : 'No pudimos cargar esta seccion. Intenta de nuevo.'}
         </p>
 
-        <button
-          onClick={() => reset()}
-          className="px-5 py-2.5 bg-[#f5c518] text-black text-sm font-semibold rounded-xl hover:bg-[#f5c518]/90 transition-colors"
-        >
-          Reintentar
-        </button>
+        <div className="flex flex-col gap-2 items-center">
+          <button
+            onClick={() => isOffline ? window.location.reload() : reset()}
+            className="px-5 py-2.5 bg-[#f5c518] text-black text-sm font-semibold rounded-xl hover:bg-[#f5c518]/90 transition-colors"
+          >
+            Reintentar
+          </button>
+          {isOffline && (
+            <p className="text-xs text-[#f5c518] mt-2">
+              Usa el boton &quot;Preparar offline&quot; en el Dashboard antes de salir a cobrar
+            </p>
+          )}
+        </div>
 
         {process.env.NODE_ENV === 'development' && error?.message && (
           <details className="mt-5 text-left bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-3">

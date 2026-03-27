@@ -9,7 +9,7 @@ import BotonWhatsApp        from '@/components/ui/BotonWhatsApp'
 import BotonCompartir       from '@/components/ui/BotonCompartir'
 import BotonImprimirRecibo  from '@/components/ui/BotonImprimirRecibo'
 import { formatCOP, DIAS_ABONO } from '@/lib/calculos'
-import { guardarPagoPendiente }  from '@/lib/offline'
+import { guardarPagoPendiente, actualizarPrestamoOffline }  from '@/lib/offline'
 
 export default function RegistrarPago({
   prestamoId, cuotaDiaria, saldoPendiente,
@@ -62,12 +62,29 @@ export default function RegistrarPago({
             diasAbonados,
             clienteNombre: cliente?.nombre,
           })
+          // Update IndexedDB data so offline views reflect the payment
+          await actualizarPrestamoOffline(prestamoId, { montoPagado: m, tipo, nota })
           window.dispatchEvent(new Event('paymentQueued'))
+          // Build updated prestamo for UI
+          const saldoNuevo = Math.max(0, (prestamo?.saldoPendiente || 0) - m)
+          const totalPagadoNuevo = (prestamo?.totalPagado || 0) + m
+          const porcentajeNuevo = prestamo?.totalAPagar > 0
+            ? Math.round((totalPagadoNuevo / prestamo.totalAPagar) * 100)
+            : 0
+          const prestamoActualizado = prestamo ? {
+            ...prestamo,
+            saldoPendiente: saldoNuevo,
+            totalPagado: totalPagadoNuevo,
+            porcentajePagado: porcentajeNuevo,
+            pagoHoy: true,
+            estado: saldoNuevo <= 0 ? 'completado' : prestamo.estado,
+          } : prestamo
           const pagoOffline = { montoPagado: m, fechaPago: new Date().toISOString(), offline: true }
           setPagoGuardado(pagoOffline)
+          setPrestamoAct(prestamoActualizado)
           setExitoso(true)
           setError('')
-          onSuccess?.(prestamo, pagoOffline)
+          onSuccess?.(prestamoActualizado, pagoOffline)
           return
         } catch {
           setError('No se pudo guardar el pago offline.')
