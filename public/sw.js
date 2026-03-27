@@ -1,18 +1,14 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME = 'cf-v1'
-const API_CACHE  = 'cf-api-v1'
+const CACHE_NAME = 'cf-v2'
+const API_CACHE  = 'cf-api-v2'
 
-// App shell: pages and static assets to precache
+// Only precache static assets (NOT auth-protected pages)
 const PRECACHE_URLS = [
-  '/dashboard',
-  '/prestamos',
-  '/clientes',
-  '/rutas',
-  '/caja',
   '/icon.svg',
   '/logo-icon.svg',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
+  '/login',
 ]
 
 // API routes to cache for offline reads (GET only)
@@ -56,11 +52,17 @@ self.addEventListener('fetch', (e) => {
   const { request } = e
   const url = new URL(request.url)
 
-  // Skip non-GET for caching (POST payments handled by IndexedDB queue in the app)
+  // Only handle same-origin requests
+  if (url.origin !== self.location.origin) return
+
+  // Skip non-GET for caching
   if (request.method !== 'GET') return
 
   // Skip auth-related requests (never cache)
   if (url.pathname.startsWith('/api/auth')) return
+
+  // Skip _next/data requests that may redirect
+  if (url.pathname.startsWith('/_next/data')) return
 
   // API requests: network-first, fallback to cache
   if (url.pathname.startsWith('/api/') && CACHEABLE_API.some((p) => url.pathname.startsWith(p))) {
@@ -75,7 +77,7 @@ self.addEventListener('fetch', (e) => {
   }
 
   // Page navigations: network-first, fallback to cache
-  if (request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html')) {
+  if (request.mode === 'navigate') {
     e.respondWith(networkFirstPage(request))
     return
   }
@@ -89,7 +91,8 @@ self.addEventListener('fetch', (e) => {
 async function networkFirstAPI(request) {
   try {
     const response = await fetch(request)
-    if (response.ok) {
+    // Only cache successful, non-redirected responses
+    if (response.ok && !response.redirected) {
       const cache = await caches.open(API_CACHE)
       cache.put(request, response.clone())
     }
@@ -107,7 +110,8 @@ async function networkFirstAPI(request) {
 async function networkFirstPage(request) {
   try {
     const response = await fetch(request)
-    if (response.ok) {
+    // Never cache redirects — they cause "service worker has redirections" errors
+    if (response.ok && !response.redirected) {
       const cache = await caches.open(CACHE_NAME)
       cache.put(request, response.clone())
     }
@@ -115,9 +119,6 @@ async function networkFirstPage(request) {
   } catch {
     const cached = await caches.match(request)
     if (cached) return cached
-    // Fallback to dashboard cache if available
-    const dashCached = await caches.match('/dashboard')
-    if (dashCached) return dashCached
     return new Response('<html><body style="background:#0a0a0a;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif"><div style="text-align:center"><h2>Sin conexión</h2><p>Revisa tu conexión a internet</p></div></body></html>', {
       headers: { 'Content-Type': 'text/html' },
     })
