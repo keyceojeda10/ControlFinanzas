@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { formatCOP } from '@/lib/calculos'
 import { useAuth } from '@/hooks/useAuth'
+import { guardarEnCache, leerDeCache } from '@/lib/offline'
 import { useOnboarding } from '@/components/onboarding/useOnboarding'
 import OnboardingChecklist from '@/components/onboarding/OnboardingChecklist'
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
@@ -73,6 +74,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [mounted, setMounted] = useState(false)
   const [error, setError] = useState('')
+  const [isOffline, setIsOffline] = useState(false)
   const [fechaActual, setFechaActual] = useState('')
   const [horaActual, setHoraActual] = useState('')
 
@@ -92,18 +94,34 @@ export default function DashboardPage() {
   }, [])
 
   useEffect(() => {
+    setIsOffline(false)
     fetch('/api/dashboard/resumen')
       .then((r) => r.json())
-      .then((d) => { if (d.error) setError(d.error); else setData(d) })
-      .catch(() => setError('No se pudo cargar el resumen.'))
+      .then((d) => {
+        if (d.error) setError(d.error)
+        else { setData(d); guardarEnCache('dashboard:resumen', d).catch(() => {}) }
+      })
+      .catch(async () => {
+        try {
+          const cached = await leerDeCache('dashboard:resumen')
+          if (cached) { setData(cached); setIsOffline(true); return }
+        } catch {}
+        setError('No se pudo cargar el resumen.')
+      })
       .finally(() => setLoading(false))
   }, [])
 
   useEffect(() => {
     fetch('/api/mora')
       .then((r) => r.json())
-      .then((d) => setMoraData(d))
-      .catch(() => setMoraData({ total: 0, agrupado: {} }))
+      .then((d) => { setMoraData(d); guardarEnCache('dashboard:mora', d).catch(() => {}) })
+      .catch(async () => {
+        try {
+          const cached = await leerDeCache('dashboard:mora')
+          if (cached) { setMoraData(cached); return }
+        } catch {}
+        setMoraData({ total: 0, agrupado: {} })
+      })
   }, [])
 
   // Cargar capital solo para owners
@@ -111,8 +129,13 @@ export default function DashboardPage() {
     if (authLoading || !esOwner) return
     fetch('/api/capital/resumen')
       .then((r) => r.json())
-      .then((d) => { if (d.configurado) setCapitalData(d) })
-      .catch(() => {})
+      .then((d) => { if (d.configurado) { setCapitalData(d); guardarEnCache('dashboard:capital', d).catch(() => {}) } })
+      .catch(async () => {
+        try {
+          const cached = await leerDeCache('dashboard:capital')
+          if (cached) setCapitalData(cached)
+        } catch {}
+      })
   }, [authLoading, esOwner])
 
   const moraPct = data ? (data.clientes.total > 0 ? Math.round((data.clientes.enMora / data.clientes.total) * 100) : 0) : 0
@@ -159,6 +182,12 @@ export default function DashboardPage() {
           {horaActual && <span className="text-[#f5c518] font-mono-display ml-2">{horaActual}</span>}
         </p>
       </div>
+      {isOffline && (
+        <div className="bg-[rgba(245,197,24,0.1)] border border-[rgba(245,197,24,0.2)] text-[#f5c518] text-xs rounded-[12px] px-4 py-2.5 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[#f5c518] animate-pulse shrink-0" />
+          Datos guardados — sin conexión
+        </div>
+      )}
       {error && <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3">{error}</div>}
       {loading || !mounted ? (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24" />)}</div>

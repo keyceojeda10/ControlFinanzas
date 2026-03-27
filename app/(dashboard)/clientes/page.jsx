@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useAuth }       from '@/hooks/useAuth'
+import { guardarEnCache, leerDeCache } from '@/lib/offline'
 import { Button }        from '@/components/ui/Button'
 import { SkeletonCard }  from '@/components/ui/Skeleton'
 import ClienteCard       from '@/components/clientes/ClienteCard'
@@ -28,9 +29,13 @@ export default function ClientesPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [total,    setTotal]      = useState(0)
 
+  const [isOffline, setIsOffline] = useState(false)
+
   const fetchClientes = useCallback(async (q, p) => {
     setLoading(true)
     setError('')
+    setIsOffline(false)
+    const cacheKey = `clientes:${q || ''}:${p}`
     try {
       const params = new URLSearchParams()
       if (q) params.set('buscar', q)
@@ -42,7 +47,21 @@ export default function ClientesPage() {
       setClientes(data.clientes)
       setTotal(data.total)
       setTotalPages(data.totalPages)
+      // Cache for offline
+      guardarEnCache(cacheKey, { clientes: data.clientes, total: data.total, totalPages: data.totalPages }).catch(() => {})
     } catch {
+      // Try IndexedDB cache
+      try {
+        const cached = await leerDeCache(cacheKey)
+        if (cached) {
+          setClientes(cached.clientes)
+          setTotal(cached.total)
+          setTotalPages(cached.totalPages)
+          setIsOffline(true)
+          setLoading(false)
+          return
+        }
+      } catch {}
       setError('No se pudieron cargar los clientes.')
     } finally {
       setLoading(false)
@@ -142,6 +161,14 @@ export default function ClientesPage() {
           </button>
         )}
       </div>
+
+      {/* Offline indicator */}
+      {isOffline && (
+        <div className="bg-[rgba(245,197,24,0.1)] border border-[rgba(245,197,24,0.2)] text-[#f5c518] text-xs rounded-[12px] px-4 py-2.5 mb-4 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[#f5c518] animate-pulse shrink-0" />
+          Datos guardados — sin conexión
+        </div>
+      )}
 
       {/* Error */}
       {error && (

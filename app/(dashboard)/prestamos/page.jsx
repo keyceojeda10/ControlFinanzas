@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link                                   from 'next/link'
 import { useAuth }                            from '@/hooks/useAuth'
+import { guardarEnCache, leerDeCache }        from '@/lib/offline'
 import { Button }                             from '@/components/ui/Button'
 import { SkeletonCard }                       from '@/components/ui/Skeleton'
 import PrestamoCard                           from '@/components/prestamos/PrestamoCard'
@@ -29,9 +30,13 @@ export default function PrestamosPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [total,     setTotal]     = useState(0)
 
+  const [isOffline, setIsOffline] = useState(false)
+
   const fetchPrestamos = useCallback(async (q, est, p) => {
     setLoading(true)
     setError('')
+    setIsOffline(false)
+    const cacheKey = `prestamos:${q || ''}:${est || ''}:${p}`
     try {
       const params = new URLSearchParams()
       if (q) params.set('buscar', q)
@@ -48,7 +53,19 @@ export default function PrestamosPage() {
       setPrestamos(items)
       setTotal(data.total)
       setTotalPages(data.totalPages)
+      guardarEnCache(cacheKey, { prestamos: items, total: data.total, totalPages: data.totalPages }).catch(() => {})
     } catch {
+      try {
+        const cached = await leerDeCache(cacheKey)
+        if (cached) {
+          setPrestamos(cached.prestamos)
+          setTotal(cached.total)
+          setTotalPages(cached.totalPages)
+          setIsOffline(true)
+          setLoading(false)
+          return
+        }
+      } catch {}
       setError('No se pudieron cargar los préstamos.')
     } finally {
       setLoading(false)
@@ -148,6 +165,14 @@ export default function PrestamosPage() {
           </button>
         )}
       </div>
+
+      {/* Offline indicator */}
+      {isOffline && (
+        <div className="bg-[rgba(245,197,24,0.1)] border border-[rgba(245,197,24,0.2)] text-[#f5c518] text-xs rounded-[12px] px-4 py-2.5 mb-4 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[#f5c518] animate-pulse shrink-0" />
+          Datos guardados — sin conexión
+        </div>
+      )}
 
       {/* Error */}
       {error && (

@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import Link                    from 'next/link'
 import { useRouter }           from 'next/navigation'
 import { useAuth }             from '@/hooks/useAuth'
+import { guardarEnCache, leerDeCache } from '@/lib/offline'
 import { Button }              from '@/components/ui/Button'
 import { Input }               from '@/components/ui/Input'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
@@ -20,12 +21,24 @@ export default function RutasPage() {
   const [nombre,   setNombre]   = useState('')
   const [saving,   setSaving]   = useState(false)
   const [formError, setFormError] = useState('')
+  const [isOffline, setIsOffline] = useState(false)
 
   useEffect(() => {
+    setIsOffline(false)
     fetch('/api/rutas')
       .then((r) => r.json())
-      .then((d) => setRutas(Array.isArray(d) ? d : []))
-      .catch(() => setError('No se pudieron cargar las rutas.'))
+      .then((d) => {
+        const rutas = Array.isArray(d) ? d : []
+        setRutas(rutas)
+        guardarEnCache('rutas', rutas).catch(() => {})
+      })
+      .catch(async () => {
+        try {
+          const cached = await leerDeCache('rutas')
+          if (cached) { setRutas(cached); setIsOffline(true); setLoading(false); return }
+        } catch {}
+        setError('No se pudieron cargar las rutas.')
+      })
       .finally(() => setLoading(false))
   }, [])
 
@@ -92,6 +105,12 @@ export default function RutasPage() {
         </form>
       )}
 
+      {isOffline && (
+        <div className="bg-[rgba(245,197,24,0.1)] border border-[rgba(245,197,24,0.2)] text-[#f5c518] text-xs rounded-[12px] px-4 py-2.5 mb-4 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[#f5c518] animate-pulse shrink-0" />
+          Datos guardados — sin conexión
+        </div>
+      )}
       {error && (
         <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3 mb-4">
           {error}

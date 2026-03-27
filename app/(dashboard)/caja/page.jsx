@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth }             from '@/hooks/useAuth'
+import { guardarEnCache, leerDeCache } from '@/lib/offline'
 import { Card }                from '@/components/ui/Card'
 import { Button }              from '@/components/ui/Button'
 import { Badge }              from '@/components/ui/Badge'
@@ -50,12 +51,15 @@ export default function CajaPage() {
   const [showGasto, setShowGasto] = useState(false)
   const [gastosPendientes, setGastosPendientes] = useState(0)
   const [fechaSeleccionada, setFechaSeleccionada] = useState(getColombiaDateStr())
+  const [isOffline, setIsOffline] = useState(false)
 
   const esHoy = fechaSeleccionada === getColombiaDateStr()
 
   const fetchData = async () => {
     setLoading(true)
     setError('')
+    setIsOffline(false)
+    const cacheKey = `caja:${fechaSeleccionada}`
     try {
       const res = await fetch(`/api/caja?fecha=${fechaSeleccionada}`)
       const data = await res.json()
@@ -63,8 +67,13 @@ export default function CajaPage() {
         setError(data.error)
       } else {
         setCajaData(data)
+        guardarEnCache(cacheKey, data).catch(() => {})
       }
     } catch {
+      try {
+        const cached = await leerDeCache(cacheKey)
+        if (cached) { setCajaData(cached); setIsOffline(true); setLoading(false); return }
+      } catch {}
       setError('No se pudo cargar la información.')
     } finally {
       setLoading(false)
@@ -134,6 +143,12 @@ export default function CajaPage() {
           />
         </div>
 
+        {isOffline && (
+          <div className="bg-[rgba(245,197,24,0.1)] border border-[rgba(245,197,24,0.2)] text-[#f5c518] text-xs rounded-[12px] px-4 py-2.5 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#f5c518] animate-pulse shrink-0" />
+            Datos guardados — sin conexión
+          </div>
+        )}
         {error && (
           <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3">
             {error}
@@ -292,6 +307,12 @@ export default function CajaPage() {
         />
       </div>
 
+      {isOffline && (
+        <div className="bg-[rgba(245,197,24,0.1)] border border-[rgba(245,197,24,0.2)] text-[#f5c518] text-xs rounded-[12px] px-4 py-2.5 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[#f5c518] animate-pulse shrink-0" />
+          Datos guardados — sin conexión
+        </div>
+      )}
       {error && (
         <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3">
           {error}

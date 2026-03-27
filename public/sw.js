@@ -1,6 +1,6 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME = 'cf-v2'
-const API_CACHE  = 'cf-api-v2'
+const CACHE_NAME = 'cf-v3'
+const API_CACHE  = 'cf-api-v3'
 
 // Only precache static assets (NOT auth-protected pages)
 const PRECACHE_URLS = [
