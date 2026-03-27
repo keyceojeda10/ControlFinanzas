@@ -5,6 +5,7 @@ import { useState, useEffect, use } from 'react'
 import { useRouter }                 from 'next/navigation'
 import dynamic                       from 'next/dynamic'
 import { useAuth }                   from '@/hooks/useAuth'
+import { obtenerRutaOffline }        from '@/lib/offline'
 import { Badge }                     from '@/components/ui/Badge'
 import { Button }                    from '@/components/ui/Button'
 import { Card }                      from '@/components/ui/Card'
@@ -57,6 +58,10 @@ export default function RutaDetallePage({ params }) {
       if (!res.ok) throw new Error()
       setRuta(await res.json())
     } catch {
+      try {
+        const cached = await obtenerRutaOffline(id)
+        if (cached) { setRuta(cached); setLoading(false); return }
+      } catch {}
       setError('No se pudo cargar la ruta.')
     } finally {
       setLoading(false)

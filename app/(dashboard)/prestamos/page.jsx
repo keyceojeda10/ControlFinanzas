@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link                                   from 'next/link'
 import { useAuth }                            from '@/hooks/useAuth'
-import { guardarEnCache, leerDeCache }        from '@/lib/offline'
+import { guardarEnCache, leerDeCache, obtenerPrestamosOffline } from '@/lib/offline'
 import { Button }                             from '@/components/ui/Button'
 import { SkeletonCard }                       from '@/components/ui/Skeleton'
 import PrestamoCard                           from '@/components/prestamos/PrestamoCard'
@@ -56,7 +56,22 @@ export default function PrestamosPage() {
       guardarEnCache(cacheKey, { prestamos: items, total: data.total, totalPages: data.totalPages }).catch(() => {})
     } catch {
       try {
-        const cached = await leerDeCache(cacheKey)
+        let cached = await leerDeCache(cacheKey)
+        if (!cached) {
+          const allPrestamos = await obtenerPrestamosOffline()
+          if (allPrestamos.length > 0) {
+            let filtered = allPrestamos
+            const apiEstado = est === 'mora' ? 'activo' : est
+            if (apiEstado) filtered = filtered.filter(pr => pr.estado === apiEstado)
+            if (est === 'mora') filtered = filtered.filter(pr => pr.diasMora > 0)
+            if (q) {
+              const ql = q.toLowerCase()
+              filtered = filtered.filter(pr => pr.cliente?.nombre?.toLowerCase().includes(ql) || pr.cliente?.cedula?.includes(ql))
+            }
+            const start = (p - 1) * LIMIT
+            cached = { prestamos: filtered.slice(start, start + LIMIT), total: filtered.length, totalPages: Math.ceil(filtered.length / LIMIT) }
+          }
+        }
         if (cached) {
           setPrestamos(cached.prestamos)
           setTotal(cached.total)

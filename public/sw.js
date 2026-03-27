@@ -1,6 +1,6 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME = 'cf-v3'
-const API_CACHE  = 'cf-api-v3'
+const CACHE_NAME = 'cf-v4'
+const API_CACHE  = 'cf-api-v4'
 
 // Only precache static assets (NOT auth-protected pages)
 const PRECACHE_URLS = [
@@ -58,8 +58,9 @@ self.addEventListener('fetch', (e) => {
   // Skip non-GET for caching
   if (request.method !== 'GET') return
 
-  // Skip auth-related requests (never cache)
+  // Skip auth-related and offline sync requests (never cache)
   if (url.pathname.startsWith('/api/auth')) return
+  if (url.pathname.startsWith('/api/offline')) return
 
   // Skip _next/data requests that may redirect
   if (url.pathname.startsWith('/_next/data')) return
@@ -119,8 +120,8 @@ async function networkFirstPage(request) {
   } catch {
     const cached = await caches.match(request)
     if (cached) return cached
-    return new Response('<html><body style="background:#0a0a0a;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif"><div style="text-align:center"><h2>Sin conexión</h2><p>Revisa tu conexión a internet</p></div></body></html>', {
-      headers: { 'Content-Type': 'text/html' },
+    return new Response('<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="background:#0a0a0a;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif"><div style="text-align:center"><h2>Sin conexion</h2><p>Revisa tu conexion a internet</p><p style="color:#f5c518;font-size:13px;margin-top:16px">Usa el boton &quot;Preparar offline&quot; en el Dashboard antes de salir</p></div></body></html>', {
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
     })
   }
 }

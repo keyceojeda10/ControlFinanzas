@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import Link                    from 'next/link'
 import { useRouter }           from 'next/navigation'
 import { useAuth }             from '@/hooks/useAuth'
-import { guardarEnCache, leerDeCache } from '@/lib/offline'
+import { guardarEnCache, leerDeCache, obtenerRutasOffline } from '@/lib/offline'
 import { Button }              from '@/components/ui/Button'
 import { Input }               from '@/components/ui/Input'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
@@ -34,8 +34,9 @@ export default function RutasPage() {
       })
       .catch(async () => {
         try {
-          const cached = await leerDeCache('rutas')
-          if (cached) { setRutas(cached); setIsOffline(true); setLoading(false); return }
+          let cached = await leerDeCache('rutas')
+          if (!cached || cached.length === 0) cached = await obtenerRutasOffline()
+          if (cached && cached.length > 0) { setRutas(cached); setIsOffline(true); setLoading(false); return }
         } catch {}
         setError('No se pudieron cargar las rutas.')
       })

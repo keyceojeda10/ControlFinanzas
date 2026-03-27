@@ -5,6 +5,7 @@ import { useState, useEffect, use } from 'react'
 import { useRouter }                  from 'next/navigation'
 import Link                           from 'next/link'
 import { useAuth }                    from '@/hooks/useAuth'
+import { obtenerPrestamoOffline }     from '@/lib/offline'
 import { Badge }                      from '@/components/ui/Badge'
 import { Button }                     from '@/components/ui/Button'
 import { Card }                       from '@/components/ui/Card'
@@ -70,6 +71,10 @@ export default function PrestamoDetallePage({ params }) {
       const data = await res.json()
       setPrestamo(data)
     } catch {
+      try {
+        const cached = await obtenerPrestamoOffline(id)
+        if (cached) { setPrestamo(cached); setLoading(false); return }
+      } catch {}
       setError('No se pudo cargar el préstamo.')
     } finally {
       setLoading(false)

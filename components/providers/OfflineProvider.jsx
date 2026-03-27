@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect, createContext, useContext, useCallback } from 'react'
-import { iniciarAutoSync, obtenerPagosPendientes, sincronizarPagos } from '@/lib/offline'
+import { iniciarAutoSync, obtenerPagosPendientes, sincronizarPagos, sincronizarTodo, obtenerSyncMeta } from '@/lib/offline'
 
-const OfflineContext = createContext({ isOnline: true, pendingCount: 0, syncing: false })
+const OfflineContext = createContext({ isOnline: true, pendingCount: 0, syncing: false, syncMeta: null })
 
 export function useOffline() {
   return useContext(OfflineContext)
@@ -13,6 +13,9 @@ export default function OfflineProvider({ children }) {
   const [isOnline, setIsOnline]         = useState(true)
   const [pendingCount, setPendingCount] = useState(0)
   const [syncResult, setSyncResult]     = useState(null)
+  const [syncMeta, setSyncMeta]         = useState(null)
+  const [bulkSyncing, setBulkSyncing]   = useState(false)
+  const [bulkProgress, setBulkProgress] = useState(null)
 
   // Track online/offline
   useEffect(() => {
@@ -68,6 +71,11 @@ export default function OfflineProvider({ children }) {
     return () => window.removeEventListener('paymentQueued', onPaymentQueued)
   }, [refreshPending])
 
+  // Load sync meta on mount
+  useEffect(() => {
+    obtenerSyncMeta().then((meta) => { if (meta) setSyncMeta(meta) }).catch(() => {})
+  }, [])
+
   const manualSync = async () => {
     if (!navigator.onLine) return
     const result = await sincronizarPagos()
@@ -78,8 +86,26 @@ export default function OfflineProvider({ children }) {
     }
   }
 
+  // Bulk sync: download everything for offline
+  const startBulkSync = async () => {
+    if (bulkSyncing || !navigator.onLine) return
+    setBulkSyncing(true)
+    setBulkProgress({ step: 'downloading', message: 'Descargando datos...' })
+    try {
+      const result = await sincronizarTodo((progress) => setBulkProgress(progress))
+      setSyncMeta({ syncedAt: result.syncedAt, totalClientes: result.clientes, totalPrestamos: result.prestamos, totalRutas: result.rutas })
+      setBulkProgress({ step: 'done', message: `${result.clientes} clientes, ${result.prestamos} prestamos sincronizados` })
+      setTimeout(() => setBulkProgress(null), 4000)
+    } catch {
+      setBulkProgress({ step: 'error', message: 'Error al sincronizar. Intenta de nuevo.' })
+      setTimeout(() => setBulkProgress(null), 4000)
+    } finally {
+      setBulkSyncing(false)
+    }
+  }
+
   return (
-    <OfflineContext.Provider value={{ isOnline, pendingCount, refreshPending, manualSync }}>
+    <OfflineContext.Provider value={{ isOnline, pendingCount, refreshPending, manualSync, syncMeta, startBulkSync, bulkSyncing, bulkProgress }}>
       {children}
 
       {/* Offline banner */}

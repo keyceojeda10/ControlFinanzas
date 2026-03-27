@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { useAuth } from '@/hooks/useAuth'
+import { useOffline } from '@/components/providers/OfflineProvider'
 import { useState, useEffect } from 'react'
 import InstallButton from './InstallButton'
 
@@ -192,6 +193,7 @@ export default function Sidebar() {
   const [fechaHora, setFechaHora] = useState('')
   const [cierreWarning, setCierreWarning] = useState(null)
 
+  const { syncMeta, startBulkSync, bulkSyncing, bulkProgress } = useOffline()
   const nav = esCobrador ? NAV_COBRADOR : NAV_OWNER
 
   // Verificar advertencia de cierre de caja cada minuto
@@ -267,6 +269,33 @@ export default function Sidebar() {
           )
         })}
       </nav>
+
+      {/* Sync offline button */}
+      <div className="mx-3 mb-2">
+        <button
+          onClick={startBulkSync}
+          disabled={bulkSyncing}
+          className="w-full flex items-center gap-2 px-3 py-2.5 rounded-[10px] bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.2)] hover:bg-[rgba(34,197,94,0.15)] transition-colors disabled:opacity-50"
+        >
+          <svg className={`w-4 h-4 text-[#22c55e] shrink-0 ${bulkSyncing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <div className="flex-1 text-left">
+            {bulkProgress ? (
+              <p className="text-xs font-medium text-[#22c55e]">{bulkProgress.message}</p>
+            ) : (
+              <>
+                <p className="text-xs font-semibold text-[#22c55e]">Sincronizar offline</p>
+                {syncMeta && (
+                  <p className="text-[10px] text-[#22c55e]/60">
+                    {syncMeta.totalClientes} clientes · {new Date(syncMeta.syncedAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' })}
+                  </p>
+                )}
+              </>
+            )}
+          </div>
+        </button>
+      </div>
 
       {/* Warning cierre de caja */}
       {cierreWarning && (

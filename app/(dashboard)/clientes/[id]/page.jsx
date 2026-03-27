@@ -5,6 +5,7 @@ import { useState, useEffect, use } from 'react'
 import { useRouter }                 from 'next/navigation'
 import Link                          from 'next/link'
 import { useAuth }                   from '@/hooks/useAuth'
+import { obtenerClienteOffline }     from '@/lib/offline'
 import { Badge }                     from '@/components/ui/Badge'
 import { Button }                    from '@/components/ui/Button'
 import { Card }                      from '@/components/ui/Card'
@@ -52,14 +53,23 @@ export default function ClienteDetallePage({ params }) {
     } catch {}
   }, [id])
 
+  const [isOffline, setIsOffline] = useState(false)
+
   useEffect(() => {
+    setIsOffline(false)
     fetch(`/api/clientes/${id}`)
       .then((r) => {
         if (!r.ok) throw new Error()
         return r.json()
       })
       .then(setCliente)
-      .catch(() => setError('No se pudo cargar el cliente.'))
+      .catch(async () => {
+        try {
+          const cached = await obtenerClienteOffline(id)
+          if (cached) { setCliente(cached); setIsOffline(true); return }
+        } catch {}
+        setError('No se pudo cargar el cliente.')
+      })
       .finally(() => setLoading(false))
   }, [id])
 

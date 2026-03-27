@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth }             from '@/hooks/useAuth'
-import { guardarEnCache, leerDeCache } from '@/lib/offline'
+import { guardarEnCache, leerDeCache, obtenerDashboardOffline } from '@/lib/offline'
 import { Card }                from '@/components/ui/Card'
 import { Button }              from '@/components/ui/Button'
 import { Badge }              from '@/components/ui/Badge'

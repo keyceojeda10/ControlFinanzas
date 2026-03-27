@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useAuth }       from '@/hooks/useAuth'
-import { guardarEnCache, leerDeCache } from '@/lib/offline'
+import { guardarEnCache, leerDeCache, obtenerClientesOffline } from '@/lib/offline'
 import { Button }        from '@/components/ui/Button'
 import { SkeletonCard }  from '@/components/ui/Skeleton'
 import ClienteCard       from '@/components/clientes/ClienteCard'
@@ -50,9 +50,22 @@ export default function ClientesPage() {
       // Cache for offline
       guardarEnCache(cacheKey, { clientes: data.clientes, total: data.total, totalPages: data.totalPages }).catch(() => {})
     } catch {
-      // Try IndexedDB cache
+      // Try page-specific cache first, then bulk sync data
       try {
-        const cached = await leerDeCache(cacheKey)
+        let cached = await leerDeCache(cacheKey)
+        if (!cached) {
+          // Fall back to bulk sync: filter client-side
+          const allClientes = await obtenerClientesOffline()
+          if (allClientes.length > 0) {
+            let filtered = allClientes
+            if (q) {
+              const ql = q.toLowerCase()
+              filtered = filtered.filter(c => c.nombre?.toLowerCase().includes(ql) || c.cedula?.includes(ql) || c.telefono?.includes(ql))
+            }
+            const start = (p - 1) * LIMIT
+            cached = { clientes: filtered.slice(start, start + LIMIT), total: filtered.length, totalPages: Math.ceil(filtered.length / LIMIT) }
+          }
+        }
         if (cached) {
           setClientes(cached.clientes)
           setTotal(cached.total)
