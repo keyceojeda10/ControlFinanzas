@@ -101,16 +101,31 @@ export async function PATCH(req, { params }) {
       return NextResponse.json({ error: 'Plan no válido' }, { status: 400 })
     }
     const planAnterior = org.plan
+
+    // Cambiar plan en la organización
     await prisma.organization.update({ where: { id }, data: { plan } })
+
+    // También actualizar el plan en la suscripción activa (mantiene mismas fechas)
+    const subActiva = await prisma.suscripcion.findFirst({
+      where: { organizationId: id, estado: 'activa' },
+      orderBy: { createdAt: 'desc' },
+    })
+    if (subActiva) {
+      await prisma.suscripcion.update({
+        where: { id: subActiva.id },
+        data: { plan },
+      })
+    }
+
     await prisma.adminLog.create({
       data: {
         adminId:        session.user.id,
         organizacionId: id,
         accion:         'cambiar_plan',
-        detalle:        `Plan cambiado de ${planAnterior} a ${plan}`,
+        detalle:        `Plan cambiado de ${planAnterior} a ${plan} (mismas fechas de suscripción)`,
       },
     })
-    return NextResponse.json({ ok: true, mensaje: `Plan cambiado a ${plan}` })
+    return NextResponse.json({ ok: true, mensaje: `Plan cambiado de ${planAnterior} a ${plan}` })
   }
 
   if (accion === 'cambiarDescuento') {

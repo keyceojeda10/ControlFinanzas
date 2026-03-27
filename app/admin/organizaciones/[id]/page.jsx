@@ -110,7 +110,19 @@ export default function OrgDetallePage() {
           {/* Cambiar plan */}
           <select
             value={org.plan}
-            onChange={(e) => ejecutarAccion('cambiarPlan', { plan: e.target.value })}
+            onChange={(e) => {
+              const nuevoPlan = e.target.value
+              if (nuevoPlan === org.plan) return
+              const fechaVenc = sub ? new Date(sub.fechaVencimiento).toLocaleDateString('es-CO') : null
+              const msg = fechaVenc
+                ? `Cambiar plan de "${org.nombre}" de ${org.plan} a ${nuevoPlan}?\n\nSe mantienen las mismas fechas de suscripcion (vence: ${fechaVenc}).`
+                : `Cambiar plan de "${org.nombre}" de ${org.plan} a ${nuevoPlan}?`
+              if (confirm(msg)) {
+                ejecutarAccion('cambiarPlan', { plan: nuevoPlan })
+              } else {
+                e.target.value = org.plan
+              }
+            }}
             disabled={!!accionando}
             className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#f5c518]"
           >
