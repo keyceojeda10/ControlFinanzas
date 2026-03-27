@@ -67,8 +67,8 @@ export async function GET() {
       cobrador: { select: { id: true, nombre: true } },
       clientes: {
         where: { estado: { not: 'eliminado' } },
-        select: { id: true, nombre: true, cedula: true, telefono: true, direccion: true, latitud: true, longitud: true, orden: true },
-        orderBy: { orden: 'asc' },
+        select: { id: true, nombre: true, cedula: true, telefono: true, direccion: true, latitud: true, longitud: true, ordenRuta: true },
+        orderBy: { ordenRuta: 'asc' },
       },
     },
   })
