@@ -154,13 +154,15 @@ export default function OfflineProvider({ children }) {
     // When offline, we redirect to a full-page load instead.
     const originalPushState = history.pushState.bind(history)
     history.pushState = function (state, title, url) {
-      if (!navigator.onLine && url) {
-        const parsed = new URL(url, window.location.origin)
-        if (isDashboardRoute(parsed.pathname)) {
-          window.location.href = parsed.pathname + parsed.search
-          return
+      try {
+        if (!navigator.onLine && url && typeof url === 'string') {
+          const parsed = new URL(url, window.location.origin)
+          if (isDashboardRoute(parsed.pathname) && parsed.pathname !== window.location.pathname) {
+            window.location.href = parsed.pathname + parsed.search
+            return
+          }
         }
-      }
+      } catch { /* parsing error — let it through */ }
       return originalPushState(state, title, url)
     }
 
