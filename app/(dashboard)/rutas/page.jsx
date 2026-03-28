@@ -113,50 +113,49 @@ export default function RutasPage() {
 
   return (
     <div className="max-w-3xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-xl font-bold text-[white]">Rutas</h1>
           <p className="text-sm text-[#888888] mt-0.5">
             {loading ? '…' : `${rutas.length} ruta${rutas.length !== 1 ? 's' : ''}`}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {!authLoading && esOwner && rutas.length > 0 && (
-            <>
-              <button
-                onClick={descargarBackup}
-                disabled={backupLoading}
-                className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#1a1a1a] text-xs text-[#888888] hover:text-white hover:border-[#3a3a3a] transition-all disabled:opacity-50 flex items-center gap-1.5"
-                title="Guardar copia de seguridad"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" /></svg>
-                {backupLoading ? 'Guardando...' : 'Guardar copia'}
-              </button>
-              <button
-                onClick={restaurarBackup}
-                disabled={restoreLoading}
-                className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#1a1a1a] text-xs text-[#888888] hover:text-white hover:border-[#3a3a3a] transition-all disabled:opacity-50 flex items-center gap-1.5"
-                title="Restaurar copia de seguridad"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M16 6l-4-4-4 4M12 3v12" /></svg>
-                {restoreLoading ? 'Restaurando...' : 'Restaurar copia'}
-              </button>
-            </>
-          )}
-          {!authLoading && esOwner && (
-            <Button
-              onClick={() => setShowForm(true)}
-              icon={
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-              }
-            >
-              Nueva ruta
-            </Button>
-          )}
-        </div>
+        {!authLoading && esOwner && (
+          <Button
+            onClick={() => setShowForm(true)}
+            icon={
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            }
+          >
+            Nueva ruta
+          </Button>
+        )}
       </div>
+
+      {!authLoading && esOwner && rutas.length > 0 && (
+        <div className="flex items-center gap-2 mb-4">
+          <button
+            onClick={descargarBackup}
+            disabled={backupLoading}
+            className="h-8 px-3 rounded-[10px] border border-[#2a2a2a] bg-[#141414] text-[11px] text-[#666] hover:text-[#aaa] hover:border-[#333] transition-all disabled:opacity-50 flex items-center gap-1.5"
+            title="Guardar copia de seguridad"
+          >
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" /></svg>
+            {backupLoading ? 'Guardando...' : 'Guardar copia'}
+          </button>
+          <button
+            onClick={restaurarBackup}
+            disabled={restoreLoading}
+            className="h-8 px-3 rounded-[10px] border border-[#2a2a2a] bg-[#141414] text-[11px] text-[#666] hover:text-[#aaa] hover:border-[#333] transition-all disabled:opacity-50 flex items-center gap-1.5"
+            title="Restaurar copia de seguridad"
+          >
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M16 6l-4-4-4 4M12 3v12" /></svg>
+            {restoreLoading ? 'Restaurando...' : 'Restaurar copia'}
+          </button>
+        </div>
+      )}
 
       {/* Mini formulario inline */}
       {showForm && (
