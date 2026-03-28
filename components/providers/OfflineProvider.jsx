@@ -80,32 +80,50 @@ export default function OfflineProvider({ children }) {
   // Next.js client-side navigation fetches RSC payloads from server,
   // which fails offline and crashes the router. By forcing full-page
   // loads (window.location.href), the SW serves cached HTML instead.
+  // We intercept BOTH <a> clicks AND router.push() (via history.pushState).
   useEffect(() => {
     const DASHBOARD_ROUTES = ['/dashboard', '/clientes', '/prestamos', '/rutas', '/caja', '/cobradores', '/reportes', '/configuracion']
 
+    const isDashboardRoute = (pathname) =>
+      DASHBOARD_ROUTES.some((r) => pathname.startsWith(r))
+
+    // 1) Intercept <a> tag clicks (captures Next.js Link clicks)
     const handleClick = (e) => {
       if (navigator.onLine) return
 
-      // Walk up from target to find the nearest <a> tag
       let el = e.target
       while (el && el.tagName !== 'A') el = el.parentElement
       if (!el || !el.href) return
 
       const url = new URL(el.href, window.location.origin)
-
-      // Only intercept internal dashboard routes
       if (url.origin !== window.location.origin) return
-      if (!DASHBOARD_ROUTES.some((r) => url.pathname.startsWith(r))) return
+      if (!isDashboardRoute(url.pathname)) return
 
-      // Prevent Next.js client-side navigation, force full-page load
       e.preventDefault()
       e.stopPropagation()
       window.location.href = url.pathname + url.search
     }
 
-    // Use capture phase to intercept before Next.js Link handler
+    // 2) Intercept router.push() via history.pushState monkey-patch
+    // Next.js router.push() calls history.pushState internally.
+    // When offline, we redirect to a full-page load instead.
+    const originalPushState = history.pushState.bind(history)
+    history.pushState = function (state, title, url) {
+      if (!navigator.onLine && url) {
+        const parsed = new URL(url, window.location.origin)
+        if (isDashboardRoute(parsed.pathname)) {
+          window.location.href = parsed.pathname + parsed.search
+          return
+        }
+      }
+      return originalPushState(state, title, url)
+    }
+
     document.addEventListener('click', handleClick, true)
-    return () => document.removeEventListener('click', handleClick, true)
+    return () => {
+      document.removeEventListener('click', handleClick, true)
+      history.pushState = originalPushState
+    }
   }, [])
 
   const manualSync = async () => {
