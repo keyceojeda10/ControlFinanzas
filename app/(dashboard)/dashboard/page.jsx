@@ -341,36 +341,41 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-      {/* Sync offline card */}
-      <button
-        onClick={startBulkSync}
-        disabled={bulkSyncing}
-        className="w-full border border-[#2a2a2a] rounded-[16px] px-4 py-4 hover:border-[#22c55e]/40 transition-all text-left disabled:opacity-60"
-        style={{ background: 'linear-gradient(135deg, #22c55e08 0%, #1a1a1a 40%, #1a1a1a 70%, #22c55e05 100%)' }}
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0" style={{ background: '#22c55e18' }}>
-            <svg className={`w-5 h-5 text-[#22c55e] ${bulkSyncing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-          </div>
-          <div className="flex-1 min-w-0">
-            {bulkProgress ? (
-              <p className="text-sm font-medium text-[#22c55e]">{bulkProgress.message}</p>
-            ) : (
-              <>
-                <p className="text-sm font-semibold text-[#22c55e]">Preparar para cobrar sin internet</p>
-                <p className="text-[10px] text-[#888888] mt-0.5">
-                  {syncMeta
-                    ? `${syncMeta.totalClientes} clientes, ${syncMeta.totalPrestamos} prestamos · ${new Date(syncMeta.syncedAt).toLocaleString('es-CO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' })}`
-                    : 'Descarga todos los datos para trabajar offline'
-                  }
-                </p>
-              </>
-            )}
+      {/* Offline sync status indicator */}
+      {syncMeta && !bulkSyncing && !bulkProgress && (
+        <div className="w-full border border-[#2a2a2a] rounded-[16px] px-4 py-3 text-left" style={{ background: '#1a1a1a' }}>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: '#22c55e18' }}>
+              <svg className="w-4 h-4 text-[#22c55e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] text-[#888888]">
+                Datos offline: {syncMeta.totalClientes} clientes, {syncMeta.totalPrestamos} prestamos
+                <span className="text-[#555]"> · </span>
+                {new Date(syncMeta.syncedAt).toLocaleString('es-CO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' })}
+              </p>
+            </div>
+            <button onClick={startBulkSync} className="text-[10px] text-[#555] hover:text-[#22c55e] transition-colors shrink-0">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
           </div>
         </div>
-      </button>
+      )}
+      {bulkSyncing && (
+        <div className="w-full border border-[#22c55e]/20 rounded-[16px] px-4 py-3 text-left" style={{ background: '#22c55e08' }}>
+          <div className="flex items-center gap-3">
+            <svg className="w-4 h-4 text-[#22c55e] animate-spin shrink-0" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            <p className="text-[11px] text-[#22c55e]">{bulkProgress?.message || 'Sincronizando datos...'}</p>
+          </div>
+        </div>
+      )}
 
       <div>
         <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-3">Accesos rapidos</p>
