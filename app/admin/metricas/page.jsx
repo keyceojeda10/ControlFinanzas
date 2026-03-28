@@ -9,8 +9,8 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
 
-const PRECIOS = { basic: 80000, standard: 150000, professional: 250000 }
-const COLORES = { basic: '#888888', standard: '#3b82f6', professional: '#a855f7' }
+const PRECIOS = { basic: 59000, growth: 79000, standard: 119000, professional: 259000 }
+const COLORES = { basic: '#888888', growth: '#3b82f6', standard: '#f5c518', professional: '#a855f7' }
 
 const CopTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
@@ -81,15 +81,16 @@ export default function MetricasPage() {
   for (let i = 11; i >= 0; i--) {
     const fecha = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1)
     const label = fecha.toLocaleDateString('es-CO', { month: 'short', year: '2-digit' })
-    let basic = 0, standard = 0, professional = 0
+    let basic = 0, growth = 0, standard = 0, professional = 0
     for (const o of orgs) {
       if (new Date(o.createdAt) <= new Date(fecha.getFullYear(), fecha.getMonth() + 1, 0)) {
         if (o.plan === 'basic') basic += PRECIOS.basic
+        else if (o.plan === 'growth') growth += PRECIOS.growth
         else if (o.plan === 'standard') standard += PRECIOS.standard
         else professional += PRECIOS.professional
       }
     }
-    mrrPorMes.push({ mes: label, basic, standard, professional })
+    mrrPorMes.push({ mes: label, basic, growth, standard, professional })
   }
 
   // 2. Crecimiento de orgs por mes
@@ -108,9 +109,10 @@ export default function MetricasPage() {
 
   // 3. Distribución de planes
   const planDist = [
-    { name: 'Basic',        value: stats.planes.basic.cantidad,        color: COLORES.basic },
-    { name: 'Standard',     value: stats.planes.standard.cantidad,     color: COLORES.standard },
-    { name: 'Professional', value: stats.planes.professional.cantidad, color: COLORES.professional },
+    { name: 'Basico',       value: stats.planes.basic?.cantidad || 0,        color: COLORES.basic },
+    { name: 'Crecimiento',  value: stats.planes.growth?.cantidad || 0,       color: COLORES.growth },
+    { name: 'Profesional',  value: stats.planes.standard?.cantidad || 0,     color: COLORES.standard },
+    { name: 'Empresarial',  value: stats.planes.professional?.cantidad || 0, color: COLORES.professional },
   ].filter((p) => p.value > 0)
 
   // 4. Churn mensual

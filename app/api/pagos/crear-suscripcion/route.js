@@ -4,8 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { preApprovalApi, PLANES, buildPreapprovalBody } from '@/lib/mercadopago'
-
-const PLANES_VALIDOS = ['basic', 'standard', 'professional']
+import { PLANES_VALIDOS } from '@/lib/planes'
 
 export async function POST(req) {
   const session = await getServerSession(authOptions)

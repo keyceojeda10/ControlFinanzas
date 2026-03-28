@@ -9,41 +9,59 @@ import { formatCOP }           from '@/lib/calculos'
 const planes = [
   {
     key: 'basic',
-    nombre: 'Básico',
+    nombre: 'Basico',
     precio: 59000,
     badge: null,
     features: [
       '1 usuario (administrador)',
-      'Hasta 50 clientes',
-      'Gestión de préstamos',
-      'Dashboard básico',
+      'Hasta 450 clientes',
+      '1 ruta',
+      'Gestion de prestamos',
+      'Dashboard basico',
+    ],
+  },
+  {
+    key: 'growth',
+    nombre: 'Crecimiento',
+    precio: 79000,
+    badge: 'Mas popular',
+    features: [
+      'Hasta 2 usuarios',
+      'Hasta 1,000 clientes',
+      'Hasta 3 rutas',
+      'Cobradores incluidos',
+      'Cierre de caja diario',
+      'Cobrador extra: $19.000/mes',
+      'Ruta extra: $29.000/mes',
     ],
   },
   {
     key: 'standard',
     nombre: 'Profesional',
     precio: 119000,
-    badge: 'Más popular',
+    badge: null,
     features: [
-      'Hasta 3 usuarios',
-      'Hasta 300 clientes',
-      'Rutas y cobradores',
-      'Cierre de caja diario',
+      'Hasta 5 usuarios',
+      'Hasta 2,000 clientes',
+      'Hasta 6 rutas',
       'Reportes completos',
-      'Cobrador extra: $29.000/mes',
+      'Cobrador extra: $19.000/mes',
+      'Ruta extra: $29.000/mes',
     ],
   },
   {
     key: 'professional',
     nombre: 'Empresarial',
-    precio: 199000,
+    precio: 259000,
     badge: null,
     features: [
-      'Hasta 7 usuarios',
-      'Clientes ilimitados',
+      'Hasta 10 usuarios',
+      'Hasta 10,000 clientes',
+      'Hasta 10 rutas',
       'Reportes avanzados',
       'Exportar a Excel',
-      'Cobrador extra: $29.000/mes',
+      'Cobrador extra: $19.000/mes',
+      'Ruta extra: $29.000/mes',
       'Todo lo del plan Profesional',
     ],
   },
@@ -316,10 +334,10 @@ export default function PlanPage() {
         </div>
       )}
 
-      <div className={`grid grid-cols-1 gap-4 ${esSuperadmin ? 'sm:grid-cols-4' : 'sm:grid-cols-3'}`}>
+      <div className={`grid grid-cols-1 gap-4 ${esSuperadmin ? 'sm:grid-cols-5' : 'sm:grid-cols-2 lg:grid-cols-4'}`}>
         {(esSuperadmin ? [planTest, ...planes] : planes).map((p) => {
           const esPlanActual = p.key === planActual
-          const esPopular    = p.badge === 'Más popular'
+          const esPopular    = p.badge === 'Mas popular'
           const esTest       = p.key === 'test'
           const esRecurrenteActiva = tieneRecurrente && esPlanActual && !subCancelada
 

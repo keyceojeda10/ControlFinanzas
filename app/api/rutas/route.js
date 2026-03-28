@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
+import { LIMITES_RUTAS, PLANES_CONFIG } from '@/lib/planes'
 
 // Funciones de fecha en timezone Colombia (UTC-5)
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
@@ -83,10 +84,26 @@ export async function POST(request) {
     return Response.json({ error: 'Solo el administrador puede crear rutas' }, { status: 403 })
   }
 
-  const { organizationId } = session.user
+  const { organizationId, plan } = session.user
   const { nombre, cobradorId } = await request.json()
 
   if (!nombre?.trim()) return Response.json({ error: 'El nombre es requerido' }, { status: 400 })
+
+  // Verificar límite de rutas del plan
+  const org = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { rutasExtra: true },
+  })
+  const limiteBase = LIMITES_RUTAS[plan] ?? 1
+  const limite = limiteBase + (org?.rutasExtra ?? 0)
+  const totalRutas = await prisma.ruta.count({ where: { organizationId, activo: true } })
+  if (totalRutas >= limite) {
+    const puedeComprar = PLANES_CONFIG[plan]?.rutaExtra > 0
+    return Response.json(
+      { error: `Has alcanzado el límite de ${limite} ruta${limite > 1 ? 's' : ''} de tu plan ${PLANES_CONFIG[plan]?.nombre || plan}. ${puedeComprar ? 'Puedes comprar una ruta adicional.' : 'Actualiza tu plan para más rutas.'}`, limitReached: true, plan },
+      { status: 403 }
+    )
+  }
 
   // Verificar cobrador si se envía
   if (cobradorId) {

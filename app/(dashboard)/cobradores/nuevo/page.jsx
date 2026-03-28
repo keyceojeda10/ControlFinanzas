@@ -7,7 +7,7 @@ import { useAuth }             from '@/hooks/useAuth'
 import { Input }               from '@/components/ui/Input'
 import { Button }              from '@/components/ui/Button'
 
-const LIMITES = { basic: 1, standard: 3, professional: Infinity }
+const LIMITES = { basic: 1, growth: 2, standard: 5, professional: 10 }
 
 export default function NuevoCobrador() {
   const router = useRouter()
@@ -32,7 +32,7 @@ export default function NuevoCobrador() {
   const plan     = session?.user?.plan ?? 'basic'
   const limite   = LIMITES[plan] ?? 1
   const restantes = isFinite(limite) && totalUsers !== null ? Math.max(0, limite - totalUsers) : null
-  const puedeComprarExtra = plan === 'standard' || plan === 'professional'
+  const puedeComprarExtra = plan === 'growth' || plan === 'standard' || plan === 'professional'
 
   useEffect(() => {
     if (!authLoading && !esOwner) router.replace('/cobradores')
@@ -193,7 +193,7 @@ export default function NuevoCobrador() {
               <div>
                 <p className="text-sm font-semibold text-white">Limite alcanzado</p>
                 <p className="text-xs text-[#888888] mt-0.5">
-                  Has usado todos los espacios de tu plan. Agrega un cobrador adicional por <span className="text-[#f5c518] font-bold">$29.000/mes</span>.
+                  Has usado todos los espacios de tu plan. Agrega un cobrador adicional por <span className="text-[#f5c518] font-bold">$19.000/mes</span>.
                 </p>
               </div>
             </div>
@@ -210,7 +210,7 @@ export default function NuevoCobrador() {
                   </svg>
                   Procesando...
                 </>
-              ) : 'Agregar cobrador extra — $29.000/mes'}
+              ) : 'Agregar cobrador extra — $19.000/mes'}
             </button>
           </div>
         )}

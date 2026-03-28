@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { enviarEmail, emailPagoAprobado } from '@/lib/email'
+import { PLANES_VALIDOS } from '@/lib/planes'
 
 export async function GET(req, { params }) {
   const session = await getServerSession(authOptions)
@@ -95,7 +96,7 @@ export async function PATCH(req, { params }) {
     return NextResponse.json({ ok: true, mensaje: 'Organización activada' })
   }
 
-  const PLANES_VALIDOS = ['test', 'basic', 'standard', 'professional']
+  // PLANES_VALIDOS importado de @/lib/planes
   if (accion === 'cambiarPlan' && plan) {
     if (!PLANES_VALIDOS.includes(plan)) {
       return NextResponse.json({ error: 'Plan no válido' }, { status: 400 })

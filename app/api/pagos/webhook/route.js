@@ -6,8 +6,7 @@ import crypto           from 'crypto'
 import { enviarEmail, emailPagoAprobado, emailPagoFallido, emailReferidoExitoso } from '@/lib/email'
 import { webhookLimiter, getClientIp } from '@/lib/rate-limit'
 
-// Valores válidos del enum Plan en Prisma/DB
-const PLANES_VALIDOS = ["test", "basic", "standard", "professional"]
+import { PLANES_VALIDOS } from '@/lib/planes'
 
 function sanitizarPlan(planRaw, fallback) {
   fallback = fallback || "basic"
@@ -298,6 +297,29 @@ export async function POST(req) {
           })
         }
         console.log('[webhook] cobrador extra agregado para org=' + orgId)
+      }
+      return NextResponse.json({ ok: true })
+    }
+
+    // ─── Ruta extra ───────────────────────────────────────
+    if (tipo === 'ruta_extra') {
+      if (status === 'approved') {
+        await prisma.organization.update({
+          where: { id: orgId },
+          data: { rutasExtra: { increment: 1 } },
+        })
+        const admin = await prisma.user.findFirst({ where: { rol: 'superadmin' } })
+        if (admin) {
+          await prisma.adminLog.create({
+            data: {
+              adminId:        admin.id,
+              organizacionId: orgId,
+              accion:         'ruta_extra_comprada',
+              detalle:        `Ruta extra comprada. MercadoPago #${data.id}. Monto: $${payment.transaction_amount}`,
+            },
+          })
+        }
+        console.log('[webhook] ruta extra agregada para org=' + orgId)
       }
       return NextResponse.json({ ok: true })
     }

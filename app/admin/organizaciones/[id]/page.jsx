@@ -9,12 +9,13 @@ import { SkeletonCard }         from '@/components/ui/Skeleton'
 import { formatCOP }            from '@/lib/calculos'
 
 const LIMITES = {
-  basic:        { usuarios: 1, clientes: 50 },
-  standard:     { usuarios: 3, clientes: 200 },
-  professional: { usuarios: 999, clientes: 999999 },
+  basic:        { usuarios: 1,  clientes: 450 },
+  growth:       { usuarios: 2,  clientes: 1000 },
+  standard:     { usuarios: 5,  clientes: 2000 },
+  professional: { usuarios: 10, clientes: 10000 },
 }
 
-const planBadge = { basic: 'gray', standard: 'blue', professional: 'purple' }
+const planBadge = { basic: 'gray', growth: 'blue', standard: 'yellow', professional: 'purple' }
 
 export default function OrgDetallePage() {
   const { id }  = useParams()
@@ -126,9 +127,10 @@ export default function OrgDetallePage() {
             disabled={!!accionando}
             className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#f5c518]"
           >
-            <option value="basic">Basic</option>
-            <option value="standard">Standard</option>
-            <option value="professional">Professional</option>
+            <option value="basic">Basico</option>
+            <option value="growth">Crecimiento</option>
+            <option value="standard">Profesional</option>
+            <option value="professional">Empresarial</option>
           </select>
           {/* Suspender / Activar */}
           {org.activo ? (
@@ -253,9 +255,10 @@ export default function OrgDetallePage() {
               onChange={(e) => setPagoDirecto(p => ({ ...p, plan: e.target.value }))}
               className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#f5c518]"
             >
-              <option value="basic">Basic ($59.000/mes)</option>
-              <option value="standard">Standard ($119.000/mes)</option>
-              <option value="professional">Professional ($199.000/mes)</option>
+              <option value="basic">Basico ($59.000/mes)</option>
+              <option value="growth">Crecimiento ($79.000/mes)</option>
+              <option value="standard">Profesional ($119.000/mes)</option>
+              <option value="professional">Empresarial ($259.000/mes)</option>
             </select>
           </div>
           <div className="flex flex-col gap-1">

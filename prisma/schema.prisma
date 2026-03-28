@@ -15,6 +15,7 @@ datasource db {
 enum Plan {
   test
   basic
+  growth
   standard
   professional
 }
@@ -71,6 +72,7 @@ model Organization {
   referidoPorId   String?
   descuento       Int            @default(0)
   cobradoresExtra Int            @default(0)
+  rutasExtra      Int            @default(0)
   estadoContacto  EstadoContacto @default(nuevo)
   fuenteRegistro  String?
   planOriginal    Plan?
