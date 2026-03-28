@@ -24,7 +24,7 @@ export async function POST(request, { params }) {
   const ruta = await verificarRuta(id, organizationId)
   if (!ruta) return Response.json({ error: 'Ruta no encontrada' }, { status: 404 })
 
-  const { clienteIds } = await request.json()
+  const { clienteIds, forzar } = await request.json()
   if (!Array.isArray(clienteIds) || !clienteIds.length) {
     return Response.json({ error: 'clienteIds debe ser un array no vacío' }, { status: 400 })
   }
@@ -32,10 +32,20 @@ export async function POST(request, { params }) {
   // Verificar que todos los clientes pertenecen a la organización
   const clientes = await prisma.cliente.findMany({
     where: { id: { in: clienteIds }, organizationId, estado: { notIn: ['eliminado'] } },
-    select: { id: true },
+    select: { id: true, nombre: true, rutaId: true },
   })
   if (clientes.length !== clienteIds.length) {
     return Response.json({ error: 'Uno o más clientes no son válidos' }, { status: 400 })
+  }
+
+  // Verificar si algún cliente ya está en otra ruta
+  const enOtraRuta = clientes.filter((c) => c.rutaId && c.rutaId !== id)
+  if (enOtraRuta.length > 0 && !forzar) {
+    const nombres = enOtraRuta.map((c) => c.nombre).join(', ')
+    return Response.json(
+      { error: `Estos clientes ya están en otra ruta: ${nombres}. Usa la opción de mover para reasignarlos.` },
+      { status: 409 }
+    )
   }
 
   // Obtener max ordenRuta actual en la ruta

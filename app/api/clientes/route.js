@@ -56,6 +56,7 @@ export async function GET(request) {
       referencia: true,
       estado:     true,
       rutaId:     true,
+      ruta:       { select: { id: true, nombre: true } },
       prestamos: {
         where:  { estado: 'activo' },
         select: {
@@ -82,6 +83,7 @@ export async function GET(request) {
     referencia:       c.referencia,
     estado:           calcularEstadoCliente(c.prestamos),
     rutaId:           c.rutaId,
+    rutaNombre:       c.ruta?.nombre ?? null,
     prestamosActivos: c.prestamos.length,
   }))
 

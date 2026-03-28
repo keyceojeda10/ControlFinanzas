@@ -22,6 +22,8 @@ export default function RutasPage() {
   const [saving,   setSaving]   = useState(false)
   const [formError, setFormError] = useState('')
   const [isOffline, setIsOffline] = useState(false)
+  const [backupLoading, setBackupLoading] = useState(false)
+  const [restoreLoading, setRestoreLoading] = useState(false)
 
   useEffect(() => {
     setIsOffline(false)
@@ -67,6 +69,48 @@ export default function RutasPage() {
     }
   }
 
+  const descargarBackup = async () => {
+    setBackupLoading(true)
+    try {
+      const res = await fetch('/api/rutas/backup')
+      if (!res.ok) { alert('Error al descargar backup'); return }
+      const data = await res.json()
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `rutas-backup-${new Date().toISOString().slice(0, 10)}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch { alert('Error de conexion') } finally { setBackupLoading(false) }
+  }
+
+  const restaurarBackup = async () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.json'
+    input.onchange = async (e) => {
+      const file = e.target.files?.[0]
+      if (!file) return
+      if (!confirm('Esto reemplazara la configuracion actual de TODAS las rutas con el archivo seleccionado. ¿Continuar?')) return
+      setRestoreLoading(true)
+      try {
+        const text = await file.text()
+        const backup = JSON.parse(text)
+        const res = await fetch('/api/rutas/backup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(backup),
+        })
+        const data = await res.json()
+        if (!res.ok) { alert(data.error ?? 'Error al restaurar'); return }
+        alert(`Restauracion completada: ${data.restaurados} clientes reasignados`)
+        window.location.reload()
+      } catch { alert('Error al leer el archivo') } finally { setRestoreLoading(false) }
+    }
+    input.click()
+  }
+
   return (
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-6">
@@ -76,18 +120,42 @@ export default function RutasPage() {
             {loading ? '…' : `${rutas.length} ruta${rutas.length !== 1 ? 's' : ''}`}
           </p>
         </div>
-        {!authLoading && esOwner && (
-          <Button
-            onClick={() => setShowForm(true)}
-            icon={
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-            }
-          >
-            Nueva ruta
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {!authLoading && esOwner && rutas.length > 0 && (
+            <>
+              <button
+                onClick={descargarBackup}
+                disabled={backupLoading}
+                className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#1a1a1a] text-xs text-[#888888] hover:text-white hover:border-[#3a3a3a] transition-all disabled:opacity-50 flex items-center gap-1.5"
+                title="Guardar copia de seguridad"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" /></svg>
+                {backupLoading ? 'Guardando...' : 'Guardar copia'}
+              </button>
+              <button
+                onClick={restaurarBackup}
+                disabled={restoreLoading}
+                className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#1a1a1a] text-xs text-[#888888] hover:text-white hover:border-[#3a3a3a] transition-all disabled:opacity-50 flex items-center gap-1.5"
+                title="Restaurar copia de seguridad"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M16 6l-4-4-4 4M12 3v12" /></svg>
+                {restoreLoading ? 'Restaurando...' : 'Restaurar copia'}
+              </button>
+            </>
+          )}
+          {!authLoading && esOwner && (
+            <Button
+              onClick={() => setShowForm(true)}
+              icon={
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              }
+            >
+              Nueva ruta
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Mini formulario inline */}
