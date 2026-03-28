@@ -225,12 +225,13 @@ export default function PrestamoDetallePage({ params }) {
           localStorage.setItem(`cf-ruta-progress-${rutaNav.rutaId}`, JSON.stringify({
             clienteId: nextCliente.id, clienteNombre: nextCliente.nombre, index: idx + 1, date: getDate(),
           }))
-          router.push(`/clientes/${nextCliente.id}`)
+          const url = `/clientes/${nextCliente.id}`
+          navigator.onLine ? router.push(url) : (window.location.href = url)
         }
 
         return isLast ? (
           <button
-            onClick={() => { sessionStorage.removeItem('cf-ruta-nav'); router.push(`/rutas/${rutaNav.rutaId}`) }}
+            onClick={() => { sessionStorage.removeItem('cf-ruta-nav'); const u = `/rutas/${rutaNav.rutaId}`; navigator.onLine ? router.push(u) : (window.location.href = u) }}
             className="w-full py-3.5 rounded-[14px] bg-[#22c55e] text-white text-sm font-semibold active:scale-[0.98] transition-all"
           >
             Ruta finalizada · Volver a {rutaNav.rutaNombre}

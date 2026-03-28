@@ -149,27 +149,9 @@ export default function OfflineProvider({ children }) {
       window.location.href = url.pathname + url.search
     }
 
-    // 2) Intercept router.push() via history.pushState monkey-patch
-    // Next.js router.push() calls history.pushState internally.
-    // When offline, we redirect to a full-page load instead.
-    const originalPushState = history.pushState.bind(history)
-    history.pushState = function (state, title, url) {
-      try {
-        if (!navigator.onLine && url && typeof url === 'string') {
-          const parsed = new URL(url, window.location.origin)
-          if (isDashboardRoute(parsed.pathname) && parsed.pathname !== window.location.pathname) {
-            window.location.href = parsed.pathname + parsed.search
-            return
-          }
-        }
-      } catch { /* parsing error — let it through */ }
-      return originalPushState(state, title, url)
-    }
-
     document.addEventListener('click', handleClick, true)
     return () => {
       document.removeEventListener('click', handleClick, true)
-      history.pushState = originalPushState
     }
   }, [])
 

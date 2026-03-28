@@ -633,7 +633,13 @@ export default function RutaDetallePage({ params }) {
                     clientes: ruta.clientes.map(cl => ({ id: cl.id, nombre: cl.nombre })),
                     currentIndex: idx,
                   }))
-                  router.push(`/clientes/${c.id}`)
+                  // Offline: full-page load so SW serves cached HTML
+                  // Online: client-side navigation
+                  if (navigator.onLine) {
+                    router.push(`/clientes/${c.id}`)
+                  } else {
+                    window.location.href = `/clientes/${c.id}`
+                  }
                 }}>
                   <p className="text-sm font-medium text-[white] truncate">{c.nombre}</p>
                   <p className="text-[10px] text-[#888888]">

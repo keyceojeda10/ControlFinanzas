@@ -173,7 +173,11 @@ export default function ClienteDetallePage({ params }) {
       index: newIdx,
       date: getColombiaDateStr(),
     }))
-    router.push(`/clientes/${next.id}`)
+    if (navigator.onLine) {
+      router.push(`/clientes/${next.id}`)
+    } else {
+      window.location.href = `/clientes/${next.id}`
+    }
   }
 
   const irSiguienteEnRuta = () => navegarEnRuta(1)
@@ -385,7 +389,8 @@ export default function ClienteDetallePage({ params }) {
             <button
               onClick={() => {
                 sessionStorage.removeItem('cf-ruta-nav')
-                router.push(`/rutas/${rutaNav.rutaId}`)
+                const url = `/rutas/${rutaNav.rutaId}`
+                navigator.onLine ? router.push(url) : (window.location.href = url)
               }}
               className="flex-1 py-3 rounded-[14px] bg-[#22c55e] text-white text-sm font-semibold active:scale-[0.98] transition-all"
             >
