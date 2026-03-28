@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, createContext, useContext, useCallback } from 'react'
+import { useState, useEffect, useRef, createContext, useContext, useCallback } from 'react'
 import { iniciarAutoSync, obtenerPagosPendientes, sincronizarPagos, sincronizarTodo, obtenerSyncMeta } from '@/lib/offline'
 
 const OfflineContext = createContext({ isOnline: true, pendingCount: 0, syncing: false, syncMeta: null })
@@ -9,6 +9,9 @@ export function useOffline() {
   return useContext(OfflineContext)
 }
 
+const SYNC_INTERVAL = 5 * 60 * 1000 // 5 minutes
+const MUTATION_SYNC_DELAY = 3000     // 3s after a mutation
+
 export default function OfflineProvider({ children }) {
   const [isOnline, setIsOnline]         = useState(true)
   const [pendingCount, setPendingCount] = useState(0)
@@ -16,6 +19,27 @@ export default function OfflineProvider({ children }) {
   const [syncMeta, setSyncMeta]         = useState(null)
   const [bulkSyncing, setBulkSyncing]   = useState(false)
   const [bulkProgress, setBulkProgress] = useState(null)
+  const syncingRef = useRef(false)
+
+  // Shared sync function — downloads all data to IndexedDB
+  const runFullSync = useCallback(async (silent = true) => {
+    if (!navigator.onLine || syncingRef.current) return
+    syncingRef.current = true
+    if (!silent) setBulkSyncing(true)
+    try {
+      const result = await sincronizarTodo(() => {})
+      setSyncMeta({
+        syncedAt: result.syncedAt,
+        totalClientes: result.clientes,
+        totalPrestamos: result.prestamos,
+        totalRutas: result.rutas,
+      })
+    } catch { /* silent */ }
+    finally {
+      syncingRef.current = false
+      if (!silent) setBulkSyncing(false)
+    }
+  }, [])
 
   // Track pending payments count (MUST be defined before useEffects that reference it)
   const refreshPending = useCallback(async () => {
@@ -30,27 +54,16 @@ export default function OfflineProvider({ children }) {
     setIsOnline(navigator.onLine)
     const goOnline = () => {
       setIsOnline(true)
-      // Re-sync everything when internet comes back
       setTimeout(async () => {
         try {
-          // First upload pending payments
           const payResult = await sincronizarPagos()
           if (payResult.synced > 0) {
             setSyncResult(payResult)
             refreshPending()
             setTimeout(() => setSyncResult(null), 5000)
           }
-          // Then download fresh data
-          setBulkSyncing(true)
-          const result = await sincronizarTodo(() => {})
-          setSyncMeta({
-            syncedAt: result.syncedAt,
-            totalClientes: result.clientes,
-            totalPrestamos: result.prestamos,
-            totalRutas: result.rutas,
-          })
+          await runFullSync(false)
         } catch { /* silent */ }
-        finally { setBulkSyncing(false) }
       }, 2000)
     }
     const goOffline = () => setIsOnline(false)
@@ -60,7 +73,7 @@ export default function OfflineProvider({ children }) {
       window.removeEventListener('online',  goOnline)
       window.removeEventListener('offline', goOffline)
     }
-  }, [refreshPending])
+  }, [refreshPending, runFullSync])
 
   // Register service worker
   useEffect(() => {
@@ -69,7 +82,7 @@ export default function OfflineProvider({ children }) {
     }
   }, [])
 
-  // Start auto-sync and listen for sync events
+  // Start auto-sync for pending payments + listen for sync events
   useEffect(() => {
     iniciarAutoSync()
 
@@ -95,44 +108,58 @@ export default function OfflineProvider({ children }) {
     return () => window.removeEventListener('paymentQueued', onPaymentQueued)
   }, [refreshPending])
 
-  // Load sync meta on mount + AUTO-SYNC silently in background
+  // ─── AUTO-SYNC: on mount + every 5 minutes ───
   useEffect(() => {
     obtenerSyncMeta().then((meta) => { if (meta) setSyncMeta(meta) }).catch(() => {})
 
-    // Auto-sync on app open: download all data in background
-    // so the user never has to press a button
-    const autoSync = async () => {
-      if (!navigator.onLine || bulkSyncing) return
-      setBulkSyncing(true)
-      try {
-        const result = await sincronizarTodo(() => {})
-        setSyncMeta({
-          syncedAt: result.syncedAt,
-          totalClientes: result.clientes,
-          totalPrestamos: result.prestamos,
-          totalRutas: result.rutas,
-        })
-      } catch { /* silent fail */ }
-      finally { setBulkSyncing(false) }
+    // Sync 3s after app open
+    const initialTimeout = setTimeout(() => runFullSync(false), 3000)
+
+    // Then every 5 minutes while online
+    const interval = setInterval(() => runFullSync(true), SYNC_INTERVAL)
+
+    return () => {
+      clearTimeout(initialTimeout)
+      clearInterval(interval)
+    }
+  }, [runFullSync])
+
+  // ─── MUTATION SYNC: detect POST/PUT/DELETE to /api/ and re-sync ───
+  useEffect(() => {
+    const originalFetch = window.fetch
+    let mutationTimeout = null
+
+    window.fetch = function (...args) {
+      const result = originalFetch.apply(this, args)
+
+      result.then((response) => {
+        const url = typeof args[0] === 'string' ? args[0] : args[0]?.url || ''
+        const method = (args[1]?.method || 'GET').toUpperCase()
+
+        // Only trigger sync for mutations to our API (not external, not GET)
+        if (url.startsWith('/api/') && method !== 'GET' && response.ok) {
+          // Debounce: if multiple mutations happen quickly, only sync once
+          if (mutationTimeout) clearTimeout(mutationTimeout)
+          mutationTimeout = setTimeout(() => runFullSync(true), MUTATION_SYNC_DELAY)
+        }
+      }).catch(() => {})
+
+      return result
     }
 
-    // Run after a short delay so the page loads first
-    const timeout = setTimeout(autoSync, 3000)
-    return () => clearTimeout(timeout)
-  }, [])
+    return () => {
+      window.fetch = originalFetch
+      if (mutationTimeout) clearTimeout(mutationTimeout)
+    }
+  }, [runFullSync])
 
   // ─── Offline navigation: force full-page loads when offline ───
-  // Next.js client-side navigation fetches RSC payloads from server,
-  // which fails offline and crashes the router. By forcing full-page
-  // loads (window.location.href), the SW serves cached HTML instead.
-  // We intercept BOTH <a> clicks AND router.push() (via history.pushState).
   useEffect(() => {
     const DASHBOARD_ROUTES = ['/dashboard', '/clientes', '/prestamos', '/rutas', '/caja', '/cobradores', '/reportes', '/configuracion']
 
     const isDashboardRoute = (pathname) =>
       DASHBOARD_ROUTES.some((r) => pathname.startsWith(r))
 
-    // 1) Intercept <a> tag clicks (captures Next.js Link clicks)
     const handleClick = (e) => {
       if (navigator.onLine) return
 
@@ -165,7 +192,7 @@ export default function OfflineProvider({ children }) {
     }
   }
 
-  // Bulk sync: download everything for offline
+  // Bulk sync: download everything for offline (manual trigger)
   const startBulkSync = async () => {
     if (bulkSyncing || !navigator.onLine) return
     setBulkSyncing(true)
