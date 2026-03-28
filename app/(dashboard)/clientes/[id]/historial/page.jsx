@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
+import { obtenerClienteOffline } from '@/lib/offline'
 import { Card } from '@/components/ui/Card'
 import { SkeletonCard } from '@/components/ui/Skeleton'
 import { formatCOP } from '@/lib/calculos'
@@ -20,15 +21,33 @@ export default function HistorialPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!authLoading && session) {
-      fetch(`/api/clientes/${params.id}/historial`)
-        .then((res) => res.json())
-        .then((data) => {
-          setHistorial(Array.isArray(data) ? data : [])
-        })
-        .finally(() => setLoading(false))
-    }
-  }, [authLoading, session, params.id])
+    if (authLoading) return
+    fetch(`/api/clientes/${params.id}/historial`)
+      .then((res) => {
+        if (!res.ok) throw new Error()
+        return res.json()
+      })
+      .then((data) => {
+        setHistorial(Array.isArray(data) ? data : [])
+      })
+      .catch(async () => {
+        // Offline fallback: extract pagos from cached client data
+        try {
+          const cliente = await obtenerClienteOffline(params.id)
+          if (cliente?.prestamos) {
+            const allPagos = cliente.prestamos.flatMap((p) =>
+              (p.pagos || []).map((pago) => ({
+                ...pago,
+                prestamoMonto: p.montoPrestado,
+              }))
+            )
+            allPagos.sort((a, b) => new Date(b.fechaPago) - new Date(a.fechaPago))
+            setHistorial(allPagos)
+          }
+        } catch { /* ignore */ }
+      })
+      .finally(() => setLoading(false))
+  }, [authLoading, params.id])
 
   if (authLoading || loading) {
     return (

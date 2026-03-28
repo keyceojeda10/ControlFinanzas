@@ -17,10 +17,34 @@ export default function OfflineProvider({ children }) {
   const [bulkSyncing, setBulkSyncing]   = useState(false)
   const [bulkProgress, setBulkProgress] = useState(null)
 
-  // Track online/offline
+  // Track online/offline + re-sync when coming back online
   useEffect(() => {
     setIsOnline(navigator.onLine)
-    const goOnline  = () => setIsOnline(true)
+    const goOnline = () => {
+      setIsOnline(true)
+      // Re-sync everything when internet comes back
+      setTimeout(async () => {
+        try {
+          // First upload pending payments
+          const payResult = await sincronizarPagos()
+          if (payResult.synced > 0) {
+            setSyncResult(payResult)
+            refreshPending()
+            setTimeout(() => setSyncResult(null), 5000)
+          }
+          // Then download fresh data
+          setBulkSyncing(true)
+          const result = await sincronizarTodo(() => {})
+          setSyncMeta({
+            syncedAt: result.syncedAt,
+            totalClientes: result.clientes,
+            totalPrestamos: result.prestamos,
+            totalRutas: result.rutas,
+          })
+        } catch { /* silent */ }
+        finally { setBulkSyncing(false) }
+      }, 2000)
+    }
     const goOffline = () => setIsOnline(false)
     window.addEventListener('online',  goOnline)
     window.addEventListener('offline', goOffline)
@@ -28,7 +52,7 @@ export default function OfflineProvider({ children }) {
       window.removeEventListener('online',  goOnline)
       window.removeEventListener('offline', goOffline)
     }
-  }, [])
+  }, [refreshPending])
 
   // Track pending payments count
   const refreshPending = useCallback(async () => {
@@ -71,9 +95,30 @@ export default function OfflineProvider({ children }) {
     return () => window.removeEventListener('paymentQueued', onPaymentQueued)
   }, [refreshPending])
 
-  // Load sync meta on mount
+  // Load sync meta on mount + AUTO-SYNC silently in background
   useEffect(() => {
     obtenerSyncMeta().then((meta) => { if (meta) setSyncMeta(meta) }).catch(() => {})
+
+    // Auto-sync on app open: download all data in background
+    // so the user never has to press a button
+    const autoSync = async () => {
+      if (!navigator.onLine || bulkSyncing) return
+      setBulkSyncing(true)
+      try {
+        const result = await sincronizarTodo(() => {})
+        setSyncMeta({
+          syncedAt: result.syncedAt,
+          totalClientes: result.clientes,
+          totalPrestamos: result.prestamos,
+          totalRutas: result.rutas,
+        })
+      } catch { /* silent fail */ }
+      finally { setBulkSyncing(false) }
+    }
+
+    // Run after a short delay so the page loads first
+    const timeout = setTimeout(autoSync, 3000)
+    return () => clearTimeout(timeout)
   }, [])
 
   // ─── Offline navigation: force full-page loads when offline ───
@@ -158,14 +203,20 @@ export default function OfflineProvider({ children }) {
     <OfflineContext.Provider value={{ isOnline, pendingCount, refreshPending, manualSync, syncMeta, startBulkSync, bulkSyncing, bulkProgress }}>
       {children}
 
-      {/* Offline banner */}
+      {/* Connection status banner */}
       {!isOnline && (
         <div className="fixed top-0 left-0 right-0 z-[9999] bg-[#ef4444] text-white text-center py-2 px-4 text-xs font-medium flex items-center justify-center gap-2">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M18.364 5.636a9 9 0 010 12.728M5.636 5.636a9 9 0 000 12.728M12 12h.01" />
+          <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+          Sin conexion — modo offline activo
+        </div>
+      )}
+      {isOnline && bulkSyncing && (
+        <div className="fixed top-0 left-0 right-0 z-[9999] bg-[#22c55e] text-white text-center py-2 px-4 text-xs font-medium flex items-center justify-center gap-2">
+          <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
-          Sin conexión — los pagos se guardarán localmente
+          Sincronizando datos...
         </div>
       )}
 
