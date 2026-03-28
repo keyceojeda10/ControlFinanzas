@@ -4,7 +4,7 @@ import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/Badge'
 
-const planBadge = { basic: 'gray', standard: 'blue', professional: 'purple', test: 'yellow' }
+const planBadge = { basic: 'gray', growth: 'blue', standard: 'yellow', professional: 'purple', test: 'yellow' }
 
 const estadoConfig = {
   nuevo:        { variant: 'blue',   label: 'Nuevo' },

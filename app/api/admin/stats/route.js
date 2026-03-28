@@ -4,7 +4,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 
-const PRECIOS = { basic: 80000, standard: 150000, professional: 250000 }
+import { PLANES_CONFIG } from '@/lib/planes'
+const PRECIOS = Object.fromEntries(Object.entries(PLANES_CONFIG).map(([k, v]) => [k, v.precio]))
 
 export async function GET() {
   const session = await getServerSession(authOptions)

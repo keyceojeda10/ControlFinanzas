@@ -36,7 +36,7 @@ export async function POST(req) {
     const { nombreOrganizacion, nombre, email, password, ref, terminosAceptados, plan } = body
 
     // Validar plan: solo basic, standard, professional son válidos para trial
-    const VALID_TRIAL_PLANS = ['basic', 'standard', 'professional']
+    const VALID_TRIAL_PLANS = ['basic', 'growth', 'standard', 'professional']
     const planFinal = VALID_TRIAL_PLANS.includes(plan) ? plan : 'basic'
 
     // Validaciones

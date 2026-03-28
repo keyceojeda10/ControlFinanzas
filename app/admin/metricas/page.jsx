@@ -9,7 +9,8 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
 
-const PRECIOS = { basic: 59000, growth: 79000, standard: 119000, professional: 259000 }
+import { PLANES_CONFIG } from '@/lib/planes'
+const PRECIOS = Object.fromEntries(Object.entries(PLANES_CONFIG).map(([k, v]) => [k, v.precio]))
 const COLORES = { basic: '#888888', growth: '#3b82f6', standard: '#f5c518', professional: '#a855f7' }
 
 const CopTooltip = ({ active, payload, label }) => {

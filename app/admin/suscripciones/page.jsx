@@ -7,7 +7,7 @@ import { Button }              from '@/components/ui/Button'
 import { SkeletonTable }       from '@/components/ui/Skeleton'
 import { formatCOP }           from '@/lib/calculos'
 
-const planBadge = { basic: 'gray', standard: 'blue', professional: 'purple' }
+const planBadge = { basic: 'gray', growth: 'blue', standard: 'yellow', professional: 'purple', test: 'yellow' }
 const tabs = [
   { key: '',          label: 'Todas'     },
   { key: 'activa',    label: 'Activas'   },
