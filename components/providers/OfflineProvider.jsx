@@ -9,8 +9,7 @@ export function useOffline() {
   return useContext(OfflineContext)
 }
 
-const SYNC_INTERVAL = 5 * 60 * 1000 // 5 minutes
-const MUTATION_SYNC_DELAY = 3000     // 3s after a mutation
+const MUTATION_SYNC_DELAY = 3000 // 3s after a mutation
 
 export default function OfflineProvider({ children }) {
   const [isOnline, setIsOnline]         = useState(true)
@@ -108,20 +107,14 @@ export default function OfflineProvider({ children }) {
     return () => window.removeEventListener('paymentQueued', onPaymentQueued)
   }, [refreshPending])
 
-  // ─── AUTO-SYNC: on mount + every 5 minutes ───
+  // ─── AUTO-SYNC: only on mount (mutations + reconnect handle the rest) ───
   useEffect(() => {
     obtenerSyncMeta().then((meta) => { if (meta) setSyncMeta(meta) }).catch(() => {})
 
     // Sync 3s after app open
     const initialTimeout = setTimeout(() => runFullSync(false), 3000)
 
-    // Then every 5 minutes while online
-    const interval = setInterval(() => runFullSync(true), SYNC_INTERVAL)
-
-    return () => {
-      clearTimeout(initialTimeout)
-      clearInterval(interval)
-    }
+    return () => clearTimeout(initialTimeout)
   }, [runFullSync])
 
   // ─── MUTATION SYNC: detect POST/PUT/DELETE to /api/ and re-sync ───
