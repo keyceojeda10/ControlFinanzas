@@ -17,6 +17,14 @@ export default function OfflineProvider({ children }) {
   const [bulkSyncing, setBulkSyncing]   = useState(false)
   const [bulkProgress, setBulkProgress] = useState(null)
 
+  // Track pending payments count (MUST be defined before useEffects that reference it)
+  const refreshPending = useCallback(async () => {
+    try {
+      const pending = await obtenerPagosPendientes()
+      setPendingCount(pending.length)
+    } catch { /* ignore */ }
+  }, [])
+
   // Track online/offline + re-sync when coming back online
   useEffect(() => {
     setIsOnline(navigator.onLine)
@@ -53,14 +61,6 @@ export default function OfflineProvider({ children }) {
       window.removeEventListener('offline', goOffline)
     }
   }, [refreshPending])
-
-  // Track pending payments count
-  const refreshPending = useCallback(async () => {
-    try {
-      const pending = await obtenerPagosPendientes()
-      setPendingCount(pending.length)
-    } catch { /* ignore */ }
-  }, [])
 
   // Register service worker
   useEffect(() => {
