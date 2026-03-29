@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link                                   from 'next/link'
 import { useAuth }                            from '@/hooks/useAuth'
+import { useOffline }                         from '@/components/providers/OfflineProvider'
 import { guardarEnCache, leerDeCache, obtenerPrestamosOffline } from '@/lib/offline'
 import { Button }                             from '@/components/ui/Button'
 import { SkeletonCard }                       from '@/components/ui/Skeleton'
@@ -21,6 +22,7 @@ const LIMIT = 50
 
 export default function PrestamosPage() {
   const { esOwner, puedeCrearPrestamos, loading: authLoading } = useAuth()
+  const { lastSyncedAt } = useOffline()
   const [prestamos, setPrestamos] = useState([])
   const [buscar,    setBuscar]    = useState('')
   const [estado,    setEstado]    = useState('activo')
@@ -87,7 +89,7 @@ export default function PrestamosPage() {
     }
   }, [])
 
-  useEffect(() => { setPage(1); fetchPrestamos('', estado, 1) }, [fetchPrestamos, estado])
+  useEffect(() => { setPage(1); fetchPrestamos('', estado, 1) }, [fetchPrestamos, estado, lastSyncedAt])
 
   useEffect(() => {
     setPage(1)

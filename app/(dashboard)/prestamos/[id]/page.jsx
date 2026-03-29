@@ -5,6 +5,7 @@ import { useState, useEffect, use } from 'react'
 import { useRouter }                  from 'next/navigation'
 import Link                           from 'next/link'
 import { useAuth }                    from '@/hooks/useAuth'
+import { useOffline }                 from '@/components/providers/OfflineProvider'
 import { obtenerPrestamoOffline }     from '@/lib/offline'
 import { Badge }                      from '@/components/ui/Badge'
 import { Button }                     from '@/components/ui/Button'
@@ -40,6 +41,7 @@ export default function PrestamoDetallePage({ params }) {
   const { id }             = use(params)
   const router             = useRouter()
   const { session }        = useAuth()
+  const { lastSyncedAt }   = useOffline()
 
   const [prestamo,     setPrestamo]     = useState(null)
   const [loading,      setLoading]      = useState(true)
@@ -82,6 +84,13 @@ export default function PrestamoDetallePage({ params }) {
   }
 
   useEffect(() => { fetchPrestamo() }, [id])
+
+  // Re-fetch silently when offline payments get synced
+  useEffect(() => {
+    if (lastSyncedAt > 0) {
+      fetch(`/api/prestamos/${id}`).then(r => r.ok ? r.json() : null).then(d => { if (d) setPrestamo(d) }).catch(() => {})
+    }
+  }, [lastSyncedAt])
 
   const handlePagoExito = (prestamoActualizado, pagoRegistrado) => {
     setPrestamo(prestamoActualizado)

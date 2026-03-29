@@ -79,7 +79,7 @@ export default function DashboardPage() {
   const [fechaActual, setFechaActual] = useState('')
   const [horaActual, setHoraActual] = useState('')
 
-  const { syncMeta, startBulkSync, bulkSyncing, bulkProgress } = useOffline()
+  const { syncMeta, startBulkSync, bulkSyncing, bulkProgress, lastSyncedAt } = useOffline()
   const onboarding = useOnboarding(esOwner && !authLoading)
 
   useEffect(() => { setMounted(true) }, [])
@@ -112,7 +112,7 @@ export default function DashboardPage() {
         setError('No se pudo cargar el resumen.')
       })
       .finally(() => setLoading(false))
-  }, [])
+  }, [lastSyncedAt])
 
   useEffect(() => {
     fetch('/api/mora')
@@ -125,7 +125,7 @@ export default function DashboardPage() {
         } catch {}
         setMoraData({ total: 0, agrupado: {} })
       })
-  }, [])
+  }, [lastSyncedAt])
 
   // Cargar capital solo para owners
   useEffect(() => {

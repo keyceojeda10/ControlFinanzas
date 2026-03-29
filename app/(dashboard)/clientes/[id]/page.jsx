@@ -5,6 +5,7 @@ import { useState, useEffect, use } from 'react'
 import { useRouter }                 from 'next/navigation'
 import Link                          from 'next/link'
 import { useAuth }                   from '@/hooks/useAuth'
+import { useOffline }                from '@/components/providers/OfflineProvider'
 import { obtenerClienteOffline }     from '@/lib/offline'
 import { Badge }                     from '@/components/ui/Badge'
 import { Button }                    from '@/components/ui/Button'
@@ -31,6 +32,7 @@ export default function ClienteDetallePage({ params }) {
   const { id }     = use(params)
   const router     = useRouter()
   const { esOwner, puedeCrearPrestamos, puedeEditarClientes, plan } = useAuth()
+  const { lastSyncedAt } = useOffline()
 
   const [cliente, setCliente]   = useState(null)
   const [loading, setLoading]   = useState(true)
@@ -72,6 +74,13 @@ export default function ClienteDetallePage({ params }) {
       })
       .finally(() => setLoading(false))
   }, [id])
+
+  // Re-fetch silently when offline payments get synced
+  useEffect(() => {
+    if (lastSyncedAt > 0) {
+      fetch(`/api/clientes/${id}`).then(r => r.ok ? r.json() : null).then(d => { if (d) setCliente(d) }).catch(() => {})
+    }
+  }, [lastSyncedAt])
 
   const handleDelete = async () => {
     setActionLoading(true)

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, createContext, useContext, useCallback } from 'react'
 import { iniciarAutoSync, obtenerPagosPendientes, sincronizarPagos, sincronizarTodo, obtenerSyncMeta } from '@/lib/offline'
 
-const OfflineContext = createContext({ isOnline: true, pendingCount: 0, syncing: false, syncMeta: null })
+const OfflineContext = createContext({ isOnline: true, pendingCount: 0, syncing: false, syncMeta: null, lastSyncedAt: 0 })
 
 export function useOffline() {
   return useContext(OfflineContext)
@@ -18,11 +18,24 @@ export default function OfflineProvider({ children }) {
   const [syncMeta, setSyncMeta]         = useState(null)
   const [bulkSyncing, setBulkSyncing]   = useState(false)
   const [bulkProgress, setBulkProgress] = useState(null)
+  // Counter that increments after every successful sync — pages watch this to refetch
+  const [lastSyncedAt, setLastSyncedAt] = useState(0)
   const syncingRef = useRef(false)
 
-  // Shared sync function — downloads all data to IndexedDB
-  const runFullSync = useCallback(async (silent = true) => {
-    if (!navigator.onLine || syncingRef.current) return
+  // Sync pending payments FIRST, then download fresh data
+  const syncPendingThenFull = useCallback(async (silent = true) => {
+    if (!navigator.onLine) return
+    try {
+      // STEP 1: Always sync pending payments to server FIRST
+      const payResult = await sincronizarPagos()
+      if (payResult.synced > 0) {
+        setSyncResult(payResult)
+        setTimeout(() => setSyncResult(null), 5000)
+      }
+    } catch { /* silent */ }
+
+    // STEP 2: Now download fresh data from server (includes synced payments)
+    if (syncingRef.current) return
     syncingRef.current = true
     if (!silent) setBulkSyncing(true)
     try {
@@ -33,11 +46,19 @@ export default function OfflineProvider({ children }) {
         totalPrestamos: result.prestamos,
         totalRutas: result.rutas,
       })
+      // Signal all pages to refetch their data
+      setLastSyncedAt(Date.now())
     } catch { /* silent */ }
     finally {
       syncingRef.current = false
       if (!silent) setBulkSyncing(false)
     }
+
+    // STEP 3: Refresh pending count
+    try {
+      const pending = await obtenerPagosPendientes()
+      setPendingCount(pending.length)
+    } catch { /* ignore */ }
   }, [])
 
   // Track pending payments count (MUST be defined before useEffects that reference it)
@@ -53,17 +74,7 @@ export default function OfflineProvider({ children }) {
     setIsOnline(navigator.onLine)
     const goOnline = () => {
       setIsOnline(true)
-      setTimeout(async () => {
-        try {
-          const payResult = await sincronizarPagos()
-          if (payResult.synced > 0) {
-            setSyncResult(payResult)
-            refreshPending()
-            setTimeout(() => setSyncResult(null), 5000)
-          }
-          await runFullSync(false)
-        } catch { /* silent */ }
-      }, 2000)
+      setTimeout(() => syncPendingThenFull(false), 2000)
     }
     const goOffline = () => setIsOnline(false)
     window.addEventListener('online',  goOnline)
@@ -72,7 +83,7 @@ export default function OfflineProvider({ children }) {
       window.removeEventListener('online',  goOnline)
       window.removeEventListener('offline', goOffline)
     }
-  }, [refreshPending, runFullSync])
+  }, [syncPendingThenFull])
 
   // Register service worker
   useEffect(() => {
@@ -81,18 +92,10 @@ export default function OfflineProvider({ children }) {
     }
   }, [])
 
-  // Start auto-sync for pending payments + listen for sync events
+  // Start auto-sync safety net (30s interval)
   useEffect(() => {
     iniciarAutoSync()
-
-    const onSync = (e) => {
-      setSyncResult(e.detail)
-      refreshPending()
-      setTimeout(() => setSyncResult(null), 5000)
-    }
-    window.addEventListener('offlineSync', onSync)
-    return () => window.removeEventListener('offlineSync', onSync)
-  }, [refreshPending])
+  }, [])
 
   useEffect(() => {
     refreshPending()
@@ -107,15 +110,15 @@ export default function OfflineProvider({ children }) {
     return () => window.removeEventListener('paymentQueued', onPaymentQueued)
   }, [refreshPending])
 
-  // ─── AUTO-SYNC: only on mount (mutations + reconnect handle the rest) ───
+  // ─── AUTO-SYNC: on mount, sync pending payments FIRST, then full data ───
   useEffect(() => {
     obtenerSyncMeta().then((meta) => { if (meta) setSyncMeta(meta) }).catch(() => {})
 
-    // Sync 3s after app open
-    const initialTimeout = setTimeout(() => runFullSync(false), 3000)
+    // Sync 3s after app open — payments first, then full data
+    const initialTimeout = setTimeout(() => syncPendingThenFull(false), 3000)
 
     return () => clearTimeout(initialTimeout)
-  }, [runFullSync])
+  }, [syncPendingThenFull])
 
   // ─── MUTATION SYNC: detect POST/PUT/DELETE to /api/ and re-sync ───
   useEffect(() => {
@@ -133,7 +136,7 @@ export default function OfflineProvider({ children }) {
         if (url.startsWith('/api/') && method !== 'GET' && response.ok) {
           // Debounce: if multiple mutations happen quickly, only sync once
           if (mutationTimeout) clearTimeout(mutationTimeout)
-          mutationTimeout = setTimeout(() => runFullSync(true), MUTATION_SYNC_DELAY)
+          mutationTimeout = setTimeout(() => syncPendingThenFull(true), MUTATION_SYNC_DELAY)
         }
       }).catch(() => {})
 
@@ -144,7 +147,7 @@ export default function OfflineProvider({ children }) {
       window.fetch = originalFetch
       if (mutationTimeout) clearTimeout(mutationTimeout)
     }
-  }, [runFullSync])
+  }, [syncPendingThenFull])
 
   // ─── Offline navigation: force full-page loads when offline ───
   useEffect(() => {
@@ -177,12 +180,7 @@ export default function OfflineProvider({ children }) {
 
   const manualSync = async () => {
     if (!navigator.onLine) return
-    const result = await sincronizarPagos()
-    if (result.synced > 0 || result.failed > 0) {
-      setSyncResult(result)
-      refreshPending()
-      setTimeout(() => setSyncResult(null), 5000)
-    }
+    await syncPendingThenFull(false)
   }
 
   // Bulk sync: download everything for offline (manual trigger)
@@ -204,7 +202,7 @@ export default function OfflineProvider({ children }) {
   }
 
   return (
-    <OfflineContext.Provider value={{ isOnline, pendingCount, refreshPending, manualSync, syncMeta, startBulkSync, bulkSyncing, bulkProgress }}>
+    <OfflineContext.Provider value={{ isOnline, pendingCount, refreshPending, manualSync, syncMeta, startBulkSync, bulkSyncing, bulkProgress, lastSyncedAt }}>
       {children}
 
       {/* Connection status banner */}

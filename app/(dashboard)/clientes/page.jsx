@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useAuth }       from '@/hooks/useAuth'
+import { useOffline }    from '@/components/providers/OfflineProvider'
 import { guardarEnCache, leerDeCache, obtenerClientesOffline } from '@/lib/offline'
 import { Button }        from '@/components/ui/Button'
 import { SkeletonCard }  from '@/components/ui/Skeleton'
@@ -20,6 +21,7 @@ const LIMIT = 50
 
 export default function ClientesPage() {
   const { esOwner, puedeCrearClientes, loading: authLoading } = useAuth()
+  const { lastSyncedAt } = useOffline()
   const [clientes, setClientes]   = useState([])
   const [buscar,   setBuscar]     = useState('')
   const [estado,   setEstado]     = useState('')
@@ -81,8 +83,8 @@ export default function ClientesPage() {
     }
   }, [])
 
-  // Carga inicial
-  useEffect(() => { fetchClientes('', 1) }, [fetchClientes])
+  // Carga inicial + re-fetch after offline sync
+  useEffect(() => { fetchClientes('', 1) }, [fetchClientes, lastSyncedAt])
 
   // Búsqueda en tiempo real con debounce — reset to page 1
   useEffect(() => {
