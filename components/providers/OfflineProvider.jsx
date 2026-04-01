@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, createContext, useContext, useCallback } from 'react'
-import { iniciarAutoSync, obtenerPagosPendientes, sincronizarPagos, sincronizarTodo, obtenerSyncMeta } from '@/lib/offline'
+import { iniciarAutoSync, obtenerPagosPendientes, sincronizarPagos, sincronizarOrdenes, sincronizarTodo, obtenerSyncMeta } from '@/lib/offline'
 
 const OfflineContext = createContext({ isOnline: true, pendingCount: 0, syncing: false, syncMeta: null, lastSyncedAt: 0 })
 
@@ -26,10 +26,13 @@ export default function OfflineProvider({ children }) {
   const syncPendingThenFull = useCallback(async (silent = true) => {
     if (!navigator.onLine) return
     try {
-      // STEP 1: Always sync pending payments to server FIRST
+      // STEP 1: Sync pending payments AND pending orders to server FIRST
       const payResult = await sincronizarPagos()
-      if (payResult.synced > 0) {
-        setSyncResult(payResult)
+      const ordResult = await sincronizarOrdenes()
+      const totalSynced = payResult.synced + ordResult.synced
+      const totalFailed = payResult.failed + ordResult.failed
+      if (totalSynced > 0) {
+        setSyncResult({ synced: totalSynced, failed: totalFailed })
         setTimeout(() => setSyncResult(null), 5000)
       }
     } catch { /* silent */ }
@@ -133,7 +136,9 @@ export default function OfflineProvider({ children }) {
         const method = (args[1]?.method || 'GET').toUpperCase()
 
         // Only trigger sync for mutations to our API (not external, not GET)
-        if (url.startsWith('/api/') && method !== 'GET' && response.ok) {
+        // Skip reorder — it saves directly and the sync could overwrite correct order
+        const isReorder = url.includes('/reordenar')
+        if (url.startsWith('/api/') && method !== 'GET' && response.ok && !isReorder) {
           // Debounce: if multiple mutations happen quickly, only sync once
           if (mutationTimeout) clearTimeout(mutationTimeout)
           mutationTimeout = setTimeout(() => syncPendingThenFull(true), MUTATION_SYNC_DELAY)

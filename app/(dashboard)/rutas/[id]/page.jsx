@@ -1,11 +1,11 @@
 'use client'
 // app/(dashboard)/rutas/[id]/page.jsx - Detalle de ruta
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, useRef, useCallback, use } from 'react'
 import { useRouter }                 from 'next/navigation'
 import dynamic                       from 'next/dynamic'
 import { useAuth }                   from '@/hooks/useAuth'
-import { obtenerRutaOffline }        from '@/lib/offline'
+import { obtenerRutaOffline, guardarOrdenPendiente } from '@/lib/offline'
 import { Badge }                     from '@/components/ui/Badge'
 import { Button }                    from '@/components/ui/Button'
 import { Card }                      from '@/components/ui/Card'
@@ -39,6 +39,12 @@ export default function RutaDetallePage({ params }) {
   const [dragIndex,     setDragIndex]     = useState(null)
   const [dragOverIdx,   setDragOverIdx]   = useState(null)
   const [ordenGuardado, setOrdenGuardado] = useState(false)
+  const [guardandoOrden, setGuardandoOrden] = useState(false)
+  const [ordenOffline,   setOrdenOffline]   = useState(false)
+  const [ordenError,     setOrdenError]     = useState(null)
+  const saveTimerRef     = useRef(null)
+  const abortRef         = useRef(null)
+  const pendingOrderRef  = useRef(null)
   const [editandoNombre, setEditandoNombre] = useState(false)
   const [nuevoNombre,    setNuevoNombre]    = useState('')
   const [eliminando,     setEliminando]     = useState(false)
@@ -235,19 +241,67 @@ export default function RutaDetallePage({ params }) {
     }
   }
 
-  const guardarOrden = async (nuevosClientes) => {
-    try {
-      const res = await fetch(`/api/rutas/${id}/reordenar`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clienteIds: nuevosClientes.map((c) => c.id) }),
-      })
-      if (res.ok) {
-        setOrdenGuardado(true)
-        setTimeout(() => setOrdenGuardado(false), 1500)
+  // Debounced save — collapses rapid drag/click operations into one API call
+  const guardarOrden = useCallback((nuevosClientes) => {
+    pendingOrderRef.current = nuevosClientes.map((c) => c.id)
+    setOrdenError(null)
+
+    // Cancel previous timer and in-flight request
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    abortRef.current?.abort()
+
+    saveTimerRef.current = setTimeout(async () => {
+      const clienteIds = pendingOrderRef.current
+      if (!clienteIds) return
+
+      // Offline: queue in IndexedDB
+      if (!navigator.onLine) {
+        try {
+          await guardarOrdenPendiente(id, clienteIds)
+          setOrdenOffline(true)
+          setTimeout(() => setOrdenOffline(false), 2000)
+        } catch { setOrdenError('No se pudo guardar offline') }
+        return
       }
-    } catch {}
-  }
+
+      // Online: send to server with abort support
+      const controller = new AbortController()
+      abortRef.current = controller
+      setGuardandoOrden(true)
+      try {
+        const res = await fetch(`/api/rutas/${id}/reordenar`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ clienteIds }),
+          signal: controller.signal,
+        })
+        if (res.ok) {
+          setOrdenGuardado(true)
+          setTimeout(() => setOrdenGuardado(false), 1500)
+        } else {
+          setOrdenError('Error al guardar orden')
+        }
+      } catch (err) {
+        if (err.name === 'AbortError') return // Superseded by newer save
+        // Network failed — queue offline
+        try {
+          await guardarOrdenPendiente(id, clienteIds)
+          setOrdenOffline(true)
+          setTimeout(() => setOrdenOffline(false), 2000)
+        } catch { setOrdenError('Error de conexion') }
+      } finally {
+        setGuardandoOrden(false)
+      }
+    }, 800)
+  }, [id])
+
+  // Cleanup timer and abort on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+      abortRef.current?.abort()
+    }
+  }, [])
 
   const moverCliente = (index, direccion) => {
     const newIdx = index + direccion
@@ -519,9 +573,15 @@ export default function RutaDetallePage({ params }) {
             <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">
               Clientes ({ruta.clientes?.length ?? 0})
             </p>
-            {ordenGuardado && (
-              <span className="text-[10px] text-[#22c55e] animate-pulse">Orden guardado</span>
+            {guardandoOrden && (
+              <span className="text-[10px] text-[#888] flex items-center gap-1">
+                <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                Guardando...
+              </span>
             )}
+            {ordenGuardado && <span className="text-[10px] text-[#22c55e]">Guardado</span>}
+            {ordenOffline && <span className="text-[10px] text-[#f5c518]">Guardado offline</span>}
+            {ordenError && <span className="text-[10px] text-[#ef4444]">{ordenError}</span>}
           </div>
           <div className="flex items-center gap-2">
             {(ruta.clientes?.length ?? 0) >= 2 && clientesConCoords >= 2 && (

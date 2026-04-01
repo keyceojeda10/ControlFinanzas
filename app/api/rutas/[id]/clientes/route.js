@@ -48,22 +48,21 @@ export async function POST(request, { params }) {
     )
   }
 
-  // Obtener max ordenRuta actual en la ruta
-  const maxOrden = await prisma.cliente.aggregate({
-    where: { rutaId: id, organizationId },
-    _max: { ordenRuta: true },
-  })
-  let nextOrden = (maxOrden._max.ordenRuta ?? -1) + 1
+  // Asignar clientes en transaccion atomica (max orden + updates juntos)
+  await prisma.$transaction(async (tx) => {
+    const maxOrden = await tx.cliente.aggregate({
+      where: { rutaId: id, organizationId },
+      _max: { ordenRuta: true },
+    })
+    const nextOrden = (maxOrden._max.ordenRuta ?? -1) + 1
 
-  // Asignar cada cliente con orden consecutivo al final
-  await prisma.$transaction(
-    clienteIds.map((cid, i) =>
-      prisma.cliente.update({
-        where: { id: cid },
+    for (let i = 0; i < clienteIds.length; i++) {
+      await tx.cliente.update({
+        where: { id: clienteIds[i] },
         data: { rutaId: id, ordenRuta: nextOrden + i },
       })
-    )
-  )
+    }
+  })
 
   return Response.json({ asignados: clienteIds.length })
 }

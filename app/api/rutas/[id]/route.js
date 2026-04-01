@@ -178,13 +178,14 @@ export async function DELETE(request, { params }) {
   })
   if (!ruta) return Response.json({ error: 'Ruta no encontrada' }, { status: 404 })
 
-  // Desasignar clientes de la ruta antes de eliminar
-  await prisma.cliente.updateMany({
-    where: { rutaId: id, organizationId },
-    data: { rutaId: null, ordenRuta: null },
-  })
-
-  await prisma.ruta.delete({ where: { id } })
+  // Desasignar clientes y eliminar ruta en una transaccion atomica
+  await prisma.$transaction([
+    prisma.cliente.updateMany({
+      where: { rutaId: id, organizationId },
+      data: { rutaId: null, ordenRuta: null },
+    }),
+    prisma.ruta.delete({ where: { id } }),
+  ])
 
   return Response.json({ eliminada: true, clientesDesasignados: ruta._count.clientes })
 }

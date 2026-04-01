@@ -39,16 +39,21 @@ self.addEventListener('install', (e) => {
       })
     )
   )
-  self.skipWaiting()
+  // Do NOT call skipWaiting() here — wait for all tabs to close
+  // This prevents mid-session cache wipes during deploys
 })
 
-// ─── Activate: clean old caches ─────────────────────────────
+// ─── Activate: clean old caches (preserve API caches) ──────
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((k) => k !== CACHE_NAME && k !== API_CACHE)
+          .filter((k) => {
+            // Keep API caches (even old versions) — updated naturally via network-first
+            if (k.startsWith('cf-api-')) return false
+            return k !== CACHE_NAME && k !== API_CACHE
+          })
           .map((k) => caches.delete(k))
       )
     )
