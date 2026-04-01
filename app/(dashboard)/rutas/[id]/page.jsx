@@ -61,10 +61,20 @@ export default function RutaDetallePage({ params }) {
   }
 
   const fetchRuta = async () => {
+    // Offline: always prefer IndexedDB (has locally-updated order)
+    if (!navigator.onLine) {
+      try {
+        const cached = await obtenerRutaOffline(id)
+        if (cached) { setRuta(cached); setLoading(false); return }
+      } catch {}
+    }
     try {
       const res  = await fetch(`/api/rutas/${id}`)
       if (!res.ok) throw new Error()
-      setRuta(await res.json())
+      const data = await res.json()
+      // If SW returned stale cache (offline flag), prefer IndexedDB
+      if (data.offline) throw new Error('offline')
+      setRuta(data)
     } catch {
       try {
         const cached = await obtenerRutaOffline(id)
