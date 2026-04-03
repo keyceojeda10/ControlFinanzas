@@ -313,16 +313,6 @@ export default function RutaDetallePage({ params }) {
     }
   }, [])
 
-  const moverCliente = (index, direccion) => {
-    const newIdx = index + direccion
-    if (newIdx < 0 || newIdx >= ruta.clientes.length) return
-    const clientes = [...ruta.clientes]
-    const [moved] = clientes.splice(index, 1)
-    clientes.splice(newIdx, 0, moved)
-    setRuta({ ...ruta, clientes })
-    guardarOrden(clientes)
-  }
-
   const handleDragStart = (index) => setDragIndex(index)
   const handleDragOver = (e, index) => { e.preventDefault(); setDragOverIdx(index) }
   const handleDrop = (index) => {
@@ -336,6 +326,102 @@ export default function RutaDetallePage({ params }) {
     setDragOverIdx(null)
   }
   const handleDragEnd = () => { setDragIndex(null); setDragOverIdx(null) }
+
+  // ─── Touch drag-and-drop for mobile ───
+  const touchStartRef = useRef(null)
+  const touchNodeRef = useRef(null)
+  const touchCloneRef = useRef(null)
+  const touchIndexRef = useRef(null)
+  const touchOverRef = useRef(null)
+  const listRef = useRef(null)
+
+  const handleTouchStart = (e, index) => {
+    // Only start drag from the grip handle
+    const grip = e.target.closest('[data-grip]')
+    if (!grip) return
+    const touch = e.touches[0]
+    touchStartRef.current = { y: touch.clientY, started: false }
+    touchIndexRef.current = index
+    touchNodeRef.current = e.currentTarget
+  }
+
+  const handleTouchMove = (e) => {
+    if (touchIndexRef.current === null || !touchStartRef.current) return
+    const touch = e.touches[0]
+    const dy = Math.abs(touch.clientY - touchStartRef.current.y)
+
+    // Start drag after 8px movement
+    if (!touchStartRef.current.started && dy < 8) return
+    e.preventDefault()
+
+    if (!touchStartRef.current.started) {
+      touchStartRef.current.started = true
+      setDragIndex(touchIndexRef.current)
+      // Create floating clone
+      const node = touchNodeRef.current
+      if (node) {
+        const rect = node.getBoundingClientRect()
+        const clone = node.cloneNode(true)
+        clone.style.position = 'fixed'
+        clone.style.left = `${rect.left}px`
+        clone.style.width = `${rect.width}px`
+        clone.style.top = `${rect.top}px`
+        clone.style.zIndex = '9999'
+        clone.style.opacity = '0.9'
+        clone.style.transform = 'scale(1.02)'
+        clone.style.boxShadow = '0 8px 32px rgba(0,0,0,0.5)'
+        clone.style.borderRadius = '14px'
+        clone.style.background = '#1a1a1a'
+        clone.style.border = '1px solid #f5c518'
+        clone.style.pointerEvents = 'none'
+        clone.style.transition = 'none'
+        document.body.appendChild(clone)
+        touchCloneRef.current = clone
+        touchStartRef.current.offsetY = touch.clientY - rect.top
+      }
+    }
+
+    // Move clone
+    if (touchCloneRef.current && touchStartRef.current.offsetY != null) {
+      touchCloneRef.current.style.top = `${touch.clientY - touchStartRef.current.offsetY}px`
+    }
+
+    // Find which item we're over
+    if (listRef.current) {
+      const items = listRef.current.querySelectorAll('[data-idx]')
+      for (const item of items) {
+        const rect = item.getBoundingClientRect()
+        if (touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+          const overIdx = parseInt(item.dataset.idx)
+          if (overIdx !== touchOverRef.current) {
+            touchOverRef.current = overIdx
+            setDragOverIdx(overIdx)
+          }
+          break
+        }
+      }
+    }
+  }
+
+  const handleTouchEnd = () => {
+    if (touchCloneRef.current) {
+      document.body.removeChild(touchCloneRef.current)
+      touchCloneRef.current = null
+    }
+    if (touchIndexRef.current !== null && touchOverRef.current !== null && touchIndexRef.current !== touchOverRef.current) {
+      const clientes = [...ruta.clientes]
+      const [moved] = clientes.splice(touchIndexRef.current, 1)
+      clientes.splice(touchOverRef.current, 0, moved)
+      setRuta({ ...ruta, clientes })
+      guardarOrden(clientes)
+    }
+    touchStartRef.current = null
+    touchIndexRef.current = null
+    touchNodeRef.current = null
+    touchOverRef.current = null
+    setDragIndex(null)
+    setDragOverIdx(null)
+  }
 
   // ─── Optimizar ruta ────────────────────────────────────
   const optimizarRuta = async () => {
@@ -393,148 +479,124 @@ export default function RutaDetallePage({ params }) {
       </button>
 
       {/* Header */}
-      <Card>
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1 min-w-0">
-            {editandoNombre ? (
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={nuevoNombre}
-                  onChange={(e) => setNuevoNombre(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && guardarNombre()}
-                  className="flex-1 h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] focus:outline-none focus:border-[#f5c518]"
-                  autoFocus
-                />
-                <button onClick={guardarNombre} className="text-[#22c55e] hover:text-[#16a34a] p-1">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </button>
-                <button onClick={() => setEditandoNombre(false)} className="text-[#888888] hover:text-[white] p-1">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg font-bold text-[white]">{ruta.nombre}</h1>
-                {esOwner && (
-                  <button
-                    onClick={() => { setNuevoNombre(ruta.nombre); setEditandoNombre(true) }}
-                    className="text-[#555] hover:text-[#f5c518] transition-colors p-1"
-                    title="Editar nombre"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                    </svg>
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-          {esOwner && !editandoNombre && (
-            <button
-              onClick={eliminarRuta}
-              disabled={eliminando}
-              className="text-[#555] hover:text-[#ef4444] transition-colors p-1 disabled:opacity-50"
-              title="Eliminar ruta"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </button>
-          )}
+      <div className="border border-[#2a2a2a] rounded-[20px] overflow-hidden" style={{ background: '#111' }}>
+        {/* Progress banner at top */}
+        <div className="relative h-1.5 bg-[#1a1a1a]">
+          <div
+            className="absolute inset-y-0 left-0 transition-all duration-700"
+            style={{
+              width: `${progreso}%`,
+              background: progreso >= 100
+                ? 'linear-gradient(90deg, #22c55e, #16a34a)'
+                : 'linear-gradient(90deg, #f5c518, #f0b800)',
+              boxShadow: `0 0 12px ${progreso >= 100 ? '#22c55e' : '#f5c518'}50`,
+            }}
+          />
         </div>
 
-        {/* Selector de cobrador (solo owner) */}
-        {esOwner && (
-          <div className="flex flex-col gap-1.5">
-            <p className="text-xs font-medium text-[#888888]">Cobrador asignado</p>
+        <div className="p-4 pb-5">
+          {/* Name + actions */}
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex-1 min-w-0">
+              {editandoNombre ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={nuevoNombre}
+                    onChange={(e) => setNuevoNombre(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && guardarNombre()}
+                    className="flex-1 h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#0a0a0a] text-sm text-[white] focus:outline-none focus:border-[#f5c518]"
+                    autoFocus
+                  />
+                  <button onClick={guardarNombre} className="text-[#22c55e] hover:text-[#16a34a] p-1">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </button>
+                  <button onClick={() => setEditandoNombre(false)} className="text-[#888888] hover:text-[white] p-1">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-xl font-bold text-[white]">{ruta.nombre}</h1>
+                    {esOwner && (
+                      <button
+                        onClick={() => { setNuevoNombre(ruta.nombre); setEditandoNombre(true) }}
+                        className="text-[#444] hover:text-[#f5c518] transition-colors p-1"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-xs text-[#555] mt-1">
+                    {ruta.cobrador
+                      ? <><span className="text-[#a855f7]">{ruta.cobrador.nombre}</span> <span className="text-[#333]">·</span> </>
+                      : ''
+                    }
+                    {ruta.clientes?.length ?? 0} cliente{(ruta.clientes?.length ?? 0) !== 1 ? 's' : ''}
+                    <span className="text-[#333] mx-1">·</span>
+                    <span style={{ color: progreso >= 100 ? '#22c55e' : '#f5c518' }}>{progreso}% del dia</span>
+                  </p>
+                </div>
+              )}
+            </div>
+            {esOwner && !editandoNombre && (
+              <button
+                onClick={eliminarRuta}
+                disabled={eliminando}
+                className="text-[#333] hover:text-[#ef4444] transition-colors p-2 disabled:opacity-50"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            )}
+          </div>
+
+          {/* Cobrador selector */}
+          {esOwner && (
             <select
               value={ruta.cobrador?.id ?? ''}
               onChange={(e) => cambiarCobrador(e.target.value)}
-              className="w-full h-9 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] px-3 focus:outline-none focus:border-[#f5c518] transition-all cursor-pointer"
+              className="w-full h-9 rounded-[10px] border border-[#222] bg-[#0a0a0a] text-xs text-[white] px-3 mb-4 focus:outline-none focus:border-[#f5c518] transition-all cursor-pointer"
             >
               <option value="">Sin cobrador asignado</option>
               {cobradores.map((c) => (
                 <option key={c.id} value={c.id}>{c.nombre}</option>
               ))}
             </select>
-          </div>
-        )}
-        {!esOwner && ruta.cobrador && (
-          <p className="text-sm text-[#888888]">Cobrador: <span className="text-[white] font-medium">{ruta.cobrador.nombre}</span></p>
-        )}
-      </Card>
+          )}
+          {!esOwner && ruta.cobrador && (
+            <p className="text-xs text-[#666] mb-4">Cobrador: <span className="text-[white] font-medium">{ruta.cobrador.nombre}</span></p>
+          )}
 
-      {/* Métricas del día */}
-      <div className="grid grid-cols-2 gap-3">
-        <div
-          className="border border-[#2a2a2a] rounded-[12px] px-3 py-3"
-          style={{
-            background: `linear-gradient(135deg, #f5c5180A 0%, #1a1a1a 40%, #1a1a1a 70%, #f5c51805 100%)`,
-            boxShadow: `0 0 30px #f5c51808, 0 1px 2px rgba(0,0,0,0.3)`,
-          }}
-        >
-          <p className="text-[10px] text-[#888888]">Esperado hoy</p>
-          <p className="text-base font-bold mt-0.5 font-mono-display" style={{ color: 'white' }}>{formatCOP(ruta.esperadoHoy)}</p>
-        </div>
-        <div
-          className="border border-[#2a2a2a] rounded-[12px] px-3 py-3"
-          style={{
-            background: `linear-gradient(135deg, #22c55e0A 0%, #1a1a1a 40%, #1a1a1a 70%, #22c55e05 100%)`,
-            boxShadow: `0 0 30px #22c55e08, 0 1px 2px rgba(0,0,0,0.3)`,
-          }}
-        >
-          <p className="text-[10px] text-[#888888]">Recaudado hoy</p>
-          <p className="text-base font-bold mt-0.5 font-mono-display" style={{ color: '#22c55e' }}>{formatCOP(ruta.recaudadoHoy)}</p>
-        </div>
-        <div
-          className="border border-[#2a2a2a] rounded-[12px] px-3 py-3"
-          style={{
-            background: `linear-gradient(135deg, #06b6d40A 0%, #1a1a1a 40%, #1a1a1a 70%, #06b6d405 100%)`,
-            boxShadow: `0 0 30px #06b6d408, 0 1px 2px rgba(0,0,0,0.3)`,
-          }}
-        >
-          <p className="text-[10px] text-[#888888]">Pendientes de pago</p>
-          <p className="text-base font-bold mt-0.5" style={{ color: ruta.pendientesHoy > 0 ? '#f59e0b' : '#22c55e' }}>
-            {ruta.pendientesHoy} cliente{ruta.pendientesHoy !== 1 ? 's' : ''}
-          </p>
-        </div>
-        <div
-          className="border border-[#2a2a2a] rounded-[12px] px-3 py-3"
-          style={{
-            background: `linear-gradient(135deg, #06b6d40A 0%, #1a1a1a 40%, #1a1a1a 70%, #06b6d405 100%)`,
-            boxShadow: `0 0 30px #06b6d408, 0 1px 2px rgba(0,0,0,0.3)`,
-          }}
-        >
-          <p className="text-[10px] text-[#888888]">En mora</p>
-          <p className="text-base font-bold mt-0.5" style={{ color: ruta.enMora > 0 ? '#ef4444' : '#22c55e' }}>
-            {ruta.enMora} cliente{ruta.enMora !== 1 ? 's' : ''}
-          </p>
+          {/* Metrics grid */}
+          <div className="grid grid-cols-4 gap-2">
+            <div className="bg-[rgba(255,255,255,0.03)] rounded-[12px] px-2.5 py-2.5 text-center">
+              <p className="text-[9px] uppercase tracking-wider text-[#555] mb-1">Esperado</p>
+              <p className="text-[13px] font-bold text-[white] font-mono-display">{formatCOP(ruta.esperadoHoy)}</p>
+            </div>
+            <div className="bg-[rgba(255,255,255,0.03)] rounded-[12px] px-2.5 py-2.5 text-center">
+              <p className="text-[9px] uppercase tracking-wider text-[#555] mb-1">Recaudado</p>
+              <p className="text-[13px] font-bold text-[#22c55e] font-mono-display">{formatCOP(ruta.recaudadoHoy)}</p>
+            </div>
+            <div className="bg-[rgba(255,255,255,0.03)] rounded-[12px] px-2.5 py-2.5 text-center">
+              <p className="text-[9px] uppercase tracking-wider text-[#555] mb-1">Pendientes</p>
+              <p className="text-[13px] font-bold" style={{ color: ruta.pendientesHoy > 0 ? '#f59e0b' : '#22c55e' }}>{ruta.pendientesHoy}</p>
+            </div>
+            <div className="bg-[rgba(255,255,255,0.03)] rounded-[12px] px-2.5 py-2.5 text-center">
+              <p className="text-[9px] uppercase tracking-wider text-[#555] mb-1">En mora</p>
+              <p className="text-[13px] font-bold" style={{ color: ruta.enMora > 0 ? '#ef4444' : '#22c55e' }}>{ruta.enMora}</p>
+            </div>
+          </div>
         </div>
       </div>
-
-      {/* Barra de progreso del día */}
-      <Card padding={false}>
-        <div className="px-4 py-3">
-          <div className="flex justify-between text-xs text-[#888888] mb-1.5">
-            <span>Progreso del día</span>
-            <span>{progreso}%</span>
-          </div>
-          <div className="h-2 bg-[#2a2a2a] rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-500"
-              style={{
-                width: `${progreso}%`,
-                background: progreso >= 100 ? '#22c55e' : 'linear-gradient(90deg, #f5c518, #f0b800)',
-              }}
-            />
-          </div>
-        </div>
-      </Card>
 
       {/* Banner: Continuar ruta */}
       {banner && (
@@ -662,111 +724,131 @@ export default function RutaDetallePage({ params }) {
         )}
 
         {(!ruta.clientes || ruta.clientes.length === 0) ? (
-          <p className="text-sm text-[#888888] text-center py-4">Sin clientes asignados</p>
+          <div className="flex flex-col items-center py-8 text-center">
+            <div className="w-12 h-12 rounded-full bg-[rgba(245,197,24,0.08)] flex items-center justify-center mb-3">
+              <svg className="w-6 h-6 text-[#555]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <p className="text-sm text-[#666]">Sin clientes asignados</p>
+          </div>
         ) : (
-          <div className="space-y-0">
-            {ruta.clientes.map((c, idx) => (
-              <div
-                key={c.id}
-                id={`cliente-${c.id}`}
-                draggable
-                onDragStart={() => handleDragStart(idx)}
-                onDragOver={(e) => handleDragOver(e, idx)}
-                onDrop={() => handleDrop(idx)}
-                onDragEnd={handleDragEnd}
-                className={[
-                  'flex items-center gap-2 py-2.5 px-1 border-b border-[#2a2a2a] last:border-0 transition-all',
-                  dragIndex === idx ? 'opacity-40' : '',
-                  dragOverIdx === idx && dragIndex !== idx ? 'border-t-2 border-t-[#f5c518]' : '',
-                  highlightId === c.id ? 'bg-[rgba(245,197,24,0.12)] rounded-lg' : '',
-                ].join(' ')}
-                style={{ cursor: 'grab' }}
-              >
-                {/* Botones mover (móvil-friendly) */}
-                <div className="flex flex-col gap-0.5 shrink-0">
-                  <button
-                    onClick={() => moverCliente(idx, -1)}
-                    disabled={idx === 0}
-                    className="text-[#555] hover:text-[#f5c518] disabled:opacity-20 transition-colors p-0.5"
+          <div className="space-y-1.5" ref={listRef}>
+            {ruta.clientes.map((c, idx) => {
+              const statusColor = c.diasMora > 0 ? '#ef4444' : c.pagoHoy ? '#22c55e' : '#f59e0b'
+              const statusText = c.diasMora > 0
+                ? `${c.diasMora}d mora`
+                : c.pagoHoy
+                  ? 'Pago hoy'
+                  : c.diasDesdeUltimoPago === 1
+                    ? 'Falta hoy'
+                    : c.diasDesdeUltimoPago >= 2
+                      ? `${c.diasDesdeUltimoPago}d sin pago`
+                      : 'Pendiente'
+              return (
+                <div
+                  key={c.id}
+                  id={`cliente-${c.id}`}
+                  data-idx={idx}
+                  draggable
+                  onDragStart={() => handleDragStart(idx)}
+                  onDragOver={(e) => handleDragOver(e, idx)}
+                  onDrop={() => handleDrop(idx)}
+                  onDragEnd={handleDragEnd}
+                  onTouchStart={(e) => handleTouchStart(e, idx)}
+                  onTouchMove={(e) => handleTouchMove(e, idx)}
+                  onTouchEnd={handleTouchEnd}
+                  className={[
+                    'flex items-center gap-0 rounded-[14px] transition-all',
+                    'border',
+                    dragIndex === idx ? 'opacity-30 scale-95' : '',
+                    dragOverIdx === idx && dragIndex !== idx ? 'border-[#f5c518] bg-[rgba(245,197,24,0.05)]' : 'border-[#1f1f1f] bg-[rgba(255,255,255,0.02)]',
+                    highlightId === c.id ? 'border-[#f5c518] bg-[rgba(245,197,24,0.08)]' : '',
+                  ].join(' ')}
+                >
+                  {/* Grip handle — large touch target */}
+                  <div
+                    data-grip="true"
+                    className="flex flex-col items-center justify-center w-10 shrink-0 self-stretch rounded-l-[14px] cursor-grab active:cursor-grabbing touch-none select-none"
+                    style={{ background: 'rgba(255,255,255,0.02)' }}
                   >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    <svg className="w-5 h-5 text-[#444]" viewBox="0 0 24 24" fill="currentColor">
+                      <circle cx="9" cy="6" r="1.5" /><circle cx="15" cy="6" r="1.5" />
+                      <circle cx="9" cy="12" r="1.5" /><circle cx="15" cy="12" r="1.5" />
+                      <circle cx="9" cy="18" r="1.5" /><circle cx="15" cy="18" r="1.5" />
                     </svg>
-                  </button>
-                  <button
-                    onClick={() => moverCliente(idx, 1)}
-                    disabled={idx === ruta.clientes.length - 1}
-                    className="text-[#555] hover:text-[#f5c518] disabled:opacity-20 transition-colors p-0.5"
+                  </div>
+
+                  {/* Client content — clickable */}
+                  <div
+                    className="flex-1 flex items-center gap-2.5 py-3 pr-3 min-w-0 cursor-pointer active:opacity-80"
+                    onClick={() => {
+                      const nextIdx = Math.min(idx + 1, ruta.clientes.length - 1)
+                      sessionStorage.setItem(`ruta-scroll-${id}`, ruta.clientes[nextIdx].id)
+                      localStorage.setItem(`cf-ruta-progress-${id}`, JSON.stringify({
+                        clienteId: c.id, clienteNombre: c.nombre, index: idx, date: getColombiaDateStr(),
+                      }))
+                      sessionStorage.setItem('cf-ruta-nav', JSON.stringify({
+                        rutaId: id, rutaNombre: ruta.nombre,
+                        clientes: ruta.clientes.map(cl => ({ id: cl.id, nombre: cl.nombre })),
+                        currentIndex: idx,
+                      }))
+                      if (navigator.onLine) { router.push(`/clientes/${c.id}`) }
+                      else { window.location.href = `/clientes/${c.id}` }
+                    }}
                   >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-                </div>
-                <div className="w-7 h-7 rounded-full bg-[rgba(245,197,24,0.15)] flex items-center justify-center shrink-0">
-                  <span className="text-[#f5c518] text-[10px] font-bold">{c.nombre?.[0]?.toUpperCase()}</span>
-                </div>
-                <div className="flex-1 min-w-0" onClick={() => {
-                  // Auto-scroll al SIGUIENTE cliente al volver
-                  const nextIdx = Math.min(idx + 1, ruta.clientes.length - 1)
-                  sessionStorage.setItem(`ruta-scroll-${id}`, ruta.clientes[nextIdx].id)
-                  // Guardar progreso para banner "continuar ruta"
-                  localStorage.setItem(`cf-ruta-progress-${id}`, JSON.stringify({
-                    clienteId: c.id,
-                    clienteNombre: c.nombre,
-                    index: idx,
-                    date: getColombiaDateStr(),
-                  }))
-                  // Guardar contexto de ruta para navegación directa entre clientes
-                  sessionStorage.setItem('cf-ruta-nav', JSON.stringify({
-                    rutaId: id,
-                    rutaNombre: ruta.nombre,
-                    clientes: ruta.clientes.map(cl => ({ id: cl.id, nombre: cl.nombre })),
-                    currentIndex: idx,
-                  }))
-                  // Offline: full-page load so SW serves cached HTML
-                  // Online: client-side navigation
-                  if (navigator.onLine) {
-                    router.push(`/clientes/${c.id}`)
-                  } else {
-                    window.location.href = `/clientes/${c.id}`
-                  }
-                }}>
-                  <p className="text-sm font-medium text-[white] truncate">{c.nombre}</p>
-                  <p className="text-[10px] text-[#888888]">
-                    {c.diasMora > 0
-                      ? `${c.diasMora} días en mora`
-                      : c.pagoHoy
-                        ? 'Pagó hoy'
-                        : c.diasDesdeUltimoPago === 1
-                          ? 'Pagó ayer · Falta hoy'
-                          : c.diasDesdeUltimoPago >= 2
-                            ? `Hace ${c.diasDesdeUltimoPago} días`
-                            : 'Pendiente'}
-                    {c.latitud != null && ' · 📍'}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {c.pagoHoy && <span className="w-2 h-2 rounded-full bg-[#22c55e]" />}
-                  {!c.pagoHoy && c.diasDesdeUltimoPago != null && c.diasDesdeUltimoPago >= 1 && c.diasMora === 0 && (
-                    <span className="w-2 h-2 rounded-full bg-[#f59e0b]" />
-                  )}
-                  {c.diasMora > 0 && <Badge variant="red">{c.diasMora}d</Badge>}
+                    {/* Number badge */}
+                    <div
+                      className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold"
+                      style={{
+                        background: `${statusColor}15`,
+                        color: statusColor,
+                      }}
+                    >
+                      {idx + 1}
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-semibold text-[white] truncate">{c.nombre}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span
+                          className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full"
+                          style={{ color: statusColor, background: `${statusColor}12` }}
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: statusColor }} />
+                          {statusText}
+                        </span>
+                        {c.latitud != null && (
+                          <span className="text-[10px] text-[#555]">GPS</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right side: mora badge + chevron */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {c.diasMora > 0 && <Badge variant="red">{c.diasMora}d</Badge>}
+                      <svg className="w-4 h-4 text-[#333]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* Remove button (owner only) */}
                   {esOwner && (
                     <button
                       onClick={() => quitarCliente(c.id)}
                       disabled={quitando === c.id}
-                      className="text-[#888888] hover:text-[#ef4444] transition-colors disabled:opacity-50"
-                      title="Quitar de la ruta"
+                      className="pr-2.5 pl-0.5 self-stretch flex items-center text-[#333] hover:text-[#ef4444] transition-colors disabled:opacity-50"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
                   )}
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </Card>
