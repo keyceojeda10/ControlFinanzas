@@ -58,21 +58,32 @@ export default function ClienteDetallePage({ params }) {
   const [isOffline, setIsOffline] = useState(false)
 
   useEffect(() => {
-    setIsOffline(false)
-    fetch(`/api/clientes/${id}`)
-      .then((r) => {
-        if (!r.ok) throw new Error()
-        return r.json()
-      })
-      .then(setCliente)
-      .catch(async () => {
+    const loadCliente = async () => {
+      setIsOffline(false)
+      // Offline: prefer IndexedDB (SW cache may be stale)
+      if (!navigator.onLine) {
         try {
           const cached = await obtenerClienteOffline(id)
-          if (cached) { setCliente(cached); setIsOffline(true); return }
+          if (cached) { setCliente(cached); setIsOffline(true); setLoading(false); return }
+        } catch {}
+      }
+      try {
+        const res = await fetch(`/api/clientes/${id}`)
+        if (!res.ok) throw new Error()
+        const data = await res.json()
+        if (data.offline) throw new Error('offline')
+        setCliente(data)
+      } catch {
+        try {
+          const cached = await obtenerClienteOffline(id)
+          if (cached) { setCliente(cached); setIsOffline(true); setLoading(false); return }
         } catch {}
         setError('No se pudo cargar el cliente.')
-      })
-      .finally(() => setLoading(false))
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadCliente()
   }, [id])
 
   // Re-fetch silently when offline payments get synced

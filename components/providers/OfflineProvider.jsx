@@ -42,7 +42,7 @@ export default function OfflineProvider({ children }) {
     syncingRef.current = true
     if (!silent) setBulkSyncing(true)
     try {
-      const result = await sincronizarTodo(() => {})
+      const result = await sincronizarTodo(silent ? () => {} : (p) => setBulkProgress(p))
       setSyncMeta({
         syncedAt: result.syncedAt,
         totalClientes: result.clientes,
@@ -51,6 +51,10 @@ export default function OfflineProvider({ children }) {
       })
       // Signal all pages to refetch their data
       setLastSyncedAt(Date.now())
+      if (!silent) {
+        setBulkProgress({ step: 'done', message: `${result.clientes} clientes sincronizados` })
+        setTimeout(() => setBulkProgress(null), 3000)
+      }
     } catch { /* silent */ }
     finally {
       syncingRef.current = false
@@ -113,14 +117,22 @@ export default function OfflineProvider({ children }) {
     return () => window.removeEventListener('paymentQueued', onPaymentQueued)
   }, [refreshPending])
 
-  // ─── AUTO-SYNC: on mount, sync pending payments FIRST, then full data ───
+  // ─── AUTO-SYNC: on mount + periodic full sync every 5 min ───
   useEffect(() => {
     obtenerSyncMeta().then((meta) => { if (meta) setSyncMeta(meta) }).catch(() => {})
 
     // Sync 3s after app open — payments first, then full data
     const initialTimeout = setTimeout(() => syncPendingThenFull(false), 3000)
 
-    return () => clearTimeout(initialTimeout)
+    // Keep offline data fresh: full sync every 5 minutes while online
+    const periodicSync = setInterval(() => {
+      if (navigator.onLine && !syncingRef.current) syncPendingThenFull(true)
+    }, 5 * 60 * 1000)
+
+    return () => {
+      clearTimeout(initialTimeout)
+      clearInterval(periodicSync)
+    }
   }, [syncPendingThenFull])
 
   // ─── MUTATION SYNC: detect POST/PUT/DELETE to /api/ and re-sync ───

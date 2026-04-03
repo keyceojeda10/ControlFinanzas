@@ -67,10 +67,18 @@ export default function PrestamoDetallePage({ params }) {
   }, [])
 
   const fetchPrestamo = async () => {
+    // Offline: prefer IndexedDB (has locally-updated data, SW cache may be stale)
+    if (!navigator.onLine) {
+      try {
+        const cached = await obtenerPrestamoOffline(id)
+        if (cached) { setPrestamo(cached); setLoading(false); return }
+      } catch {}
+    }
     try {
       const res  = await fetch(`/api/prestamos/${id}`)
       if (!res.ok) throw new Error()
       const data = await res.json()
+      if (data.offline) throw new Error('offline')
       setPrestamo(data)
     } catch {
       try {

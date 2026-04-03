@@ -38,6 +38,30 @@ export default function ClientesPage() {
     setError('')
     setIsOffline(false)
     const cacheKey = `clientes:${q || ''}:${p}`
+
+    // Offline: go straight to IndexedDB
+    if (!navigator.onLine) {
+      try {
+        let cached = await leerDeCache(cacheKey)
+        if (!cached) {
+          const allClientes = await obtenerClientesOffline()
+          if (allClientes.length > 0) {
+            let filtered = allClientes
+            if (q) {
+              const ql = q.toLowerCase()
+              filtered = filtered.filter(c => c.nombre?.toLowerCase().includes(ql) || c.cedula?.includes(ql) || c.telefono?.includes(ql))
+            }
+            const start = (p - 1) * LIMIT
+            cached = { clientes: filtered.slice(start, start + LIMIT), total: filtered.length, totalPages: Math.ceil(filtered.length / LIMIT) }
+          }
+        }
+        if (cached) {
+          setClientes(cached.clientes); setTotal(cached.total); setTotalPages(cached.totalPages)
+          setIsOffline(true); setLoading(false); return
+        }
+      } catch {}
+    }
+
     try {
       const params = new URLSearchParams()
       if (q) params.set('buscar', q)
@@ -46,6 +70,7 @@ export default function ClientesPage() {
       const res = await fetch(`/api/clientes?${params}`)
       if (!res.ok) throw new Error()
       const data = await res.json()
+      if (data.offline) throw new Error('offline')
       setClientes(data.clientes)
       setTotal(data.total)
       setTotalPages(data.totalPages)

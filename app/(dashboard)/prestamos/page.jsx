@@ -39,6 +39,33 @@ export default function PrestamosPage() {
     setError('')
     setIsOffline(false)
     const cacheKey = `prestamos:${q || ''}:${est || ''}:${p}`
+
+    // Offline: go straight to IndexedDB (skip SW cache which may be stale)
+    if (!navigator.onLine) {
+      try {
+        let cached = await leerDeCache(cacheKey)
+        if (!cached) {
+          const allPrestamos = await obtenerPrestamosOffline()
+          if (allPrestamos.length > 0) {
+            let filtered = allPrestamos
+            const apiEstado = est === 'mora' ? 'activo' : est
+            if (apiEstado) filtered = filtered.filter(pr => pr.estado === apiEstado)
+            if (est === 'mora') filtered = filtered.filter(pr => pr.diasMora > 0)
+            if (q) {
+              const ql = q.toLowerCase()
+              filtered = filtered.filter(pr => pr.cliente?.nombre?.toLowerCase().includes(ql) || pr.cliente?.cedula?.includes(ql))
+            }
+            const start = (p - 1) * LIMIT
+            cached = { prestamos: filtered.slice(start, start + LIMIT), total: filtered.length, totalPages: Math.ceil(filtered.length / LIMIT) }
+          }
+        }
+        if (cached) {
+          setPrestamos(cached.prestamos); setTotal(cached.total); setTotalPages(cached.totalPages)
+          setIsOffline(true); setLoading(false); return
+        }
+      } catch {}
+    }
+
     try {
       const params = new URLSearchParams()
       if (q) params.set('buscar', q)
@@ -50,6 +77,7 @@ export default function PrestamosPage() {
       const res = await fetch(`/api/prestamos?${params}`)
       if (!res.ok) throw new Error()
       const data = await res.json()
+      if (data.offline) throw new Error('offline')
       let items = data.prestamos
       if (est === 'mora') items = items.filter((pr) => pr.diasMora > 0)
       setPrestamos(items)

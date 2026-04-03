@@ -96,22 +96,34 @@ export default function DashboardPage() {
   }, [])
 
   useEffect(() => {
-    setIsOffline(false)
-    fetch('/api/dashboard/resumen')
-      .then((r) => r.json())
-      .then((d) => {
+    const loadDashboard = async () => {
+      setIsOffline(false)
+      // Offline: prefer IndexedDB directly
+      if (!navigator.onLine) {
+        try {
+          let cached = await leerDeCache('dashboard:resumen')
+          if (!cached) cached = await obtenerDashboardOffline()
+          if (cached) { setData(cached); setIsOffline(true); setLoading(false); return }
+        } catch {}
+      }
+      try {
+        const r = await fetch('/api/dashboard/resumen')
+        const d = await r.json()
         if (d.error) setError(d.error)
+        else if (d.offline) throw new Error('offline')
         else { setData(d); guardarEnCache('dashboard:resumen', d).catch(() => {}) }
-      })
-      .catch(async () => {
+      } catch {
         try {
           let cached = await leerDeCache('dashboard:resumen')
           if (!cached) cached = await obtenerDashboardOffline()
           if (cached) { setData(cached); setIsOffline(true); return }
         } catch {}
         setError('No se pudo cargar el resumen.')
-      })
-      .finally(() => setLoading(false))
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadDashboard()
   }, [lastSyncedAt])
 
   useEffect(() => {
