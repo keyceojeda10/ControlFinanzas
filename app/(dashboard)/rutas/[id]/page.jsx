@@ -748,7 +748,7 @@ export default function RutaDetallePage({ params }) {
 
                   {/* Client content — clickable */}
                   <div
-                    className="flex-1 flex items-center gap-3 py-3 pr-3 min-w-0 cursor-pointer active:opacity-80"
+                    className="flex-1 flex items-center gap-3 py-3 pl-2 pr-3 min-w-0 cursor-pointer active:opacity-80"
                     onClick={() => {
                       const nextIdx = Math.min(idx + 1, ruta.clientes.length - 1)
                       sessionStorage.setItem(`ruta-scroll-${id}`, ruta.clientes[nextIdx].id)
