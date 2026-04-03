@@ -104,7 +104,7 @@ export async function GET(request, { params }) {
       direccion: c.direccion,
       latitud:   c.latitud,
       longitud:  c.longitud,
-      estado:    mora > 0 ? 'mora' : (c.prestamos.length > 0 ? 'activo' : 'cancelado'),
+      estado:    c.prestamos.length === 0 ? 'completado' : (mora > 0 ? 'mora' : 'activo'),
       pagoHoy:   yaPageHoy,
       diasMora:  mora,
       diasDesdeUltimoPago,

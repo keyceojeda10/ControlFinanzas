@@ -612,6 +612,7 @@ export default function PrestamoDetallePage({ params }) {
         onSuccess={handlePagoExito}
         cliente={cliente}
         prestamo={prestamo}
+        rutaNav={rutaNav}
       />
 
       {/* Modales de ajuste */}

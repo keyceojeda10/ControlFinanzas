@@ -197,7 +197,10 @@ export default function RutaDetallePage({ params }) {
     }
   }
 
+  const [confirmQuitar, setConfirmQuitar] = useState(null) // { id, nombre }
+
   const quitarCliente = async (clienteId) => {
+    setConfirmQuitar(null)
     setQuitando(clienteId)
     await fetch(`/api/rutas/${id}/clientes`, {
       method:  'DELETE',
@@ -423,7 +426,10 @@ export default function RutaDetallePage({ params }) {
   }
 
   // ─── Optimizar ruta ────────────────────────────────────
+  const [confirmOptimizar, setConfirmOptimizar] = useState(false)
+
   const optimizarRuta = async () => {
+    setConfirmOptimizar(false)
     setOptimizando(true)
     setOptimResult(null)
     try {
@@ -644,7 +650,7 @@ export default function RutaDetallePage({ params }) {
           </button>
         )}
         {(ruta.clientes?.length ?? 0) >= 2 && clientesConCoords >= 2 && (
-          <button onClick={optimizarRuta} disabled={optimizando} className="shrink-0 h-8 px-3 rounded-[10px] border border-[#222] bg-[#111] text-[11px] text-[#aaa] font-medium active:scale-95 transition-transform disabled:opacity-50">
+          <button onClick={() => setConfirmOptimizar(true)} disabled={optimizando} className="shrink-0 h-8 px-3 rounded-[10px] border border-[#222] bg-[#111] text-[11px] text-[#aaa] font-medium active:scale-95 transition-transform disabled:opacity-50">
             {optimizando ? 'Optimizando...' : 'Optimizar'}
           </button>
         )}
@@ -701,17 +707,25 @@ export default function RutaDetallePage({ params }) {
           </div>
         ) : (
           <div className="space-y-1.5" ref={listRef}>
-            {ruta.clientes.map((c, idx) => {
-              const statusColor = c.diasMora > 0 ? '#ef4444' : c.pagoHoy ? '#22c55e' : '#f59e0b'
-              const statusText = c.diasMora > 0
-                ? `${c.diasMora}d mora`
-                : c.pagoHoy
-                  ? 'Pago hoy'
-                  : c.diasDesdeUltimoPago === 1
-                    ? 'Falta hoy'
-                    : c.diasDesdeUltimoPago >= 2
-                      ? `${c.diasDesdeUltimoPago}d sin pago`
-                      : 'Pendiente'
+            {/* Sort: active clients first (keep order), completed at end */}
+            {[...ruta.clientes].sort((a, b) => {
+              const aComp = a.estado === 'completado' ? 1 : 0
+              const bComp = b.estado === 'completado' ? 1 : 0
+              return aComp - bComp
+            }).map((c, idx) => {
+              const isCompleted = c.estado === 'completado'
+              const statusColor = isCompleted ? '#666' : c.diasMora > 0 ? '#ef4444' : c.pagoHoy ? '#22c55e' : '#f59e0b'
+              const statusText = isCompleted
+                ? 'Sin deuda — se puede retirar'
+                : c.diasMora > 0
+                  ? `${c.diasMora}d mora`
+                  : c.pagoHoy
+                    ? 'Pago hoy'
+                    : c.diasDesdeUltimoPago === 1
+                      ? 'Falta hoy'
+                      : c.diasDesdeUltimoPago >= 2
+                        ? `${c.diasDesdeUltimoPago}d sin pago`
+                        : 'Pendiente'
               return (
                 <div
                   key={c.id}
@@ -728,6 +742,7 @@ export default function RutaDetallePage({ params }) {
                   className={[
                     'flex items-center gap-0 rounded-[14px] transition-all',
                     'border',
+                    isCompleted ? 'opacity-50' : '',
                     dragIndex === idx ? 'opacity-30 scale-95' : '',
                     dragOverIdx === idx && dragIndex !== idx ? 'border-[#f5c518] bg-[rgba(245,197,24,0.05)]' : 'border-[#1f1f1f] bg-[rgba(255,255,255,0.02)]',
                     highlightId === c.id ? 'border-[#f5c518] bg-[rgba(245,197,24,0.08)]' : '',
@@ -791,7 +806,7 @@ export default function RutaDetallePage({ params }) {
                   {/* Remove button (owner only) */}
                   {esOwner && (
                     <button
-                      onClick={() => quitarCliente(c.id)}
+                      onClick={() => setConfirmQuitar({ id: c.id, nombre: c.nombre })}
                       disabled={quitando === c.id}
                       className="pr-2 pl-0 self-stretch flex items-center text-[#2a2a2a] hover:text-[#ef4444] transition-colors disabled:opacity-50"
                     >
@@ -964,6 +979,45 @@ export default function RutaDetallePage({ params }) {
             </div>
           )}
         </div>
+      </Modal>
+
+      {/* Modal: confirmar optimizar ruta */}
+      <Modal
+        open={confirmOptimizar}
+        onClose={() => setConfirmOptimizar(false)}
+        title="Optimizar ruta"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setConfirmOptimizar(false)}>Cancelar</Button>
+            <Button onClick={optimizarRuta} loading={optimizando}>Optimizar</Button>
+          </>
+        }
+      >
+        <p className="text-sm text-[#888]">
+          Se reordenaran los clientes segun su ubicacion GPS para crear la ruta mas corta. Esto puede cambiar el orden que configuraste manualmente.
+        </p>
+      </Modal>
+
+      {/* Modal: confirmar quitar cliente */}
+      <Modal
+        open={!!confirmQuitar}
+        onClose={() => setConfirmQuitar(null)}
+        title="Quitar cliente de la ruta"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setConfirmQuitar(null)}>Cancelar</Button>
+            <Button
+              onClick={() => confirmQuitar && quitarCliente(confirmQuitar.id)}
+              style={{ background: '#ef4444', color: 'white' }}
+            >
+              Quitar
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-[#888]">
+          <span className="text-white font-medium">{confirmQuitar?.nombre}</span> sera removido de esta ruta. Podras reasignarlo despues.
+        </p>
       </Modal>
     </div>
   )

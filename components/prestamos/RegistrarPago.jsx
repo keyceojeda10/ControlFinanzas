@@ -2,6 +2,7 @@
 // components/prestamos/RegistrarPago.jsx - Modal de registro de pago
 
 import { useState }    from 'react'
+import { useRouter }   from 'next/navigation'
 import { Modal }       from '@/components/ui/Modal'
 import { Button }      from '@/components/ui/Button'
 import { Input }       from '@/components/ui/Input'
@@ -14,8 +15,9 @@ import { guardarPagoPendiente, actualizarPrestamoOffline }  from '@/lib/offline'
 export default function RegistrarPago({
   prestamoId, cuotaDiaria, saldoPendiente,
   open, onClose, onSuccess,
-  cliente, prestamo,
+  cliente, prestamo, rutaNav,
 }) {
+  const router = useRouter()
   const [monto,        setMonto]        = useState(String(Math.round(cuotaDiaria ?? 0)))
   const [tipo,         setTipo]         = useState('completo')
   const [nota,         setNota]         = useState('')
@@ -116,15 +118,66 @@ export default function RegistrarPago({
     setError('')
   }
 
+  // ── Lógica siguiente cliente en ruta ────────────────────────
+  const getNextInRuta = () => {
+    if (!rutaNav || !cliente) return null
+    const idx = rutaNav.clientes.findIndex(c => c.id === cliente.id)
+    if (idx < 0) return null
+    const isLast = idx >= rutaNav.clientes.length - 1
+    return { idx, isLast, next: isLast ? null : rutaNav.clientes[idx + 1] }
+  }
+
+  const navigateNextInRuta = () => {
+    const info = getNextInRuta()
+    if (!info) return
+    const getDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10)
+    if (info.isLast) {
+      sessionStorage.removeItem('cf-ruta-nav')
+      const url = `/rutas/${rutaNav.rutaId}`
+      navigator.onLine ? router.push(url) : (window.location.href = url)
+    } else {
+      const newNav = { ...rutaNav, currentIndex: info.idx + 1 }
+      sessionStorage.setItem('cf-ruta-nav', JSON.stringify(newNav))
+      localStorage.setItem(`cf-ruta-progress-${rutaNav.rutaId}`, JSON.stringify({
+        clienteId: info.next.id, clienteNombre: info.next.nombre, index: info.idx + 1, date: getDate(),
+      }))
+      const url = `/clientes/${info.next.id}`
+      navigator.onLine ? router.push(url) : (window.location.href = url)
+    }
+  }
+
   // ── Vista éxito ───────────────────────────────────────────────
   if (exitoso && pagoGuardado) {
     const prestamoWA = prestamoAct ?? prestamo
+    const rutaInfo = getNextInRuta()
+
     return (
       <Modal
         open={open}
         onClose={handleCerrar}
-        title="¡Pago registrado!"
-        footer={<Button onClick={handleCerrar} className="w-full">Cerrar</Button>}
+        title="Pago registrado"
+        footer={
+          <div className="flex gap-2 w-full">
+            <Button variant="secondary" onClick={handleCerrar} className={rutaInfo ? 'flex-shrink-0' : 'w-full'}>
+              Cerrar
+            </Button>
+            {rutaInfo && (
+              <button
+                onClick={navigateNextInRuta}
+                className="flex-1 py-2.5 rounded-[12px] text-sm font-semibold active:scale-[0.98] transition-all"
+                style={rutaInfo.isLast
+                  ? { background: '#22c55e', color: 'white' }
+                  : { background: 'linear-gradient(135deg, #f5c518, #f0b800)', color: '#0a0a0a' }
+                }
+              >
+                {rutaInfo.isLast
+                  ? 'Ruta finalizada'
+                  : `Siguiente → ${rutaInfo.next.nombre}`
+                }
+              </button>
+            )}
+          </div>
+        }
       >
         <div className="space-y-4">
           <div className="flex flex-col items-center gap-2 py-3">
