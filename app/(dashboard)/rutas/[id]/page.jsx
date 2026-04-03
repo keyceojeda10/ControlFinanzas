@@ -764,13 +764,13 @@ export default function RutaDetallePage({ params }) {
                       else { window.location.href = `/clientes/${c.id}` }
                     }}
                   >
-                    {/* Status dot */}
-                    <div className="w-2 h-2 rounded-full shrink-0" style={{ background: statusColor, boxShadow: `0 0 6px ${statusColor}60` }} />
-
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <p className="text-[13px] font-semibold text-[white] truncate">{c.nombre}</p>
-                      <p className="text-[10px] mt-0.5" style={{ color: statusColor }}>{statusText}</p>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: statusColor, boxShadow: `0 0 5px ${statusColor}50` }} />
+                        <span className="text-[10px]" style={{ color: statusColor }}>{statusText}</span>
+                      </div>
                     </div>
 
                     {/* Right side: cuota diaria */}
