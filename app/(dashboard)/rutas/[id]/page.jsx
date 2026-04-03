@@ -477,88 +477,124 @@ export default function RutaDetallePage({ params }) {
         Rutas
       </button>
 
-      {/* Header compacto */}
-      <div className="flex items-center justify-between">
-        <div className="flex-1 min-w-0">
-          {editandoNombre ? (
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={nuevoNombre}
-                onChange={(e) => setNuevoNombre(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && guardarNombre()}
-                className="flex-1 h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111] text-sm text-[white] focus:outline-none focus:border-[#f5c518]"
-                autoFocus
-              />
-              <button onClick={guardarNombre} className="text-[#22c55e] p-1"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg></button>
-              <button onClick={() => setEditandoNombre(false)} className="text-[#555] p-1"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
-            </div>
-          ) : (
-            <>
+      {/* Header */}
+      <Card>
+        <div className="flex items-center justify-between">
+          <div className="flex-1 min-w-0">
+            {editandoNombre ? (
               <div className="flex items-center gap-2">
-                <h1 className="text-lg font-bold text-[white]">{ruta.nombre}</h1>
-                {esOwner && (
-                  <button onClick={() => { setNuevoNombre(ruta.nombre); setEditandoNombre(true) }} className="text-[#333] hover:text-[#f5c518] transition-colors p-1">
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                  </button>
-                )}
+                <input
+                  type="text"
+                  value={nuevoNombre}
+                  onChange={(e) => setNuevoNombre(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && guardarNombre()}
+                  className="flex-1 h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#0a0a0a] text-sm text-[white] focus:outline-none focus:border-[#f5c518]"
+                  autoFocus
+                />
+                <button onClick={guardarNombre} className="text-[#22c55e] p-1"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg></button>
+                <button onClick={() => setEditandoNombre(false)} className="text-[#555] p-1"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
               </div>
-              <p className="text-[11px] text-[#555] mt-0.5">
-                {ruta.cobrador && <span className="text-[#a855f7]">{ruta.cobrador.nombre}</span>}
-                {ruta.cobrador && ' · '}
-                {ruta.clientes?.length ?? 0} clientes
-              </p>
-            </>
+            ) : (
+              <>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-lg font-bold text-[white]">{ruta.nombre}</h1>
+                  {esOwner && (
+                    <button onClick={() => { setNuevoNombre(ruta.nombre); setEditandoNombre(true) }} className="text-[#333] hover:text-[#f5c518] transition-colors p-1">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                    </button>
+                  )}
+                </div>
+                <p className="text-[11px] text-[#555] mt-0.5">
+                  {ruta.cobrador && <span className="text-[#a855f7]">{ruta.cobrador.nombre}</span>}
+                  {ruta.cobrador && ' · '}
+                  {ruta.clientes?.length ?? 0} clientes
+                </p>
+              </>
+            )}
+          </div>
+          {esOwner && !editandoNombre && (
+            <button onClick={eliminarRuta} disabled={eliminando} className="text-[#333] hover:text-[#ef4444] transition-colors p-2 disabled:opacity-50">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            </button>
           )}
         </div>
-        {esOwner && !editandoNombre && (
-          <button onClick={eliminarRuta} disabled={eliminando} className="text-[#333] hover:text-[#ef4444] transition-colors p-2 disabled:opacity-50">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-          </button>
+        {esOwner && (
+          <select
+            value={ruta.cobrador?.id ?? ''}
+            onChange={(e) => cambiarCobrador(e.target.value)}
+            className="w-full h-9 rounded-[10px] border border-[#2a2a2a] bg-[#0a0a0a] text-xs text-[white] px-3 mt-3 focus:outline-none focus:border-[#f5c518] transition-all cursor-pointer"
+          >
+            <option value="">Sin cobrador asignado</option>
+            {cobradores.map((c) => (
+              <option key={c.id} value={c.id}>{c.nombre}</option>
+            ))}
+          </select>
         )}
-      </div>
+      </Card>
 
-      {/* Cobrador selector (owner) */}
-      {esOwner && (
-        <select
-          value={ruta.cobrador?.id ?? ''}
-          onChange={(e) => cambiarCobrador(e.target.value)}
-          className="w-full h-9 rounded-[10px] border border-[#222] bg-[#111] text-xs text-[white] px-3 focus:outline-none focus:border-[#f5c518] transition-all cursor-pointer -mt-2"
-        >
-          <option value="">Sin cobrador asignado</option>
-          {cobradores.map((c) => (
-            <option key={c.id} value={c.id}>{c.nombre}</option>
-          ))}
-        </select>
-      )}
+      {/* Métricas */}
+      {(() => {
+        const cobrado = ruta.capitalTotal - ruta.carteraTotal
+        const carteraPct = ruta.capitalTotal > 0
+          ? Math.min(100, Math.round((cobrado / ruta.capitalTotal) * 100))
+          : 0
+        return (
+          <>
+            {/* Cobro del día */}
+            <Card padding={false}>
+              <div className="px-4 py-3">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] text-[#666] uppercase tracking-wide">Cobro del dia</span>
+                  <span className="text-[11px] font-bold" style={{ color: progreso >= 100 ? '#22c55e' : '#f5c518' }}>{progreso}%</span>
+                </div>
+                <div className="flex items-baseline justify-between">
+                  <p className="text-lg font-bold text-[#22c55e] font-mono-display">{formatCOP(ruta.recaudadoHoy)}</p>
+                  <p className="text-[11px] text-[#444] font-mono-display">de {formatCOP(ruta.esperadoHoy)}</p>
+                </div>
+                <div className="h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden mt-2.5">
+                  <div className="h-full rounded-full transition-all duration-700" style={{
+                    width: `${progreso}%`,
+                    background: progreso >= 100 ? '#22c55e' : '#f5c518',
+                  }} />
+                </div>
+              </div>
+            </Card>
 
-      {/* Métricas + progreso — una sola fila compacta */}
-      <div className="grid grid-cols-2 gap-2">
-        <div className="border border-[#1e1e1e] rounded-[14px] p-3" style={{ background: '#111' }}>
-          <div className="flex items-baseline justify-between mb-2">
-            <span className="text-[10px] text-[#555] uppercase tracking-wide">Recaudado</span>
-            <span className="text-[10px] font-bold" style={{ color: progreso >= 100 ? '#22c55e' : '#f5c518' }}>{progreso}%</span>
-          </div>
-          <p className="text-base font-bold text-[#22c55e] font-mono-display">{formatCOP(ruta.recaudadoHoy)}</p>
-          <p className="text-[10px] text-[#444] font-mono-display">de {formatCOP(ruta.esperadoHoy)}</p>
-          <div className="h-1 bg-[#1a1a1a] rounded-full overflow-hidden mt-2">
-            <div className="h-full rounded-full transition-all duration-700" style={{
-              width: `${progreso}%`,
-              background: progreso >= 100 ? '#22c55e' : '#f5c518',
-            }} />
-          </div>
-        </div>
-        <div className="grid grid-rows-2 gap-2">
-          <div className="border border-[#1e1e1e] rounded-[14px] px-3 py-2.5 flex items-center justify-between" style={{ background: '#111' }}>
-            <span className="text-[10px] text-[#555]">Pendientes</span>
-            <span className="text-sm font-bold" style={{ color: ruta.pendientesHoy > 0 ? '#f59e0b' : '#22c55e' }}>{ruta.pendientesHoy}</span>
-          </div>
-          <div className="border border-[#1e1e1e] rounded-[14px] px-3 py-2.5 flex items-center justify-between" style={{ background: '#111' }}>
-            <span className="text-[10px] text-[#555]">En mora</span>
-            <span className="text-sm font-bold" style={{ color: ruta.enMora > 0 ? '#ef4444' : '#22c55e' }}>{ruta.enMora}</span>
-          </div>
-        </div>
-      </div>
+            {/* Cartera de la ruta */}
+            <Card padding={false}>
+              <div className="px-4 py-3">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] text-[#666] uppercase tracking-wide">Cartera</span>
+                  <span className="text-[11px] font-bold text-[#06b6d4]">{carteraPct}% cobrado</span>
+                </div>
+                <div className="flex items-baseline justify-between">
+                  <p className="text-lg font-bold text-[white] font-mono-display">{formatCOP(ruta.carteraTotal)}</p>
+                  <p className="text-[11px] text-[#444] font-mono-display">de {formatCOP(ruta.capitalTotal)}</p>
+                </div>
+                <div className="h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden mt-2.5">
+                  <div className="h-full rounded-full bg-[#06b6d4] transition-all duration-700" style={{ width: `${carteraPct}%` }} />
+                </div>
+              </div>
+            </Card>
+
+            {/* Pendientes + Mora */}
+            <div className="grid grid-cols-2 gap-3">
+              <Card padding={false}>
+                <div className="px-4 py-3">
+                  <p className="text-[10px] text-[#666] uppercase tracking-wide mb-1">Pendientes hoy</p>
+                  <p className="text-xl font-bold" style={{ color: ruta.pendientesHoy > 0 ? '#f59e0b' : '#22c55e' }}>{ruta.pendientesHoy}</p>
+                </div>
+              </Card>
+              <Card padding={false}>
+                <div className="px-4 py-3">
+                  <p className="text-[10px] text-[#666] uppercase tracking-wide mb-1">En mora</p>
+                  <p className="text-xl font-bold" style={{ color: ruta.enMora > 0 ? '#ef4444' : '#22c55e' }}>{ruta.enMora}</p>
+                </div>
+              </Card>
+            </div>
+          </>
+        )
+      })()}
 
       {/* Banner: Continuar ruta */}
       {banner && (

@@ -3,7 +3,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { calcularDiasMora } from '@/lib/calculos'
+import { calcularDiasMora, calcularSaldoPendiente } from '@/lib/calculos'
 
 // Funciones de fecha en timezone Colombia (UTC-5)
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
@@ -48,11 +48,13 @@ export async function GET(request, { params }) {
 
   if (!ruta) return Response.json({ error: 'Ruta no encontrada' }, { status: 404 })
 
-  // Calcular métricas del día
+  // Calcular métricas del día + cartera
   let esperadoHoy  = 0
   let recaudadoHoy = 0
   let pendientesHoy = 0
   let enMora = 0
+  let carteraTotal = 0  // saldo pendiente de todos los préstamos
+  let capitalTotal = 0  // monto original prestado
 
   // Cachear fechas para evitar recalcular en cada iteración
   const _hoy = hoy(), _manana = manana()
@@ -66,6 +68,8 @@ export async function GET(request, { params }) {
     for (const p of c.prestamos) {
       cuotaCliente  += p.cuotaDiaria
       esperadoHoy   += p.cuotaDiaria
+      carteraTotal  += calcularSaldoPendiente(p)
+      capitalTotal  += p.montoPrestado
       const pagosHoy = p.pagos.filter(
         (pg) => new Date(pg.fechaPago) >= _hoy && new Date(pg.fechaPago) < _manana
       )
@@ -126,6 +130,8 @@ export async function GET(request, { params }) {
     recaudadoHoy: Math.round(recaudadoHoy),
     pendientesHoy,
     enMora,
+    carteraTotal: Math.round(carteraTotal),
+    capitalTotal: Math.round(capitalTotal),
     cierre,
   })
 }
