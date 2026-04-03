@@ -104,6 +104,7 @@ export async function GET(request, { params }) {
       pagoHoy:   yaPageHoy,
       diasMora:  mora,
       diasDesdeUltimoPago,
+      cuota:     cuotaCliente,
     }
   })
 

@@ -6,7 +6,6 @@ import { useRouter }                 from 'next/navigation'
 import dynamic                       from 'next/dynamic'
 import { useAuth }                   from '@/hooks/useAuth'
 import { obtenerRutaOffline, guardarOrdenPendiente } from '@/lib/offline'
-import { Badge }                     from '@/components/ui/Badge'
 import { Button }                    from '@/components/ui/Button'
 import { Card }                      from '@/components/ui/Card'
 import { Modal }                     from '@/components/ui/Modal'
@@ -698,22 +697,22 @@ export default function RutaDetallePage({ params }) {
                     highlightId === c.id ? 'border-[#f5c518] bg-[rgba(245,197,24,0.08)]' : '',
                   ].join(' ')}
                 >
-                  {/* Grip handle — large touch target */}
+                  {/* Grip + number — combined touch target */}
                   <div
                     data-grip="true"
-                    className="flex flex-col items-center justify-center w-10 shrink-0 self-stretch rounded-l-[14px] cursor-grab active:cursor-grabbing touch-none select-none"
+                    className="flex flex-col items-center justify-center w-11 shrink-0 self-stretch rounded-l-[14px] cursor-grab active:cursor-grabbing touch-none select-none gap-1"
                     style={{ background: 'rgba(255,255,255,0.02)' }}
                   >
-                    <svg className="w-5 h-5 text-[#444]" viewBox="0 0 24 24" fill="currentColor">
-                      <circle cx="9" cy="6" r="1.5" /><circle cx="15" cy="6" r="1.5" />
-                      <circle cx="9" cy="12" r="1.5" /><circle cx="15" cy="12" r="1.5" />
-                      <circle cx="9" cy="18" r="1.5" /><circle cx="15" cy="18" r="1.5" />
+                    <svg className="w-4 h-4 text-[#333]" viewBox="0 0 24 24" fill="currentColor">
+                      <circle cx="9" cy="7" r="1.5" /><circle cx="15" cy="7" r="1.5" />
+                      <circle cx="9" cy="13" r="1.5" /><circle cx="15" cy="13" r="1.5" />
                     </svg>
+                    <span className="text-[10px] font-bold text-[#444]">{idx + 1}</span>
                   </div>
 
                   {/* Client content — clickable */}
                   <div
-                    className="flex-1 flex items-center gap-2.5 py-3 pr-3 min-w-0 cursor-pointer active:opacity-80"
+                    className="flex-1 flex items-center gap-3 py-3 pr-3 min-w-0 cursor-pointer active:opacity-80"
                     onClick={() => {
                       const nextIdx = Math.min(idx + 1, ruta.clientes.length - 1)
                       sessionStorage.setItem(`ruta-scroll-${id}`, ruta.clientes[nextIdx].id)
@@ -729,41 +728,28 @@ export default function RutaDetallePage({ params }) {
                       else { window.location.href = `/clientes/${c.id}` }
                     }}
                   >
-                    {/* Number badge */}
-                    <div
-                      className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold"
-                      style={{
-                        background: `${statusColor}15`,
-                        color: statusColor,
-                      }}
-                    >
-                      {idx + 1}
-                    </div>
+                    {/* Status dot */}
+                    <div className="w-2 h-2 rounded-full shrink-0" style={{ background: statusColor, boxShadow: `0 0 6px ${statusColor}60` }} />
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <p className="text-[13px] font-semibold text-[white] truncate">{c.nombre}</p>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span
-                          className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full"
-                          style={{ color: statusColor, background: `${statusColor}12` }}
-                        >
-                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: statusColor }} />
-                          {statusText}
-                        </span>
-                        {c.latitud != null && (
-                          <span className="text-[10px] text-[#555]">GPS</span>
-                        )}
-                      </div>
+                      <p className="text-[10px] mt-0.5" style={{ color: statusColor }}>{statusText}</p>
                     </div>
 
-                    {/* Right side: mora badge + chevron */}
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {c.diasMora > 0 && <Badge variant="red">{c.diasMora}d</Badge>}
-                      <svg className="w-4 h-4 text-[#333]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
+                    {/* Right side: cuota diaria */}
+                    <div className="text-right shrink-0">
+                      {c.cuota > 0 && (
+                        <>
+                          <p className="text-[12px] font-bold text-[white] font-mono-display">{formatCOP(c.cuota)}</p>
+                          <p className="text-[9px] text-[#444]">cuota/dia</p>
+                        </>
+                      )}
                     </div>
+
+                    <svg className="w-4 h-4 text-[#2a2a2a] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
                   </div>
 
                   {/* Remove button (owner only) */}
@@ -771,7 +757,7 @@ export default function RutaDetallePage({ params }) {
                     <button
                       onClick={() => quitarCliente(c.id)}
                       disabled={quitando === c.id}
-                      className="pr-2.5 pl-0.5 self-stretch flex items-center text-[#333] hover:text-[#ef4444] transition-colors disabled:opacity-50"
+                      className="pr-2 pl-0 self-stretch flex items-center text-[#2a2a2a] hover:text-[#ef4444] transition-colors disabled:opacity-50"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
