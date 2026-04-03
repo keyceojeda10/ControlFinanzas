@@ -1,10 +1,11 @@
 'use client'
 // app/(dashboard)/rutas/page.jsx - Lista de rutas
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link                    from 'next/link'
 import { useRouter }           from 'next/navigation'
 import { useAuth }             from '@/hooks/useAuth'
+import { useOffline }         from '@/components/providers/OfflineProvider'
 import { guardarEnCache, leerDeCache, obtenerRutasOffline } from '@/lib/offline'
 import { Button }              from '@/components/ui/Button'
 import { Input }               from '@/components/ui/Input'
@@ -14,6 +15,7 @@ import { formatCOP }           from '@/lib/calculos'
 export default function RutasPage() {
   const router = useRouter()
   const { esOwner, loading: authLoading } = useAuth()
+  const { lastSyncedAt } = useOffline()
   const [rutas,    setRutas]    = useState([])
   const [loading,  setLoading]  = useState(true)
   const [error,    setError]    = useState('')
@@ -25,25 +27,46 @@ export default function RutasPage() {
   const [backupLoading, setBackupLoading] = useState(false)
   const [restoreLoading, setRestoreLoading] = useState(false)
 
-  useEffect(() => {
+  const fetchRutas = useCallback(async () => {
+    setLoading(true)
+    setError('')
     setIsOffline(false)
-    fetch('/api/rutas')
-      .then((r) => r.json())
-      .then((d) => {
-        const rutas = Array.isArray(d) ? d : []
-        setRutas(rutas)
-        guardarEnCache('rutas', rutas).catch(() => {})
-      })
-      .catch(async () => {
-        try {
-          let cached = await leerDeCache('rutas')
-          if (!cached || cached.length === 0) cached = await obtenerRutasOffline()
-          if (cached && cached.length > 0) { setRutas(cached); setIsOffline(true); setLoading(false); return }
-        } catch {}
-        setError('No se pudieron cargar las rutas.')
-      })
-      .finally(() => setLoading(false))
+
+    // Offline: go straight to IndexedDB, bypass SW cached response
+    if (!navigator.onLine) {
+      try {
+        let cached = await leerDeCache('rutas')
+        if (!cached || cached.length === 0) cached = await obtenerRutasOffline()
+        if (cached && cached.length > 0) {
+          setRutas(cached)
+          setIsOffline(true)
+          setLoading(false)
+          return
+        }
+      } catch {}
+    }
+
+    try {
+      const res = await fetch('/api/rutas')
+      if (!res.ok) throw new Error()
+      const d = await res.json()
+      if (d.offline) throw new Error('offline')
+      const rutas = Array.isArray(d) ? d : []
+      setRutas(rutas)
+      guardarEnCache('rutas', rutas).catch(() => {})
+    } catch {
+      try {
+        let cached = await leerDeCache('rutas')
+        if (!cached || cached.length === 0) cached = await obtenerRutasOffline()
+        if (cached && cached.length > 0) { setRutas(cached); setIsOffline(true); setLoading(false); return }
+      } catch {}
+      setError('No se pudieron cargar las rutas.')
+    } finally {
+      setLoading(false)
+    }
   }, [])
+
+  useEffect(() => { fetchRutas() }, [fetchRutas, lastSyncedAt])
 
   const crearRuta = async (e) => {
     e.preventDefault()

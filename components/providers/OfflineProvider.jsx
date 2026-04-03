@@ -117,21 +117,37 @@ export default function OfflineProvider({ children }) {
     return () => window.removeEventListener('paymentQueued', onPaymentQueued)
   }, [refreshPending])
 
-  // ─── AUTO-SYNC: on mount + periodic full sync every 5 min ───
+  // ─── AUTO-SYNC: on mount + periodic + visibility change ───
   useEffect(() => {
     obtenerSyncMeta().then((meta) => { if (meta) setSyncMeta(meta) }).catch(() => {})
 
     // Sync 3s after app open — payments first, then full data
     const initialTimeout = setTimeout(() => syncPendingThenFull(false), 3000)
 
-    // Keep offline data fresh: full sync every 5 minutes while online
+    // Keep offline data fresh: full sync every 3 minutes while online
     const periodicSync = setInterval(() => {
       if (navigator.onLine && !syncingRef.current) syncPendingThenFull(true)
-    }, 5 * 60 * 1000)
+    }, 3 * 60 * 1000)
+
+    // Sync when user returns to the tab/app (e.g. from WhatsApp, another tab)
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && navigator.onLine && !syncingRef.current) {
+        syncPendingThenFull(true)
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+
+    // Sync when window regains focus (covers PWA returning from background)
+    const handleFocus = () => {
+      if (navigator.onLine && !syncingRef.current) syncPendingThenFull(true)
+    }
+    window.addEventListener('focus', handleFocus)
 
     return () => {
       clearTimeout(initialTimeout)
       clearInterval(periodicSync)
+      document.removeEventListener('visibilitychange', handleVisibility)
+      window.removeEventListener('focus', handleFocus)
     }
   }, [syncPendingThenFull])
 

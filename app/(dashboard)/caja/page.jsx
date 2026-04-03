@@ -1,8 +1,9 @@
 'use client'
 // app/(dashboard)/caja/page.jsx - Caja del día
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth }             from '@/hooks/useAuth'
+import { useOffline }          from '@/components/providers/OfflineProvider'
 import { guardarEnCache, leerDeCache, obtenerDashboardOffline } from '@/lib/offline'
 import { Card }                from '@/components/ui/Card'
 import { Button }              from '@/components/ui/Button'
@@ -40,6 +41,7 @@ function ProgressBar({ value, max, color = '#22c55e' }) {
 
 export default function CajaPage() {
   const { session, esOwner, esCobrador, loading: authLoading } = useAuth()
+  const { lastSyncedAt } = useOffline()
 
   const [cajaData, setCajaData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -55,14 +57,25 @@ export default function CajaPage() {
 
   const esHoy = fechaSeleccionada === getColombiaDateStr()
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true)
     setError('')
     setIsOffline(false)
     const cacheKey = `caja:${fechaSeleccionada}`
+
+    // Offline: go straight to IndexedDB
+    if (!navigator.onLine) {
+      try {
+        let cached = await leerDeCache(cacheKey)
+        if (!cached) cached = await obtenerDashboardOffline()
+        if (cached) { setCajaData(cached); setIsOffline(true); setLoading(false); return }
+      } catch {}
+    }
+
     try {
       const res = await fetch(`/api/caja?fecha=${fechaSeleccionada}`)
       const data = await res.json()
+      if (data.offline) throw new Error('offline')
       if (data.error) {
         setError(data.error)
       } else {
@@ -71,18 +84,19 @@ export default function CajaPage() {
       }
     } catch {
       try {
-        const cached = await leerDeCache(cacheKey)
+        let cached = await leerDeCache(cacheKey)
+        if (!cached) cached = await obtenerDashboardOffline()
         if (cached) { setCajaData(cached); setIsOffline(true); setLoading(false); return }
       } catch {}
       setError('No se pudo cargar la información.')
     } finally {
       setLoading(false)
     }
-  }
+  }, [fechaSeleccionada])
 
   useEffect(() => {
     if (!authLoading) fetchData()
-  }, [authLoading, fechaSeleccionada])
+  }, [authLoading, fetchData, lastSyncedAt])
 
   const handleFechaChange = (e) => {
     setFechaSeleccionada(e.target.value)
