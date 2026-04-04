@@ -28,6 +28,7 @@ export default function RutaDetallePage({ params }) {
   const [clientesSinRuta, setClientesSinRuta] = useState([])
   const [clientesEnOtraRuta, setClientesEnOtraRuta] = useState([])
   const [seleccionados, setSeleccionados] = useState([])
+  const [buscarCliente, setBuscarCliente] = useState('')
   const [errorAsignar, setErrorAsignar] = useState('')
   const [asignando,     setAsignando]     = useState(false)
   const [quitando,      setQuitando]      = useState(null)
@@ -857,11 +858,11 @@ export default function RutaDetallePage({ params }) {
       {/* Modal: agregar clientes */}
       <Modal
         open={modalClientes}
-        onClose={() => setModalClientes(false)}
+        onClose={() => { setModalClientes(false); setBuscarCliente('') }}
         title="Agregar clientes a la ruta"
         footer={
           <>
-            <Button variant="secondary" onClick={() => setModalClientes(false)}>Cancelar</Button>
+            <Button variant="secondary" onClick={() => { setModalClientes(false); setBuscarCliente('') }}>Cancelar</Button>
             <Button onClick={asignarClientes} loading={asignando} disabled={!seleccionados.length}>
               Agregar {seleccionados.length > 0 ? `(${seleccionados.length})` : ''}
             </Button>
@@ -872,16 +873,38 @@ export default function RutaDetallePage({ params }) {
           <p className="text-sm text-[#888888] text-center py-4">Todos los clientes ya tienen ruta asignada</p>
         ) : (
           <div className="space-y-1">
+            {/* Buscador */}
+            <div className="relative mb-2">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#555]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Buscar por nombre o cedula..."
+                value={buscarCliente}
+                onChange={(e) => setBuscarCliente(e.target.value)}
+                className="w-full h-9 pl-9 pr-3 rounded-[10px] bg-[#1a1a1a] border border-[#2a2a2a] text-sm text-white placeholder-[#555] focus:outline-none focus:border-[#f5c518] transition-colors"
+                autoFocus
+              />
+            </div>
             {errorAsignar && (
               <div className="flex items-center gap-2 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-xs rounded-[10px] px-3 py-2 mb-2">
                 <svg className="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>
                 {errorAsignar}
               </div>
             )}
-            {clientesSinRuta.length > 0 && (
+            {clientesSinRuta.filter(c => {
+              if (!buscarCliente.trim()) return true
+              const q = buscarCliente.toLowerCase()
+              return c.nombre.toLowerCase().includes(q) || c.cedula?.includes(q)
+            }).length > 0 && (
               <p className="text-[10px] font-medium text-[#555555] uppercase tracking-wide px-1 pt-1">Sin ruta asignada ({clientesSinRuta.length})</p>
             )}
-            {clientesSinRuta.map((c) => (
+            {clientesSinRuta.filter(c => {
+              if (!buscarCliente.trim()) return true
+              const q = buscarCliente.toLowerCase()
+              return c.nombre.toLowerCase().includes(q) || c.cedula?.includes(q)
+            }).map((c) => (
               <label
                 key={c.id}
                 className={[
@@ -901,13 +924,21 @@ export default function RutaDetallePage({ params }) {
                 </div>
               </label>
             ))}
-            {clientesEnOtraRuta.length > 0 && (
+            {clientesEnOtraRuta.filter(c => {
+              if (!buscarCliente.trim()) return true
+              const q = buscarCliente.toLowerCase()
+              return c.nombre.toLowerCase().includes(q) || c.cedula?.includes(q)
+            }).length > 0 && (
               <>
                 <div className="border-t border-[#2a2a2a] my-2" />
                 <p className="text-[10px] font-medium text-[#f59e0b] uppercase tracking-wide px-1">Ya en otra ruta ({clientesEnOtraRuta.length})</p>
               </>
             )}
-            {clientesEnOtraRuta.map((c) => (
+            {clientesEnOtraRuta.filter(c => {
+              if (!buscarCliente.trim()) return true
+              const q = buscarCliente.toLowerCase()
+              return c.nombre.toLowerCase().includes(q) || c.cedula?.includes(q)
+            }).map((c) => (
               <label
                 key={c.id}
                 className={[
