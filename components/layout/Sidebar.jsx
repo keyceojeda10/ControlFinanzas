@@ -238,7 +238,7 @@ export default function Sidebar() {
       <div className="px-3 pt-3 pb-1">
         <button
           onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-[10px] bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.06)] text-[#5a5a6c] hover:border-[rgba(255,255,255,0.1)] hover:text-[#7a7a8c] transition-colors text-xs"
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-[10px] bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.07)] text-[#666] hover:border-[rgba(255,255,255,0.12)] hover:text-[#999] transition-colors text-xs"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
@@ -260,7 +260,7 @@ export default function Sidebar() {
                 'flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm font-medium transition-all duration-150',
                 active
                   ? 'bg-[rgba(245,197,24,0.08)] text-[#f5c518] border-l-2 border-[#f5c518] shadow-[inset_0_0_20px_rgba(245,197,24,0.05)]'
-                  : 'text-[#7a7a8c] hover:bg-[rgba(255,255,255,0.04)] hover:text-[#b0b0c0]',
+                  : 'text-[#888] hover:bg-[rgba(255,255,255,0.05)] hover:text-white',
               ].join(' ')}
             >
               {item.icon}

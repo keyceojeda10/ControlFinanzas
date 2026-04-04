@@ -11,11 +11,9 @@ export function Card({ children, className = '', padding = true, glowColor, ...p
         className,
       ].join(' ')}
       style={{
-        background: `linear-gradient(135deg, ${glow}08 0%, rgba(15,15,22,0.8) 40%, rgba(15,15,22,0.8) 70%, ${glow}04 100%)`,
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-        border: `1px solid rgba(255,255,255,0.06)`,
-        boxShadow: `0 0 30px ${glow}06, 0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03)`,
+        background: `linear-gradient(135deg, ${glow}06 0%, #111115 40%, #111115 70%, ${glow}03 100%)`,
+        border: `1px solid rgba(255,255,255,0.07)`,
+        boxShadow: `0 2px 8px rgba(0,0,0,0.3)`,
         ...propsStyle,
       }}
       {...restProps}

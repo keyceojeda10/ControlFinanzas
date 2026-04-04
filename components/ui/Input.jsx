@@ -9,7 +9,7 @@ export const Input = forwardRef(function Input(
   return (
     <div className={`flex flex-col gap-1.5 ${containerClassName}`}>
       {label && (
-        <label className="text-xs font-medium text-[#7a7a8c]">{label}</label>
+        <label className="text-xs font-medium text-[#999]">{label}</label>
       )}
       <div className="relative flex items-center">
         {prefix && (
@@ -49,7 +49,7 @@ export const Select = forwardRef(function Select(
 ) {
   return (
     <div className={`flex flex-col gap-1.5 ${containerClassName}`}>
-      {label && <label className="text-xs font-medium text-[#7a7a8c]">{label}</label>}
+      {label && <label className="text-xs font-medium text-[#999]">{label}</label>}
       <select
         ref={ref}
         className={[
@@ -75,7 +75,7 @@ export const Textarea = forwardRef(function Textarea(
 ) {
   return (
     <div className={`flex flex-col gap-1.5 ${containerClassName}`}>
-      {label && <label className="text-xs font-medium text-[#7a7a8c]">{label}</label>}
+      {label && <label className="text-xs font-medium text-[#999]">{label}</label>}
       <textarea
         ref={ref}
         className={[

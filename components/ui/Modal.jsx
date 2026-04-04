@@ -44,19 +44,17 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }) {
           sizes[size] ?? sizes.md,
         ].join(' ')}
         style={{
-          background: 'linear-gradient(135deg, rgba(245,197,24,0.03) 0%, rgba(15,15,22,0.95) 40%, rgba(15,15,22,0.95) 70%, rgba(245,197,24,0.01) 100%)',
-          backdropFilter: 'blur(30px) saturate(1.3)',
-          WebkitBackdropFilter: 'blur(30px) saturate(1.3)',
+          background: 'linear-gradient(135deg, rgba(245,197,24,0.02) 0%, #111115 40%, #111115 70%, rgba(245,197,24,0.01) 100%)',
           border: '1px solid rgba(255,255,255,0.08)',
-          boxShadow: '0 25px 60px rgba(0,0,0,0.5), 0 0 40px rgba(245,197,24,0.03), inset 0 1px 0 rgba(255,255,255,0.04)',
+          boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
         }}
       >
         {title && (
           <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(255,255,255,0.06)] shrink-0">
-            <h2 className="text-base font-semibold text-[#f0f0f5]">{title}</h2>
+            <h2 className="text-base font-semibold text-white">{title}</h2>
             <button
               onClick={onClose}
-              className="w-7 h-7 flex items-center justify-center rounded-lg text-[#4a4a5a] hover:text-[#f0f0f5] hover:bg-[rgba(255,255,255,0.06)] transition-colors"
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-[#666] hover:text-white hover:bg-[rgba(255,255,255,0.08)] transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
