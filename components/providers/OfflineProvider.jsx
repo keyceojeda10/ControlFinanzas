@@ -238,20 +238,20 @@ export default function OfflineProvider({ children }) {
     <OfflineContext.Provider value={{ isOnline, pendingCount, refreshPending, manualSync, syncMeta, startBulkSync, bulkSyncing, bulkProgress, lastSyncedAt }}>
       {children}
 
-      {/* Connection status banner */}
+      {/* Offline indicator — small pill, bottom-right, above BottomNav */}
       {!isOnline && (
-        <div className="fixed bottom-[72px] left-4 right-4 z-[9998] bg-[rgba(239,68,68,0.95)] text-white text-center py-2.5 px-4 text-xs font-medium rounded-[12px] flex items-center justify-center gap-2 shadow-lg backdrop-blur-sm">
-          <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-          Sin conexion — modo offline activo
+        <div className="fixed bottom-[70px] right-3 z-[9998] bg-[rgba(30,30,30,0.9)] text-[#ef4444] px-2.5 py-1.5 text-[10px] font-semibold rounded-full flex items-center gap-1.5 shadow-lg border border-[rgba(239,68,68,0.3)] backdrop-blur-sm">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444] animate-pulse" />
+          Offline
         </div>
       )}
       {isOnline && bulkSyncing && (
-        <div className="fixed bottom-[72px] left-4 right-4 z-[9998] bg-[rgba(34,197,94,0.95)] text-white text-center py-2.5 px-4 text-xs font-medium rounded-[12px] flex items-center justify-center gap-2 shadow-lg backdrop-blur-sm">
-          <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+        <div className="fixed bottom-[70px] right-3 z-[9998] bg-[rgba(30,30,30,0.9)] text-[#22c55e] px-2.5 py-1.5 text-[10px] font-semibold rounded-full flex items-center gap-1.5 shadow-lg border border-[rgba(34,197,94,0.3)] backdrop-blur-sm">
+          <svg className="w-2.5 h-2.5 animate-spin" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
-          Sincronizando datos...
+          Sync...
         </div>
       )}
 
