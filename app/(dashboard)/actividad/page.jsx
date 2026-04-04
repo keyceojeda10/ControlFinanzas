@@ -166,7 +166,7 @@ export default function ActividadPage() {
         <select
           value={filtroTipo}
           onChange={(e) => setFiltroTipo(e.target.value)}
-          className="bg-[#1a1a1a] border border-[#2a2a2a] text-white text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-[#f5c518]"
+          className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-white text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-[#f5c518]"
         >
           {FILTROS_TIPO.map(f => (
             <option key={f.value} value={f.value}>{f.label}</option>
@@ -176,7 +176,7 @@ export default function ActividadPage() {
         <select
           value={filtroUsuario}
           onChange={(e) => setFiltroUsuario(e.target.value)}
-          className="bg-[#1a1a1a] border border-[#2a2a2a] text-white text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-[#f5c518]"
+          className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-white text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-[#f5c518]"
         >
           <option value="">Todos los usuarios</option>
           {usuarios.map(u => (
@@ -188,14 +188,14 @@ export default function ActividadPage() {
           type="date"
           value={desde}
           onChange={(e) => setDesde(e.target.value)}
-          className="bg-[#1a1a1a] border border-[#2a2a2a] text-white text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-[#f5c518] [color-scheme:dark]"
+          className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-white text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-[#f5c518] [color-scheme:dark]"
           placeholder="Desde"
         />
         <input
           type="date"
           value={hasta}
           onChange={(e) => setHasta(e.target.value)}
-          className="bg-[#1a1a1a] border border-[#2a2a2a] text-white text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-[#f5c518] [color-scheme:dark]"
+          className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-white text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-[#f5c518] [color-scheme:dark]"
           placeholder="Hasta"
         />
         {(filtroTipo || filtroUsuario || desde || hasta) && (
@@ -208,16 +208,16 @@ export default function ActividadPage() {
         )}
       </div>
 
-      {/* Timeline */}
+      {/* Lista de actividad */}
       {loading && items.length === 0 ? (
-        <div className="space-y-4">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="flex gap-3 animate-pulse">
-              <div className="w-8 h-8 rounded-full bg-[#2a2a2a]" />
+        <div className="space-y-2">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="flex items-center gap-3 px-3 py-2.5 animate-pulse rounded-xl bg-[rgba(255,255,255,0.02)]">
+              <div className="w-7 h-7 rounded-lg bg-[#222]" />
               <div className="flex-1">
-                <div className="h-3 w-48 bg-[#2a2a2a] rounded mb-2" />
-                <div className="h-2.5 w-32 bg-[#2a2a2a] rounded" />
+                <div className="h-3 w-40 bg-[#222] rounded" />
               </div>
+              <div className="h-2.5 w-12 bg-[#222] rounded" />
             </div>
           ))}
         </div>
@@ -230,45 +230,48 @@ export default function ActividadPage() {
           <p className="text-xs text-[#555] mt-1">Las acciones aparecerán aquí automáticamente</p>
         </div>
       ) : (
-        <div className="relative">
-          {/* Línea vertical del timeline */}
-          <div className="absolute left-4 top-0 bottom-0 w-px bg-[#2a2a2a]" />
+        <div className="rounded-[16px] overflow-hidden border border-[rgba(255,255,255,0.06)]" style={{ background: 'rgba(255,255,255,0.02)' }}>
+          {items.map((item, idx) => {
+            const config = ACCIONES[item.accion] || { label: item.accion, color: '#888' }
+            const icon = getIcon(item.accion)
 
-          <div className="space-y-1">
-            {items.map((item) => {
-              const config = ACCIONES[item.accion] || { label: item.accion, color: '#888' }
-              const icon = getIcon(item.accion)
-
-              return (
-                <div key={item.id} className="relative flex gap-3 pl-1 py-2.5 group">
-                  {/* Dot / icon */}
-                  <div
-                    className="relative z-10 w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: `${config.color}15`, border: `1px solid ${config.color}30` }}
-                  >
-                    {icon}
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-white">
-                      <span className="font-medium">{item.user?.nombre}</span>
-                      {' '}
-                      <span className="text-[#999]">{config.label?.toLowerCase()}</span>
-                    </p>
-                    {item.detalle && (
-                      <p className="text-xs text-[#777] mt-0.5 truncate">{item.detalle}</p>
-                    )}
-                    <p className="text-[10px] text-[#555] mt-0.5">{tiempoRelativo(item.createdAt)}</p>
-                  </div>
+            return (
+              <div
+                key={item.id}
+                className={[
+                  'flex items-center gap-3 px-4 py-3',
+                  idx !== items.length - 1 ? 'border-b border-[rgba(255,255,255,0.04)]' : '',
+                ].join(' ')}
+              >
+                {/* Icono con color distintivo */}
+                <div
+                  className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: `${config.color}18` }}
+                >
+                  {icon}
                 </div>
-              )
-            })}
-          </div>
+
+                {/* Contenido en una linea */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] text-white leading-tight">
+                    <span className="font-semibold">{item.user?.nombre}</span>
+                    {' '}
+                    <span className="text-[#999]">{config.label?.toLowerCase()}</span>
+                  </p>
+                  {item.detalle && (
+                    <p className="text-[11px] mt-0.5 truncate" style={{ color: config.color }}>{item.detalle}</p>
+                  )}
+                </div>
+
+                {/* Tiempo a la derecha */}
+                <span className="text-[10px] text-[#555] shrink-0 whitespace-nowrap">{tiempoRelativo(item.createdAt)}</span>
+              </div>
+            )
+          })}
 
           {/* Loader for infinite scroll */}
           {hasMore && (
-            <div ref={loaderRef} className="flex justify-center py-4">
+            <div ref={loaderRef} className="flex justify-center py-3 border-t border-[rgba(255,255,255,0.04)]">
               <div className="w-5 h-5 border-2 border-[#333] border-t-[#f5c518] rounded-full animate-spin" />
             </div>
           )}
