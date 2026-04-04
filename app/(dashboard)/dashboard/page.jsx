@@ -29,7 +29,7 @@ function KpiCard({ label, value, sub, color = '#ffffff', icon }) {
       <div className="flex items-start justify-between gap-2 mb-2">
         <p className="text-[11px] text-[#7a7a8c] leading-tight">{label}</p>
         {icon && (
-          <div className="w-7 h-7 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: `${color}15`, boxShadow: `0 0 12px ${color}10` }}>
+          <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: `${color}20`, boxShadow: `0 0 16px ${color}18` }}>
             <span style={{ color }}>{icon}</span>
           </div>
         )}

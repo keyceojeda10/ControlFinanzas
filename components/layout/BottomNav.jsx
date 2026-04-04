@@ -145,11 +145,8 @@ export default function BottomNav() {
     {/* Banner de instalación */}
     <InstallBanner />
 
-    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-[rgba(255,255,255,0.06)]" style={{ paddingBottom: 'env(safe-area-inset-bottom)', background: 'rgba(10,10,15,0.85)', backdropFilter: 'blur(24px) saturate(1.3)', WebkitBackdropFilter: 'blur(24px) saturate(1.3)' }}>
-      <div
-        className="flex items-stretch"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-      >
+    <nav className="lg:hidden fixed bottom-3 left-3 right-3 z-40 rounded-[22px] overflow-hidden" style={{ background: 'rgba(12,12,18,0.75)', backdropFilter: 'blur(30px) saturate(1.5)', WebkitBackdropFilter: 'blur(30px) saturate(1.5)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 32px rgba(0,0,0,0.4), 0 0 20px rgba(245,197,24,0.04), inset 0 1px 0 rgba(255,255,255,0.05)' }}>
+      <div className="flex items-stretch">
         {items.map((item) => {
           const active = isActive(item.href)
           return (
@@ -157,12 +154,12 @@ export default function BottomNav() {
               key={item.href}
               href={item.href}
               className={[
-                'flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors relative',
+                'flex-1 flex flex-col items-center justify-center gap-0.5 py-3 text-[10px] font-medium transition-all duration-200 relative',
                 active ? 'text-[#f5c518]' : 'text-[#5a5a6c]',
               ].join(' ')}
             >
               {active && (
-                <span className="absolute top-1 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-[#f5c518]" />
+                <span className="absolute inset-x-3 inset-y-1.5 rounded-[14px] -z-10" style={{ background: 'rgba(245,197,24,0.1)', boxShadow: '0 0 12px rgba(245,197,24,0.08)' }} />
               )}
               {item.icon}
               {item.label}
