@@ -188,15 +188,13 @@ export default function ActividadPage() {
           type="date"
           value={desde}
           onChange={(e) => setDesde(e.target.value)}
-          className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-white text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-[#f5c518] [color-scheme:dark]"
-          placeholder="Desde"
+          className={`bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-[#f5c518] [color-scheme:dark] ${desde ? 'text-white' : 'text-[#777]'}`}
         />
         <input
           type="date"
           value={hasta}
           onChange={(e) => setHasta(e.target.value)}
-          className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-white text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-[#f5c518] [color-scheme:dark]"
-          placeholder="Hasta"
+          className={`bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-[#f5c518] [color-scheme:dark] ${hasta ? 'text-white' : 'text-[#777]'}`}
         />
         {(filtroTipo || filtroUsuario || desde || hasta) && (
           <button
