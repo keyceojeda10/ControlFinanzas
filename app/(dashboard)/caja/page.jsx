@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth }             from '@/hooks/useAuth'
 import { useOffline }          from '@/components/providers/OfflineProvider'
-import { guardarEnCache, leerDeCache, obtenerDashboardOffline } from '@/lib/offline'
+import { guardarEnCache, leerDeCache } from '@/lib/offline'
 import { Card }                from '@/components/ui/Card'
 import { Button }              from '@/components/ui/Button'
 import { Badge }              from '@/components/ui/Badge'
@@ -67,7 +67,7 @@ export default function CajaPage() {
     if (!navigator.onLine) {
       try {
         let cached = await leerDeCache(cacheKey)
-        if (!cached) cached = await obtenerDashboardOffline()
+        if (!cached) cached = await leerDeCache('sync:caja')
         if (cached) { setCajaData(cached); setIsOffline(true); setLoading(false); return }
       } catch {}
     }
@@ -85,7 +85,7 @@ export default function CajaPage() {
     } catch {
       try {
         let cached = await leerDeCache(cacheKey)
-        if (!cached) cached = await obtenerDashboardOffline()
+        if (!cached) cached = await leerDeCache('sync:caja')
         if (cached) { setCajaData(cached); setIsOffline(true); setLoading(false); return }
       } catch {}
       setError('No se pudo cargar la información.')

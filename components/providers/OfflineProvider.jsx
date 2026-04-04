@@ -240,13 +240,13 @@ export default function OfflineProvider({ children }) {
 
       {/* Connection status banner */}
       {!isOnline && (
-        <div className="fixed top-0 left-0 right-0 z-[9999] bg-[#ef4444] text-white text-center py-2 px-4 text-xs font-medium flex items-center justify-center gap-2">
+        <div className="fixed bottom-[72px] left-4 right-4 z-[9998] bg-[rgba(239,68,68,0.95)] text-white text-center py-2.5 px-4 text-xs font-medium rounded-[12px] flex items-center justify-center gap-2 shadow-lg backdrop-blur-sm">
           <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
           Sin conexion — modo offline activo
         </div>
       )}
       {isOnline && bulkSyncing && (
-        <div className="fixed top-0 left-0 right-0 z-[9999] bg-[#22c55e] text-white text-center py-2 px-4 text-xs font-medium flex items-center justify-center gap-2">
+        <div className="fixed bottom-[72px] left-4 right-4 z-[9998] bg-[rgba(34,197,94,0.95)] text-white text-center py-2.5 px-4 text-xs font-medium rounded-[12px] flex items-center justify-center gap-2 shadow-lg backdrop-blur-sm">
           <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
