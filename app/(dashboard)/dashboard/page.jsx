@@ -55,8 +55,8 @@ function QuickLink({ href, label, desc, color, dataTour }) {
         <div className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
       </div>
       <div className="min-w-0">
-        <p className="text-sm font-medium text-white truncate">{label}</p>
-        <p className="text-[10px] text-[#888] truncate">{desc}</p>
+        <p className="text-sm font-medium text-white leading-tight">{label}</p>
+        <p className="text-[10px] text-[#888] leading-tight mt-0.5">{desc}</p>
       </div>
     </Link>
   )
