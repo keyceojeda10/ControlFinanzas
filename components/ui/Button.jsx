@@ -3,11 +3,11 @@
 import { forwardRef } from 'react'
 
 const variants = {
-  primary:   'bg-[#f5c518] hover:bg-[#f0b800] text-[#0a0a0a] font-bold border-transparent hover:shadow-[0_0_20px_rgba(245,197,24,0.3)]',
-  secondary: 'bg-transparent hover:bg-[#1a1a1a] text-white border-[#2a2a2a] hover:border-[#f5c518] hover:text-[#f5c518]',
-  danger:    'bg-[#ef4444] hover:bg-[#dc2626] text-white border-transparent',
-  ghost:     'bg-transparent hover:bg-[#1a1a1a] text-[#888888] hover:text-white border-transparent',
-  success:   'bg-[#22c55e] hover:bg-[#16a34a] text-white border-transparent',
+  primary:   'bg-[#f5c518] hover:bg-[#f0b800] text-[#0a0a0a] font-bold border-transparent hover:shadow-[0_0_25px_rgba(245,197,24,0.35)]',
+  secondary: 'bg-[rgba(255,255,255,0.04)] hover:bg-[rgba(255,255,255,0.08)] text-[#f0f0f5] border-[rgba(255,255,255,0.08)] hover:border-[rgba(245,197,24,0.3)] hover:text-[#f5c518] hover:shadow-[0_0_15px_rgba(245,197,24,0.1)]',
+  danger:    'bg-[#f87171] hover:bg-[#ef4444] text-white border-transparent hover:shadow-[0_0_20px_rgba(248,113,113,0.3)]',
+  ghost:     'bg-transparent hover:bg-[rgba(255,255,255,0.05)] text-[#7a7a8c] hover:text-[#f0f0f5] border-transparent',
+  success:   'bg-[#34d399] hover:bg-[#22c55e] text-[#0a0a0a] font-bold border-transparent hover:shadow-[0_0_20px_rgba(52,211,153,0.3)]',
 }
 
 const sizes = {

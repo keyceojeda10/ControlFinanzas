@@ -9,7 +9,7 @@ export const Input = forwardRef(function Input(
   return (
     <div className={`flex flex-col gap-1.5 ${containerClassName}`}>
       {label && (
-        <label className="text-xs font-medium text-[#888888]">{label}</label>
+        <label className="text-xs font-medium text-[#7a7a8c]">{label}</label>
       )}
       <div className="relative flex items-center">
         {prefix && (
@@ -21,7 +21,7 @@ export const Input = forwardRef(function Input(
           ref={ref}
           className={[
             'w-full h-10 rounded-[12px] border text-sm text-white placeholder-[#777777]',
-            'bg-[#111111] border-[#2a2a2a]',
+            'bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.08)]',
             'focus:outline-none focus:border-[#f5c518] focus:ring-1 focus:ring-[rgba(245,197,24,0.2)]',
             'transition-all duration-200',
             'disabled:opacity-50 disabled:cursor-not-allowed',
@@ -49,12 +49,12 @@ export const Select = forwardRef(function Select(
 ) {
   return (
     <div className={`flex flex-col gap-1.5 ${containerClassName}`}>
-      {label && <label className="text-xs font-medium text-[#888888]">{label}</label>}
+      {label && <label className="text-xs font-medium text-[#7a7a8c]">{label}</label>}
       <select
         ref={ref}
         className={[
           'w-full h-10 rounded-[12px] border text-sm text-white px-3',
-          'bg-[#111111] border-[#2a2a2a]',
+          'bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.08)]',
           'focus:outline-none focus:border-[#f5c518] focus:ring-1 focus:ring-[rgba(245,197,24,0.2)]',
           'transition-all duration-200 cursor-pointer',
           error ? 'border-[#ef4444]' : '',
@@ -75,12 +75,12 @@ export const Textarea = forwardRef(function Textarea(
 ) {
   return (
     <div className={`flex flex-col gap-1.5 ${containerClassName}`}>
-      {label && <label className="text-xs font-medium text-[#888888]">{label}</label>}
+      {label && <label className="text-xs font-medium text-[#7a7a8c]">{label}</label>}
       <textarea
         ref={ref}
         className={[
           'w-full rounded-[12px] border text-sm text-white px-3 py-2.5 placeholder-[#777777]',
-          'bg-[#111111] border-[#2a2a2a]',
+          'bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.08)]',
           'focus:outline-none focus:border-[#f5c518] focus:ring-1 focus:ring-[rgba(245,197,24,0.2)]',
           'transition-all duration-200 resize-none',
           error ? 'border-[#ef4444]' : '',

@@ -227,9 +227,9 @@ export default function Sidebar() {
     href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
 
   return (
-    <aside className="hidden lg:flex flex-col w-60 bg-[#111111] border-r border-[#2a2a2a] min-h-dvh shrink-0">
+    <aside className="hidden lg:flex flex-col w-60 min-h-dvh shrink-0 border-r border-[rgba(255,255,255,0.06)]" style={{ background: 'linear-gradient(180deg, rgba(12,12,18,0.95) 0%, rgba(8,8,14,0.98) 100%)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
       {/* Logo */}
-      <div className="flex flex-col items-center px-5 py-4 border-b border-[#2a2a2a]">
+      <div className="flex flex-col items-center px-5 py-4 border-b border-[rgba(255,255,255,0.06)]">
         <Image src="/logo-full.svg" alt="Control Finanzas" width={160} height={40} priority />
         {fechaHora && <span className="text-[10px] text-[#888888] mt-2">{fechaHora}</span>}
       </div>
@@ -238,7 +238,7 @@ export default function Sidebar() {
       <div className="px-3 pt-3 pb-1">
         <button
           onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-[10px] bg-[#1a1a1a] border border-[#2a2a2a] text-[#666] hover:border-[#333] hover:text-[#888] transition-colors text-xs"
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-[10px] bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.06)] text-[#5a5a6c] hover:border-[rgba(255,255,255,0.1)] hover:text-[#7a7a8c] transition-colors text-xs"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
@@ -259,8 +259,8 @@ export default function Sidebar() {
               className={[
                 'flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm font-medium transition-all duration-150',
                 active
-                  ? 'bg-[rgba(245,197,24,0.08)] text-[#f5c518] border-l-2 border-[#f5c518]'
-                  : 'text-[#888888] hover:bg-[#1a1a1a] hover:text-[#888888]',
+                  ? 'bg-[rgba(245,197,24,0.08)] text-[#f5c518] border-l-2 border-[#f5c518] shadow-[inset_0_0_20px_rgba(245,197,24,0.05)]'
+                  : 'text-[#7a7a8c] hover:bg-[rgba(255,255,255,0.04)] hover:text-[#b0b0c0]',
               ].join(' ')}
             >
               {item.icon}
@@ -316,7 +316,7 @@ export default function Sidebar() {
       )}
 
       {/* User info + sign out */}
-      <div className="px-3 pb-5 border-t border-[#2a2a2a] pt-4">
+      <div className="px-3 pb-5 border-t border-[rgba(255,255,255,0.06)] pt-4">
         <div className="flex items-center gap-3 px-3 py-2 mb-2">
           <div className="w-8 h-8 rounded-full bg-[#f5c518] flex items-center justify-center text-[#0a0a0a] text-xs font-bold shrink-0">
             {session?.user?.nombre?.[0]?.toUpperCase() ?? 'U'}

@@ -34,25 +34,29 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }) {
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
       onClick={(e) => { if (e.target === overlayRef.current) onClose?.() }}
     >
-      <div className="absolute inset-0 bg-black/85 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-[rgba(0,0,5,0.85)] backdrop-blur-md" />
 
       <div
         className={[
-          'relative w-full border border-[#2a2a2a]',
+          'relative w-full',
           'rounded-t-[20px] sm:rounded-[20px] shadow-2xl',
           'max-h-[90dvh] flex flex-col',
           sizes[size] ?? sizes.md,
         ].join(' ')}
         style={{
-          background: 'linear-gradient(135deg, #f5c51806 0%, #1a1a1a 40%, #1a1a1a 70%, #f5c51803 100%)',
+          background: 'linear-gradient(135deg, rgba(245,197,24,0.03) 0%, rgba(15,15,22,0.95) 40%, rgba(15,15,22,0.95) 70%, rgba(245,197,24,0.01) 100%)',
+          backdropFilter: 'blur(30px) saturate(1.3)',
+          WebkitBackdropFilter: 'blur(30px) saturate(1.3)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          boxShadow: '0 25px 60px rgba(0,0,0,0.5), 0 0 40px rgba(245,197,24,0.03), inset 0 1px 0 rgba(255,255,255,0.04)',
         }}
       >
         {title && (
-          <div className="flex items-center justify-between px-5 py-4 border-b border-[#2a2a2a] shrink-0">
-            <h2 className="text-base font-semibold text-white">{title}</h2>
+          <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(255,255,255,0.06)] shrink-0">
+            <h2 className="text-base font-semibold text-[#f0f0f5]">{title}</h2>
             <button
               onClick={onClose}
-              className="w-7 h-7 flex items-center justify-center rounded-lg text-[#555555] hover:text-white hover:bg-[#2a2a2a] transition-colors"
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-[#4a4a5a] hover:text-[#f0f0f5] hover:bg-[rgba(255,255,255,0.06)] transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -64,7 +68,7 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }) {
         <div className="flex-1 overflow-y-auto px-5 py-5">{children}</div>
 
         {footer && (
-          <div className="shrink-0 px-5 py-4 border-t border-[#2a2a2a] flex items-center justify-end gap-3">
+          <div className="shrink-0 px-5 py-4 border-t border-[rgba(255,255,255,0.06)] flex items-center justify-end gap-3">
             {footer}
           </div>
         )}

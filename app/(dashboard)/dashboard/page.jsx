@@ -17,22 +17,25 @@ function Skeleton({ className = '' }) {
 function KpiCard({ label, value, sub, color = '#ffffff', icon }) {
   return (
     <div
-      className="rounded-[16px] px-4 py-4 border border-[#2a2a2a]"
+      className="rounded-[16px] px-4 py-4 relative overflow-hidden group hover:scale-[1.02] transition-transform duration-200"
       style={{
-        background: `linear-gradient(135deg, ${color}0A 0%, #1a1a1a 40%, #1a1a1a 70%, ${color}05 100%)`,
-        boxShadow: `0 0 30px ${color}08, 0 1px 2px rgba(0,0,0,0.3)`,
+        background: `linear-gradient(135deg, ${color}0C 0%, rgba(15,15,22,0.8) 40%, rgba(15,15,22,0.8) 70%, ${color}06 100%)`,
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        border: '1px solid rgba(255,255,255,0.06)',
+        boxShadow: `0 0 30px ${color}08, 0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.03)`,
       }}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
-        <p className="text-[11px] text-[#888888] leading-tight">{label}</p>
+        <p className="text-[11px] text-[#7a7a8c] leading-tight">{label}</p>
         {icon && (
-          <div className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0" style={{ background: `${color}18` }}>
+          <div className="w-7 h-7 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: `${color}15`, boxShadow: `0 0 12px ${color}10` }}>
             <span style={{ color }}>{icon}</span>
           </div>
         )}
       </div>
       <p className="text-xl font-bold leading-tight font-mono-display truncate" style={{ color }}>{value}</p>
-      {sub && <p className="text-[10px] text-[#888888] mt-1">{sub}</p>}
+      {sub && <p className="text-[10px] text-[#6a6a7c] mt-1">{sub}</p>}
     </div>
   )
 }
@@ -42,19 +45,22 @@ function QuickLink({ href, label, desc, color, dataTour }) {
     <Link
       href={href}
       data-tour={dataTour}
-      className="border border-[#2a2a2a] hover:border-[#3a3a3a] rounded-[16px] px-4 py-4 transition-all group flex items-center gap-3"
+      className="rounded-[16px] px-4 py-4 transition-all duration-200 group flex items-center gap-3 hover:scale-[1.02]"
       style={{
-        background: `linear-gradient(135deg, ${color}08 0%, #1a1a1a 50%, #1a1a1a 100%)`,
+        background: `linear-gradient(135deg, ${color}0A 0%, rgba(15,15,22,0.7) 50%, rgba(15,15,22,0.7) 100%)`,
+        border: '1px solid rgba(255,255,255,0.06)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
       }}
-      onMouseEnter={(e) => e.currentTarget.style.boxShadow = `0 0 20px ${color}12`}
-      onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
+      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = `0 0 25px ${color}15`; e.currentTarget.style.borderColor = `${color}20` }}
+      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)' }}
     >
-      <div className="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0" style={{ background: `${color}18` }}>
+      <div className="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0" style={{ background: `${color}15`, boxShadow: `0 0 12px ${color}10` }}>
         <div className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
       </div>
       <div className="min-w-0">
-        <p className="text-sm font-medium text-white truncate">{label}</p>
-        <p className="text-[10px] text-[#888888] truncate">{desc}</p>
+        <p className="text-sm font-medium text-[#f0f0f5] truncate">{label}</p>
+        <p className="text-[10px] text-[#6a6a7c] truncate">{desc}</p>
       </div>
     </Link>
   )
@@ -228,54 +234,63 @@ export default function DashboardPage() {
       ) : data && (
         <div className="grid grid-cols-2 gap-3">
           <div
-            className="rounded-[16px] px-4 py-4 border border-[#2a2a2a]"
+            className="rounded-[16px] px-4 py-4 relative overflow-hidden"
             style={{
-              background: 'linear-gradient(135deg, #22c55e0A 0%, #1a1a1a 40%, #1a1a1a 70%, #22c55e05 100%)',
-              boxShadow: '0 0 30px #22c55e08, 0 1px 2px rgba(0,0,0,0.3)',
+              background: 'linear-gradient(135deg, rgba(52,211,153,0.06) 0%, rgba(15,15,22,0.8) 40%, rgba(15,15,22,0.8) 70%, rgba(52,211,153,0.03) 100%)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              boxShadow: '0 0 30px rgba(52,211,153,0.06), 0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.03)',
             }}
           >
-            <p className="text-[11px] text-[#888888] mb-1">Recaudado hoy</p>
-            <p className="text-xl font-bold text-[#22c55e] font-mono-display truncate">{formatCOP(data.cobros.hoy)}</p>
-            <p className="text-[10px] text-[#888888] mt-1">{data.cobros.cantidadHoy} pagos registrados</p>
-            <div className="mt-2 h-1.5 bg-[#2a2a2a] rounded-full overflow-hidden">
-              <div className="h-full rounded-full transition-all" style={{ width: data.prestamos.cuotaDiariaTotal > 0 ? `${Math.min(100, Math.round((data.cobros.hoy / data.prestamos.cuotaDiariaTotal) * 100))}%` : '0%', background: 'linear-gradient(90deg, #22c55e, #f5c518)' }} />
+            <p className="text-[11px] text-[#7a7a8c] mb-1">Recaudado hoy</p>
+            <p className="text-xl font-bold text-[#34d399] font-mono-display truncate">{formatCOP(data.cobros.hoy)}</p>
+            <p className="text-[10px] text-[#6a6a7c] mt-1">{data.cobros.cantidadHoy} pagos registrados</p>
+            <div className="mt-2 h-1.5 bg-[rgba(255,255,255,0.05)] rounded-full overflow-hidden">
+              <div className="h-full rounded-full progress-shimmer transition-all" style={{ width: data.prestamos.cuotaDiariaTotal > 0 ? `${Math.min(100, Math.round((data.cobros.hoy / data.prestamos.cuotaDiariaTotal) * 100))}%` : '0%' }} />
             </div>
-            <p className="text-[10px] text-[#888888] mt-1">{data.prestamos.cuotaDiariaTotal > 0 ? `${Math.min(100, Math.round((data.cobros.hoy / data.prestamos.cuotaDiariaTotal) * 100))}% de la cuota diaria` : 'Sin cuotas esperadas'}</p>
+            <p className="text-[10px] text-[#6a6a7c] mt-1">{data.prestamos.cuotaDiariaTotal > 0 ? `${Math.min(100, Math.round((data.cobros.hoy / data.prestamos.cuotaDiariaTotal) * 100))}% de la cuota diaria` : 'Sin cuotas esperadas'}</p>
           </div>
           <div
-            className="rounded-[16px] px-4 py-4 border border-[#2a2a2a]"
+            className="rounded-[16px] px-4 py-4 relative overflow-hidden"
             style={{
-              background: 'linear-gradient(135deg, #f5c5180A 0%, #1a1a1a 40%, #1a1a1a 70%, #f5c51805 100%)',
-              boxShadow: '0 0 30px #f5c51808, 0 1px 2px rgba(0,0,0,0.3)',
+              background: 'linear-gradient(135deg, rgba(245,197,24,0.06) 0%, rgba(15,15,22,0.8) 40%, rgba(15,15,22,0.8) 70%, rgba(245,197,24,0.03) 100%)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              boxShadow: '0 0 30px rgba(245,197,24,0.06), 0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.03)',
             }}
           >
-            <p className="text-[11px] text-[#888888] mb-1">Recaudado este mes</p>
+            <p className="text-[11px] text-[#7a7a8c] mb-1">Recaudado este mes</p>
             <p className="text-xl font-bold text-[#f5c518] font-mono-display truncate">{formatCOP(data.cobros.mes)}</p>
-            <p className="text-[10px] text-[#888888] mt-1">{data.cobros.cantidadMes} pagos en el mes</p>
-            {data.clientes.enMora > 0 && (<div className="mt-2 flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#ef4444]" /><p className="text-[10px] text-[#ef4444]">{moraPct}% de clientes en mora</p></div>)}
+            <p className="text-[10px] text-[#6a6a7c] mt-1">{data.cobros.cantidadMes} pagos en el mes</p>
+            {data.clientes.enMora > 0 && (<div className="mt-2 flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#f87171] animate-pulse" /><p className="text-[10px] text-[#f87171]">{moraPct}% de clientes en mora</p></div>)}
           </div>
         </div>
       )}
       {(loading || !mounted) ? <Skeleton className="h-44" /> : data && data.ultimosPagos.length > 0 && (
         <div
-          className="border border-[#2a2a2a] rounded-[16px] px-4 py-4"
+          className="rounded-[16px] px-4 py-4"
           style={{
-            background: 'linear-gradient(135deg, #22c55e06 0%, #1a1a1a 40%, #1a1a1a 70%, #22c55e03 100%)',
-            boxShadow: '0 0 20px #22c55e05, 0 1px 2px rgba(0,0,0,0.2)',
+            background: 'linear-gradient(135deg, rgba(52,211,153,0.04) 0%, rgba(15,15,22,0.7) 40%, rgba(15,15,22,0.7) 70%, rgba(52,211,153,0.02) 100%)',
+            border: '1px solid rgba(255,255,255,0.06)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.03)',
           }}
         >
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Ultimos pagos</p>
+            <p className="text-xs font-semibold text-[#7a7a8c] uppercase tracking-wide">Ultimos pagos</p>
             <Link href="/prestamos" className="text-[11px] text-[#f5c518] hover:underline">Ver todos →</Link>
           </div>
-          <div className="space-y-0 divide-y divide-[#2a2a2a]">
+          <div className="space-y-0 divide-y divide-[rgba(255,255,255,0.05)]">
             {data.ultimosPagos.map((p) => (
               <div key={p.id} className="flex items-center justify-between py-2.5">
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-white truncate">{p.cliente}</p>
                   <p className="text-[10px] text-[#888888]">{fechaCorta(p.fecha)} · {p.tipo}</p>
                 </div>
-                <p className="text-sm font-bold text-[#22c55e] shrink-0 ml-3 font-mono-display">+{formatCOP(p.monto)}</p>
+                <p className="text-sm font-bold text-[#34d399] shrink-0 ml-3 font-mono-display">+{formatCOP(p.monto)}</p>
               </div>
             ))}
           </div>

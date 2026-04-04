@@ -145,7 +145,7 @@ export default function BottomNav() {
     {/* Banner de instalación */}
     <InstallBanner />
 
-    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[#111111] border-t border-[#2a2a2a]" style={{ paddingBottom: cierreWarning ? 'env(safe-area-inset-bottom)' : 'env(safe-area-inset-bottom)' }}>
+    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-[rgba(255,255,255,0.06)]" style={{ paddingBottom: 'env(safe-area-inset-bottom)', background: 'rgba(10,10,15,0.85)', backdropFilter: 'blur(24px) saturate(1.3)', WebkitBackdropFilter: 'blur(24px) saturate(1.3)' }}>
       <div
         className="flex items-stretch"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
@@ -158,7 +158,7 @@ export default function BottomNav() {
               href={item.href}
               className={[
                 'flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors relative',
-                active ? 'text-[#f5c518]' : 'text-[#888888]',
+                active ? 'text-[#f5c518]' : 'text-[#5a5a6c]',
               ].join(' ')}
             >
               {active && (

@@ -121,7 +121,7 @@ export default function Header() {
         </div>
       )}
 
-    <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 h-14 bg-[#111111] border-b border-[#2a2a2a]" style={{ marginTop: cierreWarning ? '32px' : 0 }}>
+    <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 h-14 border-b border-[rgba(255,255,255,0.06)]" style={{ marginTop: cierreWarning ? '32px' : 0, background: 'rgba(10,10,15,0.8)', backdropFilter: 'blur(20px) saturate(1.2)', WebkitBackdropFilter: 'blur(20px) saturate(1.2)' }}>
       {/* Logo + Title */}
       <div className="flex items-center gap-2.5">
         <Image src="/logo-icon.svg" alt="CF" width={28} height={28} className="shrink-0" />
@@ -153,17 +153,17 @@ export default function Header() {
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 top-11 w-56 bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] shadow-xl overflow-hidden z-50 max-h-[70vh] overflow-y-auto">
+            <div className="absolute right-0 top-11 w-56 rounded-[14px] shadow-2xl overflow-hidden z-50 max-h-[70vh] overflow-y-auto" style={{ background: 'rgba(15,15,22,0.9)', backdropFilter: 'blur(30px) saturate(1.3)', WebkitBackdropFilter: 'blur(30px) saturate(1.3)', border: '1px solid rgba(255,255,255,0.08)' }}>
               <div className="py-2">
                 {menuItems.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
                     className={[
-                      'flex items-center gap-3 px-4 py-2.5 text-sm transition-colors',
+                      'flex items-center gap-3 px-4 py-2.5 text-sm transition-all',
                       pathname === item.href || pathname.startsWith(item.href + '/')
-                        ? 'text-[#f5c518] bg-[rgba(245,197,24,0.1)]'
-                        : 'text-[#cccccc] hover:bg-[#2a2a2a]'
+                        ? 'text-[#f5c518] bg-[rgba(245,197,24,0.08)]'
+                        : 'text-[#b0b0c0] hover:bg-[rgba(255,255,255,0.05)] hover:text-white'
                     ].join(' ')}
                     onClick={() => setMenuOpen(false)}
                   >
@@ -189,7 +189,7 @@ export default function Header() {
           </button>
 
           {userOpen && (
-            <div className="absolute right-0 top-11 w-56 bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] shadow-xl overflow-hidden z-50">
+            <div className="absolute right-0 top-11 w-56 rounded-[14px] shadow-2xl overflow-hidden z-50" style={{ background: 'rgba(15,15,22,0.9)', backdropFilter: 'blur(30px) saturate(1.3)', WebkitBackdropFilter: 'blur(30px) saturate(1.3)', border: '1px solid rgba(255,255,255,0.08)' }}>
               <div className="px-4 py-3">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-full bg-[#f5c518] flex items-center justify-center text-[#0a0a0a] text-xs font-bold shrink-0">

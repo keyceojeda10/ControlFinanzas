@@ -12,7 +12,7 @@ import { InstallBanner } from '@/components/layout/InstallButton'
 
 export default function DashboardLayout({ children }) {
   return (
-    <div className="flex min-h-dvh bg-[#0a0a0a]">
+    <div className="flex min-h-dvh bg-[#060609]">
       {/* Sidebar – visible solo en lg+ */}
       <Sidebar />
 
