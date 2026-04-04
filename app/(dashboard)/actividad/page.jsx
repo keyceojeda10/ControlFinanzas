@@ -184,20 +184,30 @@ export default function ActividadPage() {
           ))}
         </select>
 
-        <input
-          type="date"
-          value={desde}
-          onChange={(e) => setDesde(e.target.value)}
-          className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-[#f5c518] [color-scheme:dark]"
-          style={{ color: desde ? '#fff' : '#777', WebkitTextFillColor: desde ? '#fff' : '#777' }}
-        />
-        <input
-          type="date"
-          value={hasta}
-          onChange={(e) => setHasta(e.target.value)}
-          className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-[#f5c518] [color-scheme:dark]"
-          style={{ color: hasta ? '#fff' : '#777', WebkitTextFillColor: hasta ? '#fff' : '#777' }}
-        />
+        <label className="relative cursor-pointer">
+          <span className={`absolute inset-0 flex items-center px-3 text-xs pointer-events-none ${desde ? 'text-white' : 'text-[#777]'}`}>
+            {desde ? new Date(desde + 'T12:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Desde'}
+          </span>
+          <input
+            type="date"
+            value={desde}
+            onChange={(e) => setDesde(e.target.value)}
+            className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-[#f5c518] [color-scheme:dark] w-[100px]"
+            style={{ color: 'transparent', WebkitTextFillColor: 'transparent' }}
+          />
+        </label>
+        <label className="relative cursor-pointer">
+          <span className={`absolute inset-0 flex items-center px-3 text-xs pointer-events-none ${hasta ? 'text-white' : 'text-[#777]'}`}>
+            {hasta ? new Date(hasta + 'T12:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Hasta'}
+          </span>
+          <input
+            type="date"
+            value={hasta}
+            onChange={(e) => setHasta(e.target.value)}
+            className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-[#f5c518] [color-scheme:dark] w-[100px]"
+            style={{ color: 'transparent', WebkitTextFillColor: 'transparent' }}
+          />
+        </label>
         {(filtroTipo || filtroUsuario || desde || hasta) && (
           <button
             onClick={() => { setFiltroTipo(''); setFiltroUsuario(''); setDesde(''); setHasta('') }}
