@@ -20,6 +20,7 @@ function HistorialCobros({ rutaId }) {
   const [dias, setDias] = useState(null)
   const [loading, setLoading] = useState(false)
   const [expandido, setExpandido] = useState(null)
+  const [tab, setTab] = useState('pagaron') // 'pagaron' | 'noPagaron'
 
   const cargar = async () => {
     if (dias) { setOpen(!open); return }
@@ -57,57 +58,86 @@ function HistorialCobros({ rutaId }) {
               ))}
             </div>
           ) : !dias?.length ? (
-            <p className="text-sm text-[#555] text-center py-4">No hay historial aún</p>
+            <p className="text-sm text-[#555] text-center py-4">No hay historial aun</p>
           ) : (
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               {dias.map((dia) => {
                 const isOpen = expandido === dia.fecha
+                const cantPagaron = dia.pagaron.length
+                const cantNoPagaron = dia.noPagaron.length
                 return (
-                  <div key={dia.fecha}>
+                  <div key={dia.fecha} className="rounded-xl border border-[rgba(255,255,255,0.05)] overflow-hidden">
+                    {/* Fila principal del día */}
                     <button
-                      onClick={() => setExpandido(isOpen ? null : dia.fecha)}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[rgba(255,255,255,0.03)] transition-colors"
+                      onClick={() => { setExpandido(isOpen ? null : dia.fecha); setTab('pagaron') }}
+                      className="w-full flex items-center gap-3 px-3 py-3 hover:bg-[rgba(255,255,255,0.02)] transition-colors"
                     >
-                      <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: dia.cobrado > 0 ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)' }}>
-                        <svg className="w-3.5 h-3.5" fill="none" stroke={dia.cobrado > 0 ? '#22c55e' : '#555'} viewBox="0 0 24 24" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </div>
                       <div className="flex-1 text-left min-w-0">
-                        <p className="text-[13px] text-white capitalize">{formatFecha(dia.fecha)}</p>
-                        <p className="text-[10px] text-[#555]">{dia.pagos} pago{dia.pagos !== 1 ? 's' : ''}</p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-[13px] font-bold font-mono-display" style={{ color: dia.cobrado > 0 ? '#22c55e' : '#555' }}>
-                          {formatCOP(dia.cobrado)}
+                        <p className="text-[13px] text-white font-medium capitalize">{formatFecha(dia.fecha)}</p>
+                        <p className="text-[10px] text-[#666] mt-0.5">
+                          <span className="text-[#22c55e]">{cantPagaron} pagaron</span>
+                          {cantNoPagaron > 0 && <span className="text-[#ef4444]"> · {cantNoPagaron} sin pagar</span>}
                         </p>
-                        {dia.cierre && (
-                          <p className="text-[9px] font-mono-display" style={{ color: dia.cierre.diferencia >= 0 ? '#22c55e' : '#ef4444' }}>
-                            {dia.cierre.diferencia >= 0 ? '+' : ''}{formatCOP(dia.cierre.diferencia)}
-                          </p>
-                        )}
                       </div>
-                      {dia.cierre && (
-                        <svg className={`w-3 h-3 text-[#333] transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      )}
+                      <p className="text-[14px] font-bold font-mono-display text-[#22c55e] shrink-0">
+                        {formatCOP(dia.cobrado)}
+                      </p>
+                      <svg className={`w-4 h-4 text-[#444] transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
                     </button>
-                    {isOpen && dia.cierre && (
-                      <div className="ml-10 mr-3 mb-2 px-3 py-2 rounded-lg bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.05)] space-y-1">
-                        <div className="flex justify-between text-[11px]">
-                          <span className="text-[#666]">Esperado</span>
-                          <span className="text-[#999] font-mono-display">{formatCOP(dia.cierre.esperado)}</span>
+
+                    {/* Detalle expandido */}
+                    {isOpen && (
+                      <div className="border-t border-[rgba(255,255,255,0.05)]">
+                        {/* Tabs */}
+                        <div className="flex border-b border-[rgba(255,255,255,0.05)]">
+                          <button
+                            onClick={() => setTab('pagaron')}
+                            className={`flex-1 text-[11px] font-semibold py-2 transition-colors ${tab === 'pagaron' ? 'text-[#22c55e] border-b-2 border-[#22c55e]' : 'text-[#555]'}`}
+                          >
+                            Pagaron ({cantPagaron})
+                          </button>
+                          <button
+                            onClick={() => setTab('noPagaron')}
+                            className={`flex-1 text-[11px] font-semibold py-2 transition-colors ${tab === 'noPagaron' ? 'text-[#ef4444] border-b-2 border-[#ef4444]' : 'text-[#555]'}`}
+                          >
+                            No pagaron ({cantNoPagaron})
+                          </button>
                         </div>
-                        <div className="flex justify-between text-[11px]">
-                          <span className="text-[#666]">Entregado</span>
-                          <span className="text-[#999] font-mono-display">{formatCOP(dia.cierre.entregado)}</span>
-                        </div>
-                        <div className="flex justify-between text-[11px] font-semibold border-t border-[rgba(255,255,255,0.05)] pt-1">
-                          <span className="text-[#666]">Diferencia</span>
-                          <span className="font-mono-display" style={{ color: dia.cierre.diferencia >= 0 ? '#22c55e' : '#ef4444' }}>
-                            {dia.cierre.diferencia >= 0 ? '+' : ''}{formatCOP(dia.cierre.diferencia)}
-                          </span>
+
+                        {/* Contenido tab */}
+                        <div className="px-3 py-2 max-h-[200px] overflow-y-auto">
+                          {tab === 'pagaron' ? (
+                            cantPagaron === 0 ? (
+                              <p className="text-[11px] text-[#555] text-center py-2">Nadie pago este dia</p>
+                            ) : (
+                              <div className="space-y-1">
+                                {dia.pagaron.map((c, i) => (
+                                  <div key={i} className="flex items-center justify-between py-1.5">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e] shrink-0" />
+                                      <span className="text-[12px] text-[#ccc] truncate">{c.nombre}</span>
+                                    </div>
+                                    <span className="text-[12px] font-bold font-mono-display text-white shrink-0 ml-2">{formatCOP(c.monto)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )
+                          ) : (
+                            cantNoPagaron === 0 ? (
+                              <p className="text-[11px] text-[#22c55e] text-center py-2">Todos pagaron</p>
+                            ) : (
+                              <div className="space-y-1">
+                                {dia.noPagaron.map((nombre, i) => (
+                                  <div key={i} className="flex items-center gap-2 py-1.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444] shrink-0" />
+                                    <span className="text-[12px] text-[#999]">{nombre}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )
+                          )}
                         </div>
                       </div>
                     )}

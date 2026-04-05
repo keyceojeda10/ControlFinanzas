@@ -16,93 +16,106 @@ export async function GET(request, { params }) {
     return Response.json({ error: 'No tienes acceso' }, { status: 403 })
   }
 
-  // Verificar que la ruta existe y pertenece a la org
   const ruta = await prisma.ruta.findFirst({
     where: { id, organizationId },
     select: { id: true, cobradorId: true },
   })
   if (!ruta) return Response.json({ error: 'Ruta no encontrada' }, { status: 404 })
 
-  // Obtener IDs de clientes en esta ruta
+  // Clientes en esta ruta con sus cuotas
   const clientes = await prisma.cliente.findMany({
     where: { rutaId: id, organizationId },
-    select: { id: true },
+    select: {
+      id: true,
+      nombre: true,
+      prestamos: {
+        where: { estado: 'activo' },
+        select: { id: true, cuotaDiaria: true },
+      },
+    },
   })
   const clienteIds = clientes.map(c => c.id)
+  const clienteMap = Object.fromEntries(clientes.map(c => [c.id, {
+    nombre: c.nombre,
+    cuota: c.prestamos.reduce((a, p) => a + p.cuotaDiaria, 0),
+  }]))
+  const prestamoClienteMap = {}
+  for (const c of clientes) {
+    for (const p of c.prestamos) {
+      prestamoClienteMap[p.id] = c.id
+    }
+  }
 
   if (clienteIds.length === 0) {
     return Response.json({ dias: [] })
   }
 
-  // Pagos de los últimos 30 días de préstamos activos de estos clientes
+  // Pagos últimos 30 días
   const hace30 = new Date()
   hace30.setDate(hace30.getDate() - 30)
 
   const pagos = await prisma.pago.findMany({
     where: {
       organizationId,
-      prestamo: { clienteId: { in: clienteIds }, estado: 'activo' },
+      prestamo: { clienteId: { in: clienteIds } },
       fechaPago: { gte: hace30 },
       tipo: { notIn: ['recargo', 'descuento'] },
     },
-    select: { montoPagado: true, fechaPago: true },
+    select: {
+      montoPagado: true,
+      fechaPago: true,
+      tipo: true,
+      prestamoId: true,
+    },
     orderBy: { fechaPago: 'desc' },
   })
 
-  // Cierres de caja del cobrador de esta ruta (últimos 30 días)
-  const cierres = ruta.cobradorId
-    ? await prisma.cierreCaja.findMany({
-        where: {
-          organizationId,
-          cobradorId: ruta.cobradorId,
-          fecha: { gte: hace30 },
-        },
-        select: {
-          fecha: true,
-          totalEsperado: true,
-          totalRecogido: true,
-          diferencia: true,
-        },
-        orderBy: { fecha: 'desc' },
-      })
-    : []
-
-  // Agrupar pagos por día Colombia (UTC-5)
+  // Agrupar por día Colombia
   const porDia = {}
   for (const p of pagos) {
     const col = new Date(p.fechaPago.getTime() - 5 * 60 * 60 * 1000)
-    const key = col.toISOString().slice(0, 10) // YYYY-MM-DD Colombia
-    if (!porDia[key]) porDia[key] = { fecha: key, cobrado: 0, pagos: 0 }
-    porDia[key].cobrado += p.montoPagado
-    porDia[key].pagos += 1
-  }
-
-  // Index cierres por fecha
-  const cierresPorDia = {}
-  for (const c of cierres) {
-    const col = new Date(c.fecha.getTime() - 5 * 60 * 60 * 1000)
     const key = col.toISOString().slice(0, 10)
-    cierresPorDia[key] = {
-      esperado: Math.round(c.totalEsperado),
-      entregado: Math.round(c.totalRecogido),
-      diferencia: Math.round(c.diferencia),
+    if (!porDia[key]) porDia[key] = { cobrado: 0, clientes: {} }
+    porDia[key].cobrado += p.montoPagado
+
+    const clienteId = prestamoClienteMap[p.prestamoId]
+    if (clienteId) {
+      if (!porDia[key].clientes[clienteId]) {
+        porDia[key].clientes[clienteId] = { monto: 0, tipo: p.tipo }
+      }
+      porDia[key].clientes[clienteId].monto += p.montoPagado
     }
   }
 
-  // Merge — incluir días con pagos O con cierre
-  const allDays = new Set([...Object.keys(porDia), ...Object.keys(cierresPorDia)])
+  // Hoy Colombia
   const hoyCol = new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
-  const dias = Array.from(allDays)
-    .filter(d => d !== hoyCol) // excluir hoy (ya se muestra arriba)
-    .sort((a, b) => b.localeCompare(a)) // más reciente primero
-    .slice(0, 15) // máximo 15 días
-    .map(fecha => ({
-      fecha,
-      cobrado: Math.round(porDia[fecha]?.cobrado || 0),
-      pagos: porDia[fecha]?.pagos || 0,
-      cierre: cierresPorDia[fecha] || null,
-    }))
+  const dias = Object.keys(porDia)
+    .filter(d => d !== hoyCol)
+    .sort((a, b) => b.localeCompare(a))
+    .slice(0, 15)
+    .map(fecha => {
+      const dia = porDia[fecha]
+      // Lista de quién pagó
+      const pagaron = Object.entries(dia.clientes).map(([cId, info]) => ({
+        nombre: clienteMap[cId]?.nombre || 'Cliente',
+        monto: Math.round(info.monto),
+        tipo: info.tipo,
+      })).sort((a, b) => b.monto - a.monto)
+
+      // Lista de quién NO pagó (clientes con cuota > 0 que no aparecen)
+      const noPagaron = clientes
+        .filter(c => c.prestamos.length > 0 && !dia.clientes[c.id])
+        .map(c => clienteMap[c.id].nombre)
+
+      return {
+        fecha,
+        cobrado: Math.round(dia.cobrado),
+        pagaron,
+        noPagaron,
+        totalClientes: clientes.filter(c => c.prestamos.length > 0).length,
+      }
+    })
 
   return Response.json({ dias })
 }

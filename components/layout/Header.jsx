@@ -55,30 +55,8 @@ export default function Header() {
   const { session, esCobrador } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
   const [userOpen, setUserOpen] = useState(false)
-  const [cierreWarning, setCierreWarning] = useState(null)
   const menuRef = useRef(null)
   const userRef = useRef(null)
-
-  // Verificar advertencia de cierre de caja cada minuto
-  useEffect(() => {
-    const checkCierreWarning = async () => {
-      try {
-        const res = await fetch('/api/caja/warning')
-        const data = await res.json()
-        if (data.showWarning) {
-          setCierreWarning(data)
-        } else {
-          setCierreWarning(null)
-        }
-      } catch (e) {
-        // Silencioso
-      }
-    }
-
-    checkCierreWarning()
-    const interval = setInterval(checkCierreWarning, 60000) // Cada minuto
-    return () => clearInterval(interval)
-  }, [])
 
   const title = Object.entries(PAGE_TITLES).find(([key]) =>
     pathname === key || pathname.startsWith(key + '/')
@@ -110,18 +88,7 @@ export default function Header() {
 
   return (
     <>
-      {/* Banner de advertencia de cierre de caja */}
-      {cierreWarning && (
-        <div className="lg:hidden fixed top-0 inset-x-0 z-50 bg-[#f59e0b] text-black text-xs font-medium px-4 py-2 flex items-center justify-center gap-2">
-          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-          <span>El cierre de caja será en {cierreWarning.minutesUntilClose} minutos</span>
-          <Link href="/caja" className="underline font-bold">Ir a cerrar</Link>
-        </div>
-      )}
-
-    <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 h-14 border-b border-[rgba(255,255,255,0.06)]" style={{ marginTop: cierreWarning ? '32px' : 0, background: 'rgba(10,10,15,0.8)', backdropFilter: 'blur(20px) saturate(1.2)', WebkitBackdropFilter: 'blur(20px) saturate(1.2)' }}>
+    <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 h-14 border-b border-[rgba(255,255,255,0.06)]" style={{ background: 'rgba(10,10,15,0.8)', backdropFilter: 'blur(20px) saturate(1.2)', WebkitBackdropFilter: 'blur(20px) saturate(1.2)' }}>
       {/* Logo + Title */}
       <div className="flex items-center gap-2.5">
         <Image src="/logo-icon.svg" alt="CF" width={28} height={28} className="shrink-0" />
