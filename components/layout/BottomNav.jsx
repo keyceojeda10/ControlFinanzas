@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useState, useEffect } from 'react'
-import { InstallBanner } from './InstallButton'
 
 const ITEMS_OWNER = [
   {
@@ -135,16 +134,13 @@ export default function BottomNav() {
       {cierreWarning && (
         <Link
           href="/caja"
-          className="lg:hidden fixed bottom-[88px] right-3 z-40 rounded-full px-3 py-1.5 flex items-center gap-2"
-          style={{ background: 'rgba(245,158,11,0.2)', border: '1px solid rgba(245,158,11,0.3)', backdropFilter: 'blur(10px)' }}
+          className="lg:hidden fixed bottom-[88px] right-3 z-40 rounded-full px-3.5 py-2 flex items-center gap-2"
+          style={{ background: 'rgba(20,18,12,0.92)', border: '1px solid rgba(245,158,11,0.35)', backdropFilter: 'blur(20px) saturate(1.3)', WebkitBackdropFilter: 'blur(20px) saturate(1.3)', boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}
         >
           <span className="w-1.5 h-1.5 rounded-full bg-[#f59e0b] animate-pulse shrink-0" />
-          <span className="text-[11px] font-medium text-[#f59e0b]">Cierre en {cierreWarning.minutesUntilClose} min</span>
+          <span className="text-[11px] font-medium text-[#f59e0b]">Cierre de caja en {cierreWarning.minutesUntilClose} min</span>
         </Link>
       )}
-
-    {/* Banner de instalación */}
-    <InstallBanner />
 
     <nav className="lg:hidden fixed bottom-3 left-3 right-3 z-40 rounded-[22px] overflow-hidden" style={{ background: 'rgba(12,12,18,0.75)', backdropFilter: 'blur(30px) saturate(1.5)', WebkitBackdropFilter: 'blur(30px) saturate(1.5)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 32px rgba(0,0,0,0.4), 0 0 20px rgba(245,197,24,0.04), inset 0 1px 0 rgba(255,255,255,0.05)' }}>
       <div className="flex items-stretch">
