@@ -60,7 +60,9 @@ export default function Header() {
     <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 h-14 border-b border-[rgba(255,255,255,0.06)]" style={{ background: 'rgba(10,10,15,0.8)', backdropFilter: 'blur(20px) saturate(1.2)', WebkitBackdropFilter: 'blur(20px) saturate(1.2)' }}>
       {/* Logo + Title */}
       <div className="flex items-center gap-2.5">
-        <Image src="/logo-icon.svg" alt="CF" width={28} height={28} className="shrink-0" />
+        <Link href="/dashboard">
+          <Image src="/logo-icon.svg" alt="CF" width={28} height={28} className="shrink-0" />
+        </Link>
         <span className="text-sm font-semibold text-white">{title}</span>
       </div>
 

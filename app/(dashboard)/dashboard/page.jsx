@@ -193,7 +193,7 @@ export default function DashboardPage() {
         onClose={onboarding.hideSpotlight}
       />
       <div>
-        <h1 className="text-xl font-bold text-white">Dashboard</h1>
+        <h1 className="text-xl font-bold text-white">Tu resumen</h1>
         <p className="text-sm text-[#888888] mt-0.5">
           {fechaActual || 'Resumen de tu cartera hoy'}
           {horaActual && <span className="text-[#f5c518] font-mono-display ml-2">{horaActual}</span>}
