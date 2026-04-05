@@ -224,6 +224,9 @@ export default function RutaDetallePage({ params }) {
       })
       const data = await res.json()
       if (!res.ok) { setErrorCaja(data.error ?? 'Error'); return }
+      // Limpiar progreso de ruta — ya se finalizó el día
+      localStorage.removeItem(`cf-ruta-progress-${id}`)
+      setBanner(null)
       setModalCaja(false)
       fetchRuta()
     } finally {

@@ -4,8 +4,12 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado, pagoHoy } from '@/lib/calculos'
 
-function getColombiaDate() {
-  return new Date(Date.now() - 5 * 60 * 60 * 1000)
+// Medianoche Colombia = 05:00 UTC
+function hoyColombiaUTC() {
+  const now = new Date()
+  const col = new Date(now.getTime() - 5 * 60 * 60 * 1000)
+  const y = col.getUTCFullYear(), m = col.getUTCMonth(), d = col.getUTCDate()
+  return new Date(Date.UTC(y, m, d, 5, 0, 0, 0))
 }
 
 export async function GET() {
@@ -73,8 +77,7 @@ export async function GET() {
     },
   })
 
-  const hoy = getColombiaDate()
-  const inicioHoy = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())
+  const inicioHoy = hoyColombiaUTC()
   const finHoy = new Date(inicioHoy.getTime() + 86400000)
 
   // Index clientes enriquecidos por ID para lookup rapido

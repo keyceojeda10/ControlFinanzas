@@ -7,9 +7,14 @@ import { logActividad } from '@/lib/activity-log'
 import { LIMITES_RUTAS, PLANES_CONFIG } from '@/lib/planes'
 
 // Funciones de fecha en timezone Colombia (UTC-5)
-const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
-const hoy    = () => { const d = getColombiaDate(); d.setHours(0,0,0,0); return d }
-const manana = () => { const d = getColombiaDate(); d.setDate(d.getDate()+1); d.setHours(0,0,0,0); return d }
+// Medianoche Colombia = 05:00 UTC
+const hoy = () => {
+  const now = new Date()
+  const col = new Date(now.getTime() - 5 * 60 * 60 * 1000)
+  const y = col.getUTCFullYear(), m = col.getUTCMonth(), d = col.getUTCDate()
+  return new Date(Date.UTC(y, m, d, 5, 0, 0, 0))
+}
+const manana = () => new Date(hoy().getTime() + 24 * 60 * 60 * 1000)
 
 // ─── GET /api/rutas ─────────────────────────────────────────────
 export async function GET(request) {
