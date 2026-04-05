@@ -12,7 +12,7 @@ import InstallButton from './InstallButton'
 
 const NAV_OWNER = [
   {
-    label: 'Dashboard',
+    label: 'Inicio',
     href:  '/dashboard',
     icon: (
       <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

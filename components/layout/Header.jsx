@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from 'react'
 
 
 const PAGE_TITLES = {
-  '/dashboard':     'Dashboard',
+  '/dashboard':     'Inicio',
   '/clientes':      'Clientes',
   '/prestamos':     'Préstamos',
   '/rutas':         'Rutas',
