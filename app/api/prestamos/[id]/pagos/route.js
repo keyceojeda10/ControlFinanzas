@@ -46,7 +46,7 @@ export async function POST(request, { params }) {
   }
 
   const body = await request.json()
-  const { montoPagado, tipo, nota, diasAbonados } = body
+  const { montoPagado, tipo, nota, diasAbonados, metodoPago, plataforma } = body
 
   let montoFinal = Number(montoPagado)
 
@@ -98,6 +98,7 @@ export async function POST(request, { params }) {
   // Registrar pago y actualizar estados en transacción
   const resultado = await prisma.$transaction(async (tx) => {
     // 1. Crear el pago
+    const metodoValido = ['efectivo', 'transferencia'].includes(metodoPago) ? metodoPago : null
     await tx.pago.create({
       data: {
         prestamoId,
@@ -105,6 +106,8 @@ export async function POST(request, { params }) {
         cobradorId: userId,
         montoPagado: montoFinal,
         tipo,
+        metodoPago: metodoValido,
+        plataforma: metodoValido === 'transferencia' ? (plataforma?.trim() || null) : null,
         nota: nota?.trim() || null,
         fechaPago: new Date(),
       },

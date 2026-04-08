@@ -210,6 +210,8 @@ model Pago {
   montoPagado    Float
   fechaPago      DateTime @default(now())
   tipo           TipoPago
+  metodoPago     String?  // 'efectivo' | 'transferencia'
+  plataforma     String?  // Nequi, Daviplata, Bancolombia, etc. (texto libre)
   nota           String?
   createdAt      DateTime @default(now())
 

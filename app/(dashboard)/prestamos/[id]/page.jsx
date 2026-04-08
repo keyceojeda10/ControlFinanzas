@@ -456,6 +456,20 @@ export default function PrestamoDetallePage({ params }) {
                         {fmtFecha(pago.fechaPago)}
                         {pago.cobrador && ` · ${pago.cobrador.nombre}`}
                       </p>
+                      {pago.metodoPago && !esAjuste && (
+                        <p className="text-[10px] mt-0.5 flex items-center gap-1" style={{ color: pago.metodoPago === 'efectivo' ? '#22c55e' : '#3b82f6' }}>
+                          {pago.metodoPago === 'efectivo' ? (
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                            </svg>
+                          ) : (
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                            </svg>
+                          )}
+                          {pago.metodoPago === 'efectivo' ? 'Efectivo' : `Transferencia${pago.plataforma ? ` · ${pago.plataforma}` : ''}`}
+                        </p>
+                      )}
                       {pago.nota && (
                         <p className="text-[10px] mt-0.5" style={{
                           color: esAjuste ? '#aaaaaa' : '#888888'

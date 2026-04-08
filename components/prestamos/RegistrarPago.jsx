@@ -22,6 +22,8 @@ export default function RegistrarPago({
   const montoInicial = Math.min(Math.round(cuotaDiaria ?? 0), Math.round(saldoPendiente ?? 0))
   const [monto,        setMonto]        = useState(String(montoInicial))
   const [tipo,         setTipo]         = useState('completo')
+  const [metodoPago,   setMetodoPago]   = useState('efectivo')
+  const [plataforma,   setPlataforma]   = useState('')
   const [nota,         setNota]         = useState('')
   const [diasAbonados, setDiasAbonados] = useState(null)
   const [loading,      setLoading]      = useState(false)
@@ -44,7 +46,7 @@ export default function RegistrarPago({
       const res  = await fetch(`/api/prestamos/${prestamoId}/pagos`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ montoPagado: m, tipo, nota, diasAbonados }),
+        body:    JSON.stringify({ montoPagado: m, tipo, nota, diasAbonados, metodoPago, plataforma }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Error al registrar el pago'); return }
@@ -64,6 +66,8 @@ export default function RegistrarPago({
             tipo,
             nota,
             diasAbonados,
+            metodoPago,
+            plataforma,
             clienteNombre: cliente?.nombre,
           })
           // Update IndexedDB data so offline views reflect the payment
@@ -107,6 +111,8 @@ export default function RegistrarPago({
     setPrestamoAct(null)
     setMonto(String(Math.min(Math.round(cuotaDiaria ?? 0), Math.round(saldoPendiente ?? 0))))
     setTipo('completo')
+    setMetodoPago('efectivo')
+    setPlataforma('')
     setNota('')
     setDiasAbonados(null)
     setError('')
@@ -349,9 +355,55 @@ export default function RegistrarPago({
             </div>
           )}
 
+          {/* Método de pago — solo para pagos reales, no ajustes */}
+          {!['recargo', 'descuento'].includes(tipo) && (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em]">Método de pago</span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setMetodoPago('efectivo'); setPlataforma('') }}
+                  className={[
+                    'flex-1 h-9 rounded-[10px] border text-sm font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5',
+                    metodoPago === 'efectivo'
+                      ? 'bg-[rgba(34,197,94,0.12)] border-[#22c55e] text-[#22c55e]'
+                      : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#1a1a1a]',
+                  ].join(' ')}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+                  </svg>
+                  Efectivo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMetodoPago('transferencia')}
+                  className={[
+                    'flex-1 h-9 rounded-[10px] border text-sm font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5',
+                    metodoPago === 'transferencia'
+                      ? 'bg-[rgba(59,130,246,0.12)] border-[#3b82f6] text-[#3b82f6]'
+                      : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#1a1a1a]',
+                  ].join(' ')}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                  </svg>
+                  Transferencia
+                </button>
+              </div>
+              {metodoPago === 'transferencia' && (
+                <Input
+                  placeholder="Ej: Nequi, Daviplata, Bancolombia…"
+                  value={plataforma}
+                  onChange={(e) => setPlataforma(e.target.value)}
+                />
+              )}
+            </div>
+          )}
+
           <Input
             label="Nota (opcional)"
-            placeholder="Ej: Pago en efectivo"
+            placeholder="Ej: Pago adelantado"
             value={nota}
             onChange={(e) => setNota(e.target.value)}
           />

@@ -355,12 +355,17 @@ function NuevoPrestamo() {
           </div>
 
           {/* Fecha inicio */}
-          <Input
-            label="Fecha de inicio *"
-            type="date"
-            value={fechaInicio}
-            onChange={(e) => setFechaInicio(e.target.value)}
-          />
+          <div className="flex flex-col gap-1">
+            <Input
+              label="Fecha de inicio *"
+              type="date"
+              value={fechaInicio}
+              onChange={(e) => setFechaInicio(e.target.value)}
+            />
+            <p className="text-[10px] text-[#888888] leading-snug px-0.5">
+              Por defecto es hoy. Puedes elegir una fecha anterior si el préstamo ya lleva tiempo (clientes migrados de otras plataformas).
+            </p>
+          </div>
         </div>
 
         {/* Resumen en tiempo real */}
