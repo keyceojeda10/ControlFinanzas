@@ -1,6 +1,6 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME = 'cf-v7'
-const API_CACHE  = 'cf-api-v7'
+const CACHE_NAME = 'cf-v8'
+const API_CACHE  = 'cf-api-v8'
 
 // Only precache static assets (NOT auth-protected pages)
 const PRECACHE_URLS = [
@@ -43,17 +43,13 @@ self.addEventListener('install', (e) => {
   // This prevents mid-session cache wipes during deploys
 })
 
-// ─── Activate: clean old caches (preserve API caches) ──────
+// ─── Activate: clean old caches (incluyendo versiones viejas de API) ──────
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((k) => {
-            // Keep API caches (even old versions) — updated naturally via network-first
-            if (k.startsWith('cf-api-')) return false
-            return k !== CACHE_NAME && k !== API_CACHE
-          })
+          .filter((k) => k !== CACHE_NAME && k !== API_CACHE)
           .map((k) => caches.delete(k))
       )
     )
@@ -230,6 +226,15 @@ self.addEventListener('notificationclick', (e) => {
 self.addEventListener('message', (e) => {
   if (e.data?.type === 'SKIP_WAITING') {
     self.skipWaiting()
+  }
+
+  // Limpiar cache de API al hacer logout (previene leak cross-sesión/cross-org)
+  if (e.data?.type === 'CLEAR_API_CACHE') {
+    e.waitUntil(
+      caches.keys().then((keys) =>
+        Promise.all(keys.filter((k) => k.startsWith('cf-api-')).map((k) => caches.delete(k)))
+      )
+    )
   }
 
   // Pre-cache pages for offline use after bulk sync

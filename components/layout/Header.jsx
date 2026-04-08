@@ -125,7 +125,10 @@ export default function Header() {
               <div className="border-t border-[#2a2a2a]" />
 
               <button
-                onClick={() => signOut({ callbackUrl: '/login' })}
+                onClick={() => {
+                  try { navigator.serviceWorker?.controller?.postMessage({ type: 'CLEAR_API_CACHE' }) } catch {}
+                  signOut({ callbackUrl: '/login' })
+                }}
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] transition-colors"
               >
                 <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

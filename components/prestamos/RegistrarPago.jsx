@@ -105,7 +105,7 @@ export default function RegistrarPago({
     setExitoso(false)
     setPagoGuardado(null)
     setPrestamoAct(null)
-    setMonto(String(Math.round(cuotaDiaria ?? 0)))
+    setMonto(String(Math.min(Math.round(cuotaDiaria ?? 0), Math.round(saldoPendiente ?? 0))))
     setTipo('completo')
     setNota('')
     setDiasAbonados(null)

@@ -5,13 +5,49 @@ import { useEffect, useRef } from 'react'
 
 export function Modal({ open, onClose, title, children, size = 'md', footer }) {
   const overlayRef = useRef(null)
+  const dialogRef = useRef(null)
+  const previousFocusRef = useRef(null)
 
   useEffect(() => {
     if (!open) return
-    const handleKey = (e) => { if (e.key === 'Escape') onClose?.() }
+    const handleKey = (e) => {
+      if (e.key === 'Escape') onClose?.()
+      // Focus trap simple: Tab cicla dentro del modal
+      if (e.key === 'Tab' && dialogRef.current) {
+        const focusables = dialogRef.current.querySelectorAll(
+          'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+        if (focusables.length === 0) return
+        const first = focusables[0]
+        const last = focusables[focusables.length - 1]
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault()
+          last.focus()
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault()
+          first.focus()
+        }
+      }
+    }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
   }, [open, onClose])
+
+  // Mover foco al modal al abrir, devolverlo al cerrar
+  useEffect(() => {
+    if (!open) return
+    previousFocusRef.current = document.activeElement
+    // Enfocar el primer elemento interactivo del modal
+    setTimeout(() => {
+      const first = dialogRef.current?.querySelector(
+        'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled])'
+      )
+      first?.focus()
+    }, 0)
+    return () => {
+      try { previousFocusRef.current?.focus?.() } catch {}
+    }
+  }, [open])
 
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : ''
@@ -37,6 +73,10 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }) {
       <div className="absolute inset-0 bg-[rgba(0,0,5,0.85)] backdrop-blur-md" />
 
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? 'cf-modal-title' : undefined}
         className={[
           'relative w-full',
           'rounded-t-[20px] sm:rounded-[20px] shadow-2xl',
@@ -51,10 +91,11 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }) {
       >
         {title && (
           <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(255,255,255,0.06)] shrink-0">
-            <h2 className="text-base font-semibold text-white">{title}</h2>
+            <h2 id="cf-modal-title" className="text-base font-semibold text-white">{title}</h2>
             <button
               onClick={onClose}
-              className="w-7 h-7 flex items-center justify-center rounded-lg text-[#666] hover:text-white hover:bg-[rgba(255,255,255,0.08)] transition-colors"
+              aria-label="Cerrar"
+              className="w-10 h-10 flex items-center justify-center rounded-lg text-[#666] hover:text-white hover:bg-[rgba(255,255,255,0.08)] transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

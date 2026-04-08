@@ -328,7 +328,10 @@ export default function Sidebar() {
         </div>
         <InstallButton variant="desktop" />
         <button
-          onClick={() => signOut({ callbackUrl: '/login' })}
+          onClick={() => {
+            try { navigator.serviceWorker?.controller?.postMessage({ type: 'CLEAR_API_CACHE' }) } catch {}
+            signOut({ callbackUrl: '/login' })
+          }}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm text-[#888888] hover:bg-[#1a1a1a] hover:text-[#ef4444] transition-all duration-150"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

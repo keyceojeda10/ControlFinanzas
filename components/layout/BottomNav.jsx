@@ -123,8 +123,9 @@ export default function BottomNav() {
   const isActive = (href) =>
     href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
 
-  // Cierre warning check
+  // Cierre warning check — solo para cobradores (owners no tienen cierre de caja)
   useEffect(() => {
+    if (!esCobrador) return
     const checkCierreWarning = async () => {
       try {
         const res = await fetch('/api/caja/warning')
@@ -135,7 +136,7 @@ export default function BottomNav() {
     checkCierreWarning()
     const interval = setInterval(checkCierreWarning, 60000)
     return () => clearInterval(interval)
-  }, [])
+  }, [esCobrador])
 
   // Close sheet on navigate
   useEffect(() => { setMoreOpen(false) }, [pathname])
@@ -256,7 +257,7 @@ export default function BottomNav() {
             <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
-            Mas
+            Más
           </button>
         </div>
       </nav>
