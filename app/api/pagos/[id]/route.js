@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { calcularEstadoCliente, calcularSaldoPendiente } from '@/lib/calculos'
+import { registrarMovimientoCapital } from '@/lib/capital'
 
 export async function DELETE(request, { params }) {
   const session = await getServerSession(authOptions)
@@ -34,8 +35,14 @@ export async function DELETE(request, { params }) {
     await tx.pago.delete({ where: { id: pagoId } })
 
     // 1b. Si era abono a capital, reversar la reducción de totalAPagar
+    // Recalcula el ahorro con la misma fórmula proporcional usada al registrarlo
     if (pago.tipo === 'capital') {
-      const ahorroInteres = Math.round(pago.montoPagado * (pago.prestamo.tasaInteres / 100))
+      const fechaPago = new Date(new Date(pago.fechaPago).getTime() - 5 * 60 * 60 * 1000)
+      const inicio = new Date(prestamo.fechaInicio)
+      const diasTrans = Math.max(0, Math.floor((fechaPago - inicio) / (1000 * 60 * 60 * 24)))
+      const diasRest = Math.max(0, prestamo.diasPlazo - diasTrans)
+      const mesesRest = diasRest / 30
+      const ahorroInteres = Math.round(pago.montoPagado * (prestamo.tasaInteres / 100) * mesesRest)
       await tx.prestamo.update({
         where: { id: prestamo.id },
         data: { totalAPagar: prestamo.totalAPagar + ahorroInteres },
@@ -74,6 +81,20 @@ export async function DELETE(request, { params }) {
     })
     const nuevoEstado = calcularEstadoCliente(todosLosPrestamos)
     await tx.cliente.update({ where: { id: prestamo.clienteId }, data: { estado: nuevoEstado } })
+
+    // 4. Reversar movimiento de capital (solo pagos reales, no ajustes)
+    if (!['recargo', 'descuento'].includes(pago.tipo)) {
+      await registrarMovimientoCapital(tx, {
+        organizationId,
+        tipo: 'ajuste',
+        monto: pago.montoPagado,
+        direccion: 'egreso',
+        descripcion: `Reverso pago anulado - préstamo`,
+        referenciaId: prestamo.id,
+        referenciaTipo: 'pago',
+        creadoPorId: session.user.id,
+      })
+    }
   })
 
   return Response.json({ ok: true })

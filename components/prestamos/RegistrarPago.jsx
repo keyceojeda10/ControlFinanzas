@@ -333,11 +333,18 @@ export default function RegistrarPago({
               <p className="font-medium text-[#a855f7] mb-1">Abono a capital</p>
               <p className="text-[#888888]">
                 Reduce el capital y los intereses sobre ese monto. El préstamo termina antes.
-                {monto && Number(monto) > 0 && prestamo?.tasaInteres > 0 && (
-                  <> Ahorro en intereses: <span className="text-[#a855f7] font-medium font-mono-display">
-                    {formatCOP(Math.round(Number(monto) * (prestamo.tasaInteres / 100)))}
-                  </span></>
-                )}
+                {monto && Number(monto) > 0 && prestamo?.tasaInteres > 0 && (() => {
+                  const ahora = new Date(Date.now() - 5 * 60 * 60 * 1000)
+                  const inicio = new Date(prestamo.fechaInicio)
+                  const diasTrans = Math.max(0, Math.floor((ahora - inicio) / (1000 * 60 * 60 * 24)))
+                  const diasRest = Math.max(0, (prestamo.diasPlazo || 0) - diasTrans)
+                  const ahorro = Math.round(Number(monto) * (prestamo.tasaInteres / 100) * (diasRest / 30))
+                  return (
+                    <> Ahorro en intereses: <span className="text-[#a855f7] font-medium font-mono-display">
+                      {formatCOP(ahorro)}
+                    </span></>
+                  )
+                })()}
               </p>
             </div>
           )}

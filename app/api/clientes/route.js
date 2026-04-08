@@ -22,10 +22,13 @@ export async function GET(request) {
 
   const { organizationId, rol, rutaId } = session.user
 
+  // Cobrador sin ruta asignada no ve nada (previene fuga multi-tenant)
+  if (rol === 'cobrador' && !rutaId) {
+    return Response.json(page != null ? { clientes: [], total: 0, page, totalPages: 0 } : [])
+  }
+
   // Cobrador → solo clientes de su ruta
-  const filtroRuta = rol === 'cobrador' && rutaId
-    ? { rutaId }
-    : {}
+  const filtroRuta = rol === 'cobrador' ? { rutaId } : {}
 
   // Filtro de búsqueda por nombre, cédula, teléfono o referencia
   const filtroBuscar = buscar

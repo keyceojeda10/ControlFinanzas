@@ -14,15 +14,16 @@ export async function GET(request) {
 
   const { organizationId, rol, rutaId } = session.user
 
+  // Cobrador sin ruta asignada no ve nada (previene fuga multi-tenant)
+  if (rol === 'cobrador' && !rutaId) {
+    return Response.json({ total: 0, agrupado: { mora1a7: [], mora8a15: [], mora16a30: [], mora31plus: [] }, lista: [] })
+  }
+
   // Filtro para cobradores
   const wherePrestamo = {
     organizationId,
     estado: 'activo',
-  }
-
-  // Si es cobrador, solo mostrar clientes de su ruta
-  if (rol === 'cobrador' && rutaId) {
-    wherePrestamo.cliente = { rutaId }
+    ...(rol === 'cobrador' && { cliente: { rutaId } }),
   }
 
   // Obtener préstamos activos vencidos

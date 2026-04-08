@@ -10,6 +10,7 @@ import {
   pagoHoy,
 } from '@/lib/calculos'
 import { logActividad } from '@/lib/activity-log'
+import { registrarMovimientoCapital } from '@/lib/capital'
 
 async function obtenerPrestamo(id, session) {
   const p = await prisma.prestamo.findFirst({
@@ -93,11 +94,41 @@ export async function DELETE(request, { params }) {
   const p = await obtenerPrestamo(id, session)
   if (!p) return Response.json({ error: 'Préstamo no encontrado' }, { status: 404 })
 
-  // Eliminar pagos asociados primero, luego el préstamo
-  await prisma.$transaction([
-    prisma.pago.deleteMany({ where: { prestamoId: id } }),
-    prisma.prestamo.delete({ where: { id } }),
-  ])
+  const { organizationId } = session.user
+
+  // Reversar capital y eliminar pagos + préstamo en transacción
+  await prisma.$transaction(async (tx) => {
+    // 1. Reversar desembolso original (ingreso al capital = el dinero vuelve)
+    await registrarMovimientoCapital(tx, {
+      organizationId,
+      tipo: 'ajuste',
+      monto: p.montoPrestado,
+      direccion: 'ingreso',
+      descripcion: `Reverso desembolso - préstamo eliminado (${p.cliente.nombre})`,
+      referenciaId: id,
+      referenciaTipo: 'prestamo',
+      creadoPorId: session.user.id,
+    })
+
+    // 2. Reversar cada pago real (egreso del capital)
+    const pagosReales = p.pagos.filter(pg => !['recargo', 'descuento'].includes(pg.tipo))
+    for (const pg of pagosReales) {
+      await registrarMovimientoCapital(tx, {
+        organizationId,
+        tipo: 'ajuste',
+        monto: pg.montoPagado,
+        direccion: 'egreso',
+        descripcion: `Reverso recaudo - préstamo eliminado`,
+        referenciaId: id,
+        referenciaTipo: 'pago',
+        creadoPorId: session.user.id,
+      })
+    }
+
+    // 3. Eliminar pagos y préstamo
+    await tx.pago.deleteMany({ where: { prestamoId: id } })
+    await tx.prestamo.delete({ where: { id } })
+  })
 
   logActividad({ session, accion: 'eliminar_prestamo', entidadTipo: 'prestamo', entidadId: id, detalle: `Préstamo de ${p.cliente.nombre} eliminado`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
   return Response.json({ ok: true, message: 'Préstamo eliminado' })

@@ -29,25 +29,26 @@ export async function GET(request) {
   const page      = searchParams.get('page') ? Number(searchParams.get('page')) : null
   const limit     = Math.min(Number(searchParams.get('limit')) || 50, 100)
 
-  // Filtro de cliente (cobrador → solo su ruta)
-  const filtroCliente = rol === 'cobrador' && rutaId
-    ? { rutaId }
-    : {}
+  // Cobrador sin ruta asignada no ve nada (previene fuga de datos multi-tenant)
+  if (rol === 'cobrador' && !rutaId) {
+    return Response.json(page != null ? { prestamos: [], total: 0, page, totalPages: 0 } : [])
+  }
 
   const where = {
     organizationId,
     ...(clienteId && { clienteId }),
     ...(estado    && { estado }),
-    ...(buscar    && {
+    // Combinar filtros de cliente: búsqueda + restricción de ruta para cobrador
+    ...((buscar || rol === 'cobrador') && {
       cliente: {
-        OR: [
-          { nombre: { contains: buscar } },
-          { cedula: { contains: buscar } },
-        ],
+        ...(rol === 'cobrador' && { rutaId }),
+        ...(buscar && {
+          OR: [
+            { nombre: { contains: buscar } },
+            { cedula: { contains: buscar } },
+          ],
+        }),
       },
-    }),
-    ...(rol === 'cobrador' && rutaId && {
-      cliente: { ...filtroCliente },
     }),
   }
 

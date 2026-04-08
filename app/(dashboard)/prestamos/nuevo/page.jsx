@@ -305,7 +305,7 @@ function NuevoPrestamo() {
               <p className="text-[10px] text-[#888888] leading-snug px-0.5">
                 {modo === 'mercancia'
                   ? 'Déjalo en 0% para mercancía sin interés'
-                  : '% total sobre el monto. Ej: 20% sobre $100.000 = $20.000 de interés'}
+                  : '% mensual sobre el monto. Ej: 20% sobre $100.000 a 60 días = $40.000 (2 meses)'}
               </p>
             </div>
             {/* Plazo */}

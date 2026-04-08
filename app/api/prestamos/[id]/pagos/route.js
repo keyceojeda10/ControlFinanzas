@@ -119,8 +119,14 @@ export async function POST(request, { params }) {
     })
 
     // 2b. Abono a capital: reducir totalAPagar por el ahorro de intereses
+    // La tasa es mensual proporcional, así que el ahorro depende de los días restantes
     if (tipo === 'capital') {
-      const ahorroInteres = Math.round(montoFinal * (prestamo.tasaInteres / 100))
+      const ahora = new Date(Date.now() - 5 * 60 * 60 * 1000) // Colombia
+      const inicio = new Date(prestamo.fechaInicio)
+      const diasTranscurridos = Math.max(0, Math.floor((ahora - inicio) / (1000 * 60 * 60 * 24)))
+      const diasRestantes = Math.max(0, prestamo.diasPlazo - diasTranscurridos)
+      const mesesRestantes = diasRestantes / 30
+      const ahorroInteres = Math.round(montoFinal * (prestamo.tasaInteres / 100) * mesesRestantes)
       const totalPagadoActual = prestamoActualizado.pagos
         .filter(p => !['recargo', 'descuento'].includes(p.tipo))
         .reduce((a, p) => a + p.montoPagado, 0)

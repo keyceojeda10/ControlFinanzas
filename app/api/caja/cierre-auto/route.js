@@ -102,11 +102,12 @@ export async function POST(request) {
         // Calcular esperado
         const totalEsperado = await calcularEsperado(org.id, cobrador.id)
 
-        // Obtener gastos del día para este cobrador
+        // Obtener gastos aprobados del día para este cobrador
         const gastosDia = await prisma.gastoMenor.aggregate({
           where: {
             organizationId: org.id,
             cobradorId: cobrador.id,
+            estado: 'aprobado',
             fecha: { gte: fechaCierre, lte: fechaCierreFin },
           },
           _sum: { monto: true },

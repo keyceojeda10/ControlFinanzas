@@ -4,6 +4,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { calcularEstadoCliente } from '@/lib/calculos'
 
 export async function POST(request, { params }) {
   const session = await getServerSession(authOptions)
@@ -45,10 +46,29 @@ export async function POST(request, { params }) {
     return Response.json({ error: 'El préstamo ya pertenece a este cliente' }, { status: 400 })
   }
 
-  // Trasladar: cambiar clienteId del préstamo
-  const actualizado = await prisma.prestamo.update({
-    where: { id },
-    data: { clienteId: clienteDestinoId },
+  const clienteOrigenId = prestamo.clienteId
+
+  // Trasladar y recalcular estados de ambos clientes en transacción
+  const actualizado = await prisma.$transaction(async (tx) => {
+    const nuevo = await tx.prestamo.update({
+      where: { id },
+      data: { clienteId: clienteDestinoId },
+    })
+
+    // Recalcular estado de ambos clientes según sus préstamos resultantes
+    for (const clienteId of [clienteOrigenId, clienteDestinoId]) {
+      const prestamosCliente = await tx.prestamo.findMany({
+        where: { clienteId },
+        include: { pagos: { select: { montoPagado: true, fechaPago: true, tipo: true } } },
+      })
+      const nuevoEstado = calcularEstadoCliente(prestamosCliente)
+      await tx.cliente.update({
+        where: { id: clienteId },
+        data: { estado: nuevoEstado },
+      })
+    }
+
+    return nuevo
   })
 
   return Response.json({
