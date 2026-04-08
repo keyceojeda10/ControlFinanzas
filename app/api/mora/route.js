@@ -7,6 +7,7 @@ import { calcularDiasMora, calcularSaldoPendiente } from '@/lib/calculos'
 
 // GET /api/mora - Devuelve clientes en mora agrupados por días de mora
 export async function GET(request) {
+  try {
   const session = await getServerSession(authOptions)
   if (!session?.user?.organizationId) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
@@ -79,4 +80,8 @@ export async function GET(request) {
     agrupado,
     lista: clientesEnMora.sort((a, b) => b.diasMora - a.diasMora),
   })
+  } catch (err) {
+    console.error('[GET /api/mora]', err)
+    return Response.json({ error: 'Error interno del servidor' }, { status: 500 })
+  }
 }

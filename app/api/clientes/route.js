@@ -10,6 +10,7 @@ import { trackEvent } from '@/lib/analytics'
 
 // ─── GET /api/clientes ──────────────────────────────────────────
 export async function GET(request) {
+  try {
   const session = await getServerSession(authOptions)
   if (!session?.user?.organizationId) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
@@ -96,10 +97,15 @@ export async function GET(request) {
     return Response.json({ clientes: resultado, total, page, totalPages: Math.ceil(total / limit) })
   }
   return Response.json(resultado)
+  } catch (err) {
+    console.error('[GET /api/clientes]', err)
+    return Response.json({ error: 'Error interno del servidor' }, { status: 500 })
+  }
 }
 
 // ─── POST /api/clientes ─────────────────────────────────────────
 export async function POST(request) {
+  try {
   const session = await getServerSession(authOptions)
   if (!session?.user?.organizationId) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
@@ -194,4 +200,8 @@ export async function POST(request) {
   logActividad({ session, accion: 'crear_cliente', entidadTipo: 'cliente', entidadId: cliente.id, detalle: `Cliente ${nombre.trim()} (${cedula.trim()})`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
   trackEvent({ organizationId, userId: session.user.id, evento: 'crear_cliente' })
   return Response.json(cliente, { status: 201 })
+  } catch (err) {
+    console.error('[POST /api/clientes]', err)
+    return Response.json({ error: 'Error interno del servidor' }, { status: 500 })
+  }
 }

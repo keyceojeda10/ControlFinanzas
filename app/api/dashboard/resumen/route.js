@@ -16,14 +16,16 @@ export async function GET() {
   const orgId = session.user.organizationId
   if (!orgId) return NextResponse.json({ error: 'Sin organización' }, { status: 403 })
 
-  // Get Colombia date and convert to UTC for database queries
+  // Rangos UTC que representan "hoy" y "este mes" en hora Colombia (UTC-5)
+  // Colombia midnight = UTC 05:00. Fin del día Colombia = UTC 04:59:59 del día siguiente.
   const hoy = getColombiaDate()
-  // Colombia midnight = UTC 5:00
-  // We need to query from Colombia midnight (UTC 5:00) to Colombia 23:59:59 (UTC next day 4:59:59)
-  const inicioDiaUTC = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 5, 0, 0)
-  const finDiaUTC = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 1, 4, 59, 59)
-  const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1, 5, 0, 0) // Colombia midnight
-  const finMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0, 23, 59, 59)
+  const y = hoy.getUTCFullYear()
+  const m = hoy.getUTCMonth()
+  const d = hoy.getUTCDate()
+  const inicioDiaUTC = new Date(Date.UTC(y, m, d, 5, 0, 0))
+  const finDiaUTC    = new Date(Date.UTC(y, m, d + 1, 4, 59, 59))
+  const inicioMes    = new Date(Date.UTC(y, m, 1, 5, 0, 0))
+  const finMes       = new Date(Date.UTC(y, m + 1, 1, 4, 59, 59))
 
   const [
     clientesTotal,

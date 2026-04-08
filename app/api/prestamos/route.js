@@ -16,6 +16,7 @@ import { trackEvent } from '@/lib/analytics'
 
 // ─── GET /api/prestamos ─────────────────────────────────────────
 export async function GET(request) {
+  try {
   const session = await getServerSession(authOptions)
   if (!session?.user?.organizationId) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
@@ -88,10 +89,15 @@ export async function GET(request) {
     return Response.json({ prestamos: resultado, total, page, totalPages: Math.ceil(total / limit) })
   }
   return Response.json(resultado)
+  } catch (err) {
+    console.error('[GET /api/prestamos]', err)
+    return Response.json({ error: 'Error interno del servidor' }, { status: 500 })
+  }
 }
 
 // ─── POST /api/prestamos ────────────────────────────────────────
 export async function POST(request) {
+  try {
   const session = await getServerSession(authOptions)
   if (!session?.user?.organizationId) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
@@ -183,4 +189,8 @@ export async function POST(request) {
   logActividad({ session, accion: 'crear_prestamo', entidadTipo: 'prestamo', entidadId: prestamo.id, detalle: `Préstamo $${Number(montoPrestado).toLocaleString('es-CO')} a ${cliente.nombre}`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
   trackEvent({ organizationId, userId: session.user.id, evento: 'crear_prestamo', metadata: { monto: Number(montoPrestado) } })
   return Response.json(prestamo, { status: 201 })
+  } catch (err) {
+    console.error('[POST /api/prestamos]', err)
+    return Response.json({ error: 'Error interno del servidor' }, { status: 500 })
+  }
 }
