@@ -18,7 +18,9 @@ export default function RegistrarPago({
   cliente, prestamo, rutaNav,
 }) {
   const router = useRouter()
-  const [monto,        setMonto]        = useState(String(Math.round(cuotaDiaria ?? 0)))
+  // Pre-llena con la cuota, pero nunca más que el saldo pendiente (último pago de saldos pequeños)
+  const montoInicial = Math.min(Math.round(cuotaDiaria ?? 0), Math.round(saldoPendiente ?? 0))
+  const [monto,        setMonto]        = useState(String(montoInicial))
   const [tipo,         setTipo]         = useState('completo')
   const [nota,         setNota]         = useState('')
   const [diasAbonados, setDiasAbonados] = useState(null)
@@ -29,11 +31,11 @@ export default function RegistrarPago({
   const [prestamoAct,  setPrestamoAct]  = useState(null)
 
   const handleSubmit = async () => {
-    const m = Number(monto)
+    let m = Number(monto)
     if (!m || m <= 0) { setError('Ingresa un monto válido'); return }
-    if (m > saldoPendiente) {
-      setError(`El monto no puede superar el saldo: ${formatCOP(saldoPendiente)}`)
-      return
+    // Limitar al saldo en lugar de bloquear (permite cobrar saldos pequeños)
+    if (tipo !== 'recargo' && m > saldoPendiente) {
+      m = Math.round(saldoPendiente)
     }
 
     setLoading(true)
@@ -112,7 +114,7 @@ export default function RegistrarPago({
   }
 
   const handleAbonoDias = (dias) => {
-    const montoAbono = Math.round(cuotaDiaria * dias)
+    const montoAbono = Math.min(Math.round(cuotaDiaria * dias), Math.round(saldoPendiente ?? 0))
     setMonto(String(montoAbono))
     setDiasAbonados(dias)
     setError('')
