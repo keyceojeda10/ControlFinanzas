@@ -66,18 +66,100 @@ export async function PATCH(request, { params }) {
   const p = await obtenerPrestamo(id, session)
   if (!p) return Response.json({ error: 'Préstamo no encontrado' }, { status: 404 })
 
-  const { estado } = await request.json()
-  if (!['cancelado'].includes(estado)) {
-    return Response.json({ error: 'Estado no válido' }, { status: 400 })
+  const body = await request.json()
+  const { estado, modo, fechaFin: nuevaFechaFinRaw, diasExtra } = body
+
+  // ─── Modo 1: cambio de estado (cancelar) ────────────────────────
+  if (estado) {
+    if (!['cancelado'].includes(estado)) {
+      return Response.json({ error: 'Estado no válido' }, { status: 400 })
+    }
+    const actualizado = await prisma.prestamo.update({
+      where: { id },
+      data:  { estado },
+    })
+    logActividad({ session, accion: 'editar_prestamo', entidadTipo: 'prestamo', entidadId: id, detalle: `Estado cambiado a ${estado}`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
+    return Response.json(actualizado)
   }
 
-  const actualizado = await prisma.prestamo.update({
-    where: { id },
-    data:  { estado },
-  })
+  // ─── Modo 2: modificar plazo (extender o corregir fecha) ───────
+  if (modo === 'extender' || modo === 'corregir') {
+    if (p.estado !== 'activo') {
+      return Response.json({ error: 'Solo se puede modificar el plazo de préstamos activos' }, { status: 400 })
+    }
+    if (!nuevaFechaFinRaw) {
+      return Response.json({ error: 'La nueva fecha de finalización es requerida' }, { status: 400 })
+    }
 
-  logActividad({ session, accion: 'editar_prestamo', entidadTipo: 'prestamo', entidadId: id, detalle: `Estado cambiado a ${estado}`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
-  return Response.json(actualizado)
+    const fechaInicio = new Date(p.fechaInicio)
+    const nuevaFechaFin = new Date(nuevaFechaFinRaw)
+    if (isNaN(nuevaFechaFin.getTime())) {
+      return Response.json({ error: 'Fecha inválida' }, { status: 400 })
+    }
+    if (nuevaFechaFin <= fechaInicio) {
+      return Response.json({ error: 'La nueva fecha debe ser posterior a la fecha de inicio' }, { status: 400 })
+    }
+
+    // Días totales del nuevo plazo
+    const nuevoDiasPlazo = Math.round((nuevaFechaFin - fechaInicio) / (1000 * 60 * 60 * 24))
+    if (nuevoDiasPlazo <= 0) {
+      return Response.json({ error: 'El plazo debe ser mayor a 0 días' }, { status: 400 })
+    }
+
+    const diasPorPeriodo = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }[p.frecuencia] || 1
+    const totalPeriodosNuevos = Math.ceil(nuevoDiasPlazo / diasPorPeriodo)
+
+    const dataUpdate = {
+      diasPlazo: nuevoDiasPlazo,
+      fechaFin:  nuevaFechaFin,
+    }
+    let detalleLog = ''
+
+    if (modo === 'extender') {
+      // Recalcular cuota redistribuyendo el saldo pendiente en los periodos restantes
+      // - totalAPagar se mantiene (no se cobran intereses extra, solo se estira el plazo)
+      // - cuota nueva = totalAPagar / totalPeriodosNuevos (redondeada a múltiplo de 50)
+      if (totalPeriodosNuevos <= 0) {
+        return Response.json({ error: 'Plazo muy corto' }, { status: 400 })
+      }
+      const cuotaBase = p.totalAPagar / totalPeriodosNuevos
+      const nuevaCuota = Math.max(50, Math.round(cuotaBase / 50) * 50)
+      // Ajustar totalAPagar para que cierre exacto con la cuota redondeada
+      const nuevoTotalAPagar = nuevaCuota * totalPeriodosNuevos
+
+      // El nuevo total no puede ser menor a lo ya pagado
+      const totalPagadoReal = p.pagos
+        .filter(pg => !['recargo', 'descuento'].includes(pg.tipo))
+        .reduce((a, pg) => a + pg.montoPagado, 0)
+      if (nuevoTotalAPagar < totalPagadoReal) {
+        return Response.json({ error: 'El nuevo total no puede ser menor a lo ya pagado' }, { status: 400 })
+      }
+
+      dataUpdate.cuotaDiaria = nuevaCuota
+      dataUpdate.totalAPagar = nuevoTotalAPagar
+      detalleLog = `Plazo extendido: ${p.diasPlazo}→${nuevoDiasPlazo} días, cuota ${Math.round(p.cuotaDiaria).toLocaleString('es-CO')}→${nuevaCuota.toLocaleString('es-CO')}`
+    } else {
+      // Corregir: solo cambia fechas, no toca cuota ni total
+      detalleLog = `Fecha fin corregida: ${new Date(p.fechaFin).toISOString().slice(0,10)}→${nuevaFechaFin.toISOString().slice(0,10)}`
+    }
+
+    const actualizado = await prisma.prestamo.update({
+      where: { id },
+      data: dataUpdate,
+    })
+
+    logActividad({
+      session,
+      accion: 'editar_prestamo',
+      entidadTipo: 'prestamo',
+      entidadId: id,
+      detalle: detalleLog,
+      ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+    })
+    return Response.json(actualizado)
+  }
+
+  return Response.json({ error: 'Operación no válida' }, { status: 400 })
 }
 
 // ─── DELETE /api/prestamos/[id] ────────────────────────────────────
