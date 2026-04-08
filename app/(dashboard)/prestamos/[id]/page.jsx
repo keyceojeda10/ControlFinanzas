@@ -13,6 +13,7 @@ import { Card }                       from '@/components/ui/Card'
 import { SkeletonCard }               from '@/components/ui/Skeleton'
 import RegistrarPago                  from '@/components/prestamos/RegistrarPago'
 import AjusteSaldo                    from '@/components/prestamos/AjusteSaldo'
+import RenovarPrestamo                from '@/components/prestamos/RenovarPrestamo'
 import BotonWhatsApp                  from '@/components/ui/BotonWhatsApp'
 import BotonCompartir                 from '@/components/ui/BotonCompartir'
 import BotonImprimirRecibo            from '@/components/ui/BotonImprimirRecibo'
@@ -57,6 +58,7 @@ export default function PrestamoDetallePage({ params }) {
   const [rutaNav,      setRutaNav]     = useState(null)
   const [modalRecargo,  setModalRecargo]  = useState(false)
   const [modalDescuento, setModalDescuento] = useState(false)
+  const [modalRenovar,  setModalRenovar]  = useState(false)
 
   // Leer contexto de ruta activa
   useEffect(() => {
@@ -321,6 +323,21 @@ export default function PrestamoDetallePage({ params }) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
             Hacer abono extraordinario
+          </span>
+        </button>
+      )}
+
+      {/* ── RENOVAR PRÉSTAMO (solo owner, solo activo) ──────── */}
+      {estaActivo && !completado && session?.user?.rol === 'owner' && (
+        <button
+          onClick={() => setModalRenovar(true)}
+          className="w-full h-11 rounded-[14px] font-medium text-sm text-[#a855f7] bg-[rgba(168,85,247,0.08)] border border-[rgba(168,85,247,0.25)] hover:bg-[rgba(168,85,247,0.15)] transition-all active:scale-[0.98]"
+        >
+          <span className="flex items-center justify-center gap-1.5">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+            </svg>
+            Renovar préstamo
           </span>
         </button>
       )}
@@ -654,6 +671,16 @@ export default function PrestamoDetallePage({ params }) {
           setPrestamo(prestamoActualizado)
           if (prestamoActualizado.estado === 'completado') setCompletado(true)
         }}
+      />
+
+      {/* Modal de renovación */}
+      <RenovarPrestamo
+        prestamoId={id}
+        saldoPendiente={saldoPendiente}
+        prestamoAnterior={{ tasaInteres, diasPlazo, frecuencia }}
+        clienteNombre={cliente?.nombre}
+        open={modalRenovar}
+        onClose={() => setModalRenovar(false)}
       />
     </div>
   )
