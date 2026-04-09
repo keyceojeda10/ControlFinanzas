@@ -27,7 +27,7 @@ export default function LoginPage() {
         // NextAuth pasa el mensaje de throw new Error() en result.error
         const msg = result.error
         if (msg === 'VERIFY_EMAIL') {
-          router.push('/verificar-email')
+          router.push(`/verificar-email?email=${encodeURIComponent(email.trim().toLowerCase())}`)
           return
         }
         if (msg.includes('desactivada') || msg.includes('suspendida')) {

@@ -90,15 +90,31 @@ function VerificarEmailContent() {
     <div className="text-center">
       <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-5"
         style={{ background: 'rgba(245,197,24,0.1)', border: '2px solid rgba(245,197,24,0.2)' }}>
-        <span className="text-2xl">📧</span>
+        <svg className="w-8 h-8 text-[#f5c518]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
       </div>
       <h1 className="text-xl font-bold text-white mb-2">Verifica tu correo</h1>
-      <p className="text-sm text-[#888888] mb-2">
-        Te enviamos un link de verificación. Revisa tu bandeja de entrada.
+      <p className="text-sm text-[#888888] mb-1">
+        Te enviamos un link de verificacion{email ? ' a:' : '. Revisa tu bandeja de entrada.'}
       </p>
-      <p className="text-xs text-[#555555] mb-6">Si no lo ves, revisa la carpeta de spam.</p>
+      {email && (
+        <p className="text-sm text-white font-semibold mb-3">{email}</p>
+      )}
+      <p className="text-xs text-[#555555] mb-5">Revisa tu bandeja de entrada y la carpeta de spam.</p>
+
+      {email && !reenviado && (
+        <button onClick={handleReenviar} disabled={enviando}
+          className="w-full h-10 rounded-[12px] text-sm font-medium text-[#f5c518] bg-[rgba(245,197,24,0.1)] border border-[rgba(245,197,24,0.2)] hover:bg-[rgba(245,197,24,0.15)] transition-all disabled:opacity-50 mb-4">
+          {enviando ? 'Enviando...' : 'Reenviar email de verificacion'}
+        </button>
+      )}
+      {reenviado && (
+        <p className="text-sm text-[#22c55e] mb-4">Email reenviado. Revisa tu correo.</p>
+      )}
+
       <Link href="/login" className="text-sm text-[#f5c518] hover:underline">
-        Ya verifiqué → Iniciar sesión
+        Ya verifique → Iniciar sesion
       </Link>
     </div>
   )

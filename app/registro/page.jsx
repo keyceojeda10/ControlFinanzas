@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import Image                             from 'next/image'
 import { useRouter, useSearchParams }    from 'next/navigation'
+import { signIn }                        from 'next-auth/react'
 import Link                              from 'next/link'
 
 // ─── Inner component uses useSearchParams ────────────────────────
@@ -97,7 +98,17 @@ function RegistroForm() {
         window.fbq('track', 'Lead')
       }
 
-      // Redirigir a verificar email — no hacer signIn hasta que esté verificado
+      // Auto-login: entrar directo al dashboard (gracia de 24h para verificar)
+      const login = await signIn('credentials', {
+        email: form.email.trim().toLowerCase(),
+        password: form.password,
+        redirect: false,
+      })
+      if (login?.ok) {
+        router.push('/dashboard')
+        return
+      }
+      // Fallback: si el auto-login falla, redirigir a verificar email
       router.push('/verificar-email')
     } catch {
       setError('Error de conexión. Intenta de nuevo.')

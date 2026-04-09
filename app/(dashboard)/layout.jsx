@@ -4,7 +4,8 @@ import Sidebar        from '@/components/layout/Sidebar'
 import Header         from '@/components/layout/Header'
 import BottomNav      from '@/components/layout/BottomNav'
 import PageWrapper    from '@/components/layout/PageWrapper'
-import SinRutaBanner  from '@/components/layout/SinRutaBanner'
+import SinRutaBanner         from '@/components/layout/SinRutaBanner'
+import VerificarEmailBanner  from '@/components/layout/VerificarEmailBanner'
 import GlobalSearch        from '@/components/layout/GlobalSearch'
 import NotificationPrompt from '@/components/NotificationPrompt'
 import Analytics          from '@/components/Analytics'
@@ -20,6 +21,9 @@ export default function DashboardLayout({ children }) {
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header – visible solo en mobile */}
         <Header />
+
+        {/* Aviso verificar email (periodo de gracia 24h) */}
+        <VerificarEmailBanner />
 
         {/* Aviso cobrador sin ruta */}
         <SinRutaBanner />
