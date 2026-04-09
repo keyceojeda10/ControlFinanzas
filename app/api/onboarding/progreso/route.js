@@ -23,12 +23,13 @@ export async function GET() {
   }
 
   // Count actual data to auto-detect progress
-  const [clientes, prestamos, pagos, rutas, cierres] = await Promise.all([
+  const [clientes, prestamos, pagos, rutas, cierres, cobradores] = await Promise.all([
     prisma.cliente.count({ where: { organizationId: orgId, estado: { notIn: ['eliminado'] } } }),
     prisma.prestamo.count({ where: { organizationId: orgId } }),
     prisma.pago.count({ where: { organizationId: orgId } }),
     prisma.ruta.count({ where: { organizationId: orgId } }),
     prisma.cierreCaja.count({ where: { organizationId: orgId } }),
+    prisma.user.count({ where: { organizationId: orgId, rol: 'cobrador' } }),
   ])
 
   const misiones = [
@@ -63,6 +64,23 @@ export async function GET() {
       completada: rutas > 0,
       href: '/rutas',
       icono: 'ruta',
+    },
+    {
+      id: 'crear-cobrador',
+      titulo: 'Agrega un cobrador',
+      descripcion: 'Crea su cuenta y compartele los datos de acceso',
+      completada: cobradores > 0,
+      href: '/cobradores/nuevo',
+      icono: 'cobrador',
+    },
+    {
+      id: 'instalar-app',
+      titulo: 'Descarga la app en tu celular',
+      descripcion: 'Instala desde el navegador para acceso rapido',
+      completada: false, // se verifica en el cliente (PWA standalone)
+      href: '/tutoriales',
+      icono: 'instalar',
+      clientCheck: 'pwa-installed',
     },
     {
       id: 'cierre-caja',

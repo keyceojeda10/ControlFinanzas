@@ -28,6 +28,16 @@ const SPOTLIGHT_TARGETS = {
     mensaje: 'Cierra la caja del dia aqui',
     posicion: 'bottom',
   },
+  'crear-cobrador': {
+    selector: '[data-tour="cobradores"]',
+    mensaje: 'Agrega un cobrador para tu equipo',
+    posicion: 'bottom',
+  },
+  'instalar-app': {
+    selector: null,
+    mensaje: 'Descarga la app en tu celular',
+    posicion: 'bottom',
+  },
 }
 
 export function useOnboarding(esOwner) {
@@ -47,14 +57,30 @@ export function useOnboarding(esOwner) {
     try {
       const res = await fetch('/api/onboarding/progreso')
       const data = await res.json()
-      setMisiones(data.misiones || [])
-      setCompletadas(data.completadas || 0)
-      setTotal(data.total || 5)
-      setProgreso(data.progreso || 0)
-      setCompletado(data.completado || false)
+      let misionesList = data.misiones || []
+
+      // Client-side check: marcar 'instalar-app' si la PWA ya está instalada
+      if (typeof window !== 'undefined') {
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+          || window.navigator.standalone === true
+        if (isStandalone) {
+          misionesList = misionesList.map(m =>
+            m.clientCheck === 'pwa-installed' ? { ...m, completada: true } : m
+          )
+        }
+      }
+
+      const completadasCount = misionesList.filter(m => m.completada).length
+      const totalCount = misionesList.length
+
+      setMisiones(misionesList)
+      setCompletadas(completadasCount)
+      setTotal(totalCount)
+      setProgreso(totalCount > 0 ? Math.round((completadasCount / totalCount) * 100) : 0)
+      setCompletado(completadasCount === totalCount && totalCount > 0)
       setShowWizard(data.showWizard || false)
       setWizardInitialStep(data.wizardInitialStep || 0)
-      if (data.completado) setDismissed(true)
+      if (completadasCount === totalCount && totalCount > 0) setDismissed(true)
     } catch {
       setCompletado(true)
       setDismissed(true)

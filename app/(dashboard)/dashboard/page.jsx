@@ -9,6 +9,7 @@ import { useOnboarding } from '@/components/onboarding/useOnboarding'
 import OnboardingChecklist from '@/components/onboarding/OnboardingChecklist'
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
 import SpotlightOverlay from '@/components/onboarding/SpotlightOverlay'
+import CobradorOnboarding from '@/components/onboarding/CobradorOnboarding'
 
 function Skeleton({ className = '' }) {
   return <div className={`animate-pulse bg-[#2a2a2a] rounded-[12px] ${className}`} />
@@ -187,6 +188,9 @@ export default function DashboardPage() {
           onDismiss={onboarding.dismiss}
           onSpotlight={onboarding.showSpotlight}
         />
+      )}
+      {!authLoading && !esOwner && session?.user?.id && (
+        <CobradorOnboarding userId={session.user.id} />
       )}
       <SpotlightOverlay
         spotlight={onboarding.spotlight}
