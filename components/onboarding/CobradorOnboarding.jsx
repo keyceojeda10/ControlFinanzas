@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { InstallGuideModal } from '@/components/layout/InstallButton'
 
 const LS_KEY = 'cf_cobrador_onboarding_dismissed'
 
@@ -41,8 +42,8 @@ const PASOS = [
   },
   {
     titulo: 'Instala la app',
-    descripcion: 'Puedes instalar la app en tu celular para acceder mas rapido. Mira como en Tutoriales.',
-    href: '/tutoriales',
+    descripcion: 'Instala la app en tu celular para acceder mas rapido y usarla sin internet.',
+    isInstall: true,
     icono: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -54,6 +55,7 @@ const PASOS = [
 export default function CobradorOnboarding({ userId }) {
   const [visible, setVisible] = useState(false)
   const [expanded, setExpanded] = useState(true)
+  const [showInstallGuide, setShowInstallGuide] = useState(false)
 
   useEffect(() => {
     const key = userId ? `${LS_KEY}_${userId}` : LS_KEY
@@ -95,25 +97,48 @@ export default function CobradorOnboarding({ userId }) {
       {expanded && (
         <div className="px-2 pb-3 border-t border-[#2a2a2a]">
           <div className="space-y-0.5 mt-2">
-            {PASOS.map((paso, i) => (
-              <Link
-                key={i}
-                href={paso.href}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-[10px] hover:bg-[#222222] transition-all group"
-              >
-                <div className="w-7 h-7 rounded-full border-2 border-[#3a3a3a] flex items-center justify-center shrink-0 text-[#888888] group-hover:border-[#3b82f6] group-hover:text-[#3b82f6] transition-colors">
-                  {paso.icono}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white group-hover:text-[#3b82f6] transition-colors">{paso.titulo}</p>
-                  <p className="text-[10px] text-[#555555]">{paso.descripcion}</p>
-                </div>
-                <svg className="w-4 h-4 text-[#555555] group-hover:text-[#3b82f6] transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
-            ))}
+            {PASOS.map((paso, i) => {
+              if (paso.isInstall) {
+                return (
+                  <button
+                    key={i}
+                    onClick={() => setShowInstallGuide(true)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] hover:bg-[#222222] transition-all group text-left"
+                  >
+                    <div className="w-7 h-7 rounded-full border-2 border-[#3a3a3a] flex items-center justify-center shrink-0 text-[#888888] group-hover:border-[#3b82f6] group-hover:text-[#3b82f6] transition-colors">
+                      {paso.icono}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-white group-hover:text-[#3b82f6] transition-colors">{paso.titulo}</p>
+                      <p className="text-[10px] text-[#555555]">{paso.descripcion}</p>
+                    </div>
+                    <svg className="w-4 h-4 text-[#555555] group-hover:text-[#3b82f6] transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                )
+              }
+              return (
+                <Link
+                  key={i}
+                  href={paso.href}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-[10px] hover:bg-[#222222] transition-all group"
+                >
+                  <div className="w-7 h-7 rounded-full border-2 border-[#3a3a3a] flex items-center justify-center shrink-0 text-[#888888] group-hover:border-[#3b82f6] group-hover:text-[#3b82f6] transition-colors">
+                    {paso.icono}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white group-hover:text-[#3b82f6] transition-colors">{paso.titulo}</p>
+                    <p className="text-[10px] text-[#555555]">{paso.descripcion}</p>
+                  </div>
+                  <svg className="w-4 h-4 text-[#555555] group-hover:text-[#3b82f6] transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
+              )
+            })}
           </div>
+          {showInstallGuide && <InstallGuideModal onClose={() => setShowInstallGuide(false)} />}
 
           <div className="flex justify-center mt-3 mb-1">
             <button

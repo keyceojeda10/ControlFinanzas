@@ -78,7 +78,7 @@ export async function GET() {
       titulo: 'Descarga la app en tu celular',
       descripcion: 'Instala desde el navegador para acceso rapido',
       completada: false, // se verifica en el cliente (PWA standalone)
-      href: '/tutoriales',
+      href: '#',
       icono: 'instalar',
       clientCheck: 'pwa-installed',
     },

@@ -1,6 +1,8 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
+import { InstallGuideModal } from '@/components/layout/InstallButton'
 
 const ICONOS = {
   cliente: (
@@ -41,7 +43,9 @@ const ICONOS = {
 }
 
 export default function MissionItem({ mision, onSpotlight }) {
+  const [showInstallGuide, setShowInstallGuide] = useState(false)
   const icono = ICONOS[mision.icono] || ICONOS.cliente
+  const isInstallMission = mision.id === 'instalar-app'
 
   if (mision.completada) {
     return (
@@ -56,6 +60,30 @@ export default function MissionItem({ mision, onSpotlight }) {
           <p className="text-sm font-medium text-[#22c55e] line-through opacity-70">{mision.titulo}</p>
         </div>
       </div>
+    )
+  }
+
+  // Install mission opens the smart guide modal instead of navigating
+  if (isInstallMission) {
+    return (
+      <>
+        <button
+          onClick={() => setShowInstallGuide(true)}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] hover:bg-[#222222] transition-all group text-left"
+        >
+          <div className="w-7 h-7 rounded-full border-2 border-[#3a3a3a] flex items-center justify-center shrink-0 text-[#888888] group-hover:border-[#f5c518] group-hover:text-[#f5c518] transition-colors">
+            {icono}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-white group-hover:text-[#f5c518] transition-colors">{mision.titulo}</p>
+            <p className="text-[10px] text-[#555555]">{mision.descripcion}</p>
+          </div>
+          <svg className="w-4 h-4 text-[#555555] group-hover:text-[#f5c518] transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+        {showInstallGuide && <InstallGuideModal onClose={() => setShowInstallGuide(false)} />}
+      </>
     )
   }
 

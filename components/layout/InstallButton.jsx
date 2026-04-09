@@ -268,7 +268,7 @@ function renderBoldText(text) {
 }
 
 // ═══ MODAL DE INSTRUCCIONES (compartido) ═══
-function InstallGuideModal({ onClose }) {
+export function InstallGuideModal({ onClose }) {
   const instructions = getInstructions()
 
   return (
