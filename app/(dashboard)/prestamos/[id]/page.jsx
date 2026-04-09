@@ -56,6 +56,7 @@ export default function PrestamoDetallePage({ params }) {
   const [confirmCancel, setConfirmCancel] = useState(false)
   const [anulando,     setAnulando]     = useState(null)   // pagoId que se está anulando
   const [comprobante,  setComprobante]  = useState(null)   // pagoId del comprobante expandido
+  const [editandoFecha, setEditandoFecha] = useState(null) // pagoId cuya fecha se edita
   const [rutaNav,      setRutaNav]     = useState(null)
   const [modalRecargo,  setModalRecargo]  = useState(false)
   const [modalDescuento, setModalDescuento] = useState(false)
@@ -538,6 +539,23 @@ export default function PrestamoDetallePage({ params }) {
                     )}
                     {session?.user?.rol === 'owner' && (
                       <button
+                        onClick={() => setEditandoFecha(editandoFecha === pago.id ? null : pago.id)}
+                        className={[
+                          'shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors',
+                          editandoFecha === pago.id
+                            ? 'text-[#3b82f6] bg-[rgba(59,130,246,0.1)]'
+                            : 'text-[#888888] hover:text-[#3b82f6] hover:bg-[rgba(59,130,246,0.08)]',
+                        ].join(' ')}
+                        title="Editar fecha"
+                        aria-label="Editar fecha"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </button>
+                    )}
+                    {session?.user?.rol === 'owner' && (
+                      <button
                         onClick={async () => {
                           if (anulando) return
                           if (!confirm(`¿Anular pago de ${formatCOP(pago.montoPagado)}?`)) return
@@ -585,6 +603,48 @@ export default function PrestamoDetallePage({ params }) {
                           prestamo={prestamo}
                           pago={{ montoPagado: pago.montoPagado, fechaPago: pago.fechaPago }}
                         />
+                      </div>
+                    </div>
+                  )}
+                  {/* Panel de editar fecha expandible */}
+                  {editandoFecha === pago.id && (
+                    <div className="pb-3 pl-1">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="date"
+                          defaultValue={new Date(new Date(pago.fechaPago).getTime() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10)}
+                          className="h-9 rounded-[10px] border border-[#2a2a2a] bg-[#111111] px-3 text-sm text-white focus:outline-none focus:border-[#3b82f6] transition-colors"
+                          id={`fecha-pago-${pago.id}`}
+                        />
+                        <button
+                          onClick={async () => {
+                            const input = document.getElementById(`fecha-pago-${pago.id}`)
+                            if (!input?.value) return
+                            // Crear fecha a mediodía para evitar problemas de timezone
+                            const nuevaFecha = new Date(input.value + 'T12:00:00')
+                            try {
+                              const res = await fetch(`/api/pagos/${pago.id}`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ fechaPago: nuevaFecha.toISOString() }),
+                              })
+                              if (!res.ok) throw new Error()
+                              setEditandoFecha(null)
+                              await fetchPrestamo()
+                            } catch {
+                              setError('No se pudo cambiar la fecha.')
+                            }
+                          }}
+                          className="h-9 px-3 rounded-[10px] text-xs font-medium text-white bg-[#3b82f6] hover:bg-[#2563eb] transition-colors active:scale-[0.97]"
+                        >
+                          Guardar
+                        </button>
+                        <button
+                          onClick={() => setEditandoFecha(null)}
+                          className="h-9 px-2 rounded-[10px] text-xs text-[#888888] hover:text-white transition-colors"
+                        >
+                          Cancelar
+                        </button>
                       </div>
                     </div>
                   )}

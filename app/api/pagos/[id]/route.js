@@ -5,6 +5,43 @@ import { prisma }           from '@/lib/prisma'
 import { calcularEstadoCliente, calcularSaldoPendiente } from '@/lib/calculos'
 import { registrarMovimientoCapital } from '@/lib/capital'
 
+// ─── PATCH /api/pagos/[id] — Editar fecha del pago (solo owner) ──
+export async function PATCH(request, { params }) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.organizationId) {
+    return Response.json({ error: 'No autorizado' }, { status: 401 })
+  }
+  if (session.user.rol !== 'owner') {
+    return Response.json({ error: 'Solo el administrador puede editar pagos' }, { status: 403 })
+  }
+
+  const { id: pagoId } = await params
+  const { organizationId } = session.user
+  const { fechaPago } = await request.json()
+
+  if (!fechaPago) {
+    return Response.json({ error: 'La fecha es requerida' }, { status: 400 })
+  }
+
+  const nuevaFecha = new Date(fechaPago)
+  if (isNaN(nuevaFecha.getTime())) {
+    return Response.json({ error: 'Fecha inválida' }, { status: 400 })
+  }
+
+  const pago = await prisma.pago.findFirst({
+    where: { id: pagoId, organizationId },
+  })
+  if (!pago) return Response.json({ error: 'Pago no encontrado' }, { status: 404 })
+
+  await prisma.pago.update({
+    where: { id: pagoId },
+    data: { fechaPago: nuevaFecha },
+  })
+
+  return Response.json({ ok: true })
+}
+
+// ─── DELETE /api/pagos/[id] — Anular pago (solo owner) ──────────
 export async function DELETE(request, { params }) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.organizationId) {
