@@ -1,22 +1,37 @@
 'use client'
 // components/layout/VerificarEmailBanner.jsx
 // Banner persistente que aparece cuando el usuario no ha verificado su email.
-// Se muestra dentro del dashboard durante las primeras 24h (periodo de gracia).
+// Consulta la DB para verificar el estado real (no confiar en el JWT estático).
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 
 export default function VerificarEmailBanner() {
   const { data: session } = useSession()
+  const [verificado, setVerificado] = useState(null) // null = loading, true/false
   const [enviando, setEnviando]   = useState(false)
   const [reenviado, setReenviado] = useState(false)
 
-  // Solo mostrar si el email NO está verificado
-  if (!session?.user || session.user.emailVerificado !== false) return null
-  // No mostrar para superadmin
-  if (session.user.rol === 'superadmin') return null
+  const email = session?.user?.email
+  const rol   = session?.user?.rol
 
-  const email = session.user.email
+  // Consultar estado real de verificación
+  useEffect(() => {
+    if (!email || rol === 'superadmin') return
+    // Si el JWT ya dice verificado, confiar y no consultar
+    if (session?.user?.emailVerificado === true) {
+      setVerificado(true)
+      return
+    }
+    // Consultar la DB
+    fetch('/api/auth/estado-verificacion')
+      .then(r => r.json())
+      .then(d => setVerificado(d.verificado === true))
+      .catch(() => setVerificado(true)) // en caso de error, no bloquear
+  }, [email, rol, session?.user?.emailVerificado])
+
+  // No mostrar mientras carga, si ya está verificado, o si es superadmin
+  if (!session?.user || verificado !== false || rol === 'superadmin') return null
 
   const handleReenviar = async () => {
     if (enviando || reenviado) return

@@ -64,11 +64,15 @@ export function useOnboarding(esOwner) {
   }, [])
 
   useEffect(() => {
-    if (!esOwner) {
+    // null = auth aún cargando, no hacer nada todavía
+    if (esOwner === null || esOwner === undefined) return
+    // false = explícitamente no es owner (cobrador), ocultar onboarding
+    if (esOwner === false) {
       setDismissed(true)
       setLoading(false)
       return
     }
+    // true = es owner, cargar progreso
     fetchProgreso()
   }, [esOwner, fetchProgreso])
 

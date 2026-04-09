@@ -82,7 +82,7 @@ export default function DashboardPage() {
   const [horaActual, setHoraActual] = useState('')
 
   const { syncMeta, startBulkSync, bulkSyncing, bulkProgress, lastSyncedAt } = useOffline()
-  const onboarding = useOnboarding(esOwner && !authLoading)
+  const onboarding = useOnboarding(authLoading ? null : esOwner)
 
   useEffect(() => { setMounted(true) }, [])
 
