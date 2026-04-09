@@ -512,14 +512,15 @@ export default function OrgDetallePage() {
       <Card>
         <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">Usuarios</p>
         <div className="space-y-0">
-          <div className="hidden sm:grid grid-cols-4 gap-2 text-[10px] text-[#555555] font-medium uppercase pb-2 border-b border-[#2a2a2a]">
+          <div className="hidden sm:grid grid-cols-[1.2fr_1.5fr_0.8fr_0.8fr_0.9fr] gap-2 text-[10px] text-[#555555] font-medium uppercase pb-2 border-b border-[#2a2a2a]">
             <span>Nombre</span>
             <span>Email</span>
             <span className="text-center">Rol</span>
             <span className="text-center">Estado</span>
+            <span className="text-center">Acciones</span>
           </div>
           {(org.users ?? []).map((u) => (
-            <div key={u.id} className="grid grid-cols-2 sm:grid-cols-4 gap-2 py-2.5 border-b border-[#2a2a2a] last:border-0 items-center">
+            <div key={u.id} className="grid grid-cols-2 sm:grid-cols-[1.2fr_1.5fr_0.8fr_0.8fr_0.9fr] gap-2 py-2.5 border-b border-[#2a2a2a] last:border-0 items-center">
               <p className="text-sm font-medium text-[white]">{u.nombre}</p>
               <p className="text-xs text-[#888888] truncate">{u.email}</p>
               <div className="text-center">
@@ -534,6 +535,29 @@ export default function OrgDetallePage() {
                   <Badge variant={u.activo ? 'green' : 'red'}>
                     {u.activo ? 'Activo' : 'Inactivo'}
                   </Badge>
+                </button>
+              </div>
+              <div className="text-center">
+                <button
+                  onClick={() => {
+                    const nueva = prompt(`Nueva contraseña para ${u.nombre} (${u.email}):\n\nMínimo 6 caracteres.`)
+                    if (nueva == null) return
+                    const clean = nueva.trim()
+                    if (clean.length < 6) {
+                      alert('La contraseña debe tener al menos 6 caracteres')
+                      return
+                    }
+                    if (!confirm(`¿Restablecer la contraseña de ${u.nombre}?\n\nEl usuario deberá usar la nueva contraseña en su próximo inicio de sesión.`)) return
+                    ejecutarAccion('resetearPassword', { userId: u.id, nuevaPassword: clean })
+                  }}
+                  disabled={!!accionando}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium text-[#f5c518] bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.2)] hover:bg-[rgba(245,197,24,0.15)] transition-all disabled:opacity-50"
+                  title="Restablecer contraseña"
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                  </svg>
+                  Reset
                 </button>
               </div>
             </div>

@@ -1,6 +1,7 @@
 // app/api/admin/organizaciones/[id]/route.js — Detalle y gestión de organización
 import { NextResponse }     from 'next/server'
 import { getServerSession } from 'next-auth'
+import bcrypt               from 'bcryptjs'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { enviarEmail, emailPagoAprobado } from '@/lib/email'
@@ -162,6 +163,34 @@ export async function PATCH(req, { params }) {
       },
     })
     return NextResponse.json({ ok: true, mensaje: `Cobradores extra actualizados a ${cantidad}` })
+  }
+
+  if (accion === 'resetearPassword' && body.userId) {
+    const user = await prisma.user.findFirst({
+      where: { id: body.userId, organizationId: id },
+    })
+    if (!user) return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
+
+    const nuevaPassword = String(body.nuevaPassword || '').trim()
+    if (nuevaPassword.length < 6) {
+      return NextResponse.json({ error: 'La contraseña debe tener al menos 6 caracteres' }, { status: 400 })
+    }
+
+    const hash = await bcrypt.hash(nuevaPassword, 10)
+    await prisma.user.update({
+      where: { id: body.userId },
+      data: { password: hash },
+    })
+
+    await prisma.adminLog.create({
+      data: {
+        adminId:        session.user.id,
+        organizacionId: id,
+        accion:         'resetear_password',
+        detalle:        `Contraseña restablecida para "${user.nombre}" (${user.email})`,
+      },
+    })
+    return NextResponse.json({ ok: true, mensaje: 'Contraseña restablecida' })
   }
 
   if (accion === 'toggleUsuario' && body.userId) {
