@@ -40,11 +40,20 @@ export default function PrestamoCard({ prestamo: p }) {
       {/* Top row */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2.5">
-          <div className={[
-            'w-8 h-8 rounded-full flex items-center justify-center shrink-0',
-            enMora ? 'bg-[rgba(239,68,68,0.15)]' : 'bg-[rgba(245,197,24,0.15)]',
-          ].join(' ')}>
-            <span className={['text-xs font-bold', enMora ? 'text-[#ef4444]' : 'text-[#f5c518]'].join(' ')}>
+          {/* Progress ring avatar */}
+          <div className="relative w-9 h-9 shrink-0">
+            <svg className="w-9 h-9 -rotate-90" viewBox="0 0 36 36">
+              <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="2.5" />
+              <circle
+                cx="18" cy="18" r="15" fill="none"
+                stroke={porcentaje === 100 ? '#10b981' : enMora ? '#ef4444' : '#f5c518'}
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeDasharray={`${porcentaje * 94.25 / 100} 94.25`}
+                className="transition-all duration-500"
+              />
+            </svg>
+            <span className={['absolute inset-0 flex items-center justify-center text-[11px] font-bold', enMora ? 'text-[#ef4444]' : 'text-[#f5c518]'].join(' ')}>
               {p.cliente?.nombre?.[0]?.toUpperCase() ?? '?'}
             </span>
           </div>

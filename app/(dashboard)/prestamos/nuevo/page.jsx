@@ -6,6 +6,7 @@ import { useRouter, useSearchParams }              from 'next/navigation'
 import { useAuth }                                 from '@/hooks/useAuth'
 import { Button }                                  from '@/components/ui/Button'
 import { Input }                                   from '@/components/ui/Input'
+import MoneyInput                                  from '@/components/ui/MoneyInput'
 import { calcularPrestamo, formatCOP }             from '@/lib/calculos'
 import ResumenCalculo                              from '@/components/prestamos/ResumenCalculo'
 
@@ -265,14 +266,11 @@ function NuevoPrestamo() {
           )}
 
           {/* Monto */}
-          <Input
+          <MoneyInput
             label={modo === 'mercancia' ? 'Valor del artículo (COP) *' : 'Monto prestado (COP) *'}
-            type="number"
-            inputMode="numeric"
-            placeholder={modo === 'mercancia' ? 'Ej: 100000' : 'Ej: 500000'}
+            placeholder={modo === 'mercancia' ? 'Ej: 100.000' : 'Ej: 500.000'}
             value={monto}
             onChange={(e) => setMonto(e.target.value)}
-            prefix="$"
           />
 
           {/* Modo mercancía: # cuotas + frecuencia primero */}
@@ -334,14 +332,22 @@ function NuevoPrestamo() {
             </div>
           </div>
 
-          {/* Frecuencia */}
+          {/* Frecuencia – segmented control */}
           <div className="flex flex-col gap-1.5">
             <p className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em]">Frecuencia de cobro</p>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="relative flex h-10 rounded-[12px] bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] p-[3px]">
+              {/* Sliding pill */}
+              <div
+                className="absolute top-[3px] bottom-[3px] rounded-[10px] bg-[#f5c518] transition-all duration-200 ease-out"
+                style={{
+                  width: `calc(25% - 1.5px)`,
+                  left: `calc(${['diario','semanal','quincenal','mensual'].indexOf(frecuencia) * 25}% + 1.5px)`,
+                }}
+              />
               {[
                 { value: 'diario', label: 'Diario' },
                 { value: 'semanal', label: 'Semanal' },
-                { value: 'quincenal', label: 'Quincenal' },
+                { value: 'quincenal', label: 'Quinc.' },
                 { value: 'mensual', label: 'Mensual' },
               ].map((f) => (
                 <button
@@ -349,10 +355,8 @@ function NuevoPrestamo() {
                   type="button"
                   onClick={() => setFrecuencia(f.value)}
                   className={[
-                    'h-9 rounded-[10px] border text-sm font-medium transition-all cursor-pointer',
-                    frecuencia === f.value
-                      ? 'bg-[rgba(245,197,24,0.15)] border-[#f5c518] text-[#f5c518]'
-                      : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#1a1a1a]',
+                    'relative z-[1] flex-1 text-xs font-semibold transition-colors duration-200 cursor-pointer rounded-[10px]',
+                    frecuencia === f.value ? 'text-[#0a0a0a]' : 'text-[#888888]',
                   ].join(' ')}
                 >
                   {f.label}
@@ -400,14 +404,11 @@ function NuevoPrestamo() {
 
             {esEnCurso && (
               <div className="mt-3 space-y-2">
-                <Input
+                <MoneyInput
                   label="Total ya abonado (COP)"
-                  type="number"
-                  inputMode="numeric"
-                  placeholder="Ej: 150000"
+                  placeholder="Ej: 150.000"
                   value={yaAbonado}
                   onChange={(e) => setYaAbonado(e.target.value)}
-                  prefix="$"
                 />
                 {calculo && Number(yaAbonado) > 0 && (
                   <div className="bg-[#111111] border border-[#2a2a2a] rounded-[10px] px-3 py-2.5 space-y-1">

@@ -9,6 +9,7 @@ import { Input }       from '@/components/ui/Input'
 import BotonWhatsApp        from '@/components/ui/BotonWhatsApp'
 import BotonCompartir       from '@/components/ui/BotonCompartir'
 import BotonImprimirRecibo  from '@/components/ui/BotonImprimirRecibo'
+import MoneyInput           from '@/components/ui/MoneyInput'
 import { formatCOP } from '@/lib/calculos'
 import { guardarPagoPendiente, actualizarPrestamoOffline }  from '@/lib/offline'
 
@@ -270,15 +271,22 @@ export default function RegistrarPago({
         </div>
 
         {/* Slider de abono rápido por días */}
-        {tipo !== 'capital' && (
+        {tipo !== 'capital' && (() => {
+          const val = diasAbonados || 1
+          const SNAPS = [7, 15, 30]
+          const isSnap = SNAPS.includes(val)
+          const snapLabel = val === 7 ? '1 sem' : val === 15 ? 'Quinc.' : val === 30 ? '1 mes' : null
+          return (
           <div className="border-t border-[#2a2a2a] pt-4">
             <div className="flex items-center justify-between mb-3">
               <p className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em]">
                 Abono rápido por días
               </p>
               {diasAbonados && (
-                <span className="text-sm font-bold text-[#22c55e] font-mono-display">
-                  {diasAbonados} {diasAbonados === 1 ? 'día' : 'días'} — {formatCOP(Number(monto))}
+                <span className={`text-sm font-bold font-mono-display transition-colors ${isSnap ? 'text-[#f5c518]' : 'text-[#22c55e]'}`}>
+                  {diasAbonados} {diasAbonados === 1 ? 'día' : 'días'}
+                  {snapLabel && <span className="text-[10px] font-normal text-[#888888] ml-1">({snapLabel})</span>}
+                  {' — '}{formatCOP(Number(monto))}
                 </span>
               )}
             </div>
@@ -286,29 +294,41 @@ export default function RegistrarPago({
               type="range"
               min={1}
               max={30}
-              value={diasAbonados || 1}
+              value={val}
               onChange={(e) => handleAbonoDias(Number(e.target.value))}
               className="w-full h-2 rounded-full appearance-none cursor-pointer"
               style={{
-                background: `linear-gradient(to right, #22c55e 0%, #22c55e ${((diasAbonados || 1) - 1) / 29 * 100}%, #2a2a2a ${((diasAbonados || 1) - 1) / 29 * 100}%, #2a2a2a 100%)`,
+                background: `linear-gradient(to right, #22c55e 0%, #22c55e ${(val - 1) / 29 * 100}%, #2a2a2a ${(val - 1) / 29 * 100}%, #2a2a2a 100%)`,
               }}
             />
-            <div className="flex justify-between mt-1.5">
-              <span className="text-[10px] text-[#555555]">1 día</span>
-              <span className="text-[10px] text-[#555555]">15</span>
-              <span className="text-[10px] text-[#555555]">30 días</span>
+            {/* Tick marks */}
+            <div className="relative h-5 mt-1">
+              <span className="absolute left-0 text-[10px] text-[#555555]">1</span>
+              {SNAPS.map((s) => {
+                const pct = ((s - 1) / 29 * 100)
+                const active = val === s
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => handleAbonoDias(s)}
+                    className={`absolute -translate-x-1/2 text-[10px] font-medium transition-all cursor-pointer ${active ? 'text-[#f5c518] scale-110' : 'text-[#666666] hover:text-[#999999]'}`}
+                    style={{ left: `${pct}%` }}
+                  >
+                    {s}
+                  </button>
+                )
+              })}
             </div>
           </div>
-        )}
+          )
+        })()}
 
         <div className="border-t border-[#2a2a2a] pt-4 space-y-4">
-          <Input
+          <MoneyInput
             label="Monto del pago *"
-            type="number"
-            inputMode="numeric"
             value={monto}
             onChange={(e) => { setMonto(e.target.value); setError('') }}
-            prefix="$"
           />
 
           <div className="flex flex-col gap-1.5">
