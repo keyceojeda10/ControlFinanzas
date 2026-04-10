@@ -127,6 +127,7 @@ export async function GET(request, { params }) {
       diasDesdeUltimoPago,
       cuota:     cuotaCliente,
       hoySinCobro: _hoySinCobro,
+      prestamoActivo: c.prestamos[0]?.id ?? null,
     }
   })
 
@@ -142,6 +143,7 @@ export async function GET(request, { params }) {
   return Response.json({
     id:          ruta.id,
     nombre:      ruta.nombre,
+    diasSinCobro: ruta.diasSinCobro,
     cobrador:    ruta.cobrador,
     clientes:    clientesEnriquecidos,
     esperadoHoy: Math.round(esperadoHoy),

@@ -11,6 +11,7 @@ import { Card }                      from '@/components/ui/Card'
 import { Modal }                     from '@/components/ui/Modal'
 import { SkeletonCard }              from '@/components/ui/Skeleton'
 import { formatCOP }                 from '@/lib/calculos'
+import DiasSinCobroSelector          from '@/components/ui/DiasSinCobroSelector'
 
 // Cargar mapa dinámicamente (evitar SSR con Leaflet)
 const RouteMap = dynamic(() => import('@/components/rutas/RouteMap'), { ssr: false })
@@ -190,6 +191,11 @@ export default function RutaDetallePage({ params }) {
   const [showMap,        setShowMap]        = useState(false)
   const [highlightId,    setHighlightId]    = useState(null)
   const [banner,         setBanner]         = useState(null)
+  const [pagandoRapido,  setPagandoRapido]  = useState(null) // clienteId while paying
+  const [pagoRapidoOk,   setPagoRapidoOk]   = useState(null) // clienteId after success
+  const [modalDiasSC,    setModalDiasSC]    = useState(false)
+  const [diasSCRuta,     setDiasSCRuta]     = useState([])
+  const [guardandoDSC,   setGuardandoDSC]   = useState(false)
 
   // Helper: fecha Colombia como string YYYY-MM-DD
   const getColombiaDateStr = () => {
@@ -289,6 +295,43 @@ export default function RutaDetallePage({ params }) {
       body:    JSON.stringify({ cobradorId: cobradorId || null }),
     })
     fetchRuta()
+  }
+
+  // Pago rápido: 1 cuota desde la lista de ruta
+  const pagoRapido = async (cliente) => {
+    if (!cliente.cuota || cliente.cuota <= 0 || pagandoRapido) return
+    // Find first active prestamo
+    const prestamoId = ruta.clientes.find(c => c.id === cliente.id)?.prestamoActivo
+    if (!prestamoId) return
+    setPagandoRapido(cliente.id)
+    try {
+      const res = await fetch(`/api/prestamos/${prestamoId}/pagos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ montoPagado: cliente.cuota, tipo: 'completo', diasAbonados: 1, metodoPago: 'efectivo' }),
+      })
+      if (res.ok) {
+        setPagoRapidoOk(cliente.id)
+        setTimeout(() => { setPagoRapidoOk(null); fetchRuta() }, 1200)
+      }
+    } catch {} finally { setPagandoRapido(null) }
+  }
+
+  const abrirModalDSC = () => {
+    try { setDiasSCRuta(JSON.parse(ruta?.diasSinCobro || '[]')) } catch { setDiasSCRuta([]) }
+    setModalDiasSC(true)
+  }
+  const guardarDiasSCRuta = async () => {
+    setGuardandoDSC(true)
+    try {
+      await fetch(`/api/rutas/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ diasSinCobro: diasSCRuta }),
+      })
+      setModalDiasSC(false)
+      fetchRuta()
+    } catch {} finally { setGuardandoDSC(false) }
   }
 
   const abrirModalClientes = async () => {
@@ -665,7 +708,7 @@ export default function RutaDetallePage({ params }) {
             </button>
           )}
         </div>
-        {esOwner && (
+        {esOwner && (<>
           <select
             value={ruta.cobrador?.id ?? ''}
             onChange={(e) => cambiarCobrador(e.target.value)}
@@ -676,8 +719,44 @@ export default function RutaDetallePage({ params }) {
               <option key={c.id} value={c.id}>{c.nombre}</option>
             ))}
           </select>
-        )}
+          <button
+            onClick={abrirModalDSC}
+            className="w-full flex items-center justify-between h-9 rounded-[10px] border border-[#2a2a2a] bg-[#0a0a0a] text-xs text-[#888888] px-3 mt-2 hover:border-[#f59e0b] hover:text-[#f59e0b] transition-all cursor-pointer"
+          >
+            <span className="flex items-center gap-2">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              Días sin cobro
+            </span>
+            {ruta.diasSinCobro && JSON.parse(ruta.diasSinCobro).length > 0 && (
+              <span className="text-[10px] font-medium text-[#f59e0b]">
+                {JSON.parse(ruta.diasSinCobro).length} {JSON.parse(ruta.diasSinCobro).length === 1 ? 'día' : 'días'}
+              </span>
+            )}
+          </button>
+        </>)}
       </Card>
+
+      {/* Modal días sin cobro de ruta */}
+      <Modal open={modalDiasSC} onClose={() => setModalDiasSC(false)} title="Días sin cobro de la ruta" footer={
+        <>
+          <Button variant="secondary" onClick={() => setModalDiasSC(false)}>Cancelar</Button>
+          <Button onClick={guardarDiasSCRuta} loading={guardandoDSC}>Guardar</Button>
+        </>
+      }>
+        <div className="space-y-3">
+          <p className="text-xs text-[#888888] leading-snug">
+            Los clientes de esta ruta no serán cobrados estos días y no se les generará mora.
+          </p>
+          <DiasSinCobroSelector value={diasSCRuta} onChange={setDiasSCRuta} />
+          {diasSCRuta.length > 0 && (
+            <p className="text-[10px] text-[#f59e0b]">
+              Aplica a todos los clientes de esta ruta (salvo los que tengan configuración propia).
+            </p>
+          )}
+        </div>
+      </Modal>
 
       {/* Métricas */}
       {(() => {
@@ -931,13 +1010,40 @@ export default function RutaDetallePage({ params }) {
                       </div>
                     </div>
 
-                    {/* Right side: cuota diaria */}
-                    <div className="text-right shrink-0">
+                    {/* Right side: cuota + quick pay */}
+                    <div className="flex items-center gap-2 shrink-0">
                       {c.cuota > 0 && (
-                        <>
+                        <div className="text-right">
                           <p className="text-[12px] font-bold text-[white] font-mono-display">{formatCOP(c.cuota)}</p>
                           <p className="text-[9px] text-[#444]">cuota/dia</p>
-                        </>
+                        </div>
+                      )}
+
+                      {/* Quick pay button */}
+                      {!isCompleted && c.cuota > 0 && !c.pagoHoy && c.prestamoActivo && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); pagoRapido(c) }}
+                          disabled={pagandoRapido === c.id}
+                          className={[
+                            'w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-90',
+                            pagoRapidoOk === c.id
+                              ? 'bg-[#22c55e] scale-110'
+                              : 'bg-[rgba(34,197,94,0.12)] border border-[rgba(34,197,94,0.3)] hover:bg-[rgba(34,197,94,0.25)]',
+                          ].join(' ')}
+                        >
+                          {pagandoRapido === c.id ? (
+                            <svg className="w-4 h-4 text-[#22c55e] animate-spin" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                            </svg>
+                          ) : pagoRapidoOk === c.id ? (
+                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                            </svg>
+                          ) : (
+                            <span className="text-[11px] font-bold text-[#22c55e]">$</span>
+                          )}
+                        </button>
                       )}
                     </div>
 

@@ -272,6 +272,24 @@ function NuevoPrestamo() {
             value={monto}
             onChange={(e) => setMonto(e.target.value)}
           />
+          {/* Quick monto chips */}
+          <div className="flex gap-1.5 flex-wrap -mt-1">
+            {[50000, 100000, 200000, 500000, 1000000].map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setMonto(String(v))}
+                className={[
+                  'px-2.5 h-7 rounded-[8px] text-[11px] font-medium transition-all cursor-pointer',
+                  String(monto) === String(v)
+                    ? 'bg-[rgba(245,197,24,0.15)] border border-[#f5c518] text-[#f5c518]'
+                    : 'bg-[rgba(255,255,255,0.03)] border border-[#2a2a2a] text-[#888888] hover:text-white hover:bg-[#1a1a1a]',
+                ].join(' ')}
+              >
+                {v >= 1000000 ? `${v / 1000000}M` : `${v / 1000}k`}
+              </button>
+            ))}
+          </div>
 
           {/* Modo mercancía: # cuotas + frecuencia primero */}
           {modo === 'mercancia' && (
