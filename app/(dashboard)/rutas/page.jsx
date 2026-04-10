@@ -267,7 +267,7 @@ export default function RutasPage() {
                           ? <span className="text-[#a855f7]">{r.cobrador.nombre}</span>
                           : 'Sin cobrador'
                         }
-                        <span className="mx-1.5 text-[#333]">·</span>
+                        <span className="mx-1.5 text-[#666]">·</span>
                         {r.cantidadClientes} cliente{r.cantidadClientes !== 1 ? 's' : ''}
                       </p>
                     </div>
@@ -286,11 +286,11 @@ export default function RutasPage() {
                 {/* Metrics row */}
                 <div className="flex gap-2 mb-3">
                   <div className="flex-1 bg-[rgba(255,255,255,0.03)] rounded-[10px] px-2.5 py-2">
-                    <p className="text-[9px] uppercase tracking-wider text-[#555] mb-0.5">Recaudado</p>
+                    <p className="text-[9px] uppercase tracking-wider text-[#888] mb-0.5">Recaudado</p>
                     <p className="text-xs font-bold text-[#22c55e] font-mono-display">{formatCOP(r.recaudadoHoy)}</p>
                   </div>
                   <div className="flex-1 bg-[rgba(255,255,255,0.03)] rounded-[10px] px-2.5 py-2">
-                    <p className="text-[9px] uppercase tracking-wider text-[#555] mb-0.5">Esperado</p>
+                    <p className="text-[9px] uppercase tracking-wider text-[#888] mb-0.5">Esperado</p>
                     <p className="text-xs font-bold text-[#999] font-mono-display">{formatCOP(r.esperadoHoy)}</p>
                   </div>
                 </div>

@@ -278,7 +278,7 @@ export default function MetricasPage() {
                     <span className="text-xs font-bold text-white font-mono-display">{f.count}</span>
                   </div>
                 ))}
-                {uso.topFeatures.length === 0 && <p className="text-xs text-[#555]">Sin datos aún</p>}
+                {uso.topFeatures.length === 0 && <p className="text-xs text-[#888]">Sin datos aún</p>}
               </div>
             </Card>
 
@@ -292,7 +292,7 @@ export default function MetricasPage() {
                     <span className="text-xs font-bold text-white font-mono-display">{p.count}</span>
                   </div>
                 ))}
-                {uso.topPages.length === 0 && <p className="text-xs text-[#555]">Sin datos aún</p>}
+                {uso.topPages.length === 0 && <p className="text-xs text-[#888]">Sin datos aún</p>}
               </div>
             </Card>
           </div>

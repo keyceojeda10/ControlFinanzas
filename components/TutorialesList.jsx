@@ -134,7 +134,7 @@ function CategorySection({ categoria, tutoriales, showCopyButton, onImageClick }
       <div className="flex items-center gap-2.5 mb-3 mt-2">
         <div className="w-2 h-2 rounded-full" style={{ background: categoria.color }} />
         <h2 className="text-sm font-bold text-white">{categoria.label}</h2>
-        <span className="text-[10px] text-[#555] bg-[#1a1a1a] px-2 py-0.5 rounded-full">
+        <span className="text-[10px] text-[#888] bg-[#1a1a1a] px-2 py-0.5 rounded-full">
           {tutoriales.length}
         </span>
       </div>

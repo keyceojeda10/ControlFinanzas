@@ -233,11 +233,11 @@ export default function ActividadPage() {
         </div>
       ) : items.length === 0 ? (
         <div className="text-center py-16">
-          <svg className="w-12 h-12 mx-auto text-[#333] mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-12 h-12 mx-auto text-[#666] mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
           </svg>
           <p className="text-sm text-[#777]">No hay actividad registrada</p>
-          <p className="text-xs text-[#555] mt-1">Las acciones aparecerán aquí automáticamente</p>
+          <p className="text-xs text-[#888] mt-1">Las acciones aparecerán aquí automáticamente</p>
         </div>
       ) : (
         <div className="rounded-[16px] overflow-hidden border border-[rgba(255,255,255,0.06)]" style={{ background: 'rgba(255,255,255,0.02)' }}>
@@ -274,7 +274,7 @@ export default function ActividadPage() {
                 </div>
 
                 {/* Tiempo a la derecha */}
-                <span className="text-[10px] text-[#555] shrink-0 whitespace-nowrap">{tiempoRelativo(item.createdAt)}</span>
+                <span className="text-[10px] text-[#888] shrink-0 whitespace-nowrap">{tiempoRelativo(item.createdAt)}</span>
               </div>
             )
           })}

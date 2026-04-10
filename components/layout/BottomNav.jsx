@@ -192,7 +192,7 @@ export default function BottomNav() {
             </div>
 
             <div className="px-4 pb-2">
-              <p className="text-[10px] font-semibold text-[#555] uppercase tracking-wider mb-3">Navegacion</p>
+              <p className="text-[10px] font-semibold text-[#888] uppercase tracking-wider mb-3">Navegacion</p>
             </div>
 
             <div className="px-2 pb-8 overflow-y-auto">

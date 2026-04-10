@@ -63,7 +63,7 @@ export default function NotificationPrompt() {
             <p className="text-sm font-medium text-white">Activar notificaciones</p>
             <p className="text-xs text-[#777] mt-0.5">Recibe alertas de pagos, mora y vencimientos.</p>
           </div>
-          <button onClick={() => setShow(false)} className="text-[#555] hover:text-[#888]">
+          <button onClick={() => setShow(false)} className="text-[#888] hover:text-[#bbb]">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>

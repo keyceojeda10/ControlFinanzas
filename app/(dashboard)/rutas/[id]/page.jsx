@@ -45,7 +45,7 @@ function HistorialCobros({ rutaId }) {
     <Card>
       <button onClick={cargar} className="w-full flex items-center justify-between">
         <span className="text-xs font-semibold text-[#888] uppercase tracking-wide">Historial de cobros</span>
-        <svg className={`w-4 h-4 text-[#555] transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className={`w-4 h-4 text-[#888] transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
@@ -59,7 +59,7 @@ function HistorialCobros({ rutaId }) {
               ))}
             </div>
           ) : !dias?.length ? (
-            <p className="text-sm text-[#555] text-center py-4">No hay historial aun</p>
+            <p className="text-sm text-[#888] text-center py-4">No hay historial aun</p>
           ) : (
             <div className="space-y-1.5">
               {dias.map((dia) => {
@@ -83,7 +83,7 @@ function HistorialCobros({ rutaId }) {
                       <p className="text-[14px] font-bold font-mono-display text-[#22c55e] shrink-0">
                         {formatCOP(dia.cobrado)}
                       </p>
-                      <svg className={`w-4 h-4 text-[#444] transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className={`w-4 h-4 text-[#777] transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     </button>
@@ -95,13 +95,13 @@ function HistorialCobros({ rutaId }) {
                         <div className="flex border-b border-[rgba(255,255,255,0.05)]">
                           <button
                             onClick={() => setTab('pagaron')}
-                            className={`flex-1 text-[11px] font-semibold py-2 transition-colors ${tab === 'pagaron' ? 'text-[#22c55e] border-b-2 border-[#22c55e]' : 'text-[#555]'}`}
+                            className={`flex-1 text-[11px] font-semibold py-2 transition-colors ${tab === 'pagaron' ? 'text-[#22c55e] border-b-2 border-[#22c55e]' : 'text-[#888]'}`}
                           >
                             Pagaron ({cantPagaron})
                           </button>
                           <button
                             onClick={() => setTab('noPagaron')}
-                            className={`flex-1 text-[11px] font-semibold py-2 transition-colors ${tab === 'noPagaron' ? 'text-[#ef4444] border-b-2 border-[#ef4444]' : 'text-[#555]'}`}
+                            className={`flex-1 text-[11px] font-semibold py-2 transition-colors ${tab === 'noPagaron' ? 'text-[#ef4444] border-b-2 border-[#ef4444]' : 'text-[#888]'}`}
                           >
                             No pagaron ({cantNoPagaron})
                           </button>
@@ -111,7 +111,7 @@ function HistorialCobros({ rutaId }) {
                         <div className="px-3 py-2 max-h-[200px] overflow-y-auto">
                           {tab === 'pagaron' ? (
                             cantPagaron === 0 ? (
-                              <p className="text-[11px] text-[#555] text-center py-2">Nadie pago este dia</p>
+                              <p className="text-[11px] text-[#888] text-center py-2">Nadie pago este dia</p>
                             ) : (
                               <div className="space-y-1">
                                 {dia.pagaron.map((c, i) => (
@@ -682,19 +682,19 @@ export default function RutaDetallePage({ params }) {
                   autoFocus
                 />
                 <button onClick={guardarNombre} className="text-[#22c55e] p-1"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg></button>
-                <button onClick={() => setEditandoNombre(false)} className="text-[#555] p-1"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+                <button onClick={() => setEditandoNombre(false)} className="text-[#888] p-1"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
               </div>
             ) : (
               <>
                 <div className="flex items-center gap-2">
                   <h1 className="text-lg font-bold text-[white]">{ruta.nombre}</h1>
                   {esOwner && (
-                    <button onClick={() => { setNuevoNombre(ruta.nombre); setEditandoNombre(true) }} className="text-[#333] hover:text-[#f5c518] transition-colors p-1">
+                    <button onClick={() => { setNuevoNombre(ruta.nombre); setEditandoNombre(true) }} className="text-[#666] hover:text-[#f5c518] transition-colors p-1">
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                     </button>
                   )}
                 </div>
-                <p className="text-[11px] text-[#555] mt-0.5">
+                <p className="text-[11px] text-[#888] mt-0.5">
                   {ruta.cobrador && <span className="text-[#a855f7]">{ruta.cobrador.nombre}</span>}
                   {ruta.cobrador && ' · '}
                   {ruta.clientes?.length ?? 0} clientes
@@ -703,7 +703,7 @@ export default function RutaDetallePage({ params }) {
             )}
           </div>
           {esOwner && !editandoNombre && (
-            <button onClick={eliminarRuta} disabled={eliminando} className="text-[#333] hover:text-[#ef4444] transition-colors p-2 disabled:opacity-50">
+            <button onClick={eliminarRuta} disabled={eliminando} className="text-[#666] hover:text-[#ef4444] transition-colors p-2 disabled:opacity-50">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
             </button>
           )}
@@ -775,7 +775,7 @@ export default function RutaDetallePage({ params }) {
                 </div>
                 <div className="flex items-baseline justify-between">
                   <p className="text-lg font-bold text-[#22c55e] font-mono-display">{formatCOP(ruta.recaudadoHoy)}</p>
-                  <p className="text-[11px] text-[#444] font-mono-display">de {formatCOP(ruta.esperadoHoy)}</p>
+                  <p className="text-[11px] text-[#777] font-mono-display">de {formatCOP(ruta.esperadoHoy)}</p>
                 </div>
                 <div className="h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden mt-2.5">
                   <div className="h-full rounded-full transition-all duration-700" style={{
@@ -795,7 +795,7 @@ export default function RutaDetallePage({ params }) {
                 </div>
                 <div className="flex items-baseline justify-between">
                   <p className="text-lg font-bold text-[white] font-mono-display">{formatCOP(ruta.carteraTotal)}</p>
-                  <p className="text-[11px] text-[#444] font-mono-display">de {formatCOP(ruta.capitalTotal)}</p>
+                  <p className="text-[11px] text-[#777] font-mono-display">de {formatCOP(ruta.capitalTotal)}</p>
                 </div>
                 <div className="h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden mt-2.5">
                   <div className="h-full rounded-full bg-[#06b6d4] transition-all duration-700" style={{ width: `${carteraPct}%` }} />
@@ -905,10 +905,10 @@ export default function RutaDetallePage({ params }) {
       {/* Lista de clientes */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-[11px] font-medium text-[#555] uppercase tracking-wide">
+          <span className="text-[11px] font-medium text-[#888] uppercase tracking-wide">
             Clientes ({ruta.clientes?.length ?? 0})
           </span>
-          <span className="text-[10px] text-[#444]">
+          <span className="text-[10px] text-[#777]">
             {guardandoOrden && <span className="text-[#888] flex items-center gap-1 inline-flex"><svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Guardando</span>}
             {ordenGuardado && <span className="text-[#22c55e]">Guardado</span>}
             {ordenOffline && <span className="text-[#f5c518]">Guardado offline</span>}
@@ -919,7 +919,7 @@ export default function RutaDetallePage({ params }) {
         {(!ruta.clientes || ruta.clientes.length === 0) ? (
           <div className="flex flex-col items-center py-8 text-center">
             <div className="w-12 h-12 rounded-full bg-[rgba(245,197,24,0.08)] flex items-center justify-center mb-3">
-              <svg className="w-6 h-6 text-[#555]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-[#888]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
@@ -976,11 +976,11 @@ export default function RutaDetallePage({ params }) {
                     className="flex flex-col items-center justify-center w-11 shrink-0 self-stretch rounded-l-[14px] cursor-grab active:cursor-grabbing touch-none select-none gap-1"
                     style={{ background: 'rgba(255,255,255,0.02)' }}
                   >
-                    <svg className="w-4 h-4 text-[#333]" viewBox="0 0 24 24" fill="currentColor">
+                    <svg className="w-4 h-4 text-[#666]" viewBox="0 0 24 24" fill="currentColor">
                       <circle cx="9" cy="7" r="1.5" /><circle cx="15" cy="7" r="1.5" />
                       <circle cx="9" cy="13" r="1.5" /><circle cx="15" cy="13" r="1.5" />
                     </svg>
-                    <span className="text-[10px] font-bold text-[#444]">{idx + 1}</span>
+                    <span className="text-[10px] font-bold text-[#777]">{idx + 1}</span>
                   </div>
 
                   {/* Client content — clickable */}
@@ -1015,7 +1015,7 @@ export default function RutaDetallePage({ params }) {
                       {c.cuota > 0 && (
                         <div className="text-right">
                           <p className="text-[12px] font-bold text-[white] font-mono-display">{formatCOP(c.cuota)}</p>
-                          <p className="text-[9px] text-[#444]">cuota/dia</p>
+                          <p className="text-[9px] text-[#777]">cuota/dia</p>
                         </div>
                       )}
 
@@ -1126,7 +1126,7 @@ export default function RutaDetallePage({ params }) {
           <div className="space-y-1">
             {/* Buscador */}
             <div className="relative mb-2">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#555]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#888]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
