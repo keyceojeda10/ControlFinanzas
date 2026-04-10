@@ -9,7 +9,7 @@ import { Input }       from '@/components/ui/Input'
 import BotonWhatsApp        from '@/components/ui/BotonWhatsApp'
 import BotonCompartir       from '@/components/ui/BotonCompartir'
 import BotonImprimirRecibo  from '@/components/ui/BotonImprimirRecibo'
-import { formatCOP, DIAS_ABONO } from '@/lib/calculos'
+import { formatCOP } from '@/lib/calculos'
 import { guardarPagoPendiente, actualizarPrestamoOffline }  from '@/lib/offline'
 
 export default function RegistrarPago({
@@ -269,28 +269,34 @@ export default function RegistrarPago({
           <span className="font-semibold text-white font-mono-display">{formatCOP(saldoPendiente)}</span>
         </div>
 
-        {/* Botones de abono rápido por días */}
+        {/* Slider de abono rápido por días */}
         {tipo !== 'capital' && (
           <div className="border-t border-[#2a2a2a] pt-4">
-            <p className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em] mb-2">
-              Abono rápido por días
-            </p>
-            <div className="grid grid-cols-5 gap-2">
-              {DIAS_ABONO.map((dias) => (
-                <button
-                  key={dias}
-                  type="button"
-                  onClick={() => handleAbonoDias(dias)}
-                  className={[
-                    'h-9 rounded-[10px] border text-sm font-medium transition-all cursor-pointer',
-                    diasAbonados === dias
-                      ? 'bg-[rgba(34,197,94,0.15)] border-[#22c55e] text-[#22c55e]'
-                      : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#1a1a1a]',
-                  ].join(' ')}
-                >
-                  {dias}d
-                </button>
-              ))}
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em]">
+                Abono rápido por días
+              </p>
+              {diasAbonados && (
+                <span className="text-sm font-bold text-[#22c55e] font-mono-display">
+                  {diasAbonados} {diasAbonados === 1 ? 'día' : 'días'} — {formatCOP(Number(monto))}
+                </span>
+              )}
+            </div>
+            <input
+              type="range"
+              min={1}
+              max={30}
+              value={diasAbonados || 1}
+              onChange={(e) => handleAbonoDias(Number(e.target.value))}
+              className="w-full h-2 rounded-full appearance-none cursor-pointer"
+              style={{
+                background: `linear-gradient(to right, #22c55e 0%, #22c55e ${((diasAbonados || 1) - 1) / 29 * 100}%, #2a2a2a ${((diasAbonados || 1) - 1) / 29 * 100}%, #2a2a2a 100%)`,
+              }}
+            />
+            <div className="flex justify-between mt-1.5">
+              <span className="text-[10px] text-[#555555]">1 día</span>
+              <span className="text-[10px] text-[#555555]">15</span>
+              <span className="text-[10px] text-[#555555]">30 días</span>
             </div>
           </div>
         )}
