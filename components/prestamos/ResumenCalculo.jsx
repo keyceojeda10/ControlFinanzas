@@ -14,7 +14,7 @@ const fmtFecha = (d) => {
 export default function ResumenCalculo({ calculo, visible = true }) {
   if (!visible) return null
 
-  const { totalAPagar, cuotaDiaria, totalInteres, fechaFin, frecuencia } = calculo ?? {}
+  const { totalAPagar, cuotaDiaria, ultimaCuota, totalInteres, fechaFin, frecuencia, numPeriodos } = calculo ?? {}
 
   const labelCuota = {
     diario:    'Cuota diaria',
@@ -23,9 +23,12 @@ export default function ResumenCalculo({ calculo, visible = true }) {
     mensual:   'Cuota mensual',
   }[frecuencia] ?? 'Cuota'
 
+  const tieneUltimaCuotaDiferente = ultimaCuota && cuotaDiaria && ultimaCuota !== cuotaDiaria && numPeriodos > 1
+
   const items = [
     { label: 'Total a pagar',  value: fmt(totalAPagar),  accent: '#f5c518' },
-    { label: labelCuota,       value: fmt(cuotaDiaria),  accent: '#10b981' },
+    { label: labelCuota,       value: fmt(cuotaDiaria),  accent: '#10b981',
+      sub: tieneUltimaCuotaDiferente ? `Última cuota: ${fmt(ultimaCuota)}` : null },
     { label: 'Total interés',  value: fmt(totalInteres), accent: '#f59e0b' },
     { label: 'Fecha de cierre', value: fmtFecha(fechaFin), accent: '#8b5cf6' },
   ]
@@ -36,7 +39,7 @@ export default function ResumenCalculo({ calculo, visible = true }) {
         Resumen del préstamo
       </p>
       <div className="grid grid-cols-2 gap-3">
-        {items.map(({ label, value, accent }) => (
+        {items.map(({ label, value, accent, sub }) => (
           <div
             key={label}
             className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[10px] px-3 py-2.5"
@@ -48,6 +51,7 @@ export default function ResumenCalculo({ calculo, visible = true }) {
             >
               {value ?? '—'}
             </p>
+            {sub && <p className="text-[10px] text-[#8b95a5] mt-0.5">{sub}</p>}
           </div>
         ))}
       </div>

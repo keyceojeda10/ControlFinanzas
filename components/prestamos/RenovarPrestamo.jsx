@@ -186,6 +186,14 @@ export default function RenovarPrestamo({
                     {formatCOP(calculo.cuotaDiaria)}
                   </span>
                 </div>
+                {calculo.ultimaCuota && calculo.ultimaCuota !== calculo.cuotaDiaria && calculo.numPeriodos > 1 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-[#888888]">Última cuota (ajuste)</span>
+                    <span className="text-sm font-semibold text-[#8b95a5] font-mono-display">
+                      {formatCOP(calculo.ultimaCuota)}
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-[#888888]">Total a pagar</span>
                   <span className="text-sm font-semibold text-white font-mono-display">

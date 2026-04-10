@@ -3,20 +3,26 @@
 
 import { useState, useEffect, use } from 'react'
 import { useRouter }                from 'next/navigation'
+import { useAuth }                  from '@/hooks/useAuth'
 import { Badge }                    from '@/components/ui/Badge'
 import { Card }                     from '@/components/ui/Card'
 import { SkeletonCard }             from '@/components/ui/Skeleton'
 import { formatCOP }                from '@/lib/calculos'
+import CompartirCredenciales        from '@/components/cobradores/CompartirCredenciales'
 import Link                         from 'next/link'
 
 export default function CobradorDetallePage({ params }) {
   const { id }      = use(params)
   const router      = useRouter()
+  const { session } = useAuth()
   const [data,    setData]    = useState(null)
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState('')
   const [toggling, setToggling] = useState(false)
   const [eliminando, setEliminando] = useState(false)
+  const [showReenviar, setShowReenviar] = useState(false)
+  const [nuevaPass, setNuevaPass]       = useState('')
+  const [reseteando, setReseteando]     = useState(false)
 
   const fetchCobrador = async () => {
     try {
@@ -95,6 +101,7 @@ export default function CobradorDetallePage({ params }) {
             <div>
               <h1 className="text-lg font-bold text-[white]">{data.nombre}</h1>
               <p className="text-sm text-[#888888]">{data.email}</p>
+              {data.telefono && <p className="text-xs text-[#666666]">{data.telefono}</p>}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -145,6 +152,102 @@ export default function CobradorDetallePage({ params }) {
           <p className="text-lg font-bold text-[white]">{clientes.length}</p>
         </Card>
       </div>
+
+      {/* Reenviar credenciales */}
+      <Card>
+        {!showReenviar ? (
+          <button
+            onClick={() => setShowReenviar(true)}
+            className="w-full flex items-center gap-3 text-left"
+          >
+            <div className="w-9 h-9 rounded-full bg-[rgba(59,130,246,0.12)] flex items-center justify-center shrink-0">
+              <svg className="w-4 h-4 text-[#3b82f6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-white">Enviar credenciales</p>
+              <p className="text-[10px] text-[#888888]">Resetea la contraseña y envía los datos de acceso por WhatsApp</p>
+            </div>
+            <svg className="w-4 h-4 text-[#555555] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        ) : !nuevaPass ? (
+          <div className="space-y-3">
+            <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Resetear contraseña</p>
+            <p className="text-xs text-[#888888]">
+              Se generará una contraseña temporal que podrás enviarle al cobrador.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowReenviar(false)}
+                className="flex-1 h-10 rounded-[12px] bg-[#1f1f1f] border border-[#2a2a2a] text-white text-sm font-medium transition-colors hover:bg-[#2a2a2a]"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={async () => {
+                  setReseteando(true)
+                  const tempPass = Math.random().toString(36).slice(-8) + Math.floor(Math.random() * 10)
+                  try {
+                    const res = await fetch(`/api/cobradores/${id}`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ password: tempPass }),
+                    })
+                    if (!res.ok) { setError('Error al resetear contraseña'); setShowReenviar(false); return }
+                    setNuevaPass(tempPass)
+                  } catch {
+                    setError('Error de conexión')
+                    setShowReenviar(false)
+                  } finally {
+                    setReseteando(false)
+                  }
+                }}
+                disabled={reseteando}
+                className="flex-1 h-10 rounded-[12px] bg-[#f5c518] hover:bg-[#f0b800] text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+              >
+                {reseteando ? (
+                  <>
+                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Reseteando...
+                  </>
+                ) : 'Generar contraseña'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-[#22c55e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <p className="text-sm font-semibold text-white">Contraseña reseteada</p>
+            </div>
+            <div className="bg-[#111111] border border-[#2a2a2a] rounded-[10px] px-3 py-2">
+              <p className="text-[10px] text-[#888888]">Nueva contraseña temporal</p>
+              <p className="text-sm font-bold text-[#f5c518] font-mono">{nuevaPass}</p>
+            </div>
+            <CompartirCredenciales
+              nombreCobrador={data.nombre}
+              email={data.email}
+              password={nuevaPass}
+              telefono={data.telefono}
+              nombreOwner={session?.user?.nombre}
+            />
+            <button
+              onClick={() => { setShowReenviar(false); setNuevaPass('') }}
+              className="w-full text-[10px] text-[#555555] hover:text-[#888888] transition-colors text-center pt-1"
+            >
+              Cerrar
+            </button>
+          </div>
+        )}
+      </Card>
 
       {/* Ruta */}
       <Card>

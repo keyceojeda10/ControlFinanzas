@@ -6,20 +6,23 @@ import { useRouter }                from 'next/navigation'
 import { useAuth }                  from '@/hooks/useAuth'
 import { Input }                    from '@/components/ui/Input'
 import { Button }                   from '@/components/ui/Button'
+import CompartirCredenciales        from '@/components/cobradores/CompartirCredenciales'
 
 export default function EditarCobrador({ params }) {
   const { id } = use(params)
   const router = useRouter()
-  const { esOwner, loading: authLoading } = useAuth()
+  const { session, esOwner, loading: authLoading } = useAuth()
 
-  const [nombre,   setNombre]   = useState('')
-  const [email,    setEmail]    = useState('')
-  const [password, setPassword] = useState('')
-  const [loading,  setLoading]  = useState(true)
-  const [saving,   setSaving]   = useState(false)
-  const [error,    setError]    = useState('')
-  const [exito,    setExito]    = useState(false)
-  const [permisos, setPermisos] = useState({
+  const [nombre,    setNombre]    = useState('')
+  const [email,     setEmail]     = useState('')
+  const [telefono,  setTelefono]  = useState('')
+  const [password,  setPassword]  = useState('')
+  const [loading,   setLoading]   = useState(true)
+  const [saving,    setSaving]    = useState(false)
+  const [error,     setError]     = useState('')
+  const [exito,     setExito]     = useState(false)
+  const [credencialesGuardadas, setCredencialesGuardadas] = useState(null)
+  const [permisos,  setPermisos]  = useState({
     crearPrestamos: false,
     crearClientes:  false,
     editarClientes: false,
@@ -36,6 +39,7 @@ export default function EditarCobrador({ params }) {
         if (data.error) { setError(data.error); return }
         setNombre(data.nombre || '')
         setEmail(data.email || '')
+        setTelefono(data.telefono || '')
         if (data.permisos) {
           setPermisos({
             crearPrestamos: data.permisos.crearPrestamos ?? false,
@@ -58,7 +62,7 @@ export default function EditarCobrador({ params }) {
     setError('')
     setExito(false)
 
-    const body = { nombre: nombre.trim(), email: email.trim(), permisos }
+    const body = { nombre: nombre.trim(), email: email.trim(), telefono, permisos }
     if (password) body.password = password
 
     try {
@@ -70,6 +74,10 @@ export default function EditarCobrador({ params }) {
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Error al guardar'); return }
       setExito(true)
+      // Si se cambió contraseña, mostrar opción de reenviar credenciales
+      if (password) {
+        setCredencialesGuardadas({ nombre: nombre.trim(), email: email.trim(), telefono, password })
+      }
       setPassword('')
       setTimeout(() => setExito(false), 3000)
     } catch {
@@ -139,6 +147,20 @@ export default function EditarCobrador({ params }) {
         />
         <div>
           <Input
+            label="Teléfono (opcional)"
+            type="tel"
+            inputMode="numeric"
+            placeholder="Ej: 3001234567"
+            value={telefono}
+            onChange={(e) => setTelefono(e.target.value.replace(/\D/g, ''))}
+            autoComplete="tel"
+          />
+          <p className="text-[10px] text-[#888888] mt-1">
+            Útil para enviarle las credenciales por WhatsApp.
+          </p>
+        </div>
+        <div>
+          <Input
             label="Nueva contraseña (opcional)"
             placeholder="Dejar vacío para no cambiar"
             value={password}
@@ -148,6 +170,30 @@ export default function EditarCobrador({ params }) {
             Solo llena este campo si quieres cambiar la contraseña del cobrador.
           </p>
         </div>
+
+        {/* Compartir credenciales después de cambiar contraseña */}
+        {credencialesGuardadas && (
+          <div className="border border-[rgba(16,185,129,0.3)] rounded-[12px] p-4"
+            style={{ background: 'linear-gradient(135deg, #22c55e0A 0%, #1a1a1a 50%, #22c55e05 100%)' }}
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <svg className="w-4 h-4 text-[#22c55e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <p className="text-sm font-semibold text-white">Contraseña actualizada</p>
+            </div>
+            <p className="text-[10px] text-[#888888] mb-3">
+              Envía las nuevas credenciales al cobrador. La contraseña no se mostrará de nuevo.
+            </p>
+            <CompartirCredenciales
+              nombreCobrador={credencialesGuardadas.nombre}
+              email={credencialesGuardadas.email}
+              password={credencialesGuardadas.password}
+              telefono={credencialesGuardadas.telefono}
+              nombreOwner={session?.user?.nombre}
+            />
+          </div>
+        )}
 
         {/* Permisos */}
         <div className="border-t border-[#2a2a2a] pt-4">

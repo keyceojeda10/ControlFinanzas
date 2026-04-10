@@ -76,6 +76,7 @@ export async function GET(request, { params }) {
     id:           cobrador.id,
     nombre:       cobrador.nombre,
     email:        cobrador.email,
+    telefono:     cobrador.telefono,
     activo:       cobrador.activo,
     permisos: {
       crearPrestamos: cobrador.puedeCrearPrestamos,
@@ -139,6 +140,12 @@ export async function PATCH(request, { params }) {
     data.activo = Boolean(body.activo)
   }
 
+  // Telefono
+  if (body.telefono !== undefined) {
+    const tel = typeof body.telefono === 'string' ? body.telefono.replace(/\D/g, '').trim() : ''
+    data.telefono = tel || null
+  }
+
   // Permisos
   if (body.permisos !== undefined) {
     const p = body.permisos
@@ -154,7 +161,7 @@ export async function PATCH(request, { params }) {
   const actualizado = await prisma.user.update({
     where: { id },
     data,
-    select: { id: true, nombre: true, email: true, activo: true,
+    select: { id: true, nombre: true, email: true, telefono: true, activo: true,
       puedeCrearPrestamos: true, puedeCrearClientes: true, puedeEditarClientes: true },
   })
 
