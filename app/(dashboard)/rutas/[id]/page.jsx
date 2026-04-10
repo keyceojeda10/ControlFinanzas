@@ -193,6 +193,9 @@ export default function RutaDetallePage({ params }) {
   const [banner,         setBanner]         = useState(null)
   const [pagandoRapido,  setPagandoRapido]  = useState(null) // clienteId while paying
   const [pagoRapidoOk,   setPagoRapidoOk]   = useState(null) // clienteId after success
+  const [modalPagoRapido, setModalPagoRapido] = useState(null) // { id, nombre, cuota, prestamoActivo }
+  const [undoPago,       setUndoPago]       = useState(null)  // { pagoId, prestamoId, clienteNombre, timer }
+  const undoTimerRef = useRef(null)
   const [modalDiasSC,    setModalDiasSC]    = useState(false)
   const [diasSCRuta,     setDiasSCRuta]     = useState([])
   const [guardandoDSC,   setGuardandoDSC]   = useState(false)
@@ -297,24 +300,51 @@ export default function RutaDetallePage({ params }) {
     fetchRuta()
   }
 
-  // Pago rápido: 1 cuota desde la lista de ruta
-  const pagoRapido = async (cliente) => {
+  // Pago rápido: abre modal para elegir método, luego registra 1 cuota
+  const abrirPagoRapido = (cliente) => {
     if (!cliente.cuota || cliente.cuota <= 0 || pagandoRapido) return
-    // Find first active prestamo
     const prestamoId = ruta.clientes.find(c => c.id === cliente.id)?.prestamoActivo
     if (!prestamoId) return
-    setPagandoRapido(cliente.id)
+    setModalPagoRapido({ id: cliente.id, nombre: cliente.nombre, cuota: cliente.cuota, prestamoActivo: prestamoId })
+  }
+
+  const ejecutarPagoRapido = async (metodoPago) => {
+    if (!modalPagoRapido) return
+    const { id: clienteId, nombre, cuota, prestamoActivo } = modalPagoRapido
+    setModalPagoRapido(null)
+    setPagandoRapido(clienteId)
     try {
-      const res = await fetch(`/api/prestamos/${prestamoId}/pagos`, {
+      const res = await fetch(`/api/prestamos/${prestamoActivo}/pagos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ montoPagado: cliente.cuota, tipo: 'completo', diasAbonados: 1, metodoPago: 'efectivo' }),
+        body: JSON.stringify({ montoPagado: cuota, tipo: 'completo', diasAbonados: 1, metodoPago }),
       })
       if (res.ok) {
-        setPagoRapidoOk(cliente.id)
-        setTimeout(() => { setPagoRapidoOk(null); fetchRuta() }, 1200)
+        const data = await res.json()
+        // El pago más reciente es pagos[0] (ordenados desc)
+        const pagoId = data.pagos?.[0]?.id
+        setPagoRapidoOk(clienteId)
+        setTimeout(() => setPagoRapidoOk(null), 1200)
+        fetchRuta()
+        // Mostrar undo por 10 segundos
+        if (pagoId) {
+          if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
+          setUndoPago({ pagoId, prestamoId: prestamoActivo, clienteNombre: nombre })
+          undoTimerRef.current = setTimeout(() => setUndoPago(null), 10000)
+        }
       }
     } catch {} finally { setPagandoRapido(null) }
+  }
+
+  const deshacerPago = async () => {
+    if (!undoPago) return
+    const { pagoId } = undoPago
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
+    setUndoPago(null)
+    try {
+      await fetch(`/api/pagos/${pagoId}`, { method: 'DELETE' })
+      fetchRuta()
+    } catch {}
   }
 
   const abrirModalDSC = () => {
@@ -1022,26 +1052,31 @@ export default function RutaDetallePage({ params }) {
                       {/* Quick pay button */}
                       {!isCompleted && c.cuota > 0 && !c.pagoHoy && c.prestamoActivo && (
                         <button
-                          onClick={(e) => { e.stopPropagation(); pagoRapido(c) }}
+                          onClick={(e) => { e.stopPropagation(); abrirPagoRapido(c) }}
                           disabled={pagandoRapido === c.id}
                           className={[
-                            'w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-90',
+                            'h-8 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95',
                             pagoRapidoOk === c.id
-                              ? 'bg-[#22c55e] scale-110'
-                              : 'bg-[rgba(34,197,94,0.12)] border border-[rgba(34,197,94,0.3)] hover:bg-[rgba(34,197,94,0.25)]',
+                              ? 'bg-[#22c55e] px-3'
+                              : 'bg-[rgba(34,197,94,0.12)] border border-[rgba(34,197,94,0.3)] hover:bg-[rgba(34,197,94,0.25)] px-3 gap-1.5',
                           ].join(' ')}
                         >
                           {pagandoRapido === c.id ? (
-                            <svg className="w-4 h-4 text-[#22c55e] animate-spin" fill="none" viewBox="0 0 24 24">
+                            <svg className="w-3.5 h-3.5 text-[#22c55e] animate-spin" fill="none" viewBox="0 0 24 24">
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                             </svg>
                           ) : pagoRapidoOk === c.id ? (
-                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                             </svg>
                           ) : (
-                            <span className="text-[11px] font-bold text-[#22c55e]">$</span>
+                            <>
+                              <svg className="w-3.5 h-3.5 text-[#22c55e]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33" />
+                              </svg>
+                              <span className="text-[10px] font-semibold text-[#22c55e] whitespace-nowrap">Pago</span>
+                            </>
                           )}
                         </button>
                       )}
@@ -1301,6 +1336,71 @@ export default function RutaDetallePage({ params }) {
           <span className="text-white font-medium">{confirmQuitar?.nombre}</span> sera removido de esta ruta. Podras reasignarlo despues.
         </p>
       </Modal>
+
+      {/* Modal: pago rápido — elegir método */}
+      <Modal
+        open={!!modalPagoRapido}
+        onClose={() => setModalPagoRapido(null)}
+        title="Pago rapido"
+      >
+        {modalPagoRapido && (
+          <div className="space-y-4">
+            <div className="text-center">
+              <p className="text-sm text-[#888]">Registrar 1 cuota para</p>
+              <p className="text-base font-bold text-white mt-1">{modalPagoRapido.nombre}</p>
+              <p className="text-lg font-bold text-[#22c55e] font-mono-display mt-1">{formatCOP(modalPagoRapido.cuota)}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => ejecutarPagoRapido('efectivo')}
+                className="flex flex-col items-center gap-2 py-4 rounded-[14px] border border-[#2a2a2a] bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(34,197,94,0.08)] hover:border-[rgba(34,197,94,0.3)] transition-all active:scale-95"
+              >
+                <svg className="w-6 h-6 text-[#22c55e]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span className="text-sm font-medium text-white">Efectivo</span>
+              </button>
+              <button
+                onClick={() => ejecutarPagoRapido('transferencia')}
+                className="flex flex-col items-center gap-2 py-4 rounded-[14px] border border-[#2a2a2a] bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(59,130,246,0.08)] hover:border-[rgba(59,130,246,0.3)] transition-all active:scale-95"
+              >
+                <svg className="w-6 h-6 text-[#3b82f6]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+                </svg>
+                <span className="text-sm font-medium text-white">Transferencia</span>
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Toast: deshacer pago */}
+      {undoPago && (
+        <div className="fixed bottom-24 left-3 right-3 sm:left-auto sm:right-4 sm:bottom-6 sm:w-auto z-50 animate-slide-up">
+          <div className="flex items-center gap-3 px-4 py-3 rounded-[14px] border border-[rgba(34,197,94,0.2)] sm:min-w-[320px]"
+            style={{ background: 'rgba(15,15,22,0.95)', backdropFilter: 'blur(20px)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
+          >
+            <svg className="w-4 h-4 text-[#22c55e] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            <span className="text-sm text-white flex-1 truncate">Pago registrado — {undoPago.clienteNombre}</span>
+            <button
+              onClick={deshacerPago}
+              className="text-sm font-bold text-[#f5c518] hover:text-[#f5c518]/80 transition-colors shrink-0"
+            >
+              Deshacer
+            </button>
+            <button
+              onClick={() => { if (undoTimerRef.current) clearTimeout(undoTimerRef.current); setUndoPago(null) }}
+              className="text-[#666] hover:text-white transition-colors shrink-0"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

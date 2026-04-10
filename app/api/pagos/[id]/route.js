@@ -47,12 +47,8 @@ export async function DELETE(request, { params }) {
   if (!session?.user?.organizationId) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
   }
-  if (session.user.rol !== 'owner') {
-    return Response.json({ error: 'Solo el administrador puede anular pagos' }, { status: 403 })
-  }
-
   const { id: pagoId } = await params
-  const { organizationId } = session.user
+  const { organizationId, rol, id: userId } = session.user
 
   const pago = await prisma.pago.findFirst({
     where: { id: pagoId, organizationId },
@@ -64,6 +60,15 @@ export async function DELETE(request, { params }) {
   })
 
   if (!pago) return Response.json({ error: 'Pago no encontrado' }, { status: 404 })
+
+  // Cobradores pueden deshacer sus propios pagos dentro de 10 minutos
+  if (rol !== 'owner') {
+    const esSuPago = pago.cobradorId === userId
+    const minutos = (Date.now() - new Date(pago.fechaPago).getTime()) / 60000
+    if (!esSuPago || minutos > 10) {
+      return Response.json({ error: 'Solo puedes deshacer tus pagos recientes (hasta 10 min)' }, { status: 403 })
+    }
+  }
 
   await prisma.$transaction(async (tx) => {
     const prestamo = pago.prestamo
