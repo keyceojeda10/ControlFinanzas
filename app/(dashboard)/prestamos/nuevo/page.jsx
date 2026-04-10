@@ -52,6 +52,9 @@ function NuevoPrestamo() {
   // Modo: 'prestamo' (con interés) o 'mercancia' (cuota fija)
   const [modo, setModo] = useState('prestamo')
   const [numCuotas, setNumCuotas] = useState('10')
+  // Préstamo en curso (migración)
+  const [esEnCurso, setEsEnCurso] = useState(false)
+  const [yaAbonado, setYaAbonado] = useState('')
 
   // Guard de rol
   useEffect(() => {
@@ -115,6 +118,9 @@ function NuevoPrestamo() {
     if (!clienteId)  { setError('Selecciona un cliente'); return }
     if (!monto)      { setError('Ingresa el monto'); return }
     if (!calculo)    { setError('Verifica los datos del préstamo'); return }
+    if (esEnCurso && Number(yaAbonado) > calculo.totalAPagar) {
+      setError('El abono no puede ser mayor al total a pagar'); return
+    }
 
     setLoading(true)
     setError('')
@@ -129,6 +135,7 @@ function NuevoPrestamo() {
           diasPlazo:     Number(plazo),
           fechaInicio,
           frecuencia,
+          ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
         }),
       })
       const data = await res.json()
@@ -363,8 +370,68 @@ function NuevoPrestamo() {
               onChange={(e) => setFechaInicio(e.target.value)}
             />
             <p className="text-[10px] text-[#888888] leading-snug px-0.5">
-              Por defecto es hoy. Puedes elegir una fecha anterior si el préstamo ya lleva tiempo (clientes migrados de otras plataformas).
+              Por defecto es hoy. Puedes elegir una fecha anterior si el préstamo ya lleva tiempo.
             </p>
+          </div>
+
+          {/* Toggle préstamo en curso */}
+          <div className="border-t border-[#2a2a2a] pt-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-[white]">Préstamo en curso</p>
+                <p className="text-[10px] text-[#666666] leading-snug">
+                  Actívalo si este préstamo ya tiene pagos (migración de cuaderno u otro sistema)
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setEsEnCurso(v => !v); if (esEnCurso) setYaAbonado('') }}
+                className={[
+                  'relative w-10 h-[22px] rounded-full transition-colors shrink-0 mt-0.5',
+                  esEnCurso ? 'bg-[#f5c518]' : 'bg-[#333333]',
+                ].join(' ')}
+              >
+                <span className={[
+                  'absolute top-[2px] w-[18px] h-[18px] rounded-full bg-white transition-transform shadow-sm',
+                  esEnCurso ? 'left-[20px]' : 'left-[2px]',
+                ].join(' ')} />
+              </button>
+            </div>
+
+            {esEnCurso && (
+              <div className="mt-3 space-y-2">
+                <Input
+                  label="Total ya abonado (COP)"
+                  type="number"
+                  inputMode="numeric"
+                  placeholder="Ej: 150000"
+                  value={yaAbonado}
+                  onChange={(e) => setYaAbonado(e.target.value)}
+                  prefix="$"
+                />
+                {calculo && Number(yaAbonado) > 0 && (
+                  <div className="bg-[#111111] border border-[#2a2a2a] rounded-[10px] px-3 py-2.5 space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-[#888888]">Total a pagar</span>
+                      <span className="text-white font-medium font-mono-display">{formatCOP(calculo.totalAPagar)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-[#888888]">Ya abonado</span>
+                      <span className="text-[#22c55e] font-medium font-mono-display">-{formatCOP(Number(yaAbonado))}</span>
+                    </div>
+                    <div className="flex justify-between text-xs border-t border-[#2a2a2a] pt-1">
+                      <span className="text-[#888888] font-semibold">Saldo pendiente</span>
+                      <span className="text-[#f5c518] font-bold font-mono-display">
+                        {formatCOP(Math.max(0, calculo.totalAPagar - Number(yaAbonado)))}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                <p className="text-[10px] text-[#888888] leading-snug">
+                  Se registrará como pago inicial. El saldo pendiente se calculará automáticamente.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

@@ -119,7 +119,7 @@ export async function POST(request) {
 
   const { organizationId } = session.user
   const body = await request.json()
-  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia } = body
+  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado } = body
 
   const freq = frecuencia || 'diario'
   const frecuenciasValidas = ['diario', 'semanal', 'quincenal', 'mensual']
@@ -137,6 +137,8 @@ export async function POST(request) {
   if (Number(montoPrestado) <= 0) return Response.json({ error: 'El monto debe ser mayor a 0' }, { status: 400 })
   if (Number(tasaInteres)   < 0)  return Response.json({ error: 'La tasa no puede ser negativa' },  { status: 400 })
   if (Number(diasPlazo)     <= 0) return Response.json({ error: 'El plazo debe ser mayor a 0' }, { status: 400 })
+  const abono = Number(yaAbonado) || 0
+  if (abono < 0) return Response.json({ error: 'El abono no puede ser negativo' }, { status: 400 })
 
   // Verificar que el cliente pertenece a la organización
   const cliente = await prisma.cliente.findFirst({
@@ -148,6 +150,11 @@ export async function POST(request) {
   const { totalAPagar, cuotaDiaria, fechaFin } = calcularPrestamo({
     montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia: freq,
   })
+
+  // Validar abono vs total
+  if (abono > totalAPagar) {
+    return Response.json({ error: 'El abono no puede ser mayor al total a pagar' }, { status: 400 })
+  }
 
   // Crear préstamo y actualizar estado del cliente en transacción
   const prestamo = await prisma.$transaction(async (tx) => {
@@ -183,10 +190,36 @@ export async function POST(request) {
       creadoPorId: session.user.id,
     })
 
+    // Si es préstamo en curso con abono previo, registrar pago inicial
+    if (abono > 0) {
+      await tx.pago.create({
+        data: {
+          prestamoId:     nuevo.id,
+          organizationId,
+          cobradorId:     session.user.id,
+          montoPagado:    abono,
+          tipo:           'completo',
+          fechaPago:      new Date(fechaInicio),
+          nota:           'Abono previo (préstamo en curso)',
+        },
+      })
+
+      // Registrar recaudo en capital
+      await registrarMovimientoCapital(tx, {
+        organizationId,
+        tipo: 'recaudo',
+        monto: abono,
+        descripcion: `Abono previo préstamo en curso - ${cliente.nombre}`,
+        referenciaId: nuevo.id,
+        referenciaTipo: 'prestamo',
+        creadoPorId: session.user.id,
+      })
+    }
+
     return nuevo
   })
 
-  logActividad({ session, accion: 'crear_prestamo', entidadTipo: 'prestamo', entidadId: prestamo.id, detalle: `Préstamo $${Number(montoPrestado).toLocaleString('es-CO')} a ${cliente.nombre}`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
+  logActividad({ session, accion: 'crear_prestamo', entidadTipo: 'prestamo', entidadId: prestamo.id, detalle: `Préstamo $${Number(montoPrestado).toLocaleString('es-CO')} a ${cliente.nombre}${abono > 0 ? ` (en curso, abono previo $${abono.toLocaleString('es-CO')})` : ''}`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
   trackEvent({ organizationId, userId: session.user.id, evento: 'crear_prestamo', metadata: { monto: Number(montoPrestado) } })
   return Response.json(prestamo, { status: 201 })
   } catch (err) {
