@@ -6,6 +6,7 @@ import { useRouter }           from 'next/navigation'
 import { useAuth }             from '@/hooks/useAuth'
 import { Input }               from '@/components/ui/Input'
 import { Button }              from '@/components/ui/Button'
+import CompartirCredenciales   from '@/components/cobradores/CompartirCredenciales'
 
 const LIMITES = { basic: 1, growth: 2, standard: 5, professional: 10 }
 
@@ -15,11 +16,11 @@ export default function NuevoCobrador() {
 
   const [nombre,    setNombre]    = useState('')
   const [email,     setEmail]     = useState('')
+  const [telefono,  setTelefono]  = useState('')
   const [password,  setPassword]  = useState('')
   const [loading,   setLoading]   = useState(false)
   const [error,     setError]     = useState('')
   const [creado,    setCreado]    = useState(null)
-  const [copiado,   setCopiado]   = useState(false)
   const [totalUsers, setTotalUsers] = useState(null)
   const [limitReached, setLimitReached] = useState(false)
   const [comprando, setComprando] = useState(false)
@@ -54,7 +55,7 @@ export default function NuevoCobrador() {
       const res  = await fetch('/api/cobradores', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ nombre, email, password, permisos }),
+        body:    JSON.stringify({ nombre, email, telefono, password, permisos }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -62,7 +63,7 @@ export default function NuevoCobrador() {
         setError(data.error ?? 'Error al crear el cobrador')
         return
       }
-      setCreado({ nombre, email, password })
+      setCreado({ nombre, email, telefono, password })
     } catch {
       setError('Error de conexión.')
     } finally {
@@ -82,14 +83,6 @@ export default function NuevoCobrador() {
     } finally {
       setComprando(false)
     }
-  }
-
-  const copiar = () => {
-    navigator.clipboard.writeText(
-      `Email: ${creado.email}\nContraseña: ${creado.password}`
-    )
-    setCopiado(true)
-    setTimeout(() => setCopiado(false), 2000)
   }
 
   if (authLoading) return null
@@ -130,14 +123,19 @@ export default function NuevoCobrador() {
             </div>
           </div>
 
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={copiar} className="flex-1">
-              {copiado ? '¡Copiado!' : 'Copiar credenciales'}
-            </Button>
-            <Button onClick={() => router.push('/cobradores')} className="flex-1">
-              Ir a cobradores
-            </Button>
+          <div className="mb-4">
+            <CompartirCredenciales
+              nombreCobrador={creado.nombre}
+              email={creado.email}
+              password={creado.password}
+              telefono={creado.telefono}
+              nombreOwner={session?.user?.nombre}
+            />
           </div>
+
+          <Button onClick={() => router.push('/cobradores')} className="w-full">
+            Ir a cobradores
+          </Button>
         </div>
       </div>
     )
@@ -244,6 +242,20 @@ export default function NuevoCobrador() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
+        <div>
+          <Input
+            label="Teléfono (opcional)"
+            type="tel"
+            inputMode="numeric"
+            placeholder="Ej: 3001234567"
+            value={telefono}
+            onChange={(e) => setTelefono(e.target.value.replace(/\D/g, ''))}
+            autoComplete="tel"
+          />
+          <p className="text-[10px] text-[#888888] mt-1">
+            Si lo agregas, podrás enviarle las credenciales directo por WhatsApp.
+          </p>
+        </div>
         <Input
           label="Contraseña temporal *"
           placeholder="Mínimo 6 caracteres"

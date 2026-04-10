@@ -116,7 +116,7 @@ export async function POST(request) {
     )
   }
 
-  const { nombre, email, password, permisos } = await request.json()
+  const { nombre, email, password, permisos, telefono } = await request.json()
 
   if (!nombre?.trim())   return Response.json({ error: 'El nombre es requerido' },    { status: 400 })
   if (!email?.trim())    return Response.json({ error: 'El email es requerido' },     { status: 400 })
@@ -128,18 +128,24 @@ export async function POST(request) {
 
   const hashedPassword = await bcrypt.hash(password.trim(), 10)
 
+  // Normalizar telefono: solo digitos, vacio -> null
+  const telefonoNorm = typeof telefono === 'string'
+    ? telefono.replace(/\D/g, '').trim() || null
+    : null
+
   const cobrador = await prisma.user.create({
     data: {
       organizationId,
       nombre:   nombre.trim(),
       email:    email.trim().toLowerCase(),
+      telefono: telefonoNorm,
       password: hashedPassword,
       rol:      'cobrador',
       puedeCrearPrestamos: Boolean(permisos?.crearPrestamos),
       puedeCrearClientes:  Boolean(permisos?.crearClientes),
       puedeEditarClientes: Boolean(permisos?.editarClientes),
     },
-    select: { id: true, nombre: true, email: true, activo: true, rol: true,
+    select: { id: true, nombre: true, email: true, telefono: true, activo: true, rol: true,
       puedeCrearPrestamos: true, puedeCrearClientes: true, puedeEditarClientes: true },
   })
 

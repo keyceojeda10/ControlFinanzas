@@ -107,6 +107,7 @@ model User {
   organizationId          String?
   nombre                  String
   email                   String    @unique
+  telefono                String?
   password                String
   rol                     Rol
   activo                  Boolean   @default(true)
