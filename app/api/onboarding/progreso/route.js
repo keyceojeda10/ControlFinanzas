@@ -15,11 +15,29 @@ export async function GET() {
   // Check if onboarding was dismissed
   const org = await prisma.organization.findUnique({
     where: { id: orgId },
-    select: { onboardingStep: true },
+    select: { onboardingStep: true, createdAt: true },
   })
 
   if (org?.onboardingStep >= 99) {
     return NextResponse.json({ completado: true, misiones: [] })
+  }
+
+  // Cuentas antiguas (mas de 14 dias) nunca vieron el onboarding nuevo.
+  // Si ya crearon datos, dar por finalizado automaticamente.
+  const diasDesdeCreacion = org?.createdAt
+    ? (Date.now() - new Date(org.createdAt).getTime()) / (1000 * 60 * 60 * 24)
+    : 0
+  if (diasDesdeCreacion > 14) {
+    const tieneClientes = await prisma.cliente.count({
+      where: { organizationId: orgId, estado: { notIn: ['eliminado'] } },
+    })
+    if (tieneClientes > 0) {
+      await prisma.organization.update({
+        where: { id: orgId },
+        data: { onboardingStep: 99 },
+      }).catch(() => {})
+      return NextResponse.json({ completado: true, misiones: [] })
+    }
   }
 
   // Count actual data to auto-detect progress
@@ -96,12 +114,16 @@ export async function GET() {
   const total = misiones.length
   const completado = completadas === total
 
-  // Auto-complete onboarding when all missions done
-  if (completado && org?.onboardingStep < 99) {
+  // Auto-complete onboarding cuando las 3 misiones core estan listas
+  // (cliente + prestamo + pago). Ruta, cobrador, instalar-app y cierre de caja
+  // son opcionales y no deben bloquear el cierre automatico del checklist.
+  const coreCompleto = clientes > 0 && prestamos > 0 && pagos > 0
+  if (coreCompleto && (org?.onboardingStep ?? 0) < 99) {
     await prisma.organization.update({
       where: { id: orgId },
       data: { onboardingStep: 99 },
     }).catch(() => {})
+    return NextResponse.json({ completado: true, misiones: [] })
   }
 
   // Wizard shows only for brand-new orgs with zero clients

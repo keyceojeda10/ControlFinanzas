@@ -57,6 +57,21 @@ export function useOnboarding(esOwner) {
     try {
       const res = await fetch('/api/onboarding/progreso')
       const data = await res.json()
+
+      // Si el backend dice que el onboarding está completo/dismissed (onboardingStep >= 99),
+      // ocultar todo inmediatamente sin importar que misiones venga vacío.
+      if (data.completado) {
+        setMisiones([])
+        setCompletadas(0)
+        setTotal(0)
+        setProgreso(100)
+        setCompletado(true)
+        setDismissed(true)
+        setShowWizard(false)
+        setWizardInitialStep(0)
+        return
+      }
+
       let misionesList = data.misiones || []
 
       // Client-side check: marcar 'instalar-app' si la PWA ya está instalada
