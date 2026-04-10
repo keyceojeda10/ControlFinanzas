@@ -1,7 +1,8 @@
 'use client'
 // components/onboarding/CobradorOnboarding.jsx
 // Guia de primeros pasos para cobradores nuevos.
-// Se muestra una sola vez (dismiss guardado en localStorage).
+// Dismiss persistente en backend (User.onboardingCompletado) para que se
+// sincronice entre dispositivos. localStorage se usa como fallback optimista.
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
@@ -59,14 +60,44 @@ export default function CobradorOnboarding({ userId }) {
 
   useEffect(() => {
     const key = userId ? `${LS_KEY}_${userId}` : LS_KEY
-    const dismissed = localStorage.getItem(key)
-    if (!dismissed) setVisible(true)
+
+    // Fast path: si ya fue descartado en este dispositivo, no mostrar.
+    // Evita flash del banner mientras llega la respuesta del API.
+    if (localStorage.getItem(key)) {
+      setVisible(false)
+      return
+    }
+
+    // Source of truth: backend. Sincroniza entre dispositivos y sobrevive
+    // a limpiezas de localStorage/navegadores distintos.
+    let cancelled = false
+    fetch('/api/onboarding/cobrador')
+      .then(r => r.json())
+      .then(data => {
+        if (cancelled) return
+        if (data?.dismissed) {
+          localStorage.setItem(key, '1')
+          setVisible(false)
+        } else {
+          setVisible(true)
+        }
+      })
+      .catch(() => {
+        // Si el API falla, mostrar el banner (fail-open para no perder la guia)
+        if (!cancelled) setVisible(true)
+      })
+
+    return () => { cancelled = true }
   }, [userId])
 
-  const handleDismiss = () => {
+  const handleDismiss = async () => {
     const key = userId ? `${LS_KEY}_${userId}` : LS_KEY
     localStorage.setItem(key, '1')
     setVisible(false)
+    // Persistir en backend para que sobreviva a limpieza de localStorage
+    try {
+      await fetch('/api/onboarding/cobrador', { method: 'POST' })
+    } catch {}
   }
 
   if (!visible) return null

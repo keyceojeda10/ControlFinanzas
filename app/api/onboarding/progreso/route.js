@@ -18,7 +18,7 @@ export async function GET() {
     select: { onboardingStep: true, createdAt: true },
   })
 
-  if (org?.onboardingStep >= 99) {
+  if ((org?.onboardingStep ?? 0) >= 99) {
     return NextResponse.json({ completado: true, misiones: [] })
   }
 
