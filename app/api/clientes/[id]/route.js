@@ -4,8 +4,10 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado } from '@/lib/calculos'
+import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
 import { geocodeAddress }   from '@/lib/geocoding'
+import { validarDiasSinCobro } from '@/lib/dias-sin-cobro'
 
 // Helper: verificar que el cliente pertenece a la organización (y a la ruta del cobrador)
 async function obtenerCliente(id, session) {
@@ -36,7 +38,7 @@ export async function GET(request, { params }) {
   const cliente = await prisma.cliente.findUnique({
     where: { id },
     include: {
-      ruta: { select: { id: true, nombre: true } },
+      ruta: { select: { id: true, nombre: true, diasSinCobro: true } },
       prestamos: {
         orderBy: { createdAt: 'desc' },
         include: {
@@ -49,10 +51,17 @@ export async function GET(request, { params }) {
     },
   })
 
+  // Resolver días sin cobro
+  const org = await prisma.organization.findUnique({
+    where: { id: session.user.organizationId },
+    select: { diasSinCobro: true },
+  })
+  const diasExcluidos = obtenerDiasSinCobro(cliente, cliente.ruta, org)
+
   // Enriquecer préstamos con cálculos
   const prestamosEnriquecidos = cliente.prestamos.map((p) => ({
     ...p,
-    diasMora:            calcularDiasMora(p),
+    diasMora:            calcularDiasMora(p, diasExcluidos),
     saldoPendiente:      calcularSaldoPendiente(p),
     porcentajePagado:    calcularPorcentajePagado(p),
   }))
@@ -106,7 +115,15 @@ export async function PATCH(request, { params }) {
     return Response.json(actualizado)
   }
 
-  const { nombre, cedula, telefono, direccion, referencia, notas, fotoUrl, rutaId, latitud, longitud } = body
+  const { nombre, cedula, telefono, direccion, referencia, notas, fotoUrl, rutaId, latitud, longitud, diasSinCobro } = body
+
+  // Validar días sin cobro
+  let diasSinCobroVal
+  try {
+    diasSinCobroVal = diasSinCobro !== undefined ? validarDiasSinCobro(diasSinCobro) : undefined
+  } catch (e) {
+    return Response.json({ error: e.message }, { status: 400 })
+  }
 
   // Si cambia la cédula, verificar que no exista otra igual
   if (cedula && cedula.trim() !== clienteBase.cedula) {
@@ -148,6 +165,7 @@ export async function PATCH(request, { params }) {
       ...(rutaId     !== undefined && { rutaId:     rutaId             || null }),
       ...(lat        !== undefined && { latitud:    lat }),
       ...(lng        !== undefined && { longitud:   lng }),
+      ...(diasSinCobroVal !== undefined && { diasSinCobro: diasSinCobroVal }),
     },
   })
 

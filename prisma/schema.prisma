@@ -79,6 +79,7 @@ model Organization {
   planDemoHasta   DateTime?
   onboardingStep  Int            @default(0)
   trialReminderSent Boolean      @default(false)
+  diasSinCobro    String?
   createdAt       DateTime       @default(now())
 
   referidoPor      Organization?     @relation("Referidos", fields: [referidoPorId], references: [id])
@@ -143,6 +144,7 @@ model Ruta {
   cobradorId     String?
   nombre         String
   activo         Boolean  @default(true)
+  diasSinCobro   String?
   createdAt      DateTime @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id])
@@ -168,6 +170,7 @@ model Cliente {
   longitud       Float?
   estado         EstadoCliente @default(activo)
   eliminadoEn    DateTime?
+  diasSinCobro   String?
   createdAt      DateTime      @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id])

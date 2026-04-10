@@ -855,18 +855,20 @@ export default function RutaDetallePage({ params }) {
               return aComp - bComp
             }).map((c, idx) => {
               const isCompleted = c.estado === 'completado'
-              const statusColor = isCompleted ? '#666' : c.diasMora > 0 ? '#ef4444' : c.pagoHoy ? '#22c55e' : '#f59e0b'
+              const statusColor = isCompleted ? '#666' : c.hoySinCobro ? '#f59e0b' : c.diasMora > 0 ? '#ef4444' : c.pagoHoy ? '#22c55e' : '#f59e0b'
               const statusText = isCompleted
                 ? 'Sin deuda — se puede retirar'
-                : c.diasMora > 0
-                  ? `${c.diasMora}d mora`
-                  : c.pagoHoy
-                    ? 'Pago hoy'
-                    : c.diasDesdeUltimoPago === 1
-                      ? 'Falta hoy'
-                      : c.diasDesdeUltimoPago >= 2
-                        ? `${c.diasDesdeUltimoPago}d sin pago`
-                        : 'Pendiente'
+                : c.hoySinCobro && !c.pagoHoy
+                  ? 'Hoy no se cobra'
+                  : c.diasMora > 0
+                    ? `${c.diasMora}d mora`
+                    : c.pagoHoy
+                      ? 'Pago hoy'
+                      : c.diasDesdeUltimoPago === 1
+                        ? 'Falta hoy'
+                        : c.diasDesdeUltimoPago >= 2
+                          ? `${c.diasDesdeUltimoPago}d sin pago`
+                          : 'Pendiente'
               return (
                 <div
                   key={c.id}

@@ -3,6 +3,7 @@ import { NextResponse }     from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { validarDiasSinCobro } from '@/lib/dias-sin-cobro'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -13,7 +14,7 @@ export async function GET() {
 
   const org = await prisma.organization.findUnique({
     where: { id: orgId },
-    select: { id: true, nombre: true, plan: true, telefono: true, ciudad: true, createdAt: true, activo: true },
+    select: { id: true, nombre: true, plan: true, telefono: true, ciudad: true, diasSinCobro: true, createdAt: true, activo: true },
   })
 
   const sub = await prisma.suscripcion.findFirst({
@@ -44,9 +45,17 @@ export async function PATCH(req) {
   const orgId = session.user.organizationId
   if (!orgId) return NextResponse.json({ error: 'Sin organización' }, { status: 400 })
 
-  const { nombre, telefono, ciudad } = await req.json()
+  const { nombre, telefono, ciudad, diasSinCobro } = await req.json()
 
   if (!nombre?.trim()) return NextResponse.json({ error: 'El nombre es obligatorio' }, { status: 400 })
+
+  // Validar días sin cobro si se envía
+  let diasSinCobroVal
+  try {
+    diasSinCobroVal = diasSinCobro !== undefined ? validarDiasSinCobro(diasSinCobro) : undefined
+  } catch (e) {
+    return NextResponse.json({ error: e.message }, { status: 400 })
+  }
 
   const org = await prisma.organization.update({
     where: { id: orgId },
@@ -54,8 +63,9 @@ export async function PATCH(req) {
       nombre:   nombre.trim(),
       telefono: telefono?.trim() || null,
       ciudad:   ciudad?.trim()   || null,
+      ...(diasSinCobroVal !== undefined && { diasSinCobro: diasSinCobroVal }),
     },
-    select: { id: true, nombre: true, plan: true, telefono: true, ciudad: true },
+    select: { id: true, nombre: true, plan: true, telefono: true, ciudad: true, diasSinCobro: true },
   })
 
   return NextResponse.json({ ok: true, org })

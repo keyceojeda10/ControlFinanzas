@@ -6,6 +6,7 @@ import { useRouter }           from 'next/navigation'
 import dynamic                 from 'next/dynamic'
 import { Input, Select }       from '@/components/ui/Input'
 import { Button }              from '@/components/ui/Button'
+import DiasSinCobroSelector    from '@/components/ui/DiasSinCobroSelector'
 
 const LocationPicker = dynamic(() => import('@/components/clientes/LocationPicker'), { ssr: false })
 
@@ -32,6 +33,10 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
   const [loading, setLoading]   = useState(false)
   const [error,   setError]     = useState('')
   const [scoreData, setScoreData] = useState(null)
+  const [avanzadoOpen, setAvanzadoOpen] = useState(false)
+  const [diasSinCobro, setDiasSinCobro] = useState(() => {
+    try { return JSON.parse(clienteInicial?.diasSinCobro || '[]') } catch { return [] }
+  })
 
   // Consulta de score crediticio debounced al escribir cédula
   const habilitadoScore = !esEdicion && ['standard', 'professional'].includes(plan)
@@ -105,6 +110,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
           rutaId:     form.rutaId || undefined,
           latitud:    form.latitud,
           longitud:   form.longitud,
+          ...(diasSinCobro.length > 0 && { diasSinCobro }),
         }),
       })
 
@@ -221,6 +227,36 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
               <option key={r.id} value={r.id}>{r.nombre}</option>
             ))}
           </Select>
+        )}
+      </div>
+
+      {/* Avanzado — colapsable */}
+      <div className="border-t border-[#2a2a2a] pt-3">
+        <button
+          type="button"
+          onClick={() => setAvanzadoOpen(v => !v)}
+          className="flex items-center gap-2 text-xs font-medium text-[#888888] hover:text-white transition-colors w-full"
+        >
+          <svg className={`w-3.5 h-3.5 transition-transform ${avanzadoOpen ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+          Opciones avanzadas
+          {diasSinCobro.length > 0 && (
+            <span className="ml-auto text-[10px] text-[#f59e0b] font-medium">
+              {diasSinCobro.length} {diasSinCobro.length === 1 ? 'día' : 'días'} sin cobro
+            </span>
+          )}
+        </button>
+        {avanzadoOpen && (
+          <div className="mt-3 space-y-3 pl-1">
+            <div>
+              <p className="text-xs font-medium text-[#888888] mb-1.5">Días sin cobro</p>
+              <p className="text-[10px] text-[#666666] leading-snug mb-2">
+                Este cliente no será cobrado estos días. Si no configuras nada, hereda de la ruta o la organización.
+              </p>
+              <DiasSinCobroSelector value={diasSinCobro} onChange={setDiasSinCobro} compact />
+            </div>
+          </div>
         )}
       </div>
 

@@ -9,6 +9,7 @@ import {
   calcularPorcentajePagado,
   pagoHoy,
 } from '@/lib/calculos'
+import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
 import { registrarMovimientoCapital } from '@/lib/capital'
 
@@ -16,7 +17,7 @@ async function obtenerPrestamo(id, session) {
   const p = await prisma.prestamo.findFirst({
     where: { id, organizationId: session.user.organizationId },
     include: {
-      cliente: { select: { id: true, nombre: true, cedula: true, telefono: true, rutaId: true } },
+      cliente: { select: { id: true, nombre: true, cedula: true, telefono: true, rutaId: true, diasSinCobro: true, ruta: { select: { diasSinCobro: true } } } },
       pagos: {
         orderBy: { fechaPago: 'desc' },
         include: {
@@ -42,12 +43,19 @@ export async function GET(request, { params }) {
   const p = await obtenerPrestamo(id, session)
   if (!p) return Response.json({ error: 'Préstamo no encontrado' }, { status: 404 })
 
+  // Resolver días sin cobro
+  const org = await prisma.organization.findUnique({
+    where: { id: session.user.organizationId },
+    select: { diasSinCobro: true },
+  })
+  const diasExcluidos = obtenerDiasSinCobro(p.cliente, p.cliente?.ruta, org)
+
   return Response.json({
     ...p,
     totalPagado:      p.pagos.filter(x => !['recargo', 'descuento'].includes(x.tipo)).reduce((a, x) => a + x.montoPagado, 0),
     saldoPendiente:   calcularSaldoPendiente(p),
     porcentajePagado: calcularPorcentajePagado(p),
-    diasMora:         calcularDiasMora(p),
+    diasMora:         calcularDiasMora(p, diasExcluidos),
     pagoHoy:          pagoHoy(p),
   })
 }

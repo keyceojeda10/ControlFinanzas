@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { calcularDiasMora, calcularSaldoPendiente } from '@/lib/calculos'
+import { obtenerDiasSinCobro, esHoySinCobro, validarDiasSinCobro } from '@/lib/dias-sin-cobro'
 
 // Funciones de fecha en timezone Colombia (UTC-5)
 // Medianoche Colombia = 05:00 UTC
@@ -32,6 +33,12 @@ export async function GET(request, { params }) {
   if (rol === 'cobrador' && id !== rutaId) {
     return Response.json({ error: 'No tienes acceso a esta ruta' }, { status: 403 })
   }
+
+  // Config org para días sin cobro
+  const org = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { diasSinCobro: true },
+  })
 
   const ruta = await prisma.ruta.findFirst({
     where: { id, organizationId },
@@ -68,6 +75,8 @@ export async function GET(request, { params }) {
   const _hoy = hoy(), _manana = manana()
 
   const clientesEnriquecidos = ruta.clientes.map((c) => {
+    const diasExcluidos = obtenerDiasSinCobro(c, ruta, org)
+    const _hoySinCobro = esHoySinCobro(diasExcluidos)
     let cuotaCliente = 0
     let pagadoHoy    = 0
     let mora         = 0
@@ -75,7 +84,7 @@ export async function GET(request, { params }) {
 
     for (const p of c.prestamos) {
       cuotaCliente  += p.cuotaDiaria
-      esperadoHoy   += p.cuotaDiaria
+      esperadoHoy   += _hoySinCobro ? 0 : p.cuotaDiaria
       carteraTotal  += calcularSaldoPendiente(p)
       capitalTotal  += p.montoPrestado
       const pagosHoy = p.pagos.filter(
@@ -84,7 +93,7 @@ export async function GET(request, { params }) {
       const montoPagadoHoy = pagosHoy.filter(pg => !['recargo', 'descuento'].includes(pg.tipo)).reduce((a, pg) => a + pg.montoPagado, 0)
       pagadoHoy    += montoPagadoHoy
       recaudadoHoy += montoPagadoHoy
-      mora = Math.max(mora, calcularDiasMora(p))
+      mora = Math.max(mora, calcularDiasMora(p, diasExcluidos))
 
       // Último pago más reciente (pagos ya vienen ordenados por fechaPago desc)
       if (p.pagos.length > 0) {
@@ -117,6 +126,7 @@ export async function GET(request, { params }) {
       diasMora:  mora,
       diasDesdeUltimoPago,
       cuota:     cuotaCliente,
+      hoySinCobro: _hoySinCobro,
     }
   })
 
@@ -160,13 +170,21 @@ export async function PATCH(request, { params }) {
   })
   if (!ruta) return Response.json({ error: 'Ruta no encontrada' }, { status: 404 })
 
-  const { nombre, cobradorId } = await request.json()
+  const { nombre, cobradorId, diasSinCobro } = await request.json()
+
+  let diasSinCobroVal
+  try {
+    diasSinCobroVal = diasSinCobro !== undefined ? validarDiasSinCobro(diasSinCobro) : undefined
+  } catch (e) {
+    return Response.json({ error: e.message }, { status: 400 })
+  }
 
   const actualizada = await prisma.ruta.update({
     where: { id },
     data: {
       ...(nombre      !== undefined && { nombre:      nombre.trim()   }),
       ...(cobradorId  !== undefined && { cobradorId:  cobradorId || null }),
+      ...(diasSinCobroVal !== undefined && { diasSinCobro: diasSinCobroVal }),
     },
     include: { cobrador: { select: { id: true, nombre: true } } },
   })

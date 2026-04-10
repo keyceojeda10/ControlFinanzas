@@ -10,6 +10,7 @@ import {
   calcularPorcentajePagado,
   pagoHoy,
 } from '@/lib/calculos'
+import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { registrarMovimientoCapital } from '@/lib/capital'
 import { logActividad } from '@/lib/activity-log'
 import { trackEvent } from '@/lib/analytics'
@@ -56,14 +57,22 @@ export async function GET(request) {
   const prestamos = await prisma.prestamo.findMany({
     where,
     include: {
-      cliente: { select: { id: true, nombre: true, cedula: true, rutaId: true } },
+      cliente: { select: { id: true, nombre: true, cedula: true, rutaId: true, diasSinCobro: true, ruta: { select: { diasSinCobro: true } } } },
       pagos:   { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
     },
     orderBy: { createdAt: 'desc' },
     ...(page != null && { take: limit, skip: (page - 1) * limit }),
   })
 
-  const resultado = prestamos.map((p) => ({
+  // Config org para días sin cobro
+  const org = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { diasSinCobro: true },
+  })
+
+  const resultado = prestamos.map((p) => {
+    const diasExcluidos = obtenerDiasSinCobro(p.cliente, p.cliente?.ruta, org)
+    return {
     id:               p.id,
     clienteId:        p.clienteId,
     cliente:          p.cliente,
@@ -79,9 +88,9 @@ export async function GET(request) {
     totalPagado:      p.pagos.filter(x => !['recargo', 'descuento'].includes(x.tipo)).reduce((a, x) => a + x.montoPagado, 0),
     saldoPendiente:   calcularSaldoPendiente(p),
     porcentajePagado: calcularPorcentajePagado(p),
-    diasMora:         calcularDiasMora(p),
+    diasMora:         calcularDiasMora(p, diasExcluidos),
     pagoHoy:          pagoHoy(p),
-  }))
+  }})
 
   // If paginated, return object with total; otherwise array for backward compat
   if (page != null) {

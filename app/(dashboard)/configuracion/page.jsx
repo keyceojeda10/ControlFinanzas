@@ -9,6 +9,7 @@ import { Button }              from '@/components/ui/Button'
 import { Badge }               from '@/components/ui/Badge'
 import { Skeleton }            from '@/components/ui/Skeleton'
 import { formatCOP }           from '@/lib/calculos'
+import DiasSinCobroSelector    from '@/components/ui/DiasSinCobroSelector'
 
 const planBadge  = { basic: 'gray', growth: 'blue', standard: 'yellow', professional: 'purple' }
 const PRECIOS    = { basic: 59000, growth: 79000, standard: 119000, professional: 259000 }
@@ -163,6 +164,7 @@ function TabOrganizacion() {
   const [nombre,   setNombre]   = useState('')
   const [telefono, setTelefono] = useState('')
   const [ciudad,   setCiudad]   = useState('')
+  const [diasSinCobro, setDiasSinCobro] = useState([])
   const [guardando, setGuardando] = useState(false)
   const [msg, setMsg] = useState(null)
 
@@ -174,6 +176,7 @@ function TabOrganizacion() {
         setNombre(d.org?.nombre ?? '')
         setTelefono(d.org?.telefono ?? '')
         setCiudad(d.org?.ciudad ?? '')
+        try { setDiasSinCobro(JSON.parse(d.org?.diasSinCobro || '[]')) } catch { setDiasSinCobro([]) }
       })
       .finally(() => setLoading(false))
   }, [])
@@ -183,7 +186,7 @@ function TabOrganizacion() {
     try {
       const res  = await fetch('/api/configuracion/organizacion', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre, telefono, ciudad }),
+        body: JSON.stringify({ nombre, telefono, ciudad, diasSinCobro }),
       })
       const d = await res.json()
       setMsg(res.ok
@@ -224,6 +227,19 @@ function TabOrganizacion() {
           {msg && <Alerta tipo={msg.tipo}>{msg.texto}</Alerta>}
           <Button onClick={guardar} loading={guardando} size="sm">Guardar cambios</Button>
         </div>
+      </Card>
+
+      <Card>
+        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-3">Días sin cobro</p>
+        <p className="text-[11px] text-[#666666] leading-snug mb-3">
+          Los días que marques no generarán mora para ningún cliente. Puedes configurar días diferentes por ruta o por cliente.
+        </p>
+        <DiasSinCobroSelector value={diasSinCobro} onChange={setDiasSinCobro} />
+        {diasSinCobro.length > 0 && (
+          <p className="text-[10px] text-[#f59e0b] mt-2">
+            {diasSinCobro.length === 1 ? '1 día' : `${diasSinCobro.length} días`} sin cobro configurados para toda la organización
+          </p>
+        )}
       </Card>
 
       <Card>

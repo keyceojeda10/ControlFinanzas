@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { calcularDiasMora, calcularSaldoPendiente } from '@/lib/calculos'
+import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 
 // GET /api/mora - Devuelve clientes en mora agrupados por días de mora
 export async function GET(request) {
@@ -38,7 +39,8 @@ export async function GET(request) {
           cedula: true,
           telefono: true,
           rutaId: true,
-          ruta: { select: { nombre: true } },
+          diasSinCobro: true,
+          ruta: { select: { nombre: true, diasSinCobro: true } },
         },
       },
       pagos: {
@@ -47,10 +49,17 @@ export async function GET(request) {
     },
   })
 
+  // Obtener config de org (días sin cobro)
+  const org = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { diasSinCobro: true },
+  })
+
   // Calcular mora para cada préstamo
   const clientesEnMora = prestamos
     .map((p) => {
-      const diasMora = calcularDiasMora(p)
+      const diasExcluidos = obtenerDiasSinCobro(p.cliente, p.cliente?.ruta, org)
+      const diasMora = calcularDiasMora(p, diasExcluidos)
       if (diasMora <= 0) return null
       return {
         prestamoId: p.id,
