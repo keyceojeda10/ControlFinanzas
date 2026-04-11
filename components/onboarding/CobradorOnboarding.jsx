@@ -43,7 +43,7 @@ const PASOS = [
   },
   {
     titulo: 'Instala la app',
-    descripcion: 'Instala la app en tu celular para acceder mas rapido y usarla sin internet.',
+    descripcion: 'Instala la app en tu celular para acceder más rápido y usarla sin internet.',
     isInstall: true,
     icono: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

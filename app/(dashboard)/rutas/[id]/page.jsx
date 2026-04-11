@@ -59,7 +59,7 @@ function HistorialCobros({ rutaId }) {
               ))}
             </div>
           ) : !dias?.length ? (
-            <p className="text-sm text-[#888] text-center py-4">No hay historial aun</p>
+            <p className="text-sm text-[#888] text-center py-4">No hay historial aún</p>
           ) : (
             <div className="space-y-1.5">
               {dias.map((dia) => {
@@ -111,7 +111,7 @@ function HistorialCobros({ rutaId }) {
                         <div className="px-3 py-2 max-h-[200px] overflow-y-auto">
                           {tab === 'pagaron' ? (
                             cantPagaron === 0 ? (
-                              <p className="text-[11px] text-[#888] text-center py-2">Nadie pago este dia</p>
+                              <p className="text-[11px] text-[#888] text-center py-2">Nadie pagó este día</p>
                             ) : (
                               <div className="space-y-1">
                                 {dia.pagaron.map((c, i) => (
@@ -402,7 +402,7 @@ export default function RutaDetallePage({ params }) {
       setModalClientes(false)
       fetchRuta()
     } catch {
-      setErrorAsignar('Error de conexion')
+      setErrorAsignar('Error de conexión')
     } finally {
       setAsignando(false)
     }
@@ -514,7 +514,7 @@ export default function RutaDetallePage({ params }) {
           await guardarOrdenPendiente(id, clienteIds)
           setOrdenOffline(true)
           setTimeout(() => setOrdenOffline(false), 2000)
-        } catch { setOrdenError('Error de conexion') }
+        } catch { setOrdenError('Error de conexión') }
       } finally {
         setGuardandoOrden(false)
       }
@@ -800,7 +800,7 @@ export default function RutaDetallePage({ params }) {
             <Card padding={false}>
               <div className="px-4 py-3">
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] text-[#666] uppercase tracking-wide">Cobro del dia</span>
+                  <span className="text-[10px] text-[#666] uppercase tracking-wide">Cobro del día</span>
                   <span className="text-[11px] font-bold" style={{ color: progreso >= 100 ? '#22c55e' : '#f5c518' }}>{progreso}%</span>
                 </div>
                 <div className="flex items-baseline justify-between">
@@ -972,7 +972,7 @@ export default function RutaDetallePage({ params }) {
                   : c.diasMora > 0
                     ? `${c.diasMora}d mora`
                     : c.pagoHoy
-                      ? 'Pago hoy'
+                      ? 'Pagó hoy'
                       : c.diasDesdeUltimoPago === 1
                         ? 'Falta hoy'
                         : c.diasDesdeUltimoPago >= 2
@@ -1075,7 +1075,7 @@ export default function RutaDetallePage({ params }) {
                               <svg className="w-3 h-3 text-[#22c55e]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33" />
                               </svg>
-                              <span className="text-[10px] font-semibold text-[#22c55e] whitespace-nowrap">Cobro rapido</span>
+                              <span className="text-[10px] font-semibold text-[#22c55e] whitespace-nowrap">Cobro rápido</span>
                             </>
                           )}
                         </button>
@@ -1162,7 +1162,7 @@ export default function RutaDetallePage({ params }) {
               </svg>
               <input
                 type="text"
-                placeholder="Buscar por nombre o cedula..."
+                placeholder="Buscar por nombre o cédula..."
                 value={buscarCliente}
                 onChange={(e) => setBuscarCliente(e.target.value)}
                 className="w-full h-9 pl-9 pr-3 rounded-[10px] bg-[#1a1a1a] border border-[#2a2a2a] text-sm text-white placeholder-[#555] focus:outline-none focus:border-[#f5c518] transition-colors"
@@ -1337,7 +1337,7 @@ export default function RutaDetallePage({ params }) {
       <Modal
         open={!!modalPagoRapido}
         onClose={() => setModalPagoRapido(null)}
-        title="Cobro rapido"
+        title="Cobro rápido"
       >
         {modalPagoRapido && (
           <div className="space-y-4">

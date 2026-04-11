@@ -274,7 +274,7 @@ export default function DashboardPage() {
           }}
         >
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold text-[#999] uppercase tracking-wide">Ultimos pagos</p>
+            <p className="text-xs font-semibold text-[#999] uppercase tracking-wide">Últimos pagos</p>
             <Link href="/prestamos" className="text-[11px] text-[#f5c518] hover:underline">Ver todos →</Link>
           </div>
           <div className="space-y-0 divide-y divide-[rgba(255,255,255,0.05)]">
@@ -399,7 +399,7 @@ export default function DashboardPage() {
       )}
 
       <div>
-        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-3">Accesos rapidos</p>
+        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-3">Accesos rápidos</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {puedeCrearClientes && <QuickLink href="/clientes/nuevo" label="Nuevo cliente" desc="Registrar cliente" color="#f5c518" dataTour="nuevo-cliente" />}
           {puedeCrearPrestamos && <QuickLink href="/prestamos/nuevo" label="Nuevo prestamo" desc="Crear prestamo" color="#22c55e" dataTour="nuevo-prestamo" />}

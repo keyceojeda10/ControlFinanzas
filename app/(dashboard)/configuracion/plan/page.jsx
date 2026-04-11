@@ -9,22 +9,22 @@ import { formatCOP }           from '@/lib/calculos'
 const planes = [
   {
     key: 'basic',
-    nombre: 'Basico',
+    nombre: 'Básico',
     precio: 59000,
     badge: null,
     features: [
       '1 usuario (administrador)',
       'Hasta 450 clientes',
       '1 ruta',
-      'Gestion de prestamos',
-      'Dashboard basico',
+      'Gestión de préstamos',
+      'Dashboard básico',
     ],
   },
   {
     key: 'growth',
     nombre: 'Crecimiento',
     precio: 79000,
-    badge: 'Mas popular',
+    badge: 'Más popular',
     features: [
       'Hasta 2 usuarios',
       'Hasta 1,000 clientes',

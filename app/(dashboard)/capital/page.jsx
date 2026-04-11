@@ -302,7 +302,7 @@ export default function CapitalPage() {
                 />
               </div>
               <div>
-                <label className="text-xs text-[#888888] mb-1 block">Descripcion (opcional)</label>
+                <label className="text-xs text-[#888888] mb-1 block">Descripción (opcional)</label>
                 <input
                   type="text"
                   value={modalDesc}

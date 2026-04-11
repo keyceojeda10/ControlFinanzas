@@ -13,7 +13,7 @@ import DiasSinCobroSelector    from '@/components/ui/DiasSinCobroSelector'
 
 const planBadge  = { basic: 'gray', growth: 'blue', standard: 'yellow', professional: 'purple' }
 const PRECIOS    = { basic: 59000, growth: 79000, standard: 119000, professional: 259000 }
-const PLAN_NAMES = { basic: 'Basico', growth: 'Crecimiento', standard: 'Profesional', professional: 'Empresarial' }
+const PLAN_NAMES = { basic: 'Básico', growth: 'Crecimiento', standard: 'Profesional', professional: 'Empresarial' }
 
 function Alerta({ tipo = 'success', children }) {
   const styles = {

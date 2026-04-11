@@ -115,7 +115,7 @@ export default function RutasPage() {
     input.onchange = async (e) => {
       const file = e.target.files?.[0]
       if (!file) return
-      if (!confirm('Esto reemplazara la configuracion actual de TODAS las rutas con el archivo seleccionado. ¿Continuar?')) return
+      if (!confirm('Esto reemplazará la configuración actual de TODAS las rutas con el archivo seleccionado. ¿Continuar?')) return
       setRestoreLoading(true)
       try {
         const text = await file.text()

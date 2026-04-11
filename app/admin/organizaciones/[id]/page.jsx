@@ -127,7 +127,7 @@ export default function OrgDetallePage() {
             disabled={!!accionando}
             className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#f5c518]"
           >
-            <option value="basic">Basico</option>
+            <option value="basic">Básico</option>
             <option value="growth">Crecimiento</option>
             <option value="standard">Profesional</option>
             <option value="professional">Empresarial</option>

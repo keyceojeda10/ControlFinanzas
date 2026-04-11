@@ -24,7 +24,7 @@ export default function WizardExito({ cliente, prestamo, onFinish, onAddAnother 
         </svg>
       </div>
 
-      <h1 className="text-2xl font-bold text-white mb-2">Tu cartera esta lista!</h1>
+      <h1 className="text-2xl font-bold text-white mb-2">¡Tu cartera está lista!</h1>
       <p className="text-sm text-[#888888] mb-8">Ya puedes empezar a gestionar tus cobros</p>
 
       {/* KPI preview */}
@@ -34,7 +34,7 @@ export default function WizardExito({ cliente, prestamo, onFinish, onAddAnother 
           <p className="text-sm font-bold text-[#f5c518] truncate">{cliente?.nombre ?? '1 cliente'}</p>
         </div>
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-3">
-          <p className="text-[10px] text-[#888888] mb-0.5">Prestamo</p>
+          <p className="text-[10px] text-[#888888] mb-0.5">Préstamo</p>
           <p className="text-sm font-bold text-[#22c55e]">{formatCOP(prestamo?.montoPrestado ?? 0)}</p>
         </div>
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-3">
@@ -61,7 +61,7 @@ export default function WizardExito({ cliente, prestamo, onFinish, onAddAnother 
         Agregar otro cliente
       </button>
       <p className="text-[10px] text-[#555555] mt-4">
-        Puedes agregar mas clientes desde el dashboard
+        Puedes agregar más clientes desde el dashboard
       </p>
     </div>
     </>

@@ -25,7 +25,7 @@ const PAGE_TITLES = {
   '/soporte':       'Soporte',
 }
 
-const PLAN_LABELS = { basic: 'Basico', growth: 'Crecimiento', standard: 'Profesional', professional: 'Empresarial' }
+const PLAN_LABELS = { basic: 'Básico', growth: 'Crecimiento', standard: 'Profesional', professional: 'Empresarial' }
 
 export default function Header() {
   const pathname         = usePathname()

@@ -82,14 +82,14 @@ export default function ActivacionPage() {
           <p className="text-2xl font-bold text-white">{resumen.registrosSemana}</p>
         </Card>
         <Card>
-          <p className="text-[10px] text-[#888888] uppercase tracking-wide">Activacion</p>
+          <p className="text-[10px] text-[#888888] uppercase tracking-wide">Activación</p>
           <p className="text-2xl font-bold text-[#22c55e]">{resumen.tasaActivacion}%</p>
           <p className="text-[10px] text-[#888888]">{resumen.totalActivos} activos de {resumen.total}</p>
         </Card>
         <Card>
           <p className="text-[10px] text-[#888888] uppercase tracking-wide">Trial por vencer</p>
           <p className="text-2xl font-bold text-[#f59e0b]">{resumen.trialPorVencer}</p>
-          <p className="text-[10px] text-[#888888]">Proximos 3 dias</p>
+          <p className="text-[10px] text-[#888888]">Próximos 3 días</p>
         </Card>
       </div>
 
@@ -121,10 +121,10 @@ export default function ActivacionPage() {
                 <th className="text-left px-4 py-3 font-medium">Usuario</th>
                 <th className="text-left px-3 py-3 font-medium hidden sm:table-cell">Registro</th>
                 <th className="text-center px-3 py-3 font-medium">Clientes</th>
-                <th className="text-center px-3 py-3 font-medium">Prestamos</th>
+                <th className="text-center px-3 py-3 font-medium">Préstamos</th>
                 <th className="text-center px-3 py-3 font-medium">Estado</th>
                 <th className="text-center px-3 py-3 font-medium">Trial</th>
-                <th className="text-right px-4 py-3 font-medium">Accion</th>
+                <th className="text-right px-4 py-3 font-medium">Acción</th>
               </tr>
             </thead>
             <tbody>

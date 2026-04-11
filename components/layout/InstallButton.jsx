@@ -288,7 +288,7 @@ export function InstallGuideModal({ onClose }) {
               </svg>
             </button>
           </div>
-          <p className="text-xs text-[#888]">Agrega la app a tu celular para acceder mas rapido y usarla sin internet.</p>
+          <p className="text-xs text-[#888]">Agrega la app a tu celular para acceder más rápido y usarla sin internet.</p>
         </div>
 
         {/* Contenido scrollable */}
@@ -445,7 +445,7 @@ export function InstallBanner() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-white">Instala la app en tu celular</p>
-            <p className="text-xs text-[#888] mt-0.5">Accede mas rapido y usala sin internet</p>
+            <p className="text-xs text-[#888] mt-0.5">Accede más rápido y úsala sin internet</p>
           </div>
           <button onClick={handleDismiss} className="text-[#666] hover:text-white p-0.5 shrink-0" aria-label="Cerrar">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -12,10 +12,10 @@ function buildMensaje({ nombreCobrador, email, password, nombreOwner }) {
   const firma = nombreOwner ? `\n\n— ${nombreOwner}` : ''
   return (
     `${saludo}, te han creado una cuenta en *Control Finanzas* para que gestiones los cobros.\n\n` +
-    `🔗 Ingresa aqui: ${LOGIN_URL}\n` +
+    `🔗 Ingresa aquí: ${LOGIN_URL}\n` +
     `📧 Correo: ${email}\n` +
-    `🔑 Contrasena: ${password}\n\n` +
-    `💡 *Tip:* Abre el link desde tu celular y desde el menu de Chrome/Safari selecciona *"Agregar a pantalla de inicio"* para instalar la app y usarla mas rapido.${firma}`
+    `🔑 Contraseña: ${password}\n\n` +
+    `💡 *Tip:* Abre el link desde tu celular y desde el menú de Chrome/Safari selecciona *"Agregar a pantalla de inicio"* para instalar la app y usarla más rápido.${firma}`
   )
 }
 

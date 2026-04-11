@@ -59,7 +59,7 @@ export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolv
       <div className="bg-[#161b27] border border-[#2a2a2a] rounded-[14px] p-4 space-y-2">
         <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
           <div className="flex justify-between">
-            <span className="text-[#888888]">Clientes unicos</span>
+            <span className="text-[#888888]">Clientes únicos</span>
             <span className="text-white font-medium">{resumen.clientesUnicos}</span>
           </div>
           <div className="flex justify-between">
@@ -67,7 +67,7 @@ export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolv
             <span className="text-white font-medium">{resumen.clientesNuevos}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-[#888888]">Prestamos</span>
+            <span className="text-[#888888]">Préstamos</span>
             <span className="text-white font-medium">{resumen.prestamosDinero}</span>
           </div>
           <div className="flex justify-between">

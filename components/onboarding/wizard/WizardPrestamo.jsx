@@ -75,7 +75,7 @@ export default function WizardPrestamo({ cliente, onComplete }) {
   return (
     <div className="max-w-md mx-auto">
       <div className="text-center mb-6">
-        <h2 className="text-xl font-bold text-white">Crea un prestamo</h2>
+        <h2 className="text-xl font-bold text-white">Crea un préstamo</h2>
         <div className="flex items-center justify-center gap-2 mt-2">
           <div className="w-6 h-6 rounded-full bg-[rgba(245,197,24,0.2)] flex items-center justify-center">
             <span className="text-[#f5c518] text-[9px] font-bold">{cliente.nombre?.[0]?.toUpperCase()}</span>
@@ -110,7 +110,7 @@ export default function WizardPrestamo({ cliente, onComplete }) {
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
               <Input
-                label="Tasa de interes (%)"
+                label="Tasa de interés (%)"
                 type="number"
                 inputMode="decimal"
                 step="0.5"
@@ -120,16 +120,16 @@ export default function WizardPrestamo({ cliente, onComplete }) {
                 onChange={(e) => setTasa(e.target.value)}
                 suffix="%"
               />
-              <p className="text-[10px] text-[#888888] leading-snug px-0.5">20% es lo comun</p>
+              <p className="text-[10px] text-[#888888] leading-snug px-0.5">20% es lo común</p>
             </div>
             <Input
-              label="Plazo (dias)"
+              label="Plazo (días)"
               type="number"
               inputMode="numeric"
               placeholder="30"
               value={plazo}
               onChange={(e) => setPlazo(e.target.value)}
-              suffix="dias"
+              suffix="días"
             />
           </div>
 

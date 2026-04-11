@@ -110,7 +110,7 @@ export default function MetricasPage() {
 
   // 3. Distribución de planes
   const planDist = [
-    { name: 'Basico',       value: stats.planes.basic?.cantidad || 0,        color: COLORES.basic },
+    { name: 'Básico',       value: stats.planes.basic?.cantidad || 0,        color: COLORES.basic },
     { name: 'Crecimiento',  value: stats.planes.growth?.cantidad || 0,       color: COLORES.growth },
     { name: 'Profesional',  value: stats.planes.standard?.cantidad || 0,     color: COLORES.standard },
     { name: 'Empresarial',  value: stats.planes.professional?.cantidad || 0, color: COLORES.professional },

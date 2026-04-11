@@ -14,7 +14,7 @@ function RegistroForm() {
   const planParam      = searchParams.get('plan')
 
   const PLANES_TRIAL = [
-    { key: 'basic',        nombre: 'Basico',       desc: '450 clientes, 1 ruta',                  precio: '$59.000' },
+    { key: 'basic',        nombre: 'Básico',       desc: '450 clientes, 1 ruta',                  precio: '$59.000' },
     { key: 'growth',       nombre: 'Crecimiento',  desc: '1,000 clientes, 3 rutas, 2 usuarios',   precio: '$79.000' },
     { key: 'standard',     nombre: 'Profesional',  desc: '2,000 clientes, 6 rutas, 5 usuarios',   precio: '$119.000' },
     { key: 'professional', nombre: 'Empresarial',  desc: '10,000 clientes, 10 rutas, 10 usuarios', precio: '$259.000' },

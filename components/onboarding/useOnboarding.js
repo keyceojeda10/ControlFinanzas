@@ -5,17 +5,17 @@ import { useState, useEffect, useCallback } from 'react'
 const SPOTLIGHT_TARGETS = {
   'crear-cliente': {
     selector: '[data-tour="nuevo-cliente"]',
-    mensaje: 'Empieza aqui: registra tu primer cliente',
+    mensaje: 'Empieza aquí: registra tu primer cliente',
     posicion: 'bottom',
   },
   'crear-prestamo': {
     selector: '[data-tour="nuevo-prestamo"]',
-    mensaje: 'Crea un prestamo para tu cliente',
+    mensaje: 'Crea un préstamo para tu cliente',
     posicion: 'bottom',
   },
   'registrar-pago': {
     selector: '[data-tour="prestamos"]',
-    mensaje: 'Selecciona un prestamo y registra un pago',
+    mensaje: 'Selecciona un préstamo y registra un pago',
     posicion: 'bottom',
   },
   'crear-ruta': {
@@ -25,7 +25,7 @@ const SPOTLIGHT_TARGETS = {
   },
   'cierre-caja': {
     selector: '[data-tour="caja"]',
-    mensaje: 'Cierra la caja del dia aqui',
+    mensaje: 'Cierra la caja del día aquí',
     posicion: 'bottom',
   },
   'crear-cobrador': {
