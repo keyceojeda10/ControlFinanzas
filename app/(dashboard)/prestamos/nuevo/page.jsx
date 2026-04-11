@@ -43,8 +43,11 @@ function NuevoPrestamo() {
   const [clienteNombre, setClienteNombre] = useState('')
   const [monto,        setMonto]        = useState('')
   const [tasa,         setTasa]         = useState('20')
-  const [plazo,        setPlazo]        = useState('30')
+  // plazo se ingresa en la unidad de la frecuencia (dias, semanas, quincenas o meses)
+  const [plazoUnidades, setPlazoUnidades] = useState('30')
   const [frecuencia,   setFrecuencia]   = useState('diario')
+  // Dias totales derivados de plazoUnidades × diasPorPeriodo
+  const plazo = String((Number(plazoUnidades) || 0) * (DIAS_POR_PERIODO[frecuencia] || 1))
   const [fechaInicio,  setFechaInicio]  = useState(hoyISO())
   const [loading,      setLoading]      = useState(false)
   const [error,        setError]        = useState('')
@@ -76,29 +79,42 @@ function NuevoPrestamo() {
       .catch(() => {})
   }, [clienteIdParam])
 
+  // Default plazo por frecuencia (en unidades de esa frecuencia)
+  const defaultPlazoPorFrecuencia = (freq) => {
+    if (freq === 'diario')    return '30'  // 30 dias
+    if (freq === 'semanal')   return '8'   // 8 semanas
+    if (freq === 'quincenal') return '4'   // 4 quincenas
+    if (freq === 'mensual')   return '2'   // 2 meses
+    return '30'
+  }
+
   // Cuando cambia el modo, ajustar defaults
   const handleModoChange = (nuevoModo) => {
     setModo(nuevoModo)
     if (nuevoModo === 'mercancia') {
       setTasa('0')
       setNumCuotas('10')
-      // Recalcular plazo basado en cuotas y frecuencia
-      const dias = 10 * (DIAS_POR_PERIODO[frecuencia] || 1)
-      setPlazo(String(dias))
+      setPlazoUnidades('10')
     } else {
       setTasa('20')
-      setPlazo('30')
+      setPlazoUnidades(defaultPlazoPorFrecuencia(frecuencia))
     }
   }
 
-  // Cuando cambia numCuotas o frecuencia en modo mercancía, recalcular plazo
+  // Cuando cambia frecuencia en modo prestamo, resetear plazo al default de esa frecuencia
+  const handleFrecuenciaChange = (nuevaFreq) => {
+    setFrecuencia(nuevaFreq)
+    if (modo === 'prestamo') {
+      setPlazoUnidades(defaultPlazoPorFrecuencia(nuevaFreq))
+    }
+  }
+
+  // En modo mercancia, numCuotas y plazoUnidades son lo mismo
   useEffect(() => {
     if (modo === 'mercancia') {
-      const cuotas = Number(numCuotas) || 0
-      const diasPeriodo = DIAS_POR_PERIODO[frecuencia] || 1
-      setPlazo(String(cuotas * diasPeriodo))
+      setPlazoUnidades(numCuotas)
     }
-  }, [numCuotas, frecuencia, modo])
+  }, [numCuotas, modo])
 
   // Cálculo en tiempo real
   const calculo = useMemo(() => {
@@ -331,17 +347,39 @@ function NuevoPrestamo() {
                   : '% mensual sobre el monto. Ej: 20% sobre $100.000 a 60 días = $40.000 (2 meses)'}
               </p>
             </div>
-            {/* Plazo */}
+            {/* Plazo — unidad depende de la frecuencia */}
             <div className="flex flex-col gap-1">
               <Input
-                label="Plazo (días) *"
+                label={
+                  modo === 'mercancia' ? 'Plazo *' :
+                  frecuencia === 'diario'    ? 'Plazo (días) *' :
+                  frecuencia === 'semanal'   ? 'Plazo (semanas) *' :
+                  frecuencia === 'quincenal' ? 'Plazo (quincenas) *' :
+                  'Plazo (meses) *'
+                }
                 type="number"
                 inputMode="numeric"
-                placeholder="Ej: 30"
-                value={plazo}
-                onChange={(e) => setPlazo(e.target.value)}
-                suffix="días"
+                placeholder={
+                  frecuencia === 'diario'    ? 'Ej: 30' :
+                  frecuencia === 'semanal'   ? 'Ej: 8'  :
+                  frecuencia === 'quincenal' ? 'Ej: 4'  :
+                  'Ej: 2'
+                }
+                value={plazoUnidades}
+                onChange={(e) => setPlazoUnidades(e.target.value)}
+                suffix={
+                  frecuencia === 'diario'    ? 'días' :
+                  frecuencia === 'semanal'   ? 'sem.' :
+                  frecuencia === 'quincenal' ? 'quinc.' :
+                  'meses'
+                }
+                disabled={modo === 'mercancia'}
               />
+              {modo === 'prestamo' && plazoUnidades && (
+                <p className="text-[10px] text-[#888888] leading-snug px-0.5">
+                  = {plazo} días totales
+                </p>
+              )}
               {modo === 'mercancia' && (
                 <p className="text-[10px] text-[#888888] leading-snug px-0.5">
                   Calculado automáticamente según cuotas
@@ -371,7 +409,7 @@ function NuevoPrestamo() {
                 <button
                   key={f.value}
                   type="button"
-                  onClick={() => setFrecuencia(f.value)}
+                  onClick={() => handleFrecuenciaChange(f.value)}
                   className={[
                     'relative z-[1] flex-1 text-xs font-semibold transition-colors duration-200 cursor-pointer rounded-[10px]',
                     frecuencia === f.value ? 'text-[#0a0a0a]' : 'text-[#888888]',

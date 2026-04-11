@@ -15,15 +15,24 @@ const FRECUENCIAS = [
   { value: 'mensual', label: 'Mensual' },
 ]
 
+const DIAS_POR_PERIODO = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }
+const DEFAULT_PLAZO = { diario: '30', semanal: '8', quincenal: '4', mensual: '2' }
+
 export default function WizardPrestamo({ cliente, onComplete }) {
   const [monto, setMonto] = useState('')
   const [tasa, setTasa] = useState('20')
-  const [plazo, setPlazo] = useState('30')
+  const [plazoUnidades, setPlazoUnidades] = useState('30')
   const [frecuencia, setFrecuencia] = useState('diario')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  const plazo = String((Number(plazoUnidades) || 0) * (DIAS_POR_PERIODO[frecuencia] || 1))
   const fechaInicio = hoyISO()
+
+  const handleFrecuenciaChange = (freq) => {
+    setFrecuencia(freq)
+    setPlazoUnidades(DEFAULT_PLAZO[freq] || '30')
+  }
 
   const calculo = useMemo(() => {
     const m = Number(monto)
@@ -35,8 +44,8 @@ export default function WizardPrestamo({ cliente, onComplete }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!monto || Number(monto) <= 0) { setError('Ingresa el monto del prestamo'); return }
-    if (!calculo) { setError('Verifica los datos del prestamo'); return }
+    if (!monto || Number(monto) <= 0) { setError('Ingresa el monto del préstamo'); return }
+    if (!calculo) { setError('Verifica los datos del préstamo'); return }
 
     setLoading(true)
     setError('')
@@ -66,7 +75,7 @@ export default function WizardPrestamo({ cliente, onComplete }) {
         frecuencia,
       })
     } catch {
-      setError('Error de conexion. Intenta de nuevo.')
+      setError('Error de conexión. Intenta de nuevo.')
     } finally {
       setLoading(false)
     }
@@ -122,15 +131,30 @@ export default function WizardPrestamo({ cliente, onComplete }) {
               />
               <p className="text-[10px] text-[#888888] leading-snug px-0.5">20% es lo común</p>
             </div>
-            <Input
-              label="Plazo (días)"
-              type="number"
-              inputMode="numeric"
-              placeholder="30"
-              value={plazo}
-              onChange={(e) => setPlazo(e.target.value)}
-              suffix="días"
-            />
+            <div className="flex flex-col gap-1">
+              <Input
+                label={
+                  frecuencia === 'diario'    ? 'Plazo (días)' :
+                  frecuencia === 'semanal'   ? 'Plazo (semanas)' :
+                  frecuencia === 'quincenal' ? 'Plazo (quincenas)' :
+                  'Plazo (meses)'
+                }
+                type="number"
+                inputMode="numeric"
+                placeholder={DEFAULT_PLAZO[frecuencia]}
+                value={plazoUnidades}
+                onChange={(e) => setPlazoUnidades(e.target.value)}
+                suffix={
+                  frecuencia === 'diario'    ? 'días' :
+                  frecuencia === 'semanal'   ? 'sem.' :
+                  frecuencia === 'quincenal' ? 'quinc.' :
+                  'meses'
+                }
+              />
+              {frecuencia !== 'diario' && plazoUnidades && (
+                <p className="text-[10px] text-[#888888] leading-snug px-0.5">= {plazo} días</p>
+              )}
+            </div>
           </div>
 
           {/* Frecuencia */}
@@ -141,7 +165,7 @@ export default function WizardPrestamo({ cliente, onComplete }) {
                 <button
                   key={f.value}
                   type="button"
-                  onClick={() => setFrecuencia(f.value)}
+                  onClick={() => handleFrecuenciaChange(f.value)}
                   className={[
                     'h-9 rounded-[10px] border text-sm font-medium transition-all cursor-pointer',
                     frecuencia === f.value
