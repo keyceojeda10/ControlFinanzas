@@ -334,10 +334,10 @@ export async function POST(req) {
       const vencimiento = new Date(ahora)
       vencimiento.setDate(vencimiento.getDate() + diasExtension)
 
-      // Buscar suscripción existente o crear nueva
+      // Buscar suscripción existente (ignorar pending de MP nunca completadas)
       const subExistente = await prisma.suscripcion.findFirst({
-        where: { organizationId: orgId },
-        orderBy: { createdAt: 'desc' },
+        where: { organizationId: orgId, mpStatus: { not: 'pending' } },
+        orderBy: { fechaVencimiento: 'desc' },
       })
 
       if (subExistente) {
@@ -392,8 +392,8 @@ export async function POST(req) {
         // Si solo hay 1 suscripción (la que acabamos de crear/actualizar), es el primer pago
         if (pagosAnteriores <= 1) {
           const subReferidor = await prisma.suscripcion.findFirst({
-            where: { organizationId: orgData.referidoPorId },
-            orderBy: { createdAt: 'desc' },
+            where: { organizationId: orgData.referidoPorId, mpStatus: { not: 'pending' } },
+            orderBy: { fechaVencimiento: 'desc' },
           })
           if (subReferidor) {
             const baseRef = subReferidor.estado === 'activa' && new Date(subReferidor.fechaVencimiento) > ahora
@@ -446,7 +446,7 @@ export async function POST(req) {
       })
       if (owner) {
         const fechaVenc = subExistente
-          ? (await prisma.suscripcion.findFirst({ where: { organizationId: orgId }, orderBy: { createdAt: 'desc' } }))?.fechaVencimiento
+          ? (await prisma.suscripcion.findFirst({ where: { organizationId: orgId, mpStatus: { not: 'pending' } }, orderBy: { fechaVencimiento: 'desc' } }))?.fechaVencimiento
           : vencimiento
         const { subject, html } = emailPagoAprobado({
           nombre: owner.nombre,

@@ -288,10 +288,10 @@ export async function PATCH(req, { params }) {
 
     const ahora = new Date()
 
-    // Buscar suscripción existente
+    // Buscar suscripción existente (ignorar pending de MP nunca completadas)
     const subExistente = await prisma.suscripcion.findFirst({
-      where: { organizationId: id },
-      orderBy: { createdAt: 'desc' },
+      where: { organizationId: id, mpStatus: { not: 'pending' } },
+      orderBy: { fechaVencimiento: 'desc' },
     })
 
     let fechaVencimiento
@@ -349,8 +349,8 @@ export async function PATCH(req, { params }) {
       })
       if (pagosAnteriores <= 1) {
         const subReferidor = await prisma.suscripcion.findFirst({
-          where: { organizationId: org.referidoPorId },
-          orderBy: { createdAt: 'desc' },
+          where: { organizationId: org.referidoPorId, mpStatus: { not: 'pending' } },
+          orderBy: { fechaVencimiento: 'desc' },
         })
         if (subReferidor) {
           const baseRef = subReferidor.estado === 'activa' && new Date(subReferidor.fechaVencimiento) > ahora

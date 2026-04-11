@@ -18,8 +18,8 @@ export async function GET() {
   })
 
   const sub = await prisma.suscripcion.findFirst({
-    where: { organizationId: orgId },
-    orderBy: { createdAt: 'desc' },
+    where: { organizationId: orgId, mpStatus: { not: 'pending' } },
+    orderBy: { fechaVencimiento: 'desc' },
     select: { id: true, plan: true, estado: true, fechaInicio: true, fechaVencimiento: true, montoCOP: true },
   })
 
