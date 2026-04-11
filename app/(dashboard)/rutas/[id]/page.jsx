@@ -1040,12 +1040,12 @@ export default function RutaDetallePage({ params }) {
                       </div>
                     </div>
 
-                    {/* Right side: cuota + quick pay */}
-                    <div className="flex items-center gap-2 shrink-0">
+                    {/* Right side: cuota arriba, boton abajo */}
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
                       {c.cuota > 0 && (
-                        <div className="text-right">
-                          <p className="text-[12px] font-bold text-[white] font-mono-display">{formatCOP(c.cuota)}</p>
-                          <p className="text-[9px] text-[#777]">cuota/dia</p>
+                        <div className="flex items-baseline gap-1">
+                          <p className="text-[13px] font-bold text-[white] font-mono-display leading-none">{formatCOP(c.cuota)}</p>
+                          <p className="text-[9px] text-[#777] leading-none">/dia</p>
                         </div>
                       )}
 
@@ -1055,10 +1055,10 @@ export default function RutaDetallePage({ params }) {
                           onClick={(e) => { e.stopPropagation(); abrirPagoRapido(c) }}
                           disabled={pagandoRapido === c.id}
                           className={[
-                            'h-8 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95',
+                            'h-7 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95 px-3 gap-1.5',
                             pagoRapidoOk === c.id
-                              ? 'bg-[#22c55e] px-3'
-                              : 'bg-[rgba(34,197,94,0.12)] border border-[rgba(34,197,94,0.3)] hover:bg-[rgba(34,197,94,0.25)] px-3 gap-1.5',
+                              ? 'bg-[#22c55e]'
+                              : 'bg-[rgba(34,197,94,0.12)] border border-[rgba(34,197,94,0.3)] hover:bg-[rgba(34,197,94,0.25)]',
                           ].join(' ')}
                         >
                           {pagandoRapido === c.id ? (
@@ -1067,24 +1067,20 @@ export default function RutaDetallePage({ params }) {
                               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                             </svg>
                           ) : pagoRapidoOk === c.id ? (
-                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                             </svg>
                           ) : (
                             <>
-                              <svg className="w-3.5 h-3.5 text-[#22c55e]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                              <svg className="w-3 h-3 text-[#22c55e]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33" />
                               </svg>
-                              <span className="text-[10px] font-semibold text-[#22c55e] whitespace-nowrap">Pago</span>
+                              <span className="text-[10px] font-semibold text-[#22c55e] whitespace-nowrap">Cobro rapido</span>
                             </>
                           )}
                         </button>
                       )}
                     </div>
-
-                    <svg className="w-4 h-4 text-[#2a2a2a] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
                   </div>
 
                   {/* Remove button (owner only) */}
@@ -1337,11 +1333,11 @@ export default function RutaDetallePage({ params }) {
         </p>
       </Modal>
 
-      {/* Modal: pago rápido — elegir método */}
+      {/* Modal: cobro rápido — elegir método */}
       <Modal
         open={!!modalPagoRapido}
         onClose={() => setModalPagoRapido(null)}
-        title="Pago rapido"
+        title="Cobro rapido"
       >
         {modalPagoRapido && (
           <div className="space-y-4">
