@@ -65,13 +65,13 @@ export async function POST(req) {
 
     const frecuencia = periodo === 'anual' ? 12 : periodo === 'trimestral' ? 3 : 1
 
-    // Crear registro de suscripción pendiente
+    // Crear registro de suscripción pendiente (NO activa hasta que MP confirme el pago)
     await prisma.suscripcion.create({
       data: {
         organizationId:   orgId,
         plan:             plan,
         tipo:             'recurrente',
-        estado:           'activa',
+        estado:           'pendiente',
         fechaInicio:      new Date(),
         fechaVencimiento: new Date(), // Se actualiza con el primer cobro
         montoCOP:         body.auto_recurring.transaction_amount,

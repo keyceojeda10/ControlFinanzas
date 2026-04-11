@@ -12,9 +12,10 @@ export async function GET() {
   if (!orgId) return NextResponse.json({ error: 'Sin organización' }, { status: 400 })
 
   const [sub, org, subRecurrente] = await Promise.all([
+    // Suscripcion mas reciente, ignorando las pending (pago iniciado pero no completado)
     prisma.suscripcion.findFirst({
-      where: { organizationId: orgId },
-      orderBy: { createdAt: 'desc' },
+      where: { organizationId: orgId, mpStatus: { not: 'pending' } },
+      orderBy: { fechaVencimiento: 'desc' },
     }),
     prisma.organization.findUnique({
       where: { id: orgId },
@@ -25,6 +26,7 @@ export async function GET() {
         organizationId: orgId,
         tipo: 'recurrente',
         estado: 'activa',
+        mpStatus: 'authorized',
       },
       orderBy: { createdAt: 'desc' },
     }),
