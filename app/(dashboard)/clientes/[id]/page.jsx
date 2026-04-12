@@ -12,7 +12,7 @@ import { Button }                    from '@/components/ui/Button'
 import { Card }                      from '@/components/ui/Card'
 import { SkeletonCard }              from '@/components/ui/Skeleton'
 import BotonWhatsApp                 from '@/components/ui/BotonWhatsApp'
-import { formatCOP }                 from '@/lib/calculos'
+import { formatCOP, formatFechaCobro } from '@/lib/calculos'
 import ScoreCrediticio               from '@/components/clientes/ScoreCrediticio'
 
 const estadoBadge = {
@@ -603,6 +603,14 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, mini = false }) {
           <p className="text-xs text-[#888888] mt-0.5">
             Prestado el {new Date(p.fechaInicio).toLocaleDateString('es-CO')}
           </p>
+          {p.estado === 'activo' && p.proximoCobro && (
+            <p className="text-xs text-[#f5c518] mt-0.5 flex items-center gap-1 capitalize">
+              <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              Próx. cobro: <span className="font-medium">{formatFechaCobro(p.proximoCobro)}</span>
+            </p>
+          )}
         </div>
         <Badge variant={badge.variant}>{badge.label}</Badge>
       </div>

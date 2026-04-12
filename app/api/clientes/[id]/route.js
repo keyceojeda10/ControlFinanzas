@@ -3,7 +3,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado } from '@/lib/calculos'
+import { calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado, calcularProximoCobro } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
 import { geocodeAddress }   from '@/lib/geocoding'
@@ -64,6 +64,7 @@ export async function GET(request, { params }) {
     diasMora:            calcularDiasMora(p, diasExcluidos),
     saldoPendiente:      calcularSaldoPendiente(p),
     porcentajePagado:    calcularPorcentajePagado(p),
+    proximoCobro:        calcularProximoCobro(p),
   }))
 
   return Response.json({ ...cliente, prestamos: prestamosEnriquecidos })
