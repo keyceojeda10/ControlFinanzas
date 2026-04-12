@@ -339,6 +339,42 @@ function NuevoPrestamo() {
             </div>
           )}
 
+          {/* Toggle automático/manual — solo en modo prestamo */}
+          {modo === 'prestamo' && (
+            <div className="flex items-center justify-between gap-3 -mb-1">
+              <p className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em]">Cálculo</p>
+              <div className="relative flex h-8 rounded-[10px] bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] p-[3px]">
+                <div
+                  className="absolute top-[3px] bottom-[3px] rounded-[8px] bg-[#f5c518] transition-all duration-200 ease-out"
+                  style={{
+                    width: `calc(50% - 1.5px)`,
+                    left: cuotaManualActiva ? `calc(50% + 0px)` : `3px`,
+                  }}
+                />
+                {[
+                  { value: false, label: 'Automático' },
+                  { value: true,  label: 'Manual' },
+                ].map((opt) => (
+                  <button
+                    key={String(opt.value)}
+                    type="button"
+                    onClick={() => {
+                      setCuotaManualActiva(opt.value)
+                      if (!opt.value) setCuotaManual('')
+                      else if (calculo?.cuotaDiaria) setCuotaManual(String(calculo.cuotaDiaria))
+                    }}
+                    className={[
+                      'relative z-[1] px-4 text-[11px] font-semibold transition-colors duration-200 cursor-pointer rounded-[8px]',
+                      cuotaManualActiva === opt.value ? 'text-[#0a0a0a]' : 'text-[#888888]',
+                    ].join(' ')}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-3">
             {/* Tasa */}
             <div className="flex flex-col gap-1">
@@ -356,6 +392,8 @@ function NuevoPrestamo() {
               <p className="text-[10px] text-[#888888] leading-snug px-0.5">
                 {modo === 'mercancia'
                   ? 'Déjalo en 0% para mercancía sin interés'
+                  : modo === 'prestamo' && cuotaManualActiva
+                  ? 'Solo informativo. La cuota manual define el total a pagar.'
                   : '% mensual sobre el monto. Ej: 20% sobre $100.000 a 60 días = $40.000 (2 meses)'}
               </p>
             </div>
@@ -399,6 +437,21 @@ function NuevoPrestamo() {
               )}
             </div>
           </div>
+
+          {/* Cuota manual — solo si está activo el modo manual */}
+          {modo === 'prestamo' && cuotaManualActiva && (
+            <div className="flex flex-col gap-1">
+              <MoneyInput
+                label="Cuota (COP) *"
+                placeholder="Ej: 60.000"
+                value={cuotaManual}
+                onChange={(e) => setCuotaManual(e.target.value)}
+              />
+              <p className="text-[10px] text-[#f5c518] leading-snug px-0.5">
+                Tú defines el valor exacto de cada cuota. El total a pagar = cuota × {plazoUnidades || 'N'} cuotas.
+              </p>
+            </div>
+          )}
 
           {/* Frecuencia – segmented control */}
           <div className="flex flex-col gap-1.5">
@@ -502,54 +555,6 @@ function NuevoPrestamo() {
               </div>
             )}
           </div>
-
-          {/* Toggle personalizar cuota */}
-          {modo === 'prestamo' && (
-            <div className="border-t border-[#2a2a2a] pt-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[white]">Personalizar cuota</p>
-                  <p className="text-[10px] text-[#666666] leading-snug">
-                    Define tú mismo el valor de cada cuota (ej. $60.000 redondo en vez de la cuota sugerida)
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCuotaManualActiva(v => {
-                      const next = !v
-                      if (!next) setCuotaManual('')
-                      else if (calculo?.cuotaDiaria) setCuotaManual(String(calculo.cuotaDiaria))
-                      return next
-                    })
-                  }}
-                  className={[
-                    'relative w-10 h-[22px] rounded-full transition-colors shrink-0 mt-0.5',
-                    cuotaManualActiva ? 'bg-[#f5c518]' : 'bg-[#333333]',
-                  ].join(' ')}
-                >
-                  <span className={[
-                    'absolute top-[2px] w-[18px] h-[18px] rounded-full bg-white transition-transform shadow-sm',
-                    cuotaManualActiva ? 'left-[20px]' : 'left-[2px]',
-                  ].join(' ')} />
-                </button>
-              </div>
-
-              {cuotaManualActiva && (
-                <div className="mt-3 space-y-2">
-                  <MoneyInput
-                    label="Valor de cada cuota (COP)"
-                    placeholder="Ej: 60.000"
-                    value={cuotaManual}
-                    onChange={(e) => setCuotaManual(e.target.value)}
-                  />
-                  <p className="text-[10px] text-[#888888] leading-snug">
-                    El total a pagar se ajusta automáticamente. La tasa ingresada se ignora.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Resumen en tiempo real (pegado al formulario) */}
           {calculo && (
