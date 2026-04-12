@@ -59,6 +59,9 @@ function NuevoPrestamo() {
   // Préstamo en curso (migración)
   const [esEnCurso, setEsEnCurso] = useState(false)
   const [yaAbonado, setYaAbonado] = useState('')
+  // Cuota personalizada (sobrescribe la cuota calculada por el sistema)
+  const [cuotaManualActiva, setCuotaManualActiva] = useState(false)
+  const [cuotaManual, setCuotaManual] = useState('')
 
   // Guard de rol
   useEffect(() => {
@@ -122,8 +125,16 @@ function NuevoPrestamo() {
     const t = Number(tasa)
     const p = Number(plazo)
     if (!m || (tasa === '' || tasa == null) || !p || !fechaInicio) return null
-    return calcularPrestamo({ montoPrestado: m, tasaInteres: t, diasPlazo: p, fechaInicio, frecuencia })
-  }, [monto, tasa, plazo, fechaInicio, frecuencia])
+    const cm = cuotaManualActiva ? Number(cuotaManual) : 0
+    return calcularPrestamo({
+      montoPrestado: m,
+      tasaInteres: t,
+      diasPlazo: p,
+      fechaInicio,
+      frecuencia,
+      ...(cm > 0 && { cuotaManual: cm }),
+    })
+  }, [monto, tasa, plazo, fechaInicio, frecuencia, cuotaManualActiva, cuotaManual])
 
   const clientesFiltrados = clientes.filter((c) =>
     c.nombre.toLowerCase().includes(buscadorCliente.toLowerCase()) ||
@@ -153,6 +164,7 @@ function NuevoPrestamo() {
           fechaInicio,
           frecuencia,
           ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
+          ...(cuotaManualActiva && Number(cuotaManual) > 0 && { cuotaManual: Number(cuotaManual) }),
         }),
       })
       const data = await res.json()
@@ -490,10 +502,62 @@ function NuevoPrestamo() {
               </div>
             )}
           </div>
-        </div>
 
-        {/* Resumen en tiempo real */}
-        <ResumenCalculo calculo={calculo} visible={!!calculo} />
+          {/* Toggle personalizar cuota */}
+          {modo === 'prestamo' && (
+            <div className="border-t border-[#2a2a2a] pt-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-[white]">Personalizar cuota</p>
+                  <p className="text-[10px] text-[#666666] leading-snug">
+                    Define tú mismo el valor de cada cuota (ej. $60.000 redondo en vez de la cuota sugerida)
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCuotaManualActiva(v => {
+                      const next = !v
+                      if (!next) setCuotaManual('')
+                      else if (calculo?.cuotaDiaria) setCuotaManual(String(calculo.cuotaDiaria))
+                      return next
+                    })
+                  }}
+                  className={[
+                    'relative w-10 h-[22px] rounded-full transition-colors shrink-0 mt-0.5',
+                    cuotaManualActiva ? 'bg-[#f5c518]' : 'bg-[#333333]',
+                  ].join(' ')}
+                >
+                  <span className={[
+                    'absolute top-[2px] w-[18px] h-[18px] rounded-full bg-white transition-transform shadow-sm',
+                    cuotaManualActiva ? 'left-[20px]' : 'left-[2px]',
+                  ].join(' ')} />
+                </button>
+              </div>
+
+              {cuotaManualActiva && (
+                <div className="mt-3 space-y-2">
+                  <MoneyInput
+                    label="Valor de cada cuota (COP)"
+                    placeholder="Ej: 60.000"
+                    value={cuotaManual}
+                    onChange={(e) => setCuotaManual(e.target.value)}
+                  />
+                  <p className="text-[10px] text-[#888888] leading-snug">
+                    El total a pagar se ajusta automáticamente. La tasa ingresada se ignora.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Resumen en tiempo real (pegado al formulario) */}
+          {calculo && (
+            <div className="border-t border-[#2a2a2a] pt-4">
+              <ResumenCalculo calculo={calculo} visible={!!calculo} />
+            </div>
+          )}
+        </div>
 
         {/* Acciones */}
         <div className="flex gap-3">

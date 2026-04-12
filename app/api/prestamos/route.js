@@ -128,7 +128,7 @@ export async function POST(request) {
 
   const { organizationId } = session.user
   const body = await request.json()
-  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado } = body
+  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado, cuotaManual } = body
 
   const freq = frecuencia || 'diario'
   const frecuenciasValidas = ['diario', 'semanal', 'quincenal', 'mensual']
@@ -155,9 +155,14 @@ export async function POST(request) {
   })
   if (!cliente) return Response.json({ error: 'Cliente no encontrado' }, { status: 404 })
 
-  // Calcular valores del préstamo
+  // Calcular valores del préstamo (cuotaManual opcional sobreescribe la cuota calculada)
+  const cuotaManualNum = Number(cuotaManual) || 0
+  if (cuotaManualNum < 0) {
+    return Response.json({ error: 'La cuota manual no puede ser negativa' }, { status: 400 })
+  }
   const { totalAPagar, cuotaDiaria, fechaFin } = calcularPrestamo({
     montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia: freq,
+    ...(cuotaManualNum > 0 && { cuotaManual: cuotaManualNum }),
   })
 
   // Validar abono vs total
