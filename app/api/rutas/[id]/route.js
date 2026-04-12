@@ -74,6 +74,24 @@ export async function GET(request, { params }) {
   // Cachear fechas para evitar recalcular en cada iteración
   const _hoy = hoy(), _manana = manana()
 
+  // Calcular próximo cobro para frecuencias no diarias
+  const calcProximoCobro = (fechaInicio, frecuencia) => {
+    if (!fechaInicio || frecuencia === 'diario') return null
+    const diasPeriodo = { semanal: 7, quincenal: 15, mensual: 30 }[frecuencia]
+    if (!diasPeriodo) return null
+    const inicio = new Date(fechaInicio)
+    inicio.setHours(0, 0, 0, 0)
+    const hoyMs = _hoy.getTime()
+    const inicioMs = inicio.getTime()
+    const diffDias = Math.floor((hoyMs - inicioMs) / 86400000)
+    if (diffDias < 0) return new Date(fechaInicio) // aún no empieza
+    // Si hoy cae exacto en un ciclo, es día de cobro (diasParaCobro=0)
+    if (diffDias % diasPeriodo === 0) return _hoy
+    const siguientePeriodo = Math.ceil(diffDias / diasPeriodo)
+    const proxFecha = new Date(inicioMs + siguientePeriodo * diasPeriodo * 86400000)
+    return proxFecha
+  }
+
   const clientesEnriquecidos = ruta.clientes.map((c) => {
     const diasExcluidos = obtenerDiasSinCobro(c, ruta, org)
     const _hoySinCobro = esHoySinCobro(diasExcluidos)
@@ -81,6 +99,8 @@ export async function GET(request, { params }) {
     let pagadoHoy    = 0
     let mora         = 0
     let ultimaFechaPago = null
+    let frecuencia   = 'diario'
+    let proximoCobro = null
 
     for (const p of c.prestamos) {
       cuotaCliente  += p.cuotaDiaria
@@ -100,6 +120,12 @@ export async function GET(request, { params }) {
         const fecha = new Date(p.pagos[0].fechaPago)
         if (!ultimaFechaPago || fecha > ultimaFechaPago) ultimaFechaPago = fecha
       }
+
+      // Frecuencia y próximo cobro del préstamo activo
+      frecuencia = p.frecuencia || 'diario'
+      if (frecuencia !== 'diario') {
+        proximoCobro = calcProximoCobro(p.fechaInicio, frecuencia)
+      }
     }
 
     const yaPageHoy = pagadoHoy > 0
@@ -112,6 +138,12 @@ export async function GET(request, { params }) {
       const ultimoDia = new Date(ultimaFechaPago)
       ultimoDia.setHours(0, 0, 0, 0)
       diasDesdeUltimoPago = Math.floor((_hoy - ultimoDia) / 86400000)
+    }
+
+    // Días para próximo cobro
+    let diasParaCobro = null
+    if (proximoCobro) {
+      diasParaCobro = Math.round((proximoCobro.getTime() - _hoy.getTime()) / 86400000)
     }
 
     return {
@@ -128,6 +160,8 @@ export async function GET(request, { params }) {
       cuota:     cuotaCliente,
       hoySinCobro: _hoySinCobro,
       prestamoActivo: c.prestamos[0]?.id ?? null,
+      frecuencia,
+      diasParaCobro,
     }
   })
 

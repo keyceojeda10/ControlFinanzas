@@ -1037,6 +1037,11 @@ export default function RutaDetallePage({ params }) {
                       <div className="flex items-center gap-1 mt-0.5">
                         <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: statusColor, boxShadow: `0 0 5px ${statusColor}50` }} />
                         <span className="text-[10px]" style={{ color: statusColor }}>{statusText}</span>
+                        {c.frecuencia && c.frecuencia !== 'diario' && !isCompleted && (
+                          <span className="text-[10px] ml-1" style={{ color: c.diasParaCobro === 0 ? '#22c55e' : c.diasParaCobro === 1 ? '#f5c518' : '#666' }}>
+                            · {c.diasParaCobro === 0 ? 'Cobra hoy' : c.diasParaCobro === 1 ? 'Cobra mañana' : c.diasParaCobro != null ? `Cobra en ${c.diasParaCobro}d` : ''}
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -1045,7 +1050,7 @@ export default function RutaDetallePage({ params }) {
                       {c.cuota > 0 && (
                         <div className="flex items-baseline gap-1">
                           <p className="text-[13px] font-bold text-[white] font-mono-display leading-none">{formatCOP(c.cuota)}</p>
-                          <p className="text-[9px] text-[#777] leading-none">/dia</p>
+                          <p className="text-[9px] text-[#777] leading-none">/{c.frecuencia === 'semanal' ? 'sem' : c.frecuencia === 'quincenal' ? 'qna' : c.frecuencia === 'mensual' ? 'mes' : 'dia'}</p>
                         </div>
                       )}
 
