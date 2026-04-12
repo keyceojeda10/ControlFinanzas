@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
-import { sendLeadNotification, buildFirstMessage } from '@/lib/telegram'
-import { sendWhatsApp } from '@/lib/baileys-client'
+import { sendLeadNotification } from '@/lib/telegram'
 
 const VERIFY_TOKEN = process.env.FB_LEADS_VERIFY_TOKEN
 const FB_APP_SECRET = process.env.FB_APP_SECRET
@@ -143,21 +142,6 @@ async function processLead(leadgenId, adId, createdTime) {
     console.log('[Leads] Guardado en DB:', nombre, telefono)
   } catch (dbErr) {
     console.error('[Leads] DB error:', dbErr.message)
-  }
-
-  // Enviar WhatsApp automático (fire-and-forget, no bloquea)
-  if (lead && telefono) {
-    const primerMensaje = buildFirstMessage(nombre)
-    sendWhatsApp(telefono, primerMensaje)
-      .then(result => {
-        if (result.sent) {
-          prisma.lead.update({
-            where: { id: lead.id },
-            data: { mensajesEnviados: JSON.stringify([{ tipo: 'auto_primer_contacto', fecha: new Date().toISOString() }]) },
-          }).catch(() => {})
-        }
-      })
-      .catch(err => console.warn('[Leads] Baileys error (no bloqueante):', err.message))
   }
 
   // Enviar Telegram con botones interactivos
