@@ -41,7 +41,7 @@ export async function POST(req) {
       include: {
         users: {
           where: { rol: 'owner' },
-          select: { nombre: true, email: true },
+          select: { id: true, nombre: true, email: true, emailsMarketing: true },
           take: 1,
         },
         _count: { select: { clientes: true, prestamos: true } },
@@ -54,6 +54,7 @@ export async function POST(req) {
       )
       const owner = org.users[0]
       if (!owner?.email) continue
+      if (!owner.emailsMarketing) continue
 
       // Day 17: friendly reminder (step 0 → 1)
       if (diasDesdeRegistro >= 17 && org.recoveryEmailStep === 0) {
@@ -62,6 +63,7 @@ export async function POST(req) {
             nombre: owner.nombre,
             clientesCreados: org._count.clientes,
             prestamosCreados: org._count.prestamos,
+            userId: owner.id,
           })
           await enviarEmail({ to: owner.email, subject, html })
           await prisma.organization.update({
@@ -79,6 +81,7 @@ export async function POST(req) {
         try {
           const { subject, html } = emailRecuperacionDia21({
             nombre: owner.nombre,
+            userId: owner.id,
           })
           await enviarEmail({ to: owner.email, subject, html })
           await prisma.organization.update({
@@ -98,6 +101,7 @@ export async function POST(req) {
             nombre: owner.nombre,
             clientesCreados: org._count.clientes,
             prestamosCreados: org._count.prestamos,
+            userId: owner.id,
           })
           await enviarEmail({ to: owner.email, subject, html })
           await prisma.organization.update({

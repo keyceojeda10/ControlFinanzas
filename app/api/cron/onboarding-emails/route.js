@@ -41,13 +41,13 @@ export async function POST(req) {
   const orgs1 = await prisma.organization.findMany({
     where: { createdAt: { gte: i1, lte: f1 } },
     include: {
-      users: { where: { rol: 'owner' }, select: { nombre: true, email: true } },
+      users: { where: { rol: 'owner' }, select: { id: true, nombre: true, email: true, emailsMarketing: true } },
     },
   })
   for (const org of orgs1) {
     const owner = org.users[0]
-    if (owner) {
-      const { subject, html } = emailOnboardingDia1({ nombre: owner.nombre })
+    if (owner && owner.emailsMarketing) {
+      const { subject, html } = emailOnboardingDia1({ nombre: owner.nombre, userId: owner.id })
       await enviarEmail({ to: owner.email, subject, html }).catch(() => {})
       results.dia1++
     }
@@ -58,16 +58,17 @@ export async function POST(req) {
   const orgs3 = await prisma.organization.findMany({
     where: { createdAt: { gte: i3, lte: f3 } },
     include: {
-      users: { where: { rol: 'owner' }, select: { nombre: true, email: true } },
+      users: { where: { rol: 'owner' }, select: { id: true, nombre: true, email: true, emailsMarketing: true } },
       _count: { select: { clientes: true } },
     },
   })
   for (const org of orgs3) {
     const owner = org.users[0]
-    if (owner) {
+    if (owner && owner.emailsMarketing) {
       const { subject, html } = emailOnboardingDia3({
         nombre: owner.nombre,
         clientesCreados: org._count.clientes,
+        userId: owner.id,
       })
       await enviarEmail({ to: owner.email, subject, html }).catch(() => {})
       results.dia3++
@@ -79,13 +80,13 @@ export async function POST(req) {
   const orgs7 = await prisma.organization.findMany({
     where: { createdAt: { gte: i7, lte: f7 } },
     include: {
-      users: { where: { rol: 'owner' }, select: { nombre: true, email: true } },
+      users: { where: { rol: 'owner' }, select: { id: true, nombre: true, email: true, emailsMarketing: true } },
     },
   })
   for (const org of orgs7) {
     const owner = org.users[0]
-    if (owner) {
-      const { subject, html } = emailOnboardingDia7({ nombre: owner.nombre })
+    if (owner && owner.emailsMarketing) {
+      const { subject, html } = emailOnboardingDia7({ nombre: owner.nombre, userId: owner.id })
       await enviarEmail({ to: owner.email, subject, html }).catch(() => {})
       results.dia7++
     }
@@ -96,13 +97,13 @@ export async function POST(req) {
   const orgs12 = await prisma.organization.findMany({
     where: { createdAt: { gte: i12, lte: f12 } },
     include: {
-      users: { where: { rol: 'owner' }, select: { nombre: true, email: true } },
+      users: { where: { rol: 'owner' }, select: { id: true, nombre: true, email: true, emailsMarketing: true } },
     },
   })
   for (const org of orgs12) {
     const owner = org.users[0]
-    if (owner) {
-      const { subject, html } = emailOnboardingDia12({ nombre: owner.nombre })
+    if (owner && owner.emailsMarketing) {
+      const { subject, html } = emailOnboardingDia12({ nombre: owner.nombre, userId: owner.id })
       await enviarEmail({ to: owner.email, subject, html }).catch(() => {})
       results.dia12++
     }
@@ -113,13 +114,13 @@ export async function POST(req) {
   const orgs14 = await prisma.organization.findMany({
     where: { createdAt: { gte: i14, lte: f14 } },
     include: {
-      users: { where: { rol: 'owner' }, select: { nombre: true, email: true } },
+      users: { where: { rol: 'owner' }, select: { id: true, nombre: true, email: true, emailsMarketing: true } },
     },
   })
   for (const org of orgs14) {
     const owner = org.users[0]
-    if (owner) {
-      const { subject, html } = emailOnboardingDia14({ nombre: owner.nombre })
+    if (owner && owner.emailsMarketing) {
+      const { subject, html } = emailOnboardingDia14({ nombre: owner.nombre, userId: owner.id })
       await enviarEmail({ to: owner.email, subject, html }).catch(() => {})
       results.dia14++
     }

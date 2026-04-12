@@ -410,9 +410,9 @@ export async function POST(req) {
             // Notificar al referidor por email
             const ownerRef = await prisma.user.findFirst({
               where: { organizationId: orgData.referidoPorId, rol: 'owner' },
-              select: { nombre: true, email: true },
+              select: { id: true, nombre: true, email: true, emailsMarketing: true },
             })
-            if (ownerRef) {
+            if (ownerRef && ownerRef.emailsMarketing) {
               const orgReferida = await prisma.organization.findUnique({
                 where: { id: orgId },
                 select: { nombre: true },
@@ -420,6 +420,7 @@ export async function POST(req) {
               const { subject: sRef, html: hRef } = emailReferidoExitoso({
                 nombre: ownerRef.nombre,
                 nombreReferido: orgReferida?.nombre || 'Un referido',
+                userId: ownerRef.id,
               })
               enviarEmail({ to: ownerRef.email, subject: sRef, html: hRef }).catch(() => {})
             }
