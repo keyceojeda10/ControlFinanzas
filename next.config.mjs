@@ -6,6 +6,11 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['@/components/ui', '@/lib'],
   },
+  async redirects() {
+    return [
+      { source: '/register', destination: '/registro', permanent: true },
+    ]
+  },
   async headers() {
     return [
       {
