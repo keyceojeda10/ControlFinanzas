@@ -1043,6 +1043,11 @@ export default function RutaDetallePage({ params }) {
                           </span>
                         )}
                       </div>
+                      {!isCompleted && c.proximoCobroLabel && (
+                        <p className="text-[10px] text-[#888] mt-0.5 capitalize truncate">
+                          Próx. cobro: <span className="text-[#bbb] font-medium">{c.proximoCobroLabel}</span>
+                        </p>
+                      )}
                     </div>
 
                     {/* Right side: cuota arriba, boton abajo */}

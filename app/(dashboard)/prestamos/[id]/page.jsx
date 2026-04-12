@@ -18,7 +18,7 @@ import ModificarPlazo                 from '@/components/prestamos/ModificarPlaz
 import BotonWhatsApp                  from '@/components/ui/BotonWhatsApp'
 import BotonCompartir                 from '@/components/ui/BotonCompartir'
 import BotonImprimirRecibo            from '@/components/ui/BotonImprimirRecibo'
-import { formatCOP }                  from '@/lib/calculos'
+import { formatCOP, formatFechaCobro } from '@/lib/calculos'
 
 // ─── Helpers de formato ──────────────────────────────────────────
 const fmtFecha = (d) => d
@@ -140,7 +140,7 @@ export default function PrestamoDetallePage({ params }) {
     cliente, estado, montoPrestado, totalAPagar, cuotaDiaria, frecuencia,
     tasaInteres, diasPlazo, fechaInicio, fechaFin,
     totalPagado, saldoPendiente, porcentajePagado, diasMora,
-    pagoHoy: yaPagoHoy, pagos = [],
+    pagoHoy: yaPagoHoy, pagos = [], proximoCobro,
   } = prestamo
 
   const frecuenciaLabel = {
@@ -438,6 +438,11 @@ export default function PrestamoDetallePage({ params }) {
             { label: 'Plazo',        value: `${diasPlazo} días`      },
             { label: 'Inicio',       value: fmtFecha(fechaInicio)    },
             { label: 'Vencimiento',  value: fmtFecha(fechaFin)       },
+            ...(estaActivo && proximoCobro ? [{
+              label: 'Próximo cobro',
+              value: formatFechaCobro(proximoCobro),
+              color: '#f5c518',
+            }] : []),
             {
               label: diasMora > 0 ? 'Días en mora' : 'Estado',
               value: diasMora > 0 ? `${diasMora} días` : 'Al día',

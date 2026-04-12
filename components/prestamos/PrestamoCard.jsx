@@ -2,7 +2,7 @@
 
 import Link      from 'next/link'
 import { Badge } from '@/components/ui/Badge'
-import { formatCOP } from '@/lib/calculos'
+import { formatCOP, formatFechaCobro } from '@/lib/calculos'
 
 const estadoBadge = {
   activo:     { variant: 'blue',  label: 'Activo'     },
@@ -14,6 +14,7 @@ export default function PrestamoCard({ prestamo: p }) {
   const badge      = estadoBadge[p.estado] ?? estadoBadge.activo
   const porcentaje = p.porcentajePagado ?? 0
   const enMora     = p.diasMora > 0
+  const proximoCobroLabel = p.estado === 'activo' && p.proximoCobro ? formatFechaCobro(p.proximoCobro) : null
 
   return (
     <Link
@@ -106,6 +107,15 @@ export default function PrestamoCard({ prestamo: p }) {
         <span className="text-[#8b95a5]"><span className="font-mono-display">{porcentaje}%</span> pagado</span>
         <span className="text-[#8b95a5]">Cuota <span className="font-mono-display">{formatCOP(p.cuotaDiaria)}</span></span>
       </div>
+
+      {proximoCobroLabel && (
+        <div className="mt-2 pt-2 border-t border-[#2a2a2a] flex items-center gap-1.5 text-[10px] text-[#8b95a5]">
+          <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <span>Próx. cobro: <span className="text-[#f1f5f9] font-medium capitalize">{proximoCobroLabel}</span></span>
+        </div>
+      )}
     </Link>
   )
 }

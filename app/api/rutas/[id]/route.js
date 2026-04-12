@@ -3,7 +3,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { calcularDiasMora, calcularSaldoPendiente } from '@/lib/calculos'
+import { calcularDiasMora, calcularSaldoPendiente, calcularProximoCobro, formatFechaCobro } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, validarDiasSinCobro } from '@/lib/dias-sin-cobro'
 
 // Funciones de fecha en timezone Colombia (UTC-5)
@@ -126,6 +126,10 @@ export async function GET(request, { params }) {
       if (frecuencia !== 'diario') {
         proximoCobro = calcProximoCobro(p.fechaInicio, frecuencia)
       }
+      // Próximo cobro centralizado (toma en cuenta pagos del ciclo actual)
+      if (!c._proximoCobroFull) {
+        c._proximoCobroFull = calcularProximoCobro(p)
+      }
     }
 
     const yaPageHoy = pagadoHoy > 0
@@ -162,6 +166,7 @@ export async function GET(request, { params }) {
       prestamoActivo: c.prestamos[0]?.id ?? null,
       frecuencia,
       diasParaCobro,
+      proximoCobroLabel: c._proximoCobroFull ? formatFechaCobro(c._proximoCobroFull) : null,
     }
   })
 
