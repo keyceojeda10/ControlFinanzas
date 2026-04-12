@@ -75,8 +75,21 @@ function TutorialCard({ tutorial, showCopyButton, onImageClick, defaultOpen = fa
       {/* Body */}
       {open && (
         <div className="px-4 pb-4 pt-1">
-          {/* Images */}
-          {tutorial.images.length > 0 && (
+          {/* Video embed */}
+          {tutorial.videoId && (
+            <div className="relative w-full rounded-xl overflow-hidden border border-[#2a2a2a] mb-4" style={{ paddingBottom: '56.25%' }}>
+              <iframe
+                className="absolute inset-0 w-full h-full"
+                src={`https://www.youtube.com/embed/${tutorial.videoId}`}
+                title={tutorial.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          )}
+
+          {/* Images (solo si no hay video) */}
+          {!tutorial.videoId && tutorial.images.length > 0 && (
             <div className="flex gap-3 mb-4 overflow-x-auto pb-2">
               {tutorial.images.map((img) => (
                 <div
@@ -104,23 +117,38 @@ function TutorialCard({ tutorial, showCopyButton, onImageClick, defaultOpen = fa
             {showCopyButton ? tutorial.text : parseWhatsAppText(tutorial.text)}
           </div>
 
-          {showCopyButton && (
-            <div className="flex items-center gap-3 mt-3">
-              <button
-                onClick={handleCopy}
+          {/* Action buttons */}
+          <div className="flex items-center gap-2 mt-3 flex-wrap">
+            {/* Share video via WhatsApp */}
+            {tutorial.videoId && (
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(`${tutorial.title}\nhttps://www.youtube.com/watch?v=${tutorial.videoId}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#25D366] text-white text-xs font-semibold hover:bg-[#1fb855] transition-all active:scale-95"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
                   <path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.612.616l4.529-1.474A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.232 0-4.299-.726-5.979-1.955l-.417-.306-2.688.875.864-2.643-.331-.434A9.96 9.96 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z" />
                 </svg>
-                Copiar para WhatsApp
+                Compartir video
+              </a>
+            )}
+            {showCopyButton && (
+              <button
+                onClick={handleCopy}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] text-[#888] text-xs font-semibold hover:text-white hover:border-[#444] transition-all active:scale-95"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                Copiar texto
               </button>
-              {copied && (
-                <span className="text-xs text-[#22c55e] font-medium animate-pulse">Copiado!</span>
-              )}
-            </div>
-          )}
+            )}
+            {copied && (
+              <span className="text-xs text-[#22c55e] font-medium animate-pulse">Copiado!</span>
+            )}
+          </div>
         </div>
       )}
     </div>
