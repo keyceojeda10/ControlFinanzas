@@ -79,6 +79,7 @@ model Organization {
   planDemoHasta   DateTime?
   onboardingStep  Int            @default(0)
   trialReminderSent Boolean      @default(false)
+  recoveryEmailStep Int          @default(0)
   diasSinCobro    String?
   createdAt       DateTime       @default(now())
 
