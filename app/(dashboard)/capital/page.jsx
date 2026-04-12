@@ -27,6 +27,8 @@ function esIngreso(tipo) {
   return ['capital_inicial', 'inyeccion', 'recaudo'].includes(tipo)
 }
 
+const TIPOS_MANUALES = ['capital_inicial', 'inyeccion', 'retiro', 'ajuste']
+
 function fechaCorta(iso) {
   if (!iso) return ''
   const d = new Date(iso)
@@ -48,6 +50,7 @@ export default function CapitalPage() {
   const [modalDesc, setModalDesc] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [eliminando, setEliminando] = useState(null)
 
   const fetchResumen = useCallback(() => {
     fetch('/api/capital/resumen')
@@ -73,6 +76,25 @@ export default function CapitalPage() {
 
   useEffect(() => { fetchResumen() }, [fetchResumen])
   useEffect(() => { fetchMovimientos() }, [fetchMovimientos])
+
+  const handleEliminar = async (m) => {
+    const label = TIPO_LABELS[m.tipo] || m.tipo
+    const msg = `Eliminar ${label.toLowerCase()} de ${formatCOP(m.monto)}? Se revertirá el efecto en el saldo.`
+    if (!confirm(msg)) return
+    setEliminando(m.id)
+    try {
+      const res = await fetch(`/api/capital/movimientos/${m.id}`, { method: 'DELETE' })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        alert(data.error || 'No se pudo eliminar el movimiento')
+        return
+      }
+      fetchResumen()
+      fetchMovimientos()
+    } finally {
+      setEliminando(null)
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -237,11 +259,26 @@ export default function CapitalPage() {
                   )}
                   <p className="text-[10px] text-[#555555] mt-0.5">{fechaCorta(m.createdAt)}</p>
                 </div>
-                <div className="text-right shrink-0 ml-3">
-                  <p className={`text-sm font-bold ${esIngreso(m.tipo) ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
-                    {esIngreso(m.tipo) ? '+' : '-'}{formatCOP(m.monto)}
-                  </p>
-                  <p className="text-[10px] text-[#555555]">Saldo: {formatCOP(m.saldoNuevo)}</p>
+                <div className="flex items-center gap-2 shrink-0 ml-3">
+                  <div className="text-right">
+                    <p className={`text-sm font-bold ${esIngreso(m.tipo) ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
+                      {esIngreso(m.tipo) ? '+' : '-'}{formatCOP(m.monto)}
+                    </p>
+                    <p className="text-[10px] text-[#555555]">Saldo: {formatCOP(m.saldoNuevo)}</p>
+                  </div>
+                  {TIPOS_MANUALES.includes(m.tipo) && (
+                    <button
+                      type="button"
+                      onClick={() => handleEliminar(m)}
+                      disabled={eliminando === m.id}
+                      title="Eliminar movimiento"
+                      className="w-7 h-7 flex items-center justify-center rounded-[8px] text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] disabled:opacity-50 transition-colors"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

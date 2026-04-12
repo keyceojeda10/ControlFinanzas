@@ -342,13 +342,13 @@ function NuevoPrestamo() {
           {/* Toggle automático/manual — solo en modo prestamo */}
           {modo === 'prestamo' && (
             <div className="flex items-center justify-between gap-3 -mb-1">
-              <p className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em]">Cálculo</p>
-              <div className="relative flex h-8 rounded-[10px] bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] p-[3px]">
+              <p className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em] shrink-0">Cálculo</p>
+              <div className="relative grid grid-cols-2 h-9 w-[180px] shrink-0 rounded-[10px] bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] p-[3px]">
                 <div
-                  className="absolute top-[3px] bottom-[3px] rounded-[8px] bg-[#f5c518] transition-all duration-200 ease-out"
+                  className="absolute top-[3px] bottom-[3px] w-[calc(50%-3px)] rounded-[8px] bg-[#f5c518] transition-transform duration-200 ease-out"
                   style={{
-                    width: `calc(50% - 1.5px)`,
-                    left: cuotaManualActiva ? `calc(50% + 0px)` : `3px`,
+                    transform: cuotaManualActiva ? 'translateX(calc(100% + 0px))' : 'translateX(0)',
+                    left: '3px',
                   }}
                 />
                 {[
@@ -364,8 +364,8 @@ function NuevoPrestamo() {
                       else if (calculo?.cuotaDiaria) setCuotaManual(String(calculo.cuotaDiaria))
                     }}
                     className={[
-                      'relative z-[1] px-4 text-[11px] font-semibold transition-colors duration-200 cursor-pointer rounded-[8px]',
-                      cuotaManualActiva === opt.value ? 'text-[#0a0a0a]' : 'text-[#888888]',
+                      'relative z-[1] flex items-center justify-center text-[11px] font-semibold rounded-[8px] transition-colors duration-200 cursor-pointer',
+                      cuotaManualActiva === opt.value ? 'text-[#0a0a0a]' : 'text-[#888888] hover:text-[#bbb]',
                     ].join(' ')}
                   >
                     {opt.label}

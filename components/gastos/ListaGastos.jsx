@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/Button'
 import { formatCOP } from '@/lib/calculos'
+import { useAuth } from '@/hooks/useAuth'
 
 const ESTADO_COLORS = {
   pendiente: 'bg-[rgba(245,158,11,0.15)] text-[#f59e0b] border-[rgba(245,158,11,0.3)]',
@@ -12,8 +13,11 @@ const ESTADO_COLORS = {
 }
 
 export default function ListaGastos({ soloPendientes = false, onCountChange, fecha }) {
+  const { session } = useAuth()
+  const esOwner = session?.user?.rol === 'owner'
   const [gastos, setGastos] = useState([])
   const [loading, setLoading] = useState(true)
+  const [eliminando, setEliminando] = useState(null)
 
   const fetchGastos = async () => {
     setLoading(true)
@@ -55,6 +59,25 @@ export default function ListaGastos({ soloPendientes = false, onCountChange, fec
     fetchGastos()
   }
 
+  const handleEliminar = async (g) => {
+    const msg = g.estado === 'aprobado'
+      ? `Eliminar "${g.description}" por ${formatCOP(g.monto)}? Se revertirá el egreso en capital.`
+      : `Eliminar "${g.description}" por ${formatCOP(g.monto)}?`
+    if (!confirm(msg)) return
+    setEliminando(g.id)
+    try {
+      const res = await fetch(`/api/gastos/${g.id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        alert(data.error || 'No se pudo eliminar el gasto')
+        return
+      }
+      fetchGastos()
+    } finally {
+      setEliminando(null)
+    }
+  }
+
   if (loading) {
     return <p className="text-sm text-[#888888]">Cargando...</p>
   }
@@ -83,31 +106,46 @@ export default function ListaGastos({ soloPendientes = false, onCountChange, fec
             <p className="text-sm font-bold text-white font-mono-display">{formatCOP(g.monto)}</p>
           </div>
           
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <span className={[
               'text-xs px-2 py-1 rounded-full border',
               ESTADO_COLORS[g.estado] || ESTADO_COLORS.pendiente
             ]}>
               {g.estado.charAt(0).toUpperCase() + g.estado.slice(1)}
             </span>
-            
-            {g.estado === 'pendiente' && (
-              <div className="flex gap-2">
-                <Button 
-                  size="sm" 
-                  variant="secondary"
-                  onClick={() => handleAprobar(g.id, 'rechazado')}
+
+            <div className="flex items-center gap-2">
+              {g.estado === 'pendiente' && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => handleAprobar(g.id, 'rechazado')}
+                  >
+                    Rechazar
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => handleAprobar(g.id, 'aprobado')}
+                  >
+                    Aprobar
+                  </Button>
+                </>
+              )}
+              {esOwner && (
+                <button
+                  type="button"
+                  onClick={() => handleEliminar(g)}
+                  disabled={eliminando === g.id}
+                  title="Eliminar gasto"
+                  className="w-8 h-8 flex items-center justify-center rounded-[8px] text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] disabled:opacity-50 transition-colors"
                 >
-                  Rechazar
-                </Button>
-                <Button 
-                  size="sm" 
-                  onClick={() => handleAprobar(g.id, 'aprobado')}
-                >
-                  Aprobar
-                </Button>
-              </div>
-            )}
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       ))}
