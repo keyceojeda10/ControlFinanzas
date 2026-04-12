@@ -74,24 +74,6 @@ export async function GET(request, { params }) {
   // Cachear fechas para evitar recalcular en cada iteración
   const _hoy = hoy(), _manana = manana()
 
-  // Calcular próximo cobro para frecuencias no diarias
-  const calcProximoCobro = (fechaInicio, frecuencia) => {
-    if (!fechaInicio || frecuencia === 'diario') return null
-    const diasPeriodo = { semanal: 7, quincenal: 15, mensual: 30 }[frecuencia]
-    if (!diasPeriodo) return null
-    const inicio = new Date(fechaInicio)
-    inicio.setHours(0, 0, 0, 0)
-    const hoyMs = _hoy.getTime()
-    const inicioMs = inicio.getTime()
-    const diffDias = Math.floor((hoyMs - inicioMs) / 86400000)
-    if (diffDias < 0) return new Date(fechaInicio) // aún no empieza
-    // Si hoy cae exacto en un ciclo, es día de cobro (diasParaCobro=0)
-    if (diffDias % diasPeriodo === 0) return _hoy
-    const siguientePeriodo = Math.ceil(diffDias / diasPeriodo)
-    const proxFecha = new Date(inicioMs + siguientePeriodo * diasPeriodo * 86400000)
-    return proxFecha
-  }
-
   const clientesEnriquecidos = ruta.clientes.map((c) => {
     const diasExcluidos = obtenerDiasSinCobro(c, ruta, org)
     const _hoySinCobro = esHoySinCobro(diasExcluidos)
@@ -121,15 +103,11 @@ export async function GET(request, { params }) {
         if (!ultimaFechaPago || fecha > ultimaFechaPago) ultimaFechaPago = fecha
       }
 
-      // Frecuencia y próximo cobro del préstamo activo
+      // Frecuencia y próximo cobro del préstamo activo (lib centralizado)
       frecuencia = p.frecuencia || 'diario'
-      if (frecuencia !== 'diario') {
-        proximoCobro = calcProximoCobro(p.fechaInicio, frecuencia)
-      }
-      // Próximo cobro centralizado (toma en cuenta pagos del ciclo actual)
-      if (!c._proximoCobroFull) {
-        c._proximoCobroFull = calcularProximoCobro(p)
-      }
+      const pc = calcularProximoCobro(p)
+      if (frecuencia !== 'diario') proximoCobro = pc
+      if (!c._proximoCobroFull) c._proximoCobroFull = pc
     }
 
     const yaPageHoy = pagadoHoy > 0
