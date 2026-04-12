@@ -341,14 +341,13 @@ function NuevoPrestamo() {
 
           {/* Toggle automático/manual — solo en modo prestamo */}
           {modo === 'prestamo' && (
-            <div className="flex items-center justify-between gap-3 -mb-1">
-              <p className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em] shrink-0">Cálculo</p>
-              <div className="relative grid grid-cols-2 h-9 w-[180px] shrink-0 rounded-[10px] bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] p-[3px]">
+            <div className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-[12px] bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.06)]">
+              <p className="text-[11px] font-semibold text-[#888888] uppercase tracking-[0.05em] shrink-0">Cálculo</p>
+              <div className="relative grid grid-cols-2 h-9 w-[190px] shrink-0 rounded-[10px] bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] p-[3px]">
                 <div
-                  className="absolute top-[3px] bottom-[3px] w-[calc(50%-3px)] rounded-[8px] bg-[#f5c518] transition-transform duration-200 ease-out"
+                  className="absolute top-[3px] bottom-[3px] left-[3px] w-[calc(50%-3px)] rounded-[8px] bg-[#f5c518] transition-transform duration-200 ease-out"
                   style={{
-                    transform: cuotaManualActiva ? 'translateX(calc(100% + 0px))' : 'translateX(0)',
-                    left: '3px',
+                    transform: cuotaManualActiva ? 'translateX(100%)' : 'translateX(0)',
                   }}
                 />
                 {[
