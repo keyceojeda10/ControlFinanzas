@@ -1042,7 +1042,7 @@ export default function RutaDetallePage({ params }) {
 
                   {/* Client content — clickable */}
                   <div
-                    className="flex-1 flex items-center gap-3 py-3 pl-2 pr-3 min-w-0 cursor-pointer active:opacity-80"
+                    className="flex-1 py-3 pl-2 pr-3 min-w-0 cursor-pointer active:opacity-80"
                     onClick={() => {
                       const nextIdx = Math.min(idx + 1, ruta.clientes.length - 1)
                       sessionStorage.setItem(`ruta-scroll-${id}`, ruta.clientes[nextIdx].id)
@@ -1058,71 +1058,74 @@ export default function RutaDetallePage({ params }) {
                       else { window.location.href = `/clientes/${c.id}` }
                     }}
                   >
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <p className="text-[13px] font-semibold text-[white] truncate">{c.nombre}</p>
-                        {c.grupoCobro && !grupoFiltro && (
-                          <span className="shrink-0 w-2 h-2 rounded-full" style={{ background: c.grupoCobro.color || '#666' }} title={c.grupoCobro.nombre} />
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: statusColor, boxShadow: `0 0 5px ${statusColor}50` }} />
-                        <span className="text-[10px]" style={{ color: statusColor }}>{statusText}</span>
-                        {c.frecuencia && c.frecuencia !== 'diario' && !isCompleted && (
-                          <span className="text-[10px] ml-1" style={{ color: c.diasParaCobro === 0 ? '#22c55e' : c.diasParaCobro === 1 ? '#f5c518' : '#666' }}>
-                            · {c.diasParaCobro === 0 ? 'Cobra hoy' : c.diasParaCobro === 1 ? 'Cobra mañana' : c.diasParaCobro != null ? `Cobra en ${c.diasParaCobro}d` : ''}
-                          </span>
-                        )}
-                      </div>
-                      {!isCompleted && c.proximoCobroLabel && (
-                        <p className="text-[10px] text-[#888] mt-0.5 capitalize truncate">
-                          Próx. cobro: <span className="text-[#bbb] font-medium">{c.proximoCobroLabel}</span>
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Right side: cuota arriba, boton abajo */}
-                    <div className="flex flex-col items-end gap-1.5 shrink-0">
-                      {c.cuota > 0 && (
-                        <div className="flex items-baseline gap-1">
-                          <p className="text-[13px] font-bold text-[white] font-mono-display leading-none">{formatCOP(c.cuota)}</p>
-                          <p className="text-[9px] text-[#777] leading-none">/{c.frecuencia === 'semanal' ? 'sem' : c.frecuencia === 'quincenal' ? 'qna' : c.frecuencia === 'mensual' ? 'mes' : 'dia'}</p>
-                        </div>
-                      )}
-
-                      {/* Quick pay button */}
-                      {!isCompleted && c.cuota > 0 && !c.pagoHoy && c.prestamoActivo && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); abrirPagoRapido(c) }}
-                          disabled={pagandoRapido === c.id}
-                          className={[
-                            'h-7 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95 px-3 gap-1.5',
-                            pagoRapidoOk === c.id
-                              ? 'bg-[#22c55e]'
-                              : 'bg-[rgba(34,197,94,0.12)] border border-[rgba(34,197,94,0.3)] hover:bg-[rgba(34,197,94,0.25)]',
-                          ].join(' ')}
-                        >
-                          {pagandoRapido === c.id ? (
-                            <svg className="w-3.5 h-3.5 text-[#22c55e] animate-spin" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                            </svg>
-                          ) : pagoRapidoOk === c.id ? (
-                            <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                            </svg>
-                          ) : (
-                            <>
-                              <svg className="w-3 h-3 text-[#22c55e]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33" />
-                              </svg>
-                              <span className="text-[10px] font-semibold text-[#22c55e] whitespace-nowrap">Cobro rápido</span>
-                            </>
+                    <div className="flex items-start gap-3 min-w-0">
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <p className="text-[13px] font-semibold text-[white] truncate">{c.nombre}</p>
+                          {c.grupoCobro && !grupoFiltro && (
+                            <span className="shrink-0 w-2 h-2 rounded-full" style={{ background: c.grupoCobro.color || '#666' }} title={c.grupoCobro.nombre} />
                           )}
-                        </button>
-                      )}
+                        </div>
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: statusColor, boxShadow: `0 0 5px ${statusColor}50` }} />
+                          <span className="text-[10px]" style={{ color: statusColor }}>{statusText}</span>
+                          {c.frecuencia && c.frecuencia !== 'diario' && !isCompleted && (
+                            <span className="text-[10px] ml-1" style={{ color: c.diasParaCobro === 0 ? '#22c55e' : c.diasParaCobro === 1 ? '#f5c518' : '#666' }}>
+                              · {c.diasParaCobro === 0 ? 'Cobra hoy' : c.diasParaCobro === 1 ? 'Cobra mañana' : c.diasParaCobro != null ? `Cobra en ${c.diasParaCobro}d` : ''}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Right side: cuota arriba, boton abajo */}
+                      <div className="flex flex-col items-end gap-1.5 shrink-0">
+                        {c.cuota > 0 && (
+                          <div className="flex items-baseline gap-1">
+                            <p className="text-[13px] font-bold text-[white] font-mono-display leading-none">{formatCOP(c.cuota)}</p>
+                            <p className="text-[9px] text-[#777] leading-none">/{c.frecuencia === 'semanal' ? 'sem' : c.frecuencia === 'quincenal' ? 'qna' : c.frecuencia === 'mensual' ? 'mes' : 'dia'}</p>
+                          </div>
+                        )}
+
+                        {/* Quick pay button */}
+                        {!isCompleted && c.cuota > 0 && !c.pagoHoy && c.prestamoActivo && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); abrirPagoRapido(c) }}
+                            disabled={pagandoRapido === c.id}
+                            className={[
+                              'h-7 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95 px-3 gap-1.5',
+                              pagoRapidoOk === c.id
+                                ? 'bg-[#22c55e]'
+                                : 'bg-[rgba(34,197,94,0.12)] border border-[rgba(34,197,94,0.3)] hover:bg-[rgba(34,197,94,0.25)]',
+                            ].join(' ')}
+                          >
+                            {pagandoRapido === c.id ? (
+                              <svg className="w-3.5 h-3.5 text-[#22c55e] animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                              </svg>
+                            ) : pagoRapidoOk === c.id ? (
+                              <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                              </svg>
+                            ) : (
+                              <>
+                                <svg className="w-3 h-3 text-[#22c55e]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33" />
+                                </svg>
+                                <span className="text-[10px] font-semibold text-[#22c55e] whitespace-nowrap">Cobro rápido</span>
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
                     </div>
+
+                    {!isCompleted && c.proximoCobroLabel && (
+                      <p className="text-[10px] text-[#888] mt-1.5 leading-snug capitalize">
+                        Próx. cobro: <span className="text-[#bbb] font-medium">{c.proximoCobroLabel}</span>
+                      </p>
+                    )}
                   </div>
 
                   {/* Remove button (owner only) */}
