@@ -100,6 +100,7 @@ model Organization {
   capital          Capital?
   movimientosCapital MovimientoCapital[]
   actividadLogs    ActividadLog[]
+  gruposCobro      GrupoCobro[]
 
   @@index([createdAt])
 }
@@ -152,7 +153,25 @@ model Ruta {
   organization Organization @relation(fields: [organizationId], references: [id])
   cobrador     User?        @relation("CobradorRuta", fields: [cobradorId], references: [id])
   clientes     Cliente[]
+  gruposCobro  GrupoCobro[]
 
+  @@index([organizationId])
+}
+
+model GrupoCobro {
+  id             String   @id @default(cuid())
+  organizationId String
+  rutaId         String
+  nombre         String
+  color          String?
+  orden          Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  ruta         Ruta         @relation(fields: [rutaId], references: [id], onDelete: Cascade)
+  clientes     Cliente[]
+
+  @@index([rutaId])
   @@index([organizationId])
 }
 
@@ -160,6 +179,7 @@ model Cliente {
   id             String        @id @default(cuid())
   organizationId String
   rutaId         String?
+  grupoCobroId   String?
   ordenRuta      Int?
   nombre         String
   cedula         String
@@ -177,12 +197,14 @@ model Cliente {
 
   organization Organization @relation(fields: [organizationId], references: [id])
   ruta         Ruta?        @relation(fields: [rutaId], references: [id])
+  grupoCobro   GrupoCobro?  @relation(fields: [grupoCobroId], references: [id], onDelete: SetNull)
   prestamos    Prestamo[]
 
   @@unique([organizationId, cedula])
   @@index([organizationId])
   @@index([cedula])
   @@index([estado])
+  @@index([grupoCobroId])
 }
 
 model Prestamo {

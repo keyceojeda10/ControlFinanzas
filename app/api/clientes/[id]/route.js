@@ -116,7 +116,7 @@ export async function PATCH(request, { params }) {
     return Response.json(actualizado)
   }
 
-  const { nombre, cedula, telefono, direccion, referencia, notas, fotoUrl, rutaId, latitud, longitud, diasSinCobro } = body
+  const { nombre, cedula, telefono, direccion, referencia, notas, fotoUrl, rutaId, latitud, longitud, diasSinCobro, grupoCobroId } = body
 
   // Validar días sin cobro
   let diasSinCobroVal
@@ -163,9 +163,10 @@ export async function PATCH(request, { params }) {
       ...(referencia !== undefined && { referencia: referencia?.trim() || null }),
       ...(notas      !== undefined && { notas:      notas?.trim()      || null }),
       ...(fotoUrl    !== undefined && { fotoUrl:    fotoUrl?.trim() && /^https?:\/\/.+/i.test(fotoUrl.trim()) ? fotoUrl.trim() : null }),
-      ...(rutaId     !== undefined && { rutaId:     rutaId             || null }),
-      ...(lat        !== undefined && { latitud:    lat }),
-      ...(lng        !== undefined && { longitud:   lng }),
+      ...(rutaId        !== undefined && { rutaId:        rutaId        || null }),
+      ...(grupoCobroId !== undefined && { grupoCobroId: grupoCobroId || null }),
+      ...(lat          !== undefined && { latitud:    lat }),
+      ...(lng          !== undefined && { longitud:   lng }),
       ...(diasSinCobroVal !== undefined && { diasSinCobro: diasSinCobroVal }),
     },
   })

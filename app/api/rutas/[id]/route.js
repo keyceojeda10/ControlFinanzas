@@ -44,8 +44,13 @@ export async function GET(request, { params }) {
     where: { id, organizationId },
     include: {
       cobrador: { select: { id: true, nombre: true, email: true } },
+      gruposCobro: {
+        orderBy: { orden: 'asc' },
+        include: { _count: { select: { clientes: true } } },
+      },
       clientes: {
         include: {
+          grupoCobro: { select: { id: true, nombre: true, color: true } },
           prestamos: {
             where:   { estado: 'activo' },
             include: {
@@ -145,6 +150,7 @@ export async function GET(request, { params }) {
       frecuencia,
       diasParaCobro,
       proximoCobroLabel: c._proximoCobroFull ? formatFechaCobro(c._proximoCobroFull) : null,
+      grupoCobro: c.grupoCobro ?? null,
     }
   })
 
@@ -162,6 +168,7 @@ export async function GET(request, { params }) {
     nombre:      ruta.nombre,
     diasSinCobro: ruta.diasSinCobro,
     cobrador:    ruta.cobrador,
+    gruposCobro: ruta.gruposCobro,
     clientes:    clientesEnriquecidos,
     esperadoHoy: Math.round(esperadoHoy),
     recaudadoHoy: Math.round(recaudadoHoy),
