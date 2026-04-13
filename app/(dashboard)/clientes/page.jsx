@@ -150,13 +150,18 @@ export default function ClientesPage() {
     fetchGrupos()
   }, [fetchGrupos, lastSyncedAt])
 
-  // Búsqueda/filtro por grupo -> volver a página 1
+  // Búsqueda -> volver a página 1
+  useEffect(() => {
+    setPage(1)
+  }, [buscar])
+
+  // Cambiar filtro de grupo reinicia selección masiva
   useEffect(() => {
     setPage(1)
     setModoAsignar(false)
     setSelAsignar([])
     setGrupoAsignar('')
-  }, [buscar, grupoFiltro])
+  }, [grupoFiltro])
 
   // Carga de clientes con debounce
   useEffect(() => {
@@ -165,10 +170,10 @@ export default function ClientesPage() {
   }, [fetchClientes, buscar, page, grupoFiltro, lastSyncedAt])
 
   useEffect(() => {
-    if (estado || grupoFiltro || modoAsignar) {
+    if (estado || grupoFiltro) {
       setMostrarControles(true)
     }
-  }, [estado, grupoFiltro, modoAsignar])
+  }, [estado, grupoFiltro])
 
   const crearGrupo = async () => {
     if (!nuevoGrupo.trim()) return
@@ -304,7 +309,7 @@ export default function ClientesPage() {
               type="search"
               value={buscar}
               onChange={(e) => setBuscar(e.target.value)}
-              placeholder="Buscar por nombre, cédula o teléfono…"
+              placeholder={modoAsignar ? 'Buscar clientes para asignar…' : 'Buscar por nombre, cédula o teléfono…'}
               className="w-full h-9 pl-9 pr-9 rounded-[11px] border border-[#2a2a2a] bg-[#161616] text-sm text-[white] placeholder-[#777777] focus:outline-none focus:border-[#f5c518] focus:ring-1 focus:ring-[rgba(245,197,24,0.3)] transition-all"
             />
             {buscar && (
@@ -332,7 +337,7 @@ export default function ClientesPage() {
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
-            <span className="hidden sm:inline">{mostrarControles ? 'Ocultar' : 'Filtros'}</span>
+            <span>{mostrarControles ? 'Ocultar' : 'Opciones'}</span>
             {filtrosActivos > 0 && (
               <span className="min-w-4 h-4 px-1 rounded-full bg-[rgba(245,197,24,0.18)] text-[#f5c518] text-[10px] leading-4 text-center">
                 {filtrosActivos}
@@ -340,6 +345,12 @@ export default function ClientesPage() {
             )}
           </button>
         </div>
+
+        {!mostrarControles && !hayControlesActivos && (
+          <p className="mt-1.5 px-0.5 text-[11px] text-[#707783]">
+            Aquí encuentras filtros por estado, grupos y asignación masiva.
+          </p>
+        )}
 
         {!mostrarControles && hayControlesActivos && (
           <div className="mt-2 flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-0.5">
@@ -595,30 +606,54 @@ export default function ClientesPage() {
       )}
 
       {/* Barra flotante: asignar grupo */}
-      {modoAsignar && selAsignar.length > 0 && (
+      {modoAsignar && (
         <div className="fixed bottom-20 left-3 right-3 sm:left-auto sm:right-4 sm:bottom-6 sm:w-auto z-50">
-          <div className="flex items-center gap-2 px-4 py-3 rounded-[14px] border border-[rgba(245,197,24,0.2)] sm:min-w-[320px]"
+          <div className="px-3 py-3 rounded-[14px] border border-[rgba(245,197,24,0.2)] sm:min-w-[420px]"
             style={{ background: 'rgba(15,15,22,0.95)', backdropFilter: 'blur(20px)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
           >
-            <span className="text-sm text-white shrink-0">{selAsignar.length} sel.</span>
-            <select
-              value={grupoAsignar}
-              onChange={e => setGrupoAsignar(e.target.value)}
-              className="flex-1 h-8 px-2 rounded-lg bg-[#1a1a1a] border border-[#333] text-sm text-white min-w-0"
-            >
-              <option value="">Elegir grupo...</option>
-              {grupos.map(g => (
-                <option key={g.id} value={g.id}>{g.nombre}</option>
-              ))}
-              <option value="_none">Sin grupo</option>
-            </select>
-            <button
-              onClick={asignarGrupoClientes}
-              disabled={!grupoAsignar || asignandoGrupo}
-              className="h-8 px-4 rounded-lg bg-[#f5c518] text-black text-sm font-bold shrink-0 disabled:opacity-50 active:scale-95 transition-transform"
-            >
-              {asignandoGrupo ? '...' : 'Asignar'}
-            </button>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="relative flex-1 min-w-0">
+                <svg
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#7b8794] pointer-events-none"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  type="search"
+                  value={buscar}
+                  onChange={(e) => setBuscar(e.target.value)}
+                  placeholder="Buscar cliente para asignar..."
+                  className="w-full h-8 pl-8 pr-2 rounded-lg bg-[#1a1a1a] border border-[#333] text-xs text-white placeholder:text-[#6c7280]"
+                />
+              </div>
+              <span className="text-xs text-white/90 shrink-0">{selAsignar.length} sel.</span>
+              <select
+                value={grupoAsignar}
+                onChange={e => setGrupoAsignar(e.target.value)}
+                className="h-8 px-2 rounded-lg bg-[#1a1a1a] border border-[#333] text-xs text-white min-w-0 sm:w-[160px]"
+              >
+                <option value="">Elegir grupo...</option>
+                {grupos.map(g => (
+                  <option key={g.id} value={g.id}>{g.nombre}</option>
+                ))}
+                <option value="_none">Sin grupo</option>
+              </select>
+              <button
+                onClick={asignarGrupoClientes}
+                disabled={!grupoAsignar || !selAsignar.length || asignandoGrupo}
+                className="h-8 px-4 rounded-lg bg-[#f5c518] text-black text-xs font-bold shrink-0 disabled:opacity-50 active:scale-95 transition-transform"
+              >
+                {asignandoGrupo ? '...' : 'Asignar'}
+              </button>
+            </div>
+            {selAsignar.length === 0 && (
+              <p className="text-[11px] text-[#8b95a5] mt-2">
+                Busca y marca clientes para asignarlos rápido.
+              </p>
+            )}
           </div>
         </div>
       )}
