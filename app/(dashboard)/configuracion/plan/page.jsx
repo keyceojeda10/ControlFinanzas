@@ -220,7 +220,7 @@ export default function PlanPage() {
 
   if (authLoading || loadEstado) {
     return (
-      <div className="max-w-3xl mx-auto space-y-4">
+      <div className="max-w-7xl mx-auto space-y-4 px-2 sm:px-4 lg:px-6">
         <SkeletonCard /><SkeletonCard />
       </div>
     )
@@ -232,35 +232,35 @@ export default function PlanPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <div className="text-center">
-        <h1 className="text-xl font-bold text-white">Elige tu plan</h1>
-        <p className="text-sm text-[#555555] mt-1">
+    <div className="max-w-7xl mx-auto space-y-6 px-2 sm:px-4 lg:px-6">
+      <div className="text-center rounded-[18px] border border-[#2a2a2a] bg-[#121212] p-5 sm:p-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-white">Elige tu plan</h1>
+        <p className="text-sm sm:text-base text-[#777777] mt-2 max-w-2xl mx-auto">
           {estado?.estado === 'activa'
             ? `Tu plan actual: ${[planTest, ...planes].find(p => p.key === planActual)?.nombre || planActual}. Cambia cuando quieras.`
             : 'Selecciona el plan que mejor se adapte a tu negocio.'}
         </p>
         {estado?.diasRestantes != null && estado.estado === 'activa' && (
-          <p className="text-xs text-[#22c55e] mt-1">
+          <p className="text-xs sm:text-sm text-[#22c55e] mt-2">
             {estado.diasRestantes} días restantes en tu suscripción
             {tieneRecurrente && ' (renovación automática)'}
             {subCancelada && ' (cancelada, no se renovará)'}
           </p>
         )}
         {tieneRecurrente && estado?.proximoCobroAt && !subCancelada && (
-          <p className="text-[10px] text-[#888888] mt-0.5">
+          <p className="text-[11px] text-[#888888] mt-1">
             Próximo cobro: {formatFecha(estado.proximoCobroAt)}
           </p>
         )}
       </div>
 
       {/* Toggle Suscripción / Pago único */}
-      <div className="flex justify-center">
-        <div className="inline-flex bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] p-1">
+      <div className="flex justify-center px-1">
+        <div className="inline-flex bg-[#1a1a1a] border border-[#2a2a2a] rounded-[14px] p-1.5 shadow-[0_8px_20px_rgba(0,0,0,0.25)]">
           <button
             onClick={() => setModoPago('suscripcion')}
             className={[
-              'px-4 py-2 rounded-[10px] text-sm font-medium transition-all flex items-center gap-1.5',
+              'px-4 sm:px-5 py-2.5 rounded-[10px] text-sm font-semibold transition-all flex items-center gap-1.5',
               modoPago === 'suscripcion'
                 ? 'bg-[#f5c518] text-[#0a0a0a]'
                 : 'text-[#888888] hover:text-white',
@@ -279,7 +279,7 @@ export default function PlanPage() {
           <button
             onClick={() => setModoPago('pago_unico')}
             className={[
-              'px-4 py-2 rounded-[10px] text-sm font-medium transition-all',
+              'px-4 sm:px-5 py-2.5 rounded-[10px] text-sm font-semibold transition-all',
               modoPago === 'pago_unico'
                 ? 'bg-[#f5c518] text-[#0a0a0a]'
                 : 'text-[#888888] hover:text-white',
@@ -292,8 +292,8 @@ export default function PlanPage() {
 
       {/* Periodo toggle — solo para pago único */}
       {modoPago === 'pago_unico' && (
-        <div className="flex justify-center">
-          <div className="inline-flex bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] p-1">
+        <div className="flex justify-center px-1">
+          <div className="inline-flex bg-[#1a1a1a] border border-[#2a2a2a] rounded-[14px] p-1.5 overflow-x-auto max-w-full">
             {[
               { key: 'mensual',    label: 'Mensual',    badge: null },
               { key: 'trimestral', label: 'Trimestral', badge: '-10%' },
@@ -303,7 +303,7 @@ export default function PlanPage() {
                 key={p.key}
                 onClick={() => setPeriodo(p.key)}
                 className={[
-                  'px-3 sm:px-4 py-2 rounded-[10px] text-sm font-medium transition-all flex items-center gap-1.5',
+                  'px-3 sm:px-4 py-2.5 rounded-[10px] text-sm font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap',
                   periodo === p.key
                     ? 'bg-[#f5c518] text-[#0a0a0a]'
                     : 'text-[#888888] hover:text-white',
@@ -347,7 +347,7 @@ export default function PlanPage() {
         </div>
       )}
 
-      <div className={`grid grid-cols-1 gap-4 ${esSuperadmin ? 'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6' : 'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5'}`}>
+      <div className={`grid grid-cols-1 gap-5 ${esSuperadmin ? 'sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6' : 'sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5'}`}>
         {(esSuperadmin ? [planTest, ...planes] : planes).map((p) => {
           const esPlanActual = p.key === planActual
           const esPopular    = p.badge === 'Más popular'
@@ -366,11 +366,11 @@ export default function PlanPage() {
             <div
               key={p.key}
               className={[
-                'relative border rounded-[16px] p-5 flex flex-col transition-all',
+                'relative border rounded-[18px] p-6 flex flex-col transition-all min-h-[520px]',
                 esRecurrenteActiva
                   ? 'border-[#22c55e] ring-1 ring-[rgba(34,197,94,0.3)]'
                   : esPopular
-                  ? 'border-[#f5c518] ring-1 ring-[rgba(245,197,24,0.3)] mt-3'
+                  ? 'border-[#f5c518] ring-1 ring-[rgba(245,197,24,0.3)]'
                   : esTest
                   ? 'border-dashed border-[#3a3a3a]'
                   : 'border-[#2a2a2a]',
@@ -396,7 +396,7 @@ export default function PlanPage() {
               )}
 
               <div className="mb-4 mt-1">
-                <p className="text-sm font-semibold text-white">
+                <p className="text-base font-semibold text-white">
                   {esTest && <BeakerIcon />}
                   {p.nombre}
                 </p>
@@ -406,16 +406,16 @@ export default function PlanPage() {
 
                 {esSub ? (
                   // Suscripción: precio mensual simple
-                  <p className="text-2xl font-bold text-white mt-1">
+                  <p className="text-3xl font-bold text-white mt-2 leading-none">
                     <span className="font-mono-display">{formatCOP(p.precio)}</span>
-                    <span className="text-xs text-[#555555] font-normal">/mes</span>
+                    <span className="text-xs text-[#555555] font-normal ml-1">/mes</span>
                   </p>
                 ) : tieneDescuento ? (
-                  <div className="mt-1">
+                  <div className="mt-2">
                     <p className="text-sm text-[#555555] line-through font-mono-display">{formatCOP(total)}</p>
-                    <p className="text-2xl font-bold text-white">
+                    <p className="text-3xl font-bold text-white leading-none">
                       <span className="font-mono-display">{formatCOP(conDescuento)}</span>
-                      <span className="text-xs text-[#555555] font-normal">
+                      <span className="text-xs text-[#555555] font-normal ml-1">
                         /{meses === 12 ? 'año' : meses === 3 ? '3 meses' : 'mes'}
                       </span>
                     </p>
@@ -426,18 +426,18 @@ export default function PlanPage() {
                     )}
                   </div>
                 ) : (
-                  <p className="text-2xl font-bold text-white mt-1">
+                  <p className="text-3xl font-bold text-white mt-2 leading-none">
                     <span className="font-mono-display">{formatCOP(esSub ? p.precio : conDescuento)}</span>
-                    <span className="text-xs text-[#555555] font-normal">
+                    <span className="text-xs text-[#555555] font-normal ml-1">
                       /{esSub ? 'mes' : meses === 12 ? 'año' : meses === 3 ? '3 meses' : 'mes'}
                     </span>
                   </p>
                 )}
               </div>
 
-              <ul className="space-y-2 flex-1 mb-5">
+              <ul className="space-y-2.5 flex-1 mb-6">
                 {p.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-xs text-[#888888]">
+                  <li key={f} className="flex items-start gap-2 text-sm leading-snug text-[#9a9a9a]">
                     <svg className="w-4 h-4 text-[#22c55e] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
@@ -460,7 +460,7 @@ export default function PlanPage() {
                     <button
                       onClick={cancelarSuscripcion}
                       disabled={!!cargando}
-                      className="w-full h-8 rounded-[10px] text-xs font-medium text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] transition-all cursor-pointer disabled:opacity-60 flex items-center justify-center gap-1"
+                      className="w-full h-9 rounded-[10px] text-xs font-medium text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] transition-all cursor-pointer disabled:opacity-60 flex items-center justify-center gap-1"
                     >
                       {cargando === 'cancelando' ? <><Spinner /> Cancelando...</> : 'Cancelar suscripción'}
                     </button>
@@ -474,7 +474,7 @@ export default function PlanPage() {
                     <button
                       onClick={() => esSub ? crearSuscripcion(p.key) : elegirPlan(p.key)}
                       disabled={!!cargando}
-                      className="w-full h-8 rounded-[10px] text-xs font-medium bg-[#f5c518] hover:bg-[#f0b800] text-[#0a0a0a] transition-all cursor-pointer disabled:opacity-60 flex items-center justify-center gap-1"
+                      className="w-full h-9 rounded-[10px] text-xs font-medium bg-[#f5c518] hover:bg-[#f0b800] text-[#0a0a0a] transition-all cursor-pointer disabled:opacity-60 flex items-center justify-center gap-1"
                     >
                       {cargando ? <><Spinner /> Procesando...</> : 'Renovar'}
                     </button>
@@ -485,7 +485,7 @@ export default function PlanPage() {
                     onClick={() => crearSuscripcion(p.key)}
                     disabled={!!cargando}
                     className={[
-                      'w-full h-10 rounded-[12px] text-sm font-semibold transition-all flex items-center justify-center gap-2',
+                      'w-full h-11 rounded-[12px] text-sm font-semibold transition-all flex items-center justify-center gap-2',
                       'bg-[#f5c518] hover:bg-[#f0b800] text-[#0a0a0a] cursor-pointer disabled:opacity-60',
                     ].join(' ')}
                   >
@@ -499,7 +499,7 @@ export default function PlanPage() {
                     onClick={() => elegirPlan(p.key)}
                     disabled={(esPlanActual && periodo === 'mensual') || !!cargando}
                     className={[
-                      'w-full h-10 rounded-[12px] text-sm font-semibold transition-all flex items-center justify-center gap-2',
+                      'w-full h-11 rounded-[12px] text-sm font-semibold transition-all flex items-center justify-center gap-2',
                       esPlanActual && periodo === 'mensual'
                         ? 'bg-[#2a2a2a] text-[#555555] cursor-default'
                         : 'bg-[#f5c518] hover:bg-[#f0b800] text-[#0a0a0a] cursor-pointer disabled:opacity-60',
