@@ -265,7 +265,7 @@ export default function ClientesPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className={`max-w-3xl mx-auto ${modoAsignar ? 'pb-44 sm:pb-36' : ''}`}>
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-4">
         <div className="min-w-0">
