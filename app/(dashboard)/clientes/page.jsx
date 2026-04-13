@@ -1,7 +1,7 @@
 'use client'
 // app/(dashboard)/clientes/page.jsx - Lista de clientes
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { useAuth }       from '@/hooks/useAuth'
 import { useOffline }    from '@/components/providers/OfflineProvider'
@@ -50,9 +50,11 @@ export default function ClientesPage() {
   const [mostrarControles, setMostrarControles] = useState(false)
 
   const [isOffline, setIsOffline] = useState(false)
+  const hasLoadedOnceRef = useRef(false)
 
-  const fetchClientes = useCallback(async (q, p, grupoId = '') => {
-    setLoading(true)
+  const fetchClientes = useCallback(async (q, p, grupoId = '', { soft = false } = {}) => {
+    const shouldUseSoftRefresh = soft && hasLoadedOnceRef.current
+    if (!shouldUseSoftRefresh) setLoading(true)
     setError('')
     setIsOffline(false)
     const cacheKey = `clientes:${q || ''}:${p}:${grupoId || 'all'}`
@@ -80,7 +82,7 @@ export default function ClientesPage() {
         }
         if (cached) {
           setClientes(cached.clientes); setTotal(cached.total); setTotalPages(cached.totalPages)
-          setIsOffline(true); setLoading(false); return
+          setIsOffline(true); setLoading(false); hasLoadedOnceRef.current = true; return
         }
       } catch {}
     }
@@ -128,12 +130,14 @@ export default function ClientesPage() {
           setTotalPages(cached.totalPages)
           setIsOffline(true)
           setLoading(false)
+          hasLoadedOnceRef.current = true
           return
         }
       } catch {}
       setError('No se pudieron cargar los clientes.')
     } finally {
       setLoading(false)
+      hasLoadedOnceRef.current = true
     }
   }, [])
 
@@ -167,7 +171,13 @@ export default function ClientesPage() {
   useEffect(() => {
     const t = setTimeout(() => fetchClientes(buscar, page, grupoFiltro), 280)
     return () => clearTimeout(t)
-  }, [fetchClientes, buscar, page, grupoFiltro, lastSyncedAt])
+  }, [fetchClientes, buscar, page, grupoFiltro])
+
+  // Refresh silencioso cuando hay nueva sincronización global.
+  useEffect(() => {
+    if (!lastSyncedAt) return
+    fetchClientes(buscar, page, grupoFiltro, { soft: true })
+  }, [lastSyncedAt, fetchClientes, buscar, page, grupoFiltro])
 
   useEffect(() => {
     if (estado || grupoFiltro) {

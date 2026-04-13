@@ -1,7 +1,7 @@
 'use client'
 // app/(dashboard)/rutas/page.jsx - Lista de rutas
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link                    from 'next/link'
 import { useRouter }           from 'next/navigation'
 import { useAuth }             from '@/hooks/useAuth'
@@ -26,9 +26,11 @@ export default function RutasPage() {
   const [isOffline, setIsOffline] = useState(false)
   const [backupLoading, setBackupLoading] = useState(false)
   const [restoreLoading, setRestoreLoading] = useState(false)
+  const hasLoadedOnceRef = useRef(false)
 
-  const fetchRutas = useCallback(async () => {
-    setLoading(true)
+  const fetchRutas = useCallback(async ({ soft = false } = {}) => {
+    const shouldUseSoftRefresh = soft && hasLoadedOnceRef.current
+    if (!shouldUseSoftRefresh) setLoading(true)
     setError('')
     setIsOffline(false)
 
@@ -41,6 +43,7 @@ export default function RutasPage() {
           setRutas(cached)
           setIsOffline(true)
           setLoading(false)
+          hasLoadedOnceRef.current = true
           return
         }
       } catch {}
@@ -58,15 +61,22 @@ export default function RutasPage() {
       try {
         let cached = await leerDeCache('rutas')
         if (!cached || cached.length === 0) cached = await obtenerRutasOffline()
-        if (cached && cached.length > 0) { setRutas(cached); setIsOffline(true); setLoading(false); return }
+        if (cached && cached.length > 0) { setRutas(cached); setIsOffline(true); setLoading(false); hasLoadedOnceRef.current = true; return }
       } catch {}
       setError('No se pudieron cargar las rutas.')
     } finally {
       setLoading(false)
+      hasLoadedOnceRef.current = true
     }
   }, [])
 
-  useEffect(() => { fetchRutas() }, [fetchRutas, lastSyncedAt])
+  useEffect(() => { fetchRutas() }, [fetchRutas])
+
+  // Refresh silencioso cuando llega nueva sincronización global.
+  useEffect(() => {
+    if (!lastSyncedAt) return
+    fetchRutas({ soft: true })
+  }, [lastSyncedAt, fetchRutas])
 
   const crearRuta = async (e) => {
     e.preventDefault()

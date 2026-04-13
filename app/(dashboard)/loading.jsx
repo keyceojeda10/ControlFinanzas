@@ -2,7 +2,7 @@
 
 export default function DashboardLoading() {
   return (
-    <div className="max-w-3xl mx-auto space-y-4 animate-pulse">
+    <div className="max-w-3xl mx-auto space-y-4" role="status" aria-live="polite">
       {/* Header skeleton */}
       <div className="h-7 w-40 bg-[#2a2a2a] rounded-[10px]" />
 

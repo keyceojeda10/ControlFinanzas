@@ -1,7 +1,7 @@
 'use client'
 // app/(dashboard)/caja/page.jsx - Caja del día
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth }             from '@/hooks/useAuth'
 import { useOffline }          from '@/components/providers/OfflineProvider'
 import { guardarEnCache, leerDeCache } from '@/lib/offline'
@@ -54,11 +54,13 @@ export default function CajaPage() {
   const [gastosPendientes, setGastosPendientes] = useState(0)
   const [fechaSeleccionada, setFechaSeleccionada] = useState(getColombiaDateStr())
   const [isOffline, setIsOffline] = useState(false)
+  const hasLoadedOnceRef = useRef(false)
 
   const esHoy = fechaSeleccionada === getColombiaDateStr()
 
-  const fetchData = useCallback(async () => {
-    setLoading(true)
+  const fetchData = useCallback(async ({ soft = false } = {}) => {
+    const shouldUseSoftRefresh = soft && hasLoadedOnceRef.current
+    if (!shouldUseSoftRefresh) setLoading(true)
     setError('')
     setIsOffline(false)
     const cacheKey = `caja:${fechaSeleccionada}`
@@ -68,7 +70,7 @@ export default function CajaPage() {
       try {
         let cached = await leerDeCache(cacheKey)
         if (!cached) cached = await leerDeCache('sync:caja')
-        if (cached) { setCajaData(cached); setIsOffline(true); setLoading(false); return }
+        if (cached) { setCajaData(cached); setIsOffline(true); setLoading(false); hasLoadedOnceRef.current = true; return }
       } catch {}
     }
 
@@ -86,17 +88,24 @@ export default function CajaPage() {
       try {
         let cached = await leerDeCache(cacheKey)
         if (!cached) cached = await leerDeCache('sync:caja')
-        if (cached) { setCajaData(cached); setIsOffline(true); setLoading(false); return }
+        if (cached) { setCajaData(cached); setIsOffline(true); setLoading(false); hasLoadedOnceRef.current = true; return }
       } catch {}
       setError('No se pudo cargar la información.')
     } finally {
       setLoading(false)
+      hasLoadedOnceRef.current = true
     }
   }, [fechaSeleccionada])
 
   useEffect(() => {
     if (!authLoading) fetchData()
-  }, [authLoading, fetchData, lastSyncedAt])
+  }, [authLoading, fetchData])
+
+  // Refresh silencioso cuando llega nueva sincronización global.
+  useEffect(() => {
+    if (authLoading || !lastSyncedAt) return
+    fetchData({ soft: true })
+  }, [authLoading, lastSyncedAt, fetchData])
 
   const handleFechaChange = (e) => {
     setFechaSeleccionada(e.target.value)

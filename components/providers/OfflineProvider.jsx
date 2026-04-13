@@ -10,6 +10,7 @@ export function useOffline() {
 }
 
 const MUTATION_SYNC_DELAY = 3000 // 3s after a mutation
+const MIN_AUTO_SYNC_GAP_MS = 20_000
 
 export default function OfflineProvider({ children }) {
   const [isOnline, setIsOnline]         = useState(true)
@@ -22,9 +23,11 @@ export default function OfflineProvider({ children }) {
   // Counter that increments after every successful sync — pages watch this to refetch
   const [lastSyncedAt, setLastSyncedAt] = useState(0)
   const syncingRef = useRef(false)
+  const lastAutoSyncAtRef = useRef(0)
 
-  // Sync pending payments FIRST, then download fresh data
-  const syncPendingThenFull = useCallback(async (silent = true) => {
+  // Sync pending payments FIRST, then download fresh data.
+  // By default we also notify pages so visible data stays up to date.
+  const syncPendingThenFull = useCallback(async ({ silent = true, signalPages = true } = {}) => {
     if (!navigator.onLine) return
     try {
       // STEP 1: Sync pending payments AND pending orders to server FIRST
@@ -50,8 +53,9 @@ export default function OfflineProvider({ children }) {
         totalPrestamos: result.prestamos,
         totalRutas: result.rutas,
       })
-      // Signal all pages to refetch their data
-      setLastSyncedAt(Date.now())
+      if (signalPages || totalSynced > 0) {
+        setLastSyncedAt(Date.now())
+      }
       if (!silent) {
         setBulkProgress({ step: 'done', message: `${result.clientes} clientes sincronizados` })
         setTimeout(() => setBulkProgress(null), 3000)
@@ -72,6 +76,15 @@ export default function OfflineProvider({ children }) {
       setFailedPayments(failed)
     } catch { /* ignore */ }
   }, [])
+
+  const requestAutoSync = useCallback(() => {
+    if (!navigator.onLine || syncingRef.current) return
+    const now = Date.now()
+    if (now - lastAutoSyncAtRef.current < MIN_AUTO_SYNC_GAP_MS) return
+    lastAutoSyncAtRef.current = now
+    // Silent means no blocking UI toast, but pages still refresh with fresh data.
+    syncPendingThenFull({ silent: true, signalPages: true })
+  }, [syncPendingThenFull])
 
   // Track pending payments count (MUST be defined before useEffects that reference it)
   const refreshPending = useCallback(async () => {
@@ -95,7 +108,7 @@ export default function OfflineProvider({ children }) {
     setIsOnline(navigator.onLine)
     const goOnline = () => {
       setIsOnline(true)
-      setTimeout(() => syncPendingThenFull(false), 2000)
+      setTimeout(() => syncPendingThenFull({ silent: false, signalPages: true }), 2000)
     }
     const goOffline = () => setIsOnline(false)
     window.addEventListener('online',  goOnline)
@@ -135,25 +148,25 @@ export default function OfflineProvider({ children }) {
   useEffect(() => {
     obtenerSyncMeta().then((meta) => { if (meta) setSyncMeta(meta) }).catch(() => {})
 
-    // Sync 3s after app open — payments first, then full data
-    const initialTimeout = setTimeout(() => syncPendingThenFull(false), 3000)
+    // Sync shortly after app open.
+    const initialTimeout = setTimeout(() => requestAutoSync(), 3000)
 
-    // Keep offline data fresh: full sync every 3 minutes while online
+    // Keep offline data fresh continuously while online.
     const periodicSync = setInterval(() => {
-      if (navigator.onLine && !syncingRef.current) syncPendingThenFull(true)
-    }, 3 * 60 * 1000)
+      requestAutoSync()
+    }, 90 * 1000)
 
     // Sync when user returns to the tab/app (e.g. from WhatsApp, another tab)
     const handleVisibility = () => {
-      if (document.visibilityState === 'visible' && navigator.onLine && !syncingRef.current) {
-        syncPendingThenFull(true)
+      if (document.visibilityState === 'visible') {
+        requestAutoSync()
       }
     }
     document.addEventListener('visibilitychange', handleVisibility)
 
     // Sync when window regains focus (covers PWA returning from background)
     const handleFocus = () => {
-      if (navigator.onLine && !syncingRef.current) syncPendingThenFull(true)
+      requestAutoSync()
     }
     window.addEventListener('focus', handleFocus)
 
@@ -163,7 +176,7 @@ export default function OfflineProvider({ children }) {
       document.removeEventListener('visibilitychange', handleVisibility)
       window.removeEventListener('focus', handleFocus)
     }
-  }, [syncPendingThenFull])
+  }, [requestAutoSync])
 
   // ─── MUTATION SYNC: detect POST/PUT/DELETE to /api/ and re-sync ───
   useEffect(() => {
@@ -183,7 +196,7 @@ export default function OfflineProvider({ children }) {
         if (url.startsWith('/api/') && method !== 'GET' && response.ok && !isReorder) {
           // Debounce: if multiple mutations happen quickly, only sync once
           if (mutationTimeout) clearTimeout(mutationTimeout)
-          mutationTimeout = setTimeout(() => syncPendingThenFull(true), MUTATION_SYNC_DELAY)
+          mutationTimeout = setTimeout(() => syncPendingThenFull({ silent: true, signalPages: false }), MUTATION_SYNC_DELAY)
         }
       }).catch(() => {})
 
@@ -227,7 +240,7 @@ export default function OfflineProvider({ children }) {
 
   const manualSync = async () => {
     if (!navigator.onLine) return
-    await syncPendingThenFull(false)
+    await syncPendingThenFull({ silent: false, signalPages: true })
   }
 
   // Bulk sync: download everything for offline (manual trigger)

@@ -1,7 +1,7 @@
 'use client'
 // app/(dashboard)/prestamos/page.jsx - Lista de préstamos
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link                                   from 'next/link'
 import { useAuth }                            from '@/hooks/useAuth'
 import { useOffline }                         from '@/components/providers/OfflineProvider'
@@ -33,9 +33,11 @@ export default function PrestamosPage() {
   const [total,     setTotal]     = useState(0)
 
   const [isOffline, setIsOffline] = useState(false)
+  const hasLoadedOnceRef = useRef(false)
 
-  const fetchPrestamos = useCallback(async (q, est, p) => {
-    setLoading(true)
+  const fetchPrestamos = useCallback(async (q, est, p, { soft = false } = {}) => {
+    const shouldUseSoftRefresh = soft && hasLoadedOnceRef.current
+    if (!shouldUseSoftRefresh) setLoading(true)
     setError('')
     setIsOffline(false)
     const cacheKey = `prestamos:${q || ''}:${est || ''}:${p}`
@@ -61,7 +63,7 @@ export default function PrestamosPage() {
         }
         if (cached) {
           setPrestamos(cached.prestamos); setTotal(cached.total); setTotalPages(cached.totalPages)
-          setIsOffline(true); setLoading(false); return
+          setIsOffline(true); setLoading(false); hasLoadedOnceRef.current = true; return
         }
       } catch {}
     }
@@ -108,16 +110,18 @@ export default function PrestamosPage() {
           setTotalPages(cached.totalPages)
           setIsOffline(true)
           setLoading(false)
+          hasLoadedOnceRef.current = true
           return
         }
       } catch {}
       setError('No se pudieron cargar los préstamos.')
     } finally {
       setLoading(false)
+      hasLoadedOnceRef.current = true
     }
   }, [])
 
-  useEffect(() => { setPage(1); fetchPrestamos('', estado, 1) }, [fetchPrestamos, estado, lastSyncedAt])
+  useEffect(() => { setPage(1); fetchPrestamos('', estado, 1) }, [fetchPrestamos, estado])
 
   useEffect(() => {
     setPage(1)
@@ -129,6 +133,12 @@ export default function PrestamosPage() {
   useEffect(() => {
     if (page > 1) fetchPrestamos(buscar, estado, page)
   }, [page]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Refresh silencioso cuando llega nueva sincronización global.
+  useEffect(() => {
+    if (!lastSyncedAt) return
+    fetchPrestamos(buscar, estado, page, { soft: true })
+  }, [lastSyncedAt, fetchPrestamos, buscar, estado, page])
 
   const enMoraCount = prestamos.filter((p) => p.diasMora > 0).length
 

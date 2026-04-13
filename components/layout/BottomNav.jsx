@@ -192,7 +192,7 @@ export default function BottomNav() {
             </div>
 
             <div className="px-4 pb-2">
-              <p className="text-[10px] font-semibold text-[#888] uppercase tracking-wider mb-3">Navegacion</p>
+              <p className="text-[11px] font-semibold text-[#888] uppercase tracking-wider mb-3">Navegacion</p>
             </div>
 
             <div className="px-2 pb-8 overflow-y-auto">
@@ -212,7 +212,7 @@ export default function BottomNav() {
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d={item.icon} />
                       </svg>
-                      <span className="text-[11px] font-medium">{item.label}</span>
+                      <span className="text-[12px] font-medium">{item.label}</span>
                     </Link>
                   )
                 })}
@@ -231,8 +231,9 @@ export default function BottomNav() {
               <Link
                 key={item.href}
                 href={item.href}
+                aria-current={active ? 'page' : undefined}
                 className={[
-                  'flex-1 flex flex-col items-center justify-center gap-0.5 py-3 text-[10px] font-medium transition-all duration-200 relative',
+                  'flex-1 flex flex-col items-center justify-center gap-0.5 py-3 text-[11px] font-medium transition-all duration-200 relative',
                   active ? 'text-[#f5c518]' : 'text-[#777]',
                 ].join(' ')}
               >
@@ -247,8 +248,10 @@ export default function BottomNav() {
           {/* "Más" button - opens sheet */}
           <button
             onClick={() => setMoreOpen(v => !v)}
+            aria-expanded={moreOpen}
+            aria-label="Abrir menu de navegacion"
             className={[
-              'flex-1 flex flex-col items-center justify-center gap-0.5 py-3 text-[10px] font-medium transition-all duration-200 relative',
+              'flex-1 flex flex-col items-center justify-center gap-0.5 py-3 text-[11px] font-medium transition-all duration-200 relative',
               moreActive || moreOpen ? 'text-[#f5c518]' : 'text-[#777]',
             ].join(' ')}
           >

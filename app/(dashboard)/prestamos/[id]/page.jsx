@@ -1,7 +1,7 @@
 'use client'
 // app/(dashboard)/prestamos/[id]/page.jsx - Detalle del préstamo (página central del sistema)
 
-import { useState, useEffect, useCallback, use } from 'react'
+import { useState, useEffect, useRef, useCallback, use } from 'react'
 import { useRouter }                  from 'next/navigation'
 import Link                           from 'next/link'
 import { useAuth }                    from '@/hooks/useAuth'
@@ -62,6 +62,7 @@ export default function PrestamoDetallePage({ params }) {
   const [modalDescuento, setModalDescuento] = useState(false)
   const [modalRenovar,  setModalRenovar]  = useState(false)
   const [modalPlazo,    setModalPlazo]    = useState(false)
+  const hasLoadedOnceRef = useRef(false)
 
   // Leer contexto de ruta activa
   useEffect(() => {
@@ -71,12 +72,20 @@ export default function PrestamoDetallePage({ params }) {
     } catch {}
   }, [])
 
-  const fetchPrestamo = useCallback(async () => {
+  const fetchPrestamo = useCallback(async ({ soft = false } = {}) => {
+    const shouldUseSoftRefresh = soft && hasLoadedOnceRef.current
+    if (!shouldUseSoftRefresh) setLoading(true)
+
     // Offline: prefer IndexedDB (has locally-updated data, SW cache may be stale)
     if (!navigator.onLine) {
       try {
         const cached = await obtenerPrestamoOffline(id)
-        if (cached) { setPrestamo(cached); setLoading(false); return }
+        if (cached) {
+          setPrestamo(cached)
+          if (!shouldUseSoftRefresh) setLoading(false)
+          hasLoadedOnceRef.current = true
+          return
+        }
       } catch {}
     }
     try {
@@ -88,11 +97,17 @@ export default function PrestamoDetallePage({ params }) {
     } catch {
       try {
         const cached = await obtenerPrestamoOffline(id)
-        if (cached) { setPrestamo(cached); setLoading(false); return }
+        if (cached) {
+          setPrestamo(cached)
+          if (!shouldUseSoftRefresh) setLoading(false)
+          hasLoadedOnceRef.current = true
+          return
+        }
       } catch {}
-      setError('No se pudo cargar el préstamo.')
+      if (!shouldUseSoftRefresh) setError('No se pudo cargar el préstamo.')
     } finally {
-      setLoading(false)
+      if (!shouldUseSoftRefresh) setLoading(false)
+      hasLoadedOnceRef.current = true
     }
   }, [id])
 
@@ -101,9 +116,9 @@ export default function PrestamoDetallePage({ params }) {
   // Re-fetch silently when offline payments get synced
   useEffect(() => {
     if (lastSyncedAt > 0) {
-      fetch(`/api/prestamos/${id}`).then(r => r.ok ? r.json() : null).then(d => { if (d) setPrestamo(d) }).catch(() => {})
+      fetchPrestamo({ soft: true })
     }
-  }, [lastSyncedAt, id])
+  }, [lastSyncedAt, fetchPrestamo])
 
   const handlePagoExito = (prestamoActualizado, pagoRegistrado) => {
     setPrestamo(prestamoActualizado)

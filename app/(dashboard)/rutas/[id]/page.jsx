@@ -5,6 +5,7 @@ import { useState, useEffect, useRef, useCallback, use } from 'react'
 import { useRouter }                 from 'next/navigation'
 import dynamic                       from 'next/dynamic'
 import { useAuth }                   from '@/hooks/useAuth'
+import { useOffline }                from '@/components/providers/OfflineProvider'
 import { obtenerRutaOffline, guardarOrdenPendiente } from '@/lib/offline'
 import { Button }                    from '@/components/ui/Button'
 import { Card }                      from '@/components/ui/Card'
@@ -157,6 +158,7 @@ export default function RutaDetallePage({ params }) {
   const { id }    = use(params)
   const router    = useRouter()
   const { esOwner } = useAuth()
+  const { lastSyncedAt } = useOffline()
 
   const [ruta,          setRuta]          = useState(null)
   const [loading,       setLoading]       = useState(true)
@@ -207,7 +209,9 @@ export default function RutaDetallePage({ params }) {
     return d.toISOString().slice(0, 10)
   }
 
-  const fetchRuta = useCallback(async () => {
+  const fetchRuta = useCallback(async ({ soft = false } = {}) => {
+    if (!soft) setError('')
+
     // Offline: always prefer IndexedDB (has locally-updated order)
     if (!navigator.onLine) {
       try {
@@ -227,7 +231,7 @@ export default function RutaDetallePage({ params }) {
         const cached = await obtenerRutaOffline(id)
         if (cached) { setRuta(cached); setLoading(false); return }
       } catch {}
-      setError('No se pudo cargar la ruta.')
+      if (!soft) setError('No se pudo cargar la ruta.')
     } finally {
       setLoading(false)
     }
@@ -239,6 +243,13 @@ export default function RutaDetallePage({ params }) {
       fetch('/api/cobradores').then((r) => r.json()).then(setCobradores).catch(() => {})
     }
   }, [fetchRuta, esOwner])
+
+  // Refresh silencioso cuando llega nueva sincronización global.
+  useEffect(() => {
+    if (lastSyncedAt > 0) {
+      fetchRuta({ soft: true })
+    }
+  }, [lastSyncedAt, fetchRuta])
 
   // Feature 2: Auto-scroll al siguiente cliente al volver
   useEffect(() => {

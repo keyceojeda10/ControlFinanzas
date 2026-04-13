@@ -1,7 +1,7 @@
 'use client'
 // app/(dashboard)/clientes/[id]/page.jsx - Detalle del cliente
 
-import { useState, useEffect, useRef, use } from 'react'
+import { useState, useEffect, useRef, useCallback, use } from 'react'
 import { useRouter }                 from 'next/navigation'
 import Link                          from 'next/link'
 import { useAuth }                   from '@/hooks/useAuth'
@@ -56,42 +56,61 @@ export default function ClienteDetallePage({ params }) {
   }, [id])
 
   const [isOffline, setIsOffline] = useState(false)
+  const hasLoadedOnceRef = useRef(false)
+
+  const fetchCliente = useCallback(async ({ soft = false } = {}) => {
+    const shouldUseSoftRefresh = soft && hasLoadedOnceRef.current
+    if (!shouldUseSoftRefresh) setLoading(true)
+    setIsOffline(false)
+
+    // Offline: prefer IndexedDB (SW cache may be stale)
+    if (!navigator.onLine) {
+      try {
+        const cached = await obtenerClienteOffline(id)
+        if (cached) {
+          setCliente(cached)
+          setIsOffline(true)
+          if (!shouldUseSoftRefresh) setLoading(false)
+          hasLoadedOnceRef.current = true
+          return
+        }
+      } catch {}
+    }
+
+    try {
+      const res = await fetch(`/api/clientes/${id}`)
+      if (!res.ok) throw new Error()
+      const data = await res.json()
+      if (data.offline) throw new Error('offline')
+      setCliente(data)
+    } catch {
+      try {
+        const cached = await obtenerClienteOffline(id)
+        if (cached) {
+          setCliente(cached)
+          setIsOffline(true)
+          if (!shouldUseSoftRefresh) setLoading(false)
+          hasLoadedOnceRef.current = true
+          return
+        }
+      } catch {}
+      if (!shouldUseSoftRefresh) setError('No se pudo cargar el cliente.')
+    } finally {
+      if (!shouldUseSoftRefresh) setLoading(false)
+      hasLoadedOnceRef.current = true
+    }
+  }, [id])
 
   useEffect(() => {
-    const loadCliente = async () => {
-      setIsOffline(false)
-      // Offline: prefer IndexedDB (SW cache may be stale)
-      if (!navigator.onLine) {
-        try {
-          const cached = await obtenerClienteOffline(id)
-          if (cached) { setCliente(cached); setIsOffline(true); setLoading(false); return }
-        } catch {}
-      }
-      try {
-        const res = await fetch(`/api/clientes/${id}`)
-        if (!res.ok) throw new Error()
-        const data = await res.json()
-        if (data.offline) throw new Error('offline')
-        setCliente(data)
-      } catch {
-        try {
-          const cached = await obtenerClienteOffline(id)
-          if (cached) { setCliente(cached); setIsOffline(true); setLoading(false); return }
-        } catch {}
-        setError('No se pudo cargar el cliente.')
-      } finally {
-        setLoading(false)
-      }
-    }
-    loadCliente()
-  }, [id])
+    fetchCliente()
+  }, [fetchCliente])
 
   // Re-fetch silently when offline payments get synced
   useEffect(() => {
     if (lastSyncedAt > 0) {
-      fetch(`/api/clientes/${id}`).then(r => r.ok ? r.json() : null).then(d => { if (d) setCliente(d) }).catch(() => {})
+      fetchCliente({ soft: true })
     }
-  }, [lastSyncedAt, id])
+  }, [lastSyncedAt, fetchCliente])
 
   const handleDelete = async () => {
     setActionLoading(true)
