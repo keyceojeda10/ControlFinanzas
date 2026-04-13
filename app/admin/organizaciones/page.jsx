@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import Link                    from 'next/link'
 import { Badge }               from '@/components/ui/Badge'
 import { SkeletonTable }       from '@/components/ui/Skeleton'
@@ -11,18 +11,17 @@ export default function OrganizacionesPage() {
   const [orgs,    setOrgs]    = useState([])
   const [loading, setLoading] = useState(true)
   const [q,       setQ]       = useState('')
+  const [searchTerm, setSearchTerm] = useState('')
   const [filtPlan,   setFiltPlan]   = useState('')
   const [filtEstado, setFiltEstado] = useState('')
   const [fechaDesde, setFechaDesde] = useState('')
   const [fechaHasta, setFechaHasta] = useState('')
-  const [trigger, setTrigger] = useState(0) // force re-fetch
-  const isFirst = useRef(true)
 
   useEffect(() => {
     const doFetch = async () => {
       setLoading(true)
       const params = new URLSearchParams()
-      if (q.trim())   params.set('q', q.trim())
+      if (searchTerm.trim()) params.set('q', searchTerm.trim())
       if (filtPlan)   params.set('plan', filtPlan)
       if (filtEstado) params.set('estado', filtEstado)
       if (fechaDesde) params.set('desde', fechaDesde)
@@ -36,15 +35,16 @@ export default function OrganizacionesPage() {
       }
     }
     doFetch()
-  }, [filtPlan, filtEstado, fechaDesde, fechaHasta, trigger])
+  }, [filtPlan, filtEstado, fechaDesde, fechaHasta, searchTerm])
 
   const handleSearch = (e) => {
     e.preventDefault()
-    setTrigger(t => t + 1)
+    setSearchTerm(q)
   }
 
   const limpiarTodo = () => {
     setQ('')
+    setSearchTerm('')
     setFiltPlan('')
     setFiltEstado('')
     setFechaDesde('')

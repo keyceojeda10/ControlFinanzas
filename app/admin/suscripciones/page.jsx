@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link                    from 'next/link'
 import { Badge }               from '@/components/ui/Badge'
 import { Button }              from '@/components/ui/Button'
@@ -22,7 +22,7 @@ export default function SuscripcionesPage() {
   const [tab,     setTab]     = useState('')
   const [accionando, setAccionando] = useState('')
 
-  const fetchSubs = async () => {
+  const fetchSubs = useCallback(async () => {
     setLoading(true)
     try {
       const res = await fetch(`/api/admin/suscripciones${tab ? `?estado=${tab}` : ''}`)
@@ -31,9 +31,9 @@ export default function SuscripcionesPage() {
     } catch { /* ignore */ } finally {
       setLoading(false)
     }
-  }
+  }, [tab])
 
-  useEffect(() => { fetchSubs() }, [tab])
+  useEffect(() => { fetchSubs() }, [fetchSubs])
 
   const ejecutar = async (subId, accion) => {
     setAccionando(`${subId}-${accion}`)

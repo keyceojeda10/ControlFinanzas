@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import Image from 'next/image'
 import { useParams, useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -213,7 +214,14 @@ export default function TicketDetallePage() {
                     </div>
                     {m.imagenUrl && (
                       <a href={m.imagenUrl} target="_blank" rel="noopener noreferrer" className="block mb-1.5">
-                        <img src={m.imagenUrl} alt="Imagen adjunta" className="max-w-full max-h-[200px] rounded-[8px] object-contain cursor-pointer hover:opacity-90 transition-opacity" />
+                        <Image
+                          src={m.imagenUrl}
+                          alt="Imagen adjunta"
+                          width={800}
+                          height={600}
+                          unoptimized
+                          className="max-w-full max-h-[200px] rounded-[8px] object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                        />
                       </a>
                     )}
                     {m.contenido && <p className="text-xs text-white leading-relaxed whitespace-pre-wrap">{m.contenido}</p>}
@@ -231,6 +239,7 @@ export default function TicketDetallePage() {
         {!cerrado && imagenPreview && (
           <div className="px-4 py-2 border-t border-[#2a2a2a] flex items-center gap-2">
             <div className="relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={imagenPreview} alt="Preview" className="h-16 rounded-[8px] object-contain" />
               <button
                 onClick={cancelarImagen}

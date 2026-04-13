@@ -19,7 +19,6 @@ export const metadata = {
   title: "Control Finanzas",
   description: "Gestión de cartera de crédito informal",
   manifest: '/manifest.json',
-  themeColor: '#1e3a5f',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
@@ -29,6 +28,10 @@ export const metadata = {
     icon: '/icon.svg',
     apple: '/icons/icon-192.png',
   },
+};
+
+export const viewport = {
+  themeColor: '#1e3a5f',
 };
 
 export default function RootLayout({ children }) {
@@ -53,6 +56,7 @@ export default function RootLayout({ children }) {
           fbq('track','PageView');
         `}</Script>
         <noscript>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img height="1" width="1" style={{display:'none'}}
             src="https://www.facebook.com/tr?id=1286258560093362&ev=PageView&noscript=1"
             alt=""

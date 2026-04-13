@@ -212,7 +212,7 @@ export default function CRMPage() {
     }
   }, [q, filtPlan, filtEstado, filtSusc, fechaDesde, fechaHasta])
 
-  useEffect(() => { fetchRegistros() }, [filtPlan, filtEstado, filtSusc, fechaDesde, fechaHasta])
+  useEffect(() => { fetchRegistros() }, [fetchRegistros])
 
   const handleEstadoChange = (id, nuevoEstado) => {
     setRegistros((prev) => prev.map((r) => r.id === id ? { ...r, estadoContacto: nuevoEstado } : r))

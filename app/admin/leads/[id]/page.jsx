@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, use } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
@@ -221,9 +222,12 @@ function MensajeCard({ msg, lead, enviados, onToggleEnviado, onWhatsAppClick }) 
         {msg.image && (
           <div className="space-y-2">
             <div className="relative rounded-[10px] overflow-hidden border border-[#222222]">
-              <img
+              <Image
                 src={msg.image}
                 alt="Imagen para adjuntar"
+                width={1200}
+                height={900}
+                unoptimized
                 className="w-full h-auto"
               />
               <div className="absolute top-2 right-2 flex gap-1.5">

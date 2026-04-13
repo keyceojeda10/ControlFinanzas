@@ -1,7 +1,7 @@
 'use client'
 // app/(dashboard)/prestamos/[id]/page.jsx - Detalle del préstamo (página central del sistema)
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, useCallback, use } from 'react'
 import { useRouter }                  from 'next/navigation'
 import Link                           from 'next/link'
 import { useAuth }                    from '@/hooks/useAuth'
@@ -71,7 +71,7 @@ export default function PrestamoDetallePage({ params }) {
     } catch {}
   }, [])
 
-  const fetchPrestamo = async () => {
+  const fetchPrestamo = useCallback(async () => {
     // Offline: prefer IndexedDB (has locally-updated data, SW cache may be stale)
     if (!navigator.onLine) {
       try {
@@ -94,16 +94,16 @@ export default function PrestamoDetallePage({ params }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [id])
 
-  useEffect(() => { fetchPrestamo() }, [id])
+  useEffect(() => { fetchPrestamo() }, [fetchPrestamo])
 
   // Re-fetch silently when offline payments get synced
   useEffect(() => {
     if (lastSyncedAt > 0) {
       fetch(`/api/prestamos/${id}`).then(r => r.ok ? r.json() : null).then(d => { if (d) setPrestamo(d) }).catch(() => {})
     }
-  }, [lastSyncedAt])
+  }, [lastSyncedAt, id])
 
   const handlePagoExito = (prestamoActualizado, pagoRegistrado) => {
     setPrestamo(prestamoActualizado)

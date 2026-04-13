@@ -37,7 +37,13 @@ function Lightbox({ src, alt, onClose }) {
       className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center cursor-pointer"
       onClick={onClose}
     >
-      <img src={src} alt={alt} className="max-w-[90vw] max-h-[90vh] rounded-xl" />
+      <Image
+        src={src}
+        alt={alt}
+        width={1600}
+        height={1200}
+        className="max-w-[90vw] max-h-[90vh] rounded-xl w-auto h-auto"
+      />
     </div>
   )
 }

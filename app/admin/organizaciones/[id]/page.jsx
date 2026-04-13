@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Card }                 from '@/components/ui/Card'
 import { Button }               from '@/components/ui/Button'
@@ -28,7 +28,7 @@ export default function OrgDetallePage() {
   const [pagoDirecto, setPagoDirecto] = useState({ plan: 'basic', periodo: 'mensual', monto: '', extender: false })
   const [cobradoresInput, setCobradoresInput] = useState('')
 
-  const fetchOrg = async () => {
+  const fetchOrg = useCallback(async () => {
     try {
       const res = await fetch(`/api/admin/organizaciones/${id}`)
       if (!res.ok) { router.push('/admin/organizaciones'); return }
@@ -36,9 +36,9 @@ export default function OrgDetallePage() {
     } catch { /* ignore */ } finally {
       setLoading(false)
     }
-  }
+  }, [id, router])
 
-  useEffect(() => { fetchOrg() }, [id])
+  useEffect(() => { fetchOrg() }, [fetchOrg])
 
   const ejecutarAccion = async (accion, extra = {}) => {
     setAccionando(accion)

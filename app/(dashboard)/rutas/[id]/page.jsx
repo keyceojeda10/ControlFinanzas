@@ -207,7 +207,7 @@ export default function RutaDetallePage({ params }) {
     return d.toISOString().slice(0, 10)
   }
 
-  const fetchRuta = async () => {
+  const fetchRuta = useCallback(async () => {
     // Offline: always prefer IndexedDB (has locally-updated order)
     if (!navigator.onLine) {
       try {
@@ -231,14 +231,14 @@ export default function RutaDetallePage({ params }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [id])
 
   useEffect(() => {
     fetchRuta()
     if (esOwner) {
       fetch('/api/cobradores').then((r) => r.json()).then(setCobradores).catch(() => {})
     }
-  }, [id, esOwner])
+  }, [fetchRuta, esOwner])
 
   // Feature 2: Auto-scroll al siguiente cliente al volver
   useEffect(() => {

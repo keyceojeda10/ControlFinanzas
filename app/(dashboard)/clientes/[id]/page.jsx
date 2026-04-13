@@ -1,7 +1,7 @@
 'use client'
 // app/(dashboard)/clientes/[id]/page.jsx - Detalle del cliente
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, useRef, use } from 'react'
 import { useRouter }                 from 'next/navigation'
 import Link                          from 'next/link'
 import { useAuth }                   from '@/hooks/useAuth'
@@ -91,7 +91,7 @@ export default function ClienteDetallePage({ params }) {
     if (lastSyncedAt > 0) {
       fetch(`/api/clientes/${id}`).then(r => r.ok ? r.json() : null).then(d => { if (d) setCliente(d) }).catch(() => {})
     }
-  }, [lastSyncedAt])
+  }, [lastSyncedAt, id])
 
   const handleDelete = async () => {
     setActionLoading(true)
@@ -443,6 +443,7 @@ function DeleteClienteModal({ cliente, prestamos, onClose, onDeletePrestamo, onT
   const [clientes, setClientes] = useState([])
   const [buscar, setBuscar] = useState('')
   const [loadingClientes, setLoadingClientes] = useState(false)
+  const retryDeleteTriggeredRef = useRef(false)
 
   // Buscar clientes para trasladar
   useEffect(() => {
@@ -460,10 +461,10 @@ function DeleteClienteModal({ cliente, prestamos, onClose, onDeletePrestamo, onT
 
   // Si ya no quedan préstamos, reintentar eliminar
   useEffect(() => {
-    if (prestamos.length === 0) {
-      onRetryDelete()
-    }
-  }, [prestamos.length])
+    if (prestamos.length !== 0 || retryDeleteTriggeredRef.current) return
+    retryDeleteTriggeredRef.current = true
+    onRetryDelete()
+  }, [prestamos.length, onRetryDelete])
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/70 px-0 sm:px-4" onClick={onClose}>

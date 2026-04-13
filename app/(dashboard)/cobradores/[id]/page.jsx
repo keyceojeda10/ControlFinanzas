@@ -1,7 +1,7 @@
 'use client'
 // app/(dashboard)/cobradores/[id]/page.jsx - Detalle del cobrador
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, useCallback, use } from 'react'
 import { useRouter }                from 'next/navigation'
 import { useAuth }                  from '@/hooks/useAuth'
 import { Badge }                    from '@/components/ui/Badge'
@@ -24,7 +24,7 @@ export default function CobradorDetallePage({ params }) {
   const [nuevaPass, setNuevaPass]       = useState('')
   const [reseteando, setReseteando]     = useState(false)
 
-  const fetchCobrador = async () => {
+  const fetchCobrador = useCallback(async () => {
     try {
       const res = await fetch(`/api/cobradores/${id}`)
       if (!res.ok) throw new Error()
@@ -34,9 +34,9 @@ export default function CobradorDetallePage({ params }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [id])
 
-  useEffect(() => { fetchCobrador() }, [id])
+  useEffect(() => { fetchCobrador() }, [fetchCobrador])
 
   const toggleActivo = async () => {
     if (!data) return

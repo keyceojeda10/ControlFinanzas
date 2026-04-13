@@ -151,6 +151,7 @@ export default function NuevoTicketPage() {
             <div className="flex items-center gap-2 flex-wrap">
               {imagenes.map((img, idx) => (
                 <div key={idx} className="relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={img.preview} alt={`Adjunto ${idx + 1}`} className="h-20 w-20 object-cover rounded-[10px] border border-[#2a2a2a]" />
                   <button
                     type="button"

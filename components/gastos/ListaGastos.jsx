@@ -1,7 +1,7 @@
 'use client'
 // components/gastos/ListaGastos.jsx
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/Button'
 import { formatCOP } from '@/lib/calculos'
 import { useAuth } from '@/hooks/useAuth'
@@ -19,7 +19,7 @@ export default function ListaGastos({ soloPendientes = false, onCountChange, fec
   const [loading, setLoading] = useState(true)
   const [eliminando, setEliminando] = useState(null)
 
-  const fetchGastos = async () => {
+  const fetchGastos = useCallback(async () => {
     setLoading(true)
     try {
       const fechaParam = fecha || ''
@@ -46,9 +46,9 @@ export default function ListaGastos({ soloPendientes = false, onCountChange, fec
     } finally {
       setLoading(false)
     }
-  }
+  }, [fecha, onCountChange, soloPendientes])
 
-  useEffect(() => { fetchGastos() }, [fecha])
+  useEffect(() => { fetchGastos() }, [fetchGastos])
 
   const handleAprobar = async (id, estado) => {
     await fetch(`/api/gastos/${id}`, {
