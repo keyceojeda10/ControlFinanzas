@@ -47,6 +47,7 @@ export default function ClientesPage() {
   const [selAsignar,  setSelAsignar]  = useState([])
   const [grupoAsignar, setGrupoAsignar] = useState('')
   const [asignandoGrupo, setAsignandoGrupo] = useState(false)
+  const [mostrarControles, setMostrarControles] = useState(false)
 
   const [isOffline, setIsOffline] = useState(false)
 
@@ -163,6 +164,12 @@ export default function ClientesPage() {
     return () => clearTimeout(t)
   }, [fetchClientes, buscar, page, grupoFiltro, lastSyncedAt])
 
+  useEffect(() => {
+    if (estado || grupoFiltro || modoAsignar) {
+      setMostrarControles(true)
+    }
+  }, [estado, grupoFiltro, modoAsignar])
+
   const crearGrupo = async () => {
     if (!nuevoGrupo.trim()) return
     setGuardandoGrupo(true)
@@ -234,152 +241,238 @@ export default function ClientesPage() {
     }
   }
 
+  const moraCount = clientes.filter((c) => c.estado === 'mora').length
+  const filtrosActivos = (estado ? 1 : 0) + (grupoFiltro ? 1 : 0)
+  const tieneBusqueda = !!buscar.trim()
+  const estadoActivoLabel = ESTADOS_CLIENTE.find((e) => e.value === estado)?.label || ''
+  const grupoActivoLabel = grupoFiltro === '_none'
+    ? 'Sin grupo'
+    : (grupos.find((g) => g.id === grupoFiltro)?.nombre || '')
+  const hayControlesActivos = tieneBusqueda || filtrosActivos > 0 || modoAsignar
+
+  const limpiarControles = () => {
+    setBuscar('')
+    setEstado('')
+    setGrupoFiltro('')
+    setModoAsignar(false)
+    setSelAsignar([])
+    setGrupoAsignar('')
+  }
+
   return (
     <div className="max-w-3xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-start justify-between gap-3 mb-4">
         <div className="min-w-0">
           <h1 className="text-xl font-bold text-[white]">Clientes</h1>
           <p className="text-sm text-[#888888] mt-0.5">
             {loading ? '...' : `${total} cliente${total !== 1 ? 's' : ''}`}
-            {!loading && clientes.filter((c) => c.estado === 'mora').length > 0 && (
-              <span className="ml-2 text-[#ef4444]">· {clientes.filter((c) => c.estado === 'mora').length} en mora</span>
+            {!loading && moraCount > 0 && (
+              <span className="ml-2 text-[#ef4444]">· {moraCount} en mora</span>
             )}
           </p>
         </div>
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-          {!authLoading && esOwner && (
-            <>
-              <button
-                onClick={() => setModalGrupos(true)}
-                className="h-9 w-full px-3 rounded-[12px] border border-[#2a2a2a] bg-[#1a1a1a] text-xs font-medium text-[#f5c518] hover:bg-[#222222] transition-colors shrink-0 whitespace-nowrap sm:w-auto"
-              >
-                Grupos
-              </button>
-              <button
-                onClick={() => { setModoAsignar(v => !v); setSelAsignar([]); setGrupoAsignar('') }}
-                className={[
-                  'h-9 w-full px-3 rounded-[12px] border text-xs font-medium transition-colors shrink-0 whitespace-nowrap sm:w-auto',
-                  modoAsignar
-                    ? 'border-[#f5c518] bg-[rgba(245,197,24,0.15)] text-[#f5c518]'
-                    : 'border-[#2a2a2a] bg-[#1a1a1a] text-[#888888] hover:bg-[#222222] hover:text-[white]',
-                ].join(' ')}
-              >
-                {modoAsignar ? 'Cancelar asignación' : 'Asignar grupo'}
-              </button>
-            </>
-          )}
-          {!authLoading && puedeCrearClientes && (
-            <Link href="/clientes/nuevo" className="shrink-0 w-full sm:w-auto">
-              <Button
-                size="sm"
-                className="w-full whitespace-nowrap sm:w-auto"
-                icon={
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                }
-              >
-                Nuevo cliente
-              </Button>
-            </Link>
-          )}
-        </div>
+        {!authLoading && puedeCrearClientes && (
+          <Link href="/clientes/nuevo" className="shrink-0">
+            <Button
+              size="sm"
+              className="whitespace-nowrap"
+              icon={
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              }
+            >
+              Nuevo cliente
+            </Button>
+          </Link>
+        )}
       </div>
 
-      {/* Filtro de estado */}
-      <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-none pb-1">
-        {ESTADOS_CLIENTE.map(({ value, label, color }) => {
-          const isActive = estado === value
-          const accent = color ?? '#f5c518'
-          return (
-            <button
-              key={value}
-              onClick={() => setEstado(value)}
-              className={[
-                'shrink-0 px-3 h-8 rounded-full text-xs font-medium border transition-all',
-                isActive
-                  ? 'border-current'
-                  : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#222222] hover:text-[white]',
-              ].join(' ')}
-              style={isActive ? { color: accent, backgroundColor: `${accent}20` } : undefined}
+      {/* Barra compacta de búsqueda y controles */}
+      <div className="mb-5 rounded-[16px] border border-[#1f1f1f] bg-[rgba(255,255,255,0.018)] px-3 py-2.5 sm:px-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <svg
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#888888] pointer-events-none"
+              fill="none" stroke="currentColor" viewBox="0 0 24 24"
             >
-              {label}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Filtro por grupo */}
-      {grupos.length > 0 && (
-        <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-none pb-1">
-          <button
-            onClick={() => setGrupoFiltro('')}
-            className={[
-              'shrink-0 px-3 h-8 rounded-full text-xs font-medium border transition-all',
-              !grupoFiltro
-                ? 'border-[#f5c518] text-[#f5c518] bg-[rgba(245,197,24,0.12)]'
-                : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#222222] hover:text-[white]',
-            ].join(' ')}
-          >
-            Todos los grupos
-          </button>
-          <button
-            onClick={() => setGrupoFiltro('_none')}
-            className={[
-              'shrink-0 px-3 h-8 rounded-full text-xs font-medium border transition-all',
-              grupoFiltro === '_none'
-                ? 'border-[#06b6d4] text-[#06b6d4] bg-[rgba(6,182,212,0.12)]'
-                : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#222222] hover:text-[white]',
-            ].join(' ')}
-          >
-            Sin grupo
-          </button>
-          {grupos.map((g) => (
-            <button
-              key={g.id}
-              onClick={() => setGrupoFiltro(g.id)}
-              className={[
-                'shrink-0 px-3 h-8 rounded-full text-xs font-medium border transition-all flex items-center gap-1.5',
-                grupoFiltro === g.id
-                  ? 'border-current'
-                  : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#222222] hover:text-[white]',
-              ].join(' ')}
-              style={grupoFiltro === g.id ? { color: g.color || '#f5c518', backgroundColor: `${g.color || '#f5c518'}20` } : undefined}
-            >
-              <span className="w-2 h-2 rounded-full" style={{ background: g.color || '#666' }} />
-              {g.nombre}
-              <span className="text-[10px] opacity-70">{g._count?.clientes ?? 0}</span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Buscador */}
-      <div className="relative mb-5">
-        <svg
-          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#888888] pointer-events-none"
-          fill="none" stroke="currentColor" viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-        <input
-          type="search"
-          value={buscar}
-          onChange={(e) => setBuscar(e.target.value)}
-          placeholder="Buscar por nombre, cédula o teléfono…"
-          className="w-full h-10 pl-9 pr-4 rounded-[12px] border border-[#2a2a2a] bg-[#1a1a1a] text-sm text-[white] placeholder-[#777777] focus:outline-none focus:border-[#f5c518] focus:ring-1 focus:ring-[rgba(245,197,24,0.3)] transition-all"
-        />
-        {buscar && (
-          <button
-            onClick={() => setBuscar('')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#888888] hover:text-[white]"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
+            <input
+              type="search"
+              value={buscar}
+              onChange={(e) => setBuscar(e.target.value)}
+              placeholder="Buscar por nombre, cédula o teléfono…"
+              className="w-full h-9 pl-9 pr-9 rounded-[11px] border border-[#2a2a2a] bg-[#161616] text-sm text-[white] placeholder-[#777777] focus:outline-none focus:border-[#f5c518] focus:ring-1 focus:ring-[rgba(245,197,24,0.3)] transition-all"
+            />
+            {buscar && (
+              <button
+                onClick={() => setBuscar('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#888888] hover:text-[white]"
+                aria-label="Limpiar búsqueda"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+          <button
+            onClick={() => setMostrarControles((v) => !v)}
+            aria-label={mostrarControles ? 'Ocultar filtros y acciones' : 'Mostrar filtros y acciones'}
+            className="h-9 px-2.5 sm:px-3 rounded-[11px] border border-[#2a2a2a] bg-[#1a1a1a] text-xs font-medium text-[#d4d4d4] hover:bg-[#222222] transition-colors whitespace-nowrap flex items-center justify-center gap-1.5"
+          >
+            <svg
+              className={`w-4 h-4 transition-transform ${mostrarControles ? 'rotate-180 text-[#f5c518]' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+            <span className="hidden sm:inline">{mostrarControles ? 'Ocultar' : 'Filtros'}</span>
+            {filtrosActivos > 0 && (
+              <span className="min-w-4 h-4 px-1 rounded-full bg-[rgba(245,197,24,0.18)] text-[#f5c518] text-[10px] leading-4 text-center">
+                {filtrosActivos}
+              </span>
+            )}
           </button>
+        </div>
+
+        {!mostrarControles && hayControlesActivos && (
+          <div className="mt-2 flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-0.5">
+            {tieneBusqueda && (
+              <span className="shrink-0 px-2 h-6 rounded-full border border-[rgba(245,197,24,0.26)] bg-[rgba(245,197,24,0.1)] text-[10px] font-medium text-[#f5c518]">
+                Búsqueda activa
+              </span>
+            )}
+            {estado && (
+              <span className="shrink-0 px-2 h-6 rounded-full border border-[#2f2f2f] bg-[#151515] text-[10px] font-medium text-[#9ca3af] inline-flex items-center">
+                Estado: {estadoActivoLabel}
+              </span>
+            )}
+            {grupoFiltro && (
+              <span className="shrink-0 px-2 h-6 rounded-full border border-[#2f2f2f] bg-[#151515] text-[10px] font-medium text-[#9ca3af] inline-flex items-center">
+                Grupo: {grupoActivoLabel}
+              </span>
+            )}
+            {modoAsignar && (
+              <span className="shrink-0 px-2 h-6 rounded-full border border-[rgba(245,197,24,0.26)] bg-[rgba(245,197,24,0.12)] text-[10px] font-medium text-[#f5c518] inline-flex items-center">
+                Asignación activa
+              </span>
+            )}
+            <button
+              onClick={limpiarControles}
+              className="shrink-0 px-2 h-6 rounded-full border border-[#303030] text-[10px] font-medium text-[#b4b4b4] hover:text-white hover:border-[#4a4a4a] transition-colors"
+            >
+              Limpiar todo
+            </button>
+          </div>
+        )}
+
+        {mostrarControles && (
+          <div className="mt-3 pt-3 border-t border-[#242424] space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              {!authLoading && esOwner && (
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setModalGrupos(true)}
+                    className="h-8 px-3 rounded-[10px] border border-[#2a2a2a] bg-[#1a1a1a] text-xs font-medium text-[#f5c518] hover:bg-[#222222] transition-colors"
+                  >
+                    Gestionar grupos
+                  </button>
+                  <button
+                    onClick={() => { setModoAsignar(v => !v); setSelAsignar([]); setGrupoAsignar('') }}
+                    className={[
+                      'h-8 px-3 rounded-[10px] border text-xs font-medium transition-colors',
+                      modoAsignar
+                        ? 'border-[#f5c518] bg-[rgba(245,197,24,0.15)] text-[#f5c518]'
+                        : 'border-[#2a2a2a] bg-[#1a1a1a] text-[#888888] hover:bg-[#222222] hover:text-[white]',
+                    ].join(' ')}
+                  >
+                    {modoAsignar ? 'Cancelar asignación' : 'Asignar grupo'}
+                  </button>
+                </div>
+              )}
+
+              {hayControlesActivos && (
+                <button
+                  onClick={limpiarControles}
+                  className="h-8 px-3 rounded-[10px] border border-[#2a2a2a] bg-[#151515] text-xs font-medium text-[#b4b4b4] hover:bg-[#222222] hover:text-white transition-colors"
+                >
+                  Limpiar todo
+                </button>
+              )}
+            </div>
+
+            <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
+              {ESTADOS_CLIENTE.map(({ value, label, color }) => {
+                const isActive = estado === value
+                const accent = color ?? '#f5c518'
+                return (
+                  <button
+                    key={value}
+                    onClick={() => setEstado(value)}
+                    className={[
+                      'shrink-0 px-2.5 h-7 rounded-full text-[11px] font-medium border transition-all',
+                      isActive
+                        ? 'border-current'
+                        : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#222222] hover:text-[white]',
+                    ].join(' ')}
+                    style={isActive ? { color: accent, backgroundColor: `${accent}20` } : undefined}
+                  >
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+
+            {grupos.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
+                <button
+                  onClick={() => setGrupoFiltro('')}
+                  className={[
+                    'shrink-0 px-2.5 h-7 rounded-full text-[11px] font-medium border transition-all',
+                    !grupoFiltro
+                      ? 'border-[#f5c518] text-[#f5c518] bg-[rgba(245,197,24,0.12)]'
+                      : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#222222] hover:text-[white]',
+                  ].join(' ')}
+                >
+                  Todos los grupos
+                </button>
+                <button
+                  onClick={() => setGrupoFiltro('_none')}
+                  className={[
+                    'shrink-0 px-2.5 h-7 rounded-full text-[11px] font-medium border transition-all',
+                    grupoFiltro === '_none'
+                      ? 'border-[#06b6d4] text-[#06b6d4] bg-[rgba(6,182,212,0.12)]'
+                      : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#222222] hover:text-[white]',
+                  ].join(' ')}
+                >
+                  Sin grupo
+                </button>
+                {grupos.map((g) => (
+                  <button
+                    key={g.id}
+                    onClick={() => setGrupoFiltro(g.id)}
+                    className={[
+                      'shrink-0 px-2.5 h-7 rounded-full text-[11px] font-medium border transition-all flex items-center gap-1.5',
+                      grupoFiltro === g.id
+                        ? 'border-current'
+                        : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#222222] hover:text-[white]',
+                    ].join(' ')}
+                    style={grupoFiltro === g.id ? { color: g.color || '#f5c518', backgroundColor: `${g.color || '#f5c518'}20` } : undefined}
+                  >
+                    <span className="w-2 h-2 rounded-full" style={{ background: g.color || '#666' }} />
+                    {g.nombre}
+                    <span className="text-[10px] opacity-70">{g._count?.clientes ?? 0}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
 
