@@ -58,21 +58,21 @@ export default function Header() {
 
   return (
     <>
-    <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 h-14 border-b border-[rgba(255,255,255,0.06)]" style={{ background: 'rgba(10,10,15,0.8)', backdropFilter: 'blur(20px) saturate(1.2)', WebkitBackdropFilter: 'blur(20px) saturate(1.2)' }}>
+    <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 h-14 border-b border-[rgba(255,255,255,0.1)]" style={{ background: 'rgba(10,10,15,0.84)', backdropFilter: 'blur(20px) saturate(1.2)', WebkitBackdropFilter: 'blur(20px) saturate(1.2)' }}>
       {/* Logo + Title */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-3">
         <Link href="/dashboard">
           <Image src="/logo-icon.svg" alt="CF" width={28} height={28} className="shrink-0" />
         </Link>
-        <span className="text-sm font-semibold text-white">{title}</span>
+        <span className="text-sm font-semibold text-[#f4f5fa] tracking-[0.01em]">{title}</span>
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1.5">
         {/* Search button */}
         <button
           onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
-          className="w-9 h-9 flex items-center justify-center rounded-lg text-[#888888] hover:text-white hover:bg-[rgba(255,255,255,0.05)] transition-colors"
+          className="w-10 h-10 flex items-center justify-center rounded-lg text-[#9b9ba6] hover:text-white hover:bg-[rgba(255,255,255,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c518]/65 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b10] transition-colors"
           aria-label="Buscar"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -84,8 +84,8 @@ export default function Header() {
         <Link
           href="/configuracion"
           className={[
-            'w-9 h-9 flex items-center justify-center rounded-lg transition-colors',
-            pathname.startsWith('/configuracion') ? 'text-[#f5c518]' : 'text-[#888888] hover:text-white hover:bg-[rgba(255,255,255,0.05)]',
+            'w-10 h-10 flex items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c518]/65 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b10] transition-colors',
+            pathname.startsWith('/configuracion') ? 'text-[#f5c518] bg-[rgba(245,197,24,0.08)]' : 'text-[#9b9ba6] hover:text-white hover:bg-[rgba(255,255,255,0.08)]',
           ].join(' ')}
           aria-label="Configuración"
         >
@@ -98,39 +98,39 @@ export default function Header() {
         <div className="relative" ref={userRef}>
           <button
             onClick={() => setUserOpen((v) => !v)}
-            className="w-9 h-9 rounded-full bg-[#f5c518] flex items-center justify-center text-[#0a0a0a] text-xs font-bold hover:opacity-80 transition-opacity cursor-pointer"
+            className="w-10 h-10 rounded-full bg-[#f5c518] flex items-center justify-center text-[#0a0a0a] text-xs font-bold hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c518]/65 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b10] transition-opacity cursor-pointer"
             aria-label="Menú de usuario"
           >
             {inicial}
           </button>
 
           {userOpen && (
-            <div className="absolute right-0 top-11 w-56 rounded-[14px] shadow-2xl overflow-hidden z-50" style={{ background: 'rgba(15,15,22,0.9)', backdropFilter: 'blur(30px) saturate(1.3)', WebkitBackdropFilter: 'blur(30px) saturate(1.3)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div className="absolute right-0 top-12 w-60 rounded-[14px] shadow-2xl overflow-hidden z-50" style={{ background: 'rgba(15,15,22,0.92)', backdropFilter: 'blur(30px) saturate(1.3)', WebkitBackdropFilter: 'blur(30px) saturate(1.3)', border: '1px solid rgba(255,255,255,0.12)' }}>
               <div className="px-4 py-3">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-full bg-[#f5c518] flex items-center justify-center text-[#0a0a0a] text-xs font-bold shrink-0">
                     {inicial}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-white truncate">{nombre}</p>
-                    <p className="text-[11px] text-[#888888] truncate">{email}</p>
+                    <p className="text-sm font-semibold text-[#f4f5fa] truncate">{nombre}</p>
+                    <p className="text-[11px] text-[#a2a2ad] truncate">{email}</p>
                   </div>
                 </div>
                 <div className="mt-2">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-[rgba(245,197,24,0.1)] text-[#f5c518] border border-[rgba(245,197,24,0.2)]">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-[rgba(245,197,24,0.14)] text-[#ffd452] border border-[rgba(245,197,24,0.28)]">
                     Plan {PLAN_LABELS[plan] ?? plan}
                   </span>
                 </div>
               </div>
 
-              <div className="border-t border-[#2a2a2a]" />
+              <div className="border-t border-[rgba(255,255,255,0.08)]" />
 
               <button
                 onClick={() => {
                   try { navigator.serviceWorker?.controller?.postMessage({ type: 'CLEAR_API_CACHE' }) } catch {}
                   signOut({ callbackUrl: '/login' })
                 }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#ff8e8e] hover:bg-[rgba(239,68,68,0.13)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ef4444]/55 focus-visible:ring-inset transition-colors"
               >
                 <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}

@@ -237,24 +237,24 @@ export default function Sidebar() {
     href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
 
   return (
-    <aside className="hidden lg:flex flex-col w-60 min-h-dvh shrink-0 border-r border-[rgba(255,255,255,0.06)]" style={{ background: 'linear-gradient(180deg, rgba(12,12,18,0.95) 0%, rgba(8,8,14,0.98) 100%)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
+    <aside className="hidden lg:flex flex-col w-60 min-h-dvh shrink-0 border-r border-[rgba(255,255,255,0.1)]" style={{ background: 'linear-gradient(180deg, rgba(12,12,18,0.96) 0%, rgba(8,8,14,0.99) 100%)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
       {/* Logo */}
-      <div className="flex flex-col items-center px-5 py-4 border-b border-[rgba(255,255,255,0.06)]">
+      <div className="flex flex-col items-center px-5 py-4 border-b border-[rgba(255,255,255,0.08)]">
         <Image src="/logo-full.svg" alt="Control Finanzas" width={160} height={40} priority />
-        {fechaHora && <span className="text-[10px] text-[#888888] mt-2">{fechaHora}</span>}
+        {fechaHora && <span className="text-[10px] text-[#a2a2ad] mt-2">{fechaHora}</span>}
       </div>
 
       {/* Search shortcut */}
       <div className="px-3 pt-3 pb-1">
         <button
           onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-[10px] bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.07)] text-[#666] hover:border-[rgba(255,255,255,0.12)] hover:text-[#999] transition-colors text-xs"
+          className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.11)] text-[#9b9ba6] hover:border-[rgba(255,255,255,0.16)] hover:text-[#f1f2f7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c518]/65 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b10] transition-colors text-xs"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
           </svg>
           <span className="flex-1 text-left">Buscar...</span>
-          <kbd className="text-[10px] bg-[#111] border border-[#333] px-1.5 py-0.5 rounded">Ctrl+K</kbd>
+          <kbd className="text-[10px] bg-[#101016] border border-[rgba(255,255,255,0.16)] text-[#c7c7d2] px-1.5 py-0.5 rounded">Ctrl+K</kbd>
         </button>
       </div>
 
@@ -266,11 +266,12 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              aria-current={active ? 'page' : undefined}
               className={[
-                'flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm font-medium transition-all duration-150',
+                'flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm font-medium transition-all duration-150 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c518]/65 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b10]',
                 active
-                  ? 'bg-[rgba(245,197,24,0.08)] text-[#f5c518] border-l-2 border-[#f5c518] shadow-[inset_0_0_20px_rgba(245,197,24,0.05)]'
-                  : 'text-[#888] hover:bg-[rgba(255,255,255,0.05)] hover:text-white',
+                  ? 'bg-[rgba(245,197,24,0.11)] text-[#f5c518] border-l-2 border-[#f5c518] shadow-[inset_0_0_20px_rgba(245,197,24,0.06)]'
+                  : 'text-[#b0b0bb] hover:bg-[rgba(255,255,255,0.06)] hover:text-[#f1f2f7]',
               ].join(' ')}
             >
               {item.icon}
@@ -285,7 +286,7 @@ export default function Sidebar() {
         <button
           onClick={startBulkSync}
           disabled={bulkSyncing}
-          className="w-full flex items-center gap-2 px-3 py-2.5 rounded-[10px] bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.2)] hover:bg-[rgba(34,197,94,0.15)] transition-colors disabled:opacity-50"
+          className="w-full flex items-center gap-2 px-3 py-2.5 rounded-[10px] bg-[rgba(34,197,94,0.1)] border border-[rgba(34,197,94,0.24)] hover:bg-[rgba(34,197,94,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34d399]/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b10] transition-colors disabled:opacity-50"
         >
           <svg className={`w-4 h-4 text-[#22c55e] shrink-0 ${bulkSyncing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -297,7 +298,7 @@ export default function Sidebar() {
               <>
                 <p className="text-xs font-semibold text-[#22c55e]">Sincronizar offline</p>
                 {syncMeta && (
-                  <p className="text-[10px] text-[#22c55e]/60">
+                  <p className="text-[10px] text-[#22c55e]/75">
                     {syncMeta.totalClientes} clientes · {new Date(syncMeta.syncedAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' })}
                   </p>
                 )}
@@ -312,28 +313,28 @@ export default function Sidebar() {
         <div className="mx-3 mb-2">
           <Link
             href="/caja"
-            className="flex items-center gap-2 px-3 py-2.5 rounded-[10px] bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.3)] hover:bg-[rgba(245,158,11,0.15)] transition-colors"
+            className="flex items-center gap-2 px-3 py-2.5 rounded-[10px] bg-[rgba(245,158,11,0.12)] border border-[rgba(245,158,11,0.32)] hover:bg-[rgba(245,158,11,0.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f59e0b]/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b10] transition-colors"
           >
             <svg className="w-4 h-4 text-[#f59e0b] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             <div>
               <p className="text-xs font-semibold text-[#f59e0b]">Cierre en {cierreWarning.minutesUntilClose} min</p>
-              <p className="text-[10px] text-[#f59e0b]/70">Ir a cerrar caja</p>
+              <p className="text-[10px] text-[#f8bb63]">Ir a cerrar caja</p>
             </div>
           </Link>
         </div>
       )}
 
       {/* User info + sign out */}
-      <div className="px-3 pb-5 border-t border-[rgba(255,255,255,0.06)] pt-4">
+      <div className="px-3 pb-5 border-t border-[rgba(255,255,255,0.08)] pt-4">
         <div className="flex items-center gap-3 px-3 py-2 mb-2">
           <div className="w-8 h-8 rounded-full bg-[#f5c518] flex items-center justify-center text-[#0a0a0a] text-xs font-bold shrink-0">
             {session?.user?.nombre?.[0]?.toUpperCase() ?? 'U'}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-white truncate">{session?.user?.nombre}</p>
-            <p className="text-[10px] text-[#888888]">{{ owner: 'Administrador', cobrador: 'Cobrador', superadmin: 'Super Admin' }[session?.user?.rol] ?? session?.user?.rol}</p>
+            <p className="text-xs font-semibold text-[#f4f5fa] truncate">{session?.user?.nombre}</p>
+            <p className="text-[10px] text-[#a2a2ad]">{{ owner: 'Administrador', cobrador: 'Cobrador', superadmin: 'Super Admin' }[session?.user?.rol] ?? session?.user?.rol}</p>
           </div>
         </div>
         <InstallButton variant="desktop" />
@@ -342,7 +343,7 @@ export default function Sidebar() {
             try { navigator.serviceWorker?.controller?.postMessage({ type: 'CLEAR_API_CACHE' }) } catch {}
             signOut({ callbackUrl: '/login' })
           }}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm text-[#888888] hover:bg-[#1a1a1a] hover:text-[#ef4444] transition-all duration-150"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm text-[#a2a2ad] hover:bg-[rgba(255,255,255,0.06)] hover:text-[#ff8e8e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ef4444]/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b10] transition-all duration-150"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}

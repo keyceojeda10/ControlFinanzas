@@ -113,13 +113,13 @@ export default function GlobalSearch() {
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] sm:pt-[15vh]">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setOpen(false)} />
+      <div className="absolute inset-0 bg-black/72 backdrop-blur-sm" onClick={() => setOpen(false)} />
 
       {/* Modal */}
-      <div className="relative w-full max-w-lg mx-3 sm:mx-4 bg-[#111111] border border-[#2a2a2a] rounded-[16px] shadow-2xl overflow-hidden"
+      <div className="relative w-full max-w-lg mx-3 sm:mx-4 bg-[#111115] border border-[rgba(255,255,255,0.12)] rounded-[16px] shadow-2xl overflow-hidden"
         style={{ boxShadow: '0 0 40px rgba(245,197,24,0.06), 0 8px 32px rgba(0,0,0,0.5)' }}>
         {/* Input */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[#2a2a2a]">
+        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[rgba(255,255,255,0.08)]">
           <svg className="w-5 h-5 text-[#f5c518] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
           </svg>
@@ -129,16 +129,16 @@ export default function GlobalSearch() {
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             placeholder="Buscar clientes, préstamos, rutas..."
-            className="flex-1 bg-transparent text-sm text-white placeholder-[#777] outline-none"
+            className="flex-1 bg-transparent text-sm text-[#f4f5fa] placeholder-[#9b9ba6] outline-none"
           />
           {query && (
-            <button onClick={() => { setQuery(''); setResults(null) }} className="text-[#888] hover:text-white p-0.5">
+            <button onClick={() => { setQuery(''); setResults(null) }} className="text-[#a2a2ad] hover:text-white p-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c518]/65">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           )}
-          <kbd className="hidden sm:inline text-[10px] text-[#888] bg-[#0a0a0a] border border-[#2a2a2a] px-1.5 py-0.5 rounded-md font-mono">ESC</kbd>
+          <kbd className="hidden sm:inline text-[10px] text-[#c7c7d2] bg-[#0f0f14] border border-[rgba(255,255,255,0.16)] px-1.5 py-0.5 rounded-md font-mono">ESC</kbd>
         </div>
 
         {/* Results */}
@@ -151,10 +151,10 @@ export default function GlobalSearch() {
 
           {!loading && results && allItems.length === 0 && (
             <div className="py-8 text-center">
-              <svg className="w-8 h-8 mx-auto text-[#666] mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-8 h-8 mx-auto text-[#8f8f99] mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
               </svg>
-              <p className="text-sm text-[#888]">Sin resultados para "{query}"</p>
+              <p className="text-sm text-[#b0b0bb]">Sin resultados para "{query}"</p>
             </div>
           )}
 
@@ -169,7 +169,7 @@ export default function GlobalSearch() {
                   <div key={key}>
                     <div className="flex items-center gap-2 px-4 py-2 mt-1">
                       <div className="w-1 h-3 rounded-full" style={{ background: color }} />
-                      <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#666' }}>{label}</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#a2a2ad' }}>{label}</p>
                     </div>
                     {items.map((item) => {
                       const itemId = item.id
@@ -182,8 +182,8 @@ export default function GlobalSearch() {
                         <button
                           key={item.id}
                           className={[
-                            'w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all rounded-lg mx-0',
-                            idx === selected ? 'bg-[rgba(245,197,24,0.08)]' : 'hover:bg-[#1a1a1a]',
+                            'w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all rounded-lg mx-0 min-h-[46px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c518]/65 focus-visible:ring-inset',
+                            idx === selected ? 'bg-[rgba(245,197,24,0.12)]' : 'hover:bg-[rgba(255,255,255,0.06)]',
                           ].join(' ')}
                           onClick={() => navigate(href)}
                           onMouseEnter={() => setSelected(idx)}
@@ -194,8 +194,8 @@ export default function GlobalSearch() {
                             </svg>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm text-white truncate">{isCliente ? item.nombre : isPrestamo ? item.clienteNombre : item.nombre}</p>
-                            <p className="text-[10px] text-[#888]">
+                            <p className="text-sm text-[#f4f5fa] truncate">{isCliente ? item.nombre : isPrestamo ? item.clienteNombre : item.nombre}</p>
+                            <p className="text-[10px] text-[#a2a2ad]">
                               {isCliente && <>{item.cedula}{item.telefono ? ` \u00B7 ${item.telefono}` : ''}</>}
                               {isPrestamo && <span className="font-mono-display">${Math.round(item.saldoPendiente).toLocaleString('es-CO')} pendiente</span>}
                               {key === 'rutas' && <>{item._count?.clientes || 0} clientes</>}
@@ -204,7 +204,7 @@ export default function GlobalSearch() {
                           {isPrestamo && (
                             <span className={[
                               'text-[10px] px-2 py-0.5 rounded-full font-medium',
-                              item.estado === 'activo' ? 'bg-[rgba(34,197,94,0.1)] text-[#22c55e]' : 'bg-[rgba(85,85,85,0.1)] text-[#666]',
+                              item.estado === 'activo' ? 'bg-[rgba(34,197,94,0.14)] text-[#59e3a4]' : 'bg-[rgba(148,163,184,0.14)] text-[#c7c7d2]',
                             ].join(' ')}>
                               {item.estado}
                             </span>
@@ -224,16 +224,16 @@ export default function GlobalSearch() {
               <svg className="w-10 h-10 mx-auto text-[#2a2a2a] mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
               </svg>
-              <p className="text-xs text-[#888]">Busca clientes, préstamos o rutas</p>
+              <p className="text-xs text-[#a2a2ad]">Busca clientes, préstamos o rutas</p>
             </div>
           )}
         </div>
 
         {/* Footer — solo desktop */}
-        <div className="hidden sm:flex items-center justify-between px-4 py-2 border-t border-[#1a1a1a] text-[10px] text-[#777]">
+        <div className="hidden sm:flex items-center justify-between px-4 py-2 border-t border-[rgba(255,255,255,0.08)] text-[10px] text-[#a2a2ad]">
           <div className="flex items-center gap-3">
-            <span><kbd className="bg-[#0a0a0a] border border-[#2a2a2a] px-1 py-0.5 rounded-md font-mono">&uarr;</kbd> <kbd className="bg-[#0a0a0a] border border-[#2a2a2a] px-1 py-0.5 rounded-md font-mono">&darr;</kbd> navegar</span>
-            <span><kbd className="bg-[#0a0a0a] border border-[#2a2a2a] px-1 py-0.5 rounded-md font-mono">Enter</kbd> seleccionar</span>
+            <span><kbd className="bg-[#0f0f14] border border-[rgba(255,255,255,0.16)] text-[#c7c7d2] px-1 py-0.5 rounded-md font-mono">&uarr;</kbd> <kbd className="bg-[#0f0f14] border border-[rgba(255,255,255,0.16)] text-[#c7c7d2] px-1 py-0.5 rounded-md font-mono">&darr;</kbd> navegar</span>
+            <span><kbd className="bg-[#0f0f14] border border-[rgba(255,255,255,0.16)] text-[#c7c7d2] px-1 py-0.5 rounded-md font-mono">Enter</kbd> seleccionar</span>
           </div>
         </div>
       </div>

@@ -163,11 +163,11 @@ export default function BottomNav() {
       {cierreWarning && (
         <Link
           href="/caja"
-          className="lg:hidden fixed bottom-[88px] right-3 z-40 rounded-full px-3.5 py-2 flex items-center gap-2"
-          style={{ background: 'rgba(20,18,12,0.92)', border: '1px solid rgba(245,158,11,0.35)', backdropFilter: 'blur(20px) saturate(1.3)', WebkitBackdropFilter: 'blur(20px) saturate(1.3)', boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}
+          className="lg:hidden fixed bottom-[88px] right-3 z-40 rounded-full px-3.5 py-2.5 flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f59e0b]/65 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a10]"
+          style={{ background: 'rgba(20,18,12,0.92)', border: '1px solid rgba(245,158,11,0.38)', backdropFilter: 'blur(20px) saturate(1.3)', WebkitBackdropFilter: 'blur(20px) saturate(1.3)', boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}
         >
           <span className="w-1.5 h-1.5 rounded-full bg-[#f59e0b] animate-pulse shrink-0" />
-          <span className="text-[11px] font-medium text-[#f59e0b]">Cierre de caja en {cierreWarning.minutesUntilClose} min</span>
+          <span className="text-[11px] font-semibold text-[#ffc266]">Cierre de caja en {cierreWarning.minutesUntilClose} min</span>
         </Link>
       )}
 
@@ -181,7 +181,7 @@ export default function BottomNav() {
               background: 'rgba(15,15,22,0.95)',
               backdropFilter: 'blur(30px) saturate(1.3)',
               WebkitBackdropFilter: 'blur(30px) saturate(1.3)',
-              border: '1px solid rgba(255,255,255,0.08)',
+              border: '1px solid rgba(255,255,255,0.12)',
               borderBottom: 'none',
               maxHeight: '70vh',
             }}
@@ -192,7 +192,7 @@ export default function BottomNav() {
             </div>
 
             <div className="px-4 pb-2">
-              <p className="text-[11px] font-semibold text-[#888] uppercase tracking-wider mb-3">Navegacion</p>
+              <p className="text-[11px] font-semibold text-[#b6b6c1] uppercase tracking-wider mb-3">Navegacion</p>
             </div>
 
             <div className="px-2 pb-8 overflow-y-auto">
@@ -205,8 +205,8 @@ export default function BottomNav() {
                       href={item.href}
                       onClick={() => setMoreOpen(false)}
                       className={[
-                        'flex flex-col items-center gap-1.5 py-4 rounded-2xl transition-all active:scale-95',
-                        active ? 'bg-[rgba(245,197,24,0.1)] text-[#f5c518]' : 'text-[#999] hover:bg-[rgba(255,255,255,0.04)]',
+                        'flex flex-col items-center gap-1.5 py-4 rounded-2xl transition-all active:scale-95 min-h-[78px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c518]/65 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0c12]',
+                        active ? 'bg-[rgba(245,197,24,0.14)] text-[#f5c518]' : 'text-[#b2b2bd] hover:bg-[rgba(255,255,255,0.06)] hover:text-[#f1f2f7]',
                       ].join(' ')}
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -223,7 +223,7 @@ export default function BottomNav() {
       )}
 
       {/* Bottom nav bar */}
-      <nav className="lg:hidden fixed bottom-3 left-3 right-3 z-40 rounded-[22px] overflow-hidden" style={{ background: 'rgba(12,12,18,0.75)', backdropFilter: 'blur(30px) saturate(1.5)', WebkitBackdropFilter: 'blur(30px) saturate(1.5)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 32px rgba(0,0,0,0.4), 0 0 20px rgba(245,197,24,0.04), inset 0 1px 0 rgba(255,255,255,0.05)' }}>
+      <nav aria-label="Navegacion principal movil" className="lg:hidden fixed bottom-3 left-3 right-3 z-40 rounded-[22px] overflow-hidden" style={{ background: 'rgba(12,12,18,0.8)', backdropFilter: 'blur(30px) saturate(1.5)', WebkitBackdropFilter: 'blur(30px) saturate(1.5)', border: '1px solid rgba(255,255,255,0.12)', boxShadow: '0 8px 32px rgba(0,0,0,0.4), 0 0 20px rgba(245,197,24,0.04), inset 0 1px 0 rgba(255,255,255,0.05)' }}>
         <div className="flex items-stretch">
           {items.map((item) => {
             const active = isActive(item.href)
@@ -233,12 +233,12 @@ export default function BottomNav() {
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
                 className={[
-                  'flex-1 flex flex-col items-center justify-center gap-0.5 py-3 text-[11px] font-medium transition-all duration-200 relative',
-                  active ? 'text-[#f5c518]' : 'text-[#777]',
+                  'flex-1 flex flex-col items-center justify-center gap-0.5 py-3.5 text-[11px] leading-none font-semibold transition-all duration-200 relative min-h-[58px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c518]/65 focus-visible:ring-offset-1 focus-visible:ring-offset-[#0b0b10]',
+                  active ? 'text-[#f5c518]' : 'text-[#9b9ba6] hover:text-[#f1f2f7]',
                 ].join(' ')}
               >
                 {active && (
-                  <span className="absolute inset-x-1 inset-y-1.5 rounded-[12px] -z-10" style={{ background: 'rgba(245,197,24,0.1)' }} />
+                  <span className="absolute inset-x-1 inset-y-1.5 rounded-[12px] -z-10" style={{ background: 'rgba(245,197,24,0.14)' }} />
                 )}
                 {item.icon}
                 {item.label}
@@ -247,16 +247,17 @@ export default function BottomNav() {
           })}
           {/* "Más" button - opens sheet */}
           <button
+            type="button"
             onClick={() => setMoreOpen(v => !v)}
             aria-expanded={moreOpen}
             aria-label="Abrir menu de navegacion"
             className={[
-              'flex-1 flex flex-col items-center justify-center gap-0.5 py-3 text-[11px] font-medium transition-all duration-200 relative',
-              moreActive || moreOpen ? 'text-[#f5c518]' : 'text-[#777]',
+              'flex-1 flex flex-col items-center justify-center gap-0.5 py-3.5 text-[11px] leading-none font-semibold transition-all duration-200 relative min-h-[58px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c518]/65 focus-visible:ring-offset-1 focus-visible:ring-offset-[#0b0b10]',
+              moreActive || moreOpen ? 'text-[#f5c518]' : 'text-[#9b9ba6] hover:text-[#f1f2f7]',
             ].join(' ')}
           >
             {(moreActive || moreOpen) && (
-              <span className="absolute inset-x-1 inset-y-1.5 rounded-[12px] -z-10" style={{ background: 'rgba(245,197,24,0.1)' }} />
+              <span className="absolute inset-x-1 inset-y-1.5 rounded-[12px] -z-10" style={{ background: 'rgba(245,197,24,0.14)' }} />
             )}
             <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 6h16M4 12h16M4 18h16" />
