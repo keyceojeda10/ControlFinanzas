@@ -180,10 +180,10 @@ export default function ClientesPage() {
   }, [lastSyncedAt, fetchClientes, buscar, page, grupoFiltro])
 
   useEffect(() => {
-    if (estado || grupoFiltro) {
+    if (estado || grupoFiltro || modoAsignar) {
       setMostrarControles(true)
     }
-  }, [estado, grupoFiltro])
+  }, [estado, grupoFiltro, modoAsignar])
 
   const getApiError = async (res, fallback) => {
     try {
@@ -328,8 +328,15 @@ export default function ClientesPage() {
     setGrupoAsignar('')
   }
 
+  const toggleModoAsignar = () => {
+    setModoAsignar((prev) => !prev)
+    setSelAsignar([])
+    setGrupoAsignar('')
+    setMostrarControles(true)
+  }
+
   return (
-    <div className={`max-w-3xl mx-auto ${modoAsignar ? 'pb-44 sm:pb-36' : ''}`}>
+    <div className="max-w-3xl mx-auto">
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-4">
         <div className="min-w-0">
@@ -361,35 +368,41 @@ export default function ClientesPage() {
       {/* Barra compacta de búsqueda y controles */}
       <div className="mb-5 rounded-[16px] border border-[#1f1f1f] bg-[rgba(255,255,255,0.018)] px-3 py-2.5 sm:px-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <div className="relative flex-1">
-            <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#888888] pointer-events-none"
-              fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              type="search"
-              value={buscar}
-              onChange={(e) => setBuscar(e.target.value)}
-              placeholder={modoAsignar ? 'Buscar clientes para asignar…' : 'Buscar por nombre, cédula o teléfono…'}
-              className="w-full h-9 pl-9 pr-9 rounded-[11px] border border-[#2a2a2a] bg-[#161616] text-sm text-[white] placeholder-[#777777] focus:outline-none focus:border-[#f5c518] focus:ring-1 focus:ring-[rgba(245,197,24,0.3)] transition-all"
-            />
-            {buscar && (
-              <button
-                onClick={() => setBuscar('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#888888] hover:text-[white]"
-                aria-label="Limpiar búsqueda"
+          {!modoAsignar ? (
+            <div className="relative flex-1">
+              <svg
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#888888] pointer-events-none"
+                fill="none" stroke="currentColor" viewBox="0 0 24 24"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
-          </div>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="search"
+                value={buscar}
+                onChange={(e) => setBuscar(e.target.value)}
+                placeholder="Buscar por nombre, cédula o teléfono…"
+                className="w-full h-9 pl-9 pr-9 rounded-[11px] border border-[#2a2a2a] bg-[#161616] text-sm text-[white] placeholder-[#777777] focus:outline-none focus:border-[#f5c518] focus:ring-1 focus:ring-[rgba(245,197,24,0.3)] transition-all"
+              />
+              {buscar && (
+                <button
+                  onClick={() => setBuscar('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#888888] hover:text-[white]"
+                  aria-label="Limpiar búsqueda"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="h-9 flex-1 rounded-[11px] border border-[rgba(245,197,24,0.24)] bg-[rgba(245,197,24,0.08)] px-3 flex items-center text-[11px] font-medium text-[#f5c518]">
+              Asignación activa: usa el buscador dentro de Opciones.
+            </div>
+          )}
           <button
-            onClick={() => setMostrarControles((v) => !v)}
+            onClick={() => setMostrarControles((v) => (modoAsignar ? true : !v))}
             aria-label={mostrarControles ? 'Ocultar filtros y acciones' : 'Mostrar filtros y acciones'}
             className="h-9 px-2.5 sm:px-3 rounded-[11px] border border-[#2a2a2a] bg-[#1a1a1a] text-xs font-medium text-[#d4d4d4] hover:bg-[#222222] transition-colors whitespace-nowrap flex items-center justify-center gap-1.5"
           >
@@ -459,7 +472,7 @@ export default function ClientesPage() {
                     Gestionar grupos
                   </button>
                   <button
-                    onClick={() => { setModoAsignar(v => !v); setSelAsignar([]); setGrupoAsignar('') }}
+                    onClick={toggleModoAsignar}
                     className={[
                       'h-8 px-3 rounded-[10px] border text-xs font-medium transition-colors',
                       modoAsignar
@@ -545,6 +558,58 @@ export default function ClientesPage() {
                     <span className="text-[10px] opacity-70">{g._count?.clientes ?? 0}</span>
                   </button>
                 ))}
+              </div>
+            )}
+
+            {modoAsignar && (
+              <div className="rounded-[14px] border border-[rgba(245,197,24,0.26)] bg-[rgba(15,15,22,0.72)] p-3 sm:p-3.5 space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold text-[#f5c518]">Asignación por grupo</p>
+                  <span className="text-[11px] text-[#f4f4f5]">{selAsignar.length} seleccionados</span>
+                </div>
+
+                <div className="relative">
+                  <svg
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#7b8794] pointer-events-none"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <input
+                    type="search"
+                    value={buscar}
+                    onChange={(e) => setBuscar(e.target.value)}
+                    placeholder="Buscar cliente para asignar..."
+                    className="w-full h-9 pl-8 pr-2 rounded-lg bg-[#1a1a1a] border border-[#333] text-sm text-white placeholder:text-[#6c7280]"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <select
+                    value={grupoAsignar}
+                    onChange={e => setGrupoAsignar(e.target.value)}
+                    className="h-9 px-2 rounded-lg bg-[#1a1a1a] border border-[#333] text-sm text-white min-w-0 sm:flex-1"
+                  >
+                    <option value="">Elegir grupo...</option>
+                    {grupos.map(g => (
+                      <option key={g.id} value={g.id}>{g.nombre}</option>
+                    ))}
+                    <option value="_none">Sin grupo</option>
+                  </select>
+                  <button
+                    onClick={asignarGrupoClientes}
+                    disabled={!grupoAsignar || !selAsignar.length || asignandoGrupo}
+                    className="h-9 px-4 rounded-lg bg-[#f5c518] text-black text-sm font-bold shrink-0 disabled:opacity-50 active:scale-95 transition-transform"
+                  >
+                    {asignandoGrupo ? 'Asignando...' : 'Asignar'}
+                  </button>
+                </div>
+
+                <p className="text-[11px] text-[#8b95a5]">
+                  Busca en esta misma sección y marca clientes en la lista para asignarlos.
+                </p>
               </div>
             )}
           </div>
@@ -666,59 +731,6 @@ export default function ClientesPage() {
               )}
             </>
           )}
-        </div>
-      )}
-
-      {/* Barra flotante: asignar grupo */}
-      {modoAsignar && (
-        <div className="fixed bottom-20 left-3 right-3 sm:left-auto sm:right-4 sm:bottom-6 sm:w-auto z-50">
-          <div className="px-3 py-3 rounded-[14px] border border-[rgba(245,197,24,0.2)] sm:min-w-[420px]"
-            style={{ background: 'rgba(15,15,22,0.95)', backdropFilter: 'blur(20px)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
-          >
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <div className="relative flex-1 min-w-0">
-                <svg
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#7b8794] pointer-events-none"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input
-                  type="search"
-                  value={buscar}
-                  onChange={(e) => setBuscar(e.target.value)}
-                  placeholder="Buscar cliente para asignar..."
-                  className="w-full h-8 pl-8 pr-2 rounded-lg bg-[#1a1a1a] border border-[#333] text-xs text-white placeholder:text-[#6c7280]"
-                />
-              </div>
-              <span className="text-xs text-white/90 shrink-0">{selAsignar.length} sel.</span>
-              <select
-                value={grupoAsignar}
-                onChange={e => setGrupoAsignar(e.target.value)}
-                className="h-8 px-2 rounded-lg bg-[#1a1a1a] border border-[#333] text-xs text-white min-w-0 sm:w-[160px]"
-              >
-                <option value="">Elegir grupo...</option>
-                {grupos.map(g => (
-                  <option key={g.id} value={g.id}>{g.nombre}</option>
-                ))}
-                <option value="_none">Sin grupo</option>
-              </select>
-              <button
-                onClick={asignarGrupoClientes}
-                disabled={!grupoAsignar || !selAsignar.length || asignandoGrupo}
-                className="h-8 px-4 rounded-lg bg-[#f5c518] text-black text-xs font-bold shrink-0 disabled:opacity-50 active:scale-95 transition-transform"
-              >
-                {asignandoGrupo ? '...' : 'Asignar'}
-              </button>
-            </div>
-            {selAsignar.length === 0 && (
-              <p className="text-[11px] text-[#8b95a5] mt-2">
-                Busca y marca clientes para asignarlos rápido.
-              </p>
-            )}
-          </div>
         </div>
       )}
 
