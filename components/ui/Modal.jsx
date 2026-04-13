@@ -1,12 +1,18 @@
 'use client'
 // components/ui/Modal.jsx
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 export function Modal({ open, onClose, title, children, size = 'md', footer }) {
   const overlayRef = useRef(null)
   const dialogRef = useRef(null)
   const previousFocusRef = useRef(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     if (!open) return
@@ -54,7 +60,7 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }) {
     return () => { document.body.style.overflow = '' }
   }, [open])
 
-  if (!open) return null
+  if (!open || !mounted) return null
 
   const sizes = {
     sm:   'max-w-sm',
@@ -64,10 +70,10 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }) {
     full: 'max-w-full mx-4',
   }
 
-  return (
+  const modalContent = (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+      className="fixed inset-0 z-[10001] flex items-end sm:items-center justify-center p-0 sm:p-4"
       onClick={(e) => { if (e.target === overlayRef.current) onClose?.() }}
     >
       <div className="absolute inset-0 bg-[rgba(0,0,5,0.85)] backdrop-blur-md" />
@@ -115,4 +121,6 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }) {
       </div>
     </div>
   )
+
+  return createPortal(modalContent, document.body)
 }
