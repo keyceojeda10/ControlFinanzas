@@ -21,10 +21,14 @@ export async function PATCH(request, { params }) {
 
   const { nombre, color, orden } = await request.json()
 
+  if (nombre !== undefined && !String(nombre).trim()) {
+    return Response.json({ error: 'El nombre del grupo es requerido' }, { status: 400 })
+  }
+
   const actualizado = await prisma.grupoCobro.update({
     where: { id: grupoId },
     data: {
-      ...(nombre !== undefined && { nombre: nombre.trim() }),
+      ...(nombre !== undefined && { nombre: String(nombre).trim() }),
       ...(color  !== undefined && { color }),
       ...(orden  !== undefined && { orden }),
     },

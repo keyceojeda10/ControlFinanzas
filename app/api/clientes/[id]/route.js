@@ -147,6 +147,18 @@ export async function PATCH(request, { params }) {
   // Resolver coordenadas
   let lat = latitud !== undefined ? latitud : undefined
   let lng = longitud !== undefined ? longitud : undefined
+
+  // Si se envía grupoCobroId, validar que pertenece a la organización
+  if (grupoCobroId !== undefined && grupoCobroId !== null && grupoCobroId !== '') {
+    const grupo = await prisma.grupoCobro.findFirst({
+      where: { id: grupoCobroId, organizationId: session.user.organizationId },
+      select: { id: true },
+    })
+    if (!grupo) {
+      return Response.json({ error: 'Grupo de cobro no válido' }, { status: 400 })
+    }
+  }
+
   // Si se cambió dirección pero no se enviaron coords, geocodificar
   if (lat === undefined && lng === undefined && direccion !== undefined && direccion?.trim()) {
     const geo = await geocodeAddress(direccion.trim())

@@ -185,46 +185,92 @@ export default function ClientesPage() {
     }
   }, [estado, grupoFiltro])
 
+  const getApiError = async (res, fallback) => {
+    try {
+      const data = await res.json()
+      if (typeof data?.error === 'string' && data.error.trim()) return data.error
+      if (typeof data?.message === 'string' && data.message.trim()) return data.message
+    } catch {}
+    return fallback
+  }
+
   const crearGrupo = async () => {
     if (!nuevoGrupo.trim()) return
     setGuardandoGrupo(true)
+    setError('')
     try {
       const res = await fetch('/api/grupos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nombre: nuevoGrupo.trim(), color: grupoColor }),
       })
-      if (res.ok) {
-        setNuevoGrupo('')
-        setGrupoColor(null)
-        fetchGrupos()
+      if (!res.ok) {
+        setError(await getApiError(res, 'No se pudo crear el grupo.'))
+        return
       }
-    } catch {} finally {
+
+      setNuevoGrupo('')
+      setGrupoColor(null)
+      fetchGrupos()
+    } catch {
+      setError('No se pudo crear el grupo.')
+    } finally {
       setGuardandoGrupo(false)
     }
   }
 
   const editarGrupo = async (grupoId, data) => {
+    setError('')
     try {
       const res = await fetch(`/api/grupos/${grupoId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       })
-      if (res.ok) fetchGrupos()
+      if (!res.ok) {
+        setError(await getApiError(res, 'No se pudo actualizar el grupo.'))
+        return false
+      }
+
+      fetchGrupos()
+      fetchClientes(buscar, page, grupoFiltro, { soft: true })
+      return true
     } catch {}
+    setError('No se pudo actualizar el grupo.')
+    return false
+  }
+
+  const guardarNombreGrupo = async (grupo, valorCrudo) => {
+    const nombreLimpio = valorCrudo.trim()
+    if (!nombreLimpio) {
+      setError('El nombre del grupo no puede quedar vacio.')
+      setEditandoGrupo(null)
+      return
+    }
+    if (nombreLimpio === grupo.nombre) {
+      setEditandoGrupo(null)
+      return
+    }
+    await editarGrupo(grupo.id, { nombre: nombreLimpio })
+    setEditandoGrupo(null)
   }
 
   const eliminarGrupo = async (grupoId) => {
     if (!confirm('¿Eliminar este grupo? Los clientes quedarán sin grupo.')) return
+    setError('')
     try {
       const res = await fetch(`/api/grupos/${grupoId}`, { method: 'DELETE' })
-      if (res.ok) {
-        if (grupoFiltro === grupoId) setGrupoFiltro('')
-        fetchGrupos()
-        fetchClientes(buscar, page, grupoFiltro === grupoId ? '' : grupoFiltro)
+      if (!res.ok) {
+        setError(await getApiError(res, 'No se pudo eliminar el grupo.'))
+        return
       }
-    } catch {}
+
+      if (grupoFiltro === grupoId) setGrupoFiltro('')
+      fetchGrupos()
+      fetchClientes(buscar, page, grupoFiltro === grupoId ? '' : grupoFiltro, { soft: true })
+    } catch {
+      setError('No se pudo eliminar el grupo.')
+    }
   }
 
   const toggleSeleccion = (clienteId) => {
@@ -236,18 +282,26 @@ export default function ClientesPage() {
   const asignarGrupoClientes = async () => {
     if (!selAsignar.length || !grupoAsignar) return
     setAsignandoGrupo(true)
+    setError('')
     try {
-      await Promise.all(selAsignar.map((cid) =>
+      const responses = await Promise.all(selAsignar.map((cid) =>
         fetch(`/api/clientes/${cid}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ grupoCobroId: grupoAsignar === '_none' ? null : grupoAsignar }),
         })
       ))
+
+      const failed = responses.find((res) => !res.ok)
+      if (failed) {
+        setError(await getApiError(failed, 'No se pudo asignar el grupo a todos los clientes seleccionados.'))
+        return
+      }
+
       setModoAsignar(false)
       setSelAsignar([])
       setGrupoAsignar('')
-      fetchClientes(buscar, page, grupoFiltro)
+      fetchClientes(buscar, page, grupoFiltro, { soft: true })
       fetchGrupos()
     } catch {
       setError('No se pudo asignar el grupo a los clientes seleccionados.')
@@ -710,10 +764,13 @@ export default function ClientesPage() {
                       autoFocus
                       className="flex-1 h-7 px-2 rounded bg-[#1a1a1a] border border-[#444] text-sm text-white"
                       onKeyDown={e => {
-                        if (e.key === 'Enter') { editarGrupo(g.id, { nombre: e.target.value }); setEditandoGrupo(null) }
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          e.currentTarget.blur()
+                        }
                         if (e.key === 'Escape') setEditandoGrupo(null)
                       }}
-                      onBlur={e => { editarGrupo(g.id, { nombre: e.target.value }); setEditandoGrupo(null) }}
+                      onBlur={e => { guardarNombreGrupo(g, e.target.value) }}
                     />
                   ) : (
                     <span className="flex-1 text-sm text-white truncate cursor-pointer" onClick={() => setEditandoGrupo(g.id)}>
