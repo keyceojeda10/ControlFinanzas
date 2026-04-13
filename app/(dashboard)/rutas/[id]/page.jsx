@@ -1071,8 +1071,16 @@ export default function RutaDetallePage({ params }) {
                           <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: statusColor, boxShadow: `0 0 5px ${statusColor}50` }} />
                           <span className="text-[10px]" style={{ color: statusColor }}>{statusText}</span>
                           {c.frecuencia && c.frecuencia !== 'diario' && !isCompleted && (
-                            <span className="text-[10px] ml-1" style={{ color: c.diasParaCobro === 0 ? '#22c55e' : c.diasParaCobro === 1 ? '#f5c518' : '#666' }}>
-                              · {c.diasParaCobro === 0 ? 'Cobra hoy' : c.diasParaCobro === 1 ? 'Cobra mañana' : c.diasParaCobro != null ? `Cobra en ${c.diasParaCobro}d` : ''}
+                            <span className="text-[10px] ml-1" style={{ color: c.diasParaCobro < 0 ? '#ef4444' : c.diasParaCobro === 0 ? '#22c55e' : c.diasParaCobro === 1 ? '#f5c518' : '#666' }}>
+                              · {c.diasParaCobro < 0
+                                ? `Vencido ${Math.abs(c.diasParaCobro)}d`
+                                : c.diasParaCobro === 0
+                                  ? 'Cobra hoy'
+                                  : c.diasParaCobro === 1
+                                    ? 'Cobra mañana'
+                                    : c.diasParaCobro != null
+                                      ? `Cobra en ${c.diasParaCobro}d`
+                                      : ''}
                             </span>
                           )}
                         </div>
@@ -1122,8 +1130,11 @@ export default function RutaDetallePage({ params }) {
                     </div>
 
                     {!isCompleted && c.proximoCobroLabel && (
-                      <p className="text-[10px] text-[#888] mt-1.5 leading-snug capitalize">
-                        Próx. cobro: <span className="text-[#bbb] font-medium">{c.proximoCobroLabel}</span>
+                      <p className="text-[10px] mt-1.5 leading-snug capitalize" style={{ color: c.diasMora > 0 ? '#ef4444' : '#888' }}>
+                        {c.diasMora > 0 ? 'Cobro pendiente: ' : 'Próx. cobro: '}
+                        <span className="font-medium" style={{ color: c.diasMora > 0 ? '#fecaca' : '#bbb' }}>
+                          {c.diasMora > 0 && c.frecuencia === 'diario' ? 'hoy' : c.proximoCobroLabel}
+                        </span>
                       </p>
                     )}
                   </div>
