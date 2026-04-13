@@ -247,19 +247,19 @@ export default function ClientesPage() {
             )}
           </p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap sm:justify-end">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
           {!authLoading && esOwner && (
             <>
               <button
                 onClick={() => setModalGrupos(true)}
-                className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#1a1a1a] text-xs font-medium text-[#f5c518] hover:bg-[#222222] transition-colors shrink-0 whitespace-nowrap"
+                className="h-9 w-full px-3 rounded-[12px] border border-[#2a2a2a] bg-[#1a1a1a] text-xs font-medium text-[#f5c518] hover:bg-[#222222] transition-colors shrink-0 whitespace-nowrap sm:w-auto"
               >
                 Grupos
               </button>
               <button
                 onClick={() => { setModoAsignar(v => !v); setSelAsignar([]); setGrupoAsignar('') }}
                 className={[
-                  'h-9 px-3 rounded-[12px] border text-xs font-medium transition-colors shrink-0 whitespace-nowrap',
+                  'h-9 w-full px-3 rounded-[12px] border text-xs font-medium transition-colors shrink-0 whitespace-nowrap sm:w-auto',
                   modoAsignar
                     ? 'border-[#f5c518] bg-[rgba(245,197,24,0.15)] text-[#f5c518]'
                     : 'border-[#2a2a2a] bg-[#1a1a1a] text-[#888888] hover:bg-[#222222] hover:text-[white]',
@@ -270,8 +270,10 @@ export default function ClientesPage() {
             </>
           )}
           {!authLoading && puedeCrearClientes && (
-            <Link href="/clientes/nuevo" className="shrink-0">
+            <Link href="/clientes/nuevo" className="shrink-0 w-full sm:w-auto">
               <Button
+                size="sm"
+                className="w-full whitespace-nowrap sm:w-auto"
                 icon={
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
