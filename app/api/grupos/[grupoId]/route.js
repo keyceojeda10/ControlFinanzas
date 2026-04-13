@@ -11,14 +11,8 @@ export async function PATCH(request, { params }) {
     return Response.json({ error: 'Solo el administrador puede editar grupos' }, { status: 403 })
   }
 
-  const { id, grupoId } = await params
+  const { grupoId } = await params
   const { organizationId } = session.user
-
-  const ruta = await prisma.ruta.findFirst({
-    where: { id, organizationId },
-    select: { id: true },
-  })
-  if (!ruta) return Response.json({ error: 'Ruta no encontrada' }, { status: 404 })
 
   const grupo = await prisma.grupoCobro.findFirst({
     where: { id: grupoId, organizationId },
@@ -34,19 +28,10 @@ export async function PATCH(request, { params }) {
       ...(color  !== undefined && { color }),
       ...(orden  !== undefined && { orden }),
     },
-    select: { id: true, nombre: true, color: true, orden: true, createdAt: true },
+    include: { _count: { select: { clientes: true } } },
   })
 
-  const clientesEnRuta = await prisma.cliente.count({
-    where: {
-      organizationId,
-      rutaId: id,
-      estado: { notIn: ['eliminado'] },
-      grupoCobroId: grupoId,
-    },
-  })
-
-  return Response.json({ ...actualizado, _count: { clientes: clientesEnRuta } })
+  return Response.json(actualizado)
 }
 
 export async function DELETE(request, { params }) {
@@ -58,14 +43,8 @@ export async function DELETE(request, { params }) {
     return Response.json({ error: 'Solo el administrador puede eliminar grupos' }, { status: 403 })
   }
 
-  const { id, grupoId } = await params
+  const { grupoId } = await params
   const { organizationId } = session.user
-
-  const ruta = await prisma.ruta.findFirst({
-    where: { id, organizationId },
-    select: { id: true },
-  })
-  if (!ruta) return Response.json({ error: 'Ruta no encontrada' }, { status: 404 })
 
   const grupo = await prisma.grupoCobro.findFirst({
     where: { id: grupoId, organizationId },

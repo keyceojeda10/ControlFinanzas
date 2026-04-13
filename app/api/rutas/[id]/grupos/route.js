@@ -26,11 +26,34 @@ export async function GET(request, { params }) {
   })
   if (!ruta) return Response.json({ error: 'Ruta no encontrada' }, { status: 404 })
 
-  const grupos = await prisma.grupoCobro.findMany({
-    where: { rutaId: id, organizationId },
-    orderBy: { orden: 'asc' },
-    include: { _count: { select: { clientes: true } } },
-  })
+  const [gruposBase, conteos] = await Promise.all([
+    prisma.grupoCobro.findMany({
+      where: { organizationId },
+      orderBy: { orden: 'asc' },
+      select: { id: true, nombre: true, color: true, orden: true, createdAt: true },
+    }),
+    prisma.cliente.groupBy({
+      by: ['grupoCobroId'],
+      where: {
+        organizationId,
+        rutaId: id,
+        estado: { notIn: ['eliminado'] },
+        grupoCobroId: { not: null },
+      },
+      _count: { _all: true },
+    }),
+  ])
+
+  const conteoPorGrupo = Object.fromEntries(
+    conteos
+      .filter((c) => c.grupoCobroId)
+      .map((c) => [c.grupoCobroId, c._count._all])
+  )
+
+  const grupos = gruposBase.map((g) => ({
+    ...g,
+    _count: { clientes: conteoPorGrupo[g.id] ?? 0 },
+  }))
 
   return Response.json(grupos)
 }
@@ -60,23 +83,22 @@ export async function POST(request, { params }) {
   }
 
   const maxOrden = await prisma.grupoCobro.aggregate({
-    where: { rutaId: id },
+    where: { organizationId },
     _max: { orden: true },
   })
 
-  const gruposCount = await prisma.grupoCobro.count({ where: { rutaId: id } })
+  const gruposCount = await prisma.grupoCobro.count({ where: { organizationId } })
   const colorAuto = color || COLORES_GRUPO[gruposCount % COLORES_GRUPO.length]
 
   const grupo = await prisma.grupoCobro.create({
     data: {
       organizationId,
-      rutaId: id,
       nombre: nombre.trim(),
       color: colorAuto,
       orden: (maxOrden._max.orden ?? -1) + 1,
     },
-    include: { _count: { select: { clientes: true } } },
+    select: { id: true, nombre: true, color: true, orden: true, createdAt: true },
   })
 
-  return Response.json(grupo, { status: 201 })
+  return Response.json({ ...grupo, _count: { clientes: 0 } }, { status: 201 })
 }

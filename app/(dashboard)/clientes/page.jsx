@@ -7,6 +7,7 @@ import { useAuth }       from '@/hooks/useAuth'
 import { useOffline }    from '@/components/providers/OfflineProvider'
 import { guardarEnCache, leerDeCache, obtenerClientesOffline } from '@/lib/offline'
 import { Button }        from '@/components/ui/Button'
+import { Modal }         from '@/components/ui/Modal'
 import { SkeletonCard }  from '@/components/ui/Skeleton'
 import ClienteCard       from '@/components/clientes/ClienteCard'
 
@@ -19,6 +20,11 @@ const ESTADOS_CLIENTE = [
 
 const LIMIT = 50
 
+const COLORES_GRUPO = [
+  '#3b82f6', '#22c55e', '#f59e0b', '#ef4444',
+  '#a855f7', '#06b6d4', '#ec4899', '#84cc16',
+]
+
 export default function ClientesPage() {
   const { esOwner, puedeCrearClientes, loading: authLoading } = useAuth()
   const { lastSyncedAt } = useOffline()
@@ -30,14 +36,25 @@ export default function ClientesPage() {
   const [page,     setPage]       = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total,    setTotal]      = useState(0)
+  const [grupos,   setGrupos]     = useState([])
+  const [grupoFiltro, setGrupoFiltro] = useState('')
+  const [modalGrupos, setModalGrupos] = useState(false)
+  const [nuevoGrupo,  setNuevoGrupo]  = useState('')
+  const [grupoColor,  setGrupoColor]  = useState(null)
+  const [guardandoGrupo, setGuardandoGrupo] = useState(false)
+  const [editandoGrupo, setEditandoGrupo]   = useState(null)
+  const [modoAsignar, setModoAsignar] = useState(false)
+  const [selAsignar,  setSelAsignar]  = useState([])
+  const [grupoAsignar, setGrupoAsignar] = useState('')
+  const [asignandoGrupo, setAsignandoGrupo] = useState(false)
 
   const [isOffline, setIsOffline] = useState(false)
 
-  const fetchClientes = useCallback(async (q, p) => {
+  const fetchClientes = useCallback(async (q, p, grupoId = '') => {
     setLoading(true)
     setError('')
     setIsOffline(false)
-    const cacheKey = `clientes:${q || ''}:${p}`
+    const cacheKey = `clientes:${q || ''}:${p}:${grupoId || 'all'}`
 
     // Offline: go straight to IndexedDB
     if (!navigator.onLine) {
@@ -50,6 +67,11 @@ export default function ClientesPage() {
             if (q) {
               const ql = q.toLowerCase()
               filtered = filtered.filter(c => c.nombre?.toLowerCase().includes(ql) || c.cedula?.includes(ql) || c.telefono?.includes(ql))
+            }
+            if (grupoId) {
+              filtered = grupoId === '_none'
+                ? filtered.filter((c) => !c.grupoCobro?.id)
+                : filtered.filter((c) => c.grupoCobro?.id === grupoId)
             }
             const start = (p - 1) * LIMIT
             cached = { clientes: filtered.slice(start, start + LIMIT), total: filtered.length, totalPages: Math.ceil(filtered.length / LIMIT) }
@@ -65,6 +87,7 @@ export default function ClientesPage() {
     try {
       const params = new URLSearchParams()
       if (q) params.set('buscar', q)
+      if (grupoId) params.set('grupo', grupoId)
       params.set('page', String(p))
       params.set('limit', String(LIMIT))
       const res = await fetch(`/api/clientes?${params}`)
@@ -89,6 +112,11 @@ export default function ClientesPage() {
               const ql = q.toLowerCase()
               filtered = filtered.filter(c => c.nombre?.toLowerCase().includes(ql) || c.cedula?.includes(ql) || c.telefono?.includes(ql))
             }
+            if (grupoId) {
+              filtered = grupoId === '_none'
+                ? filtered.filter((c) => !c.grupoCobro?.id)
+                : filtered.filter((c) => c.grupoCobro?.id === grupoId)
+            }
             const start = (p - 1) * LIMIT
             cached = { clientes: filtered.slice(start, start + LIMIT), total: filtered.length, totalPages: Math.ceil(filtered.length / LIMIT) }
           }
@@ -108,20 +136,103 @@ export default function ClientesPage() {
     }
   }, [])
 
-  // Carga inicial + re-fetch after offline sync
-  useEffect(() => { fetchClientes('', 1) }, [fetchClientes, lastSyncedAt])
+  const fetchGrupos = useCallback(async () => {
+    try {
+      const res = await fetch('/api/grupos')
+      if (!res.ok) return
+      const data = await res.json()
+      setGrupos(Array.isArray(data) ? data : [])
+    } catch {}
+  }, [])
 
-  // Búsqueda en tiempo real con debounce — reset to page 1
+  useEffect(() => {
+    fetchGrupos()
+  }, [fetchGrupos, lastSyncedAt])
+
+  // Búsqueda/filtro por grupo -> volver a página 1
   useEffect(() => {
     setPage(1)
-    const t = setTimeout(() => fetchClientes(buscar, 1), 300)
-    return () => clearTimeout(t)
-  }, [buscar, fetchClientes])
+    setModoAsignar(false)
+    setSelAsignar([])
+    setGrupoAsignar('')
+  }, [buscar, grupoFiltro])
 
-  // Cambio de página
+  // Carga de clientes con debounce
   useEffect(() => {
-    if (page > 1) fetchClientes(buscar, page)
-  }, [page]) // eslint-disable-line react-hooks/exhaustive-deps
+    const t = setTimeout(() => fetchClientes(buscar, page, grupoFiltro), 280)
+    return () => clearTimeout(t)
+  }, [fetchClientes, buscar, page, grupoFiltro, lastSyncedAt])
+
+  const crearGrupo = async () => {
+    if (!nuevoGrupo.trim()) return
+    setGuardandoGrupo(true)
+    try {
+      const res = await fetch('/api/grupos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre: nuevoGrupo.trim(), color: grupoColor }),
+      })
+      if (res.ok) {
+        setNuevoGrupo('')
+        setGrupoColor(null)
+        fetchGrupos()
+      }
+    } catch {} finally {
+      setGuardandoGrupo(false)
+    }
+  }
+
+  const editarGrupo = async (grupoId, data) => {
+    try {
+      const res = await fetch(`/api/grupos/${grupoId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (res.ok) fetchGrupos()
+    } catch {}
+  }
+
+  const eliminarGrupo = async (grupoId) => {
+    if (!confirm('¿Eliminar este grupo? Los clientes quedarán sin grupo.')) return
+    try {
+      const res = await fetch(`/api/grupos/${grupoId}`, { method: 'DELETE' })
+      if (res.ok) {
+        if (grupoFiltro === grupoId) setGrupoFiltro('')
+        fetchGrupos()
+        fetchClientes(buscar, page, grupoFiltro === grupoId ? '' : grupoFiltro)
+      }
+    } catch {}
+  }
+
+  const toggleSeleccion = (clienteId) => {
+    setSelAsignar((prev) =>
+      prev.includes(clienteId) ? prev.filter((id) => id !== clienteId) : [...prev, clienteId]
+    )
+  }
+
+  const asignarGrupoClientes = async () => {
+    if (!selAsignar.length || !grupoAsignar) return
+    setAsignandoGrupo(true)
+    try {
+      await Promise.all(selAsignar.map((cid) =>
+        fetch(`/api/clientes/${cid}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ grupoCobroId: grupoAsignar === '_none' ? null : grupoAsignar }),
+        })
+      ))
+      setModoAsignar(false)
+      setSelAsignar([])
+      setGrupoAsignar('')
+      fetchClientes(buscar, page, grupoFiltro)
+      fetchGrupos()
+    } catch {
+      setError('No se pudo asignar el grupo a los clientes seleccionados.')
+    } finally {
+      setAsignandoGrupo(false)
+    }
+  }
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -136,19 +247,42 @@ export default function ClientesPage() {
             )}
           </p>
         </div>
-        {!authLoading && puedeCrearClientes && (
-          <Link href="/clientes/nuevo">
-            <Button
-              icon={
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-              }
-            >
-              Nuevo cliente
-            </Button>
-          </Link>
-        )}
+        <div className="flex items-center gap-2">
+          {!authLoading && esOwner && (
+            <>
+              <button
+                onClick={() => setModalGrupos(true)}
+                className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#1a1a1a] text-xs font-medium text-[#f5c518] hover:bg-[#222222] transition-colors"
+              >
+                Grupos
+              </button>
+              <button
+                onClick={() => { setModoAsignar(v => !v); setSelAsignar([]); setGrupoAsignar('') }}
+                className={[
+                  'h-9 px-3 rounded-[12px] border text-xs font-medium transition-colors',
+                  modoAsignar
+                    ? 'border-[#f5c518] bg-[rgba(245,197,24,0.15)] text-[#f5c518]'
+                    : 'border-[#2a2a2a] bg-[#1a1a1a] text-[#888888] hover:bg-[#222222] hover:text-[white]',
+                ].join(' ')}
+              >
+                {modoAsignar ? 'Cancelar asignación' : 'Asignar grupo'}
+              </button>
+            </>
+          )}
+          {!authLoading && puedeCrearClientes && (
+            <Link href="/clientes/nuevo">
+              <Button
+                icon={
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                }
+              >
+                Nuevo cliente
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Filtro de estado */}
@@ -173,6 +307,51 @@ export default function ClientesPage() {
           )
         })}
       </div>
+
+      {/* Filtro por grupo */}
+      {grupos.length > 0 && (
+        <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-none pb-1">
+          <button
+            onClick={() => setGrupoFiltro('')}
+            className={[
+              'shrink-0 px-3 h-8 rounded-full text-xs font-medium border transition-all',
+              !grupoFiltro
+                ? 'border-[#f5c518] text-[#f5c518] bg-[rgba(245,197,24,0.12)]'
+                : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#222222] hover:text-[white]',
+            ].join(' ')}
+          >
+            Todos los grupos
+          </button>
+          <button
+            onClick={() => setGrupoFiltro('_none')}
+            className={[
+              'shrink-0 px-3 h-8 rounded-full text-xs font-medium border transition-all',
+              grupoFiltro === '_none'
+                ? 'border-[#06b6d4] text-[#06b6d4] bg-[rgba(6,182,212,0.12)]'
+                : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#222222] hover:text-[white]',
+            ].join(' ')}
+          >
+            Sin grupo
+          </button>
+          {grupos.map((g) => (
+            <button
+              key={g.id}
+              onClick={() => setGrupoFiltro(g.id)}
+              className={[
+                'shrink-0 px-3 h-8 rounded-full text-xs font-medium border transition-all flex items-center gap-1.5',
+                grupoFiltro === g.id
+                  ? 'border-current'
+                  : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#222222] hover:text-[white]',
+              ].join(' ')}
+              style={grupoFiltro === g.id ? { color: g.color || '#f5c518', backgroundColor: `${g.color || '#f5c518'}20` } : undefined}
+            >
+              <span className="w-2 h-2 rounded-full" style={{ background: g.color || '#666' }} />
+              {g.nombre}
+              <span className="text-[10px] opacity-70">{g._count?.clientes ?? 0}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Buscador */}
       <div className="relative mb-5">
@@ -229,7 +408,48 @@ export default function ClientesPage() {
         const filtrados = estado ? clientes.filter((c) => c.estado === estado) : clientes
         return filtrados.length > 0 ? (
           <div className="space-y-2.5">
-            {filtrados.map((c) => <ClienteCard key={c.id} cliente={c} />)}
+            {filtrados.map((c) => (
+              modoAsignar ? (
+                <label
+                  key={c.id}
+                  className={[
+                    'flex items-center gap-3 border rounded-[14px] p-4 transition-all cursor-pointer',
+                    selAsignar.includes(c.id)
+                      ? 'border-[rgba(245,197,24,0.35)] bg-[rgba(245,197,24,0.08)]'
+                      : 'border-[#2a2a2a] bg-[#1a1a1a] hover:border-[#f5c518]/40',
+                  ].join(' ')}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selAsignar.includes(c.id)}
+                    onChange={() => toggleSeleccion(c.id)}
+                    className="accent-[#f5c518]"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-[#f1f5f9] truncate">{c.nombre}</p>
+                    <p className="text-xs text-[#8b95a5] mt-0.5">CC {c.cedula}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      {c.grupoCobro ? (
+                        <span className="inline-flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full border"
+                          style={{
+                            color: c.grupoCobro.color || '#f5c518',
+                            borderColor: `${c.grupoCobro.color || '#f5c518'}44`,
+                            background: `${c.grupoCobro.color || '#f5c518'}18`,
+                          }}
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: c.grupoCobro.color || '#f5c518' }} />
+                          {c.grupoCobro.nombre}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-[#7b8794]">Sin grupo</span>
+                      )}
+                    </div>
+                  </div>
+                </label>
+              ) : (
+                <ClienteCard key={c.id} cliente={c} />
+              )
+            ))}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -258,6 +478,13 @@ export default function ClientesPage() {
                 Limpiar búsqueda
               </button>
             </>
+          ) : grupoFiltro ? (
+            <>
+              <p className="text-sm font-medium text-[white]">Sin clientes en este grupo</p>
+              <button onClick={() => setGrupoFiltro('')} className="mt-3 text-xs text-[#f5c518] hover:underline">
+                Ver todos los grupos
+              </button>
+            </>
           ) : (
             <>
               <p className="text-sm font-medium text-[white]">No hay clientes aún</p>
@@ -271,6 +498,110 @@ export default function ClientesPage() {
           )}
         </div>
       )}
+
+      {/* Barra flotante: asignar grupo */}
+      {modoAsignar && selAsignar.length > 0 && (
+        <div className="fixed bottom-20 left-3 right-3 sm:left-auto sm:right-4 sm:bottom-6 sm:w-auto z-50">
+          <div className="flex items-center gap-2 px-4 py-3 rounded-[14px] border border-[rgba(245,197,24,0.2)] sm:min-w-[320px]"
+            style={{ background: 'rgba(15,15,22,0.95)', backdropFilter: 'blur(20px)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
+          >
+            <span className="text-sm text-white shrink-0">{selAsignar.length} sel.</span>
+            <select
+              value={grupoAsignar}
+              onChange={e => setGrupoAsignar(e.target.value)}
+              className="flex-1 h-8 px-2 rounded-lg bg-[#1a1a1a] border border-[#333] text-sm text-white min-w-0"
+            >
+              <option value="">Elegir grupo...</option>
+              {grupos.map(g => (
+                <option key={g.id} value={g.id}>{g.nombre}</option>
+              ))}
+              <option value="_none">Sin grupo</option>
+            </select>
+            <button
+              onClick={asignarGrupoClientes}
+              disabled={!grupoAsignar || asignandoGrupo}
+              className="h-8 px-4 rounded-lg bg-[#f5c518] text-black text-sm font-bold shrink-0 disabled:opacity-50 active:scale-95 transition-transform"
+            >
+              {asignandoGrupo ? '...' : 'Asignar'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: gestión de grupos */}
+      <Modal open={modalGrupos} onClose={() => { setModalGrupos(false); setEditandoGrupo(null) }} title="Grupos de cobro">
+        <div className="space-y-4">
+          <div className="flex gap-2">
+            <input
+              value={nuevoGrupo}
+              onChange={e => setNuevoGrupo(e.target.value)}
+              placeholder="Nombre del grupo..."
+              className="flex-1 h-9 px-3 rounded-lg bg-[#1a1a1a] border border-[#333] text-sm text-white placeholder:text-[#555]"
+              onKeyDown={e => e.key === 'Enter' && crearGrupo()}
+            />
+            <button
+              onClick={crearGrupo}
+              disabled={!nuevoGrupo.trim() || guardandoGrupo}
+              className="h-9 px-4 rounded-lg bg-[#f5c518] text-black text-sm font-bold shrink-0 disabled:opacity-50 active:scale-95 transition-transform"
+            >
+              {guardandoGrupo ? '...' : 'Crear'}
+            </button>
+          </div>
+
+          <div className="flex gap-2 flex-wrap">
+            {COLORES_GRUPO.map(c => (
+              <button
+                key={c}
+                onClick={() => setGrupoColor(grupoColor === c ? null : c)}
+                className={`w-7 h-7 rounded-full transition-all ${grupoColor === c ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0a0a0a] scale-110' : 'hover:scale-110'}`}
+                style={{ background: c }}
+              />
+            ))}
+          </div>
+
+          {grupos.length > 0 ? (
+            <div className="space-y-2 pt-2 border-t border-[#222]">
+              {grupos.map(g => (
+                <div key={g.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[rgba(255,255,255,0.03)] border border-[#1f1f1f]">
+                  <span className="w-3 h-3 rounded-full shrink-0" style={{ background: g.color || '#666' }} />
+                  {editandoGrupo === g.id ? (
+                    <input
+                      defaultValue={g.nombre}
+                      autoFocus
+                      className="flex-1 h-7 px-2 rounded bg-[#1a1a1a] border border-[#444] text-sm text-white"
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') { editarGrupo(g.id, { nombre: e.target.value }); setEditandoGrupo(null) }
+                        if (e.key === 'Escape') setEditandoGrupo(null)
+                      }}
+                      onBlur={e => { editarGrupo(g.id, { nombre: e.target.value }); setEditandoGrupo(null) }}
+                    />
+                  ) : (
+                    <span className="flex-1 text-sm text-white truncate cursor-pointer" onClick={() => setEditandoGrupo(g.id)}>
+                      {g.nombre}
+                    </span>
+                  )}
+                  <span className="text-[10px] text-[#666] shrink-0">{g._count?.clientes ?? 0}</span>
+                  <div className="flex gap-1 shrink-0">
+                    {COLORES_GRUPO.slice(0, 4).map(c => (
+                      <button
+                        key={c}
+                        onClick={() => editarGrupo(g.id, { color: c })}
+                        className={`w-4 h-4 rounded-full ${g.color === c ? 'ring-1 ring-white' : ''}`}
+                        style={{ background: c }}
+                      />
+                    ))}
+                  </div>
+                  <button onClick={() => eliminarGrupo(g.id)} className="text-[#666] hover:text-[#ef4444] transition-colors shrink-0">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-[#666] text-center py-4">Aún no tienes grupos. Crea uno para organizar tus clientes por día o zona.</p>
+          )}
+        </div>
+      </Modal>
 
       {/* Paginación */}
       {!loading && totalPages > 1 && (

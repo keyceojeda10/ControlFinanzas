@@ -153,7 +153,6 @@ model Ruta {
   organization Organization @relation(fields: [organizationId], references: [id])
   cobrador     User?        @relation("CobradorRuta", fields: [cobradorId], references: [id])
   clientes     Cliente[]
-  gruposCobro  GrupoCobro[]
 
   @@index([organizationId])
 }
@@ -161,17 +160,14 @@ model Ruta {
 model GrupoCobro {
   id             String   @id @default(cuid())
   organizationId String
-  rutaId         String
   nombre         String
   color          String?
   orden          Int      @default(0)
   createdAt      DateTime @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id])
-  ruta         Ruta         @relation(fields: [rutaId], references: [id], onDelete: Cascade)
   clientes     Cliente[]
 
-  @@index([rutaId])
   @@index([organizationId])
 }
 

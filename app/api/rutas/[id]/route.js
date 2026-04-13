@@ -44,10 +44,6 @@ export async function GET(request, { params }) {
     where: { id, organizationId },
     include: {
       cobrador: { select: { id: true, nombre: true, email: true } },
-      gruposCobro: {
-        orderBy: { orden: 'asc' },
-        include: { _count: { select: { clientes: true } } },
-      },
       clientes: {
         include: {
           grupoCobro: { select: { id: true, nombre: true, color: true } },
@@ -67,6 +63,23 @@ export async function GET(request, { params }) {
   })
 
   if (!ruta) return Response.json({ error: 'Ruta no encontrada' }, { status: 404 })
+
+  // Grupos de cobro son organizacionales; aquí se devuelven con conteo dentro de esta ruta.
+  const gruposBase = await prisma.grupoCobro.findMany({
+    where: { organizationId },
+    orderBy: { orden: 'asc' },
+    select: { id: true, nombre: true, color: true, orden: true, createdAt: true },
+  })
+
+  const conteoPorGrupo = (ruta.clientes ?? []).reduce((acc, c) => {
+    if (c.grupoCobroId) acc[c.grupoCobroId] = (acc[c.grupoCobroId] ?? 0) + 1
+    return acc
+  }, {})
+
+  const gruposCobro = gruposBase.map((g) => ({
+    ...g,
+    _count: { clientes: conteoPorGrupo[g.id] ?? 0 },
+  }))
 
   // Calcular métricas del día + cartera
   let esperadoHoy  = 0
@@ -168,7 +181,7 @@ export async function GET(request, { params }) {
     nombre:      ruta.nombre,
     diasSinCobro: ruta.diasSinCobro,
     cobrador:    ruta.cobrador,
-    gruposCobro: ruta.gruposCobro,
+    gruposCobro,
     clientes:    clientesEnriquecidos,
     esperadoHoy: Math.round(esperadoHoy),
     recaudadoHoy: Math.round(recaudadoHoy),

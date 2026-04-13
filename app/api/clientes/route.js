@@ -18,6 +18,7 @@ export async function GET(request) {
 
   const { searchParams } = new URL(request.url)
   const buscar = searchParams.get('buscar')?.trim() ?? ''
+  const grupo = searchParams.get('grupo')?.trim() ?? ''
   const page = searchParams.get('page') ? Number(searchParams.get('page')) : null
   const limit = Math.min(Number(searchParams.get('limit')) || 50, 100)
 
@@ -43,11 +44,16 @@ export async function GET(request) {
       }
     : {}
 
+  const filtroGrupo = grupo
+    ? (grupo === '_none' ? { grupoCobroId: null } : { grupoCobroId: grupo })
+    : {}
+
   const whereClause = {
     organizationId,
     estado: { notIn: ['eliminado'] },
     ...filtroRuta,
     ...filtroBuscar,
+    ...filtroGrupo,
   }
 
   const clientes = await prisma.cliente.findMany({
@@ -61,6 +67,7 @@ export async function GET(request) {
       estado:     true,
       rutaId:     true,
       ruta:       { select: { id: true, nombre: true } },
+      grupoCobro: { select: { id: true, nombre: true, color: true } },
       prestamos: {
         where:  { estado: 'activo' },
         select: {
@@ -88,6 +95,7 @@ export async function GET(request) {
     estado:           calcularEstadoCliente(c.prestamos),
     rutaId:           c.rutaId,
     rutaNombre:       c.ruta?.nombre ?? null,
+    grupoCobro:       c.grupoCobro ?? null,
     prestamosActivos: c.prestamos.length,
   }))
 

@@ -1,36 +1,167 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Control Finanzas
 
-## Getting Started
+SaaS multi-tenant para gestion de cartera de credito informal.
 
-First, run the development server:
+## Dominios
+
+- `control-finanzas.com`: landing page.
+- `app.control-finanzas.com`: aplicacion SaaS (este repositorio).
+
+## Que resuelve
+
+Control Finanzas permite operar el ciclo completo de un negocio de prestamos:
+
+- Gestion de clientes, prestamos, pagos y rutas.
+- Operacion por roles (`owner`, `cobrador`, `superadmin`).
+- Caja, capital y reportes.
+- Suscripciones y cobros con MercadoPago (pago unico y recurrente).
+- CRM, leads, soporte y automatizaciones de seguimiento.
+- Modo offline + PWA para trabajo en campo.
+
+## Stack principal
+
+- Next.js 15 (App Router).
+- React 19.
+- NextAuth (credenciales + JWT).
+- Prisma ORM.
+- MySQL (provider configurado en Prisma).
+- Tailwind CSS 4.
+- Vitest.
+
+Integraciones:
+
+- MercadoPago.
+- Resend (emails transaccionales).
+- Web Push.
+- Telegram (notificaciones y callbacks).
+- Facebook CAPI / Meta Leads.
+- Microservicio WhatsApp (Baileys, en carpeta separada).
+
+## Estructura funcional (alto nivel)
+
+- `app/(dashboard)`: app principal para owner/cobrador.
+- `app/admin`: panel de superadmin.
+- `app/api`: API routes por dominio.
+- `components`: UI y componentes de negocio.
+- `lib`: logica compartida (auth, pagos, analytics, offline, etc).
+- `prisma`: schema, migraciones y seed.
+- `public/sw.js`: service worker para PWA/offline.
+- `baileys-service`: servicio separado para automatizacion de WhatsApp.
+
+## Requisitos
+
+- Node.js 20+
+- npm 10+
+- MySQL 8+
+
+## Instalacion local
+
+1. Instalar dependencias:
+
+```bash
+npm install
+```
+
+2. Crear archivo `.env.local` en la raiz.
+
+3. Configurar variables de entorno (minimo recomendado):
+
+```env
+DATABASE_URL="mysql://USER:PASSWORD@HOST:3306/DB_NAME"
+
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="CAMBIAR_POR_UN_SECRET_SEGURO"
+
+MERCADOPAGO_ACCESS_TOKEN=""
+MERCADOPAGO_WEBHOOK_SECRET=""
+
+RESEND_API_KEY=""
+
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=""
+VAPID_PRIVATE_KEY=""
+VAPID_EMAIL="mailto:soporte@control-finanzas.com"
+
+CRON_SECRET=""
+
+TELEGRAM_BOT_TOKEN=""
+TELEGRAM_CHAT_ID=""
+TELEGRAM_NOTIF_BOT_TOKEN=""
+TELEGRAM_NOTIF_CHAT_ID=""
+TELEGRAM_WEBHOOK_SECRET=""
+TELEGRAM_NOTIF_WEBHOOK_SECRET=""
+
+FB_PIXEL_ID=""
+FB_CAPI_ACCESS_TOKEN=""
+FB_APP_SECRET=""
+FB_PAGE_ACCESS_TOKEN=""
+FB_LEADS_VERIFY_TOKEN=""
+FB_FORM_ID=""
+
+BACKUP_SECRET=""
+```
+
+4. Generar cliente Prisma y aplicar migraciones:
+
+```bash
+npx prisma generate
+npx prisma migrate dev
+```
+
+5. (Opcional) Cargar datos iniciales:
+
+```bash
+npx prisma db seed
+```
+
+6. Iniciar en desarrollo:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Scripts
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+- `npm run dev`: servidor local.
+- `npm run build`: build de produccion.
+- `npm run start`: correr build.
+- `npm run lint`: lint con ESLint.
+- `npm run test`: tests en modo watch.
+- `npm run test:run`: ejecutar tests una vez.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Seguridad y acceso
 
-## Learn More
+- Middleware de rutas por rol en `middleware.js`.
+- Sesiones JWT con refresh periodico de claims en `lib/auth.js`.
+- Endpoints criticos (cron/webhooks) protegidos por secretos.
+- Verificacion de firma para webhook de MercadoPago.
 
-To learn more about Next.js, take a look at the following resources:
+## Procesos cron
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Varios endpoints en `app/api/cron/*` requieren header `x-cron-secret`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Ejemplo:
 
-## Deploy on Vercel
+```bash
+curl -X POST "http://localhost:3000/api/cron/onboarding-emails" \
+	-H "x-cron-secret: TU_CRON_SECRET"
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Servicio WhatsApp (Baileys)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Se ejecuta aparte del frontend/backend principal:
+
+```bash
+cd baileys-service
+npm install
+npm start
+```
+
+Variables relevantes del microservicio:
+
+- `PORT` (default `3003`)
+- `BAILEYS_SECRET`
+
+## Estado del README
+
+Este README describe el estado actual del proyecto y reemplaza la plantilla base de Next.js.
+Si agregas nuevas integraciones o jobs, actualiza este archivo para mantener onboarding tecnico claro.

@@ -57,6 +57,19 @@ export default function ClienteCard({ cliente }) {
       {/* Right side */}
       <div className="flex flex-col items-end gap-1.5 shrink-0">
         <Badge variant={badge.variant}>{badge.label}</Badge>
+        {cliente.grupoCobro && (
+          <span
+            className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full border"
+            style={{
+              color: cliente.grupoCobro.color || '#f5c518',
+              borderColor: `${cliente.grupoCobro.color || '#f5c518'}44`,
+              background: `${cliente.grupoCobro.color || '#f5c518'}18`,
+            }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: cliente.grupoCobro.color || '#f5c518' }} />
+            {cliente.grupoCobro.nombre}
+          </span>
+        )}
         {cliente.prestamosActivos > 0 && (
           <span className="text-[10px] text-[#8b95a5]">
             {cliente.prestamosActivos} préstamo{cliente.prestamosActivos > 1 ? 's' : ''} activo{cliente.prestamosActivos > 1 ? 's' : ''}
