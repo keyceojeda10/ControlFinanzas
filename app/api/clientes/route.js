@@ -151,7 +151,7 @@ export async function POST(request) {
   }
 
   const body = await request.json()
-  const { nombre, cedula, telefono, direccion, referencia, notas, fotoUrl, rutaId, latitud, longitud } = body
+  const { nombre, cedula, telefono, direccion, referencia, notas, fotoUrl, rutaId, latitud, longitud, grupoCobroId } = body
 
   // Validaciones básicas
   if (!nombre?.trim())   return Response.json({ error: 'El nombre es requerido' },  { status: 400 })
@@ -181,6 +181,17 @@ export async function POST(request) {
     }
   }
 
+  // Si se envía grupoCobroId, verificar que pertenece a la organización
+  if (grupoCobroId) {
+    const grupo = await prisma.grupoCobro.findFirst({
+      where: { id: grupoCobroId, organizationId },
+      select: { id: true },
+    })
+    if (!grupo) {
+      return Response.json({ error: 'Grupo de cobro no válido' }, { status: 400 })
+    }
+  }
+
   // Resolver coordenadas: GPS directo > geocodificación de dirección
   let lat = latitud ?? null
   let lng = longitud ?? null
@@ -200,6 +211,7 @@ export async function POST(request) {
       notas:      notas?.trim()      || null,
       fotoUrl:    fotoUrl?.trim() && /^https?:\/\/.+/i.test(fotoUrl.trim()) ? fotoUrl.trim() : null,
       rutaId:     rutaId || autoRutaId || null,
+      grupoCobroId: grupoCobroId || null,
       latitud:    lat,
       longitud:   lng,
     },

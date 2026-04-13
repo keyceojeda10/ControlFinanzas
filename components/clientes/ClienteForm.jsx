@@ -25,11 +25,13 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
     referencia: clienteInicial?.referencia ?? '',
     notas:      clienteInicial?.notas      ?? '',
     rutaId:     clienteInicial?.rutaId     ?? '',
+    grupoCobroId: clienteInicial?.grupoCobroId ?? '',
     latitud:    clienteInicial?.latitud    ?? null,
     longitud:   clienteInicial?.longitud   ?? null,
   })
   const [errores, setErrores]   = useState({})
   const [rutas,   setRutas]     = useState([])
+  const [grupos,  setGrupos]    = useState([])
   const [loading, setLoading]   = useState(false)
   const [error,   setError]     = useState('')
   const [scoreData, setScoreData] = useState(null)
@@ -64,6 +66,14 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
       .then((data) => setRutas(Array.isArray(data) ? data : []))
       .catch(() => {})
   }, [plan])
+
+  // Cargar grupos para asignación rápida desde el formulario
+  useEffect(() => {
+    fetch('/api/grupos')
+      .then((r) => r.json())
+      .then((data) => setGrupos(Array.isArray(data) ? data : []))
+      .catch(() => {})
+  }, [])
 
   const set = (field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }))
@@ -108,6 +118,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
           referencia: form.referencia.trim() || undefined,
           notas:      form.notas.trim()      || undefined,
           rutaId:     form.rutaId || undefined,
+          grupoCobroId: form.grupoCobroId || undefined,
           latitud:    form.latitud,
           longitud:   form.longitud,
           ...(diasSinCobro.length > 0 && { diasSinCobro }),
@@ -249,6 +260,23 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
         </button>
         {avanzadoOpen && (
           <div className="mt-3 space-y-3 pl-1">
+            {grupos.length > 0 && (
+              <div>
+                <Select
+                  label="Grupo de cobro"
+                  value={form.grupoCobroId}
+                  onChange={set('grupoCobroId')}
+                >
+                  <option value="">Sin grupo</option>
+                  {grupos.map((g) => (
+                    <option key={g.id} value={g.id}>{g.nombre}</option>
+                  ))}
+                </Select>
+                <p className="text-[10px] text-[#666666] mt-1">
+                  Opcional. Asigna este cliente a un grupo desde el momento de crearlo.
+                </p>
+              </div>
+            )}
             <div>
               <p className="text-xs font-medium text-[#888888] mb-1.5">Días sin cobro</p>
               <p className="text-[10px] text-[#666666] leading-snug mb-2">
