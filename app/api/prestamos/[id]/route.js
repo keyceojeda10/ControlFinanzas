@@ -58,7 +58,7 @@ export async function GET(request, { params }) {
     porcentajePagado: calcularPorcentajePagado(p),
     diasMora:         calcularDiasMora(p, diasExcluidos),
     pagoHoy:          pagoHoy(p),
-    proximoCobro:     calcularProximoCobro(p),
+    proximoCobro:     calcularProximoCobro(p, diasExcluidos),
   })
 }
 

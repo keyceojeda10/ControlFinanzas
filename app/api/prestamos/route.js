@@ -91,7 +91,7 @@ export async function GET(request) {
     porcentajePagado: calcularPorcentajePagado(p),
     diasMora:         calcularDiasMora(p, diasExcluidos),
     pagoHoy:          pagoHoy(p),
-    proximoCobro:     calcularProximoCobro(p),
+    proximoCobro:     calcularProximoCobro(p, diasExcluidos),
   }})
 
   // If paginated, return object with total; otherwise array for backward compat

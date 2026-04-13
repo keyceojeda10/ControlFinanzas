@@ -123,7 +123,7 @@ export async function GET(request, { params }) {
 
       // Frecuencia y próximo cobro del préstamo activo (lib centralizado)
       frecuencia = p.frecuencia || 'diario'
-      const pc = calcularProximoCobro(p)
+      const pc = calcularProximoCobro(p, diasExcluidos)
       if (frecuencia !== 'diario') proximoCobro = pc
       if (!c._proximoCobroFull) c._proximoCobroFull = pc
     }

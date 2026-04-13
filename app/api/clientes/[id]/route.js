@@ -64,7 +64,7 @@ export async function GET(request, { params }) {
     diasMora:            calcularDiasMora(p, diasExcluidos),
     saldoPendiente:      calcularSaldoPendiente(p),
     porcentajePagado:    calcularPorcentajePagado(p),
-    proximoCobro:        calcularProximoCobro(p),
+    proximoCobro:        calcularProximoCobro(p, diasExcluidos),
   }))
 
   return Response.json({ ...cliente, prestamos: prestamosEnriquecidos })
