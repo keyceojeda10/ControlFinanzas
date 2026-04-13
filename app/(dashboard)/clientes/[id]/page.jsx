@@ -578,10 +578,8 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, mini = false }) {
   const tieneProximoCobro = p.estado === 'activo' && p.proximoCobro
   const proximoCobroLabel = tieneProximoCobro ? formatFechaCobro(p.proximoCobro) : null
   const cobroVencido = enMora && tieneProximoCobro
-  const prefijoCobro = cobroVencido
-    ? (p.frecuencia === 'diario' ? 'Cobro pendiente' : 'Debió cobrarse')
-    : 'Próx. cobro'
-  const valorCobro = cobroVencido && p.frecuencia === 'diario' ? 'hoy' : proximoCobroLabel
+  const prefijoCobro = cobroVencido ? 'Debió cobrarse' : 'Próx. cobro'
+  const valorCobro = proximoCobroLabel
 
   if (mini) {
     return (

@@ -155,12 +155,8 @@ export default function PrestamoDetallePage({ params }) {
   const enMora     = diasMora > 3
   const cobroInfo = estaActivo && proximoCobro
     ? {
-        label: diasMora > 0
-          ? (frecuencia === 'diario' ? 'Cobro pendiente' : 'Debió cobrarse')
-          : 'Próximo cobro',
-        value: diasMora > 0 && frecuencia === 'diario'
-          ? 'hoy'
-          : formatFechaCobro(proximoCobro),
+        label: diasMora > 0 ? 'Debió cobrarse' : 'Próximo cobro',
+        value: formatFechaCobro(proximoCobro),
         color: diasMora > 0 ? '#ef4444' : '#f5c518',
       }
     : null
