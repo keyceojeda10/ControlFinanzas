@@ -153,6 +153,17 @@ export default function PrestamoDetallePage({ params }) {
   const badge      = estadoBadge[estado] ?? estadoBadge.activo
   const estaActivo = estado === 'activo'
   const enMora     = diasMora > 3
+  const cobroInfo = estaActivo && proximoCobro
+    ? {
+        label: diasMora > 0
+          ? (frecuencia === 'diario' ? 'Cobro pendiente' : 'Debió cobrarse')
+          : 'Próximo cobro',
+        value: diasMora > 0 && frecuencia === 'diario'
+          ? 'hoy'
+          : formatFechaCobro(proximoCobro),
+        color: diasMora > 0 ? '#ef4444' : '#f5c518',
+      }
+    : null
 
   return (
     <div className="max-w-xl mx-auto space-y-4 pb-4">
@@ -438,11 +449,7 @@ export default function PrestamoDetallePage({ params }) {
             { label: 'Plazo',        value: `${diasPlazo} días`      },
             { label: 'Inicio',       value: fmtFecha(fechaInicio)    },
             { label: 'Vencimiento',  value: fmtFecha(fechaFin)       },
-            ...(estaActivo && proximoCobro ? [{
-              label: 'Próximo cobro',
-              value: formatFechaCobro(proximoCobro),
-              color: '#f5c518',
-            }] : []),
+            ...(cobroInfo ? [cobroInfo] : []),
             {
               label: diasMora > 0 ? 'Días en mora' : 'Estado',
               value: diasMora > 0 ? `${diasMora} días` : 'Al día',

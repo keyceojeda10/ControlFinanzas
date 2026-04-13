@@ -574,6 +574,14 @@ function DeleteClienteModal({ cliente, prestamos, onClose, onDeletePrestamo, onT
 function PrestamoCard({ prestamo: p, clienteId, cliente, mini = false }) {
   const badge  = estadoPrestamoBadge[p.estado] ?? estadoPrestamoBadge.activo
   const porcentaje = p.porcentajePagado ?? 0
+  const enMora = (p.diasMora ?? 0) > 0
+  const tieneProximoCobro = p.estado === 'activo' && p.proximoCobro
+  const proximoCobroLabel = tieneProximoCobro ? formatFechaCobro(p.proximoCobro) : null
+  const cobroVencido = enMora && tieneProximoCobro
+  const prefijoCobro = cobroVencido
+    ? (p.frecuencia === 'diario' ? 'Cobro pendiente' : 'Debió cobrarse')
+    : 'Próx. cobro'
+  const valorCobro = cobroVencido && p.frecuencia === 'diario' ? 'hoy' : proximoCobroLabel
 
   if (mini) {
     return (
@@ -603,12 +611,15 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, mini = false }) {
           <p className="text-xs text-[#888888] mt-0.5">
             Prestado el {new Date(p.fechaInicio).toLocaleDateString('es-CO')}
           </p>
-          {p.estado === 'activo' && p.proximoCobro && (
-            <p className="text-xs text-[#f5c518] mt-0.5 flex items-center gap-1 capitalize">
+          {proximoCobroLabel && (
+            <p className={[
+              'text-xs mt-0.5 flex items-center gap-1 capitalize',
+              cobroVencido ? 'text-[#ef4444]' : 'text-[#f5c518]',
+            ].join(' ')}>
               <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              Próx. cobro: <span className="font-medium">{formatFechaCobro(p.proximoCobro)}</span>
+              {prefijoCobro}: <span className="font-medium">{valorCobro}</span>
             </p>
           )}
         </div>
