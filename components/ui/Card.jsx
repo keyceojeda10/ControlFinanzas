@@ -11,9 +11,9 @@ export function Card({ children, className = '', padding = true, glowColor, ...p
         className,
       ].join(' ')}
       style={{
-        background: `linear-gradient(135deg, ${glow}06 0%, #111115 40%, #111115 70%, ${glow}03 100%)`,
-        border: `1px solid rgba(255,255,255,0.07)`,
-        boxShadow: `0 2px 8px rgba(0,0,0,0.3)`,
+        background: `linear-gradient(135deg, ${glow}07 0%, #111115 38%, #111115 72%, ${glow}04 100%)`,
+        border: `1px solid rgba(255,255,255,0.1)`,
+        boxShadow: `0 6px 20px rgba(0,0,0,0.28)`,
         ...propsStyle,
       }}
       {...restProps}
@@ -33,7 +33,7 @@ export function CardHeader({ children, className = '' }) {
 
 export function CardTitle({ children, className = '' }) {
   return (
-    <h3 className={`text-sm font-semibold text-[#f0f0f5] ${className}`}>
+    <h3 className={`text-sm sm:text-[0.95rem] font-semibold text-[#f4f5fa] tracking-[0.01em] ${className}`}>
       {children}
     </h3>
   )

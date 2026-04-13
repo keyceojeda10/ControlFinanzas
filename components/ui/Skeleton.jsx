@@ -3,7 +3,7 @@
 export function Skeleton({ className = '', ...props }) {
   return (
     <div
-      className={['animate-pulse rounded-[6px] bg-[#2a2a2a]', className].join(' ')}
+      className={['animate-pulse rounded-[6px] bg-[#2f2f3a]', className].join(' ')}
       {...props}
     />
   )
@@ -12,8 +12,8 @@ export function Skeleton({ className = '', ...props }) {
 export function SkeletonCard() {
   return (
     <div
-      className="border border-[#2a2a2a] rounded-[16px] p-5 space-y-3"
-      style={{ background: 'linear-gradient(135deg, #f5c51805 0%, #1a1a1a 50%, #1a1a1a 100%)' }}
+      className="border border-[rgba(255,255,255,0.1)] rounded-[16px] p-5 space-y-3"
+      style={{ background: 'linear-gradient(135deg, #f5c51806 0%, #17171e 50%, #17171e 100%)' }}
     >
       <div className="flex items-center gap-3">
         <Skeleton className="w-10 h-10 rounded-[12px]" />
@@ -30,7 +30,7 @@ export function SkeletonCard() {
 
 export function SkeletonRow() {
   return (
-    <div className="flex items-center gap-3 py-3 border-b border-[#2a2a2a]">
+    <div className="flex items-center gap-3 py-3 border-b border-[rgba(255,255,255,0.08)]">
       <Skeleton className="w-8 h-8 rounded-full" />
       <div className="flex-1 space-y-1.5">
         <Skeleton className="h-3 w-32" />

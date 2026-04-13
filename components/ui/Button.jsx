@@ -4,15 +4,15 @@ import { forwardRef } from 'react'
 
 const variants = {
   primary:   'bg-[#f5c518] hover:bg-[#f0b800] text-[#0a0a0a] font-bold border-transparent hover:shadow-[0_0_25px_rgba(245,197,24,0.35)]',
-  secondary: 'bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] text-white border-[rgba(255,255,255,0.1)] hover:border-[rgba(245,197,24,0.3)] hover:text-[#f5c518]',
+  secondary: 'bg-[rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.12)] text-[#f6f7fb] border-[rgba(255,255,255,0.14)] hover:border-[rgba(245,197,24,0.34)] hover:text-[#f5c518]',
   danger:    'bg-[#f87171] hover:bg-[#ef4444] text-white border-transparent hover:shadow-[0_0_20px_rgba(248,113,113,0.3)]',
-  ghost:     'bg-transparent hover:bg-[rgba(255,255,255,0.06)] text-[#999] hover:text-white border-transparent',
+  ghost:     'bg-transparent hover:bg-[rgba(255,255,255,0.08)] text-[#b5b5be] hover:text-[#f6f7fb] border-transparent',
   success:   'bg-[#34d399] hover:bg-[#22c55e] text-[#0a0a0a] font-bold border-transparent hover:shadow-[0_0_20px_rgba(52,211,153,0.3)]',
 }
 
 const sizes = {
-  sm: 'h-8  px-3 text-xs gap-1.5',
-  md: 'h-10 px-4 text-sm gap-2',
+  sm: 'h-9  px-3 text-xs gap-1.5',
+  md: 'h-11 px-4 text-sm gap-2',
   lg: 'h-12 px-5 text-base gap-2',
 }
 
@@ -30,7 +30,8 @@ export const Button = forwardRef(function Button(
 ) {
   const base = [
     'inline-flex items-center justify-center font-medium rounded-[12px]',
-    'border transition-all duration-200 cursor-pointer select-none',
+    'border transition-all duration-200 cursor-pointer select-none active:scale-[0.99]',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c518]/65 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b10]',
     'disabled:opacity-50 disabled:cursor-not-allowed',
     variants[variant] ?? variants.primary,
     sizes[size]       ?? sizes.md,
