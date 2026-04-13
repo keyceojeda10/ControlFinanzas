@@ -142,16 +142,13 @@ export default function BottomNav() {
   // Close sheet on navigate
   useEffect(() => { setMoreOpen(false) }, [pathname])
 
-  // Close sheet on outside click
+  // Lock body scroll while the mobile sheet is open.
   useEffect(() => {
-    if (!moreOpen) return
-    const handler = (e) => {
-      if (sheetRef.current && !sheetRef.current.contains(e.target)) {
-        setMoreOpen(false)
-      }
+    const prevOverflow = document.body.style.overflow
+    if (moreOpen) document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prevOverflow
     }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
   }, [moreOpen])
 
   // Check if any "more" item is active
@@ -173,10 +170,18 @@ export default function BottomNav() {
 
       {/* Sheet overlay + content for "Más" */}
       {moreOpen && (
-        <div className="lg:hidden fixed inset-0 z-50" style={{ background: 'rgba(0,0,5,0.6)' }}>
+        <div
+          className="lg:hidden fixed inset-0 z-50"
+          style={{ background: 'rgba(0,0,5,0.6)' }}
+          onClick={() => setMoreOpen(false)}
+          role="button"
+          tabIndex={-1}
+          aria-label="Cerrar menu de navegacion"
+        >
           <div
             ref={sheetRef}
             className="absolute bottom-0 left-0 right-0 rounded-t-[24px] overflow-hidden animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
             style={{
               background: 'rgba(15,15,22,0.95)',
               backdropFilter: 'blur(30px) saturate(1.3)',
