@@ -237,8 +237,8 @@ export default function ClientesPage() {
   return (
     <div className="max-w-3xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
+      <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-xl font-bold text-[white]">Clientes</h1>
           <p className="text-sm text-[#888888] mt-0.5">
             {loading ? '...' : `${total} cliente${total !== 1 ? 's' : ''}`}
@@ -247,19 +247,19 @@ export default function ClientesPage() {
             )}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap sm:justify-end">
           {!authLoading && esOwner && (
             <>
               <button
                 onClick={() => setModalGrupos(true)}
-                className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#1a1a1a] text-xs font-medium text-[#f5c518] hover:bg-[#222222] transition-colors"
+                className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#1a1a1a] text-xs font-medium text-[#f5c518] hover:bg-[#222222] transition-colors shrink-0 whitespace-nowrap"
               >
                 Grupos
               </button>
               <button
                 onClick={() => { setModoAsignar(v => !v); setSelAsignar([]); setGrupoAsignar('') }}
                 className={[
-                  'h-9 px-3 rounded-[12px] border text-xs font-medium transition-colors',
+                  'h-9 px-3 rounded-[12px] border text-xs font-medium transition-colors shrink-0 whitespace-nowrap',
                   modoAsignar
                     ? 'border-[#f5c518] bg-[rgba(245,197,24,0.15)] text-[#f5c518]'
                     : 'border-[#2a2a2a] bg-[#1a1a1a] text-[#888888] hover:bg-[#222222] hover:text-[white]',
@@ -270,7 +270,7 @@ export default function ClientesPage() {
             </>
           )}
           {!authLoading && puedeCrearClientes && (
-            <Link href="/clientes/nuevo">
+            <Link href="/clientes/nuevo" className="shrink-0">
               <Button
                 icon={
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
