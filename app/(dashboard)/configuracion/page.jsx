@@ -9,11 +9,12 @@ import { Button }              from '@/components/ui/Button'
 import { Badge }               from '@/components/ui/Badge'
 import { Skeleton }            from '@/components/ui/Skeleton'
 import { formatCOP }           from '@/lib/calculos'
+import { PLANES_CONFIG }       from '@/lib/planes'
 import DiasSinCobroSelector    from '@/components/ui/DiasSinCobroSelector'
 
 const planBadge  = { basic: 'gray', growth: 'blue', standard: 'yellow', professional: 'purple' }
-const PRECIOS    = { basic: 59000, growth: 79000, standard: 119000, professional: 259000 }
-const PLAN_NAMES = { basic: 'Básico', growth: 'Crecimiento', standard: 'Profesional', professional: 'Empresarial' }
+const PRECIOS    = Object.fromEntries(Object.entries(PLANES_CONFIG).map(([k, v]) => [k, v.precio]))
+const PLAN_NAMES = Object.fromEntries(Object.entries(PLANES_CONFIG).map(([k, v]) => [k, v.nombre]))
 
 function Alerta({ tipo = 'success', children }) {
   const styles = {

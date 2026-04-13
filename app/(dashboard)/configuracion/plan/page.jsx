@@ -10,11 +10,11 @@ const planes = [
   {
     key: 'basic',
     nombre: 'Básico',
-    precio: 59000,
+    precio: 39000,
     badge: null,
     features: [
       '1 usuario (administrador)',
-      'Hasta 450 clientes',
+      'Hasta 150 clientes',
       '1 ruta',
       'Gestión de préstamos',
       'Dashboard básico',
@@ -337,7 +337,7 @@ export default function PlanPage() {
       <div className={`grid grid-cols-1 gap-4 ${esSuperadmin ? 'sm:grid-cols-5' : 'sm:grid-cols-2 lg:grid-cols-4'}`}>
         {(esSuperadmin ? [planTest, ...planes] : planes).map((p) => {
           const esPlanActual = p.key === planActual
-          const esPopular    = p.badge === 'Mas popular'
+          const esPopular    = p.badge === 'Más popular'
           const esTest       = p.key === 'test'
           const esRecurrenteActiva = tieneRecurrente && esPlanActual && !subCancelada
 

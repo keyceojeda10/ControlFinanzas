@@ -5,6 +5,7 @@ import Image                             from 'next/image'
 import { useRouter, useSearchParams }    from 'next/navigation'
 import { signIn }                        from 'next-auth/react'
 import Link                              from 'next/link'
+import { PLANES_CONFIG }                 from '@/lib/planes'
 
 // ─── Inner component uses useSearchParams ────────────────────────
 function RegistroForm() {
@@ -13,11 +14,33 @@ function RegistroForm() {
   const refCode        = searchParams.get('ref')
   const planParam      = searchParams.get('plan')
 
+  const formatPrecio = (precio) => `$${precio.toLocaleString('es-CO')}`
+
   const PLANES_TRIAL = [
-    { key: 'basic',        nombre: 'Básico',       desc: '450 clientes, 1 ruta',                  precio: '$59.000' },
-    { key: 'growth',       nombre: 'Crecimiento',  desc: '1,000 clientes, 3 rutas, 2 usuarios',   precio: '$79.000' },
-    { key: 'standard',     nombre: 'Profesional',  desc: '2,000 clientes, 6 rutas, 5 usuarios',   precio: '$119.000' },
-    { key: 'professional', nombre: 'Empresarial',  desc: '10,000 clientes, 10 rutas, 10 usuarios', precio: '$259.000' },
+    {
+      key: 'basic',
+      nombre: PLANES_CONFIG.basic.nombre,
+      desc: `${PLANES_CONFIG.basic.maxClientes.toLocaleString('es-CO')} clientes, ${PLANES_CONFIG.basic.maxRutas} ruta`,
+      precio: formatPrecio(PLANES_CONFIG.basic.precio),
+    },
+    {
+      key: 'growth',
+      nombre: PLANES_CONFIG.growth.nombre,
+      desc: `${PLANES_CONFIG.growth.maxClientes.toLocaleString('es-CO')} clientes, ${PLANES_CONFIG.growth.maxRutas} rutas, ${PLANES_CONFIG.growth.maxUsuarios} usuarios`,
+      precio: formatPrecio(PLANES_CONFIG.growth.precio),
+    },
+    {
+      key: 'standard',
+      nombre: PLANES_CONFIG.standard.nombre,
+      desc: `${PLANES_CONFIG.standard.maxClientes.toLocaleString('es-CO')} clientes, ${PLANES_CONFIG.standard.maxRutas} rutas, ${PLANES_CONFIG.standard.maxUsuarios} usuarios`,
+      precio: formatPrecio(PLANES_CONFIG.standard.precio),
+    },
+    {
+      key: 'professional',
+      nombre: PLANES_CONFIG.professional.nombre,
+      desc: `${PLANES_CONFIG.professional.maxClientes.toLocaleString('es-CO')} clientes, ${PLANES_CONFIG.professional.maxRutas} rutas, ${PLANES_CONFIG.professional.maxUsuarios} usuarios`,
+      precio: formatPrecio(PLANES_CONFIG.professional.precio),
+    },
   ]
   const PLANES_MAP = Object.fromEntries(PLANES_TRIAL.map((p) => [p.key, p]))
   const planInicial = PLANES_MAP[planParam] ? planParam : 'basic'
@@ -127,9 +150,7 @@ function RegistroForm() {
           <Image src="/logo-icon.svg" alt="Control Finanzas" width={56} height={56} className="mx-auto mb-5" priority />
           <h1 className="text-2xl font-bold text-white tracking-tight">Crear cuenta</h1>
           <p className="text-sm text-[#888888] mt-1">
-            {planSeleccionado !== 'basic'
-              ? `Prueba el plan ${infoPlan.nombre} gratis por 14 dias`
-              : '14 dias gratis para probar la plataforma'}
+            {`Prueba el plan ${infoPlan.nombre} gratis por 14 dias`}
           </p>
         </div>
 
@@ -225,7 +246,7 @@ function RegistroForm() {
               type="password"
               value={form.password}
               onChange={set('password')}
-              placeholder="Mínimo 6 caracteres"
+              placeholder="Mínimo 8 caracteres"
               autoComplete="new-password"
               className={inputClass}
             />
@@ -275,7 +296,7 @@ function RegistroForm() {
                 </svg>
                 Creando cuenta...
               </>
-            ) : planSeleccionado !== 'basic' ? `Probar plan ${infoPlan.nombre} gratis` : 'Crear cuenta gratis'}
+            ) : `Probar plan ${infoPlan.nombre} gratis`}
           </button>
         </form>
 

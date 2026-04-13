@@ -255,7 +255,7 @@ export default function OrgDetallePage() {
               onChange={(e) => setPagoDirecto(p => ({ ...p, plan: e.target.value }))}
               className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#f5c518]"
             >
-              <option value="basic">Basico ($59.000/mes)</option>
+              <option value="basic">Basico ($39.000/mes)</option>
               <option value="growth">Crecimiento ($79.000/mes)</option>
               <option value="standard">Profesional ($119.000/mes)</option>
               <option value="professional">Empresarial ($259.000/mes)</option>
@@ -280,7 +280,7 @@ export default function OrgDetallePage() {
               min="0"
               value={pagoDirecto.monto}
               onChange={(e) => setPagoDirecto(p => ({ ...p, monto: e.target.value }))}
-              placeholder="Ej: 59000"
+              placeholder="Ej: 39000"
               className="w-32 h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] focus:outline-none focus:border-[#f5c518]"
             />
           </div>
