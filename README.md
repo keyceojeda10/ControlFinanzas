@@ -127,6 +127,64 @@ npm run dev
 - `npm run lint`: lint con ESLint.
 - `npm run test`: tests en modo watch.
 - `npm run test:run`: ejecutar tests una vez.
+- `./scripts/deploy-stack.ps1`: deploy app + trigger de landing opcional + verificacion post-deploy.
+
+## Deploy automatizado (app + landing separada)
+
+Este repositorio corresponde al sistema (`app.control-finanzas.com`).
+Si la landing (`control-finanzas.com`) vive en otro repo, su deploy debe dispararse aparte.
+
+1. Variables de entorno requeridas para deploy de app:
+
+```powershell
+$env:DEPLOY_SSH_USER = "usuario"
+$env:DEPLOY_SSH_HOST = "host"
+$env:DEPLOY_SCRIPT_PATH = "/home/deploy-sistema.sh" # opcional
+$env:DEPLOY_SSH_PASSWORD = "..." # opcional (si no usas llave SSH)
+```
+
+2. Opciones para deploy de landing (elige una):
+
+- Opcion A (plataformas tipo Vercel/Netlify/Render): webhook
+
+```powershell
+$env:LANDING_DEPLOY_HOOK_URL = "https://..."
+```
+
+- Opcion B (VPS/CyberPanel): deploy por SSH + script remoto
+
+```powershell
+$env:LANDING_DEPLOY_SSH_USER = "usuario"
+$env:LANDING_DEPLOY_SSH_HOST = "host"
+$env:LANDING_DEPLOY_SCRIPT_PATH = "/home/deploy-landing.sh" # opcional
+$env:LANDING_DEPLOY_SSH_PASSWORD = "..." # opcional (si no usas llave SSH)
+```
+
+3. Ejecutar deploy completo con verificacion:
+
+```powershell
+pwsh -File ./scripts/deploy-stack.ps1 -RequireLandingFresh
+```
+
+Opciones utiles:
+
+- Solo app + verificacion de app: `pwsh -File ./scripts/deploy-stack.ps1 -SkipLandingDeploy`
+- Solo verificacion (sin desplegar): `pwsh -File ./scripts/deploy-stack.ps1 -SkipAppDeploy -SkipLandingDeploy`
+
+### CyberPanel (Hostinger) recomendado
+
+Si la landing esta en un VPS con CyberPanel, normalmente no hay deploy hook listo.
+La via mas estable es un script remoto por SSH (ejemplo: `/home/deploy-landing.sh`) que haga:
+
+```bash
+cd /ruta/del/repo-landing
+git fetch origin
+git checkout main
+git pull --ff-only origin main
+npm ci
+npm run build
+sudo systemctl reload openlitespeed
+```
 
 ## Seguridad y acceso
 

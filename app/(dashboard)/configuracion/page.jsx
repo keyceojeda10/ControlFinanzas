@@ -12,7 +12,7 @@ import { formatCOP }           from '@/lib/calculos'
 import { PLANES_CONFIG }       from '@/lib/planes'
 import DiasSinCobroSelector    from '@/components/ui/DiasSinCobroSelector'
 
-const planBadge  = { basic: 'gray', growth: 'blue', standard: 'yellow', professional: 'purple' }
+const planBadge  = { starter: 'gray', basic: 'blue', growth: 'yellow', standard: 'purple', professional: 'green' }
 const PRECIOS    = Object.fromEntries(Object.entries(PLANES_CONFIG).map(([k, v]) => [k, v.precio]))
 const PLAN_NAMES = Object.fromEntries(Object.entries(PLANES_CONFIG).map(([k, v]) => [k, v.nombre]))
 
@@ -250,10 +250,10 @@ function TabOrganizacion() {
             <div>
               <p className="text-xs text-[#888888]">Plan actual</p>
               <div className="flex items-center gap-2 mt-1">
-                <Badge variant={planBadge[org?.plan ?? 'basic']}>
-                  {PLAN_NAMES[org?.plan ?? 'basic']}
+                <Badge variant={planBadge[org?.plan ?? 'starter']}>
+                  {PLAN_NAMES[org?.plan ?? 'starter']}
                 </Badge>
-                <span className="text-xs text-[#888888]"><span className="font-mono-display">{formatCOP(PRECIOS[org?.plan ?? 'basic'])}</span>/mes</span>
+                <span className="text-xs text-[#888888]"><span className="font-mono-display">{formatCOP(PRECIOS[org?.plan ?? 'starter'])}</span>/mes</span>
               </div>
             </div>
             <Link
@@ -335,10 +335,10 @@ function TabSuscripcion() {
           <div>
             <p className="text-xs text-[#888888] mb-1">Plan actual</p>
             <div className="flex items-center gap-2">
-              <Badge variant={planBadge[org?.plan ?? 'basic']}>
-                {PLAN_NAMES[org?.plan ?? 'basic']}
+              <Badge variant={planBadge[org?.plan ?? 'starter']}>
+                {PLAN_NAMES[org?.plan ?? 'starter']}
               </Badge>
-              <span className="text-xs text-[#888888]"><span className="font-mono-display">{formatCOP(PRECIOS[org?.plan ?? 'basic'])}</span>/mes</span>
+              <span className="text-xs text-[#888888]"><span className="font-mono-display">{formatCOP(PRECIOS[org?.plan ?? 'starter'])}</span>/mes</span>
             </div>
           </div>
           <Link

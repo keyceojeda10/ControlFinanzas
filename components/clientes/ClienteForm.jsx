@@ -60,7 +60,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
 
   // Cargar rutas solo para plan standard+
   useEffect(() => {
-    if (plan === 'basic') return
+    if (['starter', 'basic'].includes(plan)) return
     fetch('/api/rutas')
       .then((r) => r.json())
       .then((data) => setRutas(Array.isArray(data) ? data : []))
@@ -227,7 +227,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
         </div>
 
         {/* Ruta – solo plan standard+ */}
-        {plan !== 'basic' && rutas.length > 0 && (
+        {!['starter', 'basic'].includes(plan) && rutas.length > 0 && (
           <Select
             label="Ruta"
             value={form.rutaId}

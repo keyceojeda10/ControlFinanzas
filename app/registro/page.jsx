@@ -18,6 +18,12 @@ function RegistroForm() {
 
   const PLANES_TRIAL = [
     {
+      key: 'starter',
+      nombre: PLANES_CONFIG.starter.nombre,
+      desc: `${PLANES_CONFIG.starter.maxClientes.toLocaleString('es-CO')} clientes, ${PLANES_CONFIG.starter.maxRutas} ruta`,
+      precio: formatPrecio(PLANES_CONFIG.starter.precio),
+    },
+    {
       key: 'basic',
       nombre: PLANES_CONFIG.basic.nombre,
       desc: `${PLANES_CONFIG.basic.maxClientes.toLocaleString('es-CO')} clientes, ${PLANES_CONFIG.basic.maxRutas} ruta`,
@@ -43,7 +49,7 @@ function RegistroForm() {
     },
   ]
   const PLANES_MAP = Object.fromEntries(PLANES_TRIAL.map((p) => [p.key, p]))
-  const planInicial = PLANES_MAP[planParam] ? planParam : 'basic'
+  const planInicial = PLANES_MAP[planParam] ? planParam : 'starter'
 
   const [planSeleccionado, setPlanSeleccionado] = useState(planInicial)
   const infoPlan = PLANES_MAP[planSeleccionado]
@@ -157,7 +163,7 @@ function RegistroForm() {
         {/* Plan selector */}
         <div className="mb-4">
           <p className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em] mb-2">Elige tu plan de prueba</p>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {PLANES_TRIAL.map((p) => {
               const activo = planSeleccionado === p.key
               return (

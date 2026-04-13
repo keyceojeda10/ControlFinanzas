@@ -5,7 +5,7 @@ import Link                    from 'next/link'
 import { Badge }               from '@/components/ui/Badge'
 import { SkeletonTable }       from '@/components/ui/Skeleton'
 
-const planBadge = { basic: 'gray', growth: 'blue', standard: 'yellow', professional: 'purple', test: 'yellow' }
+const planBadge = { starter: 'gray', basic: 'blue', growth: 'yellow', standard: 'purple', professional: 'green', test: 'yellow' }
 
 export default function OrganizacionesPage() {
   const [orgs,    setOrgs]    = useState([])
@@ -94,6 +94,7 @@ export default function OrganizacionesPage() {
             className="h-8 px-2 rounded-[10px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#3b82f6]"
           >
             <option value="">Todos los planes</option>
+            <option value="starter">Inicial</option>
             <option value="basic">Básico</option>
             <option value="growth">Crecimiento</option>
             <option value="standard">Profesional</option>

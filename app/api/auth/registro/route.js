@@ -6,6 +6,7 @@ import { prisma }       from '@/lib/prisma'
 import { enviarEmail, emailBienvenida, emailVerificacion } from '@/lib/email'
 import { sendConversionEvent } from '@/lib/facebook-capi'
 import { registroLimiter, getClientIp } from '@/lib/rate-limit'
+import { PLANES_VALIDOS } from '@/lib/planes'
 
 function generarCodigoReferido() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -35,9 +36,9 @@ export async function POST(req) {
     const body = await req.json()
     const { nombreOrganizacion, nombre, email, password, ref, terminosAceptados, plan } = body
 
-    // Validar plan: solo basic, standard, professional son válidos para trial
-    const VALID_TRIAL_PLANS = ['basic', 'growth', 'standard', 'professional']
-    const planFinal = VALID_TRIAL_PLANS.includes(plan) ? plan : 'basic'
+    // Validar plan de trial: todos menos el plan interno de test
+    const VALID_TRIAL_PLANS = PLANES_VALIDOS.filter((p) => p !== 'test')
+    const planFinal = VALID_TRIAL_PLANS.includes(plan) ? plan : 'starter'
 
     // Validaciones
     if (!nombreOrganizacion?.trim() || !nombre?.trim() || !email?.trim() || !password) {

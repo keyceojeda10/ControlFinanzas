@@ -36,7 +36,7 @@ export async function GET() {
 
   if (!sub) {
     return NextResponse.json({
-      plan:             session.user.plan ?? 'basic',
+      plan:             session.user.plan ?? 'starter',
       estado:           'pendiente',
       fechaVencimiento: null,
       diasRestantes:    0,

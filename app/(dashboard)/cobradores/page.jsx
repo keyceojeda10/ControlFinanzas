@@ -16,7 +16,7 @@ export default function CobradoresPage() {
   const [error,      setError]      = useState('')
   const [toggling,   setToggling]   = useState(null)
 
-  const plan = session?.user?.plan ?? 'basic'
+  const plan = session?.user?.plan ?? 'starter'
 
   const toggleCobrador = async (cobrador) => {
     setToggling(cobrador.id)
@@ -46,8 +46,8 @@ export default function CobradoresPage() {
       .finally(() => setLoading(false))
   }, [authLoading, esOwner])
 
-  // Plan basic — bloquear
-  if (!authLoading && plan === 'basic') {
+  // Planes de entrada — bloquear
+  if (!authLoading && ['starter', 'basic'].includes(plan)) {
     return (
       <div className="max-w-xl mx-auto">
         <h1 className="text-xl font-bold text-[white] mb-6">Cobradores</h1>

@@ -83,11 +83,13 @@ export default function AdminDashboard() {
       </div>
 
       {/* Fila 2 — Distribución de planes */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { plan: 'Basic',        ...stats.planes.basic,        color: '#888888' },
-          { plan: 'Standard',     ...stats.planes.standard,     color: '#3b82f6' },
-          { plan: 'Professional', ...stats.planes.professional, color: '#a855f7' },
+          { plan: 'Inicial',      ...stats.planes.starter,      color: '#888888' },
+          { plan: 'Basico',       ...stats.planes.basic,        color: '#3b82f6' },
+          { plan: 'Crecimiento',  ...stats.planes.growth,       color: '#f5c518' },
+          { plan: 'Profesional',  ...stats.planes.standard,     color: '#a855f7' },
+          { plan: 'Empresarial',  ...stats.planes.professional, color: '#22c55e' },
         ].map(({ plan, cantidad, mrr, color }) => (
           <div key={plan} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-4 py-3">
             <div className="flex items-center gap-2 mb-1">

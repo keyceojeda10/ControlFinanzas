@@ -81,7 +81,7 @@ export default function EditarClientePage({ params }) {
       >
         <ClienteForm
           clienteInicial={cliente}
-          plan={session?.user?.plan ?? 'basic'}
+          plan={session?.user?.plan ?? 'starter'}
         />
       </div>
     </div>

@@ -9,13 +9,14 @@ import { SkeletonCard }         from '@/components/ui/Skeleton'
 import { formatCOP }            from '@/lib/calculos'
 
 const LIMITES = {
+  starter:      { usuarios: 1,  clientes: 150 },
   basic:        { usuarios: 1,  clientes: 450 },
   growth:       { usuarios: 2,  clientes: 1000 },
   standard:     { usuarios: 5,  clientes: 2000 },
   professional: { usuarios: 10, clientes: 10000 },
 }
 
-const planBadge = { basic: 'gray', growth: 'blue', standard: 'yellow', professional: 'purple' }
+const planBadge = { starter: 'gray', basic: 'blue', growth: 'yellow', standard: 'purple', professional: 'green' }
 
 export default function OrgDetallePage() {
   const { id }  = useParams()
@@ -25,7 +26,7 @@ export default function OrgDetallePage() {
   const [accionando, setAccionando] = useState('')
   const [descuentoInput, setDescuentoInput] = useState('')
   const [demoDias, setDemoDias] = useState('1')
-  const [pagoDirecto, setPagoDirecto] = useState({ plan: 'basic', periodo: 'mensual', monto: '', extender: false })
+  const [pagoDirecto, setPagoDirecto] = useState({ plan: 'starter', periodo: 'mensual', monto: '', extender: false })
   const [cobradoresInput, setCobradoresInput] = useState('')
 
   const fetchOrg = useCallback(async () => {
@@ -85,7 +86,7 @@ export default function OrgDetallePage() {
   if (!org) return null
 
   const sub    = org.suscripciones?.[0]
-  const limite = LIMITES[org.plan] ?? LIMITES.basic
+  const limite = LIMITES[org.plan] ?? LIMITES.starter
   const diasRestantes = sub
     ? Math.ceil((new Date(sub.fechaVencimiento) - new Date()) / (1000 * 60 * 60 * 24))
     : null
@@ -127,6 +128,7 @@ export default function OrgDetallePage() {
             disabled={!!accionando}
             className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#f5c518]"
           >
+            <option value="starter">Inicial</option>
             <option value="basic">Básico</option>
             <option value="growth">Crecimiento</option>
             <option value="standard">Profesional</option>
@@ -255,7 +257,8 @@ export default function OrgDetallePage() {
               onChange={(e) => setPagoDirecto(p => ({ ...p, plan: e.target.value }))}
               className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#f5c518]"
             >
-              <option value="basic">Basico ($39.000/mes)</option>
+              <option value="starter">Inicial ($39.000/mes)</option>
+              <option value="basic">Basico ($59.000/mes)</option>
               <option value="growth">Crecimiento ($79.000/mes)</option>
               <option value="standard">Profesional ($119.000/mes)</option>
               <option value="professional">Empresarial ($259.000/mes)</option>

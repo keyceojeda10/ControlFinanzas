@@ -11,7 +11,7 @@ import {
 
 import { PLANES_CONFIG } from '@/lib/planes'
 const PRECIOS = Object.fromEntries(Object.entries(PLANES_CONFIG).map(([k, v]) => [k, v.precio]))
-const COLORES = { basic: '#888888', growth: '#3b82f6', standard: '#f5c518', professional: '#a855f7' }
+const COLORES = { starter: '#888888', basic: '#3b82f6', growth: '#f5c518', standard: '#a855f7', professional: '#22c55e' }
 
 const CopTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
@@ -82,16 +82,17 @@ export default function MetricasPage() {
   for (let i = 11; i >= 0; i--) {
     const fecha = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1)
     const label = fecha.toLocaleDateString('es-CO', { month: 'short', year: '2-digit' })
-    let basic = 0, growth = 0, standard = 0, professional = 0
+    let starter = 0, basic = 0, growth = 0, standard = 0, professional = 0
     for (const o of orgs) {
       if (new Date(o.createdAt) <= new Date(fecha.getFullYear(), fecha.getMonth() + 1, 0)) {
-        if (o.plan === 'basic') basic += PRECIOS.basic
+        if (o.plan === 'starter') starter += PRECIOS.starter
+        else if (o.plan === 'basic') basic += PRECIOS.basic
         else if (o.plan === 'growth') growth += PRECIOS.growth
         else if (o.plan === 'standard') standard += PRECIOS.standard
-        else professional += PRECIOS.professional
+        else if (o.plan === 'professional') professional += PRECIOS.professional
       }
     }
-    mrrPorMes.push({ mes: label, basic, growth, standard, professional })
+    mrrPorMes.push({ mes: label, starter, basic, growth, standard, professional })
   }
 
   // 2. Crecimiento de orgs por mes
@@ -110,6 +111,7 @@ export default function MetricasPage() {
 
   // 3. Distribución de planes
   const planDist = [
+    { name: 'Inicial',      value: stats.planes.starter?.cantidad || 0,      color: COLORES.starter },
     { name: 'Básico',       value: stats.planes.basic?.cantidad || 0,        color: COLORES.basic },
     { name: 'Crecimiento',  value: stats.planes.growth?.cantidad || 0,       color: COLORES.growth },
     { name: 'Profesional',  value: stats.planes.standard?.cantidad || 0,     color: COLORES.standard },
@@ -149,7 +151,9 @@ export default function MetricasPage() {
             <YAxis tick={{ fill: '#555555', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
             <Tooltip content={<CopTooltip />} />
             <Legend wrapperStyle={{ fontSize: 10, color: '#555555' }} />
+            <Bar dataKey="starter" name="Inicial" stackId="a" fill={COLORES.starter} />
             <Bar dataKey="basic" name="Basic" stackId="a" fill={COLORES.basic} />
+            <Bar dataKey="growth" name="Crecimiento" stackId="a" fill={COLORES.growth} />
             <Bar dataKey="standard" name="Standard" stackId="a" fill={COLORES.standard} />
             <Bar dataKey="professional" name="Professional" stackId="a" fill={COLORES.professional} radius={[4, 4, 0, 0]} />
           </BarChart>

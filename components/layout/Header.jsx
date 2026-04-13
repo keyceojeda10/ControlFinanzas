@@ -25,7 +25,7 @@ const PAGE_TITLES = {
   '/soporte':       'Soporte',
 }
 
-const PLAN_LABELS = { basic: 'Básico', growth: 'Crecimiento', standard: 'Profesional', professional: 'Empresarial' }
+const PLAN_LABELS = { starter: 'Inicial', basic: 'Básico', growth: 'Crecimiento', standard: 'Profesional', professional: 'Empresarial' }
 
 export default function Header() {
   const pathname         = usePathname()
@@ -39,7 +39,7 @@ export default function Header() {
 
   const nombre = session?.user?.nombre ?? session?.user?.name ?? 'Usuario'
   const email  = session?.user?.email  ?? ''
-  const plan   = session?.user?.plan   ?? 'basic'
+  const plan   = session?.user?.plan   ?? 'starter'
   const inicial = nombre[0]?.toUpperCase() ?? 'U'
 
   useEffect(() => {

@@ -65,7 +65,9 @@ export async function GET() {
   for (const g of orgsPorPlan) {
     planes[g.plan] = g._count
   }
-  const mrr = (planes.basic ?? 0) * PRECIOS.basic
+  const mrr = (planes.starter ?? 0) * PRECIOS.starter
+            + (planes.basic ?? 0) * PRECIOS.basic
+            + (planes.growth ?? 0) * PRECIOS.growth
             + (planes.standard ?? 0) * PRECIOS.standard
             + (planes.professional ?? 0) * PRECIOS.professional
 
@@ -91,7 +93,9 @@ export async function GET() {
     suscVencidas,
     suscPorVencer,
     planes: {
+      starter:      { cantidad: planes.starter ?? 0,      mrr: (planes.starter ?? 0) * PRECIOS.starter },
       basic:        { cantidad: planes.basic ?? 0,        mrr: (planes.basic ?? 0) * PRECIOS.basic },
+      growth:       { cantidad: planes.growth ?? 0,       mrr: (planes.growth ?? 0) * PRECIOS.growth },
       standard:     { cantidad: planes.standard ?? 0,     mrr: (planes.standard ?? 0) * PRECIOS.standard },
       professional: { cantidad: planes.professional ?? 0, mrr: (planes.professional ?? 0) * PRECIOS.professional },
     },

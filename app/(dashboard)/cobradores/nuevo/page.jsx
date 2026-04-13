@@ -8,7 +8,7 @@ import { Input }               from '@/components/ui/Input'
 import { Button }              from '@/components/ui/Button'
 import CompartirCredenciales   from '@/components/cobradores/CompartirCredenciales'
 
-const LIMITES = { basic: 1, growth: 2, standard: 5, professional: 10 }
+const LIMITES = { starter: 1, basic: 1, growth: 2, standard: 5, professional: 10 }
 
 export default function NuevoCobrador() {
   const router = useRouter()
@@ -30,7 +30,7 @@ export default function NuevoCobrador() {
     editarClientes: false,
   })
 
-  const plan     = session?.user?.plan ?? 'basic'
+  const plan     = session?.user?.plan ?? 'starter'
   const limite   = LIMITES[plan] ?? 1
   const restantes = isFinite(limite) && totalUsers !== null ? Math.max(0, limite - totalUsers) : null
   const puedeComprarExtra = plan === 'growth' || plan === 'standard' || plan === 'professional'
@@ -217,7 +217,7 @@ export default function NuevoCobrador() {
           <div className="bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.2)] rounded-[12px] p-4 text-center">
             <p className="text-sm text-[#ef4444] font-medium">Limite alcanzado</p>
             <p className="text-xs text-[#888888] mt-1">
-              Tu plan no permite cobradores extra. Actualiza al plan Profesional o Empresarial.
+              Tu plan no permite cobradores extra. Actualiza al plan Crecimiento, Profesional o Empresarial.
             </p>
             <button
               onClick={() => router.push('/configuracion/plan')}

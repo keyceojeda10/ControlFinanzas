@@ -60,7 +60,7 @@ function PlanGate() {
 // ── Componente principal ───────────────────────────────────────
 export default function ReportesPage() {
   const { session, esOwner, loading: authLoading } = useAuth()
-  const plan = session?.user?.plan ?? 'basic'
+  const plan = session?.user?.plan ?? 'starter'
 
   const [resumen,    setResumen]    = useState(null)
   const [ingresos,   setIngresos]   = useState([])

@@ -8,8 +8,8 @@ import { formatCOP }           from '@/lib/calculos'
 
 const planes = [
   {
-    key: 'basic',
-    nombre: 'Básico',
+    key: 'starter',
+    nombre: 'Inicial',
     precio: 39000,
     badge: null,
     features: [
@@ -18,6 +18,19 @@ const planes = [
       '1 ruta',
       'Gestión de préstamos',
       'Dashboard básico',
+    ],
+  },
+  {
+    key: 'basic',
+    nombre: 'Básico',
+    precio: 59000,
+    badge: null,
+    features: [
+      '1 usuario (administrador)',
+      'Hasta 450 clientes',
+      '1 ruta',
+      'Gestión de préstamos',
+      'Control más amplio de cartera',
     ],
   },
   {
@@ -120,7 +133,7 @@ export default function PlanPage() {
     if (!authLoading) load()
   }, [authLoading])
 
-  const planActual = estado?.plan ?? session?.user?.plan ?? 'basic'
+  const planActual = estado?.plan ?? session?.user?.plan ?? 'starter'
   const tieneRecurrente = estado?.tieneRecurrenteActiva
   const subCancelada = !!estado?.canceladaAt && estado?.tipo === 'recurrente'
 
@@ -334,7 +347,7 @@ export default function PlanPage() {
         </div>
       )}
 
-      <div className={`grid grid-cols-1 gap-4 ${esSuperadmin ? 'sm:grid-cols-5' : 'sm:grid-cols-2 lg:grid-cols-4'}`}>
+      <div className={`grid grid-cols-1 gap-4 ${esSuperadmin ? 'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6' : 'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5'}`}>
         {(esSuperadmin ? [planTest, ...planes] : planes).map((p) => {
           const esPlanActual = p.key === planActual
           const esPopular    = p.badge === 'Más popular'

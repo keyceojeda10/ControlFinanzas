@@ -90,9 +90,9 @@ export async function POST(request) {
 
   const { organizationId, plan } = session.user
 
-  // Plan basic no puede tener cobradores
+  // Planes de entrada no pueden tener cobradores
   const nombrePlan = PLAN_NAMES[plan] || plan
-  if (plan === 'basic') {
+  if (['starter', 'basic'].includes(plan)) {
     return Response.json(
       { error: `Tu plan ${nombrePlan} no incluye cobradores. Actualiza al plan Crecimiento, Profesional o Empresarial.` },
       { status: 403 }

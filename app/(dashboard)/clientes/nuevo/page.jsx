@@ -53,7 +53,7 @@ export default function NuevoClientePage() {
           boxShadow: '0 0 30px #f5c51808, 0 1px 2px rgba(0,0,0,0.3)',
         }}
       >
-        <ClienteForm plan={session?.user?.plan ?? 'basic'} />
+        <ClienteForm plan={session?.user?.plan ?? 'starter'} />
       </div>
     </div>
   )
