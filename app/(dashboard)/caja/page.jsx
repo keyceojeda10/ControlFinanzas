@@ -141,7 +141,9 @@ export default function CajaPage() {
   const stats = cajaData?.stats?.dia || {}
   const cierres = cajaData?.cierres || []
   const cobradores = cajaData?.cobradores || []
-  const disponible = (stats.recogida || 0) - (stats.gastos || 0)
+  const disponibleOperativo = stats.disponibleOperativo ?? ((stats.recogida || 0) - (stats.gastos || 0))
+  const desembolsadoDia = stats.desembolsadoDia || 0
+  const saldoRealCaja = stats.saldoRealCaja ?? (disponibleOperativo - desembolsadoDia)
   const tasaRecaudo = stats.tasaRecaudo || 0
   const colorRecaudo = tasaRecaudo >= 80 ? '#22c55e' : tasaRecaudo >= 50 ? '#f5c518' : '#ef4444'
 
@@ -149,6 +151,8 @@ export default function CajaPage() {
   if (esCobrador) {
     const cierreHoy = cierres[0]
     const diferencia = cierreHoy ? cierreHoy.totalRecogido - cierreHoy.totalEsperado : null
+    const cierreDesembolsado = cierreHoy?.totalDesembolsado ?? desembolsadoDia
+    const cierreSaldoReal = cierreHoy?.saldoRealCaja ?? saldoRealCaja
 
     return (
       <div className="max-w-xl mx-auto space-y-4">
@@ -203,8 +207,16 @@ export default function CajaPage() {
               <p className="text-lg font-bold font-mono-display text-[#ef4444]">{stats.gastos > 0 ? '-' : ''}{formatCOP(stats.gastos || 0)}</p>
             </div>
             <div>
-              <p className="text-[10px] text-[#f5c518] uppercase font-semibold">Disponible</p>
-              <p className="text-lg font-bold font-mono-display text-[#f5c518]">{formatCOP(disponible)}</p>
+              <p className="text-[10px] text-[#888888] uppercase">Desembolsado</p>
+              <p className="text-lg font-bold font-mono-display text-[#f59e0b]">{desembolsadoDia > 0 ? '-' : ''}{formatCOP(desembolsadoDia)}</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-[#f5c518] uppercase font-semibold">Disponible operativo</p>
+              <p className="text-lg font-bold font-mono-display text-[#f5c518]">{formatCOP(disponibleOperativo)}</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-[#06b6d4] uppercase font-semibold">Saldo real caja</p>
+              <p className="text-lg font-bold font-mono-display" style={{ color: saldoRealCaja >= 0 ? '#06b6d4' : '#ef4444' }}>{formatCOP(saldoRealCaja)}</p>
             </div>
           </div>
         </Card>
@@ -221,6 +233,7 @@ export default function CajaPage() {
                 { label: 'Esperado', value: formatCOP(cierreHoy.totalEsperado), color: 'text-white' },
                 { label: 'Entregado', value: formatCOP(cierreHoy.totalRecogido), color: 'text-white' },
                 { label: 'Gastos', value: formatCOP(cierreHoy.totalGastos || 0), color: 'text-[#ef4444]' },
+                { label: 'Desembolsado hoy', value: `${cierreDesembolsado > 0 ? '-' : ''}${formatCOP(cierreDesembolsado)}`, color: 'text-[#f59e0b]' },
               ].map(({ label, value, color }) => (
                 <div key={label} className="flex justify-between text-sm">
                   <span className="text-[#888888]">{label}</span>
@@ -231,6 +244,12 @@ export default function CajaPage() {
                 <span className="text-[#888888]">Diferencia</span>
                 <span style={{ color: diferencia >= 0 ? '#22c55e' : '#ef4444' }}>
                   {diferencia >= 0 ? '+' : ''}{formatCOP(diferencia)}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm font-bold">
+                <span className="text-[#888888]">Saldo real caja</span>
+                <span style={{ color: cierreSaldoReal >= 0 ? '#06b6d4' : '#ef4444' }}>
+                  {formatCOP(cierreSaldoReal)}
                 </span>
               </div>
             </div>
@@ -367,8 +386,16 @@ export default function CajaPage() {
             <p className="text-lg font-bold font-mono-display text-[#ef4444]">{stats.gastos > 0 ? '-' : ''}{formatCOP(stats.gastos || 0)}</p>
           </div>
           <div>
-            <p className="text-[10px] text-[#f5c518] uppercase font-semibold">Disponible</p>
-            <p className="text-lg font-bold font-mono-display text-[#f5c518]">{formatCOP(disponible)}</p>
+            <p className="text-[10px] text-[#888888] uppercase">Desembolsado</p>
+            <p className="text-lg font-bold font-mono-display text-[#f59e0b]">{desembolsadoDia > 0 ? '-' : ''}{formatCOP(desembolsadoDia)}</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-[#f5c518] uppercase font-semibold">Disponible operativo</p>
+            <p className="text-lg font-bold font-mono-display text-[#f5c518]">{formatCOP(disponibleOperativo)}</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-[#06b6d4] uppercase font-semibold">Saldo real caja</p>
+            <p className="text-lg font-bold font-mono-display" style={{ color: saldoRealCaja >= 0 ? '#06b6d4' : '#ef4444' }}>{formatCOP(saldoRealCaja)}</p>
           </div>
         </div>
       </Card>
@@ -408,7 +435,7 @@ export default function CajaPage() {
                     )}
                   </div>
                   {cierre ? (
-                    <div className="grid grid-cols-4 gap-2 mt-2">
+                    <div className="grid grid-cols-5 gap-2 mt-2">
                       <div>
                         <p className="text-[9px] text-[#888888] uppercase">Esperado</p>
                         <p className="text-xs font-semibold text-white">{formatCOP(cierre.totalEsperado)}</p>
@@ -420,6 +447,12 @@ export default function CajaPage() {
                       <div>
                         <p className="text-[9px] text-[#888888] uppercase">Gastos</p>
                         <p className="text-xs font-semibold text-[#ef4444]">{formatCOP(cierre.totalGastos || 0)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] text-[#888888] uppercase">Real</p>
+                        <p className="text-xs font-semibold" style={{ color: (cierre.saldoRealCaja ?? (cierre.totalRecogido - (cierre.totalGastos || 0))) >= 0 ? '#06b6d4' : '#ef4444' }}>
+                          {formatCOP(cierre.saldoRealCaja ?? (cierre.totalRecogido - (cierre.totalGastos || 0)))}
+                        </p>
                       </div>
                       <div>
                         <p className="text-[9px] text-[#888888] uppercase">Dif.</p>

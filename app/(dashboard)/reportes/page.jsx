@@ -303,7 +303,11 @@ export default function ReportesPage() {
             Rendimiento de cobradores
           </p>
           <div className="space-y-3">
-            {cobsData.map((c) => (
+            {cobsData.map((c) => {
+              const totalGastos = c.totalGastos || 0
+              const totalDesembolsado = c.totalDesembolsado || 0
+              const saldoRealCaja = c.saldoRealCaja ?? ((c.totalRecogido || 0) - totalGastos - totalDesembolsado)
+              return (
               <div key={c.id} className="space-y-1.5">
                 <div className="flex justify-between text-sm">
                   <div>
@@ -326,13 +330,16 @@ export default function ReportesPage() {
                     }}
                   />
                 </div>
-                <div className="flex justify-between text-[10px] text-[#888888]">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-1 text-[10px] text-[#888888]">
                   <span>Esperado: <span className="font-mono-display">{formatCOP(c.totalEsperado)}</span></span>
                   <span>Recogido: <span className="font-mono-display">{formatCOP(c.totalRecogido)}</span></span>
+                  <span>Gastos: <span className="font-mono-display text-[#ef4444]">{formatCOP(totalGastos)}</span></span>
+                  <span>Desembolsado: <span className="font-mono-display text-[#f59e0b]">{formatCOP(totalDesembolsado)}</span></span>
+                  <span>Saldo real: <span className="font-mono-display" style={{ color: saldoRealCaja >= 0 ? '#06b6d4' : '#ef4444' }}>{formatCOP(saldoRealCaja)}</span></span>
                   <span>{c.diasTrabajados} días</span>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         </Card>
       )}

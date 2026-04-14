@@ -107,6 +107,12 @@ npx prisma generate
 npx prisma migrate dev
 ```
 
+Para entornos productivos, aplicar migraciones con:
+
+```bash
+npx prisma migrate deploy
+```
+
 5. (Opcional) Cargar datos iniciales:
 
 ```bash
@@ -134,42 +140,79 @@ npm run dev
 Este repositorio corresponde al sistema (`app.control-finanzas.com`).
 Si la landing (`control-finanzas.com`) vive en otro repo, su deploy debe dispararse aparte.
 
-1. Variables de entorno requeridas para deploy de app:
+1. Guardar credenciales persistentes en `.env.deploy.local` (raiz del proyecto).
+	`scripts/deploy-stack.ps1` carga automaticamente, en este orden:
+	- `.env.deploy.local`
+	- `.env.deploy`
 
-```powershell
-$env:DEPLOY_SSH_USER = "usuario"
-$env:DEPLOY_SSH_HOST = "host"
-$env:DEPLOY_SCRIPT_PATH = "/home/deploy-sistema.sh" # opcional
-$env:DEPLOY_SSH_PASSWORD = "..." # opcional (si no usas llave SSH)
+```env
+# App deploy (este repo)
+DEPLOY_SSH_USER=usuario
+DEPLOY_SSH_HOST=host
+DEPLOY_SCRIPT_PATH=/home/deploy-sistema.sh
+DEPLOY_SSH_PASSWORD="..." # opcional (si no usas llave SSH)
+APP_BASE_URL=https://app.control-finanzas.com
+LANDING_BASE_URL=https://control-finanzas.com
+
+# Landing deploy por SSH (opcional)
+LANDING_DEPLOY_SSH_USER=usuario
+LANDING_DEPLOY_SSH_HOST=host
+LANDING_DEPLOY_SCRIPT_PATH=/home/deploy-landing.sh
+LANDING_DEPLOY_SSH_PASSWORD="..." # opcional
+
+# Landing deploy por hook (opcional, alternativa a SSH)
+LANDING_DEPLOY_HOOK_URL=https://...
 ```
 
 2. Opciones para deploy de landing (elige una):
 
 - Opcion A (plataformas tipo Vercel/Netlify/Render): webhook
 
-```powershell
-$env:LANDING_DEPLOY_HOOK_URL = "https://..."
-```
+`LANDING_DEPLOY_HOOK_URL`
 
 - Opcion B (VPS/CyberPanel): deploy por SSH + script remoto
 
+`LANDING_DEPLOY_SSH_USER`, `LANDING_DEPLOY_SSH_HOST`, `LANDING_DEPLOY_SCRIPT_PATH`, `LANDING_DEPLOY_SSH_PASSWORD`
+
+3. (Opcional) Sobre-escribir valores para una sola sesion de terminal:
+
 ```powershell
-$env:LANDING_DEPLOY_SSH_USER = "usuario"
-$env:LANDING_DEPLOY_SSH_HOST = "host"
-$env:LANDING_DEPLOY_SCRIPT_PATH = "/home/deploy-landing.sh" # opcional
-$env:LANDING_DEPLOY_SSH_PASSWORD = "..." # opcional (si no usas llave SSH)
+$env:DEPLOY_SSH_HOST = "otro-host"
 ```
 
-3. Ejecutar deploy completo con verificacion:
+4. Ejecutar deploy completo con verificacion:
 
 ```powershell
 pwsh -File ./scripts/deploy-stack.ps1 -RequireLandingFresh
 ```
 
+Nota: el healthcheck de la app ahora tiene reintentos (8 intentos, 5s entre intentos) para evitar falsos fallos por 503 justo despues del restart.
+
+Importante: en releases con cambios de esquema Prisma (ejemplo: nuevos campos financieros en `CierreCaja`), ejecutar `npx prisma migrate deploy` en el servidor antes de levantar la nueva version.
+
 Opciones utiles:
 
 - Solo app + verificacion de app: `pwsh -File ./scripts/deploy-stack.ps1 -SkipLandingDeploy`
 - Solo verificacion (sin desplegar): `pwsh -File ./scripts/deploy-stack.ps1 -SkipAppDeploy -SkipLandingDeploy`
+
+### Playbook rapido: desplegar landing cuando se necesite
+
+1. En `.env.deploy.local`, activar uno de estos metodos:
+	- Webhook: definir `LANDING_DEPLOY_HOOK_URL`.
+	- SSH: descomentar `LANDING_DEPLOY_SSH_USER`, `LANDING_DEPLOY_SSH_HOST`, `LANDING_DEPLOY_SCRIPT_PATH`, `LANDING_DEPLOY_SSH_PASSWORD`.
+2. Ejecutar deploy con verificacion obligatoria de landing:
+
+```powershell
+pwsh -File ./scripts/deploy-stack.ps1 -RequireLandingFresh
+```
+
+3. Si solo quieres validar ambos dominios sin desplegar:
+
+```powershell
+pwsh -File ./scripts/deploy-stack.ps1 -SkipAppDeploy -RequireLandingFresh
+```
+
+4. Si activaste credenciales SSH de landing temporalmente, vuelve a comentarlas al finalizar para evitar deploys accidentales.
 
 ### CyberPanel (Hostinger) recomendado
 

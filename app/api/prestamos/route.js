@@ -128,7 +128,7 @@ export async function POST(request) {
     }
   }
 
-  const { organizationId } = session.user
+  const { organizationId, rol } = session.user
   const body = await request.json()
   const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado, cuotaManual } = body
 
@@ -156,6 +156,22 @@ export async function POST(request) {
     where: { id: clienteId, organizationId },
   })
   if (!cliente) return Response.json({ error: 'Cliente no encontrado' }, { status: 404 })
+
+  // Evita desalineaciones de caja: el cobrador solo puede crear préstamos en su ruta activa.
+  if (rol === 'cobrador') {
+    const rutaActiva = await prisma.ruta.findFirst({
+      where: { organizationId, cobradorId: session.user.id, activo: true },
+      select: { id: true },
+    })
+
+    if (!rutaActiva) {
+      return Response.json({ error: 'No tienes una ruta activa asignada' }, { status: 400 })
+    }
+
+    if (cliente.rutaId !== rutaActiva.id) {
+      return Response.json({ error: 'Solo puedes crear préstamos para clientes de tu ruta activa' }, { status: 403 })
+    }
+  }
 
   // Calcular valores del préstamo (cuotaManual opcional sobreescribe la cuota calculada)
   const cuotaManualNum = Number(cuotaManual) || 0

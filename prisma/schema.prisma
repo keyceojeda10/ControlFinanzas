@@ -256,6 +256,9 @@ model CierreCaja {
   totalEsperado  Float
   totalRecogido  Float
   totalGastos    Float    @default(0)
+  totalDesembolsado Float @default(0)
+  saldoOperativo  Float   @default(0)
+  saldoRealCaja   Float   @default(0)
   diferencia     Float
   createdAt      DateTime @default(now())
 

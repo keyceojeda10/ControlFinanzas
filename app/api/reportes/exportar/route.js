@@ -136,23 +136,46 @@ export async function GET(req) {
         rutas: { where: { activo: true }, take: 1, select: { nombre: true } },
         cierresCaja: {
           where: { fecha: { gte: fechaDesde, lte: fechaHasta } },
-          select: { totalRecogido: true, totalEsperado: true },
+          select: {
+            totalRecogido: true,
+            totalEsperado: true,
+            totalGastos: true,
+            totalDesembolsado: true,
+            saldoOperativo: true,
+            saldoRealCaja: true,
+          },
         },
       },
     })
 
-    const header = ['Cobrador', 'Ruta', 'Días Trabajados', 'Total Esperado', 'Total Recogido', 'Diferencia', 'Eficiencia %']
+    const header = ['Cobrador', 'Ruta', 'Días Trabajados', 'Total Esperado', 'Total Recogido', 'Total Gastos', 'Total Desembolsado', 'Saldo Operativo', 'Saldo Real Caja', 'Diferencia', 'Eficiencia %']
     const dataRows = rows.map((c) => {
       const esperado  = c.cierresCaja.reduce((a, ci) => a + ci.totalEsperado, 0)
       const recogido  = c.cierresCaja.reduce((a, ci) => a + ci.totalRecogido, 0)
+      const gastos = c.cierresCaja.reduce((a, ci) => a + (ci.totalGastos || 0), 0)
+      const desembolsado = c.cierresCaja.reduce((a, ci) => a + (ci.totalDesembolsado || 0), 0)
+      const saldoOperativo = c.cierresCaja.reduce((a, ci) => a + (ci.saldoOperativo ?? (ci.totalRecogido - (ci.totalGastos || 0))), 0)
+      const saldoRealCaja = c.cierresCaja.reduce((a, ci) => a + (ci.saldoRealCaja ?? ((ci.totalRecogido - (ci.totalGastos || 0)) - (ci.totalDesembolsado || 0))), 0)
       const eficiencia = esperado > 0 ? Math.round((recogido / esperado) * 100) : 0
-      return [c.nombre, c.rutas[0]?.nombre ?? '', c.cierresCaja.length, esperado, recogido, recogido - esperado, eficiencia]
+      return [
+        c.nombre,
+        c.rutas[0]?.nombre ?? '',
+        c.cierresCaja.length,
+        esperado,
+        recogido,
+        gastos,
+        desembolsado,
+        saldoOperativo,
+        saldoRealCaja,
+        recogido - esperado,
+        eficiencia,
+      ]
     })
 
     const data = [...headerRow('Cobradores', desde, hasta), header, ...dataRows]
     const ws = XLSX.utils.aoa_to_sheet(data)
     const startRow = 6
-    ;['D', 'E', 'F'].forEach((col) => setCurrency(ws, col, startRow, startRow + dataRows.length - 1))
+    ;['D', 'E', 'F', 'G', 'H', 'I', 'J'].forEach((col) => setCurrency(ws, col, startRow, startRow + dataRows.length - 1))
     XLSX.utils.book_append_sheet(wb, ws, 'Cobradores')
   }
 

@@ -29,7 +29,14 @@ export async function GET(req) {
       },
       cierresCaja: {
         where: { fecha: { gte: fechaDesde, lte: fechaHasta } },
-        select: { totalRecogido: true, totalEsperado: true },
+        select: {
+          totalRecogido: true,
+          totalEsperado: true,
+          totalGastos: true,
+          totalDesembolsado: true,
+          saldoOperativo: true,
+          saldoRealCaja: true,
+        },
       },
     },
   })
@@ -38,6 +45,10 @@ export async function GET(req) {
     const ruta = c.rutas?.[0]
     const totalEsperado  = c.cierresCaja.reduce((a, ci) => a + ci.totalEsperado, 0)
     const totalRecogido  = c.cierresCaja.reduce((a, ci) => a + ci.totalRecogido, 0)
+    const totalGastos = c.cierresCaja.reduce((a, ci) => a + (ci.totalGastos || 0), 0)
+    const totalDesembolsado = c.cierresCaja.reduce((a, ci) => a + (ci.totalDesembolsado || 0), 0)
+    const saldoOperativo = c.cierresCaja.reduce((a, ci) => a + (ci.saldoOperativo ?? (ci.totalRecogido - (ci.totalGastos || 0))), 0)
+    const saldoRealCaja = c.cierresCaja.reduce((a, ci) => a + (ci.saldoRealCaja ?? ((ci.totalRecogido - (ci.totalGastos || 0)) - (ci.totalDesembolsado || 0))), 0)
     const diasTrabajados = c.cierresCaja.length
     const eficiencia     = totalEsperado > 0 ? Math.round((totalRecogido / totalEsperado) * 100) : 0
     const clientesCount  = ruta?.clientes?.length ?? 0
@@ -49,6 +60,10 @@ export async function GET(req) {
       clientes:     clientesCount,
       totalEsperado,
       totalRecogido,
+      totalGastos,
+      totalDesembolsado,
+      saldoOperativo,
+      saldoRealCaja,
       diferencia:   totalRecogido - totalEsperado,
       diasTrabajados,
       eficiencia,

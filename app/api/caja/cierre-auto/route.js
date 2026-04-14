@@ -26,6 +26,45 @@ async function calcularEsperado(organizationId, cobradorId) {
   )
 }
 
+async function calcularDesembolsadoDia(organizationId, cobradorId, fechaInicio, fechaFin) {
+  const [prestamosRuta, movimientosCreador] = await Promise.all([
+    prisma.prestamo.findMany({
+      where: {
+        organizationId,
+        createdAt: { gte: fechaInicio, lte: fechaFin },
+        cliente: { ruta: { cobradorId } },
+      },
+      select: { id: true, montoPrestado: true },
+    }),
+    prisma.movimientoCapital.findMany({
+      where: {
+        organizationId,
+        tipo: 'desembolso',
+        createdAt: { gte: fechaInicio, lte: fechaFin },
+        creadoPorId: cobradorId,
+        referenciaTipo: 'prestamo',
+      },
+      select: { referenciaId: true, monto: true },
+    }),
+  ])
+
+  const idsContabilizados = new Set(prestamosRuta.map((p) => p.id))
+  let total = prestamosRuta.reduce((acc, p) => acc + p.montoPrestado, 0)
+
+  for (const mov of movimientosCreador) {
+    if (!mov.referenciaId) {
+      total += mov.monto
+      continue
+    }
+    if (!idsContabilizados.has(mov.referenciaId)) {
+      total += mov.monto
+      idsContabilizados.add(mov.referenciaId)
+    }
+  }
+
+  return total
+}
+
 // Obtiene todos los cierres del día para una organización
 async function getCierresDelDia(organizationId, fecha) {
   const inicioDia = new Date(fecha)
@@ -114,6 +153,9 @@ export async function POST(request) {
         })
 
         const totalGastos = gastosDia._sum?.monto || 0
+        const totalDesembolsado = await calcularDesembolsadoDia(org.id, cobrador.id, fechaCierre, fechaCierreFin)
+        const saldoOperativo = -totalGastos
+        const saldoRealCaja = saldoOperativo - totalDesembolsado
 
         // Crear cierre automático (con totalRecogido = 0 si no hubo)
         const cierre = await prisma.cierreCaja.create({
@@ -124,6 +166,9 @@ export async function POST(request) {
             totalEsperado: Math.round(totalEsperado),
             totalRecogido: 0,
             totalGastos: Math.round(totalGastos),
+            totalDesembolsado: Math.round(totalDesembolsado),
+            saldoOperativo: Math.round(saldoOperativo),
+            saldoRealCaja: Math.round(saldoRealCaja),
             diferencia: Math.round(-totalEsperado), // Negativo = no se registró
           },
         })

@@ -54,6 +54,60 @@ async function calcularEsperadoReal(organizationId, cobradorId = null) {
       a + c.prestamos.reduce((b, p) => b + p.cuotaDiaria, 0), 0), 0)
 }
 
+// Calcula desembolsos realizados en el día para reflejar el saldo real de caja.
+async function calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId = null) {
+  const baseWherePrestamos = {
+    organizationId,
+    createdAt: { gte: inicio, lt: fin },
+  }
+
+  // Vista global owner: total desembolsado de todos los préstamos del día.
+  if (!cobradorId) {
+    const desembolsosDia = await prisma.prestamo.aggregate({
+      where: baseWherePrestamos,
+      _sum: { montoPrestado: true },
+    })
+    return desembolsosDia._sum?.montoPrestado || 0
+  }
+
+  // Vista por cobrador: combinar (a) clientes de su ruta y (b) préstamos creados por su perfil.
+  const [prestamosRuta, movimientosCreador] = await Promise.all([
+    prisma.prestamo.findMany({
+      where: {
+        ...baseWherePrestamos,
+        cliente: { ruta: { cobradorId } },
+      },
+      select: { id: true, montoPrestado: true },
+    }),
+    prisma.movimientoCapital.findMany({
+      where: {
+        organizationId,
+        tipo: 'desembolso',
+        createdAt: { gte: inicio, lt: fin },
+        creadoPorId: cobradorId,
+        referenciaTipo: 'prestamo',
+      },
+      select: { referenciaId: true, monto: true },
+    }),
+  ])
+
+  const idsContabilizados = new Set(prestamosRuta.map((p) => p.id))
+  let total = prestamosRuta.reduce((acc, p) => acc + p.montoPrestado, 0)
+
+  for (const mov of movimientosCreador) {
+    if (!mov.referenciaId) {
+      total += mov.monto
+      continue
+    }
+    if (!idsContabilizados.has(mov.referenciaId)) {
+      total += mov.monto
+      idsContabilizados.add(mov.referenciaId)
+    }
+  }
+
+  return total
+}
+
 // Calcula estadísticas del día
 async function getStatsDia(organizationId, fecha, cobradorId = null) {
   // Convertir fecha Colombia a UTC
@@ -93,8 +147,11 @@ async function getStatsDia(organizationId, fecha, cobradorId = null) {
   })
 
   const gastos = gastosDia._sum?.monto || 0
+  const desembolsadoDia = await calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId)
   const diferencia = recogida - esperado
-  const disponible = recogida - gastos
+  const disponibleOperativo = recogida - gastos
+  const saldoRealCaja = disponibleOperativo - desembolsadoDia
+  const disponible = disponibleOperativo // Compatibilidad temporal
 
   // Calcular tasa de recaudo
   const tasaRecaudo = esperado > 0 ? Math.round((recogida / esperado) * 100) : 0
@@ -103,7 +160,10 @@ async function getStatsDia(organizationId, fecha, cobradorId = null) {
     esperado,
     recogida,
     gastos,
+    desembolsadoDia,
     diferencia,
+    disponibleOperativo,
+    saldoRealCaja,
     disponible,
     tasaRecaudo,
   }
@@ -144,7 +204,8 @@ export async function GET(request) {
   })
 
   // Obtener stats del día
-  const statsDia = await getStatsDia(organizationId, fechaBase, rol === 'cobrador' ? userId : null)
+  const statsCobradorId = rol === 'cobrador' ? userId : (rol === 'owner' ? (cobradorParam || null) : null)
+  const statsDia = await getStatsDia(organizationId, fechaBase, statsCobradorId)
 
   // Obtener gastos del día para mostrar en lista
   const whereGastos = {
@@ -263,6 +324,9 @@ export async function POST(request) {
   })
 
   const totalGastos = gastosDia._sum?.monto || 0
+  const totalDesembolsadoDia = await calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId)
+  const saldoOperativoDia = totalRecogido - totalGastos
+  const saldoRealCajaDia = saldoOperativoDia - totalDesembolsadoDia
   const diferencia = totalRecogido - totalEsperado
 
   const cierre = await prisma.cierreCaja.create({
@@ -273,11 +337,21 @@ export async function POST(request) {
       totalEsperado: Math.round(totalEsperado),
       totalRecogido: Math.round(totalRecogido),
       totalGastos: Math.round(totalGastos),
+      totalDesembolsado: Math.round(totalDesembolsadoDia),
+      saldoOperativo: Math.round(saldoOperativoDia),
+      saldoRealCaja: Math.round(saldoRealCajaDia),
       diferencia: Math.round(diferencia),
     },
     include: { cobrador: { select: { id: true, nombre: true } } },
   })
 
   logActividad({ session, accion: 'cierre_caja', entidadTipo: 'caja', entidadId: cierre.id, detalle: `Cierre de caja ${cobrador.nombre} - recogido $${Math.round(totalRecogido).toLocaleString('es-CO')}`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
-  return Response.json(cierre, { status: 201 })
+  return Response.json({
+    ...cierre,
+    resumenFinanciero: {
+      totalDesembolsadoDia: cierre.totalDesembolsado,
+      saldoOperativoDia: cierre.saldoOperativo,
+      saldoRealCajaDia: cierre.saldoRealCaja,
+    },
+  }, { status: 201 })
 }
