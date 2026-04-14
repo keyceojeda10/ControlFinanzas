@@ -14,6 +14,32 @@ function Write-Step {
     Write-Host "[deploy] $Message" -ForegroundColor Cyan
 }
 
+$script:SupportsUseBasicParsing = $null
+function Invoke-WebRequestCompat {
+    param(
+        [string]$Uri,
+        [string]$Method = 'Get',
+        [int]$TimeoutSec = 30
+    )
+
+    if ($null -eq $script:SupportsUseBasicParsing) {
+        $command = Get-Command Invoke-WebRequest -ErrorAction Stop
+        $script:SupportsUseBasicParsing = $command.Parameters.ContainsKey('UseBasicParsing')
+    }
+
+    $requestArgs = @{
+        Uri = $Uri
+        Method = $Method
+        TimeoutSec = $TimeoutSec
+    }
+
+    if ($script:SupportsUseBasicParsing) {
+        $requestArgs.UseBasicParsing = $true
+    }
+
+    return Invoke-WebRequest @requestArgs
+}
+
 function Set-EnvVarIfMissing {
     param(
         [string]$Name,
@@ -78,7 +104,7 @@ function Invoke-HttpGet {
 
     for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
         try {
-            return Invoke-WebRequest -Uri $Url -TimeoutSec 30
+            return Invoke-WebRequestCompat -Uri $Url -Method 'Get' -TimeoutSec 30
         }
         catch {
             if ($attempt -ge $MaxAttempts) {
@@ -163,7 +189,7 @@ function Test-AppPricing {
 
     foreach ($p in $paths) {
         try {
-            $js = (Invoke-WebRequest -Uri ("$AppBaseUrl$p") -TimeoutSec 30).Content
+            $js = (Invoke-WebRequestCompat -Uri ("$AppBaseUrl$p") -Method 'Get' -TimeoutSec 30).Content
         }
         catch {
             continue
@@ -200,7 +226,7 @@ function Test-LandingPricing {
 
     foreach ($p in $paths) {
         try {
-            $js = (Invoke-WebRequest -Uri ("$LandingBaseUrl$p") -TimeoutSec 30).Content
+            $js = (Invoke-WebRequestCompat -Uri ("$LandingBaseUrl$p") -Method 'Get' -TimeoutSec 30).Content
         }
         catch {
             continue
@@ -256,7 +282,7 @@ $landingTriggered = $false
 if (-not $SkipLandingDeploy) {
     if (-not [string]::IsNullOrWhiteSpace($env:LANDING_DEPLOY_HOOK_URL)) {
         Write-Step 'Triggering landing deploy hook.'
-        $resp = Invoke-WebRequest -Uri $env:LANDING_DEPLOY_HOOK_URL -Method POST -TimeoutSec 30
+        $resp = Invoke-WebRequestCompat -Uri $env:LANDING_DEPLOY_HOOK_URL -Method 'Post' -TimeoutSec 30
         Write-Step ("Landing hook status: " + [int]$resp.StatusCode)
         $landingTriggered = $true
     }
