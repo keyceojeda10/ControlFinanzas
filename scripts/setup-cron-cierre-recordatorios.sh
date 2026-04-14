@@ -26,13 +26,13 @@ if [ ! -f "$ENV_FILE" ]; then
   exit 1
 fi
 
-CRON_SECRET_VALUE=$(grep -E '^CRON_SECRET=' "$ENV_FILE" | tail -n1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
+CRON_SECRET_VALUE=$( (grep -E '^CRON_SECRET=' "$ENV_FILE" || true) | tail -n1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
 if [ -z "${CRON_SECRET_VALUE:-}" ]; then
   echo "Error: CRON_SECRET no esta definido en $ENV_FILE"
   exit 1
 fi
 
-APP_BASE_URL_VALUE=$(grep -E '^APP_BASE_URL=' "$ENV_FILE" | tail -n1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
+APP_BASE_URL_VALUE=$( (grep -E '^APP_BASE_URL=' "$ENV_FILE" || true) | tail -n1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
 if [ -z "${APP_BASE_URL_VALUE:-}" ]; then
   APP_BASE_URL_VALUE="https://app.control-finanzas.com"
 fi
