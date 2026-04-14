@@ -196,6 +196,7 @@ export default function RutaDetallePage({ params }) {
   const [pagandoRapido,  setPagandoRapido]  = useState(null) // clienteId while paying
   const [pagoRapidoOk,   setPagoRapidoOk]   = useState(null) // clienteId after success
   const [modalPagoRapido, setModalPagoRapido] = useState(null) // { id, nombre, cuota, prestamoActivo }
+  const [modalSeleccionPrestamo, setModalSeleccionPrestamo] = useState(null) // { clienteId, clienteNombre, idxRuta, prestamos }
   const [undoPago,       setUndoPago]       = useState(null)  // { pagoId, prestamoId, clienteNombre, timer }
   const undoTimerRef = useRef(null)
   const [modalDiasSC,    setModalDiasSC]    = useState(false)
@@ -207,6 +208,101 @@ export default function RutaDetallePage({ params }) {
   const getColombiaDateStr = () => {
     const d = new Date(Date.now() - 5 * 60 * 60 * 1000)
     return d.toISOString().slice(0, 10)
+  }
+
+  const frecuenciaPrestamoLabel = (f) => {
+    if (f === 'semanal') return 'Semanal'
+    if (f === 'quincenal') return 'Quincenal'
+    if (f === 'mensual') return 'Mensual'
+    return 'Diario'
+  }
+
+  const normalizarNavCliente = (clienteRuta) => ({
+    id: clienteRuta.id,
+    nombre: clienteRuta.nombre,
+    prestamoActivo: clienteRuta.prestamoActivo ?? null,
+    prestamosActivosIds: Array.isArray(clienteRuta.prestamosActivos)
+      ? clienteRuta.prestamosActivos.map((p) => p.id).filter(Boolean)
+      : (clienteRuta.prestamoActivo ? [clienteRuta.prestamoActivo] : []),
+  })
+
+  const guardarContextoRuta = (clienteRuta, idxRuta) => {
+    if (!ruta?.clientes?.length) return
+
+    const currentIndex = idxRuta >= 0 ? idxRuta : ruta.clientes.findIndex((cl) => cl.id === clienteRuta.id)
+    if (currentIndex < 0) return
+
+    const nextIdx = Math.min(currentIndex + 1, ruta.clientes.length - 1)
+    const nextCliente = ruta.clientes[nextIdx]
+    if (nextCliente?.id) {
+      sessionStorage.setItem(`ruta-scroll-${id}`, nextCliente.id)
+    }
+
+    localStorage.setItem(`cf-ruta-progress-${id}`, JSON.stringify({
+      clienteId: clienteRuta.id,
+      clienteNombre: clienteRuta.nombre,
+      index: currentIndex,
+      date: getColombiaDateStr(),
+    }))
+
+    sessionStorage.setItem('cf-ruta-nav', JSON.stringify({
+      rutaId: id,
+      rutaNombre: ruta.nombre,
+      clientes: ruta.clientes.map(normalizarNavCliente),
+      currentIndex,
+    }))
+  }
+
+  const navegarACobroCliente = (clienteRuta, idxRuta, prestamoIdForzado = null) => {
+    if (!clienteRuta) return
+    guardarContextoRuta(clienteRuta, idxRuta)
+
+    const prestamosIds = Array.isArray(clienteRuta.prestamosActivos)
+      ? clienteRuta.prestamosActivos.map((p) => p.id).filter(Boolean)
+      : []
+
+    const prestamoObjetivo = prestamoIdForzado
+      || (prestamosIds.length === 1 ? prestamosIds[0] : null)
+      || clienteRuta.prestamoActivo
+      || null
+
+    const url = prestamoObjetivo
+      ? `/prestamos/${prestamoObjetivo}?openPago=1&fromRuta=1`
+      : `/clientes/${clienteRuta.id}`
+
+    if (navigator.onLine) router.push(url)
+    else window.location.href = url
+  }
+
+  const abrirClienteDesdeRuta = (clienteRuta, idxVista) => {
+    if (!clienteRuta || !ruta?.clientes?.length) return
+
+    const idxRuta = ruta.clientes.findIndex((cl) => cl.id === clienteRuta.id)
+    const idxObjetivo = idxRuta >= 0 ? idxRuta : idxVista
+    const prestamosActivos = Array.isArray(clienteRuta.prestamosActivos) ? clienteRuta.prestamosActivos : []
+
+    if (prestamosActivos.length > 1) {
+      setModalSeleccionPrestamo({
+        clienteId: clienteRuta.id,
+        clienteNombre: clienteRuta.nombre,
+        idxRuta: idxObjetivo,
+        prestamos: prestamosActivos,
+      })
+      return
+    }
+
+    const prestamoUnico = prestamosActivos[0]?.id ?? clienteRuta.prestamoActivo ?? null
+    navegarACobroCliente(clienteRuta, idxObjetivo, prestamoUnico)
+  }
+
+  const irAPrestamoSeleccionado = (prestamoId) => {
+    if (!modalSeleccionPrestamo) return
+    const payload = modalSeleccionPrestamo
+    setModalSeleccionPrestamo(null)
+
+    const clienteRuta = ruta?.clientes?.find((cl) => cl.id === payload.clienteId)
+    if (!clienteRuta) return
+    navegarACobroCliente(clienteRuta, payload.idxRuta, prestamoId)
   }
 
   const fetchRuta = useCallback(async ({ soft = false } = {}) => {
@@ -425,13 +521,23 @@ export default function RutaDetallePage({ params }) {
   const quitarCliente = async (clienteId) => {
     setConfirmQuitar(null)
     setQuitando(clienteId)
-    await fetch(`/api/rutas/${id}/clientes`, {
-      method:  'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ clienteId }),
-    })
-    setQuitando(null)
-    fetchRuta()
+    try {
+      const res = await fetch(`/api/rutas/${id}/clientes`, {
+        method:  'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ clienteId }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        alert(data.error ?? 'No se pudo quitar el cliente de la ruta')
+        return
+      }
+      fetchRuta()
+    } catch {
+      alert('Error de conexión')
+    } finally {
+      setQuitando(null)
+    }
   }
 
   const registrarCierre = async (e) => {
@@ -996,11 +1102,7 @@ export default function RutaDetallePage({ params }) {
           </div>
         ) : (
           <div className="space-y-1.5" ref={listRef}>
-            {[...clientesFiltrados].sort((a, b) => {
-              const aComp = a.estado === 'completado' ? 1 : 0
-              const bComp = b.estado === 'completado' ? 1 : 0
-              return aComp - bComp
-            }).map((c, idx) => {
+            {clientesFiltrados.map((c, idx) => {
               const isCompleted = c.estado === 'completado'
               const pendienteHoy = Boolean(
                 c.cobroPendienteHoy ?? (!c.pagoHoy && !c.hoySinCobro && c.estado !== 'completado')
@@ -1077,20 +1179,7 @@ export default function RutaDetallePage({ params }) {
                   {/* Client content — clickable */}
                   <div
                     className="flex-1 py-3 pl-2 pr-3 min-w-0 cursor-pointer active:opacity-80"
-                    onClick={() => {
-                      const nextIdx = Math.min(idx + 1, ruta.clientes.length - 1)
-                      sessionStorage.setItem(`ruta-scroll-${id}`, ruta.clientes[nextIdx].id)
-                      localStorage.setItem(`cf-ruta-progress-${id}`, JSON.stringify({
-                        clienteId: c.id, clienteNombre: c.nombre, index: idx, date: getColombiaDateStr(),
-                      }))
-                      sessionStorage.setItem('cf-ruta-nav', JSON.stringify({
-                        rutaId: id, rutaNombre: ruta.nombre,
-                        clientes: ruta.clientes.map(cl => ({ id: cl.id, nombre: cl.nombre })),
-                        currentIndex: idx,
-                      }))
-                      if (navigator.onLine) { router.push(`/clientes/${c.id}`) }
-                      else { window.location.href = `/clientes/${c.id}` }
-                    }}
+                    onClick={() => abrirClienteDesdeRuta(c, idx)}
                   >
                     <div className="flex items-start gap-3 min-w-0">
                       {/* Info */}
@@ -1430,6 +1519,42 @@ export default function RutaDetallePage({ params }) {
         <p className="text-sm text-[#888]">
           <span className="text-white font-medium">{confirmQuitar?.nombre}</span> sera removido de esta ruta. Podras reasignarlo despues.
         </p>
+      </Modal>
+
+      {/* Modal: elegir préstamo a cobrar (cuando el cliente tiene varios activos) */}
+      <Modal
+        open={!!modalSeleccionPrestamo}
+        onClose={() => setModalSeleccionPrestamo(null)}
+        title="Elegir préstamo para cobrar"
+      >
+        {modalSeleccionPrestamo && (
+          <div className="space-y-3">
+            <p className="text-sm text-[#888]">
+              <span className="text-white font-medium">{modalSeleccionPrestamo.clienteNombre}</span> tiene varios préstamos activos.
+              Elige cuál quieres cobrar ahora.
+            </p>
+            <div className="space-y-2">
+              {modalSeleccionPrestamo.prestamos.map((p, i) => (
+                <button
+                  key={p.id}
+                  onClick={() => irAPrestamoSeleccionado(p.id)}
+                  className="w-full text-left px-3 py-3 rounded-[12px] border border-[#2a2a2a] bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(245,197,24,0.08)] hover:border-[rgba(245,197,24,0.3)] transition-all active:scale-[0.99]"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-white">Préstamo {i + 1}</p>
+                    <span className="text-sm font-bold text-[#22c55e] font-mono-display">
+                      {formatCOP(p.saldoPendiente ?? 0)}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#888] mt-1">
+                    {frecuenciaPrestamoLabel(p.frecuencia)} · Cuota {formatCOP(p.cuotaDiaria ?? 0)}
+                    {p.diasMora > 0 ? ` · ${p.diasMora}d mora` : ''}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* Modal: cobro rápido — elegir método */}

@@ -140,6 +140,18 @@ export default function RegistrarPago({
     const info = getNextInRuta()
     if (!info) return
     const getDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10)
+
+    const getRutaCobroUrl = (clienteRuta) => {
+      const prestamosIds = Array.isArray(clienteRuta?.prestamosActivosIds)
+        ? clienteRuta.prestamosActivosIds.filter(Boolean)
+        : (clienteRuta?.prestamoActivo ? [clienteRuta.prestamoActivo] : [])
+
+      if (prestamosIds.length === 1) {
+        return `/prestamos/${prestamosIds[0]}?openPago=1&fromRuta=1`
+      }
+      return `/clientes/${clienteRuta.id}`
+    }
+
     if (info.isLast) {
       sessionStorage.removeItem('cf-ruta-nav')
       const url = `/rutas/${rutaNav.rutaId}`
@@ -150,7 +162,7 @@ export default function RegistrarPago({
       localStorage.setItem(`cf-ruta-progress-${rutaNav.rutaId}`, JSON.stringify({
         clienteId: info.next.id, clienteNombre: info.next.nombre, index: info.idx + 1, date: getDate(),
       }))
-      const url = `/clientes/${info.next.id}`
+      const url = getRutaCobroUrl(info.next)
       navigator.onLine ? router.push(url) : (window.location.href = url)
     }
   }

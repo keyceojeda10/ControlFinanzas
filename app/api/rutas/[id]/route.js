@@ -98,6 +98,7 @@ export async function GET(request, { params }) {
     let cuotaCliente = 0
     let pagadoHoy    = 0
     let mora         = 0
+    const prestamosActivos = []
     let ultimaFechaPago = null
     let frecuencia   = 'diario'
     let proximoCobro = null
@@ -115,7 +116,15 @@ export async function GET(request, { params }) {
       const montoPagadoHoy = pagosHoy.filter(pg => !['recargo', 'descuento'].includes(pg.tipo)).reduce((a, pg) => a + pg.montoPagado, 0)
       pagadoHoy    += montoPagadoHoy
       recaudadoHoy += montoPagadoHoy
-      mora = Math.max(mora, calcularDiasMora(p, diasExcluidos))
+      const moraPrestamo = calcularDiasMora(p, diasExcluidos)
+      mora = Math.max(mora, moraPrestamo)
+      prestamosActivos.push({
+        id: p.id,
+        cuotaDiaria: p.cuotaDiaria,
+        saldoPendiente: Math.round(saldoPendientePrestamo),
+        diasMora: moraPrestamo,
+        frecuencia: p.frecuencia || 'diario',
+      })
 
       // Último pago más reciente (pagos ya vienen ordenados por fechaPago desc)
       if (p.pagos.length > 0) {
@@ -172,6 +181,7 @@ export async function GET(request, { params }) {
       hoySinCobro: _hoySinCobro,
       cobroPendienteHoy: pendienteHoyCliente,
       prestamoActivo: c.prestamos[0]?.id ?? null,
+      prestamosActivos,
       frecuencia,
       diasParaCobro,
       proximoCobroLabel: proximoCobro ? formatFechaCobro(proximoCobro) : null,
@@ -222,6 +232,17 @@ export async function PATCH(request, { params }) {
   if (!ruta) return Response.json({ error: 'Ruta no encontrada' }, { status: 404 })
 
   const { nombre, cobradorId, diasSinCobro } = await request.json()
+
+  // Validar cobrador si se envía (mismo tenant y rol correcto)
+  if (cobradorId !== undefined && cobradorId !== null && cobradorId !== '') {
+    const cobrador = await prisma.user.findFirst({
+      where: { id: cobradorId, organizationId: session.user.organizationId, rol: 'cobrador' },
+      select: { id: true },
+    })
+    if (!cobrador) {
+      return Response.json({ error: 'Cobrador no válido' }, { status: 400 })
+    }
+  }
 
   let diasSinCobroVal
   try {

@@ -25,6 +25,11 @@ export async function GET(request) {
 
   const { organizationId, rol, rutaId } = session.user
 
+  // Cobrador sin ruta asignada no debe ver rutas de la organización
+  if (rol === 'cobrador' && !rutaId) {
+    return Response.json([])
+  }
+
   // Cobrador: solo su ruta
   const where = rol === 'cobrador' && rutaId
     ? { id: rutaId, organizationId }

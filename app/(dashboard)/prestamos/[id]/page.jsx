@@ -120,6 +120,21 @@ export default function PrestamoDetallePage({ params }) {
     }
   }, [lastSyncedAt, fetchPrestamo])
 
+  // Intent param desde rutas: abrir modal de pago al entrar
+  useEffect(() => {
+    if (!prestamo || modalPago) return
+    if (typeof window === 'undefined') return
+
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('openPago') !== '1') return
+    if (prestamo.estado !== 'activo' || prestamo.pagoHoy) return
+
+    setModalPago(true)
+    params.delete('openPago')
+    const search = params.toString()
+    window.history.replaceState({}, '', `${window.location.pathname}${search ? `?${search}` : ''}`)
+  }, [prestamo, modalPago])
+
   const handlePagoExito = (prestamoActualizado, pagoRegistrado) => {
     setPrestamo(prestamoActualizado)
     setUltimoPago(pagoRegistrado ?? null)
@@ -168,6 +183,16 @@ export default function PrestamoDetallePage({ params }) {
   const badge      = estadoBadge[estado] ?? estadoBadge.activo
   const estaActivo = estado === 'activo'
   const enMora     = diasMora > 3
+  const getRutaCobroUrl = (clienteRuta) => {
+    const prestamosIds = Array.isArray(clienteRuta?.prestamosActivosIds)
+      ? clienteRuta.prestamosActivosIds.filter(Boolean)
+      : (clienteRuta?.prestamoActivo ? [clienteRuta.prestamoActivo] : [])
+
+    if (prestamosIds.length === 1) {
+      return `/prestamos/${prestamosIds[0]}?openPago=1&fromRuta=1`
+    }
+    return `/clientes/${clienteRuta.id}`
+  }
   const cobroInfo = estaActivo && proximoCobro
     ? {
         label: diasMora > 0 ? 'Debió cobrarse' : 'Próximo cobro',
@@ -269,7 +294,7 @@ export default function PrestamoDetallePage({ params }) {
           localStorage.setItem(`cf-ruta-progress-${rutaNav.rutaId}`, JSON.stringify({
             clienteId: nextCliente.id, clienteNombre: nextCliente.nombre, index: idx + 1, date: getDate(),
           }))
-          const url = `/clientes/${nextCliente.id}`
+          const url = getRutaCobroUrl(nextCliente)
           navigator.onLine ? router.push(url) : (window.location.href = url)
         }
 

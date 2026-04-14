@@ -161,6 +161,24 @@ export async function PATCH(request, { params }) {
     }
   }
 
+  // Validar cambios de ruta: owner puede reasignar (si existe en su org);
+  // cobrador con permiso puede editar campos del cliente, pero no cambiar su ruta.
+  if (rutaId !== undefined) {
+    if (session.user.rol !== 'owner' && rutaId !== clienteBase.rutaId) {
+      return Response.json({ error: 'Solo el administrador puede cambiar la ruta' }, { status: 403 })
+    }
+
+    if (session.user.rol === 'owner' && rutaId) {
+      const rutaValida = await prisma.ruta.findFirst({
+        where: { id: rutaId, organizationId: session.user.organizationId },
+        select: { id: true },
+      })
+      if (!rutaValida) {
+        return Response.json({ error: 'Ruta no válida' }, { status: 400 })
+      }
+    }
+  }
+
   // Si se cambió dirección pero no se enviaron coords, geocodificar
   if (lat === undefined && lng === undefined && direccion !== undefined && direccion?.trim()) {
     const geo = await geocodeAddress(direccion.trim())

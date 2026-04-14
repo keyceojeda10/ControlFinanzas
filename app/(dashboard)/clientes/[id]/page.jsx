@@ -119,6 +119,7 @@ export default function ClienteDetallePage({ params }) {
       const data = await res.json()
       if (data.error === 'tiene_prestamos') {
         setDeleteData(data.prestamos)
+        setShowDeleteModal(true)
         return
       }
       if (!res.ok) { alert(data.error || 'Error'); return }
@@ -197,6 +198,17 @@ export default function ClienteDetallePage({ params }) {
   const prestamosActivos = cliente.prestamos?.filter((p) => p.estado === 'activo') ?? []
   const historial        = cliente.prestamos?.filter((p) => p.estado !== 'activo')  ?? []
 
+  const getRutaCobroUrl = (clienteRuta) => {
+    const prestamosIds = Array.isArray(clienteRuta?.prestamosActivosIds)
+      ? clienteRuta.prestamosActivosIds.filter(Boolean)
+      : (clienteRuta?.prestamoActivo ? [clienteRuta.prestamoActivo] : [])
+
+    if (prestamosIds.length === 1) {
+      return `/prestamos/${prestamosIds[0]}?openPago=1&fromRuta=1`
+    }
+    return `/clientes/${clienteRuta.id}`
+  }
+
   const navegarEnRuta = (direction) => {
     if (!rutaNav) return
     const newIdx = rutaNav.currentIndex + direction
@@ -212,10 +224,11 @@ export default function ClienteDetallePage({ params }) {
       index: newIdx,
       date: getColombiaDateStr(),
     }))
+    const url = getRutaCobroUrl(next)
     if (navigator.onLine) {
-      router.push(`/clientes/${next.id}`)
+      router.push(url)
     } else {
-      window.location.href = `/clientes/${next.id}`
+      window.location.href = url
     }
   }
 
@@ -357,7 +370,7 @@ export default function ClienteDetallePage({ params }) {
                 <Button
                   size="sm"
                   variant="secondary"
-                  onClick={() => { setShowDeleteModal(true); handleDelete() }}
+                  onClick={handleDelete}
                   disabled={actionLoading}
                   className="!text-[#ef4444] !border-[rgba(239,68,68,0.2)] hover:!bg-[rgba(239,68,68,0.1)]"
                 >
@@ -388,6 +401,14 @@ export default function ClienteDetallePage({ params }) {
         <Card>
           <div className="text-center py-4">
             <p className="text-sm text-[#888888]">Sin préstamos activos</p>
+            {puedeCrearPrestamos && (
+              <div className="mt-3">
+                <p className="text-xs text-[#666666] mb-2">Siguiente paso recomendado: crear el primer préstamo.</p>
+                <Link href={`/prestamos/nuevo?clienteId=${id}`}>
+                  <Button size="sm">Crear préstamo ahora</Button>
+                </Link>
+              </div>
+            )}
           </div>
         </Card>
       )}
