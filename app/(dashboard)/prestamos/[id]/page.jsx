@@ -49,6 +49,7 @@ export default function PrestamoDetallePage({ params }) {
   const [loading,      setLoading]      = useState(true)
   const [error,        setError]        = useState('')
   const [modalPago,    setModalPago]    = useState(false)
+  const [presetPago,   setPresetPago]   = useState(null)
   const [exito,        setExito]        = useState(false)   // animación de éxito
   const [completado,   setCompletado]   = useState(false)   // celebración
   const [ultimoPago,   setUltimoPago]   = useState(null)    // para botón WA pago
@@ -170,6 +171,10 @@ export default function PrestamoDetallePage({ params }) {
     cliente, estado, montoPrestado, totalAPagar, cuotaDiaria, frecuencia,
     tasaInteres, diasPlazo, fechaInicio, fechaFin,
     totalPagado, saldoPendiente, porcentajePagado, diasMora,
+    cuotasPendientes = 0,
+    cuotasEnMora = 0,
+    montoEnMora = 0,
+    montoParaPonerseAlDia = 0,
     pagoHoy: yaPagoHoy, pagos = [], proximoCobro,
   } = prestamo
 
@@ -183,6 +188,24 @@ export default function PrestamoDetallePage({ params }) {
   const badge      = estadoBadge[estado] ?? estadoBadge.activo
   const estaActivo = estado === 'activo'
   const enMora     = diasMora > 3
+  const hayMontoMora = estaActivo && !completado && montoEnMora > 0
+  const hayMontoAlDia = estaActivo && !completado && montoParaPonerseAlDia > 0
+
+  const abrirPagoNormal = () => {
+    setPresetPago(null)
+    setModalPago(true)
+  }
+
+  const abrirPagoConMonto = (monto, tipo = 'parcial') => {
+    const montoSeguro = Math.max(0, Math.min(Math.round(monto || 0), Math.round(saldoPendiente || 0)))
+    if (!montoSeguro) {
+      abrirPagoNormal()
+      return
+    }
+    setPresetPago({ monto: montoSeguro, tipo })
+    setModalPago(true)
+  }
+
   const getRutaCobroUrl = (clienteRuta) => {
     const prestamosIds = Array.isArray(clienteRuta?.prestamosActivosIds)
       ? clienteRuta.prestamosActivosIds.filter(Boolean)
@@ -228,7 +251,9 @@ export default function PrestamoDetallePage({ params }) {
         <div className="flex items-center gap-3 bg-[rgba(239,68,68,0.12)] border border-[rgba(239,68,68,0.3)] rounded-[16px] px-4 py-3">
           <div className="w-2 h-2 rounded-full bg-[#ef4444] animate-pulse shrink-0" />
           <p className="text-sm text-[#ef4444] font-semibold">
-            {diasMora} días en mora — requiere atención inmediata
+            {diasMora} días en mora
+            {cuotasEnMora > 0 ? ` · ${cuotasEnMora} cuota${cuotasEnMora === 1 ? '' : 's'} vencida${cuotasEnMora === 1 ? '' : 's'}` : ''}
+            {montoEnMora > 0 ? ` · ${formatCOP(montoEnMora)}` : ''}
           </p>
         </div>
       )}
@@ -332,7 +357,7 @@ export default function PrestamoDetallePage({ params }) {
       {/* ── BOTÓN PRINCIPAL DE PAGO ──────────────────────────────── */}
       {estaActivo && !yaPagoHoy && !completado && (
         <button
-          onClick={() => setModalPago(true)}
+          onClick={abrirPagoNormal}
           className="w-full h-14 rounded-[16px] font-bold text-base text-white transition-all duration-200 active:scale-[0.98] shadow-lg"
           style={{
             background: 'linear-gradient(135deg, #22c55e, #16a34a)',
@@ -346,6 +371,28 @@ export default function PrestamoDetallePage({ params }) {
               </svg>
               Registrar pago {frecuenciaLabel} — {formatCOP(cuotaDiaria)}
             </span>
+        </button>
+      )}
+
+      {/* ── ATAJOS DE REGULARIZACIÓN ─────────────────────────────── */}
+      {hayMontoMora && (
+        <button
+          onClick={() => abrirPagoConMonto(montoEnMora)}
+          className="w-full h-11 rounded-[14px] font-semibold text-sm text-[#ef4444] bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.25)] hover:bg-[rgba(239,68,68,0.15)] transition-all"
+        >
+          Pagar mora
+          {cuotasEnMora > 0 ? ` (${cuotasEnMora} cuota${cuotasEnMora === 1 ? '' : 's'})` : ''}
+          {' · '}
+          {formatCOP(montoEnMora)}
+        </button>
+      )}
+
+      {hayMontoAlDia && montoParaPonerseAlDia !== montoEnMora && (
+        <button
+          onClick={() => abrirPagoConMonto(montoParaPonerseAlDia)}
+          className="w-full h-11 rounded-[14px] font-semibold text-sm text-[#f5c518] bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.3)] hover:bg-[rgba(245,197,24,0.15)] transition-all"
+        >
+          Ponerse al día · {formatCOP(montoParaPonerseAlDia)}
         </button>
       )}
 
@@ -365,7 +412,7 @@ export default function PrestamoDetallePage({ params }) {
       {/* ── BOTÓN DE ABONO EXTRAORDINARIO ────────────────────────────── */}
       {estaActivo && !completado && saldoPendiente > 0 && (
         <button
-          onClick={() => setModalPago(true)}
+          onClick={abrirPagoNormal}
           className="w-full h-12 rounded-[16px] font-semibold text-base text-[#f5c518] bg-[rgba(245,197,24,0.1)] border border-[rgba(245,197,24,0.3)] hover:bg-[rgba(245,197,24,0.2)] transition-all"
         >
           <span className="flex items-center justify-center gap-2">
@@ -481,6 +528,7 @@ export default function PrestamoDetallePage({ params }) {
             { label: 'Prestado',     value: formatCOP(montoPrestado) },
             { label: 'Total a pagar', value: formatCOP(totalAPagar)  },
             { label: `Cuota ${frecuenciaLabel}`, value: formatCOP(cuotaDiaria)   },
+            { label: 'Cuotas pendientes', value: `${cuotasPendientes}` },
             { label: 'Tasa diaria',  value: `${tasaInteres}%`        },
             { label: 'Plazo',        value: `${diasPlazo} días`      },
             { label: 'Inicio',       value: fmtFecha(fechaInicio)    },
@@ -488,7 +536,7 @@ export default function PrestamoDetallePage({ params }) {
             ...(cobroInfo ? [cobroInfo] : []),
             {
               label: diasMora > 0 ? 'Días en mora' : 'Estado',
-              value: diasMora > 0 ? `${diasMora} días` : 'Al día',
+              value: diasMora > 0 ? `${diasMora} días${cuotasEnMora > 0 ? ` · ${cuotasEnMora} cuota${cuotasEnMora === 1 ? '' : 's'}` : ''}` : 'Al día',
               color: diasMora > 0 ? '#ef4444' : '#22c55e',
             },
           ].map(({ label, value, color }) => (
@@ -764,11 +812,15 @@ export default function PrestamoDetallePage({ params }) {
         cuotaDiaria={cuotaDiaria}
         saldoPendiente={saldoPendiente}
         open={modalPago}
-        onClose={() => setModalPago(false)}
+        onClose={() => {
+          setModalPago(false)
+          setPresetPago(null)
+        }}
         onSuccess={handlePagoExito}
         cliente={cliente}
         prestamo={prestamo}
         rutaNav={rutaNav}
+        presetPago={presetPago}
       />
 
       {/* Modales de ajuste */}

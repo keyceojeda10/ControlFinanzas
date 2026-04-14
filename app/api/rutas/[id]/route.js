@@ -3,7 +3,16 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { calcularDiasMora, calcularSaldoPendiente, calcularProximoCobro, formatFechaCobro, tieneCobroPendienteHoy } from '@/lib/calculos'
+import {
+  calcularDiasMora,
+  calcularSaldoPendiente,
+  calcularProximoCobro,
+  formatFechaCobro,
+  tieneCobroPendienteHoy,
+  calcularCuotasEnMora,
+  calcularMontoEnMora,
+  calcularMontoParaPonerseAlDia,
+} from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, validarDiasSinCobro } from '@/lib/dias-sin-cobro'
 
 // Funciones de fecha en timezone Colombia (UTC-5)
@@ -98,6 +107,9 @@ export async function GET(request, { params }) {
     let cuotaCliente = 0
     let pagadoHoy    = 0
     let mora         = 0
+    let cuotasEnMoraCliente = 0
+    let montoEnMoraCliente = 0
+    let montoParaAlDiaCliente = 0
     const prestamosActivos = []
     let ultimaFechaPago = null
     let frecuencia   = 'diario'
@@ -117,12 +129,21 @@ export async function GET(request, { params }) {
       pagadoHoy    += montoPagadoHoy
       recaudadoHoy += montoPagadoHoy
       const moraPrestamo = calcularDiasMora(p, diasExcluidos)
+      const cuotasMoraPrestamo = calcularCuotasEnMora(p, diasExcluidos)
+      const montoMoraPrestamo = calcularMontoEnMora(p, diasExcluidos)
+      const montoAlDiaPrestamo = calcularMontoParaPonerseAlDia(p, diasExcluidos)
       mora = Math.max(mora, moraPrestamo)
+      cuotasEnMoraCliente += cuotasMoraPrestamo
+      montoEnMoraCliente += montoMoraPrestamo
+      montoParaAlDiaCliente += montoAlDiaPrestamo
       prestamosActivos.push({
         id: p.id,
         cuotaDiaria: p.cuotaDiaria,
         saldoPendiente: Math.round(saldoPendientePrestamo),
         diasMora: moraPrestamo,
+        cuotasEnMora: cuotasMoraPrestamo,
+        montoEnMora: Math.round(montoMoraPrestamo),
+        montoParaPonerseAlDia: Math.round(montoAlDiaPrestamo),
         frecuencia: p.frecuencia || 'diario',
       })
 
@@ -176,6 +197,9 @@ export async function GET(request, { params }) {
       estado:    c.prestamos.length === 0 ? 'completado' : (mora > 0 ? 'mora' : 'activo'),
       pagoHoy:   yaPageHoy,
       diasMora:  mora,
+      cuotasEnMora: cuotasEnMoraCliente,
+      montoEnMora: Math.round(montoEnMoraCliente),
+      montoParaPonerseAlDia: Math.round(montoParaAlDiaCliente),
       diasDesdeUltimoPago,
       cuota:     cuotaCliente,
       hoySinCobro: _hoySinCobro,

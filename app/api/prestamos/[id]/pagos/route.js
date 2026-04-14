@@ -10,6 +10,10 @@ import {
   calcularEstadoCliente,
   calcularCapitalRestante,
   calcularProximoCobro,
+  calcularCuotasPendientes,
+  calcularCuotasEnMora,
+  calcularMontoEnMora,
+  calcularMontoParaPonerseAlDia,
   pagoHoy,
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
@@ -266,6 +270,10 @@ export async function POST(request, { params }) {
     saldoPendiente:   calcularSaldoPendiente(prestamoFinal),
     porcentajePagado: calcularPorcentajePagado(prestamoFinal),
     diasMora:         calcularDiasMora(prestamoFinal, diasExcluidosFinal),
+    cuotasPendientes: calcularCuotasPendientes(prestamoFinal),
+    cuotasEnMora:     calcularCuotasEnMora(prestamoFinal, diasExcluidosFinal),
+    montoEnMora:      calcularMontoEnMora(prestamoFinal, diasExcluidosFinal),
+    montoParaPonerseAlDia: calcularMontoParaPonerseAlDia(prestamoFinal, diasExcluidosFinal),
     proximoCobro:     calcularProximoCobro(prestamoFinal, diasExcluidosFinal),
     pagoHoy:          pagoHoy(prestamoFinal),
   }, { status: 201 })

@@ -1131,7 +1131,9 @@ export default function RutaDetallePage({ params }) {
                     : pendienteHoy
                       ? 'Pago pendiente hoy'
                       : 'Al día'
-              const detalleMora = tieneMora ? `${c.diasMora}d mora` : null
+              const detalleMora = tieneMora
+                ? `${c.diasMora}d mora${c.cuotasEnMora ? ` · ${c.cuotasEnMora} cuota${c.cuotasEnMora === 1 ? '' : 's'}` : ''}${c.montoEnMora ? ` · ${formatCOP(c.montoEnMora)}` : ''}`
+                : null
               const cobroLabelContextual = c.diasParaCobro === 0
                 ? 'Hoy'
                 : c.diasParaCobro === 1

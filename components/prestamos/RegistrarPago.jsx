@@ -1,7 +1,7 @@
 'use client'
 // components/prestamos/RegistrarPago.jsx - Modal de registro de pago
 
-import { useState }    from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter }   from 'next/navigation'
 import { Modal }       from '@/components/ui/Modal'
 import { Button }      from '@/components/ui/Button'
@@ -17,6 +17,7 @@ export default function RegistrarPago({
   prestamoId, cuotaDiaria, saldoPendiente,
   open, onClose, onSuccess,
   cliente, prestamo, rutaNav,
+  presetPago,
 }) {
   const router = useRouter()
   // Pre-llena con la cuota, pero nunca más que el saldo pendiente (último pago de saldos pequeños)
@@ -32,6 +33,21 @@ export default function RegistrarPago({
   const [exitoso,      setExitoso]      = useState(false)
   const [pagoGuardado, setPagoGuardado] = useState(null)
   const [prestamoAct,  setPrestamoAct]  = useState(null)
+
+  useEffect(() => {
+    if (!open) return
+
+    const montoBase = Math.min(Math.round(cuotaDiaria ?? 0), Math.round(saldoPendiente ?? 0))
+    const montoPreset = Number(presetPago?.monto)
+    const montoFinal = montoPreset > 0
+      ? Math.min(Math.round(montoPreset), Math.round(saldoPendiente ?? 0))
+      : montoBase
+
+    setMonto(String(montoFinal))
+    setTipo(presetPago?.tipo ?? (montoFinal > montoBase ? 'parcial' : 'completo'))
+    setDiasAbonados(null)
+    setError('')
+  }, [open, presetPago, cuotaDiaria, saldoPendiente])
 
   const handleSubmit = async () => {
     let m = Number(monto)
@@ -281,6 +297,42 @@ export default function RegistrarPago({
           <span className="text-[#888888]">Saldo pendiente</span>
           <span className="font-semibold text-white font-mono-display">{formatCOP(saldoPendiente)}</span>
         </div>
+
+        {/* Atajos para no recalcular mora / ponerse al dia manualmente */}
+        {tipo !== 'capital' && (
+          <div className="grid grid-cols-1 gap-2">
+            {Number(prestamo?.montoEnMora) > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMonto(String(Math.min(Math.round(prestamo.montoEnMora), Math.round(saldoPendiente ?? 0))))
+                  setTipo('parcial')
+                  setDiasAbonados(null)
+                }}
+                className="h-10 rounded-[12px] border border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.08)] text-[#ef4444] text-sm font-semibold hover:bg-[rgba(239,68,68,0.15)] transition-colors"
+              >
+                Pagar mora
+                {Number(prestamo?.cuotasEnMora) > 0 ? ` (${prestamo.cuotasEnMora} cuota${prestamo.cuotasEnMora === 1 ? '' : 's'})` : ''}
+                {' · '}
+                {formatCOP(prestamo.montoEnMora)}
+              </button>
+            )}
+
+            {Number(prestamo?.montoParaPonerseAlDia) > 0 && Number(prestamo?.montoParaPonerseAlDia) !== Number(prestamo?.montoEnMora) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMonto(String(Math.min(Math.round(prestamo.montoParaPonerseAlDia), Math.round(saldoPendiente ?? 0))))
+                  setTipo('parcial')
+                  setDiasAbonados(null)
+                }}
+                className="h-10 rounded-[12px] border border-[rgba(245,197,24,0.3)] bg-[rgba(245,197,24,0.1)] text-[#f5c518] text-sm font-semibold hover:bg-[rgba(245,197,24,0.18)] transition-colors"
+              >
+                Ponerse al día · {formatCOP(prestamo.montoParaPonerseAlDia)}
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Slider de abono rápido por días */}
         {tipo !== 'capital' && (() => {
