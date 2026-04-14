@@ -93,15 +93,15 @@ export default function CobradorDetallePage({ params }) {
 
       {/* Header */}
       <Card>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             <div className="w-12 h-12 rounded-full bg-[rgba(139,92,246,0.15)] flex items-center justify-center shrink-0">
               <span className="text-[#a855f7] font-bold text-lg">{data.nombre?.[0]?.toUpperCase()}</span>
             </div>
-            <div>
-              <h1 className="text-lg font-bold text-[white]">{data.nombre}</h1>
-              <p className="text-sm text-[#888888]">{data.email}</p>
-              {data.telefono && <p className="text-xs text-[#666666]">{data.telefono}</p>}
+            <div className="min-w-0 flex-1">
+              <h1 className="text-lg font-bold text-[white] truncate">{data.nombre}</h1>
+              <p className="text-sm text-[#888888] truncate">{data.email}</p>
+              {data.telefono && <p className="text-xs text-[#666666] truncate">{data.telefono}</p>}
             </div>
           </div>
           <div className="flex items-center gap-2">
