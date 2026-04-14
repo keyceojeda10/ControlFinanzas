@@ -16,7 +16,7 @@ import { formatCOP, formatFechaCobroRelativa } from '@/lib/calculos'
 import ScoreCrediticio               from '@/components/clientes/ScoreCrediticio'
 
 const estadoBadge = {
-  activo:    { variant: 'green',  label: 'Activo'    },
+  activo:    { variant: 'green',  label: 'Al día'    },
   mora:      { variant: 'red',    label: 'En mora'   },
   cancelado: { variant: 'gray',   label: 'Cancelado' },
   inactivo:  { variant: 'gray',   label: 'Inactivo'  },

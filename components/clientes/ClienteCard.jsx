@@ -4,7 +4,7 @@ import Link  from 'next/link'
 import { Badge } from '@/components/ui/Badge'
 
 const estadoBadge = {
-  activo:    { variant: 'green',  label: 'Activo'    },
+  activo:    { variant: 'green',  label: 'Al día'    },
   mora:      { variant: 'red',    label: 'En mora'   },
   cancelado: { variant: 'gray',   label: 'Cancelado' },
 }
