@@ -2,7 +2,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado, calcularProximoCobro, formatFechaCobro, pagoHoy } from '@/lib/calculos'
+import { calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado, calcularProximoCobro, formatFechaCobro, pagoHoy, tieneCobroPendienteHoy } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro } from '@/lib/dias-sin-cobro'
 
 // Medianoche Colombia = 05:00 UTC
@@ -124,7 +124,7 @@ export async function GET() {
         const pc = p.proximoCobro ? new Date(p.proximoCobro) : null
         if (pc && (!proximoCobro || pc < proximoCobro)) proximoCobro = pc
         frecuencia = p.frecuencia || frecuencia
-        if ((p.saldoPendiente ?? 0) > 0 && (!pc || pc < finHoy)) {
+        if (!hoySinCobro && tieneCobroPendienteHoy(p, obtenerDiasSinCobro(ce, ce.ruta, org))) {
           cobroPendienteHoy = true
         }
       }
@@ -157,6 +157,10 @@ export async function GET() {
       let diasParaCobro = null
       if (proximoCobro) {
         diasParaCobro = Math.round((proximoCobro.getTime() - inicioHoy.getTime()) / 86400000)
+      }
+
+      if (pagadoHoy && !pendienteHoyCliente && diasParaCobro === 0) {
+        diasParaCobro = 1
       }
 
       return {

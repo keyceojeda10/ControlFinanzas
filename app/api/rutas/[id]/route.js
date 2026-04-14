@@ -3,7 +3,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { calcularDiasMora, calcularSaldoPendiente, calcularProximoCobro, formatFechaCobro } from '@/lib/calculos'
+import { calcularDiasMora, calcularSaldoPendiente, calcularProximoCobro, formatFechaCobro, tieneCobroPendienteHoy } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, validarDiasSinCobro } from '@/lib/dias-sin-cobro'
 
 // Funciones de fecha en timezone Colombia (UTC-5)
@@ -128,8 +128,8 @@ export async function GET(request, { params }) {
       const pc = calcularProximoCobro(p, diasExcluidos)
       if (pc && (!proximoCobro || pc < proximoCobro)) proximoCobro = pc
 
-      // Pendiente hoy si todavía hay saldo y su próxima cuota cae hoy o antes.
-      if (saldoPendientePrestamo > 0 && (!pc || pc < _manana)) {
+      // Pendiente hoy según cobertura real esperada al día de hoy.
+      if (!_hoySinCobro && tieneCobroPendienteHoy(p, diasExcluidos)) {
         cobroPendienteHoy = true
       }
     }
@@ -151,6 +151,10 @@ export async function GET(request, { params }) {
     let diasParaCobro = null
     if (proximoCobro) {
       diasParaCobro = Math.round((proximoCobro.getTime() - _hoy.getTime()) / 86400000)
+    }
+
+    if (yaPageHoy && !pendienteHoyCliente && diasParaCobro === 0) {
+      diasParaCobro = 1
     }
 
     return {
