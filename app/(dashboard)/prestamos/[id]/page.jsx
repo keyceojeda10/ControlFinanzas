@@ -18,7 +18,7 @@ import ModificarPlazo                 from '@/components/prestamos/ModificarPlaz
 import BotonWhatsApp                  from '@/components/ui/BotonWhatsApp'
 import BotonCompartir                 from '@/components/ui/BotonCompartir'
 import BotonImprimirRecibo            from '@/components/ui/BotonImprimirRecibo'
-import { formatCOP, formatFechaCobro } from '@/lib/calculos'
+import { formatCOP, formatFechaCobroRelativa } from '@/lib/calculos'
 
 // ─── Helpers de formato ──────────────────────────────────────────
 const fmtFecha = (d) => d
@@ -171,7 +171,7 @@ export default function PrestamoDetallePage({ params }) {
   const cobroInfo = estaActivo && proximoCobro
     ? {
         label: diasMora > 0 ? 'Debió cobrarse' : 'Próximo cobro',
-        value: formatFechaCobro(proximoCobro),
+        value: formatFechaCobroRelativa(proximoCobro),
         color: diasMora > 0 ? '#ef4444' : '#f5c518',
       }
     : null

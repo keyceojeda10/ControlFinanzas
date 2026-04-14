@@ -2,7 +2,7 @@
 
 import Link      from 'next/link'
 import { Badge } from '@/components/ui/Badge'
-import { formatCOP, formatFechaCobro } from '@/lib/calculos'
+import { formatCOP, formatFechaCobroRelativa } from '@/lib/calculos'
 
 const estadoBadge = {
   activo:     { variant: 'blue',  label: 'Activo'     },
@@ -15,7 +15,7 @@ export default function PrestamoCard({ prestamo: p }) {
   const porcentaje = p.porcentajePagado ?? 0
   const enMora     = p.diasMora > 0
   const tieneProximoCobro = p.estado === 'activo' && p.proximoCobro
-  const proximoCobroLabel = tieneProximoCobro ? formatFechaCobro(p.proximoCobro) : null
+  const proximoCobroLabel = tieneProximoCobro ? formatFechaCobroRelativa(p.proximoCobro) : null
   const cobroVencido = enMora && tieneProximoCobro
   const prefijoCobro = cobroVencido ? 'Debió cobrarse' : 'Próx. cobro'
   const valorCobro = proximoCobroLabel

@@ -12,7 +12,7 @@ import { Button }                    from '@/components/ui/Button'
 import { Card }                      from '@/components/ui/Card'
 import { SkeletonCard }              from '@/components/ui/Skeleton'
 import BotonWhatsApp                 from '@/components/ui/BotonWhatsApp'
-import { formatCOP, formatFechaCobro } from '@/lib/calculos'
+import { formatCOP, formatFechaCobroRelativa } from '@/lib/calculos'
 import ScoreCrediticio               from '@/components/clientes/ScoreCrediticio'
 
 const estadoBadge = {
@@ -596,7 +596,7 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, mini = false }) {
   const porcentaje = p.porcentajePagado ?? 0
   const enMora = (p.diasMora ?? 0) > 0
   const tieneProximoCobro = p.estado === 'activo' && p.proximoCobro
-  const proximoCobroLabel = tieneProximoCobro ? formatFechaCobro(p.proximoCobro) : null
+  const proximoCobroLabel = tieneProximoCobro ? formatFechaCobroRelativa(p.proximoCobro) : null
   const cobroVencido = enMora && tieneProximoCobro
   const prefijoCobro = cobroVencido ? 'Debió cobrarse' : 'Próx. cobro'
   const valorCobro = proximoCobroLabel

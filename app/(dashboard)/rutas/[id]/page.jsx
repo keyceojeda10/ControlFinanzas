@@ -1006,9 +1006,12 @@ export default function RutaDetallePage({ params }) {
                 c.cobroPendienteHoy ?? (!c.pagoHoy && !c.hoySinCobro && c.estado !== 'completado')
               )
               const tieneMora = c.diasMora > 0
+              const abonoConPendiente = c.pagoHoy && pendienteHoy
               const statusColor = isCompleted
                 ? '#666'
-                : c.pagoHoy
+                : abonoConPendiente
+                  ? '#f59e0b'
+                  : c.pagoHoy
                   ? '#22c55e'
                   : c.hoySinCobro && !pendienteHoy
                     ? '#f59e0b'
@@ -1017,7 +1020,9 @@ export default function RutaDetallePage({ params }) {
                       : '#22c55e'
               const statusText = isCompleted
                 ? 'Sin deuda — se puede retirar'
-                : c.pagoHoy
+                : abonoConPendiente
+                  ? 'Abonó hoy · sigue pendiente'
+                  : c.pagoHoy
                   ? 'Pagó hoy'
                   : c.hoySinCobro && !pendienteHoy
                     ? 'Hoy no se cobra'
@@ -1025,7 +1030,15 @@ export default function RutaDetallePage({ params }) {
                       ? 'Pago pendiente hoy'
                       : 'Al día'
               const detalleMora = tieneMora ? `${c.diasMora}d mora` : null
-              const detalleCobro = !isCompleted && c.proximoCobroLabel ? `Próx. cobro: ${c.proximoCobroLabel}` : null
+              const cobroLabelContextual = c.diasParaCobro === 0
+                ? 'Hoy'
+                : c.diasParaCobro === 1
+                  ? 'Mañana'
+                  : c.diasParaCobro === -1
+                    ? 'Ayer'
+                    : c.proximoCobroLabel
+              const prefijoCobro = c.diasParaCobro != null && c.diasParaCobro < 0 ? 'Debió cobrarse' : 'Próx. cobro'
+              const detalleCobro = !isCompleted && cobroLabelContextual ? `${prefijoCobro}: ${cobroLabelContextual}` : null
               return (
                 <div
                   key={c.id}
@@ -1117,7 +1130,7 @@ export default function RutaDetallePage({ params }) {
                         )}
 
                         {/* Quick pay button */}
-                        {!isCompleted && c.cuota > 0 && !c.pagoHoy && c.prestamoActivo && (
+                        {!isCompleted && c.cuota > 0 && c.prestamoActivo && (!c.pagoHoy || pendienteHoy) && (
                           <button
                             onClick={(e) => { e.stopPropagation(); abrirPagoRapido(c) }}
                             disabled={pagandoRapido === c.id}
