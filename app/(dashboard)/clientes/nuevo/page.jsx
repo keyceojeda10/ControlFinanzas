@@ -8,12 +8,12 @@ import ClienteForm     from '@/components/clientes/ClienteForm'
 
 export default function NuevoClientePage() {
   const router = useRouter()
-  const { session, esOwner, loading } = useAuth()
+  const { session, puedeCrearClientes, loading } = useAuth()
 
-  // Solo owners pueden crear clientes
+  // Owner o cobrador con permiso puede crear clientes
   useEffect(() => {
-    if (!loading && !esOwner) router.replace('/clientes')
-  }, [loading, esOwner, router])
+    if (!loading && !puedeCrearClientes) router.replace('/clientes')
+  }, [loading, puedeCrearClientes, router])
 
   if (loading) {
     return (
@@ -26,7 +26,7 @@ export default function NuevoClientePage() {
     )
   }
 
-  if (!esOwner) return null
+  if (!puedeCrearClientes) return null
 
   return (
     <div className="max-w-2xl mx-auto">

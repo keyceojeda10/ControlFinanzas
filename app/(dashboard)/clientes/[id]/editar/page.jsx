@@ -10,20 +10,20 @@ import { SkeletonCard }             from '@/components/ui/Skeleton'
 export default function EditarClientePage({ params }) {
   const { id }              = use(params)
   const router              = useRouter()
-  const { session, esOwner, loading: authLoading } = useAuth()
+  const { session, puedeEditarClientes, loading: authLoading } = useAuth()
 
   const [cliente,  setCliente]  = useState(null)
   const [loading,  setLoading]  = useState(true)
   const [error,    setError]    = useState('')
 
-  // Solo owners
+  // Owner o cobrador con permiso puede editar cliente
   useEffect(() => {
-    if (!authLoading && !esOwner) router.replace(`/clientes/${id}`)
-  }, [authLoading, esOwner, id, router])
+    if (!authLoading && !puedeEditarClientes) router.replace(`/clientes/${id}`)
+  }, [authLoading, puedeEditarClientes, id, router])
 
   // Cargar datos del cliente
   useEffect(() => {
-    if (authLoading || !esOwner) return
+    if (authLoading || !puedeEditarClientes) return
     fetch(`/api/clientes/${id}`)
       .then((r) => {
         if (!r.ok) throw new Error('No encontrado')
@@ -32,7 +32,7 @@ export default function EditarClientePage({ params }) {
       .then(setCliente)
       .catch(() => setError('No se pudo cargar el cliente.'))
       .finally(() => setLoading(false))
-  }, [id, authLoading, esOwner])
+  }, [id, authLoading, puedeEditarClientes])
 
   if (authLoading || loading) {
     return (

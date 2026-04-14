@@ -34,7 +34,7 @@ export default function NuevoPrestamoPage() {
 function NuevoPrestamo() {
   const router       = useRouter()
   const searchParams = useSearchParams()
-  const { esOwner, loading: authLoading } = useAuth()
+  const { puedeCrearPrestamos, loading: authLoading } = useAuth()
 
   const clienteIdParam = searchParams.get('clienteId') ?? ''
 
@@ -63,10 +63,10 @@ function NuevoPrestamo() {
   const [cuotaManualActiva, setCuotaManualActiva] = useState(false)
   const [cuotaManual, setCuotaManual] = useState('')
 
-  // Guard de rol
+  // Guard de permiso
   useEffect(() => {
-    if (!authLoading && !esOwner) router.replace('/prestamos')
-  }, [authLoading, esOwner, router])
+    if (!authLoading && !puedeCrearPrestamos) router.replace('/prestamos')
+  }, [authLoading, puedeCrearPrestamos, router])
 
   // Cargar clientes para el selector
   useEffect(() => {
@@ -178,7 +178,7 @@ function NuevoPrestamo() {
   }
 
   if (authLoading) return null
-  if (!esOwner)    return null
+  if (!puedeCrearPrestamos) return null
 
   return (
     <div className="max-w-xl mx-auto">
