@@ -8,8 +8,8 @@ import { useAuth }                    from '@/hooks/useAuth'
 import { useOffline }                 from '@/components/providers/OfflineProvider'
 import { obtenerPrestamoOffline }     from '@/lib/offline'
 import { Badge }                      from '@/components/ui/Badge'
-import { Button }                     from '@/components/ui/Button'
 import { Card }                       from '@/components/ui/Card'
+import { Modal }                      from '@/components/ui/Modal'
 import { SkeletonCard }               from '@/components/ui/Skeleton'
 import RegistrarPago                  from '@/components/prestamos/RegistrarPago'
 import AjusteSaldo                    from '@/components/prestamos/AjusteSaldo'
@@ -49,6 +49,8 @@ export default function PrestamoDetallePage({ params }) {
   const [loading,      setLoading]      = useState(true)
   const [error,        setError]        = useState('')
   const [modalPago,    setModalPago]    = useState(false)
+  const [modalAtajosCobro, setModalAtajosCobro] = useState(false)
+  const [modalGestionPrestamo, setModalGestionPrestamo] = useState(false)
   const [presetPago,   setPresetPago]   = useState(null)
   const [exito,        setExito]        = useState(false)   // animación de éxito
   const [completado,   setCompletado]   = useState(false)   // celebración
@@ -190,6 +192,8 @@ export default function PrestamoDetallePage({ params }) {
   const enMora     = diasMora > 3
   const hayMontoMora = estaActivo && !completado && montoEnMora > 0
   const hayMontoAlDia = estaActivo && !completado && montoParaPonerseAlDia > 0
+  const mostrarAtajosCobro = estaActivo && !completado && saldoPendiente > 0
+  const mostrarGestionPrestamo = estaActivo && !completado && session?.user?.rol === 'owner'
 
   const abrirPagoNormal = () => {
     setPresetPago(null)
@@ -374,28 +378,6 @@ export default function PrestamoDetallePage({ params }) {
         </button>
       )}
 
-      {/* ── ATAJOS DE REGULARIZACIÓN ─────────────────────────────── */}
-      {hayMontoMora && (
-        <button
-          onClick={() => abrirPagoConMonto(montoEnMora)}
-          className="w-full h-11 rounded-[14px] font-semibold text-sm text-[#ef4444] bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.25)] hover:bg-[rgba(239,68,68,0.15)] transition-all"
-        >
-          Pagar mora
-          {cuotasEnMora > 0 ? ` (${cuotasEnMora} cuota${cuotasEnMora === 1 ? '' : 's'})` : ''}
-          {' · '}
-          {formatCOP(montoEnMora)}
-        </button>
-      )}
-
-      {hayMontoAlDia && montoParaPonerseAlDia !== montoEnMora && (
-        <button
-          onClick={() => abrirPagoConMonto(montoParaPonerseAlDia)}
-          className="w-full h-11 rounded-[14px] font-semibold text-sm text-[#f5c518] bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.3)] hover:bg-[rgba(245,197,24,0.15)] transition-all"
-        >
-          Ponerse al día · {formatCOP(montoParaPonerseAlDia)}
-        </button>
-      )}
-
       {/* ── PAGÓ HOY ─────────────────────────────────────────────── */}
       {estaActivo && yaPagoHoy && !completado && (
         <div
@@ -409,75 +391,30 @@ export default function PrestamoDetallePage({ params }) {
         </div>
       )}
 
-      {/* ── BOTÓN DE ABONO EXTRAORDINARIO ────────────────────────────── */}
-      {estaActivo && !completado && saldoPendiente > 0 && (
-        <button
-          onClick={abrirPagoNormal}
-          className="w-full h-12 rounded-[16px] font-semibold text-base text-[#f5c518] bg-[rgba(245,197,24,0.1)] border border-[rgba(245,197,24,0.3)] hover:bg-[rgba(245,197,24,0.2)] transition-all"
-        >
-          <span className="flex items-center justify-center gap-2">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            Hacer abono extraordinario
-          </span>
-        </button>
-      )}
+      {/* ── ACCIONES SECUNDARIAS COMPACTAS ─────────────────────── */}
+      {(mostrarAtajosCobro || mostrarGestionPrestamo) && (
+        <div className="space-y-2">
+          {mostrarAtajosCobro && (
+            <button
+              onClick={() => setModalAtajosCobro(true)}
+              className="w-full h-11 px-4 rounded-[14px] border border-[#2a2a2a] bg-[rgba(255,255,255,0.02)] hover:bg-[rgba(255,255,255,0.05)] transition-all flex items-center justify-between"
+            >
+              <span className="text-sm font-medium text-white">Más opciones de cobro</span>
+              <span className="text-[11px] text-[#888]">
+                {hayMontoMora ? `Mora: ${formatCOP(montoEnMora)}` : 'Abonos y atajos'}
+              </span>
+            </button>
+          )}
 
-      {/* ── RENOVAR / MODIFICAR PLAZO (solo owner, solo activo) ──────── */}
-      {estaActivo && !completado && session?.user?.rol === 'owner' && (
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            onClick={() => setModalRenovar(true)}
-            className="h-11 rounded-[14px] font-medium text-sm text-[#a855f7] bg-[rgba(168,85,247,0.08)] border border-[rgba(168,85,247,0.25)] hover:bg-[rgba(168,85,247,0.15)] transition-all active:scale-[0.98]"
-          >
-            <span className="flex items-center justify-center gap-1.5">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-              </svg>
-              Renovar
-            </span>
-          </button>
-          <button
-            onClick={() => setModalPlazo(true)}
-            className="h-11 rounded-[14px] font-medium text-sm text-[#3b82f6] bg-[rgba(59,130,246,0.08)] border border-[rgba(59,130,246,0.25)] hover:bg-[rgba(59,130,246,0.15)] transition-all active:scale-[0.98]"
-          >
-            <span className="flex items-center justify-center gap-1.5">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Modificar plazo
-            </span>
-          </button>
-        </div>
-      )}
-
-      {/* ── RECARGO / DESCUENTO (solo owner, solo activo) ──────── */}
-      {estaActivo && !completado && session?.user?.rol === 'owner' && (
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            onClick={() => setModalRecargo(true)}
-            className="h-11 rounded-[14px] font-medium text-sm text-[#f97316] bg-[rgba(249,115,22,0.08)] border border-[rgba(249,115,22,0.2)] hover:bg-[rgba(249,115,22,0.15)] transition-all active:scale-[0.98]"
-          >
-            <span className="flex items-center justify-center gap-1.5">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-              Recargo
-            </span>
-          </button>
-          <button
-            onClick={() => setModalDescuento(true)}
-            className="h-11 rounded-[14px] font-medium text-sm text-[#22c55e] bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.2)] hover:bg-[rgba(34,197,94,0.15)] transition-all active:scale-[0.98]"
-          >
-            <span className="flex items-center justify-center gap-1.5">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6z" />
-              </svg>
-              Descuento
-            </span>
-          </button>
+          {mostrarGestionPrestamo && (
+            <button
+              onClick={() => setModalGestionPrestamo(true)}
+              className="w-full h-11 px-4 rounded-[14px] border border-[#2a2a2a] bg-[rgba(255,255,255,0.02)] hover:bg-[rgba(255,255,255,0.05)] transition-all flex items-center justify-between"
+            >
+              <span className="text-sm font-medium text-white">Gestión del préstamo</span>
+              <span className="text-[11px] text-[#888]">Renovar, plazo, ajustes</span>
+            </button>
+          )}
         </div>
       )}
 
@@ -805,6 +742,98 @@ export default function PrestamoDetallePage({ params }) {
           )}
         </div>
       )}
+
+      {/* Modal: atajos de cobro */}
+      <Modal
+        open={modalAtajosCobro}
+        onClose={() => setModalAtajosCobro(false)}
+        title="Opciones de cobro"
+      >
+        <div className="space-y-2">
+          {hayMontoMora && (
+            <button
+              onClick={() => {
+                setModalAtajosCobro(false)
+                abrirPagoConMonto(montoEnMora)
+              }}
+              className="w-full h-11 rounded-[12px] font-semibold text-sm text-[#ef4444] bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.25)] hover:bg-[rgba(239,68,68,0.15)] transition-all"
+            >
+              Pagar mora
+              {cuotasEnMora > 0 ? ` (${cuotasEnMora} cuota${cuotasEnMora === 1 ? '' : 's'})` : ''}
+              {' · '}
+              {formatCOP(montoEnMora)}
+            </button>
+          )}
+
+          {hayMontoAlDia && montoParaPonerseAlDia !== montoEnMora && (
+            <button
+              onClick={() => {
+                setModalAtajosCobro(false)
+                abrirPagoConMonto(montoParaPonerseAlDia)
+              }}
+              className="w-full h-11 rounded-[12px] font-semibold text-sm text-[#f5c518] bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.3)] hover:bg-[rgba(245,197,24,0.15)] transition-all"
+            >
+              Ponerse al día · {formatCOP(montoParaPonerseAlDia)}
+            </button>
+          )}
+
+          <button
+            onClick={() => {
+              setModalAtajosCobro(false)
+              abrirPagoNormal()
+            }}
+            className="w-full h-11 rounded-[12px] font-semibold text-sm text-[#22c55e] bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.25)] hover:bg-[rgba(34,197,94,0.15)] transition-all"
+          >
+            Hacer abono extraordinario
+          </button>
+        </div>
+      </Modal>
+
+      {/* Modal: gestión del préstamo (owner) */}
+      <Modal
+        open={modalGestionPrestamo}
+        onClose={() => setModalGestionPrestamo(false)}
+        title="Gestión del préstamo"
+      >
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => {
+              setModalGestionPrestamo(false)
+              setModalRenovar(true)
+            }}
+            className="h-11 rounded-[12px] font-medium text-sm text-[#a855f7] bg-[rgba(168,85,247,0.08)] border border-[rgba(168,85,247,0.25)] hover:bg-[rgba(168,85,247,0.15)] transition-all"
+          >
+            Renovar
+          </button>
+          <button
+            onClick={() => {
+              setModalGestionPrestamo(false)
+              setModalPlazo(true)
+            }}
+            className="h-11 rounded-[12px] font-medium text-sm text-[#3b82f6] bg-[rgba(59,130,246,0.08)] border border-[rgba(59,130,246,0.25)] hover:bg-[rgba(59,130,246,0.15)] transition-all"
+          >
+            Modificar plazo
+          </button>
+          <button
+            onClick={() => {
+              setModalGestionPrestamo(false)
+              setModalRecargo(true)
+            }}
+            className="h-11 rounded-[12px] font-medium text-sm text-[#f97316] bg-[rgba(249,115,22,0.08)] border border-[rgba(249,115,22,0.2)] hover:bg-[rgba(249,115,22,0.15)] transition-all"
+          >
+            Recargo
+          </button>
+          <button
+            onClick={() => {
+              setModalGestionPrestamo(false)
+              setModalDescuento(true)
+            }}
+            className="h-11 rounded-[12px] font-medium text-sm text-[#22c55e] bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.2)] hover:bg-[rgba(34,197,94,0.15)] transition-all"
+          >
+            Descuento
+          </button>
+        </div>
+      </Modal>
 
       {/* Modal de pago */}
       <RegistrarPago
