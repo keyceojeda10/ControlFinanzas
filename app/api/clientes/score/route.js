@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { calcularDiasMora } from '@/lib/calculos'
+import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { scoreLimiter, getClientIp } from '@/lib/rate-limit'
 
 export async function GET(req) {
@@ -42,6 +43,8 @@ export async function GET(req) {
       select: {
         id: true,
         organizationId: true,
+        diasSinCobro: true,
+        ruta: { select: { diasSinCobro: true } },
         prestamos: {
           select: {
             id:           true,
@@ -52,7 +55,7 @@ export async function GET(req) {
             frecuencia:   true,
             totalAPagar:  true,
             pagos: {
-              select: { montoPagado: true },
+              select: { montoPagado: true, tipo: true },
             },
           },
         },
@@ -69,19 +72,27 @@ export async function GET(req) {
 
     // Agregar datos de todas las orgs
     const orgsUnicas = new Set(clientesOtrasOrgs.map(c => c.organizationId))
+    const orgs = await prisma.organization.findMany({
+      where: { id: { in: [...orgsUnicas] } },
+      select: { id: true, diasSinCobro: true },
+    })
+    const orgMap = new Map(orgs.map(o => [o.id, o]))
+
     let creditosActivos     = 0
     let creditosCompletados = 0
     let creditosEnMora      = 0
     let creditosCancelados  = 0
 
     for (const cliente of clientesOtrasOrgs) {
+      const org = orgMap.get(cliente.organizationId)
+      const diasExcluidos = obtenerDiasSinCobro(cliente, cliente.ruta, org)
       for (const prestamo of cliente.prestamos) {
         if (prestamo.estado === 'completado') {
           creditosCompletados++
         } else if (prestamo.estado === 'cancelado') {
           creditosCancelados++
         } else if (prestamo.estado === 'activo') {
-          const diasMora = calcularDiasMora(prestamo)
+          const diasMora = calcularDiasMora(prestamo, diasExcluidos)
           if (diasMora > 0) {
             creditosEnMora++
           } else {

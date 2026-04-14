@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { calcularEstadoCliente } from '@/lib/calculos'
+import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 
 export async function POST(request, { params }) {
   const session = await getServerSession(authOptions)
@@ -47,6 +48,10 @@ export async function POST(request, { params }) {
   }
 
   const clienteOrigenId = prestamo.clienteId
+  const org = await prisma.organization.findUnique({
+    where: { id: orgId },
+    select: { diasSinCobro: true },
+  })
 
   // Trasladar y recalcular estados de ambos clientes en transacción
   const actualizado = await prisma.$transaction(async (tx) => {
@@ -61,7 +66,12 @@ export async function POST(request, { params }) {
         where: { clienteId },
         include: { pagos: { select: { montoPagado: true, fechaPago: true, tipo: true } } },
       })
-      const nuevoEstado = calcularEstadoCliente(prestamosCliente)
+      const clienteCfg = await tx.cliente.findUnique({
+        where: { id: clienteId },
+        select: { diasSinCobro: true, ruta: { select: { diasSinCobro: true } } },
+      })
+      const diasExcluidos = obtenerDiasSinCobro(clienteCfg, clienteCfg?.ruta, org)
+      const nuevoEstado = calcularEstadoCliente(prestamosCliente, diasExcluidos)
       await tx.cliente.update({
         where: { id: clienteId },
         data: { estado: nuevoEstado },

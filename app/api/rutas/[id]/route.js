@@ -101,11 +101,13 @@ export async function GET(request, { params }) {
     let ultimaFechaPago = null
     let frecuencia   = 'diario'
     let proximoCobro = null
+    let cobroPendienteHoy = false
 
     for (const p of c.prestamos) {
       cuotaCliente  += p.cuotaDiaria
       esperadoHoy   += _hoySinCobro ? 0 : p.cuotaDiaria
-      carteraTotal  += calcularSaldoPendiente(p)
+      const saldoPendientePrestamo = calcularSaldoPendiente(p)
+      carteraTotal  += saldoPendientePrestamo
       capitalTotal  += p.montoPrestado
       const pagosHoy = p.pagos.filter(
         (pg) => new Date(pg.fechaPago) >= _hoy && new Date(pg.fechaPago) < _manana
@@ -124,12 +126,17 @@ export async function GET(request, { params }) {
       // Frecuencia y próximo cobro del préstamo activo (lib centralizado)
       frecuencia = p.frecuencia || 'diario'
       const pc = calcularProximoCobro(p, diasExcluidos)
-      if (frecuencia !== 'diario') proximoCobro = pc
-      if (!c._proximoCobroFull) c._proximoCobroFull = pc
+      if (pc && (!proximoCobro || pc < proximoCobro)) proximoCobro = pc
+
+      // Pendiente hoy si todavía hay saldo y su próxima cuota cae hoy o antes.
+      if (saldoPendientePrestamo > 0 && (!pc || pc < _manana)) {
+        cobroPendienteHoy = true
+      }
     }
 
     const yaPageHoy = pagadoHoy > 0
-    if (!yaPageHoy && c.prestamos.length > 0) pendientesHoy++
+    const pendienteHoyCliente = !_hoySinCobro && cobroPendienteHoy
+    if (pendienteHoyCliente) pendientesHoy++
     if (mora > 0) enMora++
 
     // Calcular días desde último pago
@@ -159,10 +166,11 @@ export async function GET(request, { params }) {
       diasDesdeUltimoPago,
       cuota:     cuotaCliente,
       hoySinCobro: _hoySinCobro,
+      cobroPendienteHoy: pendienteHoyCliente,
       prestamoActivo: c.prestamos[0]?.id ?? null,
       frecuencia,
       diasParaCobro,
-      proximoCobroLabel: c._proximoCobroFull ? formatFechaCobro(c._proximoCobroFull) : null,
+      proximoCobroLabel: proximoCobro ? formatFechaCobro(proximoCobro) : null,
       grupoCobro: c.grupoCobro ?? null,
     }
   })

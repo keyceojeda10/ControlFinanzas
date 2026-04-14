@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { LIMITES_PLAN, calcularEstadoCliente } from '@/lib/calculos'
+import { obtenerDiasSinCobro, validarDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
 import { geocodeAddress }   from '@/lib/geocoding'
 import { trackEvent } from '@/lib/analytics'
@@ -66,7 +67,8 @@ export async function GET(request) {
       referencia: true,
       estado:     true,
       rutaId:     true,
-      ruta:       { select: { id: true, nombre: true } },
+      diasSinCobro: true,
+      ruta:       { select: { id: true, nombre: true, diasSinCobro: true } },
       grupoCobro: { select: { id: true, nombre: true, color: true } },
       prestamos: {
         where:  { estado: 'activo' },
@@ -77,12 +79,17 @@ export async function GET(request) {
           cuotaDiaria: true,
           diasPlazo: true,
           frecuencia: true,
-          pagos: { select: { montoPagado: true } },
+          pagos: { select: { montoPagado: true, tipo: true } },
         },
       },
     },
     orderBy: [{ ordenRuta: 'asc' }, { nombre: 'asc' }],
     ...(page != null && { take: limit, skip: (page - 1) * limit }),
+  })
+
+  const org = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { diasSinCobro: true },
   })
 
   // Recalcular estado real del cliente basado en sus préstamos activos
@@ -92,7 +99,7 @@ export async function GET(request) {
     cedula:           c.cedula,
     telefono:         c.telefono,
     referencia:       c.referencia,
-    estado:           calcularEstadoCliente(c.prestamos),
+    estado:           calcularEstadoCliente(c.prestamos, obtenerDiasSinCobro(c, c.ruta, org)),
     rutaId:           c.rutaId,
     rutaNombre:       c.ruta?.nombre ?? null,
     grupoCobro:       c.grupoCobro ?? null,
@@ -151,7 +158,14 @@ export async function POST(request) {
   }
 
   const body = await request.json()
-  const { nombre, cedula, telefono, direccion, referencia, notas, fotoUrl, rutaId, latitud, longitud, grupoCobroId } = body
+  const { nombre, cedula, telefono, direccion, referencia, notas, fotoUrl, rutaId, latitud, longitud, grupoCobroId, diasSinCobro } = body
+
+  let diasSinCobroVal
+  try {
+    diasSinCobroVal = diasSinCobro !== undefined ? validarDiasSinCobro(diasSinCobro) : undefined
+  } catch (e) {
+    return Response.json({ error: e.message }, { status: 400 })
+  }
 
   // Validaciones básicas
   if (!nombre?.trim())   return Response.json({ error: 'El nombre es requerido' },  { status: 400 })
@@ -214,6 +228,7 @@ export async function POST(request) {
       grupoCobroId: grupoCobroId || null,
       latitud:    lat,
       longitud:   lng,
+      ...(diasSinCobroVal !== undefined && { diasSinCobro: diasSinCobroVal }),
     },
   })
 

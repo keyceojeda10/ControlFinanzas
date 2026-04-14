@@ -1002,20 +1002,30 @@ export default function RutaDetallePage({ params }) {
               return aComp - bComp
             }).map((c, idx) => {
               const isCompleted = c.estado === 'completado'
-              const statusColor = isCompleted ? '#666' : c.hoySinCobro ? '#f59e0b' : c.diasMora > 0 ? '#ef4444' : c.pagoHoy ? '#22c55e' : '#f59e0b'
+              const pendienteHoy = Boolean(
+                c.cobroPendienteHoy ?? (!c.pagoHoy && !c.hoySinCobro && c.estado !== 'completado')
+              )
+              const tieneMora = c.diasMora > 0
+              const statusColor = isCompleted
+                ? '#666'
+                : c.pagoHoy
+                  ? '#22c55e'
+                  : c.hoySinCobro && !pendienteHoy
+                    ? '#f59e0b'
+                    : pendienteHoy
+                      ? '#f59e0b'
+                      : '#22c55e'
               const statusText = isCompleted
                 ? 'Sin deuda — se puede retirar'
-                : c.hoySinCobro && !c.pagoHoy
-                  ? 'Hoy no se cobra'
-                  : c.diasMora > 0
-                    ? `${c.diasMora}d mora`
-                    : c.pagoHoy
-                      ? 'Pagó hoy'
-                      : c.diasDesdeUltimoPago === 1
-                        ? 'Falta hoy'
-                        : c.diasDesdeUltimoPago >= 2
-                          ? `${c.diasDesdeUltimoPago}d sin pago`
-                          : 'Pendiente'
+                : c.pagoHoy
+                  ? 'Pagó hoy'
+                  : c.hoySinCobro && !pendienteHoy
+                    ? 'Hoy no se cobra'
+                    : pendienteHoy
+                      ? 'Pago pendiente hoy'
+                      : 'Al día'
+              const detalleMora = tieneMora ? `${c.diasMora}d mora` : null
+              const detalleCobro = !isCompleted && c.proximoCobroLabel ? `Próx. cobro: ${c.proximoCobroLabel}` : null
               return (
                 <div
                   key={c.id}
@@ -1140,13 +1150,22 @@ export default function RutaDetallePage({ params }) {
                       </div>
                     </div>
 
-                    {!isCompleted && c.proximoCobroLabel && (
-                      <p className="text-[10px] mt-1.5 leading-snug capitalize" style={{ color: c.diasMora > 0 ? '#ef4444' : '#888' }}>
-                        {c.diasMora > 0 ? 'Cobro pendiente: ' : 'Próx. cobro: '}
-                        <span className="font-medium" style={{ color: c.diasMora > 0 ? '#fecaca' : '#bbb' }}>
-                          {c.diasMora > 0 && c.frecuencia === 'diario' ? 'hoy' : c.proximoCobroLabel}
-                        </span>
-                      </p>
+                    {(detalleMora || detalleCobro) && (
+                      <div className="mt-1.5 flex items-center gap-1.5 text-[10px] leading-snug capitalize">
+                        {detalleMora && (
+                          <span className="font-medium" style={{ color: '#ef4444' }}>
+                            {detalleMora}
+                          </span>
+                        )}
+                        {detalleMora && detalleCobro && (
+                          <span style={{ color: '#555' }}>·</span>
+                        )}
+                        {detalleCobro && (
+                          <span className="font-medium" style={{ color: tieneMora ? '#fecaca' : '#888' }}>
+                            {detalleCobro}
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
 

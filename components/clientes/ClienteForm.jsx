@@ -121,7 +121,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
           grupoCobroId: form.grupoCobroId || undefined,
           latitud:    form.latitud,
           longitud:   form.longitud,
-          ...(diasSinCobro.length > 0 && { diasSinCobro }),
+          diasSinCobro: diasSinCobro.length > 0 ? diasSinCobro : null,
         }),
       })
 

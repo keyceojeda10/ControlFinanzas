@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { calcularEstadoCliente, calcularSaldoPendiente } from '@/lib/calculos'
+import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { registrarMovimientoCapital } from '@/lib/capital'
 
 // ─── PATCH /api/pagos/[id] — Editar fecha del pago (solo owner) ──
@@ -70,6 +71,11 @@ export async function DELETE(request, { params }) {
     }
   }
 
+  const org = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { diasSinCobro: true },
+  })
+
   await prisma.$transaction(async (tx) => {
     const prestamo = pago.prestamo
 
@@ -121,7 +127,12 @@ export async function DELETE(request, { params }) {
       where: { clienteId: prestamo.clienteId },
       include: { pagos: { select: { montoPagado: true, fechaPago: true, tipo: true } } },
     })
-    const nuevoEstado = calcularEstadoCliente(todosLosPrestamos)
+    const clienteCfg = await tx.cliente.findUnique({
+      where: { id: prestamo.clienteId },
+      select: { diasSinCobro: true, ruta: { select: { diasSinCobro: true } } },
+    })
+    const diasExcluidos = obtenerDiasSinCobro(clienteCfg, clienteCfg?.ruta, org)
+    const nuevoEstado = calcularEstadoCliente(todosLosPrestamos, diasExcluidos)
     await tx.cliente.update({ where: { id: prestamo.clienteId }, data: { estado: nuevoEstado } })
 
     // 4. Reversar movimiento de capital (solo pagos reales, no ajustes)

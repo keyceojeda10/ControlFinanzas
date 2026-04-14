@@ -5,6 +5,7 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import bcrypt               from 'bcryptjs'
 import { calcularEstadoCliente } from '@/lib/calculos'
+import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 
 // Funciones de fecha en timezone Colombia (UTC-5)
 // Medianoche Colombia = 05:00 UTC
@@ -32,12 +33,16 @@ export async function GET(request, { params }) {
     include: {
       rutas: {
         where:  { activo: true },
-        include: {
+        select: {
+          id: true,
+          nombre: true,
+          diasSinCobro: true,
           clientes: {
             select: {
               id: true,
               nombre: true,
               estado: true,
+              diasSinCobro: true,
               prestamos: {
                 where: { estado: 'activo' },
                 select: {
@@ -46,7 +51,7 @@ export async function GET(request, { params }) {
                   cuotaDiaria: true,
                   diasPlazo: true,
                   frecuencia: true,
-                  pagos: { select: { montoPagado: true } },
+                  pagos: { select: { montoPagado: true, tipo: true } },
                 },
               },
             },
@@ -62,13 +67,18 @@ export async function GET(request, { params }) {
 
   if (!cobrador) return Response.json({ error: 'Cobrador no encontrado' }, { status: 404 })
 
+  const org = await prisma.organization.findUnique({
+    where: { id: session.user.organizationId },
+    select: { diasSinCobro: true },
+  })
+
   // Recalcular estado real de cada cliente
   const ruta = cobrador.rutas[0] ?? null
   if (ruta) {
     ruta.clientes = ruta.clientes.map(c => ({
       id: c.id,
       nombre: c.nombre,
-      estado: calcularEstadoCliente(c.prestamos),
+      estado: calcularEstadoCliente(c.prestamos, obtenerDiasSinCobro(c, ruta, org)),
     }))
   }
 

@@ -2,7 +2,8 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado, pagoHoy } from '@/lib/calculos'
+import { calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado, calcularProximoCobro, formatFechaCobro, pagoHoy } from '@/lib/calculos'
+import { obtenerDiasSinCobro, esHoySinCobro } from '@/lib/dias-sin-cobro'
 
 // Medianoche Colombia = 05:00 UTC
 function hoyColombiaUTC() {
@@ -22,6 +23,10 @@ export async function GET() {
   const userId = session.user.id
   const rol = session.user.rol
   const rutaId = session.user.rutaId
+  const org = await prisma.organization.findUnique({
+    where: { id: orgId },
+    select: { diasSinCobro: true },
+  })
 
   // ── Filtro base: cobrador solo ve su ruta ──
   const clienteWhere = {
@@ -34,7 +39,7 @@ export async function GET() {
   const clientesRaw = await prisma.cliente.findMany({
     where: clienteWhere,
     include: {
-      ruta: { select: { id: true, nombre: true } },
+      ruta: { select: { id: true, nombre: true, diasSinCobro: true } },
       prestamos: {
         orderBy: { createdAt: 'desc' },
         include: {
@@ -51,14 +56,22 @@ export async function GET() {
   // Enriquecer préstamos con cálculos
   const clientes = clientesRaw.map((c) => ({
     ...c,
-    prestamos: c.prestamos.map((p) => ({
-      ...p,
-      totalPagado: p.pagos.filter(x => !['recargo', 'descuento'].includes(x.tipo)).reduce((a, x) => a + x.montoPagado, 0),
-      diasMora: calcularDiasMora(p),
-      saldoPendiente: calcularSaldoPendiente(p),
-      porcentajePagado: calcularPorcentajePagado(p),
-      pagoHoy: pagoHoy(p),
-    })),
+    ...(() => {
+      const diasExcluidos = obtenerDiasSinCobro(c, c.ruta, org)
+      const hoySinCobro = esHoySinCobro(diasExcluidos)
+      return {
+        hoySinCobro,
+        prestamos: c.prestamos.map((p) => ({
+          ...p,
+          totalPagado: p.pagos.filter(x => !['recargo', 'descuento'].includes(x.tipo)).reduce((a, x) => a + x.montoPagado, 0),
+          diasMora: calcularDiasMora(p, diasExcluidos),
+          saldoPendiente: calcularSaldoPendiente(p),
+          porcentajePagado: calcularPorcentajePagado(p),
+          pagoHoy: pagoHoy(p),
+          proximoCobro: calcularProximoCobro(p, diasExcluidos),
+        })),
+      }
+    })(),
   }))
 
   // ── 2. Rutas (enriquecidas con metricas completas) ──
@@ -102,8 +115,21 @@ export async function GET() {
       const diasMora = activos.length > 0 ? Math.max(0, ...activos.map(p => p.diasMora || 0)) : 0
       const pagadoHoy = activos.some(p => p.pagoHoy)
       const estado = activos.length === 0 ? 'completado' : diasMora > 0 ? 'mora' : 'activo'
+      const hoySinCobro = Boolean(ce.hoySinCobro)
+      let proximoCobro = null
+      let frecuencia = activos[0]?.frecuencia || 'diario'
+      let cobroPendienteHoy = false
 
-      esperadoHoy += cuota
+      for (const p of activos) {
+        const pc = p.proximoCobro ? new Date(p.proximoCobro) : null
+        if (pc && (!proximoCobro || pc < proximoCobro)) proximoCobro = pc
+        frecuencia = p.frecuencia || frecuencia
+        if ((p.saldoPendiente ?? 0) > 0 && (!pc || pc < finHoy)) {
+          cobroPendienteHoy = true
+        }
+      }
+
+      esperadoHoy += hoySinCobro ? 0 : cuota
       if (pagadoHoy) {
         recaudadoHoy += activos.reduce((s, p) => {
           return s + p.pagos
@@ -111,7 +137,8 @@ export async function GET() {
             .reduce((a, pg) => a + pg.montoPagado, 0)
         }, 0)
       }
-      if (!pagadoHoy && activos.length > 0) pendientesHoy++
+      const pendienteHoyCliente = !hoySinCobro && cobroPendienteHoy
+      if (pendienteHoyCliente) pendientesHoy++
       if (diasMora > 0) enMora++
       carteraTotal += activos.reduce((s, p) => s + (p.saldoPendiente || 0), 0)
       capitalTotal += activos.reduce((s, p) => s + p.montoPrestado, 0)
@@ -127,7 +154,24 @@ export async function GET() {
         }
       }
 
-      return { ...rc, estado, pagoHoy: pagadoHoy, diasMora, cuota, diasDesdeUltimoPago }
+      let diasParaCobro = null
+      if (proximoCobro) {
+        diasParaCobro = Math.round((proximoCobro.getTime() - inicioHoy.getTime()) / 86400000)
+      }
+
+      return {
+        ...rc,
+        estado,
+        pagoHoy: pagadoHoy,
+        diasMora,
+        cuota,
+        diasDesdeUltimoPago,
+        hoySinCobro,
+        cobroPendienteHoy: pendienteHoyCliente,
+        frecuencia,
+        diasParaCobro,
+        proximoCobroLabel: proximoCobro ? formatFechaCobro(proximoCobro) : null,
+      }
     })
 
     const cierre = cierresHoy.find(c => c.cobradorId === r.cobradorId) || null
@@ -168,7 +212,7 @@ export async function GET() {
       .filter(pg => new Date(pg.fechaPago) >= inicioHoy && new Date(pg.fechaPago) < finHoy && !['recargo', 'descuento'].includes(pg.tipo))
       .reduce((a, pg) => a + pg.montoPagado, 0)
   }, 0)
-  const esperadoCaja = prestamosActivos.reduce((s, p) => s + (p.cuotaDiaria || 0), 0)
+  const esperadoCaja = rutas.reduce((s, r) => s + (r.esperadoHoy || 0), 0)
 
   const gastosMenores = await prisma.gastoMenor.findMany({
     where: { organizationId: orgId, fecha: { gte: inicioHoy, lt: finHoy }, estado: 'aprobado' },

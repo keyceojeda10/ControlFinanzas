@@ -3,7 +3,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado, calcularProximoCobro } from '@/lib/calculos'
+import { calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado, calcularProximoCobro, calcularEstadoCliente } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
 import { geocodeAddress }   from '@/lib/geocoding'
@@ -67,7 +67,9 @@ export async function GET(request, { params }) {
     proximoCobro:        calcularProximoCobro(p, diasExcluidos),
   }))
 
-  return Response.json({ ...cliente, prestamos: prestamosEnriquecidos })
+  const estadoCalculado = calcularEstadoCliente(cliente.prestamos, diasExcluidos)
+
+  return Response.json({ ...cliente, estado: estadoCalculado, prestamos: prestamosEnriquecidos })
 }
 
 // ─── PATCH /api/clientes/[id] ───────────────────────────────────

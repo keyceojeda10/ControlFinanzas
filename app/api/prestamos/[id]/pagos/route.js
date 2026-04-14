@@ -9,8 +9,10 @@ import {
   calcularPorcentajePagado,
   calcularEstadoCliente,
   calcularCapitalRestante,
+  calcularProximoCobro,
   pagoHoy,
 } from '@/lib/calculos'
+import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { registrarMovimientoCapital } from '@/lib/capital'
 import { logActividad } from '@/lib/activity-log'
 import { enviarPushOrg } from '@/lib/push'
@@ -30,7 +32,14 @@ export async function POST(request, { params }) {
   const prestamo = await prisma.prestamo.findFirst({
     where: { id: prestamoId, organizationId },
     include: {
-      cliente: { select: { id: true, rutaId: true } },
+      cliente: {
+        select: {
+          id: true,
+          rutaId: true,
+          diasSinCobro: true,
+          ruta: { select: { diasSinCobro: true } },
+        },
+      },
       pagos:   { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
     },
   })
@@ -44,6 +53,11 @@ export async function POST(request, { params }) {
   if (rol === 'cobrador' && prestamo.cliente.rutaId !== rutaId) {
     return Response.json({ error: 'No tienes acceso a este préstamo' }, { status: 403 })
   }
+
+  const org = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { diasSinCobro: true },
+  })
 
   const body = await request.json()
   const { montoPagado, tipo, nota, diasAbonados, metodoPago, plataforma } = body
@@ -178,7 +192,7 @@ export async function POST(request, { params }) {
     // 4. Recalcular estado del cliente considerando TODOS sus préstamos activos
     const todosLosPrestamos = await tx.prestamo.findMany({
       where:   { clienteId: prestamo.cliente.id },
-      include: { pagos: { select: { montoPagado: true, fechaPago: true } } },
+      include: { pagos: { select: { montoPagado: true, fechaPago: true, tipo: true } } },
     })
 
     // Ajustar estado del préstamo actual en el array local
@@ -186,7 +200,8 @@ export async function POST(request, { params }) {
       p.id === prestamoId ? { ...p, estado: estadoPrestamo } : p
     )
 
-    const nuevoEstadoCliente = calcularEstadoCliente(prestamosAjustados)
+    const diasExcluidosCliente = obtenerDiasSinCobro(prestamo.cliente, prestamo.cliente?.ruta, org)
+    const nuevoEstadoCliente = calcularEstadoCliente(prestamosAjustados, diasExcluidosCliente)
     await tx.cliente.update({
       where: { id: prestamo.cliente.id },
       data:  { estado: nuevoEstadoCliente },
@@ -212,13 +227,25 @@ export async function POST(request, { params }) {
   const prestamoFinal = await prisma.prestamo.findUnique({
     where: { id: prestamoId },
     include: {
-      cliente: { select: { id: true, nombre: true, cedula: true, telefono: true, rutaId: true } },
+      cliente: {
+        select: {
+          id: true,
+          nombre: true,
+          cedula: true,
+          telefono: true,
+          rutaId: true,
+          diasSinCobro: true,
+          ruta: { select: { diasSinCobro: true } },
+        },
+      },
       pagos: {
         orderBy: { fechaPago: 'desc' },
         include: { cobrador: { select: { id: true, nombre: true } } },
       },
     },
   })
+
+  const diasExcluidosFinal = obtenerDiasSinCobro(prestamoFinal?.cliente, prestamoFinal?.cliente?.ruta, org)
 
   const tipoLabel = { completo: 'completo', parcial: 'parcial', capital: 'abono capital', recargo: 'recargo', descuento: 'descuento' }
   logActividad({ session, accion: 'registrar_pago', entidadTipo: 'pago', entidadId: prestamoId, detalle: `Pago ${tipoLabel[tipo] || tipo} $${montoFinal.toLocaleString('es-CO')}`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
@@ -238,7 +265,8 @@ export async function POST(request, { params }) {
     totalPagado:      prestamoFinal.pagos.filter(p => !['recargo', 'descuento'].includes(p.tipo)).reduce((a, x) => a + x.montoPagado, 0),
     saldoPendiente:   calcularSaldoPendiente(prestamoFinal),
     porcentajePagado: calcularPorcentajePagado(prestamoFinal),
-    diasMora:         calcularDiasMora(prestamoFinal),
+    diasMora:         calcularDiasMora(prestamoFinal, diasExcluidosFinal),
+    proximoCobro:     calcularProximoCobro(prestamoFinal, diasExcluidosFinal),
     pagoHoy:          pagoHoy(prestamoFinal),
   }, { status: 201 })
 }

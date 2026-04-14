@@ -3,6 +3,8 @@ import { NextResponse }  from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions }   from '@/lib/auth'
 import { prisma }        from '@/lib/prisma'
+import { calcularDiasMora } from '@/lib/calculos'
+import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 
 const COLOMBIA_OFFSET = 5 * 60 * 60 * 1000 // UTC-5
 
@@ -46,17 +48,39 @@ export async function GET(req) {
     fechaHasta = new Date(rangeFin.fin.getTime() + 1)
   }
 
-  const [clientes, prestamos, pagos, mora] = await Promise.all([
-    // Total clientes activos
-    prisma.cliente.count({ where: { organizationId: orgId, estado: 'activo' } }),
-
-    // Préstamos activos vs completados
-    prisma.prestamo.groupBy({
-      by: ['estado'],
-      where: { organizationId: orgId },
-      _count: true,
-      _sum: { montoPrestado: true, totalAPagar: true },
+  const [org, prestamosActivosDetalle, prestamosCompletados, pagos] = await Promise.all([
+    prisma.organization.findUnique({
+      where: { id: orgId },
+      select: { diasSinCobro: true },
     }),
+
+    prisma.prestamo.findMany({
+      where: {
+        organizationId: orgId,
+        estado: 'activo',
+        cliente: { estado: { notIn: ['eliminado', 'inactivo'] } },
+      },
+      select: {
+        clienteId: true,
+        montoPrestado: true,
+        totalAPagar: true,
+        fechaInicio: true,
+        diasPlazo: true,
+        cuotaDiaria: true,
+        frecuencia: true,
+        estado: true,
+        pagos: { select: { montoPagado: true, tipo: true } },
+        cliente: {
+          select: {
+            id: true,
+            diasSinCobro: true,
+            ruta: { select: { diasSinCobro: true } },
+          },
+        },
+      },
+    }),
+
+    prisma.prestamo.count({ where: { organizationId: orgId, estado: 'completado' } }),
 
     // Pagos en el período (excluir ajustes)
     prisma.pago.aggregate({
@@ -68,24 +92,34 @@ export async function GET(req) {
       _sum: { montoPagado: true },
       _count: true,
     }),
-
-    // Clientes en mora
-    prisma.cliente.count({ where: { organizationId: orgId, estado: 'mora' } }),
   ])
 
-  const activos    = prestamos.find((p) => p.estado === 'activo')
-  const completados = prestamos.find((p) => p.estado === 'completado')
+  const clientesActivos = new Set()
+  const clientesMora = new Set()
+  let carteraActiva = 0
+  let capitalPrestado = 0
+
+  for (const p of prestamosActivosDetalle) {
+    clientesActivos.add(p.clienteId)
+    carteraActiva += p.totalAPagar ?? 0
+    capitalPrestado += p.montoPrestado ?? 0
+
+    const diasExcluidos = obtenerDiasSinCobro(p.cliente, p.cliente?.ruta, org)
+    if (calcularDiasMora(p, diasExcluidos) > 0) {
+      clientesMora.add(p.clienteId)
+    }
+  }
 
   return NextResponse.json({
     clientes: {
-      total: clientes,
-      enMora: mora,
+      total: clientesActivos.size,
+      enMora: clientesMora.size,
     },
     prestamos: {
-      activos:     activos?._count    ?? 0,
-      completados: completados?._count ?? 0,
-      carteraActiva: activos?._sum?.totalAPagar ?? 0,
-      capitalPrestado: activos?._sum?.montoPrestado ?? 0,
+      activos:     prestamosActivosDetalle.length,
+      completados: prestamosCompletados,
+      carteraActiva,
+      capitalPrestado,
     },
     pagos: {
       totalPeriodo: pagos._sum.montoPagado ?? 0,

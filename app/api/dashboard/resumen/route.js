@@ -3,6 +3,8 @@ import { NextResponse }     from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { calcularDiasMora } from '@/lib/calculos'
+import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 
 // Obtener fecha actual en timezone Colombia (UTC-5)
 function getColombiaDate() {
@@ -28,31 +30,47 @@ export async function GET() {
   const finMes       = new Date(Date.UTC(y, m + 1, 1, 4, 59, 59))
 
   const [
-    clientesTotal,
-    clientesMora,
-    prestamosActivos,
+    org,
+    prestamosActivosDetalle,
     prestamosCompletados,
     pagosHoy,
     pagosMes,
-    proximosCobros,
+    ultimosPagos,
   ] = await Promise.all([
-    // Clientes totales
-    prisma.cliente.count({ where: { organizationId: orgId, estado: { notIn: ['eliminado'] } } }),
-
-    // Clientes en mora
-    prisma.cliente.count({ where: { organizationId: orgId, estado: 'mora' } }),
-
-    // Préstamos activos con suma
-    prisma.prestamo.aggregate({
-      where: { organizationId: orgId, estado: 'activo' },
-      _count: true,
-      _sum: { montoPrestado: true, totalAPagar: true, cuotaDiaria: true },
+    prisma.organization.findUnique({
+      where: { id: orgId },
+      select: { diasSinCobro: true },
     }),
 
-    // Préstamos completados
+    prisma.prestamo.findMany({
+      where: {
+        organizationId: orgId,
+        estado: 'activo',
+        cliente: { estado: { notIn: ['eliminado', 'inactivo'] } },
+      },
+      select: {
+        clienteId: true,
+        montoPrestado: true,
+        totalAPagar: true,
+        cuotaDiaria: true,
+        fechaInicio: true,
+        diasPlazo: true,
+        frecuencia: true,
+        estado: true,
+        pagos: { select: { montoPagado: true, tipo: true } },
+        cliente: {
+          select: {
+            id: true,
+            diasSinCobro: true,
+            ruta: { select: { diasSinCobro: true } },
+          },
+        },
+      },
+    }),
+
     prisma.prestamo.count({ where: { organizationId: orgId, estado: 'completado' } }),
 
-    // Pagos de hoy (usar fechas UTC para сравнение con datos en DB)
+    // Pagos de hoy (usar fechas UTC para comparar con datos en DB)
     prisma.pago.aggregate({
       where: {
         organizationId: orgId,
@@ -94,17 +112,35 @@ export async function GET() {
     }),
   ])
 
+  const clientesActivos = new Set()
+  const clientesMora = new Set()
+  let carteraActiva = 0
+  let capitalPrestado = 0
+  let cuotaDiariaTotal = 0
+
+  for (const p of prestamosActivosDetalle) {
+    clientesActivos.add(p.clienteId)
+    carteraActiva += p.totalAPagar ?? 0
+    capitalPrestado += p.montoPrestado ?? 0
+    cuotaDiariaTotal += p.cuotaDiaria ?? 0
+
+    const diasExcluidos = obtenerDiasSinCobro(p.cliente, p.cliente?.ruta, org)
+    if (calcularDiasMora(p, diasExcluidos) > 0) {
+      clientesMora.add(p.clienteId)
+    }
+  }
+
   return NextResponse.json({
     clientes: {
-      total:  clientesTotal,
-      enMora: clientesMora,
+      total:  clientesActivos.size,
+      enMora: clientesMora.size,
     },
     prestamos: {
-      activos:         prestamosActivos._count,
+      activos:         prestamosActivosDetalle.length,
       completados:     prestamosCompletados,
-      carteraActiva:   prestamosActivos._sum?.totalAPagar   ?? 0,
-      capitalPrestado: prestamosActivos._sum?.montoPrestado ?? 0,
-      cuotaDiariaTotal: prestamosActivos._sum?.cuotaDiaria  ?? 0,
+      carteraActiva:   carteraActiva,
+      capitalPrestado: capitalPrestado,
+      cuotaDiariaTotal: cuotaDiariaTotal,
     },
     cobros: {
       hoy:         pagosHoy._sum?.montoPagado    ?? 0,
@@ -112,7 +148,7 @@ export async function GET() {
       mes:         pagosMes._sum?.montoPagado   ?? 0,
       cantidadMes: pagosMes._count              ?? 0,
     },
-    ultimosPagos: proximosCobros.map((p) => ({
+    ultimosPagos: ultimosPagos.map((p) => ({
       id:         p.id,
       cliente:    p.prestamo.cliente.nombre,
       monto:      p.montoPagado,
