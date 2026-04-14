@@ -154,10 +154,26 @@ export async function POST(req) {
     // Nota: la recompensa de referido (+30 días) se otorga cuando el referido
     // paga su primer plan, no al registrarse. Ver webhook de MercadoPago.
 
-    // Facebook CAPI: reportar conversión real (fire-and-forget)
+    // Buscar lead asociado para vincular y obtener teléfono para CAPI
+    const leadAsociado = await prisma.lead.findFirst({
+      where: { telefono: { not: '' }, estado: { not: 'registrado' } },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, telefono: true },
+    }).catch(() => null)
+
+    // Si hay un lead reciente sin registrar, vincularlo a esta organización
+    if (leadAsociado) {
+      prisma.lead.update({
+        where: { id: leadAsociado.id },
+        data: { estado: 'registrado', organizationId: resultado.org.id },
+      }).catch(() => {})
+    }
+
+    // Facebook CAPI: reportar conversión real con email + teléfono del lead
     sendConversionEvent({
       eventName: 'CompleteRegistration',
       email: emailNorm,
+      phone: leadAsociado?.telefono,
     }).catch(() => {})
 
     return NextResponse.json({
