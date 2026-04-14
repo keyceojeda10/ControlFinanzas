@@ -27,7 +27,7 @@ async function calcularEsperado(organizationId, cobradorId) {
 }
 
 async function calcularDesembolsadoDia(organizationId, cobradorId, fechaInicio, fechaFin) {
-  const [prestamosRuta, movimientosCreador] = await Promise.all([
+  const [prestamosRuta, movimientosCreador, actividadesCreador] = await Promise.all([
     prisma.prestamo.findMany({
       where: {
         organizationId,
@@ -46,10 +46,40 @@ async function calcularDesembolsadoDia(organizationId, cobradorId, fechaInicio, 
       },
       select: { referenciaId: true, monto: true },
     }),
+    prisma.actividadLog.findMany({
+      where: {
+        organizationId,
+        userId: cobradorId,
+        accion: 'crear_prestamo',
+        createdAt: { gte: fechaInicio, lte: fechaFin },
+      },
+      select: { entidadId: true },
+    }),
   ])
+
+  const prestamoIdsActividad = actividadesCreador
+    .map((a) => a.entidadId)
+    .filter((id) => !!id)
+
+  const prestamosActividad = prestamoIdsActividad.length
+    ? await prisma.prestamo.findMany({
+      where: {
+        organizationId,
+        id: { in: prestamoIdsActividad },
+      },
+      select: { id: true, montoPrestado: true },
+    })
+    : []
 
   const idsContabilizados = new Set(prestamosRuta.map((p) => p.id))
   let total = prestamosRuta.reduce((acc, p) => acc + p.montoPrestado, 0)
+
+  for (const p of prestamosActividad) {
+    if (!idsContabilizados.has(p.id)) {
+      total += p.montoPrestado
+      idsContabilizados.add(p.id)
+    }
+  }
 
   for (const mov of movimientosCreador) {
     if (!mov.referenciaId) {
