@@ -133,7 +133,25 @@ npm run dev
 - `npm run lint`: lint con ESLint.
 - `npm run test`: tests en modo watch.
 - `npm run test:run`: ejecutar tests una vez.
+- `npm run smoke:mora`: valida coherencia de mora, proximo cobro y pago hoy sobre rutas activas.
 - `./scripts/deploy-stack.ps1`: deploy app + trigger de landing opcional + verificacion post-deploy.
+- `bash /home/control-finanzas/scripts/setup-cron-cierre-recordatorios.sh`: instala/actualiza cron para push de cierres pendientes.
+
+### Smoke test de consistencia (mora/proximo/pago)
+
+Comando base:
+
+```bash
+npm run smoke:mora
+```
+
+Opciones utiles:
+
+- Organizacion especifica: `npm run smoke:mora -- --org=<organizationId>`
+- Fecha especifica (Colombia): `npm run smoke:mora -- --date=YYYY-MM-DD`
+- Limite de muestras en salida: `npm run smoke:mora -- --sample=50`
+
+Este smoke test retorna codigo de salida `1` si detecta inconsistencias, por lo que se puede usar en CI o como paso post-deploy.
 
 ## Deploy automatizado (app + landing separada)
 
@@ -240,10 +258,30 @@ sudo systemctl reload openlitespeed
 
 Varios endpoints en `app/api/cron/*` requieren header `x-cron-secret`.
 
+Nuevo job recomendado para cierre de caja:
+
+- `POST /api/cron/cierre-recordatorios`: envia push al cobrador cuando tenga cierre pendiente (hoy) o ajuste pendiente de ayer. Incluye anti-spam diario por cobrador/tipo/fecha.
+- Frecuencia sugerida: cada 30-60 minutos entre las 20:00 y 23:55 (America/Bogota).
+
+Instalacion automatica del scheduler en VPS:
+
+```bash
+bash /home/control-finanzas/scripts/setup-cron-cierre-recordatorios.sh
+```
+
+Opcional: pasar ruta personalizada del `.env` del servidor:
+
+```bash
+bash /home/control-finanzas/scripts/setup-cron-cierre-recordatorios.sh /ruta/a/.env
+```
+
 Ejemplo:
 
 ```bash
 curl -X POST "http://localhost:3000/api/cron/onboarding-emails" \
+	-H "x-cron-secret: TU_CRON_SECRET"
+
+curl -X POST "http://localhost:3000/api/cron/cierre-recordatorios" \
 	-H "x-cron-secret: TU_CRON_SECRET"
 ```
 

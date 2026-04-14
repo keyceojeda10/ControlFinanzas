@@ -14,13 +14,95 @@ function Write-Step {
     Write-Host "[deploy] $Message" -ForegroundColor Cyan
 }
 
-function Invoke-HttpGet {
-    param([string]$Url)
-    try {
-        return Invoke-WebRequest -Uri $Url -TimeoutSec 30
+function Set-EnvVarIfMissing {
+    param(
+        [string]$Name,
+        [string]$Value
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        return
     }
-    catch {
-        throw "HTTP GET failed for $Url :: $($_.Exception.Message)"
+
+    $current = [Environment]::GetEnvironmentVariable($Name, 'Process')
+    if ([string]::IsNullOrWhiteSpace($current)) {
+        [Environment]::SetEnvironmentVariable($Name, $Value, 'Process')
+    }
+}
+
+function Import-EnvFile {
+    param([string]$FilePath)
+
+    if (-not (Test-Path -LiteralPath $FilePath)) {
+        return
+    }
+
+    $loadedCount = 0
+    foreach ($line in (Get-Content -LiteralPath $FilePath)) {
+        $trimmed = $line.Trim()
+        if ($trimmed.Length -eq 0 -or $trimmed.StartsWith('#')) {
+            continue
+        }
+
+        $envMatch = [regex]::Match($trimmed, '^(?<name>[A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?<value>.*)$')
+        if (-not $envMatch.Success) {
+            continue
+        }
+
+        $name = $envMatch.Groups['name'].Value
+        $value = $envMatch.Groups['value'].Value.Trim()
+        if ($value.Length -ge 2 -and (
+            ($value.StartsWith('"') -and $value.EndsWith('"')) -or
+            ($value.StartsWith("'") -and $value.EndsWith("'"))
+        )) {
+            $value = $value.Substring(1, $value.Length - 2)
+        }
+
+        $before = [Environment]::GetEnvironmentVariable($name, 'Process')
+        Set-EnvVarIfMissing -Name $name -Value $value
+        $after = [Environment]::GetEnvironmentVariable($name, 'Process')
+        if ([string]::IsNullOrWhiteSpace($before) -and -not [string]::IsNullOrWhiteSpace($after)) {
+            $loadedCount += 1
+        }
+    }
+
+    Write-Step ("Loaded $loadedCount deploy env vars from " + (Split-Path -Leaf $FilePath))
+}
+
+function Invoke-HttpGet {
+    param(
+        [string]$Url,
+        [int]$MaxAttempts = 1,
+        [int]$RetryDelaySeconds = 0
+    )
+
+    for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
+        try {
+            return Invoke-WebRequest -Uri $Url -TimeoutSec 30
+        }
+        catch {
+            if ($attempt -ge $MaxAttempts) {
+                throw "HTTP GET failed for $Url :: $($_.Exception.Message)"
+            }
+
+            $statusCode = $null
+            try {
+                $statusCode = [int]$_.Exception.Response.StatusCode.value__
+            }
+            catch {
+            }
+
+            if ($statusCode) {
+                Write-Warning "Attempt $attempt/$MaxAttempts failed for $Url (status $statusCode). Retrying in $RetryDelaySeconds seconds..."
+            }
+            else {
+                Write-Warning "Attempt $attempt/$MaxAttempts failed for $Url. Retrying in $RetryDelaySeconds seconds..."
+            }
+
+            if ($RetryDelaySeconds -gt 0) {
+                Start-Sleep -Seconds $RetryDelaySeconds
+            }
+        }
     }
 }
 
@@ -28,9 +110,9 @@ function Invoke-SshCommand {
     param(
         [string]$Target,
         [string]$RemoteCommand,
-        [string]$Password
+        [string]$Secret
     )
-    if (-not [string]::IsNullOrWhiteSpace($Password)) {
+    if (-not [string]::IsNullOrWhiteSpace($Secret)) {
         $sshArgs = @(
             '-o', 'PreferredAuthentications=password',
             '-o', 'PubkeyAuthentication=no',
@@ -44,7 +126,7 @@ function Invoke-SshCommand {
             throw 'sshpass is required for password-based deploy. Install sshpass or use SSH keys.'
         }
 
-        & sshpass -p $Password ssh @sshArgs
+        & sshpass -p $Secret ssh @sshArgs
     }
     else {
         $sshArgs = @(
@@ -59,9 +141,9 @@ function Invoke-SshCommand {
 
 function Get-AllJsPathsFromHtml {
     param([string]$Html)
-    $matches = [regex]::Matches($Html, '/_next/static/[^"'']+\.js')
+    $pathMatches = [regex]::Matches($Html, '/_next/static/[^"'']+\.js')
     $paths = @()
-    foreach ($m in $matches) {
+    foreach ($m in $pathMatches) {
         $paths += $m.Value
     }
     return $paths | Select-Object -Unique
@@ -139,6 +221,15 @@ function Test-LandingPricing {
     }
 }
 
+$repoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
+$envFiles = @(
+    (Join-Path $repoRoot '.env.deploy.local'),
+    (Join-Path $repoRoot '.env.deploy')
+)
+foreach ($envFile in $envFiles) {
+    Import-EnvFile -FilePath $envFile
+}
+
 $appBaseUrl = if ($env:APP_BASE_URL) { $env:APP_BASE_URL.TrimEnd('/') } else { 'https://app.control-finanzas.com' }
 $landingBaseUrl = if ($env:LANDING_BASE_URL) { $env:LANDING_BASE_URL.TrimEnd('/') } else { 'https://control-finanzas.com' }
 $deployScript = if ($env:DEPLOY_SCRIPT_PATH) { $env:DEPLOY_SCRIPT_PATH } else { '/home/deploy-sistema.sh' }
@@ -151,7 +242,7 @@ if (-not $SkipAppDeploy) {
 
     $target = "$($env:DEPLOY_SSH_USER)@$($env:DEPLOY_SSH_HOST)"
     Write-Step "Deploying app repo on $target with script $deployScript"
-    Invoke-SshCommand -Target $target -RemoteCommand "bash $deployScript" -Password $env:DEPLOY_SSH_PASSWORD
+    Invoke-SshCommand -Target $target -RemoteCommand "bash $deployScript" -Secret $env:DEPLOY_SSH_PASSWORD
     if ($LASTEXITCODE -ne 0) {
         throw "App deploy command failed with exit code $LASTEXITCODE."
     }
@@ -172,7 +263,7 @@ if (-not $SkipLandingDeploy) {
     elseif (-not [string]::IsNullOrWhiteSpace($env:LANDING_DEPLOY_SSH_USER) -and -not [string]::IsNullOrWhiteSpace($env:LANDING_DEPLOY_SSH_HOST)) {
         $landingTarget = "$($env:LANDING_DEPLOY_SSH_USER)@$($env:LANDING_DEPLOY_SSH_HOST)"
         Write-Step "Deploying landing repo on $landingTarget with script $landingDeployScript"
-        Invoke-SshCommand -Target $landingTarget -RemoteCommand "bash $landingDeployScript" -Password $env:LANDING_DEPLOY_SSH_PASSWORD
+        Invoke-SshCommand -Target $landingTarget -RemoteCommand "bash $landingDeployScript" -Secret $env:LANDING_DEPLOY_SSH_PASSWORD
         if ($LASTEXITCODE -ne 0) {
             throw "Landing deploy command failed with exit code $LASTEXITCODE."
         }
@@ -190,7 +281,8 @@ else {
 if (-not $SkipVerify) {
     Write-Step 'Running post-deploy checks.'
 
-    $health = Invoke-HttpGet -Url "$appBaseUrl/api/health"
+    # PM2 restart can produce brief 503 responses while the app warms up.
+    $health = Invoke-HttpGet -Url "$appBaseUrl/api/health" -MaxAttempts 8 -RetryDelaySeconds 5
     $appCheck = Test-AppPricing -AppBaseUrl $appBaseUrl
     $landingCheck = Test-LandingPricing -LandingBaseUrl $landingBaseUrl
 

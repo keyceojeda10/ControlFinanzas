@@ -2,6 +2,7 @@
 // app/(dashboard)/caja/page.jsx - Caja del día
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useAuth }             from '@/hooks/useAuth'
 import { useOffline }          from '@/components/providers/OfflineProvider'
 import { guardarEnCache, leerDeCache } from '@/lib/offline'
@@ -12,6 +13,9 @@ import { SkeletonCard }        from '@/components/ui/Skeleton'
 import { formatCOP }           from '@/lib/calculos'
 import ReportarGasto          from '@/components/gastos/ReportarGasto'
 import ListaGastos            from '@/components/gastos/ListaGastos'
+
+const DAY_MS = 24 * 60 * 60 * 1000
+const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
 
 const fmtFecha = (d) => {
   if (!d) return '—'
@@ -24,6 +28,12 @@ const fmtFecha = (d) => {
 const getColombiaDateStr = () => {
   const d = new Date(Date.now() - 5 * 60 * 60 * 1000)
   return d.toISOString().slice(0, 10)
+}
+
+const diasDesdeFechaColombia = (fechaBase, fechaObjetivo) => {
+  const base = new Date(fechaBase + 'T00:00:00-05:00')
+  const objetivo = new Date(fechaObjetivo + 'T00:00:00-05:00')
+  return Math.round((base - objetivo) / DAY_MS)
 }
 
 // Barra de progreso visual
@@ -40,6 +50,8 @@ function ProgressBar({ value, max, color = '#22c55e' }) {
 }
 
 export default function CajaPage() {
+  const searchParams = useSearchParams()
+  const fechaParam = searchParams.get('fecha')
   const { session, esOwner, esCobrador, loading: authLoading } = useAuth()
   const { lastSyncedAt } = useOffline()
 
@@ -52,11 +64,24 @@ export default function CajaPage() {
   const [exito, setExito] = useState(false)
   const [showGasto, setShowGasto] = useState(false)
   const [gastosPendientes, setGastosPendientes] = useState(0)
-  const [fechaSeleccionada, setFechaSeleccionada] = useState(getColombiaDateStr())
+  const [fechaSeleccionada, setFechaSeleccionada] = useState(
+    typeof fechaParam === 'string' && FECHA_REGEX.test(fechaParam)
+      ? fechaParam
+      : getColombiaDateStr()
+  )
+  const [modoAjusteCierre, setModoAjusteCierre] = useState(false)
   const [isOffline, setIsOffline] = useState(false)
   const hasLoadedOnceRef = useRef(false)
 
   const esHoy = fechaSeleccionada === getColombiaDateStr()
+
+  useEffect(() => {
+    if (typeof fechaParam !== 'string' || !FECHA_REGEX.test(fechaParam)) return
+    if (fechaParam === fechaSeleccionada) return
+    setFechaSeleccionada(fechaParam)
+    setExito(false)
+    setModoAjusteCierre(false)
+  }, [fechaParam, fechaSeleccionada])
 
   const fetchData = useCallback(async ({ soft = false } = {}) => {
     const shouldUseSoftRefresh = soft && hasLoadedOnceRef.current
@@ -110,6 +135,7 @@ export default function CajaPage() {
   const handleFechaChange = (e) => {
     setFechaSeleccionada(e.target.value)
     setExito(false)
+    setModoAjusteCierre(false)
   }
 
   const registrarCierre = async (e) => {
@@ -117,14 +143,27 @@ export default function CajaPage() {
     setGuardando(true)
     setErrorCaja('')
     try {
+      const totalRecogidoFinal = totalRecogido === ''
+        ? Number(cajaData?.stats?.dia?.recogida || 0)
+        : Number(totalRecogido)
+
+      if (!Number.isFinite(totalRecogidoFinal) || totalRecogidoFinal < 0) {
+        setErrorCaja('Ingresa un valor válido para el cierre')
+        return
+      }
+
       const res = await fetch('/api/caja', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ totalRecogido: Number(totalRecogido) }),
+        body: JSON.stringify({
+          totalRecogido: totalRecogidoFinal,
+          fecha: fechaSeleccionada,
+        }),
       })
       const data = await res.json()
       if (!res.ok) { setErrorCaja(data.error ?? 'Error al registrar'); return }
       setExito(true)
+      setModoAjusteCierre(false)
       setTotalRecogido('')
       await fetchData()
     } finally {
@@ -146,6 +185,12 @@ export default function CajaPage() {
   const saldoRealCaja = stats.saldoRealCaja ?? (disponibleOperativo - desembolsadoDia)
   const tasaRecaudo = stats.tasaRecaudo || 0
   const colorRecaudo = tasaRecaudo >= 80 ? '#22c55e' : tasaRecaudo >= 50 ? '#f5c518' : '#ef4444'
+  const recaudadoRegistrado = Math.round(stats.recogida || 0)
+  const hoyColombia = getColombiaDateStr()
+  const diasAtrasSeleccion = diasDesdeFechaColombia(hoyColombia, fechaSeleccionada)
+  const esAyer = diasAtrasSeleccion === 1
+  const fechaEditableCobrador = diasAtrasSeleccion === 0 || diasAtrasSeleccion === 1
+  const fechaFueraRango = diasAtrasSeleccion < 0 || diasAtrasSeleccion > 1
 
   // ── VISTA DEL COBRADOR ────────────────────────────────────────
   if (esCobrador) {
@@ -153,6 +198,7 @@ export default function CajaPage() {
     const diferencia = cierreHoy ? cierreHoy.totalRecogido - cierreHoy.totalEsperado : null
     const cierreDesembolsado = cierreHoy?.totalDesembolsado ?? desembolsadoDia
     const cierreSaldoReal = cierreHoy?.saldoRealCaja ?? saldoRealCaja
+    const mostrarFormularioCierre = fechaEditableCobrador && (!cierreHoy || modoAjusteCierre)
 
     return (
       <div className="max-w-xl mx-auto space-y-4">
@@ -222,7 +268,7 @@ export default function CajaPage() {
         </Card>
 
         {/* Cierre */}
-        {cierreHoy ? (
+        {cierreHoy && !modoAjusteCierre ? (
           <Card>
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Cierre registrado</p>
@@ -253,15 +299,35 @@ export default function CajaPage() {
                 </span>
               </div>
             </div>
+
+            {esAyer && !modoAjusteCierre && (
+              <div className="mt-3 pt-3 border-t border-[#2a2a2a] space-y-2">
+                <p className="text-[11px] text-[#f5c518] leading-snug">
+                  Si olvidaste confirmar o corregir el monto ayer, puedes ajustarlo hoy.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModoAjusteCierre(true)
+                    setTotalRecogido(String(Math.round(cierreHoy.totalRecogido || recaudadoRegistrado)))
+                  }}
+                  className="text-xs font-semibold text-[#f5c518] hover:text-[#ffe07a] transition-colors"
+                >
+                  Ajustar cierre de este día
+                </button>
+              </div>
+            )}
           </Card>
-        ) : esHoy ? (
+        ) : mostrarFormularioCierre ? (
           <Card>
             <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">
-              Registrar cierre del día
+              {modoAjusteCierre
+                ? 'Ajustar cierre'
+                : (esAyer ? 'Registrar cierre pendiente (ayer)' : 'Registrar cierre del día')}
             </p>
             {exito && (
               <div className="mb-4 flex items-center gap-2 bg-[rgba(16,185,129,0.1)] border border-[rgba(16,185,129,0.2)] text-[#22c55e] text-sm rounded-[12px] px-4 py-3">
-                Cierre registrado exitosamente
+                Cierre guardado exitosamente
               </div>
             )}
             {errorCaja && (
@@ -269,22 +335,48 @@ export default function CajaPage() {
                 {errorCaja}
               </div>
             )}
+            {esAyer && (
+              <p className="mb-3 text-[11px] text-[#f5c518] leading-snug">
+                Estás cerrando el día anterior. Este ajuste evita que se pierda la gestión del cobrador.
+              </p>
+            )}
             <form onSubmit={registrarCierre} className="space-y-4">
               <div className="flex justify-between text-sm">
-                <span className="text-[#888888]">Total esperado hoy</span>
+                <span className="text-[#888888]">{esAyer ? 'Total esperado (ayer)' : 'Total esperado hoy'}</span>
                 <span className="font-semibold text-white">{formatCOP(stats.esperado || 0)}</span>
+              </div>
+              <div className="rounded-[12px] border border-[rgba(245,197,24,0.25)] bg-[rgba(245,197,24,0.08)] px-3 py-2.5 space-y-2">
+                <p className="text-[11px] text-[#f5c518] leading-snug">
+                  Importante: el cierre de caja no registra pagos ni descuenta saldo de préstamos.
+                </p>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] text-[#b8b8b8]">Recaudo ya registrado en sistema</span>
+                  <button
+                    type="button"
+                    onClick={() => setTotalRecogido(String(recaudadoRegistrado))}
+                    className="text-[11px] font-semibold text-[#f5c518] hover:text-[#ffe07a] transition-colors"
+                  >
+                    Usar {formatCOP(recaudadoRegistrado)}
+                  </button>
+                </div>
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-medium text-[#888888]">Dinero que vas a entregar (COP)</label>
                 <input
                   type="number"
                   inputMode="numeric"
+                  min="0"
                   placeholder="Ej: 250000"
                   value={totalRecogido}
                   onChange={(e) => setTotalRecogido(e.target.value)}
                   className="w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-white placeholder-[#777777] focus:outline-none focus:border-[#f5c518] focus:ring-1 focus:ring-[rgba(245,197,24,0.3)] transition-all"
                 />
               </div>
+              {totalRecogido !== '' && Number(totalRecogido) !== recaudadoRegistrado && (
+                <p className="text-[11px] text-[#f5c518]">
+                  Este valor no coincide con el recaudado registrado en pagos ({formatCOP(recaudadoRegistrado)}).
+                </p>
+              )}
               {totalRecogido && (
                 <div className="text-sm">
                   <span className="text-[#888888]">Diferencia: </span>
@@ -294,14 +386,18 @@ export default function CajaPage() {
                 </div>
               )}
               <Button type="submit" loading={guardando} className="w-full">
-                Registrar cierre de caja
+                {modoAjusteCierre ? 'Guardar ajuste de cierre' : 'Registrar cierre de caja'}
               </Button>
             </form>
           </Card>
         ) : (
           <Card>
             <div className="text-center py-4">
-              <p className="text-sm text-[#888888]">No se registró cierre este día</p>
+              <p className="text-sm text-[#888888]">
+                {fechaFueraRango
+                  ? 'Esta fecha ya no está disponible para cierre desde perfil cobrador.'
+                  : 'No se registró cierre este día'}
+              </p>
             </div>
           </Card>
         )}
@@ -332,6 +428,8 @@ export default function CajaPage() {
   // ── VISTA DEL OWNER ───────────────────────────────────────────
   const cobradoresCerrados = cobradores.filter(c => c.cerrado).length
   const cobradoresTotal = cobradores.length
+  const pendientesConRecaudo = cobradores.filter(c => !c.cerrado && (c.recaudadoDia || 0) > 0).length
+  const pendientesSinMovimiento = cobradores.filter(c => !c.cerrado && (c.recaudadoDia || 0) <= 0).length
 
   return (
     <div className="max-w-2xl mx-auto space-y-4">
@@ -415,6 +513,21 @@ export default function CajaPage() {
           )}
         </div>
 
+        {cobradoresTotal > 0 && (
+          <div className="mb-3 text-[11px] space-y-1">
+            {pendientesConRecaudo > 0 && (
+              <p className="text-[#f5c518]">
+                {pendientesConRecaudo} cobrador{pendientesConRecaudo === 1 ? '' : 'es'} con recaudo registrado pendiente de cierre.
+              </p>
+            )}
+            {pendientesSinMovimiento > 0 && (
+              <p className="text-[#666666]">
+                {pendientesSinMovimiento} cobrador{pendientesSinMovimiento === 1 ? '' : 'es'} sin pagos ni cierre hoy.
+              </p>
+            )}
+          </div>
+        )}
+
         {cobradoresTotal === 0 ? (
           <p className="text-sm text-[#888888] text-center py-4">
             No hay cobradores activos
@@ -424,6 +537,11 @@ export default function CajaPage() {
             {cobradores.map((c) => {
               const cierre = c.cierre
               const diff = cierre ? cierre.totalRecogido - cierre.totalEsperado : null
+              const recaudadoDiaCobrador = Math.round(c.recaudadoDia || 0)
+              const esperadoDiaCobrador = Math.round(c.esperadoDia || 0)
+              const sugeridoCierre = Math.round(c.sugeridoCierre || 0)
+              const deltaSistemaVsCierre = cierre ? recaudadoDiaCobrador - Math.round(cierre.totalRecogido || 0) : null
+
               return (
                 <div key={c.id} className="bg-[#111111] border border-[#2a2a2a] rounded-[12px] p-3">
                   <div className="flex items-center justify-between mb-1">
@@ -431,38 +549,71 @@ export default function CajaPage() {
                     {c.cerrado ? (
                       <Badge variant="green">Cerrado</Badge>
                     ) : (
-                      <Badge variant="yellow">Pendiente</Badge>
+                      <Badge variant="yellow">Pendiente cierre</Badge>
                     )}
                   </div>
                   {cierre ? (
-                    <div className="grid grid-cols-5 gap-2 mt-2">
-                      <div>
-                        <p className="text-[9px] text-[#888888] uppercase">Esperado</p>
-                        <p className="text-xs font-semibold text-white">{formatCOP(cierre.totalEsperado)}</p>
+                    <div className="space-y-2 mt-2">
+                      <div className="grid grid-cols-5 gap-2">
+                        <div>
+                          <p className="text-[9px] text-[#888888] uppercase">Esperado</p>
+                          <p className="text-xs font-semibold text-white">{formatCOP(cierre.totalEsperado)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] text-[#888888] uppercase">Entregado</p>
+                          <p className="text-xs font-semibold text-white">{formatCOP(cierre.totalRecogido)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] text-[#888888] uppercase">Gastos</p>
+                          <p className="text-xs font-semibold text-[#ef4444]">{formatCOP(cierre.totalGastos || 0)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] text-[#888888] uppercase">Real</p>
+                          <p className="text-xs font-semibold" style={{ color: (cierre.saldoRealCaja ?? (cierre.totalRecogido - (cierre.totalGastos || 0))) >= 0 ? '#06b6d4' : '#ef4444' }}>
+                            {formatCOP(cierre.saldoRealCaja ?? (cierre.totalRecogido - (cierre.totalGastos || 0)))}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] text-[#888888] uppercase">Dif.</p>
+                          <p className="text-xs font-bold" style={{ color: diff >= 0 ? '#22c55e' : '#ef4444' }}>
+                            {diff >= 0 ? '+' : ''}{formatCOP(diff)}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-[9px] text-[#888888] uppercase">Entregado</p>
-                        <p className="text-xs font-semibold text-white">{formatCOP(cierre.totalRecogido)}</p>
-                      </div>
-                      <div>
-                        <p className="text-[9px] text-[#888888] uppercase">Gastos</p>
-                        <p className="text-xs font-semibold text-[#ef4444]">{formatCOP(cierre.totalGastos || 0)}</p>
-                      </div>
-                      <div>
-                        <p className="text-[9px] text-[#888888] uppercase">Real</p>
-                        <p className="text-xs font-semibold" style={{ color: (cierre.saldoRealCaja ?? (cierre.totalRecogido - (cierre.totalGastos || 0))) >= 0 ? '#06b6d4' : '#ef4444' }}>
-                          {formatCOP(cierre.saldoRealCaja ?? (cierre.totalRecogido - (cierre.totalGastos || 0)))}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[9px] text-[#888888] uppercase">Dif.</p>
-                        <p className="text-xs font-bold" style={{ color: diff >= 0 ? '#22c55e' : '#ef4444' }}>
-                          {diff >= 0 ? '+' : ''}{formatCOP(diff)}
-                        </p>
+
+                      <div className="text-[10px] text-[#777777] border-t border-[#222222] pt-1.5">
+                        Recaudo registrado en pagos: <span className="text-[#22c55e] font-semibold">{formatCOP(recaudadoDiaCobrador)}</span>
+                        {deltaSistemaVsCierre !== 0 && (
+                          <span className="ml-2 text-[#f5c518]">
+                            (diferencia vs cierre: {deltaSistemaVsCierre > 0 ? '+' : ''}{formatCOP(deltaSistemaVsCierre)})
+                          </span>
+                        )}
                       </div>
                     </div>
                   ) : (
-                    <p className="text-xs text-[#555555] mt-1">Aún no ha registrado cierre</p>
+                    <div className="mt-2 space-y-2">
+                      {recaudadoDiaCobrador > 0 ? (
+                        <>
+                          <div className="grid grid-cols-3 gap-2">
+                            <div>
+                              <p className="text-[9px] text-[#888888] uppercase">Esperado ruta</p>
+                              <p className="text-xs font-semibold text-white">{formatCOP(esperadoDiaCobrador)}</p>
+                            </div>
+                            <div>
+                              <p className="text-[9px] text-[#888888] uppercase">Recaudado pagos</p>
+                              <p className="text-xs font-semibold text-[#22c55e]">{formatCOP(recaudadoDiaCobrador)}</p>
+                            </div>
+                            <div>
+                              <p className="text-[9px] text-[#888888] uppercase">Sugerido cierre</p>
+                              <p className="text-xs font-semibold text-[#f5c518]">{formatCOP(sugeridoCierre)}</p>
+                            </div>
+                          </div>
+                          <p className="text-[10px] text-[#f5c518]">Falta confirmación manual del cobrador para cerrar caja.</p>
+                        </>
+                      ) : (
+                        <p className="text-xs text-[#555555]">Sin pagos registrados y sin cierre reportado hoy.</p>
+                      )}
+                    </div>
                   )}
                 </div>
               )

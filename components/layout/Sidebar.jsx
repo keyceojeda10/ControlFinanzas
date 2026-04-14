@@ -10,6 +10,8 @@ import { useOffline } from '@/components/providers/OfflineProvider'
 import { useState, useEffect } from 'react'
 import InstallButton from './InstallButton'
 
+const formatCOPCompact = (monto = 0) => `$${Math.round(monto || 0).toLocaleString('es-CO')}`
+
 const NAV_OWNER = [
   {
     label: 'Inicio',
@@ -212,7 +214,7 @@ export default function Sidebar() {
       try {
         const res = await fetch('/api/caja/warning')
         const data = await res.json()
-        setCierreWarning(data.showWarning ? data : null)
+        setCierreWarning((data.showWarning || data.showPendingReminder) ? data : null)
       } catch {}
     }
     check()
@@ -235,6 +237,20 @@ export default function Sidebar() {
 
   const isActive = (href) =>
     href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
+
+  const cierreWarningHref = cierreWarning?.showPendingReminder && cierreWarning?.pendingDate
+    ? `/caja?fecha=${cierreWarning.pendingDate}`
+    : '/caja'
+
+  const cierreWarningTitle = cierreWarning?.showPendingReminder
+    ? (cierreWarning.pendingType === 'ajuste_ayer'
+      ? 'Ajusta cierre de ayer'
+      : 'Tienes recaudo sin cierre')
+    : `Cierre en ${cierreWarning?.minutesUntilClose} min`
+
+  const cierreWarningSubtitle = cierreWarning?.showPendingReminder
+    ? `Monto sugerido: ${formatCOPCompact(cierreWarning.pendingAmount)}`
+    : 'Ir a cerrar caja'
 
   return (
     <aside className="hidden lg:flex flex-col w-60 min-h-dvh shrink-0 border-r border-[rgba(255,255,255,0.1)]" style={{ background: 'linear-gradient(180deg, rgba(12,12,18,0.96) 0%, rgba(8,8,14,0.99) 100%)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
@@ -312,15 +328,18 @@ export default function Sidebar() {
       {cierreWarning && (
         <div className="mx-3 mb-2">
           <Link
-            href="/caja"
-            className="flex items-center gap-2 px-3 py-2.5 rounded-[10px] bg-[rgba(245,158,11,0.12)] border border-[rgba(245,158,11,0.32)] hover:bg-[rgba(245,158,11,0.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f59e0b]/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b10] transition-colors"
+            href={cierreWarningHref}
+            className={`flex items-center gap-2 px-3 py-2.5 rounded-[10px] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b10] transition-colors ${cierreWarning.showPendingReminder
+              ? 'bg-[rgba(245,197,24,0.12)] border-[rgba(245,197,24,0.32)] hover:bg-[rgba(245,197,24,0.18)] focus-visible:ring-[#f5c518]/55'
+              : 'bg-[rgba(245,158,11,0.12)] border-[rgba(245,158,11,0.32)] hover:bg-[rgba(245,158,11,0.18)] focus-visible:ring-[#f59e0b]/55'
+            }`}
           >
-            <svg className="w-4 h-4 text-[#f59e0b] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className={`w-4 h-4 shrink-0 ${cierreWarning.showPendingReminder ? 'text-[#f5c518]' : 'text-[#f59e0b]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             <div>
-              <p className="text-xs font-semibold text-[#f59e0b]">Cierre en {cierreWarning.minutesUntilClose} min</p>
-              <p className="text-[10px] text-[#f8bb63]">Ir a cerrar caja</p>
+              <p className={`text-xs font-semibold ${cierreWarning.showPendingReminder ? 'text-[#f5c518]' : 'text-[#f59e0b]'}`}>{cierreWarningTitle}</p>
+              <p className={`text-[10px] ${cierreWarning.showPendingReminder ? 'text-[#f5d77a]' : 'text-[#f8bb63]'}`}>{cierreWarningSubtitle}</p>
             </div>
           </Link>
         </div>

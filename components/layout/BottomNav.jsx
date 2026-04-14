@@ -6,6 +6,8 @@ import { usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useState, useEffect, useRef } from 'react'
 
+const formatCOPCompact = (monto = 0) => `$${Math.round(monto || 0).toLocaleString('es-CO')}`
+
 const ITEMS_OWNER = [
   {
     label: 'Inicio',
@@ -131,13 +133,23 @@ export default function BottomNav() {
       try {
         const res = await fetch('/api/caja/warning')
         const data = await res.json()
-        setCierreWarning(data.showWarning ? data : null)
+        setCierreWarning((data.showWarning || data.showPendingReminder) ? data : null)
       } catch {}
     }
     checkCierreWarning()
     const interval = setInterval(checkCierreWarning, 60000)
     return () => clearInterval(interval)
   }, [esCobrador])
+
+  const warningHref = cierreWarning?.showPendingReminder && cierreWarning?.pendingDate
+    ? `/caja?fecha=${cierreWarning.pendingDate}`
+    : '/caja'
+
+  const warningText = cierreWarning?.showPendingReminder
+    ? (cierreWarning.pendingType === 'ajuste_ayer'
+      ? `Ajusta cierre de ayer · ${formatCOPCompact(cierreWarning.pendingAmount)}`
+      : `Recaudo sin cierre · ${formatCOPCompact(cierreWarning.pendingAmount)}`)
+    : `Cierre de caja en ${cierreWarning?.minutesUntilClose} min`
 
   // Close sheet on navigate
   useEffect(() => { setMoreOpen(false) }, [pathname])
@@ -159,12 +171,18 @@ export default function BottomNav() {
       {/* Cierre warning pill */}
       {cierreWarning && (
         <Link
-          href="/caja"
+          href={warningHref}
           className="lg:hidden fixed bottom-[88px] right-3 z-40 rounded-full px-3.5 py-2.5 flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f59e0b]/65 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a10]"
-          style={{ background: 'rgba(20,18,12,0.92)', border: '1px solid rgba(245,158,11,0.38)', backdropFilter: 'blur(20px) saturate(1.3)', WebkitBackdropFilter: 'blur(20px) saturate(1.3)', boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}
+          style={{
+            background: cierreWarning.showPendingReminder ? 'rgba(26,19,12,0.95)' : 'rgba(20,18,12,0.92)',
+            border: cierreWarning.showPendingReminder ? '1px solid rgba(245,197,24,0.45)' : '1px solid rgba(245,158,11,0.38)',
+            backdropFilter: 'blur(20px) saturate(1.3)',
+            WebkitBackdropFilter: 'blur(20px) saturate(1.3)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+          }}
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-[#f59e0b] animate-pulse shrink-0" />
-          <span className="text-[11px] font-semibold text-[#ffc266]">Cierre de caja en {cierreWarning.minutesUntilClose} min</span>
+          <span className={`w-1.5 h-1.5 rounded-full animate-pulse shrink-0 ${cierreWarning.showPendingReminder ? 'bg-[#f5c518]' : 'bg-[#f59e0b]'}`} />
+          <span className={`text-[11px] font-semibold ${cierreWarning.showPendingReminder ? 'text-[#f5d77a]' : 'text-[#ffc266]'}`}>{warningText}</span>
         </Link>
       )}
 

@@ -6,6 +6,8 @@ import { prisma }           from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
 
 const COLOMBIA_OFFSET = 5 * 60 * 60 * 1000 // UTC-5
+const DAY_MS = 24 * 60 * 60 * 1000
+const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
 
 const fmtFechaColombia = (d) => {
   // Si recibimos YYYY-MM-DD, agregar timezone Colombia para evitar que se interprete como UTC
@@ -27,6 +29,12 @@ const getColombiaDayRange = (fechaColombia) => {
 const getHoyColombia = () => {
   const ahora = new Date(Date.now() - COLOMBIA_OFFSET)
   return ahora.toISOString().slice(0, 10)
+}
+
+const diasAtrasDesdeHoy = (fechaObjetivo, fechaHoy = getHoyColombia()) => {
+  const hoy = new Date(fechaHoy + 'T00:00:00-05:00')
+  const objetivo = new Date(fechaObjetivo + 'T00:00:00-05:00')
+  return Math.floor((hoy - objetivo) / DAY_MS)
 }
 
 
@@ -257,18 +265,68 @@ export async function GET(request) {
   // Para owner: obtener lista de cobradores con estado de cierre
   let cobradores = []
   if (rol === 'owner') {
-    const todosCobradores = await prisma.user.findMany({
-      where: { organizationId, rol: 'cobrador', activo: true },
-      select: { id: true, nombre: true },
-    })
+    const [todosCobradores, recaudosDiaRaw, rutasActivas] = await Promise.all([
+      prisma.user.findMany({
+        where: { organizationId, rol: 'cobrador', activo: true },
+        select: { id: true, nombre: true },
+      }),
+      prisma.pago.groupBy({
+        by: ['cobradorId'],
+        where: {
+          organizationId,
+          fechaPago: { gte: inicio, lt: fin },
+          tipo: { notIn: ['recargo', 'descuento'] },
+          cobradorId: { not: null },
+        },
+        _sum: { montoPagado: true },
+      }),
+      prisma.ruta.findMany({
+        where: { organizationId, activo: true },
+        select: {
+          cobradorId: true,
+          clientes: {
+            select: {
+              prestamos: {
+                where: { estado: 'activo' },
+                select: { cuotaDiaria: true },
+              },
+            },
+          },
+        },
+      }),
+    ])
+
+    const recaudoPorCobrador = recaudosDiaRaw.reduce((acc, row) => {
+      if (!row.cobradorId) return acc
+      acc[row.cobradorId] = Math.round(row._sum?.montoPagado || 0)
+      return acc
+    }, {})
+
+    const esperadoPorCobrador = rutasActivas.reduce((acc, ruta) => {
+      if (!ruta.cobradorId) return acc
+      const esperadoRuta = ruta.clientes.reduce((totalCliente, cliente) =>
+        totalCliente + cliente.prestamos.reduce((totalPrestamo, p) => totalPrestamo + p.cuotaDiaria, 0), 0)
+
+      acc[ruta.cobradorId] = Math.round((acc[ruta.cobradorId] || 0) + esperadoRuta)
+      return acc
+    }, {})
 
     const cierreIds = new Set(cierres.map(c => c.cobradorId))
-    cobradores = todosCobradores.map(c => ({
-      id: c.id,
-      nombre: c.nombre,
-      cerrado: cierreIds.has(c.id),
-      cierre: cierres.find(ci => ci.cobradorId === c.id) || null,
-    }))
+    cobradores = todosCobradores.map(c => {
+      const cierre = cierres.find(ci => ci.cobradorId === c.id) || null
+      const recaudadoDia = recaudoPorCobrador[c.id] || 0
+      const esperadoDia = esperadoPorCobrador[c.id] || 0
+
+      return {
+        id: c.id,
+        nombre: c.nombre,
+        cerrado: cierreIds.has(c.id),
+        cierre,
+        recaudadoDia,
+        esperadoDia,
+        sugeridoCierre: recaudadoDia,
+      }
+    })
   }
 
   return Response.json({
@@ -300,8 +358,20 @@ export async function POST(request) {
   })
   if (!cobrador) return Response.json({ error: 'Cobrador no encontrado' }, { status: 404 })
 
-  // Usar fecha de Colombia hoy
-  const fechaColombia = getHoyColombia()
+  const fechaColombia = typeof body.fecha === 'string' && FECHA_REGEX.test(body.fecha)
+    ? body.fecha
+    : getHoyColombia()
+
+  const diasAtras = diasAtrasDesdeHoy(fechaColombia)
+  if (diasAtras < 0) {
+    return Response.json({ error: 'No puedes registrar cierres en fechas futuras' }, { status: 400 })
+  }
+
+  const maxDiasAtrasPermitidos = rol === 'owner' ? 7 : 1
+  if (diasAtras > maxDiasAtrasPermitidos) {
+    return Response.json({ error: 'Esta fecha ya no está disponible para ajustes' }, { status: 403 })
+  }
+
   const { inicio, fin } = getColombiaDayRange(fechaColombia)
 
   const existeCierre = await prisma.cierreCaja.findFirst({
@@ -311,36 +381,13 @@ export async function POST(request) {
       fecha: { gte: inicio, lt: fin },
     },
   })
-  if (existeCierre) {
-    return Response.json({ error: 'Ya existe un cierre de caja para hoy' }, { status: 409 })
-  }
 
   const totalRecogido = Number(body.totalRecogido ?? 0)
   if (totalRecogido < 0) {
     return Response.json({ error: 'El total recogido no puede ser negativo' }, { status: 400 })
   }
 
-  // Verificar que el cobrador tiene ruta asignada
-  const ruta = await prisma.ruta.findFirst({
-    where: { organizationId, cobradorId, activo: true },
-    select: {
-      clientes: {
-        select: {
-          prestamos: {
-            where: { estado: 'activo' },
-            select: { cuotaDiaria: true },
-          },
-        },
-      },
-    },
-  })
-
-  if (!ruta) {
-    return Response.json({ error: 'No tienes una ruta asignada. Contacta al administrador.' }, { status: 400 })
-  }
-
-  const totalEsperado = ruta.clientes.reduce((total, c) =>
-    total + c.prestamos.reduce((a, p) => a + p.cuotaDiaria, 0), 0)
+  const totalEsperado = Math.round(await calcularEsperadoReal(organizationId, cobradorId))
 
   // Obtener gastos del día
   const gastosDia = await prisma.gastoMenor.aggregate({
@@ -358,6 +405,45 @@ export async function POST(request) {
   const saldoOperativoDia = totalRecogido - totalGastos
   const saldoRealCajaDia = saldoOperativoDia - totalDesembolsadoDia
   const diferencia = totalRecogido - totalEsperado
+
+  if (existeCierre) {
+    if (diasAtras === 0 && rol !== 'owner') {
+      return Response.json({ error: 'Ya existe un cierre de caja para hoy' }, { status: 409 })
+    }
+
+    const cierreActualizado = await prisma.cierreCaja.update({
+      where: { id: existeCierre.id },
+      data: {
+        totalEsperado: Math.round(totalEsperado),
+        totalRecogido: Math.round(totalRecogido),
+        totalGastos: Math.round(totalGastos),
+        totalDesembolsado: Math.round(totalDesembolsadoDia),
+        saldoOperativo: Math.round(saldoOperativoDia),
+        saldoRealCaja: Math.round(saldoRealCajaDia),
+        diferencia: Math.round(diferencia),
+      },
+      include: { cobrador: { select: { id: true, nombre: true } } },
+    })
+
+    logActividad({
+      session,
+      accion: 'ajuste_cierre_caja',
+      entidadTipo: 'caja',
+      entidadId: cierreActualizado.id,
+      detalle: `Ajuste cierre ${cobrador.nombre} (${fmtFechaColombia(fechaColombia)}) - recogido $${Math.round(totalRecogido).toLocaleString('es-CO')}`,
+      ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+    })
+
+    return Response.json({
+      ...cierreActualizado,
+      ajustado: true,
+      resumenFinanciero: {
+        totalDesembolsadoDia: cierreActualizado.totalDesembolsado,
+        saldoOperativoDia: cierreActualizado.saldoOperativo,
+        saldoRealCajaDia: cierreActualizado.saldoRealCaja,
+      },
+    }, { status: 200 })
+  }
 
   const cierre = await prisma.cierreCaja.create({
     data: {
