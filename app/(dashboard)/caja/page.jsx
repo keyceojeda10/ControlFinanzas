@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { useAuth }             from '@/hooks/useAuth'
 import { useOffline }          from '@/components/providers/OfflineProvider'
 import { guardarEnCache, leerDeCache } from '@/lib/offline'
@@ -65,6 +66,7 @@ export default function CajaPage() {
   const [exito, setExito] = useState(false)
   const [showGasto, setShowGasto] = useState(false)
   const [showAjusteCaja, setShowAjusteCaja] = useState(false)
+  const [tipoMovimientoCaja, setTipoMovimientoCaja] = useState('inyeccion')
   const [ajusteDireccion, setAjusteDireccion] = useState('ingreso')
   const [ajusteMonto, setAjusteMonto] = useState('')
   const [ajusteDescripcion, setAjusteDescripcion] = useState('')
@@ -161,6 +163,7 @@ export default function CajaPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          movimiento: tipoMovimientoCaja,
           direccion: ajusteDireccion,
           monto: montoNum,
           descripcion: ajusteDescripcion,
@@ -175,6 +178,7 @@ export default function CajaPage() {
       setShowAjusteCaja(false)
       setAjusteMonto('')
       setAjusteDescripcion('')
+      setTipoMovimientoCaja('inyeccion')
       setAjusteDireccion('ingreso')
       setExitoAjuste(true)
       await fetchData()
@@ -230,6 +234,12 @@ export default function CajaPage() {
   const desembolsadoDia = stats.desembolsadoDia || 0
   const saldoRealCaja = stats.saldoRealCaja ?? (disponibleOperativo - desembolsadoDia)
   const saldoGeneralActual = cajaGeneral.saldoActual ?? cajaGeneral.saldoCierreDia ?? 0
+  const movimientosManualDia = cajaGeneral.movimientosManualDia || []
+  const totalesManualDia = cajaGeneral.totalesDia || {}
+  const inyeccionesManualDia = totalesManualDia.inyecciones ?? 0
+  const retirosManualDia = totalesManualDia.retiros ?? 0
+  const ajustesManualDia = totalesManualDia.ajustes ?? cajaGeneral.totalAjustesManualDia ?? 0
+  const netoManualDia = totalesManualDia.netoManual ?? cajaGeneral.totalManualDia ?? 0
   const tasaRecaudo = stats.tasaRecaudo || 0
   const colorRecaudo = tasaRecaudo >= 80 ? '#22c55e' : tasaRecaudo >= 50 ? '#f5c518' : '#ef4444'
   const recaudadoRegistrado = Math.round(stats.recogida || 0)
@@ -521,7 +531,7 @@ export default function CajaPage() {
       )}
       {exitoAjuste && (
         <div className="bg-[rgba(16,185,129,0.1)] border border-[rgba(16,185,129,0.2)] text-[#22c55e] text-sm rounded-[12px] px-4 py-3">
-          Ajuste de caja registrado correctamente.
+          Movimiento de caja registrado correctamente.
         </div>
       )}
 
@@ -573,10 +583,12 @@ export default function CajaPage() {
             onClick={() => {
               setShowAjusteCaja(true)
               setErrorAjuste('')
+              setTipoMovimientoCaja('inyeccion')
+              setAjusteDireccion('ingreso')
             }}
             className="h-9 px-3 rounded-[10px] text-xs font-semibold text-[#0a0a0a] bg-[#f5c518] hover:bg-[#f0b800] transition-colors"
           >
-            Ajuste de caja
+            Movimiento de caja
           </button>
         </div>
         <p className="text-[11px] text-[#888888] mb-3">Este saldo es acumulado y no depende de la fecha seleccionada.</p>
@@ -593,6 +605,48 @@ export default function CajaPage() {
             <p className="text-sm font-semibold text-[#f5c518]">Saldo persistente</p>
             <p className="text-[10px] text-[#888888] mt-0.5">Se actualiza con movimientos de capital</p>
           </div>
+          <div>
+            <p className="text-[10px] text-[#888888] uppercase">Inyecciones del día</p>
+            <p className="text-sm font-semibold font-mono-display text-[#22c55e]">+{formatCOP(inyeccionesManualDia)}</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-[#888888] uppercase">Retiros del día</p>
+            <p className="text-sm font-semibold font-mono-display text-[#ef4444]">-{formatCOP(retirosManualDia)}</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-[#888888] uppercase">Ajustes de cuadre</p>
+            <p className="text-sm font-semibold font-mono-display" style={{ color: ajustesManualDia >= 0 ? '#8b5cf6' : '#ef4444' }}>
+              {ajustesManualDia >= 0 ? '+' : ''}{formatCOP(ajustesManualDia)}
+            </p>
+          </div>
+          <div>
+            <p className="text-[10px] text-[#888888] uppercase">Neto manual del día</p>
+            <p className="text-sm font-semibold font-mono-display" style={{ color: netoManualDia >= 0 ? '#22c55e' : '#ef4444' }}>
+              {netoManualDia >= 0 ? '+' : ''}{formatCOP(netoManualDia)}
+            </p>
+          </div>
+        </div>
+
+        {movimientosManualDia.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-[#2a2a2a] space-y-2">
+            <p className="text-[10px] text-[#888888] uppercase tracking-wide">Movimientos manuales del día</p>
+            {movimientosManualDia.slice(0, 4).map((mov) => (
+              <div key={mov.id} className="flex items-center justify-between text-xs gap-3">
+                <span className="text-[#888888] truncate">
+                  {(mov.tipo === 'inyeccion' ? 'Inyección' : mov.tipo === 'retiro' ? 'Retiro' : 'Ajuste')} · {mov.descripcion || 'Sin descripción'}
+                </span>
+                <span className="font-semibold font-mono-display" style={{ color: mov.direccion === 'ingreso' ? '#22c55e' : '#ef4444' }}>
+                  {mov.direccion === 'ingreso' ? '+' : '-'}{formatCOP(mov.monto)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-3 pt-3 border-t border-[#2a2a2a]">
+          <Link href="/capital" className="text-xs font-medium text-[#06b6d4] hover:underline">
+            Ver historial completo en Capital
+          </Link>
         </div>
       </Card>
 
@@ -765,51 +819,109 @@ export default function CajaPage() {
         onClose={() => {
           setShowAjusteCaja(false)
           setErrorAjuste('')
+          setTipoMovimientoCaja('inyeccion')
+          setAjusteDireccion('ingreso')
         }}
-        title="Ajuste de caja"
+        title="Movimiento de caja"
       >
         <form onSubmit={registrarAjusteCaja} className="space-y-4">
           <p className="text-xs text-[#888888] leading-snug">
-            Registra entradas o salidas manuales para que el saldo general de caja quede cuadrado en el sistema.
+            Registra inyecciones, retiros o ajustes de cuadre para mantener sincronizado el saldo general de caja.
           </p>
 
           {fechaSeleccionada !== hoyColombia && (
             <p className="text-[11px] text-[#f5c518] leading-snug">
-              Este ajuste impacta el saldo general acumulado desde el momento en que se registra.
+              Este movimiento impacta el saldo general acumulado desde el momento en que se registra.
             </p>
           )}
 
           <div>
             <label className="block text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em] mb-1.5">
-              Tipo de ajuste
+              Tipo de movimiento
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
-                onClick={() => setAjusteDireccion('ingreso')}
+                onClick={() => setTipoMovimientoCaja('inyeccion')}
                 className={[
-                  'h-10 rounded-[10px] border text-sm font-semibold transition-all',
-                  ajusteDireccion === 'ingreso'
+                  'h-10 rounded-[10px] border text-xs font-semibold transition-all',
+                  tipoMovimientoCaja === 'inyeccion'
                     ? 'bg-[rgba(34,197,94,0.1)] border-[rgba(34,197,94,0.35)] text-[#22c55e]'
                     : 'bg-[#111111] border-[#2a2a2a] text-[#888888]',
                 ].join(' ')}
               >
-                Entrada
+                Inyección
               </button>
               <button
                 type="button"
-                onClick={() => setAjusteDireccion('egreso')}
+                onClick={() => setTipoMovimientoCaja('retiro')}
                 className={[
-                  'h-10 rounded-[10px] border text-sm font-semibold transition-all',
-                  ajusteDireccion === 'egreso'
+                  'h-10 rounded-[10px] border text-xs font-semibold transition-all',
+                  tipoMovimientoCaja === 'retiro'
                     ? 'bg-[rgba(239,68,68,0.1)] border-[rgba(239,68,68,0.35)] text-[#ef4444]'
                     : 'bg-[#111111] border-[#2a2a2a] text-[#888888]',
                 ].join(' ')}
               >
-                Salida
+                Retiro
+              </button>
+              <button
+                type="button"
+                onClick={() => setTipoMovimientoCaja('ajuste')}
+                className={[
+                  'h-10 rounded-[10px] border text-xs font-semibold transition-all',
+                  tipoMovimientoCaja === 'ajuste'
+                    ? 'bg-[rgba(139,92,246,0.12)] border-[rgba(139,92,246,0.4)] text-[#a78bfa]'
+                    : 'bg-[#111111] border-[#2a2a2a] text-[#888888]',
+                ].join(' ')}
+              >
+                Ajuste
               </button>
             </div>
           </div>
+
+          {tipoMovimientoCaja === 'ajuste' && (
+            <div>
+              <label className="block text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em] mb-1.5">
+                Dirección del ajuste
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAjusteDireccion('ingreso')}
+                  className={[
+                    'h-10 rounded-[10px] border text-sm font-semibold transition-all',
+                    ajusteDireccion === 'ingreso'
+                      ? 'bg-[rgba(34,197,94,0.1)] border-[rgba(34,197,94,0.35)] text-[#22c55e]'
+                      : 'bg-[#111111] border-[#2a2a2a] text-[#888888]',
+                  ].join(' ')}
+                >
+                  Entrada
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAjusteDireccion('egreso')}
+                  className={[
+                    'h-10 rounded-[10px] border text-sm font-semibold transition-all',
+                    ajusteDireccion === 'egreso'
+                      ? 'bg-[rgba(239,68,68,0.1)] border-[rgba(239,68,68,0.35)] text-[#ef4444]'
+                      : 'bg-[#111111] border-[#2a2a2a] text-[#888888]',
+                  ].join(' ')}
+                >
+                  Salida
+                </button>
+              </div>
+            </div>
+          )}
+
+          {tipoMovimientoCaja !== 'ajuste' && (
+            <div className="rounded-[12px] border border-[#2a2a2a] bg-[#111111] px-3 py-2.5">
+              <p className="text-[11px] text-[#888888] leading-snug">
+                {tipoMovimientoCaja === 'inyeccion'
+                  ? 'La inyección suma dinero real a la caja de la organización.'
+                  : 'El retiro descuenta dinero real de la caja de la organización.'}
+              </p>
+            </div>
+          )}
 
           <div>
             <label className="block text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em] mb-1.5">
@@ -850,13 +962,15 @@ export default function CajaPage() {
               onClick={() => {
                 setShowAjusteCaja(false)
                 setErrorAjuste('')
+                setTipoMovimientoCaja('inyeccion')
+                setAjusteDireccion('ingreso')
               }}
               className="flex-1"
             >
               Cancelar
             </Button>
             <Button type="submit" loading={guardandoAjuste} className="flex-1">
-              Guardar ajuste
+              Guardar movimiento
             </Button>
           </div>
         </form>

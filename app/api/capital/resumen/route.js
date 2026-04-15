@@ -28,7 +28,7 @@ export async function GET() {
   const colombiaDate = new Date(now.getTime() + colombiaOffset * 60 * 60 * 1000)
   const inicioMes = new Date(Date.UTC(colombiaDate.getUTCFullYear(), colombiaDate.getUTCMonth(), 1) - colombiaOffset * 60 * 60 * 1000)
 
-  const [desembolsos, recaudos, gastos, inyecciones, retiros] = await Promise.all([
+  const [desembolsos, recaudos, gastos, inyecciones, retiros, ajustes] = await Promise.all([
     prisma.movimientoCapital.aggregate({
       where: { organizationId, tipo: 'desembolso', createdAt: { gte: inicioMes } },
       _sum: { monto: true },
@@ -52,6 +52,10 @@ export async function GET() {
       where: { organizationId, tipo: 'retiro', createdAt: { gte: inicioMes } },
       _sum: { monto: true },
     }),
+    prisma.movimientoCapital.findMany({
+      where: { organizationId, tipo: 'ajuste', createdAt: { gte: inicioMes } },
+      select: { monto: true, saldoAnterior: true, saldoNuevo: true },
+    }),
   ])
 
   const desembolsado = desembolsos._sum.monto ?? 0
@@ -59,6 +63,12 @@ export async function GET() {
   const gastado = gastos._sum.monto ?? 0
   const inyectado = inyecciones._sum.monto ?? 0
   const retirado = retiros._sum.monto ?? 0
+  const ajustesNetos = ajustes.reduce((acc, mov) => {
+    const esIngreso = mov.saldoNuevo >= mov.saldoAnterior
+    return acc + (esIngreso ? mov.monto : -mov.monto)
+  }, 0)
+  const flujoOperativo = recaudado - desembolsado - gastado
+  const flujoCajaTotal = flujoOperativo + inyectado - retirado + ajustesNetos
 
   return Response.json({
     configurado: true,
@@ -69,7 +79,9 @@ export async function GET() {
       gastos: gastado,
       inyectado,
       retirado,
-      flujoNeto: recaudado - desembolsado - gastado,
+      ajustesNetos,
+      flujoNeto: flujoOperativo,
+      flujoCajaTotal,
       prestamosOtorgados: desembolsos._count,
       pagosRecibidos: recaudos._count,
     },

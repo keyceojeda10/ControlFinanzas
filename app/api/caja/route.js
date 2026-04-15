@@ -168,7 +168,7 @@ async function calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId =
 }
 
 async function getCajaGeneralStats(organizationId, inicio, fin) {
-  const [capital, ajustesDia] = await Promise.all([
+  const [capital, movimientosManualesDia] = await Promise.all([
     prisma.capital.findUnique({
       where: { organizationId },
       select: { saldo: true },
@@ -176,13 +176,22 @@ async function getCajaGeneralStats(organizationId, inicio, fin) {
     prisma.movimientoCapital.findMany({
       where: {
         organizationId,
-        tipo: 'ajuste',
-        referenciaTipo: 'caja_ajuste',
         createdAt: { gte: inicio, lt: fin },
+        OR: [
+          {
+            tipo: 'ajuste',
+            referenciaTipo: 'caja_ajuste',
+          },
+          {
+            tipo: { in: ['inyeccion', 'retiro'] },
+            referenciaTipo: 'caja_capital_manual',
+          },
+        ],
       },
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
+        tipo: true,
         monto: true,
         descripcion: true,
         createdAt: true,
@@ -194,10 +203,22 @@ async function getCajaGeneralStats(organizationId, inicio, fin) {
 
   const saldoActual = capital?.saldo ?? 0
 
-  const ajustesNormalizados = ajustesDia.map((mov) => {
-    const direccion = mov.saldoNuevo >= mov.saldoAnterior ? 'ingreso' : 'egreso'
+  const movimientosNormalizados = movimientosManualesDia.map((mov) => {
+    const direccion = mov.tipo === 'inyeccion'
+      ? 'ingreso'
+      : mov.tipo === 'retiro'
+        ? 'egreso'
+        : (mov.saldoNuevo >= mov.saldoAnterior ? 'ingreso' : 'egreso')
+
+    const tipo = mov.tipo === 'inyeccion'
+      ? 'inyeccion'
+      : mov.tipo === 'retiro'
+        ? 'retiro'
+        : 'ajuste'
+
     return {
       id: mov.id,
+      tipo,
       monto: mov.monto,
       descripcion: mov.descripcion,
       createdAt: mov.createdAt,
@@ -205,12 +226,30 @@ async function getCajaGeneralStats(organizationId, inicio, fin) {
     }
   })
 
+  const totalesDia = movimientosNormalizados.reduce((acc, mov) => {
+    if (mov.tipo === 'inyeccion') acc.inyecciones += mov.monto
+    if (mov.tipo === 'retiro') acc.retiros += mov.monto
+    if (mov.tipo === 'ajuste') acc.ajustes += mov.direccion === 'ingreso' ? mov.monto : -mov.monto
+    acc.netoManual += mov.direccion === 'ingreso' ? mov.monto : -mov.monto
+    return acc
+  }, {
+    inyecciones: 0,
+    retiros: 0,
+    ajustes: 0,
+    netoManual: 0,
+  })
+
+  const ajustesNormalizados = movimientosNormalizados.filter((mov) => mov.tipo === 'ajuste')
+
   const totalAjustesManualDia = ajustesNormalizados.reduce((acc, mov) => {
     return acc + (mov.direccion === 'ingreso' ? mov.monto : -mov.monto)
   }, 0)
 
   return {
     saldoActual,
+    totalManualDia: totalesDia.netoManual,
+    totalesDia,
+    movimientosManualDia: movimientosNormalizados,
     totalAjustesManualDia,
     ajustesDia: ajustesNormalizados,
   }
@@ -444,6 +483,7 @@ export async function GET(request) {
 
   if (rol === 'owner' && cajaGeneral) {
     payload.stats.cajaGeneral = cajaGeneral
+    payload.movimientosManualDia = cajaGeneral.movimientosManualDia
     payload.ajustesCajaDia = cajaGeneral.ajustesDia
   }
 

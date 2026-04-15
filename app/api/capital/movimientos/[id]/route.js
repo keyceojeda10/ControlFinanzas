@@ -39,7 +39,9 @@ export async function DELETE(request, { params }) {
       const capital = await tx.capital.findUnique({ where: { organizationId } })
       if (!capital) throw new Error('Capital no configurado')
 
-      const esIngreso = ['capital_inicial', 'inyeccion'].includes(movimiento.tipo)
+      const esIngreso = movimiento.tipo === 'ajuste'
+        ? movimiento.saldoNuevo >= movimiento.saldoAnterior
+        : ['capital_inicial', 'inyeccion'].includes(movimiento.tipo)
       const delta = esIngreso ? -movimiento.monto : movimiento.monto
       const nuevoSaldo = capital.saldo + delta
 

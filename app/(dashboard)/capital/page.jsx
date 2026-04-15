@@ -27,6 +27,13 @@ function esIngreso(tipo) {
   return ['capital_inicial', 'inyeccion', 'recaudo'].includes(tipo)
 }
 
+function esMovimientoIngreso(movimiento) {
+  if (movimiento?.tipo === 'ajuste') {
+    return (movimiento?.saldoNuevo ?? 0) >= (movimiento?.saldoAnterior ?? 0)
+  }
+  return esIngreso(movimiento?.tipo)
+}
+
 const TIPOS_MANUALES = ['capital_inicial', 'inyeccion', 'retiro', 'ajuste']
 
 function fechaCorta(iso) {
@@ -46,6 +53,7 @@ export default function CapitalPage() {
   const [loadingMov, setLoadingMov] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [modalTipo, setModalTipo] = useState('inyeccion')
+  const [modalDireccion, setModalDireccion] = useState('ingreso')
   const [modalMonto, setModalMonto] = useState('')
   const [modalDesc, setModalDesc] = useState('')
   const [saving, setSaving] = useState(false)
@@ -107,6 +115,7 @@ export default function CapitalPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tipo: modalTipo,
+          direccion: modalTipo === 'ajuste' ? modalDireccion : undefined,
           monto: Number(modalMonto),
           descripcion: modalDesc,
         }),
@@ -116,6 +125,7 @@ export default function CapitalPage() {
       setShowModal(false)
       setModalMonto('')
       setModalDesc('')
+      setModalDireccion('ingreso')
       fetchResumen()
       setPage(1)
       fetchMovimientos()
@@ -204,11 +214,11 @@ export default function CapitalPage() {
             <p className="text-lg font-bold font-mono-display text-[#ef4444]">{formatCOP(resumen.mes.gastos)}</p>
           </div>
           <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] px-4 py-4">
-            <p className="text-[11px] text-[#888888] mb-1">Flujo neto</p>
-            <p className={`text-lg font-bold font-mono-display ${resumen.mes.flujoNeto >= 0 ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
-              {resumen.mes.flujoNeto >= 0 ? '+' : ''}{formatCOP(resumen.mes.flujoNeto)}
+            <p className="text-[11px] text-[#888888] mb-1">Flujo de caja</p>
+            <p className={`text-lg font-bold font-mono-display ${(resumen.mes.flujoCajaTotal ?? resumen.mes.flujoNeto) >= 0 ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
+              {(resumen.mes.flujoCajaTotal ?? resumen.mes.flujoNeto) >= 0 ? '+' : ''}{formatCOP(resumen.mes.flujoCajaTotal ?? resumen.mes.flujoNeto)}
             </p>
-            <p className="text-[10px] text-[#888888]">Este mes</p>
+            <p className="text-[10px] text-[#888888]">Incluye inyecciones, retiros y ajustes</p>
           </div>
         </div>
       )}
@@ -261,8 +271,8 @@ export default function CapitalPage() {
                 </div>
                 <div className="flex items-center gap-2 shrink-0 ml-3">
                   <div className="text-right">
-                    <p className={`text-sm font-bold ${esIngreso(m.tipo) ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
-                      {esIngreso(m.tipo) ? '+' : '-'}{formatCOP(m.monto)}
+                    <p className={`text-sm font-bold ${esMovimientoIngreso(m) ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
+                      {esMovimientoIngreso(m) ? '+' : '-'}{formatCOP(m.monto)}
                     </p>
                     <p className="text-[10px] text-[#555555]">Saldo: {formatCOP(m.saldoNuevo)}</p>
                   </div>
@@ -326,6 +336,37 @@ export default function CapitalPage() {
                   <option value="ajuste">Ajuste manual</option>
                 </select>
               </div>
+              {modalTipo === 'ajuste' && (
+                <div>
+                  <label className="text-xs text-[#888888] mb-1 block">Direccion del ajuste</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setModalDireccion('ingreso')}
+                      className={[
+                        'h-10 rounded-[10px] border text-sm font-semibold transition-all',
+                        modalDireccion === 'ingreso'
+                          ? 'bg-[rgba(34,197,94,0.1)] border-[rgba(34,197,94,0.35)] text-[#22c55e]'
+                          : 'bg-[#0a0a0a] border-[#2a2a2a] text-[#888888]',
+                      ].join(' ')}
+                    >
+                      Entrada
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setModalDireccion('egreso')}
+                      className={[
+                        'h-10 rounded-[10px] border text-sm font-semibold transition-all',
+                        modalDireccion === 'egreso'
+                          ? 'bg-[rgba(239,68,68,0.1)] border-[rgba(239,68,68,0.35)] text-[#ef4444]'
+                          : 'bg-[#0a0a0a] border-[#2a2a2a] text-[#888888]',
+                      ].join(' ')}
+                    >
+                      Salida
+                    </button>
+                  </div>
+                </div>
+              )}
               <div>
                 <label className="text-xs text-[#888888] mb-1 block">Monto</label>
                 <input
@@ -352,7 +393,7 @@ export default function CapitalPage() {
               <div className="flex gap-3">
                 <button
                   type="button"
-                  onClick={() => { setShowModal(false); setError('') }}
+                  onClick={() => { setShowModal(false); setError(''); setModalDireccion('ingreso') }}
                   className="flex-1 px-4 py-2.5 border border-[#2a2a2a] text-[#888888] rounded-[10px] text-sm hover:bg-[#2a2a2a] transition-colors"
                 >
                   Cancelar
