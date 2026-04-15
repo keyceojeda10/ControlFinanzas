@@ -506,6 +506,28 @@ export default function PrestamoDetallePage({ params }) {
           Historial de pagos ({pagos.length})
         </p>
 
+        <div className="space-y-2 mb-4">
+          {cliente?.telefono && (
+            <BotonWhatsApp
+              tipo="historial"
+              cliente={cliente}
+              prestamo={prestamo}
+            />
+          )}
+          <div className="flex gap-2">
+            <BotonCompartir
+              tipo="historial"
+              cliente={cliente}
+              prestamo={prestamo}
+            />
+            <BotonImprimirRecibo
+              tipo="historial"
+              cliente={cliente}
+              prestamo={prestamo}
+            />
+          </div>
+        </div>
+
         {pagos.length === 0 ? (
           <p className="text-sm text-[#888888] text-center py-4">Sin pagos registrados</p>
         ) : (

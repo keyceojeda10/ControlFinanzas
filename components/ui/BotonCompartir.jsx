@@ -3,7 +3,7 @@
 'use client'
 
 import { useState } from 'react'
-import { generarTextoComprobante } from '@/lib/whatsapp'
+import { generarTextoComprobante, generarTextoHistorialCredito } from '@/lib/whatsapp'
 
 const SHARE_ICON = (
   <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -11,11 +11,13 @@ const SHARE_ICON = (
   </svg>
 )
 
-export default function BotonCompartir({ cliente, prestamo, pago }) {
+export default function BotonCompartir({ tipo = 'pago', cliente, prestamo, pago }) {
   const [copiado, setCopiado] = useState(false)
 
   const handleClick = async () => {
-    const texto = generarTextoComprobante(cliente, prestamo, pago)
+    const texto = tipo === 'historial'
+      ? generarTextoHistorialCredito(cliente, prestamo)
+      : generarTextoComprobante(cliente, prestamo, pago)
 
     if (navigator.share) {
       try {
@@ -43,7 +45,7 @@ export default function BotonCompartir({ cliente, prestamo, pago }) {
       className="flex-1 flex items-center justify-center gap-2 px-3 h-10 rounded-[12px] text-sm font-medium transition-all duration-150 cursor-pointer bg-[#1a1a1a] border border-[#2a2a2a] text-[#888888] hover:text-white hover:border-[#444]"
     >
       {SHARE_ICON}
-      {copiado ? 'Copiado' : 'Compartir'}
+      {copiado ? 'Copiado' : (tipo === 'historial' ? 'Compartir historial' : 'Compartir')}
     </button>
   )
 }

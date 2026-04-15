@@ -6,6 +6,7 @@ import {
   generarEnlacePrestamo,
   generarEnlacePago,
   generarEnlaceMora,
+  generarEnlaceHistorialCredito,
   abrirWhatsApp,
 } from '@/lib/whatsapp'
 
@@ -19,12 +20,14 @@ const TEXTOS = {
   prestamo: 'Enviar resumen por WhatsApp',
   pago:     'Enviar confirmación por WhatsApp',
   mora:     'Enviar alerta de mora',
+  historial:'Enviar historial completo',
 }
 
 const ESTILOS = {
   prestamo: 'bg-[#25d366] hover:bg-[#1da855] text-white',
   pago:     'bg-[#25d366] hover:bg-[#1da855] text-white',
   mora:     'bg-[rgba(245,158,11,0.15)] hover:bg-[rgba(245,158,11,0.25)] text-[#f59e0b] border border-[rgba(245,158,11,0.3)]',
+  historial:'bg-[#25d366] hover:bg-[#1da855] text-white',
 }
 
 export default function BotonWhatsApp({ tipo, cliente, prestamo, pago }) {
@@ -35,6 +38,7 @@ export default function BotonWhatsApp({ tipo, cliente, prestamo, pago }) {
     if (tipo === 'prestamo') return generarEnlacePrestamo(cliente, prestamo)
     if (tipo === 'pago')     return generarEnlacePago(cliente, prestamo, pago)
     if (tipo === 'mora')     return generarEnlaceMora(cliente, prestamo)
+    if (tipo === 'historial') return generarEnlaceHistorialCredito(cliente, prestamo)
     return null
   }
 
