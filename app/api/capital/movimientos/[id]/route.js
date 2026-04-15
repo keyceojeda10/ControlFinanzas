@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
+import { recalcularSaldosCapital } from '@/lib/capital'
 
 // Solo se pueden eliminar movimientos MANUALES. Los automáticos (desembolso,
 // recaudo, gasto) reflejan préstamos/pagos/gastos y deben gestionarse desde
@@ -39,21 +40,12 @@ export async function DELETE(request, { params }) {
       const capital = await tx.capital.findUnique({ where: { organizationId } })
       if (!capital) throw new Error('Capital no configurado')
 
-      const esIngreso = movimiento.tipo === 'ajuste'
-        ? movimiento.saldoNuevo >= movimiento.saldoAnterior
-        : ['capital_inicial', 'inyeccion'].includes(movimiento.tipo)
-      const delta = esIngreso ? -movimiento.monto : movimiento.monto
-      const nuevoSaldo = capital.saldo + delta
+      await tx.movimientoCapital.delete({ where: { id } })
 
-      if (nuevoSaldo < 0) {
+      const capitalRecalculado = await recalcularSaldosCapital(tx, { organizationId })
+      if (capitalRecalculado.saldo < 0) {
         throw new Error('Eliminar este movimiento dejaría el capital en negativo')
       }
-
-      await tx.capital.update({
-        where: { id: capital.id },
-        data: { saldo: nuevoSaldo },
-      })
-      await tx.movimientoCapital.delete({ where: { id } })
     })
   } catch (err) {
     return Response.json({ error: err.message }, { status: 400 })

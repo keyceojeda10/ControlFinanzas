@@ -275,23 +275,33 @@ async function getStatsDia(organizationId, fecha, cobradorId = null) {
     _sum: { monto: true },
   })
 
-  const ajustesCajaDia = await prisma.movimientoCapital.findMany({
-    where: {
-      organizationId,
-      tipo: 'ajuste',
-      referenciaTipo: 'caja_ajuste',
-      createdAt: { gte: inicio, lt: fin },
-    },
-    select: {
-      monto: true,
-      saldoAnterior: true,
-      saldoNuevo: true,
-    },
-  })
+  // Movimientos manuales de caja/capital del día (inyecciones, retiros y ajustes)
+  // para reflejar el dinero físico real disponible en caja.
+  const movimientosManualDia = cobradorId
+    ? []
+    : await prisma.movimientoCapital.findMany({
+      where: {
+        organizationId,
+        createdAt: { gte: inicio, lt: fin },
+        tipo: { in: ['capital_inicial', 'inyeccion', 'retiro', 'ajuste'] },
+        OR: [
+          { referenciaTipo: null },
+          { referenciaTipo: { in: ['caja_ajuste', 'caja_capital_manual'] } },
+        ],
+      },
+      select: {
+        tipo: true,
+        monto: true,
+        saldoAnterior: true,
+        saldoNuevo: true,
+      },
+    })
 
   const gastos = gastosDia._sum?.monto || 0
   const desembolsadoDia = await calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId)
-  const ajustesManualDia = ajustesCajaDia.reduce((acc, mov) => {
+  const ajustesManualDia = movimientosManualDia.reduce((acc, mov) => {
+    if (mov.tipo === 'capital_inicial' || mov.tipo === 'inyeccion') return acc + mov.monto
+    if (mov.tipo === 'retiro') return acc - mov.monto
     const esIngreso = mov.saldoNuevo >= mov.saldoAnterior
     return acc + (esIngreso ? mov.monto : -mov.monto)
   }, 0)
