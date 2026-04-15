@@ -70,6 +70,11 @@ async function main() {
       password:       hash123,
       rol:            'cobrador',
       organizationId: org.id,
+      puedeCrearPrestamos: true,
+      puedeGestionarPrestamos: true,
+      puedeCrearClientes: true,
+      puedeEditarClientes: true,
+      puedeReportarGastos: true,
     },
   })
 
@@ -80,6 +85,11 @@ async function main() {
       password:       hash123,
       rol:            'cobrador',
       organizationId: org.id,
+      puedeCrearPrestamos: true,
+      puedeGestionarPrestamos: false,
+      puedeCrearClientes: true,
+      puedeEditarClientes: true,
+      puedeReportarGastos: true,
     },
   })
 

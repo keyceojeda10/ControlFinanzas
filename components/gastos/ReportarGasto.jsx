@@ -21,7 +21,18 @@ const TIPOS_GASTO = [
   { value: 'otro', label: 'Otro' },
 ]
 
-export default function ReportarGasto({ open, onClose, onSuccess }) {
+const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
+const fmtFecha = (fecha) => {
+  if (!fecha || !FECHA_REGEX.test(fecha)) return 'hoy'
+  return new Date(fecha + 'T12:00:00-05:00').toLocaleDateString('es-CO', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'America/Bogota',
+  })
+}
+
+export default function ReportarGasto({ open, onClose, onSuccess, fecha }) {
   const [tipo, setTipo] = useState('gasolina')
   const [monto, setMonto] = useState('')
   const [descripcion, setDescripcion] = useState('')
@@ -39,7 +50,11 @@ export default function ReportarGasto({ open, onClose, onSuccess }) {
       const res = await fetch('/api/gastos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ description: desc, monto: m }),
+        body: JSON.stringify({
+          description: desc,
+          monto: m,
+          ...(FECHA_REGEX.test(fecha || '') ? { fecha } : {}),
+        }),
       })
       if (!res.ok) throw new Error('Error al reportar gasto')
       onSuccess?.()
@@ -62,6 +77,11 @@ export default function ReportarGasto({ open, onClose, onSuccess }) {
   return (
     <Modal open={open} onClose={handleClose} title="Reportar Gasto Menor">
       <div className="space-y-4">
+        <div className="px-3 py-2 rounded-[10px] bg-[#111111] border border-[#2a2a2a]">
+          <p className="text-[11px] text-[#888888]">Fecha del gasto</p>
+          <p className="text-sm text-white font-semibold">{fmtFecha(fecha)}</p>
+        </div>
+
         <div>
           <p className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em] mb-2">
             Tipo de gasto

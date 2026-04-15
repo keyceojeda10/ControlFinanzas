@@ -22,7 +22,9 @@ export function useAuth() {
     esSuperadmin: session?.user?.rol === 'superadmin',
     // Permisos: owner siempre true, cobrador según configuración
     puedeCrearPrestamos: esOwner || Boolean(permisos.crearPrestamos),
+    puedeGestionarPrestamos: esOwner || Boolean(permisos.gestionarPrestamos ?? permisos.crearPrestamos),
     puedeCrearClientes:  esOwner || Boolean(permisos.crearClientes),
     puedeEditarClientes: esOwner || Boolean(permisos.editarClientes),
+    puedeReportarGastos: esOwner || Boolean(permisos.reportarGastos ?? true),
   }
 }

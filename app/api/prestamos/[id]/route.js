@@ -37,6 +37,14 @@ async function obtenerPrestamo(id, session) {
   return p
 }
 
+async function cobradorPuedeGestionarPrestamos(userId) {
+  const cobrador = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { puedeGestionarPrestamos: true, puedeCrearPrestamos: true },
+  })
+  return Boolean(cobrador?.puedeGestionarPrestamos ?? cobrador?.puedeCrearPrestamos)
+}
+
 // ─── GET /api/prestamos/[id] ────────────────────────────────────
 export async function GET(request, { params }) {
   const session = await getServerSession(authOptions)
@@ -76,9 +84,6 @@ export async function PATCH(request, { params }) {
   if (!session?.user?.organizationId) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
   }
-  if (session.user.rol !== 'owner') {
-    return Response.json({ error: 'Solo el administrador puede modificar préstamos' }, { status: 403 })
-  }
 
   const { id } = await params
   const p = await obtenerPrestamo(id, session)
@@ -89,6 +94,9 @@ export async function PATCH(request, { params }) {
 
   // ─── Modo 1: cambio de estado (cancelar) ────────────────────────
   if (estado) {
+    if (session.user.rol !== 'owner') {
+      return Response.json({ error: 'Solo el administrador puede cambiar el estado del préstamo' }, { status: 403 })
+    }
     if (!['cancelado'].includes(estado)) {
       return Response.json({ error: 'Estado no válido' }, { status: 400 })
     }
@@ -102,6 +110,14 @@ export async function PATCH(request, { params }) {
 
   // ─── Modo 2: modificar plazo (extender o corregir fecha) ───────
   if (modo === 'extender' || modo === 'corregir') {
+    const puedeGestionar = session.user.rol === 'owner'
+      ? true
+      : (session.user.rol === 'cobrador' && await cobradorPuedeGestionarPrestamos(session.user.id))
+
+    if (!puedeGestionar) {
+      return Response.json({ error: 'No tienes permiso para modificar el plazo del préstamo' }, { status: 403 })
+    }
+
     if (p.estado !== 'activo') {
       return Response.json({ error: 'Solo se puede modificar el plazo de préstamos activos' }, { status: 400 })
     }

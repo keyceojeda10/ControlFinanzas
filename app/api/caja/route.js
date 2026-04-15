@@ -67,6 +67,7 @@ async function calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId =
   const baseWherePrestamos = {
     organizationId,
     createdAt: { gte: inicio, lt: fin },
+    estado: { not: 'cancelado' },
   }
 
   // Vista global owner: total desembolsado de todos los préstamos del día.
@@ -117,10 +118,30 @@ async function calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId =
       where: {
         organizationId,
         id: { in: prestamoIdsActividad },
+        createdAt: { gte: inicio, lt: fin },
+        estado: { not: 'cancelado' },
       },
       select: { id: true, montoPrestado: true },
     })
     : []
+
+  const referenciasMovimiento = movimientosCreador
+    .map((mov) => mov.referenciaId)
+    .filter((id) => !!id)
+
+  const prestamosReferenciados = referenciasMovimiento.length
+    ? await prisma.prestamo.findMany({
+      where: {
+        organizationId,
+        id: { in: referenciasMovimiento },
+        createdAt: { gte: inicio, lt: fin },
+        estado: { not: 'cancelado' },
+      },
+      select: { id: true },
+    })
+    : []
+
+  const referenciasValidas = new Set(prestamosReferenciados.map((p) => p.id))
 
   const idsContabilizados = new Set(prestamosRuta.map((p) => p.id))
   let total = prestamosRuta.reduce((acc, p) => acc + p.montoPrestado, 0)
@@ -134,9 +155,9 @@ async function calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId =
 
   for (const mov of movimientosCreador) {
     if (!mov.referenciaId) {
-      total += mov.monto
       continue
     }
+    if (!referenciasValidas.has(mov.referenciaId)) continue
     if (!idsContabilizados.has(mov.referenciaId)) {
       total += mov.monto
       idsContabilizados.add(mov.referenciaId)
@@ -144,6 +165,70 @@ async function calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId =
   }
 
   return total
+}
+
+async function getCajaGeneralStats(organizationId, inicio, fin) {
+  const [ultimoAntesInicio, ultimoAntesFin, ajustesDia] = await Promise.all([
+    prisma.movimientoCapital.findFirst({
+      where: {
+        organizationId,
+        createdAt: { lt: inicio },
+      },
+      orderBy: { createdAt: 'desc' },
+      select: { saldoNuevo: true },
+    }),
+    prisma.movimientoCapital.findFirst({
+      where: {
+        organizationId,
+        createdAt: { lt: fin },
+      },
+      orderBy: { createdAt: 'desc' },
+      select: { saldoNuevo: true },
+    }),
+    prisma.movimientoCapital.findMany({
+      where: {
+        organizationId,
+        tipo: 'ajuste',
+        referenciaTipo: 'caja_ajuste',
+        createdAt: { gte: inicio, lt: fin },
+      },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        monto: true,
+        descripcion: true,
+        createdAt: true,
+        saldoAnterior: true,
+        saldoNuevo: true,
+      },
+    }),
+  ])
+
+  const saldoInicioDia = ultimoAntesInicio?.saldoNuevo || 0
+  const saldoCierreDia = ultimoAntesFin?.saldoNuevo || saldoInicioDia
+
+  const ajustesNormalizados = ajustesDia.map((mov) => {
+    const direccion = mov.saldoNuevo >= mov.saldoAnterior ? 'ingreso' : 'egreso'
+    return {
+      id: mov.id,
+      monto: mov.monto,
+      descripcion: mov.descripcion,
+      createdAt: mov.createdAt,
+      direccion,
+    }
+  })
+
+  const totalAjustesManualDia = ajustesNormalizados.reduce((acc, mov) => {
+    return acc + (mov.direccion === 'ingreso' ? mov.monto : -mov.monto)
+  }, 0)
+
+  return {
+    saldoInicioDia,
+    saldoCierreDia,
+    variacionDia: saldoCierreDia - saldoInicioDia,
+    totalAjustesManualDia,
+    ajustesDia: ajustesNormalizados,
+  }
 }
 
 // Calcula estadísticas del día
@@ -184,11 +269,30 @@ async function getStatsDia(organizationId, fecha, cobradorId = null) {
     _sum: { monto: true },
   })
 
+  const ajustesCajaDia = await prisma.movimientoCapital.findMany({
+    where: {
+      organizationId,
+      tipo: 'ajuste',
+      referenciaTipo: 'caja_ajuste',
+      createdAt: { gte: inicio, lt: fin },
+    },
+    select: {
+      monto: true,
+      saldoAnterior: true,
+      saldoNuevo: true,
+    },
+  })
+
   const gastos = gastosDia._sum?.monto || 0
   const desembolsadoDia = await calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId)
+  const ajustesManualDia = ajustesCajaDia.reduce((acc, mov) => {
+    const esIngreso = mov.saldoNuevo >= mov.saldoAnterior
+    return acc + (esIngreso ? mov.monto : -mov.monto)
+  }, 0)
   const diferencia = recogida - esperado
   const disponibleOperativo = recogida - gastos
   const saldoRealCaja = disponibleOperativo - desembolsadoDia
+  const saldoRealCajaConAjustes = saldoRealCaja + ajustesManualDia
   const disponible = disponibleOperativo // Compatibilidad temporal
 
   // Calcular tasa de recaudo
@@ -202,6 +306,8 @@ async function getStatsDia(organizationId, fecha, cobradorId = null) {
     diferencia,
     disponibleOperativo,
     saldoRealCaja,
+    ajustesManualDia,
+    saldoRealCajaConAjustes,
     disponible,
     tasaRecaudo,
   }
@@ -243,7 +349,18 @@ export async function GET(request) {
 
   // Obtener stats del día
   const statsCobradorId = rol === 'cobrador' ? userId : (rol === 'owner' ? (cobradorParam || null) : null)
-  const statsDia = await getStatsDia(organizationId, fechaBase, statsCobradorId)
+  const [statsDiaRaw, cajaGeneral] = await Promise.all([
+    getStatsDia(organizationId, fechaBase, statsCobradorId),
+    rol === 'owner' ? getCajaGeneralStats(organizationId, inicio, fin) : Promise.resolve(null),
+  ])
+
+  const statsDia = rol === 'owner'
+    ? statsDiaRaw
+    : {
+      ...statsDiaRaw,
+      ajustesManualDia: 0,
+      saldoRealCajaConAjustes: statsDiaRaw.saldoRealCaja,
+    }
 
   // Obtener gastos del día para mostrar en lista
   const whereGastos = {
@@ -329,7 +446,7 @@ export async function GET(request) {
     })
   }
 
-  return Response.json({
+  const payload = {
     cierres,
     gastos,
     cobradores,
@@ -338,7 +455,14 @@ export async function GET(request) {
     },
     fechaDisplay: fmtFechaColombia(fechaBase),
     fecha: typeof fechaBase === 'string' ? fechaBase : new Date(fechaBase).toISOString().slice(0, 10)
-  })
+  }
+
+  if (rol === 'owner' && cajaGeneral) {
+    payload.stats.cajaGeneral = cajaGeneral
+    payload.ajustesCajaDia = cajaGeneral.ajustesDia
+  }
+
+  return Response.json(payload)
 }
 
 // ─── POST /api/caja ─────────────────────────────────────────────

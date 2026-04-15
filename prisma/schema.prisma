@@ -122,8 +122,10 @@ model User {
   terminosAceptados       Boolean   @default(false)
   fechaAceptacionTerminos DateTime?
   puedeCrearPrestamos     Boolean   @default(false)
+  puedeGestionarPrestamos Boolean   @default(false)
   puedeCrearClientes      Boolean   @default(false)
   puedeEditarClientes     Boolean   @default(false)
+  puedeReportarGastos     Boolean   @default(true)
   emailsMarketing         Boolean   @default(true)
   createdAt               DateTime  @default(now())
 

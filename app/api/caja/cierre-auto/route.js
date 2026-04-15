@@ -32,6 +32,7 @@ async function calcularDesembolsadoDia(organizationId, cobradorId, fechaInicio, 
       where: {
         organizationId,
         createdAt: { gte: fechaInicio, lte: fechaFin },
+        estado: { not: 'cancelado' },
         cliente: { ruta: { cobradorId } },
       },
       select: { id: true, montoPrestado: true },
@@ -66,10 +67,30 @@ async function calcularDesembolsadoDia(organizationId, cobradorId, fechaInicio, 
       where: {
         organizationId,
         id: { in: prestamoIdsActividad },
+        createdAt: { gte: fechaInicio, lte: fechaFin },
+        estado: { not: 'cancelado' },
       },
       select: { id: true, montoPrestado: true },
     })
     : []
+
+  const referenciasMovimiento = movimientosCreador
+    .map((mov) => mov.referenciaId)
+    .filter((id) => !!id)
+
+  const prestamosReferenciados = referenciasMovimiento.length
+    ? await prisma.prestamo.findMany({
+      where: {
+        organizationId,
+        id: { in: referenciasMovimiento },
+        createdAt: { gte: fechaInicio, lte: fechaFin },
+        estado: { not: 'cancelado' },
+      },
+      select: { id: true },
+    })
+    : []
+
+  const referenciasValidas = new Set(prestamosReferenciados.map((p) => p.id))
 
   const idsContabilizados = new Set(prestamosRuta.map((p) => p.id))
   let total = prestamosRuta.reduce((acc, p) => acc + p.montoPrestado, 0)
@@ -83,9 +104,9 @@ async function calcularDesembolsadoDia(organizationId, cobradorId, fechaInicio, 
 
   for (const mov of movimientosCreador) {
     if (!mov.referenciaId) {
-      total += mov.monto
       continue
     }
+    if (!referenciasValidas.has(mov.referenciaId)) continue
     if (!idsContabilizados.has(mov.referenciaId)) {
       total += mov.monto
       idsContabilizados.add(mov.referenciaId)

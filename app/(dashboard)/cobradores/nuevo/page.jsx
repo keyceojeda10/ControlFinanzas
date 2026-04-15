@@ -26,6 +26,8 @@ export default function NuevoCobrador() {
   const [comprando, setComprando] = useState(false)
   const [permisos,  setPermisos]  = useState({
     crearPrestamos: false,
+    gestionarPrestamos: false,
+    reportarGastos: true,
     crearClientes:  false,
     editarClientes: false,
   })
@@ -271,7 +273,9 @@ export default function NuevoCobrador() {
           <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-3">Permisos del cobrador</p>
           <div className="space-y-3">
             {[
-              { key: 'crearPrestamos', label: 'Crear préstamos', desc: 'Puede registrar nuevos préstamos para clientes de su ruta' },
+              { key: 'crearPrestamos', label: 'Crear préstamos', desc: 'Puede registrar préstamos nuevos para clientes de su ruta' },
+              { key: 'gestionarPrestamos', label: 'Gestión de préstamos', desc: 'Renovar préstamos, modificar plazos, aplicar recargos y descuentos' },
+              { key: 'reportarGastos', label: 'Reportar gastos menores', desc: 'Puede registrar gastos menores en caja (hoy o ayer)' },
               { key: 'crearClientes',  label: 'Crear clientes',  desc: 'Puede registrar nuevos clientes (se asignan a su ruta)' },
               { key: 'editarClientes', label: 'Editar clientes', desc: 'Puede modificar datos como teléfono, dirección, etc.' },
             ].map((p) => (
@@ -282,10 +286,22 @@ export default function NuevoCobrador() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setPermisos(prev => ({ ...prev, [p.key]: !prev[p.key] }))}
+                  onClick={() => setPermisos(prev => {
+                    if (p.key === 'crearPrestamos') {
+                      const nuevoValor = !prev.crearPrestamos
+                      return {
+                        ...prev,
+                        crearPrestamos: nuevoValor,
+                        ...(nuevoValor ? {} : { gestionarPrestamos: false }),
+                      }
+                    }
+                    return { ...prev, [p.key]: !prev[p.key] }
+                  })}
+                  disabled={p.key === 'gestionarPrestamos' && !permisos.crearPrestamos}
                   className={[
                     'relative w-10 h-[22px] rounded-full transition-colors shrink-0 mt-0.5',
                     permisos[p.key] ? 'bg-[#f5c518]' : 'bg-[#333333]',
+                    p.key === 'gestionarPrestamos' && !permisos.crearPrestamos ? 'opacity-50 cursor-not-allowed' : '',
                   ].join(' ')}
                 >
                   <span className={[
@@ -296,6 +312,9 @@ export default function NuevoCobrador() {
               </div>
             ))}
           </div>
+          <p className="text-[9px] text-[#888888] mt-2">
+            Nota: "Gestión de préstamos" es un permiso avanzado e independiente para cambios administrativos de créditos.
+          </p>
           <p className="text-[9px] text-[#555555] mt-2">Los permisos se pueden modificar después desde la edición del cobrador.</p>
         </div>
 

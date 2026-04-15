@@ -10,15 +10,26 @@ import { registrarMovimientoCapital } from '@/lib/capital'
 import { logActividad } from '@/lib/activity-log'
 import { trackEvent }   from '@/lib/analytics'
 
+async function cobradorPuedeGestionarPrestamos(userId) {
+  const cobrador = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { puedeGestionarPrestamos: true, puedeCrearPrestamos: true },
+  })
+  return Boolean(cobrador?.puedeGestionarPrestamos ?? cobrador?.puedeCrearPrestamos)
+}
+
 export async function POST(request, { params }) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.organizationId) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
   }
 
-  // Solo owner puede renovar (maneja efectivo y cambia capital)
-  if (session.user.rol !== 'owner') {
-    return Response.json({ error: 'Solo el administrador puede renovar préstamos' }, { status: 403 })
+  const puedeGestionar = session.user.rol === 'owner'
+    ? true
+    : (session.user.rol === 'cobrador' && await cobradorPuedeGestionarPrestamos(session.user.id))
+
+  if (!puedeGestionar) {
+    return Response.json({ error: 'No tienes permiso para renovar préstamos' }, { status: 403 })
   }
 
   const { organizationId, id: userId } = session.user
@@ -48,12 +59,15 @@ export async function POST(request, { params }) {
   const original = await prisma.prestamo.findFirst({
     where: { id: prestamoId, organizationId },
     include: {
-      cliente: { select: { id: true, nombre: true } },
+      cliente: { select: { id: true, nombre: true, rutaId: true } },
       pagos:   { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
     },
   })
 
   if (!original) return Response.json({ error: 'Préstamo no encontrado' }, { status: 404 })
+  if (session.user.rol === 'cobrador' && original.cliente.rutaId !== session.user.rutaId) {
+    return Response.json({ error: 'No tienes acceso a este préstamo' }, { status: 403 })
+  }
   if (original.estado !== 'activo') {
     return Response.json({ error: 'Solo se pueden renovar préstamos activos' }, { status: 400 })
   }

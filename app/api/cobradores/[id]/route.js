@@ -90,8 +90,10 @@ export async function GET(request, { params }) {
     activo:       cobrador.activo,
     permisos: {
       crearPrestamos: cobrador.puedeCrearPrestamos,
+      gestionarPrestamos: cobrador.puedeGestionarPrestamos ?? cobrador.puedeCrearPrestamos,
       crearClientes:  cobrador.puedeCrearClientes,
       editarClientes: cobrador.puedeEditarClientes,
+      reportarGastos: cobrador.puedeReportarGastos ?? true,
     },
     ruta,
     recaudadoHoy: cobrador.pagos.filter(p => !['recargo', 'descuento'].includes(p.tipo)).reduce((a, p) => a + p.montoPagado, 0),
@@ -160,8 +162,14 @@ export async function PATCH(request, { params }) {
   if (body.permisos !== undefined) {
     const p = body.permisos
     if (p.crearPrestamos !== undefined) data.puedeCrearPrestamos = Boolean(p.crearPrestamos)
+    if (p.gestionarPrestamos !== undefined) data.puedeGestionarPrestamos = Boolean(p.gestionarPrestamos)
     if (p.crearClientes  !== undefined) data.puedeCrearClientes  = Boolean(p.crearClientes)
     if (p.editarClientes !== undefined) data.puedeEditarClientes = Boolean(p.editarClientes)
+    if (p.reportarGastos !== undefined) data.puedeReportarGastos = Boolean(p.reportarGastos)
+
+    if (p.crearPrestamos !== undefined && p.gestionarPrestamos === undefined) {
+      data.puedeGestionarPrestamos = Boolean(p.crearPrestamos)
+    }
   }
 
   if (Object.keys(data).length === 0) {
@@ -172,7 +180,7 @@ export async function PATCH(request, { params }) {
     where: { id },
     data,
     select: { id: true, nombre: true, email: true, telefono: true, activo: true,
-      puedeCrearPrestamos: true, puedeCrearClientes: true, puedeEditarClientes: true },
+      puedeCrearPrestamos: true, puedeGestionarPrestamos: true, puedeCrearClientes: true, puedeEditarClientes: true, puedeReportarGastos: true },
   })
 
   return Response.json(actualizado)

@@ -42,7 +42,7 @@ const tipoPagoBadge = {
 export default function PrestamoDetallePage({ params }) {
   const { id }             = use(params)
   const router             = useRouter()
-  const { session }        = useAuth()
+  const { session, puedeGestionarPrestamos } = useAuth()
   const { lastSyncedAt }   = useOffline()
 
   const [prestamo,     setPrestamo]     = useState(null)
@@ -193,7 +193,7 @@ export default function PrestamoDetallePage({ params }) {
   const hayMontoMora = estaActivo && !completado && montoEnMora > 0
   const hayMontoAlDia = estaActivo && !completado && montoParaPonerseAlDia > 0
   const mostrarAtajosCobro = estaActivo && !completado && saldoPendiente > 0
-  const mostrarGestionPrestamo = estaActivo && !completado && session?.user?.rol === 'owner'
+  const mostrarGestionPrestamo = estaActivo && !completado && puedeGestionarPrestamos
 
   const abrirPagoNormal = () => {
     setPresetPago(null)
@@ -789,7 +789,7 @@ export default function PrestamoDetallePage({ params }) {
         </div>
       </Modal>
 
-      {/* Modal: gestión del préstamo (owner) */}
+      {/* Modal: gestión del préstamo (según permisos) */}
       <Modal
         open={modalGestionPrestamo}
         onClose={() => setModalGestionPrestamo(false)}

@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest",
     "test:run": "vitest run",
-    "smoke:mora": "node scripts/smoke-mora-consistency.cjs"
+    "smoke:mora": "node scripts/smoke-mora-consistency.cjs",
+    "audit:caja-user": "node scripts/auditar-caja-usuario.cjs"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

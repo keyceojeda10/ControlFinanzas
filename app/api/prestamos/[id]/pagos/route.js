@@ -22,6 +22,14 @@ import { logActividad } from '@/lib/activity-log'
 import { enviarPushOrg } from '@/lib/push'
 import { trackEvent } from '@/lib/analytics'
 
+async function cobradorPuedeGestionarPrestamos(userId) {
+  const cobrador = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { puedeGestionarPrestamos: true, puedeCrearPrestamos: true },
+  })
+  return Boolean(cobrador?.puedeGestionarPrestamos ?? cobrador?.puedeCrearPrestamos)
+}
+
 // ─── POST /api/prestamos/[id]/pagos ─────────────────────────────
 export async function POST(request, { params }) {
   const session = await getServerSession(authOptions)
@@ -79,10 +87,14 @@ export async function POST(request, { params }) {
     return Response.json({ error: 'El tipo de pago no es válido' }, { status: 400 })
   }
 
-  // Recargo y descuento: solo owner puede hacerlo y requiere nota
+  // Recargo y descuento: owner o cobrador autorizado, y requiere nota
   if (['recargo', 'descuento'].includes(tipo)) {
-    if (rol !== 'owner') {
-      return Response.json({ error: 'Solo el administrador puede aplicar recargos o descuentos' }, { status: 403 })
+    const puedeGestionar = rol === 'owner'
+      ? true
+      : (rol === 'cobrador' && await cobradorPuedeGestionarPrestamos(userId))
+
+    if (!puedeGestionar) {
+      return Response.json({ error: 'No tienes permiso para aplicar recargos o descuentos' }, { status: 403 })
     }
     if (!nota?.trim()) {
       return Response.json({ error: 'Debes indicar el motivo del ajuste' }, { status: 400 })

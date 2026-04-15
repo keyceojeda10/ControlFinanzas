@@ -42,8 +42,10 @@ export async function GET(request) {
       email:     true,
       activo:    true,
       puedeCrearPrestamos: true,
+      puedeGestionarPrestamos: true,
       puedeCrearClientes:  true,
       puedeEditarClientes: true,
+      puedeReportarGastos: true,
       rutas:     {
         where:  { activo: true },
         select: {
@@ -67,8 +69,10 @@ export async function GET(request) {
     activo:          c.activo,
     permisos: {
       crearPrestamos: c.puedeCrearPrestamos,
+      gestionarPrestamos: c.puedeGestionarPrestamos ?? c.puedeCrearPrestamos,
       crearClientes:  c.puedeCrearClientes,
       editarClientes: c.puedeEditarClientes,
+      reportarGastos: c.puedeReportarGastos ?? true,
     },
     ruta:            c.rutas[0] ?? null,
     cantidadClientes: c.rutas[0]?.clientes?.length ?? 0,
@@ -133,6 +137,10 @@ export async function POST(request) {
     ? telefono.replace(/\D/g, '').trim() || null
     : null
 
+  const crearPrestamos = Boolean(permisos?.crearPrestamos)
+  const gestionarPrestamos = Boolean(permisos?.gestionarPrestamos ?? crearPrestamos)
+  const reportarGastos = Boolean(permisos?.reportarGastos ?? true)
+
   const cobrador = await prisma.user.create({
     data: {
       organizationId,
@@ -141,12 +149,14 @@ export async function POST(request) {
       telefono: telefonoNorm,
       password: hashedPassword,
       rol:      'cobrador',
-      puedeCrearPrestamos: Boolean(permisos?.crearPrestamos),
+      puedeCrearPrestamos: crearPrestamos,
+      puedeGestionarPrestamos: gestionarPrestamos,
       puedeCrearClientes:  Boolean(permisos?.crearClientes),
       puedeEditarClientes: Boolean(permisos?.editarClientes),
+      puedeReportarGastos: reportarGastos,
     },
     select: { id: true, nombre: true, email: true, telefono: true, activo: true, rol: true,
-      puedeCrearPrestamos: true, puedeCrearClientes: true, puedeEditarClientes: true },
+      puedeCrearPrestamos: true, puedeGestionarPrestamos: true, puedeCrearClientes: true, puedeEditarClientes: true, puedeReportarGastos: true },
   })
 
   logActividad({ session, accion: 'crear_cobrador', entidadTipo: 'usuario', entidadId: cobrador.id, detalle: `Cobrador ${cobrador.nombre} creado`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
