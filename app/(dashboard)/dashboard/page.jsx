@@ -46,7 +46,7 @@ function RoutesCard({ value, sub }) {
       value={value}
       sub={sub}
       color="#8b5cf6"
-      icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 20.25h6M12 3v17.25m0 0l-3-3m3 3 3-3M4.5 12h15" /></svg>}
+      icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75v11.25m6-9v11.25m5.25-14.25L15 8.25l-6-2.25L3.75 8.25v12l5.25-2.25 6 2.25 5.25-2.25v-12z" /></svg>}
     />
   )
 }
