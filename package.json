@@ -10,7 +10,8 @@
     "test": "vitest",
     "test:run": "vitest run",
     "smoke:mora": "node scripts/smoke-mora-consistency.cjs",
-    "audit:caja-user": "node scripts/auditar-caja-usuario.cjs"
+    "audit:caja-user": "node scripts/auditar-caja-usuario.cjs",
+    "reset:arranque-user": "node scripts/reset-arranque-usuario.cjs"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

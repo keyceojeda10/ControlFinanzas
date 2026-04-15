@@ -134,8 +134,31 @@ npm run dev
 - `npm run test`: tests en modo watch.
 - `npm run test:run`: ejecutar tests una vez.
 - `npm run smoke:mora`: valida coherencia de mora, proximo cobro y pago hoy sobre rutas activas.
+- `npm run reset:arranque-user -- --email=<correo> --capital=<monto> [--limpiar-operativa-dia] [--apply]`: reset de soporte para dejar capital inicial y opcionalmente limpiar desembolsos del dia en caja operativa.
 - `./scripts/deploy-stack.ps1`: deploy app + trigger de landing opcional + verificacion post-deploy.
 - `bash /home/control-finanzas/scripts/setup-cron-cierre-recordatorios.sh`: instala/actualiza cron para push de cierres pendientes.
+
+### Reset de arranque por usuario (soporte)
+
+Este flujo se usa cuando un cliente quiere "arrancar desde cero" con un capital fijo y sin arrastre operativo del dia.
+
+1. Simular (no escribe cambios):
+
+```bash
+npm run reset:arranque-user -- --email=mikediaz2595@gmail.com --capital=412000 --limpiar-operativa-dia
+```
+
+2. Aplicar cambios reales:
+
+```bash
+npm run reset:arranque-user -- --email=mikediaz2595@gmail.com --capital=412000 --limpiar-operativa-dia --apply
+```
+
+Notas:
+
+- El script borra historial de `MovimientoCapital` y deja un unico `capital_inicial` con el monto objetivo.
+- `--limpiar-operativa-dia` mueve prestamos activos del dia operativo al dia anterior para que "Prestado hoy" quede en 0.
+- Siempre probar primero sin `--apply`.
 
 ### Smoke test de consistencia (mora/proximo/pago)
 
