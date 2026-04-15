@@ -18,6 +18,9 @@ import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
 import { registrarMovimientoCapital } from '@/lib/capital'
 
+const REF_REVERSO_CANCELACION_DESEMBOLSO = 'prestamo_cancelado_reverso_desembolso'
+const REF_REVERSO_CANCELACION_RECAUDO = 'prestamo_cancelado_reverso_recaudo'
+
 async function obtenerPrestamo(id, session) {
   const p = await prisma.prestamo.findFirst({
     where: { id, organizationId: session.user.organizationId },
@@ -100,12 +103,83 @@ export async function PATCH(request, { params }) {
     if (!['cancelado'].includes(estado)) {
       return Response.json({ error: 'Estado no válido' }, { status: 400 })
     }
-    const actualizado = await prisma.prestamo.update({
-      where: { id },
-      data:  { estado },
+    const pagosReales = p.pagos.filter(pg => !['recargo', 'descuento'].includes(pg.tipo))
+    const totalPagosReales = pagosReales.reduce((acc, pg) => acc + Number(pg.montoPagado || 0), 0)
+
+    const { actualizado, reversoAplicado } = await prisma.$transaction(async (tx) => {
+      const [reversoDesembolsoExistente, reversoRecaudoExistente] = await Promise.all([
+        tx.movimientoCapital.findFirst({
+          where: {
+            organizationId: session.user.organizationId,
+            referenciaId: id,
+            referenciaTipo: REF_REVERSO_CANCELACION_DESEMBOLSO,
+          },
+          select: { id: true },
+        }),
+        tx.movimientoCapital.findFirst({
+          where: {
+            organizationId: session.user.organizationId,
+            referenciaId: id,
+            referenciaTipo: REF_REVERSO_CANCELACION_RECAUDO,
+          },
+          select: { id: true },
+        }),
+      ])
+
+      const actualizadoPrestamo = await tx.prestamo.update({
+        where: { id },
+        data: { estado },
+      })
+
+      let aplicoReverso = false
+
+      if (!reversoDesembolsoExistente) {
+        await registrarMovimientoCapital(tx, {
+          organizationId: session.user.organizationId,
+          tipo: 'ajuste',
+          monto: Number(p.montoPrestado),
+          direccion: 'ingreso',
+          descripcion: `Reverso desembolso - préstamo cancelado (${p.cliente.nombre})`,
+          referenciaId: id,
+          referenciaTipo: REF_REVERSO_CANCELACION_DESEMBOLSO,
+          creadoPorId: session.user.id,
+        })
+        aplicoReverso = true
+      }
+
+      if (totalPagosReales > 0 && !reversoRecaudoExistente) {
+        await registrarMovimientoCapital(tx, {
+          organizationId: session.user.organizationId,
+          tipo: 'ajuste',
+          monto: totalPagosReales,
+          direccion: 'egreso',
+          descripcion: `Reverso recaudos - préstamo cancelado (${p.cliente.nombre})`,
+          referenciaId: id,
+          referenciaTipo: REF_REVERSO_CANCELACION_RECAUDO,
+          creadoPorId: session.user.id,
+        })
+        aplicoReverso = true
+      }
+
+      return { actualizado: actualizadoPrestamo, reversoAplicado: aplicoReverso }
     })
-    logActividad({ session, accion: 'editar_prestamo', entidadTipo: 'prestamo', entidadId: id, detalle: `Estado cambiado a ${estado}`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
-    return Response.json(actualizado)
+
+    logActividad({
+      session,
+      accion: 'editar_prestamo',
+      entidadTipo: 'prestamo',
+      entidadId: id,
+      detalle: reversoAplicado
+        ? `Estado cambiado a ${estado} con reverso de capital aplicado`
+        : `Estado cambiado a ${estado} (reverso de capital ya existente)`,
+      ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+    })
+
+    return Response.json({
+      ...actualizado,
+      reversoCapitalAplicado: reversoAplicado,
+      totalRecaudosReversados: Math.round(totalPagosReales),
+    })
   }
 
   // ─── Modo 2: modificar plazo (extender o corregir fecha) ───────
