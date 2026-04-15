@@ -27,6 +27,24 @@ const fmtFecha = (d) => {
   return fecha.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'America/Bogota' })
 }
 
+const fmtHora = (d) => {
+  if (!d) return '—'
+  return new Date(d).toLocaleTimeString('es-CO', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: 'America/Bogota',
+  })
+}
+
+const getMetodoPagoLabel = (pago) => {
+  if (pago?.metodoPago === 'transferencia') {
+    return pago?.plataforma ? `Transferencia (${pago.plataforma})` : 'Transferencia'
+  }
+  if (pago?.metodoPago === 'efectivo') return 'Efectivo'
+  return 'Método no definido'
+}
+
 const getColombiaDateStr = () => {
   const d = new Date(Date.now() - 5 * 60 * 60 * 1000)
   return d.toISOString().slice(0, 10)
@@ -229,12 +247,55 @@ export default function CajaPage() {
   const tasaRecaudo = stats.tasaRecaudo || 0
   const colorRecaudo = tasaRecaudo >= 80 ? '#22c55e' : tasaRecaudo >= 50 ? '#f5c518' : '#ef4444'
   const recaudadoRegistrado = cobradoHoy
+  const pagosDelDia = cajaData?.pagosDia || []
+  const resumenPagosDia = cajaData?.resumenPagosDia || {}
+  const cantidadPagosDia = resumenPagosDia.cantidad ?? pagosDelDia.length
+  const totalPagosDia = Math.round(resumenPagosDia.total ?? pagosDelDia.reduce((acc, pago) => acc + Number(pago.montoPagado || 0), 0))
   const hoyColombia = getColombiaDateStr()
   const diasAtrasSeleccion = diasDesdeFechaColombia(hoyColombia, fechaSeleccionada)
   const esAyer = diasAtrasSeleccion === 1
   const fechaEditableCobrador = diasAtrasSeleccion === 0 || diasAtrasSeleccion === 1
   const fechaFueraRango = diasAtrasSeleccion < 0 || diasAtrasSeleccion > 1
   const puedeReportarGastoCobrador = fechaEditableCobrador && puedeReportarGastos
+
+  const pagosDiaCard = (
+    <Card>
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Pagos del día</p>
+          <p className="text-[11px] text-[#666666]">{cantidadPagosDia} registro{cantidadPagosDia === 1 ? '' : 's'}</p>
+        </div>
+        <p className="text-sm font-bold font-mono-display text-[#22c55e]">{formatCOP(totalPagosDia)}</p>
+      </div>
+
+      {pagosDelDia.length === 0 ? (
+        <p className="text-sm text-[#888888] text-center py-2">No hay pagos registrados en esta fecha.</p>
+      ) : (
+        <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+          {pagosDelDia.map((pago) => (
+            <div key={pago.id} className="rounded-[10px] border border-[#2a2a2a] bg-[#111111] px-3 py-2.5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-white truncate">{pago.clienteNombre || 'Cliente'}</p>
+                  <p className="text-[11px] text-[#888888] mt-0.5">
+                    {fmtHora(pago.fechaPago)}
+                    {!esCobrador && pago.cobradorNombre ? ` · ${pago.cobradorNombre}` : ''}
+                    {` · ${getMetodoPagoLabel(pago)}`}
+                  </p>
+                </div>
+                <p className="text-sm font-bold font-mono-display text-[#22c55e]">{formatCOP(pago.montoPagado || 0)}</p>
+              </div>
+              {pago.prestamoId && (
+                <Link href={`/prestamos/${pago.prestamoId}`} className="inline-block mt-1 text-[11px] text-[#06b6d4] hover:underline">
+                  Ver préstamo
+                </Link>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  )
 
   // ── VISTA DEL COBRADOR ────────────────────────────────────────
   if (esCobrador) {
@@ -325,6 +386,8 @@ export default function CajaPage() {
             </div>
           </details>
         </Card>
+
+        {pagosDiaCard}
 
         {/* Cierre */}
         {cierreHoy && !modoAjusteCierre ? (
@@ -596,6 +659,8 @@ export default function CajaPage() {
           </div>
         </details>
       </Card>
+
+      {pagosDiaCard}
 
       <Card>
         <div className="mb-2">

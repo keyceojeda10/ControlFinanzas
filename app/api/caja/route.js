@@ -413,6 +413,59 @@ export async function GET(request) {
     orderBy: { fecha: 'desc' },
   })
 
+  const wherePagosDia = {
+    organizationId,
+    fechaPago: { gte: inicio, lt: fin },
+    tipo: { notIn: ['recargo', 'descuento'] },
+  }
+  if (rol === 'cobrador') {
+    wherePagosDia.cobradorId = userId
+  }
+  if (rol === 'owner' && cobradorParam) {
+    wherePagosDia.cobradorId = cobradorParam
+  }
+
+  const pagosDiaRaw = await prisma.pago.findMany({
+    where: wherePagosDia,
+    select: {
+      id: true,
+      montoPagado: true,
+      fechaPago: true,
+      tipo: true,
+      metodoPago: true,
+      plataforma: true,
+      cobrador: {
+        select: { id: true, nombre: true },
+      },
+      prestamo: {
+        select: {
+          id: true,
+          cliente: {
+            select: { id: true, nombre: true, cedula: true },
+          },
+        },
+      },
+    },
+    orderBy: { fechaPago: 'desc' },
+    take: 400,
+  })
+
+  const pagosDia = pagosDiaRaw.map((pago) => ({
+    id: pago.id,
+    montoPagado: Math.round(pago.montoPagado || 0),
+    fechaPago: pago.fechaPago,
+    tipo: pago.tipo,
+    metodoPago: pago.metodoPago || null,
+    plataforma: pago.plataforma || null,
+    cobradorId: pago.cobrador?.id || null,
+    cobradorNombre: pago.cobrador?.nombre || null,
+    prestamoId: pago.prestamo?.id || null,
+    clienteId: pago.prestamo?.cliente?.id || null,
+    clienteNombre: pago.prestamo?.cliente?.nombre || 'Cliente',
+    clienteCedula: pago.prestamo?.cliente?.cedula || null,
+  }))
+  const totalPagosDia = pagosDia.reduce((acc, pago) => acc + pago.montoPagado, 0)
+
   // Para owner: obtener lista de cobradores con estado de cierre
   let cobradores = []
   if (rol === 'owner') {
@@ -483,6 +536,11 @@ export async function GET(request) {
   const payload = {
     cierres,
     gastos,
+    pagosDia,
+    resumenPagosDia: {
+      cantidad: pagosDia.length,
+      total: totalPagosDia,
+    },
     cobradores,
     stats: {
       dia: statsDia,
