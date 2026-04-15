@@ -8,10 +8,7 @@ import { obtenerClienteOffline } from '@/lib/offline'
 import { Card } from '@/components/ui/Card'
 import { SkeletonCard } from '@/components/ui/Skeleton'
 import { formatCOP } from '@/lib/calculos'
-
-const fmtFecha = (d) => d
-  ? new Date(d).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })
-  : '—'
+import ListadoPagos from '@/components/pagos/ListadoPagos'
 
 export default function HistorialPage() {
   const params = useParams()
@@ -19,6 +16,7 @@ export default function HistorialPage() {
   const { session, loading: authLoading } = useAuth()
   const [historial, setHistorial] = useState([])
   const [loading, setLoading] = useState(true)
+  const [filtroFecha, setFiltroFecha] = useState('')
 
   useEffect(() => {
     if (authLoading) return
@@ -58,8 +56,16 @@ export default function HistorialPage() {
     )
   }
 
-  const totalPagado = historial.reduce((a, h) => a + h.montoPagado, 0)
-  const totalPagos = historial.length
+  const historialFiltrado = filtroFecha
+    ? historial.filter((h) => {
+        const d = new Date(new Date(h.fechaPago).getTime() - 5 * 60 * 60 * 1000)
+          .toISOString().slice(0, 10)
+        return d === filtroFecha
+      })
+    : historial
+
+  const totalPagado = historialFiltrado.reduce((a, h) => a + h.montoPagado, 0)
+  const totalPagos = historialFiltrado.length
 
   return (
     <div className="max-w-2xl mx-auto space-y-4">
@@ -80,6 +86,45 @@ export default function HistorialPage() {
         </p>
       </div>
 
+      {/* Filtro por fecha + export */}
+      <div className="flex items-center gap-2">
+        <input
+          type="date"
+          value={filtroFecha}
+          onChange={(e) => setFiltroFecha(e.target.value)}
+          className="flex-1 h-9 rounded-[10px] border border-[#2a2a2a] bg-[#111111] px-3 text-sm text-white focus:outline-none focus:border-[#3b82f6]"
+        />
+        {filtroFecha && (
+          <button
+            type="button"
+            onClick={() => setFiltroFecha('')}
+            className="px-3 h-9 text-xs text-[#888888] hover:text-white border border-[#2a2a2a] rounded-[10px]"
+          >
+            Limpiar
+          </button>
+        )}
+        {historial.length > 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              const qs = new URLSearchParams({ cliente: params.id })
+              if (filtroFecha) {
+                qs.set('desde', filtroFecha)
+                qs.set('hasta', filtroFecha)
+              }
+              window.location.href = `/api/pagos/export?${qs.toString()}`
+            }}
+            title="Descargar CSV"
+            aria-label="Descargar CSV"
+            className="h-9 w-9 flex items-center justify-center rounded-[10px] border border-[#2a2a2a] text-[#888888] hover:text-white"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+            </svg>
+          </button>
+        )}
+      </div>
+
       {/* Resumen */}
       <div className="grid grid-cols-2 gap-3">
         <Card style={{
@@ -96,41 +141,15 @@ export default function HistorialPage() {
       </div>
 
       {/* Lista de pagos */}
-      {historial.length === 0 ? (
-        <Card>
-          <p className="text-sm text-[#888888] text-center py-6">
-            No hay pagos registrados
-          </p>
-        </Card>
-      ) : (
-        <Card>
-          <div className="space-y-0">
-            <div className="grid grid-cols-4 gap-2 text-[10px] text-[#888888] font-medium uppercase pb-2 border-b border-[#2a2a2a]">
-              <span>Fecha</span>
-              <span className="text-right">Monto</span>
-              <span className="text-right">Tipo</span>
-              <span className="text-right">Cobrador</span>
-            </div>
-            {historial.map((h) => (
-              <div key={h.id} className="grid grid-cols-4 gap-2 py-3 border-b border-[#2a2a2a] last:border-0 items-center">
-                <span className="text-sm text-[white]">{fmtFecha(h.fechaPago)}</span>
-                <span className="text-sm text-[white] text-right font-medium font-mono-display">
-                  {formatCOP(h.montoPagado)}
-                </span>
-                <span className={[
-                  'text-xs text-right',
-                  h.tipo === 'completo' ? 'text-[#22c55e]' : 'text-[#f59e0b]'
-                ]}>
-                  {h.tipo === 'completo' ? 'Completo' : 'Parcial'}
-                </span>
-                <span className="text-xs text-[#888888] text-right truncate">
-                  {h.cobrador || '—'}
-                </span>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
+      <Card>
+        <ListadoPagos
+          pagos={historialFiltrado}
+          mostrarCliente={false}
+          mostrarCobrador
+          mostrarLinkPrestamo
+          emptyLabel={filtroFecha ? 'Sin pagos en esta fecha' : 'No hay pagos registrados'}
+        />
+      </Card>
     </div>
   )
 }

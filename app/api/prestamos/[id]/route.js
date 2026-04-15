@@ -297,32 +297,53 @@ export async function DELETE(request, { params }) {
   const { organizationId } = session.user
 
   // Reversar capital y eliminar pagos + préstamo en transacción
-  await prisma.$transaction(async (tx) => {
-    // 1. Reversar desembolso original (ingreso al capital = el dinero vuelve)
-    await registrarMovimientoCapital(tx, {
-      organizationId,
-      tipo: 'ajuste',
-      monto: p.montoPrestado,
-      direccion: 'ingreso',
-      descripcion: `Reverso desembolso - préstamo eliminado (${p.cliente.nombre})`,
-      referenciaId: id,
-      referenciaTipo: 'prestamo',
-      creadoPorId: session.user.id,
-    })
+  // Si el préstamo ya estaba cancelado, la reversión de capital ya se aplicó
+  // al cancelarlo. Solo eliminamos los registros sin tocar capital.
+  const estabaCancelado = p.estado === 'cancelado'
 
-    // 2. Reversar cada pago real (egreso del capital)
-    const pagosReales = p.pagos.filter(pg => !['recargo', 'descuento'].includes(pg.tipo))
-    for (const pg of pagosReales) {
+  await prisma.$transaction(async (tx) => {
+    if (!estabaCancelado) {
+      // 1. Reversar desembolso original (ingreso al capital = el dinero vuelve)
       await registrarMovimientoCapital(tx, {
         organizationId,
         tipo: 'ajuste',
-        monto: pg.montoPagado,
-        direccion: 'egreso',
-        descripcion: `Reverso recaudo - préstamo eliminado`,
+        monto: p.montoPrestado,
+        direccion: 'ingreso',
+        descripcion: `Reverso desembolso - préstamo eliminado (${p.cliente.nombre})`,
         referenciaId: id,
-        referenciaTipo: 'pago',
+        referenciaTipo: 'prestamo',
         creadoPorId: session.user.id,
       })
+
+      // 2. Reversar cada pago real (egreso del capital)
+      const pagosReales = p.pagos.filter(pg => !['recargo', 'descuento'].includes(pg.tipo))
+      for (const pg of pagosReales) {
+        await registrarMovimientoCapital(tx, {
+          organizationId,
+          tipo: 'ajuste',
+          monto: pg.montoPagado,
+          direccion: 'egreso',
+          descripcion: `Reverso recaudo - préstamo eliminado`,
+          referenciaId: id,
+          referenciaTipo: 'pago',
+          creadoPorId: session.user.id,
+        })
+      }
+
+      // 2b. Reversar descuentos aplicados (ingreso = devuelve lo descontado al capital)
+      const descuentos = p.pagos.filter(pg => pg.tipo === 'descuento')
+      for (const pg of descuentos) {
+        await registrarMovimientoCapital(tx, {
+          organizationId,
+          tipo: 'ajuste',
+          monto: pg.montoPagado,
+          direccion: 'ingreso',
+          descripcion: `Reverso descuento - préstamo eliminado`,
+          referenciaId: id,
+          referenciaTipo: 'pago',
+          creadoPorId: session.user.id,
+        })
+      }
     }
 
     // 3. Eliminar pagos y préstamo

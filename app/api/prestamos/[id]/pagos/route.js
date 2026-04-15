@@ -125,6 +125,30 @@ export async function POST(request, { params }) {
     montoFinal = Math.min(montoFinal, saldoActual)
   }
 
+  // Detección de duplicado: mismo préstamo + mismo monto + mismo tipo en los últimos 60s
+  const url = new URL(request.url)
+  const confirmarDuplicado = url.searchParams.get('confirmarDuplicado') === '1'
+  if (!confirmarDuplicado) {
+    const hace60s = new Date(Date.now() - 60 * 1000)
+    const reciente = await prisma.pago.findFirst({
+      where: {
+        prestamoId,
+        organizationId,
+        montoPagado: montoFinal,
+        tipo,
+        fechaPago: { gte: hace60s },
+      },
+      select: { id: true, fechaPago: true },
+    })
+    if (reciente) {
+      return Response.json({
+        error: 'Posible pago duplicado',
+        duplicado: true,
+        pagoReciente: { id: reciente.id, fechaPago: reciente.fechaPago },
+      }, { status: 409 })
+    }
+  }
+
   // Registrar pago y actualizar estados en transacción
   const resultado = await prisma.$transaction(async (tx) => {
     // 1. Crear el pago
@@ -233,6 +257,20 @@ export async function POST(request, { params }) {
         referenciaId: prestamoId,
         referenciaTipo: 'pago',
         creadoPorId: userId,
+      })
+    }
+
+    // Descuento: refleja la perdida como ajuste negativo del capital
+    if (tipo === 'descuento') {
+      await registrarMovimientoCapital(tx, {
+        organizationId,
+        tipo: 'ajuste',
+        monto: montoFinal,
+        descripcion: `Descuento aplicado - préstamo${nota?.trim() ? ` (${nota.trim()})` : ''}`,
+        referenciaId: prestamoId,
+        referenciaTipo: 'pago',
+        creadoPorId: userId,
+        direccion: 'egreso',
       })
     }
 

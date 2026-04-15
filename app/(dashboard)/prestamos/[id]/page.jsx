@@ -61,6 +61,7 @@ export default function PrestamoDetallePage({ params }) {
   const [anulando,     setAnulando]     = useState(null)   // pagoId que se está anulando
   const [comprobante,  setComprobante]  = useState(null)   // pagoId del comprobante expandido
   const [editandoFecha, setEditandoFecha] = useState(null) // pagoId cuya fecha se edita
+  const [filtroFecha,  setFiltroFecha]  = useState('')    // YYYY-MM-DD opcional para filtrar historial
   const [rutaNav,      setRutaNav]     = useState(null)
   const [modalRecargo,  setModalRecargo]  = useState(false)
   const [modalDescuento, setModalDescuento] = useState(false)
@@ -502,9 +503,32 @@ export default function PrestamoDetallePage({ params }) {
 
       {/* ── HISTORIAL DE PAGOS ───────────────────────────────────── */}
       <Card>
-        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">
-          Historial de pagos ({pagos.length})
-        </p>
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">
+            Historial de pagos ({(filtroFecha ? pagos.filter(p => {
+              const d = new Date(new Date(p.fechaPago).getTime() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10)
+              return d === filtroFecha
+            }) : pagos).length}{filtroFecha ? ` de ${pagos.length}` : ''})
+          </p>
+          <div className="flex items-center gap-1">
+            <input
+              type="date"
+              value={filtroFecha}
+              onChange={(e) => setFiltroFecha(e.target.value)}
+              className="h-8 rounded-[10px] border border-[#2a2a2a] bg-[#111111] px-2 text-[11px] text-white focus:outline-none focus:border-[#3b82f6]"
+              title="Filtrar por fecha"
+            />
+            {filtroFecha && (
+              <button
+                type="button"
+                onClick={() => setFiltroFecha('')}
+                className="text-[10px] text-[#888888] hover:text-white px-2 py-1"
+              >
+                Limpiar
+              </button>
+            )}
+          </div>
+        </div>
 
         <div className="space-y-2 mb-4">
           {cliente?.telefono && (
@@ -528,11 +552,21 @@ export default function PrestamoDetallePage({ params }) {
           </div>
         </div>
 
-        {pagos.length === 0 ? (
-          <p className="text-sm text-[#888888] text-center py-4">Sin pagos registrados</p>
-        ) : (
+        {(() => {
+          const pagosFiltrados = filtroFecha
+            ? pagos.filter((p) => {
+                const d = new Date(new Date(p.fechaPago).getTime() - 5 * 60 * 60 * 1000)
+                  .toISOString().slice(0, 10)
+                return d === filtroFecha
+              })
+            : pagos
+          return pagosFiltrados.length === 0 ? (
+            <p className="text-sm text-[#888888] text-center py-4">
+              {filtroFecha ? 'Sin pagos en esta fecha' : 'Sin pagos registrados'}
+            </p>
+          ) : (
           <div className="space-y-2.5">
-            {pagos.map((pago) => {
+            {pagosFiltrados.map((pago) => {
               const tipoBadge = tipoPagoBadge[pago.tipo] ?? tipoPagoBadge.parcial
               const esAjuste = ['recargo', 'descuento'].includes(pago.tipo)
               const comprobanteAbierto = comprobante === pago.id
@@ -712,7 +746,8 @@ export default function PrestamoDetallePage({ params }) {
               )
             })}
           </div>
-        )}
+          )
+        })()}
       </Card>
 
       {/* ── CANCELAR PRÉSTAMO (solo owner, solo activo) ──────────── */}

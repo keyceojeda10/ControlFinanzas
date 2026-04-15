@@ -18,6 +18,14 @@ export async function GET() {
   const orgId = session.user.organizationId
   if (!orgId) return NextResponse.json({ error: 'Sin organización' }, { status: 403 })
 
+  // Cobrador: limitar metricas a clientes/prestamos/pagos de SU ruta
+  const esCobrador = session.user.rol === 'cobrador'
+  const rutaIdCobrador = session.user.rutaId ?? null
+  const filtroRutaCliente = esCobrador ? { rutaId: rutaIdCobrador } : {}
+  const filtroRutaPagos = esCobrador
+    ? { prestamo: { cliente: { rutaId: rutaIdCobrador } } }
+    : {}
+
   // Rangos UTC que representan "hoy" y "este mes" en hora Colombia (UTC-5)
   // Colombia midnight = UTC 05:00. Fin del día Colombia = UTC 04:59:59 del día siguiente.
   const hoy = getColombiaDate()
@@ -47,7 +55,10 @@ export async function GET() {
       where: {
         organizationId: orgId,
         estado: 'activo',
-        cliente: { estado: { notIn: ['eliminado', 'inactivo'] } },
+        cliente: {
+          estado: { notIn: ['eliminado', 'inactivo'] },
+          ...filtroRutaCliente,
+        },
       },
       select: {
         clienteId: true,
@@ -69,7 +80,13 @@ export async function GET() {
       },
     }),
 
-    prisma.prestamo.count({ where: { organizationId: orgId, estado: 'completado' } }),
+    prisma.prestamo.count({
+      where: {
+        organizationId: orgId,
+        estado: 'completado',
+        ...(esCobrador ? { cliente: { rutaId: rutaIdCobrador } } : {}),
+      },
+    }),
 
     // Pagos de hoy (usar fechas UTC para comparar con datos en DB)
     prisma.pago.aggregate({
@@ -79,6 +96,7 @@ export async function GET() {
           gte: inicioDiaUTC,
           lte: finDiaUTC,
         },
+        ...filtroRutaPagos,
       },
       _sum: { montoPagado: true },
       _count: true,
@@ -89,6 +107,7 @@ export async function GET() {
       where: {
         organizationId: orgId,
         fechaPago: { gte: inicioMes, lte: finMes },
+        ...filtroRutaPagos,
       },
       _sum: { montoPagado: true },
       _count: true,
@@ -96,7 +115,7 @@ export async function GET() {
 
     // Últimos 5 pagos registrados
     prisma.pago.findMany({
-      where: { organizationId: orgId },
+      where: { organizationId: orgId, ...filtroRutaPagos },
       orderBy: { fechaPago: 'desc' },
       take: 5,
       select: {
@@ -113,7 +132,11 @@ export async function GET() {
     }),
 
     prisma.ruta.count({
-      where: { organizationId: orgId, activo: true },
+      where: {
+        organizationId: orgId,
+        activo: true,
+        ...(esCobrador ? { id: rutaIdCobrador } : {}),
+      },
     }),
   ])
 

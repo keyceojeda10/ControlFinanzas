@@ -25,25 +25,48 @@ export async function GET(request) {
 
   const { organizationId, rol, id: userId } = session.user
   const { searchParams } = new URL(request.url)
-  const fechaParam = searchParams.get('fecha') || getColombiaDateOnly()
-
-  // Convertir fechaParam a fechas UTC para Colombia
-  const fecha = new Date(fechaParam + 'T00:00:00')
-  const fechaInicio = new Date(fecha)
-  fechaInicio.setHours(5, 0, 0, 0) // Colombia midnight = UTC 5:00
-  const fechaFin = new Date(fecha)
-  fechaFin.setDate(fechaFin.getDate() + 1)
-  fechaFin.setHours(4, 59, 59, 999) // Colombia 23:59:59 = UTC 4:59:59
+  const fechaParam = searchParams.get('fecha')
+  const estadoParam = searchParams.get('estado')
+  const cobradorParam = searchParams.get('cobrador')
 
   const where = {
     organizationId,
-    fecha: { gte: fechaInicio, lt: fechaFin },
     ...(rol === 'cobrador' && { cobradorId: userId }),
+  }
+
+  // Filtro estado (pendiente | aprobado | rechazado)
+  if (estadoParam && ['pendiente', 'aprobado', 'rechazado'].includes(estadoParam)) {
+    where.estado = estadoParam
+  }
+
+  // Filtro cobrador (solo owner)
+  if (rol === 'owner' && cobradorParam) {
+    where.cobradorId = cobradorParam
+  }
+
+  // Filtro fecha: default = hoy cuando no hay estado, si hay estado y no fecha → todas
+  if (fechaParam && FECHA_REGEX.test(fechaParam)) {
+    const fecha = new Date(fechaParam + 'T00:00:00')
+    const fechaInicio = new Date(fecha)
+    fechaInicio.setHours(5, 0, 0, 0)
+    const fechaFin = new Date(fecha)
+    fechaFin.setDate(fechaFin.getDate() + 1)
+    fechaFin.setHours(4, 59, 59, 999)
+    where.fecha = { gte: fechaInicio, lt: fechaFin }
+  } else if (!estadoParam) {
+    const hoy = getColombiaDateOnly()
+    const fecha = new Date(hoy + 'T00:00:00')
+    const fechaInicio = new Date(fecha)
+    fechaInicio.setHours(5, 0, 0, 0)
+    const fechaFin = new Date(fecha)
+    fechaFin.setDate(fechaFin.getDate() + 1)
+    fechaFin.setHours(4, 59, 59, 999)
+    where.fecha = { gte: fechaInicio, lt: fechaFin }
   }
 
   const gastos = await prisma.gastoMenor.findMany({
     where,
-    include: { cobrador: { select: { nombre: true } } },
+    include: { cobrador: { select: { id: true, nombre: true } } },
     orderBy: { fecha: 'desc' },
   })
 

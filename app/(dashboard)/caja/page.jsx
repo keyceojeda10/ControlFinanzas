@@ -15,6 +15,7 @@ import { SkeletonCard }        from '@/components/ui/Skeleton'
 import { formatCOP }           from '@/lib/calculos'
 import ReportarGasto          from '@/components/gastos/ReportarGasto'
 import ListaGastos            from '@/components/gastos/ListaGastos'
+import ListadoPagos           from '@/components/pagos/ListadoPagos'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -85,6 +86,7 @@ export default function CajaPage() {
   )
   const [modoAjusteCierre, setModoAjusteCierre] = useState(false)
   const [isOffline, setIsOffline] = useState(false)
+  const [filtroCobrador, setFiltroCobrador] = useState('')
   const hasLoadedOnceRef = useRef(false)
 
   useEffect(() => {
@@ -258,42 +260,73 @@ export default function CajaPage() {
   const fechaFueraRango = diasAtrasSeleccion < 0 || diasAtrasSeleccion > 1
   const puedeReportarGastoCobrador = fechaEditableCobrador && puedeReportarGastos
 
+  const pagosDelDiaFiltrados = filtroCobrador
+    ? pagosDelDia.filter((p) => (p.cobrador?.id ?? p.cobradorId) === filtroCobrador)
+    : pagosDelDia
+  const totalPagosFiltrados = filtroCobrador
+    ? Math.round(pagosDelDiaFiltrados.reduce((acc, p) => acc + Number(p.montoPagado || 0), 0))
+    : totalPagosDia
+  const cantidadPagosFiltrados = filtroCobrador ? pagosDelDiaFiltrados.length : cantidadPagosDia
+
+  const cobradoresParaFiltro = cajaData?.cobradores || []
+  const descargarCSV = () => {
+    const qs = new URLSearchParams({
+      desde: fechaSeleccionada,
+      hasta: fechaSeleccionada,
+    })
+    if (filtroCobrador) qs.set('cobrador', filtroCobrador)
+    window.location.href = `/api/pagos/export?${qs.toString()}`
+  }
+
   const pagosDiaCard = (
     <Card>
-      <div className="flex items-center justify-between mb-3">
-        <div>
+      <div className="flex items-center justify-between mb-3 gap-2">
+        <div className="min-w-0">
           <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Pagos del día</p>
-          <p className="text-[11px] text-[#666666]">{cantidadPagosDia} registro{cantidadPagosDia === 1 ? '' : 's'}</p>
+          <p className="text-[11px] text-[#666666]">{cantidadPagosFiltrados} registro{cantidadPagosFiltrados === 1 ? '' : 's'}</p>
         </div>
-        <p className="text-sm font-bold font-mono-display text-[#22c55e]">{formatCOP(totalPagosDia)}</p>
+        <div className="flex items-center gap-2 shrink-0">
+          <p className="text-sm font-bold font-mono-display text-[#22c55e]">{formatCOP(totalPagosFiltrados)}</p>
+          {!esCobrador && pagosDelDia.length > 0 && (
+            <button
+              type="button"
+              onClick={descargarCSV}
+              title="Descargar CSV"
+              aria-label="Descargar CSV"
+              className="w-8 h-8 flex items-center justify-center rounded-[8px] text-[#888888] hover:text-white hover:bg-[#2a2a2a] transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
 
-      {pagosDelDia.length === 0 ? (
-        <p className="text-sm text-[#888888] text-center py-2">No hay pagos registrados en esta fecha.</p>
-      ) : (
-        <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
-          {pagosDelDia.map((pago) => (
-            <div key={pago.id} className="rounded-[10px] border border-[#2a2a2a] bg-[#111111] px-3 py-2.5">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-white truncate">{pago.clienteNombre || 'Cliente'}</p>
-                  <p className="text-[11px] text-[#888888] mt-0.5">
-                    {fmtHora(pago.fechaPago)}
-                    {!esCobrador && pago.cobradorNombre ? ` · ${pago.cobradorNombre}` : ''}
-                    {` · ${getMetodoPagoLabel(pago)}`}
-                  </p>
-                </div>
-                <p className="text-sm font-bold font-mono-display text-[#22c55e]">{formatCOP(pago.montoPagado || 0)}</p>
-              </div>
-              {pago.prestamoId && (
-                <Link href={`/prestamos/${pago.prestamoId}`} className="inline-block mt-1 text-[11px] text-[#06b6d4] hover:underline">
-                  Ver préstamo
-                </Link>
-              )}
-            </div>
-          ))}
+      {!esCobrador && cobradoresParaFiltro.length > 1 && (
+        <div className="mb-3">
+          <select
+            value={filtroCobrador}
+            onChange={(e) => setFiltroCobrador(e.target.value)}
+            className="w-full h-9 rounded-[10px] border border-[#2a2a2a] bg-[#111111] px-2 text-xs text-white focus:outline-none focus:border-[#3b82f6]"
+          >
+            <option value="">Todos los cobradores</option>
+            {cobradoresParaFiltro.map((c) => (
+              <option key={c.id} value={c.id}>{c.nombre}</option>
+            ))}
+          </select>
         </div>
       )}
+
+      <ListadoPagos
+        pagos={pagosDelDiaFiltrados}
+        mostrarCliente
+        mostrarCobrador={!esCobrador}
+        mostrarLinkPrestamo
+        emptyLabel="No hay pagos registrados en esta fecha."
+        maxHeight="320px"
+      />
+
     </Card>
   )
 

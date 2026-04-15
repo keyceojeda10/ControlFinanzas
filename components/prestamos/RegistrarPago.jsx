@@ -49,7 +49,7 @@ export default function RegistrarPago({
     setError('')
   }, [open, presetPago, cuotaDiaria, saldoPendiente])
 
-  const handleSubmit = async () => {
+  const handleSubmit = async ({ confirmarDuplicado = false } = {}) => {
     let m = Number(monto)
     if (!m || m <= 0) { setError('Ingresa un monto válido'); return }
     // Limitar al saldo en lugar de bloquear (permite cobrar saldos pequeños)
@@ -60,12 +60,24 @@ export default function RegistrarPago({
     setLoading(true)
     setError('')
     try {
-      const res  = await fetch(`/api/prestamos/${prestamoId}/pagos`, {
+      const qs = confirmarDuplicado ? '?confirmarDuplicado=1' : ''
+      const res  = await fetch(`/api/prestamos/${prestamoId}/pagos${qs}`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ montoPagado: m, tipo, nota, diasAbonados, metodoPago, plataforma }),
       })
       const data = await res.json()
+      if (res.status === 409 && data?.duplicado) {
+        setLoading(false)
+        const hace = Math.round((Date.now() - new Date(data.pagoReciente.fechaPago).getTime()) / 1000)
+        const ok = window.confirm(
+          `Ya se registró un pago idéntico hace ${hace}s.\n\n¿Confirmas que este es un pago adicional y no un duplicado?`
+        )
+        if (ok) {
+          return handleSubmit({ confirmarDuplicado: true })
+        }
+        return
+      }
       if (!res.ok) { setError(data.error ?? 'Error al registrar el pago'); return }
 
       const pagoParaWA = { montoPagado: m, fechaPago: new Date().toISOString() }

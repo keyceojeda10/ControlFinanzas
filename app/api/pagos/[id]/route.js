@@ -135,7 +135,10 @@ export async function DELETE(request, { params }) {
     const nuevoEstado = calcularEstadoCliente(todosLosPrestamos, diasExcluidos)
     await tx.cliente.update({ where: { id: prestamo.clienteId }, data: { estado: nuevoEstado } })
 
-    // 4. Reversar movimiento de capital (solo pagos reales, no ajustes)
+    // 4. Reversar movimiento de capital
+    // Pagos reales (completo, parcial, capital): se registro recaudo (ingreso) → reverso con egreso
+    // Descuento: se registro ajuste egreso → reverso con ingreso
+    // Recargo: no toca capital
     if (!['recargo', 'descuento'].includes(pago.tipo)) {
       await registrarMovimientoCapital(tx, {
         organizationId,
@@ -143,6 +146,17 @@ export async function DELETE(request, { params }) {
         monto: pago.montoPagado,
         direccion: 'egreso',
         descripcion: `Reverso pago anulado - préstamo`,
+        referenciaId: prestamo.id,
+        referenciaTipo: 'pago',
+        creadoPorId: session.user.id,
+      })
+    } else if (pago.tipo === 'descuento') {
+      await registrarMovimientoCapital(tx, {
+        organizationId,
+        tipo: 'ajuste',
+        monto: pago.montoPagado,
+        direccion: 'ingreso',
+        descripcion: `Reverso descuento anulado - préstamo`,
         referenciaId: prestamo.id,
         referenciaTipo: 'pago',
         creadoPorId: session.user.id,
