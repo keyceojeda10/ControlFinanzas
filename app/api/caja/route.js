@@ -167,16 +167,41 @@ async function calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId =
   return total
 }
 
-async function getCajaGeneralStats(organizationId, inicio, fin) {
-  const [capital, movimientosManualesDia] = await Promise.all([
-    prisma.capital.findUnique({
-      where: { organizationId },
-      select: { saldo: true },
+async function getCajaGeneralStats(organizationId, fechaColombia) {
+  const fechaCorte = typeof fechaColombia === 'string' && FECHA_REGEX.test(fechaColombia)
+    ? fechaColombia
+    : new Date(fechaColombia).toISOString().slice(0, 10)
+
+  const { fin } = getColombiaDayRange(fechaCorte)
+
+  const primerCierre = await prisma.cierreCaja.findFirst({
+    where: { organizationId },
+    orderBy: { fecha: 'asc' },
+    select: { fecha: true },
+  })
+
+  if (!primerCierre) {
+    return {
+      saldoActual: 0,
+      fechaInicioAcumulado: null,
+      fechaInicioDisplay: null,
+    }
+  }
+
+  const fechaInicioAcumulado = new Date(primerCierre.fecha)
+
+  const [cierresAcumulado, movimientosManualesCaja] = await Promise.all([
+    prisma.cierreCaja.aggregate({
+      where: {
+        organizationId,
+        fecha: { gte: fechaInicioAcumulado, lte: fin },
+      },
+      _sum: { saldoRealCaja: true },
     }),
     prisma.movimientoCapital.findMany({
       where: {
         organizationId,
-        createdAt: { gte: inicio, lt: fin },
+        createdAt: { gte: fechaInicioAcumulado, lte: fin },
         OR: [
           {
             tipo: 'ajuste',
@@ -188,70 +213,27 @@ async function getCajaGeneralStats(organizationId, inicio, fin) {
           },
         ],
       },
-      orderBy: { createdAt: 'desc' },
       select: {
-        id: true,
         tipo: true,
         monto: true,
-        descripcion: true,
-        createdAt: true,
         saldoAnterior: true,
         saldoNuevo: true,
       },
     }),
   ])
 
-  const saldoActual = capital?.saldo ?? 0
-
-  const movimientosNormalizados = movimientosManualesDia.map((mov) => {
-    const direccion = mov.tipo === 'inyeccion'
-      ? 'ingreso'
-      : mov.tipo === 'retiro'
-        ? 'egreso'
-        : (mov.saldoNuevo >= mov.saldoAnterior ? 'ingreso' : 'egreso')
-
-    const tipo = mov.tipo === 'inyeccion'
-      ? 'inyeccion'
-      : mov.tipo === 'retiro'
-        ? 'retiro'
-        : 'ajuste'
-
-    return {
-      id: mov.id,
-      tipo,
-      monto: mov.monto,
-      descripcion: mov.descripcion,
-      createdAt: mov.createdAt,
-      direccion,
-    }
-  })
-
-  const totalesDia = movimientosNormalizados.reduce((acc, mov) => {
-    if (mov.tipo === 'inyeccion') acc.inyecciones += mov.monto
-    if (mov.tipo === 'retiro') acc.retiros += mov.monto
-    if (mov.tipo === 'ajuste') acc.ajustes += mov.direccion === 'ingreso' ? mov.monto : -mov.monto
-    acc.netoManual += mov.direccion === 'ingreso' ? mov.monto : -mov.monto
-    return acc
-  }, {
-    inyecciones: 0,
-    retiros: 0,
-    ajustes: 0,
-    netoManual: 0,
-  })
-
-  const ajustesNormalizados = movimientosNormalizados.filter((mov) => mov.tipo === 'ajuste')
-
-  const totalAjustesManualDia = ajustesNormalizados.reduce((acc, mov) => {
-    return acc + (mov.direccion === 'ingreso' ? mov.monto : -mov.monto)
+  const saldoCierresAcumulado = cierresAcumulado._sum?.saldoRealCaja || 0
+  const netoMovimientosCajaAcumulado = movimientosManualesCaja.reduce((acc, mov) => {
+    if (mov.tipo === 'inyeccion') return acc + mov.monto
+    if (mov.tipo === 'retiro') return acc - mov.monto
+    const esIngreso = mov.saldoNuevo >= mov.saldoAnterior
+    return acc + (esIngreso ? mov.monto : -mov.monto)
   }, 0)
 
   return {
-    saldoActual,
-    totalManualDia: totalesDia.netoManual,
-    totalesDia,
-    movimientosManualDia: movimientosNormalizados,
-    totalAjustesManualDia,
-    ajustesDia: ajustesNormalizados,
+    saldoActual: saldoCierresAcumulado + netoMovimientosCajaAcumulado,
+    fechaInicioAcumulado,
+    fechaInicioDisplay: fmtFechaColombia(fechaInicioAcumulado),
   }
 }
 
@@ -375,7 +357,7 @@ export async function GET(request) {
   const statsCobradorId = rol === 'cobrador' ? userId : (rol === 'owner' ? (cobradorParam || null) : null)
   const [statsDiaRaw, cajaGeneral] = await Promise.all([
     getStatsDia(organizationId, fechaBase, statsCobradorId),
-    rol === 'owner' ? getCajaGeneralStats(organizationId, inicio, fin) : Promise.resolve(null),
+    rol === 'owner' ? getCajaGeneralStats(organizationId, fechaBase) : Promise.resolve(null),
   ])
 
   const statsDia = rol === 'owner'
@@ -483,8 +465,6 @@ export async function GET(request) {
 
   if (rol === 'owner' && cajaGeneral) {
     payload.stats.cajaGeneral = cajaGeneral
-    payload.movimientosManualDia = cajaGeneral.movimientosManualDia
-    payload.ajustesCajaDia = cajaGeneral.ajustesDia
   }
 
   return Response.json(payload)

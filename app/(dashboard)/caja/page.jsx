@@ -233,13 +233,8 @@ export default function CajaPage() {
   const disponibleOperativo = stats.disponibleOperativo ?? ((stats.recogida || 0) - (stats.gastos || 0))
   const desembolsadoDia = stats.desembolsadoDia || 0
   const saldoRealCaja = stats.saldoRealCaja ?? (disponibleOperativo - desembolsadoDia)
-  const saldoGeneralActual = cajaGeneral.saldoActual ?? cajaGeneral.saldoCierreDia ?? 0
-  const movimientosManualDia = cajaGeneral.movimientosManualDia || []
-  const totalesManualDia = cajaGeneral.totalesDia || {}
-  const inyeccionesManualDia = totalesManualDia.inyecciones ?? 0
-  const retirosManualDia = totalesManualDia.retiros ?? 0
-  const ajustesManualDia = totalesManualDia.ajustes ?? cajaGeneral.totalAjustesManualDia ?? 0
-  const netoManualDia = totalesManualDia.netoManual ?? cajaGeneral.totalManualDia ?? 0
+  const saldoGeneralActual = cajaGeneral.saldoActual ?? 0
+  const fechaInicioAcumulado = cajaGeneral.fechaInicioDisplay || null
   const tasaRecaudo = stats.tasaRecaudo || 0
   const colorRecaudo = tasaRecaudo >= 80 ? '#22c55e' : tasaRecaudo >= 50 ? '#f5c518' : '#ef4444'
   const recaudadoRegistrado = Math.round(stats.recogida || 0)
@@ -591,60 +586,20 @@ export default function CajaPage() {
             Movimiento de caja
           </button>
         </div>
-        <p className="text-[11px] text-[#888888] mb-3">Este saldo es acumulado y no depende de la fecha seleccionada.</p>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <p className="text-[10px] text-[#888888] uppercase">Saldo actual</p>
-            <p className="text-lg font-bold font-mono-display" style={{ color: saldoGeneralActual >= 0 ? '#22c55e' : '#ef4444' }}>
-              {formatCOP(saldoGeneralActual)}
-            </p>
-          </div>
-          <div>
-            <p className="text-[10px] text-[#888888] uppercase">Condición</p>
-            <p className="text-sm font-semibold text-[#f5c518]">Saldo persistente</p>
-            <p className="text-[10px] text-[#888888] mt-0.5">Se actualiza con movimientos de capital</p>
-          </div>
-          <div>
-            <p className="text-[10px] text-[#888888] uppercase">Inyecciones del día</p>
-            <p className="text-sm font-semibold font-mono-display text-[#22c55e]">+{formatCOP(inyeccionesManualDia)}</p>
-          </div>
-          <div>
-            <p className="text-[10px] text-[#888888] uppercase">Retiros del día</p>
-            <p className="text-sm font-semibold font-mono-display text-[#ef4444]">-{formatCOP(retirosManualDia)}</p>
-          </div>
-          <div>
-            <p className="text-[10px] text-[#888888] uppercase">Ajustes de cuadre</p>
-            <p className="text-sm font-semibold font-mono-display" style={{ color: ajustesManualDia >= 0 ? '#8b5cf6' : '#ef4444' }}>
-              {ajustesManualDia >= 0 ? '+' : ''}{formatCOP(ajustesManualDia)}
-            </p>
-          </div>
-          <div>
-            <p className="text-[10px] text-[#888888] uppercase">Neto manual del día</p>
-            <p className="text-sm font-semibold font-mono-display" style={{ color: netoManualDia >= 0 ? '#22c55e' : '#ef4444' }}>
-              {netoManualDia >= 0 ? '+' : ''}{formatCOP(netoManualDia)}
-            </p>
-          </div>
+        <div className="space-y-2">
+          <p className="text-[10px] text-[#888888] uppercase">Saldo actual acumulado</p>
+          <p className="text-3xl font-bold font-mono-display" style={{ color: saldoGeneralActual >= 0 ? '#22c55e' : '#ef4444' }}>
+            {formatCOP(saldoGeneralActual)}
+          </p>
+          <p className="text-[11px] text-[#888888]">
+            {fechaInicioAcumulado
+              ? `Acumulado desde ${fechaInicioAcumulado} con base en cierres diarios y movimientos manuales de caja.`
+              : 'Aún no hay cierres registrados para construir el acumulado general.'}
+          </p>
         </div>
 
-        {movimientosManualDia.length > 0 && (
-          <div className="mt-3 pt-3 border-t border-[#2a2a2a] space-y-2">
-            <p className="text-[10px] text-[#888888] uppercase tracking-wide">Movimientos manuales del día</p>
-            {movimientosManualDia.slice(0, 4).map((mov) => (
-              <div key={mov.id} className="flex items-center justify-between text-xs gap-3">
-                <span className="text-[#888888] truncate">
-                  {(mov.tipo === 'inyeccion' ? 'Inyección' : mov.tipo === 'retiro' ? 'Retiro' : 'Ajuste')} · {mov.descripcion || 'Sin descripción'}
-                </span>
-                <span className="font-semibold font-mono-display" style={{ color: mov.direccion === 'ingreso' ? '#22c55e' : '#ef4444' }}>
-                  {mov.direccion === 'ingreso' ? '+' : '-'}{formatCOP(mov.monto)}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-
         <div className="mt-3 pt-3 border-t border-[#2a2a2a]">
-          <Link href="/capital" className="text-xs font-medium text-[#06b6d4] hover:underline">
+          <Link href="/capital?view=manual-movements" className="text-xs font-medium text-[#06b6d4] hover:underline">
             Ver historial completo en Capital
           </Link>
         </div>

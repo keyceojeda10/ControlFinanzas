@@ -146,6 +146,9 @@ export default function CapitalPage() {
   }
 
   const noConfigurado = resumen && !resumen.configurado
+  const sugerido = resumen?.sugerido
+  const calidadSugerida = sugerido?.calidad || 'baja'
+  const colorCalidad = calidadSugerida === 'alta' ? '#22c55e' : calidadSugerida === 'media' ? '#f5c518' : '#ef4444'
 
   return (
     <div className="max-w-3xl mx-auto space-y-5">
@@ -167,7 +170,12 @@ export default function CapitalPage() {
       {noConfigurado && (
         <div className="bg-[#1a1a1a] border border-[#f5c518]/30 rounded-[16px] px-5 py-5 text-center">
           <p className="text-white font-medium mb-2">Configura tu capital inicial</p>
-          <p className="text-sm text-[#888888] mb-4">Registra con cuanto capital empiezas para que el sistema lleve el control automaticamente.</p>
+          <p className="text-sm text-[#888888] mb-2">Registra con cuanto capital empiezas para que el sistema lleve el control automaticamente.</p>
+          {sugerido && (
+            <p className="text-sm text-[#22c55e] mb-4">
+              Sugerencia por historial: <span className="font-semibold font-mono-display">{formatCOP(sugerido.saldo)}</span>
+            </p>
+          )}
           <button
             onClick={() => { setModalTipo('capital_inicial'); setShowModal(true) }}
             className="px-5 py-2.5 bg-[#f5c518] text-[#0a0a0a] text-sm font-semibold rounded-[10px] hover:bg-[#d4a900] transition-colors"
@@ -186,13 +194,34 @@ export default function CapitalPage() {
             boxShadow: `0 0 30px #06b6d408, 0 1px 2px rgba(0,0,0,0.3)`,
           }}
         >
-          <p className="text-[11px] text-[#888888] mb-1">Saldo disponible</p>
+          <p className="text-[11px] text-[#888888] mb-1">Saldo persistido</p>
           <p className={`text-3xl font-bold font-mono-display ${resumen.saldo >= 0 ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
             {formatCOP(resumen.saldo)}
           </p>
           {resumen.saldo < 0 && (
             <p className="text-xs text-[#ef4444] mt-1">Capital en negativo</p>
           )}
+        </div>
+      )}
+
+      {sugerido && (
+        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] px-5 py-4">
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <p className="text-[11px] text-[#888888] uppercase tracking-wide">Capital sugerido (informativo)</p>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: `${colorCalidad}22`, color: colorCalidad }}>
+              Calidad {calidadSugerida}
+            </span>
+          </div>
+          <p className="text-2xl font-bold font-mono-display text-[#f5c518]">{formatCOP(sugerido.saldo)}</p>
+          <p className="text-[11px] text-[#888888] mt-1">
+            Diferencia vs saldo persistido:{' '}
+            <span className="font-semibold font-mono-display" style={{ color: sugerido.diferenciaVsPersistido >= 0 ? '#ef4444' : '#22c55e' }}>
+              {sugerido.diferenciaVsPersistido >= 0 ? '+' : ''}{formatCOP(sugerido.diferenciaVsPersistido)}
+            </span>
+          </p>
+          <p className="text-[10px] text-[#666666] mt-2">
+            Esta sugerencia se calcula desde historial de préstamos, cobros, gastos y movimientos manuales. No modifica tu saldo automáticamente.
+          </p>
         </div>
       )}
 
