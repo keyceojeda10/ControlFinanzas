@@ -39,6 +39,18 @@ function KpiCard({ label, value, sub, color = '#ffffff', icon }) {
   )
 }
 
+function RoutesCard({ value, sub }) {
+  return (
+    <KpiCard
+      label="Rutas activas"
+      value={value}
+      sub={sub}
+      color="#8b5cf6"
+      icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 20.25h6M12 3v17.25m0 0l-3-3m3 3 3-3M4.5 12h15" /></svg>}
+    />
+  )
+}
+
 function QuickLink({ href, label, desc, color, dataTour }) {
   return (
     <Link
@@ -227,6 +239,10 @@ export default function DashboardPage() {
               icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" /></svg>}
             />
           )}
+          <RoutesCard
+            value={data.rutas?.activas ?? 0}
+            sub={esOwner ? 'Rutas habilitadas en la organización' : 'Rutas activas asignadas al equipo'}
+          />
         </div>
       )}
       {loading || !mounted ? (

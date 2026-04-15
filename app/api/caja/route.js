@@ -168,22 +168,10 @@ async function calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId =
 }
 
 async function getCajaGeneralStats(organizationId, inicio, fin) {
-  const [ultimoAntesInicio, ultimoAntesFin, ajustesDia] = await Promise.all([
-    prisma.movimientoCapital.findFirst({
-      where: {
-        organizationId,
-        createdAt: { lt: inicio },
-      },
-      orderBy: { createdAt: 'desc' },
-      select: { saldoNuevo: true },
-    }),
-    prisma.movimientoCapital.findFirst({
-      where: {
-        organizationId,
-        createdAt: { lt: fin },
-      },
-      orderBy: { createdAt: 'desc' },
-      select: { saldoNuevo: true },
+  const [capital, ajustesDia] = await Promise.all([
+    prisma.capital.findUnique({
+      where: { organizationId },
+      select: { saldo: true },
     }),
     prisma.movimientoCapital.findMany({
       where: {
@@ -204,8 +192,7 @@ async function getCajaGeneralStats(organizationId, inicio, fin) {
     }),
   ])
 
-  const saldoInicioDia = ultimoAntesInicio?.saldoNuevo || 0
-  const saldoCierreDia = ultimoAntesFin?.saldoNuevo || saldoInicioDia
+  const saldoActual = capital?.saldo ?? 0
 
   const ajustesNormalizados = ajustesDia.map((mov) => {
     const direccion = mov.saldoNuevo >= mov.saldoAnterior ? 'ingreso' : 'egreso'
@@ -223,9 +210,7 @@ async function getCajaGeneralStats(organizationId, inicio, fin) {
   }, 0)
 
   return {
-    saldoInicioDia,
-    saldoCierreDia,
-    variacionDia: saldoCierreDia - saldoInicioDia,
+    saldoActual,
     totalAjustesManualDia,
     ajustesDia: ajustesNormalizados,
   }

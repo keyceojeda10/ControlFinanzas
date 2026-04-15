@@ -36,6 +36,7 @@ export async function GET() {
     pagosHoy,
     pagosMes,
     ultimosPagos,
+    rutasActivas,
   ] = await Promise.all([
     prisma.organization.findUnique({
       where: { id: orgId },
@@ -110,6 +111,10 @@ export async function GET() {
         },
       },
     }),
+
+    prisma.ruta.count({
+      where: { organizationId: orgId, activo: true },
+    }),
   ])
 
   const clientesActivos = new Set()
@@ -147,6 +152,9 @@ export async function GET() {
       cantidadHoy: pagosHoy._count              ?? 0,
       mes:         pagosMes._sum?.montoPagado   ?? 0,
       cantidadMes: pagosMes._count              ?? 0,
+    },
+    rutas: {
+      activas: rutasActivas ?? 0,
     },
     ultimosPagos: ultimosPagos.map((p) => ({
       id:         p.id,
