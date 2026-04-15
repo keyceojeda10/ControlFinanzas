@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { useAuth }             from '@/hooks/useAuth'
 import { useOffline }          from '@/components/providers/OfflineProvider'
 import { guardarEnCache, leerDeCache } from '@/lib/offline'
@@ -35,19 +36,6 @@ const diasDesdeFechaColombia = (fechaBase, fechaObjetivo) => {
   const base = new Date(fechaBase + 'T00:00:00-05:00')
   const objetivo = new Date(fechaObjetivo + 'T00:00:00-05:00')
   return Math.round((base - objetivo) / DAY_MS)
-}
-
-// Barra de progreso visual
-function ProgressBar({ value, max, color = '#22c55e' }) {
-  const pct = max > 0 ? Math.min(Math.round((value / max) * 100), 100) : 0
-  return (
-    <div className="w-full h-2 bg-[#2a2a2a] rounded-full overflow-hidden">
-      <div
-        className="h-full rounded-full transition-all duration-500"
-        style={{ width: `${pct}%`, background: color }}
-      />
-    </div>
-  )
 }
 
 export default function CajaPage() {
@@ -231,10 +219,16 @@ export default function CajaPage() {
   const disponibleOperativo = stats.disponibleOperativo ?? ((stats.recogida || 0) - (stats.gastos || 0))
   const desembolsadoDia = stats.desembolsadoDia || 0
   const saldoRealCaja = stats.saldoRealCajaConAjustes ?? stats.saldoRealCaja ?? (disponibleOperativo - desembolsadoDia)
+  const cobradoHoy = Math.round(stats.cobradoHoy ?? stats.recogida ?? 0)
+  const prestadoHoy = Math.round(stats.prestadoHoy ?? desembolsadoDia)
+  const gastosHoy = Math.round(stats.gastos || 0)
+  const disponibleHoy = Math.round(stats.disponibleHoy ?? saldoRealCaja)
+  const diferenciaRecaudo = cobradoHoy - Math.round(stats.esperado || 0)
+  const ajustesDelDia = Math.round(stats.ajustesManualDia || 0)
   const saldoGeneralActual = cajaGeneral.saldoActual ?? 0
   const tasaRecaudo = stats.tasaRecaudo || 0
   const colorRecaudo = tasaRecaudo >= 80 ? '#22c55e' : tasaRecaudo >= 50 ? '#f5c518' : '#ef4444'
-  const recaudadoRegistrado = Math.round(stats.recogida || 0)
+  const recaudadoRegistrado = cobradoHoy
   const hoyColombia = getColombiaDateStr()
   const diasAtrasSeleccion = diasDesdeFechaColombia(hoyColombia, fechaSeleccionada)
   const esAyer = diasAtrasSeleccion === 1
@@ -278,44 +272,58 @@ export default function CajaPage() {
           </div>
         )}
 
-        {/* Resumen de recaudo */}
+        {/* Resumen operativo del día */}
         <Card>
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Recaudo del día</p>
+            <div>
+              <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Caja operativa de hoy</p>
+              <p className="text-[11px] text-[#666666]">Disponible hoy</p>
+            </div>
             {tasaRecaudo > 0 && (
               <span className="text-sm font-bold" style={{ color: colorRecaudo }}>
-                {tasaRecaudo}%
+                {tasaRecaudo}% cobrado
               </span>
             )}
           </div>
-          <ProgressBar value={stats.recogida || 0} max={stats.esperado || 1} color={colorRecaudo} />
-          <div className="grid grid-cols-2 gap-3 mt-4">
+          <p className="text-3xl font-bold font-mono-display" style={{ color: disponibleHoy >= 0 ? '#22c55e' : '#ef4444' }}>
+            {formatCOP(disponibleHoy)}
+          </p>
+          <p className="text-[11px] text-[#888888] mt-1">Cobrado - Prestado hoy - Gastos</p>
+
+          <div className="grid grid-cols-3 gap-2 mt-4">
             <div>
-              <p className="text-[10px] text-[#888888] uppercase">Esperado</p>
-              <p className="text-lg font-bold font-mono-display text-white">{formatCOP(stats.esperado || 0)}</p>
-            </div>
-            <div>
-              <p className="text-[10px] text-[#888888] uppercase">Recaudado</p>
-              <p className="text-lg font-bold font-mono-display text-[#22c55e]">{formatCOP(stats.recogida || 0)}</p>
-            </div>
-            <div>
-              <p className="text-[10px] text-[#888888] uppercase">Gastos</p>
-              <p className="text-lg font-bold font-mono-display text-[#ef4444]">{stats.gastos > 0 ? '-' : ''}{formatCOP(stats.gastos || 0)}</p>
+              <p className="text-[10px] text-[#888888] uppercase">Cobrado</p>
+              <p className="text-base font-bold font-mono-display text-[#22c55e]">{formatCOP(cobradoHoy)}</p>
             </div>
             <div>
               <p className="text-[10px] text-[#888888] uppercase">Prestado hoy</p>
-              <p className="text-lg font-bold font-mono-display text-[#f59e0b]">{desembolsadoDia > 0 ? '-' : ''}{formatCOP(desembolsadoDia)}</p>
+              <p className="text-base font-bold font-mono-display text-[#f59e0b]">{prestadoHoy > 0 ? '-' : ''}{formatCOP(prestadoHoy)}</p>
             </div>
             <div>
-              <p className="text-[10px] text-[#f5c518] uppercase font-semibold">Dinero en caja (parcial)</p>
-              <p className="text-[9px] text-[#8d7a17]">Sin restar lo prestado hoy</p>
-              <p className="text-lg font-bold font-mono-display text-[#f5c518]">{formatCOP(disponibleOperativo)}</p>
-            </div>
-            <div>
-              <p className="text-[10px] text-[#06b6d4] uppercase font-semibold">Dinero real en caja</p>
-              <p className="text-lg font-bold font-mono-display" style={{ color: saldoRealCaja >= 0 ? '#06b6d4' : '#ef4444' }}>{formatCOP(saldoRealCaja)}</p>
+              <p className="text-[10px] text-[#888888] uppercase">Gastos</p>
+              <p className="text-base font-bold font-mono-display text-[#ef4444]">{gastosHoy > 0 ? '-' : ''}{formatCOP(gastosHoy)}</p>
             </div>
           </div>
+
+          <details className="mt-3 pt-3 border-t border-[#2a2a2a]">
+            <summary className="cursor-pointer text-[11px] text-[#888888]">Ver detalle del cálculo</summary>
+            <div className="mt-2 space-y-1.5 text-[11px]">
+              <div className="flex justify-between">
+                <span className="text-[#888888]">Saldo del día</span>
+                <span className="font-semibold" style={{ color: saldoRealCaja >= 0 ? '#06b6d4' : '#ef4444' }}>{formatCOP(saldoRealCaja)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#888888]">Esperado</span>
+                <span className="font-semibold text-white">{formatCOP(stats.esperado || 0)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#888888]">Diferencia vs esperado</span>
+                <span className="font-semibold" style={{ color: diferenciaRecaudo >= 0 ? '#22c55e' : '#ef4444' }}>
+                  {diferenciaRecaudo >= 0 ? '+' : ''}{formatCOP(diferenciaRecaudo)}
+                </span>
+              </div>
+            </div>
+          </details>
         </Card>
 
         {/* Cierre */}
@@ -344,7 +352,7 @@ export default function CajaPage() {
                 </span>
               </div>
               <div className="flex justify-between text-sm font-bold">
-                <span className="text-[#888888]">Dinero real en caja</span>
+                <span className="text-[#888888]">Saldo del día</span>
                 <span style={{ color: cierreSaldoReal >= 0 ? '#06b6d4' : '#ef4444' }}>
                   {formatCOP(cierreSaldoReal)}
                 </span>
@@ -401,7 +409,7 @@ export default function CajaPage() {
                   Importante: el cierre de caja no registra pagos ni descuenta saldo de préstamos.
                 </p>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] text-[#b8b8b8]">Recaudo ya registrado en sistema</span>
+                  <span className="text-[11px] text-[#b8b8b8]">Cobrado ya registrado en sistema</span>
                   <button
                     type="button"
                     onClick={() => setTotalRecogido(String(recaudadoRegistrado))}
@@ -425,7 +433,7 @@ export default function CajaPage() {
               </div>
               {totalRecogido !== '' && Number(totalRecogido) !== recaudadoRegistrado && (
                 <p className="text-[11px] text-[#f5c518]">
-                  Este valor no coincide con el recaudado registrado en pagos ({formatCOP(recaudadoRegistrado)}).
+                  Este valor no coincide con el cobrado registrado en pagos ({formatCOP(recaudadoRegistrado)}).
                 </p>
               )}
               {totalRecogido && (
@@ -523,53 +531,83 @@ export default function CajaPage() {
       )}
       {exitoAjuste && (
         <div className="bg-[rgba(16,185,129,0.1)] border border-[rgba(16,185,129,0.2)] text-[#22c55e] text-sm rounded-[12px] px-4 py-3">
-          Movimiento de caja registrado correctamente.
+          Ajuste de saldo general registrado correctamente.
         </div>
       )}
 
-      {/* Resumen del día */}
+      {/* Resumen operativo del día */}
       <Card>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Resumen del día</p>
+          <div>
+            <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Caja operativa de hoy</p>
+            <p className="text-[11px] text-[#666666]">Disponible hoy</p>
+          </div>
           {tasaRecaudo > 0 && (
             <span className="text-sm font-bold" style={{ color: colorRecaudo }}>
-              {tasaRecaudo}% recaudo
+              {tasaRecaudo}% cobrado
             </span>
           )}
         </div>
-        <ProgressBar value={stats.recogida || 0} max={stats.esperado || 1} color={colorRecaudo} />
-        <div className="grid grid-cols-2 gap-3 mt-4">
+        <p className="text-3xl font-bold font-mono-display" style={{ color: disponibleHoy >= 0 ? '#22c55e' : '#ef4444' }}>
+          {formatCOP(disponibleHoy)}
+        </p>
+        <p className="text-[11px] text-[#888888] mt-1">Cobrado - Prestado hoy - Gastos</p>
+
+        <div className="grid grid-cols-3 gap-2 mt-4">
           <div>
-            <p className="text-[10px] text-[#888888] uppercase">Esperado</p>
-            <p className="text-lg font-bold font-mono-display text-white">{formatCOP(stats.esperado || 0)}</p>
-          </div>
-          <div>
-            <p className="text-[10px] text-[#888888] uppercase">Recaudado</p>
-            <p className="text-lg font-bold font-mono-display text-[#22c55e]">{formatCOP(stats.recogida || 0)}</p>
-          </div>
-          <div>
-            <p className="text-[10px] text-[#888888] uppercase">Gastos</p>
-            <p className="text-lg font-bold font-mono-display text-[#ef4444]">{stats.gastos > 0 ? '-' : ''}{formatCOP(stats.gastos || 0)}</p>
+            <p className="text-[10px] text-[#888888] uppercase">Cobrado</p>
+            <p className="text-base font-bold font-mono-display text-[#22c55e]">{formatCOP(cobradoHoy)}</p>
           </div>
           <div>
             <p className="text-[10px] text-[#888888] uppercase">Prestado hoy</p>
-            <p className="text-lg font-bold font-mono-display text-[#f59e0b]">{desembolsadoDia > 0 ? '-' : ''}{formatCOP(desembolsadoDia)}</p>
+            <p className="text-base font-bold font-mono-display text-[#f59e0b]">{prestadoHoy > 0 ? '-' : ''}{formatCOP(prestadoHoy)}</p>
           </div>
           <div>
-            <p className="text-[10px] text-[#f5c518] uppercase font-semibold">Dinero en caja (parcial)</p>
-            <p className="text-[9px] text-[#8d7a17]">Sin restar lo prestado hoy</p>
-            <p className="text-lg font-bold font-mono-display text-[#f5c518]">{formatCOP(disponibleOperativo)}</p>
-          </div>
-          <div>
-            <p className="text-[10px] text-[#06b6d4] uppercase font-semibold">Dinero real en caja</p>
-            <p className="text-lg font-bold font-mono-display" style={{ color: saldoRealCaja >= 0 ? '#06b6d4' : '#ef4444' }}>{formatCOP(saldoRealCaja)}</p>
+            <p className="text-[10px] text-[#888888] uppercase">Gastos</p>
+            <p className="text-base font-bold font-mono-display text-[#ef4444]">{gastosHoy > 0 ? '-' : ''}{formatCOP(gastosHoy)}</p>
           </div>
         </div>
+
+        <details className="mt-3 pt-3 border-t border-[#2a2a2a]">
+          <summary className="cursor-pointer text-[11px] text-[#888888]">Ver detalle del cálculo</summary>
+          <div className="mt-2 space-y-1.5 text-[11px]">
+            <div className="flex justify-between">
+              <span className="text-[#888888]">Saldo del día</span>
+              <span className="font-semibold" style={{ color: saldoRealCaja >= 0 ? '#06b6d4' : '#ef4444' }}>{formatCOP(saldoRealCaja)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#888888]">Esperado</span>
+              <span className="font-semibold text-white">{formatCOP(stats.esperado || 0)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#888888]">Diferencia vs esperado</span>
+              <span className="font-semibold" style={{ color: diferenciaRecaudo >= 0 ? '#22c55e' : '#ef4444' }}>
+                {diferenciaRecaudo >= 0 ? '+' : ''}{formatCOP(diferenciaRecaudo)}
+              </span>
+            </div>
+            {ajustesDelDia !== 0 && (
+              <div className="flex justify-between">
+                <span className="text-[#888888]">Ajustes manuales del día</span>
+                <span className="font-semibold" style={{ color: ajustesDelDia >= 0 ? '#22c55e' : '#ef4444' }}>
+                  {ajustesDelDia >= 0 ? '+' : ''}{formatCOP(ajustesDelDia)}
+                </span>
+              </div>
+            )}
+          </div>
+        </details>
       </Card>
 
       <Card>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Saldo general de caja</p>
+        <div className="mb-2">
+          <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Saldo general</p>
+          <p className="text-[11px] text-[#666666]">Saldo histórico acumulado del negocio</p>
+        </div>
+        <p className="text-2xl font-bold font-mono-display" style={{ color: saldoGeneralActual >= 0 ? '#22c55e' : '#ef4444' }}>
+          {formatCOP(saldoGeneralActual)}
+        </p>
+        <p className="text-[11px] text-[#888888] mt-1">Para detalle completo de movimientos, revisa Capital.</p>
+
+        <div className="mt-4 pt-3 border-t border-[#2a2a2a] space-y-2">
           <button
             type="button"
             onClick={() => {
@@ -577,16 +615,13 @@ export default function CajaPage() {
               setErrorAjuste('')
               setAjusteDireccion('ingreso')
             }}
-            className="h-9 px-3 rounded-[10px] text-xs font-semibold text-[#0a0a0a] bg-[#f5c518] hover:bg-[#f0b800] transition-colors"
+            className="w-full h-10 rounded-[10px] text-sm font-semibold text-[#0a0a0a] bg-[#f5c518] hover:bg-[#f0b800] transition-colors"
           >
-            Movimiento de caja
+            Ajustar saldo general
           </button>
-        </div>
-        <div>
-          <p className="text-[10px] text-[#888888] uppercase">Saldo actual</p>
-          <p className="text-2xl font-bold font-mono-display" style={{ color: saldoGeneralActual >= 0 ? '#22c55e' : '#ef4444' }}>
-            {formatCOP(saldoGeneralActual)}
-          </p>
+          <Link href="/capital?view=manual-movements" className="block text-center text-xs font-medium text-[#06b6d4] hover:underline">
+            Ver más movimientos en Capital
+          </Link>
         </div>
       </Card>
 
@@ -609,7 +644,7 @@ export default function CajaPage() {
           <div className="mb-3 text-[11px] space-y-1">
             {pendientesConRecaudo > 0 && (
               <p className="text-[#f5c518]">
-                {pendientesConRecaudo} cobrador{pendientesConRecaudo === 1 ? '' : 'es'} con recaudo registrado pendiente de cierre.
+                {pendientesConRecaudo} cobrador{pendientesConRecaudo === 1 ? '' : 'es'} con cobrado registrado pendiente de cierre.
               </p>
             )}
             {pendientesSinMovimiento > 0 && (
@@ -682,7 +717,7 @@ export default function CajaPage() {
                       </div>
 
                       <div className="text-xs text-[#777777] border-t border-[#222222] pt-2">
-                        Recaudo registrado en pagos: <span className="text-[#22c55e] font-semibold">{formatCOP(recaudadoDiaCobrador)}</span>
+                        Cobrado registrado en pagos: <span className="text-[#22c55e] font-semibold">{formatCOP(recaudadoDiaCobrador)}</span>
                         {deltaSistemaVsCierre !== 0 && (
                           <span className="ml-2 text-[#f5c518]">
                             (diferencia vs cierre: {deltaSistemaVsCierre > 0 ? '+' : ''}{formatCOP(deltaSistemaVsCierre)})
@@ -700,7 +735,7 @@ export default function CajaPage() {
                               <p className="text-sm font-semibold font-mono-display text-white">{formatCOP(esperadoDiaCobrador)}</p>
                             </div>
                             <div className="rounded-[10px] bg-[#171717] border border-[#262626] p-2">
-                              <p className="text-[10px] text-[#888888] uppercase tracking-wide">Recaudado pagos</p>
+                              <p className="text-[10px] text-[#888888] uppercase tracking-wide">Cobrado en pagos</p>
                               <p className="text-sm font-semibold font-mono-display text-[#22c55e]">{formatCOP(recaudadoDiaCobrador)}</p>
                             </div>
                             <div className="rounded-[10px] bg-[#171717] border border-[#262626] p-2">
@@ -761,11 +796,11 @@ export default function CajaPage() {
           setErrorAjuste('')
           setAjusteDireccion('ingreso')
         }}
-        title="Movimiento de caja"
+        title="Ajustar saldo general"
       >
         <form onSubmit={registrarAjusteCaja} className="space-y-4">
           <p className="text-xs text-[#888888] leading-snug">
-            Registra un ajuste de caja como ingreso o egreso para cuadrar el saldo actual.
+            Registra un ajuste de saldo como ingreso o egreso para cuadrar el saldo general.
           </p>
 
           <p className="text-[11px] text-[#b8b8b8] leading-snug">
