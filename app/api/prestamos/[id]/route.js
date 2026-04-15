@@ -20,6 +20,8 @@ import { registrarMovimientoCapital } from '@/lib/capital'
 
 const REF_REVERSO_CANCELACION_DESEMBOLSO = 'prestamo_cancelado_reverso_desembolso'
 const REF_REVERSO_CANCELACION_RECAUDO = 'prestamo_cancelado_reverso_recaudo'
+const REF_CANCELACION_DEVOLVER_TODO = 'prestamo_cancelado_devolver_todo'
+const REF_CANCELACION_DEVOLVER_RESTANTE = 'prestamo_cancelado_devolver_restante'
 
 async function obtenerPrestamo(id, session) {
   const p = await prisma.prestamo.findFirst({
@@ -103,28 +105,45 @@ export async function PATCH(request, { params }) {
     if (!['cancelado'].includes(estado)) {
       return Response.json({ error: 'Estado no válido' }, { status: 400 })
     }
+
+    if (p.estado === 'cancelado') {
+      return Response.json({ error: 'Este préstamo ya está cancelado' }, { status: 400 })
+    }
+
     const pagosReales = p.pagos.filter(pg => !['recargo', 'descuento'].includes(pg.tipo))
     const totalPagosReales = pagosReales.reduce((acc, pg) => acc + Number(pg.montoPagado || 0), 0)
+    const saldoNoRecuperado = Math.max(0, Number(p.montoPrestado) - totalPagosReales)
+
+    const modoReversionSolicitado = body?.modoReversionCapital === 'devolver_todo'
+      ? 'devolver_todo'
+      : body?.modoReversionCapital === 'devolver_restante'
+        ? 'devolver_restante'
+        : (totalPagosReales > 0 ? 'devolver_restante' : 'devolver_todo')
+
+    const montoReversion = modoReversionSolicitado === 'devolver_todo'
+      ? Number(p.montoPrestado)
+      : saldoNoRecuperado
+
+    const referenciaTipoCancelacion = modoReversionSolicitado === 'devolver_todo'
+      ? REF_CANCELACION_DEVOLVER_TODO
+      : REF_CANCELACION_DEVOLVER_RESTANTE
 
     const { actualizado, reversoAplicado } = await prisma.$transaction(async (tx) => {
-      const [reversoDesembolsoExistente, reversoRecaudoExistente] = await Promise.all([
-        tx.movimientoCapital.findFirst({
-          where: {
-            organizationId: session.user.organizationId,
-            referenciaId: id,
-            referenciaTipo: REF_REVERSO_CANCELACION_DESEMBOLSO,
+      const reversoExistente = await tx.movimientoCapital.findFirst({
+        where: {
+          organizationId: session.user.organizationId,
+          referenciaId: id,
+          referenciaTipo: {
+            in: [
+              REF_REVERSO_CANCELACION_DESEMBOLSO,
+              REF_REVERSO_CANCELACION_RECAUDO,
+              REF_CANCELACION_DEVOLVER_TODO,
+              REF_CANCELACION_DEVOLVER_RESTANTE,
+            ],
           },
-          select: { id: true },
-        }),
-        tx.movimientoCapital.findFirst({
-          where: {
-            organizationId: session.user.organizationId,
-            referenciaId: id,
-            referenciaTipo: REF_REVERSO_CANCELACION_RECAUDO,
-          },
-          select: { id: true },
-        }),
-      ])
+        },
+        select: { id: true },
+      })
 
       const actualizadoPrestamo = await tx.prestamo.update({
         where: { id },
@@ -133,29 +152,17 @@ export async function PATCH(request, { params }) {
 
       let aplicoReverso = false
 
-      if (!reversoDesembolsoExistente) {
+      if (!reversoExistente && montoReversion > 0) {
         await registrarMovimientoCapital(tx, {
           organizationId: session.user.organizationId,
           tipo: 'ajuste',
-          monto: Number(p.montoPrestado),
+          monto: montoReversion,
           direccion: 'ingreso',
-          descripcion: `Reverso desembolso - préstamo cancelado (${p.cliente.nombre})`,
+          descripcion: modoReversionSolicitado === 'devolver_todo'
+            ? `Cancelación préstamo - devuelve todo a caja (${p.cliente.nombre})`
+            : `Cancelación préstamo - devuelve solo pendiente (${p.cliente.nombre})`,
           referenciaId: id,
-          referenciaTipo: REF_REVERSO_CANCELACION_DESEMBOLSO,
-          creadoPorId: session.user.id,
-        })
-        aplicoReverso = true
-      }
-
-      if (totalPagosReales > 0 && !reversoRecaudoExistente) {
-        await registrarMovimientoCapital(tx, {
-          organizationId: session.user.organizationId,
-          tipo: 'ajuste',
-          monto: totalPagosReales,
-          direccion: 'egreso',
-          descripcion: `Reverso recaudos - préstamo cancelado (${p.cliente.nombre})`,
-          referenciaId: id,
-          referenciaTipo: REF_REVERSO_CANCELACION_RECAUDO,
+          referenciaTipo: referenciaTipoCancelacion,
           creadoPorId: session.user.id,
         })
         aplicoReverso = true
@@ -170,7 +177,7 @@ export async function PATCH(request, { params }) {
       entidadTipo: 'prestamo',
       entidadId: id,
       detalle: reversoAplicado
-        ? `Estado cambiado a ${estado} con reverso de capital aplicado`
+        ? `Estado cambiado a ${estado} con reverso de capital (${modoReversionSolicitado === 'devolver_todo' ? 'devolver todo' : 'devolver restante'}) por $${Math.round(montoReversion).toLocaleString('es-CO')}`
         : `Estado cambiado a ${estado} (reverso de capital ya existente)`,
       ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
     })
@@ -178,7 +185,10 @@ export async function PATCH(request, { params }) {
     return Response.json({
       ...actualizado,
       reversoCapitalAplicado: reversoAplicado,
-      totalRecaudosReversados: Math.round(totalPagosReales),
+      modoReversionCapitalAplicado: modoReversionSolicitado,
+      montoReversionCapital: Math.round(montoReversion),
+      totalPagadoReal: Math.round(totalPagosReales),
+      saldoNoRecuperado: Math.round(saldoNoRecuperado),
     })
   }
 

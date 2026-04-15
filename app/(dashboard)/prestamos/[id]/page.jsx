@@ -57,6 +57,7 @@ export default function PrestamoDetallePage({ params }) {
   const [ultimoPago,   setUltimoPago]   = useState(null)    // para botón WA pago
   const [cancelando,   setCancelando]   = useState(false)
   const [confirmCancel, setConfirmCancel] = useState(false)
+  const [modoReversionCapital, setModoReversionCapital] = useState('devolver_todo')
   const [anulando,     setAnulando]     = useState(null)   // pagoId que se está anulando
   const [comprobante,  setComprobante]  = useState(null)   // pagoId del comprobante expandido
   const [editandoFecha, setEditandoFecha] = useState(null) // pagoId cuya fecha se edita
@@ -190,6 +191,10 @@ export default function PrestamoDetallePage({ params }) {
   const badge      = estadoBadge[estado] ?? estadoBadge.activo
   const estaActivo = estado === 'activo'
   const enMora     = diasMora > 3
+  const totalPagadoReal = Math.round(totalPagado || 0)
+  const montoPrestadoRedondeado = Math.round(montoPrestado || 0)
+  const saldoFinancieroPendiente = Math.max(0, montoPrestadoRedondeado - totalPagadoReal)
+  const hayCobrosRegistrados = totalPagadoReal > 0
   const hayMontoMora = estaActivo && !completado && montoEnMora > 0
   const hayMontoAlDia = estaActivo && !completado && montoParaPonerseAlDia > 0
   const mostrarAtajosCobro = estaActivo && !completado && saldoPendiente > 0
@@ -693,7 +698,10 @@ export default function PrestamoDetallePage({ params }) {
         <div className="pt-2">
           {!confirmCancel ? (
             <button
-              onClick={() => setConfirmCancel(true)}
+              onClick={() => {
+                setModoReversionCapital(hayCobrosRegistrados ? 'devolver_restante' : 'devolver_todo')
+                setConfirmCancel(true)
+              }}
               className="w-full flex items-center justify-center gap-2 h-11 rounded-[12px] text-sm font-medium text-[#888888] hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.08)] border border-[#2a2a2a] hover:border-[rgba(239,68,68,0.3)] transition-all"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -707,6 +715,43 @@ export default function PrestamoDetallePage({ params }) {
               <p className="text-xs text-[#888888]">
                 Se marcará como cancelado. El saldo pendiente de {formatCOP(saldoPendiente)} quedará sin cobrar.
               </p>
+
+              {hayCobrosRegistrados && (
+                <div className="space-y-2">
+                  <p className="text-[11px] text-[#b8b8b8]">El préstamo ya tiene cobros registrados ({formatCOP(totalPagadoReal)}). Elige cómo reversar en caja:</p>
+
+                  <label className="flex items-start gap-2.5 rounded-[10px] border border-[#2a2a2a] bg-[#131313] px-3 py-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="modo-reversion-capital"
+                      value="devolver_todo"
+                      checked={modoReversionCapital === 'devolver_todo'}
+                      onChange={() => setModoReversionCapital('devolver_todo')}
+                      className="mt-0.5"
+                    />
+                    <div>
+                      <p className="text-xs font-semibold text-white">Devolver todo el préstamo a caja (+{formatCOP(montoPrestadoRedondeado)})</p>
+                      <p className="text-[11px] text-[#888888]">Conserva los cobros ya registrados y regresa el monto completo prestado.</p>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-2.5 rounded-[10px] border border-[#2a2a2a] bg-[#131313] px-3 py-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="modo-reversion-capital"
+                      value="devolver_restante"
+                      checked={modoReversionCapital === 'devolver_restante'}
+                      onChange={() => setModoReversionCapital('devolver_restante')}
+                      className="mt-0.5"
+                    />
+                    <div>
+                      <p className="text-xs font-semibold text-white">Devolver solo lo pendiente (+{formatCOP(saldoFinancieroPendiente)})</p>
+                      <p className="text-[11px] text-[#888888]">Calculado como prestado menos cobrado real.</p>
+                    </div>
+                  </label>
+                </div>
+              )}
+
               <div className="flex gap-2">
                 <button
                   onClick={() => setConfirmCancel(false)}
@@ -721,13 +766,23 @@ export default function PrestamoDetallePage({ params }) {
                       const res = await fetch(`/api/prestamos/${id}`, {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ estado: 'cancelado' }),
+                        body: JSON.stringify({
+                          estado: 'cancelado',
+                          modoReversionCapital: hayCobrosRegistrados ? modoReversionCapital : 'devolver_todo',
+                        }),
                       })
-                      if (!res.ok) throw new Error()
+                      if (!res.ok) {
+                        let mensaje = 'No se pudo cancelar el préstamo.'
+                        try {
+                          const payload = await res.json()
+                          if (payload?.error) mensaje = payload.error
+                        } catch {}
+                        throw new Error(mensaje)
+                      }
                       await fetchPrestamo()
                       setConfirmCancel(false)
-                    } catch {
-                      setError('No se pudo cancelar el préstamo.')
+                    } catch (err) {
+                      setError(err.message || 'No se pudo cancelar el préstamo.')
                     } finally {
                       setCancelando(false)
                     }
