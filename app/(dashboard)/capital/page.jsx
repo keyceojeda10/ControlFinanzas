@@ -7,8 +7,8 @@ const TIPO_LABELS = {
   capital_inicial: 'Capital inicial',
   inyeccion: 'Inyeccion',
   retiro: 'Retiro',
-  desembolso: 'Desembolso',
-  recaudo: 'Recaudo',
+  desembolso: 'Prestado',
+  recaudo: 'Cobrado',
   gasto: 'Gasto',
   ajuste: 'Ajuste',
 }
@@ -59,6 +59,8 @@ export default function CapitalPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [eliminando, setEliminando] = useState(null)
+  const [aplicandoSugerido, setAplicandoSugerido] = useState(false)
+  const [feedback, setFeedback] = useState(null)
 
   const fetchResumen = useCallback(() => {
     fetch('/api/capital/resumen')
@@ -136,6 +138,48 @@ export default function CapitalPage() {
     }
   }
 
+  const aplicarCapitalSugerido = async () => {
+    const montoSugerido = Math.round(Number(resumen?.sugerido?.saldo || 0))
+    if (!Number.isFinite(montoSugerido) || montoSugerido <= 0) {
+      setFeedback({
+        tipo: 'error',
+        mensaje: 'El capital sugerido debe ser mayor a 0 para poder aplicarlo.',
+      })
+      return
+    }
+
+    setAplicandoSugerido(true)
+    setFeedback(null)
+    try {
+      const res = await fetch('/api/capital', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: 'capital_inicial',
+          monto: montoSugerido,
+          descripcion: 'Capital inicial aplicado desde capital sugerido',
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'No se pudo aplicar el capital sugerido')
+
+      setFeedback({
+        tipo: 'ok',
+        mensaje: `Capital sugerido aplicado: ${formatCOP(montoSugerido)}.`,
+      })
+      fetchResumen()
+      setPage(1)
+      fetchMovimientos()
+    } catch (err) {
+      setFeedback({
+        tipo: 'error',
+        mensaje: err.message || 'No se pudo aplicar el capital sugerido',
+      })
+    } finally {
+      setAplicandoSugerido(false)
+    }
+  }
+
   if (authLoading) return null
   if (!esOwner) {
     return (
@@ -147,6 +191,8 @@ export default function CapitalPage() {
 
   const noConfigurado = resumen && !resumen.configurado
   const sugerido = resumen?.sugerido
+  const saldoCapital = Math.round(Number(resumen?.saldo || 0))
+  const mostrarSugerido = Boolean(sugerido) && saldoCapital === 0
   const calidadSugerida = sugerido?.calidad || 'baja'
   const colorCalidad = calidadSugerida === 'alta' ? '#22c55e' : calidadSugerida === 'media' ? '#f5c518' : '#ef4444'
 
@@ -166,22 +212,44 @@ export default function CapitalPage() {
         </button>
       </div>
 
+      {feedback && (
+        <div
+          className="rounded-[12px] px-4 py-3 text-sm border"
+          style={feedback.tipo === 'ok'
+            ? { color: '#22c55e', borderColor: 'rgba(34,197,94,0.25)', background: 'rgba(34,197,94,0.08)' }
+            : { color: '#ef4444', borderColor: 'rgba(239,68,68,0.25)', background: 'rgba(239,68,68,0.08)' }}
+        >
+          {feedback.mensaje}
+        </div>
+      )}
+
       {/* Setup prompt if not configured */}
       {noConfigurado && (
         <div className="bg-[#1a1a1a] border border-[#f5c518]/30 rounded-[16px] px-5 py-5 text-center">
           <p className="text-white font-medium mb-2">Configura tu capital inicial</p>
           <p className="text-sm text-[#888888] mb-2">Registra con cuanto capital empiezas para que el sistema lleve el control automaticamente.</p>
-          {sugerido && (
+          {mostrarSugerido && (
             <p className="text-sm text-[#22c55e] mb-4">
               Sugerencia por historial: <span className="font-semibold font-mono-display">{formatCOP(sugerido.saldo)}</span>
             </p>
           )}
-          <button
-            onClick={() => { setModalTipo('capital_inicial'); setShowModal(true) }}
-            className="px-5 py-2.5 bg-[#f5c518] text-[#0a0a0a] text-sm font-semibold rounded-[10px] hover:bg-[#d4a900] transition-colors"
-          >
-            Registrar capital inicial
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2 justify-center">
+            {mostrarSugerido && (
+              <button
+                onClick={aplicarCapitalSugerido}
+                disabled={aplicandoSugerido || Number(sugerido?.saldo || 0) <= 0}
+                className="px-5 py-2.5 bg-[#22c55e] text-[#04120a] text-sm font-semibold rounded-[10px] hover:bg-[#1dae4f] disabled:opacity-50 transition-colors"
+              >
+                {aplicandoSugerido ? 'Aplicando...' : 'Aplicar capital sugerido'}
+              </button>
+            )}
+            <button
+              onClick={() => { setModalTipo('capital_inicial'); setShowModal(true) }}
+              className="px-5 py-2.5 bg-[#f5c518] text-[#0a0a0a] text-sm font-semibold rounded-[10px] hover:bg-[#d4a900] transition-colors"
+            >
+              Registrar capital inicial
+            </button>
+          </div>
         </div>
       )}
 
@@ -194,7 +262,7 @@ export default function CapitalPage() {
             boxShadow: `0 0 30px #06b6d408, 0 1px 2px rgba(0,0,0,0.3)`,
           }}
         >
-          <p className="text-[11px] text-[#888888] mb-1">Saldo persistido</p>
+          <p className="text-[11px] text-[#888888] mb-1">Saldo del capital</p>
           <p className={`text-3xl font-bold font-mono-display ${resumen.saldo >= 0 ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
             {formatCOP(resumen.saldo)}
           </p>
@@ -204,21 +272,24 @@ export default function CapitalPage() {
         </div>
       )}
 
-      {sugerido && (
+      {mostrarSugerido && (
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] px-5 py-4">
           <div className="flex items-center justify-between gap-3 mb-2">
-            <p className="text-[11px] text-[#888888] uppercase tracking-wide">Capital sugerido (informativo)</p>
+            <p className="text-[11px] text-[#888888] uppercase tracking-wide">Capital sugerido</p>
             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: `${colorCalidad}22`, color: colorCalidad }}>
               Calidad {calidadSugerida}
             </span>
           </div>
           <p className="text-2xl font-bold font-mono-display text-[#f5c518]">{formatCOP(sugerido.saldo)}</p>
-          <p className="text-[11px] text-[#888888] mt-1">
-            Diferencia vs saldo persistido:{' '}
-            <span className="font-semibold font-mono-display" style={{ color: sugerido.diferenciaVsPersistido >= 0 ? '#ef4444' : '#22c55e' }}>
-              {sugerido.diferenciaVsPersistido >= 0 ? '+' : ''}{formatCOP(sugerido.diferenciaVsPersistido)}
-            </span>
-          </p>
+          <p className="text-[11px] text-[#888888] mt-1">Tu saldo está en cero. Puedes aplicarlo como capital inicial con un clic.</p>
+          <button
+            type="button"
+            onClick={aplicarCapitalSugerido}
+            disabled={aplicandoSugerido || Number(sugerido?.saldo || 0) <= 0}
+            className="mt-3 px-4 py-2 bg-[#22c55e] text-[#04120a] text-sm font-semibold rounded-[10px] hover:bg-[#1dae4f] disabled:opacity-50 transition-colors"
+          >
+            {aplicandoSugerido ? 'Aplicando...' : 'Aplicar como saldo del capital'}
+          </button>
           <p className="text-[10px] text-[#666666] mt-2">
             Esta sugerencia se calcula desde historial de préstamos, cobros, gastos y movimientos manuales. No modifica tu saldo automáticamente.
           </p>
@@ -229,12 +300,12 @@ export default function CapitalPage() {
       {resumen?.mes && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] px-4 py-4">
-            <p className="text-[11px] text-[#888888] mb-1">Desembolsado</p>
+            <p className="text-[11px] text-[#888888] mb-1">Prestado</p>
             <p className="text-lg font-bold font-mono-display text-[#f59e0b]">{formatCOP(resumen.mes.desembolsado)}</p>
             <p className="text-[10px] text-[#888888]">{resumen.mes.prestamosOtorgados} prestamos</p>
           </div>
           <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] px-4 py-4">
-            <p className="text-[11px] text-[#888888] mb-1">Recaudado</p>
+            <p className="text-[11px] text-[#888888] mb-1">Cobrado</p>
             <p className="text-lg font-bold font-mono-display text-[#06b6d4]">{formatCOP(resumen.mes.recaudado)}</p>
             <p className="text-[10px] text-[#888888]">{resumen.mes.pagosRecibidos} pagos</p>
           </div>
@@ -243,11 +314,11 @@ export default function CapitalPage() {
             <p className="text-lg font-bold font-mono-display text-[#ef4444]">{formatCOP(resumen.mes.gastos)}</p>
           </div>
           <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] px-4 py-4">
-            <p className="text-[11px] text-[#888888] mb-1">Flujo de caja</p>
-            <p className={`text-lg font-bold font-mono-display ${(resumen.mes.flujoCajaTotal ?? resumen.mes.flujoNeto) >= 0 ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
-              {(resumen.mes.flujoCajaTotal ?? resumen.mes.flujoNeto) >= 0 ? '+' : ''}{formatCOP(resumen.mes.flujoCajaTotal ?? resumen.mes.flujoNeto)}
+            <p className="text-[11px] text-[#888888] mb-1">Balance neto del mes</p>
+            <p className={`text-lg font-bold font-mono-display ${(resumen.mes.flujoNeto ?? 0) >= 0 ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
+              {(resumen.mes.flujoNeto ?? 0) >= 0 ? '+' : ''}{formatCOP(resumen.mes.flujoNeto ?? 0)}
             </p>
-            <p className="text-[10px] text-[#888888]">Incluye inyecciones, retiros y ajustes</p>
+            <p className="text-[10px] text-[#888888]">Cobrado - Prestado - Gastos</p>
           </div>
         </div>
       )}
@@ -265,8 +336,8 @@ export default function CapitalPage() {
             <option value="capital_inicial">Capital inicial</option>
             <option value="inyeccion">Inyecciones</option>
             <option value="retiro">Retiros</option>
-            <option value="desembolso">Desembolsos</option>
-            <option value="recaudo">Recaudos</option>
+            <option value="desembolso">Prestados</option>
+            <option value="recaudo">Cobrados</option>
             <option value="gasto">Gastos</option>
             <option value="ajuste">Ajustes</option>
           </select>
