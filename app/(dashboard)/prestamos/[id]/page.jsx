@@ -511,13 +511,23 @@ export default function PrestamoDetallePage({ params }) {
             }) : pagos).length}{filtroFecha ? ` de ${pagos.length}` : ''})
           </p>
           <div className="flex items-center gap-1">
-            <input
-              type="date"
-              value={filtroFecha}
-              onChange={(e) => setFiltroFecha(e.target.value)}
-              className="h-8 rounded-[10px] border border-[#2a2a2a] bg-[#111111] px-2 text-[11px] text-white focus:outline-none focus:border-[#3b82f6]"
+            <label
+              className="relative h-8 flex items-center gap-1.5 rounded-[10px] border border-[#2a2a2a] bg-[#111111] px-2 cursor-pointer hover:border-[#3b82f6] transition-colors"
               title="Filtrar por fecha"
-            />
+            >
+              <svg className="w-3.5 h-3.5 text-[#888888]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span className="text-[11px] text-white whitespace-nowrap">
+                {filtroFecha || 'Fecha'}
+              </span>
+              <input
+                type="date"
+                value={filtroFecha}
+                onChange={(e) => setFiltroFecha(e.target.value)}
+                className="absolute inset-0 opacity-0 cursor-pointer"
+              />
+            </label>
             {filtroFecha && (
               <button
                 type="button"

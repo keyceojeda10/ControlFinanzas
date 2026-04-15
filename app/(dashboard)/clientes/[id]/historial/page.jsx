@@ -88,12 +88,22 @@ export default function HistorialPage() {
 
       {/* Filtro por fecha + export */}
       <div className="flex items-center gap-2">
-        <input
-          type="date"
-          value={filtroFecha}
-          onChange={(e) => setFiltroFecha(e.target.value)}
-          className="flex-1 h-9 rounded-[10px] border border-[#2a2a2a] bg-[#111111] px-3 text-sm text-white focus:outline-none focus:border-[#3b82f6]"
-        />
+        <label
+          className="relative flex-1 h-9 flex items-center gap-2 rounded-[10px] border border-[#2a2a2a] bg-[#111111] px-3 cursor-pointer hover:border-[#3b82f6] transition-colors"
+        >
+          <svg className="w-4 h-4 text-[#888888]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <span className="text-sm text-white">
+            {filtroFecha || 'Filtrar por fecha'}
+          </span>
+          <input
+            type="date"
+            value={filtroFecha}
+            onChange={(e) => setFiltroFecha(e.target.value)}
+            className="absolute inset-0 opacity-0 cursor-pointer"
+          />
+        </label>
         {filtroFecha && (
           <button
             type="button"
