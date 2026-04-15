@@ -168,6 +168,24 @@ async function calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId =
 }
 
 async function getCajaGeneralStats(organizationId, fechaColombia) {
+  const capital = await prisma.capital.findUnique({
+    where: { organizationId },
+    select: {
+      saldo: true,
+      createdAt: true,
+    },
+  })
+
+  // Fuente oficial del saldo general: capital persistente actual.
+  if (capital) {
+    return {
+      saldoActual: Math.round(capital.saldo || 0),
+      fechaInicioAcumulado: capital.createdAt || null,
+      fechaInicioDisplay: capital.createdAt ? fmtFechaColombia(capital.createdAt) : null,
+    }
+  }
+
+  // Fallback de compatibilidad para organizaciones antiguas sin registro en Capital.
   const fechaCorte = typeof fechaColombia === 'string' && FECHA_REGEX.test(fechaColombia)
     ? fechaColombia
     : new Date(fechaColombia).toISOString().slice(0, 10)
