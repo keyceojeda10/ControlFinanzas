@@ -130,7 +130,7 @@ export async function POST(request) {
 
   const { organizationId, rol } = session.user
   const body = await request.json()
-  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado, cuotaManual } = body
+  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado, cuotaManual, inyeccionPrevia } = body
 
   const freq = frecuencia || 'diario'
   const frecuenciasValidas = ['diario', 'semanal', 'quincenal', 'mensual']
@@ -188,17 +188,51 @@ export async function POST(request) {
     return Response.json({ error: 'El abono no puede ser mayor al total a pagar' }, { status: 400 })
   }
 
+  // Leer config de modo estricto de la organización
+  const orgConfig = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { capitalEstricto: true },
+  })
+  const modoEstricto = !!orgConfig?.capitalEstricto
+
+  // Normalizar inyección previa (si viene del frontend al elegir "inyectar y continuar")
+  const inyeccionMonto = Number(inyeccionPrevia?.monto) || 0
+  const inyeccionDescripcion = typeof inyeccionPrevia?.descripcion === 'string'
+    ? inyeccionPrevia.descripcion.trim()
+    : ''
+
   // Crear préstamo y actualizar estado del cliente en transacción
+  let faltanteCapital = 0
+  let saldoCapitalActual = 0
   const prestamo = await prisma.$transaction(async (tx) => {
-    // Validar saldo de capital antes de desembolsar. Solo se valida si la org
-    // ya tiene capital configurado; orgs nuevas sin capital no tienen gate.
+    // Lock + lectura del capital actual
     const capRow = await tx.$queryRaw`
       SELECT id, saldo FROM Capital WHERE organizationId = ${organizationId} FOR UPDATE
     `
-    if (Array.isArray(capRow) && capRow.length > 0) {
-      const saldoCap = Number(capRow[0].saldo || 0)
+    const tieneCapital = Array.isArray(capRow) && capRow.length > 0
+    let saldoCap = tieneCapital ? Number(capRow[0].saldo || 0) : 0
+
+    // Si el owner decidió inyectar capital al crear el préstamo, registrar la inyección
+    // ANTES de validar saldo (la inyección suma al capital disponible).
+    if (inyeccionMonto > 0 && tieneCapital) {
+      await registrarMovimientoCapital(tx, {
+        organizationId,
+        tipo: 'inyeccion',
+        monto: inyeccionMonto,
+        descripcion: inyeccionDescripcion || `Inyección al crear préstamo - ${cliente.nombre}`,
+        referenciaTipo: 'caja_capital_manual',
+        creadoPorId: session.user.id,
+      })
+      saldoCap += inyeccionMonto
+    }
+
+    // Validación de saldo: SOLO se aplica si la org tiene modo estricto.
+    // Si no está en estricto, se permite saldo negativo (flujo legacy permisivo).
+    if (modoEstricto && tieneCapital) {
       const neto = Number(montoPrestado) - abono
       if (saldoCap < neto) {
+        faltanteCapital = neto - saldoCap
+        saldoCapitalActual = saldoCap
         throw new Error('CAPITAL_INSUFICIENTE')
       }
     }
@@ -271,6 +305,9 @@ export async function POST(request) {
     if (err?.message === 'CAPITAL_INSUFICIENTE') {
       return Response.json({
         error: 'Capital insuficiente para desembolsar este préstamo',
+        capitalInsuficiente: true,
+        faltante: Math.round(faltanteCapital),
+        saldoActual: Math.round(saldoCapitalActual),
       }, { status: 400 })
     }
     console.error('[POST /api/prestamos]', err)

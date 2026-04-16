@@ -82,6 +82,7 @@ model Organization {
   trialReminderSent Boolean      @default(false)
   recoveryEmailStep Int          @default(0)
   diasSinCobro    String?
+  capitalEstricto Boolean        @default(false)
   createdAt       DateTime       @default(now())
 
   referidoPor      Organization?     @relation("Referidos", fields: [referidoPorId], references: [id])

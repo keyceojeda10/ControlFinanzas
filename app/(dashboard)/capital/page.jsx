@@ -61,6 +61,9 @@ export default function CapitalPage() {
   const [eliminando, setEliminando] = useState(null)
   const [aplicandoSugerido, setAplicandoSugerido] = useState(false)
   const [feedback, setFeedback] = useState(null)
+  const [capitalEstricto, setCapitalEstricto] = useState(false)
+  const [togglingEstricto, setTogglingEstricto] = useState(false)
+  const [confirmEstricto, setConfirmEstricto] = useState(null)
 
   const fetchResumen = useCallback(() => {
     fetch('/api/capital/resumen')
@@ -68,6 +71,13 @@ export default function CapitalPage() {
       .then(d => setResumen(d))
       .catch(() => {})
       .finally(() => setLoading(false))
+  }, [])
+
+  const fetchConfig = useCallback(() => {
+    fetch('/api/capital')
+      .then(r => r.json())
+      .then(d => setCapitalEstricto(!!d?.config?.capitalEstricto))
+      .catch(() => {})
   }, [])
 
   const fetchMovimientos = useCallback(() => {
@@ -86,6 +96,33 @@ export default function CapitalPage() {
 
   useEffect(() => { fetchResumen() }, [fetchResumen])
   useEffect(() => { fetchMovimientos() }, [fetchMovimientos])
+  useEffect(() => { fetchConfig() }, [fetchConfig])
+
+  const aplicarToggleEstricto = async (nuevoValor) => {
+    setTogglingEstricto(true)
+    setFeedback(null)
+    try {
+      const res = await fetch('/api/capital', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ capitalEstricto: nuevoValor }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'No se pudo actualizar la configuración')
+      setCapitalEstricto(!!data?.config?.capitalEstricto)
+      setFeedback({
+        tipo: 'ok',
+        mensaje: nuevoValor
+          ? 'Modo estricto activado. Ahora los préstamos requieren capital disponible.'
+          : 'Modo estricto desactivado. Los préstamos ya no validan tu capital.',
+      })
+    } catch (err) {
+      setFeedback({ tipo: 'error', mensaje: err.message })
+    } finally {
+      setTogglingEstricto(false)
+      setConfirmEstricto(null)
+    }
+  }
 
   const handleEliminar = async (m) => {
     const label = TIPO_LABELS[m.tipo] || m.tipo
@@ -269,6 +306,92 @@ export default function CapitalPage() {
           {resumen.saldo < 0 && (
             <p className="text-xs text-[#ef4444] mt-1">Capital en negativo</p>
           )}
+        </div>
+      )}
+
+      {/* Configuración: modo estricto */}
+      {resumen?.configurado && (
+        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] px-5 py-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-white">Modo estricto</p>
+              <p className="text-xs text-[#888888] mt-1">
+                {capitalEstricto
+                  ? 'Activado: no podrás crear préstamos si no tienes capital suficiente. El sistema te pedirá inyectar el faltante.'
+                  : 'Desactivado: puedes crear préstamos aunque no tengas capital (tu saldo puede quedar en negativo).'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setConfirmEstricto(capitalEstricto ? 'desactivar' : 'activar')}
+              disabled={togglingEstricto}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-[10px] transition-colors ${
+                capitalEstricto
+                  ? 'bg-[#22c55e]/15 text-[#22c55e] border border-[#22c55e]/30 hover:bg-[#22c55e]/25'
+                  : 'bg-[#2a2a2a] text-[#888888] border border-[#2a2a2a] hover:bg-[#333333]'
+              }`}
+            >
+              {capitalEstricto ? 'Activo' : 'Inactivo'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {confirmEstricto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] w-full max-w-md p-5">
+            <h3 className="text-base font-semibold text-white mb-2">
+              {confirmEstricto === 'activar' ? 'Activar modo estricto' : 'Desactivar modo estricto'}
+            </h3>
+            {confirmEstricto === 'activar' ? (
+              <div className="text-sm text-[#cccccc] space-y-2">
+                <p>Al activar este modo:</p>
+                <ul className="list-disc pl-5 space-y-1 text-[#bbbbbb]">
+                  <li>No podrás crear préstamos si no tienes capital suficiente en el sistema.</li>
+                  <li>Cuando falte capital, se abrirá un aviso para que inyectes el dinero que hace falta.</li>
+                  <li>Tu saldo de capital nunca quedará en negativo.</li>
+                  <li>Deberás registrar cada entrada de dinero externo (inyección) para seguir prestando.</li>
+                </ul>
+                <p className="text-[#f5c518] mt-3">
+                  Recomendado si quieres llevar un control real del dinero disponible en caja.
+                </p>
+              </div>
+            ) : (
+              <div className="text-sm text-[#cccccc] space-y-2">
+                <p>Al desactivar este modo:</p>
+                <ul className="list-disc pl-5 space-y-1 text-[#bbbbbb]">
+                  <li>Podrás crear préstamos aunque no tengas capital registrado.</li>
+                  <li>Tu saldo de capital puede quedar en negativo sin advertencia.</li>
+                  <li>No se te pedirá inyectar dinero antes de desembolsar.</li>
+                </ul>
+                <p className="text-[#ef4444] mt-3">
+                  Úsalo solo si aún no quieres llevar control estricto de capital.
+                </p>
+              </div>
+            )}
+            <div className="flex gap-2 mt-5">
+              <button
+                type="button"
+                onClick={() => setConfirmEstricto(null)}
+                disabled={togglingEstricto}
+                className="flex-1 px-4 py-2 bg-[#2a2a2a] text-white text-sm font-semibold rounded-[10px] hover:bg-[#333333]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => aplicarToggleEstricto(confirmEstricto === 'activar')}
+                disabled={togglingEstricto}
+                className={`flex-1 px-4 py-2 text-sm font-semibold rounded-[10px] disabled:opacity-50 ${
+                  confirmEstricto === 'activar'
+                    ? 'bg-[#22c55e] text-[#04120a] hover:bg-[#1dae4f]'
+                    : 'bg-[#ef4444] text-white hover:bg-[#dc2626]'
+                }`}
+              >
+                {togglingEstricto ? 'Aplicando...' : (confirmEstricto === 'activar' ? 'Activar' : 'Desactivar')}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

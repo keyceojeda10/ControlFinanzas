@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
 import { registrarMovimientoManualCapital } from '@/lib/capital'
 
-// GET — obtener saldo actual
+// GET — obtener saldo actual y config (capitalEstricto)
 export async function GET() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.organizationId) {
@@ -15,11 +15,53 @@ export async function GET() {
     return Response.json({ error: 'Solo el administrador puede ver el capital' }, { status: 403 })
   }
 
-  const capital = await prisma.capital.findUnique({
-    where: { organizationId: session.user.organizationId },
+  const [capital, org] = await Promise.all([
+    prisma.capital.findUnique({
+      where: { organizationId: session.user.organizationId },
+    }),
+    prisma.organization.findUnique({
+      where: { id: session.user.organizationId },
+      select: { capitalEstricto: true },
+    }),
+  ])
+
+  return Response.json({
+    capital,
+    config: { capitalEstricto: !!org?.capitalEstricto },
+  })
+}
+
+// PATCH — actualizar configuración del capital (toggle modo estricto)
+export async function PATCH(request) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.organizationId) {
+    return Response.json({ error: 'No autorizado' }, { status: 401 })
+  }
+  if (session.user.rol !== 'owner') {
+    return Response.json({ error: 'Solo el administrador puede cambiar la configuración' }, { status: 403 })
+  }
+
+  const body = await request.json()
+  const { capitalEstricto } = body
+  if (typeof capitalEstricto !== 'boolean') {
+    return Response.json({ error: 'capitalEstricto debe ser booleano' }, { status: 400 })
+  }
+
+  const org = await prisma.organization.update({
+    where: { id: session.user.organizationId },
+    data: { capitalEstricto },
+    select: { capitalEstricto: true },
   })
 
-  return Response.json({ capital })
+  logActividad({
+    session,
+    accion: 'configurar_capital',
+    entidadTipo: 'capital',
+    detalle: `Modo capital estricto ${capitalEstricto ? 'activado' : 'desactivado'}`,
+    ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+  })
+
+  return Response.json({ config: { capitalEstricto: org.capitalEstricto } })
 }
 
 // POST — registrar movimiento manual (capital_inicial, inyeccion, retiro, ajuste)

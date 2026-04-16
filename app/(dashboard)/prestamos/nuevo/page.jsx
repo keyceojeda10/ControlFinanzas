@@ -52,6 +52,8 @@ function NuevoPrestamo() {
   const [loading,      setLoading]      = useState(false)
   const [error,        setError]        = useState('')
   const [buscadorCliente, setBuscadorCliente] = useState('')
+  const [modalInyeccion, setModalInyeccion] = useState(null) // { faltante, saldoActual, montoInyeccion, descripcion }
+  const [inyectando, setInyectando] = useState(false)
 
   // Modo: 'prestamo' (con interés) o 'mercancia' (cuota fija)
   const [modo, setModo] = useState('prestamo')
@@ -141,6 +143,26 @@ function NuevoPrestamo() {
     c.cedula.includes(buscadorCliente)
   )
 
+  const crearPrestamoRequest = async (inyeccionPrevia = null) => {
+    const res = await fetch('/api/prestamos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clienteId,
+        montoPrestado: Number(monto),
+        tasaInteres: Number(tasa),
+        diasPlazo: Number(plazo),
+        fechaInicio,
+        frecuencia,
+        ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
+        ...(cuotaManualActiva && Number(cuotaManual) > 0 && { cuotaManual: Number(cuotaManual) }),
+        ...(inyeccionPrevia && { inyeccionPrevia }),
+      }),
+    })
+    const data = await res.json()
+    return { ok: res.ok, data }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!clienteId)  { setError('Selecciona un cliente'); return }
@@ -153,27 +175,52 @@ function NuevoPrestamo() {
     setLoading(true)
     setError('')
     try {
-      const res  = await fetch('/api/prestamos', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({
-          clienteId,
-          montoPrestado: Number(monto),
-          tasaInteres:   Number(tasa),
-          diasPlazo:     Number(plazo),
-          fechaInicio,
-          frecuencia,
-          ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
-          ...(cuotaManualActiva && Number(cuotaManual) > 0 && { cuotaManual: Number(cuotaManual) }),
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) { setError(data.error ?? 'Error al crear el préstamo'); return }
+      const { ok, data } = await crearPrestamoRequest()
+      if (!ok) {
+        if (data?.capitalInsuficiente) {
+          setModalInyeccion({
+            faltante: Number(data.faltante) || 0,
+            saldoActual: Number(data.saldoActual) || 0,
+            montoInyeccion: String(Number(data.faltante) || 0),
+            descripcion: '',
+          })
+          return
+        }
+        setError(data?.error ?? 'Error al crear el préstamo')
+        return
+      }
       router.push(`/prestamos/${data.id}`)
     } catch {
       setError('Error de conexión. Intenta de nuevo.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const confirmarInyeccionYCrear = async () => {
+    if (!modalInyeccion) return
+    const monto = Number(modalInyeccion.montoInyeccion)
+    if (!Number.isFinite(monto) || monto <= 0) {
+      setError('El monto de la inyección debe ser mayor a 0')
+      return
+    }
+    setInyectando(true)
+    setError('')
+    try {
+      const { ok, data } = await crearPrestamoRequest({
+        monto,
+        descripcion: modalInyeccion.descripcion?.trim() || null,
+      })
+      if (!ok) {
+        setError(data?.error ?? 'Error al crear el préstamo con inyección')
+        return
+      }
+      setModalInyeccion(null)
+      router.push(`/prestamos/${data.id}`)
+    } catch {
+      setError('Error de conexión. Intenta de nuevo.')
+    } finally {
+      setInyectando(false)
     }
   }
 
@@ -573,6 +620,63 @@ function NuevoPrestamo() {
           </Button>
         </div>
       </form>
+
+      {modalInyeccion && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] w-full max-w-md p-5">
+            <h3 className="text-base font-semibold text-white mb-1">Capital insuficiente</h3>
+            <p className="text-sm text-[#cccccc] mb-3">
+              Tu saldo actual de capital es <span className="font-mono-display text-[#f5c518]">{formatCOP(modalInyeccion.saldoActual)}</span>. Te faltan <span className="font-mono-display text-[#ef4444]">{formatCOP(modalInyeccion.faltante)}</span> para este préstamo.
+            </p>
+            <p className="text-xs text-[#888888] mb-4">
+              Puedes inyectar ese dinero ahora (por ejemplo, de tus ahorros o de un socio) y el sistema crea el préstamo. La inyección queda registrada en tus movimientos de capital.
+            </p>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs text-[#888888] mb-1">Monto a inyectar</label>
+                <MoneyInput
+                  value={modalInyeccion.montoInyeccion}
+                  onChange={(v) => setModalInyeccion(m => ({ ...m, montoInyeccion: v }))}
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-[#888888] mb-1">Descripción (opcional)</label>
+                <Input
+                  type="text"
+                  value={modalInyeccion.descripcion}
+                  onChange={(e) => setModalInyeccion(m => ({ ...m, descripcion: e.target.value }))}
+                  placeholder="Ej: ahorros personales, aporte socio..."
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="mt-3 text-sm text-[#ef4444]">{error}</div>
+            )}
+
+            <div className="flex gap-2 mt-5">
+              <button
+                type="button"
+                onClick={() => { setModalInyeccion(null); setError('') }}
+                disabled={inyectando}
+                className="flex-1 px-4 py-2 bg-[#2a2a2a] text-white text-sm font-semibold rounded-[10px] hover:bg-[#333333]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmarInyeccionYCrear}
+                disabled={inyectando}
+                className="flex-1 px-4 py-2 bg-[#22c55e] text-[#04120a] text-sm font-semibold rounded-[10px] hover:bg-[#1dae4f] disabled:opacity-50"
+              >
+                {inyectando ? 'Procesando...' : 'Inyectar y crear'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
