@@ -312,8 +312,28 @@ async function getStatsDia(organizationId, fecha, cobradorId = null) {
         monto: true,
         saldoAnterior: true,
         saldoNuevo: true,
+        createdAt: true,
       },
+      orderBy: { createdAt: 'asc' },
     })
+
+  // Base inicial del día = saldo de capital justo antes del primer movimiento del día.
+  // Si no hubo movimientos hoy, base = saldo actual de capital.
+  let baseInicialDia = 0
+  if (!cobradorId) {
+    const cap = await prisma.capital.findUnique({
+      where: { organizationId },
+      select: { saldo: true },
+    })
+    if (cap) {
+      const primerMov = await prisma.movimientoCapital.findFirst({
+        where: { organizationId, createdAt: { gte: inicio, lt: fin } },
+        orderBy: { createdAt: 'asc' },
+        select: { saldoAnterior: true },
+      })
+      baseInicialDia = primerMov ? Number(primerMov.saldoAnterior || 0) : Number(cap.saldo || 0)
+    }
+  }
 
   const gastos = gastosDia._sum?.monto || 0
   const desembolsadoDia = await calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId)
@@ -327,6 +347,11 @@ async function getStatsDia(organizationId, fecha, cobradorId = null) {
   const disponibleOperativo = recogida - gastos
   const saldoRealCaja = disponibleOperativo - desembolsadoDia
   const saldoRealCajaConAjustes = saldoRealCaja + ajustesManualDia
+  // Saldo real esperado al final del día: base inicial + gestión del día.
+  // Para owner refleja el capital actual; para cobrador es solo el saldo operativo del día.
+  const disponibleHoy = cobradorId
+    ? saldoRealCaja
+    : Math.round(baseInicialDia + saldoRealCajaConAjustes)
   const disponible = disponibleOperativo // Compatibilidad temporal
 
   // Calcular tasa de recaudo
@@ -342,6 +367,8 @@ async function getStatsDia(organizationId, fecha, cobradorId = null) {
     saldoRealCaja,
     ajustesManualDia,
     saldoRealCajaConAjustes,
+    baseInicialDia: Math.round(baseInicialDia),
+    disponibleHoy,
     disponible,
     tasaRecaudo,
   }

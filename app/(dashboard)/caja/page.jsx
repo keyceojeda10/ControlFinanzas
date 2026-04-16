@@ -242,6 +242,7 @@ export default function CajaPage() {
   const cobradoHoy = Math.round(stats.cobradoHoy ?? stats.recogida ?? 0)
   const prestadoHoy = Math.round(stats.prestadoHoy ?? desembolsadoDia)
   const gastosHoy = Math.round(stats.gastos || 0)
+  const baseInicialDia = Math.round(stats.baseInicialDia || 0)
   const disponibleHoy = Math.round(stats.disponibleHoy ?? saldoRealCaja)
   const diferenciaRecaudo = cobradoHoy - Math.round(stats.esperado || 0)
   const ajustesDelDia = Math.round(stats.ajustesManualDia || 0)
@@ -382,7 +383,26 @@ export default function CajaPage() {
           <p className="text-3xl font-bold font-mono-display" style={{ color: disponibleHoy >= 0 ? '#22c55e' : '#ef4444' }}>
             {formatCOP(disponibleHoy)}
           </p>
-          <p className="text-[11px] text-[#888888] mt-1">Cobrado - Prestado hoy - Gastos</p>
+          <p className="text-[11px] text-[#888888] mt-1">
+            {!esCobrador
+              ? 'Base inicial + Cobrado - Prestado - Gastos + Ajustes'
+              : 'Cobrado - Prestado hoy - Gastos'}
+          </p>
+
+          {!esCobrador && (
+            <div className="grid grid-cols-2 gap-2 mt-3">
+              <div>
+                <p className="text-[10px] text-[#888888] uppercase">Base inicial</p>
+                <p className="text-base font-bold font-mono-display text-[#06b6d4]">{formatCOP(baseInicialDia)}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-[#888888] uppercase">Ajustes manuales</p>
+                <p className="text-base font-bold font-mono-display" style={{ color: ajustesDelDia >= 0 ? '#22c55e' : '#ef4444' }}>
+                  {ajustesDelDia > 0 ? '+' : ''}{formatCOP(ajustesDelDia)}
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-3 gap-2 mt-4">
             <div>
@@ -403,7 +423,7 @@ export default function CajaPage() {
             <summary className="cursor-pointer text-[11px] text-[#888888]">Ver detalle del cálculo</summary>
             <div className="mt-2 space-y-1.5 text-[11px]">
               <div className="flex justify-between">
-                <span className="text-[#888888]">Saldo del día</span>
+                <span className="text-[#888888]">Saldo operativo del día</span>
                 <span className="font-semibold" style={{ color: saldoRealCaja >= 0 ? '#06b6d4' : '#ef4444' }}>{formatCOP(saldoRealCaja)}</span>
               </div>
               <div className="flex justify-between">
@@ -647,7 +667,26 @@ export default function CajaPage() {
         <p className="text-3xl font-bold font-mono-display" style={{ color: disponibleHoy >= 0 ? '#22c55e' : '#ef4444' }}>
           {formatCOP(disponibleHoy)}
         </p>
-        <p className="text-[11px] text-[#888888] mt-1">Cobrado - Prestado hoy - Gastos</p>
+        <p className="text-[11px] text-[#888888] mt-1">
+          {!esCobrador
+            ? 'Base inicial + Cobrado - Prestado - Gastos + Ajustes'
+            : 'Cobrado - Prestado hoy - Gastos'}
+        </p>
+
+        {!esCobrador && (
+          <div className="grid grid-cols-2 gap-2 mt-3">
+            <div>
+              <p className="text-[10px] text-[#888888] uppercase">Base inicial</p>
+              <p className="text-base font-bold font-mono-display text-[#06b6d4]">{formatCOP(baseInicialDia)}</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-[#888888] uppercase">Ajustes manuales</p>
+              <p className="text-base font-bold font-mono-display" style={{ color: ajustesDelDia >= 0 ? '#22c55e' : '#ef4444' }}>
+                {ajustesDelDia > 0 ? '+' : ''}{formatCOP(ajustesDelDia)}
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-3 gap-2 mt-4">
           <div>
@@ -668,7 +707,7 @@ export default function CajaPage() {
           <summary className="cursor-pointer text-[11px] text-[#888888]">Ver detalle del cálculo</summary>
           <div className="mt-2 space-y-1.5 text-[11px]">
             <div className="flex justify-between">
-              <span className="text-[#888888]">Saldo del día</span>
+              <span className="text-[#888888]">Saldo operativo del día</span>
               <span className="font-semibold" style={{ color: saldoRealCaja >= 0 ? '#06b6d4' : '#ef4444' }}>{formatCOP(saldoRealCaja)}</span>
             </div>
             <div className="flex justify-between">
