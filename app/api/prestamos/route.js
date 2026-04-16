@@ -190,6 +190,19 @@ export async function POST(request) {
 
   // Crear préstamo y actualizar estado del cliente en transacción
   const prestamo = await prisma.$transaction(async (tx) => {
+    // Validar saldo de capital antes de desembolsar. Solo se valida si la org
+    // ya tiene capital configurado; orgs nuevas sin capital no tienen gate.
+    const capRow = await tx.$queryRaw`
+      SELECT id, saldo FROM Capital WHERE organizationId = ${organizationId} FOR UPDATE
+    `
+    if (Array.isArray(capRow) && capRow.length > 0) {
+      const saldoCap = Number(capRow[0].saldo || 0)
+      const neto = Number(montoPrestado) - abono
+      if (saldoCap < neto) {
+        throw new Error('CAPITAL_INSUFICIENTE')
+      }
+    }
+
     const nuevo = await tx.prestamo.create({
       data: {
         clienteId,
@@ -255,6 +268,11 @@ export async function POST(request) {
   trackEvent({ organizationId, userId: session.user.id, evento: 'crear_prestamo', metadata: { monto: Number(montoPrestado) } })
   return Response.json(prestamo, { status: 201 })
   } catch (err) {
+    if (err?.message === 'CAPITAL_INSUFICIENTE') {
+      return Response.json({
+        error: 'Capital insuficiente para desembolsar este préstamo',
+      }, { status: 400 })
+    }
     console.error('[POST /api/prestamos]', err)
     return Response.json({ error: 'Error interno del servidor' }, { status: 500 })
   }

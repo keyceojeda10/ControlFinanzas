@@ -238,24 +238,30 @@ export async function PATCH(request, { params }) {
     let detalleLog = ''
 
     if (modo === 'extender') {
-      // Recalcular cuota redistribuyendo el saldo pendiente en los periodos restantes
-      // - totalAPagar se mantiene (no se cobran intereses extra, solo se estira el plazo)
-      // - cuota nueva = totalAPagar / totalPeriodosNuevos (redondeada a múltiplo de 50)
+      // Recalcular cuota redistribuyendo SOLO el saldo pendiente en los periodos restantes.
+      // p.totalAPagar puede haber sido ya reducido por abonos a capital / descuentos;
+      // ese valor es la fuente de verdad. La nueva cuota se calcula sobre el saldo
+      // pendiente real para no cobrarle de mas al cliente.
       if (totalPeriodosNuevos <= 0) {
         return Response.json({ error: 'Plazo muy corto' }, { status: 400 })
       }
-      const cuotaBase = p.totalAPagar / totalPeriodosNuevos
-      const nuevaCuota = Math.max(50, Math.round(cuotaBase / 50) * 50)
-      // Ajustar totalAPagar para que cierre exacto con la cuota redondeada
-      const nuevoTotalAPagar = nuevaCuota * totalPeriodosNuevos
 
-      // El nuevo total no puede ser menor a lo ya pagado
       const totalPagadoReal = p.pagos
         .filter(pg => !['recargo', 'descuento'].includes(pg.tipo))
         .reduce((a, pg) => a + pg.montoPagado, 0)
-      if (nuevoTotalAPagar < totalPagadoReal) {
-        return Response.json({ error: 'El nuevo total no puede ser menor a lo ya pagado' }, { status: 400 })
-      }
+      const saldoPendienteActual = Math.max(0, p.totalAPagar - totalPagadoReal)
+
+      // Periodos ya transcurridos desde fechaInicio hasta hoy (aproximado por calendario).
+      const hoyUtc = new Date()
+      const diasTranscurridos = Math.max(0, Math.floor((hoyUtc - fechaInicio) / (1000 * 60 * 60 * 24)))
+      const periodosYaTranscurridos = Math.min(totalPeriodosNuevos, Math.floor(diasTranscurridos / diasPorPeriodo))
+      const periodosRestantes = Math.max(1, totalPeriodosNuevos - periodosYaTranscurridos)
+
+      const cuotaBase = saldoPendienteActual / periodosRestantes
+      const nuevaCuota = Math.max(50, Math.round(cuotaBase / 50) * 50)
+      // Nuevo total a pagar = lo ya pagado + cuotas futuras. No se puede bajar
+      // del total pagado (evita pedirle al cliente devolver dinero).
+      const nuevoTotalAPagar = Math.max(totalPagadoReal, totalPagadoReal + nuevaCuota * periodosRestantes)
 
       dataUpdate.cuotaDiaria = nuevaCuota
       dataUpdate.totalAPagar = nuevoTotalAPagar

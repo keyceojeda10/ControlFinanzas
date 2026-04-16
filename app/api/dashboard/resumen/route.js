@@ -88,7 +88,7 @@ export async function GET() {
       },
     }),
 
-    // Pagos de hoy (usar fechas UTC para comparar con datos en DB)
+    // Pagos de hoy (excluye recargos/descuentos — son ajustes contables, no efectivo)
     prisma.pago.aggregate({
       where: {
         organizationId: orgId,
@@ -96,17 +96,19 @@ export async function GET() {
           gte: inicioDiaUTC,
           lte: finDiaUTC,
         },
+        tipo: { notIn: ['recargo', 'descuento'] },
         ...filtroRutaPagos,
       },
       _sum: { montoPagado: true },
       _count: true,
     }),
 
-    // Pagos del mes
+    // Pagos del mes (excluye recargos/descuentos)
     prisma.pago.aggregate({
       where: {
         organizationId: orgId,
         fechaPago: { gte: inicioMes, lte: finMes },
+        tipo: { notIn: ['recargo', 'descuento'] },
         ...filtroRutaPagos,
       },
       _sum: { montoPagado: true },

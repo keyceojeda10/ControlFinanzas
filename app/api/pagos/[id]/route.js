@@ -62,10 +62,12 @@ export async function DELETE(request, { params }) {
 
   if (!pago) return Response.json({ error: 'Pago no encontrado' }, { status: 404 })
 
-  // Cobradores pueden deshacer sus propios pagos dentro de 10 minutos
+  // Cobradores pueden deshacer sus propios pagos dentro de 10 minutos.
+  // Usa createdAt (no fechaPago): si el owner edita fechaPago a una fecha
+  // reciente, el cobrador NO debe poder anular pagos antiguos.
   if (rol !== 'owner') {
     const esSuPago = pago.cobradorId === userId
-    const minutos = (Date.now() - new Date(pago.fechaPago).getTime()) / 60000
+    const minutos = (Date.now() - new Date(pago.createdAt).getTime()) / 60000
     if (!esSuPago || minutos > 10) {
       return Response.json({ error: 'Solo puedes deshacer tus pagos recientes (hasta 10 min)' }, { status: 403 })
     }
@@ -83,11 +85,14 @@ export async function DELETE(request, { params }) {
     await tx.pago.delete({ where: { id: pagoId } })
 
     // 1b. Si era abono a capital, reversar la reducción de totalAPagar
-    // Recalcula el ahorro con la misma fórmula proporcional usada al registrarlo
+    // Debe replicar EXACTAMENTE la formula del POST (pagos/route.js) para que
+    // el totalAPagar regrese al valor exacto antes del abono.
+    // POST usa: ahora = new Date(Date.now() - 5h); inicio = new Date(fechaInicio).
+    // Aqui usamos pago.fechaPago con la misma resta de 5h — asi `diasTrans` coincide.
     if (pago.tipo === 'capital') {
-      const fechaPago = new Date(new Date(pago.fechaPago).getTime() - 5 * 60 * 60 * 1000)
+      const fechaPagoColombia = new Date(new Date(pago.fechaPago).getTime() - 5 * 60 * 60 * 1000)
       const inicio = new Date(prestamo.fechaInicio)
-      const diasTrans = Math.max(0, Math.floor((fechaPago - inicio) / (1000 * 60 * 60 * 24)))
+      const diasTrans = Math.max(0, Math.floor((fechaPagoColombia - inicio) / (1000 * 60 * 60 * 24)))
       const diasRest = Math.max(0, prestamo.diasPlazo - diasTrans)
       const mesesRest = diasRest / 30
       const ahorroInteres = Math.round(pago.montoPagado * (prestamo.tasaInteres / 100) * mesesRest)

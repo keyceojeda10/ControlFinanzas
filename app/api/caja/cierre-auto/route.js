@@ -1,29 +1,62 @@
 // app/api/caja/cierre-auto/route.js - Cierre automático de caja (cron)
 
 import { prisma } from '@/lib/prisma'
+import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 
 const CRON_SECRET = process.env.CRON_SECRET
 
-// Calcula el total esperado del día para un cobrador
-async function calcularEsperado(organizationId, cobradorId) {
-  const ruta = await prisma.ruta.findFirst({
-    where: { organizationId, cobradorId, activo: true },
-    select: {
-      clientes: {
-        select: {
-          prestamos: {
-            where: { estado: 'activo' },
-            select: { cuotaDiaria: true },
+// Determina si una fecha dada (Date) cae en un dia sin cobro.
+function esDiaSinCobro(fecha, diasExcluidos) {
+  if (!diasExcluidos || diasExcluidos.length === 0) return false
+  const col = new Date(fecha.getTime() - 5 * 60 * 60 * 1000)
+  return diasExcluidos.includes(col.getUTCDay())
+}
+
+// Calcula el total esperado del día para un cobrador. Respeta diasSinCobro
+// (cliente > ruta > org) para la fecha del cierre, no la fecha actual.
+async function calcularEsperado(organizationId, cobradorId, fechaCierre) {
+  const [ruta, org] = await Promise.all([
+    prisma.ruta.findFirst({
+      where: { organizationId, cobradorId, activo: true },
+      select: {
+        diasSinCobro: true,
+        clientes: {
+          select: {
+            diasSinCobro: true,
+            prestamos: {
+              where: { estado: 'activo' },
+              select: { cuotaDiaria: true },
+            },
           },
         },
       },
-    },
-  })
+    }),
+    prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { diasSinCobro: true },
+    }),
+  ])
 
   if (!ruta) return 0
-  return ruta.clientes.reduce(
-    (total, c) => total + c.prestamos.reduce((a, p) => a + p.cuotaDiaria, 0), 0
-  )
+  return ruta.clientes.reduce((total, c) => {
+    const dias = obtenerDiasSinCobro(c, ruta, org)
+    if (esDiaSinCobro(fechaCierre, dias)) return total
+    return total + c.prestamos.reduce((a, p) => a + p.cuotaDiaria, 0)
+  }, 0)
+}
+
+// Suma recaudo real del dia (excluye recargos/descuentos).
+async function calcularRecogido(organizationId, cobradorId, fechaInicio, fechaFin) {
+  const pagos = await prisma.pago.aggregate({
+    where: {
+      organizationId,
+      cobradorId,
+      fechaPago: { gte: fechaInicio, lte: fechaFin },
+      tipo: { notIn: ['recargo', 'descuento'] },
+    },
+    _sum: { montoPagado: true },
+  })
+  return pagos._sum?.montoPagado || 0
 }
 
 async function calcularDesembolsadoDia(organizationId, cobradorId, fechaInicio, fechaFin) {
@@ -189,8 +222,8 @@ export async function POST(request) {
           continue
         }
 
-        // Calcular esperado
-        const totalEsperado = await calcularEsperado(org.id, cobrador.id)
+        // Calcular esperado (respeta diasSinCobro en la fecha del cierre)
+        const totalEsperado = await calcularEsperado(org.id, cobrador.id, fechaCierre)
 
         // Obtener gastos aprobados del día para este cobrador
         const gastosDia = await prisma.gastoMenor.aggregate({
@@ -205,22 +238,24 @@ export async function POST(request) {
 
         const totalGastos = gastosDia._sum?.monto || 0
         const totalDesembolsado = await calcularDesembolsadoDia(org.id, cobrador.id, fechaCierre, fechaCierreFin)
-        const saldoOperativo = -totalGastos
+        // Si el cobrador olvido cerrar, tomar el recaudo real del dia (no asumir 0).
+        const totalRecogido = await calcularRecogido(org.id, cobrador.id, fechaCierre, fechaCierreFin)
+        const saldoOperativo = totalRecogido - totalGastos
         const saldoRealCaja = saldoOperativo - totalDesembolsado
+        const diferencia = totalRecogido - totalEsperado
 
-        // Crear cierre automático (con totalRecogido = 0 si no hubo)
         const cierre = await prisma.cierreCaja.create({
           data: {
             organizationId: org.id,
             cobradorId: cobrador.id,
             fecha: fechaCierre,
             totalEsperado: Math.round(totalEsperado),
-            totalRecogido: 0,
+            totalRecogido: Math.round(totalRecogido),
             totalGastos: Math.round(totalGastos),
             totalDesembolsado: Math.round(totalDesembolsado),
             saldoOperativo: Math.round(saldoOperativo),
             saldoRealCaja: Math.round(saldoRealCaja),
-            diferencia: Math.round(-totalEsperado), // Negativo = no se registró
+            diferencia: Math.round(diferencia),
           },
         })
 
