@@ -15,8 +15,13 @@ export async function GET(req) {
   const desde = searchParams.get('desde')
   const hasta = searchParams.get('hasta')
 
-  const fechaDesde = desde ? new Date(desde) : new Date(new Date().setDate(1))
-  const fechaHasta = hasta ? new Date(hasta + 'T23:59:59') : new Date()
+  // Rango en timezone Colombia para evitar corrimiento de dia por interpretar UTC.
+  const fechaDesde = desde
+    ? new Date(desde + 'T00:00:00-05:00')
+    : new Date(new Date().setDate(1))
+  const fechaHasta = hasta
+    ? new Date(hasta + 'T23:59:59.999-05:00')
+    : new Date()
 
   const cobradores = await prisma.user.findMany({
     where: { organizationId: orgId, rol: 'cobrador', activo: true },

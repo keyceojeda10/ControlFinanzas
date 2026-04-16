@@ -153,7 +153,43 @@ export async function POST(request, { params }) {
   }
 
   // Registrar pago y actualizar estados en transacción
-  const resultado = await prisma.$transaction(async (tx) => {
+  let resultado
+  try {
+  resultado = await prisma.$transaction(async (tx) => {
+    // 0. Lock del prestamo para evitar sobrepago por race condition.
+    // Releemos totalAPagar y pagos DENTRO de la transaccion con FOR UPDATE.
+    await tx.$queryRaw`
+      SELECT id FROM Prestamo WHERE id = ${prestamoId} FOR UPDATE
+    `
+    const prestamoLocked = await tx.prestamo.findUnique({
+      where: { id: prestamoId },
+      include: { pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } } },
+    })
+    if (!prestamoLocked || prestamoLocked.estado !== 'activo') {
+      throw new Error('PRESTAMO_NO_ACTIVO')
+    }
+    const saldoLocked = calcularSaldoPendiente(prestamoLocked)
+
+    // Re-acotar el monto al saldo real ya committeado por otras tx.
+    if (!['recargo', 'descuento'].includes(tipo)) {
+      montoFinal = Math.min(montoFinal, saldoLocked)
+      if (montoFinal <= 0) {
+        throw new Error('SALDO_CERO')
+      }
+    }
+    if (tipo === 'capital') {
+      const capitalRestanteLocked = calcularCapitalRestante(prestamoLocked)
+      if (montoFinal > capitalRestanteLocked) {
+        montoFinal = capitalRestanteLocked
+      }
+      if (montoFinal <= 0) {
+        throw new Error('CAPITAL_AGOTADO')
+      }
+    }
+    if (tipo === 'descuento' && montoFinal > saldoLocked) {
+      throw new Error('DESCUENTO_EXCEDE_SALDO')
+    }
+
     // 1. Crear el pago
     const metodoValido = ['efectivo', 'transferencia'].includes(metodoPago) ? metodoPago : null
     await tx.pago.create({
@@ -279,6 +315,25 @@ export async function POST(request, { params }) {
 
     return prestamoActualizado
   })
+  } catch (err) {
+    if (err?.message === 'PRESTAMO_NO_ACTIVO') {
+      return Response.json({ error: 'El préstamo ya no está activo' }, { status: 400 })
+    }
+    if (err?.message === 'SALDO_CERO') {
+      return Response.json({ error: 'El préstamo ya fue saldado por otro pago' }, { status: 409 })
+    }
+    if (err?.message === 'CAPITAL_AGOTADO') {
+      return Response.json({ error: 'El capital del préstamo ya fue cubierto por otro abono' }, { status: 409 })
+    }
+    if (err?.message === 'DESCUENTO_EXCEDE_SALDO') {
+      return Response.json({ error: 'El descuento excede el saldo pendiente actual' }, { status: 400 })
+    }
+    console.error('[POST /api/prestamos/[id]/pagos]', err)
+    return Response.json({ error: 'Error interno del servidor' }, { status: 500 })
+  }
+
+  // Referencia explicita a `resultado` (usada por el flujo de retorno abajo).
+  void resultado
 
   // Devolver el préstamo completo enriquecido para actualizar la UI
   const prestamoFinal = await prisma.prestamo.findUnique({

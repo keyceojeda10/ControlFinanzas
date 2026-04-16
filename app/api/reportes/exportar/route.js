@@ -35,8 +35,10 @@ export async function GET(req) {
   const desde = searchParams.get('desde') ?? new Date(new Date().setDate(1)).toISOString().slice(0, 10)
   const hasta = searchParams.get('hasta') ?? new Date().toISOString().slice(0, 10)
 
-  const fechaDesde = new Date(desde)
-  const fechaHasta = new Date(hasta + 'T23:59:59')
+  // Rango en timezone Colombia (UTC-5). Sin esto, `new Date(desde)` interpreta
+  // la cadena como UTC y trae pagos del dia anterior.
+  const fechaDesde = new Date(desde + 'T00:00:00-05:00')
+  const fechaHasta = new Date(hasta + 'T23:59:59.999-05:00')
 
   let wb = XLSX.utils.book_new()
   let filename = `control-finanzas-${tipo}-${desde}.xlsx`
