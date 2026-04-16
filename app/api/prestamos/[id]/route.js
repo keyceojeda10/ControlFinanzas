@@ -213,6 +213,14 @@ export async function PATCH(request, { params }) {
       return Response.json({ error: 'La nueva fecha de finalización es requerida' }, { status: 400 })
     }
 
+    // Rechazar cambio de frecuencia: el recalculo se basa en p.frecuencia actual.
+    // Cambiar frecuencia a mitad de prestamo requeriria redistribuir pagos pasados.
+    if (body?.frecuencia && body.frecuencia !== p.frecuencia) {
+      return Response.json({
+        error: `No se puede cambiar la frecuencia al extender. El préstamo es ${p.frecuencia}.`,
+      }, { status: 400 })
+    }
+
     const fechaInicio = new Date(p.fechaInicio)
     const nuevaFechaFin = new Date(nuevaFechaFinRaw)
     if (isNaN(nuevaFechaFin.getTime())) {
@@ -324,36 +332,39 @@ export async function DELETE(request, { params }) {
         referenciaTipo: 'prestamo',
         creadoPorId: session.user.id,
       })
+    }
 
-      // 2. Reversar cada pago real (egreso del capital)
-      const pagosReales = p.pagos.filter(pg => !['recargo', 'descuento'].includes(pg.tipo))
-      for (const pg of pagosReales) {
-        await registrarMovimientoCapital(tx, {
-          organizationId,
-          tipo: 'ajuste',
-          monto: pg.montoPagado,
-          direccion: 'egreso',
-          descripcion: `Reverso recaudo - préstamo eliminado`,
-          referenciaId: id,
-          referenciaTipo: 'pago',
-          creadoPorId: session.user.id,
-        })
-      }
+    // Reversar pagos reales y descuentos SIEMPRE que existan. Al cancelar un
+    // prestamo solo se reversa el desembolso no recuperado, pero los recaudos
+    // por pagos permanecen. Si luego se elimina el prestamo, los pagos se
+    // borran pero sus MovimientoCapital quedan huerfanos inflando el capital
+    // permanentemente. Aqui los reversamos.
+    const pagosReales = p.pagos.filter(pg => !['recargo', 'descuento'].includes(pg.tipo))
+    for (const pg of pagosReales) {
+      await registrarMovimientoCapital(tx, {
+        organizationId,
+        tipo: 'ajuste',
+        monto: pg.montoPagado,
+        direccion: 'egreso',
+        descripcion: `Reverso recaudo - préstamo eliminado`,
+        referenciaId: id,
+        referenciaTipo: 'pago',
+        creadoPorId: session.user.id,
+      })
+    }
 
-      // 2b. Reversar descuentos aplicados (ingreso = devuelve lo descontado al capital)
-      const descuentos = p.pagos.filter(pg => pg.tipo === 'descuento')
-      for (const pg of descuentos) {
-        await registrarMovimientoCapital(tx, {
-          organizationId,
-          tipo: 'ajuste',
-          monto: pg.montoPagado,
-          direccion: 'ingreso',
-          descripcion: `Reverso descuento - préstamo eliminado`,
-          referenciaId: id,
-          referenciaTipo: 'pago',
-          creadoPorId: session.user.id,
-        })
-      }
+    const descuentos = p.pagos.filter(pg => pg.tipo === 'descuento')
+    for (const pg of descuentos) {
+      await registrarMovimientoCapital(tx, {
+        organizationId,
+        tipo: 'ajuste',
+        monto: pg.montoPagado,
+        direccion: 'ingreso',
+        descripcion: `Reverso descuento - préstamo eliminado`,
+        referenciaId: id,
+        referenciaTipo: 'pago',
+        creadoPorId: session.user.id,
+      })
     }
 
     // 3. Eliminar pagos y préstamo

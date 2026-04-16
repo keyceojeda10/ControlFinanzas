@@ -53,6 +53,20 @@ export async function PATCH(req, { params }) {
       })
     }
 
+    // Si estaba aprobado y ahora se rechaza, reversar el egreso previo
+    if (estado === 'rechazado' && gastoExistente.estado === 'aprobado') {
+      await registrarMovimientoCapital(tx, {
+        organizationId: session.user.organizationId,
+        tipo: 'ajuste',
+        monto: gastoExistente.monto,
+        direccion: 'ingreso',
+        descripcion: `Reverso gasto rechazado: ${gastoExistente.description}`,
+        referenciaId: id,
+        referenciaTipo: 'gasto',
+        creadoPorId: session.user.id,
+      })
+    }
+
     return gastoActualizado
   })
 

@@ -58,6 +58,7 @@ export async function GET(request, { params }) {
           grupoCobro: { select: { id: true, nombre: true, color: true } },
           prestamos: {
             where:   { estado: 'activo' },
+            orderBy: { createdAt: 'asc' },
             include: {
               pagos: {
                 select:  { montoPagado: true, fechaPago: true, tipo: true },
@@ -273,6 +274,40 @@ export async function PATCH(request, { params }) {
     diasSinCobroVal = diasSinCobro !== undefined ? validarDiasSinCobro(diasSinCobro) : undefined
   } catch (e) {
     return Response.json({ error: e.message }, { status: 400 })
+  }
+
+  // Guarda: si se cambia el cobrador y el anterior ya tiene cierre o pagos del
+  // dia, bloquear para evitar cierres fragmentados. Permitir bypass con ?forzar=1.
+  const { searchParams } = new URL(request.url)
+  const forzar = searchParams.get('forzar') === '1'
+  const cambiaCobrador = cobradorId !== undefined && (cobradorId || null) !== ruta.cobradorId
+  if (cambiaCobrador && ruta.cobradorId && !forzar) {
+    const hoyCo = new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10)
+    const inicioHoy = new Date(hoyCo + 'T00:00:00-05:00')
+    const finHoy = new Date(hoyCo + 'T23:59:59.999-05:00')
+    const [cierreHoy, pagosHoy] = await Promise.all([
+      prisma.cierreCaja.findFirst({
+        where: { cobradorId: ruta.cobradorId, fecha: { gte: inicioHoy, lte: finHoy } },
+        select: { id: true },
+      }),
+      prisma.pago.count({
+        where: {
+          cobradorId: ruta.cobradorId,
+          organizationId: session.user.organizationId,
+          fechaPago: { gte: inicioHoy, lte: finHoy },
+          prestamo: { cliente: { rutaId: id } },
+        },
+      }),
+    ])
+    if (cierreHoy || pagosHoy > 0) {
+      return Response.json({
+        error: cierreHoy
+          ? 'El cobrador anterior ya tiene cierre de caja hoy. Cambiar el cobrador fragmentaria el cierre.'
+          : `El cobrador anterior tiene ${pagosHoy} pago(s) de hoy en esta ruta. Espera al cierre o forza el cambio.`,
+        cambioBloqueado: true,
+        motivo: cierreHoy ? 'cierre_existente' : 'pagos_del_dia',
+      }, { status: 409 })
+    }
   }
 
   const actualizada = await prisma.ruta.update({
