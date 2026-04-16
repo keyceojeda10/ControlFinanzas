@@ -76,7 +76,10 @@ export async function POST(request, { params }) {
 
   let montoFinal = Number(montoPagado)
 
-  if (diasAbonados && Number(diasAbonados) > 0) {
+  // Solo usar diasAbonados como fuente del monto si NO se envió montoPagado explícito.
+  // Antes: si el usuario editaba el monto manualmente, el backend lo sobrescribía con
+  // cuotaDiaria * diasAbonados, registrando un monto distinto al que el cobrador escribió.
+  if (diasAbonados && Number(diasAbonados) > 0 && (!montoFinal || montoFinal <= 0)) {
     montoFinal = Math.round(prestamo.cuotaDiaria * Number(diasAbonados))
   }
 

@@ -404,7 +404,13 @@ export default function RegistrarPago({
           <MoneyInput
             label="Monto del pago *"
             value={monto}
-            onChange={(e) => { setMonto(e.target.value); setError('') }}
+            onChange={(e) => {
+              setMonto(e.target.value)
+              setError('')
+              // Si el usuario edita manualmente el monto, limpiar diasAbonados
+              // para evitar que el backend recalcule monto = cuotaDiaria * dias.
+              if (diasAbonados !== null) setDiasAbonados(null)
+            }}
           />
 
           <div className="flex flex-col gap-1.5">
