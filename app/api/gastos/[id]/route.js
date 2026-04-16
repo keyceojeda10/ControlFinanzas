@@ -29,6 +29,11 @@ export async function PATCH(req, { params }) {
     return NextResponse.json({ error: 'Gasto no encontrado' }, { status: 404 })
   }
 
+  // Guard: si ya estaba aprobado, evitar registrar segundo egreso de capital.
+  if (estado === 'aprobado' && gastoExistente.estado === 'aprobado') {
+    return NextResponse.json({ error: 'Este gasto ya fue aprobado' }, { status: 409 })
+  }
+
   const gasto = await prisma.$transaction(async (tx) => {
     const gastoActualizado = await tx.gastoMenor.update({
       where: { id },

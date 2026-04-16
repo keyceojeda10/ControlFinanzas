@@ -112,7 +112,11 @@ export async function PATCH(request, { params }) {
 
     const pagosReales = p.pagos.filter(pg => !['recargo', 'descuento'].includes(pg.tipo))
     const totalPagosReales = pagosReales.reduce((acc, pg) => acc + Number(pg.montoPagado || 0), 0)
-    const saldoNoRecuperado = Math.max(0, Number(p.montoPrestado) - totalPagosReales)
+    // Saldo aún no recuperado en caja: se acota por el saldo pendiente real del préstamo
+    // (que ya considera abonos a capital que reducen totalAPagar). Así si el cliente abonó
+    // $100k a capital, esa plata ya volvió a caja y no se cuenta como "restante a devolver".
+    const saldoPendienteRestante = calcularSaldoPendiente(p)
+    const saldoNoRecuperado = Math.max(0, Math.min(Number(p.montoPrestado) - totalPagosReales, saldoPendienteRestante))
 
     const modoReversionSolicitado = body?.modoReversionCapital === 'devolver_todo'
       ? 'devolver_todo'

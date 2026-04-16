@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
+import { obtenerDiasSinCobro, esHoySinCobro } from '@/lib/dias-sin-cobro'
 
 const COLOMBIA_OFFSET = 5 * 60 * 60 * 1000 // UTC-5
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -38,28 +39,41 @@ const diasAtrasDesdeHoy = (fechaObjetivo, fechaHoy = getHoyColombia()) => {
 }
 
 
-// Calcula el total esperado real desde los préstamos activos de las rutas
+// Calcula el total esperado real desde los préstamos activos de las rutas.
+// Respeta la jerarquía de días sin cobro cliente→ruta→org: si HOY es día sin cobro
+// para ese cliente, su cuota no se espera (el cobrador no tiene por qué cobrarla).
 async function calcularEsperadoReal(organizationId, cobradorId = null) {
   const whereRuta = { organizationId, activo: true }
   if (cobradorId) whereRuta.cobradorId = cobradorId
 
-  const rutas = await prisma.ruta.findMany({
-    where: whereRuta,
-    select: {
-      clientes: {
-        select: {
-          prestamos: {
-            where: { estado: 'activo' },
-            select: { cuotaDiaria: true },
+  const [rutas, org] = await Promise.all([
+    prisma.ruta.findMany({
+      where: whereRuta,
+      select: {
+        diasSinCobro: true,
+        clientes: {
+          select: {
+            diasSinCobro: true,
+            prestamos: {
+              where: { estado: 'activo' },
+              select: { cuotaDiaria: true },
+            },
           },
         },
       },
-    },
-  })
+    }),
+    prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { diasSinCobro: true },
+    }),
+  ])
 
   return rutas.reduce((total, ruta) =>
-    total + ruta.clientes.reduce((a, c) =>
-      a + c.prestamos.reduce((b, p) => b + p.cuotaDiaria, 0), 0), 0)
+    total + ruta.clientes.reduce((a, c) => {
+      const diasExcluidos = obtenerDiasSinCobro(c, ruta, org)
+      if (esHoySinCobro(diasExcluidos)) return a
+      return a + c.prestamos.reduce((b, p) => b + p.cuotaDiaria, 0)
+    }, 0), 0)
 }
 
 // Calcula desembolsos realizados en el día para reflejar el saldo real de caja.
