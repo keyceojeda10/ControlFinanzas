@@ -371,7 +371,7 @@ export default function CajaPage() {
         <Card>
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Caja operativa de hoy</p>
+              <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Saldo en caja hoy</p>
               <p className="text-[11px] text-[#666666]">Disponible hoy</p>
             </div>
             {tasaRecaudo > 0 && (
@@ -655,7 +655,7 @@ export default function CajaPage() {
       <Card>
         <div className="flex items-center justify-between mb-3">
           <div>
-            <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Caja operativa de hoy</p>
+            <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Saldo en caja hoy</p>
             <p className="text-[11px] text-[#666666]">Disponible hoy</p>
           </div>
           {tasaRecaudo > 0 && (
