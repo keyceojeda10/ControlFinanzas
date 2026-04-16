@@ -3,9 +3,10 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { calcularPrestamo } from '@/lib/calculos'
+import { calcularPrestamo, calcularEstadoCliente } from '@/lib/calculos'
 import { agruparPorCliente } from '@/lib/carga-masiva'
 import { registrarMovimientoCapital } from '@/lib/capital'
+import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad }     from '@/lib/activity-log'
 import { trackEvent }       from '@/lib/analytics'
 import { LIMITES_PLAN }     from '@/lib/planes'
@@ -67,6 +68,15 @@ export async function POST(request) {
       })
       rutaFinal = nuevaRuta.id
     }
+
+    // Config para calcular estado correcto (mora vs activo)
+    const orgCfg = await prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { diasSinCobro: true },
+    })
+    const rutaCfg = rutaFinal
+      ? await prisma.ruta.findUnique({ where: { id: rutaFinal }, select: { diasSinCobro: true } })
+      : null
 
     // Importar por cliente (agrupado)
     let clientesCreados = 0
@@ -174,6 +184,23 @@ export async function POST(request) {
               })
             }
           }
+
+          // Recalcular estado del cliente (puede quedar en mora si los prestamos
+          // traen fechas viejas con abonos insuficientes)
+          const prestamosCliente = await tx.prestamo.findMany({
+            where: { clienteId },
+            include: { pagos: { select: { montoPagado: true, fechaPago: true, tipo: true } } },
+          })
+          const clienteCfg = await tx.cliente.findUnique({
+            where: { id: clienteId },
+            select: { diasSinCobro: true },
+          })
+          const diasExcluidos = obtenerDiasSinCobro(clienteCfg, rutaCfg, orgCfg)
+          const estadoFinal = calcularEstadoCliente(prestamosCliente, diasExcluidos)
+          await tx.cliente.update({
+            where: { id: clienteId },
+            data: { estado: estadoFinal },
+          })
         })
       } catch (err) {
         console.error(`[carga-masiva] Error cédula ${cedula}:`, err.message)

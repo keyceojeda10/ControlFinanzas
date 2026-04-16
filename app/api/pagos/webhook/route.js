@@ -329,6 +329,16 @@ export async function POST(req) {
       const plan = sanitizarPlan(planRaw)
       console.log('[webhook] plan sanitizado: ' + planRaw + ' -> ' + plan)
 
+      // Idempotencia: si ya procesamos este mismo data.id antes, no extender
+      // suscripcion ni volver a recompensar al referidor.
+      const yaProcesado = await prisma.suscripcion.findFirst({
+        where: { mercadopagoId: String(data.id) },
+      })
+      if (yaProcesado) {
+        console.log('[webhook] payment ' + data.id + ' ya procesado, ignorando reenvio')
+        return NextResponse.json({ ok: true })
+      }
+
       const ahora     = new Date()
       const diasExtension = periodo === 'anual' ? 365 : periodo === 'trimestral' ? 90 : 30
       const vencimiento = new Date(ahora)

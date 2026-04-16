@@ -31,12 +31,35 @@ export async function PATCH(request, { params }) {
 
   const pago = await prisma.pago.findFirst({
     where: { id: pagoId, organizationId },
+    include: { prestamo: { select: { clienteId: true } } },
   })
   if (!pago) return Response.json({ error: 'Pago no encontrado' }, { status: 404 })
 
-  await prisma.pago.update({
-    where: { id: pagoId },
-    data: { fechaPago: nuevaFecha },
+  const org = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { diasSinCobro: true },
+  })
+
+  await prisma.$transaction(async (tx) => {
+    await tx.pago.update({
+      where: { id: pagoId },
+      data: { fechaPago: nuevaFecha },
+    })
+
+    // Recalcular estado del cliente: cambiar la fecha de un pago altera los
+    // dias de mora del prestamo, y por lo tanto el estado agregado del cliente.
+    const clienteId = pago.prestamo.clienteId
+    const todosLosPrestamos = await tx.prestamo.findMany({
+      where: { clienteId },
+      include: { pagos: { select: { montoPagado: true, fechaPago: true, tipo: true } } },
+    })
+    const clienteCfg = await tx.cliente.findUnique({
+      where: { id: clienteId },
+      select: { diasSinCobro: true, ruta: { select: { diasSinCobro: true } } },
+    })
+    const diasExcluidos = obtenerDiasSinCobro(clienteCfg, clienteCfg?.ruta, org)
+    const nuevoEstado = calcularEstadoCliente(todosLosPrestamos, diasExcluidos)
+    await tx.cliente.update({ where: { id: clienteId }, data: { estado: nuevoEstado } })
   })
 
   return Response.json({ ok: true })

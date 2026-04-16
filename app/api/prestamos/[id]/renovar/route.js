@@ -88,7 +88,35 @@ export async function POST(request, { params }) {
 
   const diferencia = Number(montoPrestado) - saldoPendiente // lo que recibe en mano
 
+  const orgConfig = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { capitalEstricto: true },
+  })
+  const modoEstricto = !!orgConfig?.capitalEstricto
+
+  let faltanteCapital = 0
+  let saldoCapitalActual = 0
+
+  try {
   const nuevoPrestamo = await prisma.$transaction(async (tx) => {
+    // Lock del capital ANTES de cualquier modificacion
+    const capRow = await tx.$queryRaw`
+      SELECT id, saldo FROM Capital WHERE organizationId = ${organizationId} FOR UPDATE
+    `
+    const tieneCapital = Array.isArray(capRow) && capRow.length > 0
+    const saldoCap = tieneCapital ? Number(capRow[0].saldo || 0) : 0
+
+    // En modo estricto, validar que al liquidar + desembolsar no queda negativo.
+    // Neto = diferencia entregada (montoNuevo - saldoLiquidado). El recaudo de
+    // la liquidacion entra primero, pero validamos contra el neto real.
+    if (modoEstricto && tieneCapital) {
+      if (saldoCap < diferencia) {
+        faltanteCapital = diferencia - saldoCap
+        saldoCapitalActual = saldoCap
+        throw new Error('CAPITAL_INSUFICIENTE')
+      }
+    }
+
     // 1. Liquidar el préstamo viejo: crear un pago tipo 'completo' por el saldo
     if (saldoPendiente > 0) {
       await tx.pago.create({
@@ -179,4 +207,16 @@ export async function POST(request, { params }) {
     saldoLiquidado: saldoPendiente,
     diferenciaEntregada: diferencia,
   }, { status: 201 })
+  } catch (err) {
+    if (err?.message === 'CAPITAL_INSUFICIENTE') {
+      return Response.json({
+        error: 'Capital insuficiente para renovar este préstamo',
+        capitalInsuficiente: true,
+        faltante: Math.round(faltanteCapital),
+        saldoActual: Math.round(saldoCapitalActual),
+      }, { status: 400 })
+    }
+    console.error('[POST /api/prestamos/[id]/renovar]', err)
+    return Response.json({ error: 'Error interno del servidor' }, { status: 500 })
+  }
 }
