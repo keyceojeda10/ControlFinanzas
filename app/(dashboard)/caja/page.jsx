@@ -245,7 +245,7 @@ export default function CajaPage() {
   const baseInicialDia = Math.round(stats.baseInicialDia || 0)
   const disponibleHoy = Math.round(stats.disponibleHoy ?? saldoRealCaja)
   const diferenciaRecaudo = cobradoHoy - Math.round(stats.esperado || 0)
-  const ajustesDelDia = Math.round(stats.ajustesManualDia || 0)
+  const ajustesDelDia = Math.round(stats.ajustesOperativosDia ?? stats.ajustesManualDia ?? 0)
   const saldoGeneralActual = cajaGeneral.saldoActual ?? 0
   const tasaRecaudo = stats.tasaRecaudo || 0
   const colorRecaudo = tasaRecaudo >= 80 ? '#22c55e' : tasaRecaudo >= 50 ? '#f5c518' : '#ef4444'

@@ -320,18 +320,20 @@ async function getStatsDia(organizationId, fecha, cobradorId = null) {
   // Base inicial del día = saldo de capital justo antes del primer movimiento del día.
   // Si no hubo movimientos hoy, base = saldo actual de capital.
   let baseInicialDia = 0
+  let saldoCapitalActual = 0
   if (!cobradorId) {
     const cap = await prisma.capital.findUnique({
       where: { organizationId },
       select: { saldo: true },
     })
     if (cap) {
+      saldoCapitalActual = Number(cap.saldo || 0)
       const primerMov = await prisma.movimientoCapital.findFirst({
         where: { organizationId, createdAt: { gte: inicio, lt: fin } },
         orderBy: { createdAt: 'asc' },
         select: { saldoAnterior: true },
       })
-      baseInicialDia = primerMov ? Number(primerMov.saldoAnterior || 0) : Number(cap.saldo || 0)
+      baseInicialDia = primerMov ? Number(primerMov.saldoAnterior || 0) : saldoCapitalActual
     }
   }
 
@@ -347,11 +349,18 @@ async function getStatsDia(organizationId, fecha, cobradorId = null) {
   const disponibleOperativo = recogida - gastos
   const saldoRealCaja = disponibleOperativo - desembolsadoDia
   const saldoRealCajaConAjustes = saldoRealCaja + ajustesManualDia
-  // Saldo real esperado al final del día: base inicial + gestión del día.
-  // Para owner refleja el capital actual; para cobrador es solo el saldo operativo del día.
+  // Saldo real esperado al final del día.
+  // Para owner: usa el saldo de capital actual (fuente de verdad — refleja TODOS los movimientos
+  // del día incluyendo cancelaciones, reversos y ajustes con cualquier referenciaTipo).
+  // Para cobrador: solo el saldo operativo del día.
   const disponibleHoy = cobradorId
     ? saldoRealCaja
-    : Math.round(baseInicialDia + saldoRealCajaConAjustes)
+    : Math.round(saldoCapitalActual)
+  // Ajustes "operativos" del día = todo lo que cambió capital - cobrado + prestado + gastos.
+  // Esto deja visible para Mike el delta no operativo (retiros, cancelaciones, etc).
+  const ajustesOperativosDia = cobradorId
+    ? 0
+    : Math.round((saldoCapitalActual - baseInicialDia) - recogida + desembolsadoDia + gastos)
   const disponible = disponibleOperativo // Compatibilidad temporal
 
   // Calcular tasa de recaudo
@@ -368,6 +377,7 @@ async function getStatsDia(organizationId, fecha, cobradorId = null) {
     ajustesManualDia,
     saldoRealCajaConAjustes,
     baseInicialDia: Math.round(baseInicialDia),
+    ajustesOperativosDia,
     disponibleHoy,
     disponible,
     tasaRecaudo,
