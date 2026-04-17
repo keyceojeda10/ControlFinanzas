@@ -333,22 +333,21 @@ async function getStatsDia(organizationId, fecha, cobradorId = null) {
 
   // Base inicial del día = saldo de capital justo antes del primer movimiento del día.
   // Si no hubo movimientos hoy, base = saldo actual de capital.
+  // Se calcula SIEMPRE (owner y cobrador) porque ahora ambos ven el mismo saldo en caja.
   let baseInicialDia = 0
   let saldoCapitalActual = 0
-  if (!cobradorId) {
-    const cap = await prisma.capital.findUnique({
-      where: { organizationId },
-      select: { saldo: true },
+  const cap = await prisma.capital.findUnique({
+    where: { organizationId },
+    select: { saldo: true },
+  })
+  if (cap) {
+    saldoCapitalActual = Number(cap.saldo || 0)
+    const primerMov = await prisma.movimientoCapital.findFirst({
+      where: { organizationId, createdAt: { gte: inicio, lt: fin } },
+      orderBy: { createdAt: 'asc' },
+      select: { saldoAnterior: true },
     })
-    if (cap) {
-      saldoCapitalActual = Number(cap.saldo || 0)
-      const primerMov = await prisma.movimientoCapital.findFirst({
-        where: { organizationId, createdAt: { gte: inicio, lt: fin } },
-        orderBy: { createdAt: 'asc' },
-        select: { saldoAnterior: true },
-      })
-      baseInicialDia = primerMov ? Number(primerMov.saldoAnterior || 0) : saldoCapitalActual
-    }
+    baseInicialDia = primerMov ? Number(primerMov.saldoAnterior || 0) : saldoCapitalActual
   }
 
   const gastos = gastosDia._sum?.monto || 0
@@ -363,18 +362,15 @@ async function getStatsDia(organizationId, fecha, cobradorId = null) {
   const disponibleOperativo = recogida - gastos
   const saldoRealCaja = disponibleOperativo - desembolsadoDia
   const saldoRealCajaConAjustes = saldoRealCaja + ajustesManualDia
-  // Saldo real esperado al final del día.
-  // Para owner: usa el saldo de capital actual (fuente de verdad — refleja TODOS los movimientos
-  // del día incluyendo cancelaciones, reversos y ajustes con cualquier referenciaTipo).
-  // Para cobrador: solo el saldo operativo del día.
-  const disponibleHoy = cobradorId
-    ? saldoRealCaja
-    : Math.round(saldoCapitalActual)
+  // Saldo en caja del día — MISMO valor para owner y cobrador.
+  // Fuente de verdad: saldo de capital actual (refleja TODOS los movimientos: cobros,
+  // desembolsos, gastos, cancelaciones, reversos, ajustes). Así el cobrador ve el
+  // mismo saldo que el owner y ambos pueden coordinar cuánto hay disponible para prestar.
+  const disponibleHoy = Math.round(saldoCapitalActual)
   // Ajustes "operativos" del día = todo lo que cambió capital - cobrado + prestado + gastos.
-  // Esto deja visible para Mike el delta no operativo (retiros, cancelaciones, etc).
-  const ajustesOperativosDia = cobradorId
-    ? 0
-    : Math.round((saldoCapitalActual - baseInicialDia) - recogida + desembolsadoDia + gastos)
+  // Esto deja visible el delta no operativo (retiros, cancelaciones, etc).
+  // Se calcula tanto para owner como para cobrador porque ambos comparten el mismo saldo.
+  const ajustesOperativosDia = Math.round((saldoCapitalActual - baseInicialDia) - recogida + desembolsadoDia + gastos)
   const disponible = disponibleOperativo // Compatibilidad temporal
 
   // Calcular tasa de recaudo
@@ -405,7 +401,7 @@ export async function GET(request) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
   }
 
-  const { organizationId, rol, id: userId, permisos } = session.user
+  const { organizationId, rol, id: userId } = session.user
   const { searchParams } = new URL(request.url)
   
   const fechaParam = searchParams.get('fecha')
@@ -439,6 +435,8 @@ export async function GET(request) {
     rol === 'owner' ? getCajaGeneralStats(organizationId, fechaBase) : Promise.resolve(null),
   ])
 
+  // Cobrador: oculta `ajustesManualDia` (solo relevante en cifras operativas internas
+  // que el cobrador no necesita ver). El `disponibleHoy` ya llega calculado igual que al owner.
   const statsDia = rol === 'owner'
     ? statsDiaRaw
     : {
@@ -602,17 +600,6 @@ export async function GET(request) {
 
   if (rol === 'owner' && cajaGeneral) {
     payload.stats.cajaGeneral = cajaGeneral
-  }
-
-  // Cobrador con permiso verCapital: exponer solo el saldo total de la organización (solo lectura).
-  if (rol === 'cobrador' && permisos?.verCapital) {
-    const cap = await prisma.capital.findUnique({
-      where: { organizationId },
-      select: { saldo: true },
-    })
-    payload.stats.capitalOrganizacion = {
-      saldoActual: Math.round(cap?.saldo ?? 0),
-    }
   }
 
   return Response.json(payload)

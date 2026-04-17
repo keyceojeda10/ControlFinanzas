@@ -60,7 +60,7 @@ const diasDesdeFechaColombia = (fechaBase, fechaObjetivo) => {
 export default function CajaPage() {
   const searchParams = useSearchParams()
   const fechaParam = searchParams.get('fecha')
-  const { esCobrador, puedeReportarGastos, puedeVerCapital, loading: authLoading } = useAuth()
+  const { esCobrador, puedeReportarGastos, loading: authLoading } = useAuth()
   const { lastSyncedAt } = useOffline()
 
   const [cajaData, setCajaData] = useState(null)
@@ -235,7 +235,6 @@ export default function CajaPage() {
 
   const stats = cajaData?.stats?.dia || {}
   const cajaGeneral = cajaData?.stats?.cajaGeneral || {}
-  const capitalOrganizacionCobrador = cajaData?.stats?.capitalOrganizacion || null
   const cierres = cajaData?.cierres || []
   const cobradores = cajaData?.cobradores || []
   const disponibleOperativo = stats.disponibleOperativo ?? ((stats.recogida || 0) - (stats.gastos || 0))
@@ -369,27 +368,12 @@ export default function CajaPage() {
           </div>
         )}
 
-        {/* Capital de la organización (solo si el cobrador tiene permiso) */}
-        {puedeVerCapital && capitalOrganizacionCobrador && (
-          <Card>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Capital de la organización</p>
-                <p className="text-[11px] text-[#666666]">Saldo total disponible para prestar</p>
-              </div>
-            </div>
-            <p className="text-2xl font-bold font-mono-display mt-2 text-[#06b6d4]">
-              {formatCOP(Math.round(capitalOrganizacionCobrador.saldoActual || 0))}
-            </p>
-          </Card>
-        )}
-
-        {/* Resumen operativo del día */}
+        {/* Saldo en caja (mismo valor que ve el owner) */}
         <Card>
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Flujo del día</p>
-              <p className="text-[11px] text-[#666666]">Neto operativo de hoy</p>
+              <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Saldo en caja</p>
+              <p className="text-[11px] text-[#666666]">Disponible para prestar ahora</p>
             </div>
             {tasaRecaudo > 0 && (
               <span className="text-sm font-bold" style={{ color: colorRecaudo }}>
@@ -401,7 +385,7 @@ export default function CajaPage() {
             {formatCOP(disponibleHoy)}
           </p>
           <p className="text-[11px] text-[#888888] mt-1">
-            Cobrado - Prestado hoy - Gastos
+            Saldo compartido con el administrador
           </p>
 
           {!esCobrador && (
@@ -670,8 +654,8 @@ export default function CajaPage() {
       <Card>
         <div className="flex items-center justify-between mb-3">
           <div>
-            <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Capital total</p>
-            <p className="text-[11px] text-[#666666]">Patrimonio actual de la organización</p>
+            <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Saldo en caja</p>
+            <p className="text-[11px] text-[#666666]">Disponible para prestar ahora</p>
           </div>
           {tasaRecaudo > 0 && (
             <span className="text-sm font-bold" style={{ color: colorRecaudo }}>
