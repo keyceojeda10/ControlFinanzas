@@ -159,12 +159,10 @@ export default function ClientesPage() {
     setPage(1)
   }, [buscar])
 
-  // Cambiar filtro de grupo reinicia selección masiva
+  // Cambiar filtro de grupo reinicia paginación y selección (mantiene modo asignar activo)
   useEffect(() => {
     setPage(1)
-    setModoAsignar(false)
     setSelAsignar([])
-    setGrupoAsignar('')
   }, [grupoFiltro])
 
   // Carga de clientes con debounce
@@ -335,7 +333,7 @@ export default function ClientesPage() {
   }
 
   return (
-    <div className={`max-w-3xl mx-auto ${modoAsignar ? 'pb-24' : ''}`}>
+    <div className={`max-w-3xl mx-auto ${modoAsignar ? 'pb-40 lg:pb-28' : ''}`}>
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-4">
         <div className="min-w-0">
@@ -773,37 +771,41 @@ export default function ClientesPage() {
         </div>
       </Modal>
 
-      {/* Sticky bar: modo asignación activo */}
+      {/* Sticky bar: modo asignación activo (posicionada encima del BottomNav móvil) */}
       {modoAsignar && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#2a2a2a] bg-[#0a0a0a]/95 backdrop-blur-md">
-          <div className="max-w-3xl mx-auto p-3 flex items-center gap-2">
-            <div className="shrink-0 text-xs text-[#f5c518] font-semibold">
-              {selAsignar.length} {selAsignar.length === 1 ? 'cliente' : 'clientes'}
+        <div className="fixed left-0 right-0 z-50 border-t border-[#f5c518]/40 bg-[#0a0a0a]/98 backdrop-blur-md bottom-[84px] lg:bottom-0 shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
+          <div className="max-w-3xl mx-auto px-3 py-2.5">
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="text-xs text-[#f5c518] font-semibold">
+                {selAsignar.length} {selAsignar.length === 1 ? 'seleccionado' : 'seleccionados'}
+              </div>
+              <button
+                onClick={cancelarAsignacion}
+                className="text-xs text-[#b4b4b4] hover:text-white underline underline-offset-2"
+              >
+                Cancelar
+              </button>
             </div>
-            <select
-              value={grupoAsignar}
-              onChange={(e) => setGrupoAsignar(e.target.value)}
-              className="flex-1 min-w-0 h-9 px-2 rounded-lg bg-[#161616] border border-[#2a2a2a] text-xs text-white"
-            >
-              <option value="">Grupo…</option>
-              <option value="_none">Sin grupo</option>
-              {grupos.map((g) => (
-                <option key={g.id} value={g.id}>{g.nombre}</option>
-              ))}
-            </select>
-            <button
-              onClick={asignarGrupoClientes}
-              disabled={!selAsignar.length || !grupoAsignar || asignandoGrupo}
-              className="shrink-0 h-9 px-3 rounded-lg bg-[#f5c518] text-black text-xs font-bold disabled:opacity-40 active:scale-95 transition-transform"
-            >
-              {asignandoGrupo ? '...' : 'Asignar'}
-            </button>
-            <button
-              onClick={cancelarAsignacion}
-              className="shrink-0 h-9 px-3 rounded-lg border border-[#2a2a2a] text-xs text-[#b4b4b4] hover:text-white"
-            >
-              Cancelar
-            </button>
+            <div className="flex items-center gap-2">
+              <select
+                value={grupoAsignar}
+                onChange={(e) => setGrupoAsignar(e.target.value)}
+                className="flex-1 min-w-0 h-10 px-2 rounded-lg bg-[#161616] border border-[#2a2a2a] text-xs text-white"
+              >
+                <option value="">Elegir grupo…</option>
+                <option value="_none">Sin grupo</option>
+                {grupos.map((g) => (
+                  <option key={g.id} value={g.id}>{g.nombre}</option>
+                ))}
+              </select>
+              <button
+                onClick={asignarGrupoClientes}
+                disabled={!selAsignar.length || !grupoAsignar || asignandoGrupo}
+                className="shrink-0 h-10 px-4 rounded-lg bg-[#f5c518] text-black text-xs font-bold disabled:opacity-40 active:scale-95 transition-transform"
+              >
+                {asignandoGrupo ? '...' : 'Asignar'}
+              </button>
+            </div>
           </div>
         </div>
       )}
