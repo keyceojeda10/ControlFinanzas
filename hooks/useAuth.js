@@ -27,5 +27,6 @@ export function useAuth() {
     puedeEditarClientes: esOwner || Boolean(permisos.editarClientes),
     puedeReportarGastos: esOwner || Boolean(permisos.reportarGastos ?? true),
     puedeVerCapital:     esOwner || Boolean(permisos.verCapital),
+    puedeVerSaldoCaja:   esOwner || Boolean(permisos.verSaldoCaja),
   }
 }

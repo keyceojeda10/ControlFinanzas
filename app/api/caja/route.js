@@ -270,7 +270,9 @@ async function getCajaGeneralStats(organizationId, fechaColombia) {
 }
 
 // Calcula estadísticas del día
-async function getStatsDia(organizationId, fecha, cobradorId = null) {
+// verSaldoCaja: si es true (owner siempre, o cobrador con permiso), expone saldoCapitalActual
+// como disponibleHoy. Si es false (cobrador sin permiso), usa el flujo operativo del día.
+async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaja = true) {
   // Convertir fecha Colombia a UTC
   const fechaStr = typeof fecha === 'string' ? fecha : fecha.toISOString().slice(0, 10)
   const { inicio, fin } = getColombiaDayRange(fechaStr)
@@ -362,15 +364,19 @@ async function getStatsDia(organizationId, fecha, cobradorId = null) {
   const disponibleOperativo = recogida - gastos
   const saldoRealCaja = disponibleOperativo - desembolsadoDia
   const saldoRealCajaConAjustes = saldoRealCaja + ajustesManualDia
-  // Saldo en caja del día — MISMO valor para owner y cobrador.
-  // Fuente de verdad: saldo de capital actual (refleja TODOS los movimientos: cobros,
-  // desembolsos, gastos, cancelaciones, reversos, ajustes). Así el cobrador ve el
-  // mismo saldo que el owner y ambos pueden coordinar cuánto hay disponible para prestar.
-  const disponibleHoy = Math.round(saldoCapitalActual)
+  // Saldo en caja del día.
+  // Si `verSaldoCaja` (owner o cobrador con permiso): devuelve saldoCapitalActual
+  // (fuente de verdad, refleja TODOS los movimientos). Así cobrador y owner comparten el número.
+  // Si NO tiene permiso: devuelve solo el flujo operativo (recogido - prestado - gastos).
+  const disponibleHoy = verSaldoCaja
+    ? Math.round(saldoCapitalActual)
+    : saldoRealCaja
   // Ajustes "operativos" del día = todo lo que cambió capital - cobrado + prestado + gastos.
-  // Esto deja visible el delta no operativo (retiros, cancelaciones, etc).
-  // Se calcula tanto para owner como para cobrador porque ambos comparten el mismo saldo.
-  const ajustesOperativosDia = Math.round((saldoCapitalActual - baseInicialDia) - recogida + desembolsadoDia + gastos)
+  // Solo relevante si el usuario tiene permiso para ver el saldo de caja (owner o
+  // cobrador con verSaldoCaja); si no, queda en 0 porque el cobrador no ve ese saldo.
+  const ajustesOperativosDia = verSaldoCaja
+    ? Math.round((saldoCapitalActual - baseInicialDia) - recogida + desembolsadoDia + gastos)
+    : 0
   const disponible = disponibleOperativo // Compatibilidad temporal
 
   // Calcular tasa de recaudo
@@ -401,7 +407,7 @@ export async function GET(request) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
   }
 
-  const { organizationId, rol, id: userId } = session.user
+  const { organizationId, rol, id: userId, permisos } = session.user
   const { searchParams } = new URL(request.url)
   
   const fechaParam = searchParams.get('fecha')
@@ -430,8 +436,10 @@ export async function GET(request) {
 
   // Obtener stats del día
   const statsCobradorId = rol === 'cobrador' ? userId : (rol === 'owner' ? (cobradorParam || null) : null)
+  // Owner siempre ve saldoCapitalActual. Cobrador solo si tiene el permiso.
+  const puedeVerSaldoCaja = rol === 'owner' || Boolean(permisos?.verSaldoCaja)
   const [statsDiaRaw, cajaGeneral] = await Promise.all([
-    getStatsDia(organizationId, fechaBase, statsCobradorId),
+    getStatsDia(organizationId, fechaBase, statsCobradorId, puedeVerSaldoCaja),
     rol === 'owner' ? getCajaGeneralStats(organizationId, fechaBase) : Promise.resolve(null),
   ])
 
@@ -600,6 +608,33 @@ export async function GET(request) {
 
   if (rol === 'owner' && cajaGeneral) {
     payload.stats.cajaGeneral = cajaGeneral
+  }
+
+  // Cobrador con permiso verCapital: expone el capital TOTAL de la organización
+  // (saldo en caja + cartera activa). Es el patrimonio completo, más sensible que el saldo.
+  if (rol === 'cobrador' && permisos?.verCapital) {
+    const [cap, prestamosActivos] = await Promise.all([
+      prisma.capital.findUnique({
+        where: { organizationId },
+        select: { saldo: true },
+      }),
+      prisma.prestamo.findMany({
+        where: { organizationId, estado: 'activo' },
+        select: { totalAPagar: true, pagos: { select: { montoPagado: true, tipo: true } } },
+      }),
+    ])
+    const saldoCaja = Math.round(cap?.saldo ?? 0)
+    const carteraActiva = prestamosActivos.reduce((acc, p) => {
+      const pagado = p.pagos
+        .filter((pg) => !['recargo', 'descuento'].includes(pg.tipo))
+        .reduce((a, pg) => a + pg.montoPagado, 0)
+      return acc + Math.max(0, (p.totalAPagar || 0) - pagado)
+    }, 0)
+    payload.stats.capitalOrganizacion = {
+      saldoCaja,
+      carteraActiva: Math.round(carteraActiva),
+      total: saldoCaja + Math.round(carteraActiva),
+    }
   }
 
   return Response.json(payload)

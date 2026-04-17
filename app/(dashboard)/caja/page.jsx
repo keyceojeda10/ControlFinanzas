@@ -60,7 +60,7 @@ const diasDesdeFechaColombia = (fechaBase, fechaObjetivo) => {
 export default function CajaPage() {
   const searchParams = useSearchParams()
   const fechaParam = searchParams.get('fecha')
-  const { esCobrador, puedeReportarGastos, loading: authLoading } = useAuth()
+  const { esCobrador, puedeReportarGastos, puedeVerSaldoCaja, puedeVerCapital, loading: authLoading } = useAuth()
   const { lastSyncedAt } = useOffline()
 
   const [cajaData, setCajaData] = useState(null)
@@ -235,6 +235,7 @@ export default function CajaPage() {
 
   const stats = cajaData?.stats?.dia || {}
   const cajaGeneral = cajaData?.stats?.cajaGeneral || {}
+  const capitalOrganizacion = cajaData?.stats?.capitalOrganizacion || null
   const cierres = cajaData?.cierres || []
   const cobradores = cajaData?.cobradores || []
   const disponibleOperativo = stats.disponibleOperativo ?? ((stats.recogida || 0) - (stats.gastos || 0))
@@ -368,12 +369,42 @@ export default function CajaPage() {
           </div>
         )}
 
-        {/* Saldo en caja (mismo valor que ve el owner) */}
+        {/* Capital total de la organización (solo cobradores con permiso verCapital) */}
+        {puedeVerCapital && capitalOrganizacion && (
+          <Card>
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Capital total de la organización</p>
+                <p className="text-[11px] text-[#666666]">Saldo en caja + cartera activa</p>
+              </div>
+            </div>
+            <p className="text-2xl font-bold font-mono-display text-[#06b6d4]">
+              {formatCOP(capitalOrganizacion.total || 0)}
+            </p>
+            <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-[#2a2a2a]">
+              <div>
+                <p className="text-[10px] text-[#888888] uppercase">En caja</p>
+                <p className="text-sm font-bold font-mono-display text-[#22c55e]">{formatCOP(capitalOrganizacion.saldoCaja || 0)}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-[#888888] uppercase">En calle (cartera)</p>
+                <p className="text-sm font-bold font-mono-display text-[#f59e0b]">{formatCOP(capitalOrganizacion.carteraActiva || 0)}</p>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Saldo principal del cobrador: si tiene verSaldoCaja ve el mismo que el owner,
+            si no ve su flujo operativo del día */}
         <Card>
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Saldo en caja</p>
-              <p className="text-[11px] text-[#666666]">Disponible para prestar ahora</p>
+              <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">
+                {puedeVerSaldoCaja ? 'Saldo en caja' : 'Flujo del día'}
+              </p>
+              <p className="text-[11px] text-[#666666]">
+                {puedeVerSaldoCaja ? 'Disponible para prestar ahora' : 'Neto operativo de hoy'}
+              </p>
             </div>
             {tasaRecaudo > 0 && (
               <span className="text-sm font-bold" style={{ color: colorRecaudo }}>
@@ -385,7 +416,7 @@ export default function CajaPage() {
             {formatCOP(disponibleHoy)}
           </p>
           <p className="text-[11px] text-[#888888] mt-1">
-            Saldo compartido con el administrador
+            {puedeVerSaldoCaja ? 'Saldo compartido con el administrador' : 'Cobrado - Prestado hoy - Gastos'}
           </p>
 
           {!esCobrador && (

@@ -128,6 +128,7 @@ model User {
   puedeEditarClientes     Boolean   @default(false)
   puedeReportarGastos     Boolean   @default(true)
   puedeVerCapital         Boolean   @default(false)
+  puedeVerSaldoCaja       Boolean   @default(false)
   emailsMarketing         Boolean   @default(true)
   createdAt               DateTime  @default(now())
 

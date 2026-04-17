@@ -31,6 +31,7 @@ export default function NuevoCobrador() {
     crearClientes:  false,
     editarClientes: false,
     verCapital:     false,
+    verSaldoCaja:   false,
   })
 
   const plan     = session?.user?.plan ?? 'starter'
@@ -279,7 +280,8 @@ export default function NuevoCobrador() {
               { key: 'reportarGastos', label: 'Reportar gastos menores', desc: 'Puede registrar gastos menores en caja (hoy o ayer)' },
               { key: 'crearClientes',  label: 'Crear clientes',  desc: 'Puede registrar nuevos clientes (se asignan a su ruta)' },
               { key: 'editarClientes', label: 'Editar clientes', desc: 'Puede modificar datos como teléfono, dirección, etc.' },
-              { key: 'verCapital',     label: 'Ver capital de la organización', desc: 'Muestra al cobrador el saldo total disponible para prestar (solo lectura)' },
+              { key: 'verSaldoCaja',   label: 'Ver saldo en caja', desc: 'Muestra al cobrador el mismo saldo en caja que ve el administrador (dinero disponible ahora para prestar)' },
+              { key: 'verCapital',     label: 'Ver capital total de la organización', desc: 'Muestra el patrimonio completo (saldo en caja + cartera activa). Más sensible que el saldo en caja' },
             ].map((p) => (
               <div key={p.key} className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">

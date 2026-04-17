@@ -95,6 +95,7 @@ export async function GET(request, { params }) {
       editarClientes: cobrador.puedeEditarClientes,
       reportarGastos: cobrador.puedeReportarGastos ?? true,
       verCapital:     cobrador.puedeVerCapital ?? false,
+      verSaldoCaja:   cobrador.puedeVerSaldoCaja ?? false,
     },
     ruta,
     recaudadoHoy: cobrador.pagos.filter(p => !['recargo', 'descuento'].includes(p.tipo)).reduce((a, p) => a + p.montoPagado, 0),
@@ -168,6 +169,7 @@ export async function PATCH(request, { params }) {
     if (p.editarClientes !== undefined) data.puedeEditarClientes = Boolean(p.editarClientes)
     if (p.reportarGastos !== undefined) data.puedeReportarGastos = Boolean(p.reportarGastos)
     if (p.verCapital !== undefined)     data.puedeVerCapital     = Boolean(p.verCapital)
+    if (p.verSaldoCaja !== undefined)   data.puedeVerSaldoCaja   = Boolean(p.verSaldoCaja)
 
     if (p.crearPrestamos !== undefined && p.gestionarPrestamos === undefined) {
       data.puedeGestionarPrestamos = Boolean(p.crearPrestamos)
@@ -182,7 +184,7 @@ export async function PATCH(request, { params }) {
     where: { id },
     data,
     select: { id: true, nombre: true, email: true, telefono: true, activo: true,
-      puedeCrearPrestamos: true, puedeGestionarPrestamos: true, puedeCrearClientes: true, puedeEditarClientes: true, puedeReportarGastos: true, puedeVerCapital: true },
+      puedeCrearPrestamos: true, puedeGestionarPrestamos: true, puedeCrearClientes: true, puedeEditarClientes: true, puedeReportarGastos: true, puedeVerCapital: true, puedeVerSaldoCaja: true },
   })
 
   return Response.json(actualizado)

@@ -47,6 +47,7 @@ export async function GET(request) {
       puedeEditarClientes: true,
       puedeReportarGastos: true,
       puedeVerCapital:     true,
+      puedeVerSaldoCaja:   true,
       rutas:     {
         where:  { activo: true },
         select: {
@@ -75,6 +76,7 @@ export async function GET(request) {
       editarClientes: c.puedeEditarClientes,
       reportarGastos: c.puedeReportarGastos ?? true,
       verCapital:     c.puedeVerCapital ?? false,
+      verSaldoCaja:   c.puedeVerSaldoCaja ?? false,
     },
     ruta:            c.rutas[0] ?? null,
     cantidadClientes: c.rutas[0]?.clientes?.length ?? 0,
@@ -143,6 +145,7 @@ export async function POST(request) {
   const gestionarPrestamos = Boolean(permisos?.gestionarPrestamos ?? crearPrestamos)
   const reportarGastos = Boolean(permisos?.reportarGastos ?? true)
   const verCapital = Boolean(permisos?.verCapital)
+  const verSaldoCaja = Boolean(permisos?.verSaldoCaja)
 
   const cobrador = await prisma.user.create({
     data: {
@@ -158,9 +161,10 @@ export async function POST(request) {
       puedeEditarClientes: Boolean(permisos?.editarClientes),
       puedeReportarGastos: reportarGastos,
       puedeVerCapital:     verCapital,
+      puedeVerSaldoCaja:   verSaldoCaja,
     },
     select: { id: true, nombre: true, email: true, telefono: true, activo: true, rol: true,
-      puedeCrearPrestamos: true, puedeGestionarPrestamos: true, puedeCrearClientes: true, puedeEditarClientes: true, puedeReportarGastos: true, puedeVerCapital: true },
+      puedeCrearPrestamos: true, puedeGestionarPrestamos: true, puedeCrearClientes: true, puedeEditarClientes: true, puedeReportarGastos: true, puedeVerCapital: true, puedeVerSaldoCaja: true },
   })
 
   logActividad({ session, accion: 'crear_cobrador', entidadTipo: 'usuario', entidadId: cobrador.id, detalle: `Cobrador ${cobrador.nombre} creado`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
