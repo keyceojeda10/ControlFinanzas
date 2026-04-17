@@ -77,6 +77,7 @@ export default function CajaPage() {
   const [ajusteDescripcion, setAjusteDescripcion] = useState('')
   const [guardandoAjuste, setGuardandoAjuste] = useState(false)
   const [errorAjuste, setErrorAjuste] = useState('')
+  const [cobradorExpandido, setCobradorExpandido] = useState({})
   const [exitoAjuste, setExitoAjuste] = useState(false)
   const [gastosPendientes, setGastosPendientes] = useState(0)
   const [fechaSeleccionada, setFechaSeleccionada] = useState(
@@ -822,9 +823,12 @@ export default function CajaPage() {
                 ? (cierre.saldoRealCaja ?? (cierre.totalRecogido - (cierre.totalGastos || 0) - cierreDesembolsado))
                 : 0
 
+              const expandido = !!cobradorExpandido[c.id]
+              const toggleExpand = () => setCobradorExpandido((prev) => ({ ...prev, [c.id]: !prev[c.id] }))
+
               return (
                 <div key={c.id} className="bg-[#111111] border border-[#2a2a2a] rounded-[12px] p-3">
-                  <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center justify-between gap-2 mb-3">
                     <span className="text-sm font-semibold text-white">{c.nombre}</span>
                     {c.cerrado ? (
                       <Badge variant="green">Cerrado</Badge>
@@ -832,67 +836,100 @@ export default function CajaPage() {
                       <Badge variant="yellow">Pendiente cierre</Badge>
                     )}
                   </div>
+
                   {cierre ? (
-                    <div className="space-y-3 mt-2">
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        <div className="rounded-[10px] bg-[#171717] border border-[#262626] p-2">
-                          <p className="text-[10px] text-[#888888] uppercase tracking-wide">Esperado</p>
-                          <p className="text-sm font-semibold font-mono-display text-white">{formatCOP(cierre.totalEsperado)}</p>
-                        </div>
-                        <div className="rounded-[10px] bg-[#171717] border border-[#262626] p-2">
+                    <>
+                      {/* Resumen siempre visible: 2 números grandes */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="rounded-[10px] bg-[#171717] border border-[#262626] p-2.5">
                           <p className="text-[10px] text-[#888888] uppercase tracking-wide">Entregado</p>
-                          <p className="text-sm font-semibold font-mono-display text-white">{formatCOP(cierre.totalRecogido)}</p>
+                          <p className="text-lg font-bold font-mono-display text-white mt-0.5">{formatCOP(cierre.totalRecogido)}</p>
                         </div>
-                        <div className="rounded-[10px] bg-[#171717] border border-[#262626] p-2">
-                          <p className="text-[10px] text-[#888888] uppercase tracking-wide">Gastos</p>
-                          <p className="text-sm font-semibold font-mono-display text-[#ef4444]">{formatCOP(cierre.totalGastos || 0)}</p>
-                        </div>
-                        <div className="rounded-[10px] bg-[#171717] border border-[#262626] p-2">
-                          <p className="text-[10px] text-[#888888] uppercase tracking-wide">Prestado hoy</p>
-                          <p className="text-sm font-semibold font-mono-display text-[#f59e0b]">{cierreDesembolsado > 0 ? '-' : ''}{formatCOP(cierreDesembolsado)}</p>
-                        </div>
-                        <div className="rounded-[10px] bg-[#171717] border border-[#262626] p-2">
-                          <p className="text-[10px] text-[#888888] uppercase tracking-wide">Saldo real</p>
-                          <p className="text-sm font-semibold font-mono-display" style={{ color: cierreSaldoReal >= 0 ? '#06b6d4' : '#ef4444' }}>
-                            {formatCOP(cierreSaldoReal)}
-                          </p>
-                        </div>
-                        <div className="rounded-[10px] bg-[#171717] border border-[#262626] p-2">
+                        <div className="rounded-[10px] bg-[#171717] border border-[#262626] p-2.5">
                           <p className="text-[10px] text-[#888888] uppercase tracking-wide">Diferencia</p>
-                          <p className="text-sm font-bold font-mono-display" style={{ color: diff >= 0 ? '#22c55e' : '#ef4444' }}>
+                          <p className="text-lg font-bold font-mono-display mt-0.5" style={{ color: diff >= 0 ? '#22c55e' : '#ef4444' }}>
                             {diff >= 0 ? '+' : ''}{formatCOP(diff)}
                           </p>
                         </div>
                       </div>
 
-                      <div className="text-xs text-[#777777] border-t border-[#222222] pt-2">
-                        Cobrado registrado en pagos: <span className="text-[#22c55e] font-semibold">{formatCOP(recaudadoDiaCobrador)}</span>
-                        {deltaSistemaVsCierre !== 0 && (
-                          <span className="ml-2 text-[#f5c518]">
-                            (diferencia vs cierre: {deltaSistemaVsCierre > 0 ? '+' : ''}{formatCOP(deltaSistemaVsCierre)})
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                      {expandido && (
+                        <div className="space-y-3 mt-3">
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            <div className="rounded-[10px] bg-[#171717] border border-[#262626] p-2">
+                              <p className="text-[10px] text-[#888888] uppercase tracking-wide">Esperado</p>
+                              <p className="text-sm font-semibold font-mono-display text-white">{formatCOP(cierre.totalEsperado)}</p>
+                            </div>
+                            <div className="rounded-[10px] bg-[#171717] border border-[#262626] p-2">
+                              <p className="text-[10px] text-[#888888] uppercase tracking-wide">Gastos</p>
+                              <p className="text-sm font-semibold font-mono-display text-[#ef4444]">{formatCOP(cierre.totalGastos || 0)}</p>
+                            </div>
+                            <div className="rounded-[10px] bg-[#171717] border border-[#262626] p-2">
+                              <p className="text-[10px] text-[#888888] uppercase tracking-wide">Prestado hoy</p>
+                              <p className="text-sm font-semibold font-mono-display text-[#f59e0b]">{cierreDesembolsado > 0 ? '-' : ''}{formatCOP(cierreDesembolsado)}</p>
+                            </div>
+                            <div className="rounded-[10px] bg-[#171717] border border-[#262626] p-2">
+                              <p className="text-[10px] text-[#888888] uppercase tracking-wide">Saldo real</p>
+                              <p className="text-sm font-semibold font-mono-display" style={{ color: cierreSaldoReal >= 0 ? '#06b6d4' : '#ef4444' }}>
+                                {formatCOP(cierreSaldoReal)}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="text-xs text-[#777777] border-t border-[#222222] pt-2">
+                            Cobrado registrado en pagos: <span className="text-[#22c55e] font-semibold">{formatCOP(recaudadoDiaCobrador)}</span>
+                            {deltaSistemaVsCierre !== 0 && (
+                              <span className="ml-2 text-[#f5c518]">
+                                (diferencia vs cierre: {deltaSistemaVsCierre > 0 ? '+' : ''}{formatCOP(deltaSistemaVsCierre)})
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      <button
+                        onClick={toggleExpand}
+                        className="w-full mt-2 text-[11px] text-[#888] hover:text-white flex items-center justify-center gap-1 py-1"
+                      >
+                        {expandido ? 'Ocultar detalle' : 'Ver detalle'}
+                        <svg className={`w-3 h-3 transition-transform ${expandido ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                    </>
                   ) : (
-                    <div className="mt-2 space-y-2">
+                    <div className="space-y-2">
                       {recaudadoDiaCobrador > 0 ? (
                         <>
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                            <div className="rounded-[10px] bg-[#171717] border border-[#262626] p-2">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="rounded-[10px] bg-[#171717] border border-[#262626] p-2.5">
+                              <p className="text-[10px] text-[#888888] uppercase tracking-wide">Cobrado</p>
+                              <p className="text-lg font-bold font-mono-display text-[#22c55e] mt-0.5">{formatCOP(recaudadoDiaCobrador)}</p>
+                            </div>
+                            <div className="rounded-[10px] bg-[#171717] border border-[#262626] p-2.5">
+                              <p className="text-[10px] text-[#888888] uppercase tracking-wide">Sugerido cierre</p>
+                              <p className="text-lg font-bold font-mono-display text-[#f5c518] mt-0.5">{formatCOP(sugeridoCierre)}</p>
+                            </div>
+                          </div>
+
+                          {expandido && (
+                            <div className="rounded-[10px] bg-[#171717] border border-[#262626] p-2 mt-2">
                               <p className="text-[10px] text-[#888888] uppercase tracking-wide">Esperado ruta</p>
                               <p className="text-sm font-semibold font-mono-display text-white">{formatCOP(esperadoDiaCobrador)}</p>
                             </div>
-                            <div className="rounded-[10px] bg-[#171717] border border-[#262626] p-2">
-                              <p className="text-[10px] text-[#888888] uppercase tracking-wide">Cobrado en pagos</p>
-                              <p className="text-sm font-semibold font-mono-display text-[#22c55e]">{formatCOP(recaudadoDiaCobrador)}</p>
-                            </div>
-                            <div className="rounded-[10px] bg-[#171717] border border-[#262626] p-2">
-                              <p className="text-[10px] text-[#888888] uppercase tracking-wide">Sugerido cierre</p>
-                              <p className="text-sm font-semibold font-mono-display text-[#f5c518]">{formatCOP(sugeridoCierre)}</p>
-                            </div>
-                          </div>
+                          )}
+
                           <p className="text-[11px] text-[#f5c518]">Falta confirmación manual del cobrador para cerrar caja.</p>
+
+                          <button
+                            onClick={toggleExpand}
+                            className="w-full text-[11px] text-[#888] hover:text-white flex items-center justify-center gap-1 py-1"
+                          >
+                            {expandido ? 'Ocultar detalle' : 'Ver detalle'}
+                            <svg className={`w-3 h-3 transition-transform ${expandido ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
                         </>
                       ) : (
                         <p className="text-sm text-[#555555]">Sin pagos registrados y sin cierre reportado hoy.</p>

@@ -68,10 +68,7 @@ export default function PrestamoCard({ prestamo: p }) {
           </div>
         </div>
         <div className="flex flex-col items-end gap-1">
-          {enMora
-            ? <Badge variant="red">En mora</Badge>
-            : <Badge variant={badge.variant}>{badge.label}</Badge>
-          }
+          {!enMora && <Badge variant={badge.variant}>{badge.label}</Badge>}
           {p.pagoHoy && (
             <span className="flex items-center gap-1 text-[10px] text-[#10b981]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] inline-block" />
