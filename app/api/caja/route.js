@@ -405,7 +405,7 @@ export async function GET(request) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
   }
 
-  const { organizationId, rol, id: userId } = session.user
+  const { organizationId, rol, id: userId, permisos } = session.user
   const { searchParams } = new URL(request.url)
   
   const fechaParam = searchParams.get('fecha')
@@ -602,6 +602,17 @@ export async function GET(request) {
 
   if (rol === 'owner' && cajaGeneral) {
     payload.stats.cajaGeneral = cajaGeneral
+  }
+
+  // Cobrador con permiso verCapital: exponer solo el saldo total de la organización (solo lectura).
+  if (rol === 'cobrador' && permisos?.verCapital) {
+    const cap = await prisma.capital.findUnique({
+      where: { organizationId },
+      select: { saldo: true },
+    })
+    payload.stats.capitalOrganizacion = {
+      saldoActual: Math.round(cap?.saldo ?? 0),
+    }
   }
 
   return Response.json(payload)

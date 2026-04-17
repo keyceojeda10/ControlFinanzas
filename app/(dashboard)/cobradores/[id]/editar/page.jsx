@@ -28,6 +28,7 @@ export default function EditarCobrador({ params }) {
     reportarGastos: true,
     crearClientes:  false,
     editarClientes: false,
+    verCapital:     false,
   })
 
   useEffect(() => {
@@ -49,6 +50,7 @@ export default function EditarCobrador({ params }) {
             reportarGastos: data.permisos.reportarGastos ?? true,
             crearClientes:  data.permisos.crearClientes  ?? false,
             editarClientes: data.permisos.editarClientes ?? false,
+            verCapital:     data.permisos.verCapital     ?? false,
           })
         }
       })
@@ -209,6 +211,7 @@ export default function EditarCobrador({ params }) {
               { key: 'reportarGastos', label: 'Reportar gastos menores', desc: 'Puede registrar gastos menores en caja (hoy o ayer)' },
               { key: 'crearClientes',  label: 'Crear clientes',  desc: 'Puede registrar nuevos clientes (se asignan a su ruta)' },
               { key: 'editarClientes', label: 'Editar clientes', desc: 'Puede modificar datos como teléfono, dirección, etc.' },
+              { key: 'verCapital',     label: 'Ver capital de la organización', desc: 'Muestra al cobrador el saldo total disponible para prestar (solo lectura)' },
             ].map((p) => (
               <div key={p.key} className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
