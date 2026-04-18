@@ -23,7 +23,19 @@ export default function OfflineProvider({ children }) {
   // Counter that increments after every successful sync — pages watch this to refetch
   const [lastSyncedAt, setLastSyncedAt] = useState(0)
   const syncingRef = useRef(false)
+  const syncingStartedAtRef = useRef(0)
   const lastAutoSyncAtRef = useRef(0)
+
+  // Safety: liberar syncingRef si lleva demasiado tiempo (sincro colgada)
+  const SYNCING_REF_TTL_MS = 75_000 // 75s — mas que timeout interno de sincronizarTodo
+  const checkStaleLock = () => {
+    if (syncingRef.current && Date.now() - syncingStartedAtRef.current > SYNCING_REF_TTL_MS) {
+      syncingRef.current = false
+      syncingStartedAtRef.current = 0
+      setBulkSyncing(false)
+      setBulkProgress(null)
+    }
+  }
 
   // Sync pending payments FIRST, then download fresh data.
   // By default we also notify pages so visible data stays up to date.
@@ -42,8 +54,10 @@ export default function OfflineProvider({ children }) {
     } catch { /* silent */ }
 
     // STEP 2: Now download fresh data from server (includes synced payments)
+    checkStaleLock()
     if (syncingRef.current) return
     syncingRef.current = true
+    syncingStartedAtRef.current = Date.now()
     if (!silent) setBulkSyncing(true)
     try {
       const result = await sincronizarTodo(silent ? () => {} : (p) => setBulkProgress(p))
@@ -63,6 +77,7 @@ export default function OfflineProvider({ children }) {
     } catch { /* silent */ }
     finally {
       syncingRef.current = false
+      syncingStartedAtRef.current = 0
       if (!silent) setBulkSyncing(false)
     }
 
@@ -78,7 +93,9 @@ export default function OfflineProvider({ children }) {
   }, [])
 
   const requestAutoSync = useCallback(() => {
-    if (!navigator.onLine || syncingRef.current) return
+    if (!navigator.onLine) return
+    checkStaleLock()
+    if (syncingRef.current) return
     const now = Date.now()
     if (now - lastAutoSyncAtRef.current < MIN_AUTO_SYNC_GAP_MS) return
     lastAutoSyncAtRef.current = now
