@@ -22,7 +22,7 @@ export async function GET() {
   const orgId = session.user.organizationId
   const userId = session.user.id
   const rol = session.user.rol
-  const rutaId = session.user.rutaId
+  const rutaIds = session.user.rutaIds ?? []
   const org = await prisma.organization.findUnique({
     where: { id: orgId },
     select: { diasSinCobro: true },
@@ -32,7 +32,7 @@ export async function GET() {
   const clienteWhere = {
     organizationId: orgId,
     estado: { not: 'eliminado' },
-    ...(rol === 'cobrador' && rutaId ? { rutaId } : {}),
+    ...(rol === 'cobrador' && rutaIds.length > 0 ? { rutaId: { in: rutaIds } } : {}),
   }
 
   // ── 1. Todos los clientes con sus préstamos y pagos ──
@@ -78,7 +78,7 @@ export async function GET() {
   const rutasRaw = await prisma.ruta.findMany({
     where: {
       organizationId: orgId,
-      ...(rol === 'cobrador' && rutaId ? { id: rutaId } : {}),
+      ...(rol === 'cobrador' && rutaIds.length > 0 ? { id: { in: rutaIds } } : {}),
     },
     include: {
       cobrador: { select: { id: true, nombre: true } },

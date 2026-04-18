@@ -14,10 +14,10 @@ export async function GET(request) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
   }
 
-  const { organizationId, rol, rutaId } = session.user
+  const { organizationId, rol, rutaIds = [] } = session.user
 
-  // Cobrador sin ruta asignada no ve nada (previene fuga multi-tenant)
-  if (rol === 'cobrador' && !rutaId) {
+  // Cobrador sin rutas asignadas no ve nada (previene fuga multi-tenant)
+  if (rol === 'cobrador' && rutaIds.length === 0) {
     return Response.json({ total: 0, agrupado: { mora1a7: [], mora8a15: [], mora16a30: [], mora31plus: [] }, lista: [] })
   }
 
@@ -25,7 +25,7 @@ export async function GET(request) {
   const wherePrestamo = {
     organizationId,
     estado: 'activo',
-    ...(rol === 'cobrador' && { cliente: { rutaId } }),
+    ...(rol === 'cobrador' && { cliente: { rutaId: { in: rutaIds } } }),
   }
 
   // Obtener préstamos activos vencidos

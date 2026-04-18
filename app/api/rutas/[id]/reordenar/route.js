@@ -11,10 +11,10 @@ export async function PUT(request, { params }) {
   }
 
   const { id } = await params
-  const { organizationId, rol, rutaId } = session.user
+  const { organizationId, rol, rutaIds = [] } = session.user
 
   // Owner o cobrador asignado a esta ruta
-  if (rol === 'cobrador' && rutaId !== id) {
+  if (rol === 'cobrador' && !rutaIds.includes(id)) {
     return Response.json({ error: 'No tienes acceso a esta ruta' }, { status: 403 })
   }
 

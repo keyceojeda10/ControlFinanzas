@@ -23,15 +23,15 @@ export async function GET(request) {
   const page = searchParams.get('page') ? Number(searchParams.get('page')) : null
   const limit = Math.min(Number(searchParams.get('limit')) || 50, 100)
 
-  const { organizationId, rol, rutaId } = session.user
+  const { organizationId, rol, rutaIds = [] } = session.user
 
-  // Cobrador sin ruta asignada no ve nada (previene fuga multi-tenant)
-  if (rol === 'cobrador' && !rutaId) {
+  // Cobrador sin rutas asignadas no ve nada (previene fuga multi-tenant)
+  if (rol === 'cobrador' && rutaIds.length === 0) {
     return Response.json(page != null ? { clientes: [], total: 0, page, totalPages: 0 } : [])
   }
 
-  // Cobrador → solo clientes de su ruta
-  const filtroRuta = rol === 'cobrador' ? { rutaId } : {}
+  // Cobrador → solo clientes de sus rutas
+  const filtroRuta = rol === 'cobrador' ? { rutaId: { in: rutaIds } } : {}
 
   // Filtro de búsqueda por nombre, cédula, teléfono o referencia
   const filtroBuscar = buscar
@@ -137,7 +137,7 @@ export async function POST(request) {
         return Response.json({ error: 'No tienes permiso para crear clientes' }, { status: 403 })
       }
       // Auto-asignar a la ruta del cobrador
-      autoRutaId = session.user.rutaId || null
+      autoRutaId = (session.user.rutaIds ?? [])[0] || session.user.rutaId || null
     } else {
       return Response.json({ error: 'No autorizado' }, { status: 403 })
     }

@@ -12,11 +12,11 @@ export async function POST(request, { params }) {
   }
 
   const { id } = await params
-  const { organizationId, rol, rutaId } = session.user
+  const { id: userId, organizationId, rol } = session.user
 
-  // Owner o cobrador asignado a esta ruta
-  if (rol === 'cobrador' && rutaId !== id) {
-    return Response.json({ error: 'No tienes acceso a esta ruta' }, { status: 403 })
+  if (rol === 'cobrador') {
+    const acceso = await prisma.ruta.findFirst({ where: { id, organizationId, cobradorId: userId }, select: { id: true } })
+    if (!acceso) return Response.json({ error: 'No tienes acceso a esta ruta' }, { status: 403 })
   }
 
   // Obtener ruta con clientes y sus coordenadas

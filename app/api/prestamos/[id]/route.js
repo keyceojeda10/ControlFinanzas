@@ -38,7 +38,7 @@ async function obtenerPrestamo(id, session) {
   })
   if (!p) return null
   // Cobrador solo puede ver préstamos de clientes de su ruta
-  if (session.user.rol === 'cobrador' && p.cliente.rutaId !== session.user.rutaId) return null
+  if (session.user.rol === 'cobrador' && !(session.user.rutaIds ?? []).includes(p.cliente.rutaId)) return null
   return p
 }
 

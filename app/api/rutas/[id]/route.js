@@ -36,11 +36,12 @@ export async function GET(request, { params }) {
   }
 
   const { id } = await params
-  const { organizationId, rol, rutaId } = session.user
+  const { id: userId, organizationId, rol } = session.user
 
-  // Cobrador solo puede ver su propia ruta
-  if (rol === 'cobrador' && id !== rutaId) {
-    return Response.json({ error: 'No tienes acceso a esta ruta' }, { status: 403 })
+  // Cobrador: solo rutas donde es el asignado
+  if (rol === 'cobrador') {
+    const acceso = await prisma.ruta.findFirst({ where: { id, organizationId, cobradorId: userId }, select: { id: true } })
+    if (!acceso) return Response.json({ error: 'No tienes acceso a esta ruta' }, { status: 403 })
   }
 
   // Config org para días sin cobro

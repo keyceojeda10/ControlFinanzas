@@ -22,7 +22,7 @@ export async function GET(request, { params }) {
   }
 
   // Cobrador solo puede ver historial de clientes de su ruta.
-  if (session.user.rol === 'cobrador' && cliente.rutaId !== session.user.rutaId) {
+  if (session.user.rol === 'cobrador' && !(session.user.rutaIds ?? []).includes(cliente.rutaId)) {
     return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 })
   }
 

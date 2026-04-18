@@ -37,7 +37,7 @@ export async function POST(request, { params }) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
   }
 
-  const { rol, rutaId, organizationId, id: userId } = session.user
+  const { rol, rutaIds = [], organizationId, id: userId } = session.user
   const { id: prestamoId } = await params
 
   // Obtener préstamo con cliente y pagos
@@ -62,7 +62,7 @@ export async function POST(request, { params }) {
   }
 
   // Cobrador: verificar que el cliente es de su ruta
-  if (rol === 'cobrador' && prestamo.cliente.rutaId !== rutaId) {
+  if (rol === 'cobrador' && !rutaIds.includes(prestamo.cliente.rutaId)) {
     return Response.json({ error: 'No tienes acceso a este préstamo' }, { status: 403 })
   }
 

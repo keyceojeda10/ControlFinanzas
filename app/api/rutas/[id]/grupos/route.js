@@ -14,9 +14,9 @@ export async function GET(request, { params }) {
   }
 
   const { id } = await params
-  const { organizationId, rol, rutaId } = session.user
+  const { organizationId, rol, rutaIds = [] } = session.user
 
-  if (rol === 'cobrador' && id !== rutaId) {
+  if (rol === 'cobrador' && !rutaIds.includes(id)) {
     return Response.json({ error: 'No tienes acceso a esta ruta' }, { status: 403 })
   }
 

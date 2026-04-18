@@ -15,8 +15,8 @@ async function obtenerCliente(id, session) {
     where: { id, organizationId: session.user.organizationId },
   })
   if (!cliente) return null
-  // Cobrador: solo puede ver clientes de su ruta
-  if (session.user.rol === 'cobrador' && cliente.rutaId !== session.user.rutaId) return null
+  // Cobrador: solo puede ver clientes de sus rutas
+  if (session.user.rol === 'cobrador' && !(session.user.rutaIds ?? []).includes(cliente.rutaId)) return null
   return cliente
 }
 

@@ -24,7 +24,7 @@ export async function GET(request) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
   }
 
-  const { organizationId, rol, rutaId } = session.user
+  const { organizationId, rol, rutaIds = [] } = session.user
   const { searchParams } = new URL(request.url)
   const clienteId = searchParams.get('clienteId')
   const estado    = searchParams.get('estado')
@@ -33,7 +33,7 @@ export async function GET(request) {
   const limit     = Math.min(Number(searchParams.get('limit')) || 50, 100)
 
   // Cobrador sin ruta asignada no ve nada (previene fuga de datos multi-tenant)
-  if (rol === 'cobrador' && !rutaId) {
+  if (rol === 'cobrador' && rutaIds.length === 0) {
     return Response.json(page != null ? { prestamos: [], total: 0, page, totalPages: 0 } : [])
   }
 
@@ -44,7 +44,7 @@ export async function GET(request) {
     // Combinar filtros de cliente: búsqueda + restricción de ruta para cobrador
     ...((buscar || rol === 'cobrador') && {
       cliente: {
-        ...(rol === 'cobrador' && { rutaId }),
+        ...(rol === 'cobrador' && { rutaId: { in: rutaIds } }),
         ...(buscar && {
           OR: [
             { nombre: { contains: buscar } },

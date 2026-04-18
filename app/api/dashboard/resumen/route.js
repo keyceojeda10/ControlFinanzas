@@ -20,10 +20,10 @@ export async function GET() {
 
   // Cobrador: limitar metricas a clientes/prestamos/pagos de SU ruta
   const esCobrador = session.user.rol === 'cobrador'
-  const rutaIdCobrador = session.user.rutaId ?? null
-  const filtroRutaCliente = esCobrador ? { rutaId: rutaIdCobrador } : {}
+  const rutaIdsCobrador = session.user.rutaIds ?? []
+  const filtroRutaCliente = esCobrador ? { rutaId: { in: rutaIdsCobrador } } : {}
   const filtroRutaPagos = esCobrador
-    ? { prestamo: { cliente: { rutaId: rutaIdCobrador } } }
+    ? { prestamo: { cliente: { rutaId: { in: rutaIdsCobrador } } } }
     : {}
 
   // Rangos UTC que representan "hoy" y "este mes" en hora Colombia (UTC-5)
@@ -84,7 +84,7 @@ export async function GET() {
       where: {
         organizationId: orgId,
         estado: 'completado',
-        ...(esCobrador ? { cliente: { rutaId: rutaIdCobrador } } : {}),
+        ...(esCobrador ? { cliente: { rutaId: { in: rutaIdsCobrador } } } : {}),
       },
     }),
 
@@ -137,7 +137,7 @@ export async function GET() {
       where: {
         organizationId: orgId,
         activo: true,
-        ...(esCobrador ? { id: rutaIdCobrador } : {}),
+        ...(esCobrador ? { id: { in: rutaIdsCobrador } } : {}),
       },
     }),
   ])

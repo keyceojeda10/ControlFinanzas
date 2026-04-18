@@ -19,10 +19,10 @@ export async function GET(request) {
     return Response.json({ clientes: [], prestamos: [], rutas: [] })
   }
 
-  const { organizationId, rol, rutaId } = session.user
+  const { organizationId, rol, rutaIds = [] } = session.user
 
-  // Cobrador: solo ve clientes de su ruta
-  const filtroRuta = rol === 'cobrador' && rutaId ? { rutaId } : {}
+  // Cobrador: solo ve clientes de sus rutas
+  const filtroRuta = rol === 'cobrador' && rutaIds.length > 0 ? { rutaId: { in: rutaIds } } : {}
 
   const [clientes, prestamos, rutas] = await Promise.all([
     // Buscar clientes

@@ -65,7 +65,7 @@ export async function POST(request, { params }) {
   })
 
   if (!original) return Response.json({ error: 'Préstamo no encontrado' }, { status: 404 })
-  if (session.user.rol === 'cobrador' && original.cliente.rutaId !== session.user.rutaId) {
+  if (session.user.rol === 'cobrador' && !(session.user.rutaIds ?? []).includes(original.cliente.rutaId)) {
     return Response.json({ error: 'No tienes acceso a este préstamo' }, { status: 403 })
   }
   if (original.estado !== 'activo') {

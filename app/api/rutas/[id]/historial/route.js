@@ -10,10 +10,11 @@ export async function GET(request, { params }) {
   }
 
   const { id } = await params
-  const { organizationId, rol, rutaId } = session.user
+  const { id: userId, organizationId, rol } = session.user
 
-  if (rol === 'cobrador' && id !== rutaId) {
-    return Response.json({ error: 'No tienes acceso' }, { status: 403 })
+  if (rol === 'cobrador') {
+    const acceso = await prisma.ruta.findFirst({ where: { id, organizationId, cobradorId: userId }, select: { id: true } })
+    if (!acceso) return Response.json({ error: 'No tienes acceso' }, { status: 403 })
   }
 
   const ruta = await prisma.ruta.findFirst({

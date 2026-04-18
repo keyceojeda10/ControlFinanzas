@@ -23,16 +23,11 @@ export async function GET(request) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
   }
 
-  const { organizationId, rol, rutaId } = session.user
+  const { id: userId, organizationId, rol } = session.user
 
-  // Cobrador sin ruta asignada no debe ver rutas de la organización
-  if (rol === 'cobrador' && !rutaId) {
-    return Response.json([])
-  }
-
-  // Cobrador: solo su ruta
-  const where = rol === 'cobrador' && rutaId
-    ? { id: rutaId, organizationId }
+  // Cobrador: todas las rutas donde es el cobrador asignado
+  const where = rol === 'cobrador'
+    ? { organizationId, cobradorId: userId, activo: true }
     : { organizationId, activo: true }
 
   const rutas = await prisma.ruta.findMany({
