@@ -233,22 +233,22 @@ export default function PlanPage() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 px-2 sm:px-4 lg:px-6">
-      <div className="text-center rounded-[18px] border border-[#2a2a2a] bg-[#121212] p-5 sm:p-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-white">Elige tu plan</h1>
-        <p className="text-sm sm:text-base text-[#777777] mt-2 max-w-2xl mx-auto">
+      <div className="text-center rounded-[18px] border border-[var(--color-border)] bg-[#121212] p-5 sm:p-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-[var(--color-text-primary)]">Elige tu plan</h1>
+        <p className="text-sm sm:text-base text-[var(--color-text-muted)] mt-2 max-w-2xl mx-auto">
           {estado?.estado === 'activa'
             ? `Tu plan actual: ${[planTest, ...planes].find(p => p.key === planActual)?.nombre || planActual}. Cambia cuando quieras.`
             : 'Selecciona el plan que mejor se adapte a tu negocio.'}
         </p>
         {estado?.diasRestantes != null && estado.estado === 'activa' && (
-          <p className="text-xs sm:text-sm text-[#22c55e] mt-2">
+          <p className="text-xs sm:text-sm text-[var(--color-success)] mt-2">
             {estado.diasRestantes} días restantes en tu suscripción
             {tieneRecurrente && ' (renovación automática)'}
             {subCancelada && ' (cancelada, no se renovará)'}
           </p>
         )}
         {tieneRecurrente && estado?.proximoCobroAt && !subCancelada && (
-          <p className="text-[11px] text-[#888888] mt-1">
+          <p className="text-[11px] text-[var(--color-text-muted)] mt-1">
             Próximo cobro: {formatFecha(estado.proximoCobroAt)}
           </p>
         )}
@@ -256,22 +256,22 @@ export default function PlanPage() {
 
       {/* Toggle Suscripción / Pago único */}
       <div className="flex justify-center px-1">
-        <div className="inline-flex bg-[#1a1a1a] border border-[#2a2a2a] rounded-[14px] p-1.5 shadow-[0_8px_20px_rgba(0,0,0,0.25)]">
+        <div className="inline-flex bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[14px] p-1.5 shadow-[0_8px_20px_rgba(0,0,0,0.25)]">
           <button
             onClick={() => setModoPago('suscripcion')}
             className={[
               'px-4 sm:px-5 py-2.5 rounded-[10px] text-sm font-semibold transition-all flex items-center gap-1.5',
               modoPago === 'suscripcion'
-                ? 'bg-[#f5c518] text-[#0a0a0a]'
-                : 'text-[#888888] hover:text-white',
+                ? 'bg-[var(--color-accent)] text-[#1a1a2e]'
+                : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]',
             ].join(' ')}
           >
             Suscripción
             <span className={[
               'text-[10px] font-bold px-1.5 py-0.5 rounded-full',
               modoPago === 'suscripcion'
-                ? 'bg-[#0a0a0a] text-[#f5c518]'
-                : 'bg-[#22c55e] text-white',
+                ? 'bg-[var(--color-bg-base)] text-[var(--color-accent)]'
+                : 'bg-[var(--color-success)] text-[var(--color-text-primary)]',
             ].join(' ')}>
               Recomendado
             </span>
@@ -281,8 +281,8 @@ export default function PlanPage() {
             className={[
               'px-4 sm:px-5 py-2.5 rounded-[10px] text-sm font-semibold transition-all',
               modoPago === 'pago_unico'
-                ? 'bg-[#f5c518] text-[#0a0a0a]'
-                : 'text-[#888888] hover:text-white',
+                ? 'bg-[var(--color-accent)] text-[#1a1a2e]'
+                : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]',
             ].join(' ')}
           >
             Pago único
@@ -293,7 +293,7 @@ export default function PlanPage() {
       {/* Periodo toggle — solo para pago único */}
       {modoPago === 'pago_unico' && (
         <div className="flex justify-center px-1">
-          <div className="inline-flex bg-[#1a1a1a] border border-[#2a2a2a] rounded-[14px] p-1.5 overflow-x-auto max-w-full">
+          <div className="inline-flex bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[14px] p-1.5 overflow-x-auto max-w-full">
             {[
               { key: 'mensual',    label: 'Mensual',    badge: null },
               { key: 'trimestral', label: 'Trimestral', badge: '-10%' },
@@ -305,8 +305,8 @@ export default function PlanPage() {
                 className={[
                   'px-3 sm:px-4 py-2.5 rounded-[10px] text-sm font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap',
                   periodo === p.key
-                    ? 'bg-[#f5c518] text-[#0a0a0a]'
-                    : 'text-[#888888] hover:text-white',
+                    ? 'bg-[var(--color-accent)] text-[#1a1a2e]'
+                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]',
                 ].join(' ')}
               >
                 {p.label}
@@ -314,8 +314,8 @@ export default function PlanPage() {
                   <span className={[
                     'text-[10px] font-bold px-1.5 py-0.5 rounded-full font-mono-display',
                     periodo === p.key
-                      ? 'bg-[#0a0a0a] text-[#f5c518]'
-                      : 'bg-[#22c55e] text-white',
+                      ? 'bg-[var(--color-bg-base)] text-[var(--color-accent)]'
+                      : 'bg-[var(--color-success)] text-[var(--color-text-primary)]',
                   ].join(' ')}>
                     {p.badge}
                   </span>
@@ -329,7 +329,7 @@ export default function PlanPage() {
       {/* Info suscripción */}
       {modoPago === 'suscripcion' && (
         <div className="text-center">
-          <p className="text-xs text-[#888888]">
+          <p className="text-xs text-[var(--color-text-muted)]">
             Se cobra automáticamente cada mes. Puedes cancelar en cualquier momento.
           </p>
         </div>
@@ -342,8 +342,8 @@ export default function PlanPage() {
       )}
 
       {esSuperadmin && (
-        <div className="border border-dashed border-[#3a3a3a] rounded-[12px] p-3 text-center">
-          <p className="text-xs text-[#555555]">Modo superadmin — plan de prueba disponible</p>
+        <div className="border border-dashed border-[var(--color-border-hover)] rounded-[12px] p-3 text-center">
+          <p className="text-xs text-[var(--color-text-muted)]">Modo superadmin — plan de prueba disponible</p>
         </div>
       )}
 
@@ -360,7 +360,7 @@ export default function PlanPage() {
           const { total, conDescuento, descuentoFinal, meses, ahorro } = calcularPrecio(p.precio)
           const tieneDescuento = !esSub && descuentoFinal > 0
 
-          const glowColor = esRecurrenteActiva ? '#22c55e' : esPopular ? '#22c55e' : esPlanActual ? '#f5c518' : esTest ? '#06b6d4' : null
+          const glowColor = esRecurrenteActiva ? 'var(--color-success)' : esPopular ? 'var(--color-success)' : esPlanActual ? 'var(--color-accent)' : esTest ? 'var(--color-info)' : null
 
           return (
             <div
@@ -372,8 +372,8 @@ export default function PlanPage() {
                   : esPopular
                   ? 'border-[#f5c518] ring-1 ring-[rgba(245,197,24,0.3)]'
                   : esTest
-                  ? 'border-dashed border-[#3a3a3a]'
-                  : 'border-[#2a2a2a]',
+                  ? 'border-dashed border-[var(--color-border-hover)]'
+                  : 'border-[var(--color-border)]',
               ].join(' ')}
               style={glowColor ? {
                 background: `linear-gradient(135deg, ${glowColor}0A 0%, #1a1a1a 40%, #1a1a1a 70%, ${glowColor}05 100%)`,
@@ -382,53 +382,53 @@ export default function PlanPage() {
             >
               {esRecurrenteActiva && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#0a0a0a] text-[#22c55e] border border-[#22c55e]">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[var(--color-bg-base)] text-[var(--color-success)] border border-[#22c55e]">
                     Suscripción activa
                   </span>
                 </div>
               )}
               {!esRecurrenteActiva && esPopular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#0a0a0a] text-[#f5c518] border border-[#f5c518]">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[var(--color-bg-base)] text-[var(--color-accent)] border border-[#f5c518]">
                     Más popular
                   </span>
                 </div>
               )}
 
               <div className="mb-4 mt-1">
-                <p className="text-base font-semibold text-white">
+                <p className="text-base font-semibold text-[var(--color-text-primary)]">
                   {esTest && <BeakerIcon />}
                   {p.nombre}
                 </p>
                 {esTest && (
-                  <p className="text-[10px] text-[#555555] mt-0.5">Solo superadmin · no usar en producción</p>
+                  <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">Solo superadmin · no usar en producción</p>
                 )}
 
                 {esSub ? (
                   // Suscripción: precio mensual simple
-                  <p className="text-3xl font-bold text-white mt-2 leading-none">
+                  <p className="text-3xl font-bold text-[var(--color-text-primary)] mt-2 leading-none">
                     <span className="font-mono-display">{formatCOP(p.precio)}</span>
-                    <span className="text-xs text-[#555555] font-normal ml-1">/mes</span>
+                    <span className="text-xs text-[var(--color-text-muted)] font-normal ml-1">/mes</span>
                   </p>
                 ) : tieneDescuento ? (
                   <div className="mt-2">
-                    <p className="text-sm text-[#555555] line-through font-mono-display">{formatCOP(total)}</p>
-                    <p className="text-3xl font-bold text-white leading-none">
+                    <p className="text-sm text-[var(--color-text-muted)] line-through font-mono-display">{formatCOP(total)}</p>
+                    <p className="text-3xl font-bold text-[var(--color-text-primary)] leading-none">
                       <span className="font-mono-display">{formatCOP(conDescuento)}</span>
-                      <span className="text-xs text-[#555555] font-normal ml-1">
+                      <span className="text-xs text-[var(--color-text-muted)] font-normal ml-1">
                         /{meses === 12 ? 'año' : meses === 3 ? '3 meses' : 'mes'}
                       </span>
                     </p>
                     {ahorro > 0 && (
-                      <p className="text-[10px] text-[#22c55e] font-medium mt-0.5">
+                      <p className="text-[10px] text-[var(--color-success)] font-medium mt-0.5">
                         Ahorras <span className="font-mono-display">{formatCOP(ahorro)}</span>
                       </p>
                     )}
                   </div>
                 ) : (
-                  <p className="text-3xl font-bold text-white mt-2 leading-none">
+                  <p className="text-3xl font-bold text-[var(--color-text-primary)] mt-2 leading-none">
                     <span className="font-mono-display">{formatCOP(esSub ? p.precio : conDescuento)}</span>
-                    <span className="text-xs text-[#555555] font-normal ml-1">
+                    <span className="text-xs text-[var(--color-text-muted)] font-normal ml-1">
                       /{esSub ? 'mes' : meses === 12 ? 'año' : meses === 3 ? '3 meses' : 'mes'}
                     </span>
                   </p>
@@ -438,7 +438,7 @@ export default function PlanPage() {
               <ul className="space-y-2.5 flex-1 mb-6">
                 {p.features.map((f) => (
                   <li key={f} className="flex items-start gap-2 text-sm leading-snug text-[#9a9a9a]">
-                    <svg className="w-4 h-4 text-[#22c55e] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-[var(--color-success)] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     {f}
@@ -451,7 +451,7 @@ export default function PlanPage() {
                 {esRecurrenteActiva ? (
                   // Suscripción activa en este plan
                   <>
-                    <div className="w-full h-10 rounded-[12px] bg-[#2a2a2a] text-[#22c55e] text-sm font-semibold flex items-center justify-center gap-2">
+                    <div className="w-full h-10 rounded-[12px] bg-[var(--color-bg-hover)] text-[var(--color-success)] text-sm font-semibold flex items-center justify-center gap-2">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
@@ -460,7 +460,7 @@ export default function PlanPage() {
                     <button
                       onClick={cancelarSuscripcion}
                       disabled={!!cargando}
-                      className="w-full h-9 rounded-[10px] text-xs font-medium text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] transition-all cursor-pointer disabled:opacity-60 flex items-center justify-center gap-1"
+                      className="w-full h-9 rounded-[10px] text-xs font-medium text-[var(--color-danger)] hover:bg-[var(--color-danger-dim)] transition-all cursor-pointer disabled:opacity-60 flex items-center justify-center gap-1"
                     >
                       {cargando === 'cancelando' ? <><Spinner /> Cancelando...</> : 'Cancelar suscripción'}
                     </button>
@@ -468,13 +468,13 @@ export default function PlanPage() {
                 ) : subCancelada && esPlanActual ? (
                   // Suscripción cancelada pero aún activa
                   <>
-                    <div className="w-full h-10 rounded-[12px] bg-[#2a2a2a] text-[#f59e0b] text-sm font-semibold flex items-center justify-center text-center px-2">
+                    <div className="w-full h-10 rounded-[12px] bg-[var(--color-bg-hover)] text-[var(--color-warning)] text-sm font-semibold flex items-center justify-center text-center px-2">
                       Cancelada — acceso hasta {formatFecha(estado?.fechaVencimiento)}
                     </div>
                     <button
                       onClick={() => esSub ? crearSuscripcion(p.key) : elegirPlan(p.key)}
                       disabled={!!cargando}
-                      className="w-full h-9 rounded-[10px] text-xs font-medium bg-[#f5c518] hover:bg-[#f0b800] text-[#0a0a0a] transition-all cursor-pointer disabled:opacity-60 flex items-center justify-center gap-1"
+                      className="w-full h-9 rounded-[10px] text-xs font-medium bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[#0a0a0a] transition-all cursor-pointer disabled:opacity-60 flex items-center justify-center gap-1"
                     >
                       {cargando ? <><Spinner /> Procesando...</> : 'Renovar'}
                     </button>
@@ -486,7 +486,7 @@ export default function PlanPage() {
                     disabled={!!cargando}
                     className={[
                       'w-full h-11 rounded-[12px] text-sm font-semibold transition-all flex items-center justify-center gap-2',
-                      'bg-[#f5c518] hover:bg-[#f0b800] text-[#0a0a0a] cursor-pointer disabled:opacity-60',
+                      'bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[#0a0a0a] cursor-pointer disabled:opacity-60',
                     ].join(' ')}
                   >
                     {cargando === p.key + '-sub' ? (
@@ -501,8 +501,8 @@ export default function PlanPage() {
                     className={[
                       'w-full h-11 rounded-[12px] text-sm font-semibold transition-all flex items-center justify-center gap-2',
                       esPlanActual && periodo === 'mensual'
-                        ? 'bg-[#2a2a2a] text-[#555555] cursor-default'
-                        : 'bg-[#f5c518] hover:bg-[#f0b800] text-[#0a0a0a] cursor-pointer disabled:opacity-60',
+                        ? 'bg-[var(--color-bg-hover)] text-[var(--color-text-muted)] cursor-default'
+                        : 'bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[#0a0a0a] cursor-pointer disabled:opacity-60',
                     ].join(' ')}
                   >
                     {cargando === p.key + '-unico' ? (

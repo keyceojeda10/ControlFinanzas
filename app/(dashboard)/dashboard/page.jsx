@@ -12,29 +12,29 @@ import SpotlightOverlay from '@/components/onboarding/SpotlightOverlay'
 import CobradorOnboarding from '@/components/onboarding/CobradorOnboarding'
 
 function Skeleton({ className = '' }) {
-  return <div className={`animate-pulse bg-[#2a2a2a] rounded-[12px] ${className}`} />
+  return <div className={`animate-pulse rounded-[12px] ${className}`} style={{ background: 'var(--color-bg-hover)' }} />
 }
 
-function KpiCard({ label, value, sub, color = '#ffffff', icon }) {
+function KpiCard({ label, value, sub, color = 'var(--color-text-primary)', icon }) {
   return (
     <div
       className="rounded-[16px] px-4 py-4 relative overflow-hidden group hover:scale-[1.01] transition-transform duration-200"
       style={{
-        background: `linear-gradient(135deg, ${color}08 0%, #111115 40%, #111115 70%, ${color}04 100%)`,
-        border: '1px solid rgba(255,255,255,0.07)',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+        background: `linear-gradient(135deg, color-mix(in srgb, ${color} 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 45%, var(--color-bg-card) 75%, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 100%)`,
+        border: '1px solid var(--color-border)',
+        boxShadow: '0 4px 12px rgba(20,20,40,0.08)',
       }}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
-        <p className="text-[11px] text-[#999] leading-tight">{label}</p>
+        <p className="text-[11px] leading-tight" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
         {icon && (
-          <div className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0" style={{ background: `${color}18` }}>
+          <div className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0" style={{ background: `color-mix(in srgb, ${color} 18%, transparent)` }}>
             <span style={{ color }}>{icon}</span>
           </div>
         )}
       </div>
       <p className="text-xl font-bold leading-tight font-mono-display truncate" style={{ color }}>{value}</p>
-      {sub && <p className="text-[10px] text-[#888] mt-1">{sub}</p>}
+      {sub && <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>{sub}</p>}
     </div>
   )
 }
@@ -58,18 +58,18 @@ function QuickLink({ href, label, desc, color, dataTour }) {
       data-tour={dataTour}
       className="rounded-[16px] px-4 py-4 transition-all duration-200 group flex items-center gap-3 hover:scale-[1.01]"
       style={{
-        background: `linear-gradient(135deg, ${color}08 0%, #111115 50%, #111115 100%)`,
-        border: '1px solid rgba(255,255,255,0.07)',
+        background: `linear-gradient(135deg, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, var(--color-bg-card) 100%)`,
+        border: '1px solid var(--color-border)',
       }}
-      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = `0 0 15px ${color}10`; e.currentTarget.style.borderColor = `${color}18` }}
-      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)' }}
+      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = `0 4px 14px color-mix(in srgb, ${color} 18%, transparent)`; e.currentTarget.style.borderColor = `color-mix(in srgb, ${color} 25%, var(--color-border))` }}
+      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'var(--color-border)' }}
     >
-      <div className="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0" style={{ background: `${color}15` }}>
+      <div className="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0" style={{ background: `color-mix(in srgb, ${color} 15%, transparent)` }}>
         <div className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
       </div>
       <div className="min-w-0">
-        <p className="text-sm font-medium text-white leading-tight">{label}</p>
-        <p className="text-[10px] text-[#888] leading-tight mt-0.5">{desc}</p>
+        <p className="text-sm font-medium leading-tight" style={{ color: 'var(--color-text-primary)' }}>{label}</p>
+        <p className="text-[10px] leading-tight mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{desc}</p>
       </div>
     </Link>
   )
@@ -209,19 +209,19 @@ export default function DashboardPage() {
         onClose={onboarding.hideSpotlight}
       />
       <div>
-        <h1 className="text-xl font-bold text-white">Tu resumen</h1>
-        <p className="text-sm text-[#888888] mt-0.5">
+        <h1 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Tu resumen</h1>
+        <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
           {fechaActual || 'Resumen de tu cartera hoy'}
-          {horaActual && <span className="text-[#f5c518] font-mono-display ml-2">{horaActual}</span>}
+          {horaActual && <span className="font-mono-display ml-2" style={{ color: 'var(--color-accent)' }}>{horaActual}</span>}
         </p>
       </div>
       {isOffline && (
-        <div className="bg-[rgba(245,197,24,0.1)] border border-[rgba(245,197,24,0.2)] text-[#f5c518] text-xs rounded-[12px] px-4 py-2.5 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-[#f5c518] animate-pulse shrink-0" />
+        <div className="text-xs rounded-[12px] px-4 py-2.5 flex items-center gap-2" style={{ background: 'var(--color-warning-dim)', border: '1px solid color-mix(in srgb, var(--color-warning) 30%, transparent)', color: 'var(--color-warning)' }}>
+          <span className="w-2 h-2 rounded-full animate-pulse shrink-0" style={{ background: 'var(--color-warning)' }} />
           Datos guardados — sin conexión
         </div>
       )}
-      {error && <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3">{error}</div>}
+      {error && <div className="text-sm rounded-[12px] px-4 py-3" style={{ background: 'var(--color-danger-dim)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)', color: 'var(--color-danger)' }}>{error}</div>}
       {loading || !mounted ? (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24" />)}</div>
       ) : data && (
@@ -252,31 +252,31 @@ export default function DashboardPage() {
           <div
             className="rounded-[16px] px-4 py-4"
             style={{
-              background: 'linear-gradient(135deg, rgba(52,211,153,0.06) 0%, #111115 40%, #111115 70%, rgba(52,211,153,0.03) 100%)',
-              border: '1px solid rgba(255,255,255,0.07)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+              background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, var(--color-success) 6%, var(--color-bg-card)) 100%)',
+              border: '1px solid var(--color-border)',
+              boxShadow: '0 4px 12px rgba(20,20,40,0.08)',
             }}
           >
-            <p className="text-[11px] text-[#999] mb-1">Recaudado hoy</p>
-            <p className="text-xl font-bold text-[#34d399] font-mono-display truncate">{formatCOP(data.cobros.hoy)}</p>
-            <p className="text-[10px] text-[#888] mt-1">{data.cobros.cantidadHoy} pagos registrados</p>
-            <div className="mt-2 h-1.5 bg-[rgba(255,255,255,0.06)] rounded-full overflow-hidden">
+            <p className="text-[11px] mb-1" style={{ color: 'var(--color-text-secondary)' }}>Recaudado hoy</p>
+            <p className="text-xl font-bold font-mono-display truncate" style={{ color: 'var(--color-success)' }}>{formatCOP(data.cobros.hoy)}</p>
+            <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>{data.cobros.cantidadHoy} pagos registrados</p>
+            <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
               <div className="h-full rounded-full progress-shimmer transition-all" style={{ width: data.prestamos.cuotaDiariaTotal > 0 ? `${Math.min(100, Math.round((data.cobros.hoy / data.prestamos.cuotaDiariaTotal) * 100))}%` : '0%' }} />
             </div>
-            <p className="text-[10px] text-[#888] mt-1">{data.prestamos.cuotaDiariaTotal > 0 ? `${Math.min(100, Math.round((data.cobros.hoy / data.prestamos.cuotaDiariaTotal) * 100))}% de la cuota diaria` : 'Sin cuotas esperadas'}</p>
+            <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>{data.prestamos.cuotaDiariaTotal > 0 ? `${Math.min(100, Math.round((data.cobros.hoy / data.prestamos.cuotaDiariaTotal) * 100))}% de la cuota diaria` : 'Sin cuotas esperadas'}</p>
           </div>
           <div
             className="rounded-[16px] px-4 py-4"
             style={{
-              background: 'linear-gradient(135deg, rgba(245,197,24,0.06) 0%, #111115 40%, #111115 70%, rgba(245,197,24,0.03) 100%)',
-              border: '1px solid rgba(255,255,255,0.07)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+              background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, var(--color-accent) 6%, var(--color-bg-card)) 100%)',
+              border: '1px solid var(--color-border)',
+              boxShadow: '0 4px 12px rgba(20,20,40,0.08)',
             }}
           >
-            <p className="text-[11px] text-[#999] mb-1">Recaudado este mes</p>
-            <p className="text-xl font-bold text-[#f5c518] font-mono-display truncate">{formatCOP(data.cobros.mes)}</p>
-            <p className="text-[10px] text-[#888] mt-1">{data.cobros.cantidadMes} pagos en el mes</p>
-            {data.clientes.enMora > 0 && (<div className="mt-2 flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#f87171] animate-pulse" /><p className="text-[10px] text-[#f87171]">{moraPct}% de clientes en mora</p></div>)}
+            <p className="text-[11px] mb-1" style={{ color: 'var(--color-text-secondary)' }}>Recaudado este mes</p>
+            <p className="text-xl font-bold font-mono-display truncate" style={{ color: 'var(--color-accent)' }}>{formatCOP(data.cobros.mes)}</p>
+            <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>{data.cobros.cantidadMes} pagos en el mes</p>
+            {data.clientes.enMora > 0 && (<div className="mt-2 flex items-center gap-1.5"><div className="w-2 h-2 rounded-full animate-pulse" style={{ background: 'var(--color-danger)' }} /><p className="text-[10px]" style={{ color: 'var(--color-danger)' }}>{moraPct}% de clientes en mora</p></div>)}
           </div>
         </div>
       )}
@@ -284,23 +284,23 @@ export default function DashboardPage() {
         <div
           className="rounded-[16px] px-4 py-4"
           style={{
-            background: 'linear-gradient(135deg, rgba(52,211,153,0.04) 0%, #111115 40%, #111115 70%, rgba(52,211,153,0.02) 100%)',
-            border: '1px solid rgba(255,255,255,0.07)',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, var(--color-bg-card) 100%)',
+            border: '1px solid var(--color-border)',
+            boxShadow: '0 4px 12px rgba(20,20,40,0.08)',
           }}
         >
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold text-[#999] uppercase tracking-wide">Últimos pagos</p>
-            <Link href="/prestamos" className="text-[11px] text-[#f5c518] hover:underline">Ver todos →</Link>
+            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-secondary)' }}>Últimos pagos</p>
+            <Link href="/prestamos" className="text-[11px] hover:underline" style={{ color: 'var(--color-accent)' }}>Ver todos →</Link>
           </div>
-          <div className="space-y-0 divide-y divide-[rgba(255,255,255,0.05)]">
+          <div className="space-y-0 divide-y" style={{ borderColor: 'var(--color-border)' }}>
             {data.ultimosPagos.map((p) => (
-              <div key={p.id} className="flex items-center justify-between py-2.5">
+              <div key={p.id} className="flex items-center justify-between py-2.5" style={{ borderTopColor: 'var(--color-border)' }}>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{p.cliente}</p>
-                  <p className="text-[10px] text-[#888888]">{fechaCorta(p.fecha)} · {p.tipo}</p>
+                  <p className="text-sm font-medium truncate" style={{ color: 'var(--color-text-primary)' }}>{p.cliente}</p>
+                  <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{fechaCorta(p.fecha)} · {p.tipo}</p>
                 </div>
-                <p className="text-sm font-bold text-[#34d399] shrink-0 ml-3 font-mono-display">+{formatCOP(p.monto)}</p>
+                <p className="text-sm font-bold shrink-0 ml-3 font-mono-display" style={{ color: 'var(--color-success)' }}>+{formatCOP(p.monto)}</p>
               </div>
             ))}
           </div>
@@ -308,69 +308,70 @@ export default function DashboardPage() {
       )}
       {!loading && mounted && moraData !== undefined && moraData.total > 0 && (
         <div
-          className="border border-[#2a2a2a] rounded-[16px] px-4 py-4"
+          className="rounded-[16px] px-4 py-4"
           style={{
-            background: 'linear-gradient(135deg, #ef444406 0%, #1a1a1a 40%, #1a1a1a 70%, #ef444403 100%)',
-            boxShadow: '0 0 20px #ef444405, 0 1px 2px rgba(0,0,0,0.2)',
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-danger) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, var(--color-bg-card) 100%)',
+            border: '1px solid var(--color-border)',
+            boxShadow: '0 4px 14px color-mix(in srgb, var(--color-danger) 12%, transparent)',
           }}
         >
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Alertas de mora</p>
-            <span className="text-[11px] bg-[#ef4444] text-white px-2 py-0.5 rounded-full">{moraData.total} clientes</span>
+            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-secondary)' }}>Alertas de mora</p>
+            <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ background: 'var(--color-danger)', color: '#fff' }}>{moraData.total} clientes</span>
           </div>
           <div className="space-y-2">
             {moraData.agrupado.mora31plus.length > 0 && (
-              <div className="bg-[#7f1d1d] border border-[#991b1b] rounded-[12px] p-3">
-                <p className="text-[11px] text-[#fca5a5] font-medium mb-2">Más de 30 días ({moraData.agrupado.mora31plus.length})</p>
+              <div className="rounded-[12px] p-3" style={{ background: 'color-mix(in srgb, var(--color-danger) 18%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-danger) 35%, transparent)' }}>
+                <p className="text-[11px] font-medium mb-2" style={{ color: 'var(--color-danger)' }}>Más de 30 días ({moraData.agrupado.mora31plus.length})</p>
                 {moraData.agrupado.mora31plus.slice(0, 3).map((c) => (
-                  <Link key={c.prestamoId} href={`/clientes/${c.cliente.id}`} className="flex items-center justify-between py-1.5 hover:bg-[#991b1b] rounded px-1 -mx-1">
+                  <Link key={c.prestamoId} href={`/clientes/${c.cliente.id}`} className="flex items-center justify-between py-1.5 rounded px-1 -mx-1 transition-colors hover:bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)]">
                     <div className="min-w-0">
-                      <p className="text-sm text-white truncate">{c.cliente.nombre}</p>
-                      <p className="text-[10px] text-[#fca5a5]">{c.diasMora} días de mora</p>
+                      <p className="text-sm truncate" style={{ color: 'var(--color-text-primary)' }}>{c.cliente.nombre}</p>
+                      <p className="text-[10px]" style={{ color: 'var(--color-danger)' }}>{c.diasMora} días de mora</p>
                     </div>
-                    <p className="text-sm font-bold text-[#fca5a5] shrink-0 ml-2 font-mono-display">{formatCOP(c.saldoPendiente)}</p>
+                    <p className="text-sm font-bold shrink-0 ml-2 font-mono-display" style={{ color: 'var(--color-danger)' }}>{formatCOP(c.saldoPendiente)}</p>
                   </Link>
                 ))}
               </div>
             )}
             {moraData.agrupado.mora16a30.length > 0 && (
-              <div className="bg-[#78350f] border border-[#92400e] rounded-[12px] p-3">
-                <p className="text-[11px] text-[#fcd34d] font-medium mb-2">16-30 días ({moraData.agrupado.mora16a30.length})</p>
+              <div className="rounded-[12px] p-3" style={{ background: 'color-mix(in srgb, var(--color-warning) 18%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-warning) 35%, transparent)' }}>
+                <p className="text-[11px] font-medium mb-2" style={{ color: 'var(--color-warning)' }}>16-30 días ({moraData.agrupado.mora16a30.length})</p>
                 {moraData.agrupado.mora16a30.slice(0, 3).map((c) => (
-                  <Link key={c.prestamoId} href={`/clientes/${c.cliente.id}`} className="flex items-center justify-between py-1.5 hover:bg-[#92400e] rounded px-1 -mx-1">
+                  <Link key={c.prestamoId} href={`/clientes/${c.cliente.id}`} className="flex items-center justify-between py-1.5 rounded px-1 -mx-1 transition-colors hover:bg-[color-mix(in_srgb,var(--color-warning)_15%,transparent)]">
                     <div className="min-w-0">
-                      <p className="text-sm text-white truncate">{c.cliente.nombre}</p>
-                      <p className="text-[10px] text-[#fcd34d]">{c.diasMora} días de mora</p>
+                      <p className="text-sm truncate" style={{ color: 'var(--color-text-primary)' }}>{c.cliente.nombre}</p>
+                      <p className="text-[10px]" style={{ color: 'var(--color-warning)' }}>{c.diasMora} días de mora</p>
                     </div>
-                    <p className="text-sm font-bold text-[#fcd34d] shrink-0 ml-2 font-mono-display">{formatCOP(c.saldoPendiente)}</p>
+                    <p className="text-sm font-bold shrink-0 ml-2 font-mono-display" style={{ color: 'var(--color-warning)' }}>{formatCOP(c.saldoPendiente)}</p>
                   </Link>
                 ))}
               </div>
             )}
             {moraData.agrupado.mora8a15.length > 0 && (
-              <div className="bg-[#713f12] border border-[#854d0e] rounded-[12px] p-3">
-                <p className="text-[11px] text-[#fde047] font-medium mb-2">8-15 días ({moraData.agrupado.mora8a15.length})</p>
+              <div className="rounded-[12px] p-3" style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)' }}>
+                <p className="text-[11px] font-medium mb-2" style={{ color: 'var(--color-accent)' }}>8-15 días ({moraData.agrupado.mora8a15.length})</p>
                 {moraData.agrupado.mora8a15.slice(0, 3).map((c) => (
-                  <Link key={c.prestamoId} href={`/clientes/${c.cliente.id}`} className="flex items-center justify-between py-1.5 hover:bg-[#854d0e] rounded px-1 -mx-1">
+                  <Link key={c.prestamoId} href={`/clientes/${c.cliente.id}`} className="flex items-center justify-between py-1.5 rounded px-1 -mx-1 transition-colors hover:bg-[color-mix(in_srgb,var(--color-accent)_15%,transparent)]">
                     <div className="min-w-0">
-                      <p className="text-sm text-white truncate">{c.cliente.nombre}</p>
-                      <p className="text-[10px] text-[#fde047]">{c.diasMora} días de mora</p>
+                      <p className="text-sm truncate" style={{ color: 'var(--color-text-primary)' }}>{c.cliente.nombre}</p>
+                      <p className="text-[10px]" style={{ color: 'var(--color-accent)' }}>{c.diasMora} días de mora</p>
                     </div>
-                    <p className="text-sm font-bold text-[#fde047] shrink-0 ml-2 font-mono-display">{formatCOP(c.saldoPendiente)}</p>
+                    <p className="text-sm font-bold shrink-0 ml-2 font-mono-display" style={{ color: 'var(--color-accent)' }}>{formatCOP(c.saldoPendiente)}</p>
                   </Link>
                 ))}
               </div>
             )}
             {moraData.agrupado.mora1a7.length > 0 && (
-              <div className="bg-[#365314] border border-[#3f6212] rounded-[12px] p-3">
-                <p className="text-[11px] text-[#a3e635] font-medium mb-2">1-7 días ({moraData.agrupado.mora1a7.length})</p>
+              <div className="rounded-[12px] p-3" style={{ background: 'color-mix(in srgb, var(--color-success) 15%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-success) 30%, transparent)' }}>
+                <p className="text-[11px] font-medium mb-2" style={{ color: 'var(--color-success)' }}>1-7 días ({moraData.agrupado.mora1a7.length})</p>
                 {moraData.agrupado.mora1a7.slice(0, 3).map((c) => (
-                  <Link key={c.prestamoId} href={`/clientes/${c.cliente.id}`} className="flex items-center justify-between py-1.5 hover:bg-[#3f6212] rounded px-1 -mx-1">
+                  <Link key={c.prestamoId} href={`/clientes/${c.cliente.id}`} className="flex items-center justify-between py-1.5 rounded px-1 -mx-1 transition-colors hover:bg-[color-mix(in_srgb,var(--color-success)_15%,transparent)]">
                     <div className="min-w-0">
-                      <p className="text-sm text-white truncate">{c.cliente.nombre}</p>
-                      <p className="text-[10px] text-[#a3e635]">{c.diasMora} días de mora</p>
+                      <p className="text-sm truncate" style={{ color: 'var(--color-text-primary)' }}>{c.cliente.nombre}</p>
+                      <p className="text-[10px]" style={{ color: 'var(--color-success)' }}>{c.diasMora} días de mora</p>
                     </div>
-                    <p className="text-sm font-bold text-[#a3e635] shrink-0 ml-2 font-mono-display">{formatCOP(c.saldoPendiente)}</p>
+                    <p className="text-sm font-bold shrink-0 ml-2 font-mono-display" style={{ color: 'var(--color-success)' }}>{formatCOP(c.saldoPendiente)}</p>
                   </Link>
                 ))}
               </div>
@@ -380,21 +381,21 @@ export default function DashboardPage() {
       )}
       {/* Offline sync status indicator */}
       {syncMeta && !bulkSyncing && !bulkProgress && (
-        <div className="w-full border border-[#2a2a2a] rounded-[16px] px-4 py-3 text-left" style={{ background: '#1a1a1a' }}>
+        <div className="w-full rounded-[16px] px-4 py-3 text-left" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: '#22c55e18' }}>
-              <svg className="w-4 h-4 text-[#22c55e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-success) 15%, transparent)' }}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--color-success)' }}>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[11px] text-[#888888]">
+              <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
                 Datos offline: {syncMeta.totalClientes} clientes, {syncMeta.totalPrestamos} prestamos
-                <span className="text-[#888]"> · </span>
+                <span> · </span>
                 {new Date(syncMeta.syncedAt).toLocaleString('es-CO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' })}
               </p>
             </div>
-            <button onClick={startBulkSync} className="text-[10px] text-[#888] hover:text-[#22c55e] transition-colors shrink-0">
+            <button onClick={startBulkSync} className="text-[10px] transition-colors shrink-0 hover:text-[var(--color-success)]" style={{ color: 'var(--color-text-muted)' }}>
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
@@ -403,19 +404,19 @@ export default function DashboardPage() {
         </div>
       )}
       {bulkSyncing && (
-        <div className="w-full border border-[#22c55e]/20 rounded-[16px] px-4 py-3 text-left" style={{ background: '#22c55e08' }}>
+        <div className="w-full rounded-[16px] px-4 py-3 text-left" style={{ background: 'color-mix(in srgb, var(--color-success) 8%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-success) 25%, transparent)' }}>
           <div className="flex items-center gap-3">
-            <svg className="w-4 h-4 text-[#22c55e] animate-spin shrink-0" fill="none" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 animate-spin shrink-0" fill="none" viewBox="0 0 24 24" style={{ color: 'var(--color-success)' }}>
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-            <p className="text-[11px] text-[#22c55e]">{bulkProgress?.message || 'Sincronizando datos...'}</p>
+            <p className="text-[11px]" style={{ color: 'var(--color-success)' }}>{bulkProgress?.message || 'Sincronizando datos...'}</p>
           </div>
         </div>
       )}
 
       <div>
-        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-3">Accesos rápidos</p>
+        <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--color-text-secondary)' }}>Accesos rápidos</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {puedeCrearClientes && <QuickLink href="/clientes/nuevo" label="Nuevo cliente" desc="Registrar cliente" color="#f5c518" dataTour="nuevo-cliente" />}
           {puedeCrearPrestamos && <QuickLink href="/prestamos/nuevo" label="Nuevo prestamo" desc="Crear prestamo" color="#22c55e" dataTour="nuevo-prestamo" />}

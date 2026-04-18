@@ -7,9 +7,9 @@ import { formatCOP } from '@/lib/calculos'
 import { useAuth } from '@/hooks/useAuth'
 
 const ESTADO_COLORS = {
-  pendiente: 'bg-[rgba(245,158,11,0.15)] text-[#f59e0b] border-[rgba(245,158,11,0.3)]',
-  aprobado: 'bg-[rgba(34,197,94,0.15)] text-[#22c55e] border-[rgba(34,197,94,0.3)]',
-  rechazado: 'bg-[rgba(239,68,68,0.15)] text-[#ef4444] border-[rgba(239,68,68,0.3)]',
+  pendiente: 'bg-[rgba(245,158,11,0.15)] text-[var(--color-warning)] border-[rgba(245,158,11,0.3)]',
+  aprobado: 'bg-[rgba(34,197,94,0.15)] text-[var(--color-success)] border-[rgba(34,197,94,0.3)]',
+  rechazado: 'bg-[rgba(239,68,68,0.15)] text-[var(--color-danger)] border-[rgba(239,68,68,0.3)]',
 }
 
 export default function ListaGastos({ soloPendientes = false, onCountChange, fecha }) {
@@ -79,13 +79,13 @@ export default function ListaGastos({ soloPendientes = false, onCountChange, fec
   }
 
   if (loading) {
-    return <p className="text-sm text-[#888888]">Cargando...</p>
+    return <p className="text-sm text-[var(--color-text-muted)]">Cargando...</p>
   }
 
   if (gastos.length === 0) {
     return (
       <div className="text-center py-6">
-        <p className="text-sm text-[#888888]">
+        <p className="text-sm text-[var(--color-text-muted)]">
           {soloPendientes ? 'No hay gastos pendientes' : 'No hay gastos reportados'}
         </p>
       </div>
@@ -95,15 +95,15 @@ export default function ListaGastos({ soloPendientes = false, onCountChange, fec
   return (
     <div className="space-y-3">
       {gastos.map((g) => (
-        <div key={g.id} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] p-4">
+        <div key={g.id} className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] p-4">
           <div className="flex items-center justify-between mb-2">
             <div>
-              <p className="text-sm font-medium text-white">{g.description}</p>
-              <p className="text-xs text-[#888888]">
+              <p className="text-sm font-medium text-[var(--color-text-primary)]">{g.description}</p>
+              <p className="text-xs text-[var(--color-text-muted)]">
                 {g.cobradorNombre} • {new Date(g.fecha).toLocaleDateString('es-CO')}
               </p>
             </div>
-            <p className="text-sm font-bold text-white font-mono-display">{formatCOP(g.monto)}</p>
+            <p className="text-sm font-bold text-[var(--color-text-primary)] font-mono-display">{formatCOP(g.monto)}</p>
           </div>
           
           <div className="flex items-center justify-between gap-2">
@@ -138,7 +138,7 @@ export default function ListaGastos({ soloPendientes = false, onCountChange, fec
                   onClick={() => handleEliminar(g)}
                   disabled={eliminando === g.id}
                   title="Eliminar gasto"
-                  className="w-8 h-8 flex items-center justify-center rounded-[8px] text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] disabled:opacity-50 transition-colors"
+                  className="w-8 h-8 flex items-center justify-center rounded-[8px] text-[var(--color-danger)] hover:bg-[var(--color-danger-dim)] disabled:opacity-50 transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

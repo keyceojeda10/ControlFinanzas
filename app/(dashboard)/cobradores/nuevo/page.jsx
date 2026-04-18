@@ -103,27 +103,27 @@ export default function NuevoCobrador() {
           }}
         >
           <div className="w-12 h-12 rounded-full bg-[rgba(16,185,129,0.12)] flex items-center justify-center mx-auto mb-4">
-            <svg className="w-6 h-6 text-[#22c55e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
           <h2 className="text-base font-bold text-[white] mb-1">¡Cobrador creado!</h2>
-          <p className="text-xs text-[#888888] mb-5">
+          <p className="text-xs text-[var(--color-text-muted)] mb-5">
             Guarda estas credenciales — la contraseña no se mostrará de nuevo.
           </p>
 
-          <div className="bg-[#111111] border border-[#2a2a2a] rounded-[12px] p-4 text-left mb-4 space-y-2">
+          <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[12px] p-4 text-left mb-4 space-y-2">
             <div>
-              <p className="text-[10px] text-[#888888]">Nombre</p>
+              <p className="text-[10px] text-[var(--color-text-muted)]">Nombre</p>
               <p className="text-sm font-medium text-[white]">{creado.nombre}</p>
             </div>
             <div>
-              <p className="text-[10px] text-[#888888]">Email</p>
+              <p className="text-[10px] text-[var(--color-text-muted)]">Email</p>
               <p className="text-sm font-medium text-[white]">{creado.email}</p>
             </div>
             <div>
-              <p className="text-[10px] text-[#888888]">Contraseña temporal</p>
-              <p className="text-sm font-bold text-[#f5c518] font-mono">{creado.password}</p>
+              <p className="text-[10px] text-[var(--color-text-muted)]">Contraseña temporal</p>
+              <p className="text-sm font-bold text-[var(--color-accent)] font-mono">{creado.password}</p>
             </div>
           </div>
 
@@ -150,7 +150,7 @@ export default function NuevoCobrador() {
       <div className="mb-6">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm text-[#888888] hover:text-[white] transition-colors mb-4"
+          className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[white] transition-colors mb-4"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -159,9 +159,9 @@ export default function NuevoCobrador() {
         </button>
         <h1 className="text-xl font-bold text-[white]">Nuevo cobrador</h1>
         {restantes !== null && (
-          <p className="text-xs text-[#888888] mt-1">
+          <p className="text-xs text-[var(--color-text-muted)] mt-1">
             Puedes agregar{' '}
-            <span className={restantes > 0 ? 'text-[#22c55e]' : 'text-[#ef4444]'}>
+            <span className={restantes > 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}>
               {restantes} cobrador{restantes !== 1 ? 'es' : ''}
             </span>{' '}
             más (plan {plan})
@@ -171,14 +171,14 @@ export default function NuevoCobrador() {
 
       <form
         onSubmit={handleSubmit}
-        className="border border-[#2a2a2a] rounded-[16px] p-5 space-y-4"
+        className="border border-[var(--color-border)] rounded-[16px] p-5 space-y-4"
         style={{
           background: 'linear-gradient(135deg, #f5c5180A 0%, #1a1a1a 40%, #1a1a1a 70%, #f5c51805 100%)',
           boxShadow: '0 0 30px #f5c51808, 0 1px 2px rgba(0,0,0,0.3)',
         }}
       >
         {error && !limitReached && (
-          <div className="flex items-center gap-2 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3">
+          <div className="flex items-center gap-2 bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[12px] px-4 py-3">
             {error}
           </div>
         )}
@@ -187,22 +187,22 @@ export default function NuevoCobrador() {
           <div className="bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.25)] rounded-[12px] p-4 space-y-3">
             <div className="flex items-start gap-3">
               <div className="w-9 h-9 rounded-full bg-[rgba(245,197,24,0.15)] flex items-center justify-center shrink-0">
-                <svg className="w-5 h-5 text-[#f5c518]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                     d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-semibold text-white">Limite alcanzado</p>
-                <p className="text-xs text-[#888888] mt-0.5">
-                  Has usado todos los espacios de tu plan. Agrega un cobrador adicional por <span className="text-[#f5c518] font-bold">$19.000/mes</span>.
+                <p className="text-sm font-semibold text-[var(--color-text-primary)]">Limite alcanzado</p>
+                <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+                  Has usado todos los espacios de tu plan. Agrega un cobrador adicional por <span className="text-[var(--color-accent)] font-bold">$19.000/mes</span>.
                 </p>
               </div>
             </div>
             <button
               onClick={comprarCobradorExtra}
               disabled={comprando}
-              className="w-full h-10 rounded-[12px] text-sm font-semibold bg-[#f5c518] hover:bg-[#f0b800] text-white transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+              className="w-full h-10 rounded-[12px] text-sm font-semibold bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-text-primary)] transition-all flex items-center justify-center gap-2 disabled:opacity-60"
             >
               {comprando ? (
                 <>
@@ -219,13 +219,13 @@ export default function NuevoCobrador() {
 
         {limitReached && !puedeComprarExtra && (
           <div className="bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.2)] rounded-[12px] p-4 text-center">
-            <p className="text-sm text-[#ef4444] font-medium">Limite alcanzado</p>
-            <p className="text-xs text-[#888888] mt-1">
+            <p className="text-sm text-[var(--color-danger)] font-medium">Limite alcanzado</p>
+            <p className="text-xs text-[var(--color-text-muted)] mt-1">
               Tu plan no permite cobradores extra. Actualiza al plan Crecimiento, Profesional o Empresarial.
             </p>
             <button
               onClick={() => router.push('/configuracion/plan')}
-              className="mt-3 text-sm text-[#f5c518] hover:underline"
+              className="mt-3 text-sm text-[var(--color-accent)] hover:underline"
             >
               Ver planes
             </button>
@@ -256,7 +256,7 @@ export default function NuevoCobrador() {
             onChange={(e) => setTelefono(e.target.value.replace(/\D/g, ''))}
             autoComplete="tel"
           />
-          <p className="text-[10px] text-[#888888] mt-1">
+          <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
             Si lo agregas, podrás enviarle las credenciales directo por WhatsApp.
           </p>
         </div>
@@ -266,13 +266,13 @@ export default function NuevoCobrador() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <p className="text-[10px] text-[#888888]">
+        <p className="text-[10px] text-[var(--color-text-muted)]">
           El cobrador deberá usar estas credenciales para ingresar al sistema.
         </p>
 
         {/* Permisos */}
-        <div className="border-t border-[#2a2a2a] pt-4 mt-2">
-          <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-3">Permisos del cobrador</p>
+        <div className="border-t border-[var(--color-border)] pt-4 mt-2">
+          <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-3">Permisos del cobrador</p>
           <div className="space-y-3">
             {[
               { key: 'crearPrestamos', label: 'Crear préstamos', desc: 'Puede registrar préstamos nuevos para clientes de su ruta' },
@@ -286,7 +286,7 @@ export default function NuevoCobrador() {
               <div key={p.key} className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-[white]">{p.label}</p>
-                  <p className="text-[10px] text-[#666666] leading-snug">{p.desc}</p>
+                  <p className="text-[10px] text-[var(--color-text-muted)] leading-snug">{p.desc}</p>
                 </div>
                 <button
                   type="button"
@@ -304,7 +304,7 @@ export default function NuevoCobrador() {
                   disabled={p.key === 'gestionarPrestamos' && !permisos.crearPrestamos}
                   className={[
                     'relative w-10 h-[22px] rounded-full transition-colors shrink-0 mt-0.5',
-                    permisos[p.key] ? 'bg-[#f5c518]' : 'bg-[#333333]',
+                    permisos[p.key] ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-bg-hover)]',
                     p.key === 'gestionarPrestamos' && !permisos.crearPrestamos ? 'opacity-50 cursor-not-allowed' : '',
                   ].join(' ')}
                 >
@@ -316,10 +316,10 @@ export default function NuevoCobrador() {
               </div>
             ))}
           </div>
-          <p className="text-[9px] text-[#888888] mt-2">
+          <p className="text-[9px] text-[var(--color-text-muted)] mt-2">
             Nota: "Gestión de préstamos" es un permiso avanzado e independiente para cambios administrativos de créditos.
           </p>
-          <p className="text-[9px] text-[#555555] mt-2">Los permisos se pueden modificar después desde la edición del cobrador.</p>
+          <p className="text-[9px] text-[var(--color-text-muted)] mt-2">Los permisos se pueden modificar después desde la edición del cobrador.</p>
         </div>
 
         <div className="flex gap-3 pt-2">

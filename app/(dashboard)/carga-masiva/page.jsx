@@ -83,15 +83,15 @@ export default function CargaMasivaPage() {
       <div className="mb-6">
         <button
           onClick={() => paso === 1 ? router.back() : setPaso(p => p - 1)}
-          className="flex items-center gap-1.5 text-sm text-[#888888] hover:text-white transition-colors mb-4"
+          className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors mb-4"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
           {paso === 1 ? 'Volver' : 'Paso anterior'}
         </button>
-        <h1 className="text-xl font-bold text-white">Importar clientes</h1>
-        <p className="text-sm text-[#888888] mt-0.5">
+        <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Importar clientes</h1>
+        <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
           Carga clientes y prestamos de forma masiva
         </p>
       </div>
@@ -103,8 +103,8 @@ export default function CargaMasivaPage() {
             <div className={[
               'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-colors',
               paso >= p.num
-                ? 'bg-[#f5c518] text-white'
-                : 'bg-[#2a2a2a] text-[#555555]',
+                ? 'bg-[var(--color-accent)] text-[var(--color-text-primary)]'
+                : 'bg-[var(--color-bg-hover)] text-[var(--color-text-muted)]',
             ].join(' ')}>
               {paso > p.num ? (
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -114,14 +114,14 @@ export default function CargaMasivaPage() {
             </div>
             <span className={[
               'text-xs font-medium hidden sm:block',
-              paso >= p.num ? 'text-white' : 'text-[#555555]',
+              paso >= p.num ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-muted)]',
             ].join(' ')}>
               {p.label}
             </span>
             {i < PASOS.length - 1 && (
               <div className={[
                 'flex-1 h-[2px] rounded-full',
-                paso > p.num ? 'bg-[#f5c518]' : 'bg-[#2a2a2a]',
+                paso > p.num ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-bg-hover)]',
               ].join(' ')} />
             )}
           </div>
@@ -129,18 +129,18 @@ export default function CargaMasivaPage() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3 mb-4">
+        <div className="flex items-center gap-2 bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[12px] px-4 py-3 mb-4">
           {error}
         </div>
       )}
 
       {validando && (
         <div className="flex items-center justify-center gap-2 py-12">
-          <svg className="animate-spin w-5 h-5 text-[#f5c518]" fill="none" viewBox="0 0 24 24">
+          <svg className="animate-spin w-5 h-5 text-[var(--color-accent)]" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
-          <span className="text-sm text-[#888888]">Validando datos...</span>
+          <span className="text-sm text-[var(--color-text-muted)]">Validando datos...</span>
         </div>
       )}
 

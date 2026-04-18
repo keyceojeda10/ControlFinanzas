@@ -84,18 +84,18 @@ export default function WizardPrestamo({ cliente, onComplete }) {
   return (
     <div className="max-w-md mx-auto">
       <div className="text-center mb-6">
-        <h2 className="text-xl font-bold text-white">Crea un préstamo</h2>
+        <h2 className="text-xl font-bold text-[var(--color-text-primary)]">Crea un préstamo</h2>
         <div className="flex items-center justify-center gap-2 mt-2">
           <div className="w-6 h-6 rounded-full bg-[rgba(245,197,24,0.2)] flex items-center justify-center">
-            <span className="text-[#f5c518] text-[9px] font-bold">{cliente.nombre?.[0]?.toUpperCase()}</span>
+            <span className="text-[var(--color-accent)] text-[9px] font-bold">{cliente.nombre?.[0]?.toUpperCase()}</span>
           </div>
-          <span className="text-sm text-[#f5c518] font-medium">{cliente.nombre}</span>
+          <span className="text-sm text-[var(--color-accent)] font-medium">{cliente.nombre}</span>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="flex items-center gap-2 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3">
+          <div className="flex items-center gap-2 bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[12px] px-4 py-3">
             <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
             </svg>
@@ -103,7 +103,7 @@ export default function WizardPrestamo({ cliente, onComplete }) {
           </div>
         )}
 
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-5 space-y-4">
+        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] p-5 space-y-4">
           {/* Monto */}
           <Input
             label="Monto prestado (COP)"
@@ -129,7 +129,7 @@ export default function WizardPrestamo({ cliente, onComplete }) {
                 onChange={(e) => setTasa(e.target.value)}
                 suffix="%"
               />
-              <p className="text-[10px] text-[#888888] leading-snug px-0.5">20% es lo común</p>
+              <p className="text-[10px] text-[var(--color-text-muted)] leading-snug px-0.5">20% es lo común</p>
             </div>
             <div className="flex flex-col gap-1">
               <Input
@@ -152,14 +152,14 @@ export default function WizardPrestamo({ cliente, onComplete }) {
                 }
               />
               {frecuencia !== 'diario' && plazoUnidades && (
-                <p className="text-[10px] text-[#888888] leading-snug px-0.5">= {plazo} días</p>
+                <p className="text-[10px] text-[var(--color-text-muted)] leading-snug px-0.5">= {plazo} días</p>
               )}
             </div>
           </div>
 
           {/* Frecuencia */}
           <div className="flex flex-col gap-1.5">
-            <p className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em]">Frecuencia de cobro</p>
+            <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">Frecuencia de cobro</p>
             <div className="grid grid-cols-4 gap-2">
               {FRECUENCIAS.map((f) => (
                 <button
@@ -169,8 +169,8 @@ export default function WizardPrestamo({ cliente, onComplete }) {
                   className={[
                     'h-9 rounded-[10px] border text-sm font-medium transition-all cursor-pointer',
                     frecuencia === f.value
-                      ? 'bg-[rgba(245,197,24,0.15)] border-[#f5c518] text-[#f5c518]'
-                      : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#1a1a1a]',
+                      ? 'bg-[rgba(245,197,24,0.15)] border-[#f5c518] text-[var(--color-accent)]'
+                      : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-surface)]',
                   ].join(' ')}
                 >
                   {f.label}
@@ -186,7 +186,7 @@ export default function WizardPrestamo({ cliente, onComplete }) {
         <button
           type="submit"
           disabled={loading}
-          className="w-full h-12 rounded-[12px] bg-[#f5c518] text-[#111111] text-base font-bold transition-all hover:bg-[#f0b800] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+          className="w-full h-12 rounded-[12px] bg-[var(--color-accent)] text-[#111111] text-base font-bold transition-all hover:bg-[var(--color-accent-hover)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
         >
           {loading ? (
             <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">

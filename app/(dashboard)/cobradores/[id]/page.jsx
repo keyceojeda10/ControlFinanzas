@@ -67,7 +67,7 @@ export default function CobradorDetallePage({ params }) {
   if (error || !data) {
     return (
       <div className="max-w-xl mx-auto">
-        <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] rounded-[16px] p-6 text-center">
+        <div className="bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] rounded-[16px] p-6 text-center">
           <p className="font-semibold mb-2">{error || 'Cobrador no encontrado'}</p>
           <button onClick={() => router.back()} className="text-sm underline">Volver</button>
         </div>
@@ -83,7 +83,7 @@ export default function CobradorDetallePage({ params }) {
       {/* Back */}
       <button
         onClick={() => router.back()}
-        className="flex items-center gap-1.5 text-sm text-[#888888] hover:text-[white] transition-colors"
+        className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[white] transition-colors"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -96,18 +96,18 @@ export default function CobradorDetallePage({ params }) {
         <div className="flex flex-col gap-2 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <div className="w-12 h-12 rounded-full bg-[rgba(139,92,246,0.15)] flex items-center justify-center shrink-0">
-              <span className="text-[#a855f7] font-bold text-lg">{data.nombre?.[0]?.toUpperCase()}</span>
+              <span className="text-[var(--color-purple)] font-bold text-lg">{data.nombre?.[0]?.toUpperCase()}</span>
             </div>
             <div className="min-w-0 flex-1">
               <h1 className="text-lg font-bold text-[white] truncate">{data.nombre}</h1>
-              <p className="text-sm text-[#888888] truncate">{data.email}</p>
-              {data.telefono && <p className="text-xs text-[#666666] truncate">{data.telefono}</p>}
+              <p className="text-sm text-[var(--color-text-muted)] truncate">{data.email}</p>
+              {data.telefono && <p className="text-xs text-[var(--color-text-muted)] truncate">{data.telefono}</p>}
             </div>
           </div>
           <div className="flex items-center gap-2 self-end min-[420px]:self-auto shrink-0">
             <Link
               href={`/cobradores/${id}/editar`}
-              className="p-2 rounded-[10px] text-[#888888] hover:text-[#f5c518] hover:bg-[rgba(245,197,24,0.1)] transition-all"
+              className="p-2 rounded-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-soft)] transition-all"
               title="Editar cobrador"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -126,7 +126,7 @@ export default function CobradorDetallePage({ params }) {
                 else { alert('Error al eliminar'); setEliminando(false) }
               }}
               disabled={eliminando}
-              className="p-2 rounded-[10px] text-[#888888] hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] transition-all disabled:opacity-50"
+              className="p-2 rounded-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger-dim)] transition-all disabled:opacity-50"
               title="Eliminar cobrador"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -140,15 +140,15 @@ export default function CobradorDetallePage({ params }) {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         <Card>
-          <p className="text-[10px] text-[#888888]">Recaudado hoy</p>
-          <p className="text-lg font-bold text-[#22c55e]">{formatCOP(data.recaudadoHoy)}</p>
+          <p className="text-[10px] text-[var(--color-text-muted)]">Recaudado hoy</p>
+          <p className="text-lg font-bold text-[var(--color-success)]">{formatCOP(data.recaudadoHoy)}</p>
         </Card>
         <Card>
-          <p className="text-[10px] text-[#888888]">Cobros hoy</p>
+          <p className="text-[10px] text-[var(--color-text-muted)]">Cobros hoy</p>
           <p className="text-lg font-bold text-[white]">{data.pagosMes}</p>
         </Card>
         <Card>
-          <p className="text-[10px] text-[#888888]">Clientes</p>
+          <p className="text-[10px] text-[var(--color-text-muted)]">Clientes</p>
           <p className="text-lg font-bold text-[white]">{clientes.length}</p>
         </Card>
       </div>
@@ -161,28 +161,28 @@ export default function CobradorDetallePage({ params }) {
             className="w-full flex items-center gap-3 text-left"
           >
             <div className="w-9 h-9 rounded-full bg-[rgba(59,130,246,0.12)] flex items-center justify-center shrink-0">
-              <svg className="w-4 h-4 text-[#3b82f6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-[var(--color-info)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white">Enviar credenciales</p>
-              <p className="text-[10px] text-[#888888]">Resetea la contraseña y envía los datos de acceso por WhatsApp</p>
+              <p className="text-sm font-semibold text-[var(--color-text-primary)]">Enviar credenciales</p>
+              <p className="text-[10px] text-[var(--color-text-muted)]">Resetea la contraseña y envía los datos de acceso por WhatsApp</p>
             </div>
-            <svg className="w-4 h-4 text-[#555555] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-[var(--color-text-muted)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
         ) : !nuevaPass ? (
           <div className="space-y-3">
-            <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Resetear contraseña</p>
-            <p className="text-xs text-[#888888]">
+            <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Resetear contraseña</p>
+            <p className="text-xs text-[var(--color-text-muted)]">
               Se generará una contraseña temporal que podrás enviarle al cobrador.
             </p>
             <div className="flex gap-2">
               <button
                 onClick={() => setShowReenviar(false)}
-                className="flex-1 h-10 rounded-[12px] bg-[#1f1f1f] border border-[#2a2a2a] text-white text-sm font-medium transition-colors hover:bg-[#2a2a2a]"
+                className="flex-1 h-10 rounded-[12px] bg-[#1f1f1f] border border-[var(--color-border)] text-[var(--color-text-primary)] text-sm font-medium transition-colors hover:bg-[var(--color-bg-hover)]"
               >
                 Cancelar
               </button>
@@ -206,7 +206,7 @@ export default function CobradorDetallePage({ params }) {
                   }
                 }}
                 disabled={reseteando}
-                className="flex-1 h-10 rounded-[12px] bg-[#f5c518] hover:bg-[#f0b800] text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+                className="flex-1 h-10 rounded-[12px] bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-text-primary)] text-sm font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
               >
                 {reseteando ? (
                   <>
@@ -223,14 +223,14 @@ export default function CobradorDetallePage({ params }) {
         ) : (
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-[#22c55e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              <p className="text-sm font-semibold text-white">Contraseña reseteada</p>
+              <p className="text-sm font-semibold text-[var(--color-text-primary)]">Contraseña reseteada</p>
             </div>
-            <div className="bg-[#111111] border border-[#2a2a2a] rounded-[10px] px-3 py-2">
-              <p className="text-[10px] text-[#888888]">Nueva contraseña temporal</p>
-              <p className="text-sm font-bold text-[#f5c518] font-mono">{nuevaPass}</p>
+            <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[10px] px-3 py-2">
+              <p className="text-[10px] text-[var(--color-text-muted)]">Nueva contraseña temporal</p>
+              <p className="text-sm font-bold text-[var(--color-accent)] font-mono">{nuevaPass}</p>
             </div>
             <CompartirCredenciales
               nombreCobrador={data.nombre}
@@ -241,7 +241,7 @@ export default function CobradorDetallePage({ params }) {
             />
             <button
               onClick={() => { setShowReenviar(false); setNuevaPass('') }}
-              className="w-full text-[10px] text-[#555555] hover:text-[#888888] transition-colors text-center pt-1"
+              className="w-full text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-muted)] transition-colors text-center pt-1"
             >
               Cerrar
             </button>
@@ -251,28 +251,28 @@ export default function CobradorDetallePage({ params }) {
 
       {/* Ruta */}
       <Card>
-        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-3">Ruta asignada</p>
+        <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-3">Ruta asignada</p>
         {ruta ? (
-          <Link href={`/rutas/${ruta.id}`} className="flex items-center gap-3 hover:bg-[#111111] -mx-1 px-1 py-2 rounded-[10px] transition-colors">
+          <Link href={`/rutas/${ruta.id}`} className="flex items-center gap-3 hover:bg-[var(--color-bg-card)] -mx-1 px-1 py-2 rounded-[10px] transition-colors">
             <div className="w-9 h-9 rounded-full bg-[rgba(245,197,24,0.15)] flex items-center justify-center shrink-0">
-              <svg className="w-4 h-4 text-[#f5c518]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
               </svg>
             </div>
             <div>
               <p className="text-sm font-semibold text-[white]">{ruta.nombre}</p>
-              <p className="text-xs text-[#888888]">{clientes.length} clientes</p>
+              <p className="text-xs text-[var(--color-text-muted)]">{clientes.length} clientes</p>
             </div>
           </Link>
         ) : (
-          <p className="text-sm text-[#f59e0b]">Sin ruta asignada</p>
+          <p className="text-sm text-[var(--color-warning)]">Sin ruta asignada</p>
         )}
       </Card>
 
       {/* Clientes de la ruta */}
       {clientes.length > 0 && (
         <Card>
-          <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-3">
+          <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-3">
             Clientes ({clientes.length})
           </p>
           <div className="space-y-2">
@@ -280,7 +280,7 @@ export default function CobradorDetallePage({ params }) {
               <Link
                 key={c.id}
                 href={`/clientes/${c.id}`}
-                className="flex items-center justify-between py-2 border-b border-[#2a2a2a] last:border-0 hover:bg-[#111111] -mx-1 px-1 rounded-[8px] transition-colors"
+                className="flex items-center justify-between py-2 border-b border-[var(--color-border)] last:border-0 hover:bg-[var(--color-bg-card)] -mx-1 px-1 rounded-[8px] transition-colors"
               >
                 <p className="text-sm text-[white]">{c.nombre}</p>
                 <Badge variant={c.estado === 'mora' ? 'red' : c.estado === 'activo' ? 'green' : 'gray'}>

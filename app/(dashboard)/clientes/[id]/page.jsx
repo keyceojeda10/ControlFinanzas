@@ -186,7 +186,7 @@ export default function ClienteDetallePage({ params }) {
   if (error || !cliente) {
     return (
       <div className="max-w-2xl mx-auto">
-        <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] rounded-[16px] p-6 text-center">
+        <div className="bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] rounded-[16px] p-6 text-center">
           <p className="font-semibold mb-2">Cliente no encontrado</p>
           <button onClick={() => router.back()} className="text-sm underline">Volver</button>
         </div>
@@ -243,7 +243,7 @@ export default function ClienteDetallePage({ params }) {
       {/* Back */}
       <button
         onClick={() => router.back()}
-        className="flex items-center gap-1.5 text-sm text-[#888888] hover:text-[white] transition-colors"
+        className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[white] transition-colors"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -257,20 +257,20 @@ export default function ClienteDetallePage({ params }) {
           <button
             onClick={() => navegarEnRuta(-1)}
             disabled={esPrimeroEnRuta}
-            className="p-1.5 rounded-[8px] bg-[#1a1a1a] border border-[#2a2a2a] text-[#888] disabled:opacity-30 active:scale-95 transition-all"
+            className="p-1.5 rounded-[8px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] disabled:opacity-30 active:scale-95 transition-all"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
           <div className="text-center min-w-0 px-2">
-            <p className="text-[10px] text-[#888] uppercase tracking-wide">{rutaNav.rutaNombre}</p>
-            <p className="text-xs text-white font-medium">{rutaNav.currentIndex + 1} de {rutaNav.clientes.length}</p>
+            <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">{rutaNav.rutaNombre}</p>
+            <p className="text-xs text-[var(--color-text-primary)] font-medium">{rutaNav.currentIndex + 1} de {rutaNav.clientes.length}</p>
           </div>
           <button
             onClick={irSiguienteEnRuta}
             disabled={esUltimoEnRuta}
-            className="p-1.5 rounded-[8px] bg-[#1a1a1a] border border-[#2a2a2a] text-[#888] disabled:opacity-30 active:scale-95 transition-all"
+            className="p-1.5 rounded-[8px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] disabled:opacity-30 active:scale-95 transition-all"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -289,8 +289,8 @@ export default function ClienteDetallePage({ params }) {
               background: cliente.estado === 'mora'     ? 'rgba(239,68,68,0.15)'
                         : cliente.estado === 'activo'   ? 'rgba(245,197,24,0.15)'
                         : 'rgba(100,116,139,0.15)',
-              color: cliente.estado === 'mora'    ? '#ef4444'
-                   : cliente.estado === 'activo'  ? '#f5c518'
+              color: cliente.estado === 'mora'    ? 'var(--color-danger)'
+                   : cliente.estado === 'activo'  ? 'var(--color-accent)'
                    : '#555555',
             }}
           >
@@ -305,32 +305,32 @@ export default function ClienteDetallePage({ params }) {
               <ScoreCrediticio cedula={cliente.cedula} plan={plan} />
             </div>
             <div className="mt-2 space-y-1">
-              <p className="text-sm text-[#888888]">
-                <span className="text-[#888888]">CC</span> {cliente.cedula}
+              <p className="text-sm text-[var(--color-text-muted)]">
+                <span className="text-[var(--color-text-muted)]">CC</span> {cliente.cedula}
               </p>
               {cliente.telefono && (
-                <p className="text-sm text-[#888888]">
-                  <span className="text-[#888888]">Tel.</span> {cliente.telefono}
+                <p className="text-sm text-[var(--color-text-muted)]">
+                  <span className="text-[var(--color-text-muted)]">Tel.</span> {cliente.telefono}
                 </p>
               )}
               {cliente.direccion && (
-                <p className="text-sm text-[#888888]">
-                  <span className="text-[#888888]">Dir.</span> {cliente.direccion}
+                <p className="text-sm text-[var(--color-text-muted)]">
+                  <span className="text-[var(--color-text-muted)]">Dir.</span> {cliente.direccion}
                 </p>
               )}
               {cliente.referencia && (
-                <p className="text-sm text-[#888888]">
-                  <span className="text-[#888888]">Ref.</span> {cliente.referencia}
+                <p className="text-sm text-[var(--color-text-muted)]">
+                  <span className="text-[var(--color-text-muted)]">Ref.</span> {cliente.referencia}
                 </p>
               )}
               {cliente.notas && (
-                <p className="text-sm text-[#888888] whitespace-pre-wrap">
-                  <span className="text-[#888888]">Notas:</span> {cliente.notas}
+                <p className="text-sm text-[var(--color-text-muted)] whitespace-pre-wrap">
+                  <span className="text-[var(--color-text-muted)]">Notas:</span> {cliente.notas}
                 </p>
               )}
               {cliente.ruta && (
-                <p className="text-sm text-[#888888]">
-                  <span className="text-[#888888]">Ruta</span> {cliente.ruta.nombre}
+                <p className="text-sm text-[var(--color-text-muted)]">
+                  <span className="text-[var(--color-text-muted)]">Ruta</span> {cliente.ruta.nombre}
                 </p>
               )}
             </div>
@@ -339,7 +339,7 @@ export default function ClienteDetallePage({ params }) {
 
         {/* Actions */}
         {(puedeCrearPrestamos || puedeEditarClientes) && (
-          <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-[#2a2a2a]">
+          <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-[var(--color-border)]">
             {puedeCrearPrestamos && (
               <Link href={`/prestamos/nuevo?clienteId=${cliente.id}`}>
                 <Button
@@ -372,7 +372,7 @@ export default function ClienteDetallePage({ params }) {
                   variant="secondary"
                   onClick={handleDelete}
                   disabled={actionLoading}
-                  className="!text-[#ef4444] !border-[rgba(239,68,68,0.2)] hover:!bg-[rgba(239,68,68,0.1)]"
+                  className="!text-[var(--color-danger)] !border-[rgba(239,68,68,0.2)] hover:!bg-[rgba(239,68,68,0.1)]"
                 >
                   Eliminar
                 </Button>
@@ -385,7 +385,7 @@ export default function ClienteDetallePage({ params }) {
       {/* Préstamos activos */}
       {prestamosActivos.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-[#888888] mb-3 uppercase tracking-wide">
+          <h2 className="text-sm font-semibold text-[var(--color-text-muted)] mb-3 uppercase tracking-wide">
             Préstamos activos
           </h2>
           <div className="space-y-3">
@@ -400,10 +400,10 @@ export default function ClienteDetallePage({ params }) {
       {prestamosActivos.length === 0 && (
         <Card>
           <div className="text-center py-4">
-            <p className="text-sm text-[#888888]">Sin préstamos activos</p>
+            <p className="text-sm text-[var(--color-text-muted)]">Sin préstamos activos</p>
             {puedeCrearPrestamos && (
               <div className="mt-3">
-                <p className="text-xs text-[#666666] mb-2">Siguiente paso recomendado: crear el primer préstamo.</p>
+                <p className="text-xs text-[var(--color-text-muted)] mb-2">Siguiente paso recomendado: crear el primer préstamo.</p>
                 <Link href={`/prestamos/nuevo?clienteId=${id}`}>
                   <Button size="sm">Crear préstamo ahora</Button>
                 </Link>
@@ -416,7 +416,7 @@ export default function ClienteDetallePage({ params }) {
       {/* Historial */}
       {historial.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-[#888888] mb-3 uppercase tracking-wide">
+          <h2 className="text-sm font-semibold text-[var(--color-text-muted)] mb-3 uppercase tracking-wide">
             Historial
           </h2>
           <div className="space-y-2.5">
@@ -434,13 +434,13 @@ export default function ClienteDetallePage({ params }) {
             <>
               <button
                 onClick={noPagoSiguiente}
-                className="flex-1 py-3 rounded-[14px] bg-[#1a1a1a] border border-[#2a2a2a] text-[#888] text-sm font-medium active:scale-[0.98] transition-all"
+                className="flex-1 py-3 rounded-[14px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] text-sm font-medium active:scale-[0.98] transition-all"
               >
                 No pagó · Siguiente
               </button>
               <button
                 onClick={irSiguienteEnRuta}
-                className="flex-1 py-3 rounded-[14px] bg-[#f5c518] text-[#0a0a0a] text-sm font-semibold active:scale-[0.98] transition-all"
+                className="flex-1 py-3 rounded-[14px] bg-[var(--color-accent)] text-[#1a1a2e] text-sm font-semibold active:scale-[0.98] transition-all"
               >
                 Siguiente cliente →
               </button>
@@ -452,7 +452,7 @@ export default function ClienteDetallePage({ params }) {
                 const url = `/rutas/${rutaNav.rutaId}`
                 navigator.onLine ? router.push(url) : (window.location.href = url)
               }}
-              className="flex-1 py-3 rounded-[14px] bg-[#22c55e] text-white text-sm font-semibold active:scale-[0.98] transition-all"
+              className="flex-1 py-3 rounded-[14px] bg-[var(--color-success)] text-[var(--color-text-primary)] text-sm font-semibold active:scale-[0.98] transition-all"
             >
               Ruta finalizada →
             </button>
@@ -509,21 +509,21 @@ function DeleteClienteModal({ cliente, prestamos, onClose, onDeletePrestamo, onT
   return (
     <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/70 px-0 sm:px-4" onClick={onClose}>
       <div
-        className="w-full sm:max-w-md bg-[#1a1a1a] border border-[#2a2a2a] rounded-t-[20px] sm:rounded-[20px] flex flex-col max-h-[85vh]"
+        className="w-full sm:max-w-md bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-t-[20px] sm:rounded-[20px] flex flex-col max-h-[85vh]"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)' }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
         <div className="px-5 pt-5 pb-3 shrink-0">
           <div className="flex items-center justify-between mb-1">
-            <h3 className="text-base font-semibold text-white">Eliminar cliente</h3>
-            <button onClick={onClose} className="text-[#888] hover:text-white p-1">
+            <h3 className="text-base font-semibold text-[var(--color-text-primary)]">Eliminar cliente</h3>
+            <button onClick={onClose} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] p-1">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
-          <p className="text-xs text-[#ef4444]">
+          <p className="text-xs text-[var(--color-danger)]">
             {cliente.nombre} tiene {prestamos.length} prestamo{prestamos.length > 1 ? 's' : ''}.
             Debes eliminarlos o trasladarlos antes de eliminar el cliente.
           </p>
@@ -535,20 +535,20 @@ function DeleteClienteModal({ cliente, prestamos, onClose, onDeletePrestamo, onT
           {trasladarId && (
             <div className="mb-4">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-sm text-white font-medium">Trasladar a otro cliente</p>
-                <button onClick={() => setTrasladarId(null)} className="text-xs text-[#888] hover:text-white">Cancelar</button>
+                <p className="text-sm text-[var(--color-text-primary)] font-medium">Trasladar a otro cliente</p>
+                <button onClick={() => setTrasladarId(null)} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]">Cancelar</button>
               </div>
               <input
                 type="text"
                 value={buscar}
                 onChange={e => setBuscar(e.target.value)}
                 placeholder="Buscar cliente por nombre o cedula..."
-                className="w-full mb-2 px-3 py-2 bg-[#111] border border-[#2a2a2a] rounded-[10px] text-sm text-white placeholder-[#555] focus:outline-none focus:border-[#f5c518]"
+                className="w-full mb-2 px-3 py-2 bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[10px] text-sm text-[var(--color-text-primary)] placeholder-[#555] focus:outline-none focus:border-[var(--color-accent)]"
               />
               {loadingClientes ? (
-                <p className="text-xs text-[#888] text-center py-3">Buscando...</p>
+                <p className="text-xs text-[var(--color-text-muted)] text-center py-3">Buscando...</p>
               ) : clientes.length === 0 ? (
-                <p className="text-xs text-[#888] text-center py-3">No se encontraron clientes</p>
+                <p className="text-xs text-[var(--color-text-muted)] text-center py-3">No se encontraron clientes</p>
               ) : (
                 <div className="space-y-1 max-h-40 overflow-y-auto">
                   {clientes.slice(0, 10).map(c => (
@@ -556,14 +556,14 @@ function DeleteClienteModal({ cliente, prestamos, onClose, onDeletePrestamo, onT
                       key={c.id}
                       onClick={() => { onTrasladar(trasladarId, c.id); setTrasladarId(null) }}
                       disabled={loading}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-[8px] bg-[#111] hover:bg-[rgba(245,197,24,0.08)] text-left transition-colors"
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-[8px] bg-[var(--color-bg-card)] hover:bg-[rgba(245,197,24,0.08)] text-left transition-colors"
                     >
-                      <div className="w-8 h-8 rounded-full bg-[rgba(245,197,24,0.15)] flex items-center justify-center text-xs font-bold text-[#f5c518] shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-[rgba(245,197,24,0.15)] flex items-center justify-center text-xs font-bold text-[var(--color-accent)] shrink-0">
                         {c.nombre?.[0]?.toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm text-white truncate">{c.nombre}</p>
-                        <p className="text-[10px] text-[#888]">CC {c.cedula}</p>
+                        <p className="text-sm text-[var(--color-text-primary)] truncate">{c.nombre}</p>
+                        <p className="text-[10px] text-[var(--color-text-muted)]">CC {c.cedula}</p>
                       </div>
                     </button>
                   ))}
@@ -579,8 +579,8 @@ function DeleteClienteModal({ cliente, prestamos, onClose, onDeletePrestamo, onT
                 <div key={p.id} className="p-3 rounded-[12px] bg-[#151515] border border-[#222]">
                   <div className="flex items-center justify-between mb-2">
                     <div>
-                      <p className="text-sm font-medium text-white">{formatCOP(p.montoPrestado)}</p>
-                      <p className="text-[10px] text-[#888]">
+                      <p className="text-sm font-medium text-[var(--color-text-primary)]">{formatCOP(p.montoPrestado)}</p>
+                      <p className="text-[10px] text-[var(--color-text-muted)]">
                         Saldo: {formatCOP(p.saldoPendiente)} - {p.estado}
                       </p>
                     </div>
@@ -589,14 +589,14 @@ function DeleteClienteModal({ cliente, prestamos, onClose, onDeletePrestamo, onT
                     <button
                       onClick={() => setTrasladarId(p.id)}
                       disabled={loading}
-                      className="flex-1 py-2 rounded-[8px] bg-[rgba(245,197,24,0.1)] border border-[rgba(245,197,24,0.2)] text-[#f5c518] text-xs font-medium hover:bg-[rgba(245,197,24,0.15)] transition-colors"
+                      className="flex-1 py-2 rounded-[8px] bg-[var(--color-warning-dim)] border border-[color-mix(in_srgb,var(--color-warning)_30%,transparent)] text-[var(--color-warning)] text-xs font-medium hover:bg-[rgba(245,197,24,0.15)] transition-colors"
                     >
                       Trasladar a otro cliente
                     </button>
                     <button
                       onClick={() => onDeletePrestamo(p.id)}
                       disabled={loading}
-                      className="flex-1 py-2 rounded-[8px] bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-xs font-medium hover:bg-[rgba(239,68,68,0.15)] transition-colors"
+                      className="flex-1 py-2 rounded-[8px] bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-xs font-medium hover:bg-[rgba(239,68,68,0.15)] transition-colors"
                     >
                       Eliminar prestamo
                     </button>
@@ -626,16 +626,16 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, mini = false }) {
     return (
       <Link
         href={`/prestamos/${p.id}`}
-        className="flex items-center gap-3 bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-4 py-3 hover:border-[#2a2a2a]/70 transition-colors group"
+        className="flex items-center gap-3 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-4 py-3 hover:border-[var(--color-border)]/70 transition-colors group"
       >
         <div className="flex-1 min-w-0">
           <p className="text-sm text-[white]">{formatCOP(p.montoPrestado)}</p>
-          <p className="text-xs text-[#888888]">
+          <p className="text-xs text-[var(--color-text-muted)]">
             {new Date(p.fechaInicio).toLocaleDateString('es-CO')}
           </p>
         </div>
         <Badge variant={badge.variant}>{badge.label}</Badge>
-        <svg className="w-4 h-4 text-[#2a2a2a] group-hover:text-[#888888] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-4 h-4 text-[#2a2a2a] group-hover:text-[var(--color-text-muted)] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
       </Link>
@@ -647,13 +647,13 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, mini = false }) {
       <div className="flex items-start justify-between mb-3">
         <div>
           <p className="text-base font-bold text-[white]">{formatCOP(p.montoPrestado)}</p>
-          <p className="text-xs text-[#888888] mt-0.5">
+          <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
             Prestado el {new Date(p.fechaInicio).toLocaleDateString('es-CO')}
           </p>
           {proximoCobroLabel && (
             <p className={[
               'text-xs mt-0.5 flex items-center gap-1 capitalize',
-              cobroVencido ? 'text-[#ef4444]' : 'text-[#f5c518]',
+              cobroVencido ? 'text-[var(--color-danger)]' : 'text-[var(--color-accent)]',
             ].join(' ')}>
               <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -667,23 +667,23 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, mini = false }) {
 
       {/* Barra de progreso */}
       <div className="mb-3">
-        <div className="flex justify-between text-xs text-[#888888] mb-1.5">
+        <div className="flex justify-between text-xs text-[var(--color-text-muted)] mb-1.5">
           <span>Pagado: {formatCOP(p.montoPrestado - (p.saldoPendiente ?? 0))}</span>
           <span>{porcentaje}%</span>
         </div>
-        <div className="h-1.5 bg-[#2a2a2a] rounded-full overflow-hidden">
+        <div className="h-1.5 bg-[var(--color-bg-hover)] rounded-full overflow-hidden">
           <div
             className="h-full rounded-full transition-all"
             style={{
               width: `${porcentaje}%`,
-              background: porcentaje === 100 ? '#22c55e' : p.diasMora > 0 ? '#ef4444' : '#f5c518',
+              background: porcentaje === 100 ? 'var(--color-success)' : p.diasMora > 0 ? 'var(--color-danger)' : 'var(--color-accent)',
             }}
           />
         </div>
         <div className="flex justify-between text-xs mt-1.5">
-          <span className="text-[#888888]">Saldo: <span className="text-[white] font-medium">{formatCOP(p.saldoPendiente)}</span></span>
+          <span className="text-[var(--color-text-muted)]">Saldo: <span className="text-[white] font-medium">{formatCOP(p.saldoPendiente)}</span></span>
           {p.diasMora > 0 && (
-            <span className="text-[#ef4444] font-medium">{p.diasMora} días en mora</span>
+            <span className="text-[var(--color-danger)] font-medium">{p.diasMora} días en mora</span>
           )}
         </div>
       </div>

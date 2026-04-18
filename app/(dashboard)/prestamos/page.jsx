@@ -9,11 +9,12 @@ import { guardarEnCache, leerDeCache, obtenerPrestamosOffline } from '@/lib/offl
 import { Button }                             from '@/components/ui/Button'
 import { SkeletonCard }                       from '@/components/ui/Skeleton'
 import PrestamoCard                           from '@/components/prestamos/PrestamoCard'
+import Mascota                                from '@/components/ui/Mascota'
 
 const ESTADOS = [
   { value: '',           label: 'Todos'     },
   { value: 'activo',     label: 'Activos'   },
-  { value: 'mora',       label: 'En mora',  color: '#ef4444' },
+  { value: 'mora',       label: 'En mora',  color: 'var(--color-danger)' },
   { value: 'completado', label: 'Completados' },
   { value: 'cancelado',  label: 'Cancelados' },
 ]
@@ -148,10 +149,10 @@ export default function PrestamosPage() {
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-xl font-bold text-[white]">Préstamos</h1>
-          <p className="text-sm text-[#888888] mt-0.5">
+          <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
             {loading ? '…' : `${total} préstamo${total !== 1 ? 's' : ''}`}
             {enMoraCount > 0 && (
-              <span className="ml-2 text-[#ef4444]">· {enMoraCount} en mora</span>
+              <span className="ml-2 text-[var(--color-danger)]">· {enMoraCount} en mora</span>
             )}
           </p>
         </div>
@@ -174,7 +175,7 @@ export default function PrestamosPage() {
       <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-none pb-1">
         {ESTADOS.map(({ value, label, color }) => {
           const isActive = estado === value
-          const accent = color ?? '#f5c518'
+          const accent = color ?? 'var(--color-accent)'
           return (
             <button
               key={value}
@@ -183,7 +184,7 @@ export default function PrestamosPage() {
                 'shrink-0 px-3 h-8 rounded-full text-xs font-medium border transition-all',
                 isActive
                   ? 'border-current'
-                  : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#222222] hover:text-[white]',
+                  : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] hover:text-[white]',
               ].join(' ')}
               style={isActive ? { color: accent, backgroundColor: `${accent}20` } : undefined}
             >
@@ -196,7 +197,7 @@ export default function PrestamosPage() {
       {/* Buscador */}
       <div className="relative mb-5">
         <svg
-          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#888888] pointer-events-none"
+          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)] pointer-events-none"
           fill="none" stroke="currentColor" viewBox="0 0 24 24"
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
@@ -207,12 +208,12 @@ export default function PrestamosPage() {
           value={buscar}
           onChange={(e) => setBuscar(e.target.value)}
           placeholder="Buscar por nombre o cédula del cliente…"
-          className="w-full h-10 pl-9 pr-4 rounded-[12px] border border-[#2a2a2a] bg-[#1a1a1a] text-sm text-[white] placeholder-[#777777] focus:outline-none focus:border-[#f5c518] focus:ring-1 focus:ring-[rgba(245,197,24,0.3)] transition-all"
+          className="w-full h-10 pl-9 pr-4 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-sm text-[white] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all"
         />
         {buscar && (
           <button
             onClick={() => setBuscar('')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#888888] hover:text-[white]"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[white]"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -223,15 +224,15 @@ export default function PrestamosPage() {
 
       {/* Offline indicator */}
       {isOffline && (
-        <div className="bg-[rgba(245,197,24,0.1)] border border-[rgba(245,197,24,0.2)] text-[#f5c518] text-xs rounded-[12px] px-4 py-2.5 mb-4 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-[#f5c518] animate-pulse shrink-0" />
+        <div className="bg-[var(--color-warning-dim)] border border-[color-mix(in_srgb,var(--color-warning)_30%,transparent)] text-[var(--color-warning)] text-xs rounded-[12px] px-4 py-2.5 mb-4 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[var(--color-accent)] animate-pulse shrink-0" />
           Datos guardados — sin conexión
         </div>
       )}
 
       {/* Error */}
       {error && (
-        <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3 mb-4">
+        <div className="bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[12px] px-4 py-3 mb-4">
           {error}
         </div>
       )}
@@ -253,17 +254,14 @@ export default function PrestamosPage() {
       {/* Estado vacío */}
       {!loading && !error && prestamos.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-14 h-14 rounded-full bg-[rgba(245,197,24,0.1)] flex items-center justify-center mb-4">
-            <svg className="w-7 h-7 text-[#f5c518]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+          <div className="mb-4">
+            <Mascota variant={buscar ? 'thinking' : 'empty'} size={100} />
           </div>
           {buscar ? (
             <>
               <p className="text-sm font-medium text-[white]">Sin resultados</p>
-              <p className="text-xs text-[#888888] mt-1">No hay préstamos para "{buscar}"</p>
-              <button onClick={() => setBuscar('')} className="mt-3 text-xs text-[#f5c518] hover:underline">
+              <p className="text-xs text-[var(--color-text-muted)] mt-1">No hay préstamos para "{buscar}"</p>
+              <button onClick={() => setBuscar('')} className="mt-3 text-xs text-[var(--color-accent)] hover:underline">
                 Limpiar búsqueda
               </button>
             </>
@@ -272,9 +270,9 @@ export default function PrestamosPage() {
               <p className="text-sm font-medium text-[white]">
                 {estado === 'activo' ? 'No hay préstamos activos' : estado === 'mora' ? 'No hay préstamos en mora' : 'Sin préstamos'}
               </p>
-              <p className="text-xs text-[#888888] mt-1">
+              <p className="text-xs text-[var(--color-text-muted)] mt-1">
                 {estado !== '' && (
-                  <button onClick={() => setEstado('')} className="text-[#f5c518] hover:underline">
+                  <button onClick={() => setEstado('')} className="text-[var(--color-accent)] hover:underline">
                     Ver todos los estados
                   </button>
                 )}
@@ -295,17 +293,17 @@ export default function PrestamosPage() {
           <button
             onClick={() => setPage(p => Math.max(1, p - 1))}
             disabled={page <= 1}
-            className="px-3 py-1.5 text-xs rounded-lg border border-[#2a2a2a] text-[#888] hover:bg-[#222] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="px-3 py-1.5 text-xs rounded-lg border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[#222] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             Anterior
           </button>
-          <span className="text-xs text-[#888]">
+          <span className="text-xs text-[var(--color-text-muted)]">
             Página {page} de {totalPages}
           </span>
           <button
             onClick={() => setPage(p => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages}
-            className="px-3 py-1.5 text-xs rounded-lg border border-[#2a2a2a] text-[#888] hover:bg-[#222] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="px-3 py-1.5 text-xs rounded-lg border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[#222] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             Siguiente
           </button>

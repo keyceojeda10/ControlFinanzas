@@ -15,7 +15,7 @@ export default function ClienteCard({ cliente }) {
   return (
     <Link
       href={`/clientes/${cliente.id}`}
-      className="flex items-center gap-3 border border-[#2a2a2a] rounded-[14px] p-4 hover:border-[#f5c518]/40 transition-all duration-150 group"
+      className="flex items-center gap-3 border border-[var(--color-border)] rounded-[14px] p-4 hover:border-[#f5c518]/40 transition-all duration-150 group"
       style={{
         background: cliente.estado === 'mora'
           ? 'linear-gradient(135deg, #ef444406 0%, #1a1a1a 40%, #1a1a1a 70%, #ef444403 100%)'
@@ -26,7 +26,7 @@ export default function ClienteCard({ cliente }) {
     >
       {/* Avatar */}
       <div
-        className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 text-white"
+        className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 text-[var(--color-text-primary)]"
         style={{
           background: cliente.estado === 'mora'
             ? 'rgba(239,68,68,0.2)'
@@ -34,9 +34,9 @@ export default function ClienteCard({ cliente }) {
             ? 'rgba(245,197,24,0.2)'
             : 'rgba(100,116,139,0.2)',
           color: cliente.estado === 'mora'
-            ? '#ef4444'
+            ? 'var(--color-danger)'
             : cliente.estado === 'activo'
-            ? '#f5c518'
+            ? 'var(--color-accent)'
             : '#64748b',
         }}
       >
@@ -61,12 +61,12 @@ export default function ClienteCard({ cliente }) {
           <span
             className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full border"
             style={{
-              color: cliente.grupoCobro.color || '#f5c518',
-              borderColor: `${cliente.grupoCobro.color || '#f5c518'}44`,
-              background: `${cliente.grupoCobro.color || '#f5c518'}18`,
+              color: cliente.grupoCobro.color || 'var(--color-accent)',
+              borderColor: `${cliente.grupoCobro.color || 'var(--color-accent)'}44`,
+              background: `${cliente.grupoCobro.color || 'var(--color-accent)'}18`,
             }}
           >
-            <span className="w-1.5 h-1.5 rounded-full" style={{ background: cliente.grupoCobro.color || '#f5c518' }} />
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: cliente.grupoCobro.color || 'var(--color-accent)' }} />
             {cliente.grupoCobro.nombre}
           </span>
         )}
@@ -79,7 +79,7 @@ export default function ClienteCard({ cliente }) {
 
       {/* Arrow */}
       <svg
-        className="w-4 h-4 text-[#2a2a2a] group-hover:text-[#f5c518] transition-colors shrink-0 ml-1"
+        className="w-4 h-4 text-[#2a2a2a] group-hover:text-[var(--color-accent)] transition-colors shrink-0 ml-1"
         fill="none" stroke="currentColor" viewBox="0 0 24 24"
       >
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

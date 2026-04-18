@@ -14,9 +14,9 @@ import {
 const MrrTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-2 text-xs shadow-xl">
-      <p className="text-[#888888] mb-1">{label}</p>
-      <p className="text-[#22c55e] font-bold font-mono-display">{formatCOP(payload[0]?.value ?? 0)}</p>
+    <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-3 py-2 text-xs shadow-xl">
+      <p className="text-[var(--color-text-muted)] mb-1">{label}</p>
+      <p className="text-[var(--color-success)] font-bold font-mono-display">{formatCOP(payload[0]?.value ?? 0)}</p>
     </div>
   )
 }
@@ -51,32 +51,32 @@ export default function AdminDashboard() {
     )
   }
 
-  if (!stats) return <p className="text-[#ef4444] text-sm">Error cargando estadísticas</p>
+  if (!stats) return <p className="text-[var(--color-danger)] text-sm">Error cargando estadísticas</p>
 
   return (
     <div className="max-w-4xl mx-auto space-y-5">
       <div>
         <h1 className="text-xl font-bold text-[white]">Dashboard</h1>
-        <p className="text-sm text-[#555555] mt-0.5">Vista general de la plataforma</p>
+        <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Vista general de la plataforma</p>
       </div>
 
       {/* Fila 1 — KPIs principales */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'MRR',               value: formatCOP(stats.mrr),       color: '#22c55e', mono: true  },
-          { label: 'Orgs activas',       value: stats.totalOrgs,            color: '#06b6d4', mono: false },
-          { label: 'Por vencer (7d)',    value: stats.suscPorVencer,        color: '#f59e0b', mono: false },
-          { label: 'Vencidas',           value: stats.suscVencidas,         color: stats.suscVencidas > 0 ? '#ef4444' : '#888888', mono: false },
+          { label: 'MRR',               value: formatCOP(stats.mrr),       color: 'var(--color-success)', mono: true  },
+          { label: 'Orgs activas',       value: stats.totalOrgs,            color: 'var(--color-info)', mono: false },
+          { label: 'Por vencer (7d)',    value: stats.suscPorVencer,        color: 'var(--color-warning)', mono: false },
+          { label: 'Vencidas',           value: stats.suscVencidas,         color: stats.suscVencidas > 0 ? 'var(--color-danger)' : '#888888', mono: false },
         ].map(({ label, value, color, mono }) => (
           <div
             key={label}
-            className="border border-[#2a2a2a] rounded-[12px] px-3 py-3 text-center"
+            className="border border-[var(--color-border)] rounded-[12px] px-3 py-3 text-center"
             style={{
               background: `linear-gradient(135deg, ${color}0A 0%, #1a1a1a 40%, #1a1a1a 70%, ${color}05 100%)`,
               boxShadow: `0 0 30px ${color}08, 0 1px 2px rgba(0,0,0,0.3)`,
             }}
           >
-            <p className="text-[10px] text-[#555555]">{label}</p>
+            <p className="text-[10px] text-[var(--color-text-muted)]">{label}</p>
             <p className={`text-base font-bold mt-0.5${mono ? ' font-mono-display' : ''}`} style={{ color }}>{value}</p>
           </div>
         ))}
@@ -87,24 +87,24 @@ export default function AdminDashboard() {
         {[
           { plan: 'Inicial',      ...stats.planes.starter,      color: '#888888' },
           { plan: 'Basico',       ...stats.planes.basic,        color: '#3b82f6' },
-          { plan: 'Crecimiento',  ...stats.planes.growth,       color: '#f5c518' },
-          { plan: 'Profesional',  ...stats.planes.standard,     color: '#a855f7' },
-          { plan: 'Empresarial',  ...stats.planes.professional, color: '#22c55e' },
+          { plan: 'Crecimiento',  ...stats.planes.growth,       color: 'var(--color-accent)' },
+          { plan: 'Profesional',  ...stats.planes.standard,     color: 'var(--color-purple)' },
+          { plan: 'Empresarial',  ...stats.planes.professional, color: 'var(--color-success)' },
         ].map(({ plan, cantidad, mrr, color }) => (
-          <div key={plan} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-4 py-3">
+          <div key={plan} className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-4 py-3">
             <div className="flex items-center gap-2 mb-1">
               <span className="w-2 h-2 rounded-full" style={{ background: color }} />
-              <span className="text-xs text-[#888888]">{plan}</span>
+              <span className="text-xs text-[var(--color-text-muted)]">{plan}</span>
             </div>
             <p className="text-lg font-bold text-[white]">{cantidad}</p>
-            <p className="text-[10px] text-[#555555]">MRR: <span className="font-mono-display">{formatCOP(mrr)}</span></p>
+            <p className="text-[10px] text-[var(--color-text-muted)]">MRR: <span className="font-mono-display">{formatCOP(mrr)}</span></p>
           </div>
         ))}
       </div>
 
       {/* Fila 3 — Gráfico MRR últimos 6 meses */}
       <Card>
-        <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">MRR — Últimos 6 meses</p>
+        <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-4">MRR — Últimos 6 meses</p>
         {stats.mrrHistorico?.length > 0 ? (
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={stats.mrrHistorico} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
@@ -117,54 +117,54 @@ export default function AdminDashboard() {
                 tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
               />
               <Tooltip content={<MrrTooltip />} />
-              <Line type="monotone" dataKey="mrr" stroke="#22c55e" strokeWidth={2} dot={{ fill: '#22c55e', r: 4 }} />
+              <Line type="monotone" dataKey="mrr" stroke="#22c55e" strokeWidth={2} dot={{ fill: 'var(--color-success)', r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
         ) : (
-          <p className="text-sm text-[#555555] text-center py-8">Sin datos</p>
+          <p className="text-sm text-[var(--color-text-muted)] text-center py-8">Sin datos</p>
         )}
       </Card>
 
       {/* Fila 4 — Métricas globales */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-4 py-3 text-center">
-          <p className="text-[10px] text-[#555555]">Total clientes</p>
+        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-4 py-3 text-center">
+          <p className="text-[10px] text-[var(--color-text-muted)]">Total clientes</p>
           <p className="text-lg font-bold text-[white]">{stats.totalClientes}</p>
         </div>
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-4 py-3 text-center">
-          <p className="text-[10px] text-[#555555]">Préstamos activos</p>
-          <p className="text-lg font-bold text-[#3b82f6]">{stats.prestamosActivos}</p>
+        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-4 py-3 text-center">
+          <p className="text-[10px] text-[var(--color-text-muted)]">Préstamos activos</p>
+          <p className="text-lg font-bold text-[var(--color-info)]">{stats.prestamosActivos}</p>
         </div>
         <div
-          className="border border-[#2a2a2a] rounded-[12px] px-4 py-3 text-center"
+          className="border border-[var(--color-border)] rounded-[12px] px-4 py-3 text-center"
           style={{
             background: 'linear-gradient(135deg, #f5c5180A 0%, #1a1a1a 40%, #1a1a1a 70%, #f5c51805 100%)',
             boxShadow: '0 0 30px #f5c51808, 0 1px 2px rgba(0,0,0,0.3)',
           }}
         >
-          <p className="text-[10px] text-[#555555]">Cartera total</p>
-          <p className="text-lg font-bold text-[#22c55e] font-mono-display">{formatCOP(stats.carteraTotal)}</p>
+          <p className="text-[10px] text-[var(--color-text-muted)]">Cartera total</p>
+          <p className="text-lg font-bold text-[var(--color-success)] font-mono-display">{formatCOP(stats.carteraTotal)}</p>
         </div>
       </div>
 
       {/* Fila 5 — Alertas: suscripciones por vencer */}
       {alertas.length > 0 && (
         <Card>
-          <p className="text-xs font-semibold text-[#f59e0b] uppercase tracking-wide mb-3">
+          <p className="text-xs font-semibold text-[var(--color-warning)] uppercase tracking-wide mb-3">
             Suscripciones por vencer
           </p>
           <div className="space-y-2">
             {alertas.map((a) => (
-              <div key={a.id} className="flex items-center justify-between py-2 border-b border-[#2a2a2a] last:border-0">
+              <div key={a.id} className="flex items-center justify-between py-2 border-b border-[var(--color-border)] last:border-0">
                 <div>
                   <p className="text-sm font-medium text-[white]">{a.organizacion}</p>
-                  <p className="text-[10px] text-[#555555]">
+                  <p className="text-[10px] text-[var(--color-text-muted)]">
                     Vence en {a.diasRestantes} día{a.diasRestantes !== 1 ? 's' : ''}
                   </p>
                 </div>
                 <Link
                   href={`/admin/organizaciones/${a.organizacionId}`}
-                  className="text-xs font-medium text-[#3b82f6] hover:underline"
+                  className="text-xs font-medium text-[var(--color-info)] hover:underline"
                 >
                   Gestionar
                 </Link>
@@ -175,12 +175,12 @@ export default function AdminDashboard() {
       )}
 
       {/* Nuevas orgs este mes */}
-      <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-4 py-3 flex items-center justify-between">
+      <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-4 py-3 flex items-center justify-between">
         <div>
-          <p className="text-[10px] text-[#555555]">Nuevas organizaciones este mes</p>
-          <p className="text-lg font-bold text-[#a855f7]">{stats.orgsNuevas}</p>
+          <p className="text-[10px] text-[var(--color-text-muted)]">Nuevas organizaciones este mes</p>
+          <p className="text-lg font-bold text-[var(--color-purple)]">{stats.orgsNuevas}</p>
         </div>
-        <Link href="/admin/organizaciones" className="text-xs text-[#3b82f6] hover:underline">
+        <Link href="/admin/organizaciones" className="text-xs text-[var(--color-info)] hover:underline">
           Ver todas
         </Link>
       </div>

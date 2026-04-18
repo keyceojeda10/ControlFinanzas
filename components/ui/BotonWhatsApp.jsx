@@ -24,10 +24,10 @@ const TEXTOS = {
 }
 
 const ESTILOS = {
-  prestamo: 'bg-[#25d366] hover:bg-[#1da855] text-white',
-  pago:     'bg-[#25d366] hover:bg-[#1da855] text-white',
-  mora:     'bg-[rgba(245,158,11,0.15)] hover:bg-[rgba(245,158,11,0.25)] text-[#f59e0b] border border-[rgba(245,158,11,0.3)]',
-  historial:'bg-[#25d366] hover:bg-[#1da855] text-white',
+  prestamo: 'bg-[#25d366] hover:bg-[#1da855] text-[var(--color-text-primary)]',
+  pago:     'bg-[#25d366] hover:bg-[#1da855] text-[var(--color-text-primary)]',
+  mora:     'bg-[rgba(245,158,11,0.15)] hover:bg-[rgba(245,158,11,0.25)] text-[var(--color-warning)] border border-[rgba(245,158,11,0.3)]',
+  historial:'bg-[#25d366] hover:bg-[#1da855] text-[var(--color-text-primary)]',
 }
 
 export default function BotonWhatsApp({ tipo, cliente, prestamo, pago }) {

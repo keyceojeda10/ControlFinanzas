@@ -76,7 +76,7 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }) {
       className="fixed inset-0 z-[10001] flex items-end sm:items-center justify-center p-0 sm:p-4"
       onClick={(e) => { if (e.target === overlayRef.current) onClose?.() }}
     >
-      <div className="absolute inset-0 bg-[rgba(0,0,5,0.85)] backdrop-blur-md" />
+      <div className="absolute inset-0 cf-modal-overlay backdrop-blur-md" />
 
       <div
         ref={dialogRef}
@@ -84,25 +84,21 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }) {
         aria-modal="true"
         aria-labelledby={title ? 'cf-modal-title' : undefined}
         className={[
-          'relative w-full',
-          'rounded-t-[20px] sm:rounded-[20px] shadow-2xl',
+          'relative w-full cf-modal-dialog',
+          'rounded-t-[20px] sm:rounded-[20px]',
           'max-h-[90dvh] flex flex-col',
           'animate-slide-up sm:animate-none',
           sizes[size] ?? sizes.md,
         ].join(' ')}
-        style={{
-          background: 'linear-gradient(135deg, rgba(245,197,24,0.02) 0%, #111115 40%, #111115 70%, rgba(245,197,24,0.01) 100%)',
-          border: '1px solid rgba(255,255,255,0.12)',
-          boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
-        }}
       >
         {title && (
-          <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(255,255,255,0.06)] shrink-0">
-            <h2 id="cf-modal-title" className="text-base font-semibold text-[#f4f5fa] tracking-[0.01em]">{title}</h2>
+          <div className="flex items-center justify-between px-5 py-4 shrink-0" style={{ borderBottom: '1px solid var(--color-border)' }}>
+            <h2 id="cf-modal-title" className="text-base font-semibold tracking-[0.01em]" style={{ color: 'var(--color-text-primary)' }}>{title}</h2>
             <button
               onClick={onClose}
               aria-label="Cerrar"
-              className="w-11 h-11 flex items-center justify-center rounded-lg text-[#9b9ba6] hover:text-white hover:bg-[rgba(255,255,255,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c518]/65 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0d12] transition-colors"
+              className="w-11 h-11 flex items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/65 focus-visible:ring-offset-2 transition-colors"
+              style={{ color: 'var(--color-text-secondary)' }}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -114,7 +110,7 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }) {
         <div className="flex-1 overflow-y-auto px-5 py-5">{children}</div>
 
         {footer && (
-          <div className="shrink-0 px-5 py-4 border-t border-[rgba(255,255,255,0.06)] flex items-center justify-end gap-3">
+          <div className="shrink-0 px-5 py-4 flex items-center justify-end gap-3" style={{ borderTop: '1px solid var(--color-border)' }}>
             {footer}
           </div>
         )}

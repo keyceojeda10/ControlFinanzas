@@ -1,7 +1,7 @@
 // components/ui/Card.jsx
 
 export function Card({ children, className = '', padding = true, glowColor, ...props }) {
-  const glow = glowColor || '#f5c518'
+  const glow = glowColor || 'var(--color-accent)'
   const { style: propsStyle, ...restProps } = props
   return (
     <div
@@ -11,9 +11,9 @@ export function Card({ children, className = '', padding = true, glowColor, ...p
         className,
       ].join(' ')}
       style={{
-        background: `linear-gradient(135deg, ${glow}07 0%, #111115 38%, #111115 72%, ${glow}04 100%)`,
-        border: `1px solid rgba(255,255,255,0.1)`,
-        boxShadow: `0 6px 20px rgba(0,0,0,0.28)`,
+        background: `linear-gradient(135deg, color-mix(in srgb, ${glow} 7%, var(--color-bg-card)) 0%, var(--color-bg-card) 45%, var(--color-bg-card) 75%, color-mix(in srgb, ${glow} 4%, var(--color-bg-card)) 100%)`,
+        border: `1px solid var(--color-border)`,
+        boxShadow: `0 6px 20px rgba(0,0,0,0.12)`,
         ...propsStyle,
       }}
       {...restProps}
@@ -33,7 +33,7 @@ export function CardHeader({ children, className = '' }) {
 
 export function CardTitle({ children, className = '' }) {
   return (
-    <h3 className={`text-sm sm:text-[0.95rem] font-semibold text-[#f4f5fa] tracking-[0.01em] ${className}`}>
+    <h3 className={`text-sm sm:text-[0.95rem] font-semibold tracking-[0.01em] ${className}`} style={{ color: 'var(--color-text-primary)' }}>
       {children}
     </h3>
   )

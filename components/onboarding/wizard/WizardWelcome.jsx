@@ -1,5 +1,7 @@
 'use client'
 
+import Mascota from '@/components/ui/Mascota'
+
 const ITEMS = [
   {
     icon: (
@@ -30,18 +32,16 @@ const ITEMS = [
 export default function WizardWelcome({ nombre, onNext, onDismiss }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-      {/* Animated icon */}
-      <div className="w-20 h-20 rounded-full bg-[rgba(245,197,24,0.12)] flex items-center justify-center mb-6 animate-pulse">
-        <svg className="w-10 h-10 text-[#f5c518]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
+      {/* Mascota */}
+      <div className="mb-6 animate-[bounce_2s_ease-in-out_infinite]">
+        <Mascota variant="happy" size={120} />
       </div>
 
       {/* Title */}
-      <h1 className="text-2xl font-bold text-white mb-2">
+      <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mb-2">
         {nombre ? `Hola, ${nombre.split(' ')[0]}!` : 'Bienvenido!'}
       </h1>
-      <p className="text-base text-[#888888] mb-8 max-w-xs">
+      <p className="text-base text-[var(--color-text-muted)] mb-8 max-w-xs">
         Vamos a configurar tu cartera en 2 minutos
       </p>
 
@@ -50,12 +50,12 @@ export default function WizardWelcome({ nombre, onNext, onDismiss }) {
         {ITEMS.map((item, i) => (
           <div
             key={i}
-            className="flex items-center gap-3 bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-4 py-3"
+            className="flex items-center gap-3 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-4 py-3"
           >
-            <div className="w-9 h-9 rounded-full bg-[rgba(245,197,24,0.12)] flex items-center justify-center shrink-0 text-[#f5c518]">
+            <div className="w-9 h-9 rounded-full bg-[rgba(245,197,24,0.12)] flex items-center justify-center shrink-0 text-[var(--color-accent)]">
               {item.icon}
             </div>
-            <p className="text-sm text-white font-medium text-left">{item.text}</p>
+            <p className="text-sm text-[var(--color-text-primary)] font-medium text-left">{item.text}</p>
           </div>
         ))}
       </div>
@@ -63,7 +63,7 @@ export default function WizardWelcome({ nombre, onNext, onDismiss }) {
       {/* CTA */}
       <button
         onClick={onNext}
-        className="w-full max-w-xs h-12 rounded-[12px] bg-[#f5c518] text-[#111111] text-base font-bold transition-all hover:bg-[#f0b800] active:scale-[0.98] cursor-pointer"
+        className="w-full max-w-xs h-12 rounded-[12px] bg-[var(--color-accent)] text-[#111111] text-base font-bold transition-all hover:bg-[var(--color-accent-hover)] active:scale-[0.98] cursor-pointer"
       >
         Empezar
       </button>
@@ -71,7 +71,7 @@ export default function WizardWelcome({ nombre, onNext, onDismiss }) {
       {/* Dismiss */}
       <button
         onClick={onDismiss}
-        className="mt-4 text-xs text-[#555555] hover:text-[#888888] transition-colors cursor-pointer"
+        className="mt-4 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-muted)] transition-colors cursor-pointer"
       >
         Ya conozco el sistema, saltar guia
       </button>

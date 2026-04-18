@@ -103,7 +103,7 @@ export default function OrgDetallePage() {
               {org.activo ? 'Activa' : 'Suspendida'}
             </Badge>
           </div>
-          <p className="text-sm text-[#555555] mt-0.5">
+          <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
             Registrada: {new Date(org.createdAt).toLocaleDateString('es-CO')}
             {org.ciudad && ` · ${org.ciudad}`}
           </p>
@@ -126,7 +126,7 @@ export default function OrgDetallePage() {
               }
             }}
             disabled={!!accionando}
-            className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#f5c518]"
+            className="h-9 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-xs text-[white] focus:outline-none focus:border-[var(--color-accent)]"
           >
             <option value="starter">Inicial</option>
             <option value="basic">Básico</option>
@@ -163,34 +163,34 @@ export default function OrgDetallePage() {
 
       {/* Métricas de uso */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-3 text-center">
-          <p className="text-[10px] text-[#555555]">Usuarios</p>
+        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-3 py-3 text-center">
+          <p className="text-[10px] text-[var(--color-text-muted)]">Usuarios</p>
           <p className="text-base font-bold text-[white]">
             {org.users?.length ?? 0}
-            <span className="text-[10px] text-[#555555] font-normal"> / {limite.usuarios === 999 ? '∞' : limite.usuarios}</span>
+            <span className="text-[10px] text-[var(--color-text-muted)] font-normal"> / {limite.usuarios === 999 ? '∞' : limite.usuarios}</span>
           </p>
         </div>
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-3 text-center">
-          <p className="text-[10px] text-[#555555]">Clientes</p>
+        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-3 py-3 text-center">
+          <p className="text-[10px] text-[var(--color-text-muted)]">Clientes</p>
           <p className="text-base font-bold text-[white]">
             {org._count?.clientes ?? 0}
-            <span className="text-[10px] text-[#555555] font-normal"> / {limite.clientes > 9999 ? '∞' : limite.clientes}</span>
+            <span className="text-[10px] text-[var(--color-text-muted)] font-normal"> / {limite.clientes > 9999 ? '∞' : limite.clientes}</span>
           </p>
         </div>
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-3 text-center">
-          <p className="text-[10px] text-[#555555]">Préstamos activos</p>
-          <p className="text-base font-bold text-[#f5c518]">{org.prestamosActivos}</p>
+        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-3 py-3 text-center">
+          <p className="text-[10px] text-[var(--color-text-muted)]">Préstamos activos</p>
+          <p className="text-base font-bold text-[var(--color-accent)]">{org.prestamosActivos}</p>
         </div>
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-3 text-center">
-          <p className="text-[10px] text-[#555555]">Cartera activa</p>
-          <p className="text-base font-bold text-[#22c55e]">{formatCOP(org.carteraActiva)}</p>
+        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-3 py-3 text-center">
+          <p className="text-[10px] text-[var(--color-text-muted)]">Cartera activa</p>
+          <p className="text-base font-bold text-[var(--color-success)]">{formatCOP(org.carteraActiva)}</p>
         </div>
       </div>
 
       {/* Suscripción actual */}
       {sub && (
         <Card>
-          <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">Suscripción actual</p>
+          <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-4">Suscripción actual</p>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
@@ -199,17 +199,17 @@ export default function OrgDetallePage() {
                   {sub.estado}
                 </Badge>
               </div>
-              <p className="text-xs text-[#888888]">
+              <p className="text-xs text-[var(--color-text-muted)]">
                 {new Date(sub.fechaInicio).toLocaleDateString('es-CO')} → {new Date(sub.fechaVencimiento).toLocaleDateString('es-CO')}
               </p>
               {diasRestantes !== null && (
-                <p className={`text-sm font-bold ${diasRestantes > 0 ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
+                <p className={`text-sm font-bold ${diasRestantes > 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
                   {diasRestantes > 0
                     ? `${diasRestantes} días restantes`
                     : `${Math.abs(diasRestantes)} días vencida`}
                 </p>
               )}
-              <p className="text-xs text-[#555555]">Monto: {formatCOP(sub.montoCOP)}</p>
+              <p className="text-xs text-[var(--color-text-muted)]">Monto: {formatCOP(sub.montoCOP)}</p>
             </div>
             <div className="flex gap-2 flex-wrap">
               <Button
@@ -245,17 +245,17 @@ export default function OrgDetallePage() {
 
       {/* Asignar plan — Pago directo */}
       <Card>
-        <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">Asignar plan (pago directo)</p>
-        <p className="text-xs text-[#888888] mb-4">
+        <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-4">Asignar plan (pago directo)</p>
+        <p className="text-xs text-[var(--color-text-muted)] mb-4">
           Usa esto cuando el cliente te paga directamente (transferencia, efectivo, etc.). Se activa igual que si pagara por MercadoPago: actualiza suscripción, le llega email de confirmación y se procesan referidos.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] text-[#555555]">Plan</label>
+            <label className="text-[10px] text-[var(--color-text-muted)]">Plan</label>
             <select
               value={pagoDirecto.plan}
               onChange={(e) => setPagoDirecto(p => ({ ...p, plan: e.target.value }))}
-              className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#f5c518]"
+              className="h-9 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-xs text-[white] focus:outline-none focus:border-[var(--color-accent)]"
             >
               <option value="starter">Inicial ($39.000/mes)</option>
               <option value="basic">Basico ($59.000/mes)</option>
@@ -265,11 +265,11 @@ export default function OrgDetallePage() {
             </select>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] text-[#555555]">Periodo</label>
+            <label className="text-[10px] text-[var(--color-text-muted)]">Periodo</label>
             <select
               value={pagoDirecto.periodo}
               onChange={(e) => setPagoDirecto(p => ({ ...p, periodo: e.target.value }))}
-              className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#f5c518]"
+              className="h-9 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-xs text-[white] focus:outline-none focus:border-[var(--color-accent)]"
             >
               <option value="mensual">Mensual (30 días)</option>
               <option value="trimestral">Trimestral (90 días)</option>
@@ -277,14 +277,14 @@ export default function OrgDetallePage() {
             </select>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] text-[#555555]">Monto recibido ($)</label>
+            <label className="text-[10px] text-[var(--color-text-muted)]">Monto recibido ($)</label>
             <input
               type="number"
               min="0"
               value={pagoDirecto.monto}
               onChange={(e) => setPagoDirecto(p => ({ ...p, monto: e.target.value }))}
               placeholder="Ej: 39000"
-              className="w-32 h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] focus:outline-none focus:border-[#f5c518]"
+              className="w-32 h-9 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[white] focus:outline-none focus:border-[var(--color-accent)]"
             />
           </div>
           <div className="flex flex-col justify-end">
@@ -319,16 +319,16 @@ export default function OrgDetallePage() {
               type="checkbox"
               checked={pagoDirecto.extender}
               onChange={(e) => setPagoDirecto(p => ({ ...p, extender: e.target.checked }))}
-              className="w-4 h-4 rounded border-[#2a2a2a] bg-[#111111] accent-[#f5c518]"
+              className="w-4 h-4 rounded border-[var(--color-border)] bg-[var(--color-bg-card)] accent-[#f5c518]"
             />
-            <span className="text-xs text-[#888888]">
+            <span className="text-xs text-[var(--color-text-muted)]">
               Extender desde vencimiento actual ({new Date(sub.fechaVencimiento).toLocaleDateString('es-CO')}) en vez de empezar desde hoy
             </span>
           </label>
         )}
         {sub && (
           <div className="mt-3 bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.15)] rounded-[12px] px-4 py-2">
-            <p className="text-[11px] text-[#f5c518]">
+            <p className="text-[11px] text-[var(--color-accent)]">
               Suscripción actual: {sub.plan} · Vence: {new Date(sub.fechaVencimiento).toLocaleDateString('es-CO')}
               {diasRestantes !== null && ` (${diasRestantes > 0 ? diasRestantes + ' días restantes' : Math.abs(diasRestantes) + ' días vencida'})`}
               {' '}— El nuevo plan empieza desde hoy{sub.estado === 'activa' && diasRestantes > 0 && sub.plan === pagoDirecto.plan ? ' (o puedes extender desde el vencimiento actual marcando la casilla arriba)' : ''}.
@@ -339,16 +339,16 @@ export default function OrgDetallePage() {
 
       {/* Demo Day */}
       <Card>
-        <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">Demo de plan</p>
+        <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-4">Demo de plan</p>
         {org.planOriginal && org.planDemoHasta ? (
           <div className="space-y-3">
             <div className="bg-[rgba(168,85,247,0.1)] border border-[rgba(168,85,247,0.2)] rounded-[12px] px-4 py-3">
-              <p className="text-sm text-[#a855f7] font-semibold">Demo activo</p>
-              <p className="text-xs text-[#888888] mt-1">
+              <p className="text-sm text-[var(--color-purple)] font-semibold">Demo activo</p>
+              <p className="text-xs text-[var(--color-text-muted)] mt-1">
                 Plan actual: <span className="text-[white] font-medium">{org.plan}</span> ·
                 Plan original: <span className="text-[white] font-medium">{org.planOriginal}</span>
               </p>
-              <p className="text-xs text-[#888888]">
+              <p className="text-xs text-[var(--color-text-muted)]">
                 Expira: <span className="text-[white]">{new Date(org.planDemoHasta).toLocaleString('es-CO')}</span>
                 {' '}({Math.max(0, Math.ceil((new Date(org.planDemoHasta) - new Date()) / (1000 * 60 * 60)))}h restantes)
               </p>
@@ -368,17 +368,17 @@ export default function OrgDetallePage() {
           </div>
         ) : (
           <div className="space-y-3">
-            <p className="text-xs text-[#888888]">
+            <p className="text-xs text-[var(--color-text-muted)]">
               Asigna acceso temporal al plan Professional para que el cliente pruebe las funciones premium.
               Al expirar, vuelve automáticamente a su plan actual ({org.plan}).
             </p>
             <div className="flex items-center gap-3 flex-wrap">
               <div className="flex items-center gap-2">
-                <label className="text-xs text-[#888888]">Días:</label>
+                <label className="text-xs text-[var(--color-text-muted)]">Días:</label>
                 <select
                   value={demoDias}
                   onChange={(e) => setDemoDias(e.target.value)}
-                  className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-[white] focus:outline-none focus:border-[#f5c518]"
+                  className="h-9 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-xs text-[white] focus:outline-none focus:border-[var(--color-accent)]"
                 >
                   <option value="1">1 día</option>
                   <option value="2">2 días</option>
@@ -405,11 +405,11 @@ export default function OrgDetallePage() {
 
       {/* Descuento y referidos */}
       <Card>
-        <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">Descuento y referidos</p>
+        <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-4">Descuento y referidos</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Descuento */}
           <div className="space-y-2">
-            <p className="text-xs text-[#888888]">Descuento especial (%)</p>
+            <p className="text-xs text-[var(--color-text-muted)]">Descuento especial (%)</p>
             <div className="flex gap-2">
               <input
                 type="number"
@@ -418,7 +418,7 @@ export default function OrgDetallePage() {
                 value={descuentoInput}
                 onChange={(e) => setDescuentoInput(e.target.value)}
                 placeholder={String(org.descuento ?? 0)}
-                className="w-20 h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] focus:outline-none focus:border-[#f5c518]"
+                className="w-20 h-9 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[white] focus:outline-none focus:border-[var(--color-accent)]"
               />
               <Button
                 size="sm"
@@ -432,25 +432,25 @@ export default function OrgDetallePage() {
               </Button>
             </div>
             {org.descuento > 0 && (
-              <p className="text-xs text-[#22c55e]">Descuento activo: {org.descuento}%</p>
+              <p className="text-xs text-[var(--color-success)]">Descuento activo: {org.descuento}%</p>
             )}
           </div>
 
           {/* Referidos */}
           <div className="space-y-2">
-            <p className="text-xs text-[#888888]">Código de referido</p>
-            <p className="text-sm font-mono text-[#f5c518]">{org.codigoReferido ?? 'Sin código'}</p>
+            <p className="text-xs text-[var(--color-text-muted)]">Código de referido</p>
+            <p className="text-sm font-mono text-[var(--color-accent)]">{org.codigoReferido ?? 'Sin código'}</p>
             {org.referidoPor && (
-              <p className="text-xs text-[#888888]">
+              <p className="text-xs text-[var(--color-text-muted)]">
                 Referido por: <span className="text-[white]">{org.referidoPor.nombre}</span>
               </p>
             )}
             {org.referidos?.length > 0 && (
               <div>
-                <p className="text-xs text-[#888888]">Referidos: <span className="text-[#22c55e] font-bold">{org.referidos.length}</span></p>
+                <p className="text-xs text-[var(--color-text-muted)]">Referidos: <span className="text-[var(--color-success)] font-bold">{org.referidos.length}</span></p>
                 <div className="mt-1 space-y-1">
                   {org.referidos.slice(0, 5).map((r) => (
-                    <p key={r.id} className="text-[11px] text-[#888888]">
+                    <p key={r.id} className="text-[11px] text-[var(--color-text-muted)]">
                       {r.nombre} · {new Date(r.createdAt).toLocaleDateString('es-CO')}
                     </p>
                   ))}
@@ -463,28 +463,28 @@ export default function OrgDetallePage() {
 
       {/* Cobradores extra */}
       <Card>
-        <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">Cobradores extra</p>
+        <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-4">Cobradores extra</p>
         <div className="space-y-3">
           <div className="flex items-center gap-4">
             <div>
-              <p className="text-xs text-[#888888]">Límite base del plan</p>
+              <p className="text-xs text-[var(--color-text-muted)]">Límite base del plan</p>
               <p className="text-sm font-bold text-[white]">{limite.usuarios === 999 ? '∞' : limite.usuarios} usuario{limite.usuarios !== 1 ? 's' : ''}</p>
             </div>
             <div>
-              <p className="text-xs text-[#888888]">Cobradores extra</p>
-              <p className="text-sm font-bold text-[#f5c518]">{org.cobradoresExtra ?? 0}</p>
+              <p className="text-xs text-[var(--color-text-muted)]">Cobradores extra</p>
+              <p className="text-sm font-bold text-[var(--color-accent)]">{org.cobradoresExtra ?? 0}</p>
             </div>
             <div>
-              <p className="text-xs text-[#888888]">Total permitido</p>
-              <p className="text-sm font-bold text-[#22c55e]">{(limite.usuarios === 999 ? '∞' : limite.usuarios + (org.cobradoresExtra ?? 0))}</p>
+              <p className="text-xs text-[var(--color-text-muted)]">Total permitido</p>
+              <p className="text-sm font-bold text-[var(--color-success)]">{(limite.usuarios === 999 ? '∞' : limite.usuarios + (org.cobradoresExtra ?? 0))}</p>
             </div>
             <div>
-              <p className="text-xs text-[#888888]">Usuarios actuales</p>
+              <p className="text-xs text-[var(--color-text-muted)]">Usuarios actuales</p>
               <p className="text-sm font-bold text-[white]">{org.users?.length ?? 0}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-xs text-[#888888]">Asignar cobradores extra:</label>
+            <label className="text-xs text-[var(--color-text-muted)]">Asignar cobradores extra:</label>
             <input
               type="number"
               min="0"
@@ -492,7 +492,7 @@ export default function OrgDetallePage() {
               value={cobradoresInput}
               onChange={(e) => setCobradoresInput(e.target.value)}
               placeholder={String(org.cobradoresExtra ?? 0)}
-              className="w-20 h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] focus:outline-none focus:border-[#f5c518]"
+              className="w-20 h-9 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[white] focus:outline-none focus:border-[var(--color-accent)]"
             />
             <Button
               size="sm"
@@ -513,9 +513,9 @@ export default function OrgDetallePage() {
 
       {/* Usuarios de la organización */}
       <Card>
-        <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">Usuarios</p>
+        <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-4">Usuarios</p>
         <div className="space-y-0">
-          <div className="hidden sm:grid grid-cols-[1.2fr_1.5fr_0.8fr_0.8fr_0.9fr] gap-2 text-[10px] text-[#555555] font-medium uppercase pb-2 border-b border-[#2a2a2a]">
+          <div className="hidden sm:grid grid-cols-[1.2fr_1.5fr_0.8fr_0.8fr_0.9fr] gap-2 text-[10px] text-[var(--color-text-muted)] font-medium uppercase pb-2 border-b border-[var(--color-border)]">
             <span>Nombre</span>
             <span>Email</span>
             <span className="text-center">Rol</span>
@@ -523,9 +523,9 @@ export default function OrgDetallePage() {
             <span className="text-center">Acciones</span>
           </div>
           {(org.users ?? []).map((u) => (
-            <div key={u.id} className="grid grid-cols-2 sm:grid-cols-[1.2fr_1.5fr_0.8fr_0.8fr_0.9fr] gap-2 py-2.5 border-b border-[#2a2a2a] last:border-0 items-center">
+            <div key={u.id} className="grid grid-cols-2 sm:grid-cols-[1.2fr_1.5fr_0.8fr_0.8fr_0.9fr] gap-2 py-2.5 border-b border-[var(--color-border)] last:border-0 items-center">
               <p className="text-sm font-medium text-[white]">{u.nombre}</p>
-              <p className="text-xs text-[#888888] truncate">{u.email}</p>
+              <p className="text-xs text-[var(--color-text-muted)] truncate">{u.email}</p>
               <div className="text-center">
                 <Badge variant={u.rol === 'owner' ? 'blue' : 'gray'}>{{ owner: 'Admin', cobrador: 'Cobrador' }[u.rol] ?? u.rol}</Badge>
               </div>
@@ -554,7 +554,7 @@ export default function OrgDetallePage() {
                     ejecutarAccion('resetearPassword', { userId: u.id, nuevaPassword: clean })
                   }}
                   disabled={!!accionando}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium text-[#f5c518] bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.2)] hover:bg-[rgba(245,197,24,0.15)] transition-all disabled:opacity-50"
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium text-[var(--color-accent)] bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.2)] hover:bg-[rgba(245,197,24,0.15)] transition-all disabled:opacity-50"
                   title="Restablecer contraseña"
                 >
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -571,14 +571,14 @@ export default function OrgDetallePage() {
       {/* Historial de acciones admin */}
       {org.adminLogs?.length > 0 && (
         <Card>
-          <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-4">Historial de acciones</p>
+          <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-4">Historial de acciones</p>
           <div className="space-y-2">
             {org.adminLogs.map((log) => (
-              <div key={log.id} className="flex items-start gap-3 py-2 border-b border-[#2a2a2a] last:border-0">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#f5c518] mt-1.5 shrink-0" />
+              <div key={log.id} className="flex items-start gap-3 py-2 border-b border-[var(--color-border)] last:border-0">
+                <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] mt-1.5 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-[white]">{log.detalle ?? log.accion}</p>
-                  <p className="text-[10px] text-[#555555]">
+                  <p className="text-[10px] text-[var(--color-text-muted)]">
                     {log.admin?.nombre ?? 'Admin'} · {new Date(log.createdAt).toLocaleString('es-CO')}
                   </p>
                 </div>

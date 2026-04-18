@@ -135,7 +135,7 @@ export default function ModificarPlazo({
       <div className="space-y-4">
         {/* Toggle de modo */}
         <div>
-          <label className="block text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em] mb-1.5">
+          <label className="block text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em] mb-1.5">
             ¿Qué quieres hacer?
           </label>
           <div className="grid grid-cols-2 gap-2">
@@ -146,13 +146,13 @@ export default function ModificarPlazo({
                 'h-auto py-2.5 px-3 rounded-[10px] border text-left transition-all cursor-pointer',
                 modo === 'extender'
                   ? 'bg-[rgba(245,197,24,0.1)] border-[#f5c518]'
-                  : 'bg-transparent border-[#2a2a2a] hover:bg-[#1a1a1a]',
+                  : 'bg-transparent border-[var(--color-border)] hover:bg-[var(--color-bg-surface)]',
               ].join(' ')}
             >
-              <div className={`text-xs font-semibold ${modo === 'extender' ? 'text-[#f5c518]' : 'text-white'}`}>
+              <div className={`text-xs font-semibold ${modo === 'extender' ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-primary)]'}`}>
                 Extender plazo
               </div>
-              <div className="text-[10px] text-[#888888] mt-0.5 leading-tight">
+              <div className="text-[10px] text-[var(--color-text-muted)] mt-0.5 leading-tight">
                 Dar más tiempo. Recalcula cuota.
               </div>
             </button>
@@ -163,13 +163,13 @@ export default function ModificarPlazo({
                 'h-auto py-2.5 px-3 rounded-[10px] border text-left transition-all cursor-pointer',
                 modo === 'corregir'
                   ? 'bg-[rgba(59,130,246,0.1)] border-[#3b82f6]'
-                  : 'bg-transparent border-[#2a2a2a] hover:bg-[#1a1a1a]',
+                  : 'bg-transparent border-[var(--color-border)] hover:bg-[var(--color-bg-surface)]',
               ].join(' ')}
             >
-              <div className={`text-xs font-semibold ${modo === 'corregir' ? 'text-[#3b82f6]' : 'text-white'}`}>
+              <div className={`text-xs font-semibold ${modo === 'corregir' ? 'text-[var(--color-info)]' : 'text-[var(--color-text-primary)]'}`}>
                 Corregir fecha
               </div>
-              <div className="text-[10px] text-[#888888] mt-0.5 leading-tight">
+              <div className="text-[10px] text-[var(--color-text-muted)] mt-0.5 leading-tight">
                 Error al crear. No toca cuota.
               </div>
             </button>
@@ -177,20 +177,20 @@ export default function ModificarPlazo({
         </div>
 
         {/* Resumen actual */}
-        <div className="px-3 py-2.5 rounded-[10px] bg-[#111111] border border-[#2a2a2a] space-y-1">
+        <div className="px-3 py-2.5 rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-[#888888]">Fecha fin actual</span>
-            <span className="text-xs text-white font-mono-display">
+            <span className="text-[10px] text-[var(--color-text-muted)]">Fecha fin actual</span>
+            <span className="text-xs text-[var(--color-text-primary)] font-mono-display">
               {fechaFinActual ? new Date(fechaFinActual).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-[#888888]">Cuota {frecuencia}</span>
-            <span className="text-xs text-white font-mono-display">{formatCOP(cuotaActual)}</span>
+            <span className="text-[10px] text-[var(--color-text-muted)]">Cuota {frecuencia}</span>
+            <span className="text-xs text-[var(--color-text-primary)] font-mono-display">{formatCOP(cuotaActual)}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-[#888888]">Plazo actual</span>
-            <span className="text-xs text-white">{diasPlazoActual} días</span>
+            <span className="text-[10px] text-[var(--color-text-muted)]">Plazo actual</span>
+            <span className="text-xs text-[var(--color-text-primary)]">{diasPlazoActual} días</span>
           </div>
         </div>
 
@@ -222,39 +222,39 @@ export default function ModificarPlazo({
             }}
           >
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-[#888888]">Nuevo plazo</span>
-              <span className="text-xs font-semibold text-white">{preview.nuevoDiasPlazo} días</span>
+              <span className="text-[10px] text-[var(--color-text-muted)]">Nuevo plazo</span>
+              <span className="text-xs font-semibold text-[var(--color-text-primary)]">{preview.nuevoDiasPlazo} días</span>
             </div>
             {modo === 'extender' && preview.nuevaCuota != null && (
               <>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-[#888888]">Nueva cuota {frecuencia}</span>
-                  <span className="text-xs font-bold text-[#f5c518] font-mono-display">
+                  <span className="text-[10px] text-[var(--color-text-muted)]">Nueva cuota {frecuencia}</span>
+                  <span className="text-xs font-bold text-[var(--color-accent)] font-mono-display">
                     {formatCOP(preview.nuevaCuota)}
                     {preview.cuotaDelta !== 0 && (
-                      <span className={`ml-1 text-[9px] ${preview.cuotaDelta < 0 ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
+                      <span className={`ml-1 text-[9px] ${preview.cuotaDelta < 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
                         ({preview.cuotaDelta > 0 ? '+' : ''}{formatCOP(Math.abs(preview.cuotaDelta))})
                       </span>
                     )}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-[#888888]">Total a pagar</span>
-                  <span className="text-xs font-semibold text-white font-mono-display">
+                  <span className="text-[10px] text-[var(--color-text-muted)]">Total a pagar</span>
+                  <span className="text-xs font-semibold text-[var(--color-text-primary)] font-mono-display">
                     {formatCOP(preview.nuevoTotal)}
                   </span>
                 </div>
               </>
             )}
             {modo === 'corregir' && (
-              <p className="text-[10px] text-[#888888] leading-snug pt-1">
+              <p className="text-[10px] text-[var(--color-text-muted)] leading-snug pt-1">
                 Solo se actualizará la fecha. La cuota, el total y los pagos no cambian.
               </p>
             )}
           </div>
         )}
 
-        {error && <p className="text-sm text-[#ef4444]">{error}</p>}
+        {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
 
         <div className="flex gap-3 pt-2">
           <Button variant="secondary" onClick={handleClose} className="flex-1">

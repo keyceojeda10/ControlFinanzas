@@ -10,19 +10,20 @@ import { Button }        from '@/components/ui/Button'
 import { Modal }         from '@/components/ui/Modal'
 import { SkeletonCard }  from '@/components/ui/Skeleton'
 import ClienteCard       from '@/components/clientes/ClienteCard'
+import Mascota           from '@/components/ui/Mascota'
 
 const ESTADOS_CLIENTE = [
   { value: '',          label: 'Todos'     },
   { value: 'activo',    label: 'Al día'    },
-  { value: 'mora',      label: 'En mora',  color: '#ef4444' },
+  { value: 'mora',      label: 'En mora',  color: 'var(--color-danger)' },
   { value: 'cancelado', label: 'Cancelados' },
 ]
 
 const LIMIT = 50
 
 const COLORES_GRUPO = [
-  '#3b82f6', '#22c55e', '#f59e0b', '#ef4444',
-  '#a855f7', '#06b6d4', '#ec4899', '#84cc16',
+  '#3b82f6', 'var(--color-success)', 'var(--color-warning)', 'var(--color-danger)',
+  'var(--color-purple)', 'var(--color-info)', '#ec4899', '#84cc16',
 ]
 
 export default function ClientesPage() {
@@ -338,10 +339,10 @@ export default function ClientesPage() {
       <div className="flex items-start justify-between gap-3 mb-4">
         <div className="min-w-0">
           <h1 className="text-xl font-bold text-[white]">Clientes</h1>
-          <p className="text-sm text-[#888888] mt-0.5">
+          <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
             {loading ? '...' : `${total} cliente${total !== 1 ? 's' : ''}`}
             {!loading && moraCount > 0 && (
-              <span className="ml-2 text-[#ef4444]">· {moraCount} en mora</span>
+              <span className="ml-2 text-[var(--color-danger)]">· {moraCount} en mora</span>
             )}
           </p>
         </div>
@@ -368,7 +369,7 @@ export default function ClientesPage() {
         <div className="flex items-center gap-2">
           <div className="relative flex-1 min-w-0">
             <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#888888] pointer-events-none"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)] pointer-events-none"
               fill="none" stroke="currentColor" viewBox="0 0 24 24"
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
@@ -379,12 +380,12 @@ export default function ClientesPage() {
               value={buscar}
               onChange={(e) => setBuscar(e.target.value)}
               placeholder={modoAsignar ? 'Buscar cliente para asignar…' : 'Buscar por nombre, cédula o teléfono…'}
-              className="w-full h-10 pl-9 pr-9 rounded-[12px] border border-[#2a2a2a] bg-[#161616] text-sm text-[white] placeholder-[#777777] focus:outline-none focus:border-[#f5c518] focus:ring-1 focus:ring-[rgba(245,197,24,0.3)] transition-all"
+              className="w-full h-10 pl-9 pr-9 rounded-[12px] border border-[var(--color-border)] bg-[#161616] text-sm text-[white] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all"
             />
             {buscar && (
               <button
                 onClick={() => setBuscar('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center text-[#888888] hover:text-[white]"
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center text-[var(--color-text-muted)] hover:text-[white]"
                 aria-label="Limpiar búsqueda"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -396,7 +397,7 @@ export default function ClientesPage() {
           {!authLoading && esOwner && (
             <button
               onClick={() => setModalGrupos(true)}
-              className="shrink-0 h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#161616] text-xs font-medium text-[#f5c518] hover:bg-[#222222] transition-colors flex items-center gap-1.5"
+              className="shrink-0 h-10 px-3 rounded-[12px] border border-[var(--color-border)] bg-[#161616] text-xs font-medium text-[var(--color-accent)] hover:bg-[var(--color-bg-hover)] transition-colors flex items-center gap-1.5"
               aria-label="Grupos de cobro"
               title="Grupos de cobro"
             >
@@ -405,7 +406,7 @@ export default function ClientesPage() {
               </svg>
               <span className="hidden sm:inline">Grupos</span>
               {grupoFiltro && (
-                <span className="w-1.5 h-1.5 rounded-full bg-[#f5c518]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)]" />
               )}
             </button>
           )}
@@ -415,7 +416,7 @@ export default function ClientesPage() {
         <div className="flex gap-2 overflow-x-auto scrollbar-none pb-0.5">
           {ESTADOS_CLIENTE.map(({ value, label, color }) => {
             const isActive = estado === value
-            const accent = color ?? '#f5c518'
+            const accent = color ?? 'var(--color-accent)'
             return (
               <button
                 key={value}
@@ -424,7 +425,7 @@ export default function ClientesPage() {
                   'shrink-0 px-3 h-8 rounded-full text-[12px] font-medium border transition-all',
                   isActive
                     ? 'border-current'
-                    : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#222222] hover:text-[white]',
+                    : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] hover:text-[white]',
                 ].join(' ')}
                 style={isActive ? { color: accent, backgroundColor: `${accent}20` } : undefined}
               >
@@ -435,7 +436,7 @@ export default function ClientesPage() {
           {hayControlesActivos && (
             <button
               onClick={limpiarControles}
-              className="shrink-0 px-3 h-8 rounded-full text-[11px] font-medium border border-[#303030] text-[#b4b4b4] hover:text-white hover:border-[#4a4a4a] transition-colors"
+              className="shrink-0 px-3 h-8 rounded-full text-[11px] font-medium border border-[#303030] text-[#b4b4b4] hover:text-[var(--color-text-primary)] hover:border-[#4a4a4a] transition-colors"
             >
               Limpiar
             </button>
@@ -445,21 +446,21 @@ export default function ClientesPage() {
         {/* Fila 3: chip del grupo activo (si hay filtro) */}
         {grupoFiltro && (
           <div className="flex items-center gap-1.5">
-            <span className="text-[10px] text-[#888]">Filtrado por grupo:</span>
+            <span className="text-[10px] text-[var(--color-text-muted)]">Filtrado por grupo:</span>
             <span
               className="inline-flex items-center gap-1.5 px-2 h-6 rounded-full text-[11px] font-medium border"
               style={
                 grupoFiltro === '_none'
-                  ? { color: '#06b6d4', borderColor: 'rgba(6,182,212,0.4)', background: 'rgba(6,182,212,0.12)' }
+                  ? { color: 'var(--color-info)', borderColor: 'rgba(6,182,212,0.4)', background: 'rgba(6,182,212,0.12)' }
                   : (() => {
                     const g = grupos.find((gr) => gr.id === grupoFiltro)
-                    const c = g?.color || '#f5c518'
+                    const c = g?.color || 'var(--color-accent)'
                     return { color: c, borderColor: `${c}66`, background: `${c}1f` }
                   })()
               }
             >
               {grupoFiltro !== '_none' && (
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: (grupos.find(g => g.id === grupoFiltro)?.color) || '#f5c518' }} />
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: (grupos.find(g => g.id === grupoFiltro)?.color) || 'var(--color-accent)' }} />
               )}
               {grupoActivoLabel}
               <button
@@ -478,15 +479,15 @@ export default function ClientesPage() {
 
       {/* Offline indicator */}
       {isOffline && (
-        <div className="bg-[rgba(245,197,24,0.1)] border border-[rgba(245,197,24,0.2)] text-[#f5c518] text-xs rounded-[12px] px-4 py-2.5 mb-4 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-[#f5c518] animate-pulse shrink-0" />
+        <div className="bg-[var(--color-warning-dim)] border border-[color-mix(in_srgb,var(--color-warning)_30%,transparent)] text-[var(--color-warning)] text-xs rounded-[12px] px-4 py-2.5 mb-4 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[var(--color-accent)] animate-pulse shrink-0" />
           Datos guardados — sin conexión
         </div>
       )}
 
       {/* Error */}
       {error && (
-        <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3 mb-4">
+        <div className="bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[12px] px-4 py-3 mb-4">
           {error}
         </div>
       )}
@@ -511,7 +512,7 @@ export default function ClientesPage() {
                     'flex items-center gap-3 border rounded-[14px] p-4 transition-all cursor-pointer',
                     selAsignar.includes(c.id)
                       ? 'border-[rgba(245,197,24,0.35)] bg-[rgba(245,197,24,0.08)]'
-                      : 'border-[#2a2a2a] bg-[#1a1a1a] hover:border-[#f5c518]/40',
+                      : 'border-[var(--color-border)] bg-[var(--color-bg-surface)] hover:border-[#f5c518]/40',
                   ].join(' ')}
                 >
                   <input
@@ -527,12 +528,12 @@ export default function ClientesPage() {
                       {c.grupoCobro ? (
                         <span className="inline-flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full border"
                           style={{
-                            color: c.grupoCobro.color || '#f5c518',
-                            borderColor: `${c.grupoCobro.color || '#f5c518'}44`,
-                            background: `${c.grupoCobro.color || '#f5c518'}18`,
+                            color: c.grupoCobro.color || 'var(--color-accent)',
+                            borderColor: `${c.grupoCobro.color || 'var(--color-accent)'}44`,
+                            background: `${c.grupoCobro.color || 'var(--color-accent)'}18`,
                           }}
                         >
-                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: c.grupoCobro.color || '#f5c518' }} />
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: c.grupoCobro.color || 'var(--color-accent)' }} />
                           {c.grupoCobro.nombre}
                         </span>
                       ) : (
@@ -549,7 +550,7 @@ export default function ClientesPage() {
         ) : (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <p className="text-sm font-medium text-[white]">Sin clientes {estado === 'mora' ? 'en mora' : estado === 'activo' ? 'al día' : 'cancelados'}</p>
-            <button onClick={() => setEstado('')} className="mt-2 text-xs text-[#f5c518] hover:underline">
+            <button onClick={() => setEstado('')} className="mt-2 text-xs text-[var(--color-accent)] hover:underline">
               Ver todos
             </button>
           </div>
@@ -559,31 +560,28 @@ export default function ClientesPage() {
       {/* Estado vacío */}
       {!loading && clientes.length === 0 && !error && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-14 h-14 rounded-full bg-[rgba(245,197,24,0.1)] flex items-center justify-center mb-4">
-            <svg className="w-7 h-7 text-[#f5c518]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
+          <div className="mb-4">
+            <Mascota variant={buscar || grupoFiltro ? 'thinking' : 'empty'} size={100} />
           </div>
           {buscar ? (
             <>
               <p className="text-sm font-medium text-[white]">Sin resultados</p>
-              <p className="text-xs text-[#888888] mt-1">No se encontró ningún cliente con "{buscar}"</p>
-              <button onClick={() => setBuscar('')} className="mt-3 text-xs text-[#f5c518] hover:underline">
+              <p className="text-xs text-[var(--color-text-muted)] mt-1">No se encontró ningún cliente con "{buscar}"</p>
+              <button onClick={() => setBuscar('')} className="mt-3 text-xs text-[var(--color-accent)] hover:underline">
                 Limpiar búsqueda
               </button>
             </>
           ) : grupoFiltro ? (
             <>
               <p className="text-sm font-medium text-[white]">Sin clientes en este grupo</p>
-              <button onClick={() => setGrupoFiltro('')} className="mt-3 text-xs text-[#f5c518] hover:underline">
+              <button onClick={() => setGrupoFiltro('')} className="mt-3 text-xs text-[var(--color-accent)] hover:underline">
                 Ver todos los grupos
               </button>
             </>
           ) : (
             <>
               <p className="text-sm font-medium text-[white]">No hay clientes aún</p>
-              <p className="text-xs text-[#888888] mt-1">Crea el primer cliente para comenzar</p>
+              <p className="text-xs text-[var(--color-text-muted)] mt-1">Crea el primer cliente para comenzar</p>
               {!authLoading && puedeCrearClientes && (
                 <Link href="/clientes/nuevo" className="mt-4">
                   <Button size="sm">Crear primer cliente</Button>
@@ -602,7 +600,7 @@ export default function ClientesPage() {
       >
         <div className="space-y-4">
           {/* Tabs */}
-          <div className="flex gap-1 p-1 rounded-xl bg-[#111] border border-[#222]">
+          <div className="flex gap-1 p-1 rounded-xl bg-[var(--color-bg-card)] border border-[#222]">
             {[
               { key: 'filtrar', label: 'Filtrar' },
               { key: 'gestionar', label: 'Gestionar' },
@@ -614,8 +612,8 @@ export default function ClientesPage() {
                 className={[
                   'flex-1 h-8 rounded-lg text-xs font-medium transition-colors',
                   tabModalGrupos === t.key
-                    ? 'bg-[#f5c518] text-black'
-                    : 'text-[#888] hover:text-white',
+                    ? 'bg-[var(--color-accent)] text-black'
+                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]',
                 ].join(' ')}
               >
                 {t.label}
@@ -626,15 +624,15 @@ export default function ClientesPage() {
           {/* FILTRAR */}
           {tabModalGrupos === 'filtrar' && (
             <div className="space-y-2">
-              <p className="text-[11px] text-[#888]">Mostrar solo clientes de un grupo:</p>
+              <p className="text-[11px] text-[var(--color-text-muted)]">Mostrar solo clientes de un grupo:</p>
               <div className="flex gap-2 flex-wrap">
                 <button
                   onClick={() => { setGrupoFiltro(''); setModalGrupos(false) }}
                   className={[
                     'px-3 h-8 rounded-full text-xs border transition-colors',
                     !grupoFiltro
-                      ? 'border-[#f5c518] text-[#f5c518] bg-[rgba(245,197,24,0.12)]'
-                      : 'border-[#2a2a2a] text-[#888] hover:text-white',
+                      ? 'border-[#f5c518] text-[var(--color-accent)] bg-[rgba(245,197,24,0.12)]'
+                      : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]',
                   ].join(' ')}
                 >
                   Todos
@@ -644,14 +642,14 @@ export default function ClientesPage() {
                   className={[
                     'px-3 h-8 rounded-full text-xs border transition-colors',
                     grupoFiltro === '_none'
-                      ? 'border-[#06b6d4] text-[#06b6d4] bg-[rgba(6,182,212,0.12)]'
-                      : 'border-[#2a2a2a] text-[#888] hover:text-white',
+                      ? 'border-[#06b6d4] text-[var(--color-info)] bg-[rgba(6,182,212,0.12)]'
+                      : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]',
                   ].join(' ')}
                 >
                   Sin grupo
                 </button>
                 {grupos.map((g) => {
-                  const c = g.color || '#f5c518'
+                  const c = g.color || 'var(--color-accent)'
                   const active = grupoFiltro === g.id
                   return (
                     <button
@@ -685,13 +683,13 @@ export default function ClientesPage() {
                   value={nuevoGrupo}
                   onChange={e => setNuevoGrupo(e.target.value)}
                   placeholder="Nombre del grupo..."
-                  className="flex-1 h-9 px-3 rounded-lg bg-[#1a1a1a] border border-[#333] text-sm text-white placeholder:text-[#555]"
+                  className="flex-1 h-9 px-3 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]"
                   onKeyDown={e => e.key === 'Enter' && crearGrupo()}
                 />
                 <button
                   onClick={crearGrupo}
                   disabled={!nuevoGrupo.trim() || guardandoGrupo}
-                  className="h-9 px-4 rounded-lg bg-[#f5c518] text-black text-sm font-bold shrink-0 disabled:opacity-50 active:scale-95 transition-transform"
+                  className="h-9 px-4 rounded-lg bg-[var(--color-accent)] text-black text-sm font-bold shrink-0 disabled:opacity-50 active:scale-95 transition-transform"
                 >
                   {guardandoGrupo ? '...' : 'Crear'}
                 </button>
@@ -717,7 +715,7 @@ export default function ClientesPage() {
                         <input
                           defaultValue={g.nombre}
                           autoFocus
-                          className="flex-1 h-7 px-2 rounded bg-[#1a1a1a] border border-[#444] text-sm text-white"
+                          className="flex-1 h-7 px-2 rounded bg-[var(--color-bg-surface)] border border-[#444] text-sm text-[var(--color-text-primary)]"
                           onKeyDown={e => {
                             if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur() }
                             if (e.key === 'Escape') setEditandoGrupo(null)
@@ -725,7 +723,7 @@ export default function ClientesPage() {
                           onBlur={e => { guardarNombreGrupo(g, e.target.value) }}
                         />
                       ) : (
-                        <span className="flex-1 text-sm text-white truncate cursor-pointer" onClick={() => setEditandoGrupo(g.id)}>
+                        <span className="flex-1 text-sm text-[var(--color-text-primary)] truncate cursor-pointer" onClick={() => setEditandoGrupo(g.id)}>
                           {g.nombre}
                         </span>
                       )}
@@ -740,7 +738,7 @@ export default function ClientesPage() {
                           />
                         ))}
                       </div>
-                      <button onClick={() => eliminarGrupo(g.id)} className="text-[#666] hover:text-[#ef4444] transition-colors shrink-0">
+                      <button onClick={() => eliminarGrupo(g.id)} className="text-[#666] hover:text-[var(--color-danger)] transition-colors shrink-0">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                       </button>
                     </div>
@@ -755,7 +753,7 @@ export default function ClientesPage() {
           {/* ASIGNAR */}
           {tabModalGrupos === 'asignar' && (
             <div className="space-y-3">
-              <p className="text-[11px] text-[#888]">
+              <p className="text-[11px] text-[var(--color-text-muted)]">
                 Activa el modo asignación para seleccionar varios clientes de la lista y cambiarles el grupo.
               </p>
               <Button onClick={abrirModoAsignar} className="w-full">
@@ -773,15 +771,15 @@ export default function ClientesPage() {
 
       {/* Sticky bar: modo asignación activo (posicionada encima del BottomNav móvil) */}
       {modoAsignar && (
-        <div className="fixed left-0 right-0 z-50 border-t border-[#f5c518]/40 bg-[#0a0a0a]/98 backdrop-blur-md bottom-[84px] lg:bottom-0 shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
+        <div className="fixed left-0 right-0 z-50 border-t border-[#f5c518]/40 bg-[var(--color-bg-base)]/98 backdrop-blur-md bottom-[84px] lg:bottom-0 shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
           <div className="max-w-3xl mx-auto px-3 py-2.5">
             <div className="flex items-center justify-between gap-2 mb-2">
-              <div className="text-xs text-[#f5c518] font-semibold">
+              <div className="text-xs text-[var(--color-accent)] font-semibold">
                 {selAsignar.length} {selAsignar.length === 1 ? 'seleccionado' : 'seleccionados'}
               </div>
               <button
                 onClick={cancelarAsignacion}
-                className="text-xs text-[#b4b4b4] hover:text-white underline underline-offset-2"
+                className="text-xs text-[#b4b4b4] hover:text-[var(--color-text-primary)] underline underline-offset-2"
               >
                 Cancelar
               </button>
@@ -790,7 +788,7 @@ export default function ClientesPage() {
               <select
                 value={grupoAsignar}
                 onChange={(e) => setGrupoAsignar(e.target.value)}
-                className="flex-1 min-w-0 h-10 px-2 rounded-lg bg-[#161616] border border-[#2a2a2a] text-xs text-white"
+                className="flex-1 min-w-0 h-10 px-2 rounded-lg bg-[#161616] border border-[var(--color-border)] text-xs text-[var(--color-text-primary)]"
               >
                 <option value="">Elegir grupo…</option>
                 <option value="_none">Sin grupo</option>
@@ -801,7 +799,7 @@ export default function ClientesPage() {
               <button
                 onClick={asignarGrupoClientes}
                 disabled={!selAsignar.length || !grupoAsignar || asignandoGrupo}
-                className="shrink-0 h-10 px-4 rounded-lg bg-[#f5c518] text-black text-xs font-bold disabled:opacity-40 active:scale-95 transition-transform"
+                className="shrink-0 h-10 px-4 rounded-lg bg-[var(--color-accent)] text-black text-xs font-bold disabled:opacity-40 active:scale-95 transition-transform"
               >
                 {asignandoGrupo ? '...' : 'Asignar'}
               </button>
@@ -816,17 +814,17 @@ export default function ClientesPage() {
           <button
             onClick={() => setPage(p => Math.max(1, p - 1))}
             disabled={page <= 1}
-            className="px-3 py-1.5 text-xs rounded-lg border border-[#2a2a2a] text-[#888] hover:bg-[#222] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="px-3 py-1.5 text-xs rounded-lg border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[#222] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             Anterior
           </button>
-          <span className="text-xs text-[#888]">
+          <span className="text-xs text-[var(--color-text-muted)]">
             Página {page} de {totalPages}
           </span>
           <button
             onClick={() => setPage(p => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages}
-            className="px-3 py-1.5 text-xs rounded-lg border border-[#2a2a2a] text-[#888] hover:bg-[#222] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="px-3 py-1.5 text-xs rounded-lg border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[#222] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             Siguiente
           </button>

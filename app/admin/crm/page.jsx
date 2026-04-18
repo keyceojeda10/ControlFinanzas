@@ -55,10 +55,10 @@ function EmailModal({ org, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70">
-      <div className="w-full max-w-md bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-5 space-y-4">
+      <div className="w-full max-w-md bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-white">Enviar email</h3>
-          <button onClick={onClose} className="text-[#555555] hover:text-white transition-colors">
+          <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">Enviar email</h3>
+          <button onClick={onClose} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -66,50 +66,50 @@ function EmailModal({ org, onClose }) {
         </div>
 
         {sent ? (
-          <p className="text-sm text-[#22c55e] text-center py-4">Email enviado correctamente</p>
+          <p className="text-sm text-[var(--color-success)] text-center py-4">Email enviado correctamente</p>
         ) : (
           <>
             <div className="space-y-3">
               <div>
-                <label className="text-[10px] text-[#555555] uppercase tracking-wide">Para</label>
+                <label className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Para</label>
                 <input
                   value={to}
                   onChange={(e) => setTo(e.target.value)}
-                  className="mt-1 w-full h-9 px-3 rounded-[10px] border border-[#2a2a2a] bg-[#111111] text-sm text-white placeholder-[#555555] focus:outline-none focus:border-[#3b82f6]"
+                  className="mt-1 w-full h-9 px-3 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[var(--color-text-primary)] placeholder-[#555555] focus:outline-none focus:border-[var(--color-info)]"
                 />
               </div>
               <div>
-                <label className="text-[10px] text-[#555555] uppercase tracking-wide">Asunto</label>
+                <label className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Asunto</label>
                 <input
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder="Asunto del correo"
-                  className="mt-1 w-full h-9 px-3 rounded-[10px] border border-[#2a2a2a] bg-[#111111] text-sm text-white placeholder-[#555555] focus:outline-none focus:border-[#3b82f6]"
+                  className="mt-1 w-full h-9 px-3 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[var(--color-text-primary)] placeholder-[#555555] focus:outline-none focus:border-[var(--color-info)]"
                 />
               </div>
               <div>
-                <label className="text-[10px] text-[#555555] uppercase tracking-wide">Mensaje</label>
+                <label className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Mensaje</label>
                 <textarea
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
                   rows={5}
                   placeholder="Escribe tu mensaje..."
-                  className="mt-1 w-full px-3 py-2 rounded-[10px] border border-[#2a2a2a] bg-[#111111] text-sm text-white placeholder-[#555555] focus:outline-none focus:border-[#3b82f6] resize-none"
+                  className="mt-1 w-full px-3 py-2 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[var(--color-text-primary)] placeholder-[#555555] focus:outline-none focus:border-[var(--color-info)] resize-none"
                 />
               </div>
             </div>
-            {error && <p className="text-xs text-[#ef4444]">{error}</p>}
+            {error && <p className="text-xs text-[var(--color-danger)]">{error}</p>}
             <div className="flex gap-2 justify-end">
               <button
                 onClick={onClose}
-                className="h-9 px-4 rounded-[10px] border border-[#2a2a2a] text-xs text-[#888888] hover:text-white transition-colors"
+                className="h-9 px-4 rounded-[10px] border border-[var(--color-border)] text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={send}
                 disabled={sending}
-                className="h-9 px-5 rounded-[10px] bg-[#3b82f6] text-white text-xs font-medium hover:bg-[#2563eb] transition-colors disabled:opacity-50"
+                className="h-9 px-5 rounded-[10px] bg-[#3b82f6] text-[var(--color-text-primary)] text-xs font-medium hover:bg-[#2563eb] transition-colors disabled:opacity-50"
               >
                 {sending ? 'Enviando...' : 'Enviar'}
               </button>
@@ -147,7 +147,7 @@ function EstadoSelect({ id, value, onChange }) {
       value={value}
       onChange={(e) => handle(e.target.value)}
       disabled={saving}
-      className="h-7 px-2 rounded-[8px] border border-[#2a2a2a] bg-[#111111] text-[10px] text-white focus:outline-none focus:border-[#3b82f6] disabled:opacity-50"
+      className="h-7 px-2 rounded-[8px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-[10px] text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-info)] disabled:opacity-50"
       onClick={(e) => e.stopPropagation()}
     >
       {Object.entries(estadoConfig).map(([k, v]) => (
@@ -221,9 +221,9 @@ export default function CRMPage() {
   const tasaColor = (t) => {
     if (!t) return 'white'
     const n = parseFloat(t)
-    if (n >= 20) return '#22c55e'
-    if (n >= 10) return '#f59e0b'
-    return '#ef4444'
+    if (n >= 20) return 'var(--color-success)'
+    if (n >= 10) return 'var(--color-warning)'
+    return 'var(--color-danger)'
   }
 
   return (
@@ -231,11 +231,11 @@ export default function CRMPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white">CRM</h1>
-          <p className="text-sm text-[#555555] mt-0.5">Gestión de leads y seguimiento comercial</p>
+          <h1 className="text-xl font-bold text-[var(--color-text-primary)]">CRM</h1>
+          <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Gestión de leads y seguimiento comercial</p>
         </div>
         {/* Period selector */}
-        <div className="flex gap-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-[10px] p-1">
+        <div className="flex gap-1 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[10px] p-1">
           {['7d', '30d', '90d'].map((p) => (
             <button
               key={p}
@@ -243,8 +243,8 @@ export default function CRMPage() {
               className={[
                 'px-3 py-1.5 rounded-[8px] text-xs font-medium transition-all',
                 periodo === p
-                  ? 'bg-[rgba(245,197,24,0.15)] text-[#f5c518]'
-                  : 'text-[#555555] hover:text-white',
+                  ? 'bg-[rgba(245,197,24,0.15)] text-[var(--color-accent)]'
+                  : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]',
               ].join(' ')}
             >
               {p}
@@ -257,26 +257,26 @@ export default function CRMPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {loadingMet ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-3 animate-pulse">
-              <div className="h-3 w-16 bg-[#2a2a2a] rounded mb-2" />
-              <div className="h-6 w-10 bg-[#2a2a2a] rounded" />
+            <div key={i} className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-3 py-3 animate-pulse">
+              <div className="h-3 w-16 bg-[var(--color-bg-hover)] rounded mb-2" />
+              <div className="h-6 w-10 bg-[var(--color-bg-hover)] rounded" />
             </div>
           ))
         ) : metricas ? (
           [
             { label: 'Registros',        value: metricas.totalRegistros ?? 0,                                                                          color: 'white' },
-            { label: 'Contactados',      value: (metricas.porEstado?.contactado ?? 0) + (metricas.porEstado?.interesado ?? 0),               color: '#f5c518' },
-            { label: 'Convertidos',      value: metricas.conSuscripcionActiva ?? 0,                                                           color: '#22c55e' },
+            { label: 'Contactados',      value: (metricas.porEstado?.contactado ?? 0) + (metricas.porEstado?.interesado ?? 0),               color: 'var(--color-accent)' },
+            { label: 'Convertidos',      value: metricas.conSuscripcionActiva ?? 0,                                                           color: 'var(--color-success)' },
             { label: 'Tasa conversión',  value: `${metricas.tasaConversion ?? 0}%`,                                                           color: tasaColor(metricas.tasaConversion) },
           ].map(({ label, value, color }) => (
-            <div key={label} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] px-3 py-3 text-center">
-              <p className="text-[10px] text-[#555555]">{label}</p>
+            <div key={label} className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-3 py-3 text-center">
+              <p className="text-[10px] text-[var(--color-text-muted)]">{label}</p>
               <p className="text-base font-bold mt-0.5" style={{ color }}>{value}</p>
             </div>
           ))
         ) : (
           <div className="col-span-4">
-            <p className="text-xs text-[#ef4444]">Error cargando métricas</p>
+            <p className="text-xs text-[var(--color-danger)]">Error cargando métricas</p>
           </div>
         )}
       </div>
@@ -293,11 +293,11 @@ export default function CRMPage() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Buscar por nombre o email..."
-              className="flex-1 h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-white placeholder-[#555555] focus:outline-none focus:border-[#3b82f6]"
+              className="flex-1 h-9 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[var(--color-text-primary)] placeholder-[#555555] focus:outline-none focus:border-[var(--color-info)]"
             />
             <button
               type="submit"
-              className="h-9 px-4 rounded-[12px] bg-[#3b82f6] text-white text-xs font-medium hover:bg-[#2563eb] transition-colors"
+              className="h-9 px-4 rounded-[12px] bg-[#3b82f6] text-[var(--color-text-primary)] text-xs font-medium hover:bg-[#2563eb] transition-colors"
             >
               Buscar
             </button>
@@ -305,7 +305,7 @@ export default function CRMPage() {
           <select
             value={filtPlan}
             onChange={(e) => setFiltPlan(e.target.value)}
-            className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-white focus:outline-none focus:border-[#3b82f6]"
+            className="h-9 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-info)]"
           >
             <option value="">Todos los planes</option>
             <option value="starter">Inicial</option>
@@ -317,7 +317,7 @@ export default function CRMPage() {
           <select
             value={filtEstado}
             onChange={(e) => setFiltEstado(e.target.value)}
-            className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-white focus:outline-none focus:border-[#3b82f6]"
+            className="h-9 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-info)]"
           >
             <option value="">Todos los estados</option>
             <option value="nuevo">Nuevo</option>
@@ -329,7 +329,7 @@ export default function CRMPage() {
           <select
             value={filtSusc}
             onChange={(e) => setFiltSusc(e.target.value)}
-            className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-white focus:outline-none focus:border-[#3b82f6]"
+            className="h-9 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-info)]"
           >
             <option value="">Todas las suscripciones</option>
             <option value="activa">Con suscripción activa</option>
@@ -338,21 +338,21 @@ export default function CRMPage() {
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="flex items-center gap-2">
-            <label className="text-[10px] text-[#555555] uppercase tracking-wide whitespace-nowrap">Desde</label>
+            <label className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide whitespace-nowrap">Desde</label>
             <input
               type="date"
               value={fechaDesde}
               onChange={(e) => setFechaDesde(e.target.value)}
-              className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-white focus:outline-none focus:border-[#3b82f6]"
+              className="h-9 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-info)]"
             />
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-[10px] text-[#555555] uppercase tracking-wide whitespace-nowrap">Hasta</label>
+            <label className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide whitespace-nowrap">Hasta</label>
             <input
               type="date"
               value={fechaHasta}
               onChange={(e) => setFechaHasta(e.target.value)}
-              className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-xs text-white focus:outline-none focus:border-[#3b82f6]"
+              className="h-9 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-info)]"
             />
           </div>
           {(fechaDesde || fechaHasta || filtEstado || filtPlan || filtSusc || q) && (
@@ -361,7 +361,7 @@ export default function CRMPage() {
                 setQ(''); setFiltPlan(''); setFiltEstado(''); setFiltSusc('')
                 setFechaDesde(''); setFechaHasta('')
               }}
-              className="h-9 px-3 rounded-[12px] border border-[#2a2a2a] text-xs text-[#555555] hover:text-white transition-colors"
+              className="h-9 px-3 rounded-[12px] border border-[var(--color-border)] text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
             >
               Limpiar filtros
             </button>
@@ -372,7 +372,7 @@ export default function CRMPage() {
       {/* Error */}
       {error && (
         <div className="bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.2)] rounded-[12px] px-4 py-3">
-          <p className="text-sm text-[#ef4444]">{error}</p>
+          <p className="text-sm text-[var(--color-danger)]">{error}</p>
         </div>
       )}
 
@@ -380,17 +380,17 @@ export default function CRMPage() {
       {loading ? (
         <SkeletonTable rows={6} />
       ) : registros.length === 0 ? (
-        <p className="text-sm text-[#555555] text-center py-10">No se encontraron registros</p>
+        <p className="text-sm text-[var(--color-text-muted)] text-center py-10">No se encontraron registros</p>
       ) : (
         <>
           {/* Mobile cards */}
           <div className="lg:hidden space-y-3">
             {registros.map((r) => (
-              <div key={r.id} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-4 space-y-3">
+              <div key={r.id} className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] p-4 space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-white truncate">{r.orgNombre}</p>
-                    <p className="text-xs text-[#888888] truncate">{r.ownerNombre}</p>
+                    <p className="text-sm font-semibold text-[var(--color-text-primary)] truncate">{r.orgNombre}</p>
+                    <p className="text-xs text-[var(--color-text-muted)] truncate">{r.ownerNombre}</p>
                   </div>
                   <div className="flex flex-col items-end gap-1 shrink-0">
                     <Badge variant={planBadge[r.plan] ?? 'gray'}>{r.plan}</Badge>
@@ -400,19 +400,19 @@ export default function CRMPage() {
                   </div>
                 </div>
 
-                <div className="space-y-1 text-xs text-[#888888]">
+                <div className="space-y-1 text-xs text-[var(--color-text-muted)]">
                   <p>{r.ownerEmail}</p>
                   {(r.ownerPhone || r.orgTelefono) && (
                     <p>{r.ownerPhone || r.orgTelefono}</p>
                   )}
                   <p>{new Date(r.createdAt).toLocaleDateString('es-CO')} · {diasDesde(r.createdAt)}</p>
                   {r.notasCount > 0 && (
-                    <p className="text-[#f5c518]">{r.notasCount} nota{r.notasCount !== 1 ? 's' : ''}</p>
+                    <p className="text-[var(--color-accent)]">{r.notasCount} nota{r.notasCount !== 1 ? 's' : ''}</p>
                   )}
                 </div>
 
                 <div className="pt-1">
-                  <label className="text-[10px] text-[#555555] uppercase tracking-wide">Estado contacto</label>
+                  <label className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Estado contacto</label>
                   <div className="mt-1">
                     <EstadoSelect id={r.id} value={r.estadoContacto} onChange={handleEstadoChange} />
                   </div>
@@ -424,7 +424,7 @@ export default function CRMPage() {
                       href={`https://wa.me/57${(r.ownerPhone || r.orgTelefono).replace(/\D/g, '')}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 h-8 px-3 rounded-[8px] bg-[rgba(34,197,94,0.1)] border border-[rgba(34,197,94,0.2)] text-[#22c55e] text-xs font-medium hover:bg-[rgba(34,197,94,0.2)] transition-colors"
+                      className="flex items-center gap-1.5 h-8 px-3 rounded-[8px] bg-[rgba(34,197,94,0.1)] border border-[rgba(34,197,94,0.2)] text-[var(--color-success)] text-xs font-medium hover:bg-[rgba(34,197,94,0.2)] transition-colors"
                     >
                       <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
@@ -434,7 +434,7 @@ export default function CRMPage() {
                   )}
                   <button
                     onClick={() => setEmailOrg({ id: r.id, ownerEmail: r.ownerEmail })}
-                    className="flex items-center gap-1.5 h-8 px-3 rounded-[8px] bg-[rgba(59,130,246,0.1)] border border-[rgba(59,130,246,0.2)] text-[#3b82f6] text-xs font-medium hover:bg-[rgba(59,130,246,0.2)] transition-colors"
+                    className="flex items-center gap-1.5 h-8 px-3 rounded-[8px] bg-[rgba(59,130,246,0.1)] border border-[rgba(59,130,246,0.2)] text-[var(--color-info)] text-xs font-medium hover:bg-[rgba(59,130,246,0.2)] transition-colors"
                   >
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -443,7 +443,7 @@ export default function CRMPage() {
                   </button>
                   <Link
                     href={`/admin/crm/${r.id}`}
-                    className="ml-auto flex items-center gap-1 h-8 px-3 rounded-[8px] border border-[#2a2a2a] text-[#888888] text-xs hover:text-white hover:border-[#3a3a3a] transition-colors"
+                    className="ml-auto flex items-center gap-1 h-8 px-3 rounded-[8px] border border-[var(--color-border)] text-[var(--color-text-muted)] text-xs hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-hover)] transition-colors"
                   >
                     Ver detalle
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -456,8 +456,8 @@ export default function CRMPage() {
           </div>
 
           {/* Desktop table */}
-          <div className="hidden lg:block bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] overflow-hidden">
-            <div className="grid grid-cols-12 gap-2 px-4 py-2.5 text-[10px] text-[#555555] font-medium uppercase border-b border-[#2a2a2a]">
+          <div className="hidden lg:block bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] overflow-hidden">
+            <div className="grid grid-cols-12 gap-2 px-4 py-2.5 text-[10px] text-[var(--color-text-muted)] font-medium uppercase border-b border-[var(--color-border)]">
               <span className="col-span-3">Organización / Owner</span>
               <span className="col-span-2">Contacto</span>
               <span className="col-span-1 text-center">Plan</span>
@@ -469,22 +469,22 @@ export default function CRMPage() {
             {registros.map((r) => (
               <div
                 key={r.id}
-                className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-[#2a2a2a] last:border-0 hover:bg-[#222222] transition-colors items-center"
+                className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-[var(--color-border)] last:border-0 hover:bg-[var(--color-bg-hover)] transition-colors items-center"
               >
                 {/* Org / Owner */}
                 <div className="col-span-3 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{r.orgNombre}</p>
-                  <p className="text-xs text-[#888888] truncate">{r.ownerNombre}</p>
+                  <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">{r.orgNombre}</p>
+                  <p className="text-xs text-[var(--color-text-muted)] truncate">{r.ownerNombre}</p>
                   {r.notasCount > 0 && (
-                    <span className="text-[10px] text-[#f5c518]">{r.notasCount} nota{r.notasCount !== 1 ? 's' : ''}</span>
+                    <span className="text-[10px] text-[var(--color-accent)]">{r.notasCount} nota{r.notasCount !== 1 ? 's' : ''}</span>
                   )}
                 </div>
 
                 {/* Contacto */}
                 <div className="col-span-2 min-w-0">
-                  <p className="text-xs text-[#888888] truncate">{r.ownerEmail}</p>
+                  <p className="text-xs text-[var(--color-text-muted)] truncate">{r.ownerEmail}</p>
                   {(r.ownerPhone || r.orgTelefono) && (
-                    <p className="text-xs text-[#555555] truncate">{r.ownerPhone || r.orgTelefono}</p>
+                    <p className="text-xs text-[var(--color-text-muted)] truncate">{r.ownerPhone || r.orgTelefono}</p>
                   )}
                 </div>
 
@@ -500,8 +500,8 @@ export default function CRMPage() {
 
                 {/* Registro */}
                 <div className="col-span-2">
-                  <p className="text-xs text-[#888888]">{new Date(r.createdAt).toLocaleDateString('es-CO')}</p>
-                  <p className="text-[10px] text-[#555555]">{diasDesde(r.createdAt)}</p>
+                  <p className="text-xs text-[var(--color-text-muted)]">{new Date(r.createdAt).toLocaleDateString('es-CO')}</p>
+                  <p className="text-[10px] text-[var(--color-text-muted)]">{diasDesde(r.createdAt)}</p>
                 </div>
 
                 {/* Acciones */}
@@ -512,7 +512,7 @@ export default function CRMPage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       title="WhatsApp"
-                      className="w-7 h-7 flex items-center justify-center rounded-[8px] bg-[rgba(34,197,94,0.1)] border border-[rgba(34,197,94,0.2)] text-[#22c55e] hover:bg-[rgba(34,197,94,0.2)] transition-colors"
+                      className="w-7 h-7 flex items-center justify-center rounded-[8px] bg-[rgba(34,197,94,0.1)] border border-[rgba(34,197,94,0.2)] text-[var(--color-success)] hover:bg-[rgba(34,197,94,0.2)] transition-colors"
                     >
                       <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
@@ -522,7 +522,7 @@ export default function CRMPage() {
                   <button
                     onClick={() => setEmailOrg({ id: r.id, ownerEmail: r.ownerEmail })}
                     title="Enviar email"
-                    className="w-7 h-7 flex items-center justify-center rounded-[8px] bg-[rgba(59,130,246,0.1)] border border-[rgba(59,130,246,0.2)] text-[#3b82f6] hover:bg-[rgba(59,130,246,0.2)] transition-colors"
+                    className="w-7 h-7 flex items-center justify-center rounded-[8px] bg-[rgba(59,130,246,0.1)] border border-[rgba(59,130,246,0.2)] text-[var(--color-info)] hover:bg-[rgba(59,130,246,0.2)] transition-colors"
                   >
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -531,7 +531,7 @@ export default function CRMPage() {
                   <Link
                     href={`/admin/crm/${r.id}`}
                     title="Ver detalle"
-                    className="w-7 h-7 flex items-center justify-center rounded-[8px] border border-[#2a2a2a] text-[#888888] hover:text-white hover:border-[#3a3a3a] transition-colors"
+                    className="w-7 h-7 flex items-center justify-center rounded-[8px] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-hover)] transition-colors"
                   >
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

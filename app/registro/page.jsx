@@ -146,23 +146,23 @@ function RegistroForm() {
     }
   }
 
-  const inputClass = 'w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-white placeholder-[#555555] focus:outline-none focus:border-[#f5c518] focus:ring-1 focus:ring-[rgba(245,197,24,0.2)] transition-all'
+  const inputClass = 'w-full h-10 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[var(--color-text-primary)] placeholder-[#555555] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[rgba(245,197,24,0.2)] transition-all'
 
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center bg-[#0a0a0a] px-4 py-8">
+    <div className="min-h-dvh flex flex-col items-center justify-center bg-[var(--color-bg-base)] px-4 py-8">
       <div className="w-full max-w-sm">
         {/* Header */}
         <div className="text-center mb-8">
           <Image src="/logo-icon.svg" alt="Control Finanzas" width={56} height={56} className="mx-auto mb-5" priority />
-          <h1 className="text-2xl font-bold text-white tracking-tight">Crear cuenta</h1>
-          <p className="text-sm text-[#888888] mt-1">
+          <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Crear cuenta</h1>
+          <p className="text-sm text-[var(--color-text-muted)] mt-1">
             {`Prueba el plan ${infoPlan.nombre} gratis por 14 dias`}
           </p>
         </div>
 
         {/* Plan selector */}
         <div className="mb-4">
-          <p className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em] mb-2">Elige tu plan de prueba</p>
+          <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em] mb-2">Elige tu plan de prueba</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {PLANES_TRIAL.map((p) => {
               const activo = planSeleccionado === p.key
@@ -175,36 +175,36 @@ function RegistroForm() {
                     'rounded-[12px] px-2 py-3 text-center transition-all cursor-pointer border',
                     activo
                       ? 'border-[#f5c518] bg-[rgba(245,197,24,0.08)]'
-                      : 'border-[#2a2a2a] bg-[#111111] hover:border-[#3a3a3a]',
+                      : 'border-[var(--color-border)] bg-[var(--color-bg-card)] hover:border-[var(--color-border-hover)]',
                   ].join(' ')}
                 >
-                  <p className={`text-xs font-semibold ${activo ? 'text-[#f5c518]' : 'text-white'}`}>{p.nombre}</p>
-                  <p className="text-[10px] text-[#888888] mt-0.5">{p.precio}/mes</p>
+                  <p className={`text-xs font-semibold ${activo ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-primary)]'}`}>{p.nombre}</p>
+                  <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{p.precio}/mes</p>
                 </button>
               )
             })}
           </div>
-          <p className="text-[10px] text-[#22c55e] mt-2">
+          <p className="text-[10px] text-[var(--color-success)] mt-2">
             14 dias gratis del plan {infoPlan.nombre} — {infoPlan.desc}
           </p>
         </div>
 
         {/* Referral badge */}
         {referrer && (
-          <div className="mb-4 flex items-center gap-2.5 bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.2)] text-[#f5c518] text-sm rounded-[10px] px-4 py-3">
+          <div className="mb-4 flex items-center gap-2.5 bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.2)] text-[var(--color-accent)] text-sm rounded-[10px] px-4 py-3">
             <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
             </svg>
             <span>
-              Referido por <strong className="text-white">{referrer.nombreOrg}</strong>
+              Referido por <strong className="text-[var(--color-text-primary)]">{referrer.nombreOrg}</strong>
             </span>
           </div>
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[24px] p-8 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[24px] p-8 space-y-4">
           {error && (
-            <div className="flex items-center gap-2.5 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[10px] px-4 py-3">
+            <div className="flex items-center gap-2.5 bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[10px] px-4 py-3">
               <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>
@@ -213,7 +213,7 @@ function RegistroForm() {
           )}
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em]">Nombre del negocio</label>
+            <label className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">Nombre del negocio</label>
             <input
               type="text"
               value={form.nombreOrganizacion}
@@ -224,7 +224,7 @@ function RegistroForm() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em]">Tu nombre</label>
+            <label className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">Tu nombre</label>
             <input
               type="text"
               value={form.nombre}
@@ -235,7 +235,7 @@ function RegistroForm() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em]">Correo electrónico</label>
+            <label className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">Correo electrónico</label>
             <input
               type="email"
               value={form.email}
@@ -247,7 +247,7 @@ function RegistroForm() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em]">Contraseña</label>
+            <label className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">Contraseña</label>
             <input
               type="password"
               value={form.password}
@@ -259,7 +259,7 @@ function RegistroForm() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em]">Confirmar contraseña</label>
+            <label className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">Confirmar contraseña</label>
             <input
               type="password"
               value={form.confirmar}
@@ -275,15 +275,15 @@ function RegistroForm() {
               type="checkbox"
               checked={form.terminosAceptados}
               onChange={(e) => setForm({ ...form, terminosAceptados: e.target.checked })}
-              className="mt-0.5 w-4 h-4 rounded border-[#2a2a2a] bg-[#111111] text-[#f5c518] focus:ring-[#f5c518] focus:ring-offset-0 cursor-pointer accent-[#f5c518]"
+              className="mt-0.5 w-4 h-4 rounded border-[var(--color-border)] bg-[var(--color-bg-card)] text-[var(--color-accent)] focus:ring-[#f5c518] focus:ring-offset-0 cursor-pointer accent-[#f5c518]"
             />
-            <span className="text-xs text-[#888888] leading-relaxed">
+            <span className="text-xs text-[var(--color-text-muted)] leading-relaxed">
               Al crear tu cuenta, aceptas nuestros{' '}
-              <a href="https://control-finanzas.com/terminos-uso" target="_blank" rel="noopener noreferrer" className="text-[#f5c518] hover:underline">
+              <a href="https://control-finanzas.com/terminos-uso" target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent)] hover:underline">
                 Términos de uso
               </a>{' '}
               y nuestra{' '}
-              <a href="https://control-finanzas.com/privacidad" target="_blank" rel="noopener noreferrer" className="text-[#f5c518] hover:underline">
+              <a href="https://control-finanzas.com/privacidad" target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent)] hover:underline">
                 Política de privacidad
               </a>
             </span>
@@ -292,7 +292,7 @@ function RegistroForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-11 mt-1 rounded-[12px] bg-[#f5c518] hover:bg-[#f0b800] disabled:opacity-60 text-[#0a0a0a] font-bold text-sm transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer hover:shadow-[0_0_20px_rgba(245,197,24,0.3)]"
+            className="w-full h-11 mt-1 rounded-[12px] bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-60 text-[#0a0a0a] font-bold text-sm transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer hover:shadow-[0_0_20px_rgba(245,197,24,0.3)]"
           >
             {loading ? (
               <>
@@ -306,9 +306,9 @@ function RegistroForm() {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-[#888888]">
+        <p className="mt-6 text-center text-sm text-[var(--color-text-muted)]">
           ¿Ya tienes cuenta?{' '}
-          <Link href="/login" className="text-[#f5c518] hover:underline font-medium">
+          <Link href="/login" className="text-[var(--color-accent)] hover:underline font-medium">
             Inicia sesión
           </Link>
         </p>

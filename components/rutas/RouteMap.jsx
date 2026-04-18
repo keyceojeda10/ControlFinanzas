@@ -69,7 +69,7 @@ export default function RouteMap({ clientes }) {
       L.polyline(
         conCoords.map((c) => [c.latitud, c.longitud]),
         {
-          color: '#f5c518',
+          color: 'var(--color-accent)',
           weight: 3,
           opacity: 0.7,
           dashArray: '8, 6',
@@ -92,8 +92,8 @@ export default function RouteMap({ clientes }) {
 
   if (conCoords.length === 0) {
     return (
-      <div className="h-[200px] rounded-xl border border-[#2a2a2a] bg-[#111111] flex items-center justify-center">
-        <p className="text-xs text-[#555555]">Sin clientes con ubicación para mostrar</p>
+      <div className="h-[200px] rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] flex items-center justify-center">
+        <p className="text-xs text-[var(--color-text-muted)]">Sin clientes con ubicación para mostrar</p>
       </div>
     )
   }
@@ -102,10 +102,10 @@ export default function RouteMap({ clientes }) {
     <div>
       <div
         ref={mapRef}
-        className="w-full h-[250px] rounded-xl overflow-hidden border border-[#2a2a2a]"
+        className="w-full h-[250px] rounded-xl overflow-hidden border border-[var(--color-border)]"
         style={{ background: '#111111' }}
       />
-      <p className="text-[10px] text-[#555555] mt-1">
+      <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
         {conCoords.length} clientes con ubicación • La línea muestra el orden de visita
       </p>
     </div>

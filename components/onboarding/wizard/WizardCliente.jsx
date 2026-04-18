@@ -70,13 +70,13 @@ export default function WizardCliente({ onComplete }) {
   return (
     <div className="max-w-md mx-auto">
       <div className="text-center mb-6">
-        <h2 className="text-xl font-bold text-white">Registra tu primer cliente</h2>
-        <p className="text-sm text-[#888888] mt-1">Piensa en el cliente que mejor conoces</p>
+        <h2 className="text-xl font-bold text-[var(--color-text-primary)]">Registra tu primer cliente</h2>
+        <p className="text-sm text-[var(--color-text-muted)] mt-1">Piensa en el cliente que mejor conoces</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="flex items-center gap-2 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3">
+          <div className="flex items-center gap-2 bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[12px] px-4 py-3">
             <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
             </svg>
@@ -84,7 +84,7 @@ export default function WizardCliente({ onComplete }) {
           </div>
         )}
 
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-5 space-y-4">
+        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] p-5 space-y-4">
           <Input
             label="Nombre completo"
             placeholder="Ej: Juan Garcia"
@@ -114,7 +114,7 @@ export default function WizardCliente({ onComplete }) {
         <button
           type="submit"
           disabled={loading}
-          className="w-full h-12 rounded-[12px] bg-[#f5c518] text-[#111111] text-base font-bold transition-all hover:bg-[#f0b800] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+          className="w-full h-12 rounded-[12px] bg-[var(--color-accent)] text-[#111111] text-base font-bold transition-all hover:bg-[var(--color-accent-hover)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
         >
           {loading ? (
             <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">

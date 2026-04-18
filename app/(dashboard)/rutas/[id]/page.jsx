@@ -58,8 +58,8 @@ function HistorialCobros({ rutaId }) {
   return (
     <Card>
       <button onClick={toggle} className="w-full flex items-center justify-between">
-        <span className="text-xs font-semibold text-[#888] uppercase tracking-wide">Historial de cobros</span>
-        <svg className={`w-4 h-4 text-[#888] transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <span className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Historial de cobros</span>
+        <svg className={`w-4 h-4 text-[var(--color-text-muted)] transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
@@ -75,12 +75,12 @@ function HistorialCobros({ rutaId }) {
                   type="date"
                   value={desde}
                   onChange={(e) => setDesde(e.target.value)}
-                  className="w-full h-9 px-2 pr-8 rounded-[10px] bg-[#1a1a1a] border border-[#2a2a2a] text-[12px] text-white focus:outline-none focus:border-[#f5c518] transition-colors appearance-none [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-date-and-time-value]:text-left"
+                  className="w-full h-9 px-2 pr-8 rounded-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[12px] text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-colors appearance-none [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-date-and-time-value]:text-left"
                 />
                 {!desde && (
                   <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[12px] text-[#555]">dd/mm/aaaa</span>
                 )}
-                <svg className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-[#f5c518]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
@@ -92,12 +92,12 @@ function HistorialCobros({ rutaId }) {
                   type="date"
                   value={hasta}
                   onChange={(e) => setHasta(e.target.value)}
-                  className="w-full h-9 px-2 pr-8 rounded-[10px] bg-[#1a1a1a] border border-[#2a2a2a] text-[12px] text-white focus:outline-none focus:border-[#f5c518] transition-colors appearance-none [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-date-and-time-value]:text-left"
+                  className="w-full h-9 px-2 pr-8 rounded-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[12px] text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-colors appearance-none [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-date-and-time-value]:text-left"
                 />
                 {!hasta && (
                   <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[12px] text-[#555]">dd/mm/aaaa</span>
                 )}
-                <svg className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-[#f5c518]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
@@ -105,7 +105,7 @@ function HistorialCobros({ rutaId }) {
             <button
               onClick={aplicarFiltro}
               disabled={loading}
-              className="h-9 px-3 rounded-[10px] bg-[#f5c518] text-black text-[11px] font-semibold hover:bg-[#e0b014] transition-colors disabled:opacity-50"
+              className="h-9 px-3 rounded-[10px] bg-[var(--color-accent)] text-black text-[11px] font-semibold hover:bg-[#e0b014] transition-colors disabled:opacity-50"
             >
               Buscar
             </button>
@@ -113,7 +113,7 @@ function HistorialCobros({ rutaId }) {
               <button
                 onClick={limpiarFiltro}
                 disabled={loading}
-                className="h-9 px-3 rounded-[10px] bg-[#1a1a1a] border border-[#2a2a2a] text-[#888] text-[11px] font-medium hover:text-white transition-colors disabled:opacity-50"
+                className="h-9 px-3 rounded-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] text-[11px] font-medium hover:text-[var(--color-text-primary)] transition-colors disabled:opacity-50"
               >
                 Limpiar
               </button>
@@ -126,7 +126,7 @@ function HistorialCobros({ rutaId }) {
               ))}
             </div>
           ) : !dias?.length ? (
-            <p className="text-sm text-[#888] text-center py-4">No hay historial aún</p>
+            <p className="text-sm text-[var(--color-text-muted)] text-center py-4">No hay historial aún</p>
           ) : (
             <div className="space-y-1.5">
               {dias.map((dia) => {
@@ -141,13 +141,13 @@ function HistorialCobros({ rutaId }) {
                       className="w-full flex items-center gap-3 px-3 py-3 hover:bg-[rgba(255,255,255,0.02)] transition-colors"
                     >
                       <div className="flex-1 text-left min-w-0">
-                        <p className="text-[13px] text-white font-medium capitalize">{formatFecha(dia.fecha)}</p>
+                        <p className="text-[13px] text-[var(--color-text-primary)] font-medium capitalize">{formatFecha(dia.fecha)}</p>
                         <p className="text-[10px] text-[#666] mt-0.5">
-                          <span className="text-[#22c55e]">{cantPagaron} pagaron</span>
-                          {cantNoPagaron > 0 && <span className="text-[#ef4444]"> · {cantNoPagaron} sin pagar</span>}
+                          <span className="text-[var(--color-success)]">{cantPagaron} pagaron</span>
+                          {cantNoPagaron > 0 && <span className="text-[var(--color-danger)]"> · {cantNoPagaron} sin pagar</span>}
                         </p>
                       </div>
-                      <p className="text-[14px] font-bold font-mono-display text-[#22c55e] shrink-0">
+                      <p className="text-[14px] font-bold font-mono-display text-[var(--color-success)] shrink-0">
                         {formatCOP(dia.cobrado)}
                       </p>
                       <svg className={`w-4 h-4 text-[#777] transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -162,13 +162,13 @@ function HistorialCobros({ rutaId }) {
                         <div className="flex border-b border-[rgba(255,255,255,0.05)]">
                           <button
                             onClick={() => setTab('pagaron')}
-                            className={`flex-1 text-[11px] font-semibold py-2 transition-colors ${tab === 'pagaron' ? 'text-[#22c55e] border-b-2 border-[#22c55e]' : 'text-[#888]'}`}
+                            className={`flex-1 text-[11px] font-semibold py-2 transition-colors ${tab === 'pagaron' ? 'text-[var(--color-success)] border-b-2 border-[#22c55e]' : 'text-[var(--color-text-muted)]'}`}
                           >
                             Pagaron ({cantPagaron})
                           </button>
                           <button
                             onClick={() => setTab('noPagaron')}
-                            className={`flex-1 text-[11px] font-semibold py-2 transition-colors ${tab === 'noPagaron' ? 'text-[#ef4444] border-b-2 border-[#ef4444]' : 'text-[#888]'}`}
+                            className={`flex-1 text-[11px] font-semibold py-2 transition-colors ${tab === 'noPagaron' ? 'text-[var(--color-danger)] border-b-2 border-[#ef4444]' : 'text-[var(--color-text-muted)]'}`}
                           >
                             No pagaron ({cantNoPagaron})
                           </button>
@@ -178,29 +178,29 @@ function HistorialCobros({ rutaId }) {
                         <div className="px-3 py-2 max-h-[200px] overflow-y-auto">
                           {tab === 'pagaron' ? (
                             cantPagaron === 0 ? (
-                              <p className="text-[11px] text-[#888] text-center py-2">Nadie pagó este día</p>
+                              <p className="text-[11px] text-[var(--color-text-muted)] text-center py-2">Nadie pagó este día</p>
                             ) : (
                               <div className="space-y-1">
                                 {dia.pagaron.map((c, i) => (
                                   <div key={i} className="flex items-center justify-between py-1.5">
                                     <div className="flex items-center gap-2 min-w-0">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e] shrink-0" />
+                                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)] shrink-0" />
                                       <span className="text-[12px] text-[#ccc] truncate">{c.nombre}</span>
                                     </div>
-                                    <span className="text-[12px] font-bold font-mono-display text-white shrink-0 ml-2">{formatCOP(c.monto)}</span>
+                                    <span className="text-[12px] font-bold font-mono-display text-[var(--color-text-primary)] shrink-0 ml-2">{formatCOP(c.monto)}</span>
                                   </div>
                                 ))}
                               </div>
                             )
                           ) : (
                             cantNoPagaron === 0 ? (
-                              <p className="text-[11px] text-[#22c55e] text-center py-2">Todos pagaron</p>
+                              <p className="text-[11px] text-[var(--color-success)] text-center py-2">Todos pagaron</p>
                             ) : (
                               <div className="space-y-1">
                                 {dia.noPagaron.map((nombre, i) => (
                                   <div key={i} className="flex items-center gap-2 py-1.5">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444] shrink-0" />
-                                    <span className="text-[12px] text-[#999]">{nombre}</span>
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-danger)] shrink-0" />
+                                    <span className="text-[12px] text-[var(--color-text-secondary)]">{nombre}</span>
                                   </div>
                                 ))}
                               </div>
@@ -882,7 +882,7 @@ export default function RutaDetallePage({ params }) {
 
   if (error || !ruta) return (
     <div className="max-w-2xl mx-auto">
-      <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] rounded-[16px] p-6 text-center">
+      <div className="bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] rounded-[16px] p-6 text-center">
         <p className="font-semibold">Ruta no encontrada</p>
         <button onClick={() => router.back()} className="text-sm underline mt-2">Volver</button>
       </div>
@@ -894,7 +894,7 @@ export default function RutaDetallePage({ params }) {
 
   return (
     <div className="max-w-2xl mx-auto space-y-4">
-      <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-[#888888] hover:text-[white] transition-colors">
+      <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[white] transition-colors">
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
@@ -912,27 +912,27 @@ export default function RutaDetallePage({ params }) {
                   value={nuevoNombre}
                   onChange={(e) => setNuevoNombre(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && guardarNombre()}
-                  className="flex-1 h-9 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#0a0a0a] text-sm text-[white] focus:outline-none focus:border-[#f5c518]"
+                  className="flex-1 h-9 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-base)] text-sm text-[white] focus:outline-none focus:border-[var(--color-accent)]"
                   autoFocus
                 />
-                <button onClick={guardarNombre} className="text-[#22c55e] p-1"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg></button>
-                <button onClick={() => setEditandoNombre(false)} className="text-[#888] p-1"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+                <button onClick={guardarNombre} className="text-[var(--color-success)] p-1"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg></button>
+                <button onClick={() => setEditandoNombre(false)} className="text-[var(--color-text-muted)] p-1"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
               </div>
             ) : (
               <>
                 <div className="flex items-center gap-2">
                   <h1 className="text-lg font-bold text-[white]">{ruta.nombre}</h1>
                   {esOwner && (
-                    <button onClick={() => { setNuevoNombre(ruta.nombre); setEditandoNombre(true) }} className="text-[#666] hover:text-[#f5c518] transition-colors p-1">
+                    <button onClick={() => { setNuevoNombre(ruta.nombre); setEditandoNombre(true) }} className="text-[#666] hover:text-[var(--color-accent)] transition-colors p-1">
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                     </button>
                   )}
                 </div>
-                <p className="text-[11px] text-[#888] mt-0.5">
-                  {ruta.cobrador && <span className="text-[#a855f7]">{ruta.cobrador.nombre}</span>}
+                <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
+                  {ruta.cobrador && <span className="text-[var(--color-purple)]">{ruta.cobrador.nombre}</span>}
                   {ruta.cobrador && ' · '}
                   {(ruta.clientesConCobroHoy ?? 0) > 0
-                    ? <><span className="text-[#22c55e] font-medium">{ruta.clientesPagaronHoy ?? 0}</span> de <span className="text-[white] font-medium">{ruta.clientesConCobroHoy}</span> clientes de hoy</>
+                    ? <><span className="text-[var(--color-success)] font-medium">{ruta.clientesPagaronHoy ?? 0}</span> de <span className="text-[white] font-medium">{ruta.clientesConCobroHoy}</span> clientes de hoy</>
                     : <>{ruta.clientes?.length ?? 0} clientes</>
                   }
                 </p>
@@ -940,7 +940,7 @@ export default function RutaDetallePage({ params }) {
             )}
           </div>
           {esOwner && !editandoNombre && (
-            <button onClick={eliminarRuta} disabled={eliminando} className="text-[#666] hover:text-[#ef4444] transition-colors p-2 disabled:opacity-50">
+            <button onClick={eliminarRuta} disabled={eliminando} className="text-[#666] hover:text-[var(--color-danger)] transition-colors p-2 disabled:opacity-50">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
             </button>
           )}
@@ -949,7 +949,7 @@ export default function RutaDetallePage({ params }) {
           <select
             value={ruta.cobrador?.id ?? ''}
             onChange={(e) => cambiarCobrador(e.target.value)}
-            className="w-full h-9 rounded-[10px] border border-[#2a2a2a] bg-[#0a0a0a] text-xs text-[white] px-3 mt-3 focus:outline-none focus:border-[#f5c518] transition-all cursor-pointer"
+            className="w-full h-9 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-base)] text-xs text-[white] px-3 mt-3 focus:outline-none focus:border-[var(--color-accent)] transition-all cursor-pointer"
           >
             <option value="">Sin cobrador asignado</option>
             {cobradores.map((c) => (
@@ -958,7 +958,7 @@ export default function RutaDetallePage({ params }) {
           </select>
           <button
             onClick={abrirModalDSC}
-            className="w-full flex items-center justify-between h-9 rounded-[10px] border border-[#2a2a2a] bg-[#0a0a0a] text-xs text-[#888888] px-3 mt-2 hover:border-[#f59e0b] hover:text-[#f59e0b] transition-all cursor-pointer"
+            className="w-full flex items-center justify-between h-9 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-base)] text-xs text-[var(--color-text-muted)] px-3 mt-2 hover:border-[#f59e0b] hover:text-[var(--color-warning)] transition-all cursor-pointer"
           >
             <span className="flex items-center gap-2">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -967,7 +967,7 @@ export default function RutaDetallePage({ params }) {
               Días sin cobro
             </span>
             {ruta.diasSinCobro && JSON.parse(ruta.diasSinCobro).length > 0 && (
-              <span className="text-[10px] font-medium text-[#f59e0b]">
+              <span className="text-[10px] font-medium text-[var(--color-warning)]">
                 {JSON.parse(ruta.diasSinCobro).length} {JSON.parse(ruta.diasSinCobro).length === 1 ? 'día' : 'días'}
               </span>
             )}
@@ -983,12 +983,12 @@ export default function RutaDetallePage({ params }) {
         </>
       }>
         <div className="space-y-3">
-          <p className="text-xs text-[#888888] leading-snug">
+          <p className="text-xs text-[var(--color-text-muted)] leading-snug">
             Los clientes de esta ruta no serán cobrados estos días y no se les generará mora.
           </p>
           <DiasSinCobroSelector value={diasSCRuta} onChange={setDiasSCRuta} />
           {diasSCRuta.length > 0 && (
-            <p className="text-[10px] text-[#f59e0b]">
+            <p className="text-[10px] text-[var(--color-warning)]">
               Aplica a todos los clientes de esta ruta (salvo los que tengan configuración propia).
             </p>
           )}
@@ -1010,21 +1010,21 @@ export default function RutaDetallePage({ params }) {
               <div className="px-4 py-3">
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-[10px] text-[#666] uppercase tracking-wide">Cobro del día</span>
-                  <span className="text-[11px] font-bold" style={{ color: progreso >= 100 ? '#22c55e' : '#f5c518' }}>{progreso}%</span>
+                  <span className="text-[11px] font-bold" style={{ color: progreso >= 100 ? 'var(--color-success)' : 'var(--color-accent)' }}>{progreso}%</span>
                 </div>
                 <div className="flex items-baseline justify-between">
-                  <p className="text-lg font-bold text-[#22c55e] font-mono-display">{formatCOP(ruta.recaudadoHoy)}</p>
+                  <p className="text-lg font-bold text-[var(--color-success)] font-mono-display">{formatCOP(ruta.recaudadoHoy)}</p>
                   <p className="text-[11px] text-[#777] font-mono-display">de {formatCOP(ruta.esperadoHoy)}</p>
                 </div>
-                <div className="h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden mt-2.5">
+                <div className="h-1.5 bg-[var(--color-bg-surface)] rounded-full overflow-hidden mt-2.5">
                   <div className="h-full rounded-full transition-all duration-700" style={{
                     width: `${progreso}%`,
-                    background: progreso >= 100 ? '#22c55e' : '#f5c518',
+                    background: progreso >= 100 ? 'var(--color-success)' : 'var(--color-accent)',
                   }} />
                 </div>
                 {(ruta.clientesConCobroHoy ?? 0) > 0 && (
-                  <p className="text-[10px] text-[#888] mt-2">
-                    <span className="text-[#22c55e] font-medium">{ruta.clientesPagaronHoy ?? 0}</span> de <span className="text-[white] font-medium">{ruta.clientesConCobroHoy}</span> clientes pagaron hoy
+                  <p className="text-[10px] text-[var(--color-text-muted)] mt-2">
+                    <span className="text-[var(--color-success)] font-medium">{ruta.clientesPagaronHoy ?? 0}</span> de <span className="text-[white] font-medium">{ruta.clientesConCobroHoy}</span> clientes pagaron hoy
                   </p>
                 )}
               </div>
@@ -1035,13 +1035,13 @@ export default function RutaDetallePage({ params }) {
               <div className="px-4 py-3">
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-[10px] text-[#666] uppercase tracking-wide">Cartera</span>
-                  <span className="text-[11px] font-bold text-[#06b6d4]">{carteraPct}% cobrado</span>
+                  <span className="text-[11px] font-bold text-[var(--color-info)]">{carteraPct}% cobrado</span>
                 </div>
                 <div className="flex items-baseline justify-between">
                   <p className="text-lg font-bold text-[white] font-mono-display">{formatCOP(ruta.carteraTotal)}</p>
                   <p className="text-[11px] text-[#777] font-mono-display">de {formatCOP(denominadorCartera)}</p>
                 </div>
-                <div className="h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden mt-2.5">
+                <div className="h-1.5 bg-[var(--color-bg-surface)] rounded-full overflow-hidden mt-2.5">
                   <div className="h-full rounded-full bg-[#06b6d4] transition-all duration-700" style={{ width: `${carteraPct}%` }} />
                 </div>
               </div>
@@ -1057,7 +1057,7 @@ export default function RutaDetallePage({ params }) {
                 <Card padding={false}>
                   <div className="px-4 py-3">
                     <p className="text-[10px] text-[#666] uppercase tracking-wide mb-1">Pendientes hoy</p>
-                    <p className="text-xl font-bold" style={{ color: ruta.pendientesHoy > 0 ? '#f59e0b' : '#22c55e' }}>{ruta.pendientesHoy}</p>
+                    <p className="text-xl font-bold" style={{ color: ruta.pendientesHoy > 0 ? 'var(--color-warning)' : 'var(--color-success)' }}>{ruta.pendientesHoy}</p>
                     <p className="text-[9px] text-[#666] mt-0.5">de {ruta.clientesConCobroHoy ?? 0} con cobro hoy</p>
                   </div>
                 </Card>
@@ -1070,7 +1070,7 @@ export default function RutaDetallePage({ params }) {
                 <Card padding={false}>
                   <div className="px-4 py-3">
                     <p className="text-[10px] text-[#666] uppercase tracking-wide mb-1">En mora</p>
-                    <p className="text-xl font-bold" style={{ color: ruta.enMora > 0 ? '#ef4444' : '#22c55e' }}>{ruta.enMora}</p>
+                    <p className="text-xl font-bold" style={{ color: ruta.enMora > 0 ? 'var(--color-danger)' : 'var(--color-success)' }}>{ruta.enMora}</p>
                     <p className="text-[9px] text-[#666] mt-0.5">del total de la ruta</p>
                   </div>
                 </Card>
@@ -1080,7 +1080,7 @@ export default function RutaDetallePage({ params }) {
               <button
                 type="button"
                 onClick={() => setEstadoFiltro(null)}
-                className="text-[11px] text-[#f5c518] hover:text-[white] transition-colors flex items-center gap-1"
+                className="text-[11px] text-[var(--color-accent)] hover:text-[white] transition-colors flex items-center gap-1"
               >
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                 Quitar filtro ({estadoFiltro === 'pendientes' ? 'Pendientes hoy' : estadoFiltro === 'mora' ? 'En mora' : 'Pagaron hoy'})
@@ -1094,7 +1094,7 @@ export default function RutaDetallePage({ params }) {
       {banner && (
         <div className="bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.2)] rounded-[16px] px-4 py-3">
           <p className="text-sm text-[white]">
-            {banner.label} <strong className="text-[#f5c518]">{banner.clienteNombre}</strong>
+            {banner.label} <strong className="text-[var(--color-accent)]">{banner.clienteNombre}</strong>
           </p>
           <div className="flex gap-2 mt-2">
             <button
@@ -1113,7 +1113,7 @@ export default function RutaDetallePage({ params }) {
                   }
                 })
               }}
-              className="px-3 py-1.5 rounded-[10px] bg-[#f5c518] text-[#0a0a0a] text-xs font-semibold active:scale-95 transition-transform"
+              className="px-3 py-1.5 rounded-[10px] bg-[var(--color-accent)] text-[#1a1a2e] text-xs font-semibold active:scale-95 transition-transform"
             >
               Continuar ruta
             </button>
@@ -1122,7 +1122,7 @@ export default function RutaDetallePage({ params }) {
                 setBanner(null)
                 localStorage.removeItem(`cf-ruta-progress-${id}`)
               }}
-              className="px-3 py-1.5 rounded-[10px] bg-[#1a1a1a] border border-[#2a2a2a] text-[#888888] text-xs font-medium active:scale-95 transition-transform"
+              className="px-3 py-1.5 rounded-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] text-xs font-medium active:scale-95 transition-transform"
             >
               Nueva ruta
             </button>
@@ -1133,12 +1133,12 @@ export default function RutaDetallePage({ params }) {
       {/* Acciones rápidas */}
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
         {esOwner && (
-          <button onClick={abrirModalClientes} className="shrink-0 h-8 px-3 rounded-[10px] border border-[#222] bg-[#111] text-[11px] text-[#aaa] font-medium active:scale-95 transition-transform">
+          <button onClick={abrirModalClientes} className="shrink-0 h-8 px-3 rounded-[10px] border border-[#222] bg-[var(--color-bg-card)] text-[11px] text-[var(--color-text-secondary)] font-medium active:scale-95 transition-transform">
             + Agregar
           </button>
         )}
         {(ruta.clientes?.length ?? 0) >= 2 && clientesConCoords >= 2 && (
-          <button onClick={() => setConfirmOptimizar(true)} disabled={optimizando} className="shrink-0 h-8 px-3 rounded-[10px] border border-[#222] bg-[#111] text-[11px] text-[#aaa] font-medium active:scale-95 transition-transform disabled:opacity-50">
+          <button onClick={() => setConfirmOptimizar(true)} disabled={optimizando} className="shrink-0 h-8 px-3 rounded-[10px] border border-[#222] bg-[var(--color-bg-card)] text-[11px] text-[var(--color-text-secondary)] font-medium active:scale-95 transition-transform disabled:opacity-50">
             {optimizando ? 'Optimizando...' : 'Optimizar'}
           </button>
         )}
@@ -1147,7 +1147,7 @@ export default function RutaDetallePage({ params }) {
             <button onClick={abrirGoogleMaps} className="shrink-0 h-8 px-3 rounded-[10px] border border-[rgba(66,133,244,0.2)] bg-[rgba(66,133,244,0.06)] text-[11px] text-[#4285f4] font-medium active:scale-95 transition-transform">
               Google Maps
             </button>
-            <button onClick={() => setShowMap((v) => !v)} className="shrink-0 h-8 px-3 rounded-[10px] border border-[#222] bg-[#111] text-[11px] text-[#666] font-medium active:scale-95 transition-transform">
+            <button onClick={() => setShowMap((v) => !v)} className="shrink-0 h-8 px-3 rounded-[10px] border border-[#222] bg-[var(--color-bg-card)] text-[11px] text-[#666] font-medium active:scale-95 transition-transform">
               {showMap ? 'Ocultar mapa' : 'Ver mapa'}
             </button>
           </>
@@ -1157,7 +1157,7 @@ export default function RutaDetallePage({ params }) {
       {/* Resultado de optimización */}
       {optimResult && (
         <div className="px-3 py-2 rounded-[12px] bg-[rgba(34,197,94,0.06)] border border-[rgba(34,197,94,0.12)]">
-          <p className="text-xs text-[#22c55e] font-medium">
+          <p className="text-xs text-[var(--color-success)] font-medium">
             Ruta optimizada {optimResult.ahorro > 0 && `· ${optimResult.ahorro}% mas corta`}
           </p>
         </div>
@@ -1173,14 +1173,14 @@ export default function RutaDetallePage({ params }) {
       {/* Lista de clientes */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-[11px] font-medium text-[#888] uppercase tracking-wide">
+          <span className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
             Clientes ({clientesFiltrados.length}{grupoFiltro ? ` de ${ruta.clientes?.length ?? 0}` : ''})
           </span>
           <span className="text-[10px] text-[#777]">
-            {guardandoOrden && <span className="text-[#888] flex items-center gap-1 inline-flex"><svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Guardando</span>}
-            {ordenGuardado && <span className="text-[#22c55e]">Guardado</span>}
-            {ordenOffline && <span className="text-[#f5c518]">Guardado offline</span>}
-            {ordenError && <span className="text-[#ef4444]">{ordenError}</span>}
+            {guardandoOrden && <span className="text-[var(--color-text-muted)] flex items-center gap-1 inline-flex"><svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Guardando</span>}
+            {ordenGuardado && <span className="text-[var(--color-success)]">Guardado</span>}
+            {ordenOffline && <span className="text-[var(--color-accent)]">Guardado offline</span>}
+            {ordenError && <span className="text-[var(--color-danger)]">{ordenError}</span>}
           </span>
         </div>
 
@@ -1189,7 +1189,7 @@ export default function RutaDetallePage({ params }) {
           <div className="flex gap-1.5 overflow-x-auto pb-2 -mx-1 px-1 mb-2">
             <button
               onClick={() => setGrupoFiltro(null)}
-              className={`shrink-0 h-7 px-3 rounded-full text-[11px] font-medium transition-all ${!grupoFiltro ? 'bg-white text-black' : 'bg-[#1a1a1a] text-[#888] border border-[#2a2a2a]'}`}
+              className={`shrink-0 h-7 px-3 rounded-full text-[11px] font-medium transition-all ${!grupoFiltro ? 'bg-white text-black' : 'bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] border border-[var(--color-border)]'}`}
             >
               Todos
             </button>
@@ -1197,7 +1197,7 @@ export default function RutaDetallePage({ params }) {
               <button
                 key={g.id}
                 onClick={() => setGrupoFiltro(grupoFiltro === g.id ? null : g.id)}
-                className={`shrink-0 h-7 px-3 rounded-full text-[11px] font-medium flex items-center gap-1.5 transition-all ${grupoFiltro === g.id ? 'bg-white text-black' : 'bg-[#1a1a1a] text-[#888] border border-[#2a2a2a]'}`}
+                className={`shrink-0 h-7 px-3 rounded-full text-[11px] font-medium flex items-center gap-1.5 transition-all ${grupoFiltro === g.id ? 'bg-white text-black' : 'bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] border border-[var(--color-border)]'}`}
               >
                 <span className="w-2 h-2 rounded-full shrink-0" style={{ background: g.color || '#666' }} />
                 {g.nombre}
@@ -1210,7 +1210,7 @@ export default function RutaDetallePage({ params }) {
         {(!ruta.clientes || ruta.clientes.length === 0) ? (
           <div className="flex flex-col items-center py-8 text-center">
             <div className="w-12 h-12 rounded-full bg-[rgba(245,197,24,0.08)] flex items-center justify-center mb-3">
-              <svg className="w-6 h-6 text-[#888]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
@@ -1228,14 +1228,14 @@ export default function RutaDetallePage({ params }) {
               const statusColor = isCompleted
                 ? '#666'
                 : abonoConPendiente
-                  ? '#f59e0b'
+                  ? 'var(--color-warning)'
                   : c.pagoHoy
-                  ? '#22c55e'
+                  ? 'var(--color-success)'
                   : c.hoySinCobro && !pendienteHoy
-                    ? '#f59e0b'
+                    ? 'var(--color-warning)'
                     : pendienteHoy
-                      ? '#f59e0b'
-                      : '#22c55e'
+                      ? 'var(--color-warning)'
+                      : 'var(--color-success)'
               const statusText = isCompleted
                 ? 'Sin deuda — se puede retirar'
                 : abonoConPendiente
@@ -1312,7 +1312,7 @@ export default function RutaDetallePage({ params }) {
                           <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: statusColor, boxShadow: `0 0 5px ${statusColor}50` }} />
                           <span className="text-[10px]" style={{ color: statusColor }}>{statusText}</span>
                           {c.frecuencia && c.frecuencia !== 'diario' && !isCompleted && (
-                            <span className="text-[10px] ml-1" style={{ color: c.diasParaCobro < 0 ? '#ef4444' : c.diasParaCobro === 0 ? '#22c55e' : c.diasParaCobro === 1 ? '#f5c518' : '#666' }}>
+                            <span className="text-[10px] ml-1" style={{ color: c.diasParaCobro < 0 ? 'var(--color-danger)' : c.diasParaCobro === 0 ? 'var(--color-success)' : c.diasParaCobro === 1 ? 'var(--color-accent)' : '#666' }}>
                               · {c.diasParaCobro < 0
                                 ? `Vencido ${Math.abs(c.diasParaCobro)}d`
                                 : c.diasParaCobro === 0
@@ -1344,25 +1344,25 @@ export default function RutaDetallePage({ params }) {
                             className={[
                               'h-7 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95 px-3 gap-1.5',
                               pagoRapidoOk === c.id
-                                ? 'bg-[#22c55e]'
+                                ? 'bg-[var(--color-success)]'
                                 : 'bg-[rgba(34,197,94,0.12)] border border-[rgba(34,197,94,0.3)] hover:bg-[rgba(34,197,94,0.25)]',
                             ].join(' ')}
                           >
                             {pagandoRapido === c.id ? (
-                              <svg className="w-3.5 h-3.5 text-[#22c55e] animate-spin" fill="none" viewBox="0 0 24 24">
+                              <svg className="w-3.5 h-3.5 text-[var(--color-success)] animate-spin" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                               </svg>
                             ) : pagoRapidoOk === c.id ? (
-                              <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-3.5 h-3.5 text-[var(--color-text-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                               </svg>
                             ) : (
                               <>
-                                <svg className="w-3 h-3 text-[#22c55e]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2}>
+                                <svg className="w-3 h-3 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33" />
                                 </svg>
-                                <span className="text-[10px] font-semibold text-[#22c55e] whitespace-nowrap">Cobro rápido</span>
+                                <span className="text-[10px] font-semibold text-[var(--color-success)] whitespace-nowrap">Cobro rápido</span>
                               </>
                             )}
                           </button>
@@ -1373,7 +1373,7 @@ export default function RutaDetallePage({ params }) {
                     {(detalleMora || detalleCobro) && (
                       <div className="mt-1.5 flex items-center gap-1.5 text-[10px] leading-snug capitalize">
                         {detalleMora && (
-                          <span className="font-medium" style={{ color: '#ef4444' }}>
+                          <span className="font-medium" style={{ color: 'var(--color-danger)' }}>
                             {detalleMora}
                           </span>
                         )}
@@ -1394,7 +1394,7 @@ export default function RutaDetallePage({ params }) {
                     <button
                       onClick={() => setConfirmQuitar({ id: c.id, nombre: c.nombre })}
                       disabled={quitando === c.id}
-                      className="pr-2 pl-0 self-stretch flex items-center text-[#2a2a2a] hover:text-[#ef4444] transition-colors disabled:opacity-50"
+                      className="pr-2 pl-0 self-stretch flex items-center text-[#2a2a2a] hover:text-[var(--color-danger)] transition-colors disabled:opacity-50"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1410,29 +1410,29 @@ export default function RutaDetallePage({ params }) {
 
       {/* Cierre de caja */}
       <Card>
-        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">
+        <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-4">
           Cierre de caja del día
         </p>
         {ruta.cierre ? (
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-[#888888]">Esperado</span>
+              <span className="text-[var(--color-text-muted)]">Esperado</span>
               <span className="text-[white] font-medium font-mono-display">{formatCOP(ruta.cierre.totalEsperado)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-[#888888]">Entregado</span>
+              <span className="text-[var(--color-text-muted)]">Entregado</span>
               <span className="text-[white] font-medium font-mono-display">{formatCOP(ruta.cierre.totalRecogido)}</span>
             </div>
-            <div className="flex justify-between text-sm font-bold border-t border-[#2a2a2a] pt-2 mt-2">
-              <span className="text-[#888888]">Diferencia</span>
-              <span className="font-mono-display" style={{ color: ruta.cierre.diferencia >= 0 ? '#22c55e' : '#ef4444' }}>
+            <div className="flex justify-between text-sm font-bold border-t border-[var(--color-border)] pt-2 mt-2">
+              <span className="text-[var(--color-text-muted)]">Diferencia</span>
+              <span className="font-mono-display" style={{ color: ruta.cierre.diferencia >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
                 {ruta.cierre.diferencia >= 0 ? '+' : ''}{formatCOP(ruta.cierre.diferencia)}
               </span>
             </div>
           </div>
         ) : (
           <div className="text-center py-2">
-            <p className="text-sm text-[#888888] mb-3">No se ha registrado el cierre de hoy</p>
+            <p className="text-sm text-[var(--color-text-muted)] mb-3">No se ha registrado el cierre de hoy</p>
             <Button onClick={() => { setTotalRecogido(''); setModalCaja(true) }}>
               Registrar cierre de caja
             </Button>
@@ -1458,12 +1458,12 @@ export default function RutaDetallePage({ params }) {
         }
       >
         {clientesSinRuta.length === 0 && clientesEnOtraRuta.length === 0 ? (
-          <p className="text-sm text-[#888888] text-center py-4">Todos los clientes ya tienen ruta asignada</p>
+          <p className="text-sm text-[var(--color-text-muted)] text-center py-4">Todos los clientes ya tienen ruta asignada</p>
         ) : (
           <div className="space-y-1">
             {/* Buscador */}
             <div className="relative mb-2">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#888]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
@@ -1471,12 +1471,12 @@ export default function RutaDetallePage({ params }) {
                 placeholder="Buscar por nombre o cédula..."
                 value={buscarCliente}
                 onChange={(e) => setBuscarCliente(e.target.value)}
-                className="w-full h-9 pl-9 pr-3 rounded-[10px] bg-[#1a1a1a] border border-[#2a2a2a] text-sm text-white placeholder-[#555] focus:outline-none focus:border-[#f5c518] transition-colors"
+                className="w-full h-9 pl-9 pr-3 rounded-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)] placeholder-[#555] focus:outline-none focus:border-[var(--color-accent)] transition-colors"
                 autoFocus
               />
             </div>
             {errorAsignar && (
-              <div className="flex items-center gap-2 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-xs rounded-[10px] px-3 py-2 mb-2">
+              <div className="flex items-center gap-2 bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-xs rounded-[10px] px-3 py-2 mb-2">
                 <svg className="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>
                 {errorAsignar}
               </div>
@@ -1486,7 +1486,7 @@ export default function RutaDetallePage({ params }) {
               const q = buscarCliente.toLowerCase()
               return c.nombre.toLowerCase().includes(q) || c.cedula?.includes(q)
             }).length > 0 && (
-              <p className="text-[10px] font-medium text-[#555555] uppercase tracking-wide px-1 pt-1">Sin ruta asignada ({clientesSinRuta.length})</p>
+              <p className="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide px-1 pt-1">Sin ruta asignada ({clientesSinRuta.length})</p>
             )}
             {clientesSinRuta.filter(c => {
               if (!buscarCliente.trim()) return true
@@ -1497,7 +1497,7 @@ export default function RutaDetallePage({ params }) {
                 key={c.id}
                 className={[
                   'flex items-center gap-3 px-3 py-2.5 rounded-[12px] cursor-pointer transition-colors',
-                  seleccionados.includes(c.id) ? 'bg-[rgba(245,197,24,0.1)]' : 'hover:bg-[#222222]',
+                  seleccionados.includes(c.id) ? 'bg-[rgba(245,197,24,0.1)]' : 'hover:bg-[var(--color-bg-hover)]',
                 ].join(' ')}
               >
                 <input
@@ -1508,7 +1508,7 @@ export default function RutaDetallePage({ params }) {
                 />
                 <div>
                   <p className="text-sm font-medium text-[white]">{c.nombre}</p>
-                  <p className="text-xs text-[#888888]">CC {c.cedula}</p>
+                  <p className="text-xs text-[var(--color-text-muted)]">CC {c.cedula}</p>
                 </div>
               </label>
             ))}
@@ -1518,8 +1518,8 @@ export default function RutaDetallePage({ params }) {
               return c.nombre.toLowerCase().includes(q) || c.cedula?.includes(q)
             }).length > 0 && (
               <>
-                <div className="border-t border-[#2a2a2a] my-2" />
-                <p className="text-[10px] font-medium text-[#f59e0b] uppercase tracking-wide px-1">Ya en otra ruta ({clientesEnOtraRuta.length})</p>
+                <div className="border-t border-[var(--color-border)] my-2" />
+                <p className="text-[10px] font-medium text-[var(--color-warning)] uppercase tracking-wide px-1">Ya en otra ruta ({clientesEnOtraRuta.length})</p>
               </>
             )}
             {clientesEnOtraRuta.filter(c => {
@@ -1531,7 +1531,7 @@ export default function RutaDetallePage({ params }) {
                 key={c.id}
                 className={[
                   'flex items-center gap-3 px-3 py-2.5 rounded-[12px] cursor-pointer transition-colors',
-                  seleccionados.includes(c.id) ? 'bg-[rgba(245,158,11,0.1)]' : 'hover:bg-[#222222]',
+                  seleccionados.includes(c.id) ? 'bg-[rgba(245,158,11,0.1)]' : 'hover:bg-[var(--color-bg-hover)]',
                 ].join(' ')}
               >
                 <input
@@ -1543,11 +1543,11 @@ export default function RutaDetallePage({ params }) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-medium text-[white] truncate">{c.nombre}</p>
-                    <span className="shrink-0 text-[10px] font-medium text-[#f59e0b] bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.2)] px-1.5 py-0.5 rounded-full">
+                    <span className="shrink-0 text-[10px] font-medium text-[var(--color-warning)] bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.2)] px-1.5 py-0.5 rounded-full">
                       En: {c.rutaNombre}
                     </span>
                   </div>
-                  <p className="text-xs text-[#888888]">CC {c.cedula}</p>
+                  <p className="text-xs text-[var(--color-text-muted)]">CC {c.cedula}</p>
                 </div>
               </label>
             ))}
@@ -1569,30 +1569,30 @@ export default function RutaDetallePage({ params }) {
       >
         <div className="space-y-4">
           {errorCaja && (
-            <div className="text-[#ef4444] text-sm bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] rounded-[12px] px-4 py-3">
+            <div className="text-[var(--color-danger)] text-sm bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] rounded-[12px] px-4 py-3">
               {errorCaja}
             </div>
           )}
           <div className="flex justify-between text-sm">
-            <span className="text-[#888888]">Total esperado hoy</span>
+            <span className="text-[var(--color-text-muted)]">Total esperado hoy</span>
             <span className="font-semibold text-[white] font-mono-display">{formatCOP(ruta.esperadoHoy)}</span>
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-[#888888]">Dinero recogido (COP)</label>
+            <label className="text-xs font-medium text-[var(--color-text-muted)]">Dinero recogido (COP)</label>
             <input
               type="number"
               inputMode="numeric"
               placeholder="Ej: 250000"
               value={totalRecogido}
               onChange={(e) => setTotalRecogido(e.target.value)}
-              className="w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] placeholder-[#777777] focus:outline-none focus:border-[#f5c518] focus:ring-1 focus:ring-[rgba(245,197,24,0.3)] transition-all"
+              className="w-full h-10 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[white] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all"
               autoFocus
             />
           </div>
           {totalRecogido && (
             <div className="text-sm">
-              <span className="text-[#888888]">Diferencia: </span>
-              <span className="font-mono-display" style={{ color: Number(totalRecogido) >= ruta.esperadoHoy ? '#22c55e' : '#ef4444', fontWeight: 700 }}>
+              <span className="text-[var(--color-text-muted)]">Diferencia: </span>
+              <span className="font-mono-display" style={{ color: Number(totalRecogido) >= ruta.esperadoHoy ? 'var(--color-success)' : 'var(--color-danger)', fontWeight: 700 }}>
                 {Number(totalRecogido) >= ruta.esperadoHoy ? '+' : ''}{formatCOP(Number(totalRecogido) - ruta.esperadoHoy)}
               </span>
             </div>
@@ -1612,7 +1612,7 @@ export default function RutaDetallePage({ params }) {
           </>
         }
       >
-        <p className="text-sm text-[#888]">
+        <p className="text-sm text-[var(--color-text-muted)]">
           Se reordenaran los clientes segun su ubicacion GPS para crear la ruta mas corta. Esto puede cambiar el orden que configuraste manualmente.
         </p>
       </Modal>
@@ -1627,15 +1627,15 @@ export default function RutaDetallePage({ params }) {
             <Button variant="secondary" onClick={() => setConfirmQuitar(null)}>Cancelar</Button>
             <Button
               onClick={() => confirmQuitar && quitarCliente(confirmQuitar.id)}
-              style={{ background: '#ef4444', color: 'white' }}
+              style={{ background: 'var(--color-danger)', color: 'white' }}
             >
               Quitar
             </Button>
           </>
         }
       >
-        <p className="text-sm text-[#888]">
-          <span className="text-white font-medium">{confirmQuitar?.nombre}</span> sera removido de esta ruta. Podras reasignarlo despues.
+        <p className="text-sm text-[var(--color-text-muted)]">
+          <span className="text-[var(--color-text-primary)] font-medium">{confirmQuitar?.nombre}</span> sera removido de esta ruta. Podras reasignarlo despues.
         </p>
       </Modal>
 
@@ -1647,8 +1647,8 @@ export default function RutaDetallePage({ params }) {
       >
         {modalSeleccionPrestamo && (
           <div className="space-y-3">
-            <p className="text-sm text-[#888]">
-              <span className="text-white font-medium">{modalSeleccionPrestamo.clienteNombre}</span> tiene varios préstamos activos.
+            <p className="text-sm text-[var(--color-text-muted)]">
+              <span className="text-[var(--color-text-primary)] font-medium">{modalSeleccionPrestamo.clienteNombre}</span> tiene varios préstamos activos.
               Elige cuál quieres cobrar ahora.
             </p>
             <div className="space-y-2">
@@ -1656,15 +1656,15 @@ export default function RutaDetallePage({ params }) {
                 <button
                   key={p.id}
                   onClick={() => irAPrestamoSeleccionado(p.id)}
-                  className="w-full text-left px-3 py-3 rounded-[12px] border border-[#2a2a2a] bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(245,197,24,0.08)] hover:border-[rgba(245,197,24,0.3)] transition-all active:scale-[0.99]"
+                  className="w-full text-left px-3 py-3 rounded-[12px] border border-[var(--color-border)] bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(245,197,24,0.08)] hover:border-[rgba(245,197,24,0.3)] transition-all active:scale-[0.99]"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-white">Préstamo {i + 1}</p>
-                    <span className="text-sm font-bold text-[#22c55e] font-mono-display">
+                    <p className="text-sm font-semibold text-[var(--color-text-primary)]">Préstamo {i + 1}</p>
+                    <span className="text-sm font-bold text-[var(--color-success)] font-mono-display">
                       {formatCOP(p.saldoPendiente ?? 0)}
                     </span>
                   </div>
-                  <p className="text-[11px] text-[#888] mt-1">
+                  <p className="text-[11px] text-[var(--color-text-muted)] mt-1">
                     {frecuenciaPrestamoLabel(p.frecuencia)} · Cuota {formatCOP(p.cuotaDiaria ?? 0)}
                     {p.diasMora > 0 ? ` · ${p.diasMora}d mora` : ''}
                   </p>
@@ -1684,28 +1684,28 @@ export default function RutaDetallePage({ params }) {
         {modalPagoRapido && (
           <div className="space-y-4">
             <div className="text-center">
-              <p className="text-sm text-[#888]">Registrar 1 cuota para</p>
-              <p className="text-base font-bold text-white mt-1">{modalPagoRapido.nombre}</p>
-              <p className="text-lg font-bold text-[#22c55e] font-mono-display mt-1">{formatCOP(modalPagoRapido.cuota)}</p>
+              <p className="text-sm text-[var(--color-text-muted)]">Registrar 1 cuota para</p>
+              <p className="text-base font-bold text-[var(--color-text-primary)] mt-1">{modalPagoRapido.nombre}</p>
+              <p className="text-lg font-bold text-[var(--color-success)] font-mono-display mt-1">{formatCOP(modalPagoRapido.cuota)}</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => ejecutarPagoRapido('efectivo')}
-                className="flex flex-col items-center gap-2 py-4 rounded-[14px] border border-[#2a2a2a] bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(34,197,94,0.08)] hover:border-[rgba(34,197,94,0.3)] transition-all active:scale-95"
+                className="flex flex-col items-center gap-2 py-4 rounded-[14px] border border-[var(--color-border)] bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(34,197,94,0.08)] hover:border-[rgba(34,197,94,0.3)] transition-all active:scale-95"
               >
-                <svg className="w-6 h-6 text-[#22c55e]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <svg className="w-6 h-6 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <span className="text-sm font-medium text-white">Efectivo</span>
+                <span className="text-sm font-medium text-[var(--color-text-primary)]">Efectivo</span>
               </button>
               <button
                 onClick={() => ejecutarPagoRapido('transferencia')}
-                className="flex flex-col items-center gap-2 py-4 rounded-[14px] border border-[#2a2a2a] bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(59,130,246,0.08)] hover:border-[rgba(59,130,246,0.3)] transition-all active:scale-95"
+                className="flex flex-col items-center gap-2 py-4 rounded-[14px] border border-[var(--color-border)] bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(59,130,246,0.08)] hover:border-[rgba(59,130,246,0.3)] transition-all active:scale-95"
               >
-                <svg className="w-6 h-6 text-[#3b82f6]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <svg className="w-6 h-6 text-[var(--color-info)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
                 </svg>
-                <span className="text-sm font-medium text-white">Transferencia</span>
+                <span className="text-sm font-medium text-[var(--color-text-primary)]">Transferencia</span>
               </button>
             </div>
           </div>
@@ -1718,19 +1718,19 @@ export default function RutaDetallePage({ params }) {
           <div className="flex items-center gap-3 px-4 py-3 rounded-[14px] border border-[rgba(34,197,94,0.2)] sm:min-w-[320px]"
             style={{ background: 'rgba(15,15,22,0.95)', backdropFilter: 'blur(20px)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
           >
-            <svg className="w-4 h-4 text-[#22c55e] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-[var(--color-success)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
-            <span className="text-sm text-white flex-1 truncate">Pago registrado — {undoPago.clienteNombre}</span>
+            <span className="text-sm text-[var(--color-text-primary)] flex-1 truncate">Pago registrado — {undoPago.clienteNombre}</span>
             <button
               onClick={deshacerPago}
-              className="text-sm font-bold text-[#f5c518] hover:text-[#f5c518]/80 transition-colors shrink-0"
+              className="text-sm font-bold text-[var(--color-accent)] hover:text-[var(--color-accent)]/80 transition-colors shrink-0"
             >
               Deshacer
             </button>
             <button
               onClick={() => { if (undoTimerRef.current) clearTimeout(undoTimerRef.current); setUndoPago(null) }}
-              className="text-[#666] hover:text-white transition-colors shrink-0"
+              className="text-[#666] hover:text-[var(--color-text-primary)] transition-colors shrink-0"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

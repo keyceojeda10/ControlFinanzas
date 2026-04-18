@@ -10,24 +10,24 @@ export default function ResumenCard({
   loading = false,
 }) {
   const accents = {
-    blue:   { bg: 'rgba(245,197,24,0.12)',  icon: '#f5c518', border: 'rgba(245,197,24,0.2)' },
-    green:  { bg: 'rgba(16,185,129,0.12)',  icon: '#10b981', border: 'rgba(16,185,129,0.2)' },
-    yellow: { bg: 'rgba(245,158,11,0.12)',  icon: '#f59e0b', border: 'rgba(245,158,11,0.2)' },
-    red:    { bg: 'rgba(239,68,68,0.12)',   icon: '#ef4444', border: 'rgba(239,68,68,0.2)'  },
-    purple: { bg: 'rgba(139,92,246,0.12)',  icon: '#8b5cf6', border: 'rgba(139,92,246,0.2)' },
+    blue:   { bg: 'rgba(245,197,24,0.12)',  icon: 'var(--color-accent)', border: 'rgba(245,197,24,0.2)' },
+    green:  { bg: 'rgba(16,185,129,0.12)',  icon: 'var(--color-success)', border: 'rgba(16,185,129,0.2)' },
+    yellow: { bg: 'rgba(245,158,11,0.12)',  icon: 'var(--color-warning)', border: 'rgba(245,158,11,0.2)' },
+    red:    { bg: 'rgba(239,68,68,0.12)',   icon: 'var(--color-danger)', border: 'rgba(239,68,68,0.2)'  },
+    purple: { bg: 'rgba(139,92,246,0.12)',  icon: 'var(--color-purple)', border: 'rgba(139,92,246,0.2)' },
   }
 
   const colors = accents[accent] ?? accents.blue
 
   if (loading) {
     return (
-      <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[14px] p-5 animate-pulse">
+      <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[14px] p-5 animate-pulse">
         <div className="flex items-start justify-between mb-4">
-          <div className="w-10 h-10 rounded-[10px] bg-[#2a2a2a]" />
-          <div className="h-5 w-14 rounded-full bg-[#2a2a2a]" />
+          <div className="w-10 h-10 rounded-[10px] bg-[var(--color-bg-hover)]" />
+          <div className="h-5 w-14 rounded-full bg-[var(--color-bg-hover)]" />
         </div>
-        <div className="h-3 w-24 rounded bg-[#2a2a2a] mb-2" />
-        <div className="h-7 w-32 rounded bg-[#2a2a2a]" />
+        <div className="h-3 w-24 rounded bg-[var(--color-bg-hover)] mb-2" />
+        <div className="h-7 w-32 rounded bg-[var(--color-bg-hover)]" />
       </div>
     )
   }
@@ -58,8 +58,8 @@ export default function ResumenCard({
             className={[
               'text-xs font-semibold px-2 py-0.5 rounded-full',
               trend >= 0
-                ? 'bg-[rgba(16,185,129,0.12)] text-[#10b981]'
-                : 'bg-[rgba(239,68,68,0.12)] text-[#ef4444]',
+                ? 'bg-[rgba(16,185,129,0.12)] text-[var(--color-success)]'
+                : 'bg-[rgba(239,68,68,0.12)] text-[var(--color-danger)]',
             ].join(' ')}
           >
             {trend >= 0 ? '▲' : '▼'} {Math.abs(trend)}%

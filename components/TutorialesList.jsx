@@ -17,7 +17,7 @@ function parseWhatsAppText(text) {
       const endIdx = remaining.indexOf('*', startIdx + 1)
       if (endIdx === -1) { parts.push(remaining); break }
       if (startIdx > 0) parts.push(remaining.slice(0, startIdx))
-      parts.push(<strong key={key++} className="text-white font-semibold">{remaining.slice(startIdx + 1, endIdx)}</strong>)
+      parts.push(<strong key={key++} className="text-[var(--color-text-primary)] font-semibold">{remaining.slice(startIdx + 1, endIdx)}</strong>)
       remaining = remaining.slice(endIdx + 1)
     }
     return (
@@ -61,17 +61,17 @@ function TutorialCard({ tutorial, showCopyButton, onImageClick, defaultOpen = fa
   }, [tutorial.text])
 
   return (
-    <div className={`bg-[#1a1a1a] border rounded-[16px] overflow-hidden transition-colors ${open ? 'border-[#3a3a3a]' : 'border-[#2a2a2a] hover:border-[#3a3a3a]'}`}>
+    <div className={`bg-[var(--color-bg-surface)] border rounded-[16px] overflow-hidden transition-colors ${open ? 'border-[var(--color-border-hover)]' : 'border-[var(--color-border)] hover:border-[var(--color-border-hover)]'}`}>
       {/* Header */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-[#222222] transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-[var(--color-bg-hover)] transition-colors"
       >
-        <span className="flex-1 text-sm font-semibold text-white leading-snug">
+        <span className="flex-1 text-sm font-semibold text-[var(--color-text-primary)] leading-snug">
           {tutorial.title}
         </span>
         <svg
-          className={`w-4 h-4 text-[#555555] transition-transform duration-200 shrink-0 ${open ? 'rotate-180' : ''}`}
+          className={`w-4 h-4 text-[var(--color-text-muted)] transition-transform duration-200 shrink-0 ${open ? 'rotate-180' : ''}`}
           fill="none" stroke="currentColor" viewBox="0 0 24 24"
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -83,7 +83,7 @@ function TutorialCard({ tutorial, showCopyButton, onImageClick, defaultOpen = fa
         <div className="px-4 pb-4 pt-1">
           {/* Video embed */}
           {tutorial.videoId && (
-            <div className="relative w-full rounded-xl overflow-hidden border border-[#2a2a2a] mb-4" style={{ paddingBottom: '56.25%' }}>
+            <div className="relative w-full rounded-xl overflow-hidden border border-[var(--color-border)] mb-4" style={{ paddingBottom: '56.25%' }}>
               <iframe
                 className="absolute inset-0 w-full h-full"
                 src={`https://www.youtube.com/embed/${tutorial.videoId}`}
@@ -100,7 +100,7 @@ function TutorialCard({ tutorial, showCopyButton, onImageClick, defaultOpen = fa
               {tutorial.images.map((img) => (
                 <div
                   key={img.src}
-                  className="rounded-xl overflow-hidden border border-[#2a2a2a] cursor-pointer hover:border-[#f5c518] transition-colors shrink-0 w-[160px] sm:w-[200px]"
+                  className="rounded-xl overflow-hidden border border-[var(--color-border)] cursor-pointer hover:border-[#f5c518] transition-colors shrink-0 w-[160px] sm:w-[200px]"
                   onClick={() => onImageClick(img.src, img.caption)}
                 >
                   <Image
@@ -110,7 +110,7 @@ function TutorialCard({ tutorial, showCopyButton, onImageClick, defaultOpen = fa
                     height={700}
                     className="w-full h-auto"
                   />
-                  <p className="text-[10px] text-[#555555] text-center py-1.5 bg-[#111111] truncate px-2">
+                  <p className="text-[10px] text-[var(--color-text-muted)] text-center py-1.5 bg-[var(--color-bg-card)] truncate px-2">
                     {img.caption}
                   </p>
                 </div>
@@ -119,7 +119,7 @@ function TutorialCard({ tutorial, showCopyButton, onImageClick, defaultOpen = fa
           )}
 
           {/* Text */}
-          <div className="bg-[#111111] border border-[#2a2a2a] rounded-xl p-4 text-xs text-[#cccccc] whitespace-pre-wrap leading-relaxed max-h-[400px] overflow-y-auto">
+          <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-xl p-4 text-xs text-[var(--color-text-primary)] whitespace-pre-wrap leading-relaxed max-h-[400px] overflow-y-auto">
             {showCopyButton ? tutorial.text : parseWhatsAppText(tutorial.text)}
           </div>
 
@@ -131,7 +131,7 @@ function TutorialCard({ tutorial, showCopyButton, onImageClick, defaultOpen = fa
                 href={`https://wa.me/?text=${encodeURIComponent(`${tutorial.title}\nhttps://www.youtube.com/watch?v=${tutorial.videoId}`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#25D366] text-white text-xs font-semibold hover:bg-[#1fb855] transition-all active:scale-95"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#25D366] text-[var(--color-text-primary)] text-xs font-semibold hover:bg-[#1fb855] transition-all active:scale-95"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
@@ -143,7 +143,7 @@ function TutorialCard({ tutorial, showCopyButton, onImageClick, defaultOpen = fa
             {showCopyButton && (
               <button
                 onClick={handleCopy}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] text-[#888] text-xs font-semibold hover:text-white hover:border-[#444] transition-all active:scale-95"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] text-xs font-semibold hover:text-[var(--color-text-primary)] hover:border-[#444] transition-all active:scale-95"
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -152,7 +152,7 @@ function TutorialCard({ tutorial, showCopyButton, onImageClick, defaultOpen = fa
               </button>
             )}
             {copied && (
-              <span className="text-xs text-[#22c55e] font-medium animate-pulse">Copiado!</span>
+              <span className="text-xs text-[var(--color-success)] font-medium animate-pulse">Copiado!</span>
             )}
           </div>
         </div>
@@ -167,8 +167,8 @@ function CategorySection({ categoria, tutoriales, showCopyButton, onImageClick }
     <div id={`cat-${categoria.id}`} className="scroll-mt-4">
       <div className="flex items-center gap-2.5 mb-3 mt-2">
         <div className="w-2 h-2 rounded-full" style={{ background: categoria.color }} />
-        <h2 className="text-sm font-bold text-white">{categoria.label}</h2>
-        <span className="text-[10px] text-[#888] bg-[#1a1a1a] px-2 py-0.5 rounded-full">
+        <h2 className="text-sm font-bold text-[var(--color-text-primary)]">{categoria.label}</h2>
+        <span className="text-[10px] text-[var(--color-text-muted)] bg-[var(--color-bg-surface)] px-2 py-0.5 rounded-full">
           {tutoriales.length}
         </span>
       </div>
@@ -214,7 +214,7 @@ export default function TutorialesList({ showCopyButton = false }) {
     <>
       {/* Search */}
       <div className="relative mb-4">
-        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#555555]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
         <input
@@ -222,7 +222,7 @@ export default function TutorialesList({ showCopyButton = false }) {
           value={search}
           onChange={(e) => { setSearch(e.target.value); setActiveCategory(null) }}
           placeholder="Buscar tutorial... (ej: prestamo, pago, ruta, offline)"
-          className="w-full h-10 pl-10 pr-4 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-white placeholder-[#555555] focus:outline-none focus:border-[#f5c518] transition-colors"
+          className="w-full h-10 pl-10 pr-4 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[var(--color-text-primary)] placeholder-[#555555] focus:outline-none focus:border-[var(--color-accent)] transition-colors"
         />
       </div>
 
@@ -232,8 +232,8 @@ export default function TutorialesList({ showCopyButton = false }) {
           onClick={() => { setActiveCategory(null); setSearch('') }}
           className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
             !activeCategory && !search.trim()
-              ? 'bg-[#f5c518] text-[#0a0a0a]'
-              : 'bg-[#1a1a1a] text-[#888] border border-[#2a2a2a] hover:border-[#444]'
+              ? 'bg-[var(--color-accent)] text-[#1a1a2e]'
+              : 'bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:border-[#444]'
           }`}
         >
           Todos
@@ -245,7 +245,7 @@ export default function TutorialesList({ showCopyButton = false }) {
             className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
               activeCategory === cat.id
                 ? 'text-[#0a0a0a]'
-                : 'bg-[#1a1a1a] text-[#888] border border-[#2a2a2a] hover:border-[#444]'
+                : 'bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:border-[#444]'
             }`}
             style={activeCategory === cat.id ? { backgroundColor: cat.color } : undefined}
           >
@@ -256,7 +256,7 @@ export default function TutorialesList({ showCopyButton = false }) {
 
       {/* Empty state */}
       {filtered.length === 0 && (
-        <p className="text-sm text-[#555555] text-center py-8">
+        <p className="text-sm text-[var(--color-text-muted)] text-center py-8">
           No se encontraron tutoriales para &quot;{search}&quot;
         </p>
       )}

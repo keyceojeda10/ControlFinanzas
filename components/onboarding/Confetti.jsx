@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
-const COLORS = ['#f5c518', '#22c55e', '#3b82f6', '#a855f7', '#ef4444', '#f59e0b']
+const COLORS = ['var(--color-accent)', 'var(--color-success)', '#3b82f6', 'var(--color-purple)', 'var(--color-danger)', 'var(--color-warning)']
 
 function randomBetween(min, max) {
   return Math.random() * (max - min) + min

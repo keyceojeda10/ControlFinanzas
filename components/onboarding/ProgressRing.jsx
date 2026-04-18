@@ -33,7 +33,7 @@ export default function ProgressRing({ progreso = 0, size = 56, stroke = 4 }) {
       </svg>
       {/* Percentage text */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-xs font-bold text-white">{progreso}%</span>
+        <span className="text-xs font-bold text-[var(--color-text-primary)]">{progreso}%</span>
       </div>
     </div>
   )

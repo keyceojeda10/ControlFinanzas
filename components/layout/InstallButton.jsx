@@ -57,55 +57,55 @@ const IconShareIOS = () => (
 )
 // 3 puntos vertical
 const IconDotsVertical = () => (
-  <svg className="w-7 h-7 text-[#888]" fill="currentColor" viewBox="0 0 24 24">
+  <svg className="w-7 h-7 text-[var(--color-text-muted)]" fill="currentColor" viewBox="0 0 24 24">
     <circle cx="12" cy="5" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="12" cy="19" r="2" />
   </svg>
 )
 // 3 puntos horizontal
 const IconDotsHorizontal = () => (
-  <svg className="w-7 h-7 text-[#888]" fill="currentColor" viewBox="0 0 24 24">
+  <svg className="w-7 h-7 text-[var(--color-text-muted)]" fill="currentColor" viewBox="0 0 24 24">
     <circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" />
   </svg>
 )
 // Desplazar abajo (scroll)
 const IconScrollDown = () => (
-  <svg className="w-7 h-7 text-[#f5c518]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
+  <svg className="w-7 h-7 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
   </svg>
 )
 // Agregar / Plus en cuadrado
 const IconAddSquare = () => (
-  <svg className="w-7 h-7 text-[#f5c518]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
+  <svg className="w-7 h-7 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
   </svg>
 )
 // Check / Listo
 const IconCheck = () => (
-  <svg className="w-7 h-7 text-[#22c55e]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
+  <svg className="w-7 h-7 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
   </svg>
 )
 // Instalar (descarga)
 const IconInstall = () => (
-  <svg className="w-7 h-7 text-[#f5c518]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
+  <svg className="w-7 h-7 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
   </svg>
 )
 // Plus simple
 const IconPlus = () => (
-  <svg className="w-7 h-7 text-[#f5c518]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+  <svg className="w-7 h-7 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
   </svg>
 )
 // Monitor con flecha (desktop install)
 const IconDesktopInstall = () => (
-  <svg className="w-7 h-7 text-[#f5c518]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
+  <svg className="w-7 h-7 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
   </svg>
 )
 // Info
 const IconInfo = () => (
-  <svg className="w-7 h-7 text-[#888]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
+  <svg className="w-7 h-7 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
   </svg>
 )
@@ -262,7 +262,7 @@ function renderBoldText(text) {
   const parts = text.split(/\*\*(.*?)\*\*/g)
   return parts.map((part, i) =>
     i % 2 === 1
-      ? <strong key={i} className="text-white">{part}</strong>
+      ? <strong key={i} className="text-[var(--color-text-primary)]">{part}</strong>
       : <span key={i}>{part}</span>
   )
 }
@@ -274,21 +274,21 @@ export function InstallGuideModal({ onClose }) {
   return (
     <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/70 px-0 sm:px-4" onClick={onClose}>
       <div
-        className="w-full sm:max-w-sm bg-[#1a1a1a] border border-[#2a2a2a] rounded-t-[20px] sm:rounded-[20px] flex flex-col max-h-[85vh] sm:max-h-[80vh] mb-0 sm:mb-0"
+        className="w-full sm:max-w-sm bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-t-[20px] sm:rounded-[20px] flex flex-col max-h-[85vh] sm:max-h-[80vh] mb-0 sm:mb-0"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header fijo */}
         <div className="px-5 pt-5 pb-3 shrink-0">
           <div className="flex items-center justify-between mb-1">
-            <h3 className="text-base font-semibold text-white">{instructions.title}</h3>
-            <button onClick={onClose} className="text-[#888] hover:text-white p-1 -mr-1">
+            <h3 className="text-base font-semibold text-[var(--color-text-primary)]">{instructions.title}</h3>
+            <button onClick={onClose} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] p-1 -mr-1">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
-          <p className="text-xs text-[#888]">Agrega la app a tu celular para acceder más rápido y usarla sin internet.</p>
+          <p className="text-xs text-[var(--color-text-muted)]">Agrega la app a tu celular para acceder más rápido y usarla sin internet.</p>
         </div>
 
         {/* Contenido scrollable */}
@@ -300,11 +300,11 @@ export function InstallGuideModal({ onClose }) {
                 <div key={i} className="flex items-start gap-3 p-3 rounded-[14px] bg-[#151515] border border-[#222]">
                   {/* Numero + Icono en fila */}
                   <div className="shrink-0 flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-[#f5c518] flex items-center justify-center text-[#0a0a0a] text-xs font-bold">
+                    <div className="w-7 h-7 rounded-full bg-[var(--color-accent)] flex items-center justify-center text-[#0a0a0a] text-xs font-bold">
                       {i + 1}
                     </div>
                     {StepIconComponent && (
-                      <div className="w-11 h-11 rounded-[12px] bg-[#2a2a2a] flex items-center justify-center">
+                      <div className="w-11 h-11 rounded-[12px] bg-[var(--color-bg-hover)] flex items-center justify-center">
                         <StepIconComponent />
                       </div>
                     )}
@@ -324,7 +324,7 @@ export function InstallGuideModal({ onClose }) {
         <div className="px-5 pb-5 pt-3 shrink-0">
           <button
             onClick={onClose}
-            className="w-full py-3.5 rounded-[12px] bg-[#f5c518] text-[#0a0a0a] text-sm font-bold hover:bg-[#f0b800] transition-colors"
+            className="w-full py-3.5 rounded-[12px] bg-[var(--color-accent)] text-[#1a1a2e] text-sm font-bold hover:bg-[var(--color-accent-hover)] transition-colors"
           >
             Entendido
           </button>
@@ -371,7 +371,7 @@ export default function InstallButton({ variant = 'mobile' }) {
     return (
       <button
         onClick={handleInstall}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[rgba(245,197,24,0.1)] border border-[rgba(245,197,24,0.2)] text-[#f5c518] hover:bg-[rgba(245,197,24,0.15)] transition-colors"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--color-warning-dim)] border border-[color-mix(in_srgb,var(--color-warning)_30%,transparent)] text-[var(--color-warning)] hover:bg-[rgba(245,197,24,0.15)] transition-colors"
         title="Instalar app en tu celular"
       >
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -385,7 +385,7 @@ export default function InstallButton({ variant = 'mobile' }) {
   return (
     <button
       onClick={handleInstall}
-      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm text-[#888888] hover:bg-[rgba(245,197,24,0.08)] hover:text-[#f5c518] transition-all duration-150"
+      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm text-[var(--color-text-muted)] hover:bg-[rgba(245,197,24,0.08)] hover:text-[var(--color-accent)] transition-all duration-150"
       title="Instalar app en tu computador"
     >
       <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -436,18 +436,18 @@ export function InstallBanner() {
 
   return (
     <div className={`fixed bottom-20 sm:bottom-6 left-3 right-3 sm:left-auto sm:right-6 sm:max-w-sm z-[60] transition-all duration-300 ${animateIn ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
-      <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-4 shadow-2xl">
+      <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] p-4 shadow-2xl">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-[10px] bg-[rgba(245,197,24,0.12)] flex items-center justify-center shrink-0">
-            <svg className="w-5 h-5 text-[#f5c518]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-white">Instala la app en tu celular</p>
-            <p className="text-xs text-[#888] mt-0.5">Accede más rápido y úsala sin internet</p>
+            <p className="text-sm font-semibold text-[var(--color-text-primary)]">Instala la app en tu celular</p>
+            <p className="text-xs text-[var(--color-text-muted)] mt-0.5">Accede más rápido y úsala sin internet</p>
           </div>
-          <button onClick={handleDismiss} className="text-[#666] hover:text-white p-0.5 shrink-0" aria-label="Cerrar">
+          <button onClick={handleDismiss} className="text-[#666] hover:text-[var(--color-text-primary)] p-0.5 shrink-0" aria-label="Cerrar">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -455,7 +455,7 @@ export function InstallBanner() {
         </div>
         <button
           onClick={handleInstall}
-          className="w-full mt-3 py-2.5 rounded-[10px] bg-[#f5c518] text-[#0a0a0a] text-sm font-semibold hover:bg-[#f0b800] transition-colors"
+          className="w-full mt-3 py-2.5 rounded-[10px] bg-[var(--color-accent)] text-[#1a1a2e] text-sm font-semibold hover:bg-[var(--color-accent-hover)] transition-colors"
         >
           {deferredPrompt ? 'Instalar ahora' : 'Ver como instalar'}
         </button>

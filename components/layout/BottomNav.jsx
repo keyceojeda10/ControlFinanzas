@@ -172,25 +172,24 @@ export default function BottomNav() {
       {cierreWarning && (
         <Link
           href={warningHref}
-          className="lg:hidden fixed bottom-[88px] right-3 z-40 rounded-full px-3.5 py-2.5 flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f59e0b]/65 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a10]"
+          className="lg:hidden fixed bottom-[88px] right-3 z-40 rounded-full px-3.5 py-2.5 flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2"
           style={{
-            background: cierreWarning.showPendingReminder ? 'rgba(26,19,12,0.95)' : 'rgba(20,18,12,0.92)',
-            border: cierreWarning.showPendingReminder ? '1px solid rgba(245,197,24,0.45)' : '1px solid rgba(245,158,11,0.38)',
+            background: cierreWarning.showPendingReminder ? 'var(--color-accent-soft)' : 'var(--color-warning-dim)',
+            border: `1px solid color-mix(in srgb, ${cierreWarning.showPendingReminder ? 'var(--color-accent)' : 'var(--color-warning)'} 50%, transparent)`,
             backdropFilter: 'blur(20px) saturate(1.3)',
             WebkitBackdropFilter: 'blur(20px) saturate(1.3)',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
           }}
         >
-          <span className={`w-1.5 h-1.5 rounded-full animate-pulse shrink-0 ${cierreWarning.showPendingReminder ? 'bg-[#f5c518]' : 'bg-[#f59e0b]'}`} />
-          <span className={`text-[11px] font-semibold ${cierreWarning.showPendingReminder ? 'text-[#f5d77a]' : 'text-[#ffc266]'}`}>{warningText}</span>
+          <span className="w-1.5 h-1.5 rounded-full animate-pulse shrink-0" style={{ background: cierreWarning.showPendingReminder ? 'var(--color-accent)' : 'var(--color-warning)' }} />
+          <span className="text-[11px] font-semibold" style={{ color: cierreWarning.showPendingReminder ? 'var(--color-accent)' : 'var(--color-warning)' }}>{warningText}</span>
         </Link>
       )}
 
       {/* Sheet overlay + content for "Más" */}
       {moreOpen && (
         <div
-          className="lg:hidden fixed inset-0 z-50"
-          style={{ background: 'rgba(0,0,5,0.6)' }}
+          className="lg:hidden fixed inset-0 z-50 cf-modal-overlay"
           onClick={() => setMoreOpen(false)}
           role="button"
           tabIndex={-1}
@@ -198,24 +197,17 @@ export default function BottomNav() {
         >
           <div
             ref={sheetRef}
-            className="absolute bottom-0 left-0 right-0 rounded-t-[24px] overflow-hidden animate-slide-up"
+            className="absolute bottom-0 left-0 right-0 rounded-t-[24px] overflow-hidden animate-slide-up cf-sheet"
             onClick={(e) => e.stopPropagation()}
-            style={{
-              background: 'rgba(15,15,22,0.95)',
-              backdropFilter: 'blur(30px) saturate(1.3)',
-              WebkitBackdropFilter: 'blur(30px) saturate(1.3)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              borderBottom: 'none',
-              maxHeight: '70vh',
-            }}
+            style={{ maxHeight: '70vh' }}
           >
             {/* Handle bar */}
             <div className="flex justify-center pt-3 pb-2">
-              <div className="w-10 h-1 rounded-full bg-[rgba(255,255,255,0.15)]" />
+              <div className="w-10 h-1 rounded-full" style={{ background: 'var(--color-border-hover)' }} />
             </div>
 
             <div className="px-4 pb-2">
-              <p className="text-[11px] font-semibold text-[#b6b6c1] uppercase tracking-wider mb-3">Navegacion</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--color-text-secondary)' }}>Navegacion</p>
             </div>
 
             <div className="px-2 pb-8 overflow-y-auto">
@@ -227,10 +219,8 @@ export default function BottomNav() {
                       key={item.href}
                       href={item.href}
                       onClick={() => setMoreOpen(false)}
-                      className={[
-                        'flex flex-col items-center gap-1.5 py-4 rounded-2xl transition-all active:scale-95 min-h-[78px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c518]/65 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0c12]',
-                        active ? 'bg-[rgba(245,197,24,0.14)] text-[#f5c518]' : 'text-[#b2b2bd] hover:bg-[rgba(255,255,255,0.06)] hover:text-[#f1f2f7]',
-                      ].join(' ')}
+                      className="flex flex-col items-center gap-1.5 py-4 rounded-2xl transition-all active:scale-95 min-h-[78px] focus-visible:outline-none focus-visible:ring-2 cf-nav-item"
+                      style={active ? { background: 'var(--color-accent-soft)', color: 'var(--color-accent)' } : { color: 'var(--color-text-secondary)' }}
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d={item.icon} />
@@ -246,7 +236,7 @@ export default function BottomNav() {
       )}
 
       {/* Bottom nav bar */}
-      <nav aria-label="Navegacion principal movil" className="lg:hidden fixed bottom-3 left-3 right-3 z-40 rounded-[22px] overflow-hidden" style={{ background: 'rgba(12,12,18,0.8)', backdropFilter: 'blur(30px) saturate(1.5)', WebkitBackdropFilter: 'blur(30px) saturate(1.5)', border: '1px solid rgba(255,255,255,0.12)', boxShadow: '0 8px 32px rgba(0,0,0,0.4), 0 0 20px rgba(245,197,24,0.04), inset 0 1px 0 rgba(255,255,255,0.05)' }}>
+      <nav aria-label="Navegacion principal movil" className="lg:hidden fixed bottom-3 left-3 right-3 z-40 rounded-[22px] overflow-hidden cf-bottomnav-bar">
         <div className="flex items-stretch">
           {items.map((item) => {
             const active = isActive(item.href)
@@ -255,13 +245,11 @@ export default function BottomNav() {
                 key={item.href}
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
-                className={[
-                  'flex-1 flex flex-col items-center justify-center gap-0.5 py-3.5 text-[11px] leading-none font-semibold transition-all duration-200 relative min-h-[58px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c518]/65 focus-visible:ring-offset-1 focus-visible:ring-offset-[#0b0b10]',
-                  active ? 'text-[#f5c518]' : 'text-[#9b9ba6] hover:text-[#f1f2f7]',
-                ].join(' ')}
+                className="flex-1 flex flex-col items-center justify-center gap-0.5 py-3.5 text-[11px] leading-none font-semibold transition-all duration-200 relative min-h-[58px] focus-visible:outline-none focus-visible:ring-2"
+                style={{ color: active ? 'var(--color-accent)' : 'var(--color-text-secondary)' }}
               >
                 {active && (
-                  <span className="absolute inset-x-1 inset-y-1.5 rounded-[12px] -z-10" style={{ background: 'rgba(245,197,24,0.14)' }} />
+                  <span className="absolute inset-x-1 inset-y-1.5 rounded-[12px] -z-10" style={{ background: 'var(--color-accent-soft)' }} />
                 )}
                 {item.icon}
                 {item.label}
@@ -274,13 +262,11 @@ export default function BottomNav() {
             onClick={() => setMoreOpen(v => !v)}
             aria-expanded={moreOpen}
             aria-label="Abrir menu de navegacion"
-            className={[
-              'flex-1 flex flex-col items-center justify-center gap-0.5 py-3.5 text-[11px] leading-none font-semibold transition-all duration-200 relative min-h-[58px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c518]/65 focus-visible:ring-offset-1 focus-visible:ring-offset-[#0b0b10]',
-              moreActive || moreOpen ? 'text-[#f5c518]' : 'text-[#9b9ba6] hover:text-[#f1f2f7]',
-            ].join(' ')}
+            className="flex-1 flex flex-col items-center justify-center gap-0.5 py-3.5 text-[11px] leading-none font-semibold transition-all duration-200 relative min-h-[58px] focus-visible:outline-none focus-visible:ring-2"
+            style={{ color: (moreActive || moreOpen) ? 'var(--color-accent)' : 'var(--color-text-secondary)' }}
           >
             {(moreActive || moreOpen) && (
-              <span className="absolute inset-x-1 inset-y-1.5 rounded-[12px] -z-10" style={{ background: 'rgba(245,197,24,0.14)' }} />
+              <span className="absolute inset-x-1 inset-y-1.5 rounded-[12px] -z-10" style={{ background: 'var(--color-accent-soft)' }} />
             )}
             <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 6h16M4 12h16M4 18h16" />

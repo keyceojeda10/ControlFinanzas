@@ -50,7 +50,7 @@ export default function ScoreCrediticio({ cedula, plan }) {
 
       <Modal open={modal} onClose={() => setModal(false)} title="Historial Crediticio" size="sm">
         {!data.encontrado ? (
-          <p className="text-sm text-[#888888]">
+          <p className="text-sm text-[var(--color-text-muted)]">
             No se encontraron registros de esta cédula en otras entidades de la plataforma.
           </p>
         ) : (
@@ -62,7 +62,7 @@ export default function ScoreCrediticio({ cedula, plan }) {
               <StatCard label="Cancelados" value={data.datos.creditosCancelados} color="#888888" />
             </div>
 
-            <div className="text-xs text-[#555555] border-t border-[#2a2a2a] pt-3">
+            <div className="text-xs text-[var(--color-text-muted)] border-t border-[var(--color-border)] pt-3">
               <p>Datos basados en {data.datos.totalOrganizaciones} entidad{data.datos.totalOrganizaciones !== 1 ? 'es' : ''} de la plataforma.</p>
               <p className="mt-1">Esta información es un indicador agregado y anónimo. No se revelan datos específicos de terceros.</p>
             </div>
@@ -75,9 +75,9 @@ export default function ScoreCrediticio({ cedula, plan }) {
 
 function StatCard({ label, value, color }) {
   return (
-    <div className="bg-[#111111] border border-[#2a2a2a] rounded-xl p-3 text-center">
+    <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-xl p-3 text-center">
       <p className="text-2xl font-bold" style={{ color }}>{value}</p>
-      <p className="text-xs text-[#888888] mt-1">{label}</p>
+      <p className="text-xs text-[var(--color-text-muted)] mt-1">{label}</p>
     </div>
   )
 }

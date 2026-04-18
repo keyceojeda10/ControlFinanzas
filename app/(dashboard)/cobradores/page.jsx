@@ -52,26 +52,26 @@ export default function CobradoresPage() {
       <div className="max-w-xl mx-auto">
         <h1 className="text-xl font-bold text-[white] mb-6">Cobradores</h1>
         <div
-          className="border border-[#2a2a2a] rounded-[16px] p-8 text-center"
+          className="border border-[var(--color-border)] rounded-[16px] p-8 text-center"
           style={{
             background: 'linear-gradient(135deg, #f59e0b0A 0%, #1a1a1a 40%, #1a1a1a 70%, #f59e0b05 100%)',
             boxShadow: '0 0 30px #f59e0b08, 0 1px 2px rgba(0,0,0,0.3)',
           }}
         >
           <div className="w-14 h-14 rounded-full bg-[rgba(245,158,11,0.12)] flex items-center justify-center mx-auto mb-4">
-            <svg className="w-7 h-7 text-[#f59e0b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-7 h-7 text-[var(--color-warning)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                 d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
           </div>
           <p className="text-base font-bold text-[white] mb-2">Función de plan premium</p>
-          <p className="text-sm text-[#888888] mb-5">
+          <p className="text-sm text-[var(--color-text-muted)] mb-5">
             Actualiza tu plan para agregar cobradores y gestionar rutas de cobro.
           </p>
-          <div className="inline-flex flex-col gap-2 text-xs text-[#888888]">
-            <span className="flex items-center gap-1.5"><svg className="w-3.5 h-3.5 text-[#22c55e]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg> Crecimiento: hasta 2 usuarios</span>
-            <span className="flex items-center gap-1.5"><svg className="w-3.5 h-3.5 text-[#22c55e]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg> Profesional: hasta 5 usuarios</span>
-            <span className="flex items-center gap-1.5"><svg className="w-3.5 h-3.5 text-[#22c55e]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg> Empresarial: hasta 10 usuarios</span>
+          <div className="inline-flex flex-col gap-2 text-xs text-[var(--color-text-muted)]">
+            <span className="flex items-center gap-1.5"><svg className="w-3.5 h-3.5 text-[var(--color-success)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg> Crecimiento: hasta 2 usuarios</span>
+            <span className="flex items-center gap-1.5"><svg className="w-3.5 h-3.5 text-[var(--color-success)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg> Profesional: hasta 5 usuarios</span>
+            <span className="flex items-center gap-1.5"><svg className="w-3.5 h-3.5 text-[var(--color-success)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg> Empresarial: hasta 10 usuarios</span>
           </div>
         </div>
       </div>
@@ -83,7 +83,7 @@ export default function CobradoresPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold text-[white]">Cobradores</h1>
-          <p className="text-sm text-[#888888] mt-0.5">
+          <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
             {loading ? '…' : `${cobradores.length} cobrador${cobradores.length !== 1 ? 'es' : ''}`}
           </p>
         </div>
@@ -103,7 +103,7 @@ export default function CobradoresPage() {
       </div>
 
       {error && (
-        <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3 mb-4">
+        <div className="bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[12px] px-4 py-3 mb-4">
           {error}
         </div>
       )}
@@ -117,13 +117,13 @@ export default function CobradoresPage() {
       {!loading && cobradores.length === 0 && !error && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="w-14 h-14 rounded-full bg-[rgba(245,197,24,0.1)] flex items-center justify-center mb-4">
-            <svg className="w-7 h-7 text-[#f5c518]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-7 h-7 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                 d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
           </div>
           <p className="text-sm font-medium text-[white]">Sin cobradores aún</p>
-          <p className="text-xs text-[#888888] mt-1">Crea el primer cobrador para asignarle una ruta</p>
+          <p className="text-xs text-[var(--color-text-muted)] mt-1">Crea el primer cobrador para asignarle una ruta</p>
           <Link href="/cobradores/nuevo" className="mt-4">
             <Button size="sm">Crear cobrador</Button>
           </Link>
@@ -136,7 +136,7 @@ export default function CobradoresPage() {
             <Link
               key={c.id}
               href={`/cobradores/${c.id}`}
-              className="block border border-[#2a2a2a] rounded-[16px] p-4 hover:border-[#3a3a3a] transition-all"
+              className="block border border-[var(--color-border)] rounded-[16px] p-4 hover:border-[var(--color-border-hover)] transition-all"
               style={{
                 background: `linear-gradient(135deg, #22c55e0A 0%, #1a1a1a 40%, #1a1a1a 70%, #a855f705 100%)`,
                 boxShadow: `0 0 30px #22c55e08, 0 1px 2px rgba(0,0,0,0.3)`,
@@ -145,11 +145,11 @@ export default function CobradoresPage() {
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-[rgba(139,92,246,0.15)] flex items-center justify-center shrink-0">
-                    <span className="text-[#a855f7] font-bold text-sm">{c.nombre?.[0]?.toUpperCase()}</span>
+                    <span className="text-[var(--color-purple)] font-bold text-sm">{c.nombre?.[0]?.toUpperCase()}</span>
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-[white]">{c.nombre}</p>
-                    <p className="text-xs text-[#888888]">{c.email}</p>
+                    <p className="text-xs text-[var(--color-text-muted)]">{c.email}</p>
                   </div>
                 </div>
                 <button
@@ -162,20 +162,20 @@ export default function CobradoresPage() {
                 </button>
               </div>
 
-              <div className="grid grid-cols-3 gap-3 pt-3 border-t border-[#2a2a2a] text-center">
+              <div className="grid grid-cols-3 gap-3 pt-3 border-t border-[var(--color-border)] text-center">
                 <div>
-                  <p className="text-[10px] text-[#888888]">Ruta</p>
+                  <p className="text-[10px] text-[var(--color-text-muted)]">Ruta</p>
                   <p className="text-xs font-medium text-[white] truncate">
-                    {c.ruta?.nombre ?? <span className="text-[#888888]">Sin ruta</span>}
+                    {c.ruta?.nombre ?? <span className="text-[var(--color-text-muted)]">Sin ruta</span>}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-[#888888]">Clientes</p>
+                  <p className="text-[10px] text-[var(--color-text-muted)]">Clientes</p>
                   <p className="text-xs font-bold text-[white]">{c.cantidadClientes}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-[#888888]">Recaudado hoy</p>
-                  <p className="text-xs font-bold text-[#22c55e] font-mono-display">{formatCOP(c.recaudadoHoy)}</p>
+                  <p className="text-[10px] text-[var(--color-text-muted)]">Recaudado hoy</p>
+                  <p className="text-xs font-bold text-[var(--color-success)] font-mono-display">{formatCOP(c.recaudadoHoy)}</p>
                 </div>
               </div>
             </Link>

@@ -97,14 +97,14 @@ export default function NuevoTicketPage() {
   return (
     <div className="max-w-lg mx-auto">
       <div className="mb-6">
-        <button onClick={() => router.back()} className="text-xs text-[#888888] hover:text-white transition-colors mb-2 flex items-center gap-1">
+        <button onClick={() => router.back()} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors mb-2 flex items-center gap-1">
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
           Volver
         </button>
-        <h1 className="text-lg font-bold text-white">Nuevo ticket de soporte</h1>
-        <p className="text-xs text-[#888888]">Cuéntanos cómo podemos ayudarte</p>
+        <h1 className="text-lg font-bold text-[var(--color-text-primary)]">Nuevo ticket de soporte</h1>
+        <p className="text-xs text-[var(--color-text-muted)]">Cuéntanos cómo podemos ayudarte</p>
       </div>
 
       <Card>
@@ -137,7 +137,7 @@ export default function NuevoTicketPage() {
 
           {/* Adjuntar imágenes */}
           <div>
-            <label className="block text-xs font-medium text-[#888888] mb-1.5">
+            <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
               Capturas de pantalla (opcional, máx. 3)
             </label>
             <input
@@ -152,11 +152,11 @@ export default function NuevoTicketPage() {
               {imagenes.map((img, idx) => (
                 <div key={idx} className="relative">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={img.preview} alt={`Adjunto ${idx + 1}`} className="h-20 w-20 object-cover rounded-[10px] border border-[#2a2a2a]" />
+                  <img src={img.preview} alt={`Adjunto ${idx + 1}`} className="h-20 w-20 object-cover rounded-[10px] border border-[var(--color-border)]" />
                   <button
                     type="button"
                     onClick={() => removeImage(idx)}
-                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#ef4444] flex items-center justify-center text-white text-[10px]"
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[var(--color-danger)] flex items-center justify-center text-[var(--color-text-primary)] text-[10px]"
                   >
                     ✕
                   </button>
@@ -166,7 +166,7 @@ export default function NuevoTicketPage() {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="h-20 w-20 rounded-[10px] border border-dashed border-[#2a2a2a] flex flex-col items-center justify-center gap-1 text-[#555555] hover:text-[#f5c518] hover:border-[#f5c518] transition-all"
+                  className="h-20 w-20 rounded-[10px] border border-dashed border-[var(--color-border)] flex flex-col items-center justify-center gap-1 text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:border-[#f5c518] transition-all"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -178,7 +178,7 @@ export default function NuevoTicketPage() {
           </div>
 
           {/* Toggle solicitar contacto */}
-          <div className="bg-[#111111] border border-[#2a2a2a] rounded-[12px] p-4">
+          <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[12px] p-4">
             <label className="flex items-start gap-3 cursor-pointer">
               <input
                 type="checkbox"
@@ -187,8 +187,8 @@ export default function NuevoTicketPage() {
                 className="mt-0.5 w-4 h-4 rounded accent-[#f5c518]"
               />
               <div>
-                <p className="text-sm font-medium text-white">Solicitar que me contacten</p>
-                <p className="text-xs text-[#888888] mt-0.5">
+                <p className="text-sm font-medium text-[var(--color-text-primary)]">Solicitar que me contacten</p>
+                <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
                   Déjanos tu número y te llamamos para resolver tu caso directamente
                 </p>
               </div>
@@ -207,7 +207,7 @@ export default function NuevoTicketPage() {
           </div>
 
           {error && (
-            <p className="text-xs text-[#ef4444] bg-[rgba(239,68,68,0.1)] rounded-[8px] px-3 py-2">{error}</p>
+            <p className="text-xs text-[var(--color-danger)] bg-[rgba(239,68,68,0.1)] rounded-[8px] px-3 py-2">{error}</p>
           )}
 
           <Button type="submit" loading={loading} className="w-full">

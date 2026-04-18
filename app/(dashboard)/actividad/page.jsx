@@ -156,7 +156,7 @@ export default function ActividadPage() {
     <div className="max-w-3xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-lg font-bold text-white">Actividad</h1>
+          <h1 className="text-lg font-bold text-[var(--color-text-primary)]">Actividad</h1>
           <p className="text-xs text-[#777]">Historial de acciones en tu negocio</p>
         </div>
       </div>
@@ -166,7 +166,7 @@ export default function ActividadPage() {
         <select
           value={filtroTipo}
           onChange={(e) => setFiltroTipo(e.target.value)}
-          className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-white text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-[#f5c518]"
+          className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-[var(--color-text-primary)] text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-[var(--color-accent)]"
         >
           {FILTROS_TIPO.map(f => (
             <option key={f.value} value={f.value}>{f.label}</option>
@@ -176,7 +176,7 @@ export default function ActividadPage() {
         <select
           value={filtroUsuario}
           onChange={(e) => setFiltroUsuario(e.target.value)}
-          className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-white text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-[#f5c518]"
+          className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-[var(--color-text-primary)] text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-[var(--color-accent)]"
         >
           <option value="">Todos los usuarios</option>
           {usuarios.map(u => (
@@ -185,33 +185,33 @@ export default function ActividadPage() {
         </select>
 
         <label className="relative cursor-pointer">
-          <span className={`absolute inset-0 flex items-center px-3 text-xs pointer-events-none truncate ${desde ? 'text-white' : 'text-[#777]'}`}>
+          <span className={`absolute inset-0 flex items-center px-3 text-xs pointer-events-none truncate ${desde ? 'text-[var(--color-text-primary)]' : 'text-[#777]'}`}>
             {desde ? new Date(desde + 'T12:00').toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' }) : 'Desde'}
           </span>
           <input
             type="date"
             value={desde}
             onChange={(e) => setDesde(e.target.value)}
-            className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-[#f5c518] [color-scheme:dark] w-[90px]"
+            className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-[var(--color-accent)] [color-scheme:dark] w-[90px]"
             style={{ color: 'transparent', WebkitTextFillColor: 'transparent' }}
           />
         </label>
         <label className="relative cursor-pointer">
-          <span className={`absolute inset-0 flex items-center px-3 text-xs pointer-events-none truncate ${hasta ? 'text-white' : 'text-[#777]'}`}>
+          <span className={`absolute inset-0 flex items-center px-3 text-xs pointer-events-none truncate ${hasta ? 'text-[var(--color-text-primary)]' : 'text-[#777]'}`}>
             {hasta ? new Date(hasta + 'T12:00').toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' }) : 'Hasta'}
           </span>
           <input
             type="date"
             value={hasta}
             onChange={(e) => setHasta(e.target.value)}
-            className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-[#f5c518] [color-scheme:dark] w-[90px]"
+            className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-[var(--color-accent)] [color-scheme:dark] w-[90px]"
             style={{ color: 'transparent', WebkitTextFillColor: 'transparent' }}
           />
         </label>
         {(filtroTipo || filtroUsuario || desde || hasta) && (
           <button
             onClick={() => { setFiltroTipo(''); setFiltroUsuario(''); setDesde(''); setHasta('') }}
-            className="text-xs text-[#f5c518] hover:text-[#f5c518]/80 px-2 py-2"
+            className="text-xs text-[var(--color-accent)] hover:text-[var(--color-accent)]/80 px-2 py-2"
           >
             Limpiar
           </button>
@@ -237,7 +237,7 @@ export default function ActividadPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
           </svg>
           <p className="text-sm text-[#777]">No hay actividad registrada</p>
-          <p className="text-xs text-[#888] mt-1">Las acciones aparecerán aquí automáticamente</p>
+          <p className="text-xs text-[var(--color-text-muted)] mt-1">Las acciones aparecerán aquí automáticamente</p>
         </div>
       ) : (
         <div className="rounded-[16px] overflow-hidden border border-[rgba(255,255,255,0.06)]" style={{ background: 'rgba(255,255,255,0.02)' }}>
@@ -263,10 +263,10 @@ export default function ActividadPage() {
 
                 {/* Contenido en una linea */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] text-white leading-tight">
+                  <p className="text-[13px] text-[var(--color-text-primary)] leading-tight">
                     <span className="font-semibold">{item.user?.nombre}</span>
                     {' '}
-                    <span className="text-[#999]">{config.label?.toLowerCase()}</span>
+                    <span className="text-[var(--color-text-secondary)]">{config.label?.toLowerCase()}</span>
                   </p>
                   {item.detalle && (
                     <p className="text-[11px] mt-0.5 truncate" style={{ color: config.color }}>{item.detalle}</p>
@@ -274,7 +274,7 @@ export default function ActividadPage() {
                 </div>
 
                 {/* Tiempo a la derecha */}
-                <span className="text-[10px] text-[#888] shrink-0 whitespace-nowrap">{tiempoRelativo(item.createdAt)}</span>
+                <span className="text-[10px] text-[var(--color-text-muted)] shrink-0 whitespace-nowrap">{tiempoRelativo(item.createdAt)}</span>
               </div>
             )
           })}
@@ -282,7 +282,7 @@ export default function ActividadPage() {
           {/* Loader for infinite scroll */}
           {hasMore && (
             <div ref={loaderRef} className="flex justify-center py-3 border-t border-[rgba(255,255,255,0.04)]">
-              <div className="w-5 h-5 border-2 border-[#333] border-t-[#f5c518] rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-[var(--color-border)] border-t-[#f5c518] rounded-full animate-spin" />
             </div>
           )}
         </div>

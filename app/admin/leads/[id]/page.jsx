@@ -69,40 +69,40 @@ function LeadDetailSkeleton() {
   return (
     <div className="space-y-5 animate-pulse">
       {/* Back link */}
-      <div className="h-4 w-28 bg-[#1a1a1a] rounded" />
+      <div className="h-4 w-28 bg-[var(--color-bg-surface)] rounded" />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Panel izquierdo */}
         <div className="lg:col-span-1 space-y-4">
-          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-5 space-y-4">
-            <div className="h-6 w-40 bg-[#2a2a2a] rounded" />
+          <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] p-5 space-y-4">
+            <div className="h-6 w-40 bg-[var(--color-bg-hover)] rounded" />
             <div className="space-y-2">
-              <div className="h-3 w-32 bg-[#2a2a2a] rounded" />
-              <div className="h-3 w-24 bg-[#2a2a2a] rounded" />
-              <div className="h-3 w-36 bg-[#2a2a2a] rounded" />
+              <div className="h-3 w-32 bg-[var(--color-bg-hover)] rounded" />
+              <div className="h-3 w-24 bg-[var(--color-bg-hover)] rounded" />
+              <div className="h-3 w-36 bg-[var(--color-bg-hover)] rounded" />
             </div>
           </div>
-          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-5 space-y-3">
-            <div className="h-9 w-full bg-[#2a2a2a] rounded-[10px]" />
-            <div className="h-20 w-full bg-[#2a2a2a] rounded-[10px]" />
-            <div className="h-10 w-full bg-[#2a2a2a] rounded-[12px]" />
+          <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] p-5 space-y-3">
+            <div className="h-9 w-full bg-[var(--color-bg-hover)] rounded-[10px]" />
+            <div className="h-20 w-full bg-[var(--color-bg-hover)] rounded-[10px]" />
+            <div className="h-10 w-full bg-[var(--color-bg-hover)] rounded-[12px]" />
           </div>
         </div>
 
         {/* Panel derecho */}
         <div className="lg:col-span-2 space-y-4">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-5 space-y-3">
+            <div key={i} className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] p-5 space-y-3">
               <div className="flex items-center justify-between">
-                <div className="h-5 w-24 bg-[#2a2a2a] rounded-full" />
-                <div className="h-5 w-16 bg-[#2a2a2a] rounded-full" />
+                <div className="h-5 w-24 bg-[var(--color-bg-hover)] rounded-full" />
+                <div className="h-5 w-16 bg-[var(--color-bg-hover)] rounded-full" />
               </div>
-              <div className="h-3 w-full bg-[#2a2a2a] rounded" />
-              <div className="h-3 w-4/5 bg-[#2a2a2a] rounded" />
-              <div className="h-3 w-3/5 bg-[#2a2a2a] rounded" />
+              <div className="h-3 w-full bg-[var(--color-bg-hover)] rounded" />
+              <div className="h-3 w-4/5 bg-[var(--color-bg-hover)] rounded" />
+              <div className="h-3 w-3/5 bg-[var(--color-bg-hover)] rounded" />
               <div className="flex gap-2 pt-1">
-                <div className="h-12 flex-1 bg-[#2a2a2a] rounded-[12px]" />
-                <div className="h-12 w-24 bg-[#2a2a2a] rounded-[12px]" />
+                <div className="h-12 flex-1 bg-[var(--color-bg-hover)] rounded-[12px]" />
+                <div className="h-12 w-24 bg-[var(--color-bg-hover)] rounded-[12px]" />
               </div>
             </div>
           ))}
@@ -168,7 +168,7 @@ function MensajeCard({ msg, lead, enviados, onToggleEnviado, onWhatsAppClick }) 
         'rounded-[16px] border transition-all duration-200',
         enviado
           ? 'border-[rgba(34,197,94,0.35)] bg-[rgba(34,197,94,0.04)]'
-          : 'border-[#2a2a2a] bg-[#1a1a1a]',
+          : 'border-[var(--color-border)] bg-[var(--color-bg-surface)]',
       ].join(' ')}
     >
       <div className="p-4 space-y-3">
@@ -179,7 +179,7 @@ function MensajeCard({ msg, lead, enviados, onToggleEnviado, onWhatsAppClick }) 
             <Badge variant={badgeVariant}>
               {catConfig.label}
             </Badge>
-            <p className="text-sm font-semibold text-white leading-tight">
+            <p className="text-sm font-semibold text-[var(--color-text-primary)] leading-tight">
               {msg.label}
             </p>
           </div>
@@ -190,8 +190,8 @@ function MensajeCard({ msg, lead, enviados, onToggleEnviado, onWhatsAppClick }) 
             className={[
               'flex items-center gap-1.5 shrink-0 h-8 px-3 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer',
               enviado
-                ? 'bg-[rgba(34,197,94,0.15)] border-[rgba(34,197,94,0.4)] text-[#22c55e]'
-                : 'bg-transparent border-[#2a2a2a] text-[#555555] hover:border-[#3a3a3a] hover:text-[#888888]',
+                ? 'bg-[rgba(34,197,94,0.15)] border-[rgba(34,197,94,0.4)] text-[var(--color-success)]'
+                : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-border-hover)] hover:text-[var(--color-text-muted)]',
             ].join(' ')}
             aria-label={enviado ? 'Marcar como no enviado' : 'Marcar como enviado'}
           >
@@ -214,14 +214,14 @@ function MensajeCard({ msg, lead, enviados, onToggleEnviado, onWhatsAppClick }) 
         </div>
 
         {/* Condición */}
-        <p className="text-[11px] text-[#555555] leading-relaxed">
+        <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed">
           {msg.condition}
         </p>
 
         {/* Imagen adjunta (si aplica) */}
         {msg.image && (
           <div className="space-y-2">
-            <div className="relative rounded-[10px] overflow-hidden border border-[#222222]">
+            <div className="relative rounded-[10px] overflow-hidden border border-[var(--color-border)]">
               <Image
                 src={msg.image}
                 alt="Imagen para adjuntar"
@@ -234,7 +234,7 @@ function MensajeCard({ msg, lead, enviados, onToggleEnviado, onWhatsAppClick }) 
                 <a
                   href={msg.image}
                   download
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-[8px] bg-black/70 backdrop-blur-sm border border-[#333333] text-[10px] text-white font-medium hover:bg-black/90 transition-all"
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-[8px] bg-black/70 backdrop-blur-sm border border-[#333333] text-[10px] text-[var(--color-text-primary)] font-medium hover:bg-black/90 transition-all"
                 >
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -243,7 +243,7 @@ function MensajeCard({ msg, lead, enviados, onToggleEnviado, onWhatsAppClick }) 
                 </a>
               </div>
             </div>
-            <p className="text-[10px] text-[#f59e0b] font-medium">
+            <p className="text-[10px] text-[var(--color-warning)] font-medium">
               Enviar esta imagen PRIMERO, luego el texto
             </p>
           </div>
@@ -255,7 +255,7 @@ function MensajeCard({ msg, lead, enviados, onToggleEnviado, onWhatsAppClick }) 
             'rounded-[10px] px-3.5 py-3 border transition-all duration-200',
             enviado
               ? 'bg-[#0d0d0d] border-[rgba(34,197,94,0.2)] opacity-60'
-              : 'bg-[#111111] border-[#222222]',
+              : 'bg-[var(--color-bg-card)] border-[var(--color-border)]',
           ].join(' ')}
         >
           <p className="text-xs text-[#aaaaaa] leading-relaxed whitespace-pre-wrap">
@@ -276,7 +276,7 @@ function MensajeCard({ msg, lead, enviados, onToggleEnviado, onWhatsAppClick }) 
                 flex-1 flex items-center justify-center gap-2
                 min-h-[52px] rounded-[12px]
                 bg-[rgba(34,197,94,0.15)] border border-[rgba(34,197,94,0.35)]
-                text-[#22c55e] text-sm font-bold
+                text-[var(--color-success)] text-sm font-bold
                 active:scale-[0.98] transition-all duration-150
                 hover:bg-[rgba(34,197,94,0.22)] hover:border-[rgba(34,197,94,0.5)]
               "
@@ -289,7 +289,7 @@ function MensajeCard({ msg, lead, enviados, onToggleEnviado, onWhatsAppClick }) 
               className="
                 flex-1 flex items-center justify-center gap-2
                 min-h-[52px] rounded-[12px]
-                bg-[#111111] border border-[#2a2a2a]
+                bg-[var(--color-bg-card)] border border-[var(--color-border)]
                 text-[#444444] text-sm font-semibold
                 cursor-not-allowed select-none
               "
@@ -308,8 +308,8 @@ function MensajeCard({ msg, lead, enviados, onToggleEnviado, onWhatsAppClick }) 
               'border text-sm font-medium',
               'active:scale-[0.97] transition-all duration-150',
               copiado
-                ? 'bg-[rgba(34,197,94,0.1)] border-[rgba(34,197,94,0.3)] text-[#22c55e]'
-                : 'bg-[#111111] border-[#2a2a2a] text-[#888888] hover:text-white hover:border-[#3a3a3a]',
+                ? 'bg-[rgba(34,197,94,0.1)] border-[rgba(34,197,94,0.3)] text-[var(--color-success)]'
+                : 'bg-[var(--color-bg-card)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-hover)]',
             ].join(' ')}
           >
             {copiado ? (
@@ -340,8 +340,8 @@ function MensajeCard({ msg, lead, enviados, onToggleEnviado, onWhatsAppClick }) 
 
 function InfoRow({ label, children }) {
   return (
-    <div className="flex items-start justify-between gap-2 py-2.5 border-b border-[#222222] last:border-0">
-      <span className="text-[10px] text-[#555555] uppercase tracking-wide shrink-0 mt-0.5 font-medium">
+    <div className="flex items-start justify-between gap-2 py-2.5 border-b border-[var(--color-border)] last:border-0">
+      <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide shrink-0 mt-0.5 font-medium">
         {label}
       </span>
       <div className="text-right min-w-0">{children}</div>
@@ -496,7 +496,7 @@ export default function LeadDetallePage({ params }) {
     <div className="max-w-6xl mx-auto px-4 py-4 pb-24 sm:pb-8">
       <Link
         href="/admin/leads"
-        className="inline-flex items-center gap-1.5 text-sm text-[#888888] hover:text-white mb-5 transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] mb-5 transition-colors"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -504,11 +504,11 @@ export default function LeadDetallePage({ params }) {
         Volver a Leads
       </Link>
       <div className="bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.2)] rounded-[12px] px-4 py-4 space-y-2">
-        <p className="text-sm text-[#ef4444] font-medium">No se pudo cargar el lead</p>
-        <p className="text-xs text-[#ef4444]/70">{error}</p>
+        <p className="text-sm text-[var(--color-danger)] font-medium">No se pudo cargar el lead</p>
+        <p className="text-xs text-[var(--color-danger)]/70">{error}</p>
         <button
           onClick={fetchLead}
-          className="text-xs text-[#ef4444]/70 underline underline-offset-2 hover:text-[#ef4444] transition-colors"
+          className="text-xs text-[var(--color-danger)]/70 underline underline-offset-2 hover:text-[var(--color-danger)] transition-colors"
         >
           Reintentar
         </button>
@@ -525,7 +525,7 @@ export default function LeadDetallePage({ params }) {
       {/* Botón volver */}
       <Link
         href="/admin/leads"
-        className="inline-flex items-center gap-1.5 text-sm text-[#888888] hover:text-white mb-5 transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] mb-5 transition-colors"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -541,12 +541,12 @@ export default function LeadDetallePage({ params }) {
         <div className="lg:col-span-1 space-y-4">
 
           {/* Card de información */}
-          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-5">
+          <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] p-5">
 
             {/* Nombre + estado */}
             <div className="flex items-start justify-between gap-3 mb-4">
               <div className="min-w-0 flex-1">
-                <h1 className="text-xl font-bold text-white leading-tight break-words">
+                <h1 className="text-xl font-bold text-[var(--color-text-primary)] leading-tight break-words">
                   {lead.nombre}
                 </h1>
               </div>
@@ -563,7 +563,7 @@ export default function LeadDetallePage({ params }) {
                 <InfoRow label="Teléfono">
                   <a
                     href={`tel:${lead.telefono}`}
-                    className="text-sm text-[#f5c518] font-semibold hover:text-[#f0b800] transition-colors"
+                    className="text-sm text-[var(--color-accent)] font-semibold hover:text-[#f0b800] transition-colors"
                   >
                     {lead.telefono}
                   </a>
@@ -582,24 +582,24 @@ export default function LeadDetallePage({ params }) {
               {/* Anuncio ID */}
               {lead.adId && (
                 <InfoRow label="Anuncio ID">
-                  <span className="text-[11px] text-[#555555] font-mono break-all">{lead.adId}</span>
+                  <span className="text-[11px] text-[var(--color-text-muted)] font-mono break-all">{lead.adId}</span>
                 </InfoRow>
               )}
 
               {/* Registrado */}
               <InfoRow label="Registrado">
                 <div className="text-right">
-                  <p className="text-xs text-[#888888]">{haceTiempo(lead.createdAt)}</p>
-                  <p className="text-[10px] text-[#555555] mt-0.5">{formatFechaLarga(lead.createdAt)}</p>
+                  <p className="text-xs text-[var(--color-text-muted)]">{haceTiempo(lead.createdAt)}</p>
+                  <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{formatFechaLarga(lead.createdAt)}</p>
                 </div>
               </InfoRow>
 
               {/* Org vinculada */}
               <InfoRow label="Org vinculada">
                 {lead.organization?.nombre ? (
-                  <span className="text-xs text-[#22c55e] font-medium">{lead.organization.nombre}</span>
+                  <span className="text-xs text-[var(--color-success)] font-medium">{lead.organization.nombre}</span>
                 ) : (
-                  <span className="text-xs text-[#555555]">Sin registrar</span>
+                  <span className="text-xs text-[var(--color-text-muted)]">Sin registrar</span>
                 )}
               </InfoRow>
 
@@ -607,20 +607,20 @@ export default function LeadDetallePage({ params }) {
           </div>
 
           {/* Card de estado + notas */}
-          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-5 space-y-4">
-            <p className="text-[10px] text-[#555555] uppercase tracking-wide font-semibold">
+          <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] p-5 space-y-4">
+            <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide font-semibold">
               Estado y notas
             </p>
 
             {/* Select de estado */}
             <div>
-              <label className="text-[10px] text-[#555555] uppercase tracking-wide block mb-1.5">
+              <label className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide block mb-1.5">
                 Estado
               </label>
               <select
                 value={estado}
                 onChange={(e) => setEstado(e.target.value)}
-                className="w-full h-10 px-3 rounded-[10px] border border-[#2a2a2a] bg-[#111111] text-sm text-white focus:outline-none focus:border-[rgba(245,197,24,0.4)] transition-colors appearance-none cursor-pointer"
+                className="w-full h-10 px-3 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[rgba(245,197,24,0.4)] transition-colors appearance-none cursor-pointer"
                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'%3E%3Cpath stroke='%23666' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center', backgroundSize: '14px', paddingRight: '32px' }}
               >
                 <option value="nuevo">Nuevo</option>
@@ -632,7 +632,7 @@ export default function LeadDetallePage({ params }) {
 
             {/* Textarea de notas */}
             <div>
-              <label className="text-[10px] text-[#555555] uppercase tracking-wide block mb-1.5">
+              <label className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide block mb-1.5">
                 Notas internas
               </label>
               <textarea
@@ -640,7 +640,7 @@ export default function LeadDetallePage({ params }) {
                 onChange={(e) => setNotas(e.target.value)}
                 rows={4}
                 placeholder="Agrega notas sobre este lead..."
-                className="w-full px-3 py-2.5 rounded-[10px] border border-[#2a2a2a] bg-[#111111] text-sm text-white placeholder-[#444444] focus:outline-none focus:border-[rgba(245,197,24,0.4)] resize-none transition-colors"
+                className="w-full px-3 py-2.5 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[var(--color-text-primary)] placeholder-[#444444] focus:outline-none focus:border-[rgba(245,197,24,0.4)] resize-none transition-colors"
               />
             </div>
 
@@ -659,7 +659,7 @@ export default function LeadDetallePage({ params }) {
                 <span
                   className={[
                     'text-xs font-medium transition-all',
-                    saveMsg === 'Guardado' ? 'text-[#22c55e]' : 'text-[#ef4444]',
+                    saveMsg === 'Guardado' ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]',
                   ].join(' ')}
                 >
                   {saveMsg === 'Guardado' ? '✓ Guardado' : saveMsg}
@@ -671,7 +671,7 @@ export default function LeadDetallePage({ params }) {
           {/* Resumen mensajes enviados */}
           {mensajesEnviadosCount > 0 && (
             <div className="bg-[rgba(34,197,94,0.05)] border border-[rgba(34,197,94,0.2)] rounded-[14px] px-4 py-3">
-              <p className="text-xs text-[#22c55e] font-medium">
+              <p className="text-xs text-[var(--color-success)] font-medium">
                 {mensajesEnviadosCount} de {MENSAJES.length} mensajes enviados
               </p>
               <div className="flex gap-1 mt-2 flex-wrap">
@@ -680,7 +680,7 @@ export default function LeadDetallePage({ params }) {
                     key={msg.id}
                     className={[
                       'w-2 h-2 rounded-full transition-colors',
-                      enviados.includes(msg.id) ? 'bg-[#22c55e]' : 'bg-[#2a2a2a]',
+                      enviados.includes(msg.id) ? 'bg-[var(--color-success)]' : 'bg-[var(--color-bg-hover)]',
                     ].join(' ')}
                     title={msg.label}
                   />
@@ -698,16 +698,16 @@ export default function LeadDetallePage({ params }) {
           {/* Header de la sección */}
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-base font-bold text-white">
+              <h2 className="text-base font-bold text-[var(--color-text-primary)]">
                 Mensajes WhatsApp
               </h2>
-              <p className="text-[11px] text-[#555555] mt-0.5">
+              <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
                 Flujo guiado · toca para abrir en WhatsApp
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <WhatsAppIcon className="w-5 h-5 text-[#22c55e]" />
-              <span className="text-xs text-[#555555]">
+              <WhatsAppIcon className="w-5 h-5 text-[var(--color-success)]" />
+              <span className="text-xs text-[var(--color-text-muted)]">
                 {mensajesEnviadosCount}/{MENSAJES.length}
               </span>
             </div>
@@ -728,12 +728,12 @@ export default function LeadDetallePage({ params }) {
                     className="w-2 h-2 rounded-full shrink-0"
                     style={{ backgroundColor: catCfg.color }}
                   />
-                  <span className="text-xs font-semibold text-[#888888] uppercase tracking-wide">
+                  <span className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
                     {catCfg.label}
                   </span>
                   <div className="flex-1 h-px bg-[#1e1e1e]" />
                   {enviadosEnCat > 0 && (
-                    <span className="text-[10px] text-[#22c55e] font-medium">
+                    <span className="text-[10px] text-[var(--color-success)] font-medium">
                       {enviadosEnCat}/{msgsDeCategoria.length} enviados
                     </span>
                   )}

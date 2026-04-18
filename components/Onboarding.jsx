@@ -110,7 +110,7 @@ export default function Onboarding({ userId, initialStep = 0, totalClientes = 0,
             key={i}
             className="h-1 flex-1 rounded-full transition-all duration-300"
             style={{
-              background: i <= progreso ? '#f5c518' : 'rgba(245,197,24,0.15)',
+              background: i <= progreso ? 'var(--color-accent)' : 'rgba(245,197,24,0.15)',
             }}
           />
         ))}
@@ -118,14 +118,14 @@ export default function Onboarding({ userId, initialStep = 0, totalClientes = 0,
 
       <div className="flex items-center justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-[#f5c518] mb-0.5">{actual.titulo}</p>
-          <p className="text-xs text-[#888888] leading-relaxed">{actual.descripcion}</p>
+          <p className="text-sm font-bold text-[var(--color-accent)] mb-0.5">{actual.titulo}</p>
+          <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">{actual.descripcion}</p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={handleOmitir}
-            className="text-[10px] text-[#555555] hover:text-[#888888] transition-colors whitespace-nowrap"
+            className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-muted)] transition-colors whitespace-nowrap"
           >
             Omitir guía
           </button>

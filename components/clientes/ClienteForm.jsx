@@ -140,7 +140,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {error && (
-        <div className="flex items-center gap-2.5 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[10px] px-4 py-3">
+        <div className="flex items-center gap-2.5 bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[10px] px-4 py-3">
           <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
           </svg>
@@ -170,10 +170,10 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
           {scoreData?.encontrado && (
             <div className={`mt-1.5 text-xs px-3 py-2 rounded-lg border ${
               scoreData.score === 'rojo'
-                ? 'bg-[rgba(239,68,68,0.08)] border-[rgba(239,68,68,0.2)] text-[#ef4444]'
+                ? 'bg-[rgba(239,68,68,0.08)] border-[rgba(239,68,68,0.2)] text-[var(--color-danger)]'
                 : scoreData.score === 'amarillo'
-                ? 'bg-[rgba(245,197,24,0.08)] border-[rgba(245,197,24,0.2)] text-[#f5c518]'
-                : 'bg-[rgba(34,197,94,0.08)] border-[rgba(34,197,94,0.2)] text-[#22c55e]'
+                ? 'bg-[rgba(245,197,24,0.08)] border-[rgba(245,197,24,0.2)] text-[var(--color-accent)]'
+                : 'bg-[rgba(34,197,94,0.08)] border-[rgba(34,197,94,0.2)] text-[var(--color-success)]'
             }`}>
               {scoreData.score === 'rojo' && 'Cliente con mora activa en otras entidades'}
               {scoreData.score === 'amarillo' && 'Cliente con créditos activos en otras entidades'}
@@ -212,7 +212,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
           maxLength={100}
         />
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em]">
+          <label className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">
             Notas
           </label>
           <textarea
@@ -221,9 +221,9 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
             placeholder="Notas adicionales sobre el cliente..."
             maxLength={500}
             rows={3}
-            className="w-full px-3 py-2 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] placeholder-[#777777] focus:outline-none focus:border-[#f5c518] focus:ring-1 focus:ring-[rgba(245,197,24,0.3)] transition-all resize-none"
+            className="w-full px-3 py-2 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[white] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all resize-none"
           />
-          <span className="text-[10px] text-[#888888] text-right">{form.notas.length}/500</span>
+          <span className="text-[10px] text-[var(--color-text-muted)] text-right">{form.notas.length}/500</span>
         </div>
 
         {/* Ruta – solo plan standard+ */}
@@ -242,18 +242,18 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
       </div>
 
       {/* Avanzado — colapsable */}
-      <div className="border-t border-[#2a2a2a] pt-3">
+      <div className="border-t border-[var(--color-border)] pt-3">
         <button
           type="button"
           onClick={() => setAvanzadoOpen(v => !v)}
-          className="flex items-center gap-2 text-xs font-medium text-[#888888] hover:text-white transition-colors w-full"
+          className="flex items-center gap-2 text-xs font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors w-full"
         >
           <svg className={`w-3.5 h-3.5 transition-transform ${avanzadoOpen ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
           Opciones avanzadas
           {diasSinCobro.length > 0 && (
-            <span className="ml-auto text-[10px] text-[#f59e0b] font-medium">
+            <span className="ml-auto text-[10px] text-[var(--color-warning)] font-medium">
               {diasSinCobro.length} {diasSinCobro.length === 1 ? 'día' : 'días'} sin cobro
             </span>
           )}
@@ -272,14 +272,14 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
                     <option key={g.id} value={g.id}>{g.nombre}</option>
                   ))}
                 </Select>
-                <p className="text-[10px] text-[#666666] mt-1">
+                <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
                   Opcional. Asigna este cliente a un grupo desde el momento de crearlo.
                 </p>
               </div>
             )}
             <div>
-              <p className="text-xs font-medium text-[#888888] mb-1.5">Días sin cobro</p>
-              <p className="text-[10px] text-[#666666] leading-snug mb-2">
+              <p className="text-xs font-medium text-[var(--color-text-muted)] mb-1.5">Días sin cobro</p>
+              <p className="text-[10px] text-[var(--color-text-muted)] leading-snug mb-2">
                 Este cliente no será cobrado estos días. Si no configuras nada, hereda de la ruta o la organización.
               </p>
               <DiasSinCobroSelector value={diasSinCobro} onChange={setDiasSinCobro} compact />

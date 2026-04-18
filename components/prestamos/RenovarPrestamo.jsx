@@ -91,15 +91,15 @@ export default function RenovarPrestamo({
   return (
     <Modal open={open} onClose={handleClose} title="Renovar préstamo">
       <div className="space-y-4">
-        <p className="text-xs text-[#888888]">
+        <p className="text-xs text-[var(--color-text-muted)]">
           Liquida el saldo actual y crea un préstamo nuevo. El cliente recibe solo la diferencia.
         </p>
 
         {/* Saldo a liquidar */}
         <div className="px-3 py-2.5 rounded-[10px] bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.2)]">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-[#888888]">Saldo a liquidar</span>
-            <span className="text-sm font-semibold text-[#f5c518] font-mono-display">
+            <span className="text-xs text-[var(--color-text-muted)]">Saldo a liquidar</span>
+            <span className="text-sm font-semibold text-[var(--color-accent)] font-mono-display">
               {formatCOP(saldoPendiente)}
             </span>
           </div>
@@ -139,7 +139,7 @@ export default function RenovarPrestamo({
 
         {/* Frecuencia */}
         <div>
-          <label className="block text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em] mb-1.5">
+          <label className="block text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em] mb-1.5">
             Frecuencia
           </label>
           <div className="grid grid-cols-4 gap-1.5">
@@ -151,8 +151,8 @@ export default function RenovarPrestamo({
                 className={[
                   'h-9 rounded-[10px] border text-xs font-medium capitalize transition-all cursor-pointer',
                   frecuencia === f
-                    ? 'bg-[rgba(245,197,24,0.12)] border-[#f5c518] text-[#f5c518]'
-                    : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#1a1a1a]',
+                    ? 'bg-[rgba(245,197,24,0.12)] border-[#f5c518] text-[var(--color-accent)]'
+                    : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-surface)]',
                 ].join(' ')}
               >
                 {f}
@@ -173,30 +173,30 @@ export default function RenovarPrestamo({
         {montoNum > 0 && (
           <div className="rounded-[12px] border border-[rgba(34,197,94,0.25)] bg-[rgba(34,197,94,0.06)] p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-[#888888]">A entregar al cliente</span>
-              <span className="text-base font-bold text-[#22c55e] font-mono-display">
+              <span className="text-xs text-[var(--color-text-muted)]">A entregar al cliente</span>
+              <span className="text-base font-bold text-[var(--color-success)] font-mono-display">
                 {formatCOP(diferencia)}
               </span>
             </div>
             {calculo && (
               <>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[#888888]">Nueva cuota {frecuencia}</span>
-                  <span className="text-sm font-semibold text-white font-mono-display">
+                  <span className="text-xs text-[var(--color-text-muted)]">Nueva cuota {frecuencia}</span>
+                  <span className="text-sm font-semibold text-[var(--color-text-primary)] font-mono-display">
                     {formatCOP(calculo.cuotaDiaria)}
                   </span>
                 </div>
                 {calculo.ultimaCuota && calculo.ultimaCuota !== calculo.cuotaDiaria && calculo.numPeriodos > 1 && (
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-[#888888]">Última cuota (ajuste)</span>
+                    <span className="text-xs text-[var(--color-text-muted)]">Última cuota (ajuste)</span>
                     <span className="text-sm font-semibold text-[#8b95a5] font-mono-display">
                       {formatCOP(calculo.ultimaCuota)}
                     </span>
                   </div>
                 )}
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[#888888]">Total a pagar</span>
-                  <span className="text-sm font-semibold text-white font-mono-display">
+                  <span className="text-xs text-[var(--color-text-muted)]">Total a pagar</span>
+                  <span className="text-sm font-semibold text-[var(--color-text-primary)] font-mono-display">
                     {formatCOP(calculo.totalAPagar)}
                   </span>
                 </div>
@@ -205,7 +205,7 @@ export default function RenovarPrestamo({
           </div>
         )}
 
-        {error && <p className="text-sm text-[#ef4444]">{error}</p>}
+        {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
 
         <div className="flex gap-3 pt-2">
           <Button variant="secondary" onClick={handleClose} className="flex-1">

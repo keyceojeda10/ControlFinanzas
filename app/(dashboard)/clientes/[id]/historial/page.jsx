@@ -71,7 +71,7 @@ export default function HistorialPage() {
     <div className="max-w-2xl mx-auto space-y-4">
       <button
         onClick={() => router.back()}
-        className="flex items-center gap-1.5 text-sm text-[#888888] hover:text-[white] transition-colors"
+        className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[white] transition-colors"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -81,7 +81,7 @@ export default function HistorialPage() {
 
       <div className="mb-4">
         <h1 className="text-xl font-bold text-[white]">Historial de Pagos</h1>
-        <p className="text-sm text-[#888888] mt-0.5">
+        <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
           Todos los pagos de todos los préstamos
         </p>
       </div>
@@ -89,12 +89,12 @@ export default function HistorialPage() {
       {/* Filtro por fecha + export */}
       <div className="flex items-center gap-2">
         <label
-          className="relative flex-1 h-9 flex items-center gap-2 rounded-[10px] border border-[#2a2a2a] bg-[#111111] px-3 cursor-pointer hover:border-[#3b82f6] transition-colors"
+          className="relative flex-1 h-9 flex items-center gap-2 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 cursor-pointer hover:border-[#3b82f6] transition-colors"
         >
-          <svg className="w-4 h-4 text-[#888888]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <span className="text-sm text-white">
+          <span className="text-sm text-[var(--color-text-primary)]">
             {filtroFecha || 'Filtrar por fecha'}
           </span>
           <input
@@ -108,7 +108,7 @@ export default function HistorialPage() {
           <button
             type="button"
             onClick={() => setFiltroFecha('')}
-            className="px-3 h-9 text-xs text-[#888888] hover:text-white border border-[#2a2a2a] rounded-[10px]"
+            className="px-3 h-9 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] border border-[var(--color-border)] rounded-[10px]"
           >
             Limpiar
           </button>
@@ -126,7 +126,7 @@ export default function HistorialPage() {
             }}
             title="Descargar CSV"
             aria-label="Descargar CSV"
-            className="h-9 w-9 flex items-center justify-center rounded-[10px] border border-[#2a2a2a] text-[#888888] hover:text-white"
+            className="h-9 w-9 flex items-center justify-center rounded-[10px] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
@@ -141,11 +141,11 @@ export default function HistorialPage() {
           background: `linear-gradient(135deg, #22c55e0A 0%, #1a1a1a 40%, #1a1a1a 70%, #22c55e05 100%)`,
           boxShadow: `0 0 30px #22c55e08, 0 1px 2px rgba(0,0,0,0.3)`,
         }}>
-          <p className="text-[10px] text-[#888888]">Total pagado</p>
+          <p className="text-[10px] text-[var(--color-text-muted)]">Total pagado</p>
           <p className="text-xl font-bold text-[white] mt-1 font-mono-display">{formatCOP(totalPagado)}</p>
         </Card>
         <Card>
-          <p className="text-[10px] text-[#888888]">Cantidad de pagos</p>
+          <p className="text-[10px] text-[var(--color-text-muted)]">Cantidad de pagos</p>
           <p className="text-xl font-bold text-[white] mt-1 font-mono-display">{totalPagos}</p>
         </Card>
       </div>

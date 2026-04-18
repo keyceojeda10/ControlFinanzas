@@ -264,24 +264,29 @@ export default function Sidebar() {
     : 'Ir a cerrar caja'
 
   return (
-    <aside className="hidden lg:flex flex-col w-60 min-h-dvh shrink-0 border-r border-[rgba(255,255,255,0.1)]" style={{ background: 'linear-gradient(180deg, rgba(12,12,18,0.96) 0%, rgba(8,8,14,0.99) 100%)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
+    <aside className="hidden lg:flex flex-col w-60 min-h-dvh shrink-0 cf-sidebar">
       {/* Logo */}
-      <div className="flex flex-col items-center px-5 py-4 border-b border-[rgba(255,255,255,0.08)]">
+      <div className="flex flex-col items-center px-5 py-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
         <Image src="/logo-full.svg" alt="Control Finanzas" width={160} height={40} priority />
-        {fechaHora && <span className="text-[10px] text-[#a2a2ad] mt-2">{fechaHora}</span>}
+        {fechaHora && <span className="text-[10px] mt-2" style={{ color: 'var(--color-text-muted)' }}>{fechaHora}</span>}
       </div>
 
       {/* Search shortcut */}
       <div className="px-3 pt-3 pb-1">
         <button
           onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
-          className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.11)] text-[#9b9ba6] hover:border-[rgba(255,255,255,0.16)] hover:text-[#f1f2f7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c518]/65 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b10] transition-colors text-xs"
+          className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] focus-visible:outline-none focus-visible:ring-2 transition-colors text-xs"
+          style={{
+            background: 'var(--color-bg-hover)',
+            border: '1px solid var(--color-border)',
+            color: 'var(--color-text-secondary)',
+          }}
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
           </svg>
           <span className="flex-1 text-left">Buscar...</span>
-          <kbd className="text-[10px] bg-[#101016] border border-[rgba(255,255,255,0.16)] text-[#c7c7d2] px-1.5 py-0.5 rounded">Ctrl+K</kbd>
+          <kbd className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'var(--color-bg-base)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}>Ctrl+K</kbd>
         </button>
       </div>
 
@@ -294,12 +299,14 @@ export default function Sidebar() {
               key={item.href}
               href={item.href}
               aria-current={active ? 'page' : undefined}
-              className={[
-                'flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm font-medium transition-all duration-150 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c518]/65 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b10]',
-                active
-                  ? 'bg-[rgba(245,197,24,0.11)] text-[#f5c518] border-l-2 border-[#f5c518] shadow-[inset_0_0_20px_rgba(245,197,24,0.06)]'
-                  : 'text-[#b0b0bb] hover:bg-[rgba(255,255,255,0.06)] hover:text-[#f1f2f7]',
-              ].join(' ')}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm font-medium transition-all duration-150 min-h-[44px] focus-visible:outline-none focus-visible:ring-2"
+              style={active ? {
+                background: 'var(--color-accent-soft)',
+                color: 'var(--color-accent)',
+                borderLeft: '2px solid var(--color-accent)',
+              } : {
+                color: 'var(--color-text-secondary)',
+              }}
             >
               {item.icon}
               {item.label}
@@ -313,19 +320,23 @@ export default function Sidebar() {
         <button
           onClick={startBulkSync}
           disabled={bulkSyncing}
-          className="w-full flex items-center gap-2 px-3 py-2.5 rounded-[10px] bg-[rgba(34,197,94,0.1)] border border-[rgba(34,197,94,0.24)] hover:bg-[rgba(34,197,94,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34d399]/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b10] transition-colors disabled:opacity-50"
+          className="w-full flex items-center gap-2 px-3 py-2.5 rounded-[10px] focus-visible:outline-none focus-visible:ring-2 transition-colors disabled:opacity-50"
+          style={{
+            background: 'var(--color-success-dim)',
+            border: '1px solid color-mix(in srgb, var(--color-success) 30%, transparent)',
+          }}
         >
-          <svg className={`w-4 h-4 text-[#22c55e] shrink-0 ${bulkSyncing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className={`w-4 h-4 shrink-0 ${bulkSyncing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--color-success)' }}>
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
           <div className="flex-1 text-left">
             {bulkProgress ? (
-              <p className="text-xs font-medium text-[#22c55e]">{bulkProgress.message}</p>
+              <p className="text-xs font-medium" style={{ color: 'var(--color-success)' }}>{bulkProgress.message}</p>
             ) : (
               <>
-                <p className="text-xs font-semibold text-[#22c55e]">Sincronizar offline</p>
+                <p className="text-xs font-semibold" style={{ color: 'var(--color-success)' }}>Sincronizar offline</p>
                 {syncMeta && (
-                  <p className="text-[10px] text-[#22c55e]/75">
+                  <p className="text-[10px]" style={{ color: 'color-mix(in srgb, var(--color-success) 80%, transparent)' }}>
                     {syncMeta.totalClientes} clientes · {new Date(syncMeta.syncedAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' })}
                   </p>
                 )}
@@ -340,31 +351,34 @@ export default function Sidebar() {
         <div className="mx-3 mb-2">
           <Link
             href={cierreWarningHref}
-            className={`flex items-center gap-2 px-3 py-2.5 rounded-[10px] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b10] transition-colors ${cierreWarning.showPendingReminder
-              ? 'bg-[rgba(245,197,24,0.12)] border-[rgba(245,197,24,0.32)] hover:bg-[rgba(245,197,24,0.18)] focus-visible:ring-[#f5c518]/55'
-              : 'bg-[rgba(245,158,11,0.12)] border-[rgba(245,158,11,0.32)] hover:bg-[rgba(245,158,11,0.18)] focus-visible:ring-[#f59e0b]/55'
-            }`}
+            className="flex items-center gap-2 px-3 py-2.5 rounded-[10px] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 transition-colors"
+            style={{
+              background: cierreWarning.showPendingReminder ? 'var(--color-accent-soft)' : 'var(--color-warning-dim)',
+              borderColor: cierreWarning.showPendingReminder
+                ? 'color-mix(in srgb, var(--color-accent) 45%, transparent)'
+                : 'color-mix(in srgb, var(--color-warning) 45%, transparent)',
+            }}
           >
-            <svg className={`w-4 h-4 shrink-0 ${cierreWarning.showPendingReminder ? 'text-[#f5c518]' : 'text-[#f59e0b]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: cierreWarning.showPendingReminder ? 'var(--color-accent)' : 'var(--color-warning)' }}>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             <div>
-              <p className={`text-xs font-semibold ${cierreWarning.showPendingReminder ? 'text-[#f5c518]' : 'text-[#f59e0b]'}`}>{cierreWarningTitle}</p>
-              <p className={`text-[10px] ${cierreWarning.showPendingReminder ? 'text-[#f5d77a]' : 'text-[#f8bb63]'}`}>{cierreWarningSubtitle}</p>
+              <p className="text-xs font-semibold" style={{ color: cierreWarning.showPendingReminder ? 'var(--color-accent)' : 'var(--color-warning)' }}>{cierreWarningTitle}</p>
+              <p className="text-[10px]" style={{ color: cierreWarning.showPendingReminder ? 'color-mix(in srgb, var(--color-accent) 80%, var(--color-text-muted))' : 'color-mix(in srgb, var(--color-warning) 80%, var(--color-text-muted))' }}>{cierreWarningSubtitle}</p>
             </div>
           </Link>
         </div>
       )}
 
       {/* User info + sign out */}
-      <div className="px-3 pb-5 border-t border-[rgba(255,255,255,0.08)] pt-4">
+      <div className="px-3 pb-5 pt-4" style={{ borderTop: '1px solid var(--color-border)' }}>
         <div className="flex items-center gap-3 px-3 py-2 mb-2">
-          <div className="w-8 h-8 rounded-full bg-[#f5c518] flex items-center justify-center text-[#0a0a0a] text-xs font-bold shrink-0">
+          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'var(--color-accent)', color: '#1a1a2e' }}>
             {session?.user?.nombre?.[0]?.toUpperCase() ?? 'U'}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-[#f4f5fa] truncate">{session?.user?.nombre}</p>
-            <p className="text-[10px] text-[#a2a2ad]">{{ owner: 'Administrador', cobrador: 'Cobrador', superadmin: 'Super Admin' }[session?.user?.rol] ?? session?.user?.rol}</p>
+            <p className="text-xs font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{session?.user?.nombre}</p>
+            <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{{ owner: 'Administrador', cobrador: 'Cobrador', superadmin: 'Super Admin' }[session?.user?.rol] ?? session?.user?.rol}</p>
           </div>
         </div>
         <div className="flex items-center gap-2 mb-2">
@@ -376,7 +390,8 @@ export default function Sidebar() {
             try { navigator.serviceWorker?.controller?.postMessage({ type: 'CLEAR_API_CACHE' }) } catch {}
             signOut({ callbackUrl: '/login' })
           }}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm text-[#a2a2ad] hover:bg-[rgba(255,255,255,0.06)] hover:text-[#ff8e8e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ef4444]/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b10] transition-all duration-150"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm focus-visible:outline-none focus-visible:ring-2 transition-all duration-150 cf-signout-btn"
+          style={{ color: 'var(--color-text-secondary)' }}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}

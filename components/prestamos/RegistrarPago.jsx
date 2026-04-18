@@ -215,7 +215,7 @@ export default function RegistrarPago({
                 onClick={navigateNextInRuta}
                 className="flex-1 py-2.5 rounded-[12px] text-sm font-semibold active:scale-[0.98] transition-all"
                 style={rutaInfo.isLast
-                  ? { background: '#22c55e', color: 'white' }
+                  ? { background: 'var(--color-success)', color: 'white' }
                   : { background: 'linear-gradient(135deg, #f5c518, #f0b800)', color: '#0a0a0a' }
                 }
               >
@@ -232,17 +232,17 @@ export default function RegistrarPago({
           <div className="flex flex-col items-center gap-2 py-3">
             <div className={`w-14 h-14 rounded-full flex items-center justify-center ${pagoGuardado.offline ? 'bg-[rgba(245,197,24,0.15)]' : 'bg-[rgba(34,197,94,0.15)]'}`}>
               {pagoGuardado.offline ? (
-                <svg className="w-7 h-7 text-[#f5c518]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-7 h-7 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               ) : (
-                <svg className="w-7 h-7 text-[#22c55e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-7 h-7 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                 </svg>
               )}
             </div>
-            <p className="text-white font-bold text-lg font-mono-display">{formatCOP(pagoGuardado.montoPagado)}</p>
-            <p className="text-[#888888] text-sm">
+            <p className="text-[var(--color-text-primary)] font-bold text-lg font-mono-display">{formatCOP(pagoGuardado.montoPagado)}</p>
+            <p className="text-[var(--color-text-muted)] text-sm">
               {pagoGuardado.offline ? 'guardado offline — se sincronizará al conectar' : 'pagado correctamente'}
             </p>
           </div>
@@ -256,12 +256,12 @@ export default function RegistrarPago({
               }}
             >
               <div className="flex justify-between">
-                <span className="text-[#888888]">Saldo pendiente</span>
-                <span className="text-white font-medium font-mono-display">{formatCOP(prestamoWA.saldoPendiente)}</span>
+                <span className="text-[var(--color-text-muted)]">Saldo pendiente</span>
+                <span className="text-[var(--color-text-primary)] font-medium font-mono-display">{formatCOP(prestamoWA.saldoPendiente)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#888888]">Progreso</span>
-                <span className="text-[#22c55e] font-medium font-mono-display">{prestamoWA.porcentajePagado}%</span>
+                <span className="text-[var(--color-text-muted)]">Progreso</span>
+                <span className="text-[var(--color-success)] font-medium font-mono-display">{prestamoWA.porcentajePagado}%</span>
               </div>
             </div>
           )}
@@ -296,18 +296,18 @@ export default function RegistrarPago({
     >
       <div className="space-y-4">
         {error && (
-          <div className="flex items-center gap-2 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[10px] px-4 py-3">
+          <div className="flex items-center gap-2 bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[10px] px-4 py-3">
             {error}
           </div>
         )}
 
         <div className="flex justify-between items-center text-sm">
-          <span className="text-[#888888]">Cuota</span>
-          <span className="font-semibold text-white font-mono-display">{formatCOP(cuotaDiaria)}</span>
+          <span className="text-[var(--color-text-muted)]">Cuota</span>
+          <span className="font-semibold text-[var(--color-text-primary)] font-mono-display">{formatCOP(cuotaDiaria)}</span>
         </div>
         <div className="flex justify-between items-center text-sm">
-          <span className="text-[#888888]">Saldo pendiente</span>
-          <span className="font-semibold text-white font-mono-display">{formatCOP(saldoPendiente)}</span>
+          <span className="text-[var(--color-text-muted)]">Saldo pendiente</span>
+          <span className="font-semibold text-[var(--color-text-primary)] font-mono-display">{formatCOP(saldoPendiente)}</span>
         </div>
 
         {/* Atajos para no recalcular mora / ponerse al dia manualmente */}
@@ -321,7 +321,7 @@ export default function RegistrarPago({
                   setTipo('parcial')
                   setDiasAbonados(null)
                 }}
-                className="h-10 rounded-[12px] border border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.08)] text-[#ef4444] text-sm font-semibold hover:bg-[rgba(239,68,68,0.15)] transition-colors"
+                className="h-10 rounded-[12px] border border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.08)] text-[var(--color-danger)] text-sm font-semibold hover:bg-[rgba(239,68,68,0.15)] transition-colors"
               >
                 Pagar mora
                 {Number(prestamo?.cuotasEnMora) > 0 ? ` (${prestamo.cuotasEnMora} cuota${prestamo.cuotasEnMora === 1 ? '' : 's'})` : ''}
@@ -338,7 +338,7 @@ export default function RegistrarPago({
                   setTipo('parcial')
                   setDiasAbonados(null)
                 }}
-                className="h-10 rounded-[12px] border border-[rgba(245,197,24,0.3)] bg-[rgba(245,197,24,0.1)] text-[#f5c518] text-sm font-semibold hover:bg-[rgba(245,197,24,0.18)] transition-colors"
+                className="h-10 rounded-[12px] border border-[rgba(245,197,24,0.3)] bg-[rgba(245,197,24,0.1)] text-[var(--color-accent)] text-sm font-semibold hover:bg-[rgba(245,197,24,0.18)] transition-colors"
               >
                 Ponerse al día · {formatCOP(prestamo.montoParaPonerseAlDia)}
               </button>
@@ -353,15 +353,15 @@ export default function RegistrarPago({
           const isSnap = SNAPS.includes(val)
           const snapLabel = val === 7 ? '1 sem' : val === 15 ? 'Quinc.' : val === 30 ? '1 mes' : null
           return (
-          <div className="border-t border-[#2a2a2a] pt-4">
+          <div className="border-t border-[var(--color-border)] pt-4">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em]">
+              <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">
                 Abono rápido por días
               </p>
               {diasAbonados && (
-                <span className={`text-sm font-bold font-mono-display transition-colors ${isSnap ? 'text-[#f5c518]' : 'text-[#22c55e]'}`}>
+                <span className={`text-sm font-bold font-mono-display transition-colors ${isSnap ? 'text-[var(--color-accent)]' : 'text-[var(--color-success)]'}`}>
                   {diasAbonados} {diasAbonados === 1 ? 'día' : 'días'}
-                  {snapLabel && <span className="text-[10px] font-normal text-[#888888] ml-1">({snapLabel})</span>}
+                  {snapLabel && <span className="text-[10px] font-normal text-[var(--color-text-muted)] ml-1">({snapLabel})</span>}
                   {' — '}{formatCOP(Number(monto))}
                 </span>
               )}
@@ -379,7 +379,7 @@ export default function RegistrarPago({
             />
             {/* Tick marks */}
             <div className="relative h-5 mt-1">
-              <span className="absolute left-0 text-[10px] text-[#555555]">1</span>
+              <span className="absolute left-0 text-[10px] text-[var(--color-text-muted)]">1</span>
               {SNAPS.map((s) => {
                 const pct = ((s - 1) / 29 * 100)
                 const active = val === s
@@ -388,7 +388,7 @@ export default function RegistrarPago({
                     key={s}
                     type="button"
                     onClick={() => handleAbonoDias(s)}
-                    className={`absolute -translate-x-1/2 text-[10px] font-medium transition-all cursor-pointer ${active ? 'text-[#f5c518] scale-110' : 'text-[#666666] hover:text-[#999999]'}`}
+                    className={`absolute -translate-x-1/2 text-[10px] font-medium transition-all cursor-pointer ${active ? 'text-[var(--color-accent)] scale-110' : 'text-[var(--color-text-muted)] hover:text-[#999999]'}`}
                     style={{ left: `${pct}%` }}
                   >
                     {s}
@@ -400,7 +400,7 @@ export default function RegistrarPago({
           )
         })()}
 
-        <div className="border-t border-[#2a2a2a] pt-4 space-y-4">
+        <div className="border-t border-[var(--color-border)] pt-4 space-y-4">
           <MoneyInput
             label="Monto del pago *"
             value={monto}
@@ -414,12 +414,12 @@ export default function RegistrarPago({
           />
 
           <div className="flex flex-col gap-1.5">
-            <span className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em]">Tipo de pago</span>
+            <span className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">Tipo de pago</span>
             <div className="flex gap-2">
               {[
-                { key: 'completo', label: 'Completo',  color: '#f5c518' },
-                { key: 'parcial',  label: 'Parcial',   color: '#f5c518' },
-                { key: 'capital',  label: 'A Capital',  color: '#a855f7' },
+                { key: 'completo', label: 'Completo',  color: 'var(--color-accent)' },
+                { key: 'parcial',  label: 'Parcial',   color: 'var(--color-accent)' },
+                { key: 'capital',  label: 'A Capital',  color: 'var(--color-purple)' },
               ].map(({ key, label, color }) => (
                 <button
                   key={key}
@@ -432,7 +432,7 @@ export default function RegistrarPago({
                     'flex-1 h-9 rounded-[10px] border text-sm font-medium transition-all cursor-pointer',
                     tipo === key
                       ? `border-[${color}] text-[${color}]`
-                      : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#1a1a1a]',
+                      : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-surface)]',
                   ].join(' ')}
                   style={tipo === key ? { backgroundColor: `${color}15`, borderColor: color, color } : undefined}
                 >
@@ -444,8 +444,8 @@ export default function RegistrarPago({
 
           {tipo === 'capital' && (
             <div className="bg-[rgba(168,85,247,0.08)] border border-[rgba(168,85,247,0.2)] rounded-[10px] px-3 py-2.5 text-xs">
-              <p className="font-medium text-[#a855f7] mb-1">Abono a capital</p>
-              <p className="text-[#888888]">
+              <p className="font-medium text-[var(--color-purple)] mb-1">Abono a capital</p>
+              <p className="text-[var(--color-text-muted)]">
                 Reduce el capital y los intereses sobre ese monto. El préstamo termina antes.
                 {monto && Number(monto) > 0 && prestamo?.tasaInteres > 0 && (() => {
                   const ahora = new Date(Date.now() - 5 * 60 * 60 * 1000)
@@ -454,7 +454,7 @@ export default function RegistrarPago({
                   const diasRest = Math.max(0, (prestamo.diasPlazo || 0) - diasTrans)
                   const ahorro = Math.round(Number(monto) * (prestamo.tasaInteres / 100) * (diasRest / 30))
                   return (
-                    <> Ahorro en intereses: <span className="text-[#a855f7] font-medium font-mono-display">
+                    <> Ahorro en intereses: <span className="text-[var(--color-purple)] font-medium font-mono-display">
                       {formatCOP(ahorro)}
                     </span></>
                   )
@@ -466,7 +466,7 @@ export default function RegistrarPago({
           {/* Método de pago — solo para pagos reales, no ajustes */}
           {!['recargo', 'descuento'].includes(tipo) && (
             <div className="flex flex-col gap-1.5">
-              <span className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em]">Método de pago</span>
+              <span className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">Método de pago</span>
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -474,8 +474,8 @@ export default function RegistrarPago({
                   className={[
                     'flex-1 h-9 rounded-[10px] border text-sm font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5',
                     metodoPago === 'efectivo'
-                      ? 'bg-[rgba(34,197,94,0.12)] border-[#22c55e] text-[#22c55e]'
-                      : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#1a1a1a]',
+                      ? 'bg-[rgba(34,197,94,0.12)] border-[#22c55e] text-[var(--color-success)]'
+                      : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-surface)]',
                   ].join(' ')}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -489,8 +489,8 @@ export default function RegistrarPago({
                   className={[
                     'flex-1 h-9 rounded-[10px] border text-sm font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5',
                     metodoPago === 'transferencia'
-                      ? 'bg-[rgba(59,130,246,0.12)] border-[#3b82f6] text-[#3b82f6]'
-                      : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#1a1a1a]',
+                      ? 'bg-[rgba(59,130,246,0.12)] border-[#3b82f6] text-[var(--color-info)]'
+                      : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-surface)]',
                   ].join(' ')}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">

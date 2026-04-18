@@ -38,8 +38,8 @@ export default function SoportePage() {
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-lg font-bold text-white">Soporte</h1>
-          <p className="text-xs text-[#888888]">Crea un ticket o revisa el estado de tus solicitudes</p>
+          <h1 className="text-lg font-bold text-[var(--color-text-primary)]">Soporte</h1>
+          <p className="text-xs text-[var(--color-text-muted)]">Crea un ticket o revisa el estado de tus solicitudes</p>
         </div>
         <Link href="/soporte/nuevo">
           <Button size="sm">
@@ -60,8 +60,8 @@ export default function SoportePage() {
           <svg className="w-12 h-12 text-[#2a2a2a] mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
           </svg>
-          <p className="text-sm text-[#888888] mb-1">No tienes tickets de soporte</p>
-          <p className="text-xs text-[#555555]">Crea uno si necesitas ayuda con algo</p>
+          <p className="text-sm text-[var(--color-text-muted)] mb-1">No tienes tickets de soporte</p>
+          <p className="text-xs text-[var(--color-text-muted)]">Crea uno si necesitas ayuda con algo</p>
         </Card>
       ) : (
         <div className="space-y-2">
@@ -70,22 +70,22 @@ export default function SoportePage() {
             const mensajesNuevos = t._count?.mensajes || 0
             return (
               <Link key={t.id} href={`/soporte/${t.id}`}>
-                <Card className="hover:border-[#f5c518]/30 transition-all cursor-pointer">
+                <Card className="hover:border-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all cursor-pointer">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <Badge variant="gray">{TIPO_LABEL[t.tipo] || t.tipo}</Badge>
                         <Badge variant={estado.variant}>{estado.label}</Badge>
                         {mensajesNuevos > 0 && (
-                          <span className="w-5 h-5 rounded-full bg-[#f5c518] text-[#0a0a0a] text-[10px] font-bold flex items-center justify-center">
+                          <span className="w-5 h-5 rounded-full bg-[var(--color-accent)] text-[#1a1a2e] text-[10px] font-bold flex items-center justify-center">
                             {mensajesNuevos}
                           </span>
                         )}
                       </div>
-                      <p className="text-sm font-semibold text-white truncate">{t.asunto}</p>
-                      <p className="text-xs text-[#555555] mt-1 line-clamp-1">{t.descripcion}</p>
+                      <p className="text-sm font-semibold text-[var(--color-text-primary)] truncate">{t.asunto}</p>
+                      <p className="text-xs text-[var(--color-text-muted)] mt-1 line-clamp-1">{t.descripcion}</p>
                     </div>
-                    <span className="text-[10px] text-[#555555] shrink-0">
+                    <span className="text-[10px] text-[var(--color-text-muted)] shrink-0">
                       {new Date(t.createdAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}
                     </span>
                   </div>

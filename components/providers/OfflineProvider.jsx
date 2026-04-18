@@ -267,13 +267,13 @@ export default function OfflineProvider({ children }) {
 
       {/* Offline indicator — small pill, bottom-right, above BottomNav */}
       {!isOnline && (
-        <div className="fixed bottom-[80px] right-4 z-[9998] bg-[rgba(15,15,22,0.85)] text-[#f87171] px-2.5 py-1.5 text-[10px] font-semibold rounded-full flex items-center gap-1.5 shadow-lg border border-[rgba(248,113,113,0.2)] backdrop-blur-xl">
+        <div className="fixed bottom-[80px] right-4 z-[9998] bg-[rgba(15,15,22,0.85)] text-[var(--color-danger)] px-2.5 py-1.5 text-[10px] font-semibold rounded-full flex items-center gap-1.5 shadow-lg border border-[rgba(248,113,113,0.2)] backdrop-blur-xl">
           <span className="w-1.5 h-1.5 rounded-full bg-[#f87171] animate-pulse" />
           Offline
         </div>
       )}
       {isOnline && bulkSyncing && (
-        <div className="fixed bottom-[80px] right-4 z-[9998] bg-[rgba(15,15,22,0.85)] text-[#34d399] px-2.5 py-1.5 text-[10px] font-semibold rounded-full flex items-center gap-1.5 shadow-lg border border-[rgba(52,211,153,0.2)] backdrop-blur-xl">
+        <div className="fixed bottom-[80px] right-4 z-[9998] bg-[rgba(15,15,22,0.85)] text-[var(--color-success)] px-2.5 py-1.5 text-[10px] font-semibold rounded-full flex items-center gap-1.5 shadow-lg border border-[rgba(52,211,153,0.2)] backdrop-blur-xl">
           <svg className="w-2.5 h-2.5 animate-spin" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
@@ -284,7 +284,7 @@ export default function OfflineProvider({ children }) {
 
       {/* Failed payments warning (permanente) */}
       {failedPayments.length > 0 && isOnline && (
-        <div className="fixed top-2 left-1/2 -translate-x-1/2 z-[9998] bg-[rgba(239,68,68,0.95)] text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg max-w-[90vw]">
+        <div className="fixed top-2 left-1/2 -translate-x-1/2 z-[9998] bg-[rgba(239,68,68,0.95)] text-[var(--color-text-primary)] text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg max-w-[90vw]">
           <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
@@ -316,12 +316,12 @@ export default function OfflineProvider({ children }) {
 
       {/* Sync result toast */}
       {syncResult && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[9999] bg-[#1a1a1a] border border-[#2a2a2a] text-white text-xs px-4 py-2.5 rounded-[12px] shadow-xl flex items-center gap-2">
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[9999] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-primary)] text-xs px-4 py-2.5 rounded-[12px] shadow-xl flex items-center gap-2">
           {syncResult.synced > 0 && (
-            <span className="text-[#22c55e]">{syncResult.synced} pago{syncResult.synced > 1 ? 's' : ''} sincronizado{syncResult.synced > 1 ? 's' : ''}</span>
+            <span className="text-[var(--color-success)]">{syncResult.synced} pago{syncResult.synced > 1 ? 's' : ''} sincronizado{syncResult.synced > 1 ? 's' : ''}</span>
           )}
           {syncResult.failed > 0 && (
-            <span className="text-[#ef4444]">{syncResult.failed} fallido{syncResult.failed > 1 ? 's' : ''}</span>
+            <span className="text-[var(--color-danger)]">{syncResult.failed} fallido{syncResult.failed > 1 ? 's' : ''}</span>
           )}
         </div>
       )}

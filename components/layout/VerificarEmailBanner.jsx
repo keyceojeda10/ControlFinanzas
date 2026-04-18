@@ -52,13 +52,13 @@ export default function VerificarEmailBanner() {
     <div className="bg-[rgba(245,197,24,0.1)] border-b border-[rgba(245,197,24,0.2)] px-4 py-3">
       <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
         <div className="flex items-start gap-2.5 flex-1 min-w-0">
-          <svg className="w-5 h-5 text-[#f5c518] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-[var(--color-accent)] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
           <div>
-            <p className="text-sm text-[#f5c518] font-semibold">Verifica tu correo</p>
-            <p className="text-xs text-[#888888] mt-0.5 leading-relaxed">
-              Te enviamos un link a <span className="text-white font-medium">{email}</span>.
+            <p className="text-sm text-[var(--color-accent)] font-semibold">Verifica tu correo</p>
+            <p className="text-xs text-[var(--color-text-muted)] mt-0.5 leading-relaxed">
+              Te enviamos un link a <span className="text-[var(--color-text-primary)] font-medium">{email}</span>.
               Tienes 24 horas para verificar o tu cuenta sera bloqueada.
             </p>
           </div>
@@ -69,7 +69,7 @@ export default function VerificarEmailBanner() {
           className="shrink-0 h-8 px-4 rounded-[10px] text-xs font-semibold transition-all disabled:opacity-60 cursor-pointer"
           style={{
             background: reenviado ? 'rgba(34,197,94,0.15)' : 'rgba(245,197,24,0.15)',
-            color: reenviado ? '#22c55e' : '#f5c518',
+            color: reenviado ? 'var(--color-success)' : 'var(--color-accent)',
             border: `1px solid ${reenviado ? 'rgba(34,197,94,0.3)' : 'rgba(245,197,24,0.3)'}`,
           }}
         >

@@ -163,7 +163,7 @@ export default function PrestamoDetallePage({ params }) {
   if (error || !prestamo) {
     return (
       <div className="max-w-xl mx-auto">
-        <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] rounded-[16px] p-6 text-center">
+        <div className="bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] rounded-[16px] p-6 text-center">
           <p className="font-semibold mb-2">Préstamo no encontrado</p>
           <button onClick={() => router.back()} className="text-sm underline">Volver</button>
         </div>
@@ -230,7 +230,7 @@ export default function PrestamoDetallePage({ params }) {
     ? {
         label: diasMora > 0 ? 'Debió cobrarse' : 'Próximo cobro',
         value: formatFechaCobroRelativa(proximoCobro),
-        color: diasMora > 0 ? '#ef4444' : '#f5c518',
+        color: diasMora > 0 ? 'var(--color-danger)' : 'var(--color-accent)',
       }
     : null
 
@@ -239,7 +239,7 @@ export default function PrestamoDetallePage({ params }) {
       {/* Back */}
       <button
         onClick={() => router.back()}
-        className="flex items-center gap-1.5 text-sm text-[#888888] hover:text-[white] transition-colors"
+        className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[white] transition-colors"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -251,16 +251,16 @@ export default function PrestamoDetallePage({ params }) {
       {completado && (
         <div className="bg-[rgba(16,185,129,0.12)] border border-[rgba(16,185,129,0.3)] rounded-[16px] p-4 text-center animate-pulse">
           <p className="text-2xl mb-1">🎉</p>
-          <p className="text-[#22c55e] font-bold">¡Préstamo completado!</p>
-          <p className="text-xs text-[#888888] mt-0.5">El cliente terminó de pagar</p>
+          <p className="text-[var(--color-success)] font-bold">¡Préstamo completado!</p>
+          <p className="text-xs text-[var(--color-text-muted)] mt-0.5">El cliente terminó de pagar</p>
         </div>
       )}
 
       {/* ── ALERTA MORA ──────────────────────────────────────────── */}
       {enMora && estaActivo && !completado && (
         <div className="flex items-center gap-3 bg-[rgba(239,68,68,0.12)] border border-[rgba(239,68,68,0.3)] rounded-[16px] px-4 py-3">
-          <div className="w-2 h-2 rounded-full bg-[#ef4444] animate-pulse shrink-0" />
-          <p className="text-sm text-[#ef4444] font-semibold">
+          <div className="w-2 h-2 rounded-full bg-[var(--color-danger)] animate-pulse shrink-0" />
+          <p className="text-sm text-[var(--color-danger)] font-semibold">
             {diasMora} días en mora
             {cuotasEnMora > 0 ? ` · ${cuotasEnMora} cuota${cuotasEnMora === 1 ? '' : 's'} vencida${cuotasEnMora === 1 ? '' : 's'}` : ''}
             {montoEnMora > 0 ? ` · ${formatCOP(montoEnMora)}` : ''}
@@ -272,10 +272,10 @@ export default function PrestamoDetallePage({ params }) {
       {exito && !completado && (
         <div className="space-y-2">
           <div className="flex items-center gap-3 bg-[rgba(16,185,129,0.12)] border border-[rgba(16,185,129,0.3)] rounded-[16px] px-4 py-3">
-            <svg className="w-5 h-5 text-[#22c55e] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-[var(--color-success)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-sm text-[#22c55e] font-medium">Pago registrado exitosamente</p>
+            <p className="text-sm text-[var(--color-success)] font-medium">Pago registrado exitosamente</p>
           </div>
           {ultimoPago && cliente?.telefono && (
             <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamo} pago={ultimoPago} />
@@ -336,7 +336,7 @@ export default function PrestamoDetallePage({ params }) {
         return isLast ? (
           <button
             onClick={() => { sessionStorage.removeItem('cf-ruta-nav'); const u = `/rutas/${rutaNav.rutaId}`; navigator.onLine ? router.push(u) : (window.location.href = u) }}
-            className="w-full py-3.5 rounded-[14px] bg-[#22c55e] text-white text-sm font-semibold active:scale-[0.98] transition-all"
+            className="w-full py-3.5 rounded-[14px] bg-[var(--color-success)] text-[var(--color-text-primary)] text-sm font-semibold active:scale-[0.98] transition-all"
           >
             Ruta finalizada · Volver a {rutaNav.rutaNombre}
           </button>
@@ -355,10 +355,10 @@ export default function PrestamoDetallePage({ params }) {
       <Card>
         <div className="flex items-center justify-between">
           <div>
-            <Link href={`/clientes/${cliente.id}`} className="hover:text-[#f5c518] transition-colors">
+            <Link href={`/clientes/${cliente.id}`} className="hover:text-[var(--color-accent)] transition-colors">
               <h1 className="text-lg font-bold text-[white]">{cliente.nombre}</h1>
             </Link>
-            <p className="text-sm text-[#888888]">CC {cliente.cedula}</p>
+            <p className="text-sm text-[var(--color-text-muted)]">CC {cliente.cedula}</p>
           </div>
           <Badge variant={badge.variant}>{badge.label}</Badge>
         </div>
@@ -368,7 +368,7 @@ export default function PrestamoDetallePage({ params }) {
       {estaActivo && !yaPagoHoy && !completado && (
         <button
           onClick={abrirPagoNormal}
-          className="w-full h-14 rounded-[16px] font-bold text-base text-white transition-all duration-200 active:scale-[0.98] shadow-lg"
+          className="w-full h-14 rounded-[16px] font-bold text-base text-[var(--color-text-primary)] transition-all duration-200 active:scale-[0.98] shadow-lg"
           style={{
             background: 'linear-gradient(135deg, #22c55e, #16a34a)',
             boxShadow: '0 4px 24px rgba(16,185,129,0.35)',
@@ -390,10 +390,10 @@ export default function PrestamoDetallePage({ params }) {
           className="w-full h-14 rounded-[16px] flex items-center justify-center gap-2.5"
           style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)' }}
         >
-          <svg className="w-5 h-5 text-[#22c55e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
           </svg>
-          <span className="text-[#22c55e] font-bold">Pagó {frecuenciaLabel} — {formatCOP(cuotaDiaria)}</span>
+          <span className="text-[var(--color-success)] font-bold">Pagó {frecuenciaLabel} — {formatCOP(cuotaDiaria)}</span>
         </div>
       )}
 
@@ -403,10 +403,10 @@ export default function PrestamoDetallePage({ params }) {
           {mostrarAtajosCobro && (
             <button
               onClick={() => setModalAtajosCobro(true)}
-              className="w-full h-11 px-4 rounded-[14px] border border-[#2a2a2a] bg-[rgba(255,255,255,0.02)] hover:bg-[rgba(255,255,255,0.05)] transition-all flex items-center justify-between"
+              className="w-full h-11 px-4 rounded-[14px] border border-[var(--color-border)] bg-[rgba(255,255,255,0.02)] hover:bg-[rgba(255,255,255,0.05)] transition-all flex items-center justify-between"
             >
-              <span className="text-sm font-medium text-white">Más opciones de cobro</span>
-              <span className="text-[11px] text-[#888]">
+              <span className="text-sm font-medium text-[var(--color-text-primary)]">Más opciones de cobro</span>
+              <span className="text-[11px] text-[var(--color-text-muted)]">
                 {hayMontoMora ? `Mora: ${formatCOP(montoEnMora)}` : 'Abonos y atajos'}
               </span>
             </button>
@@ -415,10 +415,10 @@ export default function PrestamoDetallePage({ params }) {
           {mostrarGestionPrestamo && (
             <button
               onClick={() => setModalGestionPrestamo(true)}
-              className="w-full h-11 px-4 rounded-[14px] border border-[#2a2a2a] bg-[rgba(255,255,255,0.02)] hover:bg-[rgba(255,255,255,0.05)] transition-all flex items-center justify-between"
+              className="w-full h-11 px-4 rounded-[14px] border border-[var(--color-border)] bg-[rgba(255,255,255,0.02)] hover:bg-[rgba(255,255,255,0.05)] transition-all flex items-center justify-between"
             >
-              <span className="text-sm font-medium text-white">Gestión del préstamo</span>
-              <span className="text-[11px] text-[#888]">Renovar, plazo, ajustes</span>
+              <span className="text-sm font-medium text-[var(--color-text-primary)]">Gestión del préstamo</span>
+              <span className="text-[11px] text-[var(--color-text-muted)]">Renovar, plazo, ajustes</span>
             </button>
           )}
         </div>
@@ -431,16 +431,16 @@ export default function PrestamoDetallePage({ params }) {
           boxShadow: `0 0 30px #22c55e08, 0 1px 2px rgba(0,0,0,0.3)`,
         }}
       >
-        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">
+        <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-4">
           Resumen financiero
         </p>
 
         {/* Saldo pendiente — número grande */}
         <div className="text-center mb-4">
-          <p className="text-xs text-[#888888] mb-1">Saldo pendiente</p>
+          <p className="text-xs text-[var(--color-text-muted)] mb-1">Saldo pendiente</p>
           <p
             className="text-4xl font-bold leading-none font-mono-display"
-            style={{ color: saldoPendiente === 0 ? '#22c55e' : diasMora > 0 ? '#ef4444' : 'white' }}
+            style={{ color: saldoPendiente === 0 ? 'var(--color-success)' : diasMora > 0 ? 'var(--color-danger)' : 'white' }}
           >
             {formatCOP(saldoPendiente)}
           </p>
@@ -448,17 +448,17 @@ export default function PrestamoDetallePage({ params }) {
 
         {/* Barra de progreso */}
         <div className="mb-4">
-          <div className="flex justify-between text-xs text-[#888888] mb-1.5">
+          <div className="flex justify-between text-xs text-[var(--color-text-muted)] mb-1.5">
             <span>{porcentajePagado}% pagado</span>
             <span>{formatCOP(totalPagado)} de {formatCOP(totalAPagar)}</span>
           </div>
-          <div className="h-2 bg-[#2a2a2a] rounded-full overflow-hidden">
+          <div className="h-2 bg-[var(--color-bg-hover)] rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-500"
               style={{
                 width: `${porcentajePagado}%`,
-                background: porcentajePagado === 100 ? '#22c55e'
-                  : diasMora > 0 ? '#ef4444'
+                background: porcentajePagado === 100 ? 'var(--color-success)'
+                  : diasMora > 0 ? 'var(--color-danger)'
                   : 'linear-gradient(90deg, #f5c518, #f0b800)',
               }}
             />
@@ -480,11 +480,11 @@ export default function PrestamoDetallePage({ params }) {
             {
               label: diasMora > 0 ? 'Días en mora' : 'Estado',
               value: diasMora > 0 ? `${diasMora} días${cuotasEnMora > 0 ? ` · ${cuotasEnMora} cuota${cuotasEnMora === 1 ? '' : 's'}` : ''}` : 'Al día',
-              color: diasMora > 0 ? '#ef4444' : '#22c55e',
+              color: diasMora > 0 ? 'var(--color-danger)' : 'var(--color-success)',
             },
           ].map(({ label, value, color }) => (
-            <div key={label} className="bg-[#111111] rounded-[12px] px-3 py-2.5">
-              <p className="text-[10px] text-[#888888]">{label}</p>
+            <div key={label} className="bg-[var(--color-bg-card)] rounded-[12px] px-3 py-2.5">
+              <p className="text-[10px] text-[var(--color-text-muted)]">{label}</p>
               <p className="text-sm font-semibold mt-0.5" style={{ color: color ?? 'white' }}>
                 {value}
               </p>
@@ -504,7 +504,7 @@ export default function PrestamoDetallePage({ params }) {
       {/* ── HISTORIAL DE PAGOS ───────────────────────────────────── */}
       <Card>
         <div className="flex items-center justify-between gap-2 mb-3">
-          <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">
+          <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
             Historial de pagos ({(filtroFecha ? pagos.filter(p => {
               const d = new Date(new Date(p.fechaPago).getTime() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10)
               return d === filtroFecha
@@ -512,13 +512,13 @@ export default function PrestamoDetallePage({ params }) {
           </p>
           <div className="flex items-center gap-1">
             <label
-              className="relative h-8 flex items-center gap-1.5 rounded-[10px] border border-[#2a2a2a] bg-[#111111] px-2 cursor-pointer hover:border-[#3b82f6] transition-colors"
+              className="relative h-8 flex items-center gap-1.5 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-2 cursor-pointer hover:border-[#3b82f6] transition-colors"
               title="Filtrar por fecha"
             >
-              <svg className="w-3.5 h-3.5 text-[#888888]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <span className="text-[11px] text-white whitespace-nowrap">
+              <span className="text-[11px] text-[var(--color-text-primary)] whitespace-nowrap">
                 {filtroFecha || 'Fecha'}
               </span>
               <input
@@ -532,7 +532,7 @@ export default function PrestamoDetallePage({ params }) {
               <button
                 type="button"
                 onClick={() => setFiltroFecha('')}
-                className="text-[10px] text-[#888888] hover:text-white px-2 py-1"
+                className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] px-2 py-1"
               >
                 Limpiar
               </button>
@@ -571,7 +571,7 @@ export default function PrestamoDetallePage({ params }) {
               })
             : pagos
           return pagosFiltrados.length === 0 ? (
-            <p className="text-sm text-[#888888] text-center py-4">
+            <p className="text-sm text-[var(--color-text-muted)] text-center py-4">
               {filtroFecha ? 'Sin pagos en esta fecha' : 'Sin pagos registrados'}
             </p>
           ) : (
@@ -581,20 +581,20 @@ export default function PrestamoDetallePage({ params }) {
               const esAjuste = ['recargo', 'descuento'].includes(pago.tipo)
               const comprobanteAbierto = comprobante === pago.id
               return (
-                <div key={pago.id} className="border-b border-[#2a2a2a] last:border-0">
+                <div key={pago.id} className="border-b border-[var(--color-border)] last:border-0">
                   <div className="flex items-center gap-3 py-2.5">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold" style={{
-                        color: pago.tipo === 'recargo' ? '#f97316' : pago.tipo === 'descuento' ? '#22c55e' : 'white'
+                        color: pago.tipo === 'recargo' ? '#f97316' : pago.tipo === 'descuento' ? 'var(--color-success)' : 'white'
                       }}>
                         {pago.tipo === 'recargo' ? '+' : pago.tipo === 'descuento' ? '−' : ''}{formatCOP(pago.montoPagado)}
                       </p>
-                      <p className="text-[10px] text-[#888888] mt-0.5">
+                      <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
                         {fmtFecha(pago.fechaPago)}
                         {pago.cobrador && ` · ${pago.cobrador.nombre}`}
                       </p>
                       {pago.metodoPago && !esAjuste && (
-                        <p className="text-[10px] mt-0.5 flex items-center gap-1" style={{ color: pago.metodoPago === 'efectivo' ? '#22c55e' : '#3b82f6' }}>
+                        <p className="text-[10px] mt-0.5 flex items-center gap-1" style={{ color: pago.metodoPago === 'efectivo' ? 'var(--color-success)' : '#3b82f6' }}>
                           {pago.metodoPago === 'efectivo' ? (
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
@@ -618,7 +618,7 @@ export default function PrestamoDetallePage({ params }) {
                     <div className="flex flex-col items-end gap-0.5">
                       <Badge variant={tipoBadge.variant}>{tipoBadge.label}</Badge>
                       {pago.tipo === 'capital' && tasaInteres > 0 && (
-                        <span className="text-[10px] text-[#a855f7]">
+                        <span className="text-[10px] text-[var(--color-purple)]">
                           -{formatCOP(Math.round(pago.montoPagado * tasaInteres / 100))} int.
                         </span>
                       )}
@@ -630,8 +630,8 @@ export default function PrestamoDetallePage({ params }) {
                         className={[
                           'shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors',
                           comprobanteAbierto
-                            ? 'text-[#f5c518] bg-[rgba(245,197,24,0.1)]'
-                            : 'text-[#888888] hover:text-[#f5c518] hover:bg-[rgba(245,197,24,0.08)]',
+                            ? 'text-[var(--color-accent)] bg-[rgba(245,197,24,0.1)]'
+                            : 'text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[rgba(245,197,24,0.08)]',
                         ].join(' ')}
                         title="Enviar comprobante"
                         aria-label="Enviar comprobante"
@@ -647,8 +647,8 @@ export default function PrestamoDetallePage({ params }) {
                         className={[
                           'shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors',
                           editandoFecha === pago.id
-                            ? 'text-[#3b82f6] bg-[rgba(59,130,246,0.1)]'
-                            : 'text-[#888888] hover:text-[#3b82f6] hover:bg-[rgba(59,130,246,0.08)]',
+                            ? 'text-[var(--color-info)] bg-[rgba(59,130,246,0.1)]'
+                            : 'text-[var(--color-text-muted)] hover:text-[var(--color-info)] hover:bg-[rgba(59,130,246,0.08)]',
                         ].join(' ')}
                         title="Editar fecha"
                         aria-label="Editar fecha"
@@ -675,7 +675,7 @@ export default function PrestamoDetallePage({ params }) {
                           }
                         }}
                         disabled={anulando === pago.id}
-                        className="shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[#888888] hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] transition-colors disabled:opacity-50"
+                        className="shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger-dim)] transition-colors disabled:opacity-50"
                         title="Anular pago"
                         aria-label="Anular pago"
                       >
@@ -717,7 +717,7 @@ export default function PrestamoDetallePage({ params }) {
                         <input
                           type="date"
                           defaultValue={new Date(new Date(pago.fechaPago).getTime() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10)}
-                          className="h-9 rounded-[10px] border border-[#2a2a2a] bg-[#111111] px-3 text-sm text-white focus:outline-none focus:border-[#3b82f6] transition-colors"
+                          className="h-9 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-info)] transition-colors"
                           id={`fecha-pago-${pago.id}`}
                         />
                         <button
@@ -739,13 +739,13 @@ export default function PrestamoDetallePage({ params }) {
                               setError('No se pudo cambiar la fecha.')
                             }
                           }}
-                          className="h-9 px-3 rounded-[10px] text-xs font-medium text-white bg-[#3b82f6] hover:bg-[#2563eb] transition-colors active:scale-[0.97]"
+                          className="h-9 px-3 rounded-[10px] text-xs font-medium text-[var(--color-text-primary)] bg-[#3b82f6] hover:bg-[#2563eb] transition-colors active:scale-[0.97]"
                         >
                           Guardar
                         </button>
                         <button
                           onClick={() => setEditandoFecha(null)}
-                          className="h-9 px-2 rounded-[10px] text-xs text-[#888888] hover:text-white transition-colors"
+                          className="h-9 px-2 rounded-[10px] text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
                         >
                           Cancelar
                         </button>
@@ -769,7 +769,7 @@ export default function PrestamoDetallePage({ params }) {
                 setModoReversionCapital(hayCobrosRegistrados ? 'devolver_restante' : 'devolver_todo')
                 setConfirmCancel(true)
               }}
-              className="w-full flex items-center justify-center gap-2 h-11 rounded-[12px] text-sm font-medium text-[#888888] hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.08)] border border-[#2a2a2a] hover:border-[rgba(239,68,68,0.3)] transition-all"
+              className="w-full flex items-center justify-center gap-2 h-11 rounded-[12px] text-sm font-medium text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[rgba(239,68,68,0.08)] border border-[var(--color-border)] hover:border-[rgba(239,68,68,0.3)] transition-all"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
@@ -778,16 +778,16 @@ export default function PrestamoDetallePage({ params }) {
             </button>
           ) : (
             <div className="bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.3)] rounded-[14px] p-4 space-y-3">
-              <p className="text-sm text-[#ef4444] font-semibold">¿Cancelar este préstamo?</p>
-              <p className="text-xs text-[#888888]">
+              <p className="text-sm text-[var(--color-danger)] font-semibold">¿Cancelar este préstamo?</p>
+              <p className="text-xs text-[var(--color-text-muted)]">
                 Se marcará como cancelado. El saldo pendiente de {formatCOP(saldoPendiente)} quedará sin cobrar.
               </p>
 
               {hayCobrosRegistrados && (
                 <div className="space-y-2">
-                  <p className="text-[11px] text-[#b8b8b8]">El préstamo ya tiene cobros registrados ({formatCOP(totalPagadoReal)}). Elige cómo reversar en caja:</p>
+                  <p className="text-[11px] text-[var(--color-text-secondary)]">El préstamo ya tiene cobros registrados ({formatCOP(totalPagadoReal)}). Elige cómo reversar en caja:</p>
 
-                  <label className="flex items-start gap-2.5 rounded-[10px] border border-[#2a2a2a] bg-[#131313] px-3 py-2 cursor-pointer">
+                  <label className="flex items-start gap-2.5 rounded-[10px] border border-[var(--color-border)] bg-[#131313] px-3 py-2 cursor-pointer">
                     <input
                       type="radio"
                       name="modo-reversion-capital"
@@ -797,12 +797,12 @@ export default function PrestamoDetallePage({ params }) {
                       className="mt-0.5"
                     />
                     <div>
-                      <p className="text-xs font-semibold text-white">Devolver todo el préstamo a caja (+{formatCOP(montoPrestadoRedondeado)})</p>
-                      <p className="text-[11px] text-[#888888]">Conserva los cobros ya registrados y regresa el monto completo prestado.</p>
+                      <p className="text-xs font-semibold text-[var(--color-text-primary)]">Devolver todo el préstamo a caja (+{formatCOP(montoPrestadoRedondeado)})</p>
+                      <p className="text-[11px] text-[var(--color-text-muted)]">Conserva los cobros ya registrados y regresa el monto completo prestado.</p>
                     </div>
                   </label>
 
-                  <label className="flex items-start gap-2.5 rounded-[10px] border border-[#2a2a2a] bg-[#131313] px-3 py-2 cursor-pointer">
+                  <label className="flex items-start gap-2.5 rounded-[10px] border border-[var(--color-border)] bg-[#131313] px-3 py-2 cursor-pointer">
                     <input
                       type="radio"
                       name="modo-reversion-capital"
@@ -812,8 +812,8 @@ export default function PrestamoDetallePage({ params }) {
                       className="mt-0.5"
                     />
                     <div>
-                      <p className="text-xs font-semibold text-white">Devolver solo lo pendiente (+{formatCOP(saldoFinancieroPendiente)})</p>
-                      <p className="text-[11px] text-[#888888]">Calculado como prestado menos cobrado real.</p>
+                      <p className="text-xs font-semibold text-[var(--color-text-primary)]">Devolver solo lo pendiente (+{formatCOP(saldoFinancieroPendiente)})</p>
+                      <p className="text-[11px] text-[var(--color-text-muted)]">Calculado como prestado menos cobrado real.</p>
                     </div>
                   </label>
                 </div>
@@ -822,7 +822,7 @@ export default function PrestamoDetallePage({ params }) {
               <div className="flex gap-2">
                 <button
                   onClick={() => setConfirmCancel(false)}
-                  className="flex-1 h-10 rounded-[10px] text-sm font-medium text-[#888888] border border-[#2a2a2a] hover:bg-[#1a1a1a] transition-colors"
+                  className="flex-1 h-10 rounded-[10px] text-sm font-medium text-[var(--color-text-muted)] border border-[var(--color-border)] hover:bg-[var(--color-bg-surface)] transition-colors"
                 >
                   No, volver
                 </button>
@@ -855,7 +855,7 @@ export default function PrestamoDetallePage({ params }) {
                     }
                   }}
                   disabled={cancelando}
-                  className="flex-1 h-10 rounded-[10px] text-sm font-bold text-white bg-[#ef4444] hover:bg-[#dc2626] disabled:opacity-50 transition-colors"
+                  className="flex-1 h-10 rounded-[10px] text-sm font-bold text-[var(--color-text-primary)] bg-[var(--color-danger)] hover:bg-[color-mix(in_srgb,var(--color-danger)_85%,black)] disabled:opacity-50 transition-colors"
                 >
                   {cancelando ? 'Cancelando…' : 'Sí, cancelar'}
                 </button>
@@ -878,7 +878,7 @@ export default function PrestamoDetallePage({ params }) {
                 setModalAtajosCobro(false)
                 abrirPagoConMonto(montoEnMora)
               }}
-              className="w-full h-11 rounded-[12px] font-semibold text-sm text-[#ef4444] bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.25)] hover:bg-[rgba(239,68,68,0.15)] transition-all"
+              className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--color-danger)] bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.25)] hover:bg-[rgba(239,68,68,0.15)] transition-all"
             >
               Pagar mora
               {cuotasEnMora > 0 ? ` (${cuotasEnMora} cuota${cuotasEnMora === 1 ? '' : 's'})` : ''}
@@ -893,7 +893,7 @@ export default function PrestamoDetallePage({ params }) {
                 setModalAtajosCobro(false)
                 abrirPagoConMonto(montoParaPonerseAlDia)
               }}
-              className="w-full h-11 rounded-[12px] font-semibold text-sm text-[#f5c518] bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.3)] hover:bg-[rgba(245,197,24,0.15)] transition-all"
+              className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--color-accent)] bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.3)] hover:bg-[rgba(245,197,24,0.15)] transition-all"
             >
               Ponerse al día · {formatCOP(montoParaPonerseAlDia)}
             </button>
@@ -904,7 +904,7 @@ export default function PrestamoDetallePage({ params }) {
               setModalAtajosCobro(false)
               abrirPagoNormal()
             }}
-            className="w-full h-11 rounded-[12px] font-semibold text-sm text-[#22c55e] bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.25)] hover:bg-[rgba(34,197,94,0.15)] transition-all"
+            className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--color-success)] bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.25)] hover:bg-[rgba(34,197,94,0.15)] transition-all"
           >
             Hacer abono extraordinario
           </button>
@@ -923,7 +923,7 @@ export default function PrestamoDetallePage({ params }) {
               setModalGestionPrestamo(false)
               setModalRenovar(true)
             }}
-            className="h-11 rounded-[12px] font-medium text-sm text-[#a855f7] bg-[rgba(168,85,247,0.08)] border border-[rgba(168,85,247,0.25)] hover:bg-[rgba(168,85,247,0.15)] transition-all"
+            className="h-11 rounded-[12px] font-medium text-sm text-[var(--color-purple)] bg-[rgba(168,85,247,0.08)] border border-[rgba(168,85,247,0.25)] hover:bg-[rgba(168,85,247,0.15)] transition-all"
           >
             Renovar
           </button>
@@ -932,7 +932,7 @@ export default function PrestamoDetallePage({ params }) {
               setModalGestionPrestamo(false)
               setModalPlazo(true)
             }}
-            className="h-11 rounded-[12px] font-medium text-sm text-[#3b82f6] bg-[rgba(59,130,246,0.08)] border border-[rgba(59,130,246,0.25)] hover:bg-[rgba(59,130,246,0.15)] transition-all"
+            className="h-11 rounded-[12px] font-medium text-sm text-[var(--color-info)] bg-[rgba(59,130,246,0.08)] border border-[rgba(59,130,246,0.25)] hover:bg-[rgba(59,130,246,0.15)] transition-all"
           >
             Modificar plazo
           </button>
@@ -950,7 +950,7 @@ export default function PrestamoDetallePage({ params }) {
               setModalGestionPrestamo(false)
               setModalDescuento(true)
             }}
-            className="h-11 rounded-[12px] font-medium text-sm text-[#22c55e] bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.2)] hover:bg-[rgba(34,197,94,0.15)] transition-all"
+            className="h-11 rounded-[12px] font-medium text-sm text-[var(--color-success)] bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.2)] hover:bg-[rgba(34,197,94,0.15)] transition-all"
           >
             Descuento
           </button>

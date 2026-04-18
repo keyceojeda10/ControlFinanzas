@@ -77,13 +77,13 @@ export default function ReportarGasto({ open, onClose, onSuccess, fecha }) {
   return (
     <Modal open={open} onClose={handleClose} title="Reportar Gasto Menor">
       <div className="space-y-4">
-        <div className="px-3 py-2 rounded-[10px] bg-[#111111] border border-[#2a2a2a]">
-          <p className="text-[11px] text-[#888888]">Fecha del gasto</p>
-          <p className="text-sm text-white font-semibold">{fmtFecha(fecha)}</p>
+        <div className="px-3 py-2 rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)]">
+          <p className="text-[11px] text-[var(--color-text-muted)]">Fecha del gasto</p>
+          <p className="text-sm text-[var(--color-text-primary)] font-semibold">{fmtFecha(fecha)}</p>
         </div>
 
         <div>
-          <p className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em] mb-2">
+          <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em] mb-2">
             Tipo de gasto
           </p>
           <div className="grid grid-cols-2 gap-2">
@@ -95,8 +95,8 @@ export default function ReportarGasto({ open, onClose, onSuccess, fecha }) {
                 className={[
                   'h-10 rounded-[10px] border text-sm font-medium transition-all cursor-pointer',
                   tipo === t.value
-                    ? 'bg-[rgba(245,197,24,0.15)] border-[#f5c518] text-[#f5c518]'
-                    : 'bg-transparent border-[#2a2a2a] text-[#888888] hover:bg-[#1a1a1a]',
+                    ? 'bg-[rgba(245,197,24,0.15)] border-[#f5c518] text-[var(--color-accent)]'
+                    : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-surface)]',
                 ].join(' ')}
               >
                 {GASTO_ICONS[t.value]}{t.label}
@@ -124,7 +124,7 @@ export default function ReportarGasto({ open, onClose, onSuccess, fecha }) {
           prefix="$"
         />
 
-        {error && <p className="text-sm text-[#ef4444]">{error}</p>}
+        {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
 
         <div className="flex gap-3 pt-2">
           <Button variant="secondary" onClick={handleClose} className="flex-1">

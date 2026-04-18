@@ -56,8 +56,8 @@ export default function OnboardingWizard({ nombre, onComplete, onDismiss, initia
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="wizard-success-bounce">
-          <div className="w-20 h-20 rounded-full bg-[#22c55e] flex items-center justify-center">
-            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-20 h-20 rounded-full bg-[var(--color-success)] flex items-center justify-center">
+            <svg className="w-10 h-10 text-[var(--color-text-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
             </svg>
           </div>

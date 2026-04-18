@@ -41,7 +41,7 @@ export default function ActivacionPage() {
   }, [])
 
   if (loading) return <div className="max-w-5xl mx-auto"><SkeletonCard /><SkeletonCard /></div>
-  if (!data) return <p className="text-sm text-[#888888] text-center py-12">Error cargando datos</p>
+  if (!data) return <p className="text-sm text-[var(--color-text-muted)] text-center py-12">Error cargando datos</p>
 
   const { resumen } = data
   const hoy = new Date()
@@ -67,29 +67,29 @@ export default function ActivacionPage() {
   return (
     <div className="max-w-5xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-lg font-bold text-white">Panel de Activacion</h1>
-        <p className="text-xs text-[#888888]">Monitorea registros, activacion y trial de usuarios</p>
+        <h1 className="text-lg font-bold text-[var(--color-text-primary)]">Panel de Activacion</h1>
+        <p className="text-xs text-[var(--color-text-muted)]">Monitorea registros, activacion y trial de usuarios</p>
       </div>
 
       {/* Resumen cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         <Card>
-          <p className="text-[10px] text-[#888888] uppercase tracking-wide">Hoy / Ayer</p>
-          <p className="text-2xl font-bold text-[#f5c518]">{resumen.registrosHoy} <span className="text-sm font-normal text-[#888888]">/ {resumen.registrosAyer}</span></p>
+          <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Hoy / Ayer</p>
+          <p className="text-2xl font-bold text-[var(--color-accent)]">{resumen.registrosHoy} <span className="text-sm font-normal text-[var(--color-text-muted)]">/ {resumen.registrosAyer}</span></p>
         </Card>
         <Card>
-          <p className="text-[10px] text-[#888888] uppercase tracking-wide">Esta semana</p>
-          <p className="text-2xl font-bold text-white">{resumen.registrosSemana}</p>
+          <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Esta semana</p>
+          <p className="text-2xl font-bold text-[var(--color-text-primary)]">{resumen.registrosSemana}</p>
         </Card>
         <Card>
-          <p className="text-[10px] text-[#888888] uppercase tracking-wide">Activación</p>
-          <p className="text-2xl font-bold text-[#22c55e]">{resumen.tasaActivacion}%</p>
-          <p className="text-[10px] text-[#888888]">{resumen.totalActivos} activos de {resumen.total}</p>
+          <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Activación</p>
+          <p className="text-2xl font-bold text-[var(--color-success)]">{resumen.tasaActivacion}%</p>
+          <p className="text-[10px] text-[var(--color-text-muted)]">{resumen.totalActivos} activos de {resumen.total}</p>
         </Card>
         <Card>
-          <p className="text-[10px] text-[#888888] uppercase tracking-wide">Trial por vencer</p>
-          <p className="text-2xl font-bold text-[#f59e0b]">{resumen.trialPorVencer}</p>
-          <p className="text-[10px] text-[#888888]">Próximos 3 días</p>
+          <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Trial por vencer</p>
+          <p className="text-2xl font-bold text-[var(--color-warning)]">{resumen.trialPorVencer}</p>
+          <p className="text-[10px] text-[var(--color-text-muted)]">Próximos 3 días</p>
         </Card>
       </div>
 
@@ -101,8 +101,8 @@ export default function ActivacionPage() {
             onClick={() => setFiltro(f.key)}
             className={`px-3 py-1.5 rounded-full text-[11px] font-medium transition-all ${
               filtro === f.key
-                ? 'bg-[#f5c518] text-[#0a0a0a]'
-                : 'bg-[#1a1a1a] text-[#888888] border border-[#2a2a2a] hover:text-white'
+                ? 'bg-[var(--color-accent)] text-[#1a1a2e]'
+                : 'bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:text-[var(--color-text-primary)]'
             }`}
           >
             {f.label}
@@ -117,7 +117,7 @@ export default function ActivacionPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-[#2a2a2a] text-[#888888]">
+              <tr className="border-b border-[var(--color-border)] text-[var(--color-text-muted)]">
                 <th className="text-left px-4 py-3 font-medium">Usuario</th>
                 <th className="text-left px-3 py-3 font-medium hidden sm:table-cell">Registro</th>
                 <th className="text-center px-3 py-3 font-medium">Clientes</th>
@@ -129,36 +129,36 @@ export default function ActivacionPage() {
             </thead>
             <tbody>
               {filtrados.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-8 text-[#555555]">Sin resultados</td></tr>
+                <tr><td colSpan={7} className="text-center py-8 text-[var(--color-text-muted)]">Sin resultados</td></tr>
               ) : filtrados.map(u => {
                 const est = ESTADO_CONFIG[u.estado] || ESTADO_CONFIG.inactivo
                 const waLink = whatsappLink(u.ownerTelefono, u.ownerNombre)
                 return (
-                  <tr key={u.id} className="border-b border-[#1a1a1a] hover:bg-[#111111] transition-colors">
+                  <tr key={u.id} className="border-b border-[#1a1a1a] hover:bg-[var(--color-bg-card)] transition-colors">
                     <td className="px-4 py-3">
-                      <p className="text-sm font-medium text-white truncate max-w-[180px]">{u.ownerNombre || u.orgNombre}</p>
-                      <p className="text-[10px] text-[#555555] truncate max-w-[180px]">{u.ownerEmail}</p>
+                      <p className="text-sm font-medium text-[var(--color-text-primary)] truncate max-w-[180px]">{u.ownerNombre || u.orgNombre}</p>
+                      <p className="text-[10px] text-[var(--color-text-muted)] truncate max-w-[180px]">{u.ownerEmail}</p>
                     </td>
                     <td className="px-3 py-3 hidden sm:table-cell">
-                      <p className="text-[#888888]">{haceTiempo(u.createdAt)}</p>
-                      <p className="text-[10px] text-[#555555]">{new Date(u.createdAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}</p>
+                      <p className="text-[var(--color-text-muted)]">{haceTiempo(u.createdAt)}</p>
+                      <p className="text-[10px] text-[var(--color-text-muted)]">{new Date(u.createdAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}</p>
                     </td>
                     <td className="px-3 py-3 text-center">
-                      <span className={`font-bold ${u.clientes > 0 ? 'text-white' : 'text-[#555555]'}`}>{u.clientes}</span>
+                      <span className={`font-bold ${u.clientes > 0 ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-muted)]'}`}>{u.clientes}</span>
                     </td>
                     <td className="px-3 py-3 text-center">
-                      <span className={`font-bold ${u.prestamos > 0 ? 'text-white' : 'text-[#555555]'}`}>{u.prestamos}</span>
+                      <span className={`font-bold ${u.prestamos > 0 ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-muted)]'}`}>{u.prestamos}</span>
                     </td>
                     <td className="px-3 py-3 text-center">
                       <Badge variant={est.variant}>{est.label}</Badge>
                     </td>
                     <td className="px-3 py-3 text-center">
                       {u.diasTrial > 0 ? (
-                        <span className={`text-[11px] font-bold ${u.diasTrial <= 3 ? 'text-[#f59e0b]' : 'text-[#888888]'}`}>
+                        <span className={`text-[11px] font-bold ${u.diasTrial <= 3 ? 'text-[var(--color-warning)]' : 'text-[var(--color-text-muted)]'}`}>
                           {u.diasTrial}d
                         </span>
                       ) : (
-                        <span className="text-[10px] text-[#555555]">Vencido</span>
+                        <span className="text-[10px] text-[var(--color-text-muted)]">Vencido</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -168,7 +168,7 @@ export default function ActivacionPage() {
                             href={waLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-1.5 rounded-[8px] bg-[#22c55e]/10 text-[#22c55e] hover:bg-[#22c55e]/20 transition-all"
+                            className="p-1.5 rounded-[8px] bg-[var(--color-success)]/10 text-[var(--color-success)] hover:bg-[var(--color-success)]/20 transition-all"
                             title="WhatsApp"
                           >
                             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
@@ -179,7 +179,7 @@ export default function ActivacionPage() {
                         )}
                         <a
                           href={`/admin/organizaciones/${u.id}`}
-                          className="p-1.5 rounded-[8px] bg-[rgba(245,197,24,0.1)] text-[#f5c518] hover:bg-[rgba(245,197,24,0.2)] transition-all"
+                          className="p-1.5 rounded-[8px] bg-[rgba(245,197,24,0.1)] text-[var(--color-accent)] hover:bg-[rgba(245,197,24,0.2)] transition-all"
                           title="Ver detalle"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

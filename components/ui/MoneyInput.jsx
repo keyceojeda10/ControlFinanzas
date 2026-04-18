@@ -34,18 +34,18 @@ export default function MoneyInput({
   return (
     <div className={`flex flex-col gap-1.5 ${containerClassName}`}>
       {label && (
-        <label className="text-xs font-medium text-[#999]">{label}</label>
+        <label className="text-xs font-medium text-[var(--color-text-secondary)]">{label}</label>
       )}
       <div className="relative flex items-center">
-        <span className="absolute left-3 text-[#888888] text-sm pointer-events-none select-none">$</span>
+        <span className="absolute left-3 text-[var(--color-text-muted)] text-sm pointer-events-none select-none">$</span>
         <input
           ref={inputRef}
           type="text"
           inputMode="numeric"
           className={[
-            'w-full h-10 rounded-[12px] border text-sm text-white placeholder-[#777777]',
+            'w-full h-10 rounded-[12px] border text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)]',
             'bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.08)]',
-            'focus:outline-none focus:border-[#f5c518] focus:ring-1 focus:ring-[rgba(245,197,24,0.2)]',
+            'focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[rgba(245,197,24,0.2)]',
             'transition-all duration-200',
             'disabled:opacity-50 disabled:cursor-not-allowed',
             'pl-8 pr-3',
@@ -58,7 +58,7 @@ export default function MoneyInput({
           {...props}
         />
       </div>
-      {error && <p className="text-xs text-[#ef4444]">{error}</p>}
+      {error && <p className="text-xs text-[var(--color-danger)]">{error}</p>}
     </div>
   )
 }

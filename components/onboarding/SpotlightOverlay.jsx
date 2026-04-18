@@ -87,20 +87,20 @@ export default function SpotlightOverlay({ spotlight, onClose }) {
 
       {/* Tooltip */}
       <div
-        className="absolute z-[91] bg-[#1a1a1a] border border-[#f5c518] rounded-[12px] px-4 py-3 max-w-[260px] shadow-lg shadow-[rgba(245,197,24,0.1)] onboarding-fadein"
+        className="absolute z-[91] bg-[var(--color-bg-surface)] border border-[#f5c518] rounded-[12px] px-4 py-3 max-w-[260px] shadow-lg shadow-[rgba(245,197,24,0.1)] onboarding-fadein"
         style={tooltipStyle}
         onClick={(e) => e.stopPropagation()}
       >
-        <p className="text-sm text-white font-medium mb-1.5">{spotlight.mensaje}</p>
+        <p className="text-sm text-[var(--color-text-primary)] font-medium mb-1.5">{spotlight.mensaje}</p>
         <button
           onClick={onClose}
-          className="text-[11px] text-[#f5c518] hover:text-[#f0b800] font-medium transition-colors"
+          className="text-[11px] text-[var(--color-accent)] hover:text-[#f0b800] font-medium transition-colors"
         >
           Entendido
         </button>
         {/* Arrow */}
         <div
-          className="absolute -top-1.5 left-6 w-3 h-3 bg-[#1a1a1a] border-l border-t border-[#f5c518] rotate-45"
+          className="absolute -top-1.5 left-6 w-3 h-3 bg-[var(--color-bg-surface)] border-l border-t border-[#f5c518] rotate-45"
           style={spotlight.posicion === 'top' ? { top: 'auto', bottom: -6, transform: 'rotate(225deg)' } : {}}
         />
       </div>

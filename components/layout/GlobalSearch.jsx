@@ -105,9 +105,9 @@ export default function GlobalSearch() {
   if (!open) return null
 
   const SECTIONS = [
-    { key: 'clientes', label: 'Clientes', color: '#f5c518', icon: 'M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0' },
-    { key: 'prestamos', label: 'Préstamos', color: '#22c55e', icon: 'M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33' },
-    { key: 'rutas', label: 'Rutas', color: '#a855f7', icon: 'M9 6.75V15m0-8.25a1.5 1.5 0 0 1 3 0V15m-3 0a1.5 1.5 0 0 0 3 0m3-8.25V15m0-8.25a1.5 1.5 0 0 1 3 0V15m-3 0a1.5 1.5 0 0 0 3 0' },
+    { key: 'clientes', label: 'Clientes', color: 'var(--color-accent)', icon: 'M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0' },
+    { key: 'prestamos', label: 'Préstamos', color: 'var(--color-success)', icon: 'M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33' },
+    { key: 'rutas', label: 'Rutas', color: 'var(--color-purple)', icon: 'M9 6.75V15m0-8.25a1.5 1.5 0 0 1 3 0V15m-3 0a1.5 1.5 0 0 0 3 0m3-8.25V15m0-8.25a1.5 1.5 0 0 1 3 0V15m-3 0a1.5 1.5 0 0 0 3 0' },
   ]
 
   return (
@@ -116,11 +116,11 @@ export default function GlobalSearch() {
       <div className="absolute inset-0 bg-black/72 backdrop-blur-sm" onClick={() => setOpen(false)} />
 
       {/* Modal */}
-      <div className="relative w-full max-w-lg mx-3 sm:mx-4 bg-[#111115] border border-[rgba(255,255,255,0.12)] rounded-[16px] shadow-2xl overflow-hidden"
+      <div className="relative w-full max-w-lg mx-3 sm:mx-4 bg-[var(--color-bg-card)] border border-[rgba(255,255,255,0.12)] rounded-[16px] shadow-2xl overflow-hidden"
         style={{ boxShadow: '0 0 40px rgba(245,197,24,0.06), 0 8px 32px rgba(0,0,0,0.5)' }}>
         {/* Input */}
         <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[rgba(255,255,255,0.08)]">
-          <svg className="w-5 h-5 text-[#f5c518] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-[var(--color-accent)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
           </svg>
           <input
@@ -132,7 +132,7 @@ export default function GlobalSearch() {
             className="flex-1 bg-transparent text-sm text-[#f4f5fa] placeholder-[#9b9ba6] outline-none"
           />
           {query && (
-            <button onClick={() => { setQuery(''); setResults(null) }} className="text-[#a2a2ad] hover:text-white p-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c518]/65">
+            <button onClick={() => { setQuery(''); setResults(null) }} className="text-[#a2a2ad] hover:text-[var(--color-text-primary)] p-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c518]/65">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -145,7 +145,7 @@ export default function GlobalSearch() {
         <div className="max-h-[60vh] sm:max-h-80 overflow-y-auto">
           {loading && (
             <div className="flex justify-center py-8">
-              <div className="w-5 h-5 border-2 border-[#2a2a2a] border-t-[#f5c518] rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-[var(--color-border)] border-t-[#f5c518] rounded-full animate-spin" />
             </div>
           )}
 

@@ -243,6 +243,143 @@ html[data-theme="light"] input[type="range"]::-moz-range-track { background: #e2
   letter-spacing: -0.02em;
 }
 
+/* ─── Button variants ──────────────────────────────── */
+.cf-btn-primary {
+  background: var(--color-accent);
+  color: #1a1a2e;
+  border-color: transparent;
+  font-weight: 700;
+}
+.cf-btn-primary:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+  box-shadow: 0 0 24px color-mix(in srgb, var(--color-accent) 35%, transparent);
+}
+.cf-btn-secondary {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+}
+.cf-btn-secondary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-accent) 10%, var(--color-bg-hover));
+  border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-border));
+  color: var(--color-accent);
+}
+.cf-btn-danger {
+  background: var(--color-danger);
+  color: #ffffff;
+  border-color: transparent;
+}
+.cf-btn-danger:hover:not(:disabled) {
+  filter: brightness(0.95);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--color-danger) 35%, transparent);
+}
+.cf-btn-ghost {
+  background: transparent;
+  color: var(--color-text-secondary);
+  border-color: transparent;
+}
+.cf-btn-ghost:hover:not(:disabled) {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+.cf-btn-success {
+  background: var(--color-success);
+  color: #1a1a2e;
+  font-weight: 700;
+  border-color: transparent;
+}
+.cf-btn-success:hover:not(:disabled) {
+  filter: brightness(0.96);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--color-success) 35%, transparent);
+}
+
+/* ─── Input ────────────────────────────── */
+.cf-input::placeholder { color: var(--color-text-muted); }
+.cf-input:focus {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 30%, transparent);
+}
+.cf-input-error { border-color: var(--color-danger) !important; }
+
+/* ─── Header mobile ────────────────────────────── */
+.cf-header-mobile {
+  background: color-mix(in srgb, var(--color-bg-base) 84%, transparent);
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  border-bottom: 1px solid var(--color-border);
+}
+html[data-theme="light"] .cf-header-mobile {
+  background: rgba(255, 255, 255, 0.88);
+}
+.cf-icon-btn:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+.cf-menu-item:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+/* ─── BottomNav ────────────────────────────── */
+.cf-bottomnav-bar {
+  background: color-mix(in srgb, var(--color-bg-surface) 80%, transparent);
+  backdrop-filter: blur(30px) saturate(1.5);
+  -webkit-backdrop-filter: blur(30px) saturate(1.5);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px color-mix(in srgb, var(--color-accent) 4%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+html[data-theme="light"] .cf-bottomnav-bar {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 8px 28px rgba(20, 20, 40, 0.10), 0 0 18px color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
+
+/* Sheet bottom (BottomNav "mas") */
+.cf-sheet {
+  background: color-mix(in srgb, var(--color-bg-surface) 95%, transparent);
+  backdrop-filter: blur(30px) saturate(1.3);
+  -webkit-backdrop-filter: blur(30px) saturate(1.3);
+  border: 1px solid var(--color-border);
+  border-bottom: none;
+}
+html[data-theme="light"] .cf-sheet {
+  background: #ffffff;
+  box-shadow: 0 -10px 30px rgba(20, 20, 40, 0.12);
+}
+.cf-nav-item:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+/* ─── Sidebar ────────────────────────────── */
+.cf-sidebar {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-bg-surface) 96%, transparent) 0%, color-mix(in srgb, var(--color-bg-base) 99%, transparent) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid var(--color-border);
+}
+html[data-theme="light"] .cf-sidebar {
+  background: linear-gradient(180deg, #ffffff 0%, #fafbfe 100%);
+}
+.cf-signout-btn:hover {
+  background: var(--color-danger-dim);
+  color: var(--color-danger);
+}
+
+/* ─── Modal ────────────────────────────── */
+.cf-modal-overlay {
+  background: rgba(0, 0, 5, 0.85);
+}
+html[data-theme="light"] .cf-modal-overlay {
+  background: rgba(20, 20, 40, 0.35);
+}
+.cf-modal-dialog {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+}
+html[data-theme="light"] .cf-modal-dialog {
+  box-shadow: 0 25px 60px rgba(20, 20, 40, 0.18);
+}
+
 /* ────────────────────────────────────────────────────────────
    LIGHT THEME GLOBAL OVERRIDES
    Mapea los colores oscuros hardcoded mas usados a pastel.
@@ -351,3 +488,69 @@ html[data-theme="light"] aside[style*="linear-gradient"] {
 html[data-theme="light"] .shadow-lg,
 html[data-theme="light"] .shadow-xl,
 html[data-theme="light"] .shadow-2xl { box-shadow: 0 10px 30px rgba(20,20,40,0.08), 0 4px 10px rgba(20,20,40,0.04); }
+
+/* Gradientes oscuros con rgba(255,255,255,0.03-0.08) → claros */
+html[data-theme="light"] [style*="linear-gradient"] {
+  /* heuristica: los gradientes oscuros inline pierden presencia en claro */
+}
+
+/* rgba(255,255,255,xx) usados como fondos → pastel claro */
+html[data-theme="light"] [class*="bg-[rgba(255,255,255"] { background-color: var(--color-bg-hover) !important; }
+html[data-theme="light"] [class*="border-[rgba(255,255,255"] { border-color: var(--color-border) !important; }
+
+/* Hover states */
+html[data-theme="light"] [class*="hover:bg-[#"]:hover { background-color: var(--color-bg-hover) !important; }
+html[data-theme="light"] [class*="hover:bg-[rgba(255,255,255"]:hover { background-color: color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-hover)) !important; }
+
+/* Colores de estado oscuros → sus variantes pastel */
+html[data-theme="light"] .text-\[\#22c55e\],
+html[data-theme="light"] .text-\[\#34d399\],
+html[data-theme="light"] .text-\[\#59e3a4\],
+html[data-theme="light"] .text-\[\#10b981\] { color: #10a880 !important; }
+html[data-theme="light"] .text-\[\#ef4444\],
+html[data-theme="light"] .text-\[\#f87171\],
+html[data-theme="light"] .text-\[\#ff8e8e\] { color: #e8537a !important; }
+html[data-theme="light"] .text-\[\#f59e0b\],
+html[data-theme="light"] .text-\[\#fbbf24\],
+html[data-theme="light"] .text-\[\#ffd452\] { color: #d98f1f !important; }
+html[data-theme="light"] .text-\[\#60a5fa\],
+html[data-theme="light"] .text-\[\#3b82f6\] { color: #3298d4 !important; }
+html[data-theme="light"] .text-\[\#a855f7\],
+html[data-theme="light"] .text-\[\#c084fc\],
+html[data-theme="light"] .text-\[\#d2a9ff\] { color: #8a6df0 !important; }
+html[data-theme="light"] .text-\[\#f5c518\] { color: #d9a90a !important; }
+
+/* Fondos dim de status en dark (rgba con alpha bajo) → pastel soft en light */
+html[data-theme="light"] [class*="bg-[rgba(34,197,94"],
+html[data-theme="light"] [class*="bg-[rgba(52,211,153"],
+html[data-theme="light"] [class*="bg-[rgba(16,185,129"] { background-color: rgba(34, 201, 160, 0.14) !important; }
+html[data-theme="light"] [class*="bg-[rgba(239,68,68"],
+html[data-theme="light"] [class*="bg-[rgba(248,113,113"] { background-color: rgba(255, 107, 138, 0.14) !important; }
+html[data-theme="light"] [class*="bg-[rgba(245,158,11"],
+html[data-theme="light"] [class*="bg-[rgba(251,191,36"] { background-color: rgba(255, 179, 71, 0.16) !important; }
+html[data-theme="light"] [class*="bg-[rgba(96,165,250"],
+html[data-theme="light"] [class*="bg-[rgba(59,130,246"] { background-color: rgba(79, 184, 229, 0.14) !important; }
+html[data-theme="light"] [class*="bg-[rgba(168,85,247"],
+html[data-theme="light"] [class*="bg-[rgba(192,132,252"] { background-color: rgba(167, 139, 250, 0.14) !important; }
+html[data-theme="light"] [class*="bg-[rgba(245,197,24"] { background-color: rgba(245, 197, 24, 0.18) !important; }
+
+/* Border de status */
+html[data-theme="light"] [class*="border-[rgba(34,197,94"],
+html[data-theme="light"] [class*="border-[rgba(52,211,153"] { border-color: rgba(34, 201, 160, 0.4) !important; }
+html[data-theme="light"] [class*="border-[rgba(239,68,68"],
+html[data-theme="light"] [class*="border-[rgba(248,113,113"] { border-color: rgba(255, 107, 138, 0.4) !important; }
+html[data-theme="light"] [class*="border-[rgba(245,158,11"] { border-color: rgba(255, 179, 71, 0.45) !important; }
+html[data-theme="light"] [class*="border-[rgba(245,197,24"] { border-color: rgba(245, 197, 24, 0.5) !important; }
+html[data-theme="light"] [class*="border-[rgba(168,85,247"] { border-color: rgba(167, 139, 250, 0.4) !important; }
+
+/* Focus ring offsets color-agnostic en light */
+html[data-theme="light"] [class*="focus-visible:ring-offset-[#0"] { --tw-ring-offset-color: #ffffff !important; }
+
+/* Card "Card" component en dark usa gradiente inline con hex -> se mantiene via var ya, ok */
+
+/* Badge "blue" era dorado en dark; en light el yellow sigue dorado -> ok */
+
+/* Tab active border amarillo: se mantiene */
+
+/* Ring amarillo en light tiene buen contraste */
+html[data-theme="light"] [class*="ring-[#f5c518"] { --tw-ring-color: rgba(245, 197, 24, 0.55) !important; }

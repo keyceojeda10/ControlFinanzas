@@ -20,7 +20,7 @@ export default function NuevoPrestamoPage() {
   return (
     <Suspense fallback={
       <div className="flex items-center justify-center h-40">
-        <svg className="animate-spin w-6 h-6 text-[#f5c518]" fill="none" viewBox="0 0 24 24">
+        <svg className="animate-spin w-6 h-6 text-[var(--color-accent)]" fill="none" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
         </svg>
@@ -233,7 +233,7 @@ function NuevoPrestamo() {
       <div className="mb-6">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm text-[#888888] hover:text-[white] transition-colors mb-4"
+          className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[white] transition-colors mb-4"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -241,12 +241,12 @@ function NuevoPrestamo() {
           Volver
         </button>
         <h1 className="text-xl font-bold text-[white]">Nuevo préstamo</h1>
-        <p className="text-sm text-[#888888] mt-0.5">Completa los datos para registrar el préstamo</p>
+        <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Completa los datos para registrar el préstamo</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="flex items-center gap-2 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3">
+          <div className="flex items-center gap-2 bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[12px] px-4 py-3">
             {error}
           </div>
         )}
@@ -259,8 +259,8 @@ function NuevoPrestamo() {
             className={[
               'flex items-center justify-center gap-2 py-3 rounded-[12px] border text-sm font-medium transition-all',
               modo === 'prestamo'
-                ? 'bg-[rgba(245,197,24,0.12)] border-[#f5c518] text-[#f5c518]'
-                : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#888888] hover:text-[white] hover:border-[#3a3a3a]',
+                ? 'bg-[rgba(245,197,24,0.12)] border-[#f5c518] text-[var(--color-accent)]'
+                : 'bg-[var(--color-bg-surface)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[white] hover:border-[var(--color-border-hover)]',
             ].join(' ')}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
@@ -274,8 +274,8 @@ function NuevoPrestamo() {
             className={[
               'flex items-center justify-center gap-2 py-3 rounded-[12px] border text-sm font-medium transition-all',
               modo === 'mercancia'
-                ? 'bg-[rgba(59,130,246,0.12)] border-[#3b82f6] text-[#3b82f6]'
-                : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#888888] hover:text-[white] hover:border-[#3a3a3a]',
+                ? 'bg-[rgba(59,130,246,0.12)] border-[#3b82f6] text-[var(--color-info)]'
+                : 'bg-[var(--color-bg-surface)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[white] hover:border-[var(--color-border-hover)]',
             ].join(' ')}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
@@ -287,7 +287,7 @@ function NuevoPrestamo() {
 
         {/* Card formulario */}
         <div
-          className="border border-[#2a2a2a] rounded-[16px] p-5 space-y-4"
+          className="border border-[var(--color-border)] rounded-[16px] p-5 space-y-4"
           style={{
             background: 'linear-gradient(135deg, #f5c5180A 0%, #1a1a1a 40%, #1a1a1a 70%, #f5c51805 100%)',
             boxShadow: '0 0 30px #f5c51808, 0 1px 2px rgba(0,0,0,0.3)',
@@ -297,27 +297,27 @@ function NuevoPrestamo() {
           {/* Selector de cliente */}
           {clienteIdParam ? (
             <div>
-              <p className="text-xs font-medium text-[#888888] mb-1.5">Cliente</p>
-              <div className="flex items-center gap-2 h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111]">
+              <p className="text-xs font-medium text-[var(--color-text-muted)] mb-1.5">Cliente</p>
+              <div className="flex items-center gap-2 h-10 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)]">
                 <div className="w-5 h-5 rounded-full bg-[rgba(245,197,24,0.2)] flex items-center justify-center shrink-0">
-                  <span className="text-[#f5c518] text-[9px] font-bold">{clienteNombre?.[0]?.toUpperCase()}</span>
+                  <span className="text-[var(--color-accent)] text-[9px] font-bold">{clienteNombre?.[0]?.toUpperCase()}</span>
                 </div>
                 <span className="text-sm text-[white]">{clienteNombre || clienteIdParam}</span>
               </div>
             </div>
           ) : (
             <div className="flex flex-col gap-1.5">
-              <p className="text-xs font-medium text-[#888888]">Cliente *</p>
+              <p className="text-xs font-medium text-[var(--color-text-muted)]">Cliente *</p>
               <input
                 placeholder="Buscar cliente por nombre o cédula…"
                 value={buscadorCliente}
                 onChange={(e) => { setBuscadorCliente(e.target.value); setClienteId('') }}
-                className="w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] placeholder-[#777777] focus:outline-none focus:border-[#f5c518] focus:ring-1 focus:ring-[rgba(245,197,24,0.3)] transition-all"
+                className="w-full h-10 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[white] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all"
               />
               {buscadorCliente && (
-                <div className="bg-[#111111] border border-[#2a2a2a] rounded-[12px] overflow-hidden max-h-40 overflow-y-auto">
+                <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[12px] overflow-hidden max-h-40 overflow-y-auto">
                   {clientesFiltrados.length === 0 ? (
-                    <p className="px-3 py-2.5 text-sm text-[#888888]">Sin resultados</p>
+                    <p className="px-3 py-2.5 text-sm text-[var(--color-text-muted)]">Sin resultados</p>
                   ) : clientesFiltrados.map((c) => (
                     <button
                       key={c.id}
@@ -327,12 +327,12 @@ function NuevoPrestamo() {
                         setBuscadorCliente(c.nombre)
                       }}
                       className={[
-                        'w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-[#222222] transition-colors',
-                        clienteId === c.id ? 'bg-[rgba(245,197,24,0.1)] text-[#f5c518]' : 'text-[white]',
+                        'w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-[var(--color-bg-hover)] transition-colors',
+                        clienteId === c.id ? 'bg-[rgba(245,197,24,0.1)] text-[var(--color-accent)]' : 'text-[white]',
                       ].join(' ')}
                     >
                       <span className="font-medium">{c.nombre}</span>
-                      <span className="text-[#888888] text-xs">CC {c.cedula}</span>
+                      <span className="text-[var(--color-text-muted)] text-xs">CC {c.cedula}</span>
                     </button>
                   ))}
                 </div>
@@ -357,8 +357,8 @@ function NuevoPrestamo() {
                 className={[
                   'px-2.5 h-7 rounded-[8px] text-[11px] font-medium transition-all cursor-pointer',
                   String(monto) === String(v)
-                    ? 'bg-[rgba(245,197,24,0.15)] border border-[#f5c518] text-[#f5c518]'
-                    : 'bg-[rgba(255,255,255,0.03)] border border-[#2a2a2a] text-[#888888] hover:text-white hover:bg-[#1a1a1a]',
+                    ? 'bg-[rgba(245,197,24,0.15)] border border-[#f5c518] text-[var(--color-accent)]'
+                    : 'bg-[rgba(255,255,255,0.03)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-surface)]',
                 ].join(' ')}
               >
                 {v >= 1000000 ? `${v / 1000000}M` : `${v / 1000}k`}
@@ -379,7 +379,7 @@ function NuevoPrestamo() {
                 suffix="cuotas"
               />
               {calculo && Number(monto) > 0 && (
-                <p className="text-[10px] text-[#3b82f6] font-medium px-0.5">
+                <p className="text-[10px] text-[var(--color-info)] font-medium px-0.5">
                   → {numCuotas} cuotas de <span className="font-mono-display">{formatCOP(calculo.cuotaDiaria)}</span>
                 </p>
               )}
@@ -389,10 +389,10 @@ function NuevoPrestamo() {
           {/* Toggle automático/manual — solo en modo prestamo */}
           {modo === 'prestamo' && (
             <div className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-[12px] bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.06)]">
-              <p className="text-[11px] font-semibold text-[#888888] uppercase tracking-[0.05em] shrink-0">Cálculo</p>
+              <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-[0.05em] shrink-0">Cálculo</p>
               <div className="relative grid grid-cols-2 h-9 w-[190px] shrink-0 rounded-[10px] bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] p-[3px]">
                 <div
-                  className="absolute top-[3px] bottom-[3px] left-[3px] w-[calc(50%-3px)] rounded-[8px] bg-[#f5c518] transition-transform duration-200 ease-out"
+                  className="absolute top-[3px] bottom-[3px] left-[3px] w-[calc(50%-3px)] rounded-[8px] bg-[var(--color-accent)] transition-transform duration-200 ease-out"
                   style={{
                     transform: cuotaManualActiva ? 'translateX(100%)' : 'translateX(0)',
                   }}
@@ -411,7 +411,7 @@ function NuevoPrestamo() {
                     }}
                     className={[
                       'relative z-[1] flex items-center justify-center text-[11px] font-semibold rounded-[8px] transition-colors duration-200 cursor-pointer',
-                      cuotaManualActiva === opt.value ? 'text-[#0a0a0a]' : 'text-[#888888] hover:text-[#bbb]',
+                      cuotaManualActiva === opt.value ? 'text-[#0a0a0a]' : 'text-[var(--color-text-muted)] hover:text-[#bbb]',
                     ].join(' ')}
                   >
                     {opt.label}
@@ -435,7 +435,7 @@ function NuevoPrestamo() {
                 onChange={(e) => setTasa(e.target.value)}
                 suffix="%"
               />
-              <p className="text-[10px] text-[#888888] leading-snug px-0.5">
+              <p className="text-[10px] text-[var(--color-text-muted)] leading-snug px-0.5">
                 {modo === 'mercancia'
                   ? 'Déjalo en 0% para mercancía sin interés'
                   : modo === 'prestamo' && cuotaManualActiva
@@ -472,12 +472,12 @@ function NuevoPrestamo() {
                 disabled={modo === 'mercancia'}
               />
               {modo === 'prestamo' && plazoUnidades && (
-                <p className="text-[10px] text-[#888888] leading-snug px-0.5">
+                <p className="text-[10px] text-[var(--color-text-muted)] leading-snug px-0.5">
                   = {plazo} días totales
                 </p>
               )}
               {modo === 'mercancia' && (
-                <p className="text-[10px] text-[#888888] leading-snug px-0.5">
+                <p className="text-[10px] text-[var(--color-text-muted)] leading-snug px-0.5">
                   Calculado automáticamente según cuotas
                 </p>
               )}
@@ -493,7 +493,7 @@ function NuevoPrestamo() {
                 value={cuotaManual}
                 onChange={(e) => setCuotaManual(e.target.value)}
               />
-              <p className="text-[10px] text-[#f5c518] leading-snug px-0.5">
+              <p className="text-[10px] text-[var(--color-accent)] leading-snug px-0.5">
                 Tú defines el valor exacto de cada cuota. El total a pagar = cuota × {plazoUnidades || 'N'} cuotas.
               </p>
             </div>
@@ -501,11 +501,11 @@ function NuevoPrestamo() {
 
           {/* Frecuencia – segmented control */}
           <div className="flex flex-col gap-1.5">
-            <p className="text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em]">Frecuencia de cobro</p>
+            <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">Frecuencia de cobro</p>
             <div className="relative flex h-10 rounded-[12px] bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] p-[3px]">
               {/* Sliding pill */}
               <div
-                className="absolute top-[3px] bottom-[3px] rounded-[10px] bg-[#f5c518] transition-all duration-200 ease-out"
+                className="absolute top-[3px] bottom-[3px] rounded-[10px] bg-[var(--color-accent)] transition-all duration-200 ease-out"
                 style={{
                   width: `calc(25% - 1.5px)`,
                   left: `calc(${['diario','semanal','quincenal','mensual'].indexOf(frecuencia) * 25}% + 1.5px)`,
@@ -523,7 +523,7 @@ function NuevoPrestamo() {
                   onClick={() => handleFrecuenciaChange(f.value)}
                   className={[
                     'relative z-[1] flex-1 text-xs font-semibold transition-colors duration-200 cursor-pointer rounded-[10px]',
-                    frecuencia === f.value ? 'text-[#0a0a0a]' : 'text-[#888888]',
+                    frecuencia === f.value ? 'text-[#0a0a0a]' : 'text-[var(--color-text-muted)]',
                   ].join(' ')}
                 >
                   {f.label}
@@ -540,17 +540,17 @@ function NuevoPrestamo() {
               value={fechaInicio}
               onChange={(e) => setFechaInicio(e.target.value)}
             />
-            <p className="text-[10px] text-[#888888] leading-snug px-0.5">
+            <p className="text-[10px] text-[var(--color-text-muted)] leading-snug px-0.5">
               Por defecto es hoy. Puedes elegir una fecha anterior si el préstamo ya lleva tiempo.
             </p>
           </div>
 
           {/* Toggle préstamo en curso */}
-          <div className="border-t border-[#2a2a2a] pt-4">
+          <div className="border-t border-[var(--color-border)] pt-4">
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-[white]">Préstamo en curso</p>
-                <p className="text-[10px] text-[#666666] leading-snug">
+                <p className="text-[10px] text-[var(--color-text-muted)] leading-snug">
                   Actívalo si este préstamo ya tiene pagos (migración de cuaderno u otro sistema)
                 </p>
               </div>
@@ -559,7 +559,7 @@ function NuevoPrestamo() {
                 onClick={() => { setEsEnCurso(v => !v); if (esEnCurso) setYaAbonado('') }}
                 className={[
                   'relative w-10 h-[22px] rounded-full transition-colors shrink-0 mt-0.5',
-                  esEnCurso ? 'bg-[#f5c518]' : 'bg-[#333333]',
+                  esEnCurso ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-bg-hover)]',
                 ].join(' ')}
               >
                 <span className={[
@@ -578,24 +578,24 @@ function NuevoPrestamo() {
                   onChange={(e) => setYaAbonado(e.target.value)}
                 />
                 {calculo && Number(yaAbonado) > 0 && (
-                  <div className="bg-[#111111] border border-[#2a2a2a] rounded-[10px] px-3 py-2.5 space-y-1">
+                  <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[10px] px-3 py-2.5 space-y-1">
                     <div className="flex justify-between text-xs">
-                      <span className="text-[#888888]">Total a pagar</span>
-                      <span className="text-white font-medium font-mono-display">{formatCOP(calculo.totalAPagar)}</span>
+                      <span className="text-[var(--color-text-muted)]">Total a pagar</span>
+                      <span className="text-[var(--color-text-primary)] font-medium font-mono-display">{formatCOP(calculo.totalAPagar)}</span>
                     </div>
                     <div className="flex justify-between text-xs">
-                      <span className="text-[#888888]">Ya abonado</span>
-                      <span className="text-[#22c55e] font-medium font-mono-display">-{formatCOP(Number(yaAbonado))}</span>
+                      <span className="text-[var(--color-text-muted)]">Ya abonado</span>
+                      <span className="text-[var(--color-success)] font-medium font-mono-display">-{formatCOP(Number(yaAbonado))}</span>
                     </div>
-                    <div className="flex justify-between text-xs border-t border-[#2a2a2a] pt-1">
-                      <span className="text-[#888888] font-semibold">Saldo pendiente</span>
-                      <span className="text-[#f5c518] font-bold font-mono-display">
+                    <div className="flex justify-between text-xs border-t border-[var(--color-border)] pt-1">
+                      <span className="text-[var(--color-text-muted)] font-semibold">Saldo pendiente</span>
+                      <span className="text-[var(--color-accent)] font-bold font-mono-display">
                         {formatCOP(Math.max(0, calculo.totalAPagar - Number(yaAbonado)))}
                       </span>
                     </div>
                   </div>
                 )}
-                <p className="text-[10px] text-[#888888] leading-snug">
+                <p className="text-[10px] text-[var(--color-text-muted)] leading-snug">
                   Se registrará como pago inicial. El saldo pendiente se calculará automáticamente.
                 </p>
               </div>
@@ -604,7 +604,7 @@ function NuevoPrestamo() {
 
           {/* Resumen en tiempo real (pegado al formulario) */}
           {calculo && (
-            <div className="border-t border-[#2a2a2a] pt-4">
+            <div className="border-t border-[var(--color-border)] pt-4">
               <ResumenCalculo calculo={calculo} visible={!!calculo} />
             </div>
           )}
@@ -623,18 +623,18 @@ function NuevoPrestamo() {
 
       {modalInyeccion && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] w-full max-w-md p-5">
-            <h3 className="text-base font-semibold text-white mb-1">Capital insuficiente</h3>
-            <p className="text-sm text-[#cccccc] mb-3">
-              Tu saldo actual de capital es <span className="font-mono-display text-[#f5c518]">{formatCOP(modalInyeccion.saldoActual)}</span>. Te faltan <span className="font-mono-display text-[#ef4444]">{formatCOP(modalInyeccion.faltante)}</span> para este préstamo.
+          <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] w-full max-w-md p-5">
+            <h3 className="text-base font-semibold text-[var(--color-text-primary)] mb-1">Capital insuficiente</h3>
+            <p className="text-sm text-[var(--color-text-primary)] mb-3">
+              Tu saldo actual de capital es <span className="font-mono-display text-[var(--color-accent)]">{formatCOP(modalInyeccion.saldoActual)}</span>. Te faltan <span className="font-mono-display text-[var(--color-danger)]">{formatCOP(modalInyeccion.faltante)}</span> para este préstamo.
             </p>
-            <p className="text-xs text-[#888888] mb-4">
+            <p className="text-xs text-[var(--color-text-muted)] mb-4">
               Puedes inyectar ese dinero ahora (por ejemplo, de tus ahorros o de un socio) y el sistema crea el préstamo. La inyección queda registrada en tus movimientos de capital.
             </p>
 
             <div className="space-y-3">
               <div>
-                <label className="block text-xs text-[#888888] mb-1">Monto a inyectar</label>
+                <label className="block text-xs text-[var(--color-text-muted)] mb-1">Monto a inyectar</label>
                 <MoneyInput
                   value={modalInyeccion.montoInyeccion}
                   onChange={(v) => setModalInyeccion(m => ({ ...m, montoInyeccion: v }))}
@@ -642,7 +642,7 @@ function NuevoPrestamo() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-[#888888] mb-1">Descripción (opcional)</label>
+                <label className="block text-xs text-[var(--color-text-muted)] mb-1">Descripción (opcional)</label>
                 <Input
                   type="text"
                   value={modalInyeccion.descripcion}
@@ -653,7 +653,7 @@ function NuevoPrestamo() {
             </div>
 
             {error && (
-              <div className="mt-3 text-sm text-[#ef4444]">{error}</div>
+              <div className="mt-3 text-sm text-[var(--color-danger)]">{error}</div>
             )}
 
             <div className="flex gap-2 mt-5">
@@ -661,7 +661,7 @@ function NuevoPrestamo() {
                 type="button"
                 onClick={() => { setModalInyeccion(null); setError('') }}
                 disabled={inyectando}
-                className="flex-1 px-4 py-2 bg-[#2a2a2a] text-white text-sm font-semibold rounded-[10px] hover:bg-[#333333]"
+                className="flex-1 px-4 py-2 bg-[var(--color-bg-hover)] text-[var(--color-text-primary)] text-sm font-semibold rounded-[10px] hover:bg-[var(--color-bg-hover)]"
               >
                 Cancelar
               </button>
@@ -669,7 +669,7 @@ function NuevoPrestamo() {
                 type="button"
                 onClick={confirmarInyeccionYCrear}
                 disabled={inyectando}
-                className="flex-1 px-4 py-2 bg-[#22c55e] text-[#04120a] text-sm font-semibold rounded-[10px] hover:bg-[#1dae4f] disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-[var(--color-success)] text-[#0a1f14] text-sm font-semibold rounded-[10px] hover:bg-[color-mix(in_srgb,var(--color-success)_85%,black)] disabled:opacity-50"
               >
                 {inyectando ? 'Procesando...' : 'Inyectar y crear'}
               </button>

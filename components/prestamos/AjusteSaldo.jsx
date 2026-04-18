@@ -19,7 +19,7 @@ const CONFIG = {
   descuento: {
     titulo: 'Aplicar descuento',
     descripcion: 'Resta un monto del saldo del préstamo (pago anticipado, devolución, etc.)',
-    color: '#22c55e',
+    color: 'var(--color-success)',
     signo: '−',
     placeholder: 'Ej: Descuento por pago anticipado 1 mes',
     boton: 'Aplicar descuento',
@@ -91,12 +91,12 @@ export default function AjusteSaldo({
   return (
     <Modal open={open} onClose={handleClose} title={cfg.titulo}>
       <div className="space-y-4">
-        <p className="text-xs text-[#888888]">{cfg.descripcion}</p>
+        <p className="text-xs text-[var(--color-text-muted)]">{cfg.descripcion}</p>
 
         {/* Saldo actual */}
-        <div className="flex items-center justify-between px-3 py-2.5 rounded-[10px] bg-[#111111] border border-[#2a2a2a]">
-          <span className="text-xs text-[#888888]">Saldo actual</span>
-          <span className="text-sm font-semibold text-white font-mono-display">
+        <div className="flex items-center justify-between px-3 py-2.5 rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)]">
+          <span className="text-xs text-[var(--color-text-muted)]">Saldo actual</span>
+          <span className="text-sm font-semibold text-[var(--color-text-primary)] font-mono-display">
             {formatCOP(saldoPendiente)}
           </span>
         </div>
@@ -114,7 +114,7 @@ export default function AjusteSaldo({
 
         {/* Motivo */}
         <div>
-          <label className="block text-[11px] font-medium text-[#888888] uppercase tracking-[0.05em] mb-1.5">
+          <label className="block text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em] mb-1.5">
             Motivo (obligatorio)
           </label>
           <textarea
@@ -122,7 +122,7 @@ export default function AjusteSaldo({
             onChange={(e) => setNota(e.target.value)}
             placeholder={cfg.placeholder}
             rows={2}
-            className="w-full rounded-[10px] border border-[#2a2a2a] bg-[#111111] px-3 py-2.5 text-sm text-white placeholder:text-[#555555] focus:outline-none focus:border-[#f5c518] transition-colors resize-none"
+            className="w-full rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2.5 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] transition-colors resize-none"
           />
         </div>
 
@@ -136,7 +136,7 @@ export default function AjusteSaldo({
             }}
           >
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-[#888888]">
+              <span className="text-xs text-[var(--color-text-muted)]">
                 {tipoAjuste === 'recargo' ? 'Recargo' : 'Descuento'}
               </span>
               <span className="text-sm font-semibold font-mono-display" style={{ color: cfg.color }}>
@@ -144,15 +144,15 @@ export default function AjusteSaldo({
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-xs text-[#888888]">Nuevo saldo</span>
-              <span className="text-sm font-bold text-white font-mono-display">
+              <span className="text-xs text-[var(--color-text-muted)]">Nuevo saldo</span>
+              <span className="text-sm font-bold text-[var(--color-text-primary)] font-mono-display">
                 {formatCOP(nuevoSaldo)}
               </span>
             </div>
           </div>
         )}
 
-        {error && <p className="text-sm text-[#ef4444]">{error}</p>}
+        {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
 
         <div className="flex gap-3 pt-2">
           <Button variant="secondary" onClick={handleClose} className="flex-1">

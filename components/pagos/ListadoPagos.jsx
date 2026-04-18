@@ -76,7 +76,7 @@ export default function ListadoPagos({
 
   if (lista.length === 0) {
     return (
-      <p className="text-sm text-[#888888] text-center py-4">{emptyLabel}</p>
+      <p className="text-sm text-[var(--color-text-muted)] text-center py-4">{emptyLabel}</p>
     )
   }
 
@@ -98,8 +98,8 @@ export default function ListadoPagos({
         const prefijoMonto = tipo === 'recargo' ? '+' : tipo === 'descuento' ? '−' : ''
         const colorMonto =
           tipo === 'recargo' ? '#f97316'
-          : tipo === 'descuento' ? '#22c55e'
-          : '#22c55e'
+          : tipo === 'descuento' ? 'var(--color-success)'
+          : 'var(--color-success)'
         const cliente = getCliente(pago)
         const cobrador = getCobrador(pago)
         const prestamoId = getPrestamoId(pago)
@@ -108,14 +108,14 @@ export default function ListadoPagos({
         return (
           <div
             key={pago.id}
-            className="rounded-[10px] border border-[#2a2a2a] bg-[#111111] px-3 py-2.5"
+            className="rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2.5"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 {mostrarCli && cliente && (
-                  <p className="text-sm font-semibold text-white truncate">{cliente}</p>
+                  <p className="text-sm font-semibold text-[var(--color-text-primary)] truncate">{cliente}</p>
                 )}
-                <p className="text-[11px] text-[#888888] mt-0.5">
+                <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
                   {fmtFecha(pago.fechaPago)}
                   {fmtHora(pago.fechaPago) ? ` · ${fmtHora(pago.fechaPago)}` : ''}
                   {mostrarCob && cobrador ? ` · ${cobrador}` : ''}
@@ -127,7 +127,7 @@ export default function ListadoPagos({
                 {mostrarLinkPrestamo && prestamoId && (
                   <Link
                     href={`/prestamos/${prestamoId}`}
-                    className="inline-block mt-1 text-[11px] text-[#06b6d4] hover:underline"
+                    className="inline-block mt-1 text-[11px] text-[var(--color-info)] hover:underline"
                   >
                     Ver préstamo
                   </Link>

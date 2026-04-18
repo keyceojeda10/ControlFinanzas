@@ -149,7 +149,7 @@ export default function RutasPage() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-xl font-bold text-[white]">Rutas</h1>
-          <p className="text-sm text-[#888888] mt-0.5">
+          <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
             {loading ? '…' : `${rutas.length} ruta${rutas.length !== 1 ? 's' : ''}`}
           </p>
         </div>
@@ -172,7 +172,7 @@ export default function RutasPage() {
           <button
             onClick={descargarBackup}
             disabled={backupLoading}
-            className="h-8 px-3 rounded-[10px] border border-[#2a2a2a] bg-[#141414] text-[11px] text-[#666] hover:text-[#aaa] hover:border-[#333] transition-all disabled:opacity-50 flex items-center gap-1.5"
+            className="h-8 px-3 rounded-[10px] border border-[var(--color-border)] bg-[#141414] text-[11px] text-[#666] hover:text-[var(--color-text-secondary)] hover:border-[var(--color-border)] transition-all disabled:opacity-50 flex items-center gap-1.5"
             title="Guardar copia de seguridad"
           >
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" /></svg>
@@ -181,7 +181,7 @@ export default function RutasPage() {
           <button
             onClick={restaurarBackup}
             disabled={restoreLoading}
-            className="h-8 px-3 rounded-[10px] border border-[#2a2a2a] bg-[#141414] text-[11px] text-[#666] hover:text-[#aaa] hover:border-[#333] transition-all disabled:opacity-50 flex items-center gap-1.5"
+            className="h-8 px-3 rounded-[10px] border border-[var(--color-border)] bg-[#141414] text-[11px] text-[#666] hover:text-[var(--color-text-secondary)] hover:border-[var(--color-border)] transition-all disabled:opacity-50 flex items-center gap-1.5"
             title="Restaurar copia de seguridad"
           >
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M16 6l-4-4-4 4M12 3v12" /></svg>
@@ -192,7 +192,7 @@ export default function RutasPage() {
 
       {/* Mini formulario inline */}
       {showForm && (
-        <form onSubmit={crearRuta} className="bg-[#1a1a1a] border border-[#f5c518]/30 rounded-[16px] p-4 mb-4 flex gap-3">
+        <form onSubmit={crearRuta} className="bg-[var(--color-bg-surface)] border border-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] rounded-[16px] p-4 mb-4 flex gap-3">
           <Input
             placeholder="Nombre de la ruta (ej: Zona Norte)"
             value={nombre}
@@ -207,13 +207,13 @@ export default function RutasPage() {
       )}
 
       {isOffline && (
-        <div className="bg-[rgba(245,197,24,0.1)] border border-[rgba(245,197,24,0.2)] text-[#f5c518] text-xs rounded-[12px] px-4 py-2.5 mb-4 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-[#f5c518] animate-pulse shrink-0" />
+        <div className="bg-[var(--color-warning-dim)] border border-[color-mix(in_srgb,var(--color-warning)_30%,transparent)] text-[var(--color-warning)] text-xs rounded-[12px] px-4 py-2.5 mb-4 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[var(--color-accent)] animate-pulse shrink-0" />
           Datos guardados — sin conexión
         </div>
       )}
       {error && (
-        <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-sm rounded-[12px] px-4 py-3 mb-4">
+        <div className="bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[12px] px-4 py-3 mb-4">
           {error}
         </div>
       )}
@@ -227,14 +227,14 @@ export default function RutasPage() {
       {!loading && rutas.length === 0 && !error && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="w-14 h-14 rounded-full bg-[rgba(245,197,24,0.1)] flex items-center justify-center mb-4">
-            <svg className="w-7 h-7 text-[#f5c518]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-7 h-7 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                 d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
             </svg>
           </div>
           <p className="text-sm font-medium text-[white]">Sin rutas aún</p>
-          <p className="text-xs text-[#888888] mt-1">Crea una ruta y asígnale un cobrador</p>
-          <button onClick={() => setShowForm(true)} className="mt-4 text-sm text-[#f5c518] hover:underline">
+          <p className="text-xs text-[var(--color-text-muted)] mt-1">Crea una ruta y asígnale un cobrador</p>
+          <button onClick={() => setShowForm(true)} className="mt-4 text-sm text-[var(--color-accent)] hover:underline">
             Crear primera ruta
           </button>
         </div>
@@ -247,7 +247,7 @@ export default function RutasPage() {
               ? Math.min(100, Math.round((r.recaudadoHoy / r.esperadoHoy) * 100))
               : 0
             const isComplete = progreso >= 100
-            const accentColor = isComplete ? '#22c55e' : '#f5c518'
+            const accentColor = isComplete ? 'var(--color-success)' : 'var(--color-accent)'
             return (
               <Link
                 key={r.id}
@@ -274,7 +274,7 @@ export default function RutasPage() {
                       <p className="text-sm font-bold text-[white] truncate">{r.nombre}</p>
                       <p className="text-[11px] text-[#666] mt-0.5">
                         {r.cobrador
-                          ? <span className="text-[#a855f7]">{r.cobrador.nombre}</span>
+                          ? <span className="text-[var(--color-purple)]">{r.cobrador.nombre}</span>
                           : 'Sin cobrador'
                         }
                         <span className="mx-1.5 text-[#666]">·</span>
@@ -296,12 +296,12 @@ export default function RutasPage() {
                 {/* Metrics row */}
                 <div className="flex gap-2 mb-3">
                   <div className="flex-1 bg-[rgba(255,255,255,0.03)] rounded-[10px] px-2.5 py-2">
-                    <p className="text-[9px] uppercase tracking-wider text-[#888] mb-0.5">Recaudado</p>
-                    <p className="text-xs font-bold text-[#22c55e] font-mono-display">{formatCOP(r.recaudadoHoy)}</p>
+                    <p className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] mb-0.5">Recaudado</p>
+                    <p className="text-xs font-bold text-[var(--color-success)] font-mono-display">{formatCOP(r.recaudadoHoy)}</p>
                   </div>
                   <div className="flex-1 bg-[rgba(255,255,255,0.03)] rounded-[10px] px-2.5 py-2">
-                    <p className="text-[9px] uppercase tracking-wider text-[#888] mb-0.5">Esperado</p>
-                    <p className="text-xs font-bold text-[#999] font-mono-display">{formatCOP(r.esperadoHoy)}</p>
+                    <p className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] mb-0.5">Esperado</p>
+                    <p className="text-xs font-bold text-[var(--color-text-secondary)] font-mono-display">{formatCOP(r.esperadoHoy)}</p>
                   </div>
                 </div>
 

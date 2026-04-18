@@ -15,7 +15,7 @@ export default function PagoExitoso() {
 
   // Confetti simple
   useEffect(() => {
-    const colors = ['#22c55e', '#3b82f6', '#f59e0b', '#a855f7', '#ef4444']
+    const colors = ['var(--color-success)', '#3b82f6', 'var(--color-warning)', 'var(--color-purple)', 'var(--color-danger)']
     const items = Array.from({ length: 40 }, (_, i) => ({
       id: i,
       left: Math.random() * 100,
@@ -28,7 +28,7 @@ export default function PagoExitoso() {
   }, [])
 
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center bg-[#0a0a0a] px-4 relative overflow-hidden">
+    <div className="min-h-dvh flex flex-col items-center justify-center bg-[var(--color-bg-base)] px-4 relative overflow-hidden">
       {/* Confetti */}
       {dots.map((d) => (
         <div
@@ -52,7 +52,7 @@ export default function PagoExitoso() {
           className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-6"
           style={{ background: 'rgba(16,185,129,0.15)', border: '2px solid rgba(16,185,129,0.3)' }}
         >
-          <svg className="w-10 h-10 text-[#22c55e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-10 h-10 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
@@ -60,16 +60,16 @@ export default function PagoExitoso() {
         <h1 className="text-2xl font-bold text-[white] mb-2">
           ¡Pago exitoso!
         </h1>
-        <p className="text-sm text-[#888888] mb-2">
+        <p className="text-sm text-[var(--color-text-muted)] mb-2">
           Tu plan ha sido activado correctamente.
         </p>
-        <p className="text-xs text-[#555555] mb-8">
+        <p className="text-xs text-[var(--color-text-muted)] mb-8">
           En unos segundos se actualizará tu cuenta.
         </p>
 
         <Link
           href="/dashboard"
-          className="inline-flex items-center justify-center h-11 px-8 rounded-[12px] bg-[#22c55e] hover:bg-[#16a34a] text-white font-semibold text-sm transition-all"
+          className="inline-flex items-center justify-center h-11 px-8 rounded-[12px] bg-[var(--color-success)] hover:bg-[#16a34a] text-[var(--color-text-primary)] font-semibold text-sm transition-all"
         >
           Ir al dashboard
         </Link>

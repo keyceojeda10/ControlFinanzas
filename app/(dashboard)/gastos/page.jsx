@@ -9,9 +9,9 @@ import { SkeletonCard } from '@/components/ui/Skeleton'
 import { formatCOP } from '@/lib/calculos'
 
 const ESTADO_COLORS = {
-  pendiente: 'bg-[rgba(245,158,11,0.15)] text-[#f59e0b] border-[rgba(245,158,11,0.3)]',
-  aprobado: 'bg-[rgba(34,197,94,0.15)] text-[#22c55e] border-[rgba(34,197,94,0.3)]',
-  rechazado: 'bg-[rgba(239,68,68,0.15)] text-[#ef4444] border-[rgba(239,68,68,0.3)]',
+  pendiente: 'bg-[var(--color-warning-dim)] text-[var(--color-warning)] border-[color-mix(in_srgb,var(--color-warning)_30%,transparent)]',
+  aprobado: 'bg-[var(--color-success-dim)] text-[var(--color-success)] border-[color-mix(in_srgb,var(--color-success)_30%,transparent)]',
+  rechazado: 'bg-[var(--color-danger-dim)] text-[var(--color-danger)] border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)]',
 }
 
 const TABS = [
@@ -123,7 +123,7 @@ export default function GastosPage() {
     return (
       <div className="p-4">
         <Card>
-          <p className="text-sm text-[#888888]">Solo el administrador puede gestionar gastos.</p>
+          <p className="text-sm text-[var(--color-text-muted)]">Solo el administrador puede gestionar gastos.</p>
         </Card>
       </div>
     )
@@ -132,8 +132,8 @@ export default function GastosPage() {
   return (
     <div className="p-4 space-y-4">
       <div>
-        <h1 className="text-xl font-bold text-white">Gastos menores</h1>
-        <p className="text-sm text-[#888888]">Aprobar, rechazar y revisar gastos reportados por tus cobradores</p>
+        <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Gastos menores</h1>
+        <p className="text-sm text-[var(--color-text-muted)]">Aprobar, rechazar y revisar gastos reportados por tus cobradores</p>
       </div>
 
       {/* Tabs estado */}
@@ -147,7 +147,7 @@ export default function GastosPage() {
               'px-4 py-2 rounded-full border text-xs font-medium whitespace-nowrap transition-colors',
               tab === t.key
                 ? 'bg-white text-black border-white'
-                : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#888888] hover:text-white',
+                : 'bg-[var(--color-bg-surface)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]',
             ].join(' ')}
           >
             {t.label}
@@ -158,20 +158,20 @@ export default function GastosPage() {
       {/* Filtros */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div>
-          <label className="text-xs text-[#888888] mb-1 block">Fecha (opcional)</label>
+          <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Fecha (opcional)</label>
           <div className="flex gap-2">
             <input
               type="date"
               value={fecha}
               max={getColombiaDateStr()}
               onChange={(e) => setFecha(e.target.value)}
-              className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-[10px] px-3 py-2 text-sm text-white"
+              className="flex-1 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[10px] px-3 py-2 text-sm text-[var(--color-text-primary)]"
             />
             {fecha && (
               <button
                 type="button"
                 onClick={() => setFecha('')}
-                className="px-3 py-2 text-xs text-[#888888] hover:text-white border border-[#2a2a2a] rounded-[10px]"
+                className="px-3 py-2 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] border border-[var(--color-border)] rounded-[10px]"
               >
                 Limpiar
               </button>
@@ -180,11 +180,11 @@ export default function GastosPage() {
         </div>
         {cobradores.length > 0 && (
           <div>
-            <label className="text-xs text-[#888888] mb-1 block">Cobrador</label>
+            <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Cobrador</label>
             <select
               value={cobradorId}
               onChange={(e) => setCobradorId(e.target.value)}
-              className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-[10px] px-3 py-2 text-sm text-white"
+              className="w-full bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[10px] px-3 py-2 text-sm text-[var(--color-text-primary)]"
             >
               <option value="">Todos</option>
               {cobradores.map((c) => (
@@ -197,10 +197,10 @@ export default function GastosPage() {
           <Card className="w-full">
             <div className="flex items-center justify-between px-1">
               <div>
-                <p className="text-xs text-[#888888]">Total mostrado</p>
-                <p className="text-lg font-bold text-white font-mono-display">{formatCOP(totales.suma)}</p>
+                <p className="text-xs text-[var(--color-text-muted)]">Total mostrado</p>
+                <p className="text-lg font-bold text-[var(--color-text-primary)] font-mono-display">{formatCOP(totales.suma)}</p>
               </div>
-              <span className="text-xs text-[#888888]">{totales.cantidad} gasto{totales.cantidad === 1 ? '' : 's'}</span>
+              <span className="text-xs text-[var(--color-text-muted)]">{totales.cantidad} gasto{totales.cantidad === 1 ? '' : 's'}</span>
             </div>
           </Card>
         </div>
@@ -212,21 +212,21 @@ export default function GastosPage() {
       ) : gastos.length === 0 ? (
         <Card>
           <div className="text-center py-6">
-            <p className="text-sm text-[#888888]">No hay gastos {TABS.find(t => t.key === tab)?.label.toLowerCase()}</p>
+            <p className="text-sm text-[var(--color-text-muted)]">No hay gastos {TABS.find(t => t.key === tab)?.label.toLowerCase()}</p>
           </div>
         </Card>
       ) : (
         <div className="space-y-3">
           {gastos.map((g) => (
-            <div key={g.id} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[12px] p-4">
+            <div key={g.id} className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] p-4">
               <div className="flex items-start justify-between mb-2 gap-3">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{g.description}</p>
-                  <p className="text-xs text-[#888888]">
+                  <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">{g.description}</p>
+                  <p className="text-xs text-[var(--color-text-muted)]">
                     {g.cobradorNombre || 'Owner'} • {fmtFecha(g.fecha)}
                   </p>
                 </div>
-                <p className="text-sm font-bold text-white font-mono-display whitespace-nowrap">{formatCOP(g.monto)}</p>
+                <p className="text-sm font-bold text-[var(--color-text-primary)] font-mono-display whitespace-nowrap">{formatCOP(g.monto)}</p>
               </div>
               <div className="flex items-center justify-between gap-2">
                 <span className={[
@@ -260,7 +260,7 @@ export default function GastosPage() {
                     onClick={() => handleEliminar(g)}
                     disabled={procesando === g.id}
                     title="Eliminar gasto"
-                    className="w-8 h-8 flex items-center justify-center rounded-[8px] text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] disabled:opacity-50 transition-colors"
+                    className="w-8 h-8 flex items-center justify-center rounded-[8px] text-[var(--color-danger)] hover:bg-[var(--color-danger-dim)] disabled:opacity-50 transition-colors"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

@@ -27,16 +27,16 @@ export default function PrestamoCard({ prestamo: p }) {
         'block rounded-[14px] p-4 transition-all duration-150 group',
         enMora
           ? 'bg-[rgba(239,68,68,0.06)] border-2 border-[rgba(239,68,68,0.3)] hover:border-[rgba(239,68,68,0.5)]'
-          : 'bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#f5c518]/40 hover:bg-[#222222]',
+          : 'bg-[var(--color-bg-surface)] border border-[var(--color-border)] hover:border-[#f5c518]/40 hover:bg-[var(--color-bg-hover)]',
       ].join(' ')}
     >
       {/* Alerta de mora */}
       {enMora && (
         <div className="flex items-center gap-2 mb-3 px-2.5 py-1.5 rounded-[8px] bg-[rgba(239,68,68,0.1)]">
-          <svg className="w-3.5 h-3.5 text-[#ef4444] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3.5 h-3.5 text-[var(--color-danger)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
-          <span className="text-xs font-semibold text-[#ef4444]">
+          <span className="text-xs font-semibold text-[var(--color-danger)]">
             {p.diasMora} {p.diasMora === 1 ? 'día' : 'días'} en mora
           </span>
         </div>
@@ -51,14 +51,14 @@ export default function PrestamoCard({ prestamo: p }) {
               <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="2.5" />
               <circle
                 cx="18" cy="18" r="15" fill="none"
-                stroke={porcentaje === 100 ? '#10b981' : enMora ? '#ef4444' : '#f5c518'}
+                stroke={porcentaje === 100 ? 'var(--color-success)' : enMora ? 'var(--color-danger)' : 'var(--color-accent)'}
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeDasharray={`${porcentaje * 94.25 / 100} 94.25`}
                 className="transition-all duration-500"
               />
             </svg>
-            <span className={['absolute inset-0 flex items-center justify-center text-[11px] font-bold', enMora ? 'text-[#ef4444]' : 'text-[#f5c518]'].join(' ')}>
+            <span className={['absolute inset-0 flex items-center justify-center text-[11px] font-bold', enMora ? 'text-[var(--color-danger)]' : 'text-[var(--color-accent)]'].join(' ')}>
               {p.cliente?.nombre?.[0]?.toUpperCase() ?? '?'}
             </span>
           </div>
@@ -70,7 +70,7 @@ export default function PrestamoCard({ prestamo: p }) {
         <div className="flex flex-col items-end gap-1">
           {!enMora && <Badge variant={badge.variant}>{badge.label}</Badge>}
           {p.pagoHoy && (
-            <span className="flex items-center gap-1 text-[10px] text-[#10b981]">
+            <span className="flex items-center gap-1 text-[10px] text-[var(--color-success)]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] inline-block" />
               Pagó hoy
             </span>
@@ -82,7 +82,7 @@ export default function PrestamoCard({ prestamo: p }) {
       <div className="flex items-end justify-between mb-2">
         <div>
           <p className="text-[10px] text-[#8b95a5]">Saldo pendiente</p>
-          <p className={['text-lg font-bold leading-none font-mono-display', enMora ? 'text-[#ef4444]' : 'text-[#f1f5f9]'].join(' ')}>
+          <p className={['text-lg font-bold leading-none font-mono-display', enMora ? 'text-[var(--color-danger)]' : 'text-[#f1f5f9]'].join(' ')}>
             {formatCOP(p.saldoPendiente)}
           </p>
         </div>
@@ -93,12 +93,12 @@ export default function PrestamoCard({ prestamo: p }) {
       </div>
 
       {/* Barra de progreso */}
-      <div className="h-1.5 bg-[#2a2a2a] rounded-full overflow-hidden mb-2">
+      <div className="h-1.5 bg-[var(--color-bg-hover)] rounded-full overflow-hidden mb-2">
         <div
           className="h-full rounded-full transition-all"
           style={{
             width: `${porcentaje}%`,
-            background: porcentaje === 100 ? '#10b981' : enMora ? '#ef4444' : '#f5c518',
+            background: porcentaje === 100 ? 'var(--color-success)' : enMora ? 'var(--color-danger)' : 'var(--color-accent)',
           }}
         />
       </div>
@@ -111,8 +111,8 @@ export default function PrestamoCard({ prestamo: p }) {
 
       {proximoCobroLabel && (
         <div className={[
-          'mt-2 pt-2 border-t border-[#2a2a2a] flex items-center gap-1.5 text-[10px]',
-          cobroVencido ? 'text-[#ef4444]' : 'text-[#8b95a5]',
+          'mt-2 pt-2 border-t border-[var(--color-border)] flex items-center gap-1.5 text-[10px]',
+          cobroVencido ? 'text-[var(--color-danger)]' : 'text-[#8b95a5]',
         ].join(' ')}>
           <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
