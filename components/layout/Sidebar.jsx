@@ -10,6 +10,7 @@ import { useOffline } from '@/components/providers/OfflineProvider'
 import { useState, useEffect } from 'react'
 import InstallButton from './InstallButton'
 import ThemeToggle from '@/components/ui/ThemeToggle'
+import { limpiarDatosOffline } from '@/lib/offline'
 
 const formatCOPCompact = (monto = 0) => `$${Math.round(monto || 0).toLocaleString('es-CO')}`
 
@@ -386,8 +387,9 @@ export default function Sidebar() {
           <div className="flex-1"><InstallButton variant="desktop" /></div>
         </div>
         <button
-          onClick={() => {
+          onClick={async () => {
             try { navigator.serviceWorker?.controller?.postMessage({ type: 'CLEAR_API_CACHE' }) } catch {}
+            await limpiarDatosOffline()
             signOut({ callbackUrl: '/login' })
           }}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm focus-visible:outline-none focus-visible:ring-2 transition-all duration-150 cf-signout-btn"

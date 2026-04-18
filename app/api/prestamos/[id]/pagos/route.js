@@ -128,6 +128,30 @@ export async function POST(request, { params }) {
     montoFinal = Math.min(montoFinal, saldoActual)
   }
 
+  // Idempotencia offline: si la nota incluye [offline:ISO], ese ISO es unique key.
+  // Si ya existe un pago con esa misma nota en este prestamo, devolvemos el existente
+  // (evita duplicados cuando el cliente reintenta tras timeout que sí persistió en DB).
+  const offlineMatch = typeof nota === 'string' ? nota.match(/\[offline:([^\]]+)\]/) : null
+  if (offlineMatch) {
+    const existente = await prisma.pago.findFirst({
+      where: {
+        prestamoId,
+        organizationId,
+        nota: { contains: `[offline:${offlineMatch[1]}]` },
+      },
+      select: { id: true, fechaPago: true, montoPagado: true },
+    })
+    if (existente) {
+      return Response.json({
+        ok: true,
+        idempotente: true,
+        pagoId: existente.id,
+        fechaPago: existente.fechaPago,
+        montoPagado: existente.montoPagado,
+      })
+    }
+  }
+
   // Detección de duplicado: mismo préstamo + mismo monto + mismo tipo en los últimos 60s
   const url = new URL(request.url)
   const confirmarDuplicado = url.searchParams.get('confirmarDuplicado') === '1'

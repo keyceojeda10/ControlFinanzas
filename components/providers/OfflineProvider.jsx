@@ -262,7 +262,11 @@ export default function OfflineProvider({ children }) {
 
   // Bulk sync: download everything for offline (manual trigger)
   const startBulkSync = async () => {
-    if (bulkSyncing || !navigator.onLine) return
+    if (!navigator.onLine) return
+    checkStaleLock()
+    if (bulkSyncing || syncingRef.current) return
+    syncingRef.current = true
+    syncingStartedAtRef.current = Date.now()
     setBulkSyncing(true)
     setBulkProgress({ step: 'downloading', message: 'Descargando datos...' })
     try {
@@ -274,6 +278,8 @@ export default function OfflineProvider({ children }) {
       setBulkProgress({ step: 'error', message: 'Error al sincronizar. Intenta de nuevo.' })
       setTimeout(() => setBulkProgress(null), 4000)
     } finally {
+      syncingRef.current = false
+      syncingStartedAtRef.current = 0
       setBulkSyncing(false)
     }
   }

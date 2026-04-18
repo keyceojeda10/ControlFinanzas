@@ -8,6 +8,7 @@ import { signOut }      from 'next-auth/react'
 import { useAuth }      from '@/hooks/useAuth'
 import { useEffect, useRef, useState } from 'react'
 import ThemeToggle      from '@/components/ui/ThemeToggle'
+import { limpiarDatosOffline } from '@/lib/offline'
 
 
 const PAGE_TITLES = {
@@ -151,8 +152,9 @@ export default function Header() {
               <div style={{ borderTop: '1px solid var(--color-border)' }} />
 
               <button
-                onClick={() => {
+                onClick={async () => {
                   try { navigator.serviceWorker?.controller?.postMessage({ type: 'CLEAR_API_CACHE' }) } catch {}
+                  await limpiarDatosOffline()
                   signOut({ callbackUrl: '/login' })
                 }}
                 className="w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors cf-signout-btn"
