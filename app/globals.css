@@ -602,7 +602,24 @@ html[data-theme="light"] [style*="#0a0a0a"],
 html[data-theme="light"] [style*="#0d0d12"],
 html[data-theme="light"] [style*="#111111"],
 html[data-theme="light"] [style*="#0f0f17"],
-html[data-theme="light"] [style*="#060609"] {
+html[data-theme="light"] [style*="#060609"],
+html[data-theme="light"] [style*="#141414"],
+html[data-theme="light"] [style*="#151515"],
+html[data-theme="light"] [style*="#161616"],
+html[data-theme="light"] [style*="#1f1f1f"],
+html[data-theme="light"] [style*="#202020"],
+html[data-theme="light"] [style*="#0c0c0c"],
+html[data-theme="light"] [style*="#121212"],
+html[data-theme="light"] [style*="rgba(26,26,26"],
+html[data-theme="light"] [style*="rgba(20,20,20"],
+html[data-theme="light"] [style*="rgba(10,10,10"] {
+  background: var(--color-bg-card) !important;
+  background-image: none !important;
+}
+
+/* Aside/sidebar ya cubre por regla previa, aquí refuerzo cards con Card component
+   que aceptan propsStyle con gradiente oscuro inline */
+html[data-theme="light"] [style*="linear-gradient"][style*="rgba(0,0,0"] {
   background: var(--color-bg-card) !important;
   background-image: none !important;
 }
