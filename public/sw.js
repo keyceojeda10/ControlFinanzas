@@ -1,6 +1,6 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME = 'cf-v9'
-const API_CACHE  = 'cf-api-v9'
+const CACHE_NAME = 'cf-v10'
+const API_CACHE  = 'cf-api-v10'
 
 // Only precache static assets (NOT auth-protected pages)
 const PRECACHE_URLS = [
@@ -39,8 +39,10 @@ self.addEventListener('install', (e) => {
       })
     )
   )
-  // Do NOT call skipWaiting() here — wait for all tabs to close
-  // This prevents mid-session cache wipes during deploys
+  // skipWaiting: activar el SW nuevo inmediatamente. Necesario porque la
+  // logica del fallback offline cambio y los usuarios no pueden esperar a
+  // cerrar todas las pestañas para recibir el fix.
+  self.skipWaiting()
 })
 
 // ─── Activate: clean old caches (incluyendo versiones viejas de API) ──────
@@ -147,7 +149,7 @@ async function networkFirstPage(request) {
     const cached = await caches.match(request)
     if (cached) return cached
 
-    // Fallback: si es una ruta dinámica sin cache, servir el shell del padre
+    // Fallback cascada: padre de ruta dinamica -> dashboard -> cualquier pagina cacheada
     try {
       const url = new URL(request.url)
       const match = DYNAMIC_ROUTE_FALLBACKS.find(r => url.pathname.startsWith(r.prefix) && url.pathname !== r.fallback)
@@ -155,9 +157,19 @@ async function networkFirstPage(request) {
         const parentCached = await caches.match(match.fallback)
         if (parentCached) return parentCached
       }
-      // Fallback final: dashboard shell (siempre cacheado tras primera visita)
+      // Dashboard shell
       const dashboardCached = await caches.match('/dashboard')
       if (dashboardCached) return dashboardCached
+      // Ultimo recurso: cualquier pagina dashboard cacheada (la primera que aparezca)
+      const cache = await caches.open(CACHE_NAME)
+      const keys = await cache.keys()
+      for (const req of keys) {
+        const u = new URL(req.url)
+        if (['/dashboard', '/clientes', '/prestamos', '/rutas', '/caja'].some(p => u.pathname === p)) {
+          const hit = await cache.match(req)
+          if (hit) return hit
+        }
+      }
     } catch {}
 
     return new Response('<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="background:#0a0a0a;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif"><div style="text-align:center"><h2>Sin conexion</h2><p>Revisa tu conexion a internet</p><p style="color:#f5c518;font-size:13px;margin-top:16px">Usa el boton &quot;Preparar offline&quot; en el Dashboard antes de salir</p></div></body></html>', {
