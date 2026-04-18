@@ -7,6 +7,7 @@ import dynamic                 from 'next/dynamic'
 import { Input, Select }       from '@/components/ui/Input'
 import { Button }              from '@/components/ui/Button'
 import DiasSinCobroSelector    from '@/components/ui/DiasSinCobroSelector'
+import { guardarClientePendiente } from '@/lib/offline'
 
 const LocationPicker = dynamic(() => import('@/components/clientes/LocationPicker'), { ssr: false })
 
@@ -103,6 +104,33 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
     setLoading(true)
     setError('')
 
+    const payload = {
+      nombre:     form.nombre.trim(),
+      cedula:     form.cedula.trim(),
+      telefono:   form.telefono.trim(),
+      direccion:  form.direccion.trim() || undefined,
+      referencia: form.referencia.trim() || undefined,
+      notas:      form.notas.trim()      || undefined,
+      rutaId:     form.rutaId || undefined,
+      grupoCobroId: form.grupoCobroId || undefined,
+      latitud:    form.latitud,
+      longitud:   form.longitud,
+      diasSinCobro: diasSinCobro.length > 0 ? diasSinCobro : null,
+    }
+
+    // Si offline y es creación nueva, encolar y mostrar en lista con ID temporal
+    if (!esEdicion && typeof navigator !== 'undefined' && !navigator.onLine) {
+      try {
+        const tempId = await guardarClientePendiente(payload)
+        router.push(`/clientes/${tempId}`)
+        return
+      } catch {
+        setError('No se pudo guardar offline.')
+        setLoading(false)
+        return
+      }
+    }
+
     try {
       const url    = esEdicion ? `/api/clientes/${clienteInicial.id}` : '/api/clientes'
       const method = esEdicion ? 'PATCH' : 'POST'
@@ -110,20 +138,15 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
       const res  = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({
-          nombre:     form.nombre.trim(),
-          cedula:     form.cedula.trim(),
-          telefono:   form.telefono.trim(),
-          direccion:  form.direccion.trim() || undefined,
-          referencia: form.referencia.trim() || undefined,
-          notas:      form.notas.trim()      || undefined,
-          rutaId:     form.rutaId || undefined,
-          grupoCobroId: form.grupoCobroId || undefined,
-          latitud:    form.latitud,
-          longitud:   form.longitud,
-          diasSinCobro: diasSinCobro.length > 0 ? diasSinCobro : null,
-        }),
+        body:    JSON.stringify(payload),
       })
+
+      // SW puede responder 503 sin red — encolar
+      if (res.status === 503 && !esEdicion && !navigator.onLine) {
+        const tempId = await guardarClientePendiente(payload)
+        router.push(`/clientes/${tempId}`)
+        return
+      }
 
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Error al guardar'); return }
@@ -131,6 +154,14 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
       router.push(`/clientes/${data.id}`)
       router.refresh()
     } catch {
+      // Fallback offline si el fetch falló por red
+      if (!esEdicion && !navigator.onLine) {
+        try {
+          const tempId = await guardarClientePendiente(payload)
+          router.push(`/clientes/${tempId}`)
+          return
+        } catch { /* abajo */ }
+      }
       setError('Error de conexión. Intenta de nuevo.')
     } finally {
       setLoading(false)

@@ -180,9 +180,15 @@ export async function POST(request) {
   // Verificar cédula única en la organización
   const existe = await prisma.cliente.findUnique({
     where: { organizationId_cedula: { organizationId, cedula: cedula.trim() } },
+    select: { id: true, estado: true },
   })
   if (existe) {
-    return Response.json({ error: 'Ya existe un cliente con esa cédula' }, { status: 409 })
+    // Devolver existingId permite al sync offline mapear su tempId al cliente
+    // que ya existía (p.ej. el mismo cobrador creó el cliente desde otra sesión).
+    return Response.json(
+      { error: 'Ya existe un cliente con esa cédula', existingId: existe.id },
+      { status: 409 }
+    )
   }
 
   // Si se envía rutaId, verificar que pertenece a la organización

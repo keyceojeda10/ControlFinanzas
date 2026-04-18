@@ -9,6 +9,7 @@ import { Input }                                   from '@/components/ui/Input'
 import MoneyInput                                  from '@/components/ui/MoneyInput'
 import { calcularPrestamo, formatCOP }             from '@/lib/calculos'
 import ResumenCalculo                              from '@/components/prestamos/ResumenCalculo'
+import { guardarPrestamoPendiente, obtenerClientesOffline } from '@/lib/offline'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
 const hoyISO = () => getColombiaDate().toISOString().slice(0, 10)
@@ -70,18 +71,28 @@ function NuevoPrestamo() {
     if (!authLoading && !puedeCrearPrestamos) router.replace('/prestamos')
   }, [authLoading, puedeCrearPrestamos, router])
 
-  // Cargar clientes para el selector
+  // Cargar clientes para el selector — online + offline (cache/pendientes)
   useEffect(() => {
-    fetch('/api/clientes')
-      .then((r) => r.json())
-      .then((d) => {
-        setClientes(Array.isArray(d) ? d : [])
-        if (clienteIdParam) {
-          const c = d.find((x) => x.id === clienteIdParam)
-          if (c) setClienteNombre(c.nombre)
-        }
-      })
-      .catch(() => {})
+    const cargar = async () => {
+      let lista = []
+      if (navigator.onLine) {
+        try {
+          const r = await fetch('/api/clientes')
+          const d = await r.json()
+          lista = Array.isArray(d) ? d : []
+        } catch {}
+      }
+      if (lista.length === 0) {
+        // Fallback: leer cache offline (incluye pendientes inyectados optimistamente)
+        try { lista = await obtenerClientesOffline() } catch {}
+      }
+      setClientes(lista)
+      if (clienteIdParam) {
+        const c = lista.find((x) => x.id === clienteIdParam)
+        if (c) setClienteNombre(c.nombre)
+      }
+    }
+    cargar()
   }, [clienteIdParam])
 
   // Default plazo por frecuencia (en unidades de esa frecuencia)
@@ -174,6 +185,31 @@ function NuevoPrestamo() {
 
     setLoading(true)
     setError('')
+
+    const payloadOffline = {
+      clienteId,
+      montoPrestado: Number(monto),
+      tasaInteres: Number(tasa),
+      diasPlazo: Number(plazo),
+      fechaInicio,
+      frecuencia,
+      ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
+      ...(cuotaManualActiva && Number(cuotaManual) > 0 && { cuotaManual: Number(cuotaManual) }),
+    }
+
+    // Offline: encolar sin intentar fetch (evita esperar timeout)
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      try {
+        const tempId = await guardarPrestamoPendiente(payloadOffline)
+        router.push(`/prestamos/${tempId}`)
+        return
+      } catch {
+        setError('No se pudo guardar offline.')
+        setLoading(false)
+        return
+      }
+    }
+
     try {
       const { ok, data } = await crearPrestamoRequest()
       if (!ok) {
@@ -191,6 +227,13 @@ function NuevoPrestamo() {
       }
       router.push(`/prestamos/${data.id}`)
     } catch {
+      if (!navigator.onLine) {
+        try {
+          const tempId = await guardarPrestamoPendiente(payloadOffline)
+          router.push(`/prestamos/${tempId}`)
+          return
+        } catch {}
+      }
       setError('Error de conexión. Intenta de nuevo.')
     } finally {
       setLoading(false)

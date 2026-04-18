@@ -6,7 +6,7 @@ import { useRouter }                 from 'next/navigation'
 import Link                          from 'next/link'
 import { useAuth }                   from '@/hooks/useAuth'
 import { useOffline }                from '@/components/providers/OfflineProvider'
-import { obtenerClienteOffline }     from '@/lib/offline'
+import { obtenerClienteOffline, resolverTempId }     from '@/lib/offline'
 import { Badge }                     from '@/components/ui/Badge'
 import { Button }                    from '@/components/ui/Button'
 import { Card }                      from '@/components/ui/Card'
@@ -62,6 +62,27 @@ export default function ClienteDetallePage({ params }) {
     const shouldUseSoftRefresh = soft && hasLoadedOnceRef.current
     if (!shouldUseSoftRefresh) setLoading(true)
     setIsOffline(false)
+
+    // Temp ID (creado offline) — si ya se sincronizó, redirigir al ID real
+    if (typeof id === 'string' && id.startsWith('offline-')) {
+      try {
+        const realId = await resolverTempId(id)
+        if (realId) {
+          router.replace(`/clientes/${realId}`)
+          return
+        }
+      } catch {}
+      try {
+        const cached = await obtenerClienteOffline(id)
+        if (cached) {
+          setCliente(cached)
+          setIsOffline(true)
+          if (!shouldUseSoftRefresh) setLoading(false)
+          hasLoadedOnceRef.current = true
+          return
+        }
+      } catch {}
+    }
 
     // Offline: prefer IndexedDB (SW cache may be stale)
     if (!navigator.onLine) {

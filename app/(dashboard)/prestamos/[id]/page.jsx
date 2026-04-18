@@ -6,7 +6,7 @@ import { useRouter }                  from 'next/navigation'
 import Link                           from 'next/link'
 import { useAuth }                    from '@/hooks/useAuth'
 import { useOffline }                 from '@/components/providers/OfflineProvider'
-import { obtenerPrestamoOffline }     from '@/lib/offline'
+import { obtenerPrestamoOffline, resolverTempId }     from '@/lib/offline'
 import { Badge }                      from '@/components/ui/Badge'
 import { Card }                       from '@/components/ui/Card'
 import { Modal }                      from '@/components/ui/Modal'
@@ -80,6 +80,26 @@ export default function PrestamoDetallePage({ params }) {
   const fetchPrestamo = useCallback(async ({ soft = false } = {}) => {
     const shouldUseSoftRefresh = soft && hasLoadedOnceRef.current
     if (!shouldUseSoftRefresh) setLoading(true)
+
+    // Temp ID (creado offline) — si ya se sincronizó, redirigir al ID real
+    if (typeof id === 'string' && id.startsWith('offline-')) {
+      try {
+        const realId = await resolverTempId(id)
+        if (realId) {
+          router.replace(`/prestamos/${realId}`)
+          return
+        }
+      } catch {}
+      try {
+        const cached = await obtenerPrestamoOffline(id)
+        if (cached) {
+          setPrestamo(cached)
+          if (!shouldUseSoftRefresh) setLoading(false)
+          hasLoadedOnceRef.current = true
+          return
+        }
+      } catch {}
+    }
 
     // Offline: prefer IndexedDB (has locally-updated data, SW cache may be stale)
     if (!navigator.onLine) {

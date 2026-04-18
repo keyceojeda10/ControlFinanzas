@@ -59,6 +59,48 @@ export default function RegistrarPago({
 
     setLoading(true)
     setError('')
+
+    // Fix #6: helper para encolar offline — usado tanto en catch de red como en 503 del SW
+    const encolarOffline = async () => {
+      try {
+        await guardarPagoPendiente({
+          prestamoId,
+          montoPagado: m,
+          tipo,
+          nota,
+          diasAbonados,
+          metodoPago,
+          plataforma,
+          clienteNombre: cliente?.nombre,
+        })
+        await actualizarPrestamoOffline(prestamoId, { montoPagado: m, tipo, nota })
+        window.dispatchEvent(new Event('paymentQueued'))
+        const saldoNuevo = Math.max(0, (prestamo?.saldoPendiente || 0) - m)
+        const totalPagadoNuevo = (prestamo?.totalPagado || 0) + m
+        const porcentajeNuevo = prestamo?.totalAPagar > 0
+          ? Math.round((totalPagadoNuevo / prestamo.totalAPagar) * 100)
+          : 0
+        const prestamoActualizado = prestamo ? {
+          ...prestamo,
+          saldoPendiente: saldoNuevo,
+          totalPagado: totalPagadoNuevo,
+          porcentajePagado: porcentajeNuevo,
+          pagoHoy: true,
+          estado: saldoNuevo <= 0 ? 'completado' : prestamo.estado,
+        } : prestamo
+        const pagoOffline = { montoPagado: m, fechaPago: new Date().toISOString(), offline: true }
+        setPagoGuardado(pagoOffline)
+        setPrestamoAct(prestamoActualizado)
+        setExitoso(true)
+        setError('')
+        onSuccess?.(prestamoActualizado, pagoOffline)
+        return true
+      } catch {
+        setError('No se pudo guardar el pago offline.')
+        return false
+      }
+    }
+
     try {
       const qs = confirmarDuplicado ? '?confirmarDuplicado=1' : ''
       const res  = await fetch(`/api/prestamos/${prestamoId}/pagos${qs}`, {
@@ -66,6 +108,12 @@ export default function RegistrarPago({
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ montoPagado: m, tipo, nota, diasAbonados, metodoPago, plataforma }),
       })
+      // Fix #6: el Service Worker puede responder 503 cuando no hay red en vez
+      // de dejar fallar el fetch. Tratarlo igual que offline.
+      if (res.status === 503 && !navigator.onLine) {
+        await encolarOffline()
+        return
+      }
       const data = await res.json()
       if (res.status === 409 && data?.duplicado) {
         setLoading(false)
@@ -86,47 +134,9 @@ export default function RegistrarPago({
       setExitoso(true)
       onSuccess?.(data, pagoParaWA)
     } catch {
-      // Offline: guardar en IndexedDB para sincronizar después
       if (!navigator.onLine) {
-        try {
-          await guardarPagoPendiente({
-            prestamoId,
-            montoPagado: m,
-            tipo,
-            nota,
-            diasAbonados,
-            metodoPago,
-            plataforma,
-            clienteNombre: cliente?.nombre,
-          })
-          // Update IndexedDB data so offline views reflect the payment
-          await actualizarPrestamoOffline(prestamoId, { montoPagado: m, tipo, nota })
-          window.dispatchEvent(new Event('paymentQueued'))
-          // Build updated prestamo for UI
-          const saldoNuevo = Math.max(0, (prestamo?.saldoPendiente || 0) - m)
-          const totalPagadoNuevo = (prestamo?.totalPagado || 0) + m
-          const porcentajeNuevo = prestamo?.totalAPagar > 0
-            ? Math.round((totalPagadoNuevo / prestamo.totalAPagar) * 100)
-            : 0
-          const prestamoActualizado = prestamo ? {
-            ...prestamo,
-            saldoPendiente: saldoNuevo,
-            totalPagado: totalPagadoNuevo,
-            porcentajePagado: porcentajeNuevo,
-            pagoHoy: true,
-            estado: saldoNuevo <= 0 ? 'completado' : prestamo.estado,
-          } : prestamo
-          const pagoOffline = { montoPagado: m, fechaPago: new Date().toISOString(), offline: true }
-          setPagoGuardado(pagoOffline)
-          setPrestamoAct(prestamoActualizado)
-          setExitoso(true)
-          setError('')
-          onSuccess?.(prestamoActualizado, pagoOffline)
-          return
-        } catch {
-          setError('No se pudo guardar el pago offline.')
-          return
-        }
+        await encolarOffline()
+        return
       }
       setError('Error de conexión. Intenta de nuevo.')
     } finally {

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, createContext, useContext, useCallback } from 'react'
-import { iniciarAutoSync, obtenerPagosPendientes, obtenerPagosFallidos, eliminarPagoFallido, sincronizarPagos, sincronizarOrdenes, sincronizarTodo, obtenerSyncMeta } from '@/lib/offline'
+import { iniciarAutoSync, obtenerPagosPendientes, obtenerPagosFallidos, eliminarPagoFallido, sincronizarPagos, sincronizarOrdenes, sincronizarTodo, obtenerSyncMeta, sincronizarCreaciones, obtenerClientesPendientes, obtenerPrestamosPendientes } from '@/lib/offline'
 
 const OfflineContext = createContext({ isOnline: true, pendingCount: 0, syncing: false, syncMeta: null, lastSyncedAt: 0 })
 
@@ -42,11 +42,14 @@ export default function OfflineProvider({ children }) {
   const syncPendingThenFull = useCallback(async ({ silent = true, signalPages = true } = {}) => {
     if (!navigator.onLine) return
     try {
-      // STEP 1: Sync pending payments AND pending orders to server FIRST
+      // STEP 1: Sync pending payments, orders AND creations to server FIRST
+      // Orden: creaciones primero (para que los pagos offline puedan referenciar
+      // préstamos recién creados), luego pagos, luego órdenes de ruta.
+      const creResult = await sincronizarCreaciones()
       const payResult = await sincronizarPagos()
       const ordResult = await sincronizarOrdenes()
-      const totalSynced = payResult.synced + ordResult.synced
-      const totalFailed = payResult.failed + ordResult.failed
+      const totalSynced = creResult.synced + payResult.synced + ordResult.synced
+      const totalFailed = creResult.failed + payResult.failed + ordResult.failed
       if (totalSynced > 0) {
         setSyncResult({ synced: totalSynced, failed: totalFailed })
         setTimeout(() => setSyncResult(null), 5000)
@@ -83,11 +86,13 @@ export default function OfflineProvider({ children }) {
 
     // STEP 3: Refresh pending count + failed payments
     try {
-      const [pending, failed] = await Promise.all([
+      const [pending, failed, cliPend, presPend] = await Promise.all([
         obtenerPagosPendientes(),
         obtenerPagosFallidos(),
+        obtenerClientesPendientes().catch(() => []),
+        obtenerPrestamosPendientes().catch(() => []),
       ])
-      setPendingCount(pending.length)
+      setPendingCount(pending.length + cliPend.length + presPend.length)
       setFailedPayments(failed)
     } catch { /* ignore */ }
   }, [])
@@ -106,11 +111,13 @@ export default function OfflineProvider({ children }) {
   // Track pending payments count (MUST be defined before useEffects that reference it)
   const refreshPending = useCallback(async () => {
     try {
-      const [pending, failed] = await Promise.all([
+      const [pending, failed, cliPend, presPend] = await Promise.all([
         obtenerPagosPendientes(),
         obtenerPagosFallidos(),
+        obtenerClientesPendientes().catch(() => []),
+        obtenerPrestamosPendientes().catch(() => []),
       ])
-      setPendingCount(pending.length)
+      setPendingCount(pending.length + cliPend.length + presPend.length)
       setFailedPayments(failed)
     } catch { /* ignore */ }
   }, [])
