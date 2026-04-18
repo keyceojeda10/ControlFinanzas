@@ -485,7 +485,7 @@ export default function PrestamoDetallePage({ params }) {
           ].map(({ label, value, color }) => (
             <div key={label} className="bg-[var(--color-bg-card)] rounded-[12px] px-3 py-2.5">
               <p className="text-[10px] text-[var(--color-text-muted)]">{label}</p>
-              <p className="text-sm font-semibold mt-0.5" style={{ color: color ?? 'white' }}>
+              <p className="text-sm font-semibold mt-0.5" style={{ color: color ?? 'var(--color-text-primary)' }}>
                 {value}
               </p>
             </div>
