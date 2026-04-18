@@ -1,6 +1,6 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME = 'cf-v8'
-const API_CACHE  = 'cf-api-v8'
+const CACHE_NAME = 'cf-v9'
+const API_CACHE  = 'cf-api-v9'
 
 // Only precache static assets (NOT auth-protected pages)
 const PRECACHE_URLS = [
@@ -124,6 +124,16 @@ async function networkFirstAPI(request) {
   }
 }
 
+// Rutas padre para fallback en rutas dinámicas cuando el ID específico no está
+// cacheado (p.ej. /clientes/offline-xxx creado sin red). Next.js sirve el shell
+// de la ruta padre y luego el cliente React carga datos desde IndexedDB.
+const DYNAMIC_ROUTE_FALLBACKS = [
+  { prefix: '/clientes/', fallback: '/clientes' },
+  { prefix: '/prestamos/', fallback: '/prestamos' },
+  { prefix: '/rutas/', fallback: '/rutas' },
+  { prefix: '/cobradores/', fallback: '/cobradores' },
+]
+
 async function networkFirstPage(request) {
   try {
     const response = await fetch(request)
@@ -136,6 +146,20 @@ async function networkFirstPage(request) {
   } catch {
     const cached = await caches.match(request)
     if (cached) return cached
+
+    // Fallback: si es una ruta dinámica sin cache, servir el shell del padre
+    try {
+      const url = new URL(request.url)
+      const match = DYNAMIC_ROUTE_FALLBACKS.find(r => url.pathname.startsWith(r.prefix) && url.pathname !== r.fallback)
+      if (match) {
+        const parentCached = await caches.match(match.fallback)
+        if (parentCached) return parentCached
+      }
+      // Fallback final: dashboard shell (siempre cacheado tras primera visita)
+      const dashboardCached = await caches.match('/dashboard')
+      if (dashboardCached) return dashboardCached
+    } catch {}
+
     return new Response('<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="background:#0a0a0a;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif"><div style="text-align:center"><h2>Sin conexion</h2><p>Revisa tu conexion a internet</p><p style="color:#f5c518;font-size:13px;margin-top:16px">Usa el boton &quot;Preparar offline&quot; en el Dashboard antes de salir</p></div></body></html>', {
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     })
