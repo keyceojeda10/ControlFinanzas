@@ -98,8 +98,9 @@ export async function GET(request, { params }) {
   let clientesConCobroHoy = 0
   let clientesPagaronHoy = 0
   let enMora = 0
-  let carteraTotal = 0  // saldo pendiente de todos los préstamos
-  let capitalTotal = 0  // monto original prestado
+  let carteraTotal = 0      // saldo pendiente total (principal + intereses que faltan)
+  let capitalTotal = 0      // monto original prestado (sin intereses)
+  let totalAPagarRuta = 0   // suma de totalAPagar (principal + intereses) — denominador correcto para % cobrado
 
   // Cachear fechas para evitar recalcular en cada iteración
   const _hoy = hoy(), _manana = manana()
@@ -123,8 +124,9 @@ export async function GET(request, { params }) {
       cuotaCliente  += p.cuotaDiaria
       esperadoHoy   += _hoySinCobro ? 0 : p.cuotaDiaria
       const saldoPendientePrestamo = calcularSaldoPendiente(p)
-      carteraTotal  += saldoPendientePrestamo
-      capitalTotal  += p.montoPrestado
+      carteraTotal    += saldoPendientePrestamo
+      capitalTotal    += p.montoPrestado
+      totalAPagarRuta += p.totalAPagar ?? p.montoPrestado
       const pagosHoy = p.pagos.filter(
         (pg) => new Date(pg.fechaPago) >= _hoy && new Date(pg.fechaPago) < _manana
       )
@@ -243,6 +245,7 @@ export async function GET(request, { params }) {
     enMora,
     carteraTotal: Math.round(carteraTotal),
     capitalTotal: Math.round(capitalTotal),
+    totalAPagarRuta: Math.round(totalAPagarRuta),
     cierre,
   })
 }

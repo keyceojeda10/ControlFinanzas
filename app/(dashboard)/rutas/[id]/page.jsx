@@ -418,10 +418,15 @@ export default function RutaDetallePage({ params }) {
   }
 
   const ejecutarPagoRapido = async (metodoPago) => {
-    if (!modalPagoRapido) return
+    if (!modalPagoRapido || pagandoRapido) return
     const { id: clienteId, nombre, cuota, prestamoActivo } = modalPagoRapido
     setModalPagoRapido(null)
     setPagandoRapido(clienteId)
+    // Marcar optimistamente el pagoHoy en el estado local para ocultar el botón YA
+    setRuta(prev => prev ? {
+      ...prev,
+      clientes: prev.clientes.map(c => c.id === clienteId ? { ...c, pagoHoy: true, cobroPendienteHoy: false } : c)
+    } : prev)
     try {
       const res = await fetch(`/api/prestamos/${prestamoActivo}/pagos`, {
         method: 'POST',
@@ -434,15 +439,20 @@ export default function RutaDetallePage({ params }) {
         const pagoId = data.pagos?.[0]?.id
         setPagoRapidoOk(clienteId)
         setTimeout(() => setPagoRapidoOk(null), 1200)
-        fetchRuta()
+        await fetchRuta()
         // Mostrar undo por 10 segundos
         if (pagoId) {
           if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
           setUndoPago({ pagoId, prestamoId: prestamoActivo, clienteNombre: nombre })
           undoTimerRef.current = setTimeout(() => setUndoPago(null), 10000)
         }
+      } else {
+        // Si falla, revertir estado optimista
+        await fetchRuta()
       }
-    } catch {} finally { setPagandoRapido(null) }
+    } catch {
+      await fetchRuta()
+    } finally { setPagandoRapido(null) }
   }
 
   const deshacerPago = async () => {
@@ -921,9 +931,11 @@ export default function RutaDetallePage({ params }) {
 
       {/* Métricas */}
       {(() => {
-        const cobrado = ruta.capitalTotal - ruta.carteraTotal
-        const carteraPct = ruta.capitalTotal > 0
-          ? Math.min(100, Math.round((cobrado / ruta.capitalTotal) * 100))
+        // Denominador: totalAPagar (principal + intereses). Cobrado = lo que ya pagaron del total.
+        const denominadorCartera = ruta.totalAPagarRuta ?? ruta.capitalTotal
+        const cobrado = Math.max(0, denominadorCartera - ruta.carteraTotal)
+        const carteraPct = denominadorCartera > 0
+          ? Math.min(100, Math.max(0, Math.round((cobrado / denominadorCartera) * 100)))
           : 0
         return (
           <>
@@ -961,7 +973,7 @@ export default function RutaDetallePage({ params }) {
                 </div>
                 <div className="flex items-baseline justify-between">
                   <p className="text-lg font-bold text-[white] font-mono-display">{formatCOP(ruta.carteraTotal)}</p>
-                  <p className="text-[11px] text-[#777] font-mono-display">de {formatCOP(ruta.capitalTotal)}</p>
+                  <p className="text-[11px] text-[#777] font-mono-display">de {formatCOP(denominadorCartera)}</p>
                 </div>
                 <div className="h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden mt-2.5">
                   <div className="h-full rounded-full bg-[#06b6d4] transition-all duration-700" style={{ width: `${carteraPct}%` }} />

@@ -87,11 +87,7 @@ export async function GET(request, { params }) {
     }
   }
 
-  // Hoy Colombia
-  const hoyCol = new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10)
-
   const dias = Object.keys(porDia)
-    .filter(d => d !== hoyCol)
     .sort((a, b) => b.localeCompare(a))
     .slice(0, 15)
     .map(fecha => {

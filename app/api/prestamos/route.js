@@ -247,7 +247,7 @@ export async function POST(request) {
         cuotaDiaria,
         frecuencia:    freq,
         diasPlazo:     Number(diasPlazo),
-        fechaInicio:   new Date(fechaInicio),
+        fechaInicio:   new Date(`${fechaInicio}T05:00:00.000Z`), // medianoche Colombia
         fechaFin,
       },
     })
@@ -278,7 +278,7 @@ export async function POST(request) {
           cobradorId:     session.user.id,
           montoPagado:    abono,
           tipo:           'completo',
-          fechaPago:      new Date(fechaInicio),
+          fechaPago:      new Date(`${fechaInicio}T05:00:00.000Z`),
           nota:           'Abono previo (préstamo en curso)',
         },
       })
