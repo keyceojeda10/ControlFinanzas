@@ -40,8 +40,8 @@ export async function GET(request) {
           nombre:    true,
           estado:    true,
           prestamos: {
-            where:   { estado: 'activo' },
             select:  {
+              estado: true,
               cuotaDiaria: true,
               pagos: {
                 where:  { fechaPago: { gte: hoy(), lt: manana() } },
@@ -61,7 +61,11 @@ export async function GET(request) {
 
     for (const cliente of r.clientes) {
       for (const prestamo of cliente.prestamos) {
-        esperadoHoy  += prestamo.cuotaDiaria
+        // Esperado hoy: solo préstamos activos tienen cuota esperada
+        if (prestamo.estado === 'activo') {
+          esperadoHoy += prestamo.cuotaDiaria
+        }
+        // Recaudado hoy: incluye pagos de préstamos completados hoy (el pago final cierra)
         recaudadoHoy += prestamo.pagos.filter(p => !['recargo', 'descuento'].includes(p.tipo)).reduce((a, p) => a + p.montoPagado, 0)
       }
     }

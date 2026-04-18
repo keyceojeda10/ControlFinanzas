@@ -58,7 +58,6 @@ export async function GET(request, { params }) {
         include: {
           grupoCobro: { select: { id: true, nombre: true, color: true } },
           prestamos: {
-            where:   { estado: 'activo' },
             orderBy: { createdAt: 'asc' },
             include: {
               pagos: {
@@ -122,18 +121,23 @@ export async function GET(request, { params }) {
     let cobroPendienteHoy = false
 
     for (const p of c.prestamos) {
-      cuotaCliente  += p.cuotaDiaria
-      esperadoHoy   += _hoySinCobro ? 0 : p.cuotaDiaria
-      const saldoPendientePrestamo = calcularSaldoPendiente(p)
-      carteraTotal    += saldoPendientePrestamo
-      capitalTotal    += p.montoPrestado
-      totalAPagarRuta += p.totalAPagar ?? p.montoPrestado
+      // Pagos de hoy: contar SIEMPRE (incluye préstamos completados hoy con pago final)
       const pagosHoy = p.pagos.filter(
         (pg) => new Date(pg.fechaPago) >= _hoy && new Date(pg.fechaPago) < _manana
       )
       const montoPagadoHoy = pagosHoy.filter(pg => !['recargo', 'descuento'].includes(pg.tipo)).reduce((a, pg) => a + pg.montoPagado, 0)
       pagadoHoy    += montoPagadoHoy
       recaudadoHoy += montoPagadoHoy
+
+      // Métricas de cartera/mora solo para préstamos activos
+      if (p.estado !== 'activo') continue
+
+      cuotaCliente  += p.cuotaDiaria
+      esperadoHoy   += _hoySinCobro ? 0 : p.cuotaDiaria
+      const saldoPendientePrestamo = calcularSaldoPendiente(p)
+      carteraTotal    += saldoPendientePrestamo
+      capitalTotal    += p.montoPrestado
+      totalAPagarRuta += p.totalAPagar ?? p.montoPrestado
       const moraPrestamo = calcularDiasMora(p, diasExcluidos)
       const cuotasMoraPrestamo = calcularCuotasEnMora(p, diasExcluidos)
       const montoMoraPrestamo = calcularMontoEnMora(p, diasExcluidos)
