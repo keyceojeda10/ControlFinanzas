@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
 import { sendLeadNotification } from '@/lib/telegram'
+import { parseFieldData } from '@/lib/fb-leads'
 
 const VERIFY_TOKEN = process.env.FB_LEADS_VERIFY_TOKEN
 const FB_APP_SECRET = process.env.FB_APP_SECRET
@@ -116,6 +117,9 @@ async function processLead(leadgenId, adId, createdTime) {
   const telefono = leadData?.telefono || ''
   const cantClientes = leadData?.cantClientes || ''
   const esPrestamista = leadData?.esPrestamista || ''
+  const metodoActual = leadData?.metodoActual || ''
+  const planInteres = leadData?.planInteres || ''
+  const consent = leadData?.consent || ''
 
   // Guardar en DB con protección contra duplicados
   let lead = null
@@ -136,8 +140,9 @@ async function processLead(leadgenId, adId, createdTime) {
         return
       }
     }
+    const notasJson = JSON.stringify({ leadgen_id: leadgenId, metodoActual, planInteres, consent })
     lead = await prisma.lead.create({
-      data: { nombre, telefono, cantClientes, esPrestamista, anuncioId: adId, notas: leadgenId ? `leadgen_id: ${leadgenId}` : null }
+      data: { nombre, telefono, cantClientes, esPrestamista, anuncioId: adId, notas: notasJson }
     })
     console.log('[Leads] Guardado en DB:', nombre, telefono)
   } catch (dbErr) {
@@ -146,7 +151,7 @@ async function processLead(leadgenId, adId, createdTime) {
 
   // Enviar Telegram con botones interactivos
   const messageId = await sendLeadNotification(
-    { nombre, telefono, cantClientes, esPrestamista, anuncioId: adId, createdTime, leadgenId },
+    { nombre, telefono, cantClientes, esPrestamista, metodoActual, planInteres, consent, anuncioId: adId, createdTime, leadgenId },
     lead?.id
   )
 
@@ -183,22 +188,7 @@ async function fetchLeadFromFacebook(leadgenId) {
       return null
     }
 
-    const fields = {}
-    for (const f of data.field_data || []) {
-      const name = f.name?.toLowerCase()
-      const val = f.values?.[0] || ''
-      if (name === 'full_name' || name === 'nombre') fields.nombre = val
-      else if (
-        name === 'whatsapp' ||
-        name === 'phone_number' ||
-        name === 'phone' ||
-        name === 'telefono' ||
-        name?.includes('whats')
-      ) fields.telefono = val
-      else if (name === 'how_many' || name?.includes('client') || name?.includes('cuant')) fields.cantClientes = val
-      else if (name === 'is_lender' || name?.includes('presta')) fields.esPrestamista = val
-    }
-    return fields
+    return parseFieldData(data.field_data)
   } catch (err) {
     console.error('[Leads] Fetch error:', err.message)
     return null

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendLeadNotification } from '@/lib/telegram'
+import { parseFieldData } from '@/lib/fb-leads'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
 
 const PAGE_TOKEN = process.env.FB_PAGE_ACCESS_TOKEN
@@ -35,25 +36,15 @@ export async function POST(req) {
     let nuevos = 0
 
     for (const fbLead of leads) {
-      const fields = {}
-      for (const f of fbLead.field_data || []) {
-        const name = f.name?.toLowerCase()
-        const val = f.values?.[0] || ''
-        if (name === 'full_name' || name === 'nombre') fields.nombre = val
-        else if (
-          name === 'whatsapp' ||
-          name === 'phone_number' ||
-          name === 'phone' ||
-          name === 'telefono' ||
-          name?.includes('whats')
-        ) fields.telefono = val
-        else if (name === 'how_many' || name?.includes('client') || name?.includes('cuant')) fields.cantClientes = val
-        else if (name === 'is_lender' || name?.includes('presta')) fields.esPrestamista = val
-      }
+      const fields = parseFieldData(fbLead.field_data)
 
       const nombre = fields.nombre || 'Sin nombre'
       const telefono = fields.telefono || ''
       const esPrestamista = fields.esPrestamista || ''
+      const cantClientes = fields.cantClientes || ''
+      const metodoActual = fields.metodoActual || ''
+      const planInteres = fields.planInteres || ''
+      const consent = fields.consent || ''
 
       if (nombre.includes('test lead') || nombre.includes('dummy')) continue
 
@@ -68,14 +59,15 @@ export async function POST(req) {
       }
 
       try {
+        const notasJson = JSON.stringify({ leadgen_id: fbLead.id, metodoActual, planInteres, consent })
         const lead = await prisma.lead.create({
           data: {
             nombre,
             telefono,
-            cantClientes: fields.cantClientes || '',
+            cantClientes,
             esPrestamista,
             anuncioId: 'fb_sync',
-            notas: `leadgen_id: ${fbLead.id}`,
+            notas: notasJson,
           }
         })
         console.log('[Leads Sync] Nuevo lead guardado:', nombre, telefono)
@@ -86,7 +78,7 @@ export async function POST(req) {
           ? Math.floor(new Date(fbLead.created_time).getTime() / 1000)
           : null
         const messageId = await sendLeadNotification(
-          { nombre, telefono, cantClientes: fields.cantClientes || '', esPrestamista, anuncioId: 'fb_sync', createdTime, leadgenId: fbLead.id },
+          { nombre, telefono, cantClientes, esPrestamista, metodoActual, planInteres, consent, anuncioId: 'fb_sync', createdTime, leadgenId: fbLead.id },
           lead.id
         )
 
