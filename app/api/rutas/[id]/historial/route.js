@@ -50,15 +50,28 @@ export async function GET(request, { params }) {
     return Response.json({ dias: [] })
   }
 
-  // Pagos últimos 30 días
-  const hace30 = new Date()
-  hace30.setDate(hace30.getDate() - 30)
+  // Rango por query params (?desde=YYYY-MM-DD&hasta=YYYY-MM-DD), default últimos 90 días
+  const { searchParams } = new URL(request.url)
+  const desdeParam = searchParams.get('desde')
+  const hastaParam = searchParams.get('hasta')
+
+  let desde, hasta
+  if (desdeParam) {
+    desde = new Date(`${desdeParam}T05:00:00.000Z`) // medianoche Colombia
+  } else {
+    desde = new Date()
+    desde.setDate(desde.getDate() - 90)
+  }
+  if (hastaParam) {
+    hasta = new Date(`${hastaParam}T05:00:00.000Z`)
+    hasta.setUTCDate(hasta.getUTCDate() + 1) // incluir todo el día seleccionado
+  }
 
   const pagos = await prisma.pago.findMany({
     where: {
       organizationId,
       prestamo: { clienteId: { in: clienteIds } },
-      fechaPago: { gte: hace30 },
+      fechaPago: hasta ? { gte: desde, lt: hasta } : { gte: desde },
       tipo: { notIn: ['recargo', 'descuento'] },
     },
     select: {
@@ -89,7 +102,7 @@ export async function GET(request, { params }) {
 
   const dias = Object.keys(porDia)
     .sort((a, b) => b.localeCompare(a))
-    .slice(0, 15)
+    .slice(0, 60)
     .map(fecha => {
       const dia = porDia[fecha]
       // Lista de quién pagó

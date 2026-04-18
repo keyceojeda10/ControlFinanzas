@@ -23,19 +23,32 @@ function HistorialCobros({ rutaId }) {
   const [loading, setLoading] = useState(false)
   const [expandido, setExpandido] = useState(null)
   const [tab, setTab] = useState('pagaron') // 'pagaron' | 'noPagaron'
+  const [desde, setDesde] = useState('')
+  const [hasta, setHasta] = useState('')
 
-  const cargar = async () => {
-    if (dias) { setOpen(!open); return }
+  const cargar = async (d = desde, h = hasta) => {
     setOpen(true)
     setLoading(true)
     try {
-      const res = await fetch(`/api/rutas/${rutaId}/historial`)
+      const params = new URLSearchParams()
+      if (d) params.set('desde', d)
+      if (h) params.set('hasta', h)
+      const qs = params.toString()
+      const res = await fetch(`/api/rutas/${rutaId}/historial${qs ? `?${qs}` : ''}`)
       if (res.ok) {
         const data = await res.json()
         setDias(data.dias)
       }
     } catch {} finally { setLoading(false) }
   }
+
+  const toggle = () => {
+    if (dias) { setOpen(!open); return }
+    cargar()
+  }
+
+  const aplicarFiltro = () => cargar(desde, hasta)
+  const limpiarFiltro = () => { setDesde(''); setHasta(''); cargar('', '') }
 
   const formatFecha = (str) => {
     const d = new Date(str + 'T12:00:00')
@@ -44,7 +57,7 @@ function HistorialCobros({ rutaId }) {
 
   return (
     <Card>
-      <button onClick={cargar} className="w-full flex items-center justify-between">
+      <button onClick={toggle} className="w-full flex items-center justify-between">
         <span className="text-xs font-semibold text-[#888] uppercase tracking-wide">Historial de cobros</span>
         <svg className={`w-4 h-4 text-[#888] transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -53,6 +66,43 @@ function HistorialCobros({ rutaId }) {
 
       {open && (
         <div className="mt-4">
+          {/* Filtro por rango de fechas (calendario nativo del dispositivo) */}
+          <div className="flex flex-wrap items-end gap-2 mb-3">
+            <div className="flex-1 min-w-[130px]">
+              <label className="block text-[10px] text-[#666] uppercase tracking-wide mb-1">Desde</label>
+              <input
+                type="date"
+                value={desde}
+                onChange={(e) => setDesde(e.target.value)}
+                className="w-full h-9 px-2 rounded-[10px] bg-[#1a1a1a] border border-[#2a2a2a] text-[12px] text-white focus:outline-none focus:border-[#f5c518] transition-colors"
+              />
+            </div>
+            <div className="flex-1 min-w-[130px]">
+              <label className="block text-[10px] text-[#666] uppercase tracking-wide mb-1">Hasta</label>
+              <input
+                type="date"
+                value={hasta}
+                onChange={(e) => setHasta(e.target.value)}
+                className="w-full h-9 px-2 rounded-[10px] bg-[#1a1a1a] border border-[#2a2a2a] text-[12px] text-white focus:outline-none focus:border-[#f5c518] transition-colors"
+              />
+            </div>
+            <button
+              onClick={aplicarFiltro}
+              disabled={loading}
+              className="h-9 px-3 rounded-[10px] bg-[#f5c518] text-black text-[11px] font-semibold hover:bg-[#e0b014] transition-colors disabled:opacity-50"
+            >
+              Buscar
+            </button>
+            {(desde || hasta) && (
+              <button
+                onClick={limpiarFiltro}
+                disabled={loading}
+                className="h-9 px-3 rounded-[10px] bg-[#1a1a1a] border border-[#2a2a2a] text-[#888] text-[11px] font-medium hover:text-white transition-colors disabled:opacity-50"
+              >
+                Limpiar
+              </button>
+            )}
+          </div>
           {loading ? (
             <div className="space-y-2">
               {[1,2,3].map(i => (
