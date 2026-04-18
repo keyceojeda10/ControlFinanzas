@@ -554,3 +554,89 @@ html[data-theme="light"] [class*="focus-visible:ring-offset-[#0"] { --tw-ring-of
 
 /* Ring amarillo en light tiene buen contraste */
 html[data-theme="light"] [class*="ring-[#f5c518"] { --tw-ring-color: rgba(245, 197, 24, 0.55) !important; }
+
+/* ===========================================================
+   FIX: textos claros hardcoded (#f1f5f9, #f8fafc, #e5e7eb, etc.)
+   En dark eran texto principal; en light deben ser oscuros.
+   =========================================================== */
+html[data-theme="light"] .text-\[\#f1f5f9\],
+html[data-theme="light"] .text-\[\#f8fafc\],
+html[data-theme="light"] .text-\[\#e5e7eb\],
+html[data-theme="light"] .text-\[\#e2e8f0\],
+html[data-theme="light"] .text-\[\#cbd5e1\],
+html[data-theme="light"] .text-\[\#d1d5db\],
+html[data-theme="light"] .text-\[\#ffffff\],
+html[data-theme="light"] .text-\[\#fff\],
+html[data-theme="light"] .text-\[white\],
+html[data-theme="light"] .text-white { color: var(--color-text-primary) !important; }
+
+/* Textos secundarios/muted grises oscuros → muted en light */
+html[data-theme="light"] .text-\[\#8b95a5\],
+html[data-theme="light"] .text-\[\#9ca3af\],
+html[data-theme="light"] .text-\[\#94a3b8\],
+html[data-theme="light"] .text-\[\#64748b\],
+html[data-theme="light"] .text-\[\#6b7280\],
+html[data-theme="light"] .text-\[\#a0a0a0\],
+html[data-theme="light"] .text-\[\#888\],
+html[data-theme="light"] .text-\[\#888888\],
+html[data-theme="light"] .text-\[\#999\],
+html[data-theme="light"] .text-\[\#999999\],
+html[data-theme="light"] .text-\[\#777\],
+html[data-theme="light"] .text-\[\#666\],
+html[data-theme="light"] .text-\[\#555\] { color: var(--color-text-muted) !important; }
+
+/* Flecha / iconos gris oscuro → border en light */
+html[data-theme="light"] .text-\[\#2a2a2a\],
+html[data-theme="light"] .text-\[\#333\],
+html[data-theme="light"] .text-\[\#3a3a3a\],
+html[data-theme="light"] .text-\[\#444\],
+html[data-theme="light"] .text-\[\#2d2d2d\] { color: var(--color-text-muted) !important; opacity: 0.6; }
+
+/* ===========================================================
+   FIX: gradientes oscuros inline en style={{background:...}}
+   Cards con linear-gradient conteniendo #1a1a1a / #0a0a... → blanco.
+   Heurística CSS: attr selector sobre style.
+   =========================================================== */
+html[data-theme="light"] [style*="#1a1a1a"],
+html[data-theme="light"] [style*="#0a0a0a"],
+html[data-theme="light"] [style*="#0d0d12"],
+html[data-theme="light"] [style*="#111111"],
+html[data-theme="light"] [style*="#0f0f17"],
+html[data-theme="light"] [style*="#060609"] {
+  background: var(--color-bg-card) !important;
+  background-image: none !important;
+}
+
+/* Excepción: avatares redondos pequeños (usan rgba, no hex) — no rompe */
+
+/* ===========================================================
+   FIX: fondos oscuros hex hardcoded directos en Tailwind
+   bg-[#0a0a0a], bg-[#1a1a1a], bg-[#0d0d12], bg-[#111]...
+   =========================================================== */
+html[data-theme="light"] .bg-\[\#0a0a0a\],
+html[data-theme="light"] .bg-\[\#1a1a1a\],
+html[data-theme="light"] .bg-\[\#0d0d12\],
+html[data-theme="light"] .bg-\[\#111\],
+html[data-theme="light"] .bg-\[\#111111\],
+html[data-theme="light"] .bg-\[\#0f0f17\],
+html[data-theme="light"] .bg-\[\#060609\],
+html[data-theme="light"] .bg-\[\#1f1f1f\],
+html[data-theme="light"] .bg-\[\#141420\],
+html[data-theme="light"] .bg-\[\#151520\] { background-color: var(--color-bg-card) !important; }
+
+/* Borders oscuros → token */
+html[data-theme="light"] .border-\[\#2a2a2a\],
+html[data-theme="light"] .border-\[\#333\],
+html[data-theme="light"] .border-\[\#333333\],
+html[data-theme="light"] .border-\[\#1f1f1f\],
+html[data-theme="light"] .border-\[\#252525\],
+html[data-theme="light"] .border-\[\#3a3a3a\],
+html[data-theme="light"] .border-\[\#444\] { border-color: var(--color-border) !important; }
+
+/* Ring oscuros */
+html[data-theme="light"] [class*="ring-[#2a2a2a"],
+html[data-theme="light"] [class*="ring-[#333"] { --tw-ring-color: var(--color-border) !important; }
+
+/* Hover border oscuros */
+html[data-theme="light"] [class*="hover:border-[#3"]:hover,
+html[data-theme="light"] [class*="hover:border-[#4"]:hover { border-color: color-mix(in srgb, var(--color-accent) 40%, var(--color-border)) !important; }
