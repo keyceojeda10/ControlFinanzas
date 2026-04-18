@@ -21,7 +21,7 @@ export default function ClienteCard({ cliente }) {
           ? 'linear-gradient(135deg, #ef444406 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #ef444403 100%)'
           : cliente.estado === 'activo'
           ? 'linear-gradient(135deg, #f5c51806 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #f5c51803 100%)'
-          : '#1a1a1a',
+          : 'var(--color-bg-card)',
       }}
     >
       {/* Avatar */}

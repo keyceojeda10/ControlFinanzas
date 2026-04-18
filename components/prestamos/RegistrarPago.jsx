@@ -215,7 +215,7 @@ export default function RegistrarPago({
                 onClick={navigateNextInRuta}
                 className="flex-1 py-2.5 rounded-[12px] text-sm font-semibold active:scale-[0.98] transition-all"
                 style={rutaInfo.isLast
-                  ? { background: 'var(--color-success)', color: 'white' }
+                  ? { background: 'var(--color-success)', color: 'var(--color-text-primary)' }
                   : { background: 'linear-gradient(135deg, #f5c518, #f0b800)', color: '#0a0a0a' }
                 }
               >

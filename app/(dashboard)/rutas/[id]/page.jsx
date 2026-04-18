@@ -1627,7 +1627,7 @@ export default function RutaDetallePage({ params }) {
             <Button variant="secondary" onClick={() => setConfirmQuitar(null)}>Cancelar</Button>
             <Button
               onClick={() => confirmQuitar && quitarCliente(confirmQuitar.id)}
-              style={{ background: 'var(--color-danger)', color: 'white' }}
+              style={{ background: 'var(--color-danger)', color: 'var(--color-text-primary)' }}
             >
               Quitar
             </Button>

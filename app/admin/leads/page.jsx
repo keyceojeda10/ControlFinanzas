@@ -241,7 +241,7 @@ function StatsGrid({ stats, loading }) {
     {
       label: 'Total',
       value: stats?.total ?? 0,
-      color: 'white',
+      color: 'var(--color-text-primary)',
     },
     {
       label: 'Contactados',

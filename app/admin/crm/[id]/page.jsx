@@ -414,7 +414,7 @@ export default function CRMDetailPage({ params }) {
               <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide font-medium mb-3">Actividad</p>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { label: 'Clientes',  value: data.actividad.clientes  ?? 0, color: 'white' },
+                  { label: 'Clientes',  value: data.actividad.clientes  ?? 0, color: 'var(--color-text-primary)' },
                   { label: 'Préstamos', value: data.actividad.prestamos ?? 0, color: '#3b82f6' },
                   { label: 'Rutas',     value: data.actividad.rutas     ?? 0, color: 'var(--color-purple)' },
                 ].map(({ label, value, color }) => (

@@ -171,7 +171,7 @@ export default function ReportesPage() {
         <>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: 'Clientes activos',  value: resumen.clientes.total,                     color: 'white' },
+              { label: 'Clientes activos',  value: resumen.clientes.total,                     color: 'var(--color-text-primary)' },
               { label: 'En mora',           value: resumen.clientes.enMora,                    color: 'var(--color-danger)' },
               { label: 'Préstamos activos', value: resumen.prestamos.activos,                  color: 'var(--color-accent)' },
               { label: 'Cartera activa',    value: formatCOP(resumen.prestamos.carteraActiva), color: 'var(--color-success)' },

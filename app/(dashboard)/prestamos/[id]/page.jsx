@@ -440,7 +440,7 @@ export default function PrestamoDetallePage({ params }) {
           <p className="text-xs text-[var(--color-text-muted)] mb-1">Saldo pendiente</p>
           <p
             className="text-4xl font-bold leading-none font-mono-display"
-            style={{ color: saldoPendiente === 0 ? 'var(--color-success)' : diasMora > 0 ? 'var(--color-danger)' : 'white' }}
+            style={{ color: saldoPendiente === 0 ? 'var(--color-success)' : diasMora > 0 ? 'var(--color-danger)' : 'var(--color-text-primary)' }}
           >
             {formatCOP(saldoPendiente)}
           </p>
@@ -585,7 +585,7 @@ export default function PrestamoDetallePage({ params }) {
                   <div className="flex items-center gap-3 py-2.5">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold" style={{
-                        color: pago.tipo === 'recargo' ? '#f97316' : pago.tipo === 'descuento' ? 'var(--color-success)' : 'white'
+                        color: pago.tipo === 'recargo' ? '#f97316' : pago.tipo === 'descuento' ? 'var(--color-success)' : 'var(--color-text-primary)'
                       }}>
                         {pago.tipo === 'recargo' ? '+' : pago.tipo === 'descuento' ? '−' : ''}{formatCOP(pago.montoPagado)}
                       </p>

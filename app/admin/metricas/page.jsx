@@ -205,7 +205,7 @@ export default function MetricasPage() {
                 />
                 <Tooltip
                   contentStyle={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 10, fontSize: 12 }}
-                  itemStyle={{ color: 'white' }}
+                  itemStyle={{ color: 'var(--color-text-primary)' }}
                 />
               </PieChart>
             </ResponsiveContainer>

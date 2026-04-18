@@ -317,7 +317,7 @@ export default function DashboardPage() {
         >
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-secondary)' }}>Alertas de mora</p>
-            <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ background: 'var(--color-danger)', color: '#fff' }}>{moraData.total} clientes</span>
+            <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ background: 'var(--color-danger)', color: 'var(--color-text-primary)' }}>{moraData.total} clientes</span>
           </div>
           <div className="space-y-2">
             {moraData.agrupado.mora31plus.length > 0 && (

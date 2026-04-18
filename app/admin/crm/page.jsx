@@ -264,7 +264,7 @@ export default function CRMPage() {
           ))
         ) : metricas ? (
           [
-            { label: 'Registros',        value: metricas.totalRegistros ?? 0,                                                                          color: 'white' },
+            { label: 'Registros',        value: metricas.totalRegistros ?? 0,                                                                          color: 'var(--color-text-primary)' },
             { label: 'Contactados',      value: (metricas.porEstado?.contactado ?? 0) + (metricas.porEstado?.interesado ?? 0),               color: 'var(--color-accent)' },
             { label: 'Convertidos',      value: metricas.conSuscripcionActiva ?? 0,                                                           color: 'var(--color-success)' },
             { label: 'Tasa conversión',  value: `${metricas.tasaConversion ?? 0}%`,                                                           color: tasaColor(metricas.tasaConversion) },
