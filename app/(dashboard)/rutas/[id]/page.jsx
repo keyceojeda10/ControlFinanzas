@@ -70,21 +70,37 @@ function HistorialCobros({ rutaId }) {
           <div className="flex flex-wrap items-end gap-2 mb-3">
             <div className="flex-1 min-w-[130px]">
               <label className="block text-[10px] text-[#666] uppercase tracking-wide mb-1">Desde</label>
-              <input
-                type="date"
-                value={desde}
-                onChange={(e) => setDesde(e.target.value)}
-                className="w-full h-9 px-2 rounded-[10px] bg-[#1a1a1a] border border-[#2a2a2a] text-[12px] text-white focus:outline-none focus:border-[#f5c518] transition-colors"
-              />
+              <div className="relative">
+                <input
+                  type="date"
+                  value={desde}
+                  onChange={(e) => setDesde(e.target.value)}
+                  className="w-full h-9 px-2 pr-8 rounded-[10px] bg-[#1a1a1a] border border-[#2a2a2a] text-[12px] text-white focus:outline-none focus:border-[#f5c518] transition-colors appearance-none [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-date-and-time-value]:text-left"
+                />
+                {!desde && (
+                  <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[12px] text-[#555]">dd/mm/aaaa</span>
+                )}
+                <svg className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-[#f5c518]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
             </div>
             <div className="flex-1 min-w-[130px]">
               <label className="block text-[10px] text-[#666] uppercase tracking-wide mb-1">Hasta</label>
-              <input
-                type="date"
-                value={hasta}
-                onChange={(e) => setHasta(e.target.value)}
-                className="w-full h-9 px-2 rounded-[10px] bg-[#1a1a1a] border border-[#2a2a2a] text-[12px] text-white focus:outline-none focus:border-[#f5c518] transition-colors"
-              />
+              <div className="relative">
+                <input
+                  type="date"
+                  value={hasta}
+                  onChange={(e) => setHasta(e.target.value)}
+                  className="w-full h-9 px-2 pr-8 rounded-[10px] bg-[#1a1a1a] border border-[#2a2a2a] text-[12px] text-white focus:outline-none focus:border-[#f5c518] transition-colors appearance-none [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-date-and-time-value]:text-left"
+                />
+                {!hasta && (
+                  <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[12px] text-[#555]">dd/mm/aaaa</span>
+                )}
+                <svg className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-[#f5c518]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
             </div>
             <button
               onClick={aplicarFiltro}
