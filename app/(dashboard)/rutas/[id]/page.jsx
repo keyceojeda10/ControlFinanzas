@@ -203,6 +203,7 @@ export default function RutaDetallePage({ params }) {
   const [diasSCRuta,     setDiasSCRuta]     = useState([])
   const [guardandoDSC,   setGuardandoDSC]   = useState(false)
   const [grupoFiltro,    setGrupoFiltro]    = useState(null)
+  const [estadoFiltro,   setEstadoFiltro]   = useState(null) // 'pendientes' | 'mora' | 'pagados' | null
 
   // Helper: fecha Colombia como string YYYY-MM-DD
   const getColombiaDateStr = () => {
@@ -786,9 +787,14 @@ export default function RutaDetallePage({ params }) {
     window.open(`https://www.google.com/maps/dir/${waypoints}`, '_blank')
   }
 
-  const clientesFiltrados = grupoFiltro
-    ? (ruta?.clientes ?? []).filter(c => c.grupoCobro?.id === grupoFiltro)
-    : (ruta?.clientes ?? [])
+  const clientesFiltrados = (() => {
+    let list = ruta?.clientes ?? []
+    if (grupoFiltro) list = list.filter(c => c.grupoCobro?.id === grupoFiltro)
+    if (estadoFiltro === 'pendientes') list = list.filter(c => c.cobroPendienteHoy)
+    else if (estadoFiltro === 'mora') list = list.filter(c => c.diasMora > 0)
+    else if (estadoFiltro === 'pagados') list = list.filter(c => c.pagoHoy)
+    return list
+  })()
 
   const clientesConCoords = ruta?.clientes?.filter((c) => c.latitud != null && c.longitud != null).length ?? 0
 
@@ -849,7 +855,10 @@ export default function RutaDetallePage({ params }) {
                 <p className="text-[11px] text-[#888] mt-0.5">
                   {ruta.cobrador && <span className="text-[#a855f7]">{ruta.cobrador.nombre}</span>}
                   {ruta.cobrador && ' · '}
-                  {ruta.clientes?.length ?? 0} clientes
+                  {(ruta.clientesConCobroHoy ?? 0) > 0
+                    ? <><span className="text-[#22c55e] font-medium">{ruta.clientesPagaronHoy ?? 0}</span> de <span className="text-[white] font-medium">{ruta.clientesConCobroHoy}</span> clientes de hoy</>
+                    : <>{ruta.clientes?.length ?? 0} clientes</>
+                  }
                 </p>
               </>
             )}
@@ -935,6 +944,11 @@ export default function RutaDetallePage({ params }) {
                     background: progreso >= 100 ? '#22c55e' : '#f5c518',
                   }} />
                 </div>
+                {(ruta.clientesConCobroHoy ?? 0) > 0 && (
+                  <p className="text-[10px] text-[#888] mt-2">
+                    <span className="text-[#22c55e] font-medium">{ruta.clientesPagaronHoy ?? 0}</span> de <span className="text-[white] font-medium">{ruta.clientesConCobroHoy}</span> clientes pagaron hoy
+                  </p>
+                )}
               </div>
             </Card>
 
@@ -955,21 +969,45 @@ export default function RutaDetallePage({ params }) {
               </div>
             </Card>
 
-            {/* Pendientes + Mora */}
+            {/* Pendientes + Mora (clickeables → filtran lista) */}
             <div className="grid grid-cols-2 gap-3">
-              <Card padding={false}>
-                <div className="px-4 py-3">
-                  <p className="text-[10px] text-[#666] uppercase tracking-wide mb-1">Pendientes hoy</p>
-                  <p className="text-xl font-bold" style={{ color: ruta.pendientesHoy > 0 ? '#f59e0b' : '#22c55e' }}>{ruta.pendientesHoy}</p>
-                </div>
-              </Card>
-              <Card padding={false}>
-                <div className="px-4 py-3">
-                  <p className="text-[10px] text-[#666] uppercase tracking-wide mb-1">En mora</p>
-                  <p className="text-xl font-bold" style={{ color: ruta.enMora > 0 ? '#ef4444' : '#22c55e' }}>{ruta.enMora}</p>
-                </div>
-              </Card>
+              <button
+                type="button"
+                onClick={() => setEstadoFiltro(estadoFiltro === 'pendientes' ? null : 'pendientes')}
+                className={`text-left rounded-[16px] transition-all ${estadoFiltro === 'pendientes' ? 'ring-2 ring-[#f59e0b]' : ''}`}
+              >
+                <Card padding={false}>
+                  <div className="px-4 py-3">
+                    <p className="text-[10px] text-[#666] uppercase tracking-wide mb-1">Pendientes hoy</p>
+                    <p className="text-xl font-bold" style={{ color: ruta.pendientesHoy > 0 ? '#f59e0b' : '#22c55e' }}>{ruta.pendientesHoy}</p>
+                    <p className="text-[9px] text-[#666] mt-0.5">de {ruta.clientesConCobroHoy ?? 0} con cobro hoy</p>
+                  </div>
+                </Card>
+              </button>
+              <button
+                type="button"
+                onClick={() => setEstadoFiltro(estadoFiltro === 'mora' ? null : 'mora')}
+                className={`text-left rounded-[16px] transition-all ${estadoFiltro === 'mora' ? 'ring-2 ring-[#ef4444]' : ''}`}
+              >
+                <Card padding={false}>
+                  <div className="px-4 py-3">
+                    <p className="text-[10px] text-[#666] uppercase tracking-wide mb-1">En mora</p>
+                    <p className="text-xl font-bold" style={{ color: ruta.enMora > 0 ? '#ef4444' : '#22c55e' }}>{ruta.enMora}</p>
+                    <p className="text-[9px] text-[#666] mt-0.5">del total de la ruta</p>
+                  </div>
+                </Card>
+              </button>
             </div>
+            {estadoFiltro && (
+              <button
+                type="button"
+                onClick={() => setEstadoFiltro(null)}
+                className="text-[11px] text-[#f5c518] hover:text-[white] transition-colors flex items-center gap-1"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                Quitar filtro ({estadoFiltro === 'pendientes' ? 'Pendientes hoy' : estadoFiltro === 'mora' ? 'En mora' : 'Pagaron hoy'})
+              </button>
+            )}
           </>
         )
       })()}

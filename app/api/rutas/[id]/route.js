@@ -95,6 +95,8 @@ export async function GET(request, { params }) {
   let esperadoHoy  = 0
   let recaudadoHoy = 0
   let pendientesHoy = 0
+  let clientesConCobroHoy = 0
+  let clientesPagaronHoy = 0
   let enMora = 0
   let carteraTotal = 0  // saldo pendiente de todos los préstamos
   let capitalTotal = 0  // monto original prestado
@@ -167,7 +169,10 @@ export async function GET(request, { params }) {
 
     const yaPageHoy = pagadoHoy > 0
     const pendienteHoyCliente = !_hoySinCobro && cobroPendienteHoy
+    const tieneCobroHoy = !_hoySinCobro && (cobroPendienteHoy || yaPageHoy)
     if (pendienteHoyCliente) pendientesHoy++
+    if (tieneCobroHoy) clientesConCobroHoy++
+    if (tieneCobroHoy && yaPageHoy) clientesPagaronHoy++
     if (mora > 0) enMora++
 
     // Calcular días desde último pago
@@ -233,6 +238,8 @@ export async function GET(request, { params }) {
     esperadoHoy: Math.round(esperadoHoy),
     recaudadoHoy: Math.round(recaudadoHoy),
     pendientesHoy,
+    clientesConCobroHoy,
+    clientesPagaronHoy,
     enMora,
     carteraTotal: Math.round(carteraTotal),
     capitalTotal: Math.round(capitalTotal),
