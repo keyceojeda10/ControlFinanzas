@@ -10,6 +10,7 @@ import { guardarEnCache, leerDeCache, obtenerRutasOffline } from '@/lib/offline'
 import { Button }              from '@/components/ui/Button'
 import { Input }               from '@/components/ui/Input'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
+import { Card }                from '@/components/ui/Card'
 import { formatCOP }           from '@/lib/calculos'
 
 export default function RutasPage() {
@@ -249,15 +250,13 @@ export default function RutasPage() {
             const isComplete = progreso >= 100
             const accentColor = isComplete ? 'var(--color-success)' : 'var(--color-accent)'
             return (
-              <Link
+              <Card
+                as={Link}
                 key={r.id}
                 href={`/rutas/${r.id}`}
-                className="block border rounded-[16px] p-4 transition-all group active:scale-[0.98]"
-                style={{
-                  borderColor: isComplete ? 'rgba(34,197,94,0.2)' : '#2a2a2a',
-                  background: `linear-gradient(135deg, ${accentColor}08 0%, var(--color-bg-card) 50%, var(--color-bg-card) 80%, ${accentColor}05 100%)`,
-                  boxShadow: `0 0 40px ${accentColor}06, 0 2px 8px rgba(0,0,0,0.3)`,
-                }}
+                glowColor={accentColor}
+                padding={false}
+                className="block p-4 transition-all group active:scale-[0.98]"
               >
                 {/* Top row: nombre + badge */}
                 <div className="flex items-center justify-between mb-3">
@@ -318,7 +317,7 @@ export default function RutasPage() {
                     }}
                   />
                 </div>
-              </Link>
+              </Card>
             )
           })}
         </div>

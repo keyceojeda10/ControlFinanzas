@@ -6,6 +6,7 @@ import Link                    from 'next/link'
 import { useAuth }             from '@/hooks/useAuth'
 import { Badge }               from '@/components/ui/Badge'
 import { Button }              from '@/components/ui/Button'
+import { Card }                from '@/components/ui/Card'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
 import { formatCOP }           from '@/lib/calculos'
 
@@ -133,14 +134,13 @@ export default function CobradoresPage() {
       {!loading && cobradores.length > 0 && (
         <div className="space-y-3">
           {cobradores.map((c) => (
-            <Link
+            <Card
+              as={Link}
               key={c.id}
               href={`/cobradores/${c.id}`}
-              className="block border border-[var(--color-border)] rounded-[16px] p-4 hover:border-[var(--color-border-hover)] transition-all"
-              style={{
-                background: `linear-gradient(135deg, #22c55e0A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #a855f705 100%)`,
-                boxShadow: `0 0 30px #22c55e08, 0 1px 2px rgba(0,0,0,0.3)`,
-              }}
+              glowColor="#a855f7"
+              padding={false}
+              className="block p-4 hover:border-[var(--color-border-hover)] transition-all"
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
@@ -178,7 +178,7 @@ export default function CobradoresPage() {
                   <p className="text-xs font-bold text-[var(--color-success)] font-mono-display">{formatCOP(c.recaudadoHoy)}</p>
                 </div>
               </div>
-            </Link>
+            </Card>
           ))}
         </div>
       )}

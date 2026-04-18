@@ -1,10 +1,10 @@
 // components/ui/Card.jsx
 
-export function Card({ children, className = '', padding = true, glowColor, ...props }) {
+export function Card({ as: Component = 'div', children, className = '', padding = true, glowColor, ...props }) {
   const glow = glowColor || 'var(--color-accent)'
   const { style: propsStyle, ...restProps } = props
   return (
-    <div
+    <Component
       className={[
         'rounded-[16px]',
         padding ? 'p-5' : '',
@@ -19,7 +19,7 @@ export function Card({ children, className = '', padding = true, glowColor, ...p
       {...restProps}
     >
       {children}
-    </div>
+    </Component>
   )
 }
 

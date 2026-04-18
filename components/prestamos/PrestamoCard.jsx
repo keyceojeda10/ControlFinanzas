@@ -2,6 +2,7 @@
 
 import Link      from 'next/link'
 import { Badge } from '@/components/ui/Badge'
+import { Card }  from '@/components/ui/Card'
 import { formatCOP, formatFechaCobroRelativa } from '@/lib/calculos'
 
 const estadoBadge = {
@@ -21,14 +22,12 @@ export default function PrestamoCard({ prestamo: p }) {
   const valorCobro = proximoCobroLabel
 
   return (
-    <Link
+    <Card
+      as={Link}
       href={`/prestamos/${p.id}`}
-      className={[
-        'block rounded-[14px] p-4 transition-all duration-150 group',
-        enMora
-          ? 'bg-[rgba(239,68,68,0.06)] border-2 border-[rgba(239,68,68,0.3)] hover:border-[rgba(239,68,68,0.5)]'
-          : 'bg-[var(--color-bg-surface)] border border-[var(--color-border)] hover:border-[#f5c518]/40 hover:bg-[var(--color-bg-hover)]',
-      ].join(' ')}
+      glowColor={enMora ? '#ef4444' : 'var(--color-accent)'}
+      padding={false}
+      className="block p-4 transition-all duration-150 group hover:border-[#f5c518]/40"
     >
       {/* Alerta de mora */}
       {enMora && (
@@ -125,6 +124,6 @@ export default function PrestamoCard({ prestamo: p }) {
           </span>
         </div>
       )}
-    </Link>
+    </Card>
   )
 }

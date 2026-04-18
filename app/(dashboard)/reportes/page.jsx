@@ -176,43 +176,29 @@ export default function ReportesPage() {
               { label: 'Préstamos activos', value: resumen.prestamos.activos,                  color: 'var(--color-accent)' },
               { label: 'Cartera activa',    value: formatCOP(resumen.prestamos.carteraActiva), color: 'var(--color-success)' },
             ].map(({ label, value, color }) => (
-              <div
+              <Card
                 key={label}
-                className="border border-[var(--color-border)] rounded-[12px] px-3 py-3 text-center"
-                style={{
-                  background: `linear-gradient(135deg, ${color === 'white' ? '#ffffff' : color}0A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, ${color === 'white' ? '#ffffff' : color}05 100%)`,
-                  boxShadow: `0 0 30px ${color === 'white' ? '#ffffff' : color}08, 0 1px 2px rgba(0,0,0,0.3)`,
-                }}
+                glowColor={color === 'white' ? 'var(--color-accent)' : color}
+                padding={false}
+                className="px-3 py-3 text-center"
               >
                 <p className="text-[10px] text-[var(--color-text-muted)]">{label}</p>
-                <p className="text-base font-bold mt-0.5 font-mono-display" style={{ color }}>{value}</p>
-              </div>
+                <p className="text-base font-bold mt-0.5 font-mono-display" style={{ color: color === 'white' ? 'var(--color-text-primary)' : color }}>{value}</p>
+              </Card>
             ))}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div
-              className="border border-[var(--color-border)] rounded-[12px] px-4 py-3"
-              style={{
-                background: 'linear-gradient(135deg, #22c55e0A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #22c55e05 100%)',
-                boxShadow: '0 0 30px #22c55e08, 0 1px 2px rgba(0,0,0,0.3)',
-              }}
-            >
+            <Card glowColor="#22c55e" padding={false} className="px-4 py-3">
               <p className="text-[10px] text-[var(--color-text-muted)]">Ingresos del período</p>
               <p className="text-lg font-bold text-[var(--color-success)] mt-0.5 font-mono-display">{formatCOP(resumen.pagos.totalPeriodo)}</p>
               <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{resumen.pagos.cantidad} pagos</p>
-            </div>
-            <div
-              className="border border-[var(--color-border)] rounded-[12px] px-4 py-3"
-              style={{
-                background: 'linear-gradient(135deg, #f5c5180A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #f5c51805 100%)',
-                boxShadow: '0 0 30px #f5c51808, 0 1px 2px rgba(0,0,0,0.3)',
-              }}
-            >
+            </Card>
+            <Card glowColor="var(--color-accent)" padding={false} className="px-4 py-3">
               <p className="text-[10px] text-[var(--color-text-muted)]">Capital prestado activo</p>
               <p className="text-lg font-bold text-[var(--color-accent)] mt-0.5 font-mono-display">{formatCOP(resumen.prestamos.capitalPrestado)}</p>
               <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{resumen.prestamos.completados} completados</p>
-            </div>
+            </Card>
           </div>
         </>
       )}

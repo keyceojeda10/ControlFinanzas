@@ -2,6 +2,7 @@
 
 import Link  from 'next/link'
 import { Badge } from '@/components/ui/Badge'
+import { Card } from '@/components/ui/Card'
 
 const estadoBadge = {
   activo:    { variant: 'green',  label: 'Al día'    },
@@ -12,17 +13,17 @@ const estadoBadge = {
 export default function ClienteCard({ cliente }) {
   const badge = estadoBadge[cliente.estado] ?? estadoBadge.cancelado
 
+  const glow = cliente.estado === 'mora' ? '#ef4444'
+    : cliente.estado === 'activo' ? 'var(--color-accent)'
+    : 'var(--color-text-muted)'
+
   return (
-    <Link
+    <Card
+      as={Link}
       href={`/clientes/${cliente.id}`}
-      className="flex items-center gap-3 border border-[var(--color-border)] rounded-[14px] p-4 hover:border-[#f5c518]/40 transition-all duration-150 group"
-      style={{
-        background: cliente.estado === 'mora'
-          ? 'linear-gradient(135deg, #ef444406 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #ef444403 100%)'
-          : cliente.estado === 'activo'
-          ? 'linear-gradient(135deg, #f5c51806 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #f5c51803 100%)'
-          : 'var(--color-bg-card)',
-      }}
+      glowColor={glow}
+      padding={false}
+      className="flex items-center gap-3 p-4 hover:border-[#f5c518]/40 transition-all duration-150 group"
     >
       {/* Avatar */}
       <div
@@ -84,6 +85,6 @@ export default function ClienteCard({ cliente }) {
       >
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
       </svg>
-    </Link>
+    </Card>
   )
 }
