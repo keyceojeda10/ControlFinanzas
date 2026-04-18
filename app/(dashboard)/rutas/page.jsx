@@ -255,7 +255,7 @@ export default function RutasPage() {
                 className="block border rounded-[16px] p-4 transition-all group active:scale-[0.98]"
                 style={{
                   borderColor: isComplete ? 'rgba(34,197,94,0.2)' : '#2a2a2a',
-                  background: `linear-gradient(135deg, ${accentColor}08 0%, #141414 50%, #141414 80%, ${accentColor}05 100%)`,
+                  background: `linear-gradient(135deg, ${accentColor}08 0%, var(--color-bg-card) 50%, var(--color-bg-card) 80%, ${accentColor}05 100%)`,
                   boxShadow: `0 0 40px ${accentColor}06, 0 2px 8px rgba(0,0,0,0.3)`,
                 }}
               >

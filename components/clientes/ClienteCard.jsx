@@ -18,9 +18,9 @@ export default function ClienteCard({ cliente }) {
       className="flex items-center gap-3 border border-[var(--color-border)] rounded-[14px] p-4 hover:border-[#f5c518]/40 transition-all duration-150 group"
       style={{
         background: cliente.estado === 'mora'
-          ? 'linear-gradient(135deg, #ef444406 0%, #1a1a1a 40%, #1a1a1a 70%, #ef444403 100%)'
+          ? 'linear-gradient(135deg, #ef444406 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #ef444403 100%)'
           : cliente.estado === 'activo'
-          ? 'linear-gradient(135deg, #f5c51806 0%, #1a1a1a 40%, #1a1a1a 70%, #f5c51803 100%)'
+          ? 'linear-gradient(135deg, #f5c51806 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #f5c51803 100%)'
           : '#1a1a1a',
       }}
     >

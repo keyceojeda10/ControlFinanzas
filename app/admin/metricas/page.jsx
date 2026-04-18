@@ -140,7 +140,7 @@ export default function MetricasPage() {
 
       {/* MRR por mes — barras apiladas */}
       <Card style={{
-        background: 'linear-gradient(135deg, #22c55e0A 0%, #1a1a1a 40%, #1a1a1a 70%, #22c55e05 100%)',
+        background: 'linear-gradient(135deg, #22c55e0A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #22c55e05 100%)',
         boxShadow: '0 0 30px #22c55e08, 0 1px 2px rgba(0,0,0,0.3)',
       }}>
         <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-4">MRR por mes — Últimos 12 meses</p>
@@ -162,7 +162,7 @@ export default function MetricasPage() {
 
       {/* Crecimiento de organizaciones */}
       <Card style={{
-        background: 'linear-gradient(135deg, #06b6d40A 0%, #1a1a1a 40%, #1a1a1a 70%, #06b6d405 100%)',
+        background: 'linear-gradient(135deg, #06b6d40A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #06b6d405 100%)',
         boxShadow: '0 0 30px #06b6d408, 0 1px 2px rgba(0,0,0,0.3)',
       }}>
         <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-4">Crecimiento de organizaciones</p>
@@ -245,7 +245,7 @@ export default function MetricasPage() {
               { label: 'MAU', value: uso.mau, color: 'var(--color-purple)' },
             ].map(({ label, value, color }) => (
               <Card key={label} style={{
-                background: `linear-gradient(135deg, ${color}0A 0%, #1a1a1a 40%, #1a1a1a 70%, ${color}05 100%)`,
+                background: `linear-gradient(135deg, ${color}0A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, ${color}05 100%)`,
                 boxShadow: `0 0 20px ${color}08`,
               }}>
                 <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">{label}</p>
@@ -256,7 +256,7 @@ export default function MetricasPage() {
 
           {/* DAU trend */}
           <Card style={{
-            background: 'linear-gradient(135deg, #f5c5180A 0%, #1a1a1a 40%, #1a1a1a 70%, #f5c51805 100%)',
+            background: 'linear-gradient(135deg, #f5c5180A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #f5c51805 100%)',
             boxShadow: '0 0 30px #f5c51808, 0 1px 2px rgba(0,0,0,0.3)',
           }}>
             <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-4">Usuarios activos diarios — Últimos 14 días</p>

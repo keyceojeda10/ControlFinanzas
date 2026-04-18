@@ -125,7 +125,7 @@ export default function EditarCobrador({ params }) {
         onSubmit={handleSubmit}
         className="border border-[var(--color-border)] rounded-[16px] p-5 space-y-4"
         style={{
-          background: 'linear-gradient(135deg, #f5c5180A 0%, #1a1a1a 40%, #1a1a1a 70%, #f5c51805 100%)',
+          background: 'linear-gradient(135deg, #f5c5180A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #f5c51805 100%)',
           boxShadow: '0 0 30px #f5c51808, 0 1px 2px rgba(0,0,0,0.3)',
         }}
       >
@@ -182,7 +182,7 @@ export default function EditarCobrador({ params }) {
         {/* Compartir credenciales después de cambiar contraseña */}
         {credencialesGuardadas && (
           <div className="border border-[rgba(16,185,129,0.3)] rounded-[12px] p-4"
-            style={{ background: 'linear-gradient(135deg, #22c55e0A 0%, #1a1a1a 50%, #22c55e05 100%)' }}
+            style={{ background: 'linear-gradient(135deg, #22c55e0A 0%, var(--color-bg-card) 50%, #22c55e05 100%)' }}
           >
             <div className="flex items-center gap-2 mb-3">
               <svg className="w-4 h-4 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">

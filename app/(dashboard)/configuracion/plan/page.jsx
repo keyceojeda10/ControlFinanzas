@@ -376,7 +376,7 @@ export default function PlanPage() {
                   : 'border-[var(--color-border)]',
               ].join(' ')}
               style={glowColor ? {
-                background: `linear-gradient(135deg, ${glowColor}0A 0%, #1a1a1a 40%, #1a1a1a 70%, ${glowColor}05 100%)`,
+                background: `linear-gradient(135deg, ${glowColor}0A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, ${glowColor}05 100%)`,
                 boxShadow: `0 0 30px ${glowColor}08, 0 1px 2px rgba(0,0,0,0.3)`,
               } : { background: '#1a1a1a' }}
             >

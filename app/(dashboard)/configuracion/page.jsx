@@ -329,7 +329,7 @@ function TabSuscripcion() {
     <div className="space-y-5">
       <Card
         style={{
-          background: `linear-gradient(135deg, #f5c5180A 0%, #1a1a1a 40%, #1a1a1a 70%, #f5c51805 100%)`,
+          background: `linear-gradient(135deg, #f5c5180A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #f5c51805 100%)`,
           boxShadow: `0 0 30px #f5c51808, 0 1px 2px rgba(0,0,0,0.3)`,
         }}
       >

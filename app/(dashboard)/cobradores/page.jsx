@@ -54,7 +54,7 @@ export default function CobradoresPage() {
         <div
           className="border border-[var(--color-border)] rounded-[16px] p-8 text-center"
           style={{
-            background: 'linear-gradient(135deg, #f59e0b0A 0%, #1a1a1a 40%, #1a1a1a 70%, #f59e0b05 100%)',
+            background: 'linear-gradient(135deg, #f59e0b0A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #f59e0b05 100%)',
             boxShadow: '0 0 30px #f59e0b08, 0 1px 2px rgba(0,0,0,0.3)',
           }}
         >
@@ -138,7 +138,7 @@ export default function CobradoresPage() {
               href={`/cobradores/${c.id}`}
               className="block border border-[var(--color-border)] rounded-[16px] p-4 hover:border-[var(--color-border-hover)] transition-all"
               style={{
-                background: `linear-gradient(135deg, #22c55e0A 0%, #1a1a1a 40%, #1a1a1a 70%, #a855f705 100%)`,
+                background: `linear-gradient(135deg, #22c55e0A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #a855f705 100%)`,
                 boxShadow: `0 0 30px #22c55e08, 0 1px 2px rgba(0,0,0,0.3)`,
               }}
             >
