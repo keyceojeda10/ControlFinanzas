@@ -2,7 +2,10 @@ import { Geist, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import SessionProvider from "@/components/providers/SessionProvider";
 import OfflineProvider from "@/components/providers/OfflineProvider";
+import { ThemeProvider } from "@/lib/theme/ThemeProvider";
 import Script from "next/script";
+
+const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('cf-theme')||'system';var r=t==='system'?(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'):t;document.documentElement.setAttribute('data-theme',r);document.documentElement.style.colorScheme=r;}catch(e){document.documentElement.setAttribute('data-theme','dark');}})();`;
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,12 +40,17 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="es" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className={`${geistSans.variable} ${jetbrainsMono.variable} antialiased`} suppressHydrationWarning>
-        <SessionProvider>
-          <OfflineProvider>
-            {children}
-          </OfflineProvider>
-        </SessionProvider>
+        <ThemeProvider>
+          <SessionProvider>
+            <OfflineProvider>
+              {children}
+            </OfflineProvider>
+          </SessionProvider>
+        </ThemeProvider>
         <Script id="fb-pixel" strategy="afterInteractive">{`
           !function(f,b,e,v,n,t,s)
           {if(f.fbq)return;n=f.fbq=function(){n.callMethod?

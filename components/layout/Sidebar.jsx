@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useOffline } from '@/components/providers/OfflineProvider'
 import { useState, useEffect } from 'react'
 import InstallButton from './InstallButton'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 
 const formatCOPCompact = (monto = 0) => `$${Math.round(monto || 0).toLocaleString('es-CO')}`
 
@@ -366,7 +367,10 @@ export default function Sidebar() {
             <p className="text-[10px] text-[#a2a2ad]">{{ owner: 'Administrador', cobrador: 'Cobrador', superadmin: 'Super Admin' }[session?.user?.rol] ?? session?.user?.rol}</p>
           </div>
         </div>
-        <InstallButton variant="desktop" />
+        <div className="flex items-center gap-2 mb-2">
+          <ThemeToggle />
+          <div className="flex-1"><InstallButton variant="desktop" /></div>
+        </div>
         <button
           onClick={() => {
             try { navigator.serviceWorker?.controller?.postMessage({ type: 'CLEAR_API_CACHE' }) } catch {}

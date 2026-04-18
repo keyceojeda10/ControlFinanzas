@@ -11,6 +11,8 @@ import { Skeleton }            from '@/components/ui/Skeleton'
 import { formatCOP }           from '@/lib/calculos'
 import { PLANES_CONFIG }       from '@/lib/planes'
 import DiasSinCobroSelector    from '@/components/ui/DiasSinCobroSelector'
+import ThemeToggle             from '@/components/ui/ThemeToggle'
+import { useTheme }             from '@/lib/theme/ThemeProvider'
 
 const planBadge  = { starter: 'gray', basic: 'blue', growth: 'yellow', standard: 'purple', professional: 'green' }
 const PRECIOS    = Object.fromEntries(Object.entries(PLANES_CONFIG).map(([k, v]) => [k, v.precio]))
@@ -663,6 +665,7 @@ function ConfiguracionContent() {
     { key: 'suscripcion',  label: 'Suscripción',  visible: rol === 'owner' },
     { key: 'referidos',    label: 'Referidos',     visible: rol === 'owner' },
     { key: 'notificaciones', label: 'Notificaciones', visible: true },
+    { key: 'apariencia',     label: 'Apariencia',     visible: true },
   ].filter((t) => t.visible)
 
   return (
@@ -695,6 +698,30 @@ function ConfiguracionContent() {
       {tab === 'suscripcion'  && esOwner && <TabSuscripcion />}
       {tab === 'referidos'    && esOwner && <TabReferidos />}
       {tab === 'notificaciones' && <TabNotificaciones />}
+      {tab === 'apariencia'     && <TabApariencia />}
+    </div>
+  )
+}
+
+function TabApariencia() {
+  const { theme, resolvedTheme } = useTheme()
+  return (
+    <div className="space-y-5">
+      <Card>
+        <div className="p-5 space-y-4">
+          <div>
+            <h3 className="text-base font-semibold" style={{ color: 'var(--color-text-primary)' }}>Tema de la aplicacion</h3>
+            <p className="text-sm mt-1" style={{ color: 'var(--color-text-secondary)' }}>
+              Elige como se ve Control Finanzas. El modo sistema sigue la preferencia de tu dispositivo.
+            </p>
+          </div>
+          <ThemeToggle variant="segmented" />
+          <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+            Modo actual: <strong style={{ color: 'var(--color-text-primary)' }}>{theme}</strong>
+            {theme === 'system' && ` (resuelto a ${resolvedTheme})`}
+          </p>
+        </div>
+      </Card>
     </div>
   )
 }

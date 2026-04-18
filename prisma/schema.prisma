@@ -130,6 +130,7 @@ model User {
   puedeVerCapital         Boolean   @default(false)
   puedeVerSaldoCaja       Boolean   @default(false)
   emailsMarketing         Boolean   @default(true)
+  theme                   String?   @default("system")
   createdAt               DateTime  @default(now())
 
   organization   Organization?     @relation(fields: [organizationId], references: [id])
