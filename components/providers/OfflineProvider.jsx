@@ -144,10 +144,31 @@ export default function OfflineProvider({ children }) {
     }
   }, [syncPendingThenFull])
 
-  // Register service worker
+  // Register service worker + warmup de rutas dashboard principales
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {})
+    if (!('serviceWorker' in navigator)) return
+    navigator.serviceWorker.register('/sw.js').catch(() => {})
+
+    // Warmup: la primera vez (por sesion) precachear las listas principales
+    // para que si el usuario se queda sin red sin haber navegado, tenga
+    // shells disponibles. Solo corre una vez por carga y solo si esta online.
+    const WARMUP_KEY = 'cf-sw-warmup-at'
+    const WARMUP_TTL = 30 * 60 * 1000 // 30 min
+    const lastWarmup = Number(sessionStorage.getItem(WARMUP_KEY) || 0)
+    const now = Date.now()
+    if (navigator.onLine && now - lastWarmup > WARMUP_TTL) {
+      sessionStorage.setItem(WARMUP_KEY, String(now))
+      const warmup = () => {
+        const sw = navigator.serviceWorker.controller
+        if (!sw) return
+        sw.postMessage({
+          type: 'CACHE_PAGES',
+          urls: ['/dashboard', '/clientes', '/prestamos', '/rutas', '/caja', '/clientes/nuevo', '/prestamos/nuevo'],
+        })
+      }
+      // Esperar un tick — si el SW no controla aun esta pagina, reintentar una vez
+      setTimeout(warmup, 800)
+      setTimeout(warmup, 4000)
     }
   }, [])
 
