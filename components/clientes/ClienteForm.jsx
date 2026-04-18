@@ -118,11 +118,14 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
       diasSinCobro: diasSinCobro.length > 0 ? diasSinCobro : null,
     }
 
-    // Si offline y es creación nueva, encolar y mostrar en lista con ID temporal
+    // Si offline y es creación nueva, encolar y volver a la lista (que ya
+    // está cacheada). No navegamos al detalle por ID temporal porque el SW
+    // no tiene esa URL en cache y mostraría "Sin conexión".
     if (!esEdicion && typeof navigator !== 'undefined' && !navigator.onLine) {
       try {
-        const tempId = await guardarClientePendiente(payload)
-        router.push(`/clientes/${tempId}`)
+        await guardarClientePendiente(payload)
+        try { sessionStorage.setItem('cf-toast', 'Cliente guardado. Se sincronizara al volver online.') } catch {}
+        router.push('/clientes')
         return
       } catch {
         setError('No se pudo guardar offline.')
@@ -143,8 +146,9 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
 
       // SW puede responder 503 sin red — encolar
       if (res.status === 503 && !esEdicion && !navigator.onLine) {
-        const tempId = await guardarClientePendiente(payload)
-        router.push(`/clientes/${tempId}`)
+        await guardarClientePendiente(payload)
+        try { sessionStorage.setItem('cf-toast', 'Cliente guardado. Se sincronizara al volver online.') } catch {}
+        router.push('/clientes')
         return
       }
 
@@ -157,8 +161,9 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
       // Fallback offline si el fetch falló por red
       if (!esEdicion && !navigator.onLine) {
         try {
-          const tempId = await guardarClientePendiente(payload)
-          router.push(`/clientes/${tempId}`)
+          await guardarClientePendiente(payload)
+          try { sessionStorage.setItem('cf-toast', 'Cliente guardado. Se sincronizara al volver online.') } catch {}
+          router.push('/clientes')
           return
         } catch { /* abajo */ }
       }

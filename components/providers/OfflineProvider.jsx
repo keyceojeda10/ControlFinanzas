@@ -17,6 +17,7 @@ export default function OfflineProvider({ children }) {
   const [pendingCount, setPendingCount] = useState(0)
   const [failedPayments, setFailedPayments] = useState([])
   const [syncResult, setSyncResult]     = useState(null)
+  const [customToast, setCustomToast]   = useState(null)
   const [syncMeta, setSyncMeta]         = useState(null)
   const [bulkSyncing, setBulkSyncing]   = useState(false)
   const [bulkProgress, setBulkProgress] = useState(null)
@@ -167,6 +168,29 @@ export default function OfflineProvider({ children }) {
     window.addEventListener('paymentQueued', onPaymentQueued)
     return () => window.removeEventListener('paymentQueued', onPaymentQueued)
   }, [refreshPending])
+
+  // Toast one-shot desde sessionStorage (usado cuando algo se guarda offline
+  // y navegamos a otra página). Se muestra 4s y se limpia.
+  useEffect(() => {
+    const check = () => {
+      try {
+        const msg = sessionStorage.getItem('cf-toast')
+        if (msg) {
+          sessionStorage.removeItem('cf-toast')
+          setCustomToast(msg)
+          setTimeout(() => setCustomToast(null), 4000)
+        }
+      } catch {}
+    }
+    check()
+    const onRoute = () => check()
+    window.addEventListener('popstate', onRoute)
+    const t = setInterval(check, 1500)
+    return () => {
+      window.removeEventListener('popstate', onRoute)
+      clearInterval(t)
+    }
+  }, [])
 
   // ─── AUTO-SYNC: on mount + periodic + visibility change ───
   useEffect(() => {
@@ -340,15 +364,25 @@ export default function OfflineProvider({ children }) {
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
-          {pendingCount} pago{pendingCount > 1 ? 's' : ''} pendiente{pendingCount > 1 ? 's' : ''}
+          {pendingCount} pendiente{pendingCount > 1 ? 's' : ''}
         </button>
+      )}
+
+      {/* Custom toast (cliente/prestamo guardado offline, etc) */}
+      {customToast && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[9999] bg-[var(--color-bg-surface)] border border-[var(--color-accent)] text-[var(--color-text-primary)] text-xs px-4 py-2.5 rounded-[12px] shadow-xl flex items-center gap-2 max-w-[90vw]">
+          <svg className="w-4 h-4 text-[var(--color-accent)] shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          <span>{customToast}</span>
+        </div>
       )}
 
       {/* Sync result toast */}
       {syncResult && (
         <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[9999] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-primary)] text-xs px-4 py-2.5 rounded-[12px] shadow-xl flex items-center gap-2">
           {syncResult.synced > 0 && (
-            <span className="text-[var(--color-success)]">{syncResult.synced} pago{syncResult.synced > 1 ? 's' : ''} sincronizado{syncResult.synced > 1 ? 's' : ''}</span>
+            <span className="text-[var(--color-success)]">{syncResult.synced} cambio{syncResult.synced > 1 ? 's' : ''} sincronizado{syncResult.synced > 1 ? 's' : ''}</span>
           )}
           {syncResult.failed > 0 && (
             <span className="text-[var(--color-danger)]">{syncResult.failed} fallido{syncResult.failed > 1 ? 's' : ''}</span>

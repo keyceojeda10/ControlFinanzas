@@ -198,10 +198,13 @@ function NuevoPrestamo() {
     }
 
     // Offline: encolar sin intentar fetch (evita esperar timeout)
+    // Volvemos a /prestamos (que ya está cacheado) en vez de al detalle por
+    // tempId — esa URL no está en cache del SW y mostraría "Sin conexion".
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
       try {
-        const tempId = await guardarPrestamoPendiente(payloadOffline)
-        router.push(`/prestamos/${tempId}`)
+        await guardarPrestamoPendiente(payloadOffline)
+        try { sessionStorage.setItem('cf-toast', 'Prestamo guardado. Se sincronizara al volver online.') } catch {}
+        router.push('/prestamos')
         return
       } catch {
         setError('No se pudo guardar offline.')
@@ -229,8 +232,9 @@ function NuevoPrestamo() {
     } catch {
       if (!navigator.onLine) {
         try {
-          const tempId = await guardarPrestamoPendiente(payloadOffline)
-          router.push(`/prestamos/${tempId}`)
+          await guardarPrestamoPendiente(payloadOffline)
+          try { sessionStorage.setItem('cf-toast', 'Prestamo guardado. Se sincronizara al volver online.') } catch {}
+          router.push('/prestamos')
           return
         } catch {}
       }
