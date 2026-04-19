@@ -157,19 +157,21 @@ export async function POST(request) {
   })
   if (!cliente) return Response.json({ error: 'Cliente no encontrado' }, { status: 404 })
 
-  // Evita desalineaciones de caja: el cobrador solo puede crear préstamos en su ruta activa.
+  // El cobrador puede crear préstamos a clientes de cualquiera de sus rutas
+  // asignadas (consistente con GET /api/prestamos que ya filtra por rutaIds[]).
   if (rol === 'cobrador') {
-    const rutaActiva = await prisma.ruta.findFirst({
+    const rutasAsignadas = await prisma.ruta.findMany({
       where: { organizationId, cobradorId: session.user.id, activo: true },
       select: { id: true },
     })
 
-    if (!rutaActiva) {
+    if (rutasAsignadas.length === 0) {
       return Response.json({ error: 'No tienes una ruta activa asignada' }, { status: 400 })
     }
 
-    if (cliente.rutaId !== rutaActiva.id) {
-      return Response.json({ error: 'Solo puedes crear préstamos para clientes de tu ruta activa' }, { status: 403 })
+    const rutaIdsAsignadas = rutasAsignadas.map(r => r.id)
+    if (!rutaIdsAsignadas.includes(cliente.rutaId)) {
+      return Response.json({ error: 'Solo puedes crear préstamos para clientes de tus rutas asignadas' }, { status: 403 })
     }
   }
 
