@@ -191,13 +191,17 @@ export async function POST(request) {
     )
   }
 
-  // Si se envía rutaId, verificar que pertenece a la organización
+  // Si se envía rutaId, verificar que pertenece a la organización.
+  // Para cobradores, ademas debe ser una de sus rutas asignadas.
   if (rutaId) {
     const ruta = await prisma.ruta.findFirst({
       where: { id: rutaId, organizationId },
     })
     if (!ruta) {
       return Response.json({ error: 'Ruta no válida' }, { status: 400 })
+    }
+    if (session.user.rol === 'cobrador' && !(session.user.rutaIds ?? []).includes(rutaId)) {
+      return Response.json({ error: 'Solo puedes crear clientes en tus rutas asignadas' }, { status: 403 })
     }
   }
 
