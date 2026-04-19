@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, createContext, useContext, useCallback } from 'react'
 import SyncDrawer from '@/components/offline/SyncDrawer'
-import { iniciarAutoSync, obtenerPagosPendientes, obtenerPagosFallidos, eliminarPagoFallido, sincronizarPagos, sincronizarOrdenes, sincronizarTodo, obtenerSyncMeta, sincronizarCreaciones, obtenerClientesPendientes, obtenerPrestamosPendientes, obtenerClientesFallidos, obtenerPrestamosFallidos, obtenerMutacionesPendientes, obtenerMutacionesFallidas, sincronizarMutaciones, eliminarClienteFallido, eliminarPrestamoFallido, eliminarMutacion, reintentarMutacion } from '@/lib/offline'
+import { iniciarAutoSync, obtenerPagosPendientes, obtenerPagosFallidos, eliminarPagoFallido, sincronizarPagos, sincronizarOrdenes, sincronizarTodo, obtenerSyncMeta, sincronizarCreaciones, obtenerClientesPendientes, obtenerPrestamosPendientes, obtenerClientesFallidos, obtenerPrestamosFallidos, obtenerMutacionesPendientes, obtenerMutacionesFallidas, obtenerMutacionesConflicto, sincronizarMutaciones, eliminarClienteFallido, eliminarPrestamoFallido, eliminarMutacion, reintentarMutacion } from '@/lib/offline'
 
 const OfflineContext = createContext({ isOnline: true, pendingCount: 0, syncing: false, syncMeta: null, lastSyncedAt: 0, openSyncDrawer: () => {} })
 
@@ -23,6 +23,7 @@ export default function OfflineProvider({ children }) {
   const [failedDetails, setFailedDetails] = useState({
     pagos: [], clientes: [], prestamos: [], mutaciones: [],
   })
+  const [conflictos, setConflictos] = useState([])
   const [syncResult, setSyncResult]     = useState(null)
   const [customToast, setCustomToast]   = useState(null)
   const [syncMeta, setSyncMeta]         = useState(null)
@@ -96,7 +97,7 @@ export default function OfflineProvider({ children }) {
 
     // STEP 3: Refresh pending count + failed items
     try {
-      const [pending, failed, cliPend, presPend, mutPend, cliFail, presFail, mutFail] = await Promise.all([
+      const [pending, failed, cliPend, presPend, mutPend, cliFail, presFail, mutFail, mutConf] = await Promise.all([
         obtenerPagosPendientes(),
         obtenerPagosFallidos(),
         obtenerClientesPendientes().catch(() => []),
@@ -105,11 +106,13 @@ export default function OfflineProvider({ children }) {
         obtenerClientesFallidos().catch(() => []),
         obtenerPrestamosFallidos().catch(() => []),
         obtenerMutacionesFallidas().catch(() => []),
+        obtenerMutacionesConflicto().catch(() => []),
       ])
       setPendingCount(pending.length + cliPend.length + presPend.length + mutPend.length)
       setFailedPayments(failed)
       setPendingDetails({ pagos: pending, clientes: cliPend, prestamos: presPend, mutaciones: mutPend })
       setFailedDetails({ pagos: failed, clientes: cliFail, prestamos: presFail, mutaciones: mutFail })
+      setConflictos(mutConf)
     } catch { /* ignore */ }
   }, [])
 
@@ -127,7 +130,7 @@ export default function OfflineProvider({ children }) {
   // Track pending payments count (MUST be defined before useEffects that reference it)
   const refreshPending = useCallback(async () => {
     try {
-      const [pending, failed, cliPend, presPend, mutPend, cliFail, presFail, mutFail] = await Promise.all([
+      const [pending, failed, cliPend, presPend, mutPend, cliFail, presFail, mutFail, mutConf] = await Promise.all([
         obtenerPagosPendientes(),
         obtenerPagosFallidos(),
         obtenerClientesPendientes().catch(() => []),
@@ -136,11 +139,13 @@ export default function OfflineProvider({ children }) {
         obtenerClientesFallidos().catch(() => []),
         obtenerPrestamosFallidos().catch(() => []),
         obtenerMutacionesFallidas().catch(() => []),
+        obtenerMutacionesConflicto().catch(() => []),
       ])
       setPendingCount(pending.length + cliPend.length + presPend.length + mutPend.length)
       setFailedPayments(failed)
       setPendingDetails({ pagos: pending, clientes: cliPend, prestamos: presPend, mutaciones: mutPend })
       setFailedDetails({ pagos: failed, clientes: cliFail, prestamos: presFail, mutaciones: mutFail })
+      setConflictos(mutConf)
     } catch { /* ignore */ }
   }, [])
 
@@ -169,6 +174,23 @@ export default function OfflineProvider({ children }) {
     } catch {}
     refreshPending()
     if (navigator.onLine) {
+      setTimeout(() => syncPendingThenFull({ silent: false }), 300)
+    }
+  }, [refreshPending, syncPendingThenFull])
+
+  // Resolver conflicto 412:
+  //   accion='local'    -> pisar servidor con cambios del usuario
+  //   accion='servidor' -> descartar mi cambio y quedarme con servidor
+  const resolverConflicto = useCallback(async (id, accion) => {
+    try {
+      if (accion === 'servidor') {
+        await eliminarMutacion(id)
+      } else if (accion === 'local') {
+        await reintentarMutacion(id, { forzar: true })
+      }
+    } catch {}
+    refreshPending()
+    if (navigator.onLine && accion === 'local') {
       setTimeout(() => syncPendingThenFull({ silent: false }), 300)
     }
   }, [refreshPending, syncPendingThenFull])
@@ -395,15 +417,15 @@ export default function OfflineProvider({ children }) {
   }
 
   return (
-    <OfflineContext.Provider value={{ isOnline, pendingCount, failedPayments, pendingDetails, failedDetails, descartarPagoFallido, descartarItem, reintentarItem, refreshPending, manualSync, syncMeta, startBulkSync, bulkSyncing, bulkProgress, lastSyncedAt, openSyncDrawer: () => setDrawerOpen(true) }}>
+    <OfflineContext.Provider value={{ isOnline, pendingCount, failedPayments, pendingDetails, failedDetails, conflictos, resolverConflicto, descartarPagoFallido, descartarItem, reintentarItem, refreshPending, manualSync, syncMeta, startBulkSync, bulkSyncing, bulkProgress, lastSyncedAt, openSyncDrawer: () => setDrawerOpen(true) }}>
       <SyncDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
       {children}
 
       {/* Badge flotante unificado para mobile (abre el drawer). Se oculta en desktop (lg+) */}
-      {(!isOnline || pendingCount > 0 || bulkSyncing) && (
+      {(!isOnline || pendingCount > 0 || bulkSyncing || conflictos.length > 0) && (
         <button
           onClick={() => setDrawerOpen(true)}
-          className="lg:hidden fixed bottom-[84px] right-3 z-[9998] h-9 px-3 rounded-full flex items-center gap-2 shadow-lg backdrop-blur-xl bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-primary)] text-xs font-semibold"
+          className={`lg:hidden fixed bottom-[84px] right-3 z-[9998] h-9 px-3 rounded-full flex items-center gap-2 shadow-lg backdrop-blur-xl bg-[var(--color-bg-surface)] border text-[var(--color-text-primary)] text-xs font-semibold ${conflictos.length > 0 ? 'border-[var(--color-danger)] animate-pulse' : 'border-[var(--color-border)]'}`}
           aria-label="Estado de sincronizacion"
         >
           {bulkSyncing ? (
@@ -412,12 +434,14 @@ export default function OfflineProvider({ children }) {
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
           ) : (
-            <span className={`w-2 h-2 rounded-full ${!isOnline ? 'bg-[var(--color-warning)] animate-pulse' : 'bg-[var(--color-info)]'}`} />
+            <span className={`w-2 h-2 rounded-full ${conflictos.length > 0 ? 'bg-[var(--color-danger)]' : !isOnline ? 'bg-[var(--color-warning)] animate-pulse' : 'bg-[var(--color-info)]'}`} />
           )}
           <span>
-            {!isOnline
-              ? (pendingCount > 0 ? `Offline - ${pendingCount}` : 'Offline')
-              : bulkSyncing ? 'Sync...' : `${pendingCount} pendientes`}
+            {conflictos.length > 0
+              ? `${conflictos.length} conflicto${conflictos.length > 1 ? 's' : ''}`
+              : !isOnline
+                ? (pendingCount > 0 ? `Offline - ${pendingCount}` : 'Offline')
+                : bulkSyncing ? 'Sync...' : `${pendingCount} pendientes`}
           </span>
         </button>
       )}

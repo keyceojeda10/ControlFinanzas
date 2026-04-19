@@ -1,14 +1,18 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useOffline } from '@/components/providers/OfflineProvider'
+import ConflictResolverModal from '@/components/offline/ConflictResolverModal'
 
 // Drawer lateral que lista todos los items pendientes y fallidos con acciones.
 export default function SyncDrawer({ open, onClose }) {
   const {
     isOnline, pendingCount, bulkSyncing, pendingDetails, failedDetails,
+    conflictos, resolverConflicto,
     descartarItem, reintentarItem, manualSync, syncMeta, lastSyncedAt,
   } = useOffline()
+
+  const [conflictoActivo, setConflictoActivo] = useState(null)
 
   useEffect(() => {
     if (!open) return
@@ -73,6 +77,39 @@ export default function SyncDrawer({ open, onClose }) {
             </button>
           </div>
 
+          {/* Conflictos (prioritario) */}
+          {conflictos && conflictos.length > 0 && (
+            <div className="rounded-xl border-2 border-[var(--color-danger)] bg-[var(--color-danger)]/5 p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <svg className="w-4 h-4 text-[var(--color-danger)]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4a2 2 0 00-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z" />
+                </svg>
+                <p className="text-[11px] uppercase tracking-wide text-[var(--color-danger)] font-bold">
+                  Conflictos ({conflictos.length})
+                </p>
+              </div>
+              <p className="text-[11px] text-[var(--color-text-muted)] mb-2">
+                Alguien modifico estos registros mientras editabas offline. Revisa y decide.
+              </p>
+              <ul className="space-y-1.5">
+                {conflictos.map((m) => (
+                  <li key={m.id} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2 flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-[var(--color-text-primary)] truncate">{descripcionMutacion(m)}</p>
+                      <p className="text-[11px] text-[var(--color-text-muted)] truncate">{fmtDate(m.createdAt)}</p>
+                    </div>
+                    <button
+                      onClick={() => setConflictoActivo(m)}
+                      className="text-[11px] px-2.5 h-7 rounded-md bg-[var(--color-danger)] text-white font-semibold whitespace-nowrap"
+                    >
+                      Resolver
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* Pendientes por tipo */}
           <Section title="Pagos pendientes" items={pendingDetails?.pagos} render={(p) => ({
             main: `Pago de $${Number(p.montoPagado || 0).toLocaleString('es-CO')}`,
@@ -126,13 +163,24 @@ export default function SyncDrawer({ open, onClose }) {
             </>
           )}
 
-          {pendingCount === 0 && failedTotal === 0 && (
+          {pendingCount === 0 && failedTotal === 0 && (!conflictos || conflictos.length === 0) && (
             <div className="text-center py-8 text-[var(--color-text-muted)] text-sm">
               {isOnline ? 'Todo sincronizado' : 'Sin cambios pendientes'}
             </div>
           )}
         </div>
       </div>
+
+      {conflictoActivo && (
+        <ConflictResolverModal
+          mutacion={conflictoActivo}
+          onClose={() => setConflictoActivo(null)}
+          onResolve={async (accion) => {
+            await resolverConflicto?.(conflictoActivo.id, accion)
+            setConflictoActivo(null)
+          }}
+        />
+      )}
     </div>
   )
 }
