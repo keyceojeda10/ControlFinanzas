@@ -375,10 +375,10 @@ export default function PrestamoDetallePage({ params }) {
       <Card>
         <div className="flex items-center justify-between">
           <div>
-            <Link href={`/clientes/${cliente.id}`} className="hover:text-[var(--color-accent)] transition-colors">
-              <h1 className="text-lg font-bold text-[white]">{cliente.nombre}</h1>
+            <Link href={cliente?.id ? `/clientes/${cliente.id}` : '#'} className="hover:text-[var(--color-accent)] transition-colors">
+              <h1 className="text-lg font-bold text-[white]">{cliente?.nombre || 'Cliente'}</h1>
             </Link>
-            <p className="text-sm text-[var(--color-text-muted)]">CC {cliente.cedula}</p>
+            {cliente?.cedula && <p className="text-sm text-[var(--color-text-muted)]">CC {cliente.cedula}</p>}
           </div>
           <Badge variant={badge.variant}>{badge.label}</Badge>
         </div>
