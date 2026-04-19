@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, createContext, useContext, useCallback } from 'react'
+import { useState, useEffect, useRef, useMemo, createContext, useContext, useCallback } from 'react'
 import SyncDrawer from '@/components/offline/SyncDrawer'
 import { iniciarAutoSync, obtenerPagosPendientes, obtenerPagosFallidos, eliminarPagoFallido, sincronizarPagos, sincronizarOrdenes, sincronizarTodo, obtenerSyncMeta, sincronizarCreaciones, obtenerClientesPendientes, obtenerPrestamosPendientes, obtenerClientesFallidos, obtenerPrestamosFallidos, obtenerMutacionesPendientes, obtenerMutacionesFallidas, obtenerMutacionesConflicto, sincronizarMutaciones, eliminarClienteFallido, eliminarPrestamoFallido, eliminarMutacion, reintentarMutacion } from '@/lib/offline'
 
@@ -230,7 +230,7 @@ export default function OfflineProvider({ children }) {
         if (!sw) return
         sw.postMessage({
           type: 'CACHE_PAGES',
-          urls: ['/dashboard', '/clientes', '/prestamos', '/rutas', '/caja', '/capital', '/reportes', '/clientes/nuevo', '/prestamos/nuevo'],
+          urls: ['/dashboard', '/clientes', '/prestamos', '/rutas', '/caja', '/capital', '/reportes', '/gastos', '/clientes/nuevo', '/prestamos/nuevo'],
         })
       }
       // Esperar un tick — si el SW no controla aun esta pagina, reintentar una vez
@@ -416,8 +416,23 @@ export default function OfflineProvider({ children }) {
     }
   }
 
+  // Set de IDs de entidades con mutaciones/pagos pendientes o fallidos para
+  // que las cards muestren un badge "pendiente offline" sin N consultas.
+  const pendientesIds = useMemo(() => {
+    const s = new Set()
+    for (const p of pendingDetails.pagos || []) if (p.prestamoId) s.add(p.prestamoId)
+    for (const p of failedDetails.pagos || []) if (p.prestamoId) s.add(p.prestamoId)
+    for (const c of pendingDetails.clientes || []) if (c.tempId) s.add(c.tempId)
+    for (const c of failedDetails.clientes || []) if (c.tempId) s.add(c.tempId)
+    for (const p of pendingDetails.prestamos || []) { if (p.tempId) s.add(p.tempId); if (p.clienteId) s.add(p.clienteId) }
+    for (const p of failedDetails.prestamos || []) { if (p.tempId) s.add(p.tempId); if (p.clienteId) s.add(p.clienteId) }
+    for (const m of pendingDetails.mutaciones || []) if (m.entityId) s.add(m.entityId)
+    for (const m of failedDetails.mutaciones || []) if (m.entityId) s.add(m.entityId)
+    return s
+  }, [pendingDetails, failedDetails])
+
   return (
-    <OfflineContext.Provider value={{ isOnline, pendingCount, failedPayments, pendingDetails, failedDetails, conflictos, resolverConflicto, descartarPagoFallido, descartarItem, reintentarItem, refreshPending, manualSync, syncMeta, startBulkSync, bulkSyncing, bulkProgress, lastSyncedAt, openSyncDrawer: () => setDrawerOpen(true) }}>
+    <OfflineContext.Provider value={{ isOnline, pendingCount, failedPayments, pendingDetails, failedDetails, conflictos, pendientesIds, resolverConflicto, descartarPagoFallido, descartarItem, reintentarItem, refreshPending, manualSync, syncMeta, startBulkSync, bulkSyncing, bulkProgress, lastSyncedAt, openSyncDrawer: () => setDrawerOpen(true) }}>
       <SyncDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
       {children}
 

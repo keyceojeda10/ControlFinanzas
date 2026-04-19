@@ -73,6 +73,7 @@ const CACHEABLE_API = [
   '/api/cobradores',
   '/api/auth/session',
   '/api/caja',
+  '/api/gastos',
   '/api/capital/movimientos',
   '/api/reportes/resumen',
   '/api/reportes/ingresos',

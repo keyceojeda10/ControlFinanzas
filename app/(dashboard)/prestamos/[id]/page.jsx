@@ -18,6 +18,7 @@ import ModificarPlazo                 from '@/components/prestamos/ModificarPlaz
 import BotonWhatsApp                  from '@/components/ui/BotonWhatsApp'
 import BotonCompartir                 from '@/components/ui/BotonCompartir'
 import BotonImprimirRecibo            from '@/components/ui/BotonImprimirRecibo'
+import OfflineBadge                   from '@/components/offline/OfflineBadge'
 import { formatCOP, formatFechaCobroRelativa } from '@/lib/calculos'
 
 // ─── Helpers de formato ──────────────────────────────────────────
@@ -380,7 +381,10 @@ export default function PrestamoDetallePage({ params }) {
             </Link>
             {cliente?.cedula && <p className="text-sm text-[var(--color-text-muted)]">CC {cliente.cedula}</p>}
           </div>
-          <Badge variant={badge.variant}>{badge.label}</Badge>
+          <div className="flex flex-col items-end gap-1">
+            <OfflineBadge id={prestamo?.id} />
+            <Badge variant={badge.variant}>{badge.label}</Badge>
+          </div>
         </div>
       </Card>
 

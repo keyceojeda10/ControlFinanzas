@@ -11,6 +11,7 @@ import { useState, useEffect } from 'react'
 import InstallButton from './InstallButton'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 import SyncStatusBadge from '@/components/offline/SyncStatusBadge'
+import CacheAge from '@/components/offline/CacheAge'
 import { limpiarDatosOffline } from '@/lib/offline'
 
 function SyncStatusBadgeTrigger() {
@@ -394,6 +395,9 @@ export default function Sidebar() {
         </div>
         <div className="mb-2">
           <SyncStatusBadgeTrigger />
+        </div>
+        <div className="mb-2 px-1">
+          <CacheAge />
         </div>
         <button
           onClick={async () => {

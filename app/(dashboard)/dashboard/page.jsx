@@ -10,6 +10,7 @@ import OnboardingChecklist from '@/components/onboarding/OnboardingChecklist'
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
 import SpotlightOverlay from '@/components/onboarding/SpotlightOverlay'
 import CobradorOnboarding from '@/components/onboarding/CobradorOnboarding'
+import CacheAge from '@/components/offline/CacheAge'
 
 function Skeleton({ className = '' }) {
   return <div className={`animate-pulse rounded-[12px] ${className}`} style={{ background: 'var(--color-bg-hover)' }} />
@@ -209,7 +210,10 @@ export default function DashboardPage() {
         onClose={onboarding.hideSpotlight}
       />
       <div>
-        <h1 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Tu resumen</h1>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Tu resumen</h1>
+          <CacheAge compact />
+        </div>
         <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
           {fechaActual || 'Resumen de tu cartera hoy'}
           {horaActual && <span className="font-mono-display ml-2" style={{ color: 'var(--color-accent)' }}>{horaActual}</span>}

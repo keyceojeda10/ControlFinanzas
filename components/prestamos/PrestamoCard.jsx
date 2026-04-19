@@ -4,6 +4,7 @@ import Link      from 'next/link'
 import { Badge } from '@/components/ui/Badge'
 import { Card }  from '@/components/ui/Card'
 import { formatCOP, formatFechaCobroRelativa } from '@/lib/calculos'
+import OfflineBadge from '@/components/offline/OfflineBadge'
 
 const estadoBadge = {
   activo:     { variant: 'blue',  label: 'Activo'     },
@@ -67,6 +68,7 @@ export default function PrestamoCard({ prestamo: p }) {
           </div>
         </div>
         <div className="flex flex-col items-end gap-1">
+          <OfflineBadge id={p.id} />
           {!enMora && <Badge variant={badge.variant}>{badge.label}</Badge>}
           {p.pagoHoy && (
             <span className="flex items-center gap-1 text-[10px] text-[var(--color-success)]">

@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
+import { getCachedMutation, setCachedMutation, buildMutationKey } from '@/lib/mutation-idempotency'
 
 // Funciones de fecha en timezone Colombia (UTC-5)
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -90,6 +91,13 @@ export async function POST(req) {
     return NextResponse.json({ error: 'No tienes permisos para reportar gastos' }, { status: 403 })
   }
 
+  const mutationId = req.headers.get('x-mutation-id')
+  const idemKey = mutationId ? buildMutationKey(session, mutationId, 'gasto.create') : null
+  if (idemKey) {
+    const cached = getCachedMutation(idemKey)
+    if (cached) return NextResponse.json(cached)
+  }
+
   if (session.user.rol === 'cobrador') {
     const cobrador = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -139,5 +147,6 @@ export async function POST(req) {
   })
 
   logActividad({ session, accion: 'registrar_gasto', entidadTipo: 'gasto', entidadId: gasto.id, detalle: `Gasto $${gasto.monto.toLocaleString('es-CO')} - ${gasto.description}`, ip: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
+  if (idemKey) setCachedMutation(idemKey, gasto)
   return NextResponse.json(gasto)
 }
