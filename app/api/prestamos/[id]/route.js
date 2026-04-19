@@ -104,6 +104,15 @@ export async function PATCH(request, { params }) {
   const p = await obtenerPrestamo(id, session)
   if (!p) return Response.json({ error: 'Préstamo no encontrado' }, { status: 404 })
 
+  const ifUnmodifiedSince = request.headers.get('x-if-unmodified-since')
+  if (ifUnmodifiedSince && p.updatedAt) {
+    const baseMs = Date.parse(ifUnmodifiedSince)
+    const actualMs = new Date(p.updatedAt).getTime()
+    if (!isNaN(baseMs) && actualMs > baseMs + 1000) {
+      return Response.json({ error: 'Conflicto: el registro fue modificado en el servidor.' }, { status: 412 })
+    }
+  }
+
   const body = await request.json()
   const { estado, modo, fechaFin: nuevaFechaFinRaw, diasExtra } = body
 

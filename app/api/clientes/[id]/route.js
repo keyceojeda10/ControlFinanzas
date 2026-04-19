@@ -109,6 +109,16 @@ export async function PATCH(request, { params }) {
     return Response.json({ error: 'Cliente no encontrado' }, { status: 404 })
   }
 
+  // Deteccion de conflicto por timestamp (mutaciones offline).
+  const ifUnmodifiedSince = request.headers.get('x-if-unmodified-since')
+  if (ifUnmodifiedSince && clienteBase.updatedAt) {
+    const baseMs = Date.parse(ifUnmodifiedSince)
+    const actualMs = new Date(clienteBase.updatedAt).getTime()
+    if (!isNaN(baseMs) && actualMs > baseMs + 1000) {
+      return Response.json({ error: 'Conflicto: el registro fue modificado en el servidor.' }, { status: 412 })
+    }
+  }
+
   const body = await request.json()
 
   // Acción especial: inactivar / activar

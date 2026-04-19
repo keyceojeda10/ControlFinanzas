@@ -222,6 +222,19 @@ export default function OfflineProvider({ children }) {
     iniciarAutoSync()
   }, [])
 
+  // Escuchar mensajes del SW (Background Sync dispara TRIGGER_SYNC cuando
+  // el browser detecta red, incluso si la pestaña estaba en segundo plano).
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return
+    const onMessage = (e) => {
+      if (e.data?.type === 'TRIGGER_SYNC' && navigator.onLine) {
+        syncPendingThenFull({ silent: true })
+      }
+    }
+    navigator.serviceWorker.addEventListener('message', onMessage)
+    return () => navigator.serviceWorker.removeEventListener('message', onMessage)
+  }, [syncPendingThenFull])
+
   useEffect(() => {
     refreshPending()
     const interval = setInterval(refreshPending, 10000)

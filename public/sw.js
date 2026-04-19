@@ -1,6 +1,6 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME = 'cf-v10'
-const API_CACHE  = 'cf-api-v10'
+const CACHE_NAME = 'cf-v11'
+const API_CACHE  = 'cf-api-v11'
 
 // Only precache static assets (NOT auth-protected pages)
 const PRECACHE_URLS = [
@@ -257,6 +257,34 @@ self.addEventListener('notificationclick', (e) => {
     })
   )
 })
+
+// ─── Background Sync: dispara cuando el navegador detecta red ────
+// El browser invoca este evento incluso si la pestaña esta minimizada o
+// cerrada (dentro de los limites de cada plataforma). Nosotros notificamos
+// a todos los clients abiertos para que ejecuten la sincronizacion via
+// postMessage. Si no hay clients, no hay mucho que hacer desde SW sin
+// replicar toda la logica de IndexedDB + auth aqui, asi que simplemente
+// reintentamos en el proximo evento.
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'cf-sync-pending') {
+    event.waitUntil(notificarClientsParaSync())
+  }
+})
+
+async function notificarClientsParaSync() {
+  try {
+    const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+    if (clients.length === 0) {
+      // Sin clients abiertos: rechazar para que el browser reintente mas tarde.
+      throw new Error('no-clients')
+    }
+    for (const client of clients) {
+      client.postMessage({ type: 'TRIGGER_SYNC' })
+    }
+  } catch (e) {
+    throw e
+  }
+}
 
 // ─── Message handling (for sync trigger from app) ───────────
 self.addEventListener('message', (e) => {
