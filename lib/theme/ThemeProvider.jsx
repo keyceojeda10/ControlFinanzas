@@ -13,8 +13,30 @@ function getSystemTheme() {
 
 function applyTheme(resolved) {
   if (typeof document === 'undefined') return
-  document.documentElement.setAttribute('data-theme', resolved)
-  document.documentElement.style.colorScheme = resolved
+  const h = document.documentElement
+  h.setAttribute('data-theme', resolved)
+  h.style.colorScheme = resolved
+  // Inline background para evitar flash cuando la hoja de estilos no esta lista
+  // (offline / SW fallback). Se limpia cuando hay CSS cargado.
+  const bg = resolved === 'light' ? '#f5f7fb' : '#060609'
+  const fg = resolved === 'light' ? '#1a1a2e' : '#f0f0f5'
+  h.style.backgroundColor = bg
+  h.style.color = fg
+  if (document.body) {
+    document.body.style.backgroundColor = bg
+    document.body.style.color = fg
+  }
+}
+
+function readStoredTheme() {
+  try {
+    const saved = localStorage.getItem('cf-theme') || 'system'
+    return saved === 'system'
+      ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
+      : saved
+  } catch {
+    return 'dark'
+  }
 }
 
 export function ThemeProvider({ children, initialTheme }) {
@@ -43,6 +65,31 @@ export function ThemeProvider({ children, initialTheme }) {
     mq.addEventListener?.('change', handler)
     return () => mq.removeEventListener?.('change', handler)
   }, [theme])
+
+  // Re-aplicar tema cuando la pagina vuelve del bfcache (back/forward) o
+  // cuando se sirve desde cache del SW (HTML cacheado con data-theme viejo).
+  // Cubre el caso offline: usuario navega a pagina cacheada con dark y
+  // necesitamos re-forzar light instantaneamente.
+  useEffect(() => {
+    const reapply = () => {
+      const resolved = readStoredTheme()
+      setResolvedTheme(resolved)
+      applyTheme(resolved)
+    }
+    const onPageShow = (e) => {
+      // persisted=true => bfcache restore; tambien re-aplica en todo caso
+      reapply()
+    }
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') reapply()
+    }
+    window.addEventListener('pageshow', onPageShow)
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      window.removeEventListener('pageshow', onPageShow)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [])
 
   const setTheme = useCallback((next) => {
     setThemeState(next)

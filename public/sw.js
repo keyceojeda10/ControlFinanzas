@@ -1,6 +1,6 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME = 'cf-v11'
-const API_CACHE  = 'cf-api-v11'
+const CACHE_NAME = 'cf-v12'
+const API_CACHE  = 'cf-api-v12'
 
 // Only precache static assets (NOT auth-protected pages)
 const PRECACHE_URLS = [
@@ -172,7 +172,7 @@ async function networkFirstPage(request) {
       }
     } catch {}
 
-    return new Response('<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="background:#0a0a0a;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif"><div style="text-align:center"><h2>Sin conexion</h2><p>Revisa tu conexion a internet</p><p style="color:#f5c518;font-size:13px;margin-top:16px">Usa el boton &quot;Preparar offline&quot; en el Dashboard antes de salir</p></div></body></html>', {
+    return new Response(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script>(function(){try{var t=localStorage.getItem('cf-theme')||'system';var r=t==='system'?(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'):t;var h=document.documentElement;h.setAttribute('data-theme',r);var bg=r==='light'?'#f5f7fb':'#0a0a0a';var fg=r==='light'?'#1a1a2e':'#fff';var acc=r==='light'?'#d9a90a':'#f5c518';document.addEventListener('DOMContentLoaded',function(){document.body.style.background=bg;document.body.style.color=fg;var p=document.getElementById('cf-hint');if(p)p.style.color=acc;});}catch(e){}})();</script></head><body style="background:#0a0a0a;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif"><div style="text-align:center"><h2>Sin conexion</h2><p>Revisa tu conexion a internet</p><p id="cf-hint" style="color:#f5c518;font-size:13px;margin-top:16px">Usa el boton &quot;Preparar offline&quot; en el Dashboard antes de salir</p></div></body></html>`, {
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     })
   }
