@@ -1,6 +1,10 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME = 'cf-v12'
-const API_CACHE  = 'cf-api-v12'
+const CACHE_NAME = 'cf-v13'
+const API_CACHE  = 'cf-api-v13'
+const DB_NAME = 'cf-offline'
+const DB_VERSION = 4
+const STORE_MUTACIONES = 'mutaciones_pendientes'
+const STORE_PAGOS = 'pagos_pendientes'
 
 // Only precache static assets (NOT auth-protected pages)
 const PRECACHE_URLS = [
@@ -267,22 +271,148 @@ self.addEventListener('notificationclick', (e) => {
 // reintentamos en el proximo evento.
 self.addEventListener('sync', (event) => {
   if (event.tag === 'cf-sync-pending') {
-    event.waitUntil(notificarClientsParaSync())
+    event.waitUntil(handleBackgroundSync())
   }
 })
 
-async function notificarClientsParaSync() {
-  try {
-    const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
-    if (clients.length === 0) {
-      // Sin clients abiertos: rechazar para que el browser reintente mas tarde.
-      throw new Error('no-clients')
-    }
+// Estrategia: si hay clients abiertos, delegar a ellos (tienen la logica JS completa).
+// Si NO hay clients, el SW sincroniza directo desde IndexedDB usando las cookies
+// de sesion (se incluyen automaticamente en fetch same-origin dentro del SW).
+async function handleBackgroundSync() {
+  const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+  if (clients.length > 0) {
     for (const client of clients) {
       client.postMessage({ type: 'TRIGGER_SYNC' })
     }
+    return
+  }
+
+  // Sin clients: sincronizamos directamente desde aqui.
+  // Solo procesamos mutaciones (updates) y pagos — son los mas criticos y no
+  // dependen de tempIds complicados. Las creaciones con tempIds esperan a que
+  // un client se abra (tienen mapeos de ID en memoria que complican el SW).
+  try {
+    await syncMutacionesFromSW()
+    await syncPagosFromSW()
   } catch (e) {
+    // Si algo falla, dejamos que el browser reintente.
     throw e
+  }
+}
+
+// ─── IndexedDB helpers (SW-side, promise-based) ────────────────
+function openOfflineDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION)
+    req.onsuccess = () => resolve(req.result)
+    req.onerror   = () => reject(req.error)
+    // No onupgradeneeded: la app principal crea el schema.
+  })
+}
+
+function idbGetAll(db, storeName) {
+  return new Promise((resolve, reject) => {
+    try {
+      const tx = db.transaction(storeName, 'readonly')
+      const req = tx.objectStore(storeName).getAll()
+      req.onsuccess = () => resolve(req.result || [])
+      req.onerror   = () => reject(req.error)
+    } catch (e) { reject(e) }
+  })
+}
+
+function idbUpdate(db, storeName, key, patch) {
+  return new Promise((resolve, reject) => {
+    try {
+      const tx = db.transaction(storeName, 'readwrite')
+      const store = tx.objectStore(storeName)
+      const req = store.get(key)
+      req.onsuccess = () => {
+        const rec = req.result
+        if (rec) { Object.assign(rec, patch); store.put(rec) }
+        tx.oncomplete = () => resolve()
+      }
+      req.onerror = () => reject(req.error)
+    } catch (e) { reject(e) }
+  })
+}
+
+async function syncMutacionesFromSW() {
+  let db
+  try { db = await openOfflineDB() } catch { return }
+  const todas = await idbGetAll(db, STORE_MUTACIONES).catch(() => [])
+  const pendientes = todas.filter(m => !m.synced && !m.failedPermanent && !m.conflict)
+
+  for (const m of pendientes) {
+    // Skip si depende de tempId (requiere mapeo que solo esta en la app)
+    if (typeof m.entityId === 'string' && m.entityId.startsWith('offline-')) continue
+
+    let url = ''
+    let body = m.payload
+    if (m.tipo === 'cliente.update') url = `/api/clientes/${m.entityId}`
+    else if (m.tipo === 'prestamo.update') url = `/api/prestamos/${m.entityId}`
+    else if (m.tipo === 'prestamo.cerrar') {
+      url = `/api/prestamos/${m.entityId}`
+      body = { estado: m.payload?.estado || 'completado' }
+    } else continue
+
+    const headers = { 'Content-Type': 'application/json', 'X-Mutation-Id': String(m.id) }
+    if (m.baseUpdatedAt) headers['X-If-Unmodified-Since'] = m.baseUpdatedAt
+
+    try {
+      const res = await fetch(url, { method: 'PATCH', headers, body: JSON.stringify(body), credentials: 'same-origin' })
+      if (res.ok) {
+        await idbUpdate(db, STORE_MUTACIONES, m.id, { synced: true })
+      } else if (res.status === 412) {
+        // Conflicto: marcar para que la app lo resuelva cuando se abra.
+        let snap = null
+        try { const g = await fetch(url, { credentials: 'same-origin' }); if (g.ok) snap = await g.json() } catch {}
+        await idbUpdate(db, STORE_MUTACIONES, m.id, { failedPermanent: true, conflict: true, servidorSnapshot: snap, error: 'Conflicto: registro modificado en servidor' })
+      } else if (res.status >= 400 && res.status < 500) {
+        let errorMsg = `HTTP ${res.status}`
+        try { const d = await res.json(); errorMsg = d.error || errorMsg } catch {}
+        await idbUpdate(db, STORE_MUTACIONES, m.id, { failedPermanent: true, error: errorMsg })
+      } else {
+        await idbUpdate(db, STORE_MUTACIONES, m.id, { intentos: (m.intentos || 0) + 1 })
+      }
+    } catch {
+      // Red fallo: dejar para reintento del browser.
+    }
+  }
+}
+
+async function syncPagosFromSW() {
+  let db
+  try { db = await openOfflineDB() } catch { return }
+  const todos = await idbGetAll(db, STORE_PAGOS).catch(() => [])
+  const pendientes = todos.filter(p => !p.synced && !p.failedPermanent)
+
+  for (const p of pendientes) {
+    // Skip si prestamoId es un tempId (depende de creacion no sincronizada)
+    if (typeof p.prestamoId === 'string' && p.prestamoId.startsWith('offline-')) continue
+
+    try {
+      const res = await fetch(`/api/prestamos/${p.prestamoId}/pagos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          montoPagado:  p.montoPagado,
+          tipo:         p.tipo,
+          nota:         p.nota ? `${p.nota} [offline: ${p.createdAt}]` : `[offline: ${p.createdAt}]`,
+          diasAbonados: p.diasAbonados,
+          metodoPago:   p.metodoPago,
+          plataforma:   p.plataforma,
+        }),
+      })
+      if (res.ok) {
+        await idbUpdate(db, STORE_PAGOS, p.id, { synced: true })
+      } else if (res.status >= 400 && res.status < 500) {
+        let errorMsg = `HTTP ${res.status}`
+        try { const d = await res.json(); errorMsg = d.error || errorMsg } catch {}
+        await idbUpdate(db, STORE_PAGOS, p.id, { failedPermanent: true, errorMsg })
+      }
+    } catch { /* reintento futuro */ }
   }
 }
 
