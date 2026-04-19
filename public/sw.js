@@ -1,6 +1,6 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME = 'cf-v13'
-const API_CACHE  = 'cf-api-v13'
+const CACHE_NAME = 'cf-v14'
+const API_CACHE  = 'cf-api-v14'
 const DB_NAME = 'cf-offline'
 const DB_VERSION = 4
 const STORE_MUTACIONES = 'mutaciones_pendientes'
@@ -291,13 +291,51 @@ async function handleBackgroundSync() {
   // Solo procesamos mutaciones (updates) y pagos — son los mas criticos y no
   // dependen de tempIds complicados. Las creaciones con tempIds esperan a que
   // un client se abra (tienen mapeos de ID en memoria que complican el SW).
+  let resultado = { pagos: 0, mutaciones: 0, fallidos: 0, conflictos: 0 }
   try {
-    await syncMutacionesFromSW()
-    await syncPagosFromSW()
+    const mut = await syncMutacionesFromSW()
+    const pag = await syncPagosFromSW()
+    resultado.mutaciones = mut.synced
+    resultado.pagos = pag.synced
+    resultado.fallidos = mut.failed + pag.failed
+    resultado.conflictos = mut.conflictos
   } catch (e) {
-    // Si algo falla, dejamos que el browser reintente.
     throw e
   }
+
+  // Notificacion local al usuario si hubo actividad relevante
+  await notificarResultadoSync(resultado)
+}
+
+async function notificarResultadoSync({ pagos, mutaciones, fallidos, conflictos }) {
+  const totalOk = pagos + mutaciones
+  if (totalOk === 0 && fallidos === 0 && conflictos === 0) return
+  try {
+    let title, body, url = '/dashboard'
+    if (conflictos > 0) {
+      title = 'Conflictos al sincronizar'
+      body = `${conflictos} cambio${conflictos > 1 ? 's' : ''} necesita${conflictos > 1 ? 'n' : ''} revision. Abre la app para resolver.`
+    } else if (fallidos > 0 && totalOk === 0) {
+      title = 'Error al sincronizar'
+      body = `${fallidos} cambio${fallidos > 1 ? 's' : ''} no pudo${fallidos > 1 ? 'ieron' : ''} subirse. Abre la app para revisar.`
+    } else if (totalOk > 0) {
+      const partes = []
+      if (pagos > 0) partes.push(`${pagos} pago${pagos > 1 ? 's' : ''}`)
+      if (mutaciones > 0) partes.push(`${mutaciones} cambio${mutaciones > 1 ? 's' : ''}`)
+      title = 'Sincronizado'
+      body = `${partes.join(' y ')} guardado${totalOk > 1 ? 's' : ''} en el servidor.`
+      if (fallidos > 0) body += ` (${fallidos} fallaron)`
+    }
+    await self.registration.showNotification(title, {
+      body,
+      icon: '/logo-icon.svg',
+      badge: '/icons/icon-192.png',
+      tag: 'cf-sync-result',
+      renotify: false,
+      data: { url },
+      silent: totalOk > 0 && fallidos === 0 && conflictos === 0,
+    })
+  } catch {}
 }
 
 // ─── IndexedDB helpers (SW-side, promise-based) ────────────────
@@ -339,9 +377,10 @@ function idbUpdate(db, storeName, key, patch) {
 
 async function syncMutacionesFromSW() {
   let db
-  try { db = await openOfflineDB() } catch { return }
+  try { db = await openOfflineDB() } catch { return { synced: 0, failed: 0, conflictos: 0 } }
   const todas = await idbGetAll(db, STORE_MUTACIONES).catch(() => [])
   const pendientes = todas.filter(m => !m.synced && !m.failedPermanent && !m.conflict)
+  let synced = 0, failed = 0, conflictos = 0
 
   for (const m of pendientes) {
     // Skip si depende de tempId (requiere mapeo que solo esta en la app)
@@ -363,29 +402,31 @@ async function syncMutacionesFromSW() {
       const res = await fetch(url, { method: 'PATCH', headers, body: JSON.stringify(body), credentials: 'same-origin' })
       if (res.ok) {
         await idbUpdate(db, STORE_MUTACIONES, m.id, { synced: true })
+        synced++
       } else if (res.status === 412) {
-        // Conflicto: marcar para que la app lo resuelva cuando se abra.
         let snap = null
         try { const g = await fetch(url, { credentials: 'same-origin' }); if (g.ok) snap = await g.json() } catch {}
         await idbUpdate(db, STORE_MUTACIONES, m.id, { failedPermanent: true, conflict: true, servidorSnapshot: snap, error: 'Conflicto: registro modificado en servidor' })
+        conflictos++
       } else if (res.status >= 400 && res.status < 500) {
         let errorMsg = `HTTP ${res.status}`
         try { const d = await res.json(); errorMsg = d.error || errorMsg } catch {}
         await idbUpdate(db, STORE_MUTACIONES, m.id, { failedPermanent: true, error: errorMsg })
+        failed++
       } else {
         await idbUpdate(db, STORE_MUTACIONES, m.id, { intentos: (m.intentos || 0) + 1 })
       }
-    } catch {
-      // Red fallo: dejar para reintento del browser.
-    }
+    } catch { /* red fallo: reintento del browser */ }
   }
+  return { synced, failed, conflictos }
 }
 
 async function syncPagosFromSW() {
   let db
-  try { db = await openOfflineDB() } catch { return }
+  try { db = await openOfflineDB() } catch { return { synced: 0, failed: 0 } }
   const todos = await idbGetAll(db, STORE_PAGOS).catch(() => [])
   const pendientes = todos.filter(p => !p.synced && !p.failedPermanent)
+  let synced = 0, failed = 0
 
   for (const p of pendientes) {
     // Skip si prestamoId es un tempId (depende de creacion no sincronizada)
@@ -407,13 +448,16 @@ async function syncPagosFromSW() {
       })
       if (res.ok) {
         await idbUpdate(db, STORE_PAGOS, p.id, { synced: true })
+        synced++
       } else if (res.status >= 400 && res.status < 500) {
         let errorMsg = `HTTP ${res.status}`
         try { const d = await res.json(); errorMsg = d.error || errorMsg } catch {}
         await idbUpdate(db, STORE_PAGOS, p.id, { failedPermanent: true, errorMsg })
+        failed++
       }
     } catch { /* reintento futuro */ }
   }
+  return { synced, failed }
 }
 
 // ─── Message handling (for sync trigger from app) ───────────

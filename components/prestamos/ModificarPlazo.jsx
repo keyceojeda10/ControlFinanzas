@@ -6,6 +6,7 @@ import { Modal }    from '@/components/ui/Modal'
 import { Button }   from '@/components/ui/Button'
 import { Input }    from '@/components/ui/Input'
 import { formatCOP } from '@/lib/calculos'
+import { encolarMutacion } from '@/lib/offline'
 
 const toISODate = (d) => {
   const date = d instanceof Date ? d : new Date(d)
@@ -102,15 +103,42 @@ export default function ModificarPlazo({
 
     setLoading(true)
     setError('')
+
+    const payload = { modo, fechaFin: nuevaFecha }
+
+    // Offline: encolar mutacion y cerrar. El servidor recalculara cuota al sincronizar.
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      try {
+        await encolarMutacion({
+          tipo: 'prestamo.update',
+          entityId: prestamoId,
+          payload,
+          baseUpdatedAt: prestamo?.updatedAt,
+        })
+        try { sessionStorage.setItem('cf-toast', 'Plazo modificado. Se sincronizara al volver online.') } catch {}
+        onSuccess?.()
+        handleClose()
+      } catch (e) {
+        setError('No se pudo guardar offline.')
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+
     try {
       const res = await fetch(`/api/prestamos/${prestamoId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          modo,
-          fechaFin: nuevaFecha,
-        }),
+        body: JSON.stringify(payload),
       })
+      if (res.status === 503 && !navigator.onLine) {
+        await encolarMutacion({ tipo: 'prestamo.update', entityId: prestamoId, payload, baseUpdatedAt: prestamo?.updatedAt })
+        try { sessionStorage.setItem('cf-toast', 'Plazo modificado. Se sincronizara al volver online.') } catch {}
+        onSuccess?.()
+        handleClose()
+        return
+      }
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
         throw new Error(data.error || 'Error al modificar plazo')
@@ -118,6 +146,16 @@ export default function ModificarPlazo({
       onSuccess?.()
       handleClose()
     } catch (e) {
+      // Si el fetch fallo por red (sin navigator.onLine = false todavia), encolar
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        try {
+          await encolarMutacion({ tipo: 'prestamo.update', entityId: prestamoId, payload, baseUpdatedAt: prestamo?.updatedAt })
+          try { sessionStorage.setItem('cf-toast', 'Plazo modificado. Se sincronizara al volver online.') } catch {}
+          onSuccess?.()
+          handleClose()
+          return
+        } catch {}
+      }
       setError(e.message)
     } finally {
       setLoading(false)
