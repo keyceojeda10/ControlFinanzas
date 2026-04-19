@@ -10,7 +10,13 @@ import { useOffline } from '@/components/providers/OfflineProvider'
 import { useState, useEffect } from 'react'
 import InstallButton from './InstallButton'
 import ThemeToggle from '@/components/ui/ThemeToggle'
+import SyncStatusBadge from '@/components/offline/SyncStatusBadge'
 import { limpiarDatosOffline } from '@/lib/offline'
+
+function SyncStatusBadgeTrigger() {
+  const { openSyncDrawer } = useOffline()
+  return <SyncStatusBadge variant="full" onClick={() => openSyncDrawer?.()} />
+}
 
 const formatCOPCompact = (monto = 0) => `$${Math.round(monto || 0).toLocaleString('es-CO')}`
 
@@ -385,6 +391,9 @@ export default function Sidebar() {
         <div className="flex items-center gap-2 mb-2">
           <ThemeToggle />
           <div className="flex-1"><InstallButton variant="desktop" /></div>
+        </div>
+        <div className="mb-2">
+          <SyncStatusBadgeTrigger />
         </div>
         <button
           onClick={async () => {

@@ -7,7 +7,7 @@ import dynamic                 from 'next/dynamic'
 import { Input, Select }       from '@/components/ui/Input'
 import { Button }              from '@/components/ui/Button'
 import DiasSinCobroSelector    from '@/components/ui/DiasSinCobroSelector'
-import { guardarClientePendiente } from '@/lib/offline'
+import { guardarClientePendiente, encolarMutacion } from '@/lib/offline'
 
 const LocationPicker = dynamic(() => import('@/components/clientes/LocationPicker'), { ssr: false })
 
@@ -134,6 +134,20 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
       }
     }
 
+    // Si offline y es edicion, encolar mutacion (optimistic update al cache local)
+    if (esEdicion && typeof navigator !== 'undefined' && !navigator.onLine) {
+      try {
+        await encolarMutacion({ tipo: 'cliente.update', entityId: clienteInicial.id, payload })
+        try { sessionStorage.setItem('cf-toast', 'Cambios guardados. Se sincronizaran al volver online.') } catch {}
+        router.push(`/clientes/${clienteInicial.id}`)
+        return
+      } catch {
+        setError('No se pudo guardar offline.')
+        setLoading(false)
+        return
+      }
+    }
+
     try {
       const url    = esEdicion ? `/api/clientes/${clienteInicial.id}` : '/api/clientes'
       const method = esEdicion ? 'PATCH' : 'POST'
@@ -151,6 +165,12 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
         router.push('/clientes')
         return
       }
+      if (res.status === 503 && esEdicion && !navigator.onLine) {
+        await encolarMutacion({ tipo: 'cliente.update', entityId: clienteInicial.id, payload })
+        try { sessionStorage.setItem('cf-toast', 'Cambios guardados. Se sincronizaran al volver online.') } catch {}
+        router.push(`/clientes/${clienteInicial.id}`)
+        return
+      }
 
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Error al guardar'); return }
@@ -164,6 +184,14 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
           await guardarClientePendiente(payload)
           try { sessionStorage.setItem('cf-toast', 'Cliente guardado. Se sincronizara al volver online.') } catch {}
           router.push('/clientes')
+          return
+        } catch { /* abajo */ }
+      }
+      if (esEdicion && !navigator.onLine) {
+        try {
+          await encolarMutacion({ tipo: 'cliente.update', entityId: clienteInicial.id, payload })
+          try { sessionStorage.setItem('cf-toast', 'Cambios guardados. Se sincronizaran al volver online.') } catch {}
+          router.push(`/clientes/${clienteInicial.id}`)
           return
         } catch { /* abajo */ }
       }

@@ -8,6 +8,7 @@ import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
 import { geocodeAddress }   from '@/lib/geocoding'
 import { validarDiasSinCobro } from '@/lib/dias-sin-cobro'
+import { getCachedMutation, setCachedMutation, buildMutationKey } from '@/lib/mutation-idempotency'
 
 // Helper: verificar que el cliente pertenece a la organización (y a la ruta del cobrador)
 async function obtenerCliente(id, session) {
@@ -94,6 +95,15 @@ export async function PATCH(request, { params }) {
   }
 
   const { id } = await params
+
+  // Idempotencia: si viene X-Mutation-Id y ya procesamos esta mutacion, devolver cache
+  const mutationId = request.headers.get('x-mutation-id')
+  const idempKey = mutationId ? buildMutationKey(session, mutationId, id) : null
+  if (idempKey) {
+    const cached = getCachedMutation(idempKey)
+    if (cached) return Response.json(cached)
+  }
+
   const clienteBase = await obtenerCliente(id, session)
   if (!clienteBase) {
     return Response.json({ error: 'Cliente no encontrado' }, { status: 404 })
@@ -204,6 +214,7 @@ export async function PATCH(request, { params }) {
   })
 
   logActividad({ session, accion: 'editar_cliente', entidadTipo: 'cliente', entidadId: id, detalle: `Cliente ${actualizado.nombre} editado`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
+  if (idempKey) setCachedMutation(idempKey, actualizado)
   return Response.json(actualizado)
 }
 

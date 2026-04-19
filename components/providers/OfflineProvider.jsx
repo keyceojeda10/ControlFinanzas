@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect, useRef, createContext, useContext, useCallback } from 'react'
-import { iniciarAutoSync, obtenerPagosPendientes, obtenerPagosFallidos, eliminarPagoFallido, sincronizarPagos, sincronizarOrdenes, sincronizarTodo, obtenerSyncMeta, sincronizarCreaciones, obtenerClientesPendientes, obtenerPrestamosPendientes } from '@/lib/offline'
+import SyncDrawer from '@/components/offline/SyncDrawer'
+import { iniciarAutoSync, obtenerPagosPendientes, obtenerPagosFallidos, eliminarPagoFallido, sincronizarPagos, sincronizarOrdenes, sincronizarTodo, obtenerSyncMeta, sincronizarCreaciones, obtenerClientesPendientes, obtenerPrestamosPendientes, obtenerClientesFallidos, obtenerPrestamosFallidos, obtenerMutacionesPendientes, obtenerMutacionesFallidas, sincronizarMutaciones, eliminarClienteFallido, eliminarPrestamoFallido, eliminarMutacion, reintentarMutacion } from '@/lib/offline'
 
-const OfflineContext = createContext({ isOnline: true, pendingCount: 0, syncing: false, syncMeta: null, lastSyncedAt: 0 })
+const OfflineContext = createContext({ isOnline: true, pendingCount: 0, syncing: false, syncMeta: null, lastSyncedAt: 0, openSyncDrawer: () => {} })
 
 export function useOffline() {
   return useContext(OfflineContext)
@@ -16,11 +17,18 @@ export default function OfflineProvider({ children }) {
   const [isOnline, setIsOnline]         = useState(true)
   const [pendingCount, setPendingCount] = useState(0)
   const [failedPayments, setFailedPayments] = useState([])
+  const [pendingDetails, setPendingDetails] = useState({
+    pagos: [], clientes: [], prestamos: [], mutaciones: [],
+  })
+  const [failedDetails, setFailedDetails] = useState({
+    pagos: [], clientes: [], prestamos: [], mutaciones: [],
+  })
   const [syncResult, setSyncResult]     = useState(null)
   const [customToast, setCustomToast]   = useState(null)
   const [syncMeta, setSyncMeta]         = useState(null)
   const [bulkSyncing, setBulkSyncing]   = useState(false)
   const [bulkProgress, setBulkProgress] = useState(null)
+  const [drawerOpen, setDrawerOpen]     = useState(false)
   // Counter that increments after every successful sync — pages watch this to refetch
   const [lastSyncedAt, setLastSyncedAt] = useState(0)
   const syncingRef = useRef(false)
@@ -47,10 +55,11 @@ export default function OfflineProvider({ children }) {
       // Orden: creaciones primero (para que los pagos offline puedan referenciar
       // préstamos recién creados), luego pagos, luego órdenes de ruta.
       const creResult = await sincronizarCreaciones()
+      const mutResult = await sincronizarMutaciones()
       const payResult = await sincronizarPagos()
       const ordResult = await sincronizarOrdenes()
-      const totalSynced = creResult.synced + payResult.synced + ordResult.synced
-      const totalFailed = creResult.failed + payResult.failed + ordResult.failed
+      const totalSynced = creResult.synced + mutResult.synced + payResult.synced + ordResult.synced
+      const totalFailed = creResult.failed + mutResult.failed + payResult.failed + ordResult.failed
       if (totalSynced > 0) {
         setSyncResult({ synced: totalSynced, failed: totalFailed })
         setTimeout(() => setSyncResult(null), 5000)
@@ -85,16 +94,22 @@ export default function OfflineProvider({ children }) {
       if (!silent) setBulkSyncing(false)
     }
 
-    // STEP 3: Refresh pending count + failed payments
+    // STEP 3: Refresh pending count + failed items
     try {
-      const [pending, failed, cliPend, presPend] = await Promise.all([
+      const [pending, failed, cliPend, presPend, mutPend, cliFail, presFail, mutFail] = await Promise.all([
         obtenerPagosPendientes(),
         obtenerPagosFallidos(),
         obtenerClientesPendientes().catch(() => []),
         obtenerPrestamosPendientes().catch(() => []),
+        obtenerMutacionesPendientes().catch(() => []),
+        obtenerClientesFallidos().catch(() => []),
+        obtenerPrestamosFallidos().catch(() => []),
+        obtenerMutacionesFallidas().catch(() => []),
       ])
-      setPendingCount(pending.length + cliPend.length + presPend.length)
+      setPendingCount(pending.length + cliPend.length + presPend.length + mutPend.length)
       setFailedPayments(failed)
+      setPendingDetails({ pagos: pending, clientes: cliPend, prestamos: presPend, mutaciones: mutPend })
+      setFailedDetails({ pagos: failed, clientes: cliFail, prestamos: presFail, mutaciones: mutFail })
     } catch { /* ignore */ }
   }, [])
 
@@ -112,14 +127,20 @@ export default function OfflineProvider({ children }) {
   // Track pending payments count (MUST be defined before useEffects that reference it)
   const refreshPending = useCallback(async () => {
     try {
-      const [pending, failed, cliPend, presPend] = await Promise.all([
+      const [pending, failed, cliPend, presPend, mutPend, cliFail, presFail, mutFail] = await Promise.all([
         obtenerPagosPendientes(),
         obtenerPagosFallidos(),
         obtenerClientesPendientes().catch(() => []),
         obtenerPrestamosPendientes().catch(() => []),
+        obtenerMutacionesPendientes().catch(() => []),
+        obtenerClientesFallidos().catch(() => []),
+        obtenerPrestamosFallidos().catch(() => []),
+        obtenerMutacionesFallidas().catch(() => []),
       ])
-      setPendingCount(pending.length + cliPend.length + presPend.length)
+      setPendingCount(pending.length + cliPend.length + presPend.length + mutPend.length)
       setFailedPayments(failed)
+      setPendingDetails({ pagos: pending, clientes: cliPend, prestamos: presPend, mutaciones: mutPend })
+      setFailedDetails({ pagos: failed, clientes: cliFail, prestamos: presFail, mutaciones: mutFail })
     } catch { /* ignore */ }
   }, [])
 
@@ -127,6 +148,30 @@ export default function OfflineProvider({ children }) {
     await eliminarPagoFallido(id)
     refreshPending()
   }, [refreshPending])
+
+  const descartarItem = useCallback(async (tipo, id) => {
+    try {
+      if (tipo === 'pago')      await eliminarPagoFallido(id)
+      else if (tipo === 'cliente')   await eliminarClienteFallido(id)
+      else if (tipo === 'prestamo')  await eliminarPrestamoFallido(id)
+      else if (tipo === 'mutacion')  await eliminarMutacion(id)
+    } catch {}
+    refreshPending()
+  }, [refreshPending])
+
+  const reintentarItem = useCallback(async (tipo, id) => {
+    try {
+      if (tipo === 'mutacion') {
+        await reintentarMutacion(id)
+      }
+      // Para pagos/clientes/prestamos fallidos, la estrategia es "descartar" en UI.
+      // Un reintento requiere volver a encolar manualmente.
+    } catch {}
+    refreshPending()
+    if (navigator.onLine) {
+      setTimeout(() => syncPendingThenFull({ silent: false }), 300)
+    }
+  }, [refreshPending, syncPendingThenFull])
 
   // Track online/offline + re-sync when coming back online
   useEffect(() => {
@@ -337,55 +382,30 @@ export default function OfflineProvider({ children }) {
   }
 
   return (
-    <OfflineContext.Provider value={{ isOnline, pendingCount, failedPayments, descartarPagoFallido, refreshPending, manualSync, syncMeta, startBulkSync, bulkSyncing, bulkProgress, lastSyncedAt }}>
+    <OfflineContext.Provider value={{ isOnline, pendingCount, failedPayments, pendingDetails, failedDetails, descartarPagoFallido, descartarItem, reintentarItem, refreshPending, manualSync, syncMeta, startBulkSync, bulkSyncing, bulkProgress, lastSyncedAt, openSyncDrawer: () => setDrawerOpen(true) }}>
+      <SyncDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
       {children}
 
-      {/* Offline indicator — small pill, bottom-right, above BottomNav */}
-      {!isOnline && (
-        <div className="fixed bottom-[80px] right-4 z-[9998] bg-[rgba(15,15,22,0.85)] text-[var(--color-danger)] px-2.5 py-1.5 text-[10px] font-semibold rounded-full flex items-center gap-1.5 shadow-lg border border-[rgba(248,113,113,0.2)] backdrop-blur-xl">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#f87171] animate-pulse" />
-          Offline
-        </div>
-      )}
-      {isOnline && bulkSyncing && (
-        <div className="fixed bottom-[80px] right-4 z-[9998] bg-[rgba(15,15,22,0.85)] text-[var(--color-success)] px-2.5 py-1.5 text-[10px] font-semibold rounded-full flex items-center gap-1.5 shadow-lg border border-[rgba(52,211,153,0.2)] backdrop-blur-xl">
-          <svg className="w-2.5 h-2.5 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-          Sync...
-        </div>
-      )}
-
-      {/* Failed payments warning (permanente) */}
-      {failedPayments.length > 0 && isOnline && (
-        <div className="fixed top-2 left-1/2 -translate-x-1/2 z-[9998] bg-[rgba(239,68,68,0.95)] text-[var(--color-text-primary)] text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg max-w-[90vw]">
-          <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span className="truncate">
-            {failedPayments.length} pago{failedPayments.length > 1 ? 's' : ''} no sincronizado{failedPayments.length > 1 ? 's' : ''}
-          </span>
-          <button
-            onClick={() => failedPayments.forEach(p => descartarPagoFallido(p.id))}
-            className="underline flex-shrink-0"
-          >
-            Descartar
-          </button>
-        </div>
-      )}
-
-      {/* Pending payments indicator */}
-      {pendingCount > 0 && isOnline && (
+      {/* Badge flotante unificado para mobile (abre el drawer). Se oculta en desktop (lg+) */}
+      {(!isOnline || pendingCount > 0 || bulkSyncing) && (
         <button
-          onClick={manualSync}
-          className="fixed top-2 right-2 z-[9998] bg-[rgba(245,197,24,0.95)] text-[#0a0a0a] text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg"
+          onClick={() => setDrawerOpen(true)}
+          className="lg:hidden fixed bottom-[84px] right-3 z-[9998] h-9 px-3 rounded-full flex items-center gap-2 shadow-lg backdrop-blur-xl bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-primary)] text-xs font-semibold"
+          aria-label="Estado de sincronizacion"
         >
-          <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-          {pendingCount} pendiente{pendingCount > 1 ? 's' : ''}
+          {bulkSyncing ? (
+            <svg className="w-3 h-3 animate-spin text-[var(--color-info)]" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          ) : (
+            <span className={`w-2 h-2 rounded-full ${!isOnline ? 'bg-[var(--color-warning)] animate-pulse' : 'bg-[var(--color-info)]'}`} />
+          )}
+          <span>
+            {!isOnline
+              ? (pendingCount > 0 ? `Offline - ${pendingCount}` : 'Offline')
+              : bulkSyncing ? 'Sync...' : `${pendingCount} pendientes`}
+          </span>
         </button>
       )}
 

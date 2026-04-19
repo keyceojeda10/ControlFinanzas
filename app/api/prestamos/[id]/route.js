@@ -17,6 +17,7 @@ import {
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
 import { registrarMovimientoCapital } from '@/lib/capital'
+import { getCachedMutation, setCachedMutation, buildMutationKey } from '@/lib/mutation-idempotency'
 
 const REF_REVERSO_CANCELACION_DESEMBOLSO = 'prestamo_cancelado_reverso_desembolso'
 const REF_REVERSO_CANCELACION_RECAUDO = 'prestamo_cancelado_reverso_recaudo'
@@ -91,6 +92,15 @@ export async function PATCH(request, { params }) {
   }
 
   const { id } = await params
+
+  // Idempotencia: si viene X-Mutation-Id y ya procesamos esta mutacion, devolver cache
+  const mutationId = request.headers.get('x-mutation-id')
+  const idempKey = mutationId ? buildMutationKey(session, mutationId, id) : null
+  if (idempKey) {
+    const cached = getCachedMutation(idempKey)
+    if (cached) return Response.json(cached)
+  }
+
   const p = await obtenerPrestamo(id, session)
   if (!p) return Response.json({ error: 'Préstamo no encontrado' }, { status: 404 })
 
@@ -186,14 +196,16 @@ export async function PATCH(request, { params }) {
       ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
     })
 
-    return Response.json({
+    const respuesta = {
       ...actualizado,
       reversoCapitalAplicado: reversoAplicado,
       modoReversionCapitalAplicado: modoReversionSolicitado,
       montoReversionCapital: Math.round(montoReversion),
       totalPagadoReal: Math.round(totalPagosReales),
       saldoNoRecuperado: Math.round(saldoNoRecuperado),
-    })
+    }
+    if (idempKey) setCachedMutation(idempKey, respuesta)
+    return Response.json(respuesta)
   }
 
   // ─── Modo 2: modificar plazo (extender o corregir fecha) ───────
@@ -292,6 +304,7 @@ export async function PATCH(request, { params }) {
       detalle: detalleLog,
       ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
     })
+    if (idempKey) setCachedMutation(idempKey, actualizado)
     return Response.json(actualizado)
   }
 
