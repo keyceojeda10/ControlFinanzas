@@ -7,6 +7,8 @@ import { useAuth } from '@/hooks/useAuth'
 import PasoSubir from '@/components/carga-masiva/PasoSubir'
 import PasoRevisar from '@/components/carga-masiva/PasoRevisar'
 import PasoConfirmar from '@/components/carga-masiva/PasoConfirmar'
+import { useOnline } from '@/hooks/useOnline'
+import OfflineFallback from '@/components/offline/OfflineFallback'
 
 const PASOS = [
   { num: 1, label: 'Subir datos' },
@@ -15,6 +17,12 @@ const PASOS = [
 ]
 
 export default function CargaMasivaPage() {
+  const online = useOnline()
+  if (!online) return <OfflineFallback titulo="La carga masiva no esta disponible sin conexion" descripcion="Necesitas red para subir el archivo al servidor." />
+  return <CargaMasivaPageInner />
+}
+
+function CargaMasivaPageInner() {
   const router = useRouter()
   const { esOwner, loading: authLoading } = useAuth()
 

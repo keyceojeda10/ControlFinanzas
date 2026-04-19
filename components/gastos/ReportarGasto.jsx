@@ -6,6 +6,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { formatCOP } from '@/lib/calculos'
+import { encolarMutacion } from '@/lib/offline'
 
 const GASTO_ICONS = {
   gasolina: <svg className="w-4 h-4 inline -mt-0.5 mr-1" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1.001A3.75 3.75 0 0012 18z" /></svg>,
@@ -45,21 +46,53 @@ export default function ReportarGasto({ open, onClose, onSuccess, fecha }) {
 
     setLoading(true)
     setError('')
+    const desc = tipo === 'otro' ? descripcion : TIPOS_GASTO.find(t => t.value === tipo)?.label
+    const payload = {
+      description: desc,
+      monto: m,
+      ...(FECHA_REGEX.test(fecha || '') ? { fecha } : {}),
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      try {
+        await encolarMutacion({ tipo: 'gasto.create', entityId: `offline-gasto-${Date.now()}`, payload })
+        try { sessionStorage.setItem('cf-toast', 'Gasto guardado. Se enviara al volver online.') } catch {}
+        onSuccess?.()
+        handleClose()
+      } catch (e) {
+        setError('No se pudo guardar offline.')
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+
     try {
-      const desc = tipo === 'otro' ? descripcion : TIPOS_GASTO.find(t => t.value === tipo)?.label
       const res = await fetch('/api/gastos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          description: desc,
-          monto: m,
-          ...(FECHA_REGEX.test(fecha || '') ? { fecha } : {}),
-        }),
+        body: JSON.stringify(payload),
       })
+      if (res.status === 503 && !navigator.onLine) {
+        await encolarMutacion({ tipo: 'gasto.create', entityId: `offline-gasto-${Date.now()}`, payload })
+        try { sessionStorage.setItem('cf-toast', 'Gasto guardado. Se enviara al volver online.') } catch {}
+        onSuccess?.()
+        handleClose()
+        return
+      }
       if (!res.ok) throw new Error('Error al reportar gasto')
       onSuccess?.()
       handleClose()
     } catch (e) {
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        try {
+          await encolarMutacion({ tipo: 'gasto.create', entityId: `offline-gasto-${Date.now()}`, payload })
+          try { sessionStorage.setItem('cf-toast', 'Gasto guardado. Se enviara al volver online.') } catch {}
+          onSuccess?.()
+          handleClose()
+          return
+        } catch {}
+      }
       setError(e.message)
     } finally {
       setLoading(false)

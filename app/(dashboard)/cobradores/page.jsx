@@ -9,8 +9,16 @@ import { Button }              from '@/components/ui/Button'
 import { Card }                from '@/components/ui/Card'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
 import { formatCOP }           from '@/lib/calculos'
+import { useOnline }           from '@/hooks/useOnline'
+import OfflineFallback         from '@/components/offline/OfflineFallback'
 
 export default function CobradoresPage() {
+  const online = useOnline()
+  if (!online) return <OfflineFallback titulo="La gestion de cobradores requiere conexion" />
+  return <CobradoresPageInner />
+}
+
+function CobradoresPageInner() {
   const { session, esOwner, loading: authLoading } = useAuth()
   const [cobradores, setCobradores] = useState([])
   const [loading,    setLoading]    = useState(true)

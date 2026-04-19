@@ -7,10 +7,18 @@ import { useAuth }             from '@/hooks/useAuth'
 import { Input }               from '@/components/ui/Input'
 import { Button }              from '@/components/ui/Button'
 import CompartirCredenciales   from '@/components/cobradores/CompartirCredenciales'
+import { useOnline }           from '@/hooks/useOnline'
+import OfflineFallback         from '@/components/offline/OfflineFallback'
 
 const LIMITES = { starter: 1, basic: 1, growth: 2, standard: 5, professional: 10 }
 
 export default function NuevoCobrador() {
+  const online = useOnline()
+  if (!online) return <OfflineFallback titulo="No puedes crear cobradores sin conexion" volverHref="/cobradores" volverLabel="Volver a Cobradores" />
+  return <NuevoCobradorInner />
+}
+
+function NuevoCobradorInner() {
   const router = useRouter()
   const { session, esOwner, loading: authLoading } = useAuth()
 

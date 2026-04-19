@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { ACCIONES } from '@/lib/activity-log'
+import { useOnline } from '@/hooks/useOnline'
+import OfflineFallback from '@/components/offline/OfflineFallback'
 
 const ICONOS = {
   banknotes: (color) => (
@@ -87,6 +89,12 @@ const FILTROS_TIPO = [
 ]
 
 export default function ActividadPage() {
+  const online = useOnline()
+  if (!online) return <OfflineFallback titulo="El registro de actividad no esta disponible sin conexion" />
+  return <ActividadPageInner />
+}
+
+function ActividadPageInner() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [cursor, setCursor] = useState(null)

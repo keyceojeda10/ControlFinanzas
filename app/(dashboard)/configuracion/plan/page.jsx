@@ -5,6 +5,8 @@ import { useAuth }             from '@/hooks/useAuth'
 import { Badge }               from '@/components/ui/Badge'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
 import { formatCOP }           from '@/lib/calculos'
+import { useOnline }           from '@/hooks/useOnline'
+import OfflineFallback         from '@/components/offline/OfflineFallback'
 
 const planes = [
   {
@@ -107,6 +109,12 @@ const planTest = {
 }
 
 export default function PlanPage() {
+  const online = useOnline()
+  if (!online) return <OfflineFallback titulo="La gestion de plan requiere conexion" descripcion="Los pagos y cambios de plan necesitan red." volverHref="/configuracion" volverLabel="Volver a Configuracion" />
+  return <PlanPageInner />
+}
+
+function PlanPageInner() {
   const { session, loading: authLoading } = useAuth()
   const esSuperadmin = session?.user?.rol === 'superadmin'
 

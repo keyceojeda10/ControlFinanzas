@@ -7,8 +7,16 @@ import { useAuth }                  from '@/hooks/useAuth'
 import { Input }                    from '@/components/ui/Input'
 import { Button }                   from '@/components/ui/Button'
 import CompartirCredenciales        from '@/components/cobradores/CompartirCredenciales'
+import { useOnline }                from '@/hooks/useOnline'
+import OfflineFallback              from '@/components/offline/OfflineFallback'
 
 export default function EditarCobrador({ params }) {
+  const online = useOnline()
+  if (!online) return <OfflineFallback titulo="No puedes editar cobradores sin conexion" volverHref="/cobradores" volverLabel="Volver a Cobradores" />
+  return <EditarCobradorInner params={params} />
+}
+
+function EditarCobradorInner({ params }) {
   const { id } = use(params)
   const router = useRouter()
   const { session, esOwner, loading: authLoading } = useAuth()

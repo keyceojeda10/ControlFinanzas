@@ -1,10 +1,59 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME = 'cf-v14'
-const API_CACHE  = 'cf-api-v14'
+const CACHE_NAME = 'cf-v15'
+const API_CACHE  = 'cf-api-v15'
 const DB_NAME = 'cf-offline'
 const DB_VERSION = 4
 const STORE_MUTACIONES = 'mutaciones_pendientes'
 const STORE_PAGOS = 'pagos_pendientes'
+
+// HTML amigable cuando no hay nada cacheado y estamos sin conexion.
+// Respeta el tema (lee cf-theme de localStorage) y ofrece boton para volver.
+const OFFLINE_FALLBACK_HTML = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Sin conexion - Control Finanzas</title>
+<script>
+(function(){try{
+  var t=localStorage.getItem('cf-theme')||'system';
+  var r=t==='system'?(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'):t;
+  document.documentElement.setAttribute('data-theme',r);
+}catch(e){}})();
+</script>
+<style>
+  :root{--bg:#060609;--surface:#0d0d12;--text:#f0f0f5;--muted:#9a9ab0;--border:rgba(255,255,255,0.08);--accent:#f5c518;--warn-bg:rgba(245,197,24,0.1);--warn:#f5c518;}
+  html[data-theme="light"]{--bg:#f5f7fb;--surface:#ffffff;--text:#1a1a2e;--muted:#5a5a72;--border:rgba(20,20,40,0.08);--warn-bg:rgba(245,197,24,0.15);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+  .card{max-width:360px;width:100%;text-align:center}
+  .icon{width:80px;height:80px;margin:0 auto 20px;border-radius:50%;background:var(--warn-bg);border:1px solid var(--warn);display:flex;align-items:center;justify-content:center}
+  .icon svg{width:40px;height:40px;color:var(--warn)}
+  h1{font-size:18px;font-weight:700;margin-bottom:8px}
+  p{font-size:14px;color:var(--muted);line-height:1.5;margin-bottom:24px}
+  button{width:100%;height:44px;border-radius:12px;border:none;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px;font-family:inherit}
+  .primary{background:var(--accent);color:#000}
+  .secondary{background:transparent;color:var(--muted);border:1px solid var(--border)}
+  .secondary:hover{background:var(--surface)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="icon">
+      <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414"/>
+      </svg>
+    </div>
+    <h1>Esta funcion no esta disponible sin conexion</h1>
+    <p>Vuelve a intentarlo cuando recuperes la red. Puedes seguir usando las partes principales de la app mientras tanto.</p>
+    <button class="primary" onclick="location.href='/dashboard'">Volver al Dashboard</button>
+    <button class="secondary" onclick="location.reload()">Reintentar</button>
+  </div>
+</div>
+</body>
+</html>`
 
 // Only precache static assets (NOT auth-protected pages)
 const PRECACHE_URLS = [
@@ -23,6 +72,12 @@ const CACHEABLE_API = [
   '/api/rutas',
   '/api/cobradores',
   '/api/auth/session',
+  '/api/caja',
+  '/api/capital/movimientos',
+  '/api/reportes/resumen',
+  '/api/reportes/ingresos',
+  '/api/reportes/cartera',
+  '/api/reportes/cobradores',
 ]
 
 // Auth routes that should NEVER be cached (login/logout flows)
@@ -176,7 +231,7 @@ async function networkFirstPage(request) {
       }
     } catch {}
 
-    return new Response(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script>(function(){try{var t=localStorage.getItem('cf-theme')||'system';var r=t==='system'?(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'):t;var h=document.documentElement;h.setAttribute('data-theme',r);var bg=r==='light'?'#f5f7fb':'#0a0a0a';var fg=r==='light'?'#1a1a2e':'#fff';var acc=r==='light'?'#d9a90a':'#f5c518';document.addEventListener('DOMContentLoaded',function(){document.body.style.background=bg;document.body.style.color=fg;var p=document.getElementById('cf-hint');if(p)p.style.color=acc;});}catch(e){}})();</script></head><body style="background:#0a0a0a;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif"><div style="text-align:center"><h2>Sin conexion</h2><p>Revisa tu conexion a internet</p><p id="cf-hint" style="color:#f5c518;font-size:13px;margin-top:16px">Usa el boton &quot;Preparar offline&quot; en el Dashboard antes de salir</p></div></body></html>`, {
+    return new Response(OFFLINE_FALLBACK_HTML, {
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     })
   }
@@ -387,19 +442,23 @@ async function syncMutacionesFromSW() {
     if (typeof m.entityId === 'string' && m.entityId.startsWith('offline-')) continue
 
     let url = ''
+    let method = 'PATCH'
     let body = m.payload
     if (m.tipo === 'cliente.update') url = `/api/clientes/${m.entityId}`
     else if (m.tipo === 'prestamo.update') url = `/api/prestamos/${m.entityId}`
     else if (m.tipo === 'prestamo.cerrar') {
       url = `/api/prestamos/${m.entityId}`
       body = { estado: m.payload?.estado || 'completado' }
+    } else if (m.tipo === 'gasto.create') {
+      url = '/api/gastos'
+      method = 'POST'
     } else continue
 
     const headers = { 'Content-Type': 'application/json', 'X-Mutation-Id': String(m.id) }
     if (m.baseUpdatedAt) headers['X-If-Unmodified-Since'] = m.baseUpdatedAt
 
     try {
-      const res = await fetch(url, { method: 'PATCH', headers, body: JSON.stringify(body), credentials: 'same-origin' })
+      const res = await fetch(url, { method, headers, body: JSON.stringify(body), credentials: 'same-origin' })
       if (res.ok) {
         await idbUpdate(db, STORE_MUTACIONES, m.id, { synced: true })
         synced++

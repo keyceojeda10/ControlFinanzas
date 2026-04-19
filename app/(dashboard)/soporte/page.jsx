@@ -6,6 +6,8 @@ import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { SkeletonCard } from '@/components/ui/Skeleton'
+import { useOnline } from '@/hooks/useOnline'
+import OfflineFallback from '@/components/offline/OfflineFallback'
 
 const TIPO_LABEL = {
   bug: 'Error',
@@ -23,6 +25,12 @@ const ESTADO_BADGE = {
 }
 
 export default function SoportePage() {
+  const online = useOnline()
+  if (!online) return <OfflineFallback titulo="Soporte no esta disponible sin conexion" />
+  return <SoportePageInner />
+}
+
+function SoportePageInner() {
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(true)
 

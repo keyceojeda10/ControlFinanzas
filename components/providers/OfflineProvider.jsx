@@ -230,7 +230,7 @@ export default function OfflineProvider({ children }) {
         if (!sw) return
         sw.postMessage({
           type: 'CACHE_PAGES',
-          urls: ['/dashboard', '/clientes', '/prestamos', '/rutas', '/caja', '/clientes/nuevo', '/prestamos/nuevo'],
+          urls: ['/dashboard', '/clientes', '/prestamos', '/rutas', '/caja', '/capital', '/reportes', '/clientes/nuevo', '/prestamos/nuevo'],
         })
       }
       // Esperar un tick — si el SW no controla aun esta pagina, reintentar una vez

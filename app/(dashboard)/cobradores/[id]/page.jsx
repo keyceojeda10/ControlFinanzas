@@ -10,8 +10,16 @@ import { SkeletonCard }             from '@/components/ui/Skeleton'
 import { formatCOP }                from '@/lib/calculos'
 import CompartirCredenciales        from '@/components/cobradores/CompartirCredenciales'
 import Link                         from 'next/link'
+import { useOnline }                from '@/hooks/useOnline'
+import OfflineFallback              from '@/components/offline/OfflineFallback'
 
 export default function CobradorDetallePage({ params }) {
+  const online = useOnline()
+  if (!online) return <OfflineFallback titulo="El detalle del cobrador no esta disponible sin conexion" volverHref="/cobradores" volverLabel="Volver a Cobradores" />
+  return <CobradorDetalleInner params={params} />
+}
+
+function CobradorDetalleInner({ params }) {
   const { id }      = use(params)
   const router      = useRouter()
   const { session } = useAuth()
