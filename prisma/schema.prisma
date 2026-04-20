@@ -219,6 +219,8 @@ model Prestamo {
   totalAPagar    Float
   cuotaDiaria    Float
   frecuencia     String         @default("diario")
+  diaCobroSemana Int?           // 0=dom..6=sab — ancla para frecuencia semanal/quincenal (opcional)
+  diaCobroMes    Int?           // 1..31 — ancla para frecuencia mensual (opcional, clamp a ultimo dia)
   fechaInicio    DateTime
   fechaFin       DateTime
   diasPlazo      Int

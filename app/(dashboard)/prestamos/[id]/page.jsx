@@ -15,6 +15,7 @@ import RegistrarPago                  from '@/components/prestamos/RegistrarPago
 import AjusteSaldo                    from '@/components/prestamos/AjusteSaldo'
 import RenovarPrestamo                from '@/components/prestamos/RenovarPrestamo'
 import ModificarPlazo                 from '@/components/prestamos/ModificarPlazo'
+import EditarDiaCobro                 from '@/components/prestamos/EditarDiaCobro'
 import BotonWhatsApp                  from '@/components/ui/BotonWhatsApp'
 import BotonCompartir                 from '@/components/ui/BotonCompartir'
 import BotonImprimirRecibo            from '@/components/ui/BotonImprimirRecibo'
@@ -68,6 +69,7 @@ export default function PrestamoDetallePage({ params }) {
   const [modalDescuento, setModalDescuento] = useState(false)
   const [modalRenovar,  setModalRenovar]  = useState(false)
   const [modalPlazo,    setModalPlazo]    = useState(false)
+  const [modalDiaCobro, setModalDiaCobro] = useState(false)
   const hasLoadedOnceRef = useRef(false)
 
   // Leer contexto de ruta activa
@@ -960,6 +962,17 @@ export default function PrestamoDetallePage({ params }) {
           >
             Modificar plazo
           </button>
+          {prestamo?.frecuencia && prestamo.frecuencia !== 'diario' && (
+            <button
+              onClick={() => {
+                setModalGestionPrestamo(false)
+                setModalDiaCobro(true)
+              }}
+              className="h-11 rounded-[12px] font-medium text-sm text-[var(--color-accent)] bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.25)] hover:bg-[rgba(245,197,24,0.15)] transition-all"
+            >
+              Día de cobro
+            </button>
+          )}
           <button
             onClick={() => {
               setModalGestionPrestamo(false)
@@ -1039,6 +1052,15 @@ export default function PrestamoDetallePage({ params }) {
         prestamo={prestamo}
         open={modalPlazo}
         onClose={() => setModalPlazo(false)}
+        onSuccess={fetchPrestamo}
+      />
+
+      {/* Modal de dia de cobro */}
+      <EditarDiaCobro
+        prestamoId={id}
+        prestamo={prestamo}
+        open={modalDiaCobro}
+        onClose={() => setModalDiaCobro(false)}
         onSuccess={fetchPrestamo}
       />
     </div>

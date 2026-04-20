@@ -47,6 +47,11 @@ function NuevoPrestamo() {
   // plazo se ingresa en la unidad de la frecuencia (dias, semanas, quincenas o meses)
   const [plazoUnidades, setPlazoUnidades] = useState('30')
   const [frecuencia,   setFrecuencia]   = useState('diario')
+  // Dia ancla opcional: fija el dia de cobro sin importar cuando empieza el prestamo
+  // - semanal/quincenal: 0=dom..6=sab (string '' = sin ancla)
+  // - mensual: 1..31 (string '' = sin ancla)
+  const [diaCobroSemana, setDiaCobroSemana] = useState('')
+  const [diaCobroMes, setDiaCobroMes]       = useState('')
   // Dias totales derivados de plazoUnidades × diasPorPeriodo
   const plazo = String((Number(plazoUnidades) || 0) * (DIAS_POR_PERIODO[frecuencia] || 1))
   const [fechaInicio,  setFechaInicio]  = useState(hoyISO())
@@ -165,6 +170,8 @@ function NuevoPrestamo() {
         diasPlazo: Number(plazo),
         fechaInicio,
         frecuencia,
+        ...((frecuencia === 'semanal' || frecuencia === 'quincenal') && diaCobroSemana !== '' && { diaCobroSemana: Number(diaCobroSemana) }),
+        ...(frecuencia === 'mensual' && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
         ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
         ...(cuotaManualActiva && Number(cuotaManual) > 0 && { cuotaManual: Number(cuotaManual) }),
         ...(inyeccionPrevia && { inyeccionPrevia }),
@@ -193,6 +200,8 @@ function NuevoPrestamo() {
       diasPlazo: Number(plazo),
       fechaInicio,
       frecuencia,
+      ...((frecuencia === 'semanal' || frecuencia === 'quincenal') && diaCobroSemana !== '' && { diaCobroSemana: Number(diaCobroSemana) }),
+      ...(frecuencia === 'mensual' && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
       ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
       ...(cuotaManualActiva && Number(cuotaManual) > 0 && { cuotaManual: Number(cuotaManual) }),
     }
@@ -577,6 +586,54 @@ function NuevoPrestamo() {
                 </button>
               ))}
             </div>
+
+            {/* Dia ancla opcional — semanal/quincenal */}
+            {(frecuencia === 'semanal' || frecuencia === 'quincenal') && (
+              <div className="mt-2 flex flex-col gap-1">
+                <label className="text-[11px] font-medium text-[var(--color-text-muted)]">
+                  Cobrar siempre el (opcional)
+                </label>
+                <select
+                  value={diaCobroSemana}
+                  onChange={(e) => setDiaCobroSemana(e.target.value)}
+                  className="h-9 px-2 rounded-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)]"
+                >
+                  <option value="">Sin día fijo (corre según inicio)</option>
+                  <option value="1">Lunes</option>
+                  <option value="2">Martes</option>
+                  <option value="3">Miércoles</option>
+                  <option value="4">Jueves</option>
+                  <option value="5">Viernes</option>
+                  <option value="6">Sábado</option>
+                  <option value="0">Domingo</option>
+                </select>
+                <p className="text-[10px] text-[var(--color-text-muted)] leading-snug px-0.5">
+                  Si eliges un día, el próximo cobro caerá siempre en ese día aunque los pagos se atrasen.
+                </p>
+              </div>
+            )}
+
+            {/* Dia ancla opcional — mensual */}
+            {frecuencia === 'mensual' && (
+              <div className="mt-2 flex flex-col gap-1">
+                <label className="text-[11px] font-medium text-[var(--color-text-muted)]">
+                  Día del mes a cobrar (opcional)
+                </label>
+                <select
+                  value={diaCobroMes}
+                  onChange={(e) => setDiaCobroMes(e.target.value)}
+                  className="h-9 px-2 rounded-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)]"
+                >
+                  <option value="">Sin día fijo (corre según inicio)</option>
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-[var(--color-text-muted)] leading-snug px-0.5">
+                  Si el mes no tiene ese día (ej. 31 en febrero), se cobra el último día del mes.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Fecha inicio */}

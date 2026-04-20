@@ -317,6 +317,60 @@ export async function PATCH(request, { params }) {
     return Response.json(actualizado)
   }
 
+  // ─── Modo 3: editar dia de cobro (ancla) ───────────────────────
+  if (modo === 'diaCobro') {
+    const puedeGestionar = session.user.rol === 'owner'
+      ? true
+      : (session.user.rol === 'cobrador' && await cobradorPuedeGestionarPrestamos(session.user.id))
+    if (!puedeGestionar) {
+      return Response.json({ error: 'No tienes permiso para editar el día de cobro' }, { status: 403 })
+    }
+    if (p.estado !== 'activo') {
+      return Response.json({ error: 'Solo se puede editar el día de cobro de préstamos activos' }, { status: 400 })
+    }
+
+    const freq = p.frecuencia || 'diario'
+    const dataUpdate = {}
+
+    if (freq === 'semanal' || freq === 'quincenal') {
+      const raw = body?.diaCobroSemana
+      if (raw === null || raw === '' || raw === undefined) {
+        dataUpdate.diaCobroSemana = null
+      } else {
+        const v = Number(raw)
+        if (!Number.isInteger(v) || v < 0 || v > 6) {
+          return Response.json({ error: 'Día de la semana inválido (0-6)' }, { status: 400 })
+        }
+        dataUpdate.diaCobroSemana = v
+      }
+    } else if (freq === 'mensual') {
+      const raw = body?.diaCobroMes
+      if (raw === null || raw === '' || raw === undefined) {
+        dataUpdate.diaCobroMes = null
+      } else {
+        const v = Number(raw)
+        if (!Number.isInteger(v) || v < 1 || v > 31) {
+          return Response.json({ error: 'Día del mes inválido (1-31)' }, { status: 400 })
+        }
+        dataUpdate.diaCobroMes = v
+      }
+    } else {
+      return Response.json({ error: 'La frecuencia diaria no admite día ancla' }, { status: 400 })
+    }
+
+    const actualizado = await prisma.prestamo.update({ where: { id }, data: dataUpdate })
+    logActividad({
+      session,
+      accion: 'editar_prestamo',
+      entidadTipo: 'prestamo',
+      entidadId: id,
+      detalle: `Día de cobro actualizado (${freq})`,
+      ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+    })
+    if (idempKey) setCachedMutation(idempKey, actualizado)
+    return Response.json(actualizado)
+  }
+
   return Response.json({ error: 'Operación no válida' }, { status: 400 })
 }
 

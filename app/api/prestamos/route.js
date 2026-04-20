@@ -81,6 +81,8 @@ export async function GET(request) {
     totalAPagar:      p.totalAPagar,
     cuotaDiaria:      p.cuotaDiaria,
     frecuencia:       p.frecuencia,
+    diaCobroSemana:   p.diaCobroSemana,
+    diaCobroMes:      p.diaCobroMes,
     tasaInteres:      p.tasaInteres,
     diasPlazo:        p.diasPlazo,
     fechaInicio:      p.fechaInicio,
@@ -130,12 +132,31 @@ export async function POST(request) {
 
   const { organizationId, rol } = session.user
   const body = await request.json()
-  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado, cuotaManual, inyeccionPrevia } = body
+  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado, cuotaManual, inyeccionPrevia, diaCobroSemana, diaCobroMes } = body
 
   const freq = frecuencia || 'diario'
   const frecuenciasValidas = ['diario', 'semanal', 'quincenal', 'mensual']
   if (!frecuenciasValidas.includes(freq)) {
     return Response.json({ error: 'Frecuencia no válida' }, { status: 400 })
+  }
+
+  // Dia ancla: semanal/quincenal usa diaCobroSemana (0-6), mensual usa diaCobroMes (1-31).
+  // Ambos son opcionales. Se ignoran para frecuencias que no aplican.
+  let diaCobroSemanaDb = null
+  let diaCobroMesDb = null
+  if ((freq === 'semanal' || freq === 'quincenal') && diaCobroSemana != null && diaCobroSemana !== '') {
+    const v = Number(diaCobroSemana)
+    if (!Number.isInteger(v) || v < 0 || v > 6) {
+      return Response.json({ error: 'Día de la semana inválido (0-6)' }, { status: 400 })
+    }
+    diaCobroSemanaDb = v
+  }
+  if (freq === 'mensual' && diaCobroMes != null && diaCobroMes !== '') {
+    const v = Number(diaCobroMes)
+    if (!Number.isInteger(v) || v < 1 || v > 31) {
+      return Response.json({ error: 'Día del mes inválido (1-31)' }, { status: 400 })
+    }
+    diaCobroMesDb = v
   }
 
   // Validaciones
@@ -248,6 +269,8 @@ export async function POST(request) {
         totalAPagar,
         cuotaDiaria,
         frecuencia:    freq,
+        diaCobroSemana: diaCobroSemanaDb,
+        diaCobroMes:    diaCobroMesDb,
         diasPlazo:     Number(diasPlazo),
         fechaInicio:   new Date(`${fechaInicio}T05:00:00.000Z`), // medianoche Colombia
         fechaFin,
