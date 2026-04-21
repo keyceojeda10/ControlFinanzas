@@ -7,6 +7,7 @@ import { SkeletonCard }        from '@/components/ui/Skeleton'
 import { formatCOP }           from '@/lib/calculos'
 import { useOnline }           from '@/hooks/useOnline'
 import OfflineFallback         from '@/components/offline/OfflineFallback'
+import FloatingWhatsApp        from '@/components/ui/FloatingWhatsApp'
 
 const planes = [
   {
@@ -562,6 +563,8 @@ function PlanPageInner() {
           Contactar soporte
         </a>
       </div>
+
+      <FloatingWhatsApp mensaje="Hola, necesito ayuda con el pago de mi plan en Control Finanzas." label="Contactar soporte por WhatsApp" />
     </div>
   )
 }
