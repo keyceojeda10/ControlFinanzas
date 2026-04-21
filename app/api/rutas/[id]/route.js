@@ -217,7 +217,7 @@ export async function GET(request, { params }) {
       cuota:     cuotaCliente,
       hoySinCobro: _hoySinCobro,
       cobroPendienteHoy: pendienteHoyCliente,
-      prestamoActivo: c.prestamos[0]?.id ?? null,
+      prestamoActivo: prestamosActivos[0]?.id ?? null,
       prestamosActivos,
       frecuencia,
       diasParaCobro,
