@@ -478,9 +478,19 @@ export default function RutaDetallePage({ params }) {
   // Pago rápido: abre modal para elegir método, luego registra 1 cuota
   const abrirPagoRapido = (cliente) => {
     if (!cliente.cuota || cliente.cuota <= 0 || pagandoRapido) return
-    const prestamoId = ruta.clientes.find(c => c.id === cliente.id)?.prestamoActivo
+    const datos = ruta.clientes.find(c => c.id === cliente.id)
+    const prestamoId = datos?.prestamoActivo
     if (!prestamoId) return
-    setModalPagoRapido({ id: cliente.id, nombre: cliente.nombre, cuota: cliente.cuota, prestamoActivo: prestamoId })
+    const pendiente = Boolean(
+      datos?.cobroPendienteHoy ?? (!datos?.pagoHoy && !datos?.hoySinCobro && datos?.estado !== 'completado')
+    )
+    setModalPagoRapido({
+      id: cliente.id,
+      nombre: cliente.nombre,
+      cuota: cliente.cuota,
+      prestamoActivo: prestamoId,
+      abonoConPendiente: Boolean(datos?.pagoHoy && pendiente),
+    })
   }
 
   const ejecutarPagoRapido = async (metodoPago) => {
@@ -1341,11 +1351,14 @@ export default function RutaDetallePage({ params }) {
                           <button
                             onClick={(e) => { e.stopPropagation(); abrirPagoRapido(c) }}
                             disabled={pagandoRapido === c.id}
+                            title={abonoConPendiente ? 'El cliente aun tiene cuotas atrasadas pendientes' : 'Registrar cobro del dia'}
                             className={[
                               'h-7 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95 px-3 gap-1.5',
                               pagoRapidoOk === c.id
                                 ? 'bg-[var(--color-success)]'
-                                : 'bg-[rgba(34,197,94,0.12)] border border-[rgba(34,197,94,0.3)] hover:bg-[rgba(34,197,94,0.25)]',
+                                : abonoConPendiente
+                                  ? 'bg-[rgba(245,158,11,0.12)] border border-[rgba(245,158,11,0.35)] hover:bg-[rgba(245,158,11,0.22)]'
+                                  : 'bg-[rgba(34,197,94,0.12)] border border-[rgba(34,197,94,0.3)] hover:bg-[rgba(34,197,94,0.25)]',
                             ].join(' ')}
                           >
                             {pagandoRapido === c.id ? (
@@ -1359,10 +1372,15 @@ export default function RutaDetallePage({ params }) {
                               </svg>
                             ) : (
                               <>
-                                <svg className="w-3 h-3 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2}>
+                                <svg
+                                  className={`w-3 h-3 ${abonoConPendiente ? 'text-[var(--color-warning)]' : 'text-[var(--color-success)]'}`}
+                                  fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2}
+                                >
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33" />
                                 </svg>
-                                <span className="text-[10px] font-semibold text-[var(--color-success)] whitespace-nowrap">Cobro rápido</span>
+                                <span className={`text-[10px] font-semibold whitespace-nowrap ${abonoConPendiente ? 'text-[var(--color-warning)]' : 'text-[var(--color-success)]'}`}>
+                                  {abonoConPendiente ? 'Cobrar atraso' : 'Cobro rápido'}
+                                </span>
                               </>
                             )}
                           </button>
@@ -1688,6 +1706,14 @@ export default function RutaDetallePage({ params }) {
               <p className="text-base font-bold text-[var(--color-text-primary)] mt-1">{modalPagoRapido.nombre}</p>
               <p className="text-lg font-bold text-[var(--color-success)] font-mono-display mt-1">{formatCOP(modalPagoRapido.cuota)}</p>
             </div>
+            {modalPagoRapido.abonoConPendiente && (
+              <div className="rounded-[12px] border border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.08)] p-3 text-center">
+                <p className="text-xs text-[var(--color-warning)] font-semibold">El cliente tiene cuotas atrasadas</p>
+                <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
+                  Ya recibio un pago hoy, pero aun debe mas cuotas. Cada registro cubre 1 cuota.
+                </p>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => ejecutarPagoRapido('efectivo')}
