@@ -134,7 +134,11 @@ function SoportePageInner() {
         </div>
       )}
 
-      <FloatingWhatsApp mensaje="Hola, necesito soporte con Control Finanzas." label="Soporte por WhatsApp" />
+      <FloatingWhatsApp
+        mensaje="Hola, necesito soporte con Control Finanzas."
+        label="Soporte por WhatsApp"
+        texto="Soporte directo"
+      />
     </div>
   )
 }

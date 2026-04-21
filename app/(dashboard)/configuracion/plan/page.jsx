@@ -564,7 +564,11 @@ function PlanPageInner() {
         </a>
       </div>
 
-      <FloatingWhatsApp mensaje="Hola, necesito ayuda con el pago de mi plan en Control Finanzas." label="Contactar soporte por WhatsApp" />
+      <FloatingWhatsApp
+        mensaje="Hola, necesito ayuda con el pago de mi plan en Control Finanzas."
+        label="Contactar soporte por WhatsApp"
+        texto="Ayuda con pago"
+      />
     </div>
   )
 }
