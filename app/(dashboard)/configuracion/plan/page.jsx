@@ -255,7 +255,7 @@ function PlanPageInner() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 px-2 sm:px-4 lg:px-6">
-      <div className="text-center rounded-[18px] border border-[var(--color-border)] bg-[#121212] p-5 sm:p-6">
+      <div className="text-center rounded-[18px] border border-[var(--color-border)] bg-[var(--color-bg-card)] p-5 sm:p-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-[var(--color-text-primary)]">Elige tu plan</h1>
         <p className="text-sm sm:text-base text-[var(--color-text-muted)] mt-2 max-w-2xl mx-auto">
           {estado?.estado === 'activa'
@@ -400,7 +400,7 @@ function PlanPageInner() {
               style={glowColor ? {
                 background: `linear-gradient(135deg, ${glowColor}0A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, ${glowColor}05 100%)`,
                 boxShadow: `0 0 30px ${glowColor}08, 0 1px 2px rgba(0,0,0,0.3)`,
-              } : { background: '#1a1a1a' }}
+              } : { background: 'var(--color-bg-card)' }}
             >
               {esRecurrenteActiva && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
@@ -459,7 +459,7 @@ function PlanPageInner() {
 
               <ul className="space-y-2.5 flex-1 mb-6">
                 {p.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm leading-snug text-[#9a9a9a]">
+                  <li key={f} className="flex items-start gap-2 text-sm leading-snug text-[var(--color-text-secondary)]">
                     <svg className="w-4 h-4 text-[var(--color-success)] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
