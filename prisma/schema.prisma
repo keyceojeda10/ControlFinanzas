@@ -53,6 +53,7 @@ enum EstadoSuscripcion {
   activa
   vencida
   cancelada
+  pendiente
 }
 
 enum TipoSuscripcion {
