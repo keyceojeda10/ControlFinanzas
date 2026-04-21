@@ -6,6 +6,7 @@ import BottomNav      from '@/components/layout/BottomNav'
 import PageWrapper    from '@/components/layout/PageWrapper'
 import SinRutaBanner         from '@/components/layout/SinRutaBanner'
 import VerificarEmailBanner  from '@/components/layout/VerificarEmailBanner'
+import SuscripcionBanner     from '@/components/layout/SuscripcionBanner'
 import GlobalSearch        from '@/components/layout/GlobalSearch'
 import NotificationPrompt from '@/components/NotificationPrompt'
 import Analytics          from '@/components/Analytics'
@@ -24,6 +25,9 @@ export default function DashboardLayout({ children }) {
 
         {/* Aviso verificar email (periodo de gracia 24h) */}
         <VerificarEmailBanner />
+
+        {/* Aviso vencimiento de suscripcion (solo <=7 dias o vencida) */}
+        <SuscripcionBanner />
 
         {/* Aviso cobrador sin ruta */}
         <SinRutaBanner />
