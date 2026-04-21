@@ -493,7 +493,7 @@ export default function RutaDetallePage({ params }) {
     })
   }
 
-  const ejecutarPagoRapido = async (metodoPago) => {
+  const ejecutarPagoRapido = async (metodoPago, { confirmarDuplicado = false } = {}) => {
     if (!modalPagoRapido || pagandoRapido) return
     const { id: clienteId, nombre, cuota, prestamoActivo } = modalPagoRapido
     setModalPagoRapido(null)
@@ -504,7 +504,8 @@ export default function RutaDetallePage({ params }) {
       clientes: prev.clientes.map(c => c.id === clienteId ? { ...c, pagoHoy: true, cobroPendienteHoy: false } : c)
     } : prev)
     try {
-      const res = await fetch(`/api/prestamos/${prestamoActivo}/pagos`, {
+      const url = `/api/prestamos/${prestamoActivo}/pagos${confirmarDuplicado ? '?confirmarDuplicado=1' : ''}`
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ montoPagado: cuota, tipo: 'completo', diasAbonados: 1, metodoPago }),
@@ -522,11 +523,27 @@ export default function RutaDetallePage({ params }) {
           setUndoPago({ pagoId, prestamoId: prestamoActivo, clienteNombre: nombre })
           undoTimerRef.current = setTimeout(() => setUndoPago(null), 10000)
         }
+      } else if (res.status === 409) {
+        // Duplicado detectado: preguntar al usuario si confirmar
+        const data = await res.json().catch(() => ({}))
+        if (data?.duplicado && !confirmarDuplicado) {
+          await fetchRuta()
+          if (confirm(`${nombre} ya recibio un pago por ${formatCOP(cuota)} hace menos de 1 minuto.\n\n¿Registrar este pago de todos modos?`)) {
+            setModalPagoRapido({ id: clienteId, nombre, cuota, prestamoActivo, abonoConPendiente: false })
+            return ejecutarPagoRapido(metodoPago, { confirmarDuplicado: true })
+          }
+        } else {
+          alert(data?.error || 'No se pudo registrar el pago')
+          await fetchRuta()
+        }
       } else {
         // Si falla, revertir estado optimista
+        const data = await res.json().catch(() => ({}))
+        alert(data?.error || 'No se pudo registrar el pago')
         await fetchRuta()
       }
     } catch {
+      alert('Error de conexion. Verifica tu red.')
       await fetchRuta()
     } finally { setPagandoRapido(null) }
   }
