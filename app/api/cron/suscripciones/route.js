@@ -6,6 +6,7 @@ import { prisma }       from '@/lib/prisma'
 import { enviarEmail, emailAvisoVencimiento, emailSuscripcionVencida } from '@/lib/email'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
 import { enviarPushOrg } from '@/lib/push'
+import { registrarAdminLog } from '@/lib/admin-log'
 
 const CRON_SECRET = process.env.CRON_SECRET
 
@@ -36,13 +37,10 @@ export async function POST(req) {
         planDemoHasta: null,
       },
     })
-    await prisma.adminLog.create({
-      data: {
-        adminId: 'system',
-        organizacionId: org.id,
-        accion: 'revertir_demo',
-        detalle: `Demo expirado automáticamente: ${org.plan} → ${org.planOriginal} para "${org.nombre}"`,
-      },
+    await registrarAdminLog({
+      organizacionId: org.id,
+      accion: 'revertir_demo',
+      detalle: `Demo expirado automáticamente: ${org.plan} → ${org.planOriginal} para "${org.nombre}"`,
     })
     resultados.demosRevertidos++
   }

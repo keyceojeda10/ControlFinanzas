@@ -5,6 +5,7 @@ import { paymentApi, preApprovalApi } from '@/lib/mercadopago'
 import crypto           from 'crypto'
 import { enviarEmail, emailPagoAprobado, emailPagoFallido, emailReferidoExitoso } from '@/lib/email'
 import { webhookLimiter, getClientIp } from '@/lib/rate-limit'
+import { registrarAdminLog } from '@/lib/admin-log'
 
 import { PLANES_VALIDOS } from '@/lib/planes'
 
@@ -194,18 +195,11 @@ export async function POST(req) {
           data: { plan, activo: true },
         })
 
-        // AdminLog
-        const admin = await prisma.user.findFirst({ where: { rol: 'superadmin' } })
-        if (admin) {
-          await prisma.adminLog.create({
-            data: {
-              adminId:        admin.id,
-              organizacionId: sub.organizationId,
-              accion:         'cobro_recurrente_aprobado',
-              detalle:        `Cobro recurrente aprobado. Suscripción #${preapprovalId}. Monto: $${invoice.transaction_amount}`,
-            },
-          })
-        }
+        await registrarAdminLog({
+          organizacionId: sub.organizationId,
+          accion:         'cobro_recurrente_aprobado',
+          detalle:        `Cobro recurrente aprobado. Suscripción #${preapprovalId}. Monto: $${invoice.transaction_amount}`,
+        })
 
         // Email al owner
         const owner = await prisma.user.findFirst({
@@ -223,17 +217,11 @@ export async function POST(req) {
         }
       } else if (status === 'rejected') {
         // No desactivar — MP reintenta automáticamente
-        const admin = await prisma.user.findFirst({ where: { rol: 'superadmin' } })
-        if (admin) {
-          await prisma.adminLog.create({
-            data: {
-              adminId:        admin.id,
-              organizacionId: sub.organizationId,
-              accion:         'cobro_recurrente_fallido',
-              detalle:        `Cobro recurrente rechazado. Suscripción #${preapprovalId}. MP reintentará.`,
-            },
-          })
-        }
+        await registrarAdminLog({
+          organizacionId: sub.organizationId,
+          accion:         'cobro_recurrente_fallido',
+          detalle:        `Cobro recurrente rechazado. Suscripción #${preapprovalId}. MP reintentará.`,
+        })
         const ownerFallido = await prisma.user.findFirst({
           where: { organizationId: sub.organizationId, rol: 'owner' },
           select: { nombre: true, email: true },
@@ -285,17 +273,11 @@ export async function POST(req) {
           where: { id: orgId },
           data: { cobradoresExtra: { increment: 1 } },
         })
-        const admin = await prisma.user.findFirst({ where: { rol: 'superadmin' } })
-        if (admin) {
-          await prisma.adminLog.create({
-            data: {
-              adminId:        admin.id,
-              organizacionId: orgId,
-              accion:         'cobrador_extra_comprado',
-              detalle:        `Cobrador extra comprado. MercadoPago #${data.id}. Monto: $${payment.transaction_amount}`,
-            },
-          })
-        }
+        await registrarAdminLog({
+          organizacionId: orgId,
+          accion:         'cobrador_extra_comprado',
+          detalle:        `Cobrador extra comprado. MercadoPago #${data.id}. Monto: $${payment.transaction_amount}`,
+        })
         console.log('[webhook] cobrador extra agregado para org=' + orgId)
       }
       return NextResponse.json({ ok: true })
@@ -308,17 +290,11 @@ export async function POST(req) {
           where: { id: orgId },
           data: { rutasExtra: { increment: 1 } },
         })
-        const admin = await prisma.user.findFirst({ where: { rol: 'superadmin' } })
-        if (admin) {
-          await prisma.adminLog.create({
-            data: {
-              adminId:        admin.id,
-              organizacionId: orgId,
-              accion:         'ruta_extra_comprada',
-              detalle:        `Ruta extra comprada. MercadoPago #${data.id}. Monto: $${payment.transaction_amount}`,
-            },
-          })
-        }
+        await registrarAdminLog({
+          organizacionId: orgId,
+          accion:         'ruta_extra_comprada',
+          detalle:        `Ruta extra comprada. MercadoPago #${data.id}. Monto: $${payment.transaction_amount}`,
+        })
         console.log('[webhook] ruta extra agregada para org=' + orgId)
       }
       return NextResponse.json({ ok: true })
@@ -438,18 +414,11 @@ export async function POST(req) {
         }
       }
 
-      // Registrar en AdminLog (buscar un superadmin para el log)
-      const admin = await prisma.user.findFirst({ where: { rol: 'superadmin' } })
-      if (admin) {
-        await prisma.adminLog.create({
-          data: {
-            adminId:        admin.id,
-            organizacionId: orgId,
-            accion:         'pago_aprobado',
-            detalle:        `Pago aprobado por MercadoPago #${data.id}. Plan: ${plan}. Monto: $${payment.transaction_amount}`,
-          },
-        })
-      }
+      await registrarAdminLog({
+        organizacionId: orgId,
+        accion:         'pago_aprobado',
+        detalle:        `Pago aprobado por MercadoPago #${data.id}. Plan: ${plan}. Monto: $${payment.transaction_amount}`,
+      })
       // Enviar email de confirmación al owner
       const owner = await prisma.user.findFirst({
         where: { organizationId: orgId, rol: 'owner' },
@@ -469,18 +438,11 @@ export async function POST(req) {
       }
     } else if (status === 'rejected' || status === 'cancelled') {
       const plan = sanitizarPlan(planRaw)
-      // Registrar intento fallido
-      const admin = await prisma.user.findFirst({ where: { rol: 'superadmin' } })
-      if (admin) {
-        await prisma.adminLog.create({
-          data: {
-            adminId:        admin.id,
-            organizacionId: orgId,
-            accion:         'pago_fallido',
-            detalle:        `Pago ${status} en MercadoPago #${data.id}. Plan: ${plan}`,
-          },
-        })
-      }
+      await registrarAdminLog({
+        organizacionId: orgId,
+        accion:         'pago_fallido',
+        detalle:        `Pago ${status} en MercadoPago #${data.id}. Plan: ${plan}`,
+      })
       // Enviar email de pago fallido
       const ownerFallido = await prisma.user.findFirst({
         where: { organizationId: orgId, rol: 'owner' },

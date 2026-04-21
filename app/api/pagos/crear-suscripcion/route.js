@@ -60,11 +60,17 @@ export async function POST(req) {
     return NextResponse.json({ error: 'Error al construir suscripción' }, { status: 500 })
   }
 
+  let preapproval
   try {
-    const preapproval = await preApprovalApi.create({ body })
+    preapproval = await preApprovalApi.create({ body })
+  } catch (err) {
+    console.error('[crear-suscripcion] Error creando preapproval en MP:', err?.message || err, err?.cause || '')
+    return NextResponse.json({ error: 'Error al crear la suscripción en MercadoPago' }, { status: 500 })
+  }
 
-    const frecuencia = periodo === 'anual' ? 12 : periodo === 'trimestral' ? 3 : 1
+  const frecuencia = periodo === 'anual' ? 12 : periodo === 'trimestral' ? 3 : 1
 
+  try {
     // Crear registro de suscripción pendiente (NO activa hasta que MP confirme el pago)
     await prisma.suscripcion.create({
       data: {
@@ -80,12 +86,17 @@ export async function POST(req) {
         frecuenciaMeses:  frecuencia,
       },
     })
-
-    return NextResponse.json({
-      initPoint: preapproval.init_point,
-    })
   } catch (err) {
-    console.error('[crear-suscripcion] Error:', err)
-    return NextResponse.json({ error: 'Error al crear la suscripción en MercadoPago' }, { status: 500 })
+    // Rollback: cancelar el preapproval en MP para no dejar huerfano
+    console.error('[crear-suscripcion] Error al persistir suscripcion, cancelando preapproval MP', String(preapproval.id), ':', err?.message || err)
+    try {
+      await preApprovalApi.update({ id: String(preapproval.id), body: { status: 'cancelled' } })
+      console.log('[crear-suscripcion] preapproval cancelado en MP:', preapproval.id)
+    } catch (cancelErr) {
+      console.error('[crear-suscripcion] No se pudo cancelar preapproval huerfano:', String(preapproval.id), cancelErr?.message || cancelErr)
+    }
+    return NextResponse.json({ error: 'No se pudo guardar la suscripción. Intenta de nuevo.' }, { status: 500 })
   }
+
+  return NextResponse.json({ initPoint: preapproval.init_point })
 }
