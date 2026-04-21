@@ -155,6 +155,8 @@ export async function GET(request, { params }) {
         montoEnMora: Math.round(montoMoraPrestamo),
         montoParaPonerseAlDia: Math.round(montoAlDiaPrestamo),
         frecuencia: p.frecuencia || 'diario',
+        montoPrestado: p.montoPrestado,
+        fechaInicio: p.fechaInicio,
       })
 
       // Último pago más reciente (pagos ya vienen ordenados por fechaPago desc)

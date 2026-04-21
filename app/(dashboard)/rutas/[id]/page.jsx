@@ -477,20 +477,45 @@ export default function RutaDetallePage({ params }) {
 
   // Pago rápido: abre modal para elegir método, luego registra 1 cuota
   const abrirPagoRapido = (cliente) => {
-    if (!cliente.cuota || cliente.cuota <= 0 || pagandoRapido) return
+    if (pagandoRapido) return
     const datos = ruta.clientes.find(c => c.id === cliente.id)
-    const prestamoId = datos?.prestamoActivo
-    if (!prestamoId) return
+    const activos = Array.isArray(datos?.prestamosActivos) ? datos.prestamosActivos : []
+    if (activos.length === 0) return
+
     const pendiente = Boolean(
       datos?.cobroPendienteHoy ?? (!datos?.pagoHoy && !datos?.hoySinCobro && datos?.estado !== 'completado')
     )
+    const abonoConPendiente = Boolean(datos?.pagoHoy && pendiente)
+
+    // Si hay multiples prestamos activos, dejar que el cobrador elija cual cobrar
+    if (activos.length > 1) {
+      setModalPagoRapido({
+        id: cliente.id,
+        nombre: cliente.nombre,
+        abonoConPendiente,
+        prestamosActivos: activos,
+        prestamoActivo: null,
+        cuota: null,
+      })
+      return
+    }
+
+    const p = activos[0]
+    const cuota = p.cuotaDiaria || cliente.cuota
+    if (!cuota || cuota <= 0) return
     setModalPagoRapido({
       id: cliente.id,
       nombre: cliente.nombre,
-      cuota: cliente.cuota,
-      prestamoActivo: prestamoId,
-      abonoConPendiente: Boolean(datos?.pagoHoy && pendiente),
+      cuota,
+      prestamoActivo: p.id,
+      abonoConPendiente,
     })
+  }
+
+  const elegirPrestamoPagoRapido = (prestamoId, cuota) => {
+    if (!modalPagoRapido) return
+    if (!cuota || cuota <= 0) return
+    setModalPagoRapido(prev => prev ? { ...prev, prestamoActivo: prestamoId, cuota } : prev)
   }
 
   const ejecutarPagoRapido = async (metodoPago, { confirmarDuplicado = false } = {}) => {
@@ -1716,7 +1741,37 @@ export default function RutaDetallePage({ params }) {
         onClose={() => setModalPagoRapido(null)}
         title="Cobro rápido"
       >
-        {modalPagoRapido && (
+        {modalPagoRapido && !modalPagoRapido.prestamoActivo && Array.isArray(modalPagoRapido.prestamosActivos) && modalPagoRapido.prestamosActivos.length > 1 && (
+          <div className="space-y-3">
+            <p className="text-sm text-[var(--color-text-muted)]">
+              <span className="text-[var(--color-text-primary)] font-medium">{modalPagoRapido.nombre}</span> tiene varios préstamos activos.
+              Elige cuál cobrar.
+            </p>
+            <div className="space-y-2">
+              {modalPagoRapido.prestamosActivos.map((p, i) => (
+                <button
+                  key={p.id}
+                  onClick={() => elegirPrestamoPagoRapido(p.id, p.cuotaDiaria)}
+                  disabled={!p.cuotaDiaria || p.cuotaDiaria <= 0}
+                  className="w-full text-left px-3 py-3 rounded-[12px] border border-[var(--color-border)] bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(34,197,94,0.08)] hover:border-[rgba(34,197,94,0.3)] transition-all active:scale-[0.99] disabled:opacity-50"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-[var(--color-text-primary)]">Préstamo {i + 1}</p>
+                    <span className="text-sm font-bold text-[var(--color-success)] font-mono-display">
+                      {formatCOP(p.cuotaDiaria ?? 0)}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[var(--color-text-muted)] mt-1">
+                    {frecuenciaPrestamoLabel(p.frecuencia)} · Saldo {formatCOP(p.saldoPendiente ?? 0)}
+                    {p.diasMora > 0 ? ` · ${p.diasMora}d mora` : ''}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {modalPagoRapido && modalPagoRapido.prestamoActivo && (
           <div className="space-y-4">
             <div className="text-center">
               <p className="text-sm text-[var(--color-text-muted)]">Registrar 1 cuota para</p>
