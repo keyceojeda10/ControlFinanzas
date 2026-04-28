@@ -3,7 +3,7 @@ import { NextResponse }     from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { calcularDiasMora } from '@/lib/calculos'
+import { calcularDiasMora, calcularSaldoPendiente } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 
 // Obtener fecha actual en timezone Colombia (UTC-5)
@@ -150,7 +150,8 @@ export async function GET() {
 
   for (const p of prestamosActivosDetalle) {
     clientesActivos.add(p.clienteId)
-    carteraActiva += p.totalAPagar ?? 0
+    // Cartera activa = saldo pendiente real (totalAPagar - pagado, excluye recargos/descuentos via calcularSaldoPendiente)
+    carteraActiva += calcularSaldoPendiente(p)
     capitalPrestado += p.montoPrestado ?? 0
     cuotaDiariaTotal += p.cuotaDiaria ?? 0
 
