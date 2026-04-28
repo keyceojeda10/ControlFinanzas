@@ -150,8 +150,9 @@ export async function GET() {
 
   for (const p of prestamosActivosDetalle) {
     clientesActivos.add(p.clienteId)
-    // Cartera activa = saldo pendiente real (totalAPagar - pagado, excluye recargos/descuentos via calcularSaldoPendiente)
-    carteraActiva += calcularSaldoPendiente(p)
+    // Cartera activa = totalAPagar (capital + intereses esperados). Lo que va
+    // a entrar a la organizacion cuando se cobre todo. NO es saldo pendiente.
+    carteraActiva += p.totalAPagar ?? 0
     capitalPrestado += p.montoPrestado ?? 0
     cuotaDiariaTotal += p.cuotaDiaria ?? 0
 
