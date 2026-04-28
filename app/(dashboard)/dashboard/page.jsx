@@ -18,9 +18,19 @@ function Skeleton({ className = '' }) {
 
 function KpiCard({ label, value, sub, color = 'var(--color-text-primary)', icon, info }) {
   const [showInfo, setShowInfo] = useState(false)
+  const toggle = (e) => {
+    if (!info) return
+    e?.preventDefault?.()
+    e?.stopPropagation?.()
+    setShowInfo(v => !v)
+  }
   return (
     <div
-      className="rounded-[16px] px-4 py-4 relative overflow-hidden group hover:scale-[1.01] transition-transform duration-200"
+      onClick={toggle}
+      role={info ? 'button' : undefined}
+      tabIndex={info ? 0 : undefined}
+      onKeyDown={info ? (e) => { if (e.key === 'Enter' || e.key === ' ') toggle(e) } : undefined}
+      className={`rounded-[16px] px-4 py-4 relative group transition-transform duration-200 ${info ? 'cursor-pointer hover:scale-[1.01]' : ''}`}
       style={{
         background: `linear-gradient(135deg, color-mix(in srgb, ${color} 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 45%, var(--color-bg-card) 75%, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 100%)`,
         border: '1px solid var(--color-border)',
@@ -31,15 +41,13 @@ function KpiCard({ label, value, sub, color = 'var(--color-text-primary)', icon,
         <div className="flex items-center gap-1.5 min-w-0">
           <p className="text-[11px] leading-tight" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
           {info && (
-            <button
-              type="button"
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowInfo(v => !v) }}
-              aria-label="Que significa este indicador"
-              className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold transition-all hover:scale-110"
+            <span
+              aria-hidden
+              className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold pointer-events-none"
               style={{ background: 'color-mix(in srgb, var(--color-text-muted) 25%, transparent)', color: 'var(--color-text-secondary)' }}
             >
               i
-            </button>
+            </span>
           )}
         </div>
         {icon && (
@@ -52,14 +60,14 @@ function KpiCard({ label, value, sub, color = 'var(--color-text-primary)', icon,
       {sub && <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>{sub}</p>}
       {info && showInfo && (
         <div
-          className="absolute inset-x-2 bottom-2 z-10 rounded-[10px] px-3 py-2 text-[10.5px] leading-snug"
+          className="absolute left-2 right-2 top-full mt-1 z-30 rounded-[10px] px-3 py-2 text-[11px] leading-relaxed"
           style={{
             background: 'var(--color-bg-base)',
             border: '1px solid var(--color-border)',
             color: 'var(--color-text-secondary)',
-            boxShadow: '0 8px 20px rgba(0,0,0,0.25)',
+            boxShadow: '0 12px 28px rgba(0,0,0,0.35)',
+            whiteSpace: 'normal',
           }}
-          onClick={() => setShowInfo(false)}
         >
           {info}
         </div>
