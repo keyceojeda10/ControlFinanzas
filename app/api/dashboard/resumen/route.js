@@ -45,6 +45,8 @@ export async function GET() {
     pagosMes,
     ultimosPagos,
     rutasActivas,
+    capitalRow,
+    gastosMesAgg,
   ] = await Promise.all([
     prisma.organization.findUnique({
       where: { id: orgId },
@@ -140,11 +142,27 @@ export async function GET() {
         ...(esCobrador ? { id: { in: rutaIdsCobrador } } : {}),
       },
     }),
+
+    // Saldo de capital actual (caja disponible). Solo para owner/superadmin.
+    esCobrador ? Promise.resolve(null) : prisma.capital.findFirst({
+      where: { organizationId: orgId },
+      select: { saldo: true },
+    }),
+
+    // Gastos del mes. Solo para owner/superadmin.
+    esCobrador ? Promise.resolve(null) : prisma.gastoMenor.aggregate({
+      where: {
+        organizationId: orgId,
+        fecha: { gte: inicioMes, lte: finMes },
+      },
+      _sum: { monto: true },
+    }),
   ])
 
   const clientesActivos = new Set()
   const clientesMora = new Set()
   let carteraActiva = 0
+  let saldoPorCobrar = 0
   let capitalPrestado = 0
   let cuotaDiariaTotal = 0
 
@@ -153,6 +171,8 @@ export async function GET() {
     // Cartera activa = totalAPagar (capital + intereses esperados). Lo que va
     // a entrar a la organizacion cuando se cobre todo. NO es saldo pendiente.
     carteraActiva += p.totalAPagar ?? 0
+    // Saldo por cobrar = saldo pendiente real (totalAPagar - pagado, sin recargos/descuentos).
+    saldoPorCobrar += calcularSaldoPendiente(p)
     capitalPrestado += p.montoPrestado ?? 0
     cuotaDiariaTotal += p.cuotaDiaria ?? 0
 
@@ -161,6 +181,12 @@ export async function GET() {
       clientesMora.add(p.clienteId)
     }
   }
+
+  // Patrimonio = saldo pendiente real por cobrar + caja disponible - gastos del mes.
+  // Refleja "cuanto va a tener al final" descontando los gastos que ya hizo este mes.
+  const cajaDisponible = capitalRow?.saldo ?? 0
+  const gastosMes = gastosMesAgg?._sum?.monto ?? 0
+  const patrimonio = esCobrador ? null : (saldoPorCobrar + cajaDisponible - gastosMes)
 
   return NextResponse.json({
     clientes: {
@@ -171,8 +197,14 @@ export async function GET() {
       activos:         prestamosActivosDetalle.length,
       completados:     prestamosCompletados,
       carteraActiva:   carteraActiva,
+      saldoPorCobrar:  saldoPorCobrar,
       capitalPrestado: capitalPrestado,
       cuotaDiariaTotal: cuotaDiariaTotal,
+    },
+    finanzas: esCobrador ? null : {
+      cajaDisponible,
+      gastosMes,
+      patrimonio,
     },
     cobros: {
       hoy:         pagosHoy._sum?.montoPagado    ?? 0,
