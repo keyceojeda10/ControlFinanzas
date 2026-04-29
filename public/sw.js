@@ -1,6 +1,11 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME = 'cf-v15'
-const API_CACHE  = 'cf-api-v15'
+const CACHE_NAME = 'cf-v16'
+const API_CACHE  = 'cf-api-v16'
+
+// Endpoints que NUNCA deben servirse desde cache si el navegador esta online.
+// Si la red falla, ahi si caemos al cache. Sin esto, microcortes en 4G hacen que
+// el usuario vea siempre el mismo snapshot guardado.
+const NETWORK_ONLY_WHEN_ONLINE = ['/api/dashboard/resumen']
 const DB_NAME = 'cf-offline'
 const DB_VERSION = 4
 const STORE_MUTACIONES = 'mutaciones_pendientes'
@@ -168,6 +173,9 @@ self.addEventListener('fetch', (e) => {
 // ─── Strategies ─────────────────────────────────────────────
 
 async function networkFirstAPI(request) {
+  const url = new URL(request.url)
+  const isNetworkOnly = NETWORK_ONLY_WHEN_ONLINE.some((p) => url.pathname.startsWith(p))
+
   try {
     const response = await fetch(request)
     // Only cache successful, non-redirected responses
@@ -177,6 +185,15 @@ async function networkFirstAPI(request) {
     }
     return response
   } catch {
+    // Para endpoints "network-only" (dashboard), si el navegador esta online
+    // pero el fetch fallo (microcorte 4G), NO devolver cache: devolver error
+    // explicito para que el cliente sepa que no hay datos frescos.
+    if (isNetworkOnly && self.navigator && self.navigator.onLine) {
+      return new Response(JSON.stringify({ error: 'Red inestable', offline: true }), {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
     const cached = await caches.match(request)
     if (cached) return cached
     return new Response(JSON.stringify({ error: 'Sin conexión', offline: true }), {

@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { formatCOP } from '@/lib/calculos'
 import { useAuth } from '@/hooks/useAuth'
@@ -131,6 +131,7 @@ export default function DashboardPage() {
   const [isOffline, setIsOffline] = useState(false)
   const [fechaActual, setFechaActual] = useState('')
   const [horaActual, setHoraActual] = useState('')
+  const [actualizadoEn, setActualizadoEn] = useState(null)
 
   const { syncMeta, startBulkSync, bulkSyncing, bulkProgress, lastSyncedAt } = useOffline()
   const onboarding = useOnboarding(authLoading ? null : esOwner)
@@ -148,36 +149,62 @@ export default function DashboardPage() {
     return () => clearInterval(interval)
   }, [])
 
-  useEffect(() => {
-    const loadDashboard = async () => {
-      setIsOffline(false)
-      // Offline: prefer IndexedDB directly
-      if (!navigator.onLine) {
-        try {
-          let cached = await leerDeCache('dashboard:resumen')
-          if (!cached) cached = await obtenerDashboardOffline()
-          if (cached) { setData(cached); setIsOffline(true); setLoading(false); return }
-        } catch {}
-      }
+  const loadDashboard = useCallback(async () => {
+    setIsOffline(false)
+    // Offline real: leer de IndexedDB directamente
+    if (!navigator.onLine) {
       try {
-        const r = await fetch('/api/dashboard/resumen')
-        const d = await r.json()
-        if (d.error) setError(d.error)
-        else if (d.offline) throw new Error('offline')
-        else { setData(d); guardarEnCache('dashboard:resumen', d).catch(() => {}) }
-      } catch {
-        try {
-          let cached = await leerDeCache('dashboard:resumen')
-          if (!cached) cached = await obtenerDashboardOffline()
-          if (cached) { setData(cached); setIsOffline(true); return }
-        } catch {}
-        setError('No se pudo cargar el resumen.')
-      } finally {
-        setLoading(false)
-      }
+        let cached = await leerDeCache('dashboard:resumen')
+        if (!cached) cached = await obtenerDashboardOffline()
+        if (cached) { setData(cached); setIsOffline(true); setLoading(false); return }
+      } catch {}
     }
-    loadDashboard()
-  }, [lastSyncedAt])
+    try {
+      // Cache-buster: evita que el navegador o cualquier intermediario reuse
+      // una respuesta vieja. Combinado con Cache-Control: no-store en la API,
+      // garantiza que cada carga del dashboard sea fresca.
+      const r = await fetch(`/api/dashboard/resumen?t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' },
+      })
+      const d = await r.json()
+      if (d.error) setError(d.error)
+      else if (d.offline) throw new Error('offline')
+      else {
+        setData(d)
+        setActualizadoEn(d.generatedAt || new Date().toISOString())
+        setError('')
+        guardarEnCache('dashboard:resumen', d).catch(() => {})
+      }
+    } catch {
+      try {
+        let cached = await leerDeCache('dashboard:resumen')
+        if (!cached) cached = await obtenerDashboardOffline()
+        if (cached) { setData(cached); setIsOffline(true); return }
+      } catch {}
+      setError('No se pudo cargar el resumen.')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { loadDashboard() }, [loadDashboard, lastSyncedAt])
+
+  // Refrescar cuando el usuario vuelve a la pestaña/app despues de tenerla en
+  // segundo plano. Sin esto, KPIs se quedan congelados con el snapshot inicial.
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') loadDashboard() }
+    const onFocus = () => loadDashboard()
+    const onOnline = () => loadDashboard()
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onFocus)
+    window.addEventListener('online', onOnline)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onFocus)
+      window.removeEventListener('online', onOnline)
+    }
+  }, [loadDashboard])
 
   useEffect(() => {
     fetch('/api/mora')
@@ -249,12 +276,27 @@ export default function DashboardPage() {
       <div>
         <div className="flex items-center justify-between gap-3">
           <h1 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Tu resumen</h1>
-          <CacheAge compact />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={loadDashboard}
+              className="text-[10px] px-2 py-1 rounded-[8px] transition-colors"
+              style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)' }}
+              title="Actualizar datos"
+            >
+              ↻ Actualizar
+            </button>
+            <CacheAge compact />
+          </div>
         </div>
         <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
           {fechaActual || 'Resumen de tu cartera hoy'}
           {horaActual && <span className="font-mono-display ml-2" style={{ color: 'var(--color-accent)' }}>{horaActual}</span>}
         </p>
+        {actualizadoEn && (
+          <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
+            Datos actualizados a las {new Date(actualizadoEn).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'America/Bogota' })}
+          </p>
+        )}
       </div>
       {isOffline && (
         <div className="text-xs rounded-[12px] px-4 py-2.5 flex items-center gap-2" style={{ background: 'var(--color-warning-dim)', border: '1px solid color-mix(in srgb, var(--color-warning) 30%, transparent)', color: 'var(--color-warning)' }}>

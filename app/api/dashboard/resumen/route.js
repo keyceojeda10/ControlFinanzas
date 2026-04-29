@@ -6,6 +6,12 @@ import { prisma }           from '@/lib/prisma'
 import { calcularDiasMora, calcularSaldoPendiente } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 
+// Sin cache: cada request lee BD en vivo. Evita que LiteSpeed o cualquier
+// intermediario sirva una respuesta vieja, que es la causa raiz por la que
+// algunos clientes ven KPIs "pegados" entre dias.
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // Obtener fecha actual en timezone Colombia (UTC-5)
 function getColombiaDate() {
   return new Date(Date.now() - 5 * 60 * 60 * 1000)
@@ -189,6 +195,7 @@ export async function GET() {
   const patrimonio = esCobrador ? null : (saldoPorCobrar + cajaDisponible - gastosMes)
 
   return NextResponse.json({
+    generatedAt: new Date().toISOString(),
     clientes: {
       total:  clientesActivos.size,
       enMora: clientesMora.size,
@@ -222,5 +229,11 @@ export async function GET() {
       fecha:      p.fechaPago,
       tipo:       p.tipo,
     })),
+  }, {
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+    },
   })
 }
