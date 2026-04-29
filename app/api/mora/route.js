@@ -6,6 +6,9 @@ import { prisma } from '@/lib/prisma'
 import { calcularDiasMora, calcularSaldoPendiente } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // GET /api/mora - Devuelve clientes en mora agrupados por días de mora
 export async function GET(request) {
   try {
@@ -88,6 +91,11 @@ export async function GET(request) {
     total: clientesEnMora.length,
     agrupado,
     lista: clientesEnMora.sort((a, b) => b.diasMora - a.diasMora),
+  }, {
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+      'Pragma': 'no-cache',
+    },
   })
   } catch (err) {
     console.error('[GET /api/mora]', err)

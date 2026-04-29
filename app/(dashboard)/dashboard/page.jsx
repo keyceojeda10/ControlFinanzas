@@ -192,10 +192,16 @@ export default function DashboardPage() {
 
   // Refrescar cuando el usuario vuelve a la pestaña/app despues de tenerla en
   // segundo plano. Sin esto, KPIs se quedan congelados con el snapshot inicial.
+  const refreshAll = useCallback(() => {
+    loadDashboard()
+    loadMora()
+    if (esOwner) loadCapital()
+  }, [loadDashboard, loadMora, loadCapital, esOwner])
+
   useEffect(() => {
-    const onVisible = () => { if (document.visibilityState === 'visible') loadDashboard() }
-    const onFocus = () => loadDashboard()
-    const onOnline = () => loadDashboard()
+    const onVisible = () => { if (document.visibilityState === 'visible') refreshAll() }
+    const onFocus = () => refreshAll()
+    const onOnline = () => refreshAll()
     document.addEventListener('visibilitychange', onVisible)
     window.addEventListener('focus', onFocus)
     window.addEventListener('online', onOnline)
@@ -204,34 +210,45 @@ export default function DashboardPage() {
       window.removeEventListener('focus', onFocus)
       window.removeEventListener('online', onOnline)
     }
-  }, [loadDashboard])
+  }, [refreshAll])
 
-  useEffect(() => {
-    fetch('/api/mora')
-      .then((r) => r.json())
-      .then((d) => { setMoraData(d); guardarEnCache('dashboard:mora', d).catch(() => {}) })
-      .catch(async () => {
-        try {
-          const cached = await leerDeCache('dashboard:mora')
-          if (cached) { setMoraData(cached); return }
-        } catch {}
-        setMoraData({ total: 0, agrupado: {} })
-      })
-  }, [lastSyncedAt])
+  const loadMora = useCallback(async () => {
+    try {
+      const r = await fetch(`/api/mora?t=${Date.now()}`, { cache: 'no-store' })
+      const d = await r.json()
+      setMoraData(d)
+      guardarEnCache('dashboard:mora', d).catch(() => {})
+    } catch {
+      try {
+        const cached = await leerDeCache('dashboard:mora')
+        if (cached) { setMoraData(cached); return }
+      } catch {}
+      setMoraData({ total: 0, agrupado: {} })
+    }
+  }, [])
 
-  // Cargar capital solo para owners
+  useEffect(() => { loadMora() }, [loadMora, lastSyncedAt])
+
+  const loadCapital = useCallback(async () => {
+    try {
+      const r = await fetch(`/api/capital/resumen?t=${Date.now()}`, { cache: 'no-store' })
+      const d = await r.json()
+      if (d.configurado) {
+        setCapitalData(d)
+        guardarEnCache('dashboard:capital', d).catch(() => {})
+      }
+    } catch {
+      try {
+        const cached = await leerDeCache('dashboard:capital')
+        if (cached) setCapitalData(cached)
+      } catch {}
+    }
+  }, [])
+
   useEffect(() => {
     if (authLoading || !esOwner) return
-    fetch('/api/capital/resumen')
-      .then((r) => r.json())
-      .then((d) => { if (d.configurado) { setCapitalData(d); guardarEnCache('dashboard:capital', d).catch(() => {}) } })
-      .catch(async () => {
-        try {
-          const cached = await leerDeCache('dashboard:capital')
-          if (cached) setCapitalData(cached)
-        } catch {}
-      })
-  }, [authLoading, esOwner])
+    loadCapital()
+  }, [authLoading, esOwner, loadCapital])
 
   const moraPct = data ? (data.clientes.total > 0 ? Math.round((data.clientes.enMora / data.clientes.total) * 100) : 0) : 0
 
@@ -278,7 +295,7 @@ export default function DashboardPage() {
           <h1 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Tu resumen</h1>
           <div className="flex items-center gap-2">
             <button
-              onClick={loadDashboard}
+              onClick={refreshAll}
               className="text-[10px] px-2 py-1 rounded-[8px] transition-colors"
               style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)' }}
               title="Actualizar datos"

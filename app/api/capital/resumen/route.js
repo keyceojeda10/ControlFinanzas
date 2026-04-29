@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 function netoAjustes(movimientos = []) {
   return movimientos.reduce((acc, mov) => {
     const esIngreso = mov.saldoNuevo >= mov.saldoAnterior
@@ -213,6 +216,11 @@ export async function GET() {
       flujoCajaTotal,
       prestamosOtorgados: desembolsos._count,
       pagosRecibidos: recaudos._count,
+    },
+  }, {
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+      'Pragma': 'no-cache',
     },
   })
 }
