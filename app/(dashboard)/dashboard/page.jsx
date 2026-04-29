@@ -188,30 +188,6 @@ export default function DashboardPage() {
     }
   }, [])
 
-  useEffect(() => { loadDashboard() }, [loadDashboard, lastSyncedAt])
-
-  // Refrescar cuando el usuario vuelve a la pestaña/app despues de tenerla en
-  // segundo plano. Sin esto, KPIs se quedan congelados con el snapshot inicial.
-  const refreshAll = useCallback(() => {
-    loadDashboard()
-    loadMora()
-    if (esOwner) loadCapital()
-  }, [loadDashboard, loadMora, loadCapital, esOwner])
-
-  useEffect(() => {
-    const onVisible = () => { if (document.visibilityState === 'visible') refreshAll() }
-    const onFocus = () => refreshAll()
-    const onOnline = () => refreshAll()
-    document.addEventListener('visibilitychange', onVisible)
-    window.addEventListener('focus', onFocus)
-    window.addEventListener('online', onOnline)
-    return () => {
-      document.removeEventListener('visibilitychange', onVisible)
-      window.removeEventListener('focus', onFocus)
-      window.removeEventListener('online', onOnline)
-    }
-  }, [refreshAll])
-
   const loadMora = useCallback(async () => {
     try {
       const r = await fetch(`/api/mora?t=${Date.now()}`, { cache: 'no-store' })
@@ -226,8 +202,6 @@ export default function DashboardPage() {
       setMoraData({ total: 0, agrupado: {} })
     }
   }, [])
-
-  useEffect(() => { loadMora() }, [loadMora, lastSyncedAt])
 
   const loadCapital = useCallback(async () => {
     try {
@@ -244,6 +218,31 @@ export default function DashboardPage() {
       } catch {}
     }
   }, [])
+
+  // Refrescar cuando el usuario vuelve a la pestaña/app despues de tenerla en
+  // segundo plano. Sin esto, KPIs se quedan congelados con el snapshot inicial.
+  const refreshAll = useCallback(() => {
+    loadDashboard()
+    loadMora()
+    if (esOwner) loadCapital()
+  }, [loadDashboard, loadMora, loadCapital, esOwner])
+
+  useEffect(() => { loadDashboard() }, [loadDashboard, lastSyncedAt])
+  useEffect(() => { loadMora() }, [loadMora, lastSyncedAt])
+
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') refreshAll() }
+    const onFocus = () => refreshAll()
+    const onOnline = () => refreshAll()
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onFocus)
+    window.addEventListener('online', onOnline)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onFocus)
+      window.removeEventListener('online', onOnline)
+    }
+  }, [refreshAll])
 
   useEffect(() => {
     if (authLoading || !esOwner) return
