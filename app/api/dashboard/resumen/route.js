@@ -47,6 +47,8 @@ export async function GET() {
   const finAyerUTC    = new Date(Date.UTC(y, m, d, 4, 59, 59))
   // Rango ultimos 7 dias (incluye hoy) para sparkline
   const inicio7DiasUTC = new Date(Date.UTC(y, m, d - 6, 5, 0, 0))
+  // Rango ultimos 30 dias (incluye hoy) para heatmap calendario
+  const inicio30DiasUTC = new Date(Date.UTC(y, m, d - 29, 5, 0, 0))
 
   const [
     org,
@@ -65,7 +67,7 @@ export async function GET() {
     movimientosHoy,
     clientesSinRutaCount,
     clientesSinPagosLargo,
-    pagos7Dias,
+    pagos30Dias,
   ] = await Promise.all([
     prisma.organization.findUnique({
       where: { id: orgId },
@@ -264,11 +266,11 @@ export async function GET() {
       },
     }),
 
-    // Pagos individuales de los ultimos 7 dias para construir sparkline
+    // Pagos individuales de los ultimos 30 dias para construir sparkline 7d y heatmap 30d
     prisma.pago.findMany({
       where: {
         organizationId: orgId,
-        fechaPago: { gte: inicio7DiasUTC, lte: finDiaUTC },
+        fechaPago: { gte: inicio30DiasUTC, lte: finDiaUTC },
         tipo: { notIn: ['recargo', 'descuento'] },
         ...filtroRutaPagos,
       },
@@ -334,19 +336,20 @@ export async function GET() {
   const cobrosAyerMonto = pagosAyer?._sum?.montoPagado ?? 0
   const cobrosAyerCount = pagosAyer?._count ?? 0
 
-  // Sparkline ultimos 7 dias (de mas viejo a mas reciente, hoy es el ultimo)
-  // Indice 0 = hace 6 dias, indice 6 = hoy. Asi el frontend dibuja izq->der.
+  // Sparkline 7d y Heatmap 30d (de mas viejo a mas reciente, hoy es el ultimo)
+  // sparkline7d[6] = hoy, heatmap30d[29] = hoy
   const sparkline7d = Array(7).fill(0)
-  for (const p of pagos7Dias) {
+  const heatmap30d = Array(30).fill(0)
+  for (const p of pagos30Dias) {
     const fecha = new Date(p.fechaPago)
     // Convertir a hora Colombia restando 5h
     const fechaCO = new Date(fecha.getTime() - 5 * 60 * 60 * 1000)
     const diaCO = Date.UTC(fechaCO.getUTCFullYear(), fechaCO.getUTCMonth(), fechaCO.getUTCDate())
     const hoyCO = Date.UTC(y, m, d)
     const diasAtras = Math.floor((hoyCO - diaCO) / (24 * 60 * 60 * 1000))
-    if (diasAtras >= 0 && diasAtras < 7) {
-      const idx = 6 - diasAtras
-      sparkline7d[idx] += p.montoPagado
+    if (diasAtras >= 0 && diasAtras < 30) {
+      heatmap30d[29 - diasAtras] += p.montoPagado
+      if (diasAtras < 7) sparkline7d[6 - diasAtras] += p.montoPagado
     }
   }
 
@@ -377,6 +380,7 @@ export async function GET() {
       ayer:        cobrosAyerMonto,
       cantidadAyer: cobrosAyerCount,
       sparkline7d,
+      heatmap30d,
     },
     rutas: {
       activas: rutasActivas ?? 0,

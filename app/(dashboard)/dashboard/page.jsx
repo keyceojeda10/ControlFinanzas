@@ -130,6 +130,229 @@ function Sparkline({ data, color = 'var(--color-success)', height = 28, ariaLabe
   )
 }
 
+// Hero card: KPI principal en grande con gradiente, glow pulsante y narrativa.
+// Inspirado en Mercury / Revolut — tipografia gigante, espacio generoso.
+function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#34d399', narrativa, sparklineData, onClick, info }) {
+  const animatedNum = useCountUp(typeof valueRaw === 'number' ? valueRaw : 0, 900)
+  const [showInfo, setShowInfo] = useState(false)
+  const hasInfo = Boolean(info)
+  const display = typeof valueRaw === 'number' ? formatCOP(Math.round(animatedNum)) : value
+
+  return (
+    <div
+      className="relative rounded-[20px] overflow-hidden kpi-lift cursor-pointer"
+      onClick={(e) => {
+        if (hasInfo) {
+          e.stopPropagation()
+          setShowInfo(v => !v)
+        } else if (onClick) {
+          onClick(e)
+        }
+      }}
+      style={{
+        background: `linear-gradient(135deg, color-mix(in srgb, ${color} 14%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, ${accent} 8%, var(--color-bg-card)) 100%)`,
+        border: `1px solid color-mix(in srgb, ${color} 25%, var(--color-border))`,
+        boxShadow: `0 8px 32px color-mix(in srgb, ${color} 18%, transparent)`,
+      }}
+    >
+      {/* Orb pulsante decorativo */}
+      <div
+        className="hero-glow absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none"
+        style={{ background: `radial-gradient(circle, color-mix(in srgb, ${color} 35%, transparent), transparent 70%)`, filter: 'blur(20px)' }}
+      />
+      {/* Patron de puntos sutil */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.04]"
+        style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '16px 16px', color }}
+      />
+
+      <div className="relative px-5 py-5 sm:px-6 sm:py-6">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-1.5 h-1.5 rounded-full" style={{ background: color, boxShadow: `0 0 12px ${color}` }} />
+          <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
+          {hasInfo && (
+            <span
+              aria-hidden
+              className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold pointer-events-none ml-auto"
+              style={{ background: `color-mix(in srgb, ${color} 25%, transparent)`, color }}
+            >
+              i
+            </span>
+          )}
+        </div>
+
+        <p
+          className="font-mono-display font-bold leading-none tracking-tight"
+          style={{
+            color,
+            fontSize: 'clamp(28px, 8vw, 44px)',
+            textShadow: `0 0 40px color-mix(in srgb, ${color} 25%, transparent)`,
+          }}
+        >
+          {display}
+        </p>
+
+        {sub && (
+          <p className="text-[12px] mt-2" style={{ color: 'var(--color-text-secondary)' }}>{sub}</p>
+        )}
+
+        {narrativa && (
+          <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px]" style={{ background: `color-mix(in srgb, ${color} 12%, transparent)`, color }}>
+            <span>{narrativa}</span>
+          </div>
+        )}
+
+        {sparklineData && sparklineData.length > 0 && (
+          <div className="mt-4 -mx-1">
+            <Sparkline data={sparklineData} color={color} height={40} ariaLabel="Tendencia 7 dias" />
+          </div>
+        )}
+
+        {hasInfo && showInfo && (
+          <KpiInfoPopover info={info} color={color} onClose={() => setShowInfo(false)} />
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Donut de progreso animado: anillo SVG con porcentaje en el centro.
+function DonutProgress({ value = 0, max = 100, color = 'var(--color-success)', size = 90, strokeWidth = 9, label, sublabel }) {
+  const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0
+  const animatedPct = useCountUp(pct, 1000)
+  const r = (size - strokeWidth) / 2
+  const circ = 2 * Math.PI * r
+  const len = (animatedPct / 100) * circ
+
+  return (
+    <div className="flex flex-col items-center justify-center">
+      <div className="relative" style={{ width: size, height: size }}>
+        <svg width={size} height={size} className="transform -rotate-90">
+          {/* Anillo de fondo */}
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke="var(--color-bg-hover)"
+            strokeWidth={strokeWidth}
+          />
+          {/* Anillo de progreso */}
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke={color}
+            strokeWidth={strokeWidth}
+            strokeLinecap="round"
+            strokeDasharray={`${len} ${circ}`}
+            style={{
+              transition: 'stroke-dasharray 0.05s linear',
+              filter: `drop-shadow(0 0 6px color-mix(in srgb, ${color} 50%, transparent))`,
+            }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <p className="font-mono-display font-bold leading-none" style={{ color, fontSize: size * 0.26 }}>
+            {Math.round(animatedPct)}<span style={{ fontSize: size * 0.16 }}>%</span>
+          </p>
+        </div>
+      </div>
+      {label && (
+        <p className="text-[11px] mt-2 font-semibold uppercase tracking-wider text-center" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
+      )}
+      {sublabel && (
+        <p className="text-[10px] mt-0.5 text-center" style={{ color: 'var(--color-text-muted)' }}>{sublabel}</p>
+      )}
+    </div>
+  )
+}
+
+// Heatmap calendario tipo GitHub para los ultimos 30 dias.
+function Heatmap30d({ data, color = '#34d399', label = 'Cobros últimos 30 días' }) {
+  if (!data || data.length === 0) return null
+  const max = Math.max(...data, 1)
+  const cols = 10  // 10 columnas x 3 filas = 30 dias
+  const cells = []
+  for (let i = 0; i < 30; i++) {
+    const v = data[i] || 0
+    const intensity = max > 0 ? v / max : 0
+    const opacity = v === 0 ? 0.06 : 0.18 + intensity * 0.82
+    cells.push({ idx: i, valor: v, opacity, esHoy: i === 29 })
+  }
+  // Calcular max para tooltip context
+  const totalMes = data.reduce((a, b) => a + b, 0)
+  const promedio = totalMes / 30
+
+  return (
+    <div className="rounded-[16px] px-4 py-4" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+      <div className="flex items-baseline justify-between mb-3">
+        <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
+        <p className="text-[10px] font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
+          Promedio diario · <span style={{ color: 'var(--color-text-primary)' }}>{formatCOP(Math.round(promedio))}</span>
+        </p>
+      </div>
+      <div className={`grid gap-1`} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+        {cells.map((c) => (
+          <div
+            key={c.idx}
+            className="heatmap-cell relative rounded-[4px] aspect-square"
+            style={{
+              background: c.esHoy
+                ? `color-mix(in srgb, ${color} ${Math.max(40, c.opacity * 100)}%, transparent)`
+                : `color-mix(in srgb, ${color} ${c.opacity * 100}%, transparent)`,
+              border: c.esHoy ? `1.5px solid ${color}` : '1px solid color-mix(in srgb, var(--color-text-muted) 8%, transparent)',
+              animationDelay: `${c.idx * 12}ms`,
+            }}
+            title={`Hace ${29 - c.idx} día${29 - c.idx === 1 ? '' : 's'}: ${formatCOP(c.valor)}`}
+          />
+        ))}
+      </div>
+      <div className="flex items-center justify-between gap-2 mt-3 text-[9px]" style={{ color: 'var(--color-text-muted)' }}>
+        <span>Hace 30 días</span>
+        <div className="flex items-center gap-1">
+          <span>menos</span>
+          {[0.1, 0.3, 0.55, 0.8, 1].map((op) => (
+            <div key={op} className="w-2.5 h-2.5 rounded-[2px]" style={{ background: `color-mix(in srgb, ${color} ${op * 100}%, transparent)` }} />
+          ))}
+          <span>más</span>
+        </div>
+        <span>Hoy</span>
+      </div>
+    </div>
+  )
+}
+
+// Genera narrativa contextual basada en datos. Da personalidad al dashboard.
+function generarNarrativa({ recaudadoHoy, recaudadoAyer, cuotaDiaria, sparkline7d }) {
+  if (!recaudadoHoy && !recaudadoAyer) return null
+
+  // Comparativo vs ayer
+  if (recaudadoAyer > 0) {
+    const diff = recaudadoHoy - recaudadoAyer
+    const pct = Math.round((diff / recaudadoAyer) * 100)
+    if (pct > 15) return `Vas a buen ritmo: ${pct}% más que ayer`
+    if (pct < -15) return `${Math.abs(pct)}% menos que ayer — toca empujar`
+  }
+
+  // Progreso vs cuota diaria
+  if (cuotaDiaria > 0) {
+    const pctMeta = (recaudadoHoy / cuotaDiaria) * 100
+    if (pctMeta >= 100) return '¡Meta diaria cumplida!'
+    if (pctMeta >= 75) return `Falta poco: $${formatCOP(cuotaDiaria - recaudadoHoy).replace('$', '')} para tu meta`
+    if (pctMeta >= 40) return `Vas en ${Math.round(pctMeta)}% de tu meta del día`
+  }
+
+  // Mejor dia de la semana
+  if (sparkline7d && sparkline7d.length === 7) {
+    const maxIdx = sparkline7d.indexOf(Math.max(...sparkline7d))
+    if (maxIdx === 6 && sparkline7d[6] > 0) return 'Tu mejor día de la semana'
+  }
+
+  return null
+}
+
 function KpiCard({ label, value, valueRaw, format = 'cop', sub, color = 'var(--color-text-primary)', icon, info }) {
   const [showInfo, setShowInfo] = useState(false)
   const hasInfo = Boolean(info)
@@ -156,7 +379,7 @@ function KpiCard({ label, value, valueRaw, format = 'cop', sub, color = 'var(--c
       role={hasInfo ? 'button' : undefined}
       tabIndex={hasInfo ? 0 : undefined}
       onKeyDown={hasInfo ? (e) => { if (e.key === 'Enter' || e.key === ' ') toggle(e) } : undefined}
-      className={`rounded-[16px] px-4 py-4 relative group transition-transform duration-200 ${hasInfo ? 'cursor-pointer hover:scale-[1.01]' : ''}`}
+      className={`rounded-[16px] px-4 py-4 relative group kpi-lift ${hasInfo ? 'cursor-pointer' : ''}`}
       style={{
         background: `linear-gradient(135deg, color-mix(in srgb, ${color} 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 45%, var(--color-bg-card) 75%, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 100%)`,
         border: '1px solid var(--color-border)',
@@ -280,7 +503,7 @@ function RecaudoCard({ label, color, colorHex, monto, cantidad, cuotaDiaria, ext
       role={hasInfo ? 'button' : undefined}
       tabIndex={hasInfo ? 0 : undefined}
       onKeyDown={hasInfo ? (e) => { if (e.key === 'Enter' || e.key === ' ') toggle(e) } : undefined}
-      className={`rounded-[16px] px-4 py-4 relative ${hasInfo ? 'cursor-pointer transition-transform duration-200 hover:scale-[1.01]' : ''}`}
+      className={`rounded-[16px] px-4 py-4 relative kpi-lift ${hasInfo ? 'cursor-pointer' : ''}`}
       style={{
         background: `linear-gradient(135deg, color-mix(in srgb, ${color} 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 100%)`,
         border: '1px solid var(--color-border)',
@@ -946,27 +1169,46 @@ export default function DashboardPage() {
         </div>
       ) : data && (
         <>
-          {/* Cobros — el dato mas importante del dia, va arriba */}
-          <KpiGroup title="Cobros" icon={Icons.cobros}>
-            <div className="grid grid-cols-2 gap-3">
-              <RecaudoCard
-                label="Recaudado hoy"
-                color="var(--color-success)"
-                colorHex="#22c55e"
-                monto={data.cobros.hoy}
-                cantidad={data.cobros.cantidadHoy}
-                cuotaDiaria={data.prestamos.cuotaDiariaTotal}
-                montoAyer={data.cobros.ayer}
-                sparklineData={data.cobros.sparkline7d}
-                info={{
-                  titulo: 'Recaudado hoy',
-                  que: 'Total de dinero que has cobrado HOY (en hora Colombia, desde la medianoche).',
-                  comoSeCalcula: 'Sumo todos los pagos registrados hoy de tipo "completo", "parcial" y "capital". No cuento recargos ni descuentos.',
-                  ejemplo: `Llevas ${formatCOP(data.cobros.hoy)} cobrados en ${data.cobros.cantidadHoy} pagos hoy. ${data.prestamos.cuotaDiariaTotal > 0 ? `Eso es el ${Math.min(100, Math.round((data.cobros.hoy / data.prestamos.cuotaDiariaTotal) * 100))}% de tu meta diaria de ${formatCOP(data.prestamos.cuotaDiariaTotal)}.` : ''}${data.cobros.ayer ? ` Ayer cobraste ${formatCOP(data.cobros.ayer)} en ${data.cobros.cantidadAyer} pagos.` : ''}`,
-                  cuandoCambia: 'Sube cada vez que se registra un pago. Se reinicia a $0 a la medianoche (hora Colombia).',
-                  tip: 'La barra de progreso te muestra qué % cumpliste de la meta diaria. La etiqueta "vs ayer" compara con el mismo punto del día anterior.',
-                }}
-              />
+          {/* HERO: Recaudado hoy en grande con narrativa, sparkline y donut de meta */}
+          <HeroCard
+            label="Recaudado hoy"
+            valueRaw={data.cobros.hoy}
+            value={formatCOP(data.cobros.hoy)}
+            sub={`${data.cobros.cantidadHoy} ${data.cobros.cantidadHoy === 1 ? 'pago registrado' : 'pagos registrados'}${data.cobros.ayer ? ` · ayer ${formatCOP(data.cobros.ayer)}` : ''}`}
+            color="#22c55e"
+            accent="#10b981"
+            narrativa={generarNarrativa({
+              recaudadoHoy: data.cobros.hoy,
+              recaudadoAyer: data.cobros.ayer,
+              cuotaDiaria: data.prestamos.cuotaDiariaTotal,
+              sparkline7d: data.cobros.sparkline7d,
+            })}
+            sparklineData={data.cobros.sparkline7d}
+            info={{
+              titulo: 'Recaudado hoy',
+              que: 'Total de dinero que has cobrado HOY (en hora Colombia, desde la medianoche).',
+              comoSeCalcula: 'Sumo todos los pagos registrados hoy de tipo "completo", "parcial" y "capital". No cuento recargos ni descuentos.',
+              ejemplo: `Llevas ${formatCOP(data.cobros.hoy)} cobrados en ${data.cobros.cantidadHoy} pagos hoy. ${data.prestamos.cuotaDiariaTotal > 0 ? `Eso es el ${Math.min(100, Math.round((data.cobros.hoy / data.prestamos.cuotaDiariaTotal) * 100))}% de tu meta diaria de ${formatCOP(data.prestamos.cuotaDiariaTotal)}.` : ''}${data.cobros.ayer ? ` Ayer cobraste ${formatCOP(data.cobros.ayer)} en ${data.cobros.cantidadAyer} pagos.` : ''}`,
+              cuandoCambia: 'Sube cada vez que se registra un pago. Se reinicia a $0 a la medianoche (hora Colombia).',
+              tip: 'El sparkline muestra los últimos 7 días. La etiqueta "vs ayer" compara con el día anterior completo.',
+            }}
+          />
+
+          {/* Donut meta diaria + recaudado mes (lado a lado) */}
+          {data.prestamos.cuotaDiariaTotal > 0 && (
+            <div className="grid grid-cols-[auto_1fr] gap-3 items-stretch">
+              <div
+                className="rounded-[16px] px-4 py-4 flex items-center justify-center"
+                style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+              >
+                <DonutProgress
+                  value={data.cobros.hoy}
+                  max={data.prestamos.cuotaDiariaTotal}
+                  color="#22c55e"
+                  label="Meta diaria"
+                  sublabel={formatCOP(data.prestamos.cuotaDiariaTotal)}
+                />
+              </div>
               <RecaudoCard
                 label="Recaudado este mes"
                 color="var(--color-accent)"
@@ -984,7 +1226,12 @@ export default function DashboardPage() {
                 }}
               />
             </div>
-          </KpiGroup>
+          )}
+
+          {/* Heatmap calendario 30 dias — solo si hay datos */}
+          {data.cobros.heatmap30d && data.cobros.heatmap30d.some(v => v > 0) && (
+            <Heatmap30d data={data.cobros.heatmap30d} color="#22c55e" />
+          )}
 
           {/* Tu dinero — Saldo y Patrimonio (solo owner) */}
           {esOwner && (capitalData || data.finanzas) && (
