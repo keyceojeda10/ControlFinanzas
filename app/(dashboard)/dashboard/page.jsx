@@ -436,10 +436,7 @@ function ResumenDelDia({ actividad, esOwner }) {
     monto: formatCOP(inyecciones.monto),
   })
 
-  // Si no hay nada, no renderizar (no mostrar mensaje vacio)
-  if (items.length === 0 && (!desgloseCobradores || desgloseCobradores.length === 0)) {
-    return null
-  }
+  const sinMovimientos = items.length === 0 && (!desgloseCobradores || desgloseCobradores.length === 0)
 
   return (
     <div
@@ -456,6 +453,11 @@ function ResumenDelDia({ actividad, esOwner }) {
         <h2 className="text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Movimientos de hoy</h2>
       </div>
       <div className="px-4 py-3">
+        {sinMovimientos && (
+          <p className="text-[12px] text-center py-2" style={{ color: 'var(--color-text-muted)' }}>
+            Aún no hay movimientos registrados hoy
+          </p>
+        )}
         {items.length > 0 && (
           <div className="space-y-2">
             {items.map((it, i) => (
