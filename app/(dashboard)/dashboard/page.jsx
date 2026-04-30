@@ -78,7 +78,7 @@ function KpiInfoPopover({ info, color, onClose }) {
         style={{ background: 'transparent' }}
       />
       <div
-        className="absolute left-2 right-2 top-full mt-2 z-30 rounded-[12px] overflow-hidden"
+        className="absolute left-0 sm:left-auto sm:right-0 right-0 top-full mt-2 z-30 rounded-[12px] overflow-hidden sm:min-w-[320px] sm:max-w-[400px]"
         onClick={(e) => e.stopPropagation()}
         style={{
           background: 'var(--color-bg-base)',
@@ -282,19 +282,45 @@ function ComparativoChip({ actual, anterior }) {
 }
 
 // Contenedor para agrupar KPIs por categoria (con titulo, opcion de colapsar)
-function KpiGroup({ title, icon, children, defaultOpen = true }) {
+function KpiGroup({ title, icon, children, defaultOpen = true, storageKey }) {
+  // Persistir estado abierto/cerrado por grupo. La key se deriva del titulo si
+  // no se pasa storageKey explicito. Asi recuerda la preferencia del usuario
+  // entre recargas y entre dispositivos del mismo navegador.
+  const key = storageKey || `cf-kpigroup:${title}`
   const [open, setOpen] = useState(defaultOpen)
+  const [hydrated, setHydrated] = useState(false)
+
+  // Hidratar desde localStorage despues del primer render (evita hydration mismatch)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(key)
+      if (stored !== null) setOpen(stored === '1')
+    } catch {}
+    setHydrated(true)
+  }, [key])
+
+  const toggle = () => {
+    setOpen(v => {
+      const next = !v
+      try { localStorage.setItem(key, next ? '1' : '0') } catch {}
+      return next
+    })
+  }
+
+  // Hasta hidratar, usar defaultOpen para evitar flash visual
+  const isOpen = hydrated ? open : defaultOpen
+
   return (
     <div
-      className="rounded-[16px] overflow-hidden"
+      className="rounded-[16px]"
       style={{
         background: 'var(--color-bg-card)',
         border: '1px solid var(--color-border)',
       }}
     >
       <button
-        onClick={() => setOpen(v => !v)}
-        className="w-full px-4 py-2.5 flex items-center justify-between gap-2 transition-colors hover:bg-[var(--color-bg-hover)]"
+        onClick={toggle}
+        className={`w-full px-4 py-2.5 flex items-center justify-between gap-2 transition-colors hover:bg-[var(--color-bg-hover)] rounded-t-[16px] ${isOpen ? '' : 'rounded-b-[16px]'}`}
       >
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-6 h-6 rounded-[6px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-text-muted) 12%, transparent)', color: 'var(--color-text-secondary)' }}>
@@ -302,11 +328,11 @@ function KpiGroup({ title, icon, children, defaultOpen = true }) {
           </div>
           <h2 className="text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>{title}</h2>
         </div>
-        <svg className={`w-4 h-4 transition-transform shrink-0 ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--color-text-muted)' }}>
+        <svg className={`w-4 h-4 transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--color-text-muted)' }}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
-      {open && (
+      {isOpen && (
         <div className="px-3 pb-3">
           {children}
         </div>
