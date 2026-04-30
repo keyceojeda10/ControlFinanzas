@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef, useId } from 'react'
 import Link from 'next/link'
 import { formatCOP } from '@/lib/calculos'
 import { useAuth } from '@/hooks/useAuth'
@@ -16,7 +16,121 @@ function Skeleton({ className = '' }) {
   return <div className={`animate-pulse rounded-[12px] ${className}`} style={{ background: 'var(--color-bg-hover)' }} />
 }
 
-function KpiCard({ label, value, sub, color = 'var(--color-text-primary)', icon, info }) {
+// Skeleton con forma de KpiCard real para que la carga no parezca un bloque vacio
+function KpiCardSkeleton() {
+  const shimmerStyle = {
+    background: 'linear-gradient(90deg, var(--color-bg-hover) 0%, color-mix(in srgb, var(--color-text-muted) 18%, var(--color-bg-hover)) 50%, var(--color-bg-hover) 100%)',
+    backgroundSize: '200% 100%',
+    animation: 'shimmer 1.6s ease-in-out infinite',
+  }
+  return (
+    <div
+      className="rounded-[16px] px-4 py-4"
+      style={{
+        background: 'var(--color-bg-card)',
+        border: '1px solid var(--color-border)',
+      }}
+    >
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="h-3 w-20 rounded" style={shimmerStyle} />
+        <div className="w-7 h-7 rounded-[8px] shrink-0" style={shimmerStyle} />
+      </div>
+      <div className="h-5 w-28 rounded mb-2" style={shimmerStyle} />
+      <div className="h-2.5 w-20 rounded" style={shimmerStyle} />
+    </div>
+  )
+}
+
+function KpiGroupSkeleton({ kpis = 2 }) {
+  return (
+    <div
+      className="rounded-[16px]"
+      style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+    >
+      <div className="px-4 py-2.5 flex items-center gap-2">
+        <div className="w-6 h-6 rounded-[6px] animate-pulse" style={{ background: 'var(--color-bg-hover)' }} />
+        <div className="h-3 w-24 rounded animate-pulse" style={{ background: 'var(--color-bg-hover)' }} />
+      </div>
+      <div className="px-3 pb-3">
+        <div className="grid grid-cols-2 gap-3">
+          {[...Array(kpis)].map((_, i) => <KpiCardSkeleton key={i} />)}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Hook count-up: anima un numero desde 0 hasta el valor final con easing suave
+function useCountUp(target, duration = 800) {
+  const [value, setValue] = useState(0)
+  const startRef = useRef(null)
+  const fromRef = useRef(0)
+
+  useEffect(() => {
+    if (typeof target !== 'number' || isNaN(target)) {
+      setValue(target)
+      return
+    }
+    fromRef.current = value
+    startRef.current = null
+    let raf
+    const step = (ts) => {
+      if (startRef.current === null) startRef.current = ts
+      const elapsed = ts - startRef.current
+      const progress = Math.min(1, elapsed / duration)
+      // easeOutCubic — arranque rapido, frenado suave
+      const eased = 1 - Math.pow(1 - progress, 3)
+      const current = fromRef.current + (target - fromRef.current) * eased
+      setValue(current)
+      if (progress < 1) raf = requestAnimationFrame(step)
+      else setValue(target)
+    }
+    raf = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(raf)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target, duration])
+
+  return value
+}
+
+// Sparkline minimalista con SVG. Recibe array de numeros y dibuja una linea
+// con gradiente, mostrando el ultimo punto destacado.
+function Sparkline({ data, color = 'var(--color-success)', height = 28, ariaLabel }) {
+  const reactId = useId()
+  if (!data || data.length === 0) return null
+  const w = 100
+  const h = height
+  const max = Math.max(...data, 1)
+  const min = Math.min(...data, 0)
+  const range = max - min || 1
+  const points = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * w
+    const y = h - ((v - min) / range) * (h - 4) - 2
+    return [x, y]
+  })
+  const linePath = points.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(2)},${y.toFixed(2)}`).join(' ')
+  const areaPath = `${linePath} L${w},${h} L0,${h} Z`
+  const lastPoint = points[points.length - 1]
+  const gradId = `spark-${reactId.replace(/:/g, '')}`
+
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="w-full" style={{ height, display: 'block' }} aria-label={ariaLabel}>
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.35" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={areaPath} fill={`url(#${gradId})`} />
+      <path d={linePath} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      {lastPoint && (
+        <circle cx={lastPoint[0]} cy={lastPoint[1]} r="2.2" fill={color} />
+      )}
+    </svg>
+  )
+}
+
+function KpiCard({ label, value, valueRaw, format = 'cop', sub, color = 'var(--color-text-primary)', icon, info }) {
   const [showInfo, setShowInfo] = useState(false)
   const hasInfo = Boolean(info)
   const toggle = (e) => {
@@ -27,6 +141,15 @@ function KpiCard({ label, value, sub, color = 'var(--color-text-primary)', icon,
   }
   // info puede ser string (legacy) o objeto { que, comoSeCalcula, cuandoCambia, ejemplo }
   const infoObj = typeof info === 'string' ? { que: info } : (info || {})
+
+  // Count-up: si recibimos valueRaw numerico, animamos. Si no, mostramos value tal cual.
+  const animatedNum = useCountUp(typeof valueRaw === 'number' ? valueRaw : (typeof value === 'number' ? value : 0), 700)
+  const displayValue = (() => {
+    if (valueRaw === undefined && typeof value !== 'number') return value
+    const n = typeof valueRaw === 'number' ? animatedNum : animatedNum
+    if (format === 'cop') return formatCOP(Math.round(n))
+    return Math.round(n).toLocaleString('es-CO')
+  })()
   return (
     <div
       onClick={toggle}
@@ -59,7 +182,7 @@ function KpiCard({ label, value, sub, color = 'var(--color-text-primary)', icon,
           </div>
         )}
       </div>
-      <p className="text-xl font-bold leading-tight font-mono-display truncate" style={{ color }}>{value}</p>
+      <p className="text-xl font-bold leading-tight font-mono-display truncate" style={{ color }}>{displayValue}</p>
       {sub && <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>{sub}</p>}
       {hasInfo && showInfo && (
         <KpiInfoPopover info={infoObj} color={color} onClose={() => setShowInfo(false)} />
@@ -140,10 +263,11 @@ function KpiInfoPopover({ info, color, onClose }) {
   )
 }
 
-function RecaudoCard({ label, color, colorHex, monto, cantidad, cuotaDiaria, extraSub, info, montoAyer }) {
+function RecaudoCard({ label, color, colorHex, monto, cantidad, cuotaDiaria, extraSub, info, montoAyer, sparklineData }) {
   const [showInfo, setShowInfo] = useState(false)
   const hasInfo = Boolean(info)
   const pct = cuotaDiaria > 0 ? Math.min(100, Math.round((monto / cuotaDiaria) * 100)) : null
+  const animMonto = useCountUp(monto, 700)
   const toggle = (e) => {
     if (!hasInfo) return
     e?.preventDefault?.()
@@ -175,19 +299,33 @@ function RecaudoCard({ label, color, colorHex, monto, cantidad, cuotaDiaria, ext
           </span>
         )}
       </div>
-      <p className="text-xl font-bold font-mono-display truncate" style={{ color }}>{formatCOP(monto)}</p>
+      <p className="text-xl font-bold font-mono-display truncate" style={{ color }}>{formatCOP(Math.round(animMonto))}</p>
       <div className="flex items-center gap-1.5 flex-wrap mt-1">
         <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{cantidad} pagos {label.toLowerCase().includes('mes') ? 'en el mes' : 'registrados'}</p>
         {montoAyer !== undefined && montoAyer !== null && (
           <ComparativoChip actual={monto} anterior={montoAyer} />
         )}
       </div>
-      {pct !== null && (
+      {sparklineData && sparklineData.length > 0 && (
+        <div className="mt-2.5">
+          <Sparkline data={sparklineData} color={colorHex} height={26} ariaLabel="Tendencia 7 dias" />
+          <p className="text-[9px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Últimos 7 días</p>
+        </div>
+      )}
+      {pct !== null && !sparklineData && (
         <>
           <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
             <div className="h-full rounded-full progress-shimmer transition-all" style={{ width: `${pct}%` }} />
           </div>
           <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>{cuotaDiaria > 0 ? `${pct}% de la cuota diaria` : 'Sin cuotas esperadas'}</p>
+        </>
+      )}
+      {pct !== null && sparklineData && (
+        <>
+          <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
+            <div className="h-full rounded-full progress-shimmer transition-all" style={{ width: `${pct}%` }} />
+          </div>
+          <p className="text-[9px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{pct}% de la cuota diaria</p>
         </>
       )}
       {extraSub && (
@@ -208,6 +346,8 @@ function RoutesCard({ value, sub }) {
     <KpiCard
       label="Rutas activas"
       value={value}
+      valueRaw={value}
+      format="int"
       sub={sub}
       color="#8b5cf6"
       info={{
@@ -563,6 +703,21 @@ export default function DashboardPage() {
   const [fechaActual, setFechaActual] = useState('')
   const [horaActual, setHoraActual] = useState('')
   const [actualizadoEn, setActualizadoEn] = useState(null)
+  // Vista simple = solo lo esencial (Cobros + Tu dinero). Vista pro = todo.
+  const [vistaSimple, setVistaSimple] = useState(false)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('cf-dashboard-vista')
+      if (stored === 'simple') setVistaSimple(true)
+    } catch {}
+  }, [])
+  const toggleVista = () => {
+    setVistaSimple(v => {
+      const next = !v
+      try { localStorage.setItem('cf-dashboard-vista', next ? 'simple' : 'pro') } catch {}
+      return next
+    })
+  }
 
   const { syncMeta, startBulkSync, bulkSyncing, bulkProgress, lastSyncedAt } = useOffline()
   const onboarding = useOnboarding(authLoading ? null : esOwner)
@@ -731,17 +886,39 @@ export default function DashboardPage() {
               {horaActual && <span className="font-mono-display ml-1.5" style={{ color: 'var(--color-accent)' }}>{horaActual}</span>}
             </p>
           </div>
-          <button
-            onClick={refreshAll}
-            className="shrink-0 w-9 h-9 rounded-[10px] flex items-center justify-center transition-all hover:scale-105 active:scale-95"
-            style={{ background: 'var(--color-bg-card)', color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)' }}
-            title="Actualizar datos"
-            aria-label="Actualizar"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-            </svg>
-          </button>
+          <div className="shrink-0 flex items-center gap-1.5">
+            <button
+              onClick={toggleVista}
+              className="h-9 px-2.5 rounded-[10px] flex items-center gap-1.5 transition-all hover:scale-[1.02] active:scale-95"
+              style={{
+                background: vistaSimple ? 'color-mix(in srgb, var(--color-accent) 15%, var(--color-bg-card))' : 'var(--color-bg-card)',
+                color: vistaSimple ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                border: `1px solid ${vistaSimple ? 'color-mix(in srgb, var(--color-accent) 35%, var(--color-border))' : 'var(--color-border)'}`,
+              }}
+              title={vistaSimple ? 'Cambiar a vista completa' : 'Cambiar a vista simple'}
+              aria-label="Cambiar vista"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                {vistaSimple ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 5.25h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5" />
+                )}
+              </svg>
+              <span className="text-[10px] font-semibold uppercase tracking-wide">{vistaSimple ? 'Simple' : 'Pro'}</span>
+            </button>
+            <button
+              onClick={refreshAll}
+              className="w-9 h-9 rounded-[10px] flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+              style={{ background: 'var(--color-bg-card)', color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)' }}
+              title="Actualizar datos"
+              aria-label="Actualizar"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+              </svg>
+            </button>
+          </div>
         </div>
         {actualizadoEn && (
           <div className="flex items-center gap-1.5 mt-1.5">
@@ -763,9 +940,9 @@ export default function DashboardPage() {
 
       {loading || !mounted ? (
         <div className="space-y-3">
-          <Skeleton className="h-32" />
-          <Skeleton className="h-32" />
-          <Skeleton className="h-32" />
+          <KpiGroupSkeleton kpis={2} />
+          <KpiGroupSkeleton kpis={2} />
+          <KpiGroupSkeleton kpis={2} />
         </div>
       ) : data && (
         <>
@@ -780,6 +957,7 @@ export default function DashboardPage() {
                 cantidad={data.cobros.cantidadHoy}
                 cuotaDiaria={data.prestamos.cuotaDiariaTotal}
                 montoAyer={data.cobros.ayer}
+                sparklineData={data.cobros.sparkline7d}
                 info={{
                   titulo: 'Recaudado hoy',
                   que: 'Total de dinero que has cobrado HOY (en hora Colombia, desde la medianoche).',
@@ -816,6 +994,7 @@ export default function DashboardPage() {
                   <KpiCard
                     label="Saldo disponible"
                     value={formatCOP(capitalData.saldo)}
+                    valueRaw={capitalData.saldo}
                     sub={capitalData.saldo < 0 ? 'Capital insuficiente' : 'Capital en caja'}
                     color={capitalData.saldo < 0 ? '#ef4444' : '#06b6d4'}
                     info={{
@@ -833,6 +1012,7 @@ export default function DashboardPage() {
                   <KpiCard
                     label="Patrimonio"
                     value={formatCOP(data.finanzas.patrimonio)}
+                    valueRaw={data.finanzas.patrimonio}
                     sub={`Caja + por cobrar - gastos`}
                     color="#10b981"
                     info={{
@@ -851,11 +1031,13 @@ export default function DashboardPage() {
           )}
 
           {/* Tu cartera — Cartera activa, Por cobrar */}
+          {!vistaSimple && (
           <KpiGroup title="Tu cartera" icon={Icons.cartera}>
             <div className="grid grid-cols-2 gap-3">
               <KpiCard
                 label="Cartera activa"
                 value={formatCOP(data.prestamos.carteraActiva)}
+                valueRaw={data.prestamos.carteraActiva}
                 sub={`Capital: ${formatCOP(data.prestamos.capitalPrestado)}`}
                 color="#f59e0b"
                 info={{
@@ -872,6 +1054,7 @@ export default function DashboardPage() {
                 <KpiCard
                   label="Por cobrar"
                   value={formatCOP(data.prestamos.saldoPorCobrar)}
+                  valueRaw={data.prestamos.saldoPorCobrar}
                   sub="Saldo pendiente real"
                   color="#0ea5e9"
                   info={{
@@ -887,13 +1070,17 @@ export default function DashboardPage() {
               )}
             </div>
           </KpiGroup>
+          )}
 
           {/* Tus clientes — Clientes activos, Préstamos activos */}
+          {!vistaSimple && (
           <KpiGroup title="Tus clientes" icon={Icons.clientes}>
             <div className="grid grid-cols-2 gap-3">
               <KpiCard
                 label="Clientes activos"
                 value={data.clientes.total}
+                valueRaw={data.clientes.total}
+                format="int"
                 sub={data.clientes.enMora > 0 ? `${data.clientes.enMora} en mora` : 'Sin mora'}
                 color="#f5c518"
                 info={{
@@ -908,6 +1095,8 @@ export default function DashboardPage() {
               <KpiCard
                 label="Prestamos activos"
                 value={data.prestamos.activos}
+                valueRaw={data.prestamos.activos}
+                format="int"
                 sub={`${data.prestamos.completados} completados`}
                 color="#22c55e"
                 info={{
@@ -921,13 +1110,16 @@ export default function DashboardPage() {
               />
             </div>
           </KpiGroup>
+          )}
 
           {/* Operación — Cuota diaria, Rutas (colapsado por defecto) */}
+          {!vistaSimple && (
           <KpiGroup title="Operación" icon={Icons.operacion} defaultOpen={false}>
             <div className="grid grid-cols-2 gap-3">
               <KpiCard
                 label="Cuota diaria total"
                 value={formatCOP(data.prestamos.cuotaDiariaTotal)}
+                valueRaw={data.prestamos.cuotaDiariaTotal}
                 sub="Esperado por dia"
                 color="#a855f7"
                 info={{
@@ -946,6 +1138,7 @@ export default function DashboardPage() {
               />
             </div>
           </KpiGroup>
+          )}
 
           {/* Movimientos de hoy: resumen narrativo + desglose por cobrador */}
           {data.actividadHoy && (
