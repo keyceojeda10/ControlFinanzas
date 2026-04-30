@@ -18,19 +18,22 @@ function Skeleton({ className = '' }) {
 
 function KpiCard({ label, value, sub, color = 'var(--color-text-primary)', icon, info }) {
   const [showInfo, setShowInfo] = useState(false)
+  const hasInfo = Boolean(info)
   const toggle = (e) => {
-    if (!info) return
+    if (!hasInfo) return
     e?.preventDefault?.()
     e?.stopPropagation?.()
     setShowInfo(v => !v)
   }
+  // info puede ser string (legacy) o objeto { que, comoSeCalcula, cuandoCambia, ejemplo }
+  const infoObj = typeof info === 'string' ? { que: info } : (info || {})
   return (
     <div
       onClick={toggle}
-      role={info ? 'button' : undefined}
-      tabIndex={info ? 0 : undefined}
-      onKeyDown={info ? (e) => { if (e.key === 'Enter' || e.key === ' ') toggle(e) } : undefined}
-      className={`rounded-[16px] px-4 py-4 relative group transition-transform duration-200 ${info ? 'cursor-pointer hover:scale-[1.01]' : ''}`}
+      role={hasInfo ? 'button' : undefined}
+      tabIndex={hasInfo ? 0 : undefined}
+      onKeyDown={hasInfo ? (e) => { if (e.key === 'Enter' || e.key === ' ') toggle(e) } : undefined}
+      className={`rounded-[16px] px-4 py-4 relative group transition-transform duration-200 ${hasInfo ? 'cursor-pointer hover:scale-[1.01]' : ''}`}
       style={{
         background: `linear-gradient(135deg, color-mix(in srgb, ${color} 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 45%, var(--color-bg-card) 75%, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 100%)`,
         border: '1px solid var(--color-border)',
@@ -40,11 +43,11 @@ function KpiCard({ label, value, sub, color = 'var(--color-text-primary)', icon,
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex items-center gap-1.5 min-w-0">
           <p className="text-[11px] leading-tight" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
-          {info && (
+          {hasInfo && (
             <span
               aria-hidden
               className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold pointer-events-none"
-              style={{ background: 'color-mix(in srgb, var(--color-text-muted) 25%, transparent)', color: 'var(--color-text-secondary)' }}
+              style={{ background: `color-mix(in srgb, ${color} 25%, transparent)`, color }}
             >
               i
             </span>
@@ -58,19 +61,138 @@ function KpiCard({ label, value, sub, color = 'var(--color-text-primary)', icon,
       </div>
       <p className="text-xl font-bold leading-tight font-mono-display truncate" style={{ color }}>{value}</p>
       {sub && <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>{sub}</p>}
-      {info && showInfo && (
+      {hasInfo && showInfo && (
+        <KpiInfoPopover info={infoObj} color={color} onClose={() => setShowInfo(false)} />
+      )}
+    </div>
+  )
+}
+
+function KpiInfoPopover({ info, color, onClose }) {
+  return (
+    <>
+      {/* Backdrop sutil para cerrar al tocar fuera */}
+      <div
+        className="fixed inset-0 z-20"
+        onClick={(e) => { e.stopPropagation(); onClose() }}
+        style={{ background: 'transparent' }}
+      />
+      <div
+        className="absolute left-2 right-2 top-full mt-2 z-30 rounded-[12px] overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: 'var(--color-bg-base)',
+          border: `1px solid color-mix(in srgb, ${color} 35%, var(--color-border))`,
+          boxShadow: '0 16px 32px rgba(0,0,0,0.45)',
+        }}
+      >
+        {/* Header con color del KPI */}
         <div
-          className="absolute left-2 right-2 top-full mt-1 z-30 rounded-[10px] px-3 py-2 text-[11px] leading-relaxed"
-          style={{
-            background: 'var(--color-bg-base)',
-            border: '1px solid var(--color-border)',
-            color: 'var(--color-text-secondary)',
-            boxShadow: '0 12px 28px rgba(0,0,0,0.35)',
-            whiteSpace: 'normal',
-          }}
+          className="px-3 py-2 flex items-center justify-between"
+          style={{ background: `color-mix(in srgb, ${color} 12%, var(--color-bg-base))`, borderBottom: `1px solid color-mix(in srgb, ${color} 25%, transparent)` }}
         >
-          {info}
+          <p className="text-[11px] font-bold uppercase tracking-wide" style={{ color }}>{info.titulo || '¿Qué es?'}</p>
+          <button
+            onClick={onClose}
+            className="text-[14px] leading-none w-5 h-5 flex items-center justify-center rounded-full"
+            style={{ color: 'var(--color-text-muted)' }}
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
         </div>
+
+        <div className="px-3 py-3 space-y-2.5 text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+          {info.que && (
+            <p style={{ color: 'var(--color-text-primary)' }}>{info.que}</p>
+          )}
+
+          {info.comoSeCalcula && (
+            <div className="rounded-[8px] px-2.5 py-2" style={{ background: 'var(--color-bg-hover)' }}>
+              <p className="text-[9px] font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--color-text-muted)' }}>Cómo se calcula</p>
+              <p style={{ color: 'var(--color-text-secondary)' }}>{info.comoSeCalcula}</p>
+            </div>
+          )}
+
+          {info.ejemplo && (
+            <div className="rounded-[8px] px-2.5 py-2" style={{ background: `color-mix(in srgb, ${color} 8%, var(--color-bg-base))`, border: `1px solid color-mix(in srgb, ${color} 20%, transparent)` }}>
+              <p className="text-[9px] font-semibold uppercase tracking-wide mb-1" style={{ color }}>Tu número ahora</p>
+              <p style={{ color: 'var(--color-text-primary)' }}>{info.ejemplo}</p>
+            </div>
+          )}
+
+          {info.cuandoCambia && (
+            <div className="flex items-start gap-1.5">
+              <span className="text-[10px] mt-[1px]">↻</span>
+              <p style={{ color: 'var(--color-text-muted)' }}><span className="font-semibold">Cuándo cambia:</span> {info.cuandoCambia}</p>
+            </div>
+          )}
+
+          {info.tip && (
+            <div className="flex items-start gap-1.5 pt-1.5 border-t" style={{ borderColor: 'var(--color-border)' }}>
+              <span className="text-[10px] mt-[1px]">💡</span>
+              <p style={{ color: 'var(--color-text-muted)', fontStyle: 'italic' }}>{info.tip}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  )
+}
+
+function RecaudoCard({ label, color, colorHex, monto, cantidad, cuotaDiaria, extraSub, info }) {
+  const [showInfo, setShowInfo] = useState(false)
+  const hasInfo = Boolean(info)
+  const pct = cuotaDiaria > 0 ? Math.min(100, Math.round((monto / cuotaDiaria) * 100)) : null
+  const toggle = (e) => {
+    if (!hasInfo) return
+    e?.preventDefault?.()
+    e?.stopPropagation?.()
+    setShowInfo(v => !v)
+  }
+  return (
+    <div
+      onClick={toggle}
+      role={hasInfo ? 'button' : undefined}
+      tabIndex={hasInfo ? 0 : undefined}
+      onKeyDown={hasInfo ? (e) => { if (e.key === 'Enter' || e.key === ' ') toggle(e) } : undefined}
+      className={`rounded-[16px] px-4 py-4 relative ${hasInfo ? 'cursor-pointer transition-transform duration-200 hover:scale-[1.01]' : ''}`}
+      style={{
+        background: `linear-gradient(135deg, color-mix(in srgb, ${color} 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 100%)`,
+        border: '1px solid var(--color-border)',
+        boxShadow: '0 4px 12px rgba(20,20,40,0.08)',
+      }}
+    >
+      <div className="flex items-center gap-1.5 mb-1">
+        <p className="text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
+        {hasInfo && (
+          <span
+            aria-hidden
+            className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold pointer-events-none"
+            style={{ background: `color-mix(in srgb, ${colorHex} 25%, transparent)`, color: colorHex }}
+          >
+            i
+          </span>
+        )}
+      </div>
+      <p className="text-xl font-bold font-mono-display truncate" style={{ color }}>{formatCOP(monto)}</p>
+      <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>{cantidad} pagos {label.toLowerCase().includes('mes') ? 'en el mes' : 'registrados'}</p>
+      {pct !== null && (
+        <>
+          <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
+            <div className="h-full rounded-full progress-shimmer transition-all" style={{ width: `${pct}%` }} />
+          </div>
+          <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>{cuotaDiaria > 0 ? `${pct}% de la cuota diaria` : 'Sin cuotas esperadas'}</p>
+        </>
+      )}
+      {extraSub && (
+        <div className="mt-2 flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: 'var(--color-danger)' }} />
+          <p className="text-[10px]" style={{ color: 'var(--color-danger)' }}>{extraSub}</p>
+        </div>
+      )}
+      {hasInfo && showInfo && (
+        <KpiInfoPopover info={info} color={colorHex} onClose={() => setShowInfo(false)} />
       )}
     </div>
   )
@@ -83,7 +205,14 @@ function RoutesCard({ value, sub }) {
       value={value}
       sub={sub}
       color="#8b5cf6"
-      info="Cantidad de rutas habilitadas en tu organizacion."
+      info={{
+        titulo: 'Rutas activas',
+        que: 'Zonas o sectores de cobro que tienes habilitados. Cada ruta puede tener un cobrador asignado y sus propios clientes.',
+        comoSeCalcula: 'Cuento las rutas marcadas como activas en tu organización.',
+        ejemplo: `Tienes ${value} ${value === 1 ? 'ruta activa' : 'rutas activas'}. Los cobradores ven solo los clientes de las rutas que tienen asignadas.`,
+        cuandoCambia: 'Sube cuando creas una ruta nueva. Baja si desactivas una ruta.',
+        tip: 'Si tienes clientes "Sin ruta", asígnalos a una ruta para que el cobrador los pueda visitar.',
+      }}
       icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75v11.25m6-9v11.25m5.25-14.25L15 8.25l-6-2.25L3.75 8.25v12l5.25-2.25 6 2.25 5.25-2.25v-12z" /></svg>}
     />
   )
@@ -325,27 +454,95 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24" />)}</div>
       ) : data && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <KpiCard label="Clientes activos" value={data.clientes.total} sub={data.clientes.enMora > 0 ? `${data.clientes.enMora} en mora` : 'Sin mora'} color="#f5c518" info="Total de clientes con al menos un prestamo activo. Si hay clientes en mora, se muestra cuantos." icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>} />
-          <KpiCard label="Prestamos activos" value={data.prestamos.activos} sub={`${data.prestamos.completados} completados`} color="#22c55e" info="Cantidad de prestamos vigentes. Tambien muestra cuantos ya estan completamente pagados." icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>} />
-          <KpiCard label="Cartera activa" value={formatCOP(data.prestamos.carteraActiva)} sub={`Capital: ${formatCOP(data.prestamos.capitalPrestado)}`} color="#f59e0b" info="Total que vas a recibir cuando todos terminen de pagar (capital + intereses). Solo cambia si creas o se completa un prestamo." icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" /></svg>} />
+          <KpiCard
+            label="Clientes activos"
+            value={data.clientes.total}
+            sub={data.clientes.enMora > 0 ? `${data.clientes.enMora} en mora` : 'Sin mora'}
+            color="#f5c518"
+            info={{
+              titulo: 'Clientes activos',
+              que: 'Personas que tienen al menos un préstamo vigente (sin terminar de pagar) en este momento.',
+              comoSeCalcula: 'Cuento cada cliente con préstamos en estado "activo". Los que tienen varios préstamos solo cuentan una vez.',
+              ejemplo: `Tienes ${data.clientes.total} clientes activos. ${data.clientes.enMora > 0 ? `De esos, ${data.clientes.enMora} están atrasados con sus pagos (en mora).` : 'Todos están al día con sus pagos.'}`,
+              cuandoCambia: 'Sube cuando creas un préstamo a un cliente nuevo. Baja cuando un cliente termina de pagar todos sus préstamos.',
+            }}
+            icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>}
+          />
+          <KpiCard
+            label="Prestamos activos"
+            value={data.prestamos.activos}
+            sub={`${data.prestamos.completados} completados`}
+            color="#22c55e"
+            info={{
+              titulo: 'Préstamos activos',
+              que: 'Préstamos vigentes que aún no se han pagado completamente.',
+              comoSeCalcula: 'Cuento todos los préstamos en estado "activo". Un cliente puede tener varios préstamos al mismo tiempo.',
+              ejemplo: `Tienes ${data.prestamos.activos} préstamos en la calle. Históricamente has completado ${data.prestamos.completados} préstamos exitosos.`,
+              cuandoCambia: 'Sube cuando creas un préstamo nuevo. Baja cuando un préstamo se completa (saldo $0) o se cancela.',
+            }}
+            icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>}
+          />
+          <KpiCard
+            label="Cartera activa"
+            value={formatCOP(data.prestamos.carteraActiva)}
+            sub={`Capital: ${formatCOP(data.prestamos.capitalPrestado)}`}
+            color="#f59e0b"
+            info={{
+              titulo: 'Cartera activa',
+              que: 'Todo el dinero que tus clientes te van a pagar EN TOTAL (capital + intereses) cuando terminen sus préstamos. Es como una "promesa de cobro" futura.',
+              comoSeCalcula: `Sumo el "Total a pagar" de todos los préstamos activos. Capital prestado: ${formatCOP(data.prestamos.capitalPrestado)} + Intereses por ganar: ${formatCOP(data.prestamos.carteraActiva - data.prestamos.capitalPrestado)} = ${formatCOP(data.prestamos.carteraActiva)}.`,
+              ejemplo: `Vas a recibir ${formatCOP(data.prestamos.carteraActiva)} cuando todos terminen de pagar. De eso, ${formatCOP(data.prestamos.capitalPrestado)} es lo que prestaste y ${formatCOP(data.prestamos.carteraActiva - data.prestamos.capitalPrestado)} es tu ganancia por intereses.`,
+              cuandoCambia: 'Solo cambia cuando creas un préstamo nuevo (sube) o un préstamo se completa/cancela (baja). NO baja con los pagos diarios.',
+              tip: '¿Quieres ver cuánto te falta cobrar? Mira "Por cobrar" — ese sí baja con cada pago.',
+            }}
+            icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" /></svg>}
+          />
           {data.prestamos.saldoPorCobrar !== undefined && (
             <KpiCard
               label="Por cobrar"
               value={formatCOP(data.prestamos.saldoPorCobrar)}
               sub="Saldo pendiente real"
               color="#0ea5e9"
-              info="Suma del saldo pendiente real de todos los prestamos activos. Baja con cada pago que recibes."
+              info={{
+                titulo: 'Por cobrar',
+                que: 'Lo que REALMENTE te falta cobrar HOY de todos tus préstamos activos.',
+                comoSeCalcula: `Cartera activa (${formatCOP(data.prestamos.carteraActiva)}) MENOS lo que ya te han pagado tus clientes (${formatCOP(data.prestamos.carteraActiva - data.prestamos.saldoPorCobrar)}) = ${formatCOP(data.prestamos.saldoPorCobrar)}.`,
+                ejemplo: `Te faltan ${formatCOP(data.prestamos.saldoPorCobrar)} por cobrar. Ya has cobrado ${formatCOP(data.prestamos.carteraActiva - data.prestamos.saldoPorCobrar)} del total prometido.`,
+                cuandoCambia: 'Baja cada vez que un cliente te paga. Sube cuando creas un préstamo nuevo.',
+                tip: 'Este es el indicador real de "deuda pendiente". El más útil para saber cómo va tu cobro día a día.',
+              }}
               icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" /></svg>}
             />
           )}
-          <KpiCard label="Cuota diaria total" value={formatCOP(data.prestamos.cuotaDiariaTotal)} sub="Esperado por dia" color="#a855f7" info="Suma de las cuotas diarias de todos los prestamos activos. Es lo que esperas cobrar en un dia tipico." icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>} />
+          <KpiCard
+            label="Cuota diaria total"
+            value={formatCOP(data.prestamos.cuotaDiariaTotal)}
+            sub="Esperado por dia"
+            color="#a855f7"
+            info={{
+              titulo: 'Cuota diaria total',
+              que: 'Lo que DEBERÍAS cobrar en un día normal si todos tus clientes pagaran su cuota del día sin atrasos.',
+              comoSeCalcula: 'Sumo la cuota diaria pactada de cada préstamo activo (la cuota que cada cliente debe pagar todos los días según su frecuencia).',
+              ejemplo: `Tu meta diaria es ${formatCOP(data.prestamos.cuotaDiariaTotal)}. Si cobraste menos hoy, tienes mora acumulándose. Si cobraste más, hay clientes adelantando pagos.`,
+              cuandoCambia: 'Cambia cuando creas un préstamo nuevo, cuando uno se completa, o cuando ajustas la cuota de un préstamo.',
+              tip: 'Compara este número con "Recaudado hoy" para saber qué % de tu meta diaria cumpliste.',
+            }}
+            icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>}
+          />
           {capitalData && (
             <KpiCard
               label="Saldo disponible"
               value={formatCOP(capitalData.saldo)}
               sub={capitalData.saldo < 0 ? 'Capital insuficiente' : 'Capital en caja'}
               color={capitalData.saldo < 0 ? '#ef4444' : '#06b6d4'}
-              info="Dinero que tienes disponible en caja para prestar o retirar. Sube con cobros e inyecciones, baja con desembolsos, retiros y gastos."
+              info={{
+                titulo: 'Saldo disponible',
+                que: 'El EFECTIVO que tienes en caja en este momento. Plata real disponible para prestar, retirar o cubrir gastos.',
+                comoSeCalcula: 'Capital inicial + cobros recibidos − desembolsos de préstamos − gastos − retiros + inyecciones.',
+                ejemplo: `Tienes ${formatCOP(capitalData.saldo)} en caja ahora mismo. ${capitalData.saldo < 0 ? '⚠️ Tu saldo está en negativo: revisa si registraste todos los movimientos correctamente.' : 'Con esto puedes desembolsar nuevos préstamos o retirar utilidades.'}`,
+                cuandoCambia: 'SUBE: cobros e inyecciones de capital. BAJA: desembolsos de préstamos nuevos, gastos, retiros.',
+                tip: 'Si vas a hacer un préstamo grande, verifica que tengas suficiente saldo aquí antes.',
+              }}
               icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" /></svg>}
             />
           )}
@@ -353,9 +550,16 @@ export default function DashboardPage() {
             <KpiCard
               label="Patrimonio"
               value={formatCOP(data.finanzas.patrimonio)}
-              sub={`Caja + por cobrar - gastos del mes`}
+              sub={`Caja + por cobrar - gastos`}
               color="#10b981"
-              info={`Tu foto financiera completa: caja disponible (${formatCOP(data.finanzas.cajaDisponible)}) + por cobrar real (${formatCOP(data.prestamos.saldoPorCobrar)}) - gastos del mes (${formatCOP(data.finanzas.gastosMes)}). Refleja tus movimientos del dia: pagos, prestamos, retiros y gastos.`}
+              info={{
+                titulo: 'Patrimonio',
+                que: 'Tu foto financiera completa hoy. Cuánto vale tu negocio sumando todo lo que tienes y te deben, menos lo gastado este mes.',
+                comoSeCalcula: `Saldo en caja (${formatCOP(data.finanzas.cajaDisponible)}) + Por cobrar real (${formatCOP(data.prestamos.saldoPorCobrar)}) − Gastos del mes (${formatCOP(data.finanzas.gastosMes)}) = ${formatCOP(data.finanzas.patrimonio)}.`,
+                ejemplo: `Tu negocio vale ${formatCOP(data.finanzas.patrimonio)} hoy. Esto incluye lo que tienes en caja, lo que te deben los clientes, y descontando los gastos del mes en curso.`,
+                cuandoCambia: 'Se mueve con CADA acción: pagos recibidos, préstamos nuevos, gastos, retiros, todo.',
+                tip: 'Es el indicador más completo de cómo está tu negocio. Compáralo mes a mes para ver si estás creciendo.',
+              }}
               icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.281m5.94 2.28l-2.28 5.941" /></svg>}
             />
           )}
@@ -369,35 +573,38 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 gap-3"><Skeleton className="h-24" /><Skeleton className="h-24" /></div>
       ) : data && (
         <div className="grid grid-cols-2 gap-3">
-          <div
-            className="rounded-[16px] px-4 py-4"
-            style={{
-              background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, var(--color-success) 6%, var(--color-bg-card)) 100%)',
-              border: '1px solid var(--color-border)',
-              boxShadow: '0 4px 12px rgba(20,20,40,0.08)',
+          <RecaudoCard
+            label="Recaudado hoy"
+            color="var(--color-success)"
+            colorHex="#22c55e"
+            monto={data.cobros.hoy}
+            cantidad={data.cobros.cantidadHoy}
+            cuotaDiaria={data.prestamos.cuotaDiariaTotal}
+            info={{
+              titulo: 'Recaudado hoy',
+              que: 'Total de dinero que has cobrado HOY (en hora Colombia, desde la medianoche).',
+              comoSeCalcula: 'Sumo todos los pagos registrados hoy de tipo "completo", "parcial" y "capital". No cuento recargos ni descuentos.',
+              ejemplo: `Llevas ${formatCOP(data.cobros.hoy)} cobrados en ${data.cobros.cantidadHoy} pagos hoy. ${data.prestamos.cuotaDiariaTotal > 0 ? `Eso es el ${Math.min(100, Math.round((data.cobros.hoy / data.prestamos.cuotaDiariaTotal) * 100))}% de tu meta diaria de ${formatCOP(data.prestamos.cuotaDiariaTotal)}.` : ''}`,
+              cuandoCambia: 'Sube cada vez que se registra un pago. Se reinicia a $0 a la medianoche (hora Colombia).',
+              tip: 'La barra de progreso te muestra qué % cumpliste de la meta diaria.',
             }}
-          >
-            <p className="text-[11px] mb-1" style={{ color: 'var(--color-text-secondary)' }}>Recaudado hoy</p>
-            <p className="text-xl font-bold font-mono-display truncate" style={{ color: 'var(--color-success)' }}>{formatCOP(data.cobros.hoy)}</p>
-            <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>{data.cobros.cantidadHoy} pagos registrados</p>
-            <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
-              <div className="h-full rounded-full progress-shimmer transition-all" style={{ width: data.prestamos.cuotaDiariaTotal > 0 ? `${Math.min(100, Math.round((data.cobros.hoy / data.prestamos.cuotaDiariaTotal) * 100))}%` : '0%' }} />
-            </div>
-            <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>{data.prestamos.cuotaDiariaTotal > 0 ? `${Math.min(100, Math.round((data.cobros.hoy / data.prestamos.cuotaDiariaTotal) * 100))}% de la cuota diaria` : 'Sin cuotas esperadas'}</p>
-          </div>
-          <div
-            className="rounded-[16px] px-4 py-4"
-            style={{
-              background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, var(--color-accent) 6%, var(--color-bg-card)) 100%)',
-              border: '1px solid var(--color-border)',
-              boxShadow: '0 4px 12px rgba(20,20,40,0.08)',
+          />
+          <RecaudoCard
+            label="Recaudado este mes"
+            color="var(--color-accent)"
+            colorHex="#f5c518"
+            monto={data.cobros.mes}
+            cantidad={data.cobros.cantidadMes}
+            extraSub={data.clientes.enMora > 0 ? `${moraPct}% de clientes en mora` : null}
+            info={{
+              titulo: 'Recaudado este mes',
+              que: 'Total cobrado en lo que va del mes actual (desde el día 1 hasta hoy).',
+              comoSeCalcula: 'Sumo todos los pagos del mes en curso, excluyendo recargos y descuentos.',
+              ejemplo: `Has cobrado ${formatCOP(data.cobros.mes)} en ${data.cobros.cantidadMes} pagos este mes.`,
+              cuandoCambia: 'Sube cada vez que se registra un pago. Se reinicia a $0 el día 1 de cada mes.',
+              tip: 'Compara este número con el mes pasado para ver si tu cobro está creciendo.',
             }}
-          >
-            <p className="text-[11px] mb-1" style={{ color: 'var(--color-text-secondary)' }}>Recaudado este mes</p>
-            <p className="text-xl font-bold font-mono-display truncate" style={{ color: 'var(--color-accent)' }}>{formatCOP(data.cobros.mes)}</p>
-            <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>{data.cobros.cantidadMes} pagos en el mes</p>
-            {data.clientes.enMora > 0 && (<div className="mt-2 flex items-center gap-1.5"><div className="w-2 h-2 rounded-full animate-pulse" style={{ background: 'var(--color-danger)' }} /><p className="text-[10px]" style={{ color: 'var(--color-danger)' }}>{moraPct}% de clientes en mora</p></div>)}
-          </div>
+          />
         </div>
       )}
       {(loading || !mounted) ? <Skeleton className="h-44" /> : data && data.ultimosPagos.length > 0 && (
