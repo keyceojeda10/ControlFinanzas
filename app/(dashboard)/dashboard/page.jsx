@@ -100,7 +100,9 @@ function useCountUp(target, duration = 800) {
 // deformar el grosor del trazo.
 function Sparkline({ data, color = 'var(--color-success)', ariaLabel, etiquetasDias }) {
   const reactId = useId()
-  const [hovered, setHovered] = useState(null) // indice del punto activo
+  // hovered = mouse desktop (se va al salir). pinned = touch movil (queda fijo).
+  const [hovered, setHovered] = useState(null)
+  const [pinned, setPinned] = useState(null)
   const containerRef = useRef(null)
   const [width, setWidth] = useState(300)
 
@@ -113,6 +115,24 @@ function Sparkline({ data, color = 'var(--color-success)', ariaLabel, etiquetasD
     ro.observe(containerRef.current)
     return () => ro.disconnect()
   }, [])
+
+  // Cerrar pinned al tocar fuera del sparkline
+  useEffect(() => {
+    if (pinned === null) return
+    const closeOnOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setPinned(null)
+      }
+    }
+    // Esperamos un tick para que el evento que abrio el pin no lo cierre inmediato
+    const t = setTimeout(() => {
+      document.addEventListener('pointerdown', closeOnOutside)
+    }, 0)
+    return () => {
+      clearTimeout(t)
+      document.removeEventListener('pointerdown', closeOnOutside)
+    }
+  }, [pinned])
 
   if (!data || data.length === 0) return null
 
@@ -149,7 +169,8 @@ function Sparkline({ data, color = 'var(--color-success)', ariaLabel, etiquetasD
     return out
   })()
 
-  const activeIdx = hovered
+  // pinned tiene prioridad sobre hovered (si esta fijo por touch, se queda)
+  const activeIdx = pinned !== null ? pinned : hovered
   const activePoint = activeIdx !== null ? points[activeIdx] : null
 
   return (
@@ -200,17 +221,22 @@ function Sparkline({ data, color = 'var(--color-success)', ariaLabel, etiquetasD
                 strokeWidth={esHoy || esActive ? 1.5 : 1.2}
                 style={{ transition: 'r 0.15s ease' }}
               />
-              {/* Hit area invisible mas grande */}
+              {/* Hit area invisible mas grande. Mouse usa hover, touch fija (pinned). */}
               <circle
                 cx={x}
                 cy={y}
                 r={Math.max(14, innerW / data.length / 2)}
                 fill="transparent"
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: 'pointer', touchAction: 'manipulation' }}
                 onMouseEnter={() => setHovered(i)}
                 onMouseLeave={() => setHovered(null)}
-                onTouchStart={(e) => { e.stopPropagation(); setHovered(i) }}
-                onClick={(e) => { e.stopPropagation(); setHovered(i === hovered ? null : i) }}
+                onPointerDown={(e) => {
+                  // Solo touch/pen fijan. Mouse ya esta cubierto por hover.
+                  if (e.pointerType === 'mouse') return
+                  e.stopPropagation()
+                  // Toggle: si ya esta fijo en este punto, lo quita
+                  setPinned(prev => prev === i ? null : i)
+                }}
               />
             </g>
           )
