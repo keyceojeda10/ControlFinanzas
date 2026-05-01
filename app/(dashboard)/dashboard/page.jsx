@@ -130,9 +130,9 @@ function Sparkline({ data, color = 'var(--color-success)', height = 28, ariaLabe
   )
 }
 
-// Hero card: KPI principal en grande con gradiente, glow pulsante y narrativa.
-// Inspirado en Mercury / Revolut — tipografia gigante, espacio generoso.
-function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#34d399', narrativa, sparklineData, onClick, info }) {
+// Hero card: KPI principal en grande con gradiente, glow pulsante, narrativa
+// y donut de meta integrado a la derecha. Inspirado en Mercury / Revolut.
+function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#34d399', narrativa, sparklineData, metaDiaria, info }) {
   const animatedNum = useCountUp(typeof valueRaw === 'number' ? valueRaw : 0, 900)
   const [showInfo, setShowInfo] = useState(false)
   const hasInfo = Boolean(info)
@@ -140,15 +140,7 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
 
   return (
     <div
-      className="relative rounded-[20px] overflow-hidden kpi-lift cursor-pointer"
-      onClick={(e) => {
-        if (hasInfo) {
-          e.stopPropagation()
-          setShowInfo(v => !v)
-        } else if (onClick) {
-          onClick(e)
-        }
-      }}
+      className="relative rounded-[20px] overflow-hidden kpi-lift"
       style={{
         background: `linear-gradient(135deg, color-mix(in srgb, ${color} 14%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, ${accent} 8%, var(--color-bg-card)) 100%)`,
         border: `1px solid color-mix(in srgb, ${color} 25%, var(--color-border))`,
@@ -167,44 +159,81 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
       />
 
       <div className="relative px-5 py-5 sm:px-6 sm:py-6">
+        {/* Header con label + boton info */}
         <div className="flex items-center gap-2 mb-3">
           <div className="w-1.5 h-1.5 rounded-full" style={{ background: color, boxShadow: `0 0 12px ${color}` }} />
           <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
           {hasInfo && (
-            <span
-              aria-hidden
-              className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold pointer-events-none ml-auto"
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowInfo(v => !v) }}
+              className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold ml-auto cursor-pointer transition-transform hover:scale-110"
               style={{ background: `color-mix(in srgb, ${color} 25%, transparent)`, color }}
+              aria-label="Ver información"
             >
               i
-            </span>
+            </button>
           )}
         </div>
 
-        <p
-          className="font-mono-display font-bold leading-none tracking-tight"
-          style={{
-            color,
-            fontSize: 'clamp(28px, 8vw, 44px)',
-            textShadow: `0 0 40px color-mix(in srgb, ${color} 25%, transparent)`,
-          }}
-        >
-          {display}
-        </p>
+        {/* Layout responsive: numero + donut */}
+        <div className="flex items-end justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <p
+              className="font-mono-display font-bold leading-none tracking-tight truncate"
+              style={{
+                color,
+                fontSize: 'clamp(32px, 9vw, 52px)',
+                textShadow: `0 0 40px color-mix(in srgb, ${color} 25%, transparent)`,
+              }}
+            >
+              {display}
+            </p>
+            {sub && (
+              <p className="text-[12px] mt-2" style={{ color: 'var(--color-text-secondary)' }}>{sub}</p>
+            )}
+            {narrativa && (
+              <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium" style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, border: `1px solid color-mix(in srgb, ${color} 22%, transparent)` }}>
+                <span>{narrativa}</span>
+              </div>
+            )}
+          </div>
 
-        {sub && (
-          <p className="text-[12px] mt-2" style={{ color: 'var(--color-text-secondary)' }}>{sub}</p>
-        )}
+          {/* Donut meta diaria a la derecha (si hay meta) */}
+          {metaDiaria && metaDiaria > 0 && (
+            <div className="shrink-0 hidden sm:block">
+              <DonutProgress
+                value={typeof valueRaw === 'number' ? valueRaw : 0}
+                max={metaDiaria}
+                color={color}
+                size={84}
+                strokeWidth={8}
+                label="Meta hoy"
+              />
+            </div>
+          )}
+        </div>
 
-        {narrativa && (
-          <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px]" style={{ background: `color-mix(in srgb, ${color} 12%, transparent)`, color }}>
-            <span>{narrativa}</span>
+        {/* Donut version movil (debajo del numero) */}
+        {metaDiaria && metaDiaria > 0 && (
+          <div className="sm:hidden mt-4 flex items-center gap-3 pt-3" style={{ borderTop: `1px solid color-mix(in srgb, ${color} 15%, transparent)` }}>
+            <DonutProgress
+              value={typeof valueRaw === 'number' ? valueRaw : 0}
+              max={metaDiaria}
+              color={color}
+              size={64}
+              strokeWidth={6}
+            />
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Meta diaria</p>
+              <p className="text-[14px] font-mono-display font-bold mt-0.5" style={{ color: 'var(--color-text-primary)' }}>{formatCOP(metaDiaria)}</p>
+            </div>
           </div>
         )}
 
         {sparklineData && sparklineData.length > 0 && (
           <div className="mt-4 -mx-1">
-            <Sparkline data={sparklineData} color={color} height={40} ariaLabel="Tendencia 7 dias" />
+            <Sparkline data={sparklineData} color={color} height={36} ariaLabel="Tendencia 7 dias" />
+            <p className="text-[9px] mt-1 px-1" style={{ color: 'var(--color-text-muted)' }}>Últimos 7 días</p>
           </div>
         )}
 
@@ -414,75 +443,107 @@ function KpiCard({ label, value, valueRaw, format = 'cop', sub, color = 'var(--c
   )
 }
 
+// Modal centrado fixed — evita parpadeo al apilarse, no tapa otras cards.
+// En desktop: 2 columnas (que/calculo a la izq, ejemplo/cuando/tip a la der).
+// En movil: 1 columna apilada. Cierra con backdrop, ESC o boton X.
 function KpiInfoPopover({ info, color, onClose }) {
+  // Cerrar con ESC
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    // Bloquear scroll del body mientras esta abierto
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prev
+    }
+  }, [onClose])
+
   return (
-    <>
-      {/* Backdrop sutil para cerrar al tocar fuera */}
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-[fadeIn_0.15s_ease-out]"
+      onClick={(e) => { e.stopPropagation(); onClose() }}
+      style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
+    >
       <div
-        className="fixed inset-0 z-20"
-        onClick={(e) => { e.stopPropagation(); onClose() }}
-        style={{ background: 'transparent' }}
-      />
-      <div
-        className="absolute left-0 sm:left-auto sm:right-0 right-0 top-full mt-2 z-30 rounded-[12px] overflow-hidden sm:min-w-[320px] sm:max-w-[400px]"
+        className="relative w-full max-w-[640px] max-h-[85vh] overflow-y-auto rounded-[16px]"
         onClick={(e) => e.stopPropagation()}
         style={{
           background: 'var(--color-bg-base)',
           border: `1px solid color-mix(in srgb, ${color} 35%, var(--color-border))`,
-          boxShadow: '0 16px 32px rgba(0,0,0,0.45)',
+          boxShadow: `0 24px 60px rgba(0,0,0,0.6), 0 0 80px color-mix(in srgb, ${color} 15%, transparent)`,
+          animation: 'cardFadeUp 0.25s cubic-bezier(0.22, 1, 0.36, 1)',
         }}
       >
         {/* Header con color del KPI */}
         <div
-          className="px-3 py-2 flex items-center justify-between"
+          className="px-4 py-3 flex items-center justify-between sticky top-0 z-10"
           style={{ background: `color-mix(in srgb, ${color} 12%, var(--color-bg-base))`, borderBottom: `1px solid color-mix(in srgb, ${color} 25%, transparent)` }}
         >
-          <p className="text-[11px] font-bold uppercase tracking-wide" style={{ color }}>{info.titulo || '¿Qué es?'}</p>
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color, boxShadow: `0 0 10px ${color}` }} />
+            <p className="text-[12px] font-bold uppercase tracking-wider truncate" style={{ color }}>{info.titulo || '¿Qué es?'}</p>
+          </div>
           <button
             onClick={onClose}
-            className="text-[14px] leading-none w-5 h-5 flex items-center justify-center rounded-full"
-            style={{ color: 'var(--color-text-muted)' }}
+            className="text-[18px] leading-none w-7 h-7 flex items-center justify-center rounded-full transition-colors hover:bg-[var(--color-bg-hover)] shrink-0"
+            style={{ color: 'var(--color-text-secondary)' }}
             aria-label="Cerrar"
           >
             ×
           </button>
         </div>
 
-        <div className="px-3 py-3 space-y-2.5 text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+        {/* Contenido en 2 columnas (desktop) o 1 (movil) */}
+        <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-[12px] leading-relaxed">
           {info.que && (
-            <p style={{ color: 'var(--color-text-primary)' }}>{info.que}</p>
+            <div className="sm:col-span-2 rounded-[10px] px-3 py-2.5" style={{ background: `color-mix(in srgb, ${color} 6%, transparent)` }}>
+              <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color }}>¿Qué es?</p>
+              <p style={{ color: 'var(--color-text-primary)' }}>{info.que}</p>
+            </div>
           )}
 
           {info.comoSeCalcula && (
-            <div className="rounded-[8px] px-2.5 py-2" style={{ background: 'var(--color-bg-hover)' }}>
-              <p className="text-[9px] font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--color-text-muted)' }}>Cómo se calcula</p>
+            <div className="rounded-[10px] px-3 py-2.5" style={{ background: 'var(--color-bg-hover)' }}>
+              <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-muted)' }}>Cómo se calcula</p>
               <p style={{ color: 'var(--color-text-secondary)' }}>{info.comoSeCalcula}</p>
             </div>
           )}
 
           {info.ejemplo && (
-            <div className="rounded-[8px] px-2.5 py-2" style={{ background: `color-mix(in srgb, ${color} 8%, var(--color-bg-base))`, border: `1px solid color-mix(in srgb, ${color} 20%, transparent)` }}>
-              <p className="text-[9px] font-semibold uppercase tracking-wide mb-1" style={{ color }}>Tu número ahora</p>
+            <div className="rounded-[10px] px-3 py-2.5" style={{ background: `color-mix(in srgb, ${color} 10%, transparent)`, border: `1px solid color-mix(in srgb, ${color} 25%, transparent)` }}>
+              <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color }}>Tu número ahora</p>
               <p style={{ color: 'var(--color-text-primary)' }}>{info.ejemplo}</p>
             </div>
           )}
 
           {info.cuandoCambia && (
-            <div className="flex items-start gap-1.5">
-              <span className="text-[10px] mt-[1px]">↻</span>
-              <p style={{ color: 'var(--color-text-muted)' }}><span className="font-semibold">Cuándo cambia:</span> {info.cuandoCambia}</p>
+            <div className="rounded-[10px] px-3 py-2.5 flex items-start gap-2" style={{ background: 'var(--color-bg-hover)' }}>
+              <svg className="w-3.5 h-3.5 mt-0.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--color-text-muted)' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+              </svg>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-muted)' }}>Cuándo cambia</p>
+                <p style={{ color: 'var(--color-text-secondary)' }}>{info.cuandoCambia}</p>
+              </div>
             </div>
           )}
 
           {info.tip && (
-            <div className="flex items-start gap-1.5 pt-1.5 border-t" style={{ borderColor: 'var(--color-border)' }}>
-              <span className="text-[10px] mt-[1px]">💡</span>
-              <p style={{ color: 'var(--color-text-muted)', fontStyle: 'italic' }}>{info.tip}</p>
+            <div className="sm:col-span-2 rounded-[10px] px-3 py-2.5 flex items-start gap-2" style={{ background: 'color-mix(in srgb, var(--color-warning) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--color-warning) 20%, transparent)' }}>
+              <svg className="w-3.5 h-3.5 mt-0.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--color-warning)' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
+              </svg>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--color-warning)' }}>Tip</p>
+                <p style={{ color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>{info.tip}</p>
+              </div>
             </div>
           )}
         </div>
       </div>
-    </>
+    </div>
   )
 }
 
@@ -1109,27 +1170,7 @@ export default function DashboardPage() {
               {horaActual && <span className="font-mono-display ml-1.5" style={{ color: 'var(--color-accent)' }}>{horaActual}</span>}
             </p>
           </div>
-          <div className="shrink-0 flex items-center gap-1.5">
-            <button
-              onClick={toggleVista}
-              className="h-9 px-2.5 rounded-[10px] flex items-center gap-1.5 transition-all hover:scale-[1.02] active:scale-95"
-              style={{
-                background: vistaSimple ? 'color-mix(in srgb, var(--color-accent) 15%, var(--color-bg-card))' : 'var(--color-bg-card)',
-                color: vistaSimple ? 'var(--color-accent)' : 'var(--color-text-secondary)',
-                border: `1px solid ${vistaSimple ? 'color-mix(in srgb, var(--color-accent) 35%, var(--color-border))' : 'var(--color-border)'}`,
-              }}
-              title={vistaSimple ? 'Cambiar a vista completa' : 'Cambiar a vista simple'}
-              aria-label="Cambiar vista"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                {vistaSimple ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 5.25h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5" />
-                )}
-              </svg>
-              <span className="text-[10px] font-semibold uppercase tracking-wide">{vistaSimple ? 'Simple' : 'Pro'}</span>
-            </button>
+          <div className="shrink-0">
             <button
               onClick={refreshAll}
               className="w-9 h-9 rounded-[10px] flex items-center justify-center transition-all hover:scale-105 active:scale-95"
@@ -1169,7 +1210,7 @@ export default function DashboardPage() {
         </div>
       ) : data && (
         <>
-          {/* HERO: Recaudado hoy en grande con narrativa, sparkline y donut de meta */}
+          {/* HERO: Recaudado hoy en grande con narrativa + donut de meta integrado */}
           <HeroCard
             label="Recaudado hoy"
             valueRaw={data.cobros.hoy}
@@ -1184,6 +1225,7 @@ export default function DashboardPage() {
               sparkline7d: data.cobros.sparkline7d,
             })}
             sparklineData={data.cobros.sparkline7d}
+            metaDiaria={data.prestamos.cuotaDiariaTotal}
             info={{
               titulo: 'Recaudado hoy',
               que: 'Total de dinero que has cobrado HOY (en hora Colombia, desde la medianoche).',
@@ -1194,44 +1236,23 @@ export default function DashboardPage() {
             }}
           />
 
-          {/* Donut meta diaria + recaudado mes (lado a lado) */}
-          {data.prestamos.cuotaDiariaTotal > 0 && (
-            <div className="grid grid-cols-[auto_1fr] gap-3 items-stretch">
-              <div
-                className="rounded-[16px] px-4 py-4 flex items-center justify-center"
-                style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
-              >
-                <DonutProgress
-                  value={data.cobros.hoy}
-                  max={data.prestamos.cuotaDiariaTotal}
-                  color="#22c55e"
-                  label="Meta diaria"
-                  sublabel={formatCOP(data.prestamos.cuotaDiariaTotal)}
-                />
-              </div>
-              <RecaudoCard
-                label="Recaudado este mes"
-                color="var(--color-accent)"
-                colorHex="#f5c518"
-                monto={data.cobros.mes}
-                cantidad={data.cobros.cantidadMes}
-                extraSub={data.clientes.enMora > 0 ? `${moraPct}% de clientes en mora` : null}
-                info={{
-                  titulo: 'Recaudado este mes',
-                  que: 'Total cobrado en lo que va del mes actual (desde el día 1 hasta hoy).',
-                  comoSeCalcula: 'Sumo todos los pagos del mes en curso, excluyendo recargos y descuentos.',
-                  ejemplo: `Has cobrado ${formatCOP(data.cobros.mes)} en ${data.cobros.cantidadMes} pagos este mes.`,
-                  cuandoCambia: 'Sube cada vez que se registra un pago. Se reinicia a $0 el día 1 de cada mes.',
-                  tip: 'Compara este número con el mes pasado para ver si tu cobro está creciendo.',
-                }}
-              />
-            </div>
-          )}
-
-          {/* Heatmap calendario 30 dias — solo si hay datos */}
-          {data.cobros.heatmap30d && data.cobros.heatmap30d.some(v => v > 0) && (
-            <Heatmap30d data={data.cobros.heatmap30d} color="#22c55e" />
-          )}
+          {/* Recaudado del mes — card normal con datos enriquecidos */}
+          <RecaudoCard
+            label="Recaudado este mes"
+            color="var(--color-accent)"
+            colorHex="#f5c518"
+            monto={data.cobros.mes}
+            cantidad={data.cobros.cantidadMes}
+            extraSub={data.clientes.enMora > 0 ? `${moraPct}% de clientes en mora` : null}
+            info={{
+              titulo: 'Recaudado este mes',
+              que: 'Total cobrado en lo que va del mes actual (desde el día 1 hasta hoy).',
+              comoSeCalcula: 'Sumo todos los pagos del mes en curso, excluyendo recargos y descuentos.',
+              ejemplo: `Has cobrado ${formatCOP(data.cobros.mes)} en ${data.cobros.cantidadMes} pagos este mes. Promedio por día: ${formatCOP(Math.round(data.cobros.mes / Math.max(1, new Date().getDate())))}.`,
+              cuandoCambia: 'Sube cada vez que se registra un pago. Se reinicia a $0 el día 1 de cada mes.',
+              tip: 'Compara este número con el mes pasado para ver si tu cobro está creciendo.',
+            }}
+          />
 
           {/* Tu dinero — Saldo y Patrimonio (solo owner) */}
           {esOwner && (capitalData || data.finanzas) && (
@@ -1276,6 +1297,23 @@ export default function DashboardPage() {
               </div>
             </KpiGroup>
           )}
+
+          {/* Toggle "Mostrar mas / menos KPIs" — sutil, contextual */}
+          <button
+            onClick={toggleVista}
+            className="w-full rounded-[12px] py-2.5 px-4 flex items-center justify-center gap-2 transition-colors hover:bg-[var(--color-bg-hover)]"
+            style={{
+              background: 'var(--color-bg-card)',
+              border: '1px dashed var(--color-border)',
+              color: 'var(--color-text-secondary)',
+            }}
+            title={vistaSimple ? 'Ver más métricas' : 'Mostrar solo lo esencial'}
+          >
+            <svg className={`w-3.5 h-3.5 transition-transform ${vistaSimple ? '' : 'rotate-180'}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+            <span className="text-[11px] font-medium">{vistaSimple ? 'Ver más métricas' : 'Mostrar solo lo esencial'}</span>
+          </button>
 
           {/* Tu cartera — Cartera activa, Por cobrar */}
           {!vistaSimple && (
