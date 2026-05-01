@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback, useRef, useId } from 'react'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { formatCOP } from '@/lib/calculos'
 import { useAuth } from '@/hooks/useAuth'
@@ -165,7 +166,7 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
           <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
           {hasInfo && (
             <button
-              onClick={(e) => { e.stopPropagation(); setShowInfo(v => !v) }}
+              onClick={(e) => { e.stopPropagation(); if (!showInfo) setShowInfo(true) }}
               className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold ml-auto cursor-pointer transition-transform hover:scale-110"
               style={{ background: `color-mix(in srgb, ${color} 25%, transparent)`, color }}
               aria-label="Ver información"
@@ -385,11 +386,12 @@ function generarNarrativa({ recaudadoHoy, recaudadoAyer, cuotaDiaria, sparkline7
 function KpiCard({ label, value, valueRaw, format = 'cop', sub, color = 'var(--color-text-primary)', icon, info }) {
   const [showInfo, setShowInfo] = useState(false)
   const hasInfo = Boolean(info)
-  const toggle = (e) => {
+  const openInfo = (e) => {
     if (!hasInfo) return
     e?.preventDefault?.()
     e?.stopPropagation?.()
-    setShowInfo(v => !v)
+    // Solo abrir, no toggle. Cerrar se maneja desde el modal (boton X, ESC, backdrop).
+    if (!showInfo) setShowInfo(true)
   }
   // info puede ser string (legacy) o objeto { que, comoSeCalcula, cuandoCambia, ejemplo }
   const infoObj = typeof info === 'string' ? { que: info } : (info || {})
@@ -404,10 +406,10 @@ function KpiCard({ label, value, valueRaw, format = 'cop', sub, color = 'var(--c
   })()
   return (
     <div
-      onClick={toggle}
+      onClick={openInfo}
       role={hasInfo ? 'button' : undefined}
       tabIndex={hasInfo ? 0 : undefined}
-      onKeyDown={hasInfo ? (e) => { if (e.key === 'Enter' || e.key === ' ') toggle(e) } : undefined}
+      onKeyDown={hasInfo ? (e) => { if (e.key === 'Enter' || e.key === ' ') openInfo(e) } : undefined}
       className={`rounded-[16px] px-4 py-4 relative group kpi-lift ${hasInfo ? 'cursor-pointer' : ''}`}
       style={{
         background: `linear-gradient(135deg, color-mix(in srgb, ${color} 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 45%, var(--color-bg-card) 75%, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 100%)`,
@@ -443,15 +445,16 @@ function KpiCard({ label, value, valueRaw, format = 'cop', sub, color = 'var(--c
   )
 }
 
-// Modal centrado fixed — evita parpadeo al apilarse, no tapa otras cards.
-// En desktop: 2 columnas (que/calculo a la izq, ejemplo/cuando/tip a la der).
-// En movil: 1 columna apilada. Cierra con backdrop, ESC o boton X.
+// Modal centrado renderizado via PORTAL al body — completamente independiente
+// del card que lo abrio. Evita cascadas de eventos, parpadeos y problemas con
+// overflow/transform de contenedores padre.
 function KpiInfoPopover({ info, color, onClose }) {
-  // Cerrar con ESC
+  const [portalReady, setPortalReady] = useState(false)
+
   useEffect(() => {
+    setPortalReady(true)
     const onKey = (e) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', onKey)
-    // Bloquear scroll del body mientras esta abierto
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => {
@@ -460,14 +463,25 @@ function KpiInfoPopover({ info, color, onClose }) {
     }
   }, [onClose])
 
-  return (
+  if (!portalReady || typeof document === 'undefined') return null
+
+  const modal = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-[fadeIn_0.15s_ease-out]"
-      onClick={(e) => { e.stopPropagation(); onClose() }}
-      style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
+      className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+      onMouseDown={(e) => {
+        // Solo cerrar si el click fue en el backdrop, no en el contenido
+        if (e.target === e.currentTarget) onClose()
+      }}
+      style={{
+        background: 'rgba(0,0,0,0.6)',
+        backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
+        animation: 'fadeIn 0.15s ease-out',
+      }}
     >
       <div
         className="relative w-full max-w-[640px] max-h-[85vh] overflow-y-auto rounded-[16px]"
+        onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
         style={{
           background: 'var(--color-bg-base)',
@@ -545,6 +559,8 @@ function KpiInfoPopover({ info, color, onClose }) {
       </div>
     </div>
   )
+
+  return createPortal(modal, document.body)
 }
 
 function RecaudoCard({ label, color, colorHex, monto, cantidad, cuotaDiaria, extraSub, info, montoAyer, sparklineData }) {
@@ -552,18 +568,18 @@ function RecaudoCard({ label, color, colorHex, monto, cantidad, cuotaDiaria, ext
   const hasInfo = Boolean(info)
   const pct = cuotaDiaria > 0 ? Math.min(100, Math.round((monto / cuotaDiaria) * 100)) : null
   const animMonto = useCountUp(monto, 700)
-  const toggle = (e) => {
+  const openInfo = (e) => {
     if (!hasInfo) return
     e?.preventDefault?.()
     e?.stopPropagation?.()
-    setShowInfo(v => !v)
+    if (!showInfo) setShowInfo(true)
   }
   return (
     <div
-      onClick={toggle}
+      onClick={openInfo}
       role={hasInfo ? 'button' : undefined}
       tabIndex={hasInfo ? 0 : undefined}
-      onKeyDown={hasInfo ? (e) => { if (e.key === 'Enter' || e.key === ' ') toggle(e) } : undefined}
+      onKeyDown={hasInfo ? (e) => { if (e.key === 'Enter' || e.key === ' ') openInfo(e) } : undefined}
       className={`rounded-[16px] px-4 py-4 relative kpi-lift ${hasInfo ? 'cursor-pointer' : ''}`}
       style={{
         background: `linear-gradient(135deg, color-mix(in srgb, ${color} 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 100%)`,
