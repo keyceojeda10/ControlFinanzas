@@ -94,40 +94,168 @@ function useCountUp(target, duration = 800) {
   return value
 }
 
-// Sparkline minimalista con SVG. Recibe array de numeros y dibuja una linea
-// con gradiente, mostrando el ultimo punto destacado.
-function Sparkline({ data, color = 'var(--color-success)', height = 28, ariaLabel }) {
+// Sparkline interactivo con SVG. Cada dia es un punto clickable/hoverable
+// que muestra el monto y la fecha. El ultimo dia (hoy) se destaca con un
+// anillo brillante. La linea NO usa preserveAspectRatio=none para no
+// deformar el grosor del trazo.
+function Sparkline({ data, color = 'var(--color-success)', ariaLabel, etiquetasDias }) {
   const reactId = useId()
+  const [hovered, setHovered] = useState(null) // indice del punto activo
+  const containerRef = useRef(null)
+  const [width, setWidth] = useState(300)
+
+  // Medir ancho real del contenedor para que el SVG no se deforme
+  useEffect(() => {
+    if (!containerRef.current) return
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) setWidth(Math.round(entry.contentRect.width))
+    })
+    ro.observe(containerRef.current)
+    return () => ro.disconnect()
+  }, [])
+
   if (!data || data.length === 0) return null
-  const w = 100
-  const h = height
+
+  const h = 56
+  const w = width
+  const padX = 12
+  const padTop = 6
+  const padBot = 14
   const max = Math.max(...data, 1)
-  const min = Math.min(...data, 0)
+  const min = 0
   const range = max - min || 1
+  const innerW = Math.max(1, w - padX * 2)
+  const innerH = h - padTop - padBot
+
   const points = data.map((v, i) => {
-    const x = (i / (data.length - 1)) * w
-    const y = h - ((v - min) / range) * (h - 4) - 2
-    return [x, y]
+    const x = padX + (i / Math.max(1, data.length - 1)) * innerW
+    const y = padTop + innerH - ((v - min) / range) * innerH
+    return [x, y, v]
   })
+
   const linePath = points.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(2)},${y.toFixed(2)}`).join(' ')
-  const areaPath = `${linePath} L${w},${h} L0,${h} Z`
-  const lastPoint = points[points.length - 1]
+  const areaPath = `${linePath} L${points[points.length - 1][0]},${h - padBot + 2} L${points[0][0]},${h - padBot + 2} Z`
   const gradId = `spark-${reactId.replace(/:/g, '')}`
 
+  // Etiquetas por defecto: dia de la semana abreviado (lun, mar, mie...) terminando en hoy
+  const dias = etiquetasDias || (() => {
+    const out = []
+    const hoy = new Date()
+    for (let i = data.length - 1; i >= 0; i--) {
+      const d = new Date(hoy)
+      d.setDate(hoy.getDate() - i)
+      out.push(d.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', timeZone: 'America/Bogota' }))
+    }
+    return out
+  })()
+
+  const activeIdx = hovered
+  const activePoint = activeIdx !== null ? points[activeIdx] : null
+
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="w-full" style={{ height, display: 'block' }} aria-label={ariaLabel}>
-      <defs>
-        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.35" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={areaPath} fill={`url(#${gradId})`} />
-      <path d={linePath} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      {lastPoint && (
-        <circle cx={lastPoint[0]} cy={lastPoint[1]} r="2.2" fill={color} />
+    <div ref={containerRef} className="relative w-full select-none" aria-label={ariaLabel}>
+      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: 'block', overflow: 'visible' }}>
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.4" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+
+        {/* Area + linea */}
+        <path d={areaPath} fill={`url(#${gradId})`} />
+        <path d={linePath} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+
+        {/* Linea vertical guia cuando hay hover */}
+        {activePoint && (
+          <line
+            x1={activePoint[0]}
+            x2={activePoint[0]}
+            y1={padTop}
+            y2={h - padBot + 2}
+            stroke={color}
+            strokeOpacity="0.3"
+            strokeWidth="1"
+            strokeDasharray="2 2"
+          />
+        )}
+
+        {/* Puntos por dia */}
+        {points.map(([x, y, v], i) => {
+          const esHoy = i === points.length - 1
+          const esActive = i === activeIdx
+          return (
+            <g key={i}>
+              {/* Halo del dia activo (siempre visible si es hoy) */}
+              {(esHoy || esActive) && (
+                <circle cx={x} cy={y} r={esActive ? 7 : 5} fill={color} fillOpacity={esActive ? 0.25 : 0.18} />
+              )}
+              {/* Punto */}
+              <circle
+                cx={x}
+                cy={y}
+                r={esActive ? 4 : (esHoy ? 3.2 : 2)}
+                fill={esHoy || esActive ? color : 'var(--color-bg-card)'}
+                stroke={color}
+                strokeWidth={esHoy || esActive ? 1.5 : 1.2}
+                style={{ transition: 'r 0.15s ease' }}
+              />
+              {/* Hit area invisible mas grande */}
+              <circle
+                cx={x}
+                cy={y}
+                r={Math.max(14, innerW / data.length / 2)}
+                fill="transparent"
+                style={{ cursor: 'pointer' }}
+                onMouseEnter={() => setHovered(i)}
+                onMouseLeave={() => setHovered(null)}
+                onTouchStart={(e) => { e.stopPropagation(); setHovered(i) }}
+                onClick={(e) => { e.stopPropagation(); setHovered(i === hovered ? null : i) }}
+              />
+            </g>
+          )
+        })}
+
+        {/* Etiquetas debajo */}
+        {points.map(([x], i) => {
+          const esHoy = i === points.length - 1
+          const esExt = i === 0 || esHoy
+          if (!esExt) return null
+          return (
+            <text
+              key={i}
+              x={x}
+              y={h - 2}
+              fontSize="9"
+              textAnchor={i === 0 ? 'start' : 'end'}
+              fill={esHoy ? color : 'var(--color-text-muted)'}
+              style={{ fontWeight: esHoy ? 600 : 400 }}
+            >
+              {esHoy ? 'Hoy' : 'Hace 6d'}
+            </text>
+          )
+        })}
+      </svg>
+
+      {/* Tooltip flotante con monto y dia */}
+      {activePoint && (
+        <div
+          className="absolute pointer-events-none rounded-[8px] px-2.5 py-1.5 text-[11px] font-medium whitespace-nowrap"
+          style={{
+            left: `${activePoint[0]}px`,
+            top: `${activePoint[1] - 8}px`,
+            transform: 'translate(-50%, -100%)',
+            background: 'var(--color-bg-base)',
+            border: `1px solid color-mix(in srgb, ${color} 35%, var(--color-border))`,
+            boxShadow: '0 8px 20px rgba(0,0,0,0.35)',
+            zIndex: 10,
+          }}
+        >
+          <p className="text-[9px] uppercase tracking-wider mb-0.5" style={{ color: 'var(--color-text-muted)' }}>{dias[activeIdx]}</p>
+          <p className="font-mono-display font-bold" style={{ color }}>{formatCOP(activePoint[2])}</p>
+        </div>
       )}
-    </svg>
+    </div>
   )
 }
 
@@ -232,9 +360,8 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
         )}
 
         {sparklineData && sparklineData.length > 0 && (
-          <div className="mt-4 -mx-1">
-            <Sparkline data={sparklineData} color={color} height={36} ariaLabel="Tendencia 7 dias" />
-            <p className="text-[9px] mt-1 px-1" style={{ color: 'var(--color-text-muted)' }}>Últimos 7 días</p>
+          <div className="mt-4">
+            <Sparkline data={sparklineData} color={color} ariaLabel="Tendencia ultimos 7 dias" />
           </div>
         )}
 
@@ -608,8 +735,7 @@ function RecaudoCard({ label, color, colorHex, monto, cantidad, cuotaDiaria, ext
       </div>
       {sparklineData && sparklineData.length > 0 && (
         <div className="mt-2.5">
-          <Sparkline data={sparklineData} color={colorHex} height={26} ariaLabel="Tendencia 7 dias" />
-          <p className="text-[9px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Últimos 7 días</p>
+          <Sparkline data={sparklineData} color={colorHex} ariaLabel="Tendencia ultimos 7 dias" />
         </div>
       )}
       {pct !== null && !sparklineData && (
