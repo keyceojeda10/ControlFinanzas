@@ -11,6 +11,7 @@ import { Button }              from '@/components/ui/Button'
 import { Input }               from '@/components/ui/Input'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
 import { Card }                from '@/components/ui/Card'
+import RutaCard                from '@/components/rutas/RutaCard'
 import { formatCOP }           from '@/lib/calculos'
 
 export default function RutasPage() {
@@ -243,83 +244,7 @@ export default function RutasPage() {
 
       {!loading && rutas.length > 0 && (
         <div className="space-y-3">
-          {rutas.map((r) => {
-            const progreso = r.esperadoHoy > 0
-              ? Math.min(100, Math.round((r.recaudadoHoy / r.esperadoHoy) * 100))
-              : 0
-            const isComplete = progreso >= 100
-            const accentColor = isComplete ? 'var(--color-success)' : 'var(--color-accent)'
-            return (
-              <Card
-                as={Link}
-                key={r.id}
-                href={`/rutas/${r.id}`}
-                glowColor={accentColor}
-                padding={false}
-                className="block p-4 transition-all group active:scale-[0.98]"
-              >
-                {/* Top row: nombre + badge */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div
-                      className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
-                      style={{ background: `${accentColor}15` }}
-                    >
-                      <svg className="w-4.5 h-4.5" style={{ color: accentColor }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
-                      </svg>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-[white] truncate">{r.nombre}</p>
-                      <p className="text-[11px] text-[#666] mt-0.5">
-                        {r.cobrador
-                          ? <span className="text-[var(--color-purple)]">{r.cobrador.nombre}</span>
-                          : 'Sin cobrador'
-                        }
-                        <span className="mx-1.5 text-[#666]">·</span>
-                        {r.cantidadClientes} cliente{r.cantidadClientes !== 1 ? 's' : ''}
-                      </p>
-                    </div>
-                  </div>
-                  <div
-                    className="shrink-0 px-2.5 py-1 rounded-full text-[11px] font-bold"
-                    style={{
-                      color: accentColor,
-                      background: `${accentColor}12`,
-                    }}
-                  >
-                    {progreso}%
-                  </div>
-                </div>
-
-                {/* Metrics row */}
-                <div className="flex gap-2 mb-3">
-                  <div className="flex-1 bg-[rgba(255,255,255,0.03)] rounded-[10px] px-2.5 py-2">
-                    <p className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] mb-0.5">Recaudado</p>
-                    <p className="text-xs font-bold text-[var(--color-success)] font-mono-display">{formatCOP(r.recaudadoHoy)}</p>
-                  </div>
-                  <div className="flex-1 bg-[rgba(255,255,255,0.03)] rounded-[10px] px-2.5 py-2">
-                    <p className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] mb-0.5">Esperado</p>
-                    <p className="text-xs font-bold text-[var(--color-text-secondary)] font-mono-display">{formatCOP(r.esperadoHoy)}</p>
-                  </div>
-                </div>
-
-                {/* Progress bar */}
-                <div className="h-1.5 bg-[#1f1f1f] rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-700"
-                    style={{
-                      width: `${progreso}%`,
-                      background: isComplete
-                        ? 'linear-gradient(90deg, #22c55e, #16a34a)'
-                        : `linear-gradient(90deg, ${accentColor}, ${accentColor}cc)`,
-                      boxShadow: `0 0 8px ${accentColor}40`,
-                    }}
-                  />
-                </div>
-              </Card>
-            )
-          })}
+          {rutas.map((r) => <RutaCard key={r.id} ruta={r} />)}
         </div>
       )}
     </div>

@@ -12,8 +12,10 @@ import { Button }                    from '@/components/ui/Button'
 import { Card }                      from '@/components/ui/Card'
 import { SkeletonCard }              from '@/components/ui/Skeleton'
 import BotonWhatsApp                 from '@/components/ui/BotonWhatsApp'
+import ModalWhatsAppTemplates        from '@/components/ui/ModalWhatsAppTemplates'
 import { formatCOP, formatFechaCobroRelativa } from '@/lib/calculos'
 import ScoreCrediticio               from '@/components/clientes/ScoreCrediticio'
+import ClienteHeroCard, { InfoContactoCard, AccionesClienteChips } from '@/components/clientes/ClienteHeroCard'
 
 const estadoBadge = {
   activo:    { variant: 'green',  label: 'Al día'    },
@@ -40,6 +42,7 @@ export default function ClienteDetallePage({ params }) {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteData, setDeleteData] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
+  const [modalWA, setModalWA] = useState(false)
   const [rutaNav, setRutaNav]   = useState(null)
 
   // Leer contexto de ruta activa
@@ -300,108 +303,63 @@ export default function ClienteDetallePage({ params }) {
         </div>
       )}
 
-      {/* Header card */}
-      <Card>
-        <div className="flex items-start gap-4">
-          {/* Avatar */}
-          <div
-            className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold shrink-0"
-            style={{
-              background: cliente.estado === 'mora'     ? 'rgba(239,68,68,0.15)'
-                        : cliente.estado === 'activo'   ? 'rgba(245,197,24,0.15)'
-                        : 'rgba(100,116,139,0.15)',
-              color: cliente.estado === 'mora'    ? 'var(--color-danger)'
-                   : cliente.estado === 'activo'  ? 'var(--color-accent)'
-                   : '#555555',
-            }}
-          >
-            {cliente.nombre?.[0]?.toUpperCase() ?? '?'}
-          </div>
+      {/* HERO CARD: Saldo total + avatar + chip estado + WA */}
+      <ClienteHeroCard
+        cliente={cliente}
+        prestamosActivos={prestamosActivos}
+        stats={historial.length > 0
+          ? `${historial.filter(p => p.estado === 'completado').length} préstamo${historial.filter(p => p.estado === 'completado').length === 1 ? '' : 's'} completado${historial.filter(p => p.estado === 'completado').length === 1 ? '' : 's'} antes`
+          : null}
+        onWhatsApp={cliente.telefono ? () => setModalWA(true) : null}
+      />
 
-          {/* Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-lg font-bold text-[white]">{cliente.nombre}</h1>
-              <Badge variant={badge.variant}>{badge.label}</Badge>
-              <ScoreCrediticio cedula={cliente.cedula} plan={plan} />
-            </div>
-            <div className="mt-2 space-y-1">
-              <p className="text-sm text-[var(--color-text-muted)]">
-                <span className="text-[var(--color-text-muted)]">CC</span> {cliente.cedula}
-              </p>
-              {cliente.telefono && (
-                <p className="text-sm text-[var(--color-text-muted)]">
-                  <span className="text-[var(--color-text-muted)]">Tel.</span> {cliente.telefono}
-                </p>
-              )}
-              {cliente.direccion && (
-                <p className="text-sm text-[var(--color-text-muted)]">
-                  <span className="text-[var(--color-text-muted)]">Dir.</span> {cliente.direccion}
-                </p>
-              )}
-              {cliente.referencia && (
-                <p className="text-sm text-[var(--color-text-muted)]">
-                  <span className="text-[var(--color-text-muted)]">Ref.</span> {cliente.referencia}
-                </p>
-              )}
-              {cliente.notas && (
-                <p className="text-sm text-[var(--color-text-muted)] whitespace-pre-wrap">
-                  <span className="text-[var(--color-text-muted)]">Notas:</span> {cliente.notas}
-                </p>
-              )}
-              {cliente.ruta && (
-                <p className="text-sm text-[var(--color-text-muted)]">
-                  <span className="text-[var(--color-text-muted)]">Ruta</span> {cliente.ruta.nombre}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
+      {/* Score crediticio (si aplica al plan) */}
+      <div className="flex">
+        <ScoreCrediticio cedula={cliente.cedula} plan={plan} />
+      </div>
 
-        {/* Actions */}
-        {(puedeCrearPrestamos || puedeEditarClientes) && (
-          <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-[var(--color-border)]">
-            {puedeCrearPrestamos && (
-              <Link href={`/prestamos/nuevo?clienteId=${cliente.id}`}>
-                <Button
-                  size="sm"
-                  icon={
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                  }
-                >
-                  Nuevo préstamo
-                </Button>
-              </Link>
-            )}
-            <Link href={`/clientes/${id}/historial`}>
-              <Button size="sm" variant="secondary">Historial</Button>
-            </Link>
-            {puedeEditarClientes && (
-              <Link href={`/clientes/${id}/editar`}>
-                <Button size="sm" variant="secondary">Editar</Button>
-              </Link>
-            )}
-            {esOwner && (
-              <>
-                <Button size="sm" variant="secondary" onClick={handleToggleInactivo} disabled={actionLoading}>
-                  {cliente.estado === 'inactivo' ? 'Activar' : 'Inactivar'}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={handleDelete}
-                  disabled={actionLoading}
-                  className="!text-[var(--color-danger)] !border-[rgba(239,68,68,0.2)] hover:!bg-[rgba(239,68,68,0.1)]"
-                >
-                  Eliminar
-                </Button>
-              </>
-            )}
-          </div>
-        )}
-      </Card>
+      {/* Acciones rapidas como chips */}
+      {(puedeCrearPrestamos || puedeEditarClientes || esOwner) && (
+        <AccionesClienteChips
+          acciones={[
+            ...(puedeCrearPrestamos ? [{
+              label: 'Nuevo préstamo',
+              color: '#22c55e',
+              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>,
+              onClick: () => router.push(`/prestamos/nuevo?clienteId=${cliente.id}`),
+            }] : []),
+            {
+              label: 'Historial',
+              color: '#3b82f6',
+              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+              onClick: () => router.push(`/clientes/${id}/historial`),
+            },
+            ...(puedeEditarClientes ? [{
+              label: 'Editar',
+              color: '#a855f7',
+              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" /></svg>,
+              onClick: () => router.push(`/clientes/${id}/editar`),
+            }] : []),
+            ...(esOwner ? [{
+              label: cliente.estado === 'inactivo' ? 'Activar' : 'Inactivar',
+              color: cliente.estado === 'inactivo' ? '#22c55e' : '#f59e0b',
+              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>,
+              onClick: handleToggleInactivo,
+              disabled: actionLoading,
+            }] : []),
+            ...(esOwner ? [{
+              label: 'Eliminar',
+              color: '#ef4444',
+              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>,
+              onClick: handleDelete,
+              disabled: actionLoading,
+            }] : []),
+          ]}
+        />
+      )}
+
+      {/* Info de contacto */}
+      <InfoContactoCard cliente={cliente} />
 
       {/* Préstamos activos */}
       {prestamosActivos.length > 0 && (
@@ -628,6 +586,14 @@ function DeleteClienteModal({ cliente, prestamos, onClose, onDeletePrestamo, onT
           )}
         </div>
       </div>
+
+      {/* Modal selector de plantillas WhatsApp */}
+      <ModalWhatsAppTemplates
+        open={modalWA}
+        onClose={() => setModalWA(false)}
+        cliente={cliente}
+        prestamo={prestamosActivos[0] || null}
+      />
     </div>
   )
 }
