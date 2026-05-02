@@ -3,7 +3,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { LIMITES_PLAN, calcularEstadoCliente } from '@/lib/calculos'
+import { LIMITES_PLAN, calcularEstadoCliente, calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado, calcularProximoCobro, formatFechaCobroRelativa } from '@/lib/calculos'
 import { obtenerDiasSinCobro, validarDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
 import { geocodeAddress }   from '@/lib/geocoding'
@@ -67,6 +67,7 @@ export async function GET(request) {
       referencia: true,
       estado:     true,
       rutaId:     true,
+      fotoUrl:    true,
       diasSinCobro: true,
       ruta:       { select: { id: true, nombre: true, diasSinCobro: true } },
       grupoCobro: { select: { id: true, nombre: true, color: true } },
@@ -76,10 +77,15 @@ export async function GET(request) {
           id: true,
           estado: true,
           fechaInicio: true,
+          fechaFin: true,
           cuotaDiaria: true,
           diasPlazo: true,
           frecuencia: true,
-          pagos: { select: { montoPagado: true, tipo: true } },
+          totalAPagar: true,
+          montoPrestado: true,
+          diaCobroMes: true,
+          diaCobroSemana: true,
+          pagos: { select: { montoPagado: true, fechaPago: true, tipo: true } },
         },
       },
     },
@@ -92,19 +98,63 @@ export async function GET(request) {
     select: { diasSinCobro: true },
   })
 
-  // Recalcular estado real del cliente basado en sus préstamos activos
-  const resultado = clientes.map((c) => ({
-    id:               c.id,
-    nombre:           c.nombre,
-    cedula:           c.cedula,
-    telefono:         c.telefono,
-    referencia:       c.referencia,
-    estado:           calcularEstadoCliente(c.prestamos, obtenerDiasSinCobro(c, c.ruta, org)),
-    rutaId:           c.rutaId,
-    rutaNombre:       c.ruta?.nombre ?? null,
-    grupoCobro:       c.grupoCobro ?? null,
-    prestamosActivos: c.prestamos.length,
-  }))
+  // Inicio del dia hoy en hora Colombia para detectar pagoHoy
+  const hoyCO = new Date(Date.now() - 5 * 60 * 60 * 1000)
+  const inicioHoyUTC = new Date(Date.UTC(hoyCO.getUTCFullYear(), hoyCO.getUTCMonth(), hoyCO.getUTCDate(), 5, 0, 0))
+
+  // Recalcular estado real del cliente y enriquecer con datos para la card.
+  const resultado = clientes.map((c) => {
+    const diasExcluidos = obtenerDiasSinCobro(c, c.ruta, org)
+    let saldoTotal = 0
+    let totalAPagarSum = 0
+    let diasMoraMax = 0
+    let pagoHoy = false
+    let proximoCobroMin = null
+
+    for (const p of c.prestamos) {
+      try { saldoTotal += calcularSaldoPendiente(p) } catch {}
+      totalAPagarSum += (p.totalAPagar ?? 0)
+      try {
+        const dm = calcularDiasMora(p, diasExcluidos)
+        if (dm > diasMoraMax) diasMoraMax = dm
+      } catch {}
+      // Pago hoy: alguno de sus pagos cae en el dia actual Colombia
+      if (!pagoHoy && Array.isArray(p.pagos)) {
+        for (const pg of p.pagos) {
+          if (pg.fechaPago && new Date(pg.fechaPago) >= inicioHoyUTC) { pagoHoy = true; break }
+        }
+      }
+      // Proximo cobro: tomar el mas cercano de todos los prestamos activos
+      try {
+        const prox = calcularProximoCobro(p, diasExcluidos)
+        if (prox && (!proximoCobroMin || prox < proximoCobroMin)) proximoCobroMin = prox
+      } catch {}
+    }
+
+    const porcentajePagadoPromedio = totalAPagarSum > 0
+      ? Math.round(((totalAPagarSum - saldoTotal) / totalAPagarSum) * 100)
+      : 0
+
+    return {
+      id:               c.id,
+      nombre:           c.nombre,
+      cedula:           c.cedula,
+      telefono:         c.telefono,
+      referencia:       c.referencia,
+      fotoUrl:          c.fotoUrl ?? null,
+      estado:           calcularEstadoCliente(c.prestamos, diasExcluidos),
+      rutaId:           c.rutaId,
+      rutaNombre:       c.ruta?.nombre ?? null,
+      grupoCobro:       c.grupoCobro ?? null,
+      prestamosActivos: c.prestamos.length,
+      // Nuevos campos para card rediseñada
+      saldoPendienteTotal:       saldoTotal,
+      diasMoraMax,
+      pagoHoy,
+      porcentajePagadoPromedio,
+      proximoCobroLabel: proximoCobroMin ? formatFechaCobroRelativa(proximoCobroMin) : null,
+    }
+  })
 
   // If paginated, return object with total; otherwise array for backward compat
   if (page != null) {
