@@ -487,16 +487,33 @@ export default function PrestamoDetallePage({ params }) {
         />
       )}
 
-      {/* ── PAGÓ HOY ─────────────────────────────────────────────── */}
+      {/* ── PAGÓ HOY (banner verde con misma estructura que el boton de pago) ── */}
       {estaActivo && yaPagoHoy && !completado && (
         <div
-          className="w-full h-14 rounded-[16px] flex items-center justify-center gap-2.5"
-          style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)' }}
+          className="w-full h-16 rounded-[16px] flex items-center px-4"
+          style={{
+            background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.18), rgba(22, 163, 74, 0.10))',
+            border: '1px solid rgba(34, 197, 94, 0.35)',
+          }}
         >
-          <svg className="w-5 h-5 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-          </svg>
-          <span className="text-[var(--color-success)] font-bold">Pagó {frecuenciaLabel} — {formatCOP(cuotaDiaria)}</span>
+          {/* Icono circular fijo a la izquierda */}
+          <span
+            className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center mr-3"
+            style={{ background: 'rgba(34, 197, 94, 0.25)', color: 'var(--color-success)' }}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </span>
+          {/* Texto en 2 lineas */}
+          <span className="flex-1 flex flex-col items-start min-w-0 text-left leading-tight">
+            <span className="text-[11px] font-semibold uppercase tracking-wider opacity-80" style={{ color: 'var(--color-success)' }}>
+              Pago {frecuenciaLabel} registrado
+            </span>
+            <span className="text-[18px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--color-success)' }}>
+              {formatCOP(cuotaDiaria)}
+            </span>
+          </span>
         </div>
       )}
 

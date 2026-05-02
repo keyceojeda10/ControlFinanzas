@@ -318,39 +318,56 @@ export function BotonPagoPersonalidad({ enMora, frecuenciaLabel, monto, onClick 
   return (
     <button
       onClick={onClick}
-      className="w-full h-14 rounded-[16px] font-bold text-base text-white transition-all duration-200 active:scale-[0.98] shadow-lg relative overflow-hidden group"
+      className="w-full h-16 rounded-[16px] text-white transition-all duration-200 active:scale-[0.98] relative overflow-hidden group flex items-center px-4"
       style={{
         background: isUrgente
           ? 'linear-gradient(135deg, #ef4444, #dc2626)'
           : 'linear-gradient(135deg, #22c55e, #16a34a)',
         boxShadow: isUrgente
-          ? '0 4px 24px rgba(239, 68, 68, 0.35)'
-          : '0 4px 24px rgba(16, 185, 129, 0.35)',
+          ? '0 6px 24px rgba(239, 68, 68, 0.4)'
+          : '0 6px 24px rgba(16, 185, 129, 0.35)',
       }}
     >
       {/* Shimmer overlay on hover */}
       <span
-        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
         style={{
-          background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
+          background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent)',
           backgroundSize: '200% 100%',
           animation: 'shimmer 1.5s infinite',
         }}
       />
-      <span className="relative flex items-center justify-center gap-2.5">
+
+      {/* Icono circular fijo a la izquierda */}
+      <span
+        className="relative shrink-0 w-10 h-10 rounded-full flex items-center justify-center mr-3"
+        style={{ background: 'rgba(255,255,255,0.18)' }}
+      >
         {isUrgente ? (
           <svg className="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
           </svg>
         ) : (
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         )}
-        {isUrgente
-          ? `URGENTE: Registrar pago ${frecuenciaLabel} — ${formatCOP(monto)}`
-          : `Registrar pago ${frecuenciaLabel} — ${formatCOP(monto)}`}
       </span>
+
+      {/* Texto en 2 lineas: titulo arriba (pequeño), monto abajo (grande) */}
+      <span className="relative flex-1 flex flex-col items-start min-w-0 text-left leading-tight">
+        <span className="text-[11px] font-semibold uppercase tracking-wider opacity-90">
+          {isUrgente ? 'Pagar ahora · vencido' : `Registrar pago ${frecuenciaLabel}`}
+        </span>
+        <span className="text-[18px] font-bold font-mono-display mt-0.5">
+          {formatCOP(monto)}
+        </span>
+      </span>
+
+      {/* Chevron a la derecha para indicar accion */}
+      <svg className="relative w-5 h-5 shrink-0 ml-2 opacity-70" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+      </svg>
     </button>
   )
 }
