@@ -30,47 +30,74 @@ export async function GET(request, { params }) {
 
   const { id } = await params
 
-  const clienteBase = await obtenerCliente(id, session)
-  if (!clienteBase) {
-    return Response.json({ error: 'Cliente no encontrado' }, { status: 404 })
-  }
+  try {
+    const clienteBase = await obtenerCliente(id, session)
+    if (!clienteBase) {
+      return Response.json({ error: 'Cliente no encontrado' }, { status: 404 })
+    }
 
-  // Obtener cliente completo con préstamos y pagos
-  const cliente = await prisma.cliente.findUnique({
-    where: { id },
-    include: {
-      ruta: { select: { id: true, nombre: true, diasSinCobro: true } },
-      prestamos: {
-        orderBy: { createdAt: 'desc' },
-        include: {
-          pagos: {
-            orderBy: { fechaPago: 'desc' },
-            select: { id: true, montoPagado: true, fechaPago: true, tipo: true, nota: true },
+    // Obtener cliente completo con préstamos y pagos
+    const cliente = await prisma.cliente.findUnique({
+      where: { id },
+      include: {
+        ruta: { select: { id: true, nombre: true, diasSinCobro: true } },
+        prestamos: {
+          orderBy: { createdAt: 'desc' },
+          include: {
+            pagos: {
+              orderBy: { fechaPago: 'desc' },
+              select: { id: true, montoPagado: true, fechaPago: true, tipo: true, nota: true },
+            },
           },
         },
       },
-    },
-  })
+    })
 
-  // Resolver días sin cobro
-  const org = await prisma.organization.findUnique({
-    where: { id: session.user.organizationId },
-    select: { diasSinCobro: true },
-  })
-  const diasExcluidos = obtenerDiasSinCobro(cliente, cliente.ruta, org)
+    // Resolver días sin cobro
+    const org = await prisma.organization.findUnique({
+      where: { id: session.user.organizationId },
+      select: { diasSinCobro: true },
+    })
+    const diasExcluidos = obtenerDiasSinCobro(cliente, cliente.ruta, org)
 
-  // Enriquecer préstamos con cálculos
-  const prestamosEnriquecidos = cliente.prestamos.map((p) => ({
-    ...p,
-    diasMora:            calcularDiasMora(p, diasExcluidos),
-    saldoPendiente:      calcularSaldoPendiente(p),
-    porcentajePagado:    calcularPorcentajePagado(p),
-    proximoCobro:        calcularProximoCobro(p, diasExcluidos),
-  }))
+    // Enriquecer préstamos con cálculos. Si alguno falla, devolver el prestamo
+    // sin enriquecer en lugar de tirar 500 (para que el cliente no se quede
+    // sin poder abrir la pagina por un edge case en un solo prestamo).
+    const prestamosEnriquecidos = cliente.prestamos.map((p) => {
+      try {
+        return {
+          ...p,
+          diasMora:            calcularDiasMora(p, diasExcluidos),
+          saldoPendiente:      calcularSaldoPendiente(p),
+          porcentajePagado:    calcularPorcentajePagado(p),
+          proximoCobro:        calcularProximoCobro(p, diasExcluidos),
+        }
+      } catch (err) {
+        console.error(`[GET /api/clientes/${id}] error enriqueciendo prestamo ${p.id}:`, err)
+        return {
+          ...p,
+          diasMora:         0,
+          saldoPendiente:   p.totalAPagar ?? 0,
+          porcentajePagado: 0,
+          proximoCobro:     null,
+          _enriqueceError:  true,
+        }
+      }
+    })
 
-  const estadoCalculado = calcularEstadoCliente(cliente.prestamos, diasExcluidos)
+    let estadoCalculado
+    try {
+      estadoCalculado = calcularEstadoCliente(cliente.prestamos, diasExcluidos)
+    } catch (err) {
+      console.error(`[GET /api/clientes/${id}] error calculando estado:`, err)
+      estadoCalculado = cliente.estado || 'activo'
+    }
 
-  return Response.json({ ...cliente, estado: estadoCalculado, prestamos: prestamosEnriquecidos })
+    return Response.json({ ...cliente, estado: estadoCalculado, prestamos: prestamosEnriquecidos })
+  } catch (err) {
+    console.error(`[GET /api/clientes/${id}] error fatal:`, err)
+    return Response.json({ error: 'Error interno al cargar el cliente', detalle: err?.message }, { status: 500 })
+  }
 }
 
 // ─── PATCH /api/clientes/[id] ───────────────────────────────────
