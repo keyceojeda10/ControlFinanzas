@@ -172,7 +172,10 @@ export function PrestamoHeroCard({ prestamo, narrativa, sparklineData }) {
                 className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium"
                 style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, border: `1px solid color-mix(in srgb, ${color} 22%, transparent)` }}
               >
-                <span>{narrativa}</span>
+                {typeof narrativa === 'object' && narrativa.icon && (
+                  <span className="w-3.5 h-3.5 inline-flex items-center justify-center">{narrativa.icon}</span>
+                )}
+                <span>{typeof narrativa === 'object' ? narrativa.text : narrativa}</span>
               </div>
             )}
           </div>
@@ -187,7 +190,7 @@ export function PrestamoHeroCard({ prestamo, narrativa, sparklineData }) {
         <div className="sm:hidden mt-4 flex items-center gap-3 pt-3" style={{ borderTop: `1px solid color-mix(in srgb, ${color} 15%, transparent)` }}>
           <DonutPagado pct={pctPagado} color={color} size={64} />
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Has pagado</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Ha pagado</p>
             <p className="text-[14px] font-mono-display font-bold mt-0.5" style={{ color: 'var(--color-text-primary)' }}>{formatCOP(totalPagado)}</p>
           </div>
         </div>
@@ -606,13 +609,17 @@ export function TimelinePrestamo({ fechaInicio, fechaFin, porcentajePagado, colo
       {/* Mensaje de estado de progreso */}
       {adelantado && (
         <div className="mt-3 inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-medium" style={{ background: 'color-mix(in srgb, var(--color-success) 12%, transparent)', color: 'var(--color-success)' }}>
-          <span>📈</span>
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.281m5.94 2.28l-2.28 5.941" />
+          </svg>
           <span>Va adelantado en pagos</span>
         </div>
       )}
       {atrasado && (
         <div className="mt-3 inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-medium" style={{ background: 'color-mix(in srgb, var(--color-warning) 12%, transparent)', color: 'var(--color-warning)' }}>
-          <span>⏰</span>
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
           <span>Atrasado vs el tiempo del préstamo</span>
         </div>
       )}
