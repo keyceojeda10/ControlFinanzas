@@ -1,7 +1,7 @@
 'use client'
 // components/prestamos/RegistrarPago.jsx - Modal de registro de pago
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter }   from 'next/navigation'
 import { Modal }       from '@/components/ui/Modal'
 import { Button }      from '@/components/ui/Button'
@@ -28,6 +28,10 @@ export default function RegistrarPago({
   const [plataforma,   setPlataforma]   = useState('')
   const [nota,         setNota]         = useState('')
   const [diasAbonados, setDiasAbonados] = useState(null)
+  // Valor visual del slider — se anima entre cambios para que las transiciones
+  // (boton mora, ponerse al dia) se sientan fluidas en vez de saltar de golpe.
+  const [sliderVisual, setSliderVisual] = useState(1)
+  const sliderAnimRef = useRef(null)
   const [loading,      setLoading]      = useState(false)
   const [error,        setError]        = useState('')
   const [exitoso,      setExitoso]      = useState(false)
@@ -46,8 +50,41 @@ export default function RegistrarPago({
     setMonto(String(montoFinal))
     setTipo(presetPago?.tipo ?? (montoFinal > montoBase ? 'parcial' : 'completo'))
     setDiasAbonados(null)
+    setSliderVisual(1)
     setError('')
   }, [open, presetPago, cuotaDiaria, saldoPendiente])
+
+  // Animacion del slider visual: cuando diasAbonados cambia (por boton de mora,
+  // ponerse al dia o snap), interpola gradualmente desde el valor visual actual
+  // hasta el nuevo. Si el cambio viene del propio drag del slider, va instantaneo.
+  useEffect(() => {
+    const target = diasAbonados ?? 1
+    const from = sliderVisual
+    if (from === target) return
+    // Si la diferencia es 1, no animar (es el drag manual)
+    if (Math.abs(target - from) <= 1) {
+      setSliderVisual(target)
+      return
+    }
+    // Animar con requestAnimationFrame
+    if (sliderAnimRef.current) cancelAnimationFrame(sliderAnimRef.current)
+    const start = performance.now()
+    const duration = 350
+    const tick = (now) => {
+      const elapsed = now - start
+      const progress = Math.min(1, elapsed / duration)
+      // easeOutCubic
+      const eased = 1 - Math.pow(1 - progress, 3)
+      const current = from + (target - from) * eased
+      setSliderVisual(progress >= 1 ? target : current)
+      if (progress < 1) sliderAnimRef.current = requestAnimationFrame(tick)
+    }
+    sliderAnimRef.current = requestAnimationFrame(tick)
+    return () => {
+      if (sliderAnimRef.current) cancelAnimationFrame(sliderAnimRef.current)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [diasAbonados])
 
   const handleSubmit = async ({ confirmarDuplicado = false } = {}) => {
     let m = Number(monto)
@@ -320,16 +357,23 @@ export default function RegistrarPago({
           <span className="font-semibold text-[var(--color-text-primary)] font-mono-display">{formatCOP(saldoPendiente)}</span>
         </div>
 
-        {/* Atajos para no recalcular mora / ponerse al dia manualmente */}
-        {tipo !== 'capital' && (
+        {/* Atajos para no recalcular mora / ponerse al dia manualmente.
+            Al pulsar, calculamos cuantos dias equivale el monto y movemos
+            tambien el slider de abono rapido para que el usuario vea visualmente
+            el progreso. Si supera 30 dias (max del slider), se capea en 30. */}
+        {tipo !== 'capital' && (() => {
+          const cuota = Math.max(1, Math.round(cuotaDiaria ?? 1))
+          const diasParaMonto = (m) => Math.min(30, Math.max(1, Math.round((Number(m) || 0) / cuota)))
+          return (
           <div className="grid grid-cols-1 gap-2">
             {Number(prestamo?.montoEnMora) > 0 && (
               <button
                 type="button"
                 onClick={() => {
-                  setMonto(String(Math.min(Math.round(prestamo.montoEnMora), Math.round(saldoPendiente ?? 0))))
+                  const montoFinal = Math.min(Math.round(prestamo.montoEnMora), Math.round(saldoPendiente ?? 0))
+                  setMonto(String(montoFinal))
                   setTipo('parcial')
-                  setDiasAbonados(null)
+                  setDiasAbonados(diasParaMonto(montoFinal))
                 }}
                 className="h-10 rounded-[12px] border border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.08)] text-[var(--color-danger)] text-sm font-semibold hover:bg-[rgba(239,68,68,0.15)] transition-colors"
               >
@@ -344,9 +388,10 @@ export default function RegistrarPago({
               <button
                 type="button"
                 onClick={() => {
-                  setMonto(String(Math.min(Math.round(prestamo.montoParaPonerseAlDia), Math.round(saldoPendiente ?? 0))))
+                  const montoFinal = Math.min(Math.round(prestamo.montoParaPonerseAlDia), Math.round(saldoPendiente ?? 0))
+                  setMonto(String(montoFinal))
                   setTipo('parcial')
-                  setDiasAbonados(null)
+                  setDiasAbonados(diasParaMonto(montoFinal))
                 }}
                 className="h-10 rounded-[12px] border border-[rgba(245,197,24,0.3)] bg-[rgba(245,197,24,0.1)] text-[var(--color-accent)] text-sm font-semibold hover:bg-[rgba(245,197,24,0.18)] transition-colors"
               >
@@ -354,14 +399,18 @@ export default function RegistrarPago({
               </button>
             )}
           </div>
-        )}
+          )
+        })()}
 
         {/* Slider de abono rápido por días */}
         {tipo !== 'capital' && (() => {
           const val = diasAbonados || 1
+          // Valor mostrado en el slider (puede ser fraccional durante la animacion)
+          const visual = sliderVisual
           const SNAPS = [7, 15, 30]
           const isSnap = SNAPS.includes(val)
           const snapLabel = val === 7 ? '1 sem' : val === 15 ? 'Quinc.' : val === 30 ? '1 mes' : null
+          const pctVisual = ((visual - 1) / 29 * 100)
           return (
           <div className="border-t border-[var(--color-border)] pt-4">
             <div className="flex items-center justify-between mb-3">
@@ -376,17 +425,42 @@ export default function RegistrarPago({
                 </span>
               )}
             </div>
-            <input
-              type="range"
-              min={1}
-              max={30}
-              value={val}
-              onChange={(e) => handleAbonoDias(Number(e.target.value))}
-              className="w-full h-2 rounded-full appearance-none cursor-pointer"
-              style={{
-                background: `linear-gradient(to right, #22c55e 0%, #22c55e ${(val - 1) / 29 * 100}%, #2a2a2a ${(val - 1) / 29 * 100}%, #2a2a2a 100%)`,
-              }}
-            />
+            {/* Track visual + thumb animado. Usamos un contenedor relative con
+                un track de fondo, fill animado y thumb posicionado por porcentaje.
+                El input range nativo va encima invisible para capturar el drag. */}
+            <div className="relative h-6 flex items-center select-none">
+              {/* Track de fondo */}
+              <div className="absolute inset-x-0 h-2 rounded-full" style={{ background: '#2a2a2a' }} />
+              {/* Fill verde animado */}
+              <div
+                className="absolute h-2 rounded-full"
+                style={{
+                  width: `${pctVisual}%`,
+                  background: 'linear-gradient(to right, #16a34a, #22c55e)',
+                  boxShadow: pctVisual > 5 ? '0 0 12px rgba(34, 197, 94, 0.45)' : 'none',
+                }}
+              />
+              {/* Thumb */}
+              <div
+                className="absolute w-5 h-5 rounded-full pointer-events-none"
+                style={{
+                  left: `calc(${pctVisual}% - 10px)`,
+                  background: '#22c55e',
+                  border: '3px solid var(--color-bg-base)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.4), 0 0 0 1px rgba(34, 197, 94, 0.5)',
+                }}
+              />
+              {/* Input range invisible para drag manual */}
+              <input
+                type="range"
+                min={1}
+                max={30}
+                value={val}
+                onChange={(e) => handleAbonoDias(Number(e.target.value))}
+                className="absolute inset-0 w-full opacity-0 cursor-pointer"
+                style={{ height: '24px' }}
+              />
+            </div>
             {/* Tick marks */}
             <div className="relative h-5 mt-1">
               <span className="absolute left-0 text-[10px] text-[var(--color-text-muted)]">1</span>
