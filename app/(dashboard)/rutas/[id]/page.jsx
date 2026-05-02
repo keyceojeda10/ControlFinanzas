@@ -953,79 +953,209 @@ export default function RutaDetallePage({ params }) {
         Rutas
       </button>
 
-      {/* Header */}
-      <Card>
-        <div className="flex items-center justify-between">
-          <div className="flex-1 min-w-0">
-            {editandoNombre ? (
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={nuevoNombre}
-                  onChange={(e) => setNuevoNombre(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && guardarNombre()}
-                  className="flex-1 h-9 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-base)] text-sm text-[white] focus:outline-none focus:border-[var(--color-accent)]"
-                  autoFocus
-                />
-                <button onClick={guardarNombre} className="text-[var(--color-success)] p-1"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg></button>
-                <button onClick={() => setEditandoNombre(false)} className="text-[var(--color-text-muted)] p-1"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
-              </div>
-            ) : (
-              <>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-lg font-bold text-[white]">{ruta.nombre}</h1>
-                  {esOwner && (
-                    <button onClick={() => { setNuevoNombre(ruta.nombre); setEditandoNombre(true) }} className="text-[#666] hover:text-[var(--color-accent)] transition-colors p-1">
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                    </button>
+      {/* HERO CARD: Recaudado del dia + Donut + Mood color */}
+      {(() => {
+        const heroColor = progreso >= 100 ? '#22c55e'
+          : progreso >= 60 ? '#f5c518'
+          : progreso >= 30 ? '#f97316'
+          : ruta.esperadoHoy > 0 ? '#ef4444'
+          : '#64748b'
+        const heroLabel = progreso >= 100 ? 'Meta cumplida'
+          : progreso >= 60 ? 'Buen ritmo'
+          : progreso >= 30 ? 'Atrasada'
+          : ruta.esperadoHoy > 0 ? 'Crítica'
+          : 'Sin actividad esperada'
+        return (
+          <div
+            className="relative rounded-[20px] overflow-hidden"
+            style={{
+              background: `linear-gradient(135deg, color-mix(in srgb, ${heroColor} 14%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, ${heroColor} 8%, var(--color-bg-card)) 100%)`,
+              border: `1px solid color-mix(in srgb, ${heroColor} 25%, var(--color-border))`,
+              boxShadow: `0 8px 32px color-mix(in srgb, ${heroColor} 18%, transparent)`,
+            }}
+          >
+            {/* Orb pulsante */}
+            <div className="hero-glow absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none"
+              style={{ background: `radial-gradient(circle, color-mix(in srgb, ${heroColor} 35%, transparent), transparent 70%)`, filter: 'blur(20px)' }} />
+            {/* Patron de puntos */}
+            <div className="absolute inset-0 pointer-events-none opacity-[0.04]"
+              style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '16px 16px', color: heroColor }} />
+
+            <div className="relative px-5 py-5 sm:px-6 sm:py-6">
+              {/* Top: nombre + chip + boton eliminar */}
+              <div className="flex items-start gap-3 mb-4">
+                <div
+                  className="w-12 h-12 rounded-[12px] flex items-center justify-center shrink-0"
+                  style={{
+                    background: `color-mix(in srgb, ${heroColor} 18%, transparent)`,
+                    border: `1px solid color-mix(in srgb, ${heroColor} 30%, transparent)`,
+                    color: heroColor,
+                  }}
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75v11.25m6-9v11.25m5.25-14.25L15 8.25l-6-2.25L3.75 8.25v12l5.25-2.25 6 2.25 5.25-2.25v-12z" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  {editandoNombre ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={nuevoNombre}
+                        onChange={(e) => setNuevoNombre(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && guardarNombre()}
+                        className="flex-1 h-9 px-3 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-base)] text-sm text-[var(--color-text-primary)] focus:outline-none"
+                        style={{ borderColor: heroColor }}
+                        autoFocus
+                      />
+                      <button onClick={guardarNombre} className="p-1" style={{ color: 'var(--color-success)' }}><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg></button>
+                      <button onClick={() => setEditandoNombre(false)} className="p-1" style={{ color: 'var(--color-text-muted)' }}><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <h1 className="text-lg font-bold leading-tight truncate" style={{ color: 'var(--color-text-primary)' }}>{ruta.nombre}</h1>
+                        {esOwner && (
+                          <button onClick={() => { setNuevoNombre(ruta.nombre); setEditandoNombre(true) }} className="shrink-0 p-1 transition-colors" style={{ color: 'var(--color-text-muted)' }}>
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                          </button>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                        <span
+                          className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                          style={{
+                            background: `color-mix(in srgb, ${heroColor} 15%, transparent)`,
+                            color: heroColor,
+                            border: `1px solid color-mix(in srgb, ${heroColor} 25%, transparent)`,
+                          }}
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: heroColor }} />
+                          {heroLabel}
+                        </span>
+                        {ruta.cobrador && (
+                          <span className="text-[10px]" style={{ color: 'var(--color-purple)' }}>· {ruta.cobrador.nombre}</span>
+                        )}
+                        <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>· {ruta.clientes?.length ?? 0} clientes</span>
+                      </div>
+                    </>
                   )}
                 </div>
-                <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
-                  {ruta.cobrador && <span className="text-[var(--color-purple)]">{ruta.cobrador.nombre}</span>}
-                  {ruta.cobrador && ' · '}
-                  {(ruta.clientesConCobroHoy ?? 0) > 0
-                    ? <><span className="text-[var(--color-success)] font-medium">{ruta.clientesPagaronHoy ?? 0}</span> de <span className="text-[white] font-medium">{ruta.clientesConCobroHoy}</span> clientes de hoy</>
-                    : <>{ruta.clientes?.length ?? 0} clientes</>
-                  }
-                </p>
-              </>
-            )}
+                {esOwner && !editandoNombre && (
+                  <button onClick={eliminarRuta} disabled={eliminando} className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
+                    style={{ background: 'rgba(239, 68, 68, 0.12)', color: 'var(--color-danger)', border: '1px solid rgba(239, 68, 68, 0.25)' }}
+                    aria-label="Eliminar ruta"
+                    title="Eliminar ruta"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  </button>
+                )}
+              </div>
+
+              {/* Recaudado del dia: numero gigante + donut a la derecha */}
+              <div className="flex items-end justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                    Recaudado hoy
+                  </p>
+                  <p
+                    className="font-mono-display font-bold leading-none tracking-tight truncate"
+                    style={{
+                      color: heroColor,
+                      fontSize: 'clamp(28px, 8vw, 40px)',
+                      textShadow: `0 0 30px color-mix(in srgb, ${heroColor} 25%, transparent)`,
+                    }}
+                  >
+                    {formatCOP(ruta.recaudadoHoy ?? 0)}
+                  </p>
+                  <p className="text-[12px] mt-2" style={{ color: 'var(--color-text-secondary)' }}>
+                    de {formatCOP(ruta.esperadoHoy ?? 0)} esperados
+                  </p>
+                  {(ruta.clientesConCobroHoy ?? 0) > 0 && (
+                    <p className="text-[11px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                      <span style={{ color: 'var(--color-success)', fontWeight: 600 }}>{ruta.clientesPagaronHoy ?? 0}</span> de <span style={{ color: 'var(--color-text-primary)', fontWeight: 600 }}>{ruta.clientesConCobroHoy}</span> clientes pagaron
+                    </p>
+                  )}
+                </div>
+
+                {/* Donut % */}
+                <div className="hidden sm:flex shrink-0 items-center justify-center" style={{ width: 84, height: 84 }}>
+                  <div className="relative" style={{ width: 84, height: 84 }}>
+                    <svg width={84} height={84} className="transform -rotate-90">
+                      <circle cx={42} cy={42} r={36} fill="none" stroke="var(--color-bg-hover)" strokeWidth="8" />
+                      <circle cx={42} cy={42} r={36} fill="none" stroke={heroColor} strokeWidth="8" strokeLinecap="round"
+                        strokeDasharray={`${(progreso / 100) * (2 * Math.PI * 36)} ${2 * Math.PI * 36}`}
+                        style={{ filter: `drop-shadow(0 0 6px color-mix(in srgb, ${heroColor} 50%, transparent))` }}
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <p className="font-mono-display font-bold leading-none" style={{ color: heroColor, fontSize: 20 }}>
+                        {progreso}<span style={{ fontSize: 12 }}>%</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Donut version movil debajo */}
+              <div className="sm:hidden mt-4 pt-3 flex items-center gap-3" style={{ borderTop: `1px solid color-mix(in srgb, ${heroColor} 15%, transparent)` }}>
+                <div className="relative shrink-0" style={{ width: 64, height: 64 }}>
+                  <svg width={64} height={64} className="transform -rotate-90">
+                    <circle cx={32} cy={32} r={26} fill="none" stroke="var(--color-bg-hover)" strokeWidth="6" />
+                    <circle cx={32} cy={32} r={26} fill="none" stroke={heroColor} strokeWidth="6" strokeLinecap="round"
+                      strokeDasharray={`${(progreso / 100) * (2 * Math.PI * 26)} ${2 * Math.PI * 26}`}
+                      style={{ filter: `drop-shadow(0 0 4px color-mix(in srgb, ${heroColor} 50%, transparent))` }}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <p className="font-mono-display font-bold leading-none" style={{ color: heroColor, fontSize: 16 }}>
+                      {progreso}<span style={{ fontSize: 10 }}>%</span>
+                    </p>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Meta del día</p>
+                  <p className="text-[14px] font-mono-display font-bold mt-0.5" style={{ color: 'var(--color-text-primary)' }}>{formatCOP(ruta.esperadoHoy ?? 0)}</p>
+                </div>
+              </div>
+
+              {/* Controles de owner: cobrador + dias sin cobro */}
+              {esOwner && !editandoNombre && (
+                <div className="mt-4 pt-3 grid grid-cols-2 gap-2" style={{ borderTop: `1px solid color-mix(in srgb, ${heroColor} 15%, transparent)` }}>
+                  <select
+                    value={ruta.cobrador?.id ?? ''}
+                    onChange={(e) => cambiarCobrador(e.target.value)}
+                    className="h-9 rounded-[10px] border bg-transparent text-xs px-2 focus:outline-none transition-all cursor-pointer"
+                    style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
+                  >
+                    <option value="">Sin cobrador</option>
+                    {cobradores.map((c) => (
+                      <option key={c.id} value={c.id}>{c.nombre}</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={abrirModalDSC}
+                    className="flex items-center justify-between h-9 rounded-[10px] border bg-transparent text-xs px-2.5 hover:border-[#f59e0b] transition-all cursor-pointer"
+                    style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      Días sin cobro
+                    </span>
+                    {ruta.diasSinCobro && JSON.parse(ruta.diasSinCobro).length > 0 && (
+                      <span className="text-[10px] font-medium" style={{ color: 'var(--color-warning)' }}>
+                        {JSON.parse(ruta.diasSinCobro).length}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-          {esOwner && !editandoNombre && (
-            <button onClick={eliminarRuta} disabled={eliminando} className="text-[#666] hover:text-[var(--color-danger)] transition-colors p-2 disabled:opacity-50">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-            </button>
-          )}
-        </div>
-        {esOwner && (<>
-          <select
-            value={ruta.cobrador?.id ?? ''}
-            onChange={(e) => cambiarCobrador(e.target.value)}
-            className="w-full h-9 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-base)] text-xs text-[white] px-3 mt-3 focus:outline-none focus:border-[var(--color-accent)] transition-all cursor-pointer"
-          >
-            <option value="">Sin cobrador asignado</option>
-            {cobradores.map((c) => (
-              <option key={c.id} value={c.id}>{c.nombre}</option>
-            ))}
-          </select>
-          <button
-            onClick={abrirModalDSC}
-            className="w-full flex items-center justify-between h-9 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-base)] text-xs text-[var(--color-text-muted)] px-3 mt-2 hover:border-[#f59e0b] hover:text-[var(--color-warning)] transition-all cursor-pointer"
-          >
-            <span className="flex items-center gap-2">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              Días sin cobro
-            </span>
-            {ruta.diasSinCobro && JSON.parse(ruta.diasSinCobro).length > 0 && (
-              <span className="text-[10px] font-medium text-[var(--color-warning)]">
-                {JSON.parse(ruta.diasSinCobro).length} {JSON.parse(ruta.diasSinCobro).length === 1 ? 'día' : 'días'}
-              </span>
-            )}
-          </button>
-        </>)}
-      </Card>
+        )
+      })()}
 
       {/* Modal días sin cobro de ruta */}
       <Modal open={modalDiasSC} onClose={() => setModalDiasSC(false)} title="Días sin cobro de la ruta" footer={
@@ -1047,9 +1177,8 @@ export default function RutaDetallePage({ params }) {
         </div>
       </Modal>
 
-      {/* Métricas */}
+      {/* Métricas adicionales: Cartera + Pendientes + Mora (Cobro hoy ya esta en Hero) */}
       {(() => {
-        // Denominador: totalAPagar (principal + intereses). Cobrado = lo que ya pagaron del total.
         const denominadorCartera = ruta.totalAPagarRuta ?? ruta.capitalTotal
         const cobrado = Math.max(0, denominadorCartera - ruta.carteraTotal)
         const carteraPct = denominadorCartera > 0
@@ -1057,84 +1186,98 @@ export default function RutaDetallePage({ params }) {
           : 0
         return (
           <>
-            {/* Cobro del día */}
-            <Card padding={false}>
-              <div className="px-4 py-3">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] text-[#666] uppercase tracking-wide">Cobro del día</span>
-                  <span className="text-[11px] font-bold" style={{ color: progreso >= 100 ? 'var(--color-success)' : 'var(--color-accent)' }}>{progreso}%</span>
+            {/* Cartera total */}
+            <div
+              className="rounded-[16px] px-4 py-3"
+              style={{
+                background: `linear-gradient(135deg, color-mix(in srgb, #06b6d4 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
+                border: '1px solid color-mix(in srgb, #06b6d4 22%, var(--color-border))',
+              }}
+            >
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, #06b6d4 18%, transparent)', color: '#06b6d4' }}>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#06b6d4' }}>Cartera de la ruta</span>
                 </div>
-                <div className="flex items-baseline justify-between">
-                  <p className="text-lg font-bold text-[var(--color-success)] font-mono-display">{formatCOP(ruta.recaudadoHoy)}</p>
-                  <p className="text-[11px] text-[#777] font-mono-display">de {formatCOP(ruta.esperadoHoy)}</p>
-                </div>
-                <div className="h-1.5 bg-[var(--color-bg-surface)] rounded-full overflow-hidden mt-2.5">
-                  <div className="h-full rounded-full transition-all duration-700" style={{
-                    width: `${progreso}%`,
-                    background: progreso >= 100 ? 'var(--color-success)' : 'var(--color-accent)',
-                  }} />
-                </div>
-                {(ruta.clientesConCobroHoy ?? 0) > 0 && (
-                  <p className="text-[10px] text-[var(--color-text-muted)] mt-2">
-                    <span className="text-[var(--color-success)] font-medium">{ruta.clientesPagaronHoy ?? 0}</span> de <span className="text-[white] font-medium">{ruta.clientesConCobroHoy}</span> clientes pagaron hoy
-                  </p>
-                )}
+                <span className="text-[11px] font-bold" style={{ color: '#06b6d4' }}>{carteraPct}% cobrado</span>
               </div>
-            </Card>
-
-            {/* Cartera de la ruta */}
-            <Card padding={false}>
-              <div className="px-4 py-3">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] text-[#666] uppercase tracking-wide">Cartera</span>
-                  <span className="text-[11px] font-bold text-[var(--color-info)]">{carteraPct}% cobrado</span>
-                </div>
-                <div className="flex items-baseline justify-between">
-                  <p className="text-lg font-bold text-[white] font-mono-display">{formatCOP(ruta.carteraTotal)}</p>
-                  <p className="text-[11px] text-[#777] font-mono-display">de {formatCOP(denominadorCartera)}</p>
-                </div>
-                <div className="h-1.5 bg-[var(--color-bg-surface)] rounded-full overflow-hidden mt-2.5">
-                  <div className="h-full rounded-full bg-[#06b6d4] transition-all duration-700" style={{ width: `${carteraPct}%` }} />
-                </div>
+              <div className="flex items-baseline justify-between">
+                <p className="text-lg font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatCOP(ruta.carteraTotal)}</p>
+                <p className="text-[11px] font-mono-display" style={{ color: 'var(--color-text-muted)' }}>de {formatCOP(denominadorCartera)}</p>
               </div>
-            </Card>
+              <div className="h-1.5 rounded-full overflow-hidden mt-2.5" style={{ background: 'var(--color-bg-hover)' }}>
+                <div className="h-full rounded-full transition-all duration-700"
+                  style={{
+                    width: `${carteraPct}%`,
+                    background: 'linear-gradient(90deg, color-mix(in srgb, #06b6d4 60%, transparent), #06b6d4)',
+                    boxShadow: carteraPct > 5 ? '0 0 10px color-mix(in srgb, #06b6d4 50%, transparent)' : 'none',
+                  }}
+                />
+              </div>
+            </div>
 
-            {/* Pendientes + Mora (clickeables → filtran lista) */}
+            {/* Pendientes + Mora como filtros clickeables */}
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => setEstadoFiltro(estadoFiltro === 'pendientes' ? null : 'pendientes')}
-                className={`text-left rounded-[16px] transition-all ${estadoFiltro === 'pendientes' ? 'ring-2 ring-[#f59e0b]' : ''}`}
+                className="text-left rounded-[16px] px-4 py-3 transition-all kpi-lift"
+                style={{
+                  background: `linear-gradient(135deg, color-mix(in srgb, #f59e0b 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
+                  border: estadoFiltro === 'pendientes'
+                    ? '1px solid #f59e0b'
+                    : '1px solid color-mix(in srgb, #f59e0b 22%, var(--color-border))',
+                  boxShadow: estadoFiltro === 'pendientes' ? '0 0 0 1px #f59e0b' : 'none',
+                }}
               >
-                <Card padding={false}>
-                  <div className="px-4 py-3">
-                    <p className="text-[10px] text-[#666] uppercase tracking-wide mb-1">Pendientes hoy</p>
-                    <p className="text-xl font-bold" style={{ color: ruta.pendientesHoy > 0 ? 'var(--color-warning)' : 'var(--color-success)' }}>{ruta.pendientesHoy}</p>
-                    <p className="text-[9px] text-[#666] mt-0.5">de {ruta.clientesConCobroHoy ?? 0} con cobro hoy</p>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, #f59e0b 18%, transparent)', color: '#f59e0b' }}>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                   </div>
-                </Card>
+                  <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#f59e0b' }}>Pendientes</p>
+                </div>
+                <p className="text-2xl font-bold font-mono-display" style={{ color: ruta.pendientesHoy > 0 ? 'var(--color-warning)' : 'var(--color-success)' }}>
+                  {ruta.pendientesHoy}
+                </p>
+                <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>de {ruta.clientesConCobroHoy ?? 0} hoy</p>
               </button>
+
               <button
                 type="button"
                 onClick={() => setEstadoFiltro(estadoFiltro === 'mora' ? null : 'mora')}
-                className={`text-left rounded-[16px] transition-all ${estadoFiltro === 'mora' ? 'ring-2 ring-[#ef4444]' : ''}`}
+                className="text-left rounded-[16px] px-4 py-3 transition-all kpi-lift"
+                style={{
+                  background: `linear-gradient(135deg, color-mix(in srgb, #ef4444 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
+                  border: estadoFiltro === 'mora'
+                    ? '1px solid #ef4444'
+                    : '1px solid color-mix(in srgb, #ef4444 22%, var(--color-border))',
+                  boxShadow: estadoFiltro === 'mora' ? '0 0 0 1px #ef4444' : 'none',
+                }}
               >
-                <Card padding={false}>
-                  <div className="px-4 py-3">
-                    <p className="text-[10px] text-[#666] uppercase tracking-wide mb-1">En mora</p>
-                    <p className="text-xl font-bold" style={{ color: ruta.enMora > 0 ? 'var(--color-danger)' : 'var(--color-success)' }}>{ruta.enMora}</p>
-                    <p className="text-[9px] text-[#666] mt-0.5">del total de la ruta</p>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, #ef4444 18%, transparent)', color: '#ef4444' }}>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
                   </div>
-                </Card>
+                  <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#ef4444' }}>En mora</p>
+                </div>
+                <p className="text-2xl font-bold font-mono-display" style={{ color: ruta.enMora > 0 ? 'var(--color-danger)' : 'var(--color-success)' }}>
+                  {ruta.enMora}
+                </p>
+                <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>del total de la ruta</p>
               </button>
             </div>
             {estadoFiltro && (
               <button
                 type="button"
                 onClick={() => setEstadoFiltro(null)}
-                className="text-[11px] text-[var(--color-accent)] hover:text-[white] transition-colors flex items-center gap-1"
+                className="text-[11px] hover:text-[var(--color-text-primary)] transition-colors flex items-center gap-1"
+                style={{ color: 'var(--color-accent)' }}
               >
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 Quitar filtro ({estadoFiltro === 'pendientes' ? 'Pendientes hoy' : estadoFiltro === 'mora' ? 'En mora' : 'Pagaron hoy'})
               </button>
             )}
