@@ -7,6 +7,7 @@ import { useAuth }             from '@/hooks/useAuth'
 import { Badge }               from '@/components/ui/Badge'
 import { Button }              from '@/components/ui/Button'
 import { Card }                from '@/components/ui/Card'
+import CobradorCard            from '@/components/cobradores/CobradorCard'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
 import { formatCOP }           from '@/lib/calculos'
 import { useOnline }           from '@/hooks/useOnline'
@@ -142,51 +143,12 @@ function CobradoresPageInner() {
       {!loading && cobradores.length > 0 && (
         <div className="space-y-3">
           {cobradores.map((c) => (
-            <Card
-              as={Link}
+            <CobradorCard
               key={c.id}
-              href={`/cobradores/${c.id}`}
-              glowColor="#a855f7"
-              padding={false}
-              className="block p-4 hover:border-[var(--color-border-hover)] transition-all"
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[rgba(139,92,246,0.15)] flex items-center justify-center shrink-0">
-                    <span className="text-[var(--color-purple)] font-bold text-sm">{c.nombre?.[0]?.toUpperCase()}</span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-[white]">{c.nombre}</p>
-                    <p className="text-xs text-[var(--color-text-muted)]">{c.email}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={(e) => { e.preventDefault(); toggleCobrador(c) }}
-                  disabled={toggling === c.id}
-                  className="shrink-0"
-                  title={c.activo ? 'Desactivar cobrador' : 'Activar cobrador'}
-                >
-                  <Badge variant={c.activo ? 'green' : 'gray'}>{c.activo ? 'Activo' : 'Inactivo'}</Badge>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3 pt-3 border-t border-[var(--color-border)] text-center">
-                <div>
-                  <p className="text-[10px] text-[var(--color-text-muted)]">Ruta</p>
-                  <p className="text-xs font-medium text-[white] truncate">
-                    {c.ruta?.nombre ?? <span className="text-[var(--color-text-muted)]">Sin ruta</span>}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-[var(--color-text-muted)]">Clientes</p>
-                  <p className="text-xs font-bold text-[white]">{c.cantidadClientes}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-[var(--color-text-muted)]">Recaudado hoy</p>
-                  <p className="text-xs font-bold text-[var(--color-success)] font-mono-display">{formatCOP(c.recaudadoHoy)}</p>
-                </div>
-              </div>
-            </Card>
+              cobrador={c}
+              onToggleActivo={toggleCobrador}
+              toggling={toggling === c.id}
+            />
           ))}
         </div>
       )}

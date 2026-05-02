@@ -53,35 +53,64 @@ export async function GET(request) {
         select: {
           id:      true,
           nombre:  true,
-          clientes: { select: { id: true } },
+          clientes: {
+            select: {
+              id: true,
+              prestamos: {
+                where: { estado: 'activo' },
+                select: { cuotaDiaria: true, frecuencia: true },
+              },
+            },
+          },
         },
       },
       pagos: {
         where:      { fechaPago: { gte: hoy(), lt: manana() } },
-        select:     { montoPagado: true, tipo: true },
+        select:     { montoPagado: true, tipo: true, fechaPago: true },
+        orderBy:    { fechaPago: 'desc' },
       },
     },
     orderBy: { nombre: 'asc' },
   })
 
-  const resultado = cobradores.map((c) => ({
-    id:              c.id,
-    nombre:          c.nombre,
-    email:           c.email,
-    activo:          c.activo,
-    permisos: {
-      crearPrestamos: c.puedeCrearPrestamos,
-      gestionarPrestamos: c.puedeGestionarPrestamos ?? c.puedeCrearPrestamos,
-      crearClientes:  c.puedeCrearClientes,
-      editarClientes: c.puedeEditarClientes,
-      reportarGastos: c.puedeReportarGastos ?? true,
-      verCapital:     c.puedeVerCapital ?? false,
-      verSaldoCaja:   c.puedeVerSaldoCaja ?? false,
-    },
-    ruta:            c.rutas[0] ?? null,
-    cantidadClientes: c.rutas[0]?.clientes?.length ?? 0,
-    recaudadoHoy:    c.pagos.filter(p => !['recargo', 'descuento'].includes(p.tipo)).reduce((a, p) => a + p.montoPagado, 0),
-  }))
+  const resultado = cobradores.map((c) => {
+    const pagosValidos = c.pagos.filter(p => !['recargo', 'descuento'].includes(p.tipo))
+    const recaudadoHoy = pagosValidos.reduce((a, p) => a + p.montoPagado, 0)
+    const cantidadPagos = pagosValidos.length
+    const ultimoPago = c.pagos[0]?.fechaPago ?? null
+    // Esperado hoy: suma de cuotas diarias de los prestamos activos en sus rutas
+    let esperadoHoy = 0
+    for (const ruta of c.rutas) {
+      for (const cliente of (ruta.clientes ?? [])) {
+        for (const p of (cliente.prestamos ?? [])) {
+          if (p.frecuencia === 'diario' || !p.frecuencia) {
+            esperadoHoy += p.cuotaDiaria ?? 0
+          }
+        }
+      }
+    }
+    return {
+      id:              c.id,
+      nombre:          c.nombre,
+      email:           c.email,
+      activo:          c.activo,
+      permisos: {
+        crearPrestamos: c.puedeCrearPrestamos,
+        gestionarPrestamos: c.puedeGestionarPrestamos ?? c.puedeCrearPrestamos,
+        crearClientes:  c.puedeCrearClientes,
+        editarClientes: c.puedeEditarClientes,
+        reportarGastos: c.puedeReportarGastos ?? true,
+        verCapital:     c.puedeVerCapital ?? false,
+        verSaldoCaja:   c.puedeVerSaldoCaja ?? false,
+      },
+      ruta:            c.rutas[0] ? { id: c.rutas[0].id, nombre: c.rutas[0].nombre } : null,
+      cantidadClientes: c.rutas[0]?.clientes?.length ?? 0,
+      recaudadoHoy,
+      esperadoHoy,
+      cantidadPagosHoy: cantidadPagos,
+      ultimoPago,
+    }
+  })
 
   return Response.json(resultado)
 }

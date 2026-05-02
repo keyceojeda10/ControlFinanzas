@@ -99,67 +99,117 @@ function CobradorDetalleInner({ params }) {
         Cobradores
       </button>
 
-      {/* Header */}
-      <Card>
-        <div className="flex flex-col gap-2 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="w-12 h-12 rounded-full bg-[rgba(139,92,246,0.15)] flex items-center justify-center shrink-0">
-              <span className="text-[var(--color-purple)] font-bold text-lg">{data.nombre?.[0]?.toUpperCase()}</span>
-            </div>
-            <div className="min-w-0 flex-1">
-              <h1 className="text-lg font-bold text-[white] truncate">{data.nombre}</h1>
-              <p className="text-sm text-[var(--color-text-muted)] truncate">{data.email}</p>
-              {data.telefono && <p className="text-xs text-[var(--color-text-muted)] truncate">{data.telefono}</p>}
-            </div>
-          </div>
-          <div className="flex items-center gap-2 self-end min-[420px]:self-auto shrink-0">
-            <Link
-              href={`/cobradores/${id}/editar`}
-              className="p-2 rounded-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-soft)] transition-all"
-              title="Editar cobrador"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-            </Link>
-            <button onClick={toggleActivo} disabled={toggling} title={data.activo ? 'Desactivar' : 'Activar'}>
-              <Badge variant={data.activo ? 'green' : 'gray'}>{data.activo ? 'Activo' : 'Inactivo'}</Badge>
-            </button>
-            <button
-              onClick={async () => {
-                if (!confirm(`¿Eliminar a "${data.nombre}"? ${data.recaudadoHoy > 0 || data.pagosMes > 0 ? 'Tiene historial de pagos, se desactivará en vez de eliminarse.' : 'Se eliminará permanentemente.'}`)) return
-                setEliminando(true)
-                const res = await fetch(`/api/cobradores/${id}`, { method: 'DELETE' })
-                if (res.ok) router.push('/cobradores')
-                else { alert('Error al eliminar'); setEliminando(false) }
-              }}
-              disabled={eliminando}
-              className="p-2 rounded-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger-dim)] transition-all disabled:opacity-50"
-              title="Eliminar cobrador"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </Card>
+      {/* HERO CARD: cobrador + stats + acciones */}
+      {(() => {
+        const heroColor = data.activo ? '#a855f7' : '#64748b'
+        return (
+          <div
+            className="relative rounded-[20px] overflow-hidden"
+            style={{
+              background: `linear-gradient(135deg, color-mix(in srgb, ${heroColor} 14%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, ${heroColor} 8%, var(--color-bg-card)) 100%)`,
+              border: `1px solid color-mix(in srgb, ${heroColor} 25%, var(--color-border))`,
+              boxShadow: `0 8px 32px color-mix(in srgb, ${heroColor} 18%, transparent)`,
+            }}
+          >
+            <div className="hero-glow absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none"
+              style={{ background: `radial-gradient(circle, color-mix(in srgb, ${heroColor} 35%, transparent), transparent 70%)`, filter: 'blur(20px)' }} />
+            <div className="absolute inset-0 pointer-events-none opacity-[0.04]"
+              style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '16px 16px', color: heroColor }} />
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
-        <Card>
-          <p className="text-[10px] text-[var(--color-text-muted)]">Recaudado hoy</p>
-          <p className="text-lg font-bold text-[var(--color-success)]">{formatCOP(data.recaudadoHoy)}</p>
-        </Card>
-        <Card>
-          <p className="text-[10px] text-[var(--color-text-muted)]">Cobros hoy</p>
-          <p className="text-lg font-bold text-[white]">{data.pagosMes}</p>
-        </Card>
-        <Card>
-          <p className="text-[10px] text-[var(--color-text-muted)]">Clientes</p>
-          <p className="text-lg font-bold text-[white]">{clientes.length}</p>
-        </Card>
-      </div>
+            <div className="relative px-5 py-5 sm:px-6 sm:py-6">
+              {/* Top: avatar + nombre + acciones circulares */}
+              <div className="flex items-start gap-3 mb-4">
+                <div
+                  className="w-14 h-14 rounded-full flex items-center justify-center text-[20px] font-bold shrink-0"
+                  style={{
+                    background: `color-mix(in srgb, ${heroColor} 18%, transparent)`,
+                    color: heroColor,
+                    border: `2px solid color-mix(in srgb, ${heroColor} 40%, transparent)`,
+                  }}
+                >
+                  {data.nombre?.[0]?.toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-lg font-bold leading-tight truncate" style={{ color: 'var(--color-text-primary)' }}>{data.nombre}</h1>
+                  <p className="text-[12px] mt-0.5 truncate" style={{ color: 'var(--color-text-muted)' }}>{data.email}</p>
+                  {data.telefono && <p className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--color-text-muted)' }}>{data.telefono}</p>}
+                  <button
+                    onClick={toggleActivo}
+                    disabled={toggling}
+                    className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full mt-1.5 disabled:opacity-50"
+                    style={{
+                      background: `color-mix(in srgb, ${heroColor} 15%, transparent)`,
+                      color: heroColor,
+                      border: `1px solid color-mix(in srgb, ${heroColor} 25%, transparent)`,
+                    }}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: heroColor }} />
+                    {data.activo ? 'Activo' : 'Inactivo'}
+                  </button>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Link
+                    href={`/cobradores/${id}/editar`}
+                    className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+                    style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)' }}
+                    title="Editar"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
+                    </svg>
+                  </Link>
+                  <button
+                    onClick={async () => {
+                      if (!confirm(`¿Eliminar a "${data.nombre}"? ${data.recaudadoHoy > 0 || data.pagosMes > 0 ? 'Tiene historial de pagos, se desactivará en vez de eliminarse.' : 'Se eliminará permanentemente.'}`)) return
+                      setEliminando(true)
+                      const res = await fetch(`/api/cobradores/${id}`, { method: 'DELETE' })
+                      if (res.ok) router.push('/cobradores')
+                      else { alert('Error al eliminar'); setEliminando(false) }
+                    }}
+                    disabled={eliminando}
+                    className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
+                    style={{ background: 'rgba(239, 68, 68, 0.12)', color: 'var(--color-danger)', border: '1px solid rgba(239, 68, 68, 0.25)' }}
+                    title="Eliminar"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Stats: recaudado hoy en grande + 2 chips a la derecha */}
+              <div className="flex items-end justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                    Recaudado hoy
+                  </p>
+                  <p
+                    className="font-mono-display font-bold leading-none tracking-tight truncate"
+                    style={{
+                      color: 'var(--color-success)',
+                      fontSize: 'clamp(28px, 8vw, 36px)',
+                      textShadow: '0 0 30px color-mix(in srgb, var(--color-success) 25%, transparent)',
+                    }}
+                  >
+                    {formatCOP(data.recaudadoHoy ?? 0)}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-1.5 shrink-0">
+                  <div className="rounded-[10px] px-2.5 py-1.5 text-right" style={{ background: 'color-mix(in srgb, var(--color-text-muted) 10%, transparent)' }}>
+                    <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Cobros</p>
+                    <p className="text-[14px] font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{data.pagosMes ?? 0}</p>
+                  </div>
+                  <div className="rounded-[10px] px-2.5 py-1.5 text-right" style={{ background: 'color-mix(in srgb, var(--color-text-muted) 10%, transparent)' }}>
+                    <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Clientes</p>
+                    <p className="text-[14px] font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{clientes.length}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Reenviar credenciales */}
       <Card>
