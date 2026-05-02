@@ -435,21 +435,45 @@ export function generarStatsContextuales({ prestamo, totalPagado, cuotasPagadas,
 // ─── 5. Acciones secundarias como chips ──────────────────────────
 export function ChipsAccionesSecundarias({ acciones }) {
   if (!acciones || acciones.length === 0) return null
+  // Grid de columnas iguales para que se vean alineadas (no flex-wrap suelto)
+  const cols = acciones.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className={`grid ${cols} gap-2`}>
       {acciones.map((a, i) => (
         <button
           key={i}
           onClick={a.onClick}
-          className="inline-flex items-center gap-2 px-3 h-10 rounded-[12px] text-[12px] font-semibold transition-all hover:scale-[1.02] active:scale-95"
+          className="group relative h-12 px-3 rounded-[12px] flex items-center gap-2 transition-all active:scale-[0.98] overflow-hidden"
           style={{
-            background: `color-mix(in srgb, ${a.color} 10%, transparent)`,
-            color: a.color,
-            border: `1px solid color-mix(in srgb, ${a.color} 25%, transparent)`,
+            background: `linear-gradient(135deg, color-mix(in srgb, ${a.color} 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
+            border: `1px solid color-mix(in srgb, ${a.color} 22%, var(--color-border))`,
           }}
         >
-          <span className="w-4 h-4">{a.icon}</span>
-          {a.label}
+          {/* Icono con fondo cuadrado del color */}
+          <div
+            className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0 transition-transform group-hover:scale-110"
+            style={{
+              background: `color-mix(in srgb, ${a.color} 18%, transparent)`,
+              color: a.color,
+            }}
+          >
+            <span className="w-4 h-4">{a.icon}</span>
+          </div>
+          {/* Texto: label arriba (titulo), sublabel abajo (opcional) */}
+          <div className="flex flex-col items-start min-w-0 flex-1">
+            <span className="text-[12px] font-semibold leading-tight truncate w-full text-left" style={{ color: a.color }}>
+              {a.label}
+            </span>
+            {a.sublabel && (
+              <span className="text-[10px] leading-tight truncate w-full text-left" style={{ color: 'var(--color-text-muted)' }}>
+                {a.sublabel}
+              </span>
+            )}
+          </div>
+          {/* Chevron derecho */}
+          <svg className="w-3.5 h-3.5 shrink-0 opacity-40 group-hover:opacity-80 transition-opacity" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: a.color }}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
         </button>
       ))}
     </div>
