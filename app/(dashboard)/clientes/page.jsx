@@ -11,6 +11,7 @@ import { Modal }         from '@/components/ui/Modal'
 import { SkeletonCard }  from '@/components/ui/Skeleton'
 import ClienteCard       from '@/components/clientes/ClienteCard'
 import SwipeableCard     from '@/components/ui/SwipeableCard'
+import ModalWhatsAppTemplates from '@/components/ui/ModalWhatsAppTemplates'
 import Mascota           from '@/components/ui/Mascota'
 
 // Iconos para acciones swipe
@@ -53,6 +54,8 @@ export default function ClientesPage() {
   const [grupos,   setGrupos]     = useState([])
   const [grupoFiltro, setGrupoFiltro] = useState('')
   const [modalGrupos, setModalGrupos] = useState(false)
+  // Modal selector de plantillas WhatsApp (se abre desde swipe)
+  const [waCliente, setWaCliente] = useState(null)
   const [tabModalGrupos, setTabModalGrupos] = useState('filtrar') // filtrar | gestionar
   const [nuevoGrupo,  setNuevoGrupo]  = useState('')
   const [grupoColor,  setGrupoColor]  = useState(null)
@@ -563,12 +566,7 @@ export default function ClientesPage() {
                       icon: IconWA,
                       label: 'WhatsApp',
                       color: '#25D366',
-                      onClick: () => {
-                        const tel = c.telefono.replace(/\D/g, '')
-                        const telCO = tel.startsWith('57') ? tel : `57${tel}`
-                        const msg = encodeURIComponent(`Hola ${c.nombre}, te escribo de Créditos para recordarte sobre tu pago.`)
-                        window.open(`https://wa.me/${telCO}?text=${msg}`, '_blank')
-                      },
+                      onClick: () => setWaCliente(c),
                     }] : []),
                     ...(c.prestamosActivos > 0 ? [{
                       icon: IconPagar,
@@ -866,6 +864,14 @@ export default function ClientesPage() {
           </button>
         </div>
       )}
+
+      {/* Modal selector de plantillas WhatsApp (se abre desde swipe) */}
+      <ModalWhatsAppTemplates
+        open={!!waCliente}
+        onClose={() => setWaCliente(null)}
+        cliente={waCliente}
+        prestamo={null}
+      />
     </div>
   )
 }

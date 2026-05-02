@@ -10,6 +10,7 @@ import { Button }                             from '@/components/ui/Button'
 import { SkeletonCard }                       from '@/components/ui/Skeleton'
 import PrestamoCard                           from '@/components/prestamos/PrestamoCard'
 import SwipeableCard                          from '@/components/ui/SwipeableCard'
+import ModalWhatsAppTemplates                 from '@/components/ui/ModalWhatsAppTemplates'
 import Mascota                                from '@/components/ui/Mascota'
 
 const IconWA = (
@@ -46,6 +47,8 @@ export default function PrestamosPage() {
   const [total,     setTotal]     = useState(0)
 
   const [isOffline, setIsOffline] = useState(false)
+  // Modal selector de plantillas WA (se abre desde swipe action)
+  const [waContext, setWaContext] = useState(null)  // { cliente, prestamo }
   const hasLoadedOnceRef = useRef(false)
 
   const fetchPrestamos = useCallback(async (q, est, p, { soft = false } = {}) => {
@@ -260,18 +263,13 @@ export default function PrestamosPage() {
       {!loading && prestamos.length > 0 && (
         <div className="space-y-2.5">
           {prestamos.map((p) => {
-            const tel = p.cliente?.telefono?.replace(/\D/g, '')
-            const telCO = tel ? (tel.startsWith('57') ? tel : `57${tel}`) : null
             const actions = []
-            if (telCO) {
+            if (p.cliente?.telefono) {
               actions.push({
                 icon: IconWA,
                 label: 'WhatsApp',
                 color: '#25D366',
-                onClick: () => {
-                  const msg = encodeURIComponent(`Hola ${p.cliente?.nombre}, te escribo de Créditos para recordarte sobre tu pago.`)
-                  window.open(`https://wa.me/${telCO}?text=${msg}`, '_blank')
-                },
+                onClick: () => setWaContext({ cliente: p.cliente, prestamo: p }),
               })
             }
             if (p.estado === 'activo') {
@@ -349,6 +347,14 @@ export default function PrestamosPage() {
           </button>
         </div>
       )}
+
+      {/* Modal selector de plantillas WhatsApp (se abre desde swipe) */}
+      <ModalWhatsAppTemplates
+        open={!!waContext}
+        onClose={() => setWaContext(null)}
+        cliente={waContext?.cliente}
+        prestamo={waContext?.prestamo}
+      />
     </div>
   )
 }
