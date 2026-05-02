@@ -20,6 +20,20 @@ import BotonWhatsApp                  from '@/components/ui/BotonWhatsApp'
 import BotonCompartir                 from '@/components/ui/BotonCompartir'
 import BotonImprimirRecibo            from '@/components/ui/BotonImprimirRecibo'
 import OfflineBadge                   from '@/components/offline/OfflineBadge'
+import ModalWhatsAppTemplates         from '@/components/ui/ModalWhatsAppTemplates'
+import {
+  PrestamoHeroCard,
+  HeaderClienteContexto,
+  BotonPagoPersonalidad,
+  StatsContextuales,
+  generarStatsContextuales,
+  ChipsAccionesSecundarias,
+  GrillaDatosSecciones,
+  TimelinePrestamo,
+  PagoMiniCard,
+  ComparativoPrestamosCliente,
+  moodColorFromPrestamo,
+} from '@/components/prestamos/PrestamoDetalleViews'
 import { formatCOP, formatFechaCobroRelativa } from '@/lib/calculos'
 
 // ─── Helpers de formato ──────────────────────────────────────────
@@ -70,6 +84,8 @@ export default function PrestamoDetallePage({ params }) {
   const [modalRenovar,  setModalRenovar]  = useState(false)
   const [modalPlazo,    setModalPlazo]    = useState(false)
   const [modalDiaCobro, setModalDiaCobro] = useState(false)
+  const [modalWA, setModalWA] = useState(false)
+  const [statsCliente, setStatsCliente] = useState(null) // { totalPrestamos, completados, numeroEsteDe }
   const hasLoadedOnceRef = useRef(false)
 
   // Leer contexto de ruta activa
@@ -163,6 +179,30 @@ export default function PrestamoDetallePage({ params }) {
     window.history.replaceState({}, '', `${window.location.pathname}${search ? `?${search}` : ''}`)
   }, [prestamo, modalPago])
 
+  // Cargar stats del cliente para mostrar comparativo "vs prestamos anteriores"
+  useEffect(() => {
+    const clienteId = prestamo?.cliente?.id
+    if (!clienteId) return
+    let cancel = false
+    fetch(`/api/clientes/${clienteId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (cancel || !data?.prestamos) return
+        const todos = data.prestamos
+        const completados = todos.filter(p => p.estado === 'completado').length
+        // Numero de este prestamo: ordenamos por fecha createdAt asc, este indice + 1
+        const ordenados = [...todos].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+        const idx = ordenados.findIndex(p => p.id === prestamo.id)
+        setStatsCliente({
+          totalPrestamos: todos.length,
+          completados,
+          numeroEsteDe: idx >= 0 ? idx + 1 : 1,
+        })
+      })
+      .catch(() => {})
+    return () => { cancel = true }
+  }, [prestamo?.cliente?.id, prestamo?.id])
+
   const handlePagoExito = (prestamoActualizado, pagoRegistrado) => {
     setPrestamo(prestamoActualizado)
     setUltimoPago(pagoRegistrado ?? null)
@@ -222,6 +262,52 @@ export default function PrestamoDetallePage({ params }) {
   const hayMontoMora = estaActivo && !completado && montoEnMora > 0
   const hayMontoAlDia = estaActivo && !completado && montoParaPonerseAlDia > 0
   const mostrarAtajosCobro = estaActivo && !completado && saldoPendiente > 0
+
+  // Sparkline 14 dias: monto cobrado por dia (excluye recargos/descuentos)
+  const sparkline14d = (() => {
+    const buckets = Array(14).fill(0)
+    const hoyCO = new Date(Date.now() - 5 * 60 * 60 * 1000)
+    const inicioHoyMs = Date.UTC(hoyCO.getUTCFullYear(), hoyCO.getUTCMonth(), hoyCO.getUTCDate())
+    for (const pg of pagos) {
+      if (!pg.fechaPago) continue
+      if (['recargo', 'descuento'].includes(pg.tipo)) continue
+      const pagoCO = new Date(new Date(pg.fechaPago).getTime() - 5 * 60 * 60 * 1000)
+      const diaCO = Date.UTC(pagoCO.getUTCFullYear(), pagoCO.getUTCMonth(), pagoCO.getUTCDate())
+      const diasAtras = Math.floor((inicioHoyMs - diaCO) / (24 * 60 * 60 * 1000))
+      if (diasAtras >= 0 && diasAtras < 14) {
+        buckets[13 - diasAtras] += pg.montoPagado
+      }
+    }
+    return buckets
+  })()
+
+  // Cuotas pagadas
+  const cuotasPagadas = cuotaDiaria > 0 ? Math.floor(totalPagadoReal / cuotaDiaria) : 0
+
+  // Stats contextuales
+  const statsContexto = generarStatsContextuales({
+    prestamo,
+    totalPagado: totalPagadoReal,
+    cuotasPagadas,
+    fechaInicio,
+    fechaFin,
+    diasMora,
+    porcentajePagado,
+    prestamoNumeroCliente: statsCliente?.numeroEsteDe,
+    totalPrestamosCliente: statsCliente?.totalPrestamos,
+  })
+
+  // Narrativa para el HeroCard
+  const narrativaSaldo = (() => {
+    if (estado === 'completado') return '¡Préstamo completado! 🎉'
+    if (estado === 'cancelado') return 'Préstamo cancelado'
+    if (porcentajePagado >= 90) return '¡Casi listo! Falta poco'
+    if (diasMora > 7) return `${diasMora} días en mora — atención urgente`
+    if (diasMora > 0) return `${diasMora} día${diasMora === 1 ? '' : 's'} vencido`
+    if (yaPagoHoy) return 'Pagó hoy ✓'
+    if (porcentajePagado >= 50) return 'Va por buen camino'
+    return null
+  })()
   const mostrarGestionPrestamo = estaActivo && !completado && puedeGestionarPrestamos
 
   const abrirPagoNormal = () => {
@@ -374,40 +460,24 @@ export default function PrestamoDetallePage({ params }) {
         )
       })()}
 
-      {/* ── HEADER CLIENTE ───────────────────────────────────────── */}
-      <Card>
-        <div className="flex items-center justify-between">
-          <div>
-            <Link href={cliente?.id ? `/clientes/${cliente.id}` : '#'} className="hover:text-[var(--color-accent)] transition-colors">
-              <h1 className="text-lg font-bold text-[white]">{cliente?.nombre || 'Cliente'}</h1>
-            </Link>
-            {cliente?.cedula && <p className="text-sm text-[var(--color-text-muted)]">CC {cliente.cedula}</p>}
-          </div>
-          <div className="flex flex-col items-end gap-1">
-            <OfflineBadge id={prestamo?.id} />
-            <Badge variant={badge.variant}>{badge.label}</Badge>
-          </div>
-        </div>
-      </Card>
+      {/* ── 2. HEADER CLIENTE CON CONTEXTO ─────────────────────────── */}
+      <HeaderClienteContexto
+        cliente={cliente}
+        prestamo={prestamo}
+        statsCliente={statsCliente && statsCliente.totalPrestamos > 1
+          ? `${statsCliente.completados} préstamo${statsCliente.completados === 1 ? '' : 's'} completado${statsCliente.completados === 1 ? '' : 's'} · cliente recurrente`
+          : null}
+        onWhatsApp={cliente?.telefono ? () => setModalWA(true) : null}
+      />
 
-      {/* ── BOTÓN PRINCIPAL DE PAGO ──────────────────────────────── */}
+      {/* ── 3. BOTÓN PRINCIPAL DE PAGO CON PERSONALIDAD ────────────── */}
       {estaActivo && !yaPagoHoy && !completado && (
-        <button
+        <BotonPagoPersonalidad
+          enMora={enMora}
+          frecuenciaLabel={frecuenciaLabel}
+          monto={cuotaDiaria}
           onClick={abrirPagoNormal}
-          className="w-full h-14 rounded-[16px] font-bold text-base text-[var(--color-text-primary)] transition-all duration-200 active:scale-[0.98] shadow-lg"
-          style={{
-            background: 'linear-gradient(135deg, #22c55e, #16a34a)',
-            boxShadow: '0 4px 24px rgba(16,185,129,0.35)',
-          }}
-        >
-            <span className="flex items-center justify-center gap-2.5">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5}
-                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Registrar pago {frecuenciaLabel} — {formatCOP(cuotaDiaria)}
-            </span>
-        </button>
+        />
       )}
 
       {/* ── PAGÓ HOY ─────────────────────────────────────────────── */}
@@ -423,101 +493,105 @@ export default function PrestamoDetallePage({ params }) {
         </div>
       )}
 
-      {/* ── ACCIONES SECUNDARIAS COMPACTAS ─────────────────────── */}
+      {/* ── 5. ACCIONES SECUNDARIAS COMO CHIPS ─────────────────── */}
       {(mostrarAtajosCobro || mostrarGestionPrestamo) && (
-        <div className="space-y-2">
-          {mostrarAtajosCobro && (
-            <button
-              onClick={() => setModalAtajosCobro(true)}
-              className="w-full h-11 px-4 rounded-[14px] border border-[var(--color-border)] bg-[rgba(255,255,255,0.02)] hover:bg-[rgba(255,255,255,0.05)] transition-all flex items-center justify-between"
-            >
-              <span className="text-sm font-medium text-[var(--color-text-primary)]">Más opciones de cobro</span>
-              <span className="text-[11px] text-[var(--color-text-muted)]">
-                {hayMontoMora ? `Mora: ${formatCOP(montoEnMora)}` : 'Abonos y atajos'}
-              </span>
-            </button>
-          )}
-
-          {mostrarGestionPrestamo && (
-            <button
-              onClick={() => setModalGestionPrestamo(true)}
-              className="w-full h-11 px-4 rounded-[14px] border border-[var(--color-border)] bg-[rgba(255,255,255,0.02)] hover:bg-[rgba(255,255,255,0.05)] transition-all flex items-center justify-between"
-            >
-              <span className="text-sm font-medium text-[var(--color-text-primary)]">Gestión del préstamo</span>
-              <span className="text-[11px] text-[var(--color-text-muted)]">Renovar, plazo, ajustes</span>
-            </button>
-          )}
-        </div>
+        <ChipsAccionesSecundarias
+          acciones={[
+            ...(mostrarAtajosCobro ? [{
+              label: hayMontoMora ? `Cobros · Mora ${formatCOP(montoEnMora)}` : 'Más opciones de cobro',
+              color: hayMontoMora ? 'var(--color-danger)' : 'var(--color-accent)',
+              icon: <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+              onClick: () => setModalAtajosCobro(true),
+            }] : []),
+            ...(mostrarGestionPrestamo ? [{
+              label: 'Gestión del préstamo',
+              color: '#a855f7',
+              icon: <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.559.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.894.149c-.424.07-.764.383-.929.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.425-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z" /></svg>,
+              onClick: () => setModalGestionPrestamo(true),
+            }] : []),
+          ]}
+        />
       )}
 
-      {/* ── RESUMEN FINANCIERO ───────────────────────────────────── */}
-      <Card
-        style={{
-          background: `linear-gradient(135deg, #22c55e0A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #22c55e05 100%)`,
-          boxShadow: `0 0 30px #22c55e08, 0 1px 2px rgba(0,0,0,0.3)`,
-        }}
-      >
-        <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-4">
-          Resumen financiero
-        </p>
+      {/* ── 1. HERO CARD: SALDO PENDIENTE EN GRANDE + DONUT + SPARKLINE ── */}
+      <PrestamoHeroCard
+        prestamo={prestamo}
+        narrativa={narrativaSaldo}
+        sparklineData={sparkline14d.some(v => v > 0) ? sparkline14d : null}
+      />
 
-        {/* Saldo pendiente — número grande */}
-        <div className="text-center mb-4">
-          <p className="text-xs text-[var(--color-text-muted)] mb-1">Saldo pendiente</p>
-          <p
-            className="text-4xl font-bold leading-none font-mono-display"
-            style={{ color: saldoPendiente === 0 ? 'var(--color-success)' : diasMora > 0 ? 'var(--color-danger)' : 'var(--color-text-primary)' }}
-          >
-            {formatCOP(saldoPendiente)}
-          </p>
-        </div>
+      {/* ── 4. STATS INTELIGENTES CONTEXTUALES (chips) ───────────── */}
+      {statsContexto.length > 0 && <StatsContextuales stats={statsContexto} />}
 
-        {/* Barra de progreso */}
-        <div className="mb-4">
-          <div className="flex justify-between text-xs text-[var(--color-text-muted)] mb-1.5">
-            <span>{porcentajePagado}% pagado</span>
-            <span>{formatCOP(totalPagado)} de {formatCOP(totalAPagar)}</span>
-          </div>
-          <div className="h-2 bg-[var(--color-bg-hover)] rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-500"
-              style={{
-                width: `${porcentajePagado}%`,
-                background: porcentajePagado === 100 ? 'var(--color-success)'
-                  : diasMora > 0 ? 'var(--color-danger)'
-                  : 'linear-gradient(90deg, #f5c518, #f0b800)',
-              }}
-            />
-          </div>
-        </div>
+      {/* ── 9. COMPARATIVO PRÉSTAMOS DEL CLIENTE ─────────────────── */}
+      <ComparativoPrestamosCliente
+        totalPrestamosCliente={statsCliente?.totalPrestamos}
+        prestamoNumeroCliente={statsCliente?.numeroEsteDe}
+        prestamosCompletadosCliente={statsCliente?.completados}
+      />
 
-        {/* Grilla de datos */}
-        <div className="grid grid-cols-2 gap-3">
-          {[
-            { label: 'Prestado',     value: formatCOP(montoPrestado) },
-            { label: 'Total a pagar', value: formatCOP(totalAPagar)  },
-            { label: `Cuota ${frecuenciaLabel}`, value: formatCOP(cuotaDiaria)   },
-            { label: 'Cuotas pendientes', value: `${cuotasPendientes}` },
-            { label: 'Tasa diaria',  value: `${tasaInteres}%`        },
-            { label: 'Plazo',        value: `${diasPlazo} días`      },
-            { label: 'Inicio',       value: fmtFecha(fechaInicio)    },
-            { label: 'Vencimiento',  value: fmtFecha(fechaFin)       },
-            ...(cobroInfo ? [cobroInfo] : []),
-            {
-              label: diasMora > 0 ? 'Días en mora' : 'Estado',
-              value: diasMora > 0 ? `${diasMora} días${cuotasEnMora > 0 ? ` · ${cuotasEnMora} cuota${cuotasEnMora === 1 ? '' : 's'}` : ''}` : 'Al día',
-              color: diasMora > 0 ? 'var(--color-danger)' : 'var(--color-success)',
-            },
-          ].map(({ label, value, color }) => (
-            <div key={label} className="bg-[var(--color-bg-card)] rounded-[12px] px-3 py-2.5">
-              <p className="text-[10px] text-[var(--color-text-muted)]">{label}</p>
-              <p className="text-sm font-semibold mt-0.5" style={{ color: color ?? 'var(--color-text-primary)' }}>
-                {value}
-              </p>
-            </div>
-          ))}
-        </div>
-      </Card>
+      {/* ── 7. LÍNEA DE TIEMPO DEL PRÉSTAMO ──────────────────────── */}
+      {estaActivo && fechaInicio && fechaFin && (
+        <TimelinePrestamo
+          fechaInicio={fechaInicio}
+          fechaFin={fechaFin}
+          porcentajePagado={porcentajePagado}
+          color={moodColorFromPrestamo(prestamo)}
+        />
+      )}
+
+      {/* ── 6. GRILLA DE DATOS EN 3 SECCIONES ─────────────────────── */}
+      <GrillaDatosSecciones
+        secciones={[
+          {
+            titulo: 'Crédito',
+            color: '#f5c518',
+            icon: (
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            ),
+            items: [
+              { label: 'Prestado', value: formatCOP(montoPrestado) },
+              { label: 'Total a pagar', value: formatCOP(totalAPagar) },
+              { label: 'Tasa', value: `${tasaInteres}%` },
+              { label: 'Plazo', value: `${diasPlazo} días` },
+            ],
+          },
+          {
+            titulo: 'Pagos',
+            color: '#22c55e',
+            icon: (
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            ),
+            items: [
+              { label: `Cuota ${frecuenciaLabel}`, value: formatCOP(cuotaDiaria) },
+              { label: 'Cuotas pendientes', value: `${cuotasPendientes}` },
+              ...(cobroInfo ? [{ label: cobroInfo.label, value: cobroInfo.value, color: cobroInfo.color }] : []),
+              {
+                label: diasMora > 0 ? 'Días en mora' : 'Estado',
+                value: diasMora > 0 ? `${diasMora} días${cuotasEnMora > 0 ? ` · ${cuotasEnMora}c` : ''}` : 'Al día',
+                color: diasMora > 0 ? 'var(--color-danger)' : 'var(--color-success)',
+              },
+            ],
+          },
+          {
+            titulo: 'Fechas',
+            color: '#3b82f6',
+            icon: (
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            ),
+            items: [
+              { label: 'Inicio', value: fmtFecha(fechaInicio) },
+              { label: 'Vencimiento', value: fmtFecha(fechaFin) },
+            ],
+          },
+        ]}
+      />
 
       {/* ── BOTONES WHATSAPP ─────────────────────────────────────── */}
       {cliente?.telefono && estaActivo && enMora && !completado && (
@@ -603,84 +677,48 @@ export default function PrestamoDetallePage({ params }) {
           ) : (
           <div className="space-y-2.5">
             {pagosFiltrados.map((pago) => {
-              const tipoBadge = tipoPagoBadge[pago.tipo] ?? tipoPagoBadge.parcial
               const esAjuste = ['recargo', 'descuento'].includes(pago.tipo)
               const comprobanteAbierto = comprobante === pago.id
               return (
-                <div key={pago.id} className="border-b border-[var(--color-border)] last:border-0">
-                  <div className="flex items-center gap-3 py-2.5">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold" style={{
-                        color: pago.tipo === 'recargo' ? '#f97316' : pago.tipo === 'descuento' ? 'var(--color-success)' : 'var(--color-text-primary)'
-                      }}>
-                        {pago.tipo === 'recargo' ? '+' : pago.tipo === 'descuento' ? '−' : ''}{formatCOP(pago.montoPagado)}
-                      </p>
-                      <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
-                        {fmtFecha(pago.fechaPago)}
-                        {pago.cobrador && ` · ${pago.cobrador.nombre}`}
-                      </p>
-                      {pago.metodoPago && !esAjuste && (
-                        <p className="text-[10px] mt-0.5 flex items-center gap-1" style={{ color: pago.metodoPago === 'efectivo' ? 'var(--color-success)' : '#3b82f6' }}>
-                          {pago.metodoPago === 'efectivo' ? (
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                            </svg>
-                          ) : (
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                            </svg>
-                          )}
-                          {pago.metodoPago === 'efectivo' ? 'Efectivo' : `Transferencia${pago.plataforma ? ` · ${pago.plataforma}` : ''}`}
-                        </p>
-                      )}
-                      {pago.nota && (
-                        <p className="text-[10px] mt-0.5" style={{
-                          color: esAjuste ? '#aaaaaa' : '#888888'
-                        }}>
-                          {pago.nota}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex flex-col items-end gap-0.5">
-                      <Badge variant={tipoBadge.variant}>{tipoBadge.label}</Badge>
-                      {pago.tipo === 'capital' && tasaInteres > 0 && (
-                        <span className="text-[10px] text-[var(--color-purple)]">
-                          -{formatCOP(Math.round(pago.montoPagado * tasaInteres / 100))} int.
-                        </span>
-                      )}
-                    </div>
-                    {/* Botón comprobante */}
+                <PagoMiniCard key={pago.id} pago={pago} isOffline={pago.id?.startsWith?.('offline-')}>
+                  {/* Botones de accion (comprobante, editar fecha, anular) */}
+                  <div className="flex items-center gap-1 mt-2 pt-2" style={{ borderTop: '1px solid var(--color-border)' }}>
                     {!esAjuste && (
                       <button
                         onClick={() => setComprobante(comprobanteAbierto ? null : pago.id)}
                         className={[
-                          'shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors',
+                          'flex items-center gap-1 px-2 h-7 rounded-[8px] text-[10px] font-medium transition-colors',
                           comprobanteAbierto
                             ? 'text-[var(--color-accent)] bg-[rgba(245,197,24,0.1)]'
                             : 'text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[rgba(245,197,24,0.08)]',
                         ].join(' ')}
                         title="Enviar comprobante"
-                        aria-label="Enviar comprobante"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                         </svg>
+                        Compartir
                       </button>
                     )}
+                    {pago.tipo === 'capital' && tasaInteres > 0 && (
+                      <span className="text-[10px] px-2 py-1 rounded-[6px]" style={{ background: 'rgba(168, 85, 247, 0.1)', color: 'var(--color-purple)' }}>
+                        -{formatCOP(Math.round(pago.montoPagado * tasaInteres / 100))} int.
+                      </span>
+                    )}
+                    <div className="flex-1" />
                     {session?.user?.rol === 'owner' && (
                       <button
                         onClick={() => setEditandoFecha(editandoFecha === pago.id ? null : pago.id)}
                         className={[
-                          'shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors',
+                          'w-7 h-7 flex items-center justify-center rounded-[8px] transition-colors',
                           editandoFecha === pago.id
                             ? 'text-[var(--color-info)] bg-[rgba(59,130,246,0.1)]'
                             : 'text-[var(--color-text-muted)] hover:text-[var(--color-info)] hover:bg-[rgba(59,130,246,0.08)]',
                         ].join(' ')}
                         title="Editar fecha"
-                        aria-label="Editar fecha"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                       </button>
                     )}
@@ -701,12 +739,11 @@ export default function PrestamoDetallePage({ params }) {
                           }
                         }}
                         disabled={anulando === pago.id}
-                        className="shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger-dim)] transition-colors disabled:opacity-50"
+                        className="w-7 h-7 flex items-center justify-center rounded-[8px] text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger-dim)] transition-colors disabled:opacity-50"
                         title="Anular pago"
-                        aria-label="Anular pago"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                       </button>
                     )}
@@ -778,7 +815,7 @@ export default function PrestamoDetallePage({ params }) {
                       </div>
                     </div>
                   )}
-                </div>
+                </PagoMiniCard>
               )
             })}
           </div>
@@ -1062,6 +1099,14 @@ export default function PrestamoDetallePage({ params }) {
         open={modalDiaCobro}
         onClose={() => setModalDiaCobro(false)}
         onSuccess={fetchPrestamo}
+      />
+
+      {/* Modal selector de plantillas WhatsApp (boton circular del header) */}
+      <ModalWhatsAppTemplates
+        open={modalWA}
+        onClose={() => setModalWA(false)}
+        cliente={cliente}
+        prestamo={prestamo}
       />
     </div>
   )
