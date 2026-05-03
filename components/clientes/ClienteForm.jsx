@@ -14,6 +14,30 @@ const LocationPicker = dynamic(() => import('@/components/clientes/LocationPicke
 // Validación de teléfono colombiano: 10 dígitos, empieza en 3
 const validarTelefono = (v) => /^3\d{9}$/.test(v.replace(/\s/g, ''))
 
+// Card de seccion con icono cuadrado del color. Definida fuera del componente
+// para que React no la desmonte/remonte en cada render (causa perdida de focus).
+const SectionCard = ({ icon, title, color = 'var(--color-accent)', children }) => (
+  <div
+    className="rounded-[16px] p-4"
+    style={{
+      background: `linear-gradient(135deg, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
+      border: '1px solid var(--color-border)',
+    }}
+  >
+    <div className="flex items-center gap-2 mb-3">
+      <div className="w-6 h-6 rounded-[6px] flex items-center justify-center"
+        style={{ background: `color-mix(in srgb, ${color} 18%, transparent)`, color }}
+      >
+        <span className="w-3.5 h-3.5">{icon}</span>
+      </div>
+      <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color }}>
+        {title}
+      </p>
+    </div>
+    {children}
+  </div>
+)
+
 export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
   const router = useRouter()
   const esEdicion = !!clienteInicial
@@ -200,29 +224,6 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic' }) {
       setLoading(false)
     }
   }
-
-  // Helper: card de seccion con icono cuadrado del color
-  const SectionCard = ({ icon, title, color = 'var(--color-accent)', children }) => (
-    <div
-      className="rounded-[16px] p-4"
-      style={{
-        background: `linear-gradient(135deg, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
-        border: '1px solid var(--color-border)',
-      }}
-    >
-      <div className="flex items-center gap-2 mb-3">
-        <div className="w-6 h-6 rounded-[6px] flex items-center justify-center"
-          style={{ background: `color-mix(in srgb, ${color} 18%, transparent)`, color }}
-        >
-          <span className="w-3.5 h-3.5">{icon}</span>
-        </div>
-        <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color }}>
-          {title}
-        </p>
-      </div>
-      {children}
-    </div>
-  )
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
