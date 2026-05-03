@@ -129,147 +129,242 @@ export default function GastosPage() {
     )
   }
 
+  // Configuracion de tabs con color por estado
+  const TAB_COLORS = {
+    pendiente:  { color: '#f59e0b', icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
+    aprobado:   { color: '#22c55e', icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> },
+    rechazado:  { color: '#ef4444', icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg> },
+  }
+
   return (
-    <div className="p-4 space-y-4">
+    <div className="max-w-3xl mx-auto p-4 space-y-4">
+      {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Gastos menores</h1>
-        <p className="text-sm text-[var(--color-text-muted)]">Aprobar, rechazar y revisar gastos reportados por tus cobradores</p>
+        <h1 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Gastos menores</h1>
+        <p className="text-[12px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+          Aprobar, rechazar y revisar gastos reportados por tus cobradores
+        </p>
       </div>
 
-      {/* Tabs estado */}
+      {/* Tabs estado con mood color */}
       <div className="flex gap-2 overflow-x-auto pb-1">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            type="button"
-            onClick={() => setTab(t.key)}
-            className={[
-              'px-4 py-2 rounded-full border text-xs font-medium whitespace-nowrap transition-colors',
-              tab === t.key
-                ? 'bg-white text-black border-white'
-                : 'bg-[var(--color-bg-surface)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]',
-            ].join(' ')}
-          >
-            {t.label}
-          </button>
-        ))}
+        {TABS.map((t) => {
+          const tabInfo = TAB_COLORS[t.key]
+          const active = tab === t.key
+          return (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setTab(t.key)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all"
+              style={{
+                background: active
+                  ? `color-mix(in srgb, ${tabInfo.color} 18%, transparent)`
+                  : 'var(--color-bg-card)',
+                color: active ? tabInfo.color : 'var(--color-text-muted)',
+                border: `1px solid ${active ? `color-mix(in srgb, ${tabInfo.color} 35%, transparent)` : 'var(--color-border)'}`,
+              }}
+            >
+              <span className="w-3 h-3" style={{ color: tabInfo.color }}>{tabInfo.icon}</span>
+              {t.label}
+            </button>
+          )
+        })}
       </div>
 
-      {/* Filtros */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div>
-          <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Fecha (opcional)</label>
-          <div className="flex gap-2">
+      {/* Hero del total + filtros */}
+      <div
+        className="rounded-[16px] px-4 py-4"
+        style={{
+          background: `linear-gradient(135deg, color-mix(in srgb, ${TAB_COLORS[tab].color} 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
+          border: `1px solid color-mix(in srgb, ${TAB_COLORS[tab].color} 22%, var(--color-border))`,
+          boxShadow: `0 4px 16px color-mix(in srgb, ${TAB_COLORS[tab].color} 12%, transparent)`,
+        }}
+      >
+        <div className="flex items-end justify-between gap-3 mb-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: TAB_COLORS[tab].color }}>
+              Total {TABS.find(t => t.key === tab)?.label.toLowerCase()}
+            </p>
+            <p
+              className="font-mono-display font-bold leading-none mt-1"
+              style={{
+                color: TAB_COLORS[tab].color,
+                fontSize: 'clamp(24px, 6vw, 32px)',
+                textShadow: `0 0 24px color-mix(in srgb, ${TAB_COLORS[tab].color} 25%, transparent)`,
+              }}
+            >
+              {formatCOP(totales.suma)}
+            </p>
+            <p className="text-[11px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
+              {totales.cantidad} {totales.cantidad === 1 ? 'gasto' : 'gastos'}
+            </p>
+          </div>
+        </div>
+
+        {/* Filtros */}
+        <div className="flex flex-wrap items-center gap-2 pt-3" style={{ borderTop: `1px solid color-mix(in srgb, ${TAB_COLORS[tab].color} 15%, transparent)` }}>
+          <div className="flex items-center gap-1.5">
             <input
               type="date"
               value={fecha}
               max={getColombiaDateStr()}
               onChange={(e) => setFecha(e.target.value)}
-              className="flex-1 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[10px] px-3 py-2 text-sm text-[var(--color-text-primary)]"
+              className="h-8 px-2 rounded-[8px] border bg-transparent text-[11px] focus:outline-none transition-all"
+              style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
             />
             {fecha && (
               <button
                 type="button"
                 onClick={() => setFecha('')}
-                className="px-3 py-2 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] border border-[var(--color-border)] rounded-[10px]"
+                className="text-[10px] px-2 py-1"
+                style={{ color: 'var(--color-text-muted)' }}
               >
                 Limpiar
               </button>
             )}
           </div>
-        </div>
-        {cobradores.length > 0 && (
-          <div>
-            <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Cobrador</label>
+          {cobradores.length > 0 && (
             <select
               value={cobradorId}
               onChange={(e) => setCobradorId(e.target.value)}
-              className="w-full bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[10px] px-3 py-2 text-sm text-[var(--color-text-primary)]"
+              className="h-8 px-2 rounded-[8px] border bg-transparent text-[11px] focus:outline-none transition-all"
+              style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
             >
-              <option value="">Todos</option>
+              <option value="">Todos los cobradores</option>
               {cobradores.map((c) => (
                 <option key={c.id} value={c.id}>{c.nombre}</option>
               ))}
             </select>
-          </div>
-        )}
-        <div className="flex items-end">
-          <Card className="w-full">
-            <div className="flex items-center justify-between px-1">
-              <div>
-                <p className="text-xs text-[var(--color-text-muted)]">Total mostrado</p>
-                <p className="text-lg font-bold text-[var(--color-text-primary)] font-mono-display">{formatCOP(totales.suma)}</p>
-              </div>
-              <span className="text-xs text-[var(--color-text-muted)]">{totales.cantidad} gasto{totales.cantidad === 1 ? '' : 's'}</span>
-            </div>
-          </Card>
+          )}
         </div>
       </div>
 
       {/* Lista */}
       {loading ? (
-        <SkeletonCard />
-      ) : gastos.length === 0 ? (
-        <Card>
-          <div className="text-center py-6">
-            <p className="text-sm text-[var(--color-text-muted)]">No hay gastos {TABS.find(t => t.key === tab)?.label.toLowerCase()}</p>
-          </div>
-        </Card>
-      ) : (
         <div className="space-y-3">
-          {gastos.map((g) => (
-            <div key={g.id} className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] p-4">
-              <div className="flex items-start justify-between mb-2 gap-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">{g.description}</p>
-                  <p className="text-xs text-[var(--color-text-muted)]">
-                    {g.cobradorNombre || 'Owner'} • {fmtFecha(g.fecha)}
-                  </p>
-                </div>
-                <p className="text-sm font-bold text-[var(--color-text-primary)] font-mono-display whitespace-nowrap">{formatCOP(g.monto)}</p>
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <span className={[
-                  'text-xs px-2 py-1 rounded-full border',
-                  ESTADO_COLORS[g.estado] || ESTADO_COLORS.pendiente,
-                ].join(' ')}>
-                  {g.estado.charAt(0).toUpperCase() + g.estado.slice(1)}
-                </span>
-                <div className="flex items-center gap-2">
-                  {g.estado === 'pendiente' && (
-                    <>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        disabled={procesando === g.id}
-                        onClick={() => handleAccion(g, 'rechazado')}
-                      >
-                        Rechazar
-                      </Button>
-                      <Button
-                        size="sm"
-                        disabled={procesando === g.id}
-                        onClick={() => handleAccion(g, 'aprobado')}
-                      >
-                        Aprobar
-                      </Button>
-                    </>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => handleEliminar(g)}
-                    disabled={procesando === g.id}
-                    title="Eliminar gasto"
-                    className="w-8 h-8 flex items-center justify-center rounded-[8px] text-[var(--color-danger)] hover:bg-[var(--color-danger-dim)] disabled:opacity-50 transition-colors"
+          {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
+        </div>
+      ) : gastos.length === 0 ? (
+        <div
+          className="rounded-[16px] py-10 text-center"
+          style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+        >
+          <div
+            className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center"
+            style={{ background: `color-mix(in srgb, ${TAB_COLORS[tab].color} 15%, transparent)`, color: TAB_COLORS[tab].color }}
+          >
+            <span className="w-6 h-6">{TAB_COLORS[tab].icon}</span>
+          </div>
+          <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+            No hay gastos {TABS.find(t => t.key === tab)?.label.toLowerCase()}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2.5">
+          {gastos.map((g) => {
+            const eInfo = TAB_COLORS[g.estado] || TAB_COLORS.pendiente
+            return (
+              <div
+                key={g.id}
+                className="rounded-[14px] px-3 py-3 transition-all kpi-lift"
+                style={{
+                  background: `linear-gradient(135deg, color-mix(in srgb, ${eInfo.color} 5%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
+                  border: `1px solid color-mix(in srgb, ${eInfo.color} 18%, var(--color-border))`,
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  {/* Icono circular del estado */}
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+                    style={{
+                      background: `color-mix(in srgb, ${eInfo.color} 18%, transparent)`,
+                      color: eInfo.color,
+                      border: `1px solid color-mix(in srgb, ${eInfo.color} 30%, transparent)`,
+                    }}
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
+                    <span className="w-5 h-5">{eInfo.icon}</span>
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+                      {g.description}
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-0.5 text-[10px] flex-wrap" style={{ color: 'var(--color-text-muted)' }}>
+                      <span style={{ color: 'var(--color-purple)' }}>{g.cobradorNombre || 'Owner'}</span>
+                      <span>·</span>
+                      <span>{fmtFecha(g.fecha)}</span>
+                    </div>
+                  </div>
+
+                  <div className="text-right shrink-0">
+                    <p className="text-[15px] font-bold font-mono-display leading-none" style={{ color: eInfo.color }}>
+                      {formatCOP(g.monto)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Acciones */}
+                <div className="flex items-center justify-between gap-2 mt-3 pt-2.5" style={{ borderTop: '1px solid var(--color-border)' }}>
+                  <span
+                    className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                    style={{
+                      background: `color-mix(in srgb, ${eInfo.color} 15%, transparent)`,
+                      color: eInfo.color,
+                      border: `1px solid color-mix(in srgb, ${eInfo.color} 25%, transparent)`,
+                    }}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: eInfo.color }} />
+                    {g.estado.charAt(0).toUpperCase() + g.estado.slice(1)}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {g.estado === 'pendiente' && (
+                      <>
+                        <button
+                          type="button"
+                          disabled={procesando === g.id}
+                          onClick={() => handleAccion(g, 'rechazado')}
+                          className="px-3 h-8 rounded-[8px] text-[11px] font-semibold transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
+                          style={{
+                            background: 'color-mix(in srgb, var(--color-danger) 12%, transparent)',
+                            color: 'var(--color-danger)',
+                            border: '1px solid color-mix(in srgb, var(--color-danger) 25%, transparent)',
+                          }}
+                        >
+                          Rechazar
+                        </button>
+                        <button
+                          type="button"
+                          disabled={procesando === g.id}
+                          onClick={() => handleAccion(g, 'aprobado')}
+                          className="px-3 h-8 rounded-[8px] text-[11px] font-bold transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
+                          style={{
+                            background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+                            color: '#fff',
+                            boxShadow: '0 2px 8px rgba(34, 197, 94, 0.35)',
+                          }}
+                        >
+                          Aprobar
+                        </button>
+                      </>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleEliminar(g)}
+                      disabled={procesando === g.id}
+                      title="Eliminar gasto"
+                      className="w-8 h-8 flex items-center justify-center rounded-[8px] disabled:opacity-50 transition-colors"
+                      style={{ color: 'var(--color-text-muted)' }}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
