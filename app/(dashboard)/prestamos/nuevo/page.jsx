@@ -38,7 +38,7 @@ const SectionCard = ({ icon, title, color = 'var(--color-accent)', children, acc
       </div>
       {accent}
     </div>
-    {children}
+    <div className="space-y-3">{children}</div>
   </div>
 )
 
@@ -688,7 +688,6 @@ function NuevoPrestamo() {
               Por defecto es hoy. Puedes elegir una fecha anterior si el préstamo ya lleva tiempo.
             </p>
           </div>
-
         </SectionCard>
 
         {/* Avanzado: prestamo en curso */}

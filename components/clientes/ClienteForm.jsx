@@ -34,7 +34,7 @@ const SectionCard = ({ icon, title, color = 'var(--color-accent)', children }) =
         {title}
       </p>
     </div>
-    {children}
+    <div className="space-y-3">{children}</div>
   </div>
 )
 
