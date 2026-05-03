@@ -16,6 +16,32 @@ const hoyISO = () => getColombiaDate().toISOString().slice(0, 10)
 
 const DIAS_POR_PERIODO = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }
 
+// Card de seccion premium (definida fuera para evitar perdida de focus)
+const SectionCard = ({ icon, title, color = 'var(--color-accent)', children, accent }) => (
+  <div
+    className="rounded-[16px] p-4"
+    style={{
+      background: `linear-gradient(135deg, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
+      border: '1px solid var(--color-border)',
+    }}
+  >
+    <div className="flex items-center justify-between gap-2 mb-3">
+      <div className="flex items-center gap-2">
+        <div className="w-6 h-6 rounded-[6px] flex items-center justify-center"
+          style={{ background: `color-mix(in srgb, ${color} 18%, transparent)`, color }}
+        >
+          <span className="w-3.5 h-3.5">{icon}</span>
+        </div>
+        <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color }}>
+          {title}
+        </p>
+      </div>
+      {accent}
+    </div>
+    {children}
+  </div>
+)
+
 // Wrapper con Suspense requerido por useSearchParams en Next.js build
 export default function NuevoPrestamoPage() {
   return (
@@ -356,29 +382,21 @@ function NuevoPrestamo() {
           </button>
         </div>
 
-        {/* Card formulario */}
-        <div
-          className="border border-[var(--color-border)] rounded-[16px] p-5 space-y-4"
-          style={{
-            background: 'linear-gradient(135deg, #f5c5180A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #f5c51805 100%)',
-            boxShadow: '0 0 30px #f5c51808, 0 1px 2px rgba(0,0,0,0.3)',
-          }}
+        {/* Cliente */}
+        <SectionCard
+          title="Cliente"
+          color="#3b82f6"
+          icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>}
         >
-
-          {/* Selector de cliente */}
           {clienteIdParam ? (
-            <div>
-              <p className="text-xs font-medium text-[var(--color-text-muted)] mb-1.5">Cliente</p>
-              <div className="flex items-center gap-2 h-10 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)]">
-                <div className="w-5 h-5 rounded-full bg-[rgba(245,197,24,0.2)] flex items-center justify-center shrink-0">
-                  <span className="text-[var(--color-accent)] text-[9px] font-bold">{clienteNombre?.[0]?.toUpperCase()}</span>
-                </div>
-                <span className="text-sm text-[white]">{clienteNombre || clienteIdParam}</span>
+            <div className="flex items-center gap-2 h-10 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)]">
+              <div className="w-5 h-5 rounded-full bg-[rgba(59,130,246,0.2)] flex items-center justify-center shrink-0">
+                <span className="text-[var(--color-info)] text-[9px] font-bold">{clienteNombre?.[0]?.toUpperCase()}</span>
               </div>
+              <span className="text-sm text-[white]">{clienteNombre || clienteIdParam}</span>
             </div>
           ) : (
             <div className="flex flex-col gap-1.5">
-              <p className="text-xs font-medium text-[var(--color-text-muted)]">Cliente *</p>
               <input
                 placeholder="Buscar cliente por nombre o cédula…"
                 value={buscadorCliente}
@@ -410,8 +428,14 @@ function NuevoPrestamo() {
               )}
             </div>
           )}
+        </SectionCard>
 
-          {/* Monto */}
+        {/* Monto */}
+        <SectionCard
+          title="Monto"
+          color="var(--color-accent)"
+          icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+        >
           <MoneyInput
             label={modo === 'mercancia' ? 'Valor del artículo (COP) *' : 'Monto prestado (COP) *'}
             placeholder={modo === 'mercancia' ? 'Ej: 100.000' : 'Ej: 500.000'}
@@ -457,41 +481,42 @@ function NuevoPrestamo() {
             </div>
           )}
 
-          {/* Toggle automático/manual — solo en modo prestamo */}
-          {modo === 'prestamo' && (
-            <div className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-[12px] bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.06)]">
-              <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-[0.05em] shrink-0">Cálculo</p>
-              <div className="relative grid grid-cols-2 h-9 w-[190px] shrink-0 rounded-[10px] bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] p-[3px]">
-                <div
-                  className="absolute top-[3px] bottom-[3px] left-[3px] w-[calc(50%-3px)] rounded-[8px] bg-[var(--color-accent)] transition-transform duration-200 ease-out"
-                  style={{
-                    transform: cuotaManualActiva ? 'translateX(100%)' : 'translateX(0)',
+        </SectionCard>
+
+        {/* Plan de pago: tasa, plazo, frecuencia */}
+        <SectionCard
+          title="Plan de pago"
+          color="#22c55e"
+          icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+          accent={modo === 'prestamo' && (
+            <div className="relative grid grid-cols-2 h-7 w-[150px] shrink-0 rounded-[8px] bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] p-[2px]">
+              <div
+                className="absolute top-[2px] bottom-[2px] left-[2px] w-[calc(50%-2px)] rounded-[6px] bg-[var(--color-accent)] transition-transform duration-200 ease-out"
+                style={{ transform: cuotaManualActiva ? 'translateX(100%)' : 'translateX(0)' }}
+              />
+              {[
+                { value: false, label: 'Auto' },
+                { value: true,  label: 'Manual' },
+              ].map((opt) => (
+                <button
+                  key={String(opt.value)}
+                  type="button"
+                  onClick={() => {
+                    setCuotaManualActiva(opt.value)
+                    if (!opt.value) setCuotaManual('')
+                    else if (calculo?.cuotaDiaria) setCuotaManual(String(calculo.cuotaDiaria))
                   }}
-                />
-                {[
-                  { value: false, label: 'Automático' },
-                  { value: true,  label: 'Manual' },
-                ].map((opt) => (
-                  <button
-                    key={String(opt.value)}
-                    type="button"
-                    onClick={() => {
-                      setCuotaManualActiva(opt.value)
-                      if (!opt.value) setCuotaManual('')
-                      else if (calculo?.cuotaDiaria) setCuotaManual(String(calculo.cuotaDiaria))
-                    }}
-                    className={[
-                      'relative z-[1] flex items-center justify-center text-[11px] font-semibold rounded-[8px] transition-colors duration-200 cursor-pointer',
-                      cuotaManualActiva === opt.value ? 'text-[#0a0a0a]' : 'text-[var(--color-text-muted)] hover:text-[#bbb]',
-                    ].join(' ')}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
+                  className={[
+                    'relative z-[1] flex items-center justify-center text-[10px] font-semibold rounded-[6px] transition-colors duration-200 cursor-pointer',
+                    cuotaManualActiva === opt.value ? 'text-[#0a0a0a]' : 'text-[var(--color-text-muted)]',
+                  ].join(' ')}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
           )}
-
+        >
           <div className="grid grid-cols-2 gap-3">
             {/* Tasa */}
             <div className="flex flex-col gap-1">
@@ -664,70 +689,76 @@ function NuevoPrestamo() {
             </p>
           </div>
 
-          {/* Toggle préstamo en curso */}
-          <div className="border-t border-[var(--color-border)] pt-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-[white]">Préstamo en curso</p>
-                <p className="text-[10px] text-[var(--color-text-muted)] leading-snug">
-                  Actívalo si este préstamo ya tiene pagos (migración de cuaderno u otro sistema)
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => { setEsEnCurso(v => !v); if (esEnCurso) setYaAbonado('') }}
-                className={[
-                  'relative w-10 h-[22px] rounded-full transition-colors shrink-0 mt-0.5',
-                  esEnCurso ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-bg-hover)]',
-                ].join(' ')}
-              >
-                <span className={[
-                  'absolute top-[2px] w-[18px] h-[18px] rounded-full bg-white transition-transform shadow-sm',
-                  esEnCurso ? 'left-[20px]' : 'left-[2px]',
-                ].join(' ')} />
-              </button>
-            </div>
+        </SectionCard>
 
-            {esEnCurso && (
-              <div className="mt-3 space-y-2">
-                <MoneyInput
-                  label="Total ya abonado (COP)"
-                  placeholder="Ej: 150.000"
-                  value={yaAbonado}
-                  onChange={(e) => setYaAbonado(e.target.value)}
-                />
-                {calculo && Number(yaAbonado) > 0 && (
-                  <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[10px] px-3 py-2.5 space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-[var(--color-text-muted)]">Total a pagar</span>
-                      <span className="text-[var(--color-text-primary)] font-medium font-mono-display">{formatCOP(calculo.totalAPagar)}</span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-[var(--color-text-muted)]">Ya abonado</span>
-                      <span className="text-[var(--color-success)] font-medium font-mono-display">-{formatCOP(Number(yaAbonado))}</span>
-                    </div>
-                    <div className="flex justify-between text-xs border-t border-[var(--color-border)] pt-1">
-                      <span className="text-[var(--color-text-muted)] font-semibold">Saldo pendiente</span>
-                      <span className="text-[var(--color-accent)] font-bold font-mono-display">
-                        {formatCOP(Math.max(0, calculo.totalAPagar - Number(yaAbonado)))}
-                      </span>
-                    </div>
+        {/* Avanzado: prestamo en curso */}
+        <SectionCard
+          title="Préstamo en curso (opcional)"
+          color="var(--color-warning)"
+          icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
+          accent={
+            <button
+              type="button"
+              onClick={() => { setEsEnCurso(v => !v); if (esEnCurso) setYaAbonado('') }}
+              className={[
+                'relative w-10 h-[22px] rounded-full transition-colors shrink-0',
+                esEnCurso ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-bg-hover)]',
+              ].join(' ')}
+            >
+              <span className={[
+                'absolute top-[2px] w-[18px] h-[18px] rounded-full bg-white transition-transform shadow-sm',
+                esEnCurso ? 'left-[20px]' : 'left-[2px]',
+              ].join(' ')} />
+            </button>
+          }
+        >
+          {!esEnCurso ? (
+            <p className="text-[11px] text-[var(--color-text-muted)] leading-snug">
+              Actívalo si este préstamo ya tiene pagos (migración de cuaderno u otro sistema).
+            </p>
+          ) : (
+            <div className="space-y-2">
+              <MoneyInput
+                label="Total ya abonado (COP)"
+                placeholder="Ej: 150.000"
+                value={yaAbonado}
+                onChange={(e) => setYaAbonado(e.target.value)}
+              />
+              {calculo && Number(yaAbonado) > 0 && (
+                <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[10px] px-3 py-2.5 space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-[var(--color-text-muted)]">Total a pagar</span>
+                    <span className="text-[var(--color-text-primary)] font-medium font-mono-display">{formatCOP(calculo.totalAPagar)}</span>
                   </div>
-                )}
-                <p className="text-[10px] text-[var(--color-text-muted)] leading-snug">
-                  Se registrará como pago inicial. El saldo pendiente se calculará automáticamente.
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Resumen en tiempo real (pegado al formulario) */}
-          {calculo && (
-            <div className="border-t border-[var(--color-border)] pt-4">
-              <ResumenCalculo calculo={calculo} visible={!!calculo} />
+                  <div className="flex justify-between text-xs">
+                    <span className="text-[var(--color-text-muted)]">Ya abonado</span>
+                    <span className="text-[var(--color-success)] font-medium font-mono-display">-{formatCOP(Number(yaAbonado))}</span>
+                  </div>
+                  <div className="flex justify-between text-xs border-t border-[var(--color-border)] pt-1">
+                    <span className="text-[var(--color-text-muted)] font-semibold">Saldo pendiente</span>
+                    <span className="text-[var(--color-accent)] font-bold font-mono-display">
+                      {formatCOP(Math.max(0, calculo.totalAPagar - Number(yaAbonado)))}
+                    </span>
+                  </div>
+                </div>
+              )}
+              <p className="text-[10px] text-[var(--color-text-muted)] leading-snug">
+                Se registrará como pago inicial. El saldo pendiente se calculará automáticamente.
+              </p>
             </div>
           )}
-        </div>
+        </SectionCard>
+
+        {/* Resumen en tiempo real */}
+        {calculo && (
+          <SectionCard
+            title="Resumen"
+            color="#a855f7"
+            icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2a4 4 0 00-4-4H3m18 6v-2a4 4 0 00-4-4h-2M9 7a4 4 0 100-8 4 4 0 000 8zm12 0a4 4 0 100-8 4 4 0 000 8z" /></svg>}
+          >
+            <ResumenCalculo calculo={calculo} visible={!!calculo} />
+          </SectionCard>
+        )}
 
         {/* Acciones */}
         <div className="flex gap-3">
