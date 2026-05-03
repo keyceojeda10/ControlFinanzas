@@ -14,7 +14,10 @@ export async function GET() {
   const [sub, org, subRecurrente] = await Promise.all([
     // Suscripcion mas reciente, ignorando las pending (pago iniciado pero no completado)
     prisma.suscripcion.findFirst({
-      where: { organizationId: orgId, mpStatus: { not: 'pending' } },
+      where: {
+        organizationId: orgId,
+        OR: [{ mpStatus: null }, { mpStatus: { not: 'pending' } }],
+      },
       orderBy: { fechaVencimiento: 'desc' },
     }),
     prisma.organization.findUnique({
