@@ -92,9 +92,13 @@ export default function Header() {
         <div className="relative" ref={userRef}>
           <button
             onClick={() => setUserOpen((v) => !v)}
-            className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 transition-opacity cursor-pointer"
+            className="w-10 h-10 rounded-full flex items-center justify-center text-[13px] font-bold hover:scale-105 focus-visible:outline-none focus-visible:ring-2 transition-all cursor-pointer active:scale-95"
             aria-label="Menú de usuario"
-            style={{ background: 'var(--color-accent)', color: '#1a1a2e' }}
+            style={{
+              background: 'linear-gradient(135deg, var(--color-accent), var(--color-accent-hover))',
+              color: '#1a1a2e',
+              boxShadow: '0 0 12px color-mix(in srgb, var(--color-accent) 35%, transparent)',
+            }}
           >
             {inicial}
           </button>

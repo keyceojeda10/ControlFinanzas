@@ -298,8 +298,8 @@ export default function Sidebar() {
         </button>
       </div>
 
-      {/* Nav links */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto scrollbar-none">
+      {/* Nav links — estilo premium con icono cuadrado + glow del accent en activo */}
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-none">
         {nav.map((item) => {
           const active = isActive(item.href)
           return (
@@ -307,17 +307,36 @@ export default function Sidebar() {
               key={item.href}
               href={item.href}
               aria-current={active ? 'page' : undefined}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm font-medium transition-all duration-150 min-h-[44px] focus-visible:outline-none focus-visible:ring-2"
+              className="group flex items-center gap-2.5 px-2 py-2 rounded-[12px] text-[13px] font-medium transition-all duration-200 min-h-[40px] focus-visible:outline-none focus-visible:ring-2 relative"
               style={active ? {
-                background: 'var(--color-accent-soft)',
+                background: `linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 14%, transparent) 0%, color-mix(in srgb, var(--color-accent) 6%, transparent) 100%)`,
                 color: 'var(--color-accent)',
-                borderLeft: '2px solid var(--color-accent)',
+                border: '1px solid color-mix(in srgb, var(--color-accent) 25%, transparent)',
+                boxShadow: '0 4px 12px color-mix(in srgb, var(--color-accent) 12%, transparent)',
               } : {
                 color: 'var(--color-text-secondary)',
+                border: '1px solid transparent',
               }}
             >
-              {item.icon}
-              {item.label}
+              {/* Icono con fondo cuadrado del color cuando activo */}
+              <div
+                className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0 transition-all"
+                style={{
+                  background: active
+                    ? 'color-mix(in srgb, var(--color-accent) 22%, transparent)'
+                    : 'transparent',
+                  color: active ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                }}
+              >
+                {item.icon}
+              </div>
+              <span className="flex-1">{item.label}</span>
+              {active && (
+                <span
+                  className="w-1.5 h-1.5 rounded-full shrink-0"
+                  style={{ background: 'var(--color-accent)', boxShadow: '0 0 8px var(--color-accent)' }}
+                />
+              )}
             </Link>
           )
         })}
@@ -378,15 +397,40 @@ export default function Sidebar() {
         </div>
       )}
 
-      {/* User info + sign out */}
+      {/* User info + sign out — premium con avatar circular y rol como chip */}
       <div className="px-3 pb-5 pt-4" style={{ borderTop: '1px solid var(--color-border)' }}>
-        <div className="flex items-center gap-3 px-3 py-2 mb-2">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'var(--color-accent)', color: '#1a1a2e' }}>
+        <div
+          className="rounded-[12px] px-2.5 py-2.5 mb-2.5 flex items-center gap-2.5"
+          style={{
+            background: `linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
+            border: '1px solid color-mix(in srgb, var(--color-accent) 18%, var(--color-border))',
+          }}
+        >
+          <div
+            className="w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-bold shrink-0"
+            style={{
+              background: 'linear-gradient(135deg, var(--color-accent), var(--color-accent-hover))',
+              color: '#1a1a2e',
+              boxShadow: '0 0 12px color-mix(in srgb, var(--color-accent) 30%, transparent)',
+            }}
+          >
             {session?.user?.nombre?.[0]?.toUpperCase() ?? 'U'}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{session?.user?.nombre}</p>
-            <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{{ owner: 'Administrador', cobrador: 'Cobrador', superadmin: 'Super Admin' }[session?.user?.rol] ?? session?.user?.rol}</p>
+            <p className="text-[12px] font-bold truncate leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+              {session?.user?.nombre}
+            </p>
+            <span
+              className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full mt-0.5"
+              style={{
+                background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)',
+                color: 'var(--color-accent)',
+                border: '1px solid color-mix(in srgb, var(--color-accent) 25%, transparent)',
+              }}
+            >
+              <span className="w-1 h-1 rounded-full" style={{ background: 'var(--color-accent)' }} />
+              {{ owner: 'Administrador', cobrador: 'Cobrador', superadmin: 'Super Admin' }[session?.user?.rol] ?? session?.user?.rol}
+            </span>
           </div>
         </div>
         <div className="flex items-center gap-2 mb-2">
@@ -405,10 +449,14 @@ export default function Sidebar() {
             await limpiarDatosOffline()
             signOut({ callbackUrl: '/login' })
           }}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm focus-visible:outline-none focus-visible:ring-2 transition-all duration-150 cf-signout-btn"
-          style={{ color: 'var(--color-text-secondary)' }}
+          className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-[13px] focus-visible:outline-none focus-visible:ring-2 transition-all duration-150 cf-signout-btn"
+          style={{
+            color: 'var(--color-text-secondary)',
+            background: 'transparent',
+            border: '1px solid var(--color-border)',
+          }}
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
               d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
