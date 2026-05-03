@@ -53,7 +53,7 @@ export async function GET(req) {
     where,
     include: {
       users: {
-        select: { email: true, nombre: true },
+        select: { email: true, nombre: true, lastLoginAt: true, lastActivityAt: true },
         where: { rol: 'owner' },
         take: 1,
       },
@@ -65,6 +65,10 @@ export async function GET(req) {
         },
       },
       suscripciones: {
+        // Excluir pending (pagos MP iniciados pero nunca completados)
+        where: {
+          OR: [{ mpStatus: null }, { mpStatus: { not: 'pending' } }],
+        },
         orderBy: { fechaVencimiento: 'desc' },
         take: 1,
         select: {
@@ -72,6 +76,7 @@ export async function GET(req) {
           plan: true,
           estado: true,
           fechaVencimiento: true,
+          montoCOP: true,
         },
       },
     },
@@ -92,6 +97,8 @@ export async function GET(req) {
       nombre:          o.nombre,
       ownerEmail:      owner?.email ?? '',
       ownerNombre:     owner?.nombre ?? '',
+      ownerLastLoginAt:    owner?.lastLoginAt ?? null,
+      ownerLastActivityAt: owner?.lastActivityAt ?? null,
       plan:            o.plan,
       activo:          o.activo,
       createdAt:       o.createdAt,
@@ -102,6 +109,7 @@ export async function GET(req) {
         id:               sub.id,
         estado:           sub.estado,
         fechaVencimiento: sub.fechaVencimiento,
+        montoCOP:         sub.montoCOP,
         diasRestantes,
       } : null,
     }

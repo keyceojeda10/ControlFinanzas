@@ -133,6 +133,8 @@ model User {
   emailsMarketing         Boolean   @default(true)
   theme                   String?   @default("system")
   createdAt               DateTime  @default(now())
+  lastLoginAt             DateTime?
+  lastActivityAt          DateTime?
 
   organization   Organization?     @relation(fields: [organizationId], references: [id])
   rutas          Ruta[]            @relation("CobradorRuta")
