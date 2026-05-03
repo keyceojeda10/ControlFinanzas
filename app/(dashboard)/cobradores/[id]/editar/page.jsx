@@ -10,6 +10,31 @@ import CompartirCredenciales        from '@/components/cobradores/CompartirCrede
 import { useOnline }                from '@/hooks/useOnline'
 import OfflineFallback              from '@/components/offline/OfflineFallback'
 
+const SectionCard = ({ icon, title, color = 'var(--color-accent)', children, accent }) => (
+  <div
+    className="rounded-[16px] p-4"
+    style={{
+      background: `linear-gradient(135deg, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
+      border: '1px solid var(--color-border)',
+    }}
+  >
+    <div className="flex items-center justify-between gap-2 mb-3">
+      <div className="flex items-center gap-2">
+        <div className="w-6 h-6 rounded-[6px] flex items-center justify-center"
+          style={{ background: `color-mix(in srgb, ${color} 18%, transparent)`, color }}
+        >
+          <span className="w-3.5 h-3.5">{icon}</span>
+        </div>
+        <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color }}>
+          {title}
+        </p>
+      </div>
+      {accent}
+    </div>
+    {children}
+  </div>
+)
+
 export default function EditarCobrador({ params }) {
   const online = useOnline()
   if (!online) return <OfflineFallback titulo="No puedes editar cobradores sin conexion" volverHref="/cobradores" volverLabel="Volver a Cobradores" />
@@ -143,14 +168,7 @@ function EditarCobradorInner({ params }) {
         </div>
       </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="border border-[var(--color-border)] rounded-[16px] p-5 space-y-4"
-        style={{
-          background: 'linear-gradient(135deg, #f5c5180A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #f5c51805 100%)',
-          boxShadow: '0 0 30px #f5c51808, 0 1px 2px rgba(0,0,0,0.3)',
-        }}
-      >
+      <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
           <div className="flex items-center gap-2 bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[12px] px-4 py-3">
             {error}
@@ -162,44 +180,63 @@ function EditarCobradorInner({ params }) {
           </div>
         )}
 
-        <Input
-          label="Nombre completo"
-          placeholder="Ej: Pedro Ramírez"
-          value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
-        />
-        <Input
-          label="Correo electrónico"
-          type="email"
-          placeholder="cobrador@ejemplo.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <div>
-          <Input
-            label="Teléfono (opcional)"
-            type="tel"
-            inputMode="numeric"
-            placeholder="Ej: 3001234567"
-            value={telefono}
-            onChange={(e) => setTelefono(e.target.value.replace(/\D/g, ''))}
-            autoComplete="tel"
-          />
-          <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
-            Útil para enviarle las credenciales por WhatsApp.
-          </p>
-        </div>
-        <div>
-          <Input
-            label="Nueva contraseña (opcional)"
-            placeholder="Dejar vacío para no cambiar"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
-            Solo llena este campo si quieres cambiar la contraseña del cobrador.
-          </p>
-        </div>
+        {/* Datos personales */}
+        <SectionCard
+          title="Datos personales"
+          color="#a855f7"
+          icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>}
+        >
+          <div className="space-y-3">
+            <Input
+              label="Nombre completo"
+              placeholder="Ej: Pedro Ramírez"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+            />
+            <div>
+              <Input
+                label="Teléfono (opcional)"
+                type="tel"
+                inputMode="numeric"
+                placeholder="Ej: 3001234567"
+                value={telefono}
+                onChange={(e) => setTelefono(e.target.value.replace(/\D/g, ''))}
+                autoComplete="tel"
+              />
+              <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
+                Útil para enviarle las credenciales por WhatsApp.
+              </p>
+            </div>
+          </div>
+        </SectionCard>
+
+        {/* Acceso al sistema */}
+        <SectionCard
+          title="Acceso al sistema"
+          color="#22c55e"
+          icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>}
+        >
+          <div className="space-y-3">
+            <Input
+              label="Correo electrónico"
+              type="email"
+              placeholder="cobrador@ejemplo.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <div>
+              <Input
+                label="Nueva contraseña (opcional)"
+                placeholder="Dejar vacío para no cambiar"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
+                Solo llena este campo si quieres cambiar la contraseña del cobrador.
+              </p>
+            </div>
+          </div>
+        </SectionCard>
 
         {/* Compartir credenciales después de cambiar contraseña */}
         {credencialesGuardadas && (
@@ -226,8 +263,11 @@ function EditarCobradorInner({ params }) {
         )}
 
         {/* Permisos */}
-        <div className="border-t border-[var(--color-border)] pt-4">
-          <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-3">Permisos del cobrador</p>
+        <SectionCard
+          title="Permisos del cobrador"
+          color="var(--color-accent)"
+          icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>}
+        >
           <div className="space-y-3">
             {[
               { key: 'crearPrestamos', label: 'Crear préstamos', desc: 'Puede registrar préstamos nuevos para clientes de su ruta' },
@@ -274,7 +314,7 @@ function EditarCobradorInner({ params }) {
           <p className="text-[9px] text-[var(--color-text-muted)] mt-2">
             Nota: "Gestión de préstamos" es un permiso avanzado e independiente para cambios administrativos de créditos.
           </p>
-        </div>
+        </SectionCard>
 
         <div className="flex gap-3 pt-2">
           <Button type="button" variant="secondary" onClick={() => router.back()} disabled={saving}>
