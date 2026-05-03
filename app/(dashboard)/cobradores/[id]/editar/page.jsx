@@ -116,17 +116,31 @@ function EditarCobradorInner({ params }) {
 
   return (
     <div className="max-w-md mx-auto">
-      <div className="mb-6">
+      <div className="mb-5">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[white] transition-colors mb-4"
+          className="flex items-center gap-1.5 text-sm transition-colors mb-3"
+          style={{ color: 'var(--color-text-muted)' }}
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
           Volver
         </button>
-        <h1 className="text-xl font-bold text-[white]">Editar cobrador</h1>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
+            style={{
+              background: 'linear-gradient(135deg, color-mix(in srgb, #a855f7 22%, transparent), color-mix(in srgb, #a855f7 12%, transparent))',
+              border: '1px solid color-mix(in srgb, #a855f7 30%, transparent)',
+              color: '#a855f7',
+            }}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
+            </svg>
+          </div>
+          <h1 className="text-xl font-bold leading-tight" style={{ color: 'var(--color-text-primary)' }}>Editar cobrador</h1>
+        </div>
       </div>
 
       <form

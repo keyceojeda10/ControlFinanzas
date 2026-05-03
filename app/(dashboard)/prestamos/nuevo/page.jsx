@@ -285,19 +285,34 @@ function NuevoPrestamo() {
 
   return (
     <div className="max-w-xl mx-auto">
-      {/* Header */}
-      <div className="mb-6">
+      <div className="mb-5">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[white] transition-colors mb-4"
+          className="flex items-center gap-1.5 text-sm transition-colors mb-3"
+          style={{ color: 'var(--color-text-muted)' }}
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
           Volver
         </button>
-        <h1 className="text-xl font-bold text-[white]">Nuevo préstamo</h1>
-        <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Completa los datos para registrar el préstamo</p>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
+            style={{
+              background: 'linear-gradient(135deg, color-mix(in srgb, #22c55e 22%, transparent), color-mix(in srgb, #22c55e 12%, transparent))',
+              border: '1px solid color-mix(in srgb, #22c55e 30%, transparent)',
+              color: '#22c55e',
+            }}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <h1 className="text-xl font-bold leading-tight" style={{ color: 'var(--color-text-primary)' }}>Nuevo préstamo</h1>
+            <p className="text-[12px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Completa los datos para registrar el préstamo</p>
+          </div>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
