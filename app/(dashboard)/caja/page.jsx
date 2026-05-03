@@ -681,84 +681,110 @@ export default function CajaPage() {
         </div>
       )}
 
-      {/* Resumen operativo del día */}
-      <Card>
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Saldo en caja</p>
-            <p className="text-[11px] text-[var(--color-text-muted)]">Disponible para prestar ahora</p>
-          </div>
-          {tasaRecaudo > 0 && (
-            <span className="text-sm font-bold" style={{ color: colorRecaudo }}>
-              {tasaRecaudo}% cobrado
-            </span>
-          )}
-        </div>
-        <p className="text-3xl font-bold font-mono-display" style={{ color: disponibleHoy >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
-          {formatCOP(disponibleHoy)}
-        </p>
-        <p className="text-[11px] text-[var(--color-text-muted)] mt-1">
-          Base inicial + Cobrado - Prestado - Gastos + Ajustes
-        </p>
+      {/* HERO CARD: Saldo en caja del dia */}
+      {(() => {
+        const heroColor = disponibleHoy >= 0 ? '#22c55e' : '#ef4444'
+        return (
+          <div
+            className="relative rounded-[20px] overflow-hidden"
+            style={{
+              background: `linear-gradient(135deg, color-mix(in srgb, ${heroColor} 14%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, ${heroColor} 8%, var(--color-bg-card)) 100%)`,
+              border: `1px solid color-mix(in srgb, ${heroColor} 25%, var(--color-border))`,
+              boxShadow: `0 8px 32px color-mix(in srgb, ${heroColor} 18%, transparent)`,
+            }}
+          >
+            <div className="hero-glow absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none"
+              style={{ background: `radial-gradient(circle, color-mix(in srgb, ${heroColor} 35%, transparent), transparent 70%)`, filter: 'blur(20px)' }} />
+            <div className="absolute inset-0 pointer-events-none opacity-[0.04]"
+              style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '16px 16px', color: heroColor }} />
 
-        {!esCobrador && (
-          <div className="grid grid-cols-2 gap-2 mt-3">
-            <div>
-              <p className="text-[10px] text-[var(--color-text-muted)] uppercase">Base inicial</p>
-              <p className="text-base font-bold font-mono-display text-[var(--color-info)]">{formatCOP(baseInicialDia)}</p>
-            </div>
-            <div>
-              <p className="text-[10px] text-[var(--color-text-muted)] uppercase">Ajustes manuales</p>
-              <p className="text-base font-bold font-mono-display" style={{ color: ajustesDelDia >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
-                {ajustesDelDia > 0 ? '+' : ''}{formatCOP(ajustesDelDia)}
-              </p>
-            </div>
-          </div>
-        )}
-
-        <div className="grid grid-cols-3 gap-2 mt-4">
-          <div>
-            <p className="text-[10px] text-[var(--color-text-muted)] uppercase">Cobrado</p>
-            <p className="text-base font-bold font-mono-display text-[var(--color-success)]">{formatCOP(cobradoHoy)}</p>
-          </div>
-          <div>
-            <p className="text-[10px] text-[var(--color-text-muted)] uppercase">Prestado hoy</p>
-            <p className="text-base font-bold font-mono-display text-[var(--color-warning)]">{prestadoHoy > 0 ? '-' : ''}{formatCOP(prestadoHoy)}</p>
-          </div>
-          <div>
-            <p className="text-[10px] text-[var(--color-text-muted)] uppercase">Gastos</p>
-            <p className="text-base font-bold font-mono-display text-[var(--color-danger)]">{gastosHoy > 0 ? '-' : ''}{formatCOP(gastosHoy)}</p>
-          </div>
-        </div>
-
-        <details className="mt-3 pt-3 border-t border-[var(--color-border)]">
-          <summary className="cursor-pointer text-[11px] text-[var(--color-text-muted)]">Ver detalle del cálculo</summary>
-          <div className="mt-2 space-y-1.5 text-[11px]">
-            <div className="flex justify-between">
-              <span className="text-[var(--color-text-muted)]">Saldo operativo del día</span>
-              <span className="font-semibold" style={{ color: saldoRealCaja >= 0 ? 'var(--color-info)' : 'var(--color-danger)' }}>{formatCOP(saldoRealCaja)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-[var(--color-text-muted)]">Esperado</span>
-              <span className="font-semibold text-[var(--color-text-primary)]">{formatCOP(stats.esperado || 0)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-[var(--color-text-muted)]">Diferencia vs esperado</span>
-              <span className="font-semibold" style={{ color: diferenciaRecaudo >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
-                {diferenciaRecaudo >= 0 ? '+' : ''}{formatCOP(diferenciaRecaudo)}
-              </span>
-            </div>
-            {ajustesDelDia !== 0 && (
-              <div className="flex justify-between">
-                <span className="text-[var(--color-text-muted)]">Ajustes manuales del día</span>
-                <span className="font-semibold" style={{ color: ajustesDelDia >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
-                  {ajustesDelDia >= 0 ? '+' : ''}{formatCOP(ajustesDelDia)}
-                </span>
+            <div className="relative px-5 py-5 sm:px-6 sm:py-6">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-1.5 h-1.5 rounded-full" style={{ background: heroColor, boxShadow: `0 0 12px ${heroColor}` }} />
+                <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'var(--color-text-secondary)' }}>
+                  Saldo en caja
+                </p>
+                {tasaRecaudo > 0 && (
+                  <span className="ml-auto text-[11px] font-bold" style={{ color: colorRecaudo }}>{tasaRecaudo}% cobrado</span>
+                )}
               </div>
-            )}
+
+              <p
+                className="font-mono-display font-bold leading-none tracking-tight"
+                style={{
+                  color: heroColor,
+                  fontSize: 'clamp(32px, 9vw, 44px)',
+                  textShadow: `0 0 30px color-mix(in srgb, ${heroColor} 25%, transparent)`,
+                }}
+              >
+                {formatCOP(disponibleHoy)}
+              </p>
+              <p className="text-[11px] mt-2" style={{ color: 'var(--color-text-muted)' }}>
+                Base inicial + Cobrado − Prestado − Gastos + Ajustes
+              </p>
+
+              {/* Mini-stats: cobrado / prestado / gastos */}
+              <div className="grid grid-cols-3 gap-2 mt-4 pt-4" style={{ borderTop: `1px solid color-mix(in srgb, ${heroColor} 15%, transparent)` }}>
+                <div className="rounded-[10px] px-2.5 py-2" style={{ background: 'color-mix(in srgb, var(--color-success) 10%, transparent)' }}>
+                  <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Cobrado</p>
+                  <p className="text-[14px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--color-success)' }}>{formatCOP(cobradoHoy)}</p>
+                </div>
+                <div className="rounded-[10px] px-2.5 py-2" style={{ background: 'color-mix(in srgb, var(--color-warning) 10%, transparent)' }}>
+                  <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Prestado</p>
+                  <p className="text-[14px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--color-warning)' }}>{prestadoHoy > 0 ? '-' : ''}{formatCOP(prestadoHoy)}</p>
+                </div>
+                <div className="rounded-[10px] px-2.5 py-2" style={{ background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)' }}>
+                  <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Gastos</p>
+                  <p className="text-[14px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--color-danger)' }}>{gastosHoy > 0 ? '-' : ''}{formatCOP(gastosHoy)}</p>
+                </div>
+              </div>
+
+              {!esCobrador && (
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  <div className="rounded-[10px] px-2.5 py-2" style={{ background: 'color-mix(in srgb, var(--color-info) 10%, transparent)' }}>
+                    <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Base inicial</p>
+                    <p className="text-[14px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--color-info)' }}>{formatCOP(baseInicialDia)}</p>
+                  </div>
+                  <div className="rounded-[10px] px-2.5 py-2" style={{ background: 'var(--color-bg-hover)' }}>
+                    <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Ajustes</p>
+                    <p className="text-[14px] font-bold font-mono-display mt-0.5" style={{ color: ajustesDelDia >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                      {ajustesDelDia > 0 ? '+' : ''}{formatCOP(ajustesDelDia)}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <details className="mt-3 pt-3" style={{ borderTop: `1px solid color-mix(in srgb, ${heroColor} 15%, transparent)` }}>
+                <summary className="cursor-pointer text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Ver detalle del cálculo</summary>
+                <div className="mt-2 space-y-1.5 text-[11px]">
+                  <div className="flex justify-between">
+                    <span style={{ color: 'var(--color-text-muted)' }}>Saldo operativo del día</span>
+                    <span className="font-semibold font-mono-display" style={{ color: saldoRealCaja >= 0 ? 'var(--color-info)' : 'var(--color-danger)' }}>{formatCOP(saldoRealCaja)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span style={{ color: 'var(--color-text-muted)' }}>Esperado</span>
+                    <span className="font-semibold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatCOP(stats.esperado || 0)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span style={{ color: 'var(--color-text-muted)' }}>Diferencia vs esperado</span>
+                    <span className="font-semibold font-mono-display" style={{ color: diferenciaRecaudo >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                      {diferenciaRecaudo >= 0 ? '+' : ''}{formatCOP(diferenciaRecaudo)}
+                    </span>
+                  </div>
+                  {ajustesDelDia !== 0 && (
+                    <div className="flex justify-between">
+                      <span style={{ color: 'var(--color-text-muted)' }}>Ajustes manuales del día</span>
+                      <span className="font-semibold font-mono-display" style={{ color: ajustesDelDia >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                        {ajustesDelDia >= 0 ? '+' : ''}{formatCOP(ajustesDelDia)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </details>
+            </div>
           </div>
-        </details>
-      </Card>
+        )
+      })()}
 
       {pagosDiaCard}
 

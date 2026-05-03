@@ -290,24 +290,50 @@ export default function CapitalPage() {
         </div>
       )}
 
-      {/* Saldo grande */}
-      {resumen?.configurado && (
-        <div
-          className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] px-5 py-5 text-center"
-          style={{
-            background: `linear-gradient(135deg, color-mix(in srgb, var(--color-info) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, var(--color-bg-card) 100%)`,
-            boxShadow: `0 4px 14px color-mix(in srgb, var(--color-info) 12%, transparent)`,
-          }}
-        >
-          <p className="text-[11px] text-[var(--color-text-muted)] mb-1">Saldo del capital</p>
-          <p className={`text-3xl font-bold font-mono-display ${resumen.saldo >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
-            {formatCOP(resumen.saldo)}
-          </p>
-          {resumen.saldo < 0 && (
-            <p className="text-xs text-[var(--color-danger)] mt-1">Capital en negativo</p>
-          )}
-        </div>
-      )}
+      {/* HERO CARD: Saldo del capital */}
+      {resumen?.configurado && (() => {
+        const heroColor = resumen.saldo >= 0 ? '#06b6d4' : '#ef4444'
+        return (
+          <div
+            className="relative rounded-[20px] overflow-hidden"
+            style={{
+              background: `linear-gradient(135deg, color-mix(in srgb, ${heroColor} 14%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, ${heroColor} 8%, var(--color-bg-card)) 100%)`,
+              border: `1px solid color-mix(in srgb, ${heroColor} 25%, var(--color-border))`,
+              boxShadow: `0 8px 32px color-mix(in srgb, ${heroColor} 18%, transparent)`,
+            }}
+          >
+            <div className="hero-glow absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none"
+              style={{ background: `radial-gradient(circle, color-mix(in srgb, ${heroColor} 35%, transparent), transparent 70%)`, filter: 'blur(20px)' }} />
+            <div className="absolute inset-0 pointer-events-none opacity-[0.04]"
+              style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '16px 16px', color: heroColor }} />
+
+            <div className="relative px-5 py-5 sm:px-6 sm:py-6">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-1.5 h-1.5 rounded-full" style={{ background: heroColor, boxShadow: `0 0 12px ${heroColor}` }} />
+                <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'var(--color-text-secondary)' }}>
+                  Saldo del capital
+                </p>
+              </div>
+              <p
+                className="font-mono-display font-bold leading-none tracking-tight"
+                style={{
+                  color: resumen.saldo >= 0 ? 'var(--color-success)' : 'var(--color-danger)',
+                  fontSize: 'clamp(36px, 10vw, 52px)',
+                  textShadow: `0 0 30px color-mix(in srgb, ${resumen.saldo >= 0 ? 'var(--color-success)' : 'var(--color-danger)'} 25%, transparent)`,
+                }}
+              >
+                {formatCOP(resumen.saldo)}
+              </p>
+              {resumen.saldo < 0 && (
+                <p className="text-[12px] mt-2 inline-flex items-center gap-1 px-2 py-1 rounded-full font-medium" style={{ background: 'rgba(239, 68, 68, 0.12)', color: 'var(--color-danger)' }}>
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
+                  Capital en negativo
+                </p>
+              )}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Configuración: modo estricto */}
       {resumen?.configurado && (
@@ -419,30 +445,76 @@ export default function CapitalPage() {
         </div>
       )}
 
-      {/* Stats del mes */}
+      {/* Stats del mes — cards premium con iconos circulares */}
       {resumen?.mes && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] px-4 py-4">
-            <p className="text-[11px] text-[var(--color-text-muted)] mb-1">Prestado</p>
-            <p className="text-lg font-bold font-mono-display text-[var(--color-warning)]">{formatCOP(resumen.mes.desembolsado)}</p>
-            <p className="text-[10px] text-[var(--color-text-muted)]">{resumen.mes.prestamosOtorgados} prestamos</p>
-          </div>
-          <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] px-4 py-4">
-            <p className="text-[11px] text-[var(--color-text-muted)] mb-1">Cobrado</p>
-            <p className="text-lg font-bold font-mono-display text-[var(--color-info)]">{formatCOP(resumen.mes.recaudado)}</p>
-            <p className="text-[10px] text-[var(--color-text-muted)]">{resumen.mes.pagosRecibidos} pagos</p>
-          </div>
-          <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] px-4 py-4">
-            <p className="text-[11px] text-[var(--color-text-muted)] mb-1">Gastos</p>
-            <p className="text-lg font-bold font-mono-display text-[var(--color-danger)]">{formatCOP(resumen.mes.gastos)}</p>
-          </div>
-          <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] px-4 py-4">
-            <p className="text-[11px] text-[var(--color-text-muted)] mb-1">Balance neto del mes</p>
-            <p className={`text-lg font-bold font-mono-display ${(resumen.mes.flujoNeto ?? 0) >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
-              {(resumen.mes.flujoNeto ?? 0) >= 0 ? '+' : ''}{formatCOP(resumen.mes.flujoNeto ?? 0)}
-            </p>
-            <p className="text-[10px] text-[var(--color-text-muted)]">Cobrado - Prestado - Gastos</p>
-          </div>
+          {[
+            {
+              label: 'Prestado',
+              value: formatCOP(resumen.mes.desembolsado),
+              sub: `${resumen.mes.prestamosOtorgados} préstamos`,
+              color: '#f97316',
+              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15M9 12l3 3m0 0l3-3m-3 3V2.25" /></svg>,
+            },
+            {
+              label: 'Cobrado',
+              value: formatCOP(resumen.mes.recaudado),
+              sub: `${resumen.mes.pagosRecibidos} pagos`,
+              color: '#22c55e',
+              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m-6 6l3-3m0 0l3 3m-3-3v6.75" /></svg>,
+            },
+            {
+              label: 'Gastos',
+              value: formatCOP(resumen.mes.gastos),
+              sub: 'del mes',
+              color: '#ef4444',
+              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25M6.75 12h.008v.008H6.75V12z" /></svg>,
+            },
+          ].map((s, i) => (
+            <div
+              key={i}
+              className="rounded-[16px] px-4 py-3 transition-all kpi-lift"
+              style={{
+                background: `linear-gradient(135deg, color-mix(in srgb, ${s.color} 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
+                border: `1px solid color-mix(in srgb, ${s.color} 22%, var(--color-border))`,
+              }}
+            >
+              <div className="flex items-center gap-1.5 mb-1">
+                <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: `color-mix(in srgb, ${s.color} 18%, transparent)`, color: s.color }}>
+                  <span className="w-3 h-3">{s.icon}</span>
+                </div>
+                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: s.color }}>{s.label}</p>
+              </div>
+              <p className="text-[16px] font-bold font-mono-display leading-tight" style={{ color: 'var(--color-text-primary)' }}>{s.value}</p>
+              <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{s.sub}</p>
+            </div>
+          ))}
+          {(() => {
+            const flujo = resumen.mes.flujoNeto ?? 0
+            const balanceColor = flujo >= 0 ? '#22c55e' : '#ef4444'
+            return (
+              <div
+                className="rounded-[16px] px-4 py-3 transition-all kpi-lift"
+                style={{
+                  background: `linear-gradient(135deg, color-mix(in srgb, ${balanceColor} 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
+                  border: `1px solid color-mix(in srgb, ${balanceColor} 22%, var(--color-border))`,
+                }}
+              >
+                <div className="flex items-center gap-1.5 mb-1">
+                  <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: `color-mix(in srgb, ${balanceColor} 18%, transparent)`, color: balanceColor }}>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.281m5.94 2.28l-2.28 5.941" />
+                    </svg>
+                  </div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: balanceColor }}>Balance neto</p>
+                </div>
+                <p className="text-[16px] font-bold font-mono-display leading-tight" style={{ color: balanceColor }}>
+                  {flujo >= 0 ? '+' : ''}{formatCOP(flujo)}
+                </p>
+                <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Cobrado − Prestado − Gastos</p>
+              </div>
+            )
+          })()}
         </div>
       )}
 
