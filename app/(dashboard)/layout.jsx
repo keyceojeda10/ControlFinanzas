@@ -1,5 +1,10 @@
 // app/(dashboard)/layout.jsx - Layout del dashboard con Sidebar, Header y BottomNav
 
+import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 import Sidebar        from '@/components/layout/Sidebar'
 import Header         from '@/components/layout/Header'
 import BottomNav      from '@/components/layout/BottomNav'
@@ -12,7 +17,34 @@ import NotificationPrompt from '@/components/NotificationPrompt'
 import Analytics          from '@/components/Analytics'
 import { InstallBanner } from '@/components/layout/InstallButton'
 
-export default function DashboardLayout({ children }) {
+// Bloqueo definitivo de suscripcion vencida: lee DB en cada request.
+// El middleware no puede hacerlo (Edge runtime sin Prisma) y el JWT puede
+// estar stale porque getToken solo decifra cookie sin refrescar.
+async function bloquearSiVencida() {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.organizationId) return
+  if (session.user.rol === 'superadmin') return
+
+  const hdrs = await headers()
+  const pathname = hdrs.get('x-invoke-path') || hdrs.get('x-pathname') || ''
+  // Permitir acceso a la pagina de plan aunque este vencido
+  if (pathname.includes('/configuracion/plan')) return
+
+  const sub = await prisma.suscripcion.findFirst({
+    where: {
+      organizationId: session.user.organizationId,
+      OR: [{ mpStatus: null }, { mpStatus: { not: 'pending' } }],
+    },
+    orderBy: { fechaVencimiento: 'desc' },
+    select: { fechaVencimiento: true },
+  })
+  if (sub?.fechaVencimiento && new Date(sub.fechaVencimiento) < new Date()) {
+    redirect('/suscripcion-vencida')
+  }
+}
+
+export default async function DashboardLayout({ children }) {
+  await bloquearSiVencida()
   return (
     <div className="flex min-h-dvh bg-[#060609]">
       {/* Sidebar – visible solo en lg+ */}

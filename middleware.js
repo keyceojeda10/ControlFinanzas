@@ -43,7 +43,7 @@ export async function middleware(request) {
       return NextResponse.redirect(new URL('/admin/dashboard', request.url))
     }
 
-    // ─── Verificar suscripción vencida ────────────────
+    // ─── Verificar suscripción vencida (chequeo rapido del JWT) ────────────────
     // Excepciones: /configuracion/plan puede acceder aunque esté vencida
     if (pathname !== '/configuracion/plan' && token.suscripcionVencimiento) {
       const vencimiento = new Date(token.suscripcionVencimiento)
@@ -52,7 +52,11 @@ export async function middleware(request) {
       }
     }
 
-    return NextResponse.next()
+    // Inyectar pathname para que el layout pueda hacer chequeo adicional
+    // contra DB (el JWT puede estar stale si el cookie es viejo).
+    const reqHeaders = new Headers(request.headers)
+    reqHeaders.set('x-pathname', pathname)
+    return NextResponse.next({ request: { headers: reqHeaders } })
   }
 
   // ─── /login → redirigir si ya hay sesión activa ─────────
