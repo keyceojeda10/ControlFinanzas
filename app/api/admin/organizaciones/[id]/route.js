@@ -23,7 +23,13 @@ export async function GET(req, { params }) {
         orderBy: { createdAt: 'asc' },
       },
       suscripciones: {
-        orderBy: { createdAt: 'desc' },
+        // Excluir pending (pagos MP iniciados pero nunca completados)
+        where: {
+          OR: [{ mpStatus: null }, { mpStatus: { not: 'pending' } }],
+        },
+        // Ordenar por fechaVencimiento desc para mostrar la suscripcion
+        // efectiva (la mas vigente), no la mas reciente por createdAt.
+        orderBy: { fechaVencimiento: 'desc' },
         select: {
           id: true, plan: true, estado: true,
           fechaInicio: true, fechaVencimiento: true, montoCOP: true,

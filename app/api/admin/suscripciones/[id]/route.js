@@ -23,7 +23,11 @@ export async function PATCH(req, { params }) {
   const orgNombre = sub.organization.nombre
 
   if (accion === 'renovar') {
-    const nuevaFecha = new Date(sub.fechaVencimiento)
+    // Usar la fecha mayor entre hoy y el vencimiento para no acumular
+    // dias vencidos. Si la sub vencio hace 30 dias, +30 dias seguia vencida.
+    const ahora = new Date()
+    const base = new Date(sub.fechaVencimiento) > ahora ? new Date(sub.fechaVencimiento) : ahora
+    const nuevaFecha = new Date(base)
     nuevaFecha.setDate(nuevaFecha.getDate() + 30)
     await prisma.suscripcion.update({
       where: { id },
@@ -41,7 +45,9 @@ export async function PATCH(req, { params }) {
   }
 
   if (accion === 'gracia') {
-    const nuevaFecha = new Date(sub.fechaVencimiento)
+    const ahora = new Date()
+    const base = new Date(sub.fechaVencimiento) > ahora ? new Date(sub.fechaVencimiento) : ahora
+    const nuevaFecha = new Date(base)
     nuevaFecha.setDate(nuevaFecha.getDate() + 7)
     await prisma.suscripcion.update({
       where: { id },
