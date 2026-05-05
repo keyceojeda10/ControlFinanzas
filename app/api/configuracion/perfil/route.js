@@ -11,7 +11,7 @@ export async function GET() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, nombre: true, email: true, rol: true, createdAt: true },
+    select: { id: true, nombre: true, email: true, telefono: true, rol: true, createdAt: true },
   })
 
   return NextResponse.json(user)
@@ -22,7 +22,7 @@ export async function PATCH(req) {
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
   const body = await req.json()
-  const { nombre, passwordActual, nuevoPassword } = body
+  const { nombre, telefono, passwordActual, nuevoPassword } = body
 
   const updates = {}
 
@@ -30,6 +30,28 @@ export async function PATCH(req) {
   if (nombre !== undefined) {
     if (!nombre.trim()) return NextResponse.json({ error: 'El nombre no puede estar vacío' }, { status: 400 })
     updates.nombre = nombre.trim()
+  }
+
+  // Actualizar telefono (validar celular colombiano)
+  if (telefono !== undefined) {
+    const limpio = String(telefono).replace(/\D/g, '')
+    if (!/^3\d{9}$/.test(limpio)) {
+      return NextResponse.json({ error: 'Ingresa un celular colombiano valido (10 digitos, empieza en 3)' }, { status: 400 })
+    }
+    updates.telefono = limpio
+    // Si la org no tiene telefono, copiarlo del owner
+    if (session.user.rol === 'owner' && session.user.organizationId) {
+      const org = await prisma.organization.findUnique({
+        where: { id: session.user.organizationId },
+        select: { telefono: true },
+      })
+      if (!org?.telefono) {
+        await prisma.organization.update({
+          where: { id: session.user.organizationId },
+          data: { telefono: limpio },
+        })
+      }
+    }
   }
 
   // Cambiar contraseña

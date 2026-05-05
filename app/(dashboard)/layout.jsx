@@ -16,6 +16,7 @@ import GlobalSearch        from '@/components/layout/GlobalSearch'
 import NotificationPrompt from '@/components/NotificationPrompt'
 import Analytics          from '@/components/Analytics'
 import { InstallBanner } from '@/components/layout/InstallButton'
+import CompletarTelefonoModal from '@/components/layout/CompletarTelefonoModal'
 
 // Bloqueo definitivo de suscripcion vencida: lee DB en cada request.
 // El middleware no puede hacerlo (Edge runtime sin Prisma) y el JWT puede
@@ -81,6 +82,9 @@ export default async function DashboardLayout({ children }) {
 
       {/* Banner instalar app (una vez por sesion) */}
       <InstallBanner />
+
+      {/* Modal completar telefono (owners sin telefono) */}
+      <CompletarTelefonoModal />
 
       {/* Analytics: page view tracking */}
       <Analytics />
