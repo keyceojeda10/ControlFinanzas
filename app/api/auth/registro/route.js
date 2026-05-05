@@ -34,15 +34,21 @@ export async function POST(req) {
     }
 
     const body = await req.json()
-    const { nombreOrganizacion, nombre, email, password, ref, terminosAceptados, plan } = body
+    const { nombreOrganizacion, nombre, email, telefono, password, ref, terminosAceptados, plan } = body
 
     // Validar plan de trial: todos menos el plan interno de test
     const VALID_TRIAL_PLANS = PLANES_VALIDOS.filter((p) => p !== 'test')
     const planFinal = VALID_TRIAL_PLANS.includes(plan) ? plan : 'starter'
 
     // Validaciones
-    if (!nombreOrganizacion?.trim() || !nombre?.trim() || !email?.trim() || !password) {
+    if (!nombreOrganizacion?.trim() || !nombre?.trim() || !email?.trim() || !password || !telefono?.trim()) {
       return NextResponse.json({ success: false, error: 'Todos los campos son obligatorios' }, { status: 400 })
+    }
+
+    // Validar telefono colombiano: 10 digitos, empieza en 3
+    const telefonoLimpio = String(telefono).replace(/\D/g, '')
+    if (!/^3\d{9}$/.test(telefonoLimpio)) {
+      return NextResponse.json({ success: false, error: 'Ingresa un celular colombiano valido (10 digitos, empieza en 3)' }, { status: 400 })
     }
 
     if (password.length < 8) {
@@ -91,6 +97,7 @@ export async function POST(req) {
           nombre:        nombreOrganizacion.trim(),
           plan:          planFinal,
           activo:        true,
+          telefono:      telefonoLimpio,
           codigoReferido,
           ...(orgReferidora ? { referidoPorId: orgReferidora.id } : {}),
         },
@@ -104,6 +111,7 @@ export async function POST(req) {
         data: {
           nombre:                  nombre.trim(),
           email:                   emailNorm,
+          telefono:                telefonoLimpio,
           password:                hash,
           rol:                     'owner',
           organizationId:          org.id,
@@ -169,11 +177,11 @@ export async function POST(req) {
       }).catch(() => {})
     }
 
-    // Facebook CAPI: reportar conversión real con email + teléfono del lead
+    // Facebook CAPI: reportar conversión real con email + teléfono ingresado
     sendConversionEvent({
       eventName: 'CompleteRegistration',
       email: emailNorm,
-      phone: leadAsociado?.telefono,
+      phone: telefonoLimpio,
     }).catch(() => {})
 
     return NextResponse.json({
