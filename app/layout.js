@@ -23,9 +23,12 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ["700"],
 });
 
+const SITE_URL = process.env.NEXTAUTH_URL || 'https://app.control-finanzas.com'
+
 export const metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Control Finanzas",
-  description: "Gestión de cartera de crédito informal",
+  description: "Gestiona tu cartera de prestamos: clientes, cobros, pagos y reportes en tiempo real.",
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -33,8 +36,28 @@ export const metadata = {
     title: 'Control Finanzas',
   },
   icons: {
-    icon: '/icon.svg',
-    apple: '/icons/icon-192.png',
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+    ],
+    apple: '/apple-icon.png',
+    shortcut: '/favicon-32x32.png',
+  },
+  openGraph: {
+    title: 'Control Finanzas',
+    description: 'Gestiona tu cartera de prestamos: clientes, cobros, pagos y reportes en tiempo real.',
+    url: SITE_URL,
+    siteName: 'Control Finanzas',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Control Finanzas' }],
+    locale: 'es_CO',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Control Finanzas',
+    description: 'Gestiona tu cartera de prestamos en tiempo real.',
+    images: ['/og-image.png'],
   },
 };
 
