@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
-import Image                             from 'next/image'
 import { useRouter, useSearchParams }    from 'next/navigation'
 import { signIn }                        from 'next-auth/react'
 import Link                              from 'next/link'
 import { PLANES_CONFIG }                 from '@/lib/planes'
+import AuthShell                         from '@/components/auth/AuthShell'
+import AuthInput                         from '@/components/auth/AuthInput'
+import AuthButton                        from '@/components/auth/AuthButton'
 
-// ─── Inner component uses useSearchParams ────────────────────────
 function RegistroForm() {
   const router         = useRouter()
   const searchParams   = useSearchParams()
@@ -17,36 +18,11 @@ function RegistroForm() {
   const formatPrecio = (precio) => `$${precio.toLocaleString('es-CO')}`
 
   const PLANES_TRIAL = [
-    {
-      key: 'starter',
-      nombre: PLANES_CONFIG.starter.nombre,
-      desc: `${PLANES_CONFIG.starter.maxClientes.toLocaleString('es-CO')} clientes, ${PLANES_CONFIG.starter.maxRutas} ruta`,
-      precio: formatPrecio(PLANES_CONFIG.starter.precio),
-    },
-    {
-      key: 'basic',
-      nombre: PLANES_CONFIG.basic.nombre,
-      desc: `${PLANES_CONFIG.basic.maxClientes.toLocaleString('es-CO')} clientes, ${PLANES_CONFIG.basic.maxRutas} ruta`,
-      precio: formatPrecio(PLANES_CONFIG.basic.precio),
-    },
-    {
-      key: 'growth',
-      nombre: PLANES_CONFIG.growth.nombre,
-      desc: `${PLANES_CONFIG.growth.maxClientes.toLocaleString('es-CO')} clientes, ${PLANES_CONFIG.growth.maxRutas} rutas, ${PLANES_CONFIG.growth.maxUsuarios} usuarios`,
-      precio: formatPrecio(PLANES_CONFIG.growth.precio),
-    },
-    {
-      key: 'standard',
-      nombre: PLANES_CONFIG.standard.nombre,
-      desc: `${PLANES_CONFIG.standard.maxClientes.toLocaleString('es-CO')} clientes, ${PLANES_CONFIG.standard.maxRutas} rutas, ${PLANES_CONFIG.standard.maxUsuarios} usuarios`,
-      precio: formatPrecio(PLANES_CONFIG.standard.precio),
-    },
-    {
-      key: 'professional',
-      nombre: PLANES_CONFIG.professional.nombre,
-      desc: `${PLANES_CONFIG.professional.maxClientes.toLocaleString('es-CO')} clientes, ${PLANES_CONFIG.professional.maxRutas} rutas, ${PLANES_CONFIG.professional.maxUsuarios} usuarios`,
-      precio: formatPrecio(PLANES_CONFIG.professional.precio),
-    },
+    { key: 'starter',      nombre: PLANES_CONFIG.starter.nombre,      desc: `${PLANES_CONFIG.starter.maxClientes.toLocaleString('es-CO')} clientes, ${PLANES_CONFIG.starter.maxRutas} ruta`,                                                            precio: formatPrecio(PLANES_CONFIG.starter.precio) },
+    { key: 'basic',        nombre: PLANES_CONFIG.basic.nombre,        desc: `${PLANES_CONFIG.basic.maxClientes.toLocaleString('es-CO')} clientes, ${PLANES_CONFIG.basic.maxRutas} ruta`,                                                                precio: formatPrecio(PLANES_CONFIG.basic.precio) },
+    { key: 'growth',       nombre: PLANES_CONFIG.growth.nombre,       desc: `${PLANES_CONFIG.growth.maxClientes.toLocaleString('es-CO')} clientes, ${PLANES_CONFIG.growth.maxRutas} rutas, ${PLANES_CONFIG.growth.maxUsuarios} usuarios`,             precio: formatPrecio(PLANES_CONFIG.growth.precio) },
+    { key: 'standard',     nombre: PLANES_CONFIG.standard.nombre,     desc: `${PLANES_CONFIG.standard.maxClientes.toLocaleString('es-CO')} clientes, ${PLANES_CONFIG.standard.maxRutas} rutas, ${PLANES_CONFIG.standard.maxUsuarios} usuarios`,        precio: formatPrecio(PLANES_CONFIG.standard.precio) },
+    { key: 'professional', nombre: PLANES_CONFIG.professional.nombre, desc: `${PLANES_CONFIG.professional.maxClientes.toLocaleString('es-CO')} clientes, ${PLANES_CONFIG.professional.maxRutas} rutas, ${PLANES_CONFIG.professional.maxUsuarios} usuarios`, precio: formatPrecio(PLANES_CONFIG.professional.precio) },
   ]
   const PLANES_MAP = Object.fromEntries(PLANES_TRIAL.map((p) => [p.key, p]))
   const planInicial = PLANES_MAP[planParam] ? planParam : 'starter'
@@ -64,16 +40,13 @@ function RegistroForm() {
   })
   const [error,    setError]    = useState('')
   const [loading,  setLoading]  = useState(false)
-  const [referrer, setReferrer] = useState(null) // { nombreOrg: string } | null
+  const [referrer, setReferrer] = useState(null)
 
-  // Validate referral code on mount if present
   useEffect(() => {
     if (!refCode) return
     fetch(`/api/auth/validar-referido?code=${encodeURIComponent(refCode)}`)
       .then((r) => r.json())
-      .then((data) => {
-        if (data.valid) setReferrer({ nombreOrg: data.nombreOrg })
-      })
+      .then((data) => { if (data.valid) setReferrer({ nombreOrg: data.nombreOrg }) })
       .catch(() => {})
   }, [refCode])
 
@@ -84,21 +57,11 @@ function RegistroForm() {
     setError('')
 
     if (!form.nombreOrganizacion.trim() || !form.nombre.trim() || !form.email.trim() || !form.password) {
-      setError('Todos los campos son obligatorios')
-      return
+      setError('Todos los campos son obligatorios'); return
     }
-    if (!form.terminosAceptados) {
-      setError('Debes aceptar los términos y condiciones para continuar')
-      return
-    }
-    if (form.password.length < 8) {
-      setError('La contraseña debe tener al menos 8 caracteres')
-      return
-    }
-    if (form.password !== form.confirmar) {
-      setError('Las contraseñas no coinciden')
-      return
-    }
+    if (!form.terminosAceptados) { setError('Debes aceptar los términos y condiciones'); return }
+    if (form.password.length < 8) { setError('La contraseña debe tener al menos 8 caracteres'); return }
+    if (form.password !== form.confirmar) { setError('Las contraseñas no coinciden'); return }
 
     setLoading(true)
     try {
@@ -116,28 +79,18 @@ function RegistroForm() {
         }),
       })
       const data = await res.json()
+      if (!res.ok) { setError(data.error ?? 'Error al registrar'); return }
 
-      if (!res.ok) {
-        setError(data.error ?? 'Error al registrar')
-        return
-      }
-
-      // Pixel Lead antes de redirigir
       if (typeof window !== 'undefined' && window.fbq) {
         window.fbq('track', 'Lead')
       }
 
-      // Auto-login: entrar directo al dashboard (gracia de 24h para verificar)
       const login = await signIn('credentials', {
         email: form.email.trim().toLowerCase(),
         password: form.password,
         redirect: false,
       })
-      if (login?.ok) {
-        router.push('/dashboard')
-        return
-      }
-      // Fallback: si el auto-login falla, redirigir a verificar email
+      if (login?.ok) { router.push('/dashboard'); return }
       router.push('/verificar-email')
     } catch {
       setError('Error de conexión. Intenta de nuevo.')
@@ -146,23 +99,28 @@ function RegistroForm() {
     }
   }
 
-  const inputClass = 'w-full h-10 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[var(--color-text-primary)] placeholder-[#555555] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[rgba(245,197,24,0.2)] transition-all'
-
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center bg-[var(--color-bg-base)] px-4 py-8">
-      <div className="w-full max-w-sm">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <Image src="/logo-icon.svg" alt="Control Finanzas" width={56} height={56} className="mx-auto mb-5" priority />
-          <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Crear cuenta</h1>
-          <p className="text-sm text-[var(--color-text-muted)] mt-1">
-            {`Prueba el plan ${infoPlan.nombre} gratis por 14 dias`}
-          </p>
-        </div>
-
+    <AuthShell
+      title="Crea tu cuenta"
+      subtitle={`14 días gratis del plan ${infoPlan.nombre}`}
+      maxWidth="max-w-md"
+      footer={
+        <>
+          ¿Ya tienes cuenta?{' '}
+          <Link href="/login" className="font-medium hover:underline" style={{ color: 'var(--color-accent)' }}>
+            Inicia sesión
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
         {/* Plan selector */}
-        <div className="mb-4">
-          <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em] mb-2">Elige tu plan de prueba</p>
+        <div>
+          <p className="text-[11px] font-medium uppercase tracking-[0.05em] mb-2"
+            style={{ color: 'var(--color-text-muted)' }}
+          >
+            Elige tu plan de prueba
+          </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {PLANES_TRIAL.map((p) => {
               const activo = planSeleccionado === p.key
@@ -171,153 +129,162 @@ function RegistroForm() {
                   key={p.key}
                   type="button"
                   onClick={() => setPlanSeleccionado(p.key)}
-                  className={[
-                    'rounded-[12px] px-2 py-3 text-center transition-all cursor-pointer border',
-                    activo
-                      ? 'border-[#f5c518] bg-[rgba(245,197,24,0.08)]'
-                      : 'border-[var(--color-border)] bg-[var(--color-bg-card)] hover:border-[var(--color-border-hover)]',
-                  ].join(' ')}
+                  className="rounded-[12px] px-2 py-2.5 text-center transition-all cursor-pointer"
+                  style={{
+                    background: activo
+                      ? 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 15%, transparent), color-mix(in srgb, var(--color-accent) 5%, transparent))'
+                      : 'rgba(255,255,255,0.02)',
+                    border: activo
+                      ? '1px solid color-mix(in srgb, var(--color-accent) 50%, transparent)'
+                      : '1px solid rgba(255,255,255,0.06)',
+                    boxShadow: activo ? '0 0 16px rgba(245,197,24,0.15)' : 'none',
+                  }}
                 >
-                  <p className={`text-xs font-semibold ${activo ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-primary)]'}`}>{p.nombre}</p>
-                  <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{p.precio}/mes</p>
+                  <p className="text-xs font-semibold"
+                    style={{ color: activo ? 'var(--color-accent)' : 'var(--color-text-primary)' }}
+                  >
+                    {p.nombre}
+                  </p>
+                  <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                    {p.precio}/mes
+                  </p>
                 </button>
               )
             })}
           </div>
-          <p className="text-[10px] text-[var(--color-success)] mt-2">
-            14 dias gratis del plan {infoPlan.nombre} — {infoPlan.desc}
+          <p className="text-[10px] mt-2 leading-snug" style={{ color: '#22c55e' }}>
+            14 días gratis · {infoPlan.desc}
           </p>
         </div>
 
         {/* Referral badge */}
         {referrer && (
-          <div className="mb-4 flex items-center gap-2.5 bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.2)] text-[var(--color-accent)] text-sm rounded-[10px] px-4 py-3">
+          <div className="flex items-center gap-2.5 text-sm rounded-[10px] px-4 py-2.5"
+            style={{
+              background: 'rgba(245,197,24,0.08)',
+              border: '1px solid rgba(245,197,24,0.2)',
+              color: 'var(--color-accent)',
+            }}
+          >
             <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
             </svg>
-            <span>
-              Referido por <strong className="text-[var(--color-text-primary)]">{referrer.nombreOrg}</strong>
+            <span className="text-xs">
+              Referido por <strong style={{ color: 'var(--color-text-primary)' }}>{referrer.nombreOrg}</strong>
             </span>
           </div>
         )}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[24px] p-8 space-y-4">
-          {error && (
-            <div className="flex items-center gap-2.5 bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[10px] px-4 py-3">
-              <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-              {error}
-            </div>
-          )}
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">Nombre del negocio</label>
-            <input
-              type="text"
-              value={form.nombreOrganizacion}
-              onChange={set('nombreOrganizacion')}
-              placeholder="Ej: Préstamos García"
-              className={inputClass}
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">Tu nombre</label>
-            <input
-              type="text"
-              value={form.nombre}
-              onChange={set('nombre')}
-              placeholder="Ej: Carlos García"
-              className={inputClass}
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">Correo electrónico</label>
-            <input
-              type="email"
-              value={form.email}
-              onChange={set('email')}
-              placeholder="usuario@ejemplo.com"
-              autoComplete="email"
-              className={inputClass}
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">Contraseña</label>
-            <input
-              type="password"
-              value={form.password}
-              onChange={set('password')}
-              placeholder="Mínimo 8 caracteres"
-              autoComplete="new-password"
-              className={inputClass}
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">Confirmar contraseña</label>
-            <input
-              type="password"
-              value={form.confirmar}
-              onChange={set('confirmar')}
-              placeholder="Repite tu contraseña"
-              autoComplete="new-password"
-              className={inputClass}
-            />
-          </div>
-
-          <label className="flex items-start gap-3 cursor-pointer mt-1">
-            <input
-              type="checkbox"
-              checked={form.terminosAceptados}
-              onChange={(e) => setForm({ ...form, terminosAceptados: e.target.checked })}
-              className="mt-0.5 w-4 h-4 rounded border-[var(--color-border)] bg-[var(--color-bg-card)] text-[var(--color-accent)] focus:ring-[#f5c518] focus:ring-offset-0 cursor-pointer accent-[#f5c518]"
-            />
-            <span className="text-xs text-[var(--color-text-muted)] leading-relaxed">
-              Al crear tu cuenta, aceptas nuestros{' '}
-              <a href="https://control-finanzas.com/terminos-uso" target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent)] hover:underline">
-                Términos de uso
-              </a>{' '}
-              y nuestra{' '}
-              <a href="https://control-finanzas.com/privacidad" target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent)] hover:underline">
-                Política de privacidad
-              </a>
-            </span>
-          </label>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full h-11 mt-1 rounded-[12px] bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-60 text-[#0a0a0a] font-bold text-sm transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer hover:shadow-[0_0_20px_rgba(245,197,24,0.3)]"
+        {error && (
+          <div className="flex items-center gap-2.5 text-sm rounded-[10px] px-4 py-3"
+            style={{
+              background: 'var(--color-danger-dim)',
+              border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)',
+              color: 'var(--color-danger)',
+            }}
           >
-            {loading ? (
-              <>
-                <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                Creando cuenta...
-              </>
-            ) : `Probar plan ${infoPlan.nombre} gratis`}
-          </button>
-        </form>
+            <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+            {error}
+          </div>
+        )}
 
-        <p className="mt-6 text-center text-sm text-[var(--color-text-muted)]">
-          ¿Ya tienes cuenta?{' '}
-          <Link href="/login" className="text-[var(--color-accent)] hover:underline font-medium">
-            Inicia sesión
-          </Link>
-        </p>
-      </div>
-    </div>
+        <AuthInput
+          label="Nombre del negocio"
+          value={form.nombreOrganizacion}
+          onChange={set('nombreOrganizacion')}
+          placeholder="Ej: Préstamos García"
+          icon={
+            <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
+            </svg>
+          }
+        />
+
+        <AuthInput
+          label="Tu nombre"
+          value={form.nombre}
+          onChange={set('nombre')}
+          placeholder="Ej: Carlos García"
+          icon={
+            <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+            </svg>
+          }
+        />
+
+        <AuthInput
+          label="Correo electrónico"
+          type="email"
+          value={form.email}
+          onChange={set('email')}
+          placeholder="usuario@ejemplo.com"
+          autoComplete="email"
+          icon={
+            <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+            </svg>
+          }
+        />
+
+        <AuthInput
+          label="Contraseña"
+          type="password"
+          value={form.password}
+          onChange={set('password')}
+          placeholder="Mínimo 8 caracteres"
+          autoComplete="new-password"
+          showPasswordToggle
+          icon={
+            <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+            </svg>
+          }
+        />
+
+        <AuthInput
+          label="Confirmar contraseña"
+          type="password"
+          value={form.confirmar}
+          onChange={set('confirmar')}
+          placeholder="Repite tu contraseña"
+          autoComplete="new-password"
+          showPasswordToggle
+          icon={
+            <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          }
+        />
+
+        <label className="flex items-start gap-3 cursor-pointer mt-1">
+          <input
+            type="checkbox"
+            checked={form.terminosAceptados}
+            onChange={(e) => setForm({ ...form, terminosAceptados: e.target.checked })}
+            className="mt-0.5 w-4 h-4 rounded cursor-pointer accent-[#f5c518]"
+          />
+          <span className="text-xs leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+            Acepto los{' '}
+            <a href="https://control-finanzas.com/terminos-uso" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--color-accent)' }}>
+              Términos de uso
+            </a>{' '}
+            y la{' '}
+            <a href="https://control-finanzas.com/privacidad" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--color-accent)' }}>
+              Política de privacidad
+            </a>
+          </span>
+        </label>
+
+        <AuthButton loading={loading} loadingLabel="Creando cuenta...">
+          Probar plan {infoPlan.nombre} gratis
+        </AuthButton>
+      </form>
+    </AuthShell>
   )
 }
 
-// ─── Page wrapper with Suspense (required for useSearchParams) ───
 export default function RegistroPage() {
   return (
     <Suspense>
