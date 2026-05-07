@@ -95,6 +95,7 @@ model Organization {
   pagos            Pago[]
   cierresCaja      CierreCaja[]
   suscripciones    Suscripcion[]
+  asistenteMemorias AsistenteMemoria[]
   adminLogs        AdminLog[]
   gastosMenores    GastoMenor[]
   tickets          TicketSoporte[]
@@ -147,6 +148,7 @@ model User {
   notasAdmin     NotaSeguimiento[] @relation("NotasAdmin")
   actividadLogs      ActividadLog[]
   pushSubscriptions  PushSubscription[]
+  asistenteMemorias  AsistenteMemoria[]
 
   @@index([organizationId])
 }
@@ -416,6 +418,24 @@ model ActividadLog {
 
   @@index([organizationId, createdAt])
   @@index([userId])
+}
+
+// ─── MEMORIA DEL ASISTENTE ─────────────────────────────
+
+model AsistenteMemoria {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  contenido      String   @db.Text
+  categoria      String   // preferencia | portafolio | comportamiento | accion
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, userId])
+  @@index([organizationId, categoria])
 }
 
 // ─── EVENTOS / ANALYTICS ───────────────────────────────

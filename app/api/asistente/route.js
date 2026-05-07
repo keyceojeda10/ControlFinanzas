@@ -8,6 +8,7 @@ import { planTieneIA } from '@/lib/planes'
 import { TOOLS_OWNER, TOOLS_COBRADOR } from '@/lib/asistente-tools'
 import { calcularPrestamo } from '@/lib/calculos'
 import { prisma } from '@/lib/prisma'
+import { obtenerMemorias, extraerYGuardarMemoria } from '@/lib/asistente-memoria'
 
 export const dynamic = 'force-dynamic'
 
@@ -121,7 +122,16 @@ async function buildDisplayData(toolName, input, orgId) {
       return { fields, titulo: 'Editar préstamo', color: 'info' }
     }
     case 'escalate_support': {
-      return { tipo: 'escalation', motivo: input.motivo, mensaje: input.mensaje }
+      const origin = process.env.NEXTAUTH_URL ?? 'https://app.control-finanzas.com'
+      const waNum = process.env.SOPORTE_WHATSAPP ?? '573234567890'
+      return {
+        tipo: 'escalation',
+        motivo: input.motivo,
+        mensaje: input.mensaje,
+        whatsappUrl: `https://wa.me/${waNum}?text=Hola%2C+necesito+soporte+con+Control+Finanzas`,
+        soporteUrl: `${origin}/soporte`,
+        planesUrl: input.motivo === 'renovar_plan' ? `${origin}/configuracion/plan` : null,
+      }
     }
     case 'register_payment': {
       // Fetch préstamo para saldo actual
@@ -207,9 +217,14 @@ export async function POST(req) {
   if (!message?.trim()) return NextResponse.json({ error: 'Mensaje vacío' }, { status: 400 })
 
   // Build context and prompt based on role
-  const ctx = isOwner
-    ? await buildContexto(orgId)
-    : await buildContextoCobrador(orgId, rutaIds ?? [], session.user.id)
+  const [ctx, memorias] = await Promise.all([
+    isOwner
+      ? buildContexto(orgId)
+      : buildContextoCobrador(orgId, rutaIds ?? [], session.user.id),
+    isOwner ? obtenerMemorias(orgId, session.user.id) : Promise.resolve([]),
+  ])
+
+  if (isOwner) ctx.memorias = memorias
 
   const systemPrompt = isOwner
     ? buildSystemPrompt(ctx)
@@ -305,6 +320,15 @@ export async function POST(req) {
         }
 
         controller.enqueue(enc.encode('data: [DONE]\n\n'))
+
+        // fire-and-forget: extraer memoria si hay conversación larga
+        if (isOwner && history.length >= 4) {
+          const conversacionCompleta = [
+            ...history.slice(-6),
+            { role: 'user', content: message },
+          ]
+          setImmediate(() => extraerYGuardarMemoria(orgId, session.user.id, conversacionCompleta))
+        }
       } catch (err) {
         controller.enqueue(enc.encode(`data: ${JSON.stringify({ error: 'Error al procesar tu consulta.' })}\n\n`))
       } finally {

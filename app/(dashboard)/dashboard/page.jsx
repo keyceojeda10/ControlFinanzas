@@ -1142,6 +1142,49 @@ function NecesitaAtencion({ alertas, moraData }) {
   )
 }
 
+function BandaSuscripcion({ dias }) {
+  if (dias === null || dias === undefined || dias > 30) return null
+  const urgente = dias <= 7
+  const color = urgente ? 'var(--color-danger)' : 'var(--color-warning)'
+  const pct = Math.round((dias / 30) * 100)
+  return (
+    <div className="rounded-[14px] px-4 py-3 flex items-center justify-between gap-3"
+      style={{
+        background: `color-mix(in srgb, ${color} 8%, var(--color-bg-card))`,
+        border: `1px solid color-mix(in srgb, ${color} 25%, var(--color-border))`,
+      }}
+    >
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1.5">
+          <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
+            <div className="h-full rounded-full transition-all duration-700"
+              style={{
+                width: `${pct}%`,
+                background: color,
+                boxShadow: urgente ? `0 0 6px ${color}` : 'none',
+              }}
+            />
+          </div>
+          <span className="text-[11px] font-bold font-mono-display shrink-0" style={{ color }}>{dias}d</span>
+        </div>
+        <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+          {urgente ? 'Tu suscripción vence pronto' : `${dias} días restantes de tu plan`}
+        </p>
+      </div>
+      <a href="/configuracion/plan"
+        className="shrink-0 text-[11px] font-semibold px-3 py-1.5 rounded-full transition-all"
+        style={{
+          background: `color-mix(in srgb, ${color} 15%, transparent)`,
+          color,
+          border: `1px solid color-mix(in srgb, ${color} 35%, transparent)`,
+        }}
+      >
+        Renovar
+      </a>
+    </div>
+  )
+}
+
 export default function DashboardPage() {
   const { session, loading: authLoading, esOwner, puedeCrearClientes, puedeCrearPrestamos } = useAuth()
 
@@ -1155,6 +1198,8 @@ export default function DashboardPage() {
   const [fechaActual, setFechaActual] = useState('')
   const [horaActual, setHoraActual] = useState('')
   const [actualizadoEn, setActualizadoEn] = useState(null)
+  const [susInfo, setSusInfo] = useState(null)
+
   // Vista simple = solo lo esencial (Cobros + Tu dinero). Vista pro = todo.
   const [vistaSimple, setVistaSimple] = useState(false)
   useEffect(() => {
@@ -1284,6 +1329,14 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (authLoading || !esOwner) return
+    fetch('/api/pagos/estado')
+      .then(r => r.json())
+      .then(d => { if (d.diasRestantes !== undefined) setSusInfo(d) })
+      .catch(() => {})
+  }, [authLoading, esOwner])
+
+  useEffect(() => {
+    if (authLoading || !esOwner) return
     loadCapital()
   }, [authLoading, esOwner, loadCapital])
 
@@ -1362,6 +1415,7 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+      {esOwner && susInfo && <BandaSuscripcion dias={susInfo.diasRestantes} />}
       {isOffline && (
         <div className="text-xs rounded-[12px] px-4 py-2.5 flex items-center gap-2" style={{ background: 'var(--color-warning-dim)', border: '1px solid color-mix(in srgb, var(--color-warning) 30%, transparent)', color: 'var(--color-warning)' }}>
           <span className="w-2 h-2 rounded-full animate-pulse shrink-0" style={{ background: 'var(--color-warning)' }} />
