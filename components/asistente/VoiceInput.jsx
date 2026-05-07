@@ -70,6 +70,9 @@ const VoiceInput = forwardRef(function VoiceInput(
     recognition.maxAlternatives = 1
     recognition.continuous = true
 
+    // Rastrear si el engine llegó a arrancar — evita que onerror antes de onstart cierre el waveform
+    let started = false
+
     safetyTimerRef.current = setTimeout(() => {
       stopEngine()
       onRecordingEnd?.()
@@ -77,6 +80,7 @@ const VoiceInput = forwardRef(function VoiceInput(
     }, 30000)
 
     recognition.onstart = () => {
+      started = true
       onRecordingStart?.()
     }
 
@@ -94,19 +98,34 @@ const VoiceInput = forwardRef(function VoiceInput(
       onInterimUpdate?.(display)
     }
 
-    recognition.onerror = () => {
+    recognition.onerror = (e) => {
       clearTimeout(safetyTimerRef.current)
       stopEngine()
-      onRecordingEnd?.()
-      onCancel?.()
+      // Solo notificar al padre si el engine llegó a arrancar — si falló antes de onstart
+      // (ej: panel oculto, permiso denegado) no tocar el estado del padre
+      if (started) {
+        onRecordingEnd?.()
+        onCancel?.()
+      }
     }
 
     recognition.onend = () => {
       clearTimeout(safetyTimerRef.current)
+      // Si el engine terminó solo (sin abort explícito) y ya había arrancado, notificar al padre
+      if (started && recognitionRef.current) {
+        recognitionRef.current = null
+        onRecordingEnd?.()
+        onCancel?.()
+      }
     }
 
     recognitionRef.current = recognition
-    recognition.start()
+    try {
+      recognition.start()
+    } catch {
+      clearTimeout(safetyTimerRef.current)
+      recognitionRef.current = null
+    }
   }, [stopEngine, onRecordingStart, onRecordingEnd, onInterimUpdate, onCancel])
 
   if (!supported) return null

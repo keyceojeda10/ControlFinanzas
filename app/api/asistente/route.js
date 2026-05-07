@@ -300,7 +300,12 @@ export async function POST(req) {
               const lookupResult = clientes.length > 0
                 ? clientes.map(c => {
                     const prestamo = c.prestamos?.[0]
-                    return `${c.nombre} (cédula: ${c.cedula}, id: ${c.id}${prestamo ? `, prestamoId: ${prestamo.id}, cuota: $${Math.round(prestamo.cuotaDiaria).toLocaleString('es-CO')}, saldo: $${Math.round(prestamo.totalAPagar).toLocaleString('es-CO')}` : ', sin préstamo activo'})`
+                    // IDs internos en formato no-visible al usuario (Lucas los usa internamente)
+                    const ids = `[id:${c.id}${prestamo ? `|pid:${prestamo.id}` : ''}]`
+                    const info = prestamo
+                      ? `, cuota: $${Math.round(prestamo.cuotaDiaria).toLocaleString('es-CO')}, saldo: $${Math.round(prestamo.totalAPagar).toLocaleString('es-CO')}`
+                      : ', sin préstamo activo'
+                    return `${c.nombre} (cédula: ${c.cedula}${info}) ${ids}`
                   }).join(' | ')
                 : 'No se encontró ningún cliente con ese nombre o cédula'
 
