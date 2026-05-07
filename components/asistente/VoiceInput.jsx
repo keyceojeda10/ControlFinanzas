@@ -19,8 +19,17 @@ export default function VoiceInput({ onTranscript, disabled }) {
 
   const animateBars = useCallback(() => {
     setBars(Array(BAR_COUNT).fill(0).map(() => 0.2 + Math.random() * 0.8))
-    animTimerRef.current = setTimeout(animateBars, 110)
   }, [])
+
+  useEffect(() => {
+    if (!recording) return
+    const tick = () => {
+      animateBars()
+      animTimerRef.current = setTimeout(tick, 110)
+    }
+    tick()
+    return () => clearTimeout(animTimerRef.current)
+  }, [recording, animateBars])
 
   const stopRecording = useCallback(() => {
     setRecording(false)
@@ -37,7 +46,7 @@ export default function VoiceInput({ onTranscript, disabled }) {
     recognition.lang = 'es-CO'
     recognition.interimResults = false
     recognition.maxAlternatives = 1
-    recognition.onstart = () => { setRecording(true); animateBars() }
+    recognition.onstart = () => { setRecording(true) }
     recognition.onresult = (e) => {
       const transcript = e.results[0]?.[0]?.transcript
       if (transcript) onTranscript(transcript)
@@ -47,7 +56,7 @@ export default function VoiceInput({ onTranscript, disabled }) {
     recognition.onend = stopRecording
     recognitionRef.current = recognition
     recognition.start()
-  }, [animateBars, onTranscript, stopRecording])
+  }, [onTranscript, stopRecording])
 
   useEffect(() => () => { clearTimeout(animTimerRef.current); try { recognitionRef.current?.stop() } catch {} }, [])
 
