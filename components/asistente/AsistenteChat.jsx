@@ -5,30 +5,110 @@ import AccionCard from './AccionCard'
 import VoiceInput from './VoiceInput'
 
 // ---------------------------------------------------------------------------
-// WaveformBar — se renderiza en lugar del row de input mientras se graba
+// WaveformBar — waveform real via Web Audio API AnalyserNode
 // ---------------------------------------------------------------------------
-const BAR_COUNT = 38
+const BAR_COUNT = 40
 
 function WaveformBar({ text, onCancel, onConfirm }) {
-  const [bars, setBars] = useState(() =>
-    Array(BAR_COUNT).fill(0).map(() => 0.15 + Math.random() * 0.35)
-  )
-  const timerRef = useRef(null)
+  const canvasRef = useRef(null)
+  const audioCtxRef = useRef(null)
+  const analyserRef = useRef(null)
+  const streamRef = useRef(null)
+  const rafRef = useRef(null)
+  const barsRef = useRef(new Float32Array(BAR_COUNT).fill(0.05))
 
   useEffect(() => {
-    const tick = () => {
-      setBars(
-        Array(BAR_COUNT).fill(0).map(() =>
-          text
-            ? 0.08 + Math.random() * 0.25   // quietas cuando hay texto pausado
-            : 0.15 + Math.random() * 0.85   // activas mientras habla
-        )
-      )
-      timerRef.current = setTimeout(tick, 80)
+    let cancelled = false
+
+    async function initAudio() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+        if (cancelled) { stream.getTracks().forEach(t => t.stop()); return }
+        streamRef.current = stream
+        const ctx = new (window.AudioContext || window.webkitAudioContext)()
+        audioCtxRef.current = ctx
+        const source = ctx.createMediaStreamSource(stream)
+        const analyser = ctx.createAnalyser()
+        analyser.fftSize = 128
+        analyser.smoothingTimeConstant = 0.75
+        source.connect(analyser)
+        analyserRef.current = analyser
+        drawLoop()
+      } catch {
+        // Permiso denegado — caer en animación simulada suave
+        simulateLoop()
+      }
     }
-    tick()
-    return () => clearTimeout(timerRef.current)
-  }, [text])
+
+    function drawLoop() {
+      if (cancelled) return
+      const canvas = canvasRef.current
+      if (!canvas || !analyserRef.current) return
+      const ctx2d = canvas.getContext('2d')
+      const analyser = analyserRef.current
+      const dataArray = new Uint8Array(analyser.frequencyBinCount)
+      analyser.getByteFrequencyData(dataArray)
+      // Mapear frecuencias a BAR_COUNT barras
+      const step = Math.floor(dataArray.length / BAR_COUNT)
+      for (let i = 0; i < BAR_COUNT; i++) {
+        const raw = dataArray[i * step] / 255
+        // Suavizado exponencial por barra
+        barsRef.current[i] = barsRef.current[i] * 0.6 + raw * 0.4
+      }
+      renderCanvas(ctx2d, canvas)
+      rafRef.current = requestAnimationFrame(drawLoop)
+    }
+
+    function simulateLoop() {
+      if (cancelled) return
+      const canvas = canvasRef.current
+      if (!canvas) return
+      const ctx2d = canvas.getContext('2d')
+      for (let i = 0; i < BAR_COUNT; i++) {
+        const target = 0.05 + Math.random() * 0.3
+        barsRef.current[i] = barsRef.current[i] * 0.7 + target * 0.3
+      }
+      renderCanvas(ctx2d, canvas)
+      rafRef.current = requestAnimationFrame(simulateLoop)
+    }
+
+    function renderCanvas(ctx2d, canvas) {
+      const W = canvas.width
+      const H = canvas.height
+      ctx2d.clearRect(0, 0, W, H)
+      const accent = getComputedStyle(document.documentElement)
+        .getPropertyValue('--color-accent').trim() || '#f5c518'
+      const barW = Math.floor((W - (BAR_COUNT - 1) * 2) / BAR_COUNT)
+      for (let i = 0; i < BAR_COUNT; i++) {
+        const h = Math.max(2, barsRef.current[i] * (H - 4))
+        const x = i * (barW + 2)
+        const y = (H - h) / 2
+        ctx2d.globalAlpha = 0.4 + barsRef.current[i] * 0.6
+        ctx2d.fillStyle = accent
+        ctx2d.beginPath()
+        const r = Math.min(2, barW / 2, h / 2)
+        if (ctx2d.roundRect) {
+          ctx2d.roundRect(x, y, barW, h, r)
+        } else {
+          ctx2d.rect(x, y, barW, h)
+        }
+        ctx2d.fill()
+      }
+      ctx2d.globalAlpha = 1
+    }
+
+    initAudio()
+
+    return () => {
+      cancelled = true
+      cancelAnimationFrame(rafRef.current)
+      try { streamRef.current?.getTracks().forEach(t => t.stop()) } catch {}
+      try { audioCtxRef.current?.close() } catch {}
+      streamRef.current = null
+      audioCtxRef.current = null
+      analyserRef.current = null
+    }
+  }, [])
 
   const displayText = text || 'Habla...'
   const hasText = !!text
@@ -43,44 +123,31 @@ function WaveformBar({ text, onCancel, onConfirm }) {
         boxSizing: 'border-box',
       }}
     >
-      {/* Texto transcript / indicador */}
+      {/* Texto transcript */}
       <span
-        className="text-xs shrink-0 max-w-[90px] truncate"
+        className="text-xs shrink-0 truncate"
         style={{
+          maxWidth: '80px',
+          minWidth: '44px',
           color: hasText ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
           fontStyle: hasText ? 'normal' : 'italic',
-          minWidth: '52px',
         }}
         title={text}
       >
         {displayText}
       </span>
 
-      {/* Barras waveform */}
-      <div
-        className="flex items-center gap-[2px] flex-1 overflow-hidden"
-        style={{ height: '28px' }}
+      {/* Canvas waveform real */}
+      <canvas
+        ref={canvasRef}
+        width={200}
+        height={28}
         aria-hidden="true"
-      >
-        {bars.map((h, i) => (
-          <div
-            key={i}
-            style={{
-              width: '2px',
-              height: `${Math.max(2, Math.round(h * 26))}px`,
-              borderRadius: '2px',
-              background: 'var(--color-accent)',
-              opacity: 0.45 + h * 0.55,
-              transition: 'height 0.08s ease, opacity 0.08s ease',
-              flexShrink: 0,
-            }}
-          />
-        ))}
-      </div>
+        style={{ flex: 1, minWidth: 0, height: '28px', display: 'block' }}
+      />
 
-      {/* Botones accion */}
+      {/* Botones */}
       <div className="flex items-center gap-1.5 shrink-0">
-        {/* Cancelar */}
         <button
           type="button"
           onClick={onCancel}
@@ -96,8 +163,6 @@ function WaveformBar({ text, onCancel, onConfirm }) {
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-
-        {/* Confirmar */}
         <button
           type="button"
           onClick={() => onConfirm(text)}
