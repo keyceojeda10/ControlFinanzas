@@ -452,6 +452,14 @@ export default function ClienteDetallePage({ params }) {
           clienteId={id}
         />
       )}
+
+      {/* Modal selector de plantillas WhatsApp */}
+      <ModalWhatsAppTemplates
+        open={modalWA}
+        onClose={() => setModalWA(false)}
+        cliente={cliente}
+        prestamo={prestamosActivos[0] || null}
+      />
     </div>
   )
 }
@@ -586,14 +594,6 @@ function DeleteClienteModal({ cliente, prestamos, onClose, onDeletePrestamo, onT
           )}
         </div>
       </div>
-
-      {/* Modal selector de plantillas WhatsApp */}
-      <ModalWhatsAppTemplates
-        open={modalWA}
-        onClose={() => setModalWA(false)}
-        cliente={cliente}
-        prestamo={prestamosActivos[0] || null}
-      />
     </div>
   )
 }
