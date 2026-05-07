@@ -276,16 +276,18 @@ export async function POST(req) {
           if (toolBlock) {
             // lookup_client is handled server-side without showing a confirmation card
             if (toolBlock.name === 'lookup_client') {
-              // Perform the lookup and continue conversation
+              // Búsqueda fuzzy: dividir en palabras para tolerar transcripciones de voz inexactas
               const buscar = toolBlock.input?.buscar || ''
+              const palabras = buscar.trim().split(/\s+/).filter(Boolean)
+              const condiciones = palabras.length > 1
+                ? palabras.flatMap(p => [{ nombre: { contains: p } }, { cedula: { contains: p } }])
+                : [{ nombre: { contains: buscar } }, { cedula: { contains: buscar } }]
+
               const clientes = await prisma.cliente.findMany({
                 where: {
                   organizationId: orgId,
                   estado: { notIn: ['eliminado'] },
-                  OR: [
-                    { nombre: { contains: buscar } },
-                    { cedula: { contains: buscar } },
-                  ],
+                  OR: condiciones,
                 },
                 select: {
                   id: true, nombre: true, cedula: true, telefono: true,
@@ -297,17 +299,28 @@ export async function POST(req) {
                 },
                 take: 5,
               })
-              const lookupResult = clientes.length > 0
-                ? clientes.map(c => {
-                    const prestamo = c.prestamos?.[0]
-                    // IDs internos en formato no-visible al usuario (Lucas los usa internamente)
-                    const ids = `[id:${c.id}${prestamo ? `|pid:${prestamo.id}` : ''}]`
-                    const info = prestamo
-                      ? `, cuota: $${Math.round(prestamo.cuotaDiaria).toLocaleString('es-CO')}, saldo: $${Math.round(prestamo.totalAPagar).toLocaleString('es-CO')}`
-                      : ', sin préstamo activo'
-                    return `${c.nombre} (cédula: ${c.cedula}${info}) ${ids}`
-                  }).join(' | ')
-                : 'No se encontró ningún cliente con ese nombre o cédula'
+
+              let lookupResult
+              if (clientes.length > 0) {
+                lookupResult = clientes.map(c => {
+                  const prestamo = c.prestamos?.[0]
+                  const ids = `[id:${c.id}${prestamo ? `|pid:${prestamo.id}` : ''}]`
+                  const info = prestamo
+                    ? `, cuota: $${Math.round(prestamo.cuotaDiaria).toLocaleString('es-CO')}, saldo: $${Math.round(prestamo.totalAPagar).toLocaleString('es-CO')}`
+                    : ', sin préstamo activo'
+                  return `${c.nombre} (cédula: ${c.cedula}${info}) ${ids}`
+                }).join(' | ')
+              } else {
+                // No encontrado — sugerir clientes activos recientes para que Lucas pueda orientar
+                const sugeridos = await prisma.cliente.findMany({
+                  where: { organizationId: orgId, estado: { notIn: ['eliminado', 'inactivo'] }, prestamos: { some: { estado: 'activo' } } },
+                  select: { nombre: true, cedula: true },
+                  orderBy: { createdAt: 'desc' },
+                  take: 3,
+                })
+                const sugeridosTexto = sugeridos.map(c => `${c.nombre} (cédula: ${c.cedula})`).join(', ')
+                lookupResult = `No encontré a nadie con "${buscar}". Clientes activos recientes: ${sugeridosTexto || 'ninguno'}.`
+              }
 
               controller.enqueue(enc.encode(`data: ${JSON.stringify({ type: 'lookup_result', result: lookupResult, clientes })}\n\n`))
             } else {
@@ -324,8 +337,6 @@ export async function POST(req) {
           }
         }
 
-        controller.enqueue(enc.encode('data: [DONE]\n\n'))
-
         // fire-and-forget: extraer memoria si hay conversación larga
         if (isOwner && history.length >= 4) {
           const conversacionCompleta = [
@@ -335,8 +346,10 @@ export async function POST(req) {
           setImmediate(() => extraerYGuardarMemoria(orgId, session.user.id, conversacionCompleta))
         }
       } catch (err) {
-        controller.enqueue(enc.encode(`data: ${JSON.stringify({ error: 'Error al procesar tu consulta.' })}\n\n`))
+        try { controller.enqueue(enc.encode(`data: ${JSON.stringify({ error: 'Error al procesar tu consulta.' })}\n\n`)) } catch {}
       } finally {
+        // [DONE] siempre en finally — garantiza que el cliente nunca quede cargando infinito
+        try { controller.enqueue(enc.encode('data: [DONE]\n\n')) } catch {}
         controller.close()
       }
     },

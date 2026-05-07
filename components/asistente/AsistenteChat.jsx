@@ -357,12 +357,7 @@ export default function AsistenteChat({ onClose }) {
             }
 
             if (parsed.type === 'lookup_result') {
-              setMessages(prev => {
-                const copy = [...prev]
-                const last = copy[copy.length - 1]
-                copy[copy.length - 1] = { ...last, content: last.content + `\n\nBúsqueda: ${parsed.result}` }
-                return copy
-              })
+              // No mostrar en el chat — Lucas lo procesa internamente y responde con texto limpio
             }
           } catch {}
         }
