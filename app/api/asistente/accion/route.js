@@ -99,8 +99,20 @@ export async function POST(req) {
 
       case 'edit_loan': {
         const body = { modo: input.modo }
-        if (input.nuevaFechaFin) body.fechaFin = input.nuevaFechaFin
-        if (input.diasExtra) body.diasExtra = input.diasExtra
+        // Para modo 'extender': el API requiere nuevaFechaFin, no acepta diasExtra directamente.
+        // Si Claude calculó diasExtra sin nuevaFechaFin, derivar la fecha consultando el préstamo.
+        if (input.nuevaFechaFin) {
+          body.fechaFin = input.nuevaFechaFin
+        } else if (input.modo === 'extender' && input.diasExtra) {
+          // Fetch current fechaFin from DB
+          const prestamoRes = await fetch(`${origin}/api/prestamos/${input.prestamoId}`, { headers })
+          if (prestamoRes.ok) {
+            const prestamoData = await prestamoRes.json()
+            const fechaActual = new Date(prestamoData.prestamo?.fechaFin || prestamoData.fechaFin || Date.now())
+            fechaActual.setDate(fechaActual.getDate() + Number(input.diasExtra))
+            body.fechaFin = fechaActual.toISOString().split('T')[0]
+          }
+        }
         if (input.frecuencia) body.frecuencia = input.frecuencia
         if (input.diaCobroSemana !== undefined) body.diaCobroSemana = input.diaCobroSemana
         if (input.diaCobroMes) body.diaCobroMes = input.diaCobroMes

@@ -46,14 +46,19 @@ export default function VoiceInput({ onTranscript, disabled }) {
     recognition.lang = 'es-CO'
     recognition.interimResults = false
     recognition.maxAlternatives = 1
+
+    // Safety timeout: stop if browser hangs and never fires onend
+    const safetyTimer = setTimeout(() => stopRecording(), 30000)
+
     recognition.onstart = () => { setRecording(true) }
     recognition.onresult = (e) => {
+      clearTimeout(safetyTimer)
       const transcript = e.results[0]?.[0]?.transcript
       if (transcript) onTranscript(transcript)
       stopRecording()
     }
-    recognition.onerror = stopRecording
-    recognition.onend = stopRecording
+    recognition.onerror = () => { clearTimeout(safetyTimer); stopRecording() }
+    recognition.onend = () => { clearTimeout(safetyTimer); stopRecording() }
     recognitionRef.current = recognition
     recognition.start()
   }, [onTranscript, stopRecording])

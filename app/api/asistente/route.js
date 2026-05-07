@@ -11,6 +11,9 @@ import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
 
+if (!process.env.ANTHROPIC_API_KEY) {
+  console.error('[asistente] ANTHROPIC_API_KEY no está configurada — el asistente no funcionará')
+}
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 // Build the displayData object shown in the confirmation card
@@ -40,8 +43,9 @@ async function buildDisplayData(toolName, input, orgId) {
         fechaInicio: input.fechaInicio || hoy,
         frecuencia: input.frecuencia,
       })
+      // fechaFin es un Date con hora local 00:00 — usar UTC para evitar desfase de un día en servidores UTC
       const fechaFin = calc.fechaFin
-        ? new Date(calc.fechaFin).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })
+        ? new Date(calc.fechaFin).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
         : '—'
       const frecLabels = { diario: 'Diario', semanal: 'Semanal', quincenal: 'Quincenal', mensual: 'Mensual' }
       return {
@@ -106,7 +110,7 @@ async function buildDisplayData(toolName, input, orgId) {
         { label: 'Cambio', value: modeLabels[input.modo] || input.modo },
       ]
       if (input.nuevaFechaFin) {
-        fields.push({ label: 'Nueva fecha fin', value: new Date(input.nuevaFechaFin).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' }) })
+        fields.push({ label: 'Nueva fecha fin', value: new Date(input.nuevaFechaFin).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }) })
       }
       if (input.diasExtra) fields.push({ label: 'Días extra', value: `+${input.diasExtra} días` })
       if (input.diaCobroSemana !== undefined) {

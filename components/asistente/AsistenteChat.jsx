@@ -21,8 +21,10 @@ export default function AsistenteChat({ onClose }) {
   const [planError, setPlanError] = useState(null)
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
+  const messagesRef = useRef([])
 
   useEffect(() => {
+    messagesRef.current = messages
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
@@ -32,19 +34,18 @@ export default function AsistenteChat({ onClose }) {
     setInput('')
     setError('')
 
+    // Capture history from ref (pure read, no side effects in setMessages updater)
+    const currentHistory = messagesRef.current
+      .filter(m => m.type !== 'action')
+      .slice(-6)
+      .map(m => ({ role: m.role, content: m.content }))
+
     const userMsg = { role: 'user', content: msg }
     const assistantMsg = { role: 'assistant', content: '', type: 'text' }
     setMessages(prev => [...prev, userMsg, assistantMsg])
     setLoading(true)
 
     try {
-      const currentHistory = []
-      setMessages(prev => {
-        // Capture history before adding new messages
-        currentHistory.push(...prev.filter(m => m.type !== 'action').slice(-6).map(m => ({ role: m.role, content: m.content })))
-        return prev
-      })
-
       const res = await fetch('/api/asistente', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -113,11 +114,10 @@ export default function AsistenteChat({ onClose }) {
             }
 
             if (parsed.type === 'lookup_result') {
-              // Append lookup result as text to current message
               setMessages(prev => {
                 const copy = [...prev]
                 const last = copy[copy.length - 1]
-                copy[copy.length - 1] = { ...last, content: last.content + `\n\n*Resultado búsqueda: ${parsed.result}*` }
+                copy[copy.length - 1] = { ...last, content: last.content + `\n\nBúsqueda: ${parsed.result}` }
                 return copy
               })
             }
@@ -216,7 +216,11 @@ export default function AsistenteChat({ onClose }) {
                 tool={msg.actionData.tool}
                 input={msg.actionData.input}
                 displayData={msg.actionData.displayData}
-                onConfirm={() => {}}
+                onConfirm={(data) => {
+                  if (data?.message) {
+                    setMessages(prev => [...prev, { role: 'assistant', content: data.message, type: 'text' }])
+                  }
+                }}
                 onCancel={() => {
                   setMessages(prev => {
                     const copy = [...prev]
