@@ -9,9 +9,21 @@ export const dynamic = 'force-dynamic'
 export async function POST(req) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-  if (session.user.rol !== 'owner') return NextResponse.json({ error: 'Solo el administrador puede ejecutar acciones' }, { status: 403 })
 
   const orgId = session.user.organizationId
+  const isOwner = session.user.rol === 'owner'
+  const isCobrador = session.user.rol === 'cobrador'
+
+  // Validación temprana de tool antes de rate-limit para poder hacer el check de permisos
+  const bodyRaw = await req.json()
+  const { tool, input } = bodyRaw
+  if (!tool || !input) return NextResponse.json({ error: 'Datos incompletos' }, { status: 400 })
+
+  // Owner puede todo; cobrador solo puede register_payment y register_expense
+  const COBRADOR_TOOLS = ['register_payment', 'register_expense']
+  if (!isOwner && !(isCobrador && COBRADOR_TOOLS.includes(tool))) {
+    return NextResponse.json({ error: 'Sin permisos para ejecutar esta acción' }, { status: 403 })
+  }
 
   // Rate limit de acciones (más estricto que el chat)
   const rl = accionLimiter(orgId)
@@ -21,9 +33,6 @@ export async function POST(req) {
       message: `Límite de acciones alcanzado. Intenta en ${rl.retryAfter} segundos.`,
     }, { status: 429 })
   }
-
-  const { tool, input } = await req.json()
-  if (!tool || !input) return NextResponse.json({ error: 'Datos incompletos' }, { status: 400 })
 
   // Use NEXTAUTH_URL for internal fetches, fallback to localhost
   const origin = (process.env.NEXTAUTH_URL || 'http://localhost:3000').replace(/\/$/, '')
@@ -136,6 +145,39 @@ export async function POST(req) {
           whatsappUrl: `https://wa.me/${waNumber}?text=${waText}`,
           soporteUrl: '/soporte/nuevo',
           planesUrl: '/configuracion/plan',
+        })
+      }
+
+      case 'register_payment': {
+        const res = await fetch(`${origin}/api/prestamos/${input.prestamoId}/pagos`, {
+          method: 'POST', headers,
+          body: JSON.stringify({
+            montoPagado: input.monto,
+            tipo: input.tipo,
+            metodoPago: input.metodoPago || 'efectivo',
+            plataforma: input.plataforma || null,
+          }),
+        })
+        const data = await res.json()
+        if (!res.ok) return NextResponse.json({ error: data.error || 'Error al registrar el pago' }, { status: res.status })
+        clearCachedContexto(orgId)
+        return NextResponse.json({
+          ok: true,
+          message: `Pago de $${Math.round(input.monto).toLocaleString('es-CO')} registrado para ${input.clienteNombre}.`,
+        })
+      }
+
+      case 'register_expense': {
+        const res = await fetch(`${origin}/api/gastos`, {
+          method: 'POST', headers,
+          body: JSON.stringify({ description: input.description, monto: input.monto }),
+        })
+        const data = await res.json()
+        if (!res.ok) return NextResponse.json({ error: data.error || 'Error al registrar el gasto' }, { status: res.status })
+        clearCachedContexto(orgId)
+        return NextResponse.json({
+          ok: true,
+          message: `Gasto de $${Math.round(input.monto).toLocaleString('es-CO')} (${input.description}) registrado. Pendiente de aprobación.`,
         })
       }
 

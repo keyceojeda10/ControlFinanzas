@@ -1,11 +1,10 @@
 'use client'
-// components/asistente/AsistenteChat.jsx — Chat UI del asistente Lucas
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import AccionCard from './AccionCard'
 import VoiceInput from './VoiceInput'
 
-const SUGERENCIAS = [
+const SUGERENCIAS_DEFAULT = [
   '¿Cuánto estoy ganando realmente?',
   '¿Cuánto recaudé esta semana?',
   '¿Quién me debe más y cuánto?',
@@ -13,12 +12,27 @@ const SUGERENCIAS = [
   '¿Tengo capital disponible para prestar más?',
 ]
 
+function generarSugerencias(alertas) {
+  if (!alertas) return SUGERENCIAS_DEFAULT
+  const s = []
+  if (alertas.clientesMora > 0)
+    s.push(`¿Quiénes son mis ${alertas.clientesMora} clientes en mora?`)
+  if (alertas.clientesSinRuta > 0)
+    s.push(`${alertas.clientesSinRuta} clientes sin ruta — ¿qué hacemos?`)
+  if (alertas.prestamosSinPagos > 0)
+    s.push(`${alertas.prestamosSinPagos} préstamos sin cobro en +7 días`)
+  if (alertas.diaSemana === 1)
+    s.push('¿Cuánto recaudé el fin de semana?')
+  if (typeof alertas.pctCobroHoy === 'number' && alertas.pctCobroHoy < 80)
+    s.push(`Solo llevo ${alertas.pctCobroHoy}% de mi meta de hoy — ¿qué hago?`)
+  s.push('¿Cuánto estoy ganando realmente?')
+  return s.slice(0, 5)
+}
+
 // Convierte markdown básico (**negrita**, *cursiva*, saltos de línea) a JSX
 function renderMarkdown(text) {
   if (!text) return null
-  // Split por saltos de línea, procesar cada línea
-  return text.split('\n').map((line, li) => {
-    // Parsear **bold** y *italic* dentro de cada línea
+  return text.split('\n').map((line, li, arr) => {
     const parts = []
     const regex = /(\*\*(.+?)\*\*|\*(.+?)\*)/g
     let last = 0
@@ -33,7 +47,7 @@ function renderMarkdown(text) {
     return (
       <span key={li}>
         {parts}
-        {li < text.split('\n').length - 1 && <br />}
+        {li < arr.length - 1 && <br />}
       </span>
     )
   })
@@ -45,6 +59,7 @@ export default function AsistenteChat({ onClose }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [planError, setPlanError] = useState(null)
+  const [usageInfo, setUsageInfo] = useState(null) // { limite, usado, restantes, alertas }
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
   const messagesRef = useRef([])
@@ -54,13 +69,30 @@ export default function AsistenteChat({ onClose }) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  // Fetch uso + alertas al montar
+  useEffect(() => {
+    fetch('/api/asistente/uso')
+      .then(r => r.json())
+      .then(json => {
+        const d = json.data ?? json
+        setUsageInfo(d)
+      })
+      .catch(() => {})
+  }, [])
+
+  const refreshUsage = useCallback(() => {
+    fetch('/api/asistente/uso')
+      .then(r => r.json())
+      .then(json => { const d = json.data ?? json; setUsageInfo(d) })
+      .catch(() => {})
+  }, [])
+
   const sendMessage = useCallback(async (text) => {
     const msg = (text || input).trim()
     if (!msg || loading) return
     setInput('')
     setError('')
 
-    // Capture history from ref (pure read, no side effects in setMessages updater)
     const currentHistory = messagesRef.current
       .filter(m => m.type !== 'action')
       .slice(-6)
@@ -91,6 +123,7 @@ export default function AsistenteChat({ onClose }) {
             copy[copy.length - 1] = { ...copy[copy.length - 1], content: data.message }
             return copy
           })
+          refreshUsage()
           return
         }
         throw new Error(data.error || 'Error del servidor')
@@ -122,7 +155,6 @@ export default function AsistenteChat({ onClose }) {
             }
 
             if (parsed.type === 'action_proposal') {
-              // Replace the last assistant message with an action card
               setMessages(prev => {
                 const copy = [...prev]
                 copy[copy.length - 1] = {
@@ -150,17 +182,26 @@ export default function AsistenteChat({ onClose }) {
           } catch {}
         }
       }
+      refreshUsage()
     } catch {
       setError('Error de conexión. Intenta de nuevo.')
       setMessages(prev => prev.slice(0, -2))
     } finally {
       setLoading(false)
     }
-  }, [input, loading])
+  }, [input, loading, refreshUsage])
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
   }
+
+  const sugerencias = generarSugerencias(usageInfo?.alertas)
+
+  // Determinar color del contador
+  const restantes = usageInfo?.restantes ?? null
+  const limite = usageInfo?.limite ?? null
+  const sinMensajes = restantes !== null && restantes <= 0
+  const pocasCuotas = restantes !== null && restantes > 0 && restantes <= 3
 
   return (
     <div className="flex flex-col h-full">
@@ -183,14 +224,31 @@ export default function AsistenteChat({ onClose }) {
             <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Asistente financiero</p>
           </div>
         </div>
-        {onClose && (
-          <button onClick={onClose} className="p-1.5 rounded-lg transition-colors"
-            style={{ color: 'var(--color-text-muted)' }} aria-label="Cerrar asistente">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Contador de mensajes */}
+          {restantes !== null && limite !== null && limite > 0 && (
+            <span
+              className="text-[10px] font-medium px-2 py-0.5 rounded-full"
+              style={{
+                background: pocasCuotas || sinMensajes
+                  ? 'color-mix(in srgb, var(--color-warning) 15%, transparent)'
+                  : 'var(--color-bg-hover)',
+                color: pocasCuotas || sinMensajes ? 'var(--color-warning)' : 'var(--color-text-muted)',
+                border: `1px solid ${pocasCuotas || sinMensajes ? 'color-mix(in srgb, var(--color-warning) 30%, transparent)' : 'var(--color-border)'}`,
+              }}
+            >
+              {sinMensajes ? '0 restantes' : `${restantes} de ${limite}`}
+            </span>
+          )}
+          {onClose && (
+            <button onClick={onClose} className="p-1.5 rounded-lg transition-colors"
+              style={{ color: 'var(--color-text-muted)' }} aria-label="Cerrar asistente">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Plan error */}
@@ -219,7 +277,7 @@ export default function AsistenteChat({ onClose }) {
               </p>
             </div>
             <div className="flex flex-col gap-2">
-              {SUGERENCIAS.map((s) => (
+              {sugerencias.map((s) => (
                 <button key={s} onClick={() => sendMessage(s)}
                   className="text-left text-sm px-3 py-2.5 rounded-[12px] transition-all active:scale-[0.98]"
                   style={{
@@ -246,6 +304,7 @@ export default function AsistenteChat({ onClose }) {
                   if (data?.message) {
                     setMessages(prev => [...prev, { role: 'assistant', content: data.message, type: 'text' }])
                   }
+                  refreshUsage()
                 }}
                 onCancel={() => {
                   setMessages(prev => {
@@ -303,43 +362,66 @@ export default function AsistenteChat({ onClose }) {
       {/* Input */}
       {!planError && (
         <div className="px-4 py-3 border-t shrink-0" style={{ borderColor: 'var(--color-border)' }}>
-          <div className="flex gap-2 items-end">
-            <VoiceInput
-              onTranscript={(t) => {
-                setInput(t)
-                setTimeout(() => inputRef.current?.focus(), 50)
-              }}
-              disabled={loading}
-            />
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Pregunta o pide algo..."
-              rows={1}
-              disabled={loading}
-              className="flex-1 resize-none rounded-[12px] px-3.5 py-2.5 text-sm outline-none transition-all"
+          {sinMensajes ? (
+            /* Banner de upgrade cuando se agotan los mensajes */
+            <div className="rounded-[12px] px-4 py-3 text-center"
               style={{
-                background: 'var(--color-bg-hover)',
-                border: '1px solid var(--color-border-hover)',
-                color: 'var(--color-text-primary)',
-                maxHeight: '100px',
-                lineHeight: '1.5',
-              }}
-            />
-            <button onClick={() => sendMessage()} disabled={loading || !input.trim()}
-              className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 transition-all disabled:opacity-40"
-              style={{ background: 'var(--color-accent)', color: '#0a0a0a' }}
-              aria-label="Enviar">
-              <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.269 20.876L5.999 12zm0 0h7.5" />
-              </svg>
-            </button>
-          </div>
-          <p className="text-[10px] text-center mt-2" style={{ color: 'var(--color-text-muted)' }}>
-            Lucas puede cometer errores — verifica datos importantes
-          </p>
+                background: 'color-mix(in srgb, var(--color-warning) 10%, var(--color-bg-hover))',
+                border: '1px solid color-mix(in srgb, var(--color-warning) 30%, transparent)',
+              }}>
+              <p className="text-sm font-semibold mb-1" style={{ color: 'var(--color-warning)' }}>
+                Límite de mensajes alcanzado
+              </p>
+              <p className="text-xs mb-2" style={{ color: 'var(--color-text-secondary)' }}>
+                Actualiza tu plan para tener más consultas con Lucas.
+              </p>
+              <a href="/configuracion/plan"
+                className="inline-block text-xs font-bold px-4 py-1.5 rounded-lg"
+                style={{ background: 'var(--color-accent)', color: '#0a0a0a' }}>
+                Ver planes
+              </a>
+            </div>
+          ) : (
+            <>
+              <div className="flex gap-2 items-end">
+                <VoiceInput
+                  onTranscript={(t) => {
+                    setInput(t)
+                    setTimeout(() => inputRef.current?.focus(), 50)
+                  }}
+                  disabled={loading}
+                />
+                <textarea
+                  ref={inputRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Pregunta o pide algo..."
+                  rows={1}
+                  disabled={loading}
+                  className="flex-1 resize-none rounded-[12px] px-3.5 py-2.5 text-sm outline-none transition-all"
+                  style={{
+                    background: 'var(--color-bg-hover)',
+                    border: '1px solid var(--color-border-hover)',
+                    color: 'var(--color-text-primary)',
+                    maxHeight: '100px',
+                    lineHeight: '1.5',
+                  }}
+                />
+                <button onClick={() => sendMessage()} disabled={loading || !input.trim()}
+                  className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 transition-all disabled:opacity-40"
+                  style={{ background: 'var(--color-accent)', color: '#0a0a0a' }}
+                  aria-label="Enviar">
+                  <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.269 20.876L5.999 12zm0 0h7.5" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-[10px] text-center mt-2" style={{ color: 'var(--color-text-muted)' }}>
+                Lucas puede cometer errores — verifica datos importantes
+              </p>
+            </>
+          )}
         </div>
       )}
     </div>

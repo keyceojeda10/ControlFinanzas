@@ -55,7 +55,7 @@ export default function AsistenteButton() {
         />
       )}
 
-      {/* Panel del chat: slide-up en mobile, panel lateral en desktop */}
+      {/* Panel del chat: slide-up en mobile — siempre montado para persistir historial */}
       <div
         className="fixed z-50 transition-all duration-300"
         style={{
@@ -71,20 +71,19 @@ export default function AsistenteButton() {
           boxShadow: open ? '0 -8px 60px rgba(0,0,0,0.7)' : 'none',
         }}
       >
-        {open && (
-          <div className="h-full flex flex-col">
-            {/* Handle bar */}
-            <div className="flex justify-center pt-3 pb-1">
-              <div
-                className="w-10 h-1 rounded-full"
-                style={{ background: 'var(--color-border-hover)' }}
-              />
-            </div>
-            <div className="flex-1 overflow-hidden">
-              <AsistenteChat onClose={() => setOpen(false)} />
-            </div>
+        {/* AsistenteChat permanece montado siempre — display:none lo oculta sin destruir el estado */}
+        <div style={{ display: open ? 'flex' : 'none', flexDirection: 'column', height: '100%' }}>
+          {/* Handle bar */}
+          <div className="flex justify-center pt-3 pb-1">
+            <div
+              className="w-10 h-1 rounded-full"
+              style={{ background: 'var(--color-border-hover)' }}
+            />
           </div>
-        )}
+          <div className="flex-1 overflow-hidden">
+            <AsistenteChat onClose={() => setOpen(false)} />
+          </div>
+        </div>
       </div>
     </>
   )

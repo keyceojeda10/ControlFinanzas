@@ -3,9 +3,9 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import Anthropic from '@anthropic-ai/sdk'
 import { buildContexto, buildSystemPrompt, buildContextoCobrador, buildSystemPromptCobrador, detectQueryComplexity } from '@/lib/asistente'
-import { asistenteLimiter } from '@/lib/rate-limit'
+import { getAsistenteLimiter } from '@/lib/rate-limit'
 import { planTieneIA } from '@/lib/planes'
-import { TOOLS_OWNER } from '@/lib/asistente-tools'
+import { TOOLS_OWNER, TOOLS_COBRADOR } from '@/lib/asistente-tools'
 import { calcularPrestamo } from '@/lib/calculos'
 import { prisma } from '@/lib/prisma'
 
@@ -123,6 +123,50 @@ async function buildDisplayData(toolName, input, orgId) {
     case 'escalate_support': {
       return { tipo: 'escalation', motivo: input.motivo, mensaje: input.mensaje }
     }
+    case 'register_payment': {
+      // Fetch préstamo para saldo actual
+      let saldoActual = null
+      try {
+        const prestamo = await prisma.prestamo.findFirst({
+          where: { id: input.prestamoId, organizationId: orgId },
+          select: { totalAPagar: true, pagos: { select: { montoPagado: true, tipo: true } } },
+        })
+        if (prestamo) {
+          const pagado = (prestamo.pagos ?? [])
+            .filter(p => !['recargo', 'descuento'].includes(p.tipo))
+            .reduce((acc, p) => acc + p.montoPagado, 0)
+          saldoActual = Math.max(0, prestamo.totalAPagar - pagado)
+        }
+      } catch {}
+
+      const tipoLabel = { completo: 'Pago completo', parcial: 'Pago parcial' }
+      const metodoLabel = { efectivo: 'Efectivo', transferencia: 'Transferencia' }
+      const fields = [
+        { label: 'Cliente', value: input.clienteNombre },
+        { label: 'Monto del pago', value: fmt(input.monto) },
+        { label: 'Tipo', value: tipoLabel[input.tipo] || input.tipo },
+        { label: 'Método', value: metodoLabel[input.metodoPago] || 'Efectivo' },
+      ]
+      if (input.plataforma) fields.push({ label: 'Plataforma', value: input.plataforma })
+      if (saldoActual !== null) {
+        fields.push({ label: 'Saldo actual', value: fmt(saldoActual) })
+        fields.push({ label: 'Saldo después del pago', value: fmt(Math.max(0, saldoActual - input.monto)) })
+      }
+      return { fields, titulo: 'Registrar pago', color: 'success' }
+    }
+    case 'register_expense': {
+      const hoy = new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'America/Bogota' })
+      return {
+        fields: [
+          { label: 'Descripción', value: input.description },
+          { label: 'Monto', value: fmt(input.monto) },
+          { label: 'Fecha', value: hoy },
+          { label: 'Estado', value: 'Pendiente de aprobación' },
+        ],
+        titulo: 'Registrar gasto',
+        color: 'warning',
+      }
+    }
     default:
       return { fields: [], titulo: toolName, color: 'info' }
   }
@@ -149,8 +193,8 @@ export async function POST(req) {
     }, { status: 403 })
   }
 
-  // Rate limit por orgId
-  const rl = asistenteLimiter(orgId)
+  // Rate limit por orgId — límite según plan
+  const rl = getAsistenteLimiter(orgId, plan)
   if (!rl.ok) {
     return NextResponse.json({
       error: 'rate_limit',
@@ -187,7 +231,11 @@ export async function POST(req) {
     max_tokens: isOwner ? 1024 : 600,
     system: systemPrompt,
     messages,
-    ...(isOwner ? { tools: TOOLS_OWNER, tool_choice: { type: 'auto' } } : {}),
+    ...(isOwner
+      ? { tools: TOOLS_OWNER, tool_choice: { type: 'auto' } }
+      : isCobrador
+        ? { tools: TOOLS_COBRADOR, tool_choice: { type: 'auto' } }
+        : {}),
   }
 
   const stream = anthropic.messages.stream(streamParams)
@@ -224,11 +272,21 @@ export async function POST(req) {
                     { cedula: { contains: buscar } },
                   ],
                 },
-                select: { id: true, nombre: true, cedula: true, telefono: true },
+                select: {
+                  id: true, nombre: true, cedula: true, telefono: true,
+                  prestamos: {
+                    where: { estado: 'activo' },
+                    select: { id: true, totalAPagar: true, cuotaDiaria: true, montoPrestado: true },
+                    take: 1,
+                  },
+                },
                 take: 5,
               })
               const lookupResult = clientes.length > 0
-                ? clientes.map(c => `${c.nombre} (cédula: ${c.cedula}, id: ${c.id})`).join(' | ')
+                ? clientes.map(c => {
+                    const prestamo = c.prestamos?.[0]
+                    return `${c.nombre} (cédula: ${c.cedula}, id: ${c.id}${prestamo ? `, prestamoId: ${prestamo.id}, cuota: $${Math.round(prestamo.cuotaDiaria).toLocaleString('es-CO')}, saldo: $${Math.round(prestamo.totalAPagar).toLocaleString('es-CO')}` : ', sin préstamo activo'})`
+                  }).join(' | ')
                 : 'No se encontró ningún cliente con ese nombre o cédula'
 
               controller.enqueue(enc.encode(`data: ${JSON.stringify({ type: 'lookup_result', result: lookupResult, clientes })}\n\n`))
