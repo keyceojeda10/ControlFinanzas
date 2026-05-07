@@ -55,6 +55,12 @@ export async function POST(req) {
 
       case 'create_loan': {
         const hoy = new Date().toISOString().split('T')[0]
+        // Validar fechaInicio: si Claude la calculó mal (>30 días en el pasado o en el futuro lejano), usar hoy
+        let fechaInicio = hoy
+        if (input.fechaInicio) {
+          const diff = (new Date(input.fechaInicio) - new Date(hoy)) / (1000 * 60 * 60 * 24)
+          if (diff >= -30 && diff <= 365) fechaInicio = input.fechaInicio
+        }
         const res = await fetch(`${origin}/api/prestamos`, {
           method: 'POST', headers,
           body: JSON.stringify({
@@ -62,7 +68,7 @@ export async function POST(req) {
             montoPrestado: input.montoPrestado,
             tasaInteres: input.tasaInteres,
             diasPlazo: input.diasPlazo,
-            fechaInicio: input.fechaInicio || hoy,
+            fechaInicio,
             frecuencia: input.frecuencia,
           }),
         })
