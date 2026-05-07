@@ -123,7 +123,7 @@ async function buildDisplayData(toolName, input, orgId) {
     }
     case 'escalate_support': {
       const origin = process.env.NEXTAUTH_URL ?? 'https://app.control-finanzas.com'
-      const waNum = process.env.SOPORTE_WHATSAPP ?? '573234567890'
+      const waNum = process.env.SOPORTE_WHATSAPP ?? '573011993001'
       return {
         tipo: 'escalation',
         motivo: input.motivo,

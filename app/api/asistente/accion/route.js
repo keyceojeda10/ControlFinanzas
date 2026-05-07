@@ -136,7 +136,7 @@ export async function POST(req) {
       }
 
       case 'escalate_support': {
-        const waNumber = process.env.SOPORTE_WHATSAPP || '573001234567'
+        const waNumber = process.env.SOPORTE_WHATSAPP || '573011993001'
         const waText = encodeURIComponent(`Hola, necesito ayuda con Control Finanzas. Motivo: ${input.motivo}`)
         return NextResponse.json({
           ok: true,
