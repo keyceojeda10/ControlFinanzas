@@ -322,7 +322,43 @@ export async function POST(req) {
                 lookupResult = `No encontré a nadie con "${buscar}". Clientes activos recientes: ${sugeridosTexto || 'ninguno'}.`
               }
 
+              // Enviar lookup_result al frontend (para uso interno del cliente)
               controller.enqueue(enc.encode(`data: ${JSON.stringify({ type: 'lookup_result', result: lookupResult, clientes })}\n\n`))
+
+              // Segunda llamada a Claude con el tool_result para que Lucas pueda continuar la conversación
+              const messagesConToolResult = [
+                ...messages,
+                { role: 'assistant', content: finalMsg.content },
+                {
+                  role: 'user',
+                  content: [{
+                    type: 'tool_result',
+                    tool_use_id: toolBlock.id,
+                    content: lookupResult,
+                  }],
+                },
+              ]
+              const stream2 = anthropic.messages.stream({
+                ...streamParams,
+                messages: messagesConToolResult,
+              })
+              for await (const chunk2 of stream2) {
+                if (chunk2.type === 'content_block_delta' && chunk2.delta?.type === 'text_delta') {
+                  controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: chunk2.delta.text })}\n\n`))
+                }
+              }
+              // Si la segunda respuesta también usa una herramienta (ej: register_payment tras lookup)
+              const finalMsg2 = await stream2.finalMessage()
+              const toolBlock2 = finalMsg2.content.find(b => b.type === 'tool_use')
+              if (toolBlock2 && toolBlock2.name !== 'lookup_client') {
+                const displayData2 = await buildDisplayData(toolBlock2.name, toolBlock2.input, orgId)
+                controller.enqueue(enc.encode(`data: ${JSON.stringify({
+                  type: 'action_proposal',
+                  tool: toolBlock2.name,
+                  input: toolBlock2.input,
+                  displayData: displayData2,
+                })}\n\n`))
+              }
             } else {
               const displayData = await buildDisplayData(toolBlock.name, toolBlock.input, orgId)
               controller.enqueue(
