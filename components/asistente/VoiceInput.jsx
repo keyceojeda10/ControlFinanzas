@@ -1,124 +1,151 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react'
 
-const BAR_COUNT = 5
-
-export default function VoiceInput({ onTranscript, disabled }) {
+/**
+ * VoiceInput — botón micrófono + motor de reconocimiento de voz.
+ *
+ * Props:
+ *   disabled          — deshabilita el botón
+ *   onRecordingStart  — llamado cuando el engine empieza a escuchar
+ *   onInterimUpdate   — llamado con el texto parcial/acumulado mientras habla
+ *   onRecordingEnd    — llamado cuando el engine se detiene (cancel o confirm)
+ *   onConfirm(text)   — llamado al confirmar con el texto final
+ *   onCancel()        — llamado al cancelar
+ *
+ * Ref expone:
+ *   cancel()          — para que el padre cancele desde WaveformBar
+ *   confirm(text)     — para que el padre confirme desde WaveformBar
+ */
+const VoiceInput = forwardRef(function VoiceInput(
+  { disabled, onRecordingStart, onInterimUpdate, onRecordingEnd, onConfirm, onCancel },
+  ref
+) {
   const [supported, setSupported] = useState(false)
-  const [recording, setRecording] = useState(false)
-  const [bars, setBars] = useState(Array(BAR_COUNT).fill(0.25))
   const recognitionRef = useRef(null)
-  const animTimerRef = useRef(null)
+  const safetyTimerRef = useRef(null)
 
   useEffect(() => {
-    const SR = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition)
+    const SR =
+      typeof window !== 'undefined' &&
+      (window.SpeechRecognition || window.webkitSpeechRecognition)
     setSupported(!!SR)
   }, [])
 
-  const animateBars = useCallback(() => {
-    setBars(Array(BAR_COUNT).fill(0).map(() => 0.2 + Math.random() * 0.8))
-  }, [])
+  useEffect(
+    () => () => {
+      clearTimeout(safetyTimerRef.current)
+      try { recognitionRef.current?.abort() } catch {}
+    },
+    []
+  )
 
-  useEffect(() => {
-    if (!recording) return
-    const tick = () => {
-      animateBars()
-      animTimerRef.current = setTimeout(tick, 110)
-    }
-    tick()
-    return () => clearTimeout(animTimerRef.current)
-  }, [recording, animateBars])
-
-  const stopRecording = useCallback(() => {
-    setRecording(false)
-    setBars(Array(BAR_COUNT).fill(0.25))
-    clearTimeout(animTimerRef.current)
-    try { recognitionRef.current?.stop() } catch {}
+  const stopEngine = useCallback(() => {
+    clearTimeout(safetyTimerRef.current)
+    try { recognitionRef.current?.abort() } catch {}
     recognitionRef.current = null
   }, [])
+
+  // Expose imperative API to parent
+  useImperativeHandle(ref, () => ({
+    cancel() {
+      stopEngine()
+      onRecordingEnd?.()
+      onCancel?.()
+    },
+    confirm(text) {
+      stopEngine()
+      onRecordingEnd?.()
+      if (text) onConfirm?.(text)
+    },
+  }), [stopEngine, onRecordingEnd, onCancel, onConfirm])
 
   const startRecording = useCallback(() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SR) return
+
     const recognition = new SR()
     recognition.lang = 'es-CO'
-    recognition.interimResults = false
+    recognition.interimResults = true
     recognition.maxAlternatives = 1
+    recognition.continuous = true
 
-    const safetyTimer = setTimeout(() => stopRecording(), 30000)
+    safetyTimerRef.current = setTimeout(() => {
+      stopEngine()
+      onRecordingEnd?.()
+      onCancel?.()
+    }, 30000)
 
-    recognition.onstart = () => { setRecording(true) }
-    recognition.onresult = (e) => {
-      clearTimeout(safetyTimer)
-      const transcript = e.results[0]?.[0]?.transcript
-      if (transcript) onTranscript(transcript)
-      stopRecording()
+    recognition.onstart = () => {
+      onRecordingStart?.()
     }
-    recognition.onerror = () => { clearTimeout(safetyTimer); stopRecording() }
-    recognition.onend = () => { clearTimeout(safetyTimer); stopRecording() }
+
+    recognition.onresult = (e) => {
+      let finalAccum = ''
+      let interimAccum = ''
+      for (let i = 0; i < e.results.length; i++) {
+        if (e.results[i].isFinal) {
+          finalAccum += e.results[i][0].transcript + ' '
+        } else {
+          interimAccum += e.results[i][0].transcript
+        }
+      }
+      const display = (finalAccum + interimAccum).trim()
+      onInterimUpdate?.(display)
+    }
+
+    recognition.onerror = () => {
+      clearTimeout(safetyTimerRef.current)
+      stopEngine()
+      onRecordingEnd?.()
+      onCancel?.()
+    }
+
+    recognition.onend = () => {
+      clearTimeout(safetyTimerRef.current)
+    }
+
     recognitionRef.current = recognition
     recognition.start()
-  }, [onTranscript, stopRecording])
-
-  useEffect(() => () => { clearTimeout(animTimerRef.current); try { recognitionRef.current?.stop() } catch {} }, [])
+  }, [stopEngine, onRecordingStart, onRecordingEnd, onInterimUpdate, onCancel])
 
   if (!supported) return null
 
   return (
-    <div className="relative flex flex-col items-center shrink-0">
-      <button
-        type="button"
-        onClick={recording ? stopRecording : startRecording}
-        disabled={disabled}
-        aria-label={recording ? 'Detener grabación' : 'Hablar con Lucas'}
-        className="w-10 h-10 rounded-[12px] flex items-center justify-center transition-all disabled:opacity-40"
-        style={{
-          background: recording ? 'color-mix(in srgb, var(--color-danger) 15%, transparent)' : 'var(--color-bg-hover)',
-          border: `1px solid ${recording ? 'var(--color-danger)' : 'var(--color-border)'}`,
-          color: recording ? 'var(--color-danger)' : 'var(--color-text-muted)',
-        }}
+    <button
+      type="button"
+      onClick={startRecording}
+      disabled={disabled}
+      aria-label="Hablar con Lucas"
+      className="w-10 h-10 rounded-[12px] flex items-center justify-center transition-all disabled:opacity-40 shrink-0"
+      style={{
+        background: 'var(--color-bg-hover)',
+        border: '1px solid var(--color-border)',
+        color: 'var(--color-text-muted)',
+      }}
+    >
+      <svg
+        style={{ width: '16px', height: '16px' }}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.8}
+        viewBox="0 0 24 24"
       >
-        {recording ? (
-          <div className="flex items-end justify-center gap-[2px]" style={{ width: '20px', height: '20px', padding: '2px 0' }}>
-            {bars.map((h, i) => (
-              <div
-                key={i}
-                style={{
-                  width: '3px',
-                  height: `${Math.round(h * 16)}px`,
-                  borderRadius: '2px',
-                  background: 'var(--color-danger)',
-                  transition: 'height 0.1s ease',
-                  minHeight: '3px',
-                }}
-              />
-            ))}
-          </div>
-        ) : (
-          <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-            <line x1="12" y1="19" x2="12" y2="23" strokeLinecap="round"/>
-            <line x1="8" y1="23" x2="16" y2="23" strokeLinecap="round"/>
-          </svg>
-        )}
-      </button>
-
-      {/* Tooltip arriba del botón mientras graba */}
-      {recording && (
-        <span
-          className="absolute text-[9px] font-medium whitespace-nowrap animate-pulse pointer-events-none px-1.5 py-0.5 rounded-md"
-          style={{
-            bottom: '44px',
-            color: 'var(--color-danger)',
-            background: 'color-mix(in srgb, var(--color-danger) 10%, var(--color-bg-card))',
-            border: '1px solid color-mix(in srgb, var(--color-danger) 25%, transparent)',
-          }}
-        >
-          Toca para parar
-        </span>
-      )}
-    </div>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M19 10v2a7 7 0 0 1-14 0v-2"
+        />
+        <line x1="12" y1="19" x2="12" y2="23" strokeLinecap="round" />
+        <line x1="8" y1="23" x2="16" y2="23" strokeLinecap="round" />
+      </svg>
+    </button>
   )
-}
+})
+
+export default VoiceInput

@@ -4,6 +4,123 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import AccionCard from './AccionCard'
 import VoiceInput from './VoiceInput'
 
+// ---------------------------------------------------------------------------
+// WaveformBar — se renderiza en lugar del row de input mientras se graba
+// ---------------------------------------------------------------------------
+const BAR_COUNT = 38
+
+function WaveformBar({ text, onCancel, onConfirm }) {
+  const [bars, setBars] = useState(() =>
+    Array(BAR_COUNT).fill(0).map(() => 0.15 + Math.random() * 0.35)
+  )
+  const timerRef = useRef(null)
+
+  useEffect(() => {
+    const tick = () => {
+      setBars(
+        Array(BAR_COUNT).fill(0).map(() =>
+          text
+            ? 0.08 + Math.random() * 0.25   // quietas cuando hay texto pausado
+            : 0.15 + Math.random() * 0.85   // activas mientras habla
+        )
+      )
+      timerRef.current = setTimeout(tick, 80)
+    }
+    tick()
+    return () => clearTimeout(timerRef.current)
+  }, [text])
+
+  const displayText = text || 'Habla...'
+  const hasText = !!text
+
+  return (
+    <div
+      className="flex items-center gap-2 w-full rounded-[16px] px-3"
+      style={{
+        height: '44px',
+        background: 'var(--color-bg-hover)',
+        border: '1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)',
+        boxSizing: 'border-box',
+      }}
+    >
+      {/* Texto transcript / indicador */}
+      <span
+        className="text-xs shrink-0 max-w-[90px] truncate"
+        style={{
+          color: hasText ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+          fontStyle: hasText ? 'normal' : 'italic',
+          minWidth: '52px',
+        }}
+        title={text}
+      >
+        {displayText}
+      </span>
+
+      {/* Barras waveform */}
+      <div
+        className="flex items-center gap-[2px] flex-1 overflow-hidden"
+        style={{ height: '28px' }}
+        aria-hidden="true"
+      >
+        {bars.map((h, i) => (
+          <div
+            key={i}
+            style={{
+              width: '2px',
+              height: `${Math.max(2, Math.round(h * 26))}px`,
+              borderRadius: '2px',
+              background: 'var(--color-accent)',
+              opacity: 0.45 + h * 0.55,
+              transition: 'height 0.08s ease, opacity 0.08s ease',
+              flexShrink: 0,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Botones accion */}
+      <div className="flex items-center gap-1.5 shrink-0">
+        {/* Cancelar */}
+        <button
+          type="button"
+          onClick={onCancel}
+          aria-label="Cancelar grabacion"
+          className="w-8 h-8 rounded-[10px] flex items-center justify-center transition-all"
+          style={{
+            background: 'color-mix(in srgb, var(--color-text-muted) 12%, transparent)',
+            color: 'var(--color-text-muted)',
+            border: '1px solid color-mix(in srgb, var(--color-text-muted) 20%, transparent)',
+          }}
+        >
+          <svg style={{ width: '13px', height: '13px' }} fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        {/* Confirmar */}
+        <button
+          type="button"
+          onClick={() => onConfirm(text)}
+          disabled={!hasText}
+          aria-label="Confirmar transcripcion"
+          className="w-8 h-8 rounded-[10px] flex items-center justify-center transition-all disabled:opacity-30"
+          style={{
+            background: hasText
+              ? 'color-mix(in srgb, var(--color-accent) 20%, transparent)'
+              : 'color-mix(in srgb, var(--color-accent) 10%, transparent)',
+            color: 'var(--color-accent)',
+            border: '1px solid color-mix(in srgb, var(--color-accent) 35%, transparent)',
+          }}
+        >
+          <svg style={{ width: '13px', height: '13px' }} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  )
+}
+
 const SUGERENCIAS_DEFAULT = [
   '¿Cuánto estoy ganando realmente?',
   '¿Cuánto recaudé esta semana?',
@@ -60,9 +177,12 @@ export default function AsistenteChat({ onClose }) {
   const [error, setError] = useState('')
   const [planError, setPlanError] = useState(null)
   const [usageInfo, setUsageInfo] = useState(null) // { limite, usado, restantes, alertas }
+  const [voiceActive, setVoiceActive] = useState(false)
+  const [voiceText, setVoiceText] = useState('')
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
   const messagesRef = useRef([])
+  const voiceRef = useRef(null) // ref al VoiceInput para llamar cancel/confirm
 
   useEffect(() => {
     messagesRef.current = messages
@@ -394,40 +514,66 @@ export default function AsistenteChat({ onClose }) {
             </div>
           ) : (
             <>
-              <div className="flex gap-2 items-end">
-                <VoiceInput
-                  onTranscript={(t) => {
-                    setInput(t)
-                    setTimeout(() => inputRef.current?.focus(), 50)
+              {/* Waveform overlay — reemplaza visualmente toda la fila cuando graba */}
+              {voiceActive ? (
+                <WaveformBar
+                  text={voiceText}
+                  onCancel={() => {
+                    voiceRef.current?.cancel()
                   }}
-                  disabled={loading}
-                />
-                <textarea
-                  ref={inputRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Pregunta o pide algo..."
-                  rows={1}
-                  disabled={loading}
-                  className="flex-1 resize-none rounded-[12px] px-3.5 py-2.5 text-sm outline-none transition-all"
-                  style={{
-                    background: 'var(--color-bg-hover)',
-                    border: '1px solid var(--color-border-hover)',
-                    color: 'var(--color-text-primary)',
-                    maxHeight: '100px',
-                    lineHeight: '1.5',
+                  onConfirm={(text) => {
+                    voiceRef.current?.confirm(text)
                   }}
                 />
-                <button onClick={() => sendMessage()} disabled={loading || !input.trim()}
-                  className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 transition-all disabled:opacity-40"
-                  style={{ background: 'var(--color-accent)', color: '#0a0a0a' }}
-                  aria-label="Enviar">
-                  <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.269 20.876L5.999 12zm0 0h7.5" />
-                  </svg>
-                </button>
-              </div>
+              ) : (
+                <div className="flex gap-2 items-end">
+                  <VoiceInput
+                    ref={voiceRef}
+                    disabled={loading}
+                    onRecordingStart={() => {
+                      setVoiceActive(true)
+                      setVoiceText('')
+                    }}
+                    onInterimUpdate={(t) => setVoiceText(t)}
+                    onRecordingEnd={() => {
+                      setVoiceActive(false)
+                      setVoiceText('')
+                    }}
+                    onConfirm={(text) => {
+                      setInput(text)
+                      setTimeout(() => inputRef.current?.focus(), 50)
+                    }}
+                    onCancel={() => {
+                      // ya limpiado en onRecordingEnd
+                    }}
+                  />
+                  <textarea
+                    ref={inputRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Pregunta o pide algo..."
+                    rows={1}
+                    disabled={loading}
+                    className="flex-1 resize-none rounded-[12px] px-3.5 py-2.5 text-sm outline-none transition-all"
+                    style={{
+                      background: 'var(--color-bg-hover)',
+                      border: '1px solid var(--color-border-hover)',
+                      color: 'var(--color-text-primary)',
+                      maxHeight: '100px',
+                      lineHeight: '1.5',
+                    }}
+                  />
+                  <button onClick={() => sendMessage()} disabled={loading || !input.trim()}
+                    className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 transition-all disabled:opacity-40"
+                    style={{ background: 'var(--color-accent)', color: '#0a0a0a' }}
+                    aria-label="Enviar">
+                    <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.269 20.876L5.999 12zm0 0h7.5" />
+                    </svg>
+                  </button>
+                </div>
+              )}
               <p className="text-[10px] text-center mt-2" style={{ color: 'var(--color-text-muted)' }}>
                 Lucas puede cometer errores — verifica datos importantes
               </p>
