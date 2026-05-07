@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { accionLimiter } from '@/lib/rate-limit'
 import { clearCachedContexto } from '@/lib/asistente-cache'
+import { generarTextoComprobante, formatearTelefono } from '@/lib/whatsapp'
 
 export const dynamic = 'force-dynamic'
 
@@ -161,9 +162,38 @@ export async function POST(req) {
         const data = await res.json()
         if (!res.ok) return NextResponse.json({ error: data.error || 'Error al registrar el pago' }, { status: res.status })
         clearCachedContexto(orgId)
+
+        // Generar link de comprobante WhatsApp si el cliente tiene teléfono
+        let waUrl = null
+        try {
+          const prestamoRes = await fetch(`${origin}/api/prestamos/${input.prestamoId}`, { headers })
+          if (prestamoRes.ok) {
+            const pd = await prestamoRes.json()
+            const prestamo = pd.prestamo ?? pd
+            const cliente = prestamo.cliente
+            const tel = formatearTelefono(cliente?.telefono)
+            if (tel) {
+              const pagosReal = (prestamo.pagos ?? []).filter(p => !['recargo', 'descuento'].includes(p.tipo))
+              const totalPagado = pagosReal.reduce((s, p) => s + Number(p.montoPagado), 0)
+              const saldoPendiente = Math.max(0, Number(prestamo.totalAPagar) - totalPagado)
+              const porcentajePagado = prestamo.totalAPagar > 0
+                ? Math.round((totalPagado / prestamo.totalAPagar) * 100)
+                : 100
+              const ultimoPago = pagosReal.sort((a, b) => new Date(b.fechaPago) - new Date(a.fechaPago))[0]
+              const texto = generarTextoComprobante(
+                { nombre: cliente.nombre, cedula: cliente.cedula },
+                { totalPagado, saldoPendiente, porcentajePagado, diasMora: prestamo.diasMora ?? 0 },
+                { montoPagado: input.monto, fechaPago: ultimoPago?.fechaPago ?? new Date().toISOString() },
+              )
+              waUrl = `https://wa.me/${tel}?text=${encodeURIComponent(texto)}`
+            }
+          }
+        } catch {}
+
         return NextResponse.json({
           ok: true,
           message: `Pago de $${Math.round(input.monto).toLocaleString('es-CO')} registrado para ${input.clienteNombre}.`,
+          waUrl,
         })
       }
 
