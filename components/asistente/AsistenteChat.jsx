@@ -1,6 +1,9 @@
 'use client'
 // components/asistente/AsistenteChat.jsx — Chat UI del asistente Lucas
+
 import { useState, useRef, useEffect, useCallback } from 'react'
+import AccionCard from './AccionCard'
+import VoiceInput from './VoiceInput'
 
 const SUGERENCIAS = [
   '¿Cuánto estoy ganando realmente?',
@@ -30,18 +33,22 @@ export default function AsistenteChat({ onClose }) {
     setError('')
 
     const userMsg = { role: 'user', content: msg }
-    const assistantMsg = { role: 'assistant', content: '' }
+    const assistantMsg = { role: 'assistant', content: '', type: 'text' }
     setMessages(prev => [...prev, userMsg, assistantMsg])
     setLoading(true)
 
     try {
+      const currentHistory = []
+      setMessages(prev => {
+        // Capture history before adding new messages
+        currentHistory.push(...prev.filter(m => m.type !== 'action').slice(-6).map(m => ({ role: m.role, content: m.content })))
+        return prev
+      })
+
       const res = await fetch('/api/asistente', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: msg,
-          history: messages.slice(-6),
-        }),
+        body: JSON.stringify({ message: msg, history: currentHistory }),
       })
 
       if (!res.ok) {
@@ -74,56 +81,74 @@ export default function AsistenteChat({ onClose }) {
           const payload = line.slice(6)
           if (payload === '[DONE]') break
           try {
-            const { token, error: streamErr } = JSON.parse(payload)
-            if (streamErr) { setError(streamErr); break }
-            if (token) {
+            const parsed = JSON.parse(payload)
+
+            if (parsed.error) { setError(parsed.error); break }
+
+            if (parsed.token) {
+              setMessages(prev => {
+                const copy = [...prev]
+                const last = copy[copy.length - 1]
+                copy[copy.length - 1] = { ...last, content: last.content + parsed.token }
+                return copy
+              })
+            }
+
+            if (parsed.type === 'action_proposal') {
+              // Replace the last assistant message with an action card
               setMessages(prev => {
                 const copy = [...prev]
                 copy[copy.length - 1] = {
-                  ...copy[copy.length - 1],
-                  content: copy[copy.length - 1].content + token,
+                  role: 'assistant',
+                  type: 'action',
+                  content: '',
+                  actionData: {
+                    tool: parsed.tool,
+                    input: parsed.input,
+                    displayData: parsed.displayData,
+                  },
                 }
+                return copy
+              })
+            }
+
+            if (parsed.type === 'lookup_result') {
+              // Append lookup result as text to current message
+              setMessages(prev => {
+                const copy = [...prev]
+                const last = copy[copy.length - 1]
+                copy[copy.length - 1] = { ...last, content: last.content + `\n\n*Resultado búsqueda: ${parsed.result}*` }
                 return copy
               })
             }
           } catch {}
         }
       }
-    } catch (e) {
-      setError('Error de conexion. Intenta de nuevo.')
+    } catch {
+      setError('Error de conexión. Intenta de nuevo.')
       setMessages(prev => prev.slice(0, -2))
     } finally {
       setLoading(false)
     }
-  }, [input, loading, messages])
+  }, [input, loading])
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      sendMessage()
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
   }
 
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div
-        className="flex items-center justify-between px-4 py-3 border-b shrink-0"
-        style={{ borderColor: 'rgba(255,255,255,0.07)' }}
-      >
+      <div className="flex items-center justify-between px-4 py-3 border-b shrink-0"
+        style={{ borderColor: 'var(--color-border)' }}>
         <div className="flex items-center gap-2.5">
-          <div
-            className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0"
+          <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0"
             style={{
               background: 'var(--color-accent-soft)',
               border: '1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)',
-            }}
-          >
-            <svg
-              style={{ width: '16px', height: '16px', display: 'block', color: 'var(--color-accent)' }}
-              viewBox="0 0 24 24"
-              fill="currentColor"
-            >
+            }}>
+            <svg style={{ width: '16px', height: '16px', display: 'block', color: 'var(--color-accent)' }}
+              viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2 L13.5 10.5 L22 12 L13.5 13.5 L12 22 L10.5 13.5 L2 12 L10.5 10.5 Z" />
             </svg>
           </div>
@@ -133,12 +158,8 @@ export default function AsistenteChat({ onClose }) {
           </div>
         </div>
         {onClose && (
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg transition-colors"
-            style={{ color: 'var(--color-text-muted)' }}
-            aria-label="Cerrar asistente"
-          >
+          <button onClick={onClose} className="p-1.5 rounded-lg transition-colors"
+            style={{ color: 'var(--color-text-muted)' }} aria-label="Cerrar asistente">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -148,23 +169,15 @@ export default function AsistenteChat({ onClose }) {
 
       {/* Plan error */}
       {planError && (
-        <div
-          className="mx-4 mt-4 p-3 rounded-[12px] text-sm"
+        <div className="mx-4 mt-4 p-3 rounded-[12px] text-sm"
           style={{
             background: 'var(--color-accent-soft)',
             border: '1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)',
-            color: 'var(--color-text-primary)',
-          }}
-        >
-          <p className="font-semibold mb-1" style={{ color: 'var(--color-accent)' }}>
-            Asistente IA no disponible
-          </p>
+          }}>
+          <p className="font-semibold mb-1" style={{ color: 'var(--color-accent)' }}>Asistente IA no disponible</p>
           <p style={{ color: 'var(--color-text-secondary)' }}>{planError}</p>
-          <a
-            href="/configuracion/plan"
-            className="inline-block mt-2 text-xs font-bold px-3 py-1.5 rounded-lg"
-            style={{ background: 'var(--color-accent)', color: '#0a0a0a' }}
-          >
+          <a href="/configuracion/plan" className="inline-block mt-2 text-xs font-bold px-3 py-1.5 rounded-lg"
+            style={{ background: 'var(--color-accent)', color: '#0a0a0a' }}>
             Ver planes
           </a>
         </div>
@@ -176,21 +189,18 @@ export default function AsistenteChat({ onClose }) {
           <div className="space-y-4">
             <div className="text-center pt-4">
               <p className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>
-                Hola, soy Lucas. Preguntame sobre tu negocio.
+                Hola, soy Lucas. Pregúntame sobre tu negocio o pídeme que haga algo.
               </p>
             </div>
             <div className="flex flex-col gap-2">
               {SUGERENCIAS.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => sendMessage(s)}
-                  className="text-left text-sm px-3 py-2.5 rounded-[12px] transition-all active:scale-98"
+                <button key={s} onClick={() => sendMessage(s)}
+                  className="text-left text-sm px-3 py-2.5 rounded-[12px] transition-all active:scale-[0.98]"
                   style={{
-                    background: '#1e1e28',
-                    border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'var(--color-bg-hover)',
+                    border: '1px solid var(--color-border)',
                     color: 'var(--color-text-secondary)',
-                  }}
-                >
+                  }}>
                   {s}
                 </button>
               ))}
@@ -198,115 +208,98 @@ export default function AsistenteChat({ onClose }) {
           </div>
         )}
 
-        {messages.map((msg, i) => (
-          <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            {msg.role === 'assistant' && (
+        {messages.map((msg, i) => {
+          if (msg.type === 'action' && msg.actionData) {
+            return (
+              <AccionCard
+                key={i}
+                tool={msg.actionData.tool}
+                input={msg.actionData.input}
+                displayData={msg.actionData.displayData}
+                onConfirm={() => {}}
+                onCancel={() => {
+                  setMessages(prev => {
+                    const copy = [...prev]
+                    copy[i] = { ...copy[i], type: 'cancelled' }
+                    return copy
+                  })
+                }}
+              />
+            )
+          }
+
+          if (msg.type === 'cancelled') return null
+
+          return (
+            <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              {msg.role === 'assistant' && (
+                <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mr-2 mt-0.5"
+                  style={{ background: 'var(--color-accent-soft)' }}>
+                  <svg style={{ width: '12px', height: '12px', display: 'block', color: 'var(--color-accent)' }}
+                    viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2 L13.5 10.5 L22 12 L13.5 13.5 L12 22 L10.5 13.5 L2 12 L10.5 10.5 Z" />
+                  </svg>
+                </div>
+              )}
               <div
-                className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mr-2 mt-0.5"
-                style={{ background: 'var(--color-accent-soft)' }}
-              >
-                <svg
-                  style={{ width: '12px', height: '12px', display: 'block', color: 'var(--color-accent)' }}
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path d="M12 2 L13.5 10.5 L22 12 L13.5 13.5 L12 22 L10.5 13.5 L2 12 L10.5 10.5 Z" />
-                </svg>
-              </div>
-            )}
-            <div
-              className={`max-w-[80%] px-3.5 py-2.5 rounded-[14px] text-sm whitespace-pre-wrap ${
-                msg.role === 'user' ? 'rounded-br-[4px]' : 'rounded-bl-[4px]'
-              }`}
-              style={
-                msg.role === 'user'
+                className={`max-w-[80%] px-3.5 py-2.5 rounded-[14px] text-sm whitespace-pre-wrap ${msg.role === 'user' ? 'rounded-br-[4px]' : 'rounded-bl-[4px]'}`}
+                style={msg.role === 'user'
                   ? { background: 'var(--color-accent)', color: '#0a0a0a' }
-                  : {
-                      background: '#1e1e28',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      color: 'var(--color-text-primary)',
-                    }
-              }
-            >
-              {msg.content ||
-                (msg.role === 'assistant' && loading && i === messages.length - 1 ? (
-                  <span className="flex gap-1 items-center py-0.5">
-                    <span
-                      className="w-1.5 h-1.5 rounded-full animate-bounce"
-                      style={{ background: 'var(--color-text-muted)', animationDelay: '0ms' }}
-                    />
-                    <span
-                      className="w-1.5 h-1.5 rounded-full animate-bounce"
-                      style={{ background: 'var(--color-text-muted)', animationDelay: '150ms' }}
-                    />
-                    <span
-                      className="w-1.5 h-1.5 rounded-full animate-bounce"
-                      style={{ background: 'var(--color-text-muted)', animationDelay: '300ms' }}
-                    />
-                  </span>
-                ) : (
-                  ''
-                ))}
+                  : { background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }
+                }>
+                {msg.content || (msg.role === 'assistant' && loading && i === messages.length - 1
+                  ? (
+                    <span className="flex gap-1 items-center py-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: '0ms' }} />
+                      <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: '150ms' }} />
+                      <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: '300ms' }} />
+                    </span>
+                  ) : ''
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
 
         {error && (
-          <p className="text-center text-xs" style={{ color: 'var(--color-danger)' }}>
-            {error}
-          </p>
+          <p className="text-center text-xs" style={{ color: 'var(--color-danger)' }}>{error}</p>
         )}
         <div ref={bottomRef} />
       </div>
 
       {/* Input */}
       {!planError && (
-        <div
-          className="px-4 py-3 border-t shrink-0"
-          style={{ borderColor: 'rgba(255,255,255,0.07)' }}
-        >
+        <div className="px-4 py-3 border-t shrink-0" style={{ borderColor: 'var(--color-border)' }}>
           <div className="flex gap-2 items-end">
+            <VoiceInput onTranscript={(t) => sendMessage(t)} disabled={loading} />
             <textarea
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Preguntame algo sobre tu negocio..."
+              placeholder="Pregunta o pide algo..."
               rows={1}
               disabled={loading}
               className="flex-1 resize-none rounded-[12px] px-3.5 py-2.5 text-sm outline-none transition-all"
               style={{
-                background: '#1e1e28',
-                border: '1px solid rgba(255,255,255,0.1)',
+                background: 'var(--color-bg-hover)',
+                border: '1px solid var(--color-border-hover)',
                 color: 'var(--color-text-primary)',
                 maxHeight: '100px',
                 lineHeight: '1.5',
               }}
             />
-            <button
-              onClick={() => sendMessage()}
-              disabled={loading || !input.trim()}
+            <button onClick={() => sendMessage()} disabled={loading || !input.trim()}
               className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 transition-all disabled:opacity-40"
               style={{ background: 'var(--color-accent)', color: '#0a0a0a' }}
-              aria-label="Enviar"
-            >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2.2}
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.269 20.876L5.999 12zm0 0h7.5"
-                />
+              aria-label="Enviar">
+              <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.269 20.876L5.999 12zm0 0h7.5" />
               </svg>
             </button>
           </div>
           <p className="text-[10px] text-center mt-2" style={{ color: 'var(--color-text-muted)' }}>
-            Los datos se actualizan cada 5 minutos
+            Lucas puede cometer errores — verifica datos importantes
           </p>
         </div>
       )}
