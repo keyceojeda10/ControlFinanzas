@@ -38,16 +38,10 @@ export default function AsistenteButton() {
       >
         <svg
           style={{ width: '20px', height: '20px', flexShrink: 0, display: 'block' }}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={1.8}
           viewBox="0 0 24 24"
+          fill="currentColor"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"
-          />
+          <path d="M12 2 L13.5 10.5 L22 12 L13.5 13.5 L12 22 L10.5 13.5 L2 12 L10.5 10.5 Z" />
         </svg>
         <span className="hidden lg:inline text-sm font-semibold">Lucas IA</span>
       </button>
