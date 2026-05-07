@@ -165,7 +165,7 @@ function WaveformBar({ text, onCancel, onConfirm }) {
         </button>
         <button
           type="button"
-          onClick={() => onConfirm(text)}
+          onClick={onConfirm}
           disabled={!hasText}
           aria-label="Confirmar transcripcion"
           className="w-8 h-8 rounded-[10px] flex items-center justify-center transition-all disabled:opacity-30"
@@ -579,65 +579,61 @@ export default function AsistenteChat({ onClose }) {
             </div>
           ) : (
             <>
-              {/* Waveform overlay — reemplaza visualmente toda la fila cuando graba */}
-              {voiceActive ? (
-                <WaveformBar
-                  text={voiceText}
-                  onCancel={() => {
-                    voiceRef.current?.cancel()
+              {/* VoiceInput siempre montado (para que voiceRef funcione), oculto visualmente cuando no graba */}
+              <div style={{ display: voiceActive ? 'none' : 'flex' }} className="gap-2 items-end">
+                <VoiceInput
+                  ref={voiceRef}
+                  disabled={loading}
+                  onRecordingStart={() => {
+                    setVoiceActive(true)
+                    setVoiceText('')
                   }}
+                  onInterimUpdate={(t) => setVoiceText(t)}
+                  onRecordingEnd={() => {}}
                   onConfirm={(text) => {
-                    voiceRef.current?.confirm(text)
+                    setVoiceActive(false)
+                    setVoiceText('')
+                    setInput(text)
+                    setTimeout(() => inputRef.current?.focus(), 50)
+                  }}
+                  onCancel={() => {
+                    setVoiceActive(false)
+                    setVoiceText('')
                   }}
                 />
-              ) : (
-                <div className="flex gap-2 items-end">
-                  <VoiceInput
-                    ref={voiceRef}
-                    disabled={loading}
-                    onRecordingStart={() => {
-                      setVoiceActive(true)
-                      setVoiceText('')
-                    }}
-                    onInterimUpdate={(t) => setVoiceText(t)}
-                    onRecordingEnd={() => {
-                      setVoiceActive(false)
-                      setVoiceText('')
-                    }}
-                    onConfirm={(text) => {
-                      setInput(text)
-                      setTimeout(() => inputRef.current?.focus(), 50)
-                    }}
-                    onCancel={() => {
-                      // ya limpiado en onRecordingEnd
-                    }}
-                  />
-                  <textarea
-                    ref={inputRef}
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Pregunta o pide algo..."
-                    rows={1}
-                    disabled={loading}
-                    className="flex-1 resize-none rounded-[12px] px-3.5 py-2.5 text-sm outline-none transition-all"
-                    style={{
-                      background: 'var(--color-bg-hover)',
-                      border: '1px solid var(--color-border-hover)',
-                      color: 'var(--color-text-primary)',
-                      maxHeight: '100px',
-                      lineHeight: '1.5',
-                    }}
-                  />
-                  <button onClick={() => sendMessage()} disabled={loading || !input.trim()}
-                    className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 transition-all disabled:opacity-40"
-                    style={{ background: 'var(--color-accent)', color: '#0a0a0a' }}
-                    aria-label="Enviar">
-                    <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.269 20.876L5.999 12zm0 0h7.5" />
-                    </svg>
-                  </button>
-                </div>
+                <textarea
+                  ref={inputRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Pregunta o pide algo..."
+                  rows={1}
+                  disabled={loading}
+                  className="flex-1 resize-none rounded-[12px] px-3.5 py-2.5 text-sm outline-none transition-all"
+                  style={{
+                    background: 'var(--color-bg-hover)',
+                    border: '1px solid var(--color-border-hover)',
+                    color: 'var(--color-text-primary)',
+                    maxHeight: '100px',
+                    lineHeight: '1.5',
+                  }}
+                />
+                <button onClick={() => sendMessage()} disabled={loading || !input.trim()}
+                  className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 transition-all disabled:opacity-40"
+                  style={{ background: 'var(--color-accent)', color: '#0a0a0a' }}
+                  aria-label="Enviar">
+                  <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.269 20.876L5.999 12zm0 0h7.5" />
+                  </svg>
+                </button>
+              </div>
+              {/* Waveform overlay — visible solo cuando graba */}
+              {voiceActive && (
+                <WaveformBar
+                  text={voiceText}
+                  onCancel={() => voiceRef.current?.cancel()}
+                  onConfirm={() => voiceRef.current?.confirm(voiceText)}
+                />
               )}
               <p className="text-[10px] text-center mt-2" style={{ color: 'var(--color-text-muted)' }}>
                 Lucas puede cometer errores — verifica datos importantes
