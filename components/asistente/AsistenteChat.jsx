@@ -109,7 +109,7 @@ export default function AsistenteChat({ onClose }) {
       {/* Header */}
       <div
         className="flex items-center justify-between px-4 py-3 border-b shrink-0"
-        style={{ borderColor: 'var(--color-border)' }}
+        style={{ borderColor: 'rgba(255,255,255,0.07)' }}
       >
         <div className="flex items-center gap-2.5">
           <div
@@ -193,8 +193,8 @@ export default function AsistenteChat({ onClose }) {
                   onClick={() => sendMessage(s)}
                   className="text-left text-sm px-3 py-2.5 rounded-[12px] transition-all active:scale-98"
                   style={{
-                    background: 'var(--color-surface)',
-                    border: '1px solid var(--color-border)',
+                    background: '#1e1e28',
+                    border: '1px solid rgba(255,255,255,0.08)',
                     color: 'var(--color-text-secondary)',
                   }}
                 >
@@ -236,8 +236,8 @@ export default function AsistenteChat({ onClose }) {
                 msg.role === 'user'
                   ? { background: 'var(--color-accent)', color: '#0a0a0a' }
                   : {
-                      background: 'var(--color-surface)',
-                      border: '1px solid var(--color-border)',
+                      background: '#1e1e28',
+                      border: '1px solid rgba(255,255,255,0.08)',
                       color: 'var(--color-text-primary)',
                     }
               }
@@ -277,7 +277,7 @@ export default function AsistenteChat({ onClose }) {
       {!planError && (
         <div
           className="px-4 py-3 border-t shrink-0"
-          style={{ borderColor: 'var(--color-border)' }}
+          style={{ borderColor: 'rgba(255,255,255,0.07)' }}
         >
           <div className="flex gap-2 items-end">
             <textarea
@@ -290,8 +290,8 @@ export default function AsistenteChat({ onClose }) {
               disabled={loading}
               className="flex-1 resize-none rounded-[12px] px-3.5 py-2.5 text-sm outline-none transition-all"
               style={{
-                background: 'var(--color-surface)',
-                border: '1px solid var(--color-border)',
+                background: '#1e1e28',
+                border: '1px solid rgba(255,255,255,0.1)',
                 color: 'var(--color-text-primary)',
                 maxHeight: '100px',
                 lineHeight: '1.5',

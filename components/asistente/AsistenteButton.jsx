@@ -24,18 +24,20 @@ export default function AsistenteButton() {
       <button
         onClick={() => setOpen(v => !v)}
         aria-label="Abrir asistente IA"
-        className="fixed bottom-[88px] right-4 lg:bottom-[90px] lg:right-6 z-40 w-12 h-12 lg:w-auto lg:h-auto lg:px-4 lg:py-2.5 rounded-full lg:rounded-[14px] flex items-center justify-center lg:gap-2 transition-all active:scale-95 shadow-lg"
+        className="fixed bottom-[88px] right-4 lg:bottom-6 lg:right-6 z-40 w-12 h-12 lg:w-auto lg:h-auto lg:px-4 lg:py-2.5 rounded-full lg:rounded-[14px] transition-all active:scale-95"
         style={{
-          background: open
-            ? 'var(--color-accent)'
-            : 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 20%, var(--color-surface)), var(--color-surface))',
-          border: '1px solid color-mix(in srgb, var(--color-accent) 40%, transparent)',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.3), 0 0 0 1px color-mix(in srgb, var(--color-accent) 20%, transparent)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+          background: open ? 'var(--color-accent)' : '#1a1a22',
+          border: '1px solid color-mix(in srgb, var(--color-accent) 50%, transparent)',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.5), 0 0 0 1px color-mix(in srgb, var(--color-accent) 25%, transparent)',
           color: open ? '#0a0a0a' : 'var(--color-accent)',
         }}
       >
         <svg
-          className="w-5 h-5 shrink-0"
+          style={{ width: '20px', height: '20px', flexShrink: 0, display: 'block' }}
           fill="none"
           stroke="currentColor"
           strokeWidth={1.8}
@@ -69,10 +71,10 @@ export default function AsistenteButton() {
           height: open ? '85vh' : '0',
           overflow: 'hidden',
           borderRadius: '24px 24px 0 0',
-          background: 'var(--color-background)',
-          border: open ? '1px solid var(--color-border)' : 'none',
+          background: '#13131a',
+          border: open ? '1px solid rgba(255,255,255,0.08)' : 'none',
           borderBottom: 'none',
-          boxShadow: open ? '0 -8px 40px rgba(0,0,0,0.4)' : 'none',
+          boxShadow: open ? '0 -8px 60px rgba(0,0,0,0.7)' : 'none',
         }}
       >
         {open && (
