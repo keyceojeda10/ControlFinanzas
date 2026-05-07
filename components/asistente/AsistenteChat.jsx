@@ -1,13 +1,13 @@
 'use client'
-// components/asistente/AsistenteChat.jsx — Chat UI del asistente Fin
+// components/asistente/AsistenteChat.jsx — Chat UI del asistente Lucas
 import { useState, useRef, useEffect, useCallback } from 'react'
 
 const SUGERENCIAS = [
+  '¿Cuánto estoy ganando realmente?',
   '¿Cuánto recaudé esta semana?',
-  '¿Quién me debe más?',
+  '¿Quién me debe más y cuánto?',
   '¿Cuántos clientes están en mora?',
-  '¿Cómo va mi cartera este mes?',
-  '¿Tengo capital disponible para prestar?',
+  '¿Tengo capital disponible para prestar más?',
 ]
 
 export default function AsistenteChat({ onClose }) {
@@ -120,22 +120,15 @@ export default function AsistenteChat({ onClose }) {
             }}
           >
             <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.8}
+              style={{ width: '16px', height: '16px', display: 'block', color: 'var(--color-accent)' }}
               viewBox="0 0 24 24"
-              style={{ color: 'var(--color-accent)' }}
+              fill="currentColor"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"
-              />
+              <path d="M12 2 L13.5 10.5 L22 12 L13.5 13.5 L12 22 L10.5 13.5 L2 12 L10.5 10.5 Z" />
             </svg>
           </div>
           <div>
-            <p className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>Fin</p>
+            <p className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>Lucas</p>
             <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Asistente financiero</p>
           </div>
         </div>
@@ -183,7 +176,7 @@ export default function AsistenteChat({ onClose }) {
           <div className="space-y-4">
             <div className="text-center pt-4">
               <p className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>
-                Hola, soy Fin. Preguntame sobre tu negocio.
+                Hola, soy Lucas. Preguntame sobre tu negocio.
               </p>
             </div>
             <div className="flex flex-col gap-2">
@@ -213,18 +206,11 @@ export default function AsistenteChat({ onClose }) {
                 style={{ background: 'var(--color-accent-soft)' }}
               >
                 <svg
-                  className="w-3 h-3"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
+                  style={{ width: '12px', height: '12px', display: 'block', color: 'var(--color-accent)' }}
                   viewBox="0 0 24 24"
-                  style={{ color: 'var(--color-accent)' }}
+                  fill="currentColor"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"
-                  />
+                  <path d="M12 2 L13.5 10.5 L22 12 L13.5 13.5 L12 22 L10.5 13.5 L2 12 L10.5 10.5 Z" />
                 </svg>
               </div>
             )}
