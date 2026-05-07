@@ -133,6 +133,17 @@ const NAV_OWNER = [
     ),
   },
   {
+    label: 'Asistente IA',
+    href:  '/asistente',
+    badge: 'Nuevo',
+    icon: (
+      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+          d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+      </svg>
+    ),
+  },
+  {
     label: 'Soporte',
     href:  '/soporte',
     icon: (
@@ -331,6 +342,18 @@ export default function Sidebar() {
                 {item.icon}
               </div>
               <span className="flex-1">{item.label}</span>
+              {item.badge && !active && (
+                <span
+                  className="text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0"
+                  style={{
+                    background: 'color-mix(in srgb, var(--color-accent) 20%, transparent)',
+                    color: 'var(--color-accent)',
+                    border: '1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)',
+                  }}
+                >
+                  {item.badge}
+                </span>
+              )}
               {active && (
                 <span
                   className="w-1.5 h-1.5 rounded-full shrink-0"

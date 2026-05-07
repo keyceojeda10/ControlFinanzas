@@ -17,6 +17,7 @@ import NotificationPrompt from '@/components/NotificationPrompt'
 import Analytics          from '@/components/Analytics'
 import { InstallBanner } from '@/components/layout/InstallButton'
 import CompletarTelefonoModal from '@/components/layout/CompletarTelefonoModal'
+import AsistenteButton from '@/components/asistente/AsistenteButton'
 
 // Bloqueo definitivo de suscripcion vencida: lee DB en cada request.
 // El middleware no puede hacerlo (Edge runtime sin Prisma) y el JWT puede
@@ -88,6 +89,9 @@ export default async function DashboardLayout({ children }) {
 
       {/* Analytics: page view tracking */}
       <Analytics />
+
+      {/* Asistente IA flotante (solo owners) */}
+      <AsistenteButton />
     </div>
   )
 }
