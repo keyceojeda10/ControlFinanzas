@@ -187,6 +187,8 @@ function generarHTMLHistorialCompleto(cliente, prestamo, orgNombre) {
       <div class="item"><b>Cuotas pendientes:</b> ${cuotasPendientes}</div>
       <div class="item"><b>Días en mora:</b> ${diasMora}</div>
       <div class="item"><b>Fecha de emisión:</b> ${fmtFechaHora(new Date())}</div>
+      <div class="item"><b>Fecha vencimiento:</b> ${fmtFecha(prestamo?.fechaFin)}</div>
+      <div class="item"><b>Último pago:</b> ${pagos.length > 0 ? fmtFechaHora(pagos[pagos.length - 1].fechaPago) : 'Sin pagos'}</div>
     </div>
 
     <div class="line"></div>
@@ -210,7 +212,7 @@ function generarHTMLHistorialCompleto(cliente, prestamo, orgNombre) {
 </body></html>`
 }
 
-export default function BotonImprimirRecibo({ tipo = 'recibo', cliente, prestamo, pago, orgNombre = '' }) {
+export default function BotonImprimirRecibo({ tipo = 'recibo', cliente, prestamo, pago, orgNombre = '', label }) {
   const handleClick = () => {
     const html = tipo === 'historial'
       ? generarHTMLHistorialCompleto(cliente, prestamo, orgNombre)
@@ -243,7 +245,7 @@ export default function BotonImprimirRecibo({ tipo = 'recibo', cliente, prestamo
       className="flex-1 flex items-center justify-center gap-2 px-3 h-10 rounded-[12px] text-sm font-medium transition-all duration-150 cursor-pointer bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[#444]"
     >
       {PRINT_ICON}
-      {tipo === 'historial' ? 'Imprimir historial' : 'Imprimir'}
+      {tipo === 'historial' ? (label ?? 'Imprimir historial') : 'Imprimir'}
     </button>
   )
 }

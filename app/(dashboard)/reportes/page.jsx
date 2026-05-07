@@ -1,11 +1,12 @@
 'use client'
-// app/(dashboard)/reportes/page.jsx — Solo plan professional
+// app/(dashboard)/reportes/page.jsx — Reportes escalonados por plan
 
 import { useState, useEffect } from 'react'
 import { useAuth }             from '@/hooks/useAuth'
 import { Card }                from '@/components/ui/Card'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
 import { formatCOP }           from '@/lib/calculos'
+import { nivelReportes }       from '@/lib/planes'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell,
@@ -57,6 +58,32 @@ function PlanGate() {
   )
 }
 
+// ── Nudge de upgrade para secciones bloqueadas ─────────────────
+function UpgradeNudge({ titulo, planRequerido }) {
+  const labelPlan = planRequerido === 'standard' ? 'Profesional' : 'Empresarial'
+  return (
+    <div className="rounded-[16px] px-4 py-6 text-center"
+      style={{ background: 'var(--color-bg-card)', border: '1px dashed var(--color-border)' }}
+    >
+      <p className="text-sm font-semibold mb-1" style={{ color: 'var(--color-text-secondary)' }}>{titulo}</p>
+      <p className="text-xs mb-3" style={{ color: 'var(--color-text-muted)' }}>
+        Disponible en plan <span style={{ color: 'var(--color-accent)' }}>{labelPlan}</span>
+      </p>
+      <a
+        href="/configuracion/plan"
+        className="inline-block text-xs font-semibold px-4 py-1.5 rounded-full transition-all"
+        style={{
+          background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)',
+          color: 'var(--color-accent)',
+          border: '1px solid color-mix(in srgb, var(--color-accent) 35%, transparent)',
+        }}
+      >
+        Ver planes
+      </a>
+    </div>
+  )
+}
+
 // ── Componente principal ───────────────────────────────────────
 export default function ReportesPage() {
   const { session, esOwner, loading: authLoading } = useAuth()
@@ -74,25 +101,31 @@ export default function ReportesPage() {
   const [desde, setDesde] = useState(inicioMes())
   const [hasta, setHasta]  = useState(hoy())
 
+  const nivel = nivelReportes(plan)
+
   const fetchAll = async () => {
     setLoading(true)
     setError('')
     try {
       const qs = `desde=${desde}&hasta=${hasta}`
-      const [rRes, iRes, cRes, cbRes] = await Promise.all([
+      const promises = [
         fetch(`/api/reportes/resumen?${qs}`),
         fetch(`/api/reportes/ingresos?periodo=${periodoIngresos}&${qs}`),
-        fetch('/api/reportes/cartera'),
-        fetch(`/api/reportes/cobradores?${qs}`),
-      ])
-      const [r, i, c, cb] = await Promise.all([
-        rRes.json(), iRes.json(), cRes.json(), cbRes.json(),
-      ])
-      if (!rRes.ok) { setError(r.error ?? 'Error'); return }
+      ]
+      if (nivel >= 2) {
+        promises.push(fetch('/api/reportes/cartera'))
+        promises.push(fetch(`/api/reportes/cobradores?${qs}`))
+      }
+      const responses = await Promise.all(promises)
+      const jsons = await Promise.all(responses.map((r) => r.json()))
+      const [r, i, c, cb] = jsons
+      if (!responses[0].ok) { setError(r.error ?? 'Error'); return }
       setResumen(r)
       setIngresos(Array.isArray(i.data) ? i.data : [])
-      setCartera(Array.isArray(c) ? c : [])
-      setCobsData(Array.isArray(cb) ? cb : [])
+      if (nivel >= 2) {
+        setCartera(Array.isArray(c) ? c : [])
+        setCobsData(Array.isArray(cb) ? cb : [])
+      }
     } catch {
       setError('No se pudieron cargar los reportes.')
     } finally {
@@ -101,7 +134,7 @@ export default function ReportesPage() {
   }
 
   useEffect(() => {
-    if (!authLoading && esOwner && plan === 'professional') fetchAll()
+    if (!authLoading && esOwner && nivel >= 1) fetchAll()
     else if (!authLoading) setLoading(false)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, periodoIngresos, desde, hasta])
@@ -125,7 +158,7 @@ export default function ReportesPage() {
     }
   }
 
-  if (authLoading || (loading && plan === 'professional' && esOwner)) {
+  if (authLoading || (loading && nivel >= 1 && esOwner)) {
     return (
       <div className="max-w-3xl mx-auto space-y-4">
         <SkeletonCard /><SkeletonCard /><SkeletonCard />
@@ -133,10 +166,10 @@ export default function ReportesPage() {
     )
   }
 
-  if (!esOwner || plan !== 'professional') return <PlanGate />
+  if (!esOwner || nivel === 0) return <PlanGate />
 
   // Top recaudacion del periodo (medalla)
-  const topCobradores = [...cobsData].sort((a, b) => (b.totalRecogido || 0) - (a.totalRecogido || 0)).slice(0, 3)
+  const topCobradores = nivel >= 2 ? [...cobsData].sort((a, b) => (b.totalRecogido || 0) - (a.totalRecogido || 0)).slice(0, 3) : []
 
   return (
     <div className="max-w-3xl mx-auto space-y-5">
@@ -384,7 +417,8 @@ export default function ReportesPage() {
       </div>
 
       {/* ── 3. Cartera por ruta ──────────────────────────────── */}
-      {cartera.length > 0 && (
+      {nivel < 2 && <UpgradeNudge titulo="Cartera por ruta" planRequerido="standard" />}
+      {nivel >= 2 && cartera.length > 0 && (
         <div className="rounded-[16px] px-4 py-4"
           style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
         >
@@ -420,7 +454,8 @@ export default function ReportesPage() {
       )}
 
       {/* ── 4. Top cobradores (podio visual) + lista completa ── */}
-      {cobsData.length > 0 && (
+      {nivel < 2 && <UpgradeNudge titulo="Rendimiento de cobradores" planRequerido="standard" />}
+      {nivel >= 2 && cobsData.length > 0 && (
         <div className="rounded-[16px] px-4 py-4"
           style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
         >
@@ -515,7 +550,8 @@ export default function ReportesPage() {
       )}
 
       {/* ── 5. Exportar a Excel como chips ──────────────────────── */}
-      <div className="rounded-[16px] px-4 py-4"
+      {nivel < 3 && <UpgradeNudge titulo="Exportar a Excel" planRequerido="professional" />}
+      {nivel >= 3 && <div className="rounded-[16px] px-4 py-4"
         style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
       >
         <div className="flex items-center gap-2 mb-3">
@@ -560,7 +596,7 @@ export default function ReportesPage() {
             </button>
           ))}
         </div>
-      </div>
+      </div>}
     </div>
   )
 }

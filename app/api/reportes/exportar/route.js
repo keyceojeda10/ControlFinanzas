@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import * as XLSX            from 'xlsx'
+import { nivelReportes }   from '@/lib/planes'
 
 function headerRow(titulo, desde, hasta) {
   return [
@@ -27,7 +28,7 @@ export async function GET(req) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   if (session.user.rol !== 'owner') return NextResponse.json({ error: 'Solo el administrador' }, { status: 403 })
-  if (session.user.plan !== 'professional') return NextResponse.json({ error: 'Plan professional requerido' }, { status: 403 })
+  if (nivelReportes(session.user.plan) < 3) return NextResponse.json({ error: 'Plan insuficiente' }, { status: 403 })
 
   const orgId = session.user.organizationId
   const { searchParams } = new URL(req.url)

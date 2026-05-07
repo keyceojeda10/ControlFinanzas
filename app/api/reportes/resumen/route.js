@@ -5,6 +5,7 @@ import { authOptions }   from '@/lib/auth'
 import { prisma }        from '@/lib/prisma'
 import { calcularDiasMora } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
+import { nivelReportes } from '@/lib/planes'
 
 const COLOMBIA_OFFSET = 5 * 60 * 60 * 1000 // UTC-5
 
@@ -21,7 +22,7 @@ export async function GET(req) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   if (session.user.rol !== 'owner') return NextResponse.json({ error: 'Solo el administrador' }, { status: 403 })
-  if (session.user.plan !== 'professional') return NextResponse.json({ error: 'Plan professional requerido' }, { status: 403 })
+  if (nivelReportes(session.user.plan) < 1) return NextResponse.json({ error: 'Plan insuficiente' }, { status: 403 })
 
   const orgId = session.user.organizationId
   const { searchParams } = new URL(req.url)

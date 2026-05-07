@@ -682,8 +682,10 @@ export default function PrestamoDetallePage({ params }) {
             />
             <BotonImprimirRecibo
               tipo="historial"
+              label="Estado de cuenta"
               cliente={cliente}
               prestamo={prestamo}
+              orgNombre={session?.user?.nombre ?? ''}
             />
           </div>
         </div>
