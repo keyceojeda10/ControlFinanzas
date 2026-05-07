@@ -330,11 +330,21 @@ export default function AsistenteChat({ onClose }) {
 
             if (parsed.error) { setError(parsed.error); break }
 
+            if (parsed.type === 'status') {
+              setMessages(prev => {
+                const copy = [...prev]
+                const last = copy[copy.length - 1]
+                copy[copy.length - 1] = { ...last, statusText: parsed.text, content: '' }
+                return copy
+              })
+            }
+
             if (parsed.token) {
               setMessages(prev => {
                 const copy = [...prev]
                 const last = copy[copy.length - 1]
-                copy[copy.length - 1] = { ...last, content: last.content + parsed.token }
+                // Primer token real — limpiar statusText
+                copy[copy.length - 1] = { ...last, statusText: undefined, content: last.content + parsed.token }
                 return copy
               })
             }
@@ -529,6 +539,14 @@ export default function AsistenteChat({ onClose }) {
                 }>
                 {msg.content
                   ? (msg.role === 'assistant' ? renderMarkdown(msg.content) : msg.content)
+                  : msg.statusText
+                  ? (
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full animate-bounce shrink-0" style={{ background: 'var(--color-text-muted)', animationDelay: '0ms' }} />
+                      <span className="w-1.5 h-1.5 rounded-full animate-bounce shrink-0" style={{ background: 'var(--color-text-muted)', animationDelay: '150ms' }} />
+                      <span className="text-xs italic" style={{ color: 'var(--color-text-muted)' }}>{msg.statusText}</span>
+                    </span>
+                  )
                   : (msg.role === 'assistant' && loading && i === messages.length - 1
                     ? (
                       <span className="flex gap-1 items-center py-0.5">

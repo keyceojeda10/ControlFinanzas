@@ -274,6 +274,25 @@ export async function POST(req) {
           const finalMsg = await stream.finalMessage()
           const toolBlock = finalMsg.content.find(b => b.type === 'tool_use')
           if (toolBlock) {
+            // Mensaje de estado mientras se procesa — solo si Claude no escribió nada antes
+            const yaEscribio = finalMsg.content.some(b => b.type === 'text' && b.text?.trim())
+            if (!yaEscribio) {
+              const statusMsgs = {
+                lookup_client: 'Buscando...',
+                create_client: 'Creando cliente...',
+                create_loan: 'Preparando préstamo...',
+                register_payment: 'Registrando pago...',
+                adjust_capital: 'Ajustando capital...',
+                create_route: 'Creando ruta...',
+                assign_clients_to_route: 'Asignando clientes...',
+                edit_loan: 'Editando préstamo...',
+                register_expense: 'Registrando gasto...',
+                escalate_support: 'Conectando con soporte...',
+              }
+              const msg = statusMsgs[toolBlock.name]
+              if (msg) controller.enqueue(enc.encode(`data: ${JSON.stringify({ type: 'status', text: msg })}\n\n`))
+            }
+
             // lookup_client is handled server-side without showing a confirmation card
             if (toolBlock.name === 'lookup_client') {
               // Búsqueda fuzzy: dividir en palabras para tolerar transcripciones de voz inexactas
