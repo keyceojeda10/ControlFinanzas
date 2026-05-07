@@ -1,5 +1,4 @@
 'use client'
-// components/asistente/VoiceInput.jsx — Entrada de voz con waveform animado
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 
@@ -47,7 +46,6 @@ export default function VoiceInput({ onTranscript, disabled }) {
     recognition.interimResults = false
     recognition.maxAlternatives = 1
 
-    // Safety timeout: stop if browser hangs and never fires onend
     const safetyTimer = setTimeout(() => stopRecording(), 30000)
 
     recognition.onstart = () => { setRecording(true) }
@@ -68,42 +66,59 @@ export default function VoiceInput({ onTranscript, disabled }) {
   if (!supported) return null
 
   return (
-    <button
-      type="button"
-      onClick={recording ? stopRecording : startRecording}
-      disabled={disabled}
-      aria-label={recording ? 'Detener grabación' : 'Hablar con Lucas'}
-      className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 transition-all disabled:opacity-40"
-      style={{
-        background: recording ? 'color-mix(in srgb, var(--color-danger) 15%, transparent)' : 'var(--color-bg-hover)',
-        border: `1px solid ${recording ? 'var(--color-danger)' : 'var(--color-border)'}`,
-        color: recording ? 'var(--color-danger)' : 'var(--color-text-muted)',
-      }}
-    >
-      {recording ? (
-        <div className="flex items-end justify-center gap-[2px]" style={{ width: '20px', height: '20px', padding: '2px 0' }}>
-          {bars.map((h, i) => (
-            <div
-              key={i}
-              style={{
-                width: '3px',
-                height: `${Math.round(h * 16)}px`,
-                borderRadius: '2px',
-                background: 'var(--color-danger)',
-                transition: 'height 0.1s ease',
-                minHeight: '3px',
-              }}
-            />
-          ))}
-        </div>
-      ) : (
-        <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-          <line x1="12" y1="19" x2="12" y2="23" strokeLinecap="round"/>
-          <line x1="8" y1="23" x2="16" y2="23" strokeLinecap="round"/>
-        </svg>
+    <div className="relative flex flex-col items-center shrink-0">
+      <button
+        type="button"
+        onClick={recording ? stopRecording : startRecording}
+        disabled={disabled}
+        aria-label={recording ? 'Detener grabación' : 'Hablar con Lucas'}
+        className="w-10 h-10 rounded-[12px] flex items-center justify-center transition-all disabled:opacity-40"
+        style={{
+          background: recording ? 'color-mix(in srgb, var(--color-danger) 15%, transparent)' : 'var(--color-bg-hover)',
+          border: `1px solid ${recording ? 'var(--color-danger)' : 'var(--color-border)'}`,
+          color: recording ? 'var(--color-danger)' : 'var(--color-text-muted)',
+        }}
+      >
+        {recording ? (
+          <div className="flex items-end justify-center gap-[2px]" style={{ width: '20px', height: '20px', padding: '2px 0' }}>
+            {bars.map((h, i) => (
+              <div
+                key={i}
+                style={{
+                  width: '3px',
+                  height: `${Math.round(h * 16)}px`,
+                  borderRadius: '2px',
+                  background: 'var(--color-danger)',
+                  transition: 'height 0.1s ease',
+                  minHeight: '3px',
+                }}
+              />
+            ))}
+          </div>
+        ) : (
+          <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23" strokeLinecap="round"/>
+            <line x1="8" y1="23" x2="16" y2="23" strokeLinecap="round"/>
+          </svg>
+        )}
+      </button>
+
+      {/* Tooltip arriba del botón mientras graba */}
+      {recording && (
+        <span
+          className="absolute text-[9px] font-medium whitespace-nowrap animate-pulse pointer-events-none px-1.5 py-0.5 rounded-md"
+          style={{
+            bottom: '44px',
+            color: 'var(--color-danger)',
+            background: 'color-mix(in srgb, var(--color-danger) 10%, var(--color-bg-card))',
+            border: '1px solid color-mix(in srgb, var(--color-danger) 25%, transparent)',
+          }}
+        >
+          Toca para parar
+        </span>
       )}
-    </button>
+    </div>
   )
 }

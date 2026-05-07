@@ -13,6 +13,32 @@ const SUGERENCIAS = [
   '¿Tengo capital disponible para prestar más?',
 ]
 
+// Convierte markdown básico (**negrita**, *cursiva*, saltos de línea) a JSX
+function renderMarkdown(text) {
+  if (!text) return null
+  // Split por saltos de línea, procesar cada línea
+  return text.split('\n').map((line, li) => {
+    // Parsear **bold** y *italic* dentro de cada línea
+    const parts = []
+    const regex = /(\*\*(.+?)\*\*|\*(.+?)\*)/g
+    let last = 0
+    let m
+    while ((m = regex.exec(line)) !== null) {
+      if (m.index > last) parts.push(line.slice(last, m.index))
+      if (m[0].startsWith('**')) parts.push(<strong key={m.index}>{m[2]}</strong>)
+      else parts.push(<em key={m.index}>{m[3]}</em>)
+      last = m.index + m[0].length
+    }
+    if (last < line.length) parts.push(line.slice(last))
+    return (
+      <span key={li}>
+        {parts}
+        {li < text.split('\n').length - 1 && <br />}
+      </span>
+    )
+  })
+}
+
 export default function AsistenteChat({ onClose }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
@@ -246,20 +272,23 @@ export default function AsistenteChat({ onClose }) {
                 </div>
               )}
               <div
-                className={`max-w-[80%] px-3.5 py-2.5 rounded-[14px] text-sm whitespace-pre-wrap ${msg.role === 'user' ? 'rounded-br-[4px]' : 'rounded-bl-[4px]'}`}
+                className={`max-w-[80%] px-3.5 py-2.5 rounded-[14px] text-sm ${msg.role === 'user' ? 'rounded-br-[4px] whitespace-pre-wrap' : 'rounded-bl-[4px]'}`}
                 style={msg.role === 'user'
                   ? { background: 'var(--color-accent)', color: '#0a0a0a' }
                   : { background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }
                 }>
-                {msg.content || (msg.role === 'assistant' && loading && i === messages.length - 1
-                  ? (
-                    <span className="flex gap-1 items-center py-0.5">
-                      <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: '0ms' }} />
-                      <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: '150ms' }} />
-                      <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: '300ms' }} />
-                    </span>
-                  ) : ''
-                )}
+                {msg.content
+                  ? (msg.role === 'assistant' ? renderMarkdown(msg.content) : msg.content)
+                  : (msg.role === 'assistant' && loading && i === messages.length - 1
+                    ? (
+                      <span className="flex gap-1 items-center py-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: '0ms' }} />
+                        <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: '150ms' }} />
+                        <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: '300ms' }} />
+                      </span>
+                    ) : null
+                  )
+                }
               </div>
             </div>
           )
@@ -275,7 +304,13 @@ export default function AsistenteChat({ onClose }) {
       {!planError && (
         <div className="px-4 py-3 border-t shrink-0" style={{ borderColor: 'var(--color-border)' }}>
           <div className="flex gap-2 items-end">
-            <VoiceInput onTranscript={(t) => sendMessage(t)} disabled={loading} />
+            <VoiceInput
+              onTranscript={(t) => {
+                setInput(t)
+                setTimeout(() => inputRef.current?.focus(), 50)
+              }}
+              disabled={loading}
+            />
             <textarea
               ref={inputRef}
               value={input}
