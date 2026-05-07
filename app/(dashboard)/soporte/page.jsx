@@ -212,6 +212,7 @@ function SoportePageInner() {
         mensaje="Hola, necesito soporte con Control Finanzas."
         label="Soporte por WhatsApp"
         texto="Soporte directo"
+        extraBottom={60}
       />
     </div>
   )

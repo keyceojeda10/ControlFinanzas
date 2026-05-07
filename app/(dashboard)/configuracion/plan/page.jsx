@@ -568,6 +568,7 @@ function PlanPageInner() {
         mensaje="Hola, necesito ayuda con el pago de mi plan en Control Finanzas."
         label="Contactar soporte por WhatsApp"
         texto="Ayuda con pago"
+        extraBottom={60}
       />
     </div>
   )
