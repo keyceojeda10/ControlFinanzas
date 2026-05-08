@@ -170,7 +170,9 @@ function TabOrganizacion() {
   const [ciudad,   setCiudad]   = useState('')
   const [diasSinCobro, setDiasSinCobro] = useState([])
   const [guardando, setGuardando] = useState(false)
+  const [guardandoDSC, setGuardandoDSC] = useState(false)
   const [msg, setMsg] = useState(null)
+  const [msgDSC, setMsgDSC] = useState(null)
   const [festivos, setFestivos] = useState([])
   const [festivosLoading, setFestivosLoading] = useState(false)
 
@@ -235,7 +237,7 @@ function TabOrganizacion() {
     try {
       const res  = await fetch('/api/configuracion/organizacion', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre, telefono, ciudad, diasSinCobro }),
+        body: JSON.stringify({ nombre, telefono, ciudad }),
       })
       const d = await res.json()
       setMsg(res.ok
@@ -244,6 +246,22 @@ function TabOrganizacion() {
     } catch {
       setMsg({ tipo: 'error', texto: 'Error de conexión' })
     } finally { setGuardando(false) }
+  }
+
+  const guardarDSC = async () => {
+    setGuardandoDSC(true); setMsgDSC(null)
+    try {
+      const res = await fetch('/api/configuracion/organizacion', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ diasSinCobro }),
+      })
+      const d = await res.json()
+      setMsgDSC(res.ok
+        ? { tipo: 'success', texto: 'Días sin cobro guardados' }
+        : { tipo: 'error',   texto: d.error ?? 'Error al guardar' })
+    } catch {
+      setMsgDSC({ tipo: 'error', texto: 'Error de conexión' })
+    } finally { setGuardandoDSC(false) }
   }
 
   if (loading) return (
@@ -289,6 +307,8 @@ function TabOrganizacion() {
             {diasSinCobro.length === 1 ? '1 día' : `${diasSinCobro.length} días`} sin cobro configurados para toda la organización
           </p>
         )}
+        {msgDSC && <Alerta tipo={msgDSC.tipo}>{msgDSC.texto}</Alerta>}
+        <Button onClick={guardarDSC} loading={guardandoDSC} size="sm" className="mt-3">Guardar días sin cobro</Button>
       </Card>
 
       {/* Festivos */}
