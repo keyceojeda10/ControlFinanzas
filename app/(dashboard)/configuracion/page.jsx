@@ -11,6 +11,7 @@ import { Skeleton }            from '@/components/ui/Skeleton'
 import { formatCOP }           from '@/lib/calculos'
 import { PLANES_CONFIG }       from '@/lib/planes'
 import DiasSinCobroSelector    from '@/components/ui/DiasSinCobroSelector'
+import FestivosManager         from '@/components/ui/FestivosManager'
 import ThemeToggle             from '@/components/ui/ThemeToggle'
 import { useTheme }             from '@/lib/theme/ThemeProvider'
 
@@ -170,6 +171,8 @@ function TabOrganizacion() {
   const [diasSinCobro, setDiasSinCobro] = useState([])
   const [guardando, setGuardando] = useState(false)
   const [msg, setMsg] = useState(null)
+  const [festivos, setFestivos] = useState([])
+  const [festivosLoading, setFestivosLoading] = useState(false)
 
   useEffect(() => {
     fetch('/api/configuracion/organizacion')
@@ -182,7 +185,50 @@ function TabOrganizacion() {
         try { setDiasSinCobro(JSON.parse(d.org?.diasSinCobro || '[]')) } catch { setDiasSinCobro([]) }
       })
       .finally(() => setLoading(false))
+
+    fetch('/api/festivos')
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d) setFestivos(d.festivos ?? []) })
+      .catch(() => {})
   }, [])
+
+  const agregarFestivo = async (fecha, nombre) => {
+    setFestivosLoading(true)
+    try {
+      const res = await fetch('/api/festivos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fecha, nombre }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setMsg({ tipo: 'error', texto: data.error || 'Error al agregar festivo' })
+        return
+      }
+      setFestivos(prev => [...prev, data.festivo].sort((a, b) => new Date(a.fecha) - new Date(b.fecha)))
+    } catch {
+      setMsg({ tipo: 'error', texto: 'Error de conexión' })
+    } finally {
+      setFestivosLoading(false)
+    }
+  }
+
+  const eliminarFestivo = async (id) => {
+    setFestivosLoading(true)
+    try {
+      const res = await fetch(`/api/festivos/${id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const data = await res.json()
+        setMsg({ tipo: 'error', texto: data.error || 'Error al eliminar festivo' })
+        return
+      }
+      setFestivos(prev => prev.filter(f => f.id !== id))
+    } catch {
+      setMsg({ tipo: 'error', texto: 'Error de conexión' })
+    } finally {
+      setFestivosLoading(false)
+    }
+  }
 
   const guardar = async () => {
     setGuardando(true); setMsg(null)
@@ -243,6 +289,25 @@ function TabOrganizacion() {
             {diasSinCobro.length === 1 ? '1 día' : `${diasSinCobro.length} días`} sin cobro configurados para toda la organización
           </p>
         )}
+      </Card>
+
+      {/* Festivos */}
+      <Card>
+        <div className="flex items-center gap-2 mb-1">
+          <svg className="w-4 h-4 text-[#f5c518] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <h3 className="font-medium text-white text-sm">Festivos y días sin cobro específicos</h3>
+        </div>
+        <p className="text-xs text-[#666666] mb-4">
+          Fechas concretas en las que no se realiza cobro. No generan mora ese día.
+        </p>
+        <FestivosManager
+          festivos={festivos}
+          onAdd={agregarFestivo}
+          onDelete={eliminarFestivo}
+          loading={festivosLoading}
+        />
       </Card>
 
       <Card>

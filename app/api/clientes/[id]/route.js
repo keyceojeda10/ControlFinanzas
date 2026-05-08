@@ -53,24 +53,31 @@ export async function GET(request, { params }) {
       },
     })
 
-    // Resolver días sin cobro
-    const org = await prisma.organization.findUnique({
-      where: { id: session.user.organizationId },
-      select: { diasSinCobro: true },
-    })
-    const diasExcluidos = obtenerDiasSinCobro(cliente, cliente.ruta, org)
+    // Resolver días sin cobro y festivos
+    const [org, festivos] = await Promise.all([
+      prisma.organization.findUnique({
+        where: { id: session.user.organizationId },
+        select: { diasSinCobro: true },
+      }),
+      prisma.festivo.findMany({
+        where: { organizationId: session.user.organizationId },
+        select: { fecha: true },
+      }),
+    ])
 
     // Enriquecer préstamos con cálculos. Si alguno falla, devolver el prestamo
     // sin enriquecer en lugar de tirar 500 (para que el cliente no se quede
     // sin poder abrir la pagina por un edge case en un solo prestamo).
     const prestamosEnriquecidos = cliente.prestamos.map((p) => {
       try {
+        // diasSinCobro se resuelve por préstamo (máxima prioridad en jerarquía)
+        const diasExcluidos = obtenerDiasSinCobro(cliente, cliente.ruta, org, p)
         return {
           ...p,
-          diasMora:            calcularDiasMora(p, diasExcluidos),
+          diasMora:            calcularDiasMora(p, diasExcluidos, festivos),
           saldoPendiente:      calcularSaldoPendiente(p),
           porcentajePagado:    calcularPorcentajePagado(p),
-          proximoCobro:        calcularProximoCobro(p, diasExcluidos),
+          proximoCobro:        calcularProximoCobro(p, diasExcluidos, festivos),
         }
       } catch (err) {
         console.error(`[GET /api/clientes/${id}] error enriqueciendo prestamo ${p.id}:`, err)
@@ -85,9 +92,11 @@ export async function GET(request, { params }) {
       }
     })
 
+    // Para calcularEstadoCliente usamos diasExcluidos a nivel cliente (sin prestamo)
+    const diasExcluidos = obtenerDiasSinCobro(cliente, cliente.ruta, org)
     let estadoCalculado
     try {
-      estadoCalculado = calcularEstadoCliente(cliente.prestamos, diasExcluidos)
+      estadoCalculado = calcularEstadoCliente(cliente.prestamos, diasExcluidos, festivos)
     } catch (err) {
       console.error(`[GET /api/clientes/${id}] error calculando estado:`, err)
       estadoCalculado = cliente.estado || 'activo'

@@ -105,6 +105,7 @@ model Organization {
   movimientosCapital MovimientoCapital[]
   actividadLogs    ActividadLog[]
   gruposCobro      GrupoCobro[]
+  festivos         Festivo[]
 
   @@index([createdAt])
 }
@@ -183,6 +184,19 @@ model GrupoCobro {
   @@index([organizationId])
 }
 
+model Festivo {
+  id             String   @id @default(cuid())
+  organizationId String
+  fecha          DateTime
+  nombre         String?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, fecha])
+  @@index([organizationId, fecha])
+}
+
 model Cliente {
   id             String        @id @default(cuid())
   organizationId String
@@ -226,6 +240,7 @@ model Prestamo {
   frecuencia     String         @default("diario")
   diaCobroSemana Int?           // 0=dom..6=sab — ancla para frecuencia semanal/quincenal (opcional)
   diaCobroMes    Int?           // 1..31 — ancla para frecuencia mensual (opcional, clamp a ultimo dia)
+  diasSinCobro   String?
   fechaInicio    DateTime
   fechaFin       DateTime
   diasPlazo      Int

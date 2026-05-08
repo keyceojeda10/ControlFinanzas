@@ -13,7 +13,7 @@ import {
   calcularMontoEnMora,
   calcularMontoParaPonerseAlDia,
 } from '@/lib/calculos'
-import { obtenerDiasSinCobro, esHoySinCobro, validarDiasSinCobro } from '@/lib/dias-sin-cobro'
+import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo, validarDiasSinCobro } from '@/lib/dias-sin-cobro'
 
 // Funciones de fecha en timezone Colombia (UTC-5)
 // Medianoche Colombia = 05:00 UTC
@@ -44,11 +44,17 @@ export async function GET(request, { params }) {
     if (!acceso) return Response.json({ error: 'No tienes acceso a esta ruta' }, { status: 403 })
   }
 
-  // Config org para días sin cobro
-  const org = await prisma.organization.findUnique({
-    where: { id: organizationId },
-    select: { diasSinCobro: true },
-  })
+  // Config org para días sin cobro + festivos de la organización
+  const [org, festivos] = await Promise.all([
+    prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { diasSinCobro: true },
+    }),
+    prisma.festivo.findMany({
+      where: { organizationId },
+      select: { fecha: true },
+    }),
+  ])
 
   const ruta = await prisma.ruta.findFirst({
     where: { id, organizationId },
@@ -106,8 +112,10 @@ export async function GET(request, { params }) {
   const _hoy = hoy(), _manana = manana()
 
   const clientesEnriquecidos = ruta.clientes.map((c) => {
+    // diasSinCobro se resuelve a nivel cliente (sin prestamo individual aquí,
+    // ya que la vista de ruta no tiene acceso al campo diasSinCobro del prestamo)
     const diasExcluidos = obtenerDiasSinCobro(c, ruta, org)
-    const _hoySinCobro = esHoySinCobro(diasExcluidos)
+    const _hoySinCobro = esHoySinCobro(diasExcluidos) || esHoyFestivo(festivos)
     let cuotaCliente = 0
     let pagadoHoy    = 0
     let mora         = 0
@@ -132,16 +140,19 @@ export async function GET(request, { params }) {
       // Métricas de cartera/mora solo para préstamos activos
       if (p.estado !== 'activo') continue
 
+      // Resolver diasSinCobro por préstamo individual (incluye campo propio del préstamo)
+      const diasExcluidosPrestamo = obtenerDiasSinCobro(c, ruta, org, p)
+
       cuotaCliente  += p.cuotaDiaria
       esperadoHoy   += _hoySinCobro ? 0 : p.cuotaDiaria
       const saldoPendientePrestamo = calcularSaldoPendiente(p)
       carteraTotal    += saldoPendientePrestamo
       capitalTotal    += p.montoPrestado
       totalAPagarRuta += p.totalAPagar ?? p.montoPrestado
-      const moraPrestamo = calcularDiasMora(p, diasExcluidos)
-      const cuotasMoraPrestamo = calcularCuotasEnMora(p, diasExcluidos)
-      const montoMoraPrestamo = calcularMontoEnMora(p, diasExcluidos)
-      const montoAlDiaPrestamo = calcularMontoParaPonerseAlDia(p, diasExcluidos)
+      const moraPrestamo = calcularDiasMora(p, diasExcluidosPrestamo, festivos)
+      const cuotasMoraPrestamo = calcularCuotasEnMora(p, diasExcluidosPrestamo, festivos)
+      const montoMoraPrestamo = calcularMontoEnMora(p, diasExcluidosPrestamo, festivos)
+      const montoAlDiaPrestamo = calcularMontoParaPonerseAlDia(p, diasExcluidosPrestamo, festivos)
       mora = Math.max(mora, moraPrestamo)
       cuotasEnMoraCliente += cuotasMoraPrestamo
       montoEnMoraCliente += montoMoraPrestamo
@@ -167,11 +178,11 @@ export async function GET(request, { params }) {
 
       // Frecuencia y próximo cobro del préstamo activo (lib centralizado)
       frecuencia = p.frecuencia || 'diario'
-      const pc = calcularProximoCobro(p, diasExcluidos)
+      const pc = calcularProximoCobro(p, diasExcluidosPrestamo, festivos)
       if (pc && (!proximoCobro || pc < proximoCobro)) proximoCobro = pc
 
       // Pendiente hoy según cobertura real esperada al día de hoy.
-      if (!_hoySinCobro && tieneCobroPendienteHoy(p, diasExcluidos)) {
+      if (!_hoySinCobro && tieneCobroPendienteHoy(p, diasExcluidosPrestamo, festivos)) {
         cobroPendienteHoy = true
       }
     }
