@@ -8,6 +8,7 @@ import { useAuth }                    from '@/hooks/useAuth'
 import { useOffline }                 from '@/components/providers/OfflineProvider'
 import { obtenerPrestamoOffline, resolverTempId }     from '@/lib/offline'
 import { Badge }                      from '@/components/ui/Badge'
+import { Button }                     from '@/components/ui/Button'
 import { Card }                       from '@/components/ui/Card'
 import { Modal }                      from '@/components/ui/Modal'
 import { SkeletonCard }               from '@/components/ui/Skeleton'
@@ -35,6 +36,7 @@ import {
   moodColorFromPrestamo,
 } from '@/components/prestamos/PrestamoDetalleViews'
 import { formatCOP, formatFechaCobroRelativa } from '@/lib/calculos'
+import DiasSinCobroSelector from '@/components/ui/DiasSinCobroSelector'
 
 // ─── Helpers de formato ──────────────────────────────────────────
 const fmtFecha = (d) => d
@@ -85,6 +87,8 @@ export default function PrestamoDetallePage({ params }) {
   const [modalPlazo,    setModalPlazo]    = useState(false)
   const [modalDiaCobro, setModalDiaCobro] = useState(false)
   const [modalWA, setModalWA] = useState(false)
+  const [modalDscPrestamo, setModalDscPrestamo] = useState(false)
+  const [dscDias, setDscDias] = useState([])
   const [statsCliente, setStatsCliente] = useState(null) // { totalPrestamos, completados, numeroEsteDe }
   const hasLoadedOnceRef = useRef(false)
 
@@ -1056,6 +1060,60 @@ export default function PrestamoDetallePage({ params }) {
           >
             Descuento
           </button>
+          <button
+            onClick={() => {
+              try { setDscDias(prestamo?.diasSinCobro ? JSON.parse(prestamo.diasSinCobro) : []) } catch { setDscDias([]) }
+              setModalGestionPrestamo(false)
+              setModalDscPrestamo(true)
+            }}
+            className="h-11 rounded-[12px] font-medium text-sm text-[#a0a0a0] bg-[rgba(160,160,160,0.06)] border border-[rgba(160,160,160,0.2)] hover:bg-[rgba(160,160,160,0.12)] transition-all"
+          >
+            Días sin cobro
+          </button>
+        </div>
+      </Modal>
+
+      {/* Modal: días sin cobro del préstamo */}
+      <Modal
+        open={modalDscPrestamo}
+        onClose={() => setModalDscPrestamo(false)}
+        title="Días sin cobro del préstamo"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setModalDscPrestamo(false)}>Cancelar</Button>
+            <Button
+              onClick={async () => {
+                try {
+                  const res = await fetch(`/api/prestamos/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ diasSinCobro: dscDias }),
+                  })
+                  const data = await res.json()
+                  if (!res.ok) { alert(data.error || 'Error'); return }
+                  setPrestamo(prev => ({ ...prev, diasSinCobro: data.diasSinCobro ?? JSON.stringify(dscDias) }))
+                  setModalDscPrestamo(false)
+                } catch { alert('Error al guardar') }
+              }}
+            >
+              Guardar
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <p className="text-xs text-[#666] leading-snug">
+            Este préstamo no generará mora en los días seleccionados. Vacío = hereda la configuración del cliente, ruta u organización.
+          </p>
+          <DiasSinCobroSelector value={dscDias} onChange={setDscDias} />
+          {dscDias.length > 0 && (
+            <button
+              onClick={() => setDscDias([])}
+              className="text-xs text-[#a0a0a0] hover:text-white transition-colors"
+            >
+              Limpiar (heredar de cliente/ruta/org)
+            </button>
+          )}
         </div>
       </Modal>
 

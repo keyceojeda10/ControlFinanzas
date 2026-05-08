@@ -268,6 +268,8 @@ export default function RutaDetallePage({ params }) {
   const [modalDiasSC,    setModalDiasSC]    = useState(false)
   const [diasSCRuta,     setDiasSCRuta]     = useState([])
   const [guardandoDSC,   setGuardandoDSC]   = useState(false)
+  const [festivoHoy,     setFestivoHoy]     = useState(null)
+  const [guardandoFestivo, setGuardandoFestivo] = useState(false)
   const [grupoFiltro,    setGrupoFiltro]    = useState(null)
   const [estadoFiltro,   setEstadoFiltro]   = useState(null) // 'pendientes' | 'mora' | 'pagados' | null
 
@@ -404,6 +406,15 @@ export default function RutaDetallePage({ params }) {
     fetchRuta()
     if (esOwner) {
       fetch('/api/cobradores').then((r) => r.json()).then(setCobradores).catch(() => {})
+      fetch('/api/festivos')
+        .then(r => r.json())
+        .then(d => {
+          const hoyCol = new Date(Date.now() - 5 * 60 * 60 * 1000)
+          const hoyStr = hoyCol.toISOString().split('T')[0]
+          const hoy = (d.festivos ?? []).find(f => new Date(f.fecha).toISOString().split('T')[0] === hoyStr)
+          setFestivoHoy(hoy ?? null)
+        })
+        .catch(() => {})
     }
   }, [fetchRuta, esOwner])
 
@@ -599,6 +610,29 @@ export default function RutaDetallePage({ params }) {
       setModalDiasSC(false)
       fetchRuta()
     } catch {} finally { setGuardandoDSC(false) }
+  }
+
+  const marcarFestivoHoy = async () => {
+    setGuardandoFestivo(true)
+    try {
+      const hoyStr = new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString().split('T')[0]
+      const res = await fetch('/api/festivos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fecha: hoyStr, nombre: 'Festivo' }),
+      })
+      const data = await res.json()
+      if (res.ok) setFestivoHoy(data.festivo)
+    } finally { setGuardandoFestivo(false) }
+  }
+
+  const quitarFestivoHoy = async () => {
+    if (!festivoHoy) return
+    setGuardandoFestivo(true)
+    try {
+      await fetch(`/api/festivos/${festivoHoy.id}`, { method: 'DELETE' })
+      setFestivoHoy(null)
+    } finally { setGuardandoFestivo(false) }
   }
 
   const abrirModalClientes = async () => {
@@ -1119,36 +1153,54 @@ export default function RutaDetallePage({ params }) {
                 </div>
               </div>
 
-              {/* Controles de owner: cobrador + dias sin cobro */}
+              {/* Controles de owner: cobrador + dias sin cobro + festivo hoy */}
               {esOwner && !editandoNombre && (
-                <div className="mt-4 pt-3 grid grid-cols-2 gap-2" style={{ borderTop: `1px solid color-mix(in srgb, ${heroColor} 15%, transparent)` }}>
-                  <select
-                    value={ruta.cobrador?.id ?? ''}
-                    onChange={(e) => cambiarCobrador(e.target.value)}
-                    className="h-9 rounded-[10px] border bg-transparent text-xs px-2 focus:outline-none transition-all cursor-pointer"
-                    style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
-                  >
-                    <option value="">Sin cobrador</option>
-                    {cobradores.map((c) => (
-                      <option key={c.id} value={c.id}>{c.nombre}</option>
-                    ))}
-                  </select>
-                  <button
-                    onClick={abrirModalDSC}
-                    className="flex items-center justify-between h-9 rounded-[10px] border bg-transparent text-xs px-2.5 hover:border-[#f59e0b] transition-all cursor-pointer"
-                    style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      Días sin cobro
-                    </span>
-                    {ruta.diasSinCobro && JSON.parse(ruta.diasSinCobro).length > 0 && (
-                      <span className="text-[10px] font-medium" style={{ color: 'var(--color-warning)' }}>
-                        {JSON.parse(ruta.diasSinCobro).length}
+                <div className="mt-4 pt-3 flex flex-col gap-2" style={{ borderTop: `1px solid color-mix(in srgb, ${heroColor} 15%, transparent)` }}>
+                  <div className="grid grid-cols-2 gap-2">
+                    <select
+                      value={ruta.cobrador?.id ?? ''}
+                      onChange={(e) => cambiarCobrador(e.target.value)}
+                      className="h-9 rounded-[10px] border bg-transparent text-xs px-2 focus:outline-none transition-all cursor-pointer"
+                      style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
+                    >
+                      <option value="">Sin cobrador</option>
+                      {cobradores.map((c) => (
+                        <option key={c.id} value={c.id}>{c.nombre}</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={abrirModalDSC}
+                      className="flex items-center justify-between h-9 rounded-[10px] border bg-transparent text-xs px-2.5 hover:border-[#f59e0b] transition-all cursor-pointer"
+                      style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Días sin cobro
                       </span>
-                    )}
+                      {ruta.diasSinCobro && JSON.parse(ruta.diasSinCobro).length > 0 && (
+                        <span className="text-[10px] font-medium" style={{ color: 'var(--color-warning)' }}>
+                          {JSON.parse(ruta.diasSinCobro).length}
+                        </span>
+                      )}
+                    </button>
+                  </div>
+                  <button
+                    onClick={festivoHoy ? quitarFestivoHoy : marcarFestivoHoy}
+                    disabled={guardandoFestivo}
+                    className={[
+                      'flex items-center justify-center gap-1.5 h-9 rounded-[10px] border text-xs px-2.5 transition-all disabled:opacity-50',
+                      festivoHoy
+                        ? 'border-[#22c55e] text-[#22c55e] bg-[rgba(34,197,94,0.08)]'
+                        : 'bg-transparent hover:border-[#22c55e] hover:text-[#22c55e]',
+                    ].join(' ')}
+                    style={!festivoHoy ? { borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' } : {}}
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5m-9-6h.008v.008H12V13.5zm0 3h.008v.008H12v-3zm-3 3h.008v.008H9V16.5zm0-3h.008v.008H9V13.5zm6 3h.008v.008H15V16.5zm0-3h.008v.008H15V13.5z" />
+                    </svg>
+                    {guardandoFestivo ? 'Guardando…' : festivoHoy ? 'Hoy es festivo — toca para quitar' : 'Festivo hoy'}
                   </button>
                 </div>
               )}

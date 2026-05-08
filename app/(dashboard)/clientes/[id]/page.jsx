@@ -16,7 +16,6 @@ import ModalWhatsAppTemplates        from '@/components/ui/ModalWhatsAppTemplate
 import { formatCOP, formatFechaCobroRelativa } from '@/lib/calculos'
 import ScoreCrediticio               from '@/components/clientes/ScoreCrediticio'
 import ClienteHeroCard, { InfoContactoCard, AccionesClienteChips } from '@/components/clientes/ClienteHeroCard'
-import DiasSinCobroSelector          from '@/components/ui/DiasSinCobroSelector'
 
 const estadoBadge = {
   activo:    { variant: 'green',  label: 'Al día'    },
@@ -45,6 +44,8 @@ export default function ClienteDetallePage({ params }) {
   const [actionLoading, setActionLoading] = useState(false)
   const [modalWA, setModalWA] = useState(false)
   const [rutaNav, setRutaNav]   = useState(null)
+  const [festivoHoy, setFestivoHoy] = useState(null)
+  const [guardandoFestivo, setGuardandoFestivo] = useState(false)
 
   // Leer contexto de ruta activa
   useEffect(() => {
@@ -128,7 +129,17 @@ export default function ClienteDetallePage({ params }) {
 
   useEffect(() => {
     fetchCliente()
-  }, [fetchCliente])
+    if (esOwner) {
+      fetch('/api/festivos')
+        .then(r => r.json())
+        .then(d => {
+          const hoyStr = new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString().split('T')[0]
+          const hoy = (d.festivos ?? []).find(f => new Date(f.fecha).toISOString().split('T')[0] === hoyStr)
+          setFestivoHoy(hoy ?? null)
+        })
+        .catch(() => {})
+    }
+  }, [fetchCliente, esOwner])
 
   // Re-fetch silently when offline payments get synced
   useEffect(() => {
@@ -151,6 +162,29 @@ export default function ClienteDetallePage({ params }) {
       router.push('/clientes')
     } catch { alert('Error de conexión') }
     finally { setActionLoading(false) }
+  }
+
+  const marcarFestivoHoy = async () => {
+    setGuardandoFestivo(true)
+    try {
+      const hoyStr = new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString().split('T')[0]
+      const res = await fetch('/api/festivos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fecha: hoyStr, nombre: 'Festivo' }),
+      })
+      const data = await res.json()
+      if (res.ok) setFestivoHoy(data.festivo)
+    } finally { setGuardandoFestivo(false) }
+  }
+
+  const quitarFestivoHoy = async () => {
+    if (!festivoHoy) return
+    setGuardandoFestivo(true)
+    try {
+      await fetch(`/api/festivos/${festivoHoy.id}`, { method: 'DELETE' })
+      setFestivoHoy(null)
+    } finally { setGuardandoFestivo(false) }
   }
 
   const handleToggleInactivo = async () => {
@@ -359,6 +393,25 @@ export default function ClienteDetallePage({ params }) {
         />
       )}
 
+      {/* Festivo hoy (solo owner) */}
+      {esOwner && (
+        <button
+          onClick={festivoHoy ? quitarFestivoHoy : marcarFestivoHoy}
+          disabled={guardandoFestivo}
+          className={[
+            'flex items-center gap-1.5 h-8 rounded-[10px] border text-xs px-2.5 transition-all disabled:opacity-50',
+            festivoHoy
+              ? 'border-[#22c55e] text-[#22c55e] bg-[rgba(34,197,94,0.08)]'
+              : 'border-[#2a2a2a] text-[#a0a0a0] hover:border-[#22c55e] hover:text-[#22c55e]',
+          ].join(' ')}
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5m-9-6h.008v.008H12V13.5zm0 3h.008v.008H12v-3zm-3 3h.008v.008H9V16.5zm0-3h.008v.008H9V13.5zm6 3h.008v.008H15V16.5zm0-3h.008v.008H15V13.5z" />
+          </svg>
+          {guardandoFestivo ? 'Guardando…' : festivoHoy ? 'Hoy es festivo — toca para quitar' : 'Festivo hoy'}
+        </button>
+      )}
+
       {/* Info de contacto */}
       <InfoContactoCard cliente={cliente} />
 
@@ -370,20 +423,7 @@ export default function ClienteDetallePage({ params }) {
           </h2>
           <div className="space-y-3">
             {prestamosActivos.map((p) => (
-              <div key={p.id} className="space-y-0">
-                <PrestamoCard prestamo={p} clienteId={id} cliente={cliente} />
-                <DscPrestamo
-                  prestamo={p}
-                  onSaved={(updated) =>
-                    setCliente(prev => ({
-                      ...prev,
-                      prestamos: prev.prestamos.map(x =>
-                        x.id === updated.id ? { ...x, diasSinCobro: updated.diasSinCobro } : x
-                      ),
-                    }))
-                  }
-                />
-              </div>
+              <PrestamoCard key={p.id} prestamo={p} clienteId={id} cliente={cliente} />
             ))}
           </div>
         </div>
@@ -474,88 +514,6 @@ export default function ClienteDetallePage({ params }) {
         cliente={cliente}
         prestamo={prestamosActivos[0] || null}
       />
-    </div>
-  )
-}
-
-// ─── Días sin cobro por préstamo ────────────────────────────────
-const NOMBRES_DSC = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
-
-function DscPrestamo({ prestamo, onSaved }) {
-  const [open, setOpen] = useState(false)
-  const [dias, setDias] = useState(() => {
-    try { return prestamo.diasSinCobro ? JSON.parse(prestamo.diasSinCobro) : [] } catch { return [] }
-  })
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
-
-  const diasActuales = dias.length > 0 ? dias : null
-
-  async function guardar() {
-    setSaving(true)
-    setError('')
-    try {
-      const res = await fetch(`/api/prestamos/${prestamo.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ diasSinCobro: dias }),
-      })
-      const data = await res.json()
-      if (!res.ok) { setError(data.error || 'Error al guardar'); return }
-      onSaved?.(data)
-      setOpen(false)
-    } catch {
-      setError('Error de conexión')
-    } finally { setSaving(false) }
-  }
-
-  return (
-    <div className="bg-[var(--color-bg-surface)] border border-t-0 border-[var(--color-border)] rounded-b-[16px] px-4 pb-3 pt-2.5">
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-1.5 text-xs text-[#a0a0a0] hover:text-white transition-colors w-full focus:outline-none"
-      >
-        <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-        <span>Días sin cobro</span>
-        {diasActuales && (
-          <span className="text-[#f5c518] ml-1">{diasActuales.map(d => NOMBRES_DSC[d]).join(', ')}</span>
-        )}
-        <svg
-          className={`w-3 h-3 ml-auto transition-transform ${open ? 'rotate-180' : ''}`}
-          fill="none" stroke="currentColor" viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-
-      {open && (
-        <div className="mt-3 space-y-3">
-          <p className="text-xs text-[#666]">
-            Sin cobro solo para este préstamo. Vacío = hereda de cliente / ruta / organización.
-          </p>
-          <DiasSinCobroSelector value={dias} onChange={setDias} compact />
-          {error && <p className="text-xs text-[#ef4444]">{error}</p>}
-          <div className="flex gap-2">
-            <button
-              onClick={guardar}
-              disabled={saving}
-              className="text-xs px-3 py-1.5 bg-[#f5c518] text-black rounded-lg font-medium disabled:opacity-50 hover:bg-[#f0b800] transition-colors focus:outline-none focus:ring-2 focus:ring-[#f5c518]/40"
-            >
-              {saving ? 'Guardando...' : 'Guardar'}
-            </button>
-            {dias.length > 0 && (
-              <button
-                onClick={() => setDias([])}
-                className="text-xs px-3 py-1.5 text-[#a0a0a0] hover:text-white border border-[#2a2a2a] rounded-lg transition-colors focus:outline-none"
-              >
-                Limpiar
-              </button>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
