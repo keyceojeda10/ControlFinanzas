@@ -50,7 +50,9 @@ export async function PATCH(req) {
 
   const { nombre, telefono, ciudad, diasSinCobro } = await req.json()
 
-  if (!nombre?.trim()) return NextResponse.json({ error: 'El nombre es obligatorio' }, { status: 400 })
+  if (nombre !== undefined && !nombre?.trim()) {
+    return NextResponse.json({ error: 'El nombre es obligatorio' }, { status: 400 })
+  }
 
   // Validar días sin cobro si se envía
   let diasSinCobroVal
@@ -63,9 +65,9 @@ export async function PATCH(req) {
   const org = await prisma.organization.update({
     where: { id: orgId },
     data: {
-      nombre:   nombre.trim(),
-      telefono: telefono?.trim() || null,
-      ciudad:   ciudad?.trim()   || null,
+      ...(nombre !== undefined && { nombre: nombre.trim() }),
+      ...(telefono !== undefined && { telefono: telefono?.trim() || null }),
+      ...(ciudad !== undefined && { ciudad: ciudad?.trim() || null }),
       ...(diasSinCobroVal !== undefined && { diasSinCobro: diasSinCobroVal }),
     },
     select: { id: true, nombre: true, plan: true, telefono: true, ciudad: true, diasSinCobro: true },
