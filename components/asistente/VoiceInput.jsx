@@ -14,6 +14,9 @@ const VoiceInput = forwardRef(function VoiceInput(
     accumulated: '',
     recognition: null,
     safetyTimer: null,
+    restartTimer: null,
+    startedAt: 0,
+    failCount: 0,
   })
 
   // Callbacks siempre frescos
@@ -29,68 +32,106 @@ const VoiceInput = forwardRef(function VoiceInput(
     return () => {
       const s = stateRef.current
       clearTimeout(s.safetyTimer)
+      clearTimeout(s.restartTimer)
       try { s.recognition?.abort() } catch {}
     }
   }, [])
 
-  // startSession declarada como función normal que lee stateRef — sin useCallback para evitar circular
   function doStartSession() {
     const s = stateRef.current
     if (!s.active) return
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SR) return
 
-    try {
-      const rec = new SR()
-      rec.lang = 'es-CO'
-      rec.interimResults = true
-      rec.maxAlternatives = 1
-      rec.continuous = false // móvil no soporta continuous real; reiniciamos en onend
+    // Si ya hay una instancia activa, no crear otra
+    if (s.recognition) return
 
-      rec.onresult = (e) => {
-        let fin = ''
-        let interim = ''
-        for (let i = 0; i < e.results.length; i++) {
-          if (e.results[i].isFinal) fin += e.results[i][0].transcript + ' '
-          else interim += e.results[i][0].transcript
-        }
-        if (fin) s.accumulated += fin
-        cbRef.current.onInterimUpdate?.((s.accumulated + interim).trim())
+    const rec = new SR()
+    rec.lang = 'es-CO'
+    rec.interimResults = true
+    rec.maxAlternatives = 1
+    rec.continuous = false
+
+    rec.onresult = (e) => {
+      s.failCount = 0 // hubo resultado — resetear contador de fallos
+      let fin = ''
+      let interim = ''
+      for (let i = 0; i < e.results.length; i++) {
+        if (e.results[i].isFinal) fin += e.results[i][0].transcript + ' '
+        else interim += e.results[i][0].transcript
       }
+      if (fin) s.accumulated += fin
+      cbRef.current.onInterimUpdate?.((s.accumulated + interim).trim())
+    }
 
-      rec.onerror = (e) => {
-        s.recognition = null
-        if (e.error === 'no-speech' || e.error === 'audio-capture') {
-          // Silencio o captura momentánea — reiniciar sin cancelar
-          if (s.active) doStartSession()
-          return
-        }
-        // Error real — cancelar todo
+    rec.onerror = (e) => {
+      s.recognition = null
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+        // Sin permiso de micrófono — abortar completamente
         doStopAll()
         cbRef.current.onRecordingEnd?.()
         cbRef.current.onCancel?.()
+        return
       }
-
-      rec.onend = () => {
-        s.recognition = null
-        // Reiniciar automáticamente si sigue activo (reemplaza continuous:true)
-        if (s.active) doStartSession()
+      if (e.error === 'no-speech' || e.error === 'audio-capture' || e.error === 'network') {
+        // Transitorio — reiniciar con pequeña pausa
+        if (s.active) scheduleRestart(300)
+        return
       }
+      // Cualquier otro error — abortar
+      doStopAll()
+      cbRef.current.onRecordingEnd?.()
+      cbRef.current.onCancel?.()
+    }
 
-      s.recognition = rec
+    rec.onend = () => {
+      s.recognition = null
+      if (!s.active) return
+      const elapsed = Date.now() - s.startedAt
+      if (elapsed < 300) {
+        // Cerró demasiado rápido — posiblemente iOS sin permisos o colisión
+        s.failCount = (s.failCount || 0) + 1
+        if (s.failCount >= 3) {
+          // Tres fallos consecutivos — rendirse para no entrar en loop
+          doStopAll()
+          cbRef.current.onRecordingEnd?.()
+          cbRef.current.onCancel?.()
+          return
+        }
+        scheduleRestart(400)
+      } else {
+        s.failCount = 0
+        scheduleRestart(50)
+      }
+    }
+
+    s.recognition = rec
+    s.startedAt = Date.now()
+    try {
       rec.start()
     } catch {
-      // Si falla (p.ej. otra instancia activa), onend lo retomará
+      s.recognition = null
+      if (s.active) scheduleRestart(500)
     }
+  }
+
+  function scheduleRestart(ms) {
+    const s = stateRef.current
+    clearTimeout(s.restartTimer)
+    s.restartTimer = setTimeout(() => {
+      if (s.active) doStartSession()
+    }, ms)
   }
 
   function doStopAll() {
     const s = stateRef.current
     s.active = false
     clearTimeout(s.safetyTimer)
+    clearTimeout(s.restartTimer)
     try { s.recognition?.abort() } catch {}
     s.recognition = null
     s.accumulated = ''
+    s.failCount = 0
   }
 
   useImperativeHandle(ref, () => ({
