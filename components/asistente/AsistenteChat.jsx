@@ -6,38 +6,37 @@ import VoiceInput from './VoiceInput'
 
 // ---------------------------------------------------------------------------
 // WaveformBar — waveform real via Web Audio API AnalyserNode
+// Recibe el MediaStream ya obtenido por VoiceInput (evita doble getUserMedia)
 // ---------------------------------------------------------------------------
 const BAR_COUNT = 40
 
-function WaveformBar({ text, onCancel, onConfirm }) {
+function WaveformBar({ text, stream, onCancel, onConfirm, onSend }) {
   const canvasRef = useRef(null)
   const audioCtxRef = useRef(null)
   const analyserRef = useRef(null)
-  const streamRef = useRef(null)
   const rafRef = useRef(null)
   const barsRef = useRef(new Float32Array(BAR_COUNT).fill(0.05))
 
   useEffect(() => {
     let cancelled = false
 
-    async function initAudio() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-        if (cancelled) { stream.getTracks().forEach(t => t.stop()); return }
-        streamRef.current = stream
-        const ctx = new (window.AudioContext || window.webkitAudioContext)()
-        audioCtxRef.current = ctx
-        const source = ctx.createMediaStreamSource(stream)
-        const analyser = ctx.createAnalyser()
-        analyser.fftSize = 128
-        analyser.smoothingTimeConstant = 0.75
-        source.connect(analyser)
-        analyserRef.current = analyser
-        drawLoop()
-      } catch {
-        // Permiso denegado — caer en animación simulada suave
-        simulateLoop()
+    function initAudio() {
+      if (stream) {
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)()
+          audioCtxRef.current = ctx
+          const source = ctx.createMediaStreamSource(stream)
+          const analyser = ctx.createAnalyser()
+          analyser.fftSize = 128
+          analyser.smoothingTimeConstant = 0.75
+          source.connect(analyser)
+          analyserRef.current = analyser
+          drawLoop()
+          return
+        } catch {}
       }
+      // Sin stream o error — animación simulada
+      simulateLoop()
     }
 
     function drawLoop() {
@@ -48,11 +47,9 @@ function WaveformBar({ text, onCancel, onConfirm }) {
       const analyser = analyserRef.current
       const dataArray = new Uint8Array(analyser.frequencyBinCount)
       analyser.getByteFrequencyData(dataArray)
-      // Mapear frecuencias a BAR_COUNT barras
       const step = Math.floor(dataArray.length / BAR_COUNT)
       for (let i = 0; i < BAR_COUNT; i++) {
         const raw = dataArray[i * step] / 255
-        // Suavizado exponencial por barra
         barsRef.current[i] = barsRef.current[i] * 0.6 + raw * 0.4
       }
       renderCanvas(ctx2d, canvas)
@@ -102,40 +99,47 @@ function WaveformBar({ text, onCancel, onConfirm }) {
     return () => {
       cancelled = true
       cancelAnimationFrame(rafRef.current)
-      try { streamRef.current?.getTracks().forEach(t => t.stop()) } catch {}
       try { audioCtxRef.current?.close() } catch {}
-      streamRef.current = null
       audioCtxRef.current = null
       analyserRef.current = null
     }
-  }, [])
+  }, [stream])
 
-  const displayText = text || 'Habla...'
+  const displayText = text || 'Escuchando...'
   const hasText = !!text
 
   return (
     <div
       className="flex items-center gap-2 w-full rounded-[16px] px-3"
       style={{
-        height: '44px',
+        height: '48px',
         background: 'var(--color-bg-hover)',
         border: '1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)',
         boxSizing: 'border-box',
       }}
     >
-      {/* Texto transcript */}
-      <span
-        className="text-xs shrink-0 truncate"
-        style={{
-          maxWidth: '80px',
-          minWidth: '44px',
-          color: hasText ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
-          fontStyle: hasText ? 'normal' : 'italic',
-        }}
-        title={text}
-      >
-        {displayText}
-      </span>
+      {/* Indicador grabando + texto transcript */}
+      <div className="flex items-center gap-2 shrink-0" style={{ minWidth: 0, maxWidth: '110px' }}>
+        {/* Punto rojo pulsante */}
+        <span
+          className="shrink-0 w-2 h-2 rounded-full"
+          style={{
+            background: '#ef4444',
+            boxShadow: '0 0 0 0 rgba(239,68,68,0.5)',
+            animation: 'voice-pulse 1.4s ease-in-out infinite',
+          }}
+        />
+        <span
+          className="text-xs truncate"
+          style={{
+            color: hasText ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+            fontStyle: hasText ? 'normal' : 'italic',
+          }}
+          title={text}
+        >
+          {displayText}
+        </span>
+      </div>
 
       {/* Canvas waveform real */}
       <canvas
@@ -146,8 +150,9 @@ function WaveformBar({ text, onCancel, onConfirm }) {
         style={{ flex: 1, minWidth: 0, height: '28px', display: 'block' }}
       />
 
-      {/* Botones */}
-      <div className="flex items-center gap-1.5 shrink-0">
+      {/* Botones: Cancelar | Editar texto | Enviar directo */}
+      <div className="flex items-center gap-1 shrink-0">
+        {/* Cancelar */}
         <button
           type="button"
           onClick={onCancel}
@@ -163,22 +168,40 @@ function WaveformBar({ text, onCancel, onConfirm }) {
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
+        {/* Poner en textarea para editar */}
         <button
           type="button"
           onClick={onConfirm}
           disabled={!hasText}
-          aria-label="Confirmar transcripcion"
+          aria-label="Editar antes de enviar"
+          title="Editar texto"
           className="w-8 h-8 rounded-[10px] flex items-center justify-center transition-all disabled:opacity-30"
           style={{
-            background: hasText
-              ? 'color-mix(in srgb, var(--color-accent) 20%, transparent)'
-              : 'color-mix(in srgb, var(--color-accent) 10%, transparent)',
-            color: 'var(--color-accent)',
+            background: 'color-mix(in srgb, var(--color-text-muted) 12%, transparent)',
+            color: 'var(--color-text-muted)',
+            border: '1px solid color-mix(in srgb, var(--color-text-muted) 20%, transparent)',
+          }}
+        >
+          <svg style={{ width: '13px', height: '13px' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487a2.25 2.25 0 013.182 3.182L7.5 20.213l-4 1 1-4L16.862 4.487z"/>
+          </svg>
+        </button>
+        {/* Enviar directo */}
+        <button
+          type="button"
+          onClick={onSend}
+          disabled={!hasText}
+          aria-label="Enviar mensaje de voz"
+          title="Enviar"
+          className="w-8 h-8 rounded-[10px] flex items-center justify-center transition-all disabled:opacity-30"
+          style={{
+            background: hasText ? 'var(--color-accent)' : 'color-mix(in srgb, var(--color-accent) 20%, transparent)',
+            color: hasText ? '#0a0a0a' : 'var(--color-accent)',
             border: '1px solid color-mix(in srgb, var(--color-accent) 35%, transparent)',
           }}
         >
-          <svg style={{ width: '13px', height: '13px' }} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+          <svg style={{ width: '13px', height: '13px' }} fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.269 20.876L5.999 12zm0 0h7.5" />
           </svg>
         </button>
       </div>
@@ -244,6 +267,7 @@ export default function AsistenteChat({ onClose }) {
   const [usageInfo, setUsageInfo] = useState(null) // { limite, usado, restantes, alertas }
   const [voiceActive, setVoiceActive] = useState(false)
   const [voiceText, setVoiceText] = useState('')
+  const [voiceStream, setVoiceStream] = useState(null)
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
   const messagesRef = useRef([])
@@ -592,26 +616,34 @@ export default function AsistenteChat({ onClose }) {
             </div>
           ) : (
             <>
-              {/* VoiceInput siempre montado (para que voiceRef funcione), oculto visualmente cuando no graba */}
+              {/* Input bar — visible cuando NO graba */}
               <div style={{ display: voiceActive ? 'none' : 'flex' }} className="gap-2 items-end">
                 <VoiceInput
                   ref={voiceRef}
                   disabled={loading}
-                  onRecordingStart={() => {
+                  onRecordingStart={(stream) => {
                     setVoiceActive(true)
                     setVoiceText('')
+                    setVoiceStream(stream || null)
                   }}
                   onInterimUpdate={(t) => setVoiceText(t)}
                   onRecordingEnd={() => {}}
                   onConfirm={(text) => {
                     setVoiceActive(false)
                     setVoiceText('')
+                    setVoiceStream(null)
                     setInput(text)
                     setTimeout(() => inputRef.current?.focus(), 50)
                   }}
                   onCancel={() => {
                     setVoiceActive(false)
                     setVoiceText('')
+                    setVoiceStream(null)
+                  }}
+                  onPermissionDenied={() => {
+                    setVoiceActive(false)
+                    setVoiceText('')
+                    setVoiceStream(null)
                   }}
                 />
                 <textarea
@@ -640,12 +672,18 @@ export default function AsistenteChat({ onClose }) {
                   </svg>
                 </button>
               </div>
-              {/* Waveform overlay — visible solo cuando graba */}
+              {/* WaveformBar — visible solo cuando graba */}
               {voiceActive && (
                 <WaveformBar
                   text={voiceText}
+                  stream={voiceStream}
                   onCancel={() => voiceRef.current?.cancel()}
                   onConfirm={() => voiceRef.current?.confirm(voiceText)}
+                  onSend={() => {
+                    const txt = voiceText
+                    voiceRef.current?.cancel()
+                    if (txt) sendMessage(txt)
+                  }}
                 />
               )}
               <p className="text-[10px] text-center mt-2" style={{ color: 'var(--color-text-muted)' }}>

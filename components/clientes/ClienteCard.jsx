@@ -118,12 +118,12 @@ export default function ClienteCard({ cliente }) {
                 <span style={{ color: 'var(--color-text-muted)' }}>
                   {cliente.prestamosActivos} préstamo{cliente.prestamosActivos > 1 ? 's' : ''}
                   {cliente.proximoCobroLabel && (
-                    <> · <span style={{ color: cliente.diasMoraMax > 0 ? color : 'var(--color-text-secondary)' }} className="capitalize">{cliente.proximoCobroLabel}</span></>
+                    <> · <span style={{ color: cliente.diasMoraMax > 0 ? color : 'var(--color-text-secondary)' }}>{cliente.proximoCobroLabel}</span></>
                   )}
                 </span>
                 <span className="font-mono-display font-semibold" style={{ color }}>{porcentaje}%</span>
               </div>
-              <div className="h-1 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
+              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
                 <div
                   className="h-full rounded-full transition-all"
                   style={{

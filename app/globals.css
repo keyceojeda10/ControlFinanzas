@@ -237,6 +237,7 @@ html[data-theme="light"] ::selection { background: rgba(245, 197, 24, 0.35); col
 .wizard-success-bounce { animation: wizardSuccessBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 @keyframes wizardSlideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes wizardSuccessBounce { 0% { opacity: 0; transform: scale(0.3); } 50% { opacity: 1; transform: scale(1.1); } 100% { transform: scale(1); } }
+@keyframes voice-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.5); } 50% { box-shadow: 0 0 0 5px rgba(239,68,68,0); } }
 
 /* ─── Range slider ────────────────────────────── */
 input[type="range"] { -webkit-appearance: none; appearance: none; outline: none; }

@@ -3,7 +3,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { LIMITES_PLAN, calcularEstadoCliente, calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado, calcularProximoCobro, formatFechaCobroRelativa } from '@/lib/calculos'
+import { LIMITES_PLAN, calcularEstadoCliente, calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado, calcularProximoCobro, formatFechaCobroContextual } from '@/lib/calculos'
 import { obtenerDiasSinCobro, validarDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
 import { geocodeAddress }   from '@/lib/geocoding'
@@ -152,7 +152,7 @@ export async function GET(request) {
       diasMoraMax,
       pagoHoy,
       porcentajePagadoPromedio,
-      proximoCobroLabel: proximoCobroMin ? formatFechaCobroRelativa(proximoCobroMin) : null,
+      proximoCobroLabel: proximoCobroMin ? formatFechaCobroContextual(proximoCobroMin, diasMoraMax) : null,
     }
   })
 
