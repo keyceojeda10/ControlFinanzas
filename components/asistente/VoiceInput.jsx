@@ -148,11 +148,25 @@ const VoiceInput = forwardRef(function VoiceInput(
     },
   }))
 
-  const startRecording = useCallback(() => {
+  const startRecording = useCallback(async () => {
     const s = stateRef.current
     if (s.active || disabled) return
+
+    // Pedir permiso de micrófono explícitamente antes de SpeechRecognition.
+    // En iOS Safari el permiso llega async y sin esto onend dispara antes de que
+    // el usuario acepte, causando el efecto de "se abre y se cierra".
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      // Cerrar el stream de inmediato — solo necesitábamos el permiso
+      stream.getTracks().forEach(t => t.stop())
+    } catch {
+      // Usuario rechazó permiso o no hay micrófono — no iniciar
+      return
+    }
+
     s.active = true
     s.accumulated = ''
+    s.failCount = 0
 
     s.safetyTimer = setTimeout(() => {
       doStopAll()
