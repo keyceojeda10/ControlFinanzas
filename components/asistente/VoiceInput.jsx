@@ -34,11 +34,14 @@ function hasSpeechRecognition() {
   return !!(window.SpeechRecognition || window.webkitSpeechRecognition)
 }
 
-// En Android PWA siempre usamos Whisper. En Android Chrome normal también
-// preferimos Whisper para evitar el problema de permisos.
+// iOS = SpeechRecognition (funciona perfecto, modal nativo del sistema).
+// Android + PC/desktop = Whisper via getUserMedia (evita el problema de permisos
+// de SpeechRecognition que no muestra modal en Chrome cuando fue denegado antes).
 function checkWhisperMode() {
   if (typeof window === 'undefined') return false
-  return isAndroid()
+  const isIOS = /ipad|iphone|ipod/i.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  return !isIOS
 }
 
 // ─── Waveform canvas ────────────────────────────────────────────────────────
@@ -224,9 +227,16 @@ const VoiceInput = forwardRef(function VoiceInput(
       whisperActiveRef.current = false
       setState('error')
       const isPWA = window.matchMedia('(display-mode: standalone)').matches
-      setErrorMsg(isPWA
-        ? 'Micrófono bloqueado. Ve a Ajustes de Android → Apps → Chrome → Permisos → Micrófono → Permitir, luego vuelve.'
-        : 'Micrófono bloqueado. Toca el candado (o ícono de info) en la barra del navegador → Permisos del sitio → Micrófono → Permitir.')
+      const isMobile = isAndroid()
+      let msg
+      if (isPWA) {
+        msg = 'Micrófono bloqueado. Ve a Ajustes → Apps → Chrome → Permisos → Micrófono → Permitir, luego vuelve a la app.'
+      } else if (isMobile) {
+        msg = 'Micrófono bloqueado. Toca el candado junto a la URL → Permisos del sitio → Micrófono → Permitir.'
+      } else {
+        msg = 'Micrófono bloqueado. Haz clic en el ícono de micrófono o candado en la barra de URL de Chrome → Permitir siempre.'
+      }
+      setErrorMsg(msg)
       cbRef.current.onRecordingEnd?.()
       cbRef.current.onCancel?.()
       return
