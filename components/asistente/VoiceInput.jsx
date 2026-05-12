@@ -223,7 +223,10 @@ const VoiceInput = forwardRef(function VoiceInput(
     } catch (e) {
       whisperActiveRef.current = false
       setState('error')
-      setErrorMsg('No se pudo acceder al micrófono. Abre la app en Chrome y acepta el permiso.')
+      const isPWA = window.matchMedia('(display-mode: standalone)').matches
+      setErrorMsg(isPWA
+        ? 'Micrófono bloqueado. Ve a Ajustes de Android → Apps → Chrome → Permisos → Micrófono → Permitir, luego vuelve.'
+        : 'Micrófono bloqueado. Toca el candado (o ícono de info) en la barra del navegador → Permisos del sitio → Micrófono → Permitir.')
       cbRef.current.onRecordingEnd?.()
       cbRef.current.onCancel?.()
       return
