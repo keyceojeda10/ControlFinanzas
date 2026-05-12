@@ -60,6 +60,7 @@ const diasDesdeFechaColombia = (fechaBase, fechaObjetivo) => {
 export default function CajaPage() {
   const searchParams = useSearchParams()
   const fechaParam = searchParams.get('fecha')
+  const tabParam = searchParams.get('tab')
   const { esCobrador, puedeReportarGastos, puedeVerSaldoCaja, puedeVerCapital, loading: authLoading } = useAuth()
   const { lastSyncedAt } = useOffline()
 
@@ -80,6 +81,7 @@ export default function CajaPage() {
   const [cobradorExpandido, setCobradorExpandido] = useState({})
   const [exitoAjuste, setExitoAjuste] = useState(false)
   const [gastosPendientes, setGastosPendientes] = useState(0)
+  const [cajaTab, setCajaTab] = useState(tabParam === 'gastos' ? 'gastos' : 'cobros')
   const [fechaSeleccionada, setFechaSeleccionada] = useState(
     typeof fechaParam === 'string' && FECHA_REGEX.test(fechaParam)
       ? fechaParam
@@ -664,6 +666,25 @@ export default function CajaPage() {
         />
       </div>
 
+      {/* Tabs Cobros / Gastos */}
+      <div className="flex gap-1 p-1 rounded-[12px]" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
+        {[{ key: 'cobros', label: 'Cobros del día' }, { key: 'gastos', label: 'Gastos' }].map(t => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setCajaTab(t.key)}
+            className="flex-1 py-2 text-xs font-semibold rounded-[9px] transition-all"
+            style={cajaTab === t.key ? {
+              background: 'var(--color-bg-card)',
+              color: 'var(--color-accent)',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+            } : { color: 'var(--color-text-muted)' }}
+          >
+            {t.label}{t.key === 'gastos' && gastosPendientes > 0 ? ` (${gastosPendientes})` : ''}
+          </button>
+        ))}
+      </div>
+
       {isOffline && (
         <div className="bg-[var(--color-warning-dim)] border border-[color-mix(in_srgb,var(--color-warning)_30%,transparent)] text-[var(--color-warning)] text-xs rounded-[12px] px-4 py-2.5 flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-[var(--color-accent)] animate-pulse shrink-0" />
@@ -681,6 +702,26 @@ export default function CajaPage() {
         </div>
       )}
 
+      {cajaTab === 'gastos' && (
+        <Card>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Gastos menores</p>
+            <button
+              onClick={() => setShowGasto(true)}
+              className="p-1.5 rounded-[8px] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-soft)] transition-all"
+              title="Reportar gasto"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                  d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </button>
+          </div>
+          <ListaGastos soloPendientes={false} fecha={fechaSeleccionada} onCountChange={setGastosPendientes} />
+        </Card>
+      )}
+
+      {cajaTab === 'cobros' && <>
       {/* HERO CARD: Saldo en caja del dia */}
       {(() => {
         const heroColor = disponibleHoy >= 0 ? '#22c55e' : '#ef4444'
@@ -984,30 +1025,7 @@ export default function CajaPage() {
         )}
       </Card>
 
-      {/* Gastos Menores */}
-      <Card>
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
-            Gastos menores
-          </p>
-          <div className="flex items-center gap-2">
-            {gastosPendientes > 0 && (
-              <Badge variant="yellow">{gastosPendientes} pendientes</Badge>
-            )}
-            <button
-              onClick={() => setShowGasto(true)}
-              className="p-1.5 rounded-[8px] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-soft)] transition-all"
-              title="Reportar gasto"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                  d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </button>
-          </div>
-        </div>
-        <ListaGastos soloPendientes={false} fecha={fechaSeleccionada} onCountChange={setGastosPendientes} />
-      </Card>
+      </>}
 
       <ReportarGasto
         open={showGasto}

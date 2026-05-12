@@ -114,14 +114,14 @@ export default function ClienteCard({ cliente }) {
           {/* Progreso si tiene préstamo activo */}
           {tienePrestamo && (
             <div className="mt-2">
-              <div className="flex items-center justify-between text-[10px] mb-1">
-                <span style={{ color: 'var(--color-text-muted)' }}>
+              <div className="flex items-center justify-between text-[10px] mb-1 gap-2">
+                <span className="min-w-0 truncate" style={{ color: 'var(--color-text-muted)' }}>
                   {cliente.prestamosActivos} préstamo{cliente.prestamosActivos > 1 ? 's' : ''}
                   {cliente.proximoCobroLabel && (
                     <> · <span style={{ color: cliente.diasMoraMax > 0 ? color : 'var(--color-text-secondary)' }}>{cliente.proximoCobroLabel}</span></>
                   )}
                 </span>
-                <span className="font-mono-display font-semibold" style={{ color }}>{porcentaje}%</span>
+                <span className="shrink-0 font-mono-display font-semibold" style={{ color }}>{porcentaje}%</span>
               </div>
               <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
                 <div

@@ -133,6 +133,7 @@ const VoiceInput = forwardRef(function VoiceInput(
   const [state, setState]  = useState('idle') // 'idle' | 'recording' | 'error'
   const [errorMsg, setErrorMsg] = useState('')
   const [transcript, setTranscript] = useState('')
+  const [showPermHint, setShowPermHint] = useState(false)
 
   const recRef  = useRef(null)
   const accRef  = useRef('')
@@ -190,6 +191,7 @@ const VoiceInput = forwardRef(function VoiceInput(
 
     rec.onstart = () => {
       failRef.current = 0
+      try { localStorage.setItem('voice_perm_granted', '1') } catch {}
     }
 
     rec.onresult = (e) => {
@@ -211,7 +213,10 @@ const VoiceInput = forwardRef(function VoiceInput(
         activeRef.current = false
         clearTimeout(safetyTimerRef.current)
         setState('error')
-        setErrorMsg('Permiso de micrófono denegado. Actívalo en tu navegador.')
+        const yaConociaPerm = (() => { try { return !!localStorage.getItem('voice_perm_granted') } catch { return false } })()
+        setErrorMsg(yaConociaPerm
+          ? 'Permiso denegado. Ve a Configuración del sitio → Micrófono → Permitir.'
+          : 'Acepta el permiso de micrófono en la barra de tu navegador y vuelve a intentar.')
         cbRef.current.onRecordingEnd?.()
         cbRef.current.onCancel?.()
         return
@@ -290,6 +295,14 @@ const VoiceInput = forwardRef(function VoiceInput(
       stopAll('cancel')
     }, 60000)
 
+    // Si es la primera vez (sin permiso guardado), mostrar hint 3 segundos
+    try {
+      if (!localStorage.getItem('voice_perm_granted')) {
+        setShowPermHint(true)
+        setTimeout(() => setShowPermHint(false), 3000)
+      }
+    } catch {}
+
     cbRef.current.onRecordingStart?.()
     startSession()
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -315,18 +328,18 @@ const VoiceInput = forwardRef(function VoiceInput(
           style={{ background: '#ef4444', animation: 'voice-pulse 1.4s ease-in-out infinite' }}
         />
 
-        {/* Transcript o placeholder */}
+        {/* Transcript o placeholder / hint permiso */}
         <span
           className="text-xs shrink-0 truncate"
           style={{
             minWidth: '44px',
-            maxWidth: '100px',
-            color: hasText ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
-            fontStyle: hasText ? 'normal' : 'italic',
+            maxWidth: '110px',
+            color: showPermHint ? 'var(--color-warning)' : (hasText ? 'var(--color-text-primary)' : 'var(--color-text-muted)'),
+            fontStyle: hasText && !showPermHint ? 'normal' : 'italic',
           }}
           title={transcript}
         >
-          {transcript || 'Escuchando...'}
+          {showPermHint ? 'Acepta el permiso...' : (transcript || 'Escuchando...')}
         </span>
 
         {/* Waveform */}
