@@ -153,6 +153,16 @@ const VoiceInput = forwardRef(function VoiceInput(
     const SR = typeof window !== 'undefined' &&
       (window.SpeechRecognition || window.webkitSpeechRecognition)
     setSupported(!!SR)
+
+    // Verificar estado del permiso de mic al montar (no pide permiso, solo consulta)
+    if (typeof navigator !== 'undefined' && navigator.permissions) {
+      navigator.permissions.query({ name: 'microphone' }).then(status => {
+        if (status.state === 'granted') {
+          try { localStorage.setItem('voice_perm_granted', '1') } catch {}
+        }
+      }).catch(() => {})
+    }
+
     return () => {
       clearTimeout(restartTimerRef.current)
       clearTimeout(safetyTimerRef.current)
@@ -214,9 +224,18 @@ const VoiceInput = forwardRef(function VoiceInput(
         clearTimeout(safetyTimerRef.current)
         setState('error')
         const yaConociaPerm = (() => { try { return !!localStorage.getItem('voice_perm_granted') } catch { return false } })()
-        setErrorMsg(yaConociaPerm
-          ? 'Permiso denegado. Ve a Configuración del sitio → Micrófono → Permitir.'
-          : 'Acepta el permiso de micrófono en la barra de tu navegador y vuelve a intentar.')
+        const esAndroid = typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent)
+        let msg
+        if (yaConociaPerm) {
+          msg = esAndroid
+            ? 'Micrófono bloqueado. Toca el candado en la barra del navegador → Permisos → Micrófono → Permitir.'
+            : 'Permiso denegado. Toca el candado en la barra del navegador → Micrófono → Permitir.'
+        } else {
+          msg = esAndroid
+            ? 'Activa el micrófono: toca el candado en la barra del navegador → Permisos → Micrófono → Permitir.'
+            : 'Acepta el permiso de micrófono en la barra de tu navegador y vuelve a intentar.'
+        }
+        setErrorMsg(msg)
         cbRef.current.onRecordingEnd?.()
         cbRef.current.onCancel?.()
         return

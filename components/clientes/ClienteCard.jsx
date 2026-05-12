@@ -59,9 +59,9 @@ export default function ClienteCard({ cliente }) {
             <div
               className="w-11 h-11 rounded-full flex items-center justify-center text-[14px] font-bold"
               style={{
-                background: `color-mix(in srgb, ${color} 18%, transparent)`,
+                background: `${color}2e`,
                 color,
-                border: `2px solid color-mix(in srgb, ${color} 40%, transparent)`,
+                border: `2px solid ${color}66`,
               }}
             >
               {inicial}
@@ -85,9 +85,9 @@ export default function ClienteCard({ cliente }) {
             <span
               className="shrink-0 inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
               style={{
-                background: `color-mix(in srgb, ${color} 15%, transparent)`,
+                background: `${color}26`,
                 color,
-                border: `1px solid color-mix(in srgb, ${color} 25%, transparent)`,
+                border: `1px solid ${color}40`,
               }}
             >
               <span className="w-1 h-1 rounded-full" style={{ background: color }} />
@@ -114,23 +114,25 @@ export default function ClienteCard({ cliente }) {
           {/* Progreso si tiene préstamo activo */}
           {tienePrestamo && (
             <div className="mt-2">
-              <div className="flex items-center justify-between text-[10px] mb-1 gap-2">
-                <span className="min-w-0 truncate" style={{ color: 'var(--color-text-muted)' }}>
-                  {cliente.prestamosActivos} préstamo{cliente.prestamosActivos > 1 ? 's' : ''}
-                  {cliente.proximoCobroLabel && (
-                    <> · <span style={{ color: cliente.diasMoraMax > 0 ? color : 'var(--color-text-secondary)' }}>{cliente.proximoCobroLabel}</span></>
-                  )}
-                </span>
-                <span className="shrink-0 font-mono-display font-semibold" style={{ color }}>{porcentaje}%</span>
-              </div>
-              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
-                <div
-                  className="h-full rounded-full transition-all"
-                  style={{
-                    width: `${porcentaje}%`,
-                    background: `linear-gradient(90deg, color-mix(in srgb, ${color} 70%, transparent), ${color})`,
-                  }}
-                />
+              {/* Línea de info: N préstamos · fecha cobro */}
+              <p className="text-[10px] mb-1" style={{ color: 'var(--color-text-muted)' }}>
+                {cliente.prestamosActivos} préstamo{cliente.prestamosActivos > 1 ? 's' : ''}
+                {cliente.proximoCobroLabel && (
+                  <> · <span style={{ color: cliente.diasMoraMax > 0 ? color : 'var(--color-text-secondary)' }}>{cliente.proximoCobroLabel}</span></>
+                )}
+              </p>
+              {/* Barra de progreso con % a la derecha */}
+              <div className="flex items-center gap-1.5">
+                <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{
+                      width: `${porcentaje}%`,
+                      background: `linear-gradient(90deg, ${color}99, ${color})`,
+                    }}
+                  />
+                </div>
+                <span className="shrink-0 text-[10px] font-mono-display font-semibold" style={{ color }}>{porcentaje}%</span>
               </div>
             </div>
           )}

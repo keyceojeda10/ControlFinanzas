@@ -223,15 +223,15 @@ export default function CapitalTab() {
         <div
           className="rounded-[12px] px-4 py-3 text-sm border"
           style={feedback.tipo === 'ok'
-            ? { color: 'var(--color-success)', borderColor: 'color-mix(in srgb, var(--color-success) 25%, transparent)', background: 'var(--color-success-dim)' }
-            : { color: 'var(--color-danger)', borderColor: 'color-mix(in srgb, var(--color-danger) 25%, transparent)', background: 'var(--color-danger-dim)' }}
+            ? { color: 'var(--color-success)', borderColor: 'var(--color-success-border)', background: 'var(--color-success-dim)' }
+            : { color: 'var(--color-danger)', borderColor: 'var(--color-danger-border)', background: 'var(--color-danger-dim)' }}
         >
           {feedback.mensaje}
         </div>
       )}
 
       {noConfigurado && (
-        <div className="bg-[var(--color-bg-surface)] border border-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] rounded-[16px] px-5 py-5 text-center">
+        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-hover)] rounded-[16px] px-5 py-5 text-center">
           <p className="text-[var(--color-text-primary)] font-medium mb-2">Configura tu capital inicial</p>
           <p className="text-sm text-[var(--color-text-muted)] mb-2">Registra con cuanto capital empiezas para que el sistema lleve el control automaticamente.</p>
           {mostrarSugerido && (
@@ -265,13 +265,13 @@ export default function CapitalTab() {
           <div
             className="relative rounded-[20px] overflow-hidden"
             style={{
-              background: `linear-gradient(135deg, color-mix(in srgb, ${heroColor} 14%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, ${heroColor} 8%, var(--color-bg-card)) 100%)`,
-              border: `1px solid color-mix(in srgb, ${heroColor} 25%, var(--color-border))`,
-              boxShadow: `0 8px 32px color-mix(in srgb, ${heroColor} 18%, transparent)`,
+              background: `var(--color-bg-card)`,
+              border: `1px solid ${heroColor}40`,
+              boxShadow: `0 8px 32px ${heroColor}2e`,
             }}
           >
             <div className="hero-glow absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none"
-              style={{ background: `radial-gradient(circle, color-mix(in srgb, ${heroColor} 35%, transparent), transparent 70%)`, filter: 'blur(20px)' }} />
+              style={{ background: `radial-gradient(circle, ${heroColor}59, transparent 70%)`, filter: 'blur(20px)' }} />
             <div className="absolute inset-0 pointer-events-none opacity-[0.04]"
               style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '16px 16px', color: heroColor }} />
             <div className="relative px-5 py-5 sm:px-6 sm:py-6">
@@ -284,7 +284,7 @@ export default function CapitalTab() {
                 style={{
                   color: resumen.saldo >= 0 ? 'var(--color-success)' : 'var(--color-danger)',
                   fontSize: 'clamp(36px, 10vw, 52px)',
-                  textShadow: `0 0 30px color-mix(in srgb, ${resumen.saldo >= 0 ? 'var(--color-success)' : 'var(--color-danger)'} 25%, transparent)`,
+                  textShadow: resumen.saldo >= 0 ? '0 0 30px rgba(52,211,153,0.25)' : '0 0 30px rgba(248,113,113,0.25)',
                 }}
               >
                 {formatCOP(resumen.saldo)}
@@ -317,7 +317,7 @@ export default function CapitalTab() {
               disabled={togglingEstricto}
               className={`px-3 py-1.5 text-xs font-semibold rounded-[10px] transition-colors ${
                 capitalEstricto
-                  ? 'bg-[var(--color-success-dim)] text-[var(--color-success)] border border-[color-mix(in_srgb,var(--color-success)_30%,transparent)]'
+                  ? 'bg-[var(--color-success-dim)] text-[var(--color-success)] border border-[var(--color-success-border)]'
                   : 'bg-[var(--color-bg-hover)] text-[var(--color-text-muted)] border border-[var(--color-border)]'
               }`}
             >
@@ -398,9 +398,9 @@ export default function CapitalTab() {
               icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25M6.75 12h.008v.008H6.75V12z" /></svg> },
           ].map((s, i) => (
             <div key={i} className="rounded-[16px] px-4 py-3 kpi-lift"
-              style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${s.color} 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`, border: `1px solid color-mix(in srgb, ${s.color} 22%, var(--color-border))` }}>
+              style={{ background: `var(--color-bg-card)`, border: `1px solid ${s.color}38` }}>
               <div className="flex items-center gap-1.5 mb-1">
-                <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: `color-mix(in srgb, ${s.color} 18%, transparent)`, color: s.color }}>
+                <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: `${s.color}2e`, color: s.color }}>
                   <span className="w-3 h-3">{s.icon}</span>
                 </div>
                 <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: s.color }}>{s.label}</p>
@@ -414,9 +414,9 @@ export default function CapitalTab() {
             const balanceColor = flujo >= 0 ? '#22c55e' : '#ef4444'
             return (
               <div className="rounded-[16px] px-4 py-3 kpi-lift"
-                style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${balanceColor} 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`, border: `1px solid color-mix(in srgb, ${balanceColor} 22%, var(--color-border))` }}>
+                style={{ background: `var(--color-bg-card)`, border: `1px solid ${balanceColor}38` }}>
                 <div className="flex items-center gap-1.5 mb-1">
-                  <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: `color-mix(in srgb, ${balanceColor} 18%, transparent)`, color: balanceColor }}>
+                  <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: `${balanceColor}2e`, color: balanceColor }}>
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.281m5.94 2.28l-2.28 5.941" />
                     </svg>
@@ -527,8 +527,8 @@ export default function CapitalTab() {
                         className={['h-10 rounded-[10px] border text-sm font-semibold transition-all',
                           modalDireccion === dir
                             ? dir === 'ingreso'
-                              ? 'bg-[var(--color-success-dim)] border-[color-mix(in_srgb,var(--color-success)_35%,transparent)] text-[var(--color-success)]'
-                              : 'bg-[var(--color-danger-dim)] border-[color-mix(in_srgb,var(--color-danger)_35%,transparent)] text-[var(--color-danger)]'
+                              ? 'bg-[var(--color-success-dim)] border-[var(--color-success-border)] text-[var(--color-success)]'
+                              : 'bg-[var(--color-danger-dim)] border-[var(--color-danger-border)] text-[var(--color-danger)]'
                             : 'bg-[var(--color-bg-base)] border-[var(--color-border)] text-[var(--color-text-muted)]',
                         ].join(' ')}>
                         {dir === 'ingreso' ? 'Entrada' : 'Salida'}

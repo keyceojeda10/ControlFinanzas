@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/Card'
 import { SkeletonCard } from '@/components/ui/Skeleton'
 import { formatCOP } from '@/lib/calculos'
 import CapitalTab from '@/components/capital/CapitalTab'
+import ReportarGasto from '@/components/gastos/ReportarGasto'
 
 const ESTADO_COLORS = {
   pendiente: 'bg-[var(--color-warning-dim)] text-[var(--color-warning)] border-[color-mix(in_srgb,var(--color-warning)_30%,transparent)]',
@@ -76,6 +77,7 @@ export default function GastosPage() {
 
   // Tab de estado dentro de "Gastos del día"
   const [estadoTab, setEstadoTab] = useState('pendiente')
+  const [showReportarGasto, setShowReportarGasto] = useState(false)
   const [fecha, setFecha] = useState('')
   const [cobradorId, setCobradorId] = useState('')
   const [cobradores, setCobradores] = useState([])
@@ -171,12 +173,37 @@ export default function GastosPage() {
   return (
     <div className="max-w-3xl mx-auto p-4 space-y-4">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Gastos</h1>
-        <p className="text-[12px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-          Gastos de cobradores y control de capital
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Gastos</h1>
+          <p className="text-[12px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+            Gastos de cobradores y control de capital
+          </p>
+        </div>
+        {pageTab === 'dia' && (
+          <button
+            type="button"
+            onClick={() => setShowReportarGasto(true)}
+            className="flex items-center gap-1.5 h-9 px-3 rounded-[10px] text-xs font-semibold shrink-0 transition-all"
+            style={{
+              background: 'var(--color-accent)',
+              color: '#0a0a0a',
+            }}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Mi gasto
+          </button>
+        )}
       </div>
+
+      <ReportarGasto
+        open={showReportarGasto}
+        onClose={() => setShowReportarGasto(false)}
+        onSuccess={() => { setShowReportarGasto(false); fetchGastos() }}
+        fecha={fecha || undefined}
+      />
 
       {/* Tabs de página: Gastos del día | Capital */}
       <div
@@ -262,14 +289,22 @@ export default function GastosPage() {
             </div>
             <div className="flex flex-wrap items-center gap-2 pt-3" style={{ borderTop: `1px solid color-mix(in srgb, ${TAB_COLORS[estadoTab].color} 15%, transparent)` }}>
               <div className="flex items-center gap-1.5">
-                <input
-                  type="date"
-                  value={fecha}
-                  max={getColombiaDateStr()}
-                  onChange={(e) => setFecha(e.target.value)}
-                  className="h-8 px-2 rounded-[8px] border bg-transparent text-[11px] focus:outline-none transition-all"
-                  style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
-                />
+                <label className="flex items-center gap-1.5 h-8 px-2 rounded-[8px] border cursor-pointer"
+                  style={{ borderColor: 'var(--color-border)', background: 'var(--color-bg-card)' }}>
+                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--color-text-muted)' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span className="text-[11px]" style={{ color: fecha ? 'var(--color-text-primary)' : 'var(--color-text-muted)' }}>
+                    {fecha ? new Date(fecha + 'T12:00:00-05:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'short', timeZone: 'America/Bogota' }) : 'Filtrar fecha'}
+                  </span>
+                  <input
+                    type="date"
+                    value={fecha}
+                    max={getColombiaDateStr()}
+                    onChange={(e) => setFecha(e.target.value)}
+                    className="sr-only"
+                  />
+                </label>
                 {fecha && (
                   <button type="button" onClick={() => setFecha('')}
                     className="text-[10px] px-2 py-1" style={{ color: 'var(--color-text-muted)' }}>
