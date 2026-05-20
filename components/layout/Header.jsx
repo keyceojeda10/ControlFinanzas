@@ -60,8 +60,11 @@ export default function Header() {
 
   return (
     <>
+    {/* Spacer: el header es fixed (no sticky) — sticky causa tearing GPU en Android Chrome.
+        fixed se compone en capa propia predecible. Este div ocupa el hueco de 56px. */}
+    <div className="lg:hidden h-14 shrink-0" aria-hidden />
     <header
-      className="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 h-14 cf-header-mobile"
+      className="lg:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 h-14 cf-header-mobile"
     >
       {/* Logo + Title */}
       <div className="flex items-center gap-3">
