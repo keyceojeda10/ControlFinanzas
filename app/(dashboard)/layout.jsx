@@ -69,7 +69,7 @@ export default async function DashboardLayout({ children }) {
         <SinRutaBanner />
 
         {/* Contenido de la página */}
-        <main className="flex-1 px-4 py-5 lg:px-6 lg:py-6 pb-24 lg:pb-6 isolate">
+        <main className="flex-1 px-4 py-5 lg:px-6 lg:py-6 pb-24 lg:pb-6">
           <PageWrapper>{children}</PageWrapper>
         </main>
       </div>
