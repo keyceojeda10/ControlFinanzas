@@ -352,13 +352,24 @@ html[data-theme="light"] input[type="range"]::-moz-range-track { background: #e2
 
 /* ─── Header mobile ────────────────────────────── */
 .cf-header-mobile {
-  background: color-mix(in srgb, var(--color-bg-base) 84%, transparent);
-  backdrop-filter: blur(20px) saturate(1.2);
-  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  background: var(--color-bg-base);
   border-bottom: 1px solid var(--color-border);
 }
+/* backdrop-filter solo en desktop — en Android causa artefactos GPU en capas fixed */
+@media (min-width: 1024px) {
+  .cf-header-mobile {
+    background: color-mix(in srgb, var(--color-bg-base) 84%, transparent);
+    backdrop-filter: blur(20px) saturate(1.2);
+    -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  }
+}
 html[data-theme="light"] .cf-header-mobile {
-  background: rgba(255, 255, 255, 0.88);
+  background: #ffffff;
+}
+@media (min-width: 1024px) {
+  html[data-theme="light"] .cf-header-mobile {
+    background: rgba(255, 255, 255, 0.88);
+  }
 }
 .cf-icon-btn:hover {
   background: var(--color-bg-hover);
@@ -371,24 +382,35 @@ html[data-theme="light"] .cf-header-mobile {
 
 /* ─── BottomNav ────────────────────────────── */
 .cf-bottomnav-bar {
-  background: color-mix(in srgb, var(--color-bg-surface) 80%, transparent);
-  backdrop-filter: blur(30px) saturate(1.5);
-  -webkit-backdrop-filter: blur(30px) saturate(1.5);
+  background: var(--color-bg-surface);
   border: 1px solid var(--color-border);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px color-mix(in srgb, var(--color-accent) 4%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
+/* backdrop-filter solo en desktop — en Android causa artefactos GPU */
+@media (min-width: 1024px) {
+  .cf-bottomnav-bar {
+    background: color-mix(in srgb, var(--color-bg-surface) 80%, transparent);
+    backdrop-filter: blur(30px) saturate(1.5);
+    -webkit-backdrop-filter: blur(30px) saturate(1.5);
+  }
+}
 html[data-theme="light"] .cf-bottomnav-bar {
-  background: rgba(255, 255, 255, 0.95);
+  background: #ffffff;
   box-shadow: 0 8px 28px rgba(20, 20, 40, 0.10), 0 0 18px color-mix(in srgb, var(--color-accent) 10%, transparent);
 }
 
 /* Sheet bottom (BottomNav "mas") */
 .cf-sheet {
-  background: color-mix(in srgb, var(--color-bg-surface) 95%, transparent);
-  backdrop-filter: blur(30px) saturate(1.3);
-  -webkit-backdrop-filter: blur(30px) saturate(1.3);
+  background: var(--color-bg-surface);
   border: 1px solid var(--color-border);
   border-bottom: none;
+}
+@media (min-width: 1024px) {
+  .cf-sheet {
+    background: color-mix(in srgb, var(--color-bg-surface) 95%, transparent);
+    backdrop-filter: blur(30px) saturate(1.3);
+    -webkit-backdrop-filter: blur(30px) saturate(1.3);
+  }
 }
 html[data-theme="light"] .cf-sheet {
   background: #ffffff;
