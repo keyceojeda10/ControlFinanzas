@@ -32,9 +32,23 @@ export default function RutasPage() {
 
   const fetchRutas = useCallback(async ({ soft = false } = {}) => {
     const shouldUseSoftRefresh = soft && hasLoadedOnceRef.current
-    if (!shouldUseSoftRefresh) setLoading(true)
     setError('')
     setIsOffline(false)
+
+    // Cache-first: pintar al instante desde IndexedDB y luego revalidar.
+    // Evita el flash vacio→skeleton→datos en cada navegacion repetida.
+    if (!shouldUseSoftRefresh && !hasLoadedOnceRef.current) {
+      try {
+        const cached = await leerDeCache('rutas')
+        if (cached && cached.length > 0) {
+          setRutas(cached)
+          setLoading(false)        // hay datos: no mostrar skeleton
+          hasLoadedOnceRef.current = true
+        } else {
+          setLoading(true)         // primera vez sin cache: skeleton
+        }
+      } catch { setLoading(true) }
+    }
 
     // Offline: go straight to IndexedDB, bypass SW cached response
     if (!navigator.onLine) {

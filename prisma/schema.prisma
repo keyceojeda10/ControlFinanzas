@@ -168,6 +168,8 @@ model Ruta {
   clientes     Cliente[]
 
   @@index([organizationId])
+  @@index([cobradorId])
+  @@index([organizationId, activo])
 }
 
 model GrupoCobro {
@@ -227,6 +229,8 @@ model Cliente {
   @@index([cedula])
   @@index([estado])
   @@index([grupoCobroId])
+  @@index([rutaId])
+  @@index([organizationId, estado])
 }
 
 model Prestamo {
@@ -253,6 +257,9 @@ model Prestamo {
 
   @@index([organizationId])
   @@index([clienteId])
+  @@index([estado])
+  @@index([organizationId, estado])
+  @@index([createdAt])
 }
 
 model Pago {
@@ -274,6 +281,8 @@ model Pago {
 
   @@index([organizationId])
   @@index([prestamoId])
+  @@index([organizationId, fechaPago])
+  @@index([prestamoId, fechaPago])
 }
 
 model CierreCaja {

@@ -71,10 +71,25 @@ export default function ClientesPage() {
 
   const fetchClientes = useCallback(async (q, p, grupoId = '', { soft = false } = {}) => {
     const shouldUseSoftRefresh = soft && hasLoadedOnceRef.current
-    if (!shouldUseSoftRefresh) setLoading(true)
     setError('')
     setIsOffline(false)
     const cacheKey = `clientes:${q || ''}:${p}:${grupoId || 'all'}`
+
+    // Cache-first: si hay datos cacheados para este filtro, pintarlos al
+    // instante y revalidar en segundo plano. Sin cache → skeleton.
+    if (!shouldUseSoftRefresh) {
+      try {
+        const cached = await leerDeCache(cacheKey)
+        if (cached && cached.clientes) {
+          setClientes(cached.clientes)
+          setTotal(cached.total)
+          setTotalPages(cached.totalPages)
+          setLoading(false)
+        } else {
+          setLoading(true)
+        }
+      } catch { setLoading(true) }
+    }
 
     // Offline: go straight to IndexedDB
     if (!navigator.onLine) {

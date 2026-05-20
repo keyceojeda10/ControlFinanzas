@@ -1236,6 +1236,15 @@ export default function DashboardPage() {
 
   const loadDashboard = useCallback(async () => {
     setIsOffline(false)
+    // Cache-first: pintar al instante el ultimo resumen guardado y revalidar
+    // en segundo plano. Evita el flash skeleton→datos al entrar al dashboard.
+    try {
+      const cached = await leerDeCache('dashboard:resumen')
+      if (cached) {
+        setData(cached)
+        setLoading(false)
+      }
+    } catch {}
     // Offline real: leer de IndexedDB directamente
     if (!navigator.onLine) {
       try {

@@ -53,10 +53,25 @@ export default function PrestamosPage() {
 
   const fetchPrestamos = useCallback(async (q, est, p, { soft = false } = {}) => {
     const shouldUseSoftRefresh = soft && hasLoadedOnceRef.current
-    if (!shouldUseSoftRefresh) setLoading(true)
     setError('')
     setIsOffline(false)
     const cacheKey = `prestamos:${q || ''}:${est || ''}:${p}`
+
+    // Cache-first: pintar al instante desde IndexedDB si hay datos de este
+    // filtro, y revalidar en segundo plano. Sin cache → skeleton.
+    if (!shouldUseSoftRefresh) {
+      try {
+        const cached = await leerDeCache(cacheKey)
+        if (cached && cached.prestamos) {
+          setPrestamos(cached.prestamos)
+          setTotal(cached.total)
+          setTotalPages(cached.totalPages)
+          setLoading(false)
+        } else {
+          setLoading(true)
+        }
+      } catch { setLoading(true) }
+    }
 
     // Offline: go straight to IndexedDB (skip SW cache which may be stale)
     if (!navigator.onLine) {

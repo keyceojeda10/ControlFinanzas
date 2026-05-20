@@ -171,11 +171,12 @@ export default function BottomNav() {
 
   return (
     <>
-      {/* Cierre warning pill */}
+      {/* Cierre warning pill — centrada sobre el BottomNav para no chocar con
+          el boton de Lucas IA (bottom-[88px] right-4) ni el badge de sync */}
       {cierreWarning && (
         <Link
           href={warningHref}
-          className="lg:hidden fixed bottom-[88px] right-3 z-40 rounded-full px-3.5 py-2.5 flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2"
+          className="lg:hidden fixed bottom-[88px] left-1/2 -translate-x-1/2 z-40 max-w-[90vw] rounded-full px-3.5 py-2.5 flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2"
           style={{
             background: cierreWarning.showPendingReminder ? 'var(--color-accent-soft)' : 'var(--color-warning-dim)',
             border: `1px solid color-mix(in srgb, ${cierreWarning.showPendingReminder ? 'var(--color-accent)' : 'var(--color-warning)'} 50%, transparent)`,
@@ -183,7 +184,7 @@ export default function BottomNav() {
           }}
         >
           <span className="w-1.5 h-1.5 rounded-full animate-pulse shrink-0" style={{ background: cierreWarning.showPendingReminder ? 'var(--color-accent)' : 'var(--color-warning)' }} />
-          <span className="text-[11px] font-semibold" style={{ color: cierreWarning.showPendingReminder ? 'var(--color-accent)' : 'var(--color-warning)' }}>{warningText}</span>
+          <span className="text-[11px] font-semibold whitespace-nowrap" style={{ color: cierreWarning.showPendingReminder ? 'var(--color-accent)' : 'var(--color-warning)' }}>{warningText}</span>
         </Link>
       )}
 
