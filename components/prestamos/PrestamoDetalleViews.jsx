@@ -91,19 +91,21 @@ function DonutPagado({ pct, color, size = 76 }) {
   const len = (animPct / 100) * circ
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="transform -rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--color-bg-hover)" strokeWidth="6" />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          stroke={color}
-          strokeWidth="6"
-          strokeLinecap="round"
-          strokeDasharray={`${len} ${circ}`}
-          style={{ transition: 'stroke-dasharray 0.05s linear' }}
-        />
+      <svg width={size} height={size}>
+        <g transform={`rotate(-90 ${size / 2} ${size / 2})`}>
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--color-bg-hover)" strokeWidth="6" />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke={color}
+            strokeWidth="6"
+            strokeLinecap="round"
+            strokeDasharray={`${len} ${circ}`}
+            style={{ transition: 'stroke-dasharray 0.05s linear' }}
+          />
+        </g>
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
         <p className="font-mono-display font-bold leading-none" style={{ color, fontSize: size * 0.24 }}>

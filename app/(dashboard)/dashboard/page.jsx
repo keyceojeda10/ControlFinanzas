@@ -410,30 +410,33 @@ function DonutProgress({ value = 0, max = 100, color = 'var(--color-success)', s
   return (
     <div className="flex flex-col items-center justify-center">
       <div className="relative" style={{ width: size, height: size }}>
-        <svg width={size} height={size} className="transform -rotate-90">
-          {/* Anillo de fondo */}
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={r}
-            fill="none"
-            stroke="var(--color-bg-hover)"
-            strokeWidth={strokeWidth}
-          />
-          {/* Anillo de progreso */}
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={r}
-            fill="none"
-            stroke={color}
-            strokeWidth={strokeWidth}
-            strokeLinecap="round"
-            strokeDasharray={`${len} ${circ}`}
-            style={{
-              transition: 'stroke-dasharray 0.05s linear',
-            }}
-          />
+        {/* rotacion por atributo SVG (no CSS transform) — evita crear capa GPU */}
+        <svg width={size} height={size}>
+          <g transform={`rotate(-90 ${size / 2} ${size / 2})`}>
+            {/* Anillo de fondo */}
+            <circle
+              cx={size / 2}
+              cy={size / 2}
+              r={r}
+              fill="none"
+              stroke="var(--color-bg-hover)"
+              strokeWidth={strokeWidth}
+            />
+            {/* Anillo de progreso */}
+            <circle
+              cx={size / 2}
+              cy={size / 2}
+              r={r}
+              fill="none"
+              stroke={color}
+              strokeWidth={strokeWidth}
+              strokeLinecap="round"
+              strokeDasharray={`${len} ${circ}`}
+              style={{
+                transition: 'stroke-dasharray 0.05s linear',
+              }}
+            />
+          </g>
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <p className="font-mono-display font-bold leading-none" style={{ color, fontSize: size * 0.26 }}>

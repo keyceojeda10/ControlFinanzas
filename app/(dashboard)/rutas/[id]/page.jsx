@@ -1115,11 +1115,13 @@ export default function RutaDetallePage({ params }) {
                 {/* Donut % */}
                 <div className="hidden sm:flex shrink-0 items-center justify-center" style={{ width: 84, height: 84 }}>
                   <div className="relative" style={{ width: 84, height: 84 }}>
-                    <svg width={84} height={84} className="transform -rotate-90">
-                      <circle cx={42} cy={42} r={36} fill="none" stroke="var(--color-bg-hover)" strokeWidth="8" />
-                      <circle cx={42} cy={42} r={36} fill="none" stroke={heroColor} strokeWidth="8" strokeLinecap="round"
-                        strokeDasharray={`${(progreso / 100) * (2 * Math.PI * 36)} ${2 * Math.PI * 36}`}
-                      />
+                    <svg width={84} height={84}>
+                      <g transform="rotate(-90 42 42)">
+                        <circle cx={42} cy={42} r={36} fill="none" stroke="var(--color-bg-hover)" strokeWidth="8" />
+                        <circle cx={42} cy={42} r={36} fill="none" stroke={heroColor} strokeWidth="8" strokeLinecap="round"
+                          strokeDasharray={`${(progreso / 100) * (2 * Math.PI * 36)} ${2 * Math.PI * 36}`}
+                        />
+                      </g>
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
                       <p className="font-mono-display font-bold leading-none" style={{ color: heroColor, fontSize: 20 }}>
@@ -1133,11 +1135,13 @@ export default function RutaDetallePage({ params }) {
               {/* Donut version movil debajo */}
               <div className="sm:hidden mt-4 pt-3 flex items-center gap-3" style={{ borderTop: `1px solid color-mix(in srgb, ${heroColor} 15%, transparent)` }}>
                 <div className="relative shrink-0" style={{ width: 64, height: 64 }}>
-                  <svg width={64} height={64} className="transform -rotate-90">
-                    <circle cx={32} cy={32} r={26} fill="none" stroke="var(--color-bg-hover)" strokeWidth="6" />
-                    <circle cx={32} cy={32} r={26} fill="none" stroke={heroColor} strokeWidth="6" strokeLinecap="round"
-                      strokeDasharray={`${(progreso / 100) * (2 * Math.PI * 26)} ${2 * Math.PI * 26}`}
-                    />
+                  <svg width={64} height={64}>
+                    <g transform="rotate(-90 32 32)">
+                      <circle cx={32} cy={32} r={26} fill="none" stroke="var(--color-bg-hover)" strokeWidth="6" />
+                      <circle cx={32} cy={32} r={26} fill="none" stroke={heroColor} strokeWidth="6" strokeLinecap="round"
+                        strokeDasharray={`${(progreso / 100) * (2 * Math.PI * 26)} ${2 * Math.PI * 26}`}
+                      />
+                    </g>
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
                     <p className="font-mono-display font-bold leading-none" style={{ color: heroColor, fontSize: 16 }}>
