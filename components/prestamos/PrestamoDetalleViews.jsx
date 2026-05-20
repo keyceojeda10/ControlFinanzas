@@ -128,7 +128,7 @@ export function PrestamoHeroCard({ prestamo, narrativa, sparklineData }) {
 
   return (
     <div
-      className="relative rounded-[20px] overflow-hidden"
+      className="cf-hero-card relative rounded-[20px] overflow-hidden"
       style={{
         background: `linear-gradient(135deg, color-mix(in srgb, ${color} 14%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, ${accent} 8%, var(--color-bg-card)) 100%)`,
         border: `1px solid color-mix(in srgb, ${color} 25%, var(--color-border))`,

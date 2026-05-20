@@ -263,7 +263,7 @@ export default function CapitalTab() {
         const heroColor = resumen.saldo >= 0 ? '#06b6d4' : '#ef4444'
         return (
           <div
-            className="relative rounded-[20px] overflow-hidden"
+            className="cf-hero-card relative rounded-[20px] overflow-hidden"
             style={{
               background: `var(--color-bg-card)`,
               border: `1px solid ${heroColor}40`,

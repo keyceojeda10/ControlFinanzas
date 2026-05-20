@@ -6,7 +6,7 @@ export function Card({ as: Component = 'div', children, className = '', padding 
   return (
     <Component
       className={[
-        'rounded-[16px]',
+        'cf-hero-card rounded-[16px]',
         padding ? 'p-5' : '',
         className,
       ].join(' ')}

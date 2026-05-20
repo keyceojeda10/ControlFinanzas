@@ -295,7 +295,7 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
 
   return (
     <div
-      className="relative rounded-[20px] overflow-hidden kpi-lift"
+      className="cf-hero-card relative rounded-[20px] overflow-hidden kpi-lift"
       style={{
         background: `linear-gradient(135deg, color-mix(in srgb, ${color} 14%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, ${accent} 8%, var(--color-bg-card)) 100%)`,
         border: `1px solid color-mix(in srgb, ${color} 25%, var(--color-border))`,
