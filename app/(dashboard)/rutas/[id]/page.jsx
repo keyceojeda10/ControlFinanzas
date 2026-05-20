@@ -1009,7 +1009,7 @@ export default function RutaDetallePage({ params }) {
             }}
           >
             {/* Orb pulsante */}
-            <div className="hero-glow absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none"
+            <div className="hero-glow absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none hidden lg:block"
               style={{ background: `radial-gradient(circle, color-mix(in srgb, ${heroColor} 35%, transparent), transparent 70%)`, filter: 'blur(20px)' }} />
             {/* Patron de puntos */}
             <div className="absolute inset-0 pointer-events-none opacity-[0.04]"

@@ -304,7 +304,7 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
     >
       {/* Orb pulsante decorativo */}
       <div
-        className="hero-glow absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none"
+        className="hero-glow absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none hidden lg:block"
         style={{ background: `radial-gradient(circle, color-mix(in srgb, ${color} 35%, transparent), transparent 70%)`, filter: 'blur(20px)' }}
       />
       {/* Patron de puntos sutil */}

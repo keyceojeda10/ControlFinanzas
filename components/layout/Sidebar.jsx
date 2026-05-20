@@ -293,7 +293,7 @@ export default function Sidebar() {
     : 'Ir a cerrar caja'
 
   return (
-    <aside className="hidden lg:flex flex-col w-60 min-h-dvh shrink-0 cf-sidebar">
+    <aside className="hidden lg:flex flex-col w-60 min-h-screen shrink-0 cf-sidebar">
       {/* Logo */}
       <div className="flex flex-col items-center px-5 py-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
         <Image src="/logo-full.svg" alt="Control Finanzas" width={160} height={40} priority />

@@ -48,7 +48,7 @@ async function bloquearSiVencida() {
 export default async function DashboardLayout({ children }) {
   await bloquearSiVencida()
   return (
-    <div className="flex min-h-dvh lg:h-dvh bg-[#060609]">
+    <div className="flex min-h-screen lg:h-screen bg-[#060609]">
       {/* Sidebar – visible solo en lg+ */}
       <Sidebar />
 
@@ -69,7 +69,7 @@ export default async function DashboardLayout({ children }) {
         <SinRutaBanner />
 
         {/* Contenido de la página */}
-        <main className="flex-1 px-4 py-5 lg:px-6 lg:py-6 pb-24 lg:pb-6">
+        <main className="flex-1 px-4 py-5 lg:px-6 lg:py-6 pb-24 lg:pb-6 isolate">
           <PageWrapper>{children}</PageWrapper>
         </main>
       </div>

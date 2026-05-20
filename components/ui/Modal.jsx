@@ -86,7 +86,7 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }) {
         className={[
           'relative w-full cf-modal-dialog',
           'rounded-t-[20px] sm:rounded-[20px]',
-          'max-h-[90dvh] flex flex-col',
+          'max-h-[90vh] flex flex-col',
           'animate-slide-up sm:animate-none',
           sizes[size] ?? sizes.md,
         ].join(' ')}
