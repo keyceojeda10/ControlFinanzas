@@ -66,7 +66,7 @@ export default function CompletarTelefonoModal() {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center px-4"
-      style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}
+      style={{ background: 'rgba(0,0,0,0.75)' }}
     >
       <div className="relative w-full max-w-md rounded-[20px] p-6 animate-[fadeUpModal_0.3s_ease-out]"
         style={{

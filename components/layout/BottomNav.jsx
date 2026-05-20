@@ -179,8 +179,6 @@ export default function BottomNav() {
           style={{
             background: cierreWarning.showPendingReminder ? 'var(--color-accent-soft)' : 'var(--color-warning-dim)',
             border: `1px solid color-mix(in srgb, ${cierreWarning.showPendingReminder ? 'var(--color-accent)' : 'var(--color-warning)'} 50%, transparent)`,
-            backdropFilter: 'blur(20px) saturate(1.3)',
-            WebkitBackdropFilter: 'blur(20px) saturate(1.3)',
             boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
           }}
         >

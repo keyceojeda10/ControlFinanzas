@@ -50,7 +50,7 @@ export default function AsistenteButton() {
       {open && (
         <div
           className="fixed inset-0 z-40 lg:hidden"
-          style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
+          style={{ background: 'rgba(0,0,0,0.6)' }}
           onClick={() => setOpen(false)}
         />
       )}

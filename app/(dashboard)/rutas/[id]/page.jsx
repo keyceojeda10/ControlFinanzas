@@ -2009,7 +2009,7 @@ export default function RutaDetallePage({ params }) {
       {undoPago && (
         <div className="fixed bottom-24 left-3 right-3 sm:left-auto sm:right-4 sm:bottom-6 sm:w-auto z-50 animate-slide-up">
           <div className="flex items-center gap-3 px-4 py-3 rounded-[14px] border border-[rgba(34,197,94,0.2)] sm:min-w-[320px]"
-            style={{ background: 'rgba(15,15,22,0.95)', backdropFilter: 'blur(20px)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
+            style={{ background: 'rgba(15,15,22,0.98)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
           >
             <svg className="w-4 h-4 text-[var(--color-success)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
