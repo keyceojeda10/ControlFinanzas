@@ -48,12 +48,14 @@ async function bloquearSiVencida() {
 export default async function DashboardLayout({ children }) {
   await bloquearSiVencida()
   return (
-    <div className="flex min-h-dvh bg-[#060609]">
+    <div className="flex min-h-dvh lg:h-dvh bg-[#060609]">
       {/* Sidebar – visible solo en lg+ */}
       <Sidebar />
 
       {/* Área principal */}
-      <div className="flex-1 flex flex-col min-w-0">
+      {/* mobile: flex-col sin overflow → body scrollea (evita GPU artifacts Android) */}
+      {/* desktop: overflow-y-auto + h-dvh → scroll interno con sidebar fija */}
+      <div className="flex-1 flex flex-col min-w-0 lg:overflow-y-auto">
         {/* Header – visible solo en mobile */}
         <Header />
 
@@ -66,8 +68,8 @@ export default async function DashboardLayout({ children }) {
         {/* Aviso cobrador sin ruta */}
         <SinRutaBanner />
 
-        {/* Contenido de la página – PageWrapper anima solo al cambiar ruta */}
-        <main className="flex-1 px-4 py-5 lg:px-6 lg:py-6 pb-24 lg:pb-6 overflow-y-auto">
+        {/* Contenido de la página */}
+        <main className="flex-1 px-4 py-5 lg:px-6 lg:py-6 pb-24 lg:pb-6">
           <PageWrapper>{children}</PageWrapper>
         </main>
       </div>
