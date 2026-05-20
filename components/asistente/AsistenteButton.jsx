@@ -24,7 +24,7 @@ export default function AsistenteButton() {
       <button
         onClick={() => setOpen(v => !v)}
         aria-label="Abrir asistente IA"
-        className="fixed bottom-[88px] right-4 lg:bottom-6 lg:right-6 z-40 w-12 h-12 lg:w-auto lg:h-auto lg:px-4 lg:py-2.5 rounded-full lg:rounded-[14px] transition-all active:scale-95"
+        className="fixed bottom-[88px] right-4 lg:bottom-6 lg:right-6 z-40 w-12 h-12 lg:w-auto lg:h-auto lg:px-4 lg:py-2.5 rounded-full lg:rounded-[14px] transition-[background-color,color,transform] duration-200 active:scale-95"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -55,9 +55,11 @@ export default function AsistenteButton() {
         />
       )}
 
-      {/* Panel del chat: slide-up en mobile — siempre montado para persistir historial */}
+      {/* Panel del chat: slide-up en mobile — siempre montado para persistir historial.
+          Cerrado: visibility:hidden saca el panel del compositing GPU. Mantener una capa
+          fixed permanente (aunque sea height:0) corrompe el rasterizador del Mali-G52. */}
       <div
-        className="fixed z-50 transition-all duration-300"
+        className="fixed z-50 transition-[height] duration-300"
         style={{
           bottom: 0,
           left: 0,
@@ -69,6 +71,8 @@ export default function AsistenteButton() {
           border: open ? '1px solid var(--color-border)' : 'none',
           borderBottom: 'none',
           boxShadow: open ? '0 -8px 60px rgba(0,0,0,0.7)' : 'none',
+          visibility: open ? 'visible' : 'hidden',
+          pointerEvents: open ? 'auto' : 'none',
         }}
       >
         {/* AsistenteChat permanece montado siempre — display:none lo oculta sin destruir el estado */}

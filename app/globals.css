@@ -373,11 +373,8 @@ html[data-theme="light"] input[type="range"]::-moz-range-track { background: #e2
 .cf-header-mobile {
   background: var(--color-bg-base);
   border-bottom: 1px solid var(--color-border);
-  /* Header fixed (ver Header.jsx) — capa GPU propia, evita tearing en Android Chrome */
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
+  /* SIN translateZ/backface: forzar capa GPU rompe el rasterizador del Mali-G52
+     (Samsung A13) — deja regiones sin pintar. Chrome compone fixed sin ayuda. */
 }
 /* backdrop-filter solo en desktop — en Android causa artefactos GPU en capas fixed */
 @media (min-width: 1024px) {
@@ -409,11 +406,7 @@ html[data-theme="light"] .cf-header-mobile {
   background: var(--color-bg-surface);
   border: 1px solid var(--color-border);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px color-mix(in srgb, var(--color-accent) 4%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  /* Capa GPU propia y estable — evita tearing del nav fixed en Android Chrome */
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
+  /* SIN translateZ/backface — ver nota en .cf-header-mobile (rasterizador Mali-G52) */
 }
 /* backdrop-filter solo en desktop — en Android causa artefactos GPU */
 @media (min-width: 1024px) {
