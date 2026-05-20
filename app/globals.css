@@ -211,13 +211,28 @@ html[data-theme="light"] .progress-shimmer {
   .kpi-lift:hover { transform: none; box-shadow: none; }
 }
 
-/* ─── Cards: sin box-shadow en movil ─────────────────────────
-   .cf-hero-card marca cards con box-shadow. En movil se anula: el blur del
-   shadow (20-32px) sangra sobre el bloque adyacente y el rasterizador GPU
-   del Mali-G52 (Samsung A13) corrompe el tile solapado → artefactos.
-   El shadow es decorativo; quitarlo en movil no afecta la UX. */
+/* ─── Cards: fix de rasterizado GPU en Android ───────────────
+   El driver GPU Mali (Samsung A13 y otros Android con Mali) rasteriza mal
+   los elementos con border-radius cuando estan en el path de rasterizado
+   normal → artefactos de lineas de colores / contenido fantasma DENTRO del
+   bloque. Diagnosticado en vivo via CDP DevTools sobre un A13 real:
+     - el glitch desaparece quitando border-radius
+     - solo `transform: translateZ(0)` lo corrige (promueve el elemento a su
+       propia capa de composicion). `contain: paint` NO sirve.
+   Se aplica solo en movil — en desktop el bug no ocurre.
+
+   Doble cobertura:
+   1) selector amplio: cualquier card con radius mediano-grande de Tailwind
+      (rounded-[1Xpx] / rounded-[2Xpx]) — captura la mayoria automaticamente.
+   2) clase .cf-hero-card explicita — refuerzo para cards con radius via
+      `style` inline o componentes clave (Card, hero cards). */
 @media (max-width: 1023px) {
-  .cf-hero-card { box-shadow: none !important; }
+  .cf-hero-card,
+  [class*="rounded-[1"],
+  [class*="rounded-[2"] {
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
 }
 
 /* ─── Heatmap cell appear ───────────────────────────────── */

@@ -1242,7 +1242,7 @@ export default function RutaDetallePage({ params }) {
           <>
             {/* Cartera total */}
             <div
-              className="rounded-[16px] px-4 py-3"
+              className="cf-hero-card rounded-[16px] px-4 py-3"
               style={{
                 background: `linear-gradient(135deg, color-mix(in srgb, #06b6d4 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
                 border: '1px solid color-mix(in srgb, #06b6d4 22%, var(--color-border))',
