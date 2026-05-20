@@ -432,7 +432,6 @@ function DonutProgress({ value = 0, max = 100, color = 'var(--color-success)', s
             strokeDasharray={`${len} ${circ}`}
             style={{
               transition: 'stroke-dasharray 0.05s linear',
-              filter: `drop-shadow(0 0 6px color-mix(in srgb, ${color} 50%, transparent))`,
             }}
           />
         </svg>

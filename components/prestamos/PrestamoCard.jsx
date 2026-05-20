@@ -103,13 +103,12 @@ export default function PrestamoCard({ prestamo: p }) {
       <div className="mb-3">
         <div className="h-2 rounded-full overflow-hidden relative" style={{ background: 'var(--color-bg-hover)' }}>
           <div
-            className="h-full rounded-full transition-all duration-500"
+            className="h-full rounded-full transition-[width] duration-500"
             style={{
               width: `${porcentaje}%`,
               background: porcentaje === 100
                 ? `linear-gradient(90deg, ${COLOR_DONE}, ${COLOR_DONE})`
                 : `linear-gradient(90deg, color-mix(in srgb, ${color} 70%, transparent), ${color})`,
-              boxShadow: porcentaje > 5 ? `0 0 10px color-mix(in srgb, ${color} 50%, transparent)` : 'none',
             }}
           />
         </div>

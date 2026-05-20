@@ -125,13 +125,12 @@ export default function RutaCard({ ruta }) {
       {/* Progress bar con glow */}
       <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
         <div
-          className="h-full rounded-full transition-all duration-700"
+          className="h-full rounded-full transition-[width] duration-700"
           style={{
             width: `${progreso}%`,
             background: progreso >= 100
               ? `linear-gradient(90deg, ${COLOR_OK}, ${COLOR_OK})`
               : `linear-gradient(90deg, color-mix(in srgb, ${color} 60%, transparent), ${color})`,
-            boxShadow: progreso > 5 ? `0 0 10px color-mix(in srgb, ${color} 50%, transparent)` : 'none',
           }}
         />
       </div>

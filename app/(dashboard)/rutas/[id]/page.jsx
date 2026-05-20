@@ -1119,7 +1119,6 @@ export default function RutaDetallePage({ params }) {
                       <circle cx={42} cy={42} r={36} fill="none" stroke="var(--color-bg-hover)" strokeWidth="8" />
                       <circle cx={42} cy={42} r={36} fill="none" stroke={heroColor} strokeWidth="8" strokeLinecap="round"
                         strokeDasharray={`${(progreso / 100) * (2 * Math.PI * 36)} ${2 * Math.PI * 36}`}
-                        style={{ filter: `drop-shadow(0 0 6px color-mix(in srgb, ${heroColor} 50%, transparent))` }}
                       />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -1138,7 +1137,6 @@ export default function RutaDetallePage({ params }) {
                     <circle cx={32} cy={32} r={26} fill="none" stroke="var(--color-bg-hover)" strokeWidth="6" />
                     <circle cx={32} cy={32} r={26} fill="none" stroke={heroColor} strokeWidth="6" strokeLinecap="round"
                       strokeDasharray={`${(progreso / 100) * (2 * Math.PI * 26)} ${2 * Math.PI * 26}`}
-                      style={{ filter: `drop-shadow(0 0 4px color-mix(in srgb, ${heroColor} 50%, transparent))` }}
                     />
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -1262,11 +1260,10 @@ export default function RutaDetallePage({ params }) {
                 <p className="text-[11px] font-mono-display" style={{ color: 'var(--color-text-muted)' }}>de {formatCOP(denominadorCartera)}</p>
               </div>
               <div className="h-1.5 rounded-full overflow-hidden mt-2.5" style={{ background: 'var(--color-bg-hover)' }}>
-                <div className="h-full rounded-full transition-all duration-700"
+                <div className="h-full rounded-full transition-[width] duration-700"
                   style={{
                     width: `${carteraPct}%`,
                     background: 'linear-gradient(90deg, color-mix(in srgb, #06b6d4 60%, transparent), #06b6d4)',
-                    boxShadow: carteraPct > 5 ? '0 0 10px color-mix(in srgb, #06b6d4 50%, transparent)' : 'none',
                   }}
                 />
               </div>

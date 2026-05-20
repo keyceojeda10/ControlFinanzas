@@ -139,11 +139,10 @@ export default function CobradorCard({ cobrador, onToggleActivo, toggling }) {
           </div>
           <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
             <div
-              className="h-full rounded-full transition-all duration-700"
+              className="h-full rounded-full transition-[width] duration-700"
               style={{
                 width: `${progreso}%`,
                 background: `linear-gradient(90deg, color-mix(in srgb, ${color} 60%, transparent), ${color})`,
-                boxShadow: progreso > 5 ? `0 0 8px color-mix(in srgb, ${color} 50%, transparent)` : 'none',
               }}
             />
           </div>

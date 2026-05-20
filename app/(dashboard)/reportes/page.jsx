@@ -527,11 +527,10 @@ export default function ReportesPage() {
                   </div>
                   <div className="h-1.5 rounded-full overflow-hidden mb-2" style={{ background: 'var(--color-bg-hover)' }}>
                     <div
-                      className="h-full rounded-full transition-all duration-700"
+                      className="h-full rounded-full transition-[width] duration-700"
                       style={{
                         width: `${Math.min(100, c.eficiencia)}%`,
                         background: `linear-gradient(90deg, color-mix(in srgb, ${eficColor} 60%, transparent), ${eficColor})`,
-                        boxShadow: c.eficiencia > 5 ? `0 0 8px color-mix(in srgb, ${eficColor} 50%, transparent)` : 'none',
                       }}
                     />
                   </div>

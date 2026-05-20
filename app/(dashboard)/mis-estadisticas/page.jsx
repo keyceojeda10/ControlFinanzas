@@ -97,11 +97,10 @@ export default function MisEstadisticasPage() {
         {/* Barra progreso */}
         <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
           <div
-            className="h-full rounded-full transition-all duration-700"
+            className="h-full rounded-full transition-[width] duration-700"
             style={{
               width: `${Math.min(100, data.pctMeta)}%`,
               background: `linear-gradient(90deg, color-mix(in srgb, ${pctColor} 60%, transparent), ${pctColor})`,
-              boxShadow: `0 0 8px color-mix(in srgb, ${pctColor} 50%, transparent)`,
             }}
           />
         </div>

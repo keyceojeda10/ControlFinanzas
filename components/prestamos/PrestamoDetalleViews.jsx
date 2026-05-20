@@ -102,7 +102,7 @@ function DonutPagado({ pct, color, size = 76 }) {
           strokeWidth="6"
           strokeLinecap="round"
           strokeDasharray={`${len} ${circ}`}
-          style={{ filter: `drop-shadow(0 0 6px color-mix(in srgb, ${color} 50%, transparent))`, transition: 'stroke-dasharray 0.05s linear' }}
+          style={{ transition: 'stroke-dasharray 0.05s linear' }}
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
@@ -588,7 +588,6 @@ export function TimelinePrestamo({ fechaInicio, fechaFin, porcentajePagado, colo
           style={{
             width: `${animPago}%`,
             background: color,
-            boxShadow: animPago > 5 ? `0 0 8px color-mix(in srgb, ${color} 50%, transparent)` : 'none',
           }}
         />
         {/* Marker de "Hoy" */}
