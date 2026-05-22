@@ -66,6 +66,7 @@ function NuevoCobradorInner() {
     editarClientes: false,
     verCapital:     false,
     verSaldoCaja:   false,
+    gestionarRutas: false,
   })
 
   const plan     = session?.user?.plan ?? 'starter'

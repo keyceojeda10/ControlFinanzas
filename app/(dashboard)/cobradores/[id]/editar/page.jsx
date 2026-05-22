@@ -63,6 +63,7 @@ function EditarCobradorInner({ params }) {
     editarClientes: false,
     verCapital:     false,
     verSaldoCaja:   false,
+    gestionarRutas: false,
   })
 
   useEffect(() => {
@@ -86,6 +87,7 @@ function EditarCobradorInner({ params }) {
             editarClientes: data.permisos.editarClientes ?? false,
             verCapital:     data.permisos.verCapital     ?? false,
             verSaldoCaja:   data.permisos.verSaldoCaja   ?? false,
+            gestionarRutas: data.permisos.gestionarRutas ?? false,
           })
         }
       })
