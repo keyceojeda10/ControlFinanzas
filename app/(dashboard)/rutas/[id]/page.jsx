@@ -223,7 +223,7 @@ function HistorialCobros({ rutaId }) {
 export default function RutaDetallePage({ params }) {
   const { id }    = use(params)
   const router    = useRouter()
-  const { esOwner } = useAuth()
+  const { esOwner, puedeGestionarRutas } = useAuth()
   const { lastSyncedAt } = useOffline()
 
   const [ruta,          setRuta]          = useState(null)
@@ -1380,7 +1380,7 @@ export default function RutaDetallePage({ params }) {
 
       {/* Acciones rápidas */}
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-        {esOwner && (
+        {puedeGestionarRutas && (
           <button onClick={abrirModalClientes} className="shrink-0 h-8 px-3 rounded-[10px] border border-[#222] bg-[var(--color-bg-card)] text-[11px] text-[var(--color-text-secondary)] font-medium active:scale-95 transition-transform">
             + Agregar
           </button>
@@ -1645,8 +1645,8 @@ export default function RutaDetallePage({ params }) {
                     )}
                   </div>
 
-                  {/* Remove button (owner only) */}
-                  {esOwner && (
+                  {/* Remove button (owner or cobrador con permiso) */}
+                  {puedeGestionarRutas && (
                     <button
                       onClick={() => setConfirmQuitar({ id: c.id, nombre: c.nombre })}
                       disabled={quitando === c.id}

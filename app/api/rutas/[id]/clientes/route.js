@@ -15,12 +15,19 @@ export async function POST(request, { params }) {
   if (!session?.user?.organizationId) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
   }
-  if (session.user.rol !== 'owner') {
-    return Response.json({ error: 'Solo el administrador puede asignar clientes a rutas' }, { status: 403 })
+  const puedeGestionar = session.user.rol === 'owner' || session.user.permisos?.gestionarRutas
+  if (!puedeGestionar) {
+    return Response.json({ error: 'No tienes permiso para asignar clientes a rutas' }, { status: 403 })
   }
 
   const { id } = await params
   const { organizationId } = session.user
+
+  // Cobrador solo puede gestionar sus rutas asignadas
+  if (session.user.rol === 'cobrador' && !session.user.rutaIds?.includes(id)) {
+    return Response.json({ error: 'No tienes acceso a esta ruta' }, { status: 403 })
+  }
+
   const ruta = await verificarRuta(id, organizationId)
   if (!ruta) return Response.json({ error: 'Ruta no encontrada' }, { status: 404 })
 
@@ -74,12 +81,19 @@ export async function DELETE(request, { params }) {
   if (!session?.user?.organizationId) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
   }
-  if (session.user.rol !== 'owner') {
-    return Response.json({ error: 'Solo el administrador puede gestionar rutas' }, { status: 403 })
+  const puedeGestionar = session.user.rol === 'owner' || session.user.permisos?.gestionarRutas
+  if (!puedeGestionar) {
+    return Response.json({ error: 'No tienes permiso para quitar clientes de rutas' }, { status: 403 })
   }
 
   const { id } = await params
   const { organizationId } = session.user
+
+  // Cobrador solo puede gestionar sus rutas asignadas
+  if (session.user.rol === 'cobrador' && !session.user.rutaIds?.includes(id)) {
+    return Response.json({ error: 'No tienes acceso a esta ruta' }, { status: 403 })
+  }
+
   const ruta = await verificarRuta(id, organizationId)
   if (!ruta) return Response.json({ error: 'Ruta no encontrada' }, { status: 404 })
 

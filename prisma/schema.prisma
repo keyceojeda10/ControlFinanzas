@@ -132,6 +132,7 @@ model User {
   puedeReportarGastos     Boolean   @default(true)
   puedeVerCapital         Boolean   @default(false)
   puedeVerSaldoCaja       Boolean   @default(false)
+  puedeGestionarRutas     Boolean   @default(false)
   emailsMarketing         Boolean   @default(true)
   theme                   String?   @default("system")
   createdAt               DateTime  @default(now())
