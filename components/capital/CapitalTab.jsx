@@ -539,8 +539,8 @@ export default function CapitalTab() {
               )}
               <div>
                 <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Monto</label>
-                <input type="number" value={modalMonto} onChange={(e) => setModalMonto(e.target.value)}
-                  placeholder="0" min="1" required
+                <input type="text" inputMode="numeric" value={modalMonto} onChange={(e) => setModalMonto(e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="0" required
                   className="w-full bg-[var(--color-bg-base)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-[10px] px-3 py-2.5 text-sm" />
               </div>
               <div>

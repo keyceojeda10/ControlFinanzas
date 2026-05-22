@@ -11,11 +11,24 @@ const fieldStyle = {
 }
 
 export const Input = forwardRef(function Input(
-  { label, error, prefix, suffix, className = '', containerClassName = '', ...props },
+  { label, error, prefix, suffix, className = '', containerClassName = '', type, onChange, ...props },
   ref
 ) {
   const generatedId = useId()
   const fieldId = props.id || generatedId
+
+  // iOS Safari: type="number" causa "The string did not match the expected pattern"
+  // Fix: usar type="text" con inputMode para mostrar teclado numérico
+  const isNumber = type === 'number'
+  const actualType = isNumber ? 'text' : type
+  const actualInputMode = isNumber ? (props.inputMode || 'numeric') : props.inputMode
+  const handleChange = isNumber
+    ? (e) => {
+        const allow = props.inputMode === 'decimal' ? /[^0-9.]/g : /[^0-9]/g
+        e.target.value = e.target.value.replace(allow, '')
+        onChange?.(e)
+      }
+    : onChange
 
   return (
     <div className={`flex flex-col gap-1.5 ${containerClassName}`}>
@@ -31,6 +44,9 @@ export const Input = forwardRef(function Input(
         <input
           ref={ref}
           id={fieldId}
+          type={actualType}
+          inputMode={actualInputMode}
+          onChange={handleChange}
           className={[
             'cf-input w-full h-11 rounded-[12px] border text-sm transition-all duration-200',
             'focus:outline-none focus:border-[var(--color-accent)]',
