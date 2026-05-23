@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
 import { sendLeadNotification } from '@/lib/telegram'
 import { parseFieldData } from '@/lib/fb-leads'
+import { procesarNuevoLead } from '@/lib/bot/bridge'
 
 const VERIFY_TOKEN = process.env.FB_LEADS_VERIFY_TOKEN
 const FB_APP_SECRET = process.env.FB_APP_SECRET
@@ -165,26 +166,12 @@ async function processLead(leadgenId, adId, createdTime) {
 
   console.log('[Leads] Telegram enviado para:', nombre)
 
-  // Enviar lead al agente de WhatsApp (microservicio cf-whatsapp-agent)
+  // Enviar lead al bot de WhatsApp (integrado)
   if (telefono && lead) {
-    notificarAgenteWhatsApp({
+    procesarNuevoLead({
       cfLeadId: lead.id, nombre, telefono, cantClientes, esPrestamista, metodoActual, planInteres, anuncioId: adId,
-    }).catch(err => console.error('[Leads] Error notificando agente WhatsApp:', err.message))
+    }).catch(err => console.error('[Leads] Error procesando lead en bot WhatsApp:', err.message))
   }
-}
-
-async function notificarAgenteWhatsApp(data) {
-  const agentUrl = process.env.WHATSAPP_AGENT_URL
-  const agentSecret = process.env.WHATSAPP_AGENT_SECRET
-  if (!agentUrl) return
-
-  const res = await fetch(`${agentUrl}/bridge/new-lead`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ secret: agentSecret || '', ...data }),
-  })
-  const json = await res.json()
-  console.log('[Leads] Agente WhatsApp respondio:', json.status || json.error || 'ok')
 }
 
 function sleep(ms) {

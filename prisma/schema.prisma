@@ -586,8 +586,92 @@ model Lead {
   updatedAt             DateTime      @updatedAt
 
   organization Organization? @relation(fields: [organizationId], references: [id])
+  botLeads     BotLead[]
 
   @@index([createdAt])
   @@index([estado])
   @@index([telefono])
+}
+
+// ─── WHATSAPP BOT (Sales Agent) ─────────────────────────
+
+enum BotLeadEstado {
+  pendiente
+  contactado
+  interesado
+  no_interesado
+  cerrado
+  bloqueado
+}
+
+model BotLead {
+  id                   String         @id @default(cuid())
+  cfLeadId             String?
+  nombre               String
+  telefono             String
+  cantClientes         String?
+  esPrestamista        String?
+  metodoActual         String?
+  planInteres          String?
+  anuncioId            String?
+  estado               BotLeadEstado  @default(pendiente)
+  temperatura          Int            @default(0)
+  botActivo            Boolean        @default(true)
+  alertado             Boolean        @default(false)
+  hookId               String?
+  intentosSeguimiento  Int            @default(0)
+  proximoSeguimiento   DateTime?
+  fechaContacto        DateTime?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  cfLead         Lead?              @relation(fields: [cfLeadId], references: [id])
+  conversaciones BotConversacion[]
+
+  @@index([telefono])
+  @@index([estado])
+  @@index([cfLeadId])
+  @@index([estado, botActivo, proximoSeguimiento])
+}
+
+model BotConversacion {
+  id          String   @id @default(cuid())
+  botLeadId   String
+  rol         String
+  texto       String   @db.Text
+  tipoMensaje String   @default("chat")
+  messageId   String?
+  createdAt   DateTime @default(now())
+
+  botLead BotLead @relation(fields: [botLeadId], references: [id], onDelete: Cascade)
+
+  @@index([botLeadId])
+}
+
+model BotGastoApi {
+  id        String   @id @default(cuid())
+  proveedor String
+  modelo    String?
+  tokensIn  Int      @default(0)
+  tokensOut Int      @default(0)
+  costoUsd  Float    @default(0)
+  detalle   String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([proveedor])
+}
+
+model BotConfig {
+  id                String   @id @default(cuid())
+  botActivo         Boolean  @default(true)
+  modoPrueba        Boolean  @default(false)
+  systemPrompt      String   @db.LongText
+  modelo            String   @default("claude-sonnet-4-6")
+  limiteDiario      Int      @default(25)
+  delayMinMs        Int      @default(30000)
+  delayMaxMs        Int      @default(60000)
+  limiteGastoUsd    Float    @default(5.0)
+  whatsappPersonal  String?
+  updatedAt         DateTime @updatedAt
 }
