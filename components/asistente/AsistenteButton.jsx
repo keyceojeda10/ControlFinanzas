@@ -1,5 +1,5 @@
 'use client'
-// components/asistente/AsistenteButton.jsx — Boton flotante + drawer del asistente Lucas
+// components/asistente/AsistenteButton.jsx — Boton flotante + widget Messenger (desktop) / drawer (mobile)
 import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import AsistenteChat from './AsistenteChat'
@@ -11,29 +11,30 @@ export default function AsistenteButton() {
   // Cerrar al navegar
   useEffect(() => { setOpen(false) }, [pathname])
 
-  // Bloquear scroll del body en mobile cuando esta abierto
+  // Bloquear scroll solo en mobile cuando esta abierto
   useEffect(() => {
-    if (open) document.body.style.overflow = 'hidden'
+    const isMobile = window.innerWidth < 1024
+    if (open && isMobile) document.body.style.overflow = 'hidden'
     else document.body.style.overflow = ''
     return () => { document.body.style.overflow = '' }
   }, [open])
 
   return (
     <>
-      {/* Boton flotante — esquina inferior derecha, sobre BottomNav en mobile */}
+      {/* Boton flotante */}
       <button
         onClick={() => setOpen(v => !v)}
         aria-label="Abrir asistente IA"
         className="fixed bottom-[88px] right-4 lg:bottom-6 lg:right-6 z-40 w-12 h-12 lg:w-auto lg:h-auto lg:px-4 lg:py-2.5 rounded-full lg:rounded-[14px] transition-[background-color,color,transform] duration-200 active:scale-95"
         style={{
-          display: 'flex',
+          display: open ? 'none' : 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           gap: '8px',
-          background: open ? 'var(--color-accent)' : 'var(--color-bg-surface)',
-          border: '1px solid color-mix(in srgb, var(--color-accent) 50%, transparent)',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.5), 0 0 0 1px color-mix(in srgb, var(--color-accent) 25%, transparent)',
-          color: open ? '#0a0a0a' : 'var(--color-accent)',
+          background: 'var(--color-bg-surface)',
+          border: '1px solid rgba(245,197,24,0.35)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+          color: 'var(--color-accent)',
         }}
       >
         <svg
@@ -55,11 +56,9 @@ export default function AsistenteButton() {
         />
       )}
 
-      {/* Panel del chat: slide-up en mobile — siempre montado para persistir historial.
-          Cerrado: visibility:hidden saca el panel del compositing GPU. Mantener una capa
-          fixed permanente (aunque sea height:0) corrompe el rasterizador del Mali-G52. */}
+      {/* ── Mobile: slide-up sheet (85vh) ── */}
       <div
-        className="fixed z-50 transition-[height] duration-300"
+        className="lg:hidden fixed z-50 transition-[height] duration-300"
         style={{
           bottom: 0,
           left: 0,
@@ -70,19 +69,62 @@ export default function AsistenteButton() {
           background: 'var(--color-bg-card)',
           border: open ? '1px solid var(--color-border)' : 'none',
           borderBottom: 'none',
-          boxShadow: open ? '0 -8px 60px rgba(0,0,0,0.7)' : 'none',
+          boxShadow: open ? '0 -8px 40px rgba(0,0,0,0.6)' : 'none',
           visibility: open ? 'visible' : 'hidden',
           pointerEvents: open ? 'auto' : 'none',
         }}
       >
-        {/* AsistenteChat permanece montado siempre — display:none lo oculta sin destruir el estado */}
         <div style={{ display: open ? 'flex' : 'none', flexDirection: 'column', height: '100%' }}>
           {/* Handle bar */}
           <div className="flex justify-center pt-3 pb-1">
-            <div
-              className="w-10 h-1 rounded-full"
-              style={{ background: 'var(--color-border-hover)' }}
-            />
+            <div className="w-10 h-1 rounded-full" style={{ background: 'var(--color-border-hover)' }} />
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <AsistenteChat onClose={() => setOpen(false)} />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Desktop: widget Messenger flotante ── */}
+      <div
+        className="hidden lg:block fixed z-50"
+        style={{
+          bottom: '80px',
+          right: '24px',
+          width: '380px',
+          height: '520px',
+          borderRadius: '16px',
+          background: 'var(--color-bg-card)',
+          border: '1px solid var(--color-border)',
+          boxShadow: '0 16px 48px rgba(0,0,0,0.5)',
+          overflow: 'hidden',
+          transform: open ? 'scale(1)' : 'scale(0.9)',
+          opacity: open ? 1 : 0,
+          visibility: open ? 'visible' : 'hidden',
+          pointerEvents: open ? 'auto' : 'none',
+          transition: 'transform 0.2s ease, opacity 0.2s ease, visibility 0.2s',
+          transformOrigin: 'bottom right',
+        }}
+      >
+        <div style={{ display: open ? 'flex' : 'none', flexDirection: 'column', height: '100%' }}>
+          {/* Widget header */}
+          <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--color-border)' }}>
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--color-accent)' }}>
+                <path d="M12 2 L13.5 10.5 L22 12 L13.5 13.5 L12 22 L10.5 13.5 L2 12 L10.5 10.5 Z" />
+              </svg>
+              <span className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Lucas</span>
+            </div>
+            <button
+              onClick={() => setOpen(false)}
+              className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors"
+              style={{ color: 'var(--color-text-muted)' }}
+              aria-label="Cerrar asistente"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
           <div className="flex-1 overflow-hidden">
             <AsistenteChat onClose={() => setOpen(false)} />

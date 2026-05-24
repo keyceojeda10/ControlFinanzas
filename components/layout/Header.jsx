@@ -98,9 +98,8 @@ export default function Header() {
             className="w-10 h-10 rounded-full flex items-center justify-center text-[13px] font-bold hover:scale-105 focus-visible:outline-none focus-visible:ring-2 transition-all cursor-pointer active:scale-95"
             aria-label="Menú de usuario"
             style={{
-              background: 'linear-gradient(135deg, var(--color-accent), var(--color-accent-hover))',
+              background: 'var(--color-accent)',
               color: '#1a1a2e',
-              boxShadow: '0 0 12px color-mix(in srgb, var(--color-accent) 35%, transparent)',
             }}
           >
             {inicial}
@@ -124,7 +123,7 @@ export default function Header() {
                     style={{
                       background: 'var(--color-accent-soft)',
                       color: 'var(--color-accent)',
-                      borderColor: 'color-mix(in srgb, var(--color-accent) 40%, transparent)',
+                      borderColor: 'rgba(245,197,24,0.35)',
                     }}
                   >
                     Plan {PLAN_LABELS[plan] ?? plan}

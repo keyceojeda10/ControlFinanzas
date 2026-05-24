@@ -179,7 +179,7 @@ export default function BottomNav() {
           className="lg:hidden fixed bottom-[88px] left-1/2 -translate-x-1/2 z-40 max-w-[90vw] rounded-full px-3.5 py-2.5 flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2"
           style={{
             background: cierreWarning.showPendingReminder ? 'var(--color-accent-soft)' : 'var(--color-warning-dim)',
-            border: `1px solid color-mix(in srgb, ${cierreWarning.showPendingReminder ? 'var(--color-accent)' : 'var(--color-warning)'} 50%, transparent)`,
+            border: `1px solid ${cierreWarning.showPendingReminder ? 'rgba(245,197,24,0.4)' : 'rgba(251,191,36,0.4)'}`,
             boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
           }}
         >
@@ -237,8 +237,8 @@ export default function BottomNav() {
         </div>
       )}
 
-      {/* Bottom nav bar */}
-      <nav aria-label="Navegacion principal movil" className="lg:hidden fixed bottom-3 left-3 right-3 z-40 rounded-[22px] overflow-hidden cf-bottomnav-bar">
+      {/* Bottom nav bar — edge-to-edge, estilo nativo */}
+      <nav aria-label="Navegacion principal movil" className="lg:hidden fixed bottom-0 left-0 right-0 z-40 cf-bottomnav-bar">
         <div className="flex items-stretch">
           {items.map((item) => {
             const active = isActive(item.href)

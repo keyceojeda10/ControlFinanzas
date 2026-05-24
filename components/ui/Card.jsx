@@ -1,7 +1,6 @@
 // components/ui/Card.jsx
 
 export function Card({ as: Component = 'div', children, className = '', padding = true, glowColor, ...props }) {
-  const glow = glowColor || 'var(--color-accent)'
   const { style: propsStyle, ...restProps } = props
   return (
     <Component
@@ -11,9 +10,8 @@ export function Card({ as: Component = 'div', children, className = '', padding 
         className,
       ].join(' ')}
       style={{
-        background: `linear-gradient(135deg, color-mix(in srgb, ${glow} 7%, var(--color-bg-card)) 0%, var(--color-bg-card) 45%, var(--color-bg-card) 75%, color-mix(in srgb, ${glow} 4%, var(--color-bg-card)) 100%)`,
-        border: `1px solid var(--color-border)`,
-        boxShadow: `0 6px 20px rgba(0,0,0,0.12)`,
+        background: 'var(--color-bg-card)',
+        border: '1px solid var(--color-border)',
         ...propsStyle,
       }}
       {...restProps}

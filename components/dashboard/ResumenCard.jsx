@@ -32,16 +32,12 @@ export default function ResumenCard({
     )
   }
 
-  // Extraemos el color RGB puro del icono para el glow (sin alpha)
-  const glowColor = colors.icon
-
   return (
     <div
-      className="border rounded-[14px] p-5 flex flex-col gap-3 transition-transform duration-150 hover:scale-[1.01]"
+      className="border rounded-[14px] p-5 flex flex-col gap-3"
       style={{
-        borderColor: colors.border,
-        background: `linear-gradient(135deg, ${glowColor}0A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, ${glowColor}05 100%)`,
-        boxShadow: `0 0 30px ${glowColor}08, 0 1px 2px rgba(0,0,0,0.3)`,
+        borderColor: 'var(--color-border)',
+        background: 'var(--color-bg-card)',
       }}
     >
       {/* Top row: icon + trend */}

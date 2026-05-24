@@ -21,158 +21,172 @@ function SyncStatusBadgeTrigger() {
 
 const formatCOPCompact = (monto = 0) => `$${Math.round(monto || 0).toLocaleString('es-CO')}`
 
-const NAV_OWNER = [
+const NAV_SECTIONS_OWNER = [
   {
-    label: 'Inicio',
-    href:  '/dashboard',
-    icon: (
-      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-      </svg>
-    ),
+    section: 'GENERAL',
+    items: [
+      {
+        label: 'Dashboard',
+        href:  '/dashboard',
+        icon: (
+          <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+        ),
+      },
+      {
+        label: 'Actividad',
+        href:  '/actividad',
+        icon: (
+          <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+              d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        ),
+      },
+    ],
   },
   {
-    label: 'Clientes',
-    href:  '/clientes',
-    icon: (
-      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-      </svg>
-    ),
+    section: 'CARTERA',
+    items: [
+      {
+        label: 'Clientes',
+        href:  '/clientes',
+        icon: (
+          <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        ),
+      },
+      {
+        label: 'Prestamos',
+        href:  '/prestamos',
+        icon: (
+          <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        ),
+      },
+      {
+        label: 'Cobradores',
+        href:  '/cobradores',
+        icon: (
+          <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+        ),
+      },
+      {
+        label: 'Rutas',
+        href:  '/rutas',
+        icon: (
+          <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+              d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+          </svg>
+        ),
+      },
+    ],
   },
   {
-    label: 'Importar',
-    href:  '/carga-masiva',
-    icon: (
-      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-      </svg>
-    ),
+    section: 'FINANZAS',
+    items: [
+      {
+        label: 'Caja',
+        href:  '/caja',
+        icon: (
+          <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+              d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+          </svg>
+        ),
+      },
+      {
+        label: 'Gastos',
+        href:  '/gastos',
+        icon: (
+          <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        ),
+      },
+      {
+        label: 'Capital',
+        href:  '/capital',
+        icon: (
+          <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+        ),
+      },
+    ],
   },
   {
-    label: 'Préstamos',
-    href:  '/prestamos',
-    icon: (
-      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
+    section: 'ANALISIS',
+    items: [
+      {
+        label: 'Reportes',
+        href:  '/reportes',
+        icon: (
+          <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+        ),
+      },
+      {
+        label: 'Asistente IA',
+        href:  '/asistente',
+        icon: (
+          <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+              d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+          </svg>
+        ),
+      },
+    ],
   },
   {
-    label: 'Rutas',
-    href:  '/rutas',
-    icon: (
-      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-          d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Cobradores',
-    href:  '/cobradores',
-    icon: (
-      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Caja',
-    href:  '/caja',
-    icon: (
-      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-          d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Gastos',
-    href:  '/gastos',
-    icon: (
-      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Capital',
-    href:  '/capital',
-    icon: (
-      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Actividad',
-    href:  '/actividad',
-    icon: (
-      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-          d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Reportes',
-    href:  '/reportes',
-    icon: (
-      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Asistente IA',
-    href:  '/asistente',
-    badge: 'Nuevo',
-    icon: (
-      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-          d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Soporte',
-    href:  '/soporte',
-    icon: (
-      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-          d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Tutoriales',
-    href:  '/tutoriales',
-    icon: (
-      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-          d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Configuración',
-    href:  '/configuracion',
-    icon: (
-      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      </svg>
-    ),
+    section: 'CUENTA',
+    items: [
+      {
+        label: 'Configuracion',
+        href:  '/configuracion',
+        icon: (
+          <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        ),
+      },
+      {
+        label: 'Soporte',
+        href:  '/soporte',
+        icon: (
+          <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+              d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+          </svg>
+        ),
+      },
+      {
+        label: 'Tutoriales',
+        href:  '/tutoriales',
+        icon: (
+          <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          </svg>
+        ),
+      },
+    ],
   },
 ]
 
@@ -246,7 +260,8 @@ export default function Sidebar() {
   const [cierreWarning, setCierreWarning] = useState(null)
 
   const { syncMeta, startBulkSync, bulkSyncing, bulkProgress } = useOffline()
-  const nav = esCobrador ? NAV_COBRADOR : NAV_OWNER
+  const navSections = esCobrador ? null : NAV_SECTIONS_OWNER
+  const navFlat = esCobrador ? NAV_COBRADOR : null
 
   // Verificar advertencia de cierre de caja cada minuto
   useEffect(() => {
@@ -319,57 +334,59 @@ export default function Sidebar() {
         </button>
       </div>
 
-      {/* Nav links — estilo premium con icono cuadrado + glow del accent en activo */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-none">
-        {nav.map((item) => {
+      {/* Nav links — secciones agrupadas, estilo sobrio */}
+      <nav className="flex-1 px-3 py-3 overflow-y-auto scrollbar-none">
+        {navSections ? navSections.map((group, gi) => (
+          <div key={group.section} className={gi > 0 ? 'mt-5' : ''}>
+            <p className="text-[10px] font-semibold uppercase tracking-wider px-2 mb-1.5" style={{ color: 'var(--color-text-muted)' }}>
+              {group.section}
+            </p>
+            <div className="space-y-0.5">
+              {group.items.map((item) => {
+                const active = isActive(item.href)
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    aria-current={active ? 'page' : undefined}
+                    className="group flex items-center gap-2.5 px-2 py-2 rounded-[10px] text-[13px] font-medium transition-colors duration-150 min-h-[38px] focus-visible:outline-none focus-visible:ring-2 relative"
+                    style={{
+                      background: active ? 'rgba(245,197,24,0.08)' : 'transparent',
+                      color: active ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                    }}
+                  >
+                    {active && (
+                      <span className="absolute left-0 top-2 bottom-2 w-[2px] rounded-full" style={{ background: 'var(--color-accent)' }} />
+                    )}
+                    <span className="w-5 h-5 flex items-center justify-center shrink-0" style={{ color: active ? 'var(--color-accent)' : 'var(--color-text-muted)' }}>
+                      {item.icon}
+                    </span>
+                    <span className="flex-1">{item.label}</span>
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        )) : navFlat.map((item) => {
           const active = isActive(item.href)
           return (
             <Link
               key={item.href}
               href={item.href}
               aria-current={active ? 'page' : undefined}
-              className="group flex items-center gap-2.5 px-2 py-2 rounded-[12px] text-[13px] font-medium transition-all duration-200 min-h-[40px] focus-visible:outline-none focus-visible:ring-2 relative"
-              style={active ? {
-                background: `linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 14%, transparent) 0%, color-mix(in srgb, var(--color-accent) 6%, transparent) 100%)`,
-                color: 'var(--color-accent)',
-                border: '1px solid color-mix(in srgb, var(--color-accent) 25%, transparent)',
-                boxShadow: '0 4px 12px color-mix(in srgb, var(--color-accent) 12%, transparent)',
-              } : {
-                color: 'var(--color-text-secondary)',
-                border: '1px solid transparent',
+              className="group flex items-center gap-2.5 px-2 py-2 rounded-[10px] text-[13px] font-medium transition-colors duration-150 min-h-[38px] focus-visible:outline-none focus-visible:ring-2 relative"
+              style={{
+                background: active ? 'rgba(245,197,24,0.08)' : 'transparent',
+                color: active ? 'var(--color-accent)' : 'var(--color-text-secondary)',
               }}
             >
-              {/* Icono con fondo cuadrado del color cuando activo */}
-              <div
-                className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0 transition-all"
-                style={{
-                  background: active
-                    ? 'color-mix(in srgb, var(--color-accent) 22%, transparent)'
-                    : 'transparent',
-                  color: active ? 'var(--color-accent)' : 'var(--color-text-secondary)',
-                }}
-              >
-                {item.icon}
-              </div>
-              <span className="flex-1">{item.label}</span>
-              {item.badge && !active && (
-                <span
-                  className="text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0"
-                  style={{
-                    background: 'color-mix(in srgb, var(--color-accent) 20%, transparent)',
-                    color: 'var(--color-accent)',
-                    border: '1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)',
-                  }}
-                >
-                  {item.badge}
-                </span>
-              )}
               {active && (
-                <span
-                  className="w-1.5 h-1.5 rounded-full shrink-0"
-                  style={{ background: 'var(--color-accent)', boxShadow: '0 0 8px var(--color-accent)' }}
-                />
+                <span className="absolute left-0 top-2 bottom-2 w-[2px] rounded-full" style={{ background: 'var(--color-accent)' }} />
               )}
+              <span className="w-5 h-5 flex items-center justify-center shrink-0" style={{ color: active ? 'var(--color-accent)' : 'var(--color-text-muted)' }}>
+                {item.icon}
+              </span>
+              <span className="flex-1">{item.label}</span>
             </Link>
           )
         })}
@@ -383,7 +400,7 @@ export default function Sidebar() {
           className="w-full flex items-center gap-2 px-3 py-2.5 rounded-[10px] focus-visible:outline-none focus-visible:ring-2 transition-colors disabled:opacity-50"
           style={{
             background: 'var(--color-success-dim)',
-            border: '1px solid color-mix(in srgb, var(--color-success) 30%, transparent)',
+            border: '1px solid var(--color-success-border)',
           }}
         >
           <svg className={`w-4 h-4 shrink-0 ${bulkSyncing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--color-success)' }}>
@@ -396,7 +413,7 @@ export default function Sidebar() {
               <>
                 <p className="text-xs font-semibold" style={{ color: 'var(--color-success)' }}>Sincronizar offline</p>
                 {syncMeta && (
-                  <p className="text-[10px]" style={{ color: 'color-mix(in srgb, var(--color-success) 80%, transparent)' }}>
+                  <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
                     {syncMeta.totalClientes} clientes · {new Date(syncMeta.syncedAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' })}
                   </p>
                 )}
@@ -415,8 +432,8 @@ export default function Sidebar() {
             style={{
               background: cierreWarning.showPendingReminder ? 'var(--color-accent-soft)' : 'var(--color-warning-dim)',
               borderColor: cierreWarning.showPendingReminder
-                ? 'color-mix(in srgb, var(--color-accent) 45%, transparent)'
-                : 'color-mix(in srgb, var(--color-warning) 45%, transparent)',
+                ? 'rgba(245,197,24,0.35)'
+                : 'var(--color-warning-border)',
             }}
           >
             <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: cierreWarning.showPendingReminder ? 'var(--color-accent)' : 'var(--color-warning)' }}>
@@ -424,44 +441,32 @@ export default function Sidebar() {
             </svg>
             <div>
               <p className="text-xs font-semibold" style={{ color: cierreWarning.showPendingReminder ? 'var(--color-accent)' : 'var(--color-warning)' }}>{cierreWarningTitle}</p>
-              <p className="text-[10px]" style={{ color: cierreWarning.showPendingReminder ? 'color-mix(in srgb, var(--color-accent) 80%, var(--color-text-muted))' : 'color-mix(in srgb, var(--color-warning) 80%, var(--color-text-muted))' }}>{cierreWarningSubtitle}</p>
+              <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{cierreWarningSubtitle}</p>
             </div>
           </Link>
         </div>
       )}
 
-      {/* User info + sign out — premium con avatar circular y rol como chip */}
+      {/* User info + sign out */}
       <div className="px-3 pb-5 pt-4" style={{ borderTop: '1px solid var(--color-border)' }}>
         <div
-          className="rounded-[12px] px-2.5 py-2.5 mb-2.5 flex items-center gap-2.5"
+          className="rounded-[10px] px-2.5 py-2.5 mb-2.5 flex items-center gap-2.5"
           style={{
-            background: `linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
-            border: '1px solid color-mix(in srgb, var(--color-accent) 18%, var(--color-border))',
+            background: 'var(--color-bg-hover)',
+            border: '1px solid var(--color-border)',
           }}
         >
           <div
-            className="w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-bold shrink-0"
-            style={{
-              background: 'linear-gradient(135deg, var(--color-accent), var(--color-accent-hover))',
-              color: '#1a1a2e',
-              boxShadow: '0 0 12px color-mix(in srgb, var(--color-accent) 30%, transparent)',
-            }}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0"
+            style={{ background: 'var(--color-accent)', color: '#1a1a2e' }}
           >
             {session?.user?.nombre?.[0]?.toUpperCase() ?? 'U'}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[12px] font-bold truncate leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+            <p className="text-[12px] font-semibold truncate leading-tight" style={{ color: 'var(--color-text-primary)' }}>
               {session?.user?.nombre}
             </p>
-            <span
-              className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full mt-0.5"
-              style={{
-                background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)',
-                color: 'var(--color-accent)',
-                border: '1px solid color-mix(in srgb, var(--color-accent) 25%, transparent)',
-              }}
-            >
-              <span className="w-1 h-1 rounded-full" style={{ background: 'var(--color-accent)' }} />
+            <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
               {{ owner: 'Administrador', cobrador: 'Cobrador', superadmin: 'Super Admin' }[session?.user?.rol] ?? session?.user?.rol}
             </span>
           </div>

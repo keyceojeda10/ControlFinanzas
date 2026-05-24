@@ -12,6 +12,7 @@ import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
 import SpotlightOverlay from '@/components/onboarding/SpotlightOverlay'
 import CobradorOnboarding from '@/components/onboarding/CobradorOnboarding'
 import CacheAge from '@/components/offline/CacheAge'
+import DashboardAiTip from '@/components/dashboard/DashboardAiTip'
 
 function Skeleton({ className = '' }) {
   return <div className={`animate-pulse rounded-[12px] ${className}`} style={{ background: 'var(--color-bg-hover)' }} />
@@ -297,15 +298,14 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
     <div
       className="cf-hero-card relative rounded-[20px] overflow-hidden kpi-lift"
       style={{
-        background: `linear-gradient(135deg, color-mix(in srgb, ${color} 14%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, ${accent} 8%, var(--color-bg-card)) 100%)`,
-        border: `1px solid color-mix(in srgb, ${color} 25%, var(--color-border))`,
-        boxShadow: `0 8px 32px color-mix(in srgb, ${color} 18%, transparent)`,
+        background: 'var(--color-bg-card)',
+        border: '1px solid var(--color-border)',
       }}
     >
-      {/* Orb pulsante decorativo */}
+      {/* Orb decorativo estatico */}
       <div
         className="hero-glow absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none hidden lg:block"
-        style={{ background: `radial-gradient(circle, color-mix(in srgb, ${color} 35%, transparent), transparent 70%)`, filter: 'blur(20px)' }}
+        style={{ background: `radial-gradient(circle, ${color}30, transparent 70%)`, filter: 'blur(20px)' }}
       />
       {/* Patron de puntos sutil */}
       <div
@@ -316,13 +316,13 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
       <div className="relative px-5 py-5 sm:px-6 sm:py-6">
         {/* Header con label + boton info */}
         <div className="flex items-center gap-2 mb-3">
-          <div className="w-1.5 h-1.5 rounded-full" style={{ background: color, boxShadow: `0 0 12px ${color}` }} />
+          <div className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
           <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
           {hasInfo && (
             <button
               onClick={(e) => { e.stopPropagation(); if (!showInfo) setShowInfo(true) }}
               className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold ml-auto cursor-pointer transition-transform hover:scale-110"
-              style={{ background: `color-mix(in srgb, ${color} 25%, transparent)`, color }}
+              style={{ background: `${color}20`, color }}
               aria-label="Ver información"
             >
               i
@@ -338,7 +338,6 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
               style={{
                 color,
                 fontSize: 'clamp(32px, 9vw, 52px)',
-                textShadow: `0 0 40px color-mix(in srgb, ${color} 25%, transparent)`,
               }}
             >
               {display}
@@ -347,7 +346,7 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
               <p className="text-[12px] mt-2" style={{ color: 'var(--color-text-secondary)' }}>{sub}</p>
             )}
             {narrativa && (
-              <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium" style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, border: `1px solid color-mix(in srgb, ${color} 22%, transparent)` }}>
+              <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium" style={{ background: `${color}15`, color, border: `1px solid ${color}25` }}>
                 <span>{narrativa}</span>
               </div>
             )}
@@ -1468,6 +1467,9 @@ export default function DashboardPage() {
               tip: 'El sparkline muestra los últimos 7 días. La etiqueta "vs ayer" compara con el día anterior completo.',
             }}
           />
+
+          {/* Tip IA sutil */}
+          <DashboardAiTip data={data} />
 
           {/* Recaudado del mes — card normal con datos enriquecidos */}
           <RecaudoCard
