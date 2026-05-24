@@ -8,6 +8,9 @@ import { procesarNuevoLead } from '@/lib/bot/bridge'
 const VERIFY_TOKEN = process.env.FB_LEADS_VERIFY_TOKEN
 const FB_APP_SECRET = process.env.FB_APP_SECRET
 
+// Lock en memoria para evitar procesamiento concurrente del mismo leadgenId
+const processingLeads = new Set()
+
 // Facebook webhook verification (GET)
 export async function GET(request) {
   if (!VERIFY_TOKEN) {
@@ -101,6 +104,21 @@ export async function POST(request) {
 }
 
 async function processLead(leadgenId, adId, createdTime) {
+  // Lock: si ya se está procesando este leadgenId, ignorar
+  if (leadgenId && processingLeads.has(leadgenId)) {
+    console.log('[Leads] leadgenId ya en proceso, ignorando duplicado:', leadgenId)
+    return
+  }
+  if (leadgenId) processingLeads.add(leadgenId)
+
+  try {
+    await _processLeadInternal(leadgenId, adId, createdTime)
+  } finally {
+    if (leadgenId) processingLeads.delete(leadgenId)
+  }
+}
+
+async function _processLeadInternal(leadgenId, adId, createdTime) {
   let leadData = null
 
   const delays = [2000, 5000, 10000]
@@ -122,18 +140,11 @@ async function processLead(leadgenId, adId, createdTime) {
   const planInteres = leadData?.planInteres || ''
   const consent = leadData?.consent || ''
 
-  // Guardar en DB con protección contra duplicados
+  // Guardar en DB con protección contra duplicados exactos (mismo leadgenId)
   let lead = null
+  let esRetorno = false
   try {
-    // Dedup por teléfono
-    if (telefono) {
-      const exists = await prisma.lead.findFirst({ where: { telefono } })
-      if (exists) {
-        console.log('[Leads] Lead duplicado (tel), ignorando:', nombre, telefono)
-        return
-      }
-    }
-    // Dedup por leadgenId (notas contiene el ID)
+    // Dedup estricto: solo por leadgenId (el mismo evento exacto)
     if (leadgenId) {
       const existsLg = await prisma.lead.findFirst({ where: { notas: { contains: leadgenId } } })
       if (existsLg) {
@@ -141,18 +152,31 @@ async function processLead(leadgenId, adId, createdTime) {
         return
       }
     }
-    const notasJson = JSON.stringify({ leadgen_id: leadgenId, metodoActual, planInteres, consent })
-    lead = await prisma.lead.create({
-      data: { nombre, telefono, cantClientes, esPrestamista, anuncioId: adId, notas: notasJson }
-    })
-    console.log('[Leads] Guardado en DB:', nombre, telefono)
+
+    // Verificar si el teléfono ya existe (lead que vuelve a llenar formulario)
+    if (telefono) {
+      const exists = await prisma.lead.findFirst({ where: { telefono } })
+      if (exists) {
+        esRetorno = true
+        lead = exists
+        console.log('[Leads] Lead RETORNO detectado:', nombre, telefono, '- volvió a llenar formulario')
+      }
+    }
+
+    if (!lead) {
+      const notasJson = JSON.stringify({ leadgen_id: leadgenId, metodoActual, planInteres, consent })
+      lead = await prisma.lead.create({
+        data: { nombre, telefono, cantClientes, esPrestamista, anuncioId: adId, notas: notasJson }
+      })
+      console.log('[Leads] Guardado en DB:', nombre, telefono)
+    }
   } catch (dbErr) {
     console.error('[Leads] DB error:', dbErr.message)
   }
 
   // Enviar Telegram con botones interactivos
   const messageId = await sendLeadNotification(
-    { nombre, telefono, cantClientes, esPrestamista, metodoActual, planInteres, consent, anuncioId: adId, createdTime, leadgenId },
+    { nombre, telefono, cantClientes, esPrestamista, metodoActual, planInteres, consent, anuncioId: adId, createdTime, leadgenId, esRetorno },
     lead?.id
   )
 
@@ -164,12 +188,12 @@ async function processLead(leadgenId, adId, createdTime) {
     }).catch(() => {})
   }
 
-  console.log('[Leads] Telegram enviado para:', nombre)
+  console.log('[Leads] Telegram enviado para:', nombre, esRetorno ? '(RETORNO)' : '')
 
   // Enviar lead al bot de WhatsApp (integrado)
   if (telefono && lead) {
     procesarNuevoLead({
-      cfLeadId: lead.id, nombre, telefono, cantClientes, esPrestamista, metodoActual, planInteres, anuncioId: adId,
+      cfLeadId: lead.id, nombre, telefono, cantClientes, esPrestamista, metodoActual, planInteres, anuncioId: adId, esRetorno,
     }).catch(err => console.error('[Leads] Error procesando lead en bot WhatsApp:', err.message))
   }
 }

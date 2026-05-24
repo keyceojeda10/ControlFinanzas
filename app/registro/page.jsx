@@ -123,7 +123,7 @@ function RegistroForm() {
         {/* Plan selector */}
         <div>
           <p className="text-[11px] font-medium uppercase tracking-[0.05em] mb-2"
-            style={{ color: 'var(--color-text-muted)' }}
+            style={{ color: '#666' }}
           >
             Elige tu plan de prueba
           </p>
@@ -147,7 +147,7 @@ function RegistroForm() {
                   }}
                 >
                   <p className="text-xs font-semibold"
-                    style={{ color: activo ? 'var(--color-accent)' : 'var(--color-text-primary)' }}
+                    style={{ color: activo ? 'var(--color-accent)' : '#f0f0f5' }}
                   >
                     {p.nombre}
                   </p>
@@ -287,7 +287,7 @@ function RegistroForm() {
             onChange={(e) => setForm({ ...form, terminosAceptados: e.target.checked })}
             className="mt-0.5 w-4 h-4 rounded cursor-pointer accent-[#f5c518]"
           />
-          <span className="text-xs leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+          <span className="text-xs leading-relaxed" style={{ color: '#666' }}>
             Acepto los{' '}
             <a href="https://control-finanzas.com/terminos-uso" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--color-accent)' }}>
               Términos de uso

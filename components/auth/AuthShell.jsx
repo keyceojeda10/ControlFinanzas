@@ -53,11 +53,11 @@ export default function AuthShell({ title, subtitle, children, footer, maxWidth 
               <Image src="/logo-icon.svg" alt="Control Finanzas" width={32} height={32} priority />
             </div>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>
+          <h1 className="text-2xl font-bold tracking-tight" style={{ color: '#f0f0f5' }}>
             {title}
           </h1>
           {subtitle && (
-            <p className="text-sm mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-sm mt-1.5" style={{ color: '#666' }}>
               {subtitle}
             </p>
           )}
@@ -91,7 +91,7 @@ export default function AuthShell({ title, subtitle, children, footer, maxWidth 
         </div>
 
         {footer && (
-          <div className="mt-6 text-center text-sm" style={{ color: 'var(--color-text-muted)' }}>
+          <div className="mt-6 text-center text-sm" style={{ color: '#666' }}>
             {footer}
           </div>
         )}

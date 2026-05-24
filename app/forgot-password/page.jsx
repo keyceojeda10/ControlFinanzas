@@ -63,10 +63,10 @@ export default function ForgotPasswordPage() {
               </svg>
             </div>
           </div>
-          <p className="text-sm mb-3" style={{ color: 'var(--color-text-primary)' }}>
+          <p className="text-sm mb-3" style={{ color: '#f0f0f5' }}>
             Si existe una cuenta con <strong style={{ color: 'var(--color-accent)' }}>{email}</strong>, recibirás un enlace para restablecer tu contraseña.
           </p>
-          <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-xs" style={{ color: '#666' }}>
             El enlace expira en 1 hora. Revisa también tu carpeta de spam.
           </p>
         </div>

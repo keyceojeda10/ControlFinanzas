@@ -119,7 +119,7 @@ export default function LoginPage() {
 
         <div className="text-right">
           <Link href="/forgot-password" className="text-xs hover:underline transition-colors"
-            style={{ color: 'var(--color-text-muted)' }}
+            style={{ color: '#666' }}
           >
             ¿Olvidaste tu contraseña?
           </Link>
