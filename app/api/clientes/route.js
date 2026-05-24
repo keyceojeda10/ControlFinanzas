@@ -233,6 +233,27 @@ export async function POST(request) {
     select: { id: true, estado: true },
   })
   if (existe) {
+    // Si el cliente fue eliminado (soft-delete), reactivarlo con los datos nuevos
+    if (existe.estado === 'eliminado') {
+      const reactivado = await prisma.cliente.update({
+        where: { id: existe.id },
+        data: {
+          nombre:     nombre.trim(),
+          telefono:   telefono.trim(),
+          direccion:  direccion?.trim()  || null,
+          referencia: referencia?.trim()  || null,
+          notas:      notas?.trim()      || null,
+          fotoUrl:    fotoUrl?.trim() && /^https?:\/\/.+/i.test(fotoUrl.trim()) ? fotoUrl.trim() : null,
+          rutaId:     rutaId || null,
+          grupoCobroId: grupoCobroId || null,
+          estado:     'activo',
+          eliminadoEn: null,
+        },
+      })
+      logActividad({ session, accion: 'reactivar_cliente', entidadTipo: 'cliente', entidadId: reactivado.id, detalle: `Cliente reactivado ${nombre.trim()} (${cedula.trim()})`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
+      trackEvent({ organizationId, userId: session.user.id, evento: 'reactivar_cliente' })
+      return Response.json(reactivado, { status: 201 })
+    }
     // Devolver existingId permite al sync offline mapear su tempId al cliente
     // que ya existía (p.ej. el mismo cobrador creó el cliente desde otra sesión).
     return Response.json(
