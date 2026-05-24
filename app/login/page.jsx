@@ -62,7 +62,7 @@ export default function LoginPage() {
       footer={
         <>
           ¿No tienes cuenta?{' '}
-          <Link href="/registro" className="font-medium hover:underline" style={{ color: 'var(--color-accent)' }}>
+          <Link href="/registro" className="font-medium hover:underline" style={{ color: '#f5c518' }}>
             Regístrate gratis
           </Link>
         </>
@@ -72,9 +72,9 @@ export default function LoginPage() {
         {error && (
           <div className="flex items-center gap-2.5 text-sm rounded-[10px] px-4 py-3"
             style={{
-              background: 'var(--color-danger-dim)',
-              border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)',
-              color: 'var(--color-danger)',
+              background: 'rgba(248,113,113,0.10)',
+              border: '1px solid rgba(248,113,113,0.30)',
+              color: '#f87171',
             }}
           >
             <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">

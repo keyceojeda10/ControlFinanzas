@@ -40,7 +40,7 @@ export default function ForgotPasswordPage() {
         title="Revisa tu correo"
         subtitle="Te enviamos un enlace para recuperar tu contraseña"
         footer={
-          <Link href="/login" className="font-medium hover:underline" style={{ color: 'var(--color-accent)' }}>
+          <Link href="/login" className="font-medium hover:underline" style={{ color: '#f5c518' }}>
             Volver al login
           </Link>
         }
@@ -64,7 +64,7 @@ export default function ForgotPasswordPage() {
             </div>
           </div>
           <p className="text-sm mb-3" style={{ color: '#f0f0f5' }}>
-            Si existe una cuenta con <strong style={{ color: 'var(--color-accent)' }}>{email}</strong>, recibirás un enlace para restablecer tu contraseña.
+            Si existe una cuenta con <strong style={{ color: '#f5c518' }}>{email}</strong>, recibirás un enlace para restablecer tu contraseña.
           </p>
           <p className="text-xs" style={{ color: '#666' }}>
             El enlace expira en 1 hora. Revisa también tu carpeta de spam.
@@ -79,7 +79,7 @@ export default function ForgotPasswordPage() {
       title="Recuperar contraseña"
       subtitle="Te enviaremos un enlace a tu correo"
       footer={
-        <Link href="/login" className="font-medium hover:underline" style={{ color: 'var(--color-accent)' }}>
+        <Link href="/login" className="font-medium hover:underline" style={{ color: '#f5c518' }}>
           Volver al login
         </Link>
       }
@@ -88,9 +88,9 @@ export default function ForgotPasswordPage() {
         {error && (
           <div className="flex items-center gap-2.5 text-sm rounded-[10px] px-4 py-3"
             style={{
-              background: 'var(--color-danger-dim)',
-              border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)',
-              color: 'var(--color-danger)',
+              background: 'rgba(248,113,113,0.10)',
+              border: '1px solid rgba(248,113,113,0.30)',
+              color: '#f87171',
             }}
           >
             <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">

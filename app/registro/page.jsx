@@ -113,7 +113,7 @@ function RegistroForm() {
       footer={
         <>
           ¿Ya tienes cuenta?{' '}
-          <Link href="/login" className="font-medium hover:underline" style={{ color: 'var(--color-accent)' }}>
+          <Link href="/login" className="font-medium hover:underline" style={{ color: '#f5c518' }}>
             Inicia sesión
           </Link>
         </>
@@ -138,20 +138,20 @@ function RegistroForm() {
                   className="rounded-[12px] px-2 py-2.5 text-center transition-all cursor-pointer"
                   style={{
                     background: activo
-                      ? 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 15%, transparent), color-mix(in srgb, var(--color-accent) 5%, transparent))'
+                      ? 'linear-gradient(135deg, rgba(245,197,24,0.15), rgba(245,197,24,0.05))'
                       : 'rgba(255,255,255,0.02)',
                     border: activo
-                      ? '1px solid color-mix(in srgb, var(--color-accent) 50%, transparent)'
+                      ? '1px solid rgba(245,197,24,0.5)'
                       : '1px solid rgba(255,255,255,0.06)',
                     boxShadow: activo ? '0 0 16px rgba(245,197,24,0.15)' : 'none',
                   }}
                 >
                   <p className="text-xs font-semibold"
-                    style={{ color: activo ? 'var(--color-accent)' : '#f0f0f5' }}
+                    style={{ color: activo ? '#f5c518' : '#f0f0f5' }}
                   >
                     {p.nombre}
                   </p>
-                  <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                  <p className="text-[10px] mt-0.5" style={{ color: '#666' }}>
                     {p.precio}/mes
                   </p>
                 </button>
@@ -169,14 +169,14 @@ function RegistroForm() {
             style={{
               background: 'rgba(245,197,24,0.08)',
               border: '1px solid rgba(245,197,24,0.2)',
-              color: 'var(--color-accent)',
+              color: '#f5c518',
             }}
           >
             <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
             </svg>
             <span className="text-xs">
-              Referido por <strong style={{ color: 'var(--color-text-primary)' }}>{referrer.nombreOrg}</strong>
+              Referido por <strong style={{ color: '#f0f0f5' }}>{referrer.nombreOrg}</strong>
             </span>
           </div>
         )}
@@ -184,9 +184,9 @@ function RegistroForm() {
         {error && (
           <div className="flex items-center gap-2.5 text-sm rounded-[10px] px-4 py-3"
             style={{
-              background: 'var(--color-danger-dim)',
-              border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)',
-              color: 'var(--color-danger)',
+              background: 'rgba(248,113,113,0.10)',
+              border: '1px solid rgba(248,113,113,0.30)',
+              color: '#f87171',
             }}
           >
             <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -289,11 +289,11 @@ function RegistroForm() {
           />
           <span className="text-xs leading-relaxed" style={{ color: '#666' }}>
             Acepto los{' '}
-            <a href="https://control-finanzas.com/terminos-uso" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--color-accent)' }}>
+            <a href="https://control-finanzas.com/terminos-uso" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: '#f5c518' }}>
               Términos de uso
             </a>{' '}
             y la{' '}
-            <a href="https://control-finanzas.com/privacidad" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--color-accent)' }}>
+            <a href="https://control-finanzas.com/privacidad" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: '#f5c518' }}>
               Política de privacidad
             </a>
           </span>
@@ -307,9 +307,21 @@ function RegistroForm() {
   )
 }
 
+function RegistroFallback() {
+  return (
+    <div className="min-h-dvh flex items-center justify-center" style={{ background: '#060609' }}>
+      <div className="text-center">
+        <div className="w-10 h-10 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-3"
+          style={{ borderColor: '#f5c518', borderTopColor: 'transparent' }} />
+        <p style={{ color: '#666', fontSize: '14px' }}>Cargando...</p>
+      </div>
+    </div>
+  )
+}
+
 export default function RegistroPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<RegistroFallback />}>
       <RegistroForm />
     </Suspense>
   )

@@ -13,7 +13,7 @@ export default function AuthShell({ title, subtitle, children, footer, maxWidth 
       <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none">
         <div
           className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full blur-[120px] opacity-30"
-          style={{ background: 'radial-gradient(circle, var(--color-accent) 0%, transparent 70%)' }}
+          style={{ background: 'radial-gradient(circle, #f5c518 0%, transparent 70%)' }}
         />
         <div
           className="absolute top-1/3 -right-40 w-[450px] h-[450px] rounded-full blur-[120px] opacity-25"
@@ -41,12 +41,12 @@ export default function AuthShell({ title, subtitle, children, footer, maxWidth 
           <div className="relative inline-block mb-4">
             <div
               className="absolute inset-0 rounded-full blur-xl opacity-60"
-              style={{ background: 'radial-gradient(circle, var(--color-accent) 0%, transparent 70%)' }}
+              style={{ background: 'radial-gradient(circle, #f5c518 0%, transparent 70%)' }}
             />
             <div
               className="relative w-14 h-14 rounded-[16px] flex items-center justify-center"
               style={{
-                background: 'linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 70%, #f59e0b))',
+                background: 'linear-gradient(135deg, #f5c518, #f0ad0e)',
                 boxShadow: '0 8px 32px rgba(245,197,24,0.4), inset 0 1px 0 rgba(255,255,255,0.2)',
               }}
             >
@@ -78,7 +78,7 @@ export default function AuthShell({ title, subtitle, children, footer, maxWidth 
           <div aria-hidden
             className="absolute inset-0 rounded-[20px] pointer-events-none"
             style={{
-              background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 20%, transparent), transparent 40%)',
+              background: 'linear-gradient(135deg, rgba(245,197,24,0.2), transparent 40%)',
               padding: '1px',
               WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
               WebkitMaskComposite: 'xor',
