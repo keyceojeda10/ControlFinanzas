@@ -1,110 +1,82 @@
 'use client'
-// components/auth/AuthShell.jsx — Layout premium para login/registro/forgot
-// Fondo con aurora + grid pattern + card glassmorphic.
-
-import Image from 'next/image'
+// components/auth/AuthShell.jsx — Layout para login/registro/forgot
+// Simplificado para maxima compatibilidad con WebViews Android
 
 export default function AuthShell({ title, subtitle, children, footer, maxWidth = 'max-w-sm' }) {
   return (
-    <div className="relative min-h-dvh flex flex-col items-center justify-center px-4 py-8 overflow-hidden"
-      style={{ background: '#060609' }}
+    <div
+      className="relative flex flex-col items-center justify-center px-4 py-8 overflow-hidden"
+      style={{ background: '#060609', minHeight: '100vh' }}
     >
-      {/* Aurora orbs (fondo) */}
-      <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div
-          className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full blur-[120px] opacity-30"
-          style={{ background: 'radial-gradient(circle, #f5c518 0%, transparent 70%)' }}
-        />
-        <div
-          className="absolute top-1/3 -right-40 w-[450px] h-[450px] rounded-full blur-[120px] opacity-25"
-          style={{ background: 'radial-gradient(circle, #22c55e 0%, transparent 70%)' }}
-        />
-        <div
-          className="absolute -bottom-40 left-1/4 w-[400px] h-[400px] rounded-full blur-[120px] opacity-20"
-          style={{ background: 'radial-gradient(circle, #3b82f6 0%, transparent 70%)' }}
-        />
+      {/* Aurora orbs — opacidad baja, blur moderado para no crashear GPUs movil */}
+      <div aria-hidden="true" style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+        <div style={{
+          position: 'absolute', top: '-120px', left: '-120px',
+          width: '300px', height: '300px', borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(245,197,24,0.25) 0%, transparent 70%)',
+          filter: 'blur(60px)',
+        }} />
+        <div style={{
+          position: 'absolute', top: '33%', right: '-120px',
+          width: '280px', height: '280px', borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(34,197,94,0.2) 0%, transparent 70%)',
+          filter: 'blur(60px)',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: '-120px', left: '25%',
+          width: '250px', height: '250px', borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%)',
+          filter: 'blur(60px)',
+        }} />
       </div>
 
-      {/* Grid pattern sutil */}
-      <div aria-hidden className="absolute inset-0 pointer-events-none opacity-[0.025]"
-        style={{
-          backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)',
-          backgroundSize: '40px 40px',
-          maskImage: 'radial-gradient(circle at center, black 30%, transparent 80%)',
-          WebkitMaskImage: 'radial-gradient(circle at center, black 30%, transparent 80%)',
-        }}
-      />
-
-      <div className={`relative w-full ${maxWidth} animate-[fadeUp_0.4s_ease-out]`}>
+      <div className={`relative w-full ${maxWidth}`} style={{ zIndex: 1 }}>
         {/* Logo + titulos */}
         <div className="text-center mb-6">
           <div className="relative inline-block mb-4">
             <div
-              className="absolute inset-0 rounded-full blur-xl opacity-60"
-              style={{ background: 'radial-gradient(circle, #f5c518 0%, transparent 70%)' }}
-            />
-            <div
-              className="relative w-14 h-14 rounded-[16px] flex items-center justify-center"
+              className="relative flex items-center justify-center"
               style={{
+                width: '56px', height: '56px', borderRadius: '16px',
                 background: 'linear-gradient(135deg, #f5c518, #f0ad0e)',
                 boxShadow: '0 8px 32px rgba(245,197,24,0.4), inset 0 1px 0 rgba(255,255,255,0.2)',
               }}
             >
-              <Image src="/logo-icon.svg" alt="Control Finanzas" width={32} height={32} priority />
+              {/* Logo como img normal — Next Image puede fallar en WebViews */}
+              <img src="/logo-icon.svg" alt="Control Finanzas" width={32} height={32} />
             </div>
           </div>
           <h1 className="text-2xl font-bold tracking-tight" style={{ color: '#f0f0f5' }}>
             {title}
           </h1>
           {subtitle && (
-            <p className="text-sm mt-1.5" style={{ color: '#666' }}>
+            <p className="text-sm" style={{ color: '#888', marginTop: '6px' }}>
               {subtitle}
             </p>
           )}
         </div>
 
-        {/* Card con glassmorphism */}
+        {/* Card */}
         <div
           className="relative rounded-[20px] p-6 sm:p-7"
           style={{
-            background: 'linear-gradient(135deg, rgba(20,20,26,0.85) 0%, rgba(13,13,17,0.92) 100%)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
+            background: 'rgba(17,17,22,0.92)',
             border: '1px solid rgba(255,255,255,0.08)',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.02), inset 0 1px 0 rgba(255,255,255,0.05)',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
           }}
         >
-          {/* Borde gradiente sutil */}
-          <div aria-hidden
-            className="absolute inset-0 rounded-[20px] pointer-events-none"
-            style={{
-              background: 'linear-gradient(135deg, rgba(245,197,24,0.2), transparent 40%)',
-              padding: '1px',
-              WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-              WebkitMaskComposite: 'xor',
-              maskComposite: 'exclude',
-            }}
-          />
-          <div className="relative">
+          {/* Contenido del form — z-index alto para que nada lo bloquee */}
+          <div style={{ position: 'relative', zIndex: 2 }}>
             {children}
           </div>
         </div>
 
         {footer && (
-          <div className="mt-6 text-center text-sm" style={{ color: '#666' }}>
+          <div className="mt-6 text-center text-sm" style={{ color: '#888' }}>
             {footer}
           </div>
         )}
-
-        {/* Trust badges */}
       </div>
-
-      <style jsx global>{`
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(12px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   )
 }

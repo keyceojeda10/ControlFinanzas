@@ -309,11 +309,11 @@ function RegistroForm() {
 
 function RegistroFallback() {
   return (
-    <div className="min-h-dvh flex items-center justify-center" style={{ background: '#060609' }}>
+    <div className="flex items-center justify-center" style={{ background: '#060609', minHeight: '100vh' }}>
       <div className="text-center">
         <div className="w-10 h-10 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-3"
           style={{ borderColor: '#f5c518', borderTopColor: 'transparent' }} />
-        <p style={{ color: '#666', fontSize: '14px' }}>Cargando...</p>
+        <p style={{ color: '#888', fontSize: '14px' }}>Cargando...</p>
       </div>
     </div>
   )

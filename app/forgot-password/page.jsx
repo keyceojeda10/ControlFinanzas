@@ -47,13 +47,10 @@ export default function ForgotPasswordPage() {
       >
         <div className="text-center py-2">
           <div className="relative inline-block mb-4">
-            <div className="absolute inset-0 rounded-full blur-2xl opacity-50"
-              style={{ background: 'radial-gradient(circle, #22c55e 0%, transparent 70%)' }}
-            />
             <div className="relative w-14 h-14 rounded-full flex items-center justify-center"
               style={{
-                background: 'linear-gradient(135deg, color-mix(in srgb, #22c55e 30%, transparent), color-mix(in srgb, #22c55e 10%, transparent))',
-                border: '1px solid color-mix(in srgb, #22c55e 35%, transparent)',
+                background: 'linear-gradient(135deg, rgba(34,197,94,0.3), rgba(34,197,94,0.1))',
+                border: '1px solid rgba(34,197,94,0.35)',
               }}
             >
               <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"
