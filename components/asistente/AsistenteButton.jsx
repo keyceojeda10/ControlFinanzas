@@ -107,25 +107,6 @@ export default function AsistenteButton() {
         }}
       >
         <div style={{ display: open ? 'flex' : 'none', flexDirection: 'column', height: '100%' }}>
-          {/* Widget header */}
-          <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--color-border)' }}>
-            <div className="flex items-center gap-2">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--color-accent)' }}>
-                <path d="M12 2 L13.5 10.5 L22 12 L13.5 13.5 L12 22 L10.5 13.5 L2 12 L10.5 10.5 Z" />
-              </svg>
-              <span className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Lucas</span>
-            </div>
-            <button
-              onClick={() => setOpen(false)}
-              className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors"
-              style={{ color: 'var(--color-text-muted)' }}
-              aria-label="Cerrar asistente"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
           <div className="flex-1 overflow-hidden">
             <AsistenteChat onClose={() => setOpen(false)} />
           </div>

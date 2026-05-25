@@ -1,4 +1,4 @@
-import { Geist, JetBrains_Mono, Instrument_Serif } from "next/font/google";
+import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import SessionProvider from "@/components/providers/SessionProvider";
 import OfflineProvider from "@/components/providers/OfflineProvider";
@@ -17,10 +17,10 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
-const jetbrainsMono = JetBrains_Mono({
+const geistMono = Geist_Mono({
   variable: "--font-mono-display",
   subsets: ["latin"],
-  weight: ["700"],
+  weight: ["400", "500", "700"],
 });
 
 const instrumentSerif = Instrument_Serif({
@@ -78,7 +78,7 @@ export default function RootLayout({ children }) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
-      <body className={`${geistSans.variable} ${jetbrainsMono.variable} ${instrumentSerif.variable} antialiased`} suppressHydrationWarning>
+      <body className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} antialiased`} suppressHydrationWarning>
         <ThemeProvider>
           <SessionProvider>
             <OfflineProvider>

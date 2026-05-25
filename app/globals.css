@@ -319,11 +319,18 @@ html[data-theme="light"] input[type="range"]::-webkit-slider-thumb { background:
 html[data-theme="light"] input[type="range"]::-moz-range-thumb { background: #22c9a0; border-color: #ffffff; }
 html[data-theme="light"] input[type="range"]::-moz-range-track { background: #e2e6ef; }
 
-/* ─── Fintech number display ──────────────────────────────── */
-.font-mono-display {
+/* ─── Typography utilities ──────────────────────────────── */
+.font-mono-display, .mono {
   font-family: var(--font-mono-display), ui-monospace, monospace;
-  font-feature-settings: "tnum" 1;
+  font-feature-settings: "tnum" 1, "ss01" 1;
   letter-spacing: -0.02em;
+}
+.serif {
+  font-family: var(--font-serif-display), Georgia, serif;
+  letter-spacing: -0.01em;
+}
+.tabular {
+  font-variant-numeric: tabular-nums;
 }
 
 /* ─── Button variants ──────────────────────────────── */
