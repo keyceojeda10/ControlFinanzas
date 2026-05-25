@@ -9,9 +9,17 @@ export async function GET() {
   if (!session?.user) return Response.json({ error: 'No autenticado' }, { status: 401 })
 
   const { organizationId, plan } = session.user
-  if (!organizationId) return Response.json({ error: 'Sin organizacion' }, { status: 400 })
-
   const config = PLANES_CONFIG[plan] || PLANES_CONFIG.starter
+
+  // Superadmin no tiene org — devolver limites del plan con uso 0
+  if (!organizationId) {
+    return Response.json({
+      clientes:      { usado: 0, limite: config.maxClientes },
+      usuarios:      { usado: 0, limite: config.maxUsuarios },
+      rutas:         { usado: 0, limite: config.maxRutas },
+      lucasMensajes: { usado: 0, limite: config.aiMensajesDia },
+    })
+  }
 
   const [clientes, usuarios, rutas] = await Promise.all([
     prisma.cliente.count({ where: { organizationId, estado: { notIn: ['eliminado'] } } }),

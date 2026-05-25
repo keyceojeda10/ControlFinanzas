@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter }           from 'next/navigation'
 import { useAuth }             from '@/hooks/useAuth'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
 import { formatCOP }           from '@/lib/calculos'
 import { useOnline }           from '@/hooks/useOnline'
 import OfflineFallback         from '@/components/offline/OfflineFallback'
 import FloatingWhatsApp        from '@/components/ui/FloatingWhatsApp'
+import { PLANES_CONFIG }       from '@/lib/planes'
 
 // ── Plan data ──────────────────────────────────────────────
 const planes = [
@@ -68,6 +70,7 @@ export default function PlanPage() {
 }
 
 function PlanPageInner() {
+  const router = useRouter()
   const { session, loading: authLoading } = useAuth()
   const esSuperadmin = session?.user?.rol === 'superadmin'
 
@@ -190,13 +193,25 @@ function PlanPageInner() {
     <div className="max-w-lg mx-auto px-4 pb-12 space-y-5">
 
       {/* ── Header ── */}
-      <div className="pt-2">
-        <h1 className="text-[28px] font-normal leading-tight" style={{ color: 'var(--color-text-primary)' }}>
-          Mi <em style={{ fontStyle: 'italic', color: 'var(--color-accent)' }}>plan</em>
-        </h1>
-        <p className="text-[13px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-          {orgNombre}{orgNombre ? ' · ' : ''}{infoPlan.nombre}
-        </p>
+      <div className="pt-2 flex items-start gap-3">
+        <button
+          onClick={() => router.back()}
+          className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 mt-1 transition-colors"
+          style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}
+          aria-label="Volver"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+          </svg>
+        </button>
+        <div>
+          <h1 className="text-[28px] font-normal leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+            Mi <em style={{ fontStyle: 'italic', color: 'var(--color-accent)' }}>plan</em>
+          </h1>
+          <p className="text-[13px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+            {orgNombre}{orgNombre ? ' · ' : ''}{infoPlan.nombre}
+          </p>
+        </div>
       </div>
 
       {/* ── Plan Actual card ── */}
@@ -219,9 +234,16 @@ function PlanPageInner() {
         <h2 className="text-[32px] font-normal leading-none mb-1 serif" style={{ color: 'var(--color-text-primary)' }}>
           {infoPlan.nombre}
         </h2>
-        <p className="text-[13px] mb-4" style={{ color: 'var(--color-text-muted)' }}>
-          Hasta {(uso?.clientes?.limite || 0).toLocaleString('es-CO')} clientes · {(uso?.usuarios?.limite || 1)} {(uso?.usuarios?.limite || 1) === 1 ? 'usuario' : 'usuarios'}
-        </p>
+        {(() => {
+          const cfg = PLANES_CONFIG[planActual] || PLANES_CONFIG.starter
+          const limClientes = uso?.clientes?.limite ?? cfg.maxClientes
+          const limUsuarios = uso?.usuarios?.limite ?? cfg.maxUsuarios
+          return (
+            <p className="text-[13px] mb-4" style={{ color: 'var(--color-text-muted)' }}>
+              Hasta {limClientes.toLocaleString('es-CO')} clientes · {limUsuarios} {limUsuarios === 1 ? 'usuario' : 'usuarios'}
+            </p>
+          )
+        })()}
 
         <div className="flex items-baseline gap-1">
           <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>$</span>
@@ -292,19 +314,28 @@ function PlanPageInner() {
       </div>
 
       {/* ── Uso actual ── */}
-      {uso && (
-        <div className="rounded-[16px] overflow-hidden" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] px-4 pt-4 pb-2 font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
-            Uso actual
-          </p>
-          <UsageBar label="Clientes"   usado={uso.clientes.usado}      limite={uso.clientes.limite} />
-          <UsageBar label="Usuarios"   usado={uso.usuarios.usado}      limite={uso.usuarios.limite} />
-          <UsageBar label="Rutas"      usado={uso.rutas.usado}         limite={uso.rutas.limite} />
-          {uso.lucasMensajes.limite > 0 && (
-            <UsageBar label="Lucas IA (hoy)" usado={uso.lucasMensajes.usado} limite={uso.lucasMensajes.limite} />
-          )}
-        </div>
-      )}
+      {(() => {
+        const cfg = PLANES_CONFIG[planActual] || PLANES_CONFIG.starter
+        const u = uso || {
+          clientes:      { usado: 0, limite: cfg.maxClientes },
+          usuarios:      { usado: 0, limite: cfg.maxUsuarios },
+          rutas:         { usado: 0, limite: cfg.maxRutas },
+          lucasMensajes: { usado: 0, limite: cfg.aiMensajesDia },
+        }
+        return (
+          <div className="rounded-[16px] overflow-hidden" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] px-4 pt-4 pb-2 font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
+              Uso actual
+            </p>
+            <UsageBar label="Clientes"   usado={u.clientes.usado}      limite={u.clientes.limite} />
+            <UsageBar label="Usuarios"   usado={u.usuarios.usado}      limite={u.usuarios.limite} />
+            <UsageBar label="Rutas"      usado={u.rutas.usado}         limite={u.rutas.limite} />
+            {u.lucasMensajes.limite > 0 && (
+              <UsageBar label="Lucas IA (hoy)" usado={u.lucasMensajes.usado} limite={u.lucasMensajes.limite} />
+            )}
+          </div>
+        )
+      })()}
 
       {/* ── Upgrade / Cancel CTAs ── */}
       <div className="space-y-2">
