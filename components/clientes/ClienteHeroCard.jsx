@@ -76,7 +76,7 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
       style={{
         background: `linear-gradient(135deg, color-mix(in srgb, ${color} 14%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, ${color} 8%, var(--color-bg-card)) 100%)`,
         border: `1px solid color-mix(in srgb, ${color} 25%, var(--color-border))`,
-        boxShadow: `0 8px 32px color-mix(in srgb, ${color} 18%, transparent)`,
+        boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
       }}
     >
       {/* Orb pulsante decorativo */}
@@ -168,7 +168,7 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
               style={{
                 color,
                 fontSize: 'clamp(28px, 8vw, 40px)',
-                textShadow: `0 0 30px color-mix(in srgb, ${color} 25%, transparent)`,
+                textShadow: 'none',
               }}
             >
               {formatCOP(Math.round(animSaldo))}

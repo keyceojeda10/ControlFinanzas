@@ -56,7 +56,7 @@ export default function CobradorCard({ cobrador, onToggleActivo, toggling }) {
       style={{
         background: `linear-gradient(135deg, color-mix(in srgb, ${color} 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
         border: `1px solid color-mix(in srgb, ${color} 20%, var(--color-border))`,
-        boxShadow: `0 4px 16px color-mix(in srgb, ${color} 12%, transparent)`,
+        boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
       }}
     >
       <Link href={`/cobradores/${cobrador.id}`} className="block px-4 py-4">
@@ -77,7 +77,7 @@ export default function CobradorCard({ cobrador, onToggleActivo, toggling }) {
             {actividad?.activo && (
               <span
                 className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full"
-                style={{ background: 'var(--color-success)', border: '2px solid var(--color-bg-card)', boxShadow: '0 0 8px var(--color-success)' }}
+                style={{ background: 'var(--color-success)', border: '2px solid var(--color-bg-card)', boxShadow: '0 0 4px var(--color-success)' }}
                 title="Activo ahora"
               />
             )}
@@ -128,7 +128,7 @@ export default function CobradorCard({ cobrador, onToggleActivo, toggling }) {
               style={{
                 color: progreso >= 100 ? color : 'var(--color-text-primary)',
                 fontSize: '20px',
-                textShadow: progreso >= 100 ? `0 0 12px color-mix(in srgb, ${color} 30%, transparent)` : 'none',
+                textShadow: 'none',
               }}
             >
               {formatCOP(cobrador.recaudadoHoy ?? 0)}

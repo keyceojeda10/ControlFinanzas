@@ -12,6 +12,8 @@ import { Card }                      from '@/components/ui/Card'
 import { Modal }                     from '@/components/ui/Modal'
 import { SkeletonCard }              from '@/components/ui/Skeleton'
 import { formatCOP }                 from '@/lib/calculos'
+import AiTipBanner                   from '@/components/ui/AiTipBanner'
+import { generarTipRuta }            from '@/lib/tips/rutaTips'
 import DiasSinCobroSelector          from '@/components/ui/DiasSinCobroSelector'
 
 // Cargar mapa dinámicamente (evitar SSR con Leaflet)
@@ -1005,7 +1007,7 @@ export default function RutaDetallePage({ params }) {
             style={{
               background: `linear-gradient(135deg, color-mix(in srgb, ${heroColor} 14%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, ${heroColor} 8%, var(--color-bg-card)) 100%)`,
               border: `1px solid color-mix(in srgb, ${heroColor} 25%, var(--color-border))`,
-              boxShadow: `0 8px 32px color-mix(in srgb, ${heroColor} 18%, transparent)`,
+              boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
             }}
           >
             {/* Orb pulsante */}
@@ -1210,6 +1212,9 @@ export default function RutaDetallePage({ params }) {
           </div>
         )
       })()}
+
+      {/* Tip IA contextual */}
+      <AiTipBanner tip={generarTipRuta(ruta?.clientes)} pageKey={`ruta-${id}`} />
 
       {/* Modal días sin cobro de ruta */}
       <Modal open={modalDiasSC} onClose={() => setModalDiasSC(false)} title="Días sin cobro de la ruta" footer={

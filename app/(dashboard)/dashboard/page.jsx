@@ -640,7 +640,7 @@ function KpiInfoPopover({ info, color, onClose }) {
         style={{
           background: 'var(--color-bg-base)',
           border: `1px solid color-mix(in srgb, ${color} 35%, var(--color-border))`,
-          boxShadow: `0 24px 60px rgba(0,0,0,0.6), 0 0 80px color-mix(in srgb, ${color} 15%, transparent)`,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
           animation: 'cardFadeUp 0.25s cubic-bezier(0.22, 1, 0.36, 1)',
         }}
       >
@@ -650,7 +650,7 @@ function KpiInfoPopover({ info, color, onClose }) {
           style={{ background: `color-mix(in srgb, ${color} 12%, var(--color-bg-base))`, borderBottom: `1px solid color-mix(in srgb, ${color} 25%, transparent)` }}
         >
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color, boxShadow: `0 0 10px ${color}` }} />
+            <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color, boxShadow: `0 0 5px ${color}` }} />
             <p className="text-[12px] font-bold uppercase tracking-wider truncate" style={{ color }}>{info.titulo || '¿Qué es?'}</p>
           </div>
           <button

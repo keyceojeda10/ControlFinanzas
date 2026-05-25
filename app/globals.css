@@ -245,6 +245,30 @@ html[data-theme="light"] ::selection { background: rgba(245, 197, 24, 0.35); col
 .scrollbar-none { scrollbar-width: none; }
 .scrollbar-none::-webkit-scrollbar { display: none; }
 
+/* Sidebar nav scrollbar — thin, subtle */
+.sidebar-nav {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+.sidebar-nav::-webkit-scrollbar { width: 4px; }
+.sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px;
+}
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.2);
+}
+html[data-theme="light"] .sidebar-nav {
+  scrollbar-color: rgba(0,0,0,0.12) transparent;
+}
+html[data-theme="light"] .sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.12);
+}
+html[data-theme="light"] .sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.2);
+}
+
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 .page-transition { animation: none; }
 @media (min-width: 1024px) {
@@ -448,7 +472,7 @@ html[data-theme="light"] .cf-modal-overlay {
 .cf-modal-dialog {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 html[data-theme="light"] .cf-modal-dialog {
   box-shadow: 0 25px 60px rgba(20, 20, 40, 0.18);

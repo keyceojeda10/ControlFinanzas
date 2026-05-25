@@ -39,7 +39,7 @@ export default function AuthShell({ title, subtitle, children, footer, maxWidth 
               style={{
                 width: '56px', height: '56px', borderRadius: '16px',
                 background: 'linear-gradient(135deg, #f5c518, #f0ad0e)',
-                boxShadow: '0 8px 32px rgba(245,197,24,0.4), inset 0 1px 0 rgba(255,255,255,0.2)',
+                boxShadow: '0 2px 8px rgba(245,197,24,0.15), inset 0 1px 0 rgba(255,255,255,0.2)',
               }}
             >
               {/* Logo como img normal — Next Image puede fallar en WebViews */}
@@ -62,7 +62,7 @@ export default function AuthShell({ title, subtitle, children, footer, maxWidth 
           style={{
             background: 'rgba(17,17,22,0.92)',
             border: '1px solid rgba(255,255,255,0.08)',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
           }}
         >
           {/* Contenido del form — z-index alto para que nada lo bloquee */}

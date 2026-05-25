@@ -1,4 +1,4 @@
-import { Geist, JetBrains_Mono } from "next/font/google";
+import { Geist, JetBrains_Mono, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import SessionProvider from "@/components/providers/SessionProvider";
 import OfflineProvider from "@/components/providers/OfflineProvider";
@@ -21,6 +21,13 @@ const jetbrainsMono = JetBrains_Mono({
   variable: "--font-mono-display",
   subsets: ["latin"],
   weight: ["700"],
+});
+
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-serif-display",
+  subsets: ["latin"],
+  weight: ["400"],
+  style: ["normal", "italic"],
 });
 
 const SITE_URL = process.env.NEXTAUTH_URL || 'https://app.control-finanzas.com'
@@ -71,7 +78,7 @@ export default function RootLayout({ children }) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
-      <body className={`${geistSans.variable} ${jetbrainsMono.variable} antialiased`} suppressHydrationWarning>
+      <body className={`${geistSans.variable} ${jetbrainsMono.variable} ${instrumentSerif.variable} antialiased`} suppressHydrationWarning>
         <ThemeProvider>
           <SessionProvider>
             <OfflineProvider>

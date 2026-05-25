@@ -132,7 +132,7 @@ export function PrestamoHeroCard({ prestamo, narrativa, sparklineData }) {
       style={{
         background: `linear-gradient(135deg, color-mix(in srgb, ${color} 14%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, ${accent} 8%, var(--color-bg-card)) 100%)`,
         border: `1px solid color-mix(in srgb, ${color} 25%, var(--color-border))`,
-        boxShadow: `0 8px 32px color-mix(in srgb, ${color} 18%, transparent)`,
+        boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
       }}
     >
       {/* Orb pulsante decorativo */}
@@ -148,7 +148,7 @@ export function PrestamoHeroCard({ prestamo, narrativa, sparklineData }) {
 
       <div className="relative px-5 py-5 sm:px-6 sm:py-6">
         <div className="flex items-center gap-2 mb-3">
-          <div className="w-1.5 h-1.5 rounded-full" style={{ background: color, boxShadow: `0 0 12px ${color}` }} />
+          <div className="w-1.5 h-1.5 rounded-full" style={{ background: color, boxShadow: `0 0 5px ${color}` }} />
           <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'var(--color-text-secondary)' }}>
             Saldo pendiente
           </p>
@@ -161,7 +161,7 @@ export function PrestamoHeroCard({ prestamo, narrativa, sparklineData }) {
               style={{
                 color,
                 fontSize: 'clamp(36px, 11vw, 56px)',
-                textShadow: `0 0 40px color-mix(in srgb, ${color} 25%, transparent)`,
+                textShadow: 'none',
               }}
             >
               {formatCOP(Math.round(animSaldo))}
@@ -326,8 +326,8 @@ export function BotonPagoPersonalidad({ enMora, frecuenciaLabel, monto, onClick 
           ? 'linear-gradient(135deg, #ef4444, #dc2626)'
           : 'linear-gradient(135deg, #22c55e, #16a34a)',
         boxShadow: isUrgente
-          ? '0 6px 24px rgba(239, 68, 68, 0.4)'
-          : '0 6px 24px rgba(16, 185, 129, 0.35)',
+          ? '0 2px 8px rgba(239, 68, 68, 0.2)'
+          : '0 2px 8px rgba(16, 185, 129, 0.2)',
       }}
     >
       {/* Shimmer overlay on hover */}
@@ -599,7 +599,7 @@ export function TimelinePrestamo({ fechaInicio, fechaFin, porcentajePagado, colo
             left: `${animTiempo}%`,
             background: 'var(--color-bg-card)',
             border: `2px solid ${color}`,
-            boxShadow: `0 0 8px color-mix(in srgb, ${color} 50%, transparent)`,
+            boxShadow: `0 0 4px color-mix(in srgb, ${color} 30%, transparent)`,
           }}
           title="Hoy"
         />

@@ -18,7 +18,7 @@ export default function FloatingWhatsApp({
       target="_blank"
       rel="noopener noreferrer"
       aria-label={label}
-      className="sm:hidden fixed z-40 right-4 bottom-[calc(env(safe-area-inset-bottom,0px)+92px)] h-12 pl-3 pr-4 rounded-full bg-[#25D366] hover:bg-[#1ebe5b] text-white shadow-[0_10px_30px_rgba(37,211,102,0.45)] flex items-center gap-2 transition-all active:scale-95"
+      className="sm:hidden fixed z-40 right-4 bottom-[calc(env(safe-area-inset-bottom,0px)+92px)] h-12 pl-3 pr-4 rounded-full bg-[#25D366] hover:bg-[#1ebe5b] text-white shadow-[0_4px_12px_rgba(37,211,102,0.25)] flex items-center gap-2 transition-all active:scale-95"
       style={bottomStyle}
     >
       <svg className="w-6 h-6 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">

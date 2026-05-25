@@ -335,7 +335,7 @@ export default function Sidebar() {
       </div>
 
       {/* Nav links — secciones agrupadas, estilo sobrio */}
-      <nav className="flex-1 px-3 py-3 overflow-y-auto scrollbar-none">
+      <nav className="flex-1 px-3 py-3 overflow-y-auto sidebar-nav">
         {navSections ? navSections.map((group, gi) => (
           <div key={group.section} className={gi > 0 ? 'mt-5' : ''}>
             <p className="text-[10px] font-semibold uppercase tracking-wider px-2 mb-1.5" style={{ color: 'var(--color-text-muted)' }}>
@@ -392,43 +392,12 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Sync offline button */}
-      <div className="mx-3 mb-2">
-        <button
-          onClick={startBulkSync}
-          disabled={bulkSyncing}
-          className="w-full flex items-center gap-2 px-3 py-2.5 rounded-[10px] focus-visible:outline-none focus-visible:ring-2 transition-colors disabled:opacity-50"
-          style={{
-            background: 'var(--color-success-dim)',
-            border: '1px solid var(--color-success-border)',
-          }}
-        >
-          <svg className={`w-4 h-4 shrink-0 ${bulkSyncing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--color-success)' }}>
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          <div className="flex-1 text-left">
-            {bulkProgress ? (
-              <p className="text-xs font-medium" style={{ color: 'var(--color-success)' }}>{bulkProgress.message}</p>
-            ) : (
-              <>
-                <p className="text-xs font-semibold" style={{ color: 'var(--color-success)' }}>Sincronizar offline</p>
-                {syncMeta && (
-                  <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
-                    {syncMeta.totalClientes} clientes · {new Date(syncMeta.syncedAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' })}
-                  </p>
-                )}
-              </>
-            )}
-          </div>
-        </button>
-      </div>
-
       {/* Warning cierre de caja */}
       {cierreWarning && (
         <div className="mx-3 mb-2">
           <Link
             href={cierreWarningHref}
-            className="flex items-center gap-2 px-3 py-2.5 rounded-[10px] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 rounded-[10px] border focus-visible:outline-none focus-visible:ring-2 transition-colors"
             style={{
               background: cierreWarning.showPendingReminder ? 'var(--color-accent-soft)' : 'var(--color-warning-dim)',
               borderColor: cierreWarning.showPendingReminder
@@ -436,70 +405,81 @@ export default function Sidebar() {
                 : 'var(--color-warning-border)',
             }}
           >
-            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: cierreWarning.showPendingReminder ? 'var(--color-accent)' : 'var(--color-warning)' }}>
+            <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: cierreWarning.showPendingReminder ? 'var(--color-accent)' : 'var(--color-warning)' }}>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
-            <div>
-              <p className="text-xs font-semibold" style={{ color: cierreWarning.showPendingReminder ? 'var(--color-accent)' : 'var(--color-warning)' }}>{cierreWarningTitle}</p>
-              <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{cierreWarningSubtitle}</p>
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold truncate" style={{ color: cierreWarning.showPendingReminder ? 'var(--color-accent)' : 'var(--color-warning)' }}>{cierreWarningTitle}</p>
+              <p className="text-[10px] truncate" style={{ color: 'var(--color-text-muted)' }}>{cierreWarningSubtitle}</p>
             </div>
           </Link>
         </div>
       )}
 
-      {/* User info + sign out */}
-      <div className="px-3 pb-5 pt-4" style={{ borderTop: '1px solid var(--color-border)' }}>
-        <div
-          className="rounded-[10px] px-2.5 py-2.5 mb-2.5 flex items-center gap-2.5"
-          style={{
-            background: 'var(--color-bg-hover)',
-            border: '1px solid var(--color-border)',
-          }}
-        >
+      {/* Footer compacto */}
+      <div className="px-3 pb-3 pt-3 space-y-2" style={{ borderTop: '1px solid var(--color-border)' }}>
+        {/* Fila 1: User + theme + sign out */}
+        <div className="flex items-center gap-2">
           <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0"
+            className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0"
             style={{ background: 'var(--color-accent)', color: '#1a1a2e' }}
           >
             {session?.user?.nombre?.[0]?.toUpperCase() ?? 'U'}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[12px] font-semibold truncate leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+            <p className="text-[11px] font-semibold truncate leading-tight" style={{ color: 'var(--color-text-primary)' }}>
               {session?.user?.nombre}
             </p>
-            <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
-              {{ owner: 'Administrador', cobrador: 'Cobrador', superadmin: 'Super Admin' }[session?.user?.rol] ?? session?.user?.rol}
+            <span className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>
+              {{ owner: 'Admin', cobrador: 'Cobrador', superadmin: 'Super Admin' }[session?.user?.rol] ?? session?.user?.rol}
             </span>
           </div>
-        </div>
-        <div className="flex items-center gap-2 mb-2">
           <ThemeToggle />
-          <div className="flex-1"><InstallButton variant="desktop" /></div>
+          <button
+            onClick={async () => {
+              try { navigator.serviceWorker?.controller?.postMessage({ type: 'CLEAR_API_CACHE' }) } catch {}
+              await limpiarDatosOffline()
+              signOut({ callbackUrl: '/login' })
+            }}
+            className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors shrink-0"
+            style={{ color: 'var(--color-text-muted)' }}
+            title="Cerrar sesion"
+            aria-label="Cerrar sesion"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+          </button>
         </div>
-        <div className="mb-2">
+
+        {/* Fila 2: Sync + Install */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={startBulkSync}
+            disabled={bulkSyncing}
+            className="flex-1 flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] focus-visible:outline-none focus-visible:ring-2 transition-colors disabled:opacity-50"
+            style={{
+              background: 'var(--color-success-dim)',
+              border: '1px solid var(--color-success-border)',
+            }}
+          >
+            <svg className={`w-3.5 h-3.5 shrink-0 ${bulkSyncing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--color-success)' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span className="text-[11px] font-medium truncate" style={{ color: 'var(--color-success)' }}>
+              {bulkProgress ? bulkProgress.message : 'Sync offline'}
+            </span>
+          </button>
+          <InstallButton variant="desktop" />
+        </div>
+
+        {/* Fila 3: Status line */}
+        <div className="flex items-center gap-1.5 px-1">
           <SyncStatusBadgeTrigger />
-        </div>
-        <div className="mb-2 px-1">
+          <span className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>·</span>
           <CacheAge />
         </div>
-        <button
-          onClick={async () => {
-            try { navigator.serviceWorker?.controller?.postMessage({ type: 'CLEAR_API_CACHE' }) } catch {}
-            await limpiarDatosOffline()
-            signOut({ callbackUrl: '/login' })
-          }}
-          className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-[13px] focus-visible:outline-none focus-visible:ring-2 transition-all duration-150 cf-signout-btn"
-          style={{
-            color: 'var(--color-text-secondary)',
-            background: 'transparent',
-            border: '1px solid var(--color-border)',
-          }}
-        >
-          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-          </svg>
-          Cerrar sesión
-        </button>
       </div>
     </aside>
   )

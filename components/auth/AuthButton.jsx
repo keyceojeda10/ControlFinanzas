@@ -10,7 +10,7 @@ export default function AuthButton({ loading, children, loadingLabel = 'Procesan
       style={{
         background: 'linear-gradient(135deg, #f5c518, #f2b211)',
         color: '#0a0a0a',
-        boxShadow: '0 4px 14px rgba(245,197,24,0.3), inset 0 1px 0 rgba(255,255,255,0.25)',
+        boxShadow: '0 2px 6px rgba(245,197,24,0.15), inset 0 1px 0 rgba(255,255,255,0.25)',
       }}
       {...props}
     >

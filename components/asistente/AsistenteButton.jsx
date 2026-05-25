@@ -33,7 +33,7 @@ export default function AsistenteButton() {
           gap: '8px',
           background: 'var(--color-bg-surface)',
           border: '1px solid rgba(245,197,24,0.35)',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
           color: 'var(--color-accent)',
         }}
       >
@@ -69,7 +69,7 @@ export default function AsistenteButton() {
           background: 'var(--color-bg-card)',
           border: open ? '1px solid var(--color-border)' : 'none',
           borderBottom: 'none',
-          boxShadow: open ? '0 -8px 40px rgba(0,0,0,0.6)' : 'none',
+          boxShadow: open ? '0 -4px 16px rgba(0,0,0,0.3)' : 'none',
           visibility: open ? 'visible' : 'hidden',
           pointerEvents: open ? 'auto' : 'none',
         }}
@@ -96,7 +96,7 @@ export default function AsistenteButton() {
           borderRadius: '16px',
           background: 'var(--color-bg-card)',
           border: '1px solid var(--color-border)',
-          boxShadow: '0 16px 48px rgba(0,0,0,0.5)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
           overflow: 'hidden',
           transform: open ? 'scale(1)' : 'scale(0.9)',
           opacity: open ? 1 : 0,

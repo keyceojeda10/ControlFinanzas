@@ -267,7 +267,7 @@ export default function CapitalTab() {
             style={{
               background: `var(--color-bg-card)`,
               border: `1px solid ${heroColor}40`,
-              boxShadow: `0 8px 32px ${heroColor}2e`,
+              boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
             }}
           >
             <div className="hero-glow absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none"
@@ -276,7 +276,7 @@ export default function CapitalTab() {
               style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '16px 16px', color: heroColor }} />
             <div className="relative px-5 py-5 sm:px-6 sm:py-6">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-1.5 h-1.5 rounded-full" style={{ background: heroColor, boxShadow: `0 0 12px ${heroColor}` }} />
+                <div className="w-1.5 h-1.5 rounded-full" style={{ background: heroColor, boxShadow: `0 0 5px ${heroColor}` }} />
                 <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'var(--color-text-secondary)' }}>Saldo del capital</p>
               </div>
               <p
@@ -284,7 +284,7 @@ export default function CapitalTab() {
                 style={{
                   color: resumen.saldo >= 0 ? 'var(--color-success)' : 'var(--color-danger)',
                   fontSize: 'clamp(36px, 10vw, 52px)',
-                  textShadow: resumen.saldo >= 0 ? '0 0 30px rgba(52,211,153,0.25)' : '0 0 30px rgba(248,113,113,0.25)',
+                  textShadow: 'none',
                 }}
               >
                 {formatCOP(resumen.saldo)}

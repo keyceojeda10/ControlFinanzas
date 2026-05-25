@@ -106,6 +106,7 @@ model Organization {
   actividadLogs    ActividadLog[]
   gruposCobro      GrupoCobro[]
   festivos         Festivo[]
+  visitasReagendadas VisitaReagendada[]
 
   @@index([createdAt])
 }
@@ -224,6 +225,7 @@ model Cliente {
   ruta         Ruta?        @relation(fields: [rutaId], references: [id])
   grupoCobro   GrupoCobro?  @relation(fields: [grupoCobroId], references: [id], onDelete: SetNull)
   prestamos    Prestamo[]
+  visitasReagendadas VisitaReagendada[]
 
   @@unique([organizationId, cedula])
   @@index([organizationId])
@@ -674,4 +676,28 @@ model BotConfig {
   limiteGastoUsd    Float    @default(5.0)
   whatsappPersonal  String?
   updatedAt         DateTime @updatedAt
+}
+
+model VisitaReagendada {
+  id              String   @id @default(cuid())
+  organizationId  String
+  clienteId       String
+  prestamoId      String?
+  cobradorId      String?
+  rutaId          String?
+
+  fechaOriginal   DateTime
+  fechaReagendada DateTime
+  motivo          String   // no_estaba, negocio_cerrado, no_tenia_dinero, pidio_plazo, otro
+  motivoDetalle   String?  @db.Text
+  estado          String   @default("pendiente") // pendiente, completada, vencida
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  cliente      Cliente      @relation(fields: [clienteId], references: [id])
+
+  @@index([organizationId, clienteId])
+  @@index([organizationId, fechaReagendada])
 }

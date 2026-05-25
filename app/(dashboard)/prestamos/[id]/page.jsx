@@ -36,6 +36,8 @@ import {
   moodColorFromPrestamo,
 } from '@/components/prestamos/PrestamoDetalleViews'
 import { formatCOP, formatFechaCobroRelativa } from '@/lib/calculos'
+import AiTipBanner from '@/components/ui/AiTipBanner'
+import { generarTipPrestamo } from '@/lib/tips/prestamoTips'
 import DiasSinCobroSelector from '@/components/ui/DiasSinCobroSelector'
 
 // ─── Helpers de formato ──────────────────────────────────────────
@@ -549,6 +551,9 @@ export default function PrestamoDetallePage({ params }) {
         narrativa={narrativaSaldo}
         sparklineData={sparkline14d.some(v => v > 0) ? sparkline14d : null}
       />
+
+      {/* Tip IA contextual */}
+      <AiTipBanner tip={generarTipPrestamo(prestamo, pagos)} pageKey={`prestamo-${prestamo.id}`} />
 
       {/* ── 4. STATS INTELIGENTES CONTEXTUALES (chips) ───────────── */}
       {statsContexto.length > 0 && <StatsContextuales stats={statsContexto} />}

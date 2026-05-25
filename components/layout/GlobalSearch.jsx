@@ -117,7 +117,7 @@ export default function GlobalSearch() {
 
       {/* Modal */}
       <div className="relative w-full max-w-lg mx-3 sm:mx-4 bg-[var(--color-bg-card)] border border-[rgba(255,255,255,0.12)] rounded-[16px] shadow-2xl overflow-hidden"
-        style={{ boxShadow: '0 0 40px rgba(245,197,24,0.06), 0 8px 32px rgba(0,0,0,0.5)' }}>
+        style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.25)' }}>
         {/* Input */}
         <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[rgba(255,255,255,0.08)]">
           <svg className="w-5 h-5 text-[var(--color-accent)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -437,7 +437,7 @@ export default function RegistrarPago({
                 style={{
                   width: `${pctVisual}%`,
                   background: 'linear-gradient(to right, #16a34a, #22c55e)',
-                  boxShadow: pctVisual > 5 ? '0 0 12px rgba(34, 197, 94, 0.45)' : 'none',
+                  boxShadow: pctVisual > 5 ? '0 0 6px rgba(34, 197, 94, 0.25)' : 'none',
                 }}
               />
               {/* Thumb */}
@@ -447,7 +447,7 @@ export default function RegistrarPago({
                   left: `calc(${pctVisual}% - 10px)`,
                   background: '#22c55e',
                   border: '3px solid var(--color-bg-base)',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.4), 0 0 0 1px rgba(34, 197, 94, 0.5)',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.3), 0 0 0 1px rgba(34, 197, 94, 0.3)',
                 }}
               />
               {/* Input range invisible para drag manual */}
