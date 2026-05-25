@@ -1,4 +1,6 @@
 import { ImageResponse } from 'next/og'
+import { readFileSync } from 'fs'
+import { join } from 'path'
 
 export const runtime = 'nodejs'
 export const alt = 'Control Finanzas — Gestiona tu cartera de prestamos'
@@ -6,6 +8,10 @@ export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
 export default async function Image() {
+  // Read official logo SVG and encode as base64 data URI
+  const logoSvg = readFileSync(join(process.cwd(), 'public', 'logo-icon.svg'))
+  const logoBase64 = `data:image/svg+xml;base64,${logoSvg.toString('base64')}`
+
   return new ImageResponse(
     (
       <div
@@ -62,48 +68,13 @@ export default async function Image() {
         >
           {/* Logo icon + brand */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 40 }}>
-            {/* Gold square with chart bars */}
-            <div
-              style={{
-                width: 72,
-                height: 72,
-                borderRadius: 14,
-                background: '#f5c518',
-                display: 'flex',
-                alignItems: 'flex-end',
-                justifyContent: 'center',
-                padding: '0 14px 14px 14px',
-                gap: 6,
-              }}
-            >
-              <div
-                style={{
-                  width: 10,
-                  height: 16,
-                  borderRadius: 3,
-                  background: '#0a0a0a',
-                  display: 'flex',
-                }}
-              />
-              <div
-                style={{
-                  width: 10,
-                  height: 26,
-                  borderRadius: 3,
-                  background: '#0a0a0a',
-                  display: 'flex',
-                }}
-              />
-              <div
-                style={{
-                  width: 10,
-                  height: 38,
-                  borderRadius: 3,
-                  background: '#0a0a0a',
-                  display: 'flex',
-                }}
-              />
-            </div>
+            {/* Official logo SVG */}
+            <img
+              src={logoBase64}
+              width={72}
+              height={72}
+              style={{ width: 72, height: 72 }}
+            />
 
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <span
@@ -146,8 +117,9 @@ export default async function Image() {
             }}
           >
             <span>Gestiona tu cartera</span>
-            <span>
-              de prestamos{' '}
+            <span style={{ display: 'flex', flexWrap: 'wrap' }}>
+              <span>de prestamos</span>
+              <span style={{ width: 14, display: 'flex' }} />
               <span style={{ color: '#f5c518' }}>en tiempo real</span>
             </span>
           </div>
