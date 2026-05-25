@@ -99,6 +99,11 @@ body {
   min-height: 100vh;
 }
 
+h1 {
+  font-family: var(--font-serif-display), Georgia, serif;
+  letter-spacing: -0.015em;
+}
+
 /* Gradientes decorativos solo en desktop — sutiles */
 @media (min-width: 1024px) {
   body {

@@ -76,7 +76,7 @@ export default function ScoreCrediticio({ cedula, plan }) {
 function StatCard({ label, value, color }) {
   return (
     <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-xl p-3 text-center">
-      <p className="text-2xl font-bold" style={{ color }}>{value}</p>
+      <p className="text-2xl font-bold font-mono-display" style={{ color }}>{value}</p>
       <p className="text-xs text-[var(--color-text-muted)] mt-1">{label}</p>
     </div>
   )
