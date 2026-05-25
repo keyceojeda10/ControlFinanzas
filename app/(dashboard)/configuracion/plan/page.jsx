@@ -253,64 +253,61 @@ function PlanPageInner() {
         </div>
       </div>
 
-      {/* ── Tiempo restante / Proximo cobro ── */}
-      <div
-        className="rounded-[16px] p-5"
-        style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
-      >
-        {esTrial ? (
-          <>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] mb-2 font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
-              Prueba gratuita
-            </p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-[28px] font-bold font-mono-display leading-none" style={{ color: estado?.diasRestantes > 3 ? 'var(--color-text-primary)' : 'var(--color-warning)' }}>
-                {estado?.diasRestantes ?? 0}
-              </span>
-              <span className="text-[13px]" style={{ color: 'var(--color-text-muted)' }}>dias restantes</span>
-            </div>
-            {estado?.fechaVencimiento && (
-              <p className="text-[11px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
-                Vence el {formatFecha(estado.fechaVencimiento)}
-              </p>
-            )}
-          </>
-        ) : (
-          <>
-            <div className="flex items-center justify-between mb-2">
+      {/* ── Vencimiento con barra de progreso ── */}
+      {(() => {
+        const dias = estado?.diasRestantes ?? 0
+        const fechaVenc = estado?.fechaVencimiento || estado?.proximoCobroAt
+        const totalDias = 30 // ciclo mensual
+        const diasTranscurridos = Math.max(0, totalDias - dias)
+        const pctUsado = Math.min((diasTranscurridos / totalDias) * 100, 100)
+        const urgente = dias <= 5
+        const barColor = urgente ? 'var(--color-warning)' : 'var(--color-accent)'
+
+        return (
+          <div
+            className="rounded-[16px] p-5"
+            style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+          >
+            <div className="flex items-center justify-between mb-3">
               <p className="text-[10px] font-semibold uppercase tracking-[0.1em] font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
-                {subCancelada ? 'Acceso hasta' : 'Proximo cobro'}
+                {esTrial ? 'Prueba gratuita' : subCancelada ? 'Acceso hasta' : 'Vencimiento'}
               </p>
               {tieneRecurrente && !subCancelada && (
                 <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{
                   background: 'var(--color-bg-hover)',
                   border: '1px solid var(--color-border)',
                   color: 'var(--color-text-muted)',
-                }}>
-                  {estado?.tipo === 'recurrente' ? 'Auto' : 'Manual'}
-                </span>
+                }}>Renovacion automatica</span>
               )}
             </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-[12px]" style={{ color: 'var(--color-text-muted)' }}>$</span>
-              <span className="text-[24px] font-bold font-mono-display leading-none" style={{ color: 'var(--color-text-primary)' }}>
-                {infoPlan.precio.toLocaleString('es-CO')}
+
+            <p className="text-[14px] font-medium mb-1" style={{ color: 'var(--color-text-primary)' }}>
+              {subCancelada
+                ? `Cancelada · acceso hasta el ${formatFecha(fechaVenc)}`
+                : fechaVenc
+                ? `Tu plan ${esTrial ? 'vence' : 'se renueva'} el ${formatFecha(fechaVenc)}`
+                : 'Sin fecha de vencimiento'}
+            </p>
+
+            {/* Progress bar */}
+            <div className="h-[6px] rounded-full overflow-hidden mt-3 mb-2" style={{ background: 'var(--color-bg-hover)' }}>
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${100 - pctUsado}%`, background: barColor }}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className="text-[12px] font-mono-display font-semibold" style={{ color: urgente ? 'var(--color-warning)' : 'var(--color-text-primary)' }}>
+                {dias} dias restantes
+              </span>
+              <span className="text-[11px] font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
+                de {totalDias} dias
               </span>
             </div>
-            <p className="text-[11px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
-              {subCancelada
-                ? `Cancelada · acceso hasta ${formatFecha(estado?.fechaVencimiento)}`
-                : formatFecha(estado?.proximoCobroAt || estado?.fechaVencimiento)}
-            </p>
-            {estado?.diasRestantes != null && (
-              <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-success)' }}>
-                {estado.diasRestantes} dias restantes
-                {tieneRecurrente && !subCancelada && ' (renovacion automatica)'}
-              </p>
-            )}
-          </>
-        )}
-      </div>
+          </div>
+        )
+      })()}
 
       {/* ── Uso actual ── */}
       {(() => {
