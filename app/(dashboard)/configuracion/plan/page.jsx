@@ -94,7 +94,7 @@ function PlanPageInner() {
     }).catch(() => {}).finally(() => setLoadEstado(false))
   }, [authLoading])
 
-  const planActual = estado?.plan ?? session?.user?.plan ?? 'starter'
+  const planActual = uso?.plan ?? estado?.plan ?? session?.user?.plan ?? 'starter'
   const tieneRecurrente = estado?.tieneRecurrenteActiva
   const subCancelada = !!estado?.canceladaAt && estado?.tipo === 'recurrente'
   const infoPlan = [...planes, planTest].find(p => p.key === planActual) || planes[0]
@@ -187,7 +187,6 @@ function PlanPageInner() {
   }
 
   const esTrial = estado?.estado !== 'activa' || (!tieneRecurrente && !estado?.mercadopagoId)
-  const precioConIva = Math.round(infoPlan.precio * 1.19)
 
   return (
     <div className="max-w-lg mx-auto px-4 pb-12 space-y-5">
@@ -250,7 +249,7 @@ function PlanPageInner() {
           <span className="text-[32px] font-bold leading-none font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
             {infoPlan.precio.toLocaleString('es-CO')}
           </span>
-          <span className="text-[12px] font-mono-display" style={{ color: 'var(--color-text-muted)' }}>/mes + IVA</span>
+          <span className="text-[12px] font-mono-display" style={{ color: 'var(--color-text-muted)' }}>/mes</span>
         </div>
       </div>
 
@@ -295,13 +294,13 @@ function PlanPageInner() {
             <div className="flex items-baseline gap-2">
               <span className="text-[12px]" style={{ color: 'var(--color-text-muted)' }}>$</span>
               <span className="text-[24px] font-bold font-mono-display leading-none" style={{ color: 'var(--color-text-primary)' }}>
-                {precioConIva.toLocaleString('es-CO')}
+                {infoPlan.precio.toLocaleString('es-CO')}
               </span>
             </div>
             <p className="text-[11px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
               {subCancelada
                 ? `Cancelada · acceso hasta ${formatFecha(estado?.fechaVencimiento)}`
-                : `${formatFecha(estado?.proximoCobroAt || estado?.fechaVencimiento)} · IVA incluido`}
+                : formatFecha(estado?.proximoCobroAt || estado?.fechaVencimiento)}
             </p>
             {estado?.diasRestantes != null && (
               <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-success)' }}>
