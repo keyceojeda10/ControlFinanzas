@@ -56,7 +56,6 @@ export const metadata = {
     description: 'Gestiona tu cartera de prestamos: clientes, cobros, pagos y reportes en tiempo real.',
     url: SITE_URL,
     siteName: 'Control Finanzas',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Control Finanzas' }],
     locale: 'es_CO',
     type: 'website',
   },
@@ -64,7 +63,6 @@ export const metadata = {
     card: 'summary_large_image',
     title: 'Control Finanzas',
     description: 'Gestiona tu cartera de prestamos en tiempo real.',
-    images: ['/og-image.png'],
   },
 };
 
