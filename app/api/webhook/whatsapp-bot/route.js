@@ -10,6 +10,10 @@ const WEBHOOK_SECRET = process.env.BOT_WEBHOOK_SECRET
 const WHATSAPP_PERSONAL = process.env.BOT_WHATSAPP_PERSONAL
 
 const TIPOS_SOPORTADOS = new Set(['chat', 'text', 'audio', 'ptt', 'image'])
+
+// Lock para evitar procesamiento concurrente del mismo mensaje o lead
+const processingMessages = new Set()
+const processingLeads = new Set()
 const EVENTOS_IGNORADOS = new Set([
   'e2e_notification', 'notification_template', 'notification',
   'gp2', 'broadcast_notification', 'protocol', 'ciphertext',
@@ -60,6 +64,22 @@ async function procesarMensaje(body) {
   if (msg.isGroup === true) return
   if (EVENTOS_IGNORADOS.has(tipo)) return
 
+  // Lock por messageId: si ya se está procesando este mensaje, ignorar
+  if (messageId && processingMessages.has(messageId)) {
+    console.log('[Bot Webhook] Mensaje ya en proceso, ignorando:', messageId)
+    return
+  }
+  if (messageId) processingMessages.add(messageId)
+
+  try {
+    await _procesarMensajeInternal(msg, fromRaw, tipo, messageId)
+  } finally {
+    if (messageId) setTimeout(() => processingMessages.delete(messageId), 30000)
+  }
+}
+
+async function _procesarMensajeInternal(msg, fromRaw, tipo, messageId) {
+  const texto_raw = msg.body || msg.text || ''
   const telefono = await openwa.resolverTelefono(fromRaw)
 
   // Comando del usuario personal (TOMAR/SOLTAR)
@@ -85,6 +105,25 @@ async function procesarMensaje(body) {
 
   const botApagado = !lead.botActivo || lead.estado === 'cerrado'
 
+  // Lock por lead: evitar que dos mensajes del mismo lead se procesen a la vez
+  if (processingLeads.has(lead.id)) {
+    console.log('[Bot Webhook] Lead ya en proceso, esperando:', lead.nombre)
+    // Esperar hasta 15s a que termine el otro
+    for (let i = 0; i < 30; i++) {
+      await new Promise(r => setTimeout(r, 500))
+      if (!processingLeads.has(lead.id)) break
+    }
+  }
+  processingLeads.add(lead.id)
+
+  try {
+    await _responderAlLead(msg, lead, tipo, messageId, botApagado)
+  } finally {
+    processingLeads.delete(lead.id)
+  }
+}
+
+async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
   // Resolver contenido segun tipo
   let texto = msg.body || msg.text || ''
   let tipoMensaje = 'chat'
