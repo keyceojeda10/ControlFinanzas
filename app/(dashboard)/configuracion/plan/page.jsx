@@ -2,92 +2,25 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth }             from '@/hooks/useAuth'
-import { Badge }               from '@/components/ui/Badge'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
 import { formatCOP }           from '@/lib/calculos'
 import { useOnline }           from '@/hooks/useOnline'
 import OfflineFallback         from '@/components/offline/OfflineFallback'
 import FloatingWhatsApp        from '@/components/ui/FloatingWhatsApp'
 
+// ── Plan data ──────────────────────────────────────────────
 const planes = [
-  {
-    key: 'starter',
-    nombre: 'Inicial',
-    precio: 39000,
-    badge: null,
-    features: [
-      '1 usuario (administrador)',
-      'Hasta 150 clientes',
-      '1 ruta',
-      'Gestión de préstamos',
-      'Dashboard básico',
-    ],
-  },
-  {
-    key: 'basic',
-    nombre: 'Básico',
-    precio: 59000,
-    badge: null,
-    features: [
-      '1 usuario (administrador)',
-      'Hasta 450 clientes',
-      '1 ruta',
-      'Gestión de préstamos',
-      'Control más amplio de cartera',
-    ],
-  },
-  {
-    key: 'growth',
-    nombre: 'Crecimiento',
-    precio: 79000,
-    badge: 'Más popular',
-    features: [
-      'Hasta 2 usuarios',
-      'Hasta 1,000 clientes',
-      'Hasta 3 rutas',
-      'Cobradores incluidos',
-      'Cierre de caja diario',
-      'Cobrador extra: $19.000/mes',
-      'Ruta extra: $29.000/mes',
-    ],
-  },
-  {
-    key: 'standard',
-    nombre: 'Profesional',
-    precio: 119000,
-    badge: null,
-    features: [
-      'Hasta 5 usuarios',
-      'Hasta 2,000 clientes',
-      'Hasta 6 rutas',
-      'Reportes completos',
-      'Cobrador extra: $19.000/mes',
-      'Ruta extra: $29.000/mes',
-    ],
-  },
-  {
-    key: 'professional',
-    nombre: 'Empresarial',
-    precio: 259000,
-    badge: null,
-    features: [
-      'Hasta 10 usuarios',
-      'Hasta 10,000 clientes',
-      'Hasta 10 rutas',
-      'Reportes avanzados',
-      'Exportar a Excel',
-      'Cobrador extra: $19.000/mes',
-      'Ruta extra: $29.000/mes',
-      'Todo lo del plan Profesional',
-    ],
-  },
+  { key: 'starter',      nombre: 'Inicial',      precio: 39000,  features: ['1 usuario', 'Hasta 150 clientes', '1 ruta', 'Dashboard basico'] },
+  { key: 'basic',        nombre: 'Basico',        precio: 59000,  features: ['1 usuario', 'Hasta 450 clientes', '1 ruta', 'Control de cartera'] },
+  { key: 'growth',       nombre: 'Crecimiento',  precio: 79000,  badge: 'Popular', features: ['2 usuarios', 'Hasta 1,000 clientes', '3 rutas', 'Lucas IA (20/dia)', 'Cierre de caja'] },
+  { key: 'standard',     nombre: 'Profesional',  precio: 119000, features: ['5 usuarios', 'Hasta 2,000 clientes', '6 rutas', 'Lucas IA (60/dia)', 'Reportes avanzados'] },
+  { key: 'professional', nombre: 'Empresarial',  precio: 259000, features: ['10 usuarios', 'Hasta 10,000 clientes', '10 rutas', 'Lucas IA (200/dia)', 'Reportes + exportacion'] },
 ]
 
-const BeakerIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 inline-block mr-1 align-middle" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15M14.25 3.104c.251.023.501.05.75.082M19.8 15a2.25 2.25 0 0 1 .45 2.311l-.987 2.963c-.43 1.292-1.643 2.226-3.063 2.226H7.8c-1.42 0-2.633-.934-3.063-2.226L3.75 17.31A2.25 2.25 0 0 1 4.2 15h15.6Z" />
-  </svg>
-)
+const planTest = { key: 'test', nombre: 'Test', precio: 1500, features: ['Solo testing interno', 'NO usar en produccion'] }
+
+const WHATSAPP_SOPORTE = '573011993001'
+const whatsappLink = (msg) => `https://wa.me/${WHATSAPP_SOPORTE}?text=${encodeURIComponent(msg)}`
 
 const Spinner = () => (
   <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
@@ -96,23 +29,38 @@ const Spinner = () => (
   </svg>
 )
 
-const WHATSAPP_SOPORTE = '573011993001'
-const whatsappLink = (mensaje) =>
-  `https://wa.me/${WHATSAPP_SOPORTE}?text=${encodeURIComponent(mensaje)}`
+// ── Usage bar ──────────────────────────────────────────────
+function UsageBar({ label, usado, limite }) {
+  if (!limite || limite <= 0) return null
+  const pct = Math.min((usado / limite) * 100, 100)
+  const high = pct >= 80
 
-const planTest = {
-  key: 'test',
-  nombre: 'Test ($1.500)',
-  precio: 1500,
-  badge: 'Solo pruebas',
-  badgeIcon: true,
-  features: [
-    'Solo para testing interno',
-    'NO usar en producción',
-    'Activa 30 días',
-  ],
+  return (
+    <div
+      className="flex items-center justify-between gap-4 px-4 py-3"
+      style={{ borderBottom: '1px solid var(--color-border)' }}
+    >
+      <span className="text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>{label}</span>
+      <div className="flex items-center gap-3 flex-1 max-w-[200px]">
+        <div className="flex-1 h-[5px] rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
+          <div
+            className="h-full rounded-full transition-all duration-500"
+            style={{
+              width: `${pct}%`,
+              background: high ? 'var(--color-warning)' : 'var(--color-accent)',
+            }}
+          />
+        </div>
+        <span className="text-[12px] font-mono-display font-medium tabular whitespace-nowrap" style={{ color: high ? 'var(--color-warning)' : 'var(--color-text-primary)' }}>
+          {usado.toLocaleString('es-CO')}
+          <span style={{ color: 'var(--color-text-muted)' }}> / {limite.toLocaleString('es-CO')}</span>
+        </span>
+      </div>
+    </div>
+  )
 }
 
+// ── Main ───────────────────────────────────────────────────
 export default function PlanPage() {
   const online = useOnline()
   if (!online) return <OfflineFallback titulo="La gestion de plan requiere conexion" descripcion="Los pagos y cambios de plan necesitan red." volverHref="/configuracion" volverLabel="Volver a Configuracion" />
@@ -124,32 +72,38 @@ function PlanPageInner() {
   const esSuperadmin = session?.user?.rol === 'superadmin'
 
   const [estado,       setEstado]       = useState(null)
+  const [uso,          setUso]          = useState(null)
   const [cargando,     setCargando]     = useState('')
   const [loadEstado,   setLoadEstado]   = useState(true)
   const [periodo,      setPeriodo]      = useState('mensual')
-  const [modoPago,     setModoPago]     = useState('suscripcion') // 'suscripcion' | 'pago_unico'
+  const [modoPago,     setModoPago]     = useState('suscripcion')
   const [descuentoOrg, setDescuentoOrg] = useState(0)
+  const [showPlanes,   setShowPlanes]   = useState(false)
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await fetch('/api/pagos/estado')
-        if (res.ok) {
-          const data = await res.json()
-          setEstado(data)
-          setDescuentoOrg(data.descuento ?? 0)
-        }
-      } catch { /* ignore */ } finally {
-        setLoadEstado(false)
-      }
-    }
-    if (!authLoading) load()
+    if (authLoading) return
+    Promise.all([
+      fetch('/api/pagos/estado').then(r => r.ok ? r.json() : null),
+      fetch('/api/plan/uso').then(r => r.ok ? r.json() : null),
+    ]).then(([est, u]) => {
+      if (est) { setEstado(est); setDescuentoOrg(est.descuento ?? 0) }
+      if (u) setUso(u)
+    }).catch(() => {}).finally(() => setLoadEstado(false))
   }, [authLoading])
 
   const planActual = estado?.plan ?? session?.user?.plan ?? 'starter'
   const tieneRecurrente = estado?.tieneRecurrenteActiva
   const subCancelada = !!estado?.canceladaAt && estado?.tipo === 'recurrente'
+  const infoPlan = [...planes, planTest].find(p => p.key === planActual) || planes[0]
+  const orgNombre = session?.user?.nombreOrganizacion || session?.user?.name || ''
 
+  // Next plan up for upgrade CTA
+  const planIndex = planes.findIndex(p => p.key === planActual)
+  const nextPlan = planIndex >= 0 && planIndex < planes.length - 1 ? planes[planIndex + 1] : null
+
+  const formatFecha = (f) => f ? new Date(f).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' }) : ''
+
+  // ── Payment flows (preserved from original) ──
   const calcularPrecio = (precioBase) => {
     const meses = periodo === 'anual' ? 12 : periodo === 'trimestral' ? 3 : 1
     const mesesCobrados = periodo === 'anual' ? 10 : meses
@@ -163,411 +117,445 @@ function PlanPageInner() {
     return { total, conDescuento, descuentoFinal, meses, ahorro }
   }
 
-  // Pago único (flujo existente)
   const elegirPlan = async (plan) => {
     if (plan === planActual && periodo === 'mensual') return
     setCargando(plan + '-unico')
     try {
       const res = await fetch('/api/pagos/crear-preferencia', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan, periodo }),
       })
       const data = await res.json()
       if (!res.ok) {
         const msg = data.error ?? 'Error al crear el pago'
-        if (confirm(`${msg}\n\n¿Quieres contactar a soporte por WhatsApp?`)) {
+        if (confirm(`${msg}\n\n¿Quieres contactar a soporte por WhatsApp?`))
           window.open(whatsappLink(`Hola, tuve un problema al pagar el plan ${plan} (${periodo}). Error: ${msg}`), '_blank')
-        }
         return
       }
       window.location.href = data.initPoint
     } catch {
-      if (confirm('Error de conexión.\n\n¿Quieres contactar a soporte por WhatsApp?')) {
-        window.open(whatsappLink(`Hola, tuve un error de conexión al pagar el plan ${plan}.`), '_blank')
-      }
-    } finally {
-      setCargando('')
-    }
+      if (confirm('Error de conexion.\n\n¿Quieres contactar a soporte por WhatsApp?'))
+        window.open(whatsappLink(`Hola, tuve un error de conexion al pagar el plan ${plan}.`), '_blank')
+    } finally { setCargando('') }
   }
 
-  // Suscripción recurrente
   const crearSuscripcion = async (plan) => {
     setCargando(plan + '-sub')
     try {
       const res = await fetch('/api/pagos/crear-suscripcion', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan, periodo }),
       })
       const data = await res.json()
       if (!res.ok) {
-        const msg = data.error ?? 'Error al crear la suscripción'
-        if (confirm(`${msg}\n\n¿Quieres contactar a soporte por WhatsApp?`)) {
-          window.open(whatsappLink(`Hola, tuve un problema al crear la suscripción del plan ${plan}. Error: ${msg}`), '_blank')
-        }
+        const msg = data.error ?? 'Error al crear la suscripcion'
+        if (confirm(`${msg}\n\n¿Quieres contactar a soporte por WhatsApp?`))
+          window.open(whatsappLink(`Hola, tuve un problema al crear la suscripcion del plan ${plan}. Error: ${msg}`), '_blank')
         return
       }
       window.location.href = data.initPoint
     } catch {
-      if (confirm('Error de conexión.\n\n¿Quieres contactar a soporte por WhatsApp?')) {
-        window.open(whatsappLink(`Hola, tuve un error de conexión al crear la suscripción del plan ${plan}.`), '_blank')
-      }
-    } finally {
-      setCargando('')
-    }
+      if (confirm('Error de conexion.\n\n¿Quieres contactar a soporte por WhatsApp?'))
+        window.open(whatsappLink(`Hola, tuve un error de conexion al crear la suscripcion del plan ${plan}.`), '_blank')
+    } finally { setCargando('') }
   }
 
-  // Cancelar suscripción
   const cancelarSuscripcion = async () => {
-    if (!confirm('Se cancelarán los cobros automáticos. Mantendrás acceso hasta la fecha de vencimiento.')) return
+    if (!confirm('Se cancelaran los cobros automaticos. Mantendras acceso hasta la fecha de vencimiento.')) return
     setCargando('cancelando')
     try {
       const res = await fetch('/api/pagos/cancelar-suscripcion', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       })
-      if (res.ok) {
-        window.location.reload()
-      } else {
-        const data = await res.json()
-        alert(data.error ?? 'Error al cancelar')
-      }
-    } catch {
-      alert('Error de conexión')
-    } finally {
-      setCargando('')
-    }
+      if (res.ok) window.location.reload()
+      else { const d = await res.json(); alert(d.error ?? 'Error al cancelar') }
+    } catch { alert('Error de conexion') }
+    finally { setCargando('') }
   }
 
+  // ── Loading state ──
   if (authLoading || loadEstado) {
     return (
-      <div className="max-w-7xl mx-auto space-y-4 px-2 sm:px-4 lg:px-6">
+      <div className="max-w-lg mx-auto space-y-4 px-4 pt-6">
         <SkeletonCard /><SkeletonCard />
       </div>
     )
   }
 
-  const formatFecha = (fecha) => {
-    if (!fecha) return ''
-    return new Date(fecha).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })
-  }
+  const esTrial = estado?.estado !== 'activa' || (!tieneRecurrente && !estado?.mercadopagoId)
+  const precioConIva = Math.round(infoPlan.precio * 1.19)
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 px-2 sm:px-4 lg:px-6">
-      <div className="text-center rounded-[18px] border border-[var(--color-border)] bg-[var(--color-bg-card)] p-5 sm:p-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-[var(--color-text-primary)]">Elige tu plan</h1>
-        <p className="text-sm sm:text-base text-[var(--color-text-muted)] mt-2 max-w-2xl mx-auto">
-          {estado?.estado === 'activa'
-            ? `Tu plan actual: ${[planTest, ...planes].find(p => p.key === planActual)?.nombre || planActual}. Cambia cuando quieras.`
-            : 'Selecciona el plan que mejor se adapte a tu negocio.'}
+    <div className="max-w-lg mx-auto px-4 pb-12 space-y-5">
+
+      {/* ── Header ── */}
+      <div className="pt-2">
+        <h1 className="text-[28px] font-normal leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+          Mi <em style={{ fontStyle: 'italic', color: 'var(--color-accent)' }}>plan</em>
+        </h1>
+        <p className="text-[13px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+          {orgNombre}{orgNombre ? ' · ' : ''}{infoPlan.nombre}
         </p>
-        {estado?.diasRestantes != null && estado.estado === 'activa' && (
-          <p className="text-xs sm:text-sm text-[var(--color-success)] mt-2">
-            {estado.diasRestantes} días restantes en tu suscripción
-            {tieneRecurrente && ' (renovación automática)'}
-            {subCancelada && ' (cancelada, no se renovará)'}
-          </p>
-        )}
-        {tieneRecurrente && estado?.proximoCobroAt && !subCancelada && (
-          <p className="text-[11px] text-[var(--color-text-muted)] mt-1">
-            Próximo cobro: {formatFecha(estado.proximoCobroAt)}
-          </p>
-        )}
       </div>
 
-      {/* Toggle Suscripción / Pago único */}
-      <div className="flex justify-center px-1">
-        <div className="inline-flex bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[14px] p-1.5 shadow-[0_8px_20px_rgba(0,0,0,0.25)]">
-          <button
-            onClick={() => setModoPago('suscripcion')}
-            className={[
-              'px-4 sm:px-5 py-2.5 rounded-[10px] text-sm font-semibold transition-all flex items-center gap-1.5',
-              modoPago === 'suscripcion'
-                ? 'bg-[var(--color-accent)] text-[#1a1a2e]'
-                : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]',
-            ].join(' ')}
-          >
-            Suscripción
-            <span className={[
-              'text-[10px] font-bold px-1.5 py-0.5 rounded-full',
-              modoPago === 'suscripcion'
-                ? 'bg-[var(--color-bg-base)] text-[var(--color-accent)]'
-                : 'bg-[var(--color-success)] text-[var(--color-text-primary)]',
-            ].join(' ')}>
-              Recomendado
-            </span>
-          </button>
-          <button
-            onClick={() => setModoPago('pago_unico')}
-            className={[
-              'px-4 sm:px-5 py-2.5 rounded-[10px] text-sm font-semibold transition-all',
-              modoPago === 'pago_unico'
-                ? 'bg-[var(--color-accent)] text-[#1a1a2e]'
-                : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]',
-            ].join(' ')}
-          >
-            Pago único
-          </button>
+      {/* ── Plan Actual card ── */}
+      <div
+        className="rounded-[16px] p-5 relative overflow-hidden"
+        style={{
+          background: 'var(--color-bg-card)',
+          border: '1px solid var(--color-border)',
+        }}
+      >
+        {/* Decorative gradient blob */}
+        <div className="absolute top-0 right-0 w-32 h-32 rounded-full" style={{
+          background: 'radial-gradient(circle, rgba(245,197,24,0.08) 0%, transparent 70%)',
+          transform: 'translate(30%, -30%)',
+        }} />
+
+        <p className="text-[10px] font-semibold uppercase tracking-[0.1em] mb-3 font-mono-display" style={{ color: 'var(--color-accent)' }}>
+          Plan actual
+        </p>
+        <h2 className="text-[32px] font-normal leading-none mb-1 serif" style={{ color: 'var(--color-text-primary)' }}>
+          {infoPlan.nombre}
+        </h2>
+        <p className="text-[13px] mb-4" style={{ color: 'var(--color-text-muted)' }}>
+          Hasta {(uso?.clientes?.limite || 0).toLocaleString('es-CO')} clientes · {(uso?.usuarios?.limite || 1)} {(uso?.usuarios?.limite || 1) === 1 ? 'usuario' : 'usuarios'}
+        </p>
+
+        <div className="flex items-baseline gap-1">
+          <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>$</span>
+          <span className="text-[32px] font-bold leading-none font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
+            {infoPlan.precio.toLocaleString('es-CO')}
+          </span>
+          <span className="text-[12px] font-mono-display" style={{ color: 'var(--color-text-muted)' }}>/mes + IVA</span>
         </div>
       </div>
 
-      {/* Periodo toggle — solo para pago único */}
-      {modoPago === 'pago_unico' && (
-        <div className="flex justify-center px-1">
-          <div className="inline-flex bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[14px] p-1.5 overflow-x-auto max-w-full">
-            {[
-              { key: 'mensual',    label: 'Mensual',    badge: null },
-              { key: 'trimestral', label: 'Trimestral', badge: '-10%' },
-              { key: 'anual',      label: 'Anual',      badge: '2 meses gratis' },
-            ].map((p) => (
-              <button
-                key={p.key}
-                onClick={() => setPeriodo(p.key)}
-                className={[
-                  'px-3 sm:px-4 py-2.5 rounded-[10px] text-sm font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap',
-                  periodo === p.key
-                    ? 'bg-[var(--color-accent)] text-[#1a1a2e]'
-                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]',
-                ].join(' ')}
-              >
-                {p.label}
-                {p.badge && (
-                  <span className={[
-                    'text-[10px] font-bold px-1.5 py-0.5 rounded-full font-mono-display',
-                    periodo === p.key
-                      ? 'bg-[var(--color-bg-base)] text-[var(--color-accent)]'
-                      : 'bg-[var(--color-success)] text-[var(--color-text-primary)]',
-                  ].join(' ')}>
-                    {p.badge}
-                  </span>
-                )}
-              </button>
-            ))}
+      {/* ── Tiempo restante / Proximo cobro ── */}
+      <div
+        className="rounded-[16px] p-5"
+        style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+      >
+        {esTrial ? (
+          <>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] mb-2 font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
+              Prueba gratuita
+            </p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-[28px] font-bold font-mono-display leading-none" style={{ color: estado?.diasRestantes > 3 ? 'var(--color-text-primary)' : 'var(--color-warning)' }}>
+                {estado?.diasRestantes ?? 0}
+              </span>
+              <span className="text-[13px]" style={{ color: 'var(--color-text-muted)' }}>dias restantes</span>
+            </div>
+            {estado?.fechaVencimiento && (
+              <p className="text-[11px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                Vence el {formatFecha(estado.fechaVencimiento)}
+              </p>
+            )}
+          </>
+        ) : (
+          <>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
+                {subCancelada ? 'Acceso hasta' : 'Proximo cobro'}
+              </p>
+              {tieneRecurrente && !subCancelada && (
+                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{
+                  background: 'var(--color-bg-hover)',
+                  border: '1px solid var(--color-border)',
+                  color: 'var(--color-text-muted)',
+                }}>
+                  {estado?.tipo === 'recurrente' ? 'Auto' : 'Manual'}
+                </span>
+              )}
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-[12px]" style={{ color: 'var(--color-text-muted)' }}>$</span>
+              <span className="text-[24px] font-bold font-mono-display leading-none" style={{ color: 'var(--color-text-primary)' }}>
+                {precioConIva.toLocaleString('es-CO')}
+              </span>
+            </div>
+            <p className="text-[11px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
+              {subCancelada
+                ? `Cancelada · acceso hasta ${formatFecha(estado?.fechaVencimiento)}`
+                : `${formatFecha(estado?.proximoCobroAt || estado?.fechaVencimiento)} · IVA incluido`}
+            </p>
+            {estado?.diasRestantes != null && (
+              <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-success)' }}>
+                {estado.diasRestantes} dias restantes
+                {tieneRecurrente && !subCancelada && ' (renovacion automatica)'}
+              </p>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* ── Uso actual ── */}
+      {uso && (
+        <div className="rounded-[16px] overflow-hidden" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] px-4 pt-4 pb-2 font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
+            Uso actual
+          </p>
+          <UsageBar label="Clientes"   usado={uso.clientes.usado}      limite={uso.clientes.limite} />
+          <UsageBar label="Usuarios"   usado={uso.usuarios.usado}      limite={uso.usuarios.limite} />
+          <UsageBar label="Rutas"      usado={uso.rutas.usado}         limite={uso.rutas.limite} />
+          {uso.lucasMensajes.limite > 0 && (
+            <UsageBar label="Lucas IA (hoy)" usado={uso.lucasMensajes.usado} limite={uso.lucasMensajes.limite} />
+          )}
+        </div>
+      )}
+
+      {/* ── Upgrade / Cancel CTAs ── */}
+      <div className="space-y-2">
+        {nextPlan && (
+          <button
+            onClick={() => setShowPlanes(v => !v)}
+            className="w-full h-12 rounded-[14px] text-[14px] font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+            style={{ background: 'var(--color-accent)', color: '#0a0a0a' }}
+          >
+            {showPlanes ? 'Ocultar planes' : `Mejorar a ${nextPlan.nombre}`}
+          </button>
+        )}
+        {!nextPlan && !showPlanes && (
+          <button
+            onClick={() => setShowPlanes(v => !v)}
+            className="w-full h-12 rounded-[14px] text-[14px] font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+            style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+          >
+            {showPlanes ? 'Ocultar planes' : 'Ver todos los planes'}
+          </button>
+        )}
+
+        {tieneRecurrente && !subCancelada && (
+          <button
+            onClick={cancelarSuscripcion}
+            disabled={!!cargando}
+            className="w-full h-10 rounded-[12px] text-[12px] font-medium flex items-center justify-center gap-1 transition-colors disabled:opacity-60"
+            style={{ color: 'var(--color-danger)' }}
+          >
+            {cargando === 'cancelando' ? <><Spinner /> Cancelando...</> : 'Cancelar suscripcion'}
+          </button>
+        )}
+      </div>
+
+      {/* ── Plan selector (expandable) ── */}
+      {showPlanes && (
+        <div className="space-y-5 pt-2">
+          <div className="text-center">
+            <h2 className="text-[20px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+              Cambiar plan
+            </h2>
+            <p className="text-[12px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
+              El cambio aplica inmediatamente.
+            </p>
+          </div>
+
+          {/* Payment mode toggle */}
+          <div className="flex justify-center">
+            <div className="inline-flex rounded-[12px] p-1" style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)' }}>
+              {['suscripcion', 'pago_unico'].map(m => (
+                <button
+                  key={m}
+                  onClick={() => setModoPago(m)}
+                  className="px-4 py-2 rounded-[8px] text-[12px] font-semibold transition-all flex items-center gap-1.5"
+                  style={modoPago === m
+                    ? { background: 'var(--color-accent)', color: '#0a0a0a' }
+                    : { color: 'var(--color-text-muted)' }
+                  }
+                >
+                  {m === 'suscripcion' ? 'Suscripcion' : 'Pago unico'}
+                  {m === 'suscripcion' && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{
+                      background: modoPago === m ? 'rgba(0,0,0,0.15)' : 'var(--color-success)',
+                      color: modoPago === m ? '#0a0a0a' : '#fff',
+                    }}>Rec.</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Period toggle for pago unico */}
+          {modoPago === 'pago_unico' && (
+            <div className="flex justify-center">
+              <div className="inline-flex rounded-[12px] p-1 overflow-x-auto" style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)' }}>
+                {[
+                  { key: 'mensual', label: 'Mensual' },
+                  { key: 'trimestral', label: 'Trimestral', badge: '-10%' },
+                  { key: 'anual', label: 'Anual', badge: '2 gratis' },
+                ].map(p => (
+                  <button
+                    key={p.key}
+                    onClick={() => setPeriodo(p.key)}
+                    className="px-3 py-2 rounded-[8px] text-[12px] font-semibold transition-all flex items-center gap-1 whitespace-nowrap"
+                    style={periodo === p.key
+                      ? { background: 'var(--color-accent)', color: '#0a0a0a' }
+                      : { color: 'var(--color-text-muted)' }
+                    }
+                  >
+                    {p.label}
+                    {p.badge && (
+                      <span className="text-[9px] font-bold px-1 py-0.5 rounded-full font-mono-display" style={{
+                        background: periodo === p.key ? 'rgba(0,0,0,0.15)' : 'var(--color-success)',
+                        color: periodo === p.key ? '#0a0a0a' : '#fff',
+                      }}>{p.badge}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {esSuperadmin && (
+            <p className="text-[10px] text-center" style={{ color: 'var(--color-text-muted)' }}>
+              Modo superadmin — plan test disponible
+            </p>
+          )}
+
+          {/* Plan cards */}
+          <div className="space-y-3">
+            {(esSuperadmin ? [planTest, ...planes] : planes).map((p) => {
+              const esActual = p.key === planActual
+              const esSub = modoPago === 'suscripcion'
+              const esTest = p.key === 'test'
+              const esRecurrActiva = tieneRecurrente && esActual && !subCancelada
+              const { conDescuento, descuentoFinal, meses, ahorro } = calcularPrecio(p.precio)
+              const tieneDesc = !esSub && descuentoFinal > 0
+
+              return (
+                <div
+                  key={p.key}
+                  className="rounded-[14px] p-4 transition-all"
+                  style={{
+                    background: esActual ? 'rgba(245,197,24,0.04)' : 'var(--color-bg-card)',
+                    border: esActual
+                      ? '1.5px solid rgba(245,197,24,0.4)'
+                      : esTest
+                      ? '1px dashed var(--color-border-hover)'
+                      : '1px solid var(--color-border)',
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[14px] font-semibold" style={{ color: esActual ? 'var(--color-accent)' : 'var(--color-text-primary)' }}>
+                        {p.nombre}
+                      </span>
+                      {p.badge && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--color-accent)', color: '#0a0a0a' }}>
+                          {p.badge}
+                        </span>
+                      )}
+                      {esRecurrActiva && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--color-success)', color: '#fff' }}>
+                          Activo
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      {tieneDesc ? (
+                        <div>
+                          <span className="text-[10px] line-through font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
+                            {formatCOP(p.precio * meses)}
+                          </span>
+                          <span className="text-[14px] font-bold font-mono-display ml-1" style={{ color: 'var(--color-text-primary)' }}>
+                            {formatCOP(conDescuento)}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-[14px] font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
+                          {formatCOP(esSub ? p.precio : conDescuento)}
+                          <span className="text-[10px] font-normal" style={{ color: 'var(--color-text-muted)' }}>
+                            /{esSub ? 'mes' : meses === 12 ? 'ano' : meses === 3 ? 'trim.' : 'mes'}
+                          </span>
+                        </span>
+                      )}
+                      {ahorro > 0 && !esSub && (
+                        <p className="text-[9px] font-mono-display" style={{ color: 'var(--color-success)' }}>
+                          Ahorras {formatCOP(ahorro)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mb-3">
+                    {p.features.map((f, i) => (
+                      <span key={i} className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                        {f}
+                      </span>
+                    ))}
+                  </div>
+
+                  {esRecurrActiva ? (
+                    <div className="h-9 rounded-[10px] flex items-center justify-center text-[12px] font-semibold" style={{
+                      background: 'var(--color-bg-hover)', color: 'var(--color-success)',
+                    }}>
+                      Plan actual
+                    </div>
+                  ) : subCancelada && esActual ? (
+                    <button
+                      onClick={() => esSub ? crearSuscripcion(p.key) : elegirPlan(p.key)}
+                      disabled={!!cargando}
+                      className="w-full h-9 rounded-[10px] text-[12px] font-semibold transition-all disabled:opacity-60 active:scale-[0.98]"
+                      style={{ background: 'var(--color-accent)', color: '#0a0a0a' }}
+                    >
+                      {cargando ? <><Spinner /> Procesando...</> : 'Renovar'}
+                    </button>
+                  ) : esSub && !esTest ? (
+                    <button
+                      onClick={() => crearSuscripcion(p.key)}
+                      disabled={!!cargando}
+                      className="w-full h-9 rounded-[10px] text-[12px] font-semibold transition-all disabled:opacity-60 active:scale-[0.98]"
+                      style={{
+                        background: esActual ? 'var(--color-bg-hover)' : 'var(--color-accent)',
+                        color: esActual ? 'var(--color-text-muted)' : '#0a0a0a',
+                      }}
+                    >
+                      {cargando === p.key + '-sub' ? <><Spinner /> Procesando...</> : esActual ? 'Plan actual' : tieneRecurrente ? 'Cambiar' : 'Suscribirme'}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => elegirPlan(p.key)}
+                      disabled={(esActual && periodo === 'mensual') || !!cargando}
+                      className="w-full h-9 rounded-[10px] text-[12px] font-semibold transition-all disabled:opacity-60 active:scale-[0.98]"
+                      style={{
+                        background: esActual && periodo === 'mensual' ? 'var(--color-bg-hover)' : 'var(--color-accent)',
+                        color: esActual && periodo === 'mensual' ? 'var(--color-text-muted)' : '#0a0a0a',
+                      }}
+                    >
+                      {cargando === p.key + '-unico' ? <><Spinner /> Procesando...</> : esActual && periodo === 'mensual' ? 'Plan actual' : 'Pagar'}
+                    </button>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
 
-      {/* Info suscripción */}
-      {modoPago === 'suscripcion' && (
-        <div className="text-center">
-          <p className="text-xs text-[var(--color-text-muted)]">
-            Se cobra automáticamente cada mes. Puedes cancelar en cualquier momento.
-          </p>
-        </div>
-      )}
-
-      {descuentoOrg > 0 && modoPago === 'pago_unico' && (
-        <div className="text-center">
-          <Badge variant="green">Descuento especial: {descuentoOrg}%</Badge>
-        </div>
-      )}
-
-      {esSuperadmin && (
-        <div className="border border-dashed border-[var(--color-border-hover)] rounded-[12px] p-3 text-center">
-          <p className="text-xs text-[var(--color-text-muted)]">Modo superadmin — plan de prueba disponible</p>
-        </div>
-      )}
-
-      <div className={`grid grid-cols-1 gap-5 ${esSuperadmin ? 'sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6' : 'sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5'}`}>
-        {(esSuperadmin ? [planTest, ...planes] : planes).map((p) => {
-          const esPlanActual = p.key === planActual
-          const esPopular    = p.badge === 'Más popular'
-          const esTest       = p.key === 'test'
-          const esRecurrenteActiva = tieneRecurrente && esPlanActual && !subCancelada
-
-          // Para suscripción: precio mensual del plan
-          // Para pago único: precio con descuento según periodo
-          const esSub = modoPago === 'suscripcion'
-          const { total, conDescuento, descuentoFinal, meses, ahorro } = calcularPrecio(p.precio)
-          const tieneDescuento = !esSub && descuentoFinal > 0
-
-          const glowColor = esRecurrenteActiva ? 'var(--color-success)' : esPopular ? 'var(--color-success)' : esPlanActual ? 'var(--color-accent)' : esTest ? 'var(--color-info)' : null
-
-          return (
-            <div
-              key={p.key}
-              className={[
-                'relative border rounded-[18px] p-6 flex flex-col transition-all min-h-[520px]',
-                esRecurrenteActiva
-                  ? 'border-[#22c55e] ring-1 ring-[rgba(34,197,94,0.3)]'
-                  : esPopular
-                  ? 'border-[#f5c518] ring-1 ring-[rgba(245,197,24,0.3)]'
-                  : esTest
-                  ? 'border-dashed border-[var(--color-border-hover)]'
-                  : 'border-[var(--color-border)]',
-              ].join(' ')}
-              style={glowColor ? {
-                background: `linear-gradient(135deg, ${glowColor}0A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, ${glowColor}05 100%)`,
-                boxShadow: `0 0 30px ${glowColor}08, 0 1px 2px rgba(0,0,0,0.3)`,
-              } : { background: 'var(--color-bg-card)' }}
-            >
-              {esRecurrenteActiva && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[var(--color-bg-base)] text-[var(--color-success)] border border-[#22c55e]">
-                    Suscripción activa
-                  </span>
-                </div>
-              )}
-              {!esRecurrenteActiva && esPopular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[var(--color-bg-base)] text-[var(--color-accent)] border border-[#f5c518]">
-                    Más popular
-                  </span>
-                </div>
-              )}
-
-              <div className="mb-4 mt-1">
-                <p className="text-base font-semibold text-[var(--color-text-primary)]">
-                  {esTest && <BeakerIcon />}
-                  {p.nombre}
-                </p>
-                {esTest && (
-                  <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">Solo superadmin · no usar en producción</p>
-                )}
-
-                {esSub ? (
-                  // Suscripción: precio mensual simple
-                  <p className="text-3xl font-bold text-[var(--color-text-primary)] mt-2 leading-none">
-                    <span className="font-mono-display">{formatCOP(p.precio)}</span>
-                    <span className="text-xs text-[var(--color-text-muted)] font-normal ml-1">/mes</span>
-                  </p>
-                ) : tieneDescuento ? (
-                  <div className="mt-2">
-                    <p className="text-sm text-[var(--color-text-muted)] line-through font-mono-display">{formatCOP(total)}</p>
-                    <p className="text-3xl font-bold text-[var(--color-text-primary)] leading-none">
-                      <span className="font-mono-display">{formatCOP(conDescuento)}</span>
-                      <span className="text-xs text-[var(--color-text-muted)] font-normal ml-1">
-                        /{meses === 12 ? 'año' : meses === 3 ? '3 meses' : 'mes'}
-                      </span>
-                    </p>
-                    {ahorro > 0 && (
-                      <p className="text-[10px] text-[var(--color-success)] font-medium mt-0.5">
-                        Ahorras <span className="font-mono-display">{formatCOP(ahorro)}</span>
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-3xl font-bold text-[var(--color-text-primary)] mt-2 leading-none">
-                    <span className="font-mono-display">{formatCOP(esSub ? p.precio : conDescuento)}</span>
-                    <span className="text-xs text-[var(--color-text-muted)] font-normal ml-1">
-                      /{esSub ? 'mes' : meses === 12 ? 'año' : meses === 3 ? '3 meses' : 'mes'}
-                    </span>
-                  </p>
-                )}
-              </div>
-
-              <ul className="space-y-2.5 flex-1 mb-6">
-                {p.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm leading-snug text-[var(--color-text-secondary)]">
-                    <svg className="w-4 h-4 text-[var(--color-success)] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-
-              {/* Botones según modo y estado */}
-              <div className="space-y-2">
-                {esRecurrenteActiva ? (
-                  // Suscripción activa en este plan
-                  <>
-                    <div className="w-full h-10 rounded-[12px] bg-[var(--color-bg-hover)] text-[var(--color-success)] text-sm font-semibold flex items-center justify-center gap-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      Plan actual
-                    </div>
-                    <button
-                      onClick={cancelarSuscripcion}
-                      disabled={!!cargando}
-                      className="w-full h-9 rounded-[10px] text-xs font-medium text-[var(--color-danger)] hover:bg-[var(--color-danger-dim)] transition-all cursor-pointer disabled:opacity-60 flex items-center justify-center gap-1"
-                    >
-                      {cargando === 'cancelando' ? <><Spinner /> Cancelando...</> : 'Cancelar suscripción'}
-                    </button>
-                  </>
-                ) : subCancelada && esPlanActual ? (
-                  // Suscripción cancelada pero aún activa
-                  <>
-                    <div className="w-full h-10 rounded-[12px] bg-[var(--color-bg-hover)] text-[var(--color-warning)] text-sm font-semibold flex items-center justify-center text-center px-2">
-                      Cancelada — acceso hasta {formatFecha(estado?.fechaVencimiento)}
-                    </div>
-                    <button
-                      onClick={() => esSub ? crearSuscripcion(p.key) : elegirPlan(p.key)}
-                      disabled={!!cargando}
-                      className="w-full h-9 rounded-[10px] text-xs font-medium bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[#0a0a0a] transition-all cursor-pointer disabled:opacity-60 flex items-center justify-center gap-1"
-                    >
-                      {cargando ? <><Spinner /> Procesando...</> : 'Renovar'}
-                    </button>
-                  </>
-                ) : esSub && !esTest ? (
-                  // Modo suscripción — botón principal (no disponible para plan test)
-                  <button
-                    onClick={() => crearSuscripcion(p.key)}
-                    disabled={!!cargando}
-                    className={[
-                      'w-full h-11 rounded-[12px] text-sm font-semibold transition-all flex items-center justify-center gap-2',
-                      'bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[#0a0a0a] cursor-pointer disabled:opacity-60',
-                    ].join(' ')}
-                  >
-                    {cargando === p.key + '-sub' ? (
-                      <><Spinner /> Procesando...</>
-                    ) : tieneRecurrente ? 'Cambiar a este plan' : 'Suscribirse'}
-                  </button>
-                ) : (
-                  // Modo pago único
-                  <button
-                    onClick={() => elegirPlan(p.key)}
-                    disabled={(esPlanActual && periodo === 'mensual') || !!cargando}
-                    className={[
-                      'w-full h-11 rounded-[12px] text-sm font-semibold transition-all flex items-center justify-center gap-2',
-                      esPlanActual && periodo === 'mensual'
-                        ? 'bg-[var(--color-bg-hover)] text-[var(--color-text-muted)] cursor-default'
-                        : 'bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[#0a0a0a] cursor-pointer disabled:opacity-60',
-                    ].join(' ')}
-                  >
-                    {cargando === p.key + '-unico' ? (
-                      <><Spinner /> Procesando...</>
-                    ) : esPlanActual && periodo === 'mensual'
-                      ? 'Plan actual'
-                      : periodo === 'anual' ? 'Pagar año' : periodo === 'trimestral' ? 'Pagar trimestre' : 'Pagar mes'}
-                  </button>
-                )}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Soporte por WhatsApp */}
-      <div className="rounded-[18px] border border-[var(--color-border)] bg-[var(--color-bg-card)] p-5 sm:p-6 flex flex-col sm:flex-row items-center gap-4 justify-between">
-        <div className="text-center sm:text-left">
-          <p className="text-sm font-semibold text-[var(--color-text-primary)]">
-            ¿Problemas con el pago o prefieres otro medio?
-          </p>
-          <p className="text-xs text-[var(--color-text-muted)] mt-1">
-            Escríbenos por WhatsApp y te ayudamos a activar tu plan (Nequi, transferencia y más).
-          </p>
+      {/* ── Support ── */}
+      <div className="rounded-[16px] p-4 flex items-center gap-3" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+        <div className="flex-1">
+          <p className="text-[12px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>Necesitas ayuda?</p>
+          <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Te ayudamos por WhatsApp con pagos y planes.</p>
         </div>
         <a
           href={whatsappLink('Hola, necesito ayuda con el pago de mi plan en Control Finanzas.')}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-4 h-10 rounded-[12px] bg-[#25D366] hover:bg-[#1ebe5b] text-white text-sm font-semibold transition-all whitespace-nowrap"
+          target="_blank" rel="noopener noreferrer"
+          className="shrink-0 h-9 px-3 rounded-[10px] flex items-center gap-1.5 text-[12px] font-semibold transition-all"
+          style={{ background: '#25D366', color: '#fff' }}
         >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
           </svg>
-          Contactar soporte
+          Soporte
         </a>
       </div>
 
       <FloatingWhatsApp
-        mensaje="Hola, necesito ayuda con el pago de mi plan en Control Finanzas."
-        label="Contactar soporte por WhatsApp"
-        texto="Ayuda con pago"
+        mensaje="Hola, necesito ayuda con mi plan en Control Finanzas."
+        label="Soporte WhatsApp"
+        texto="Ayuda"
         extraBottom={60}
       />
     </div>
