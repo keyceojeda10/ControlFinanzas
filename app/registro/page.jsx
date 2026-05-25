@@ -106,10 +106,17 @@ function PlanCard({ plan, selected, onSelect }) {
         </span>
       )}
 
-      <div className="flex items-baseline justify-between mb-1.5">
-        <span className="text-[13px] font-semibold" style={{ color: activo ? '#f5c518' : '#f0f0f5' }}>
-          {plan.nombre}
-        </span>
+      <div className="flex items-center justify-between mb-1.5">
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0" style={{
+            border: `2px solid ${activo ? '#f5c518' : 'rgba(255,255,255,0.15)'}`,
+          }}>
+            {activo && <div className="w-2 h-2 rounded-full" style={{ background: '#f5c518' }} />}
+          </div>
+          <span className="text-[13px] font-semibold" style={{ color: activo ? '#f5c518' : '#f0f0f5' }}>
+            {plan.nombre}
+          </span>
+        </div>
         <span className="font-mono-display text-[14px] font-bold" style={{ color: activo ? '#f5c518' : '#f0f0f5' }}>
           {formatPrecio(plan.precio)}
           <span className="text-[10px] font-normal" style={{ color: '#666' }}>/mes</span>
@@ -131,12 +138,6 @@ function PlanCard({ plan, selected, onSelect }) {
         ))}
       </ul>
 
-      {/* Radio indicator */}
-      <div className="absolute top-4 left-4 w-4 h-4 rounded-full flex items-center justify-center" style={{
-        border: `2px solid ${activo ? '#f5c518' : 'rgba(255,255,255,0.15)'}`,
-      }}>
-        {activo && <div className="w-2 h-2 rounded-full" style={{ background: '#f5c518' }} />}
-      </div>
     </button>
   )
 }
