@@ -4,7 +4,7 @@
 import { useSession } from 'next-auth/react'
 
 export function useAuth() {
-  const { data: session, status } = useSession()
+  const { data: session, status, update } = useSession()
   const loading = status === 'loading'
 
   const esOwner    = session?.user?.rol === 'owner'
@@ -13,6 +13,7 @@ export function useAuth() {
   return {
     session,
     loading,
+    updateSession: update,
     rol: session?.user?.rol ?? null,
     organizationId: session?.user?.organizationId ?? null,
     plan: session?.user?.plan ?? null,

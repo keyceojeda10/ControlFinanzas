@@ -41,7 +41,7 @@ const inputClass =
 // TAB 1 — MI PERFIL
 // ══════════════════════════════════════════════════════════════
 function TabPerfil() {
-  const { session } = useAuth()
+  const { session, updateSession } = useAuth()
   const [perfil,  setPerfil]  = useState(null)
   const [loading, setLoading] = useState(true)
   const [nombre,       setNombre]       = useState('')
@@ -89,9 +89,8 @@ function TabPerfil() {
       })
       if (res.ok) {
         setMsgAvatar({ tipo: 'success', texto: 'Avatar actualizado' })
-        // Refrescar sesion para que Header/Sidebar lo muestren
-        const event = new Event('visibilitychange')
-        document.dispatchEvent(event)
+        // Forzar refresh del JWT para que Header/Sidebar lo muestren al instante
+        if (updateSession) await updateSession()
       } else {
         setMsgAvatar({ tipo: 'error', texto: 'Error al guardar avatar' })
       }
