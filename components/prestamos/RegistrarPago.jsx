@@ -48,7 +48,7 @@ export default function RegistrarPago({
       : montoBase
 
     setMonto(String(montoFinal))
-    setTipo(presetPago?.tipo ?? (montoFinal > montoBase ? 'parcial' : 'completo'))
+    setTipo(presetPago?.tipo ?? (montoFinal >= montoBase ? 'completo' : 'parcial'))
     setDiasAbonados(null)
     setSliderVisual(1)
     setError('')
@@ -372,7 +372,7 @@ export default function RegistrarPago({
                 onClick={() => {
                   const montoFinal = Math.min(Math.round(prestamo.montoEnMora), Math.round(saldoPendiente ?? 0))
                   setMonto(String(montoFinal))
-                  setTipo('parcial')
+                  setTipo(montoFinal >= cuota ? 'completo' : 'parcial')
                   setDiasAbonados(diasParaMonto(montoFinal))
                 }}
                 className="h-10 rounded-[12px] border border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.08)] text-[var(--color-danger)] text-sm font-semibold hover:bg-[rgba(239,68,68,0.15)] transition-colors"
@@ -390,7 +390,7 @@ export default function RegistrarPago({
                 onClick={() => {
                   const montoFinal = Math.min(Math.round(prestamo.montoParaPonerseAlDia), Math.round(saldoPendiente ?? 0))
                   setMonto(String(montoFinal))
-                  setTipo('parcial')
+                  setTipo(montoFinal >= cuota ? 'completo' : 'parcial')
                   setDiasAbonados(diasParaMonto(montoFinal))
                 }}
                 className="h-10 rounded-[12px] border border-[rgba(245,197,24,0.3)] bg-[rgba(245,197,24,0.1)] text-[var(--color-accent)] text-sm font-semibold hover:bg-[rgba(245,197,24,0.18)] transition-colors"

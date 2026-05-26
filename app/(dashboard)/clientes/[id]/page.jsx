@@ -44,6 +44,7 @@ export default function ClienteDetallePage({ params }) {
   const [loading, setLoading]   = useState(true)
   const [error,   setError]     = useState('')
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false)
   const [deleteData, setDeleteData] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [modalWA, setModalWA] = useState(false)
@@ -402,7 +403,7 @@ export default function ClienteDetallePage({ params }) {
               label: 'Eliminar',
               color: '#ef4444',
               icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>,
-              onClick: handleDelete,
+              onClick: () => setShowConfirmDelete(true),
               disabled: actionLoading,
             }] : []),
           ]}
@@ -506,6 +507,44 @@ export default function ClienteDetallePage({ params }) {
               Ruta finalizada →
             </button>
           )}
+        </div>
+      )}
+
+      {/* Modal: confirmar eliminación */}
+      {showConfirmDelete && (
+        <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/70 px-0 sm:px-4" onClick={() => setShowConfirmDelete(false)}>
+          <div
+            className="w-full sm:max-w-sm bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-t-[20px] sm:rounded-[20px] p-5"
+            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 20px)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex flex-col items-center gap-3 mb-5">
+              <div className="w-12 h-12 rounded-full bg-[rgba(239,68,68,0.12)] flex items-center justify-center">
+                <svg className="w-6 h-6 text-[var(--color-danger)]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+              </div>
+              <h3 className="text-base font-semibold text-[var(--color-text-primary)]">Eliminar cliente</h3>
+              <p className="text-sm text-[var(--color-text-muted)] text-center">
+                Vas a eliminar a <span className="font-medium text-[var(--color-text-primary)]">{cliente.nombre}</span>. Esta accion no se puede deshacer.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowConfirmDelete(false)}
+                className="flex-1 h-11 rounded-[12px] border border-[var(--color-border)] text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)] transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => { setShowConfirmDelete(false); handleDelete() }}
+                disabled={actionLoading}
+                className="flex-1 h-11 rounded-[12px] bg-[var(--color-danger)] text-white text-sm font-semibold hover:bg-[#dc2626] transition-colors disabled:opacity-50"
+              >
+                {actionLoading ? 'Eliminando...' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
