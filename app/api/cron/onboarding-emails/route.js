@@ -48,7 +48,7 @@ export async function POST(req) {
     const owner = org.users[0]
     if (owner && owner.emailsMarketing) {
       const { subject, html } = emailOnboardingDia1({ nombre: owner.nombre, userId: owner.id })
-      await enviarEmail({ to: owner.email, subject, html }).catch(() => {})
+      await enviarEmail({ to: owner.email, subject, html }).catch(e => console.error('[Email] Fallo envio:', e.message))
       results.dia1++
     }
   }
@@ -70,7 +70,7 @@ export async function POST(req) {
         clientesCreados: org._count.clientes,
         userId: owner.id,
       })
-      await enviarEmail({ to: owner.email, subject, html }).catch(() => {})
+      await enviarEmail({ to: owner.email, subject, html }).catch(e => console.error('[Email] Fallo envio:', e.message))
       results.dia3++
     }
   }
@@ -87,7 +87,7 @@ export async function POST(req) {
     const owner = org.users[0]
     if (owner && owner.emailsMarketing) {
       const { subject, html } = emailOnboardingDia7({ nombre: owner.nombre, userId: owner.id })
-      await enviarEmail({ to: owner.email, subject, html }).catch(() => {})
+      await enviarEmail({ to: owner.email, subject, html }).catch(e => console.error('[Email] Fallo envio:', e.message))
       results.dia7++
     }
   }
@@ -104,7 +104,7 @@ export async function POST(req) {
     const owner = org.users[0]
     if (owner && owner.emailsMarketing) {
       const { subject, html } = emailOnboardingDia12({ nombre: owner.nombre, userId: owner.id })
-      await enviarEmail({ to: owner.email, subject, html }).catch(() => {})
+      await enviarEmail({ to: owner.email, subject, html }).catch(e => console.error('[Email] Fallo envio:', e.message))
       results.dia12++
     }
   }
@@ -121,7 +121,7 @@ export async function POST(req) {
     const owner = org.users[0]
     if (owner && owner.emailsMarketing) {
       const { subject, html } = emailOnboardingDia14({ nombre: owner.nombre, userId: owner.id })
-      await enviarEmail({ to: owner.email, subject, html }).catch(() => {})
+      await enviarEmail({ to: owner.email, subject, html }).catch(e => console.error('[Email] Fallo envio:', e.message))
       results.dia14++
     }
   }

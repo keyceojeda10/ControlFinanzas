@@ -143,7 +143,7 @@ export async function POST(req) {
 
     // Enviar email de verificación con codigo OTP
     const { subject: svf, html: hvf } = emailVerificacion({ nombre: nombre.trim(), codigo: resultado.user.tokenVerificacion })
-    enviarEmail({ to: emailNorm, subject: svf, html: hvf }).catch(() => {})
+    enviarEmail({ to: emailNorm, subject: svf, html: hvf }).catch(e => console.error('[Email] Fallo envio:', e.message))
 
     // Enviar email de bienvenida en background (no bloquea)
     const vencimiento = new Date()
@@ -154,7 +154,7 @@ export async function POST(req) {
       nombreOrg:        nombreOrganizacion.trim(),
       fechaVencimiento: vencimiento,
     })
-    enviarEmail({ to: emailNorm, subject, html }).catch(() => {})
+    enviarEmail({ to: emailNorm, subject, html }).catch(e => console.error('[Email] Fallo envio:', e.message))
 
     // Nota: la recompensa de referido (+30 días) se otorga cuando el referido
     // paga su primer plan, no al registrarse. Ver webhook de MercadoPago.
@@ -171,7 +171,7 @@ export async function POST(req) {
       prisma.lead.update({
         where: { id: leadAsociado.id },
         data: { estado: 'registrado', organizationId: resultado.org.id },
-      }).catch(() => {})
+      }).catch(e => console.error('[Email] Fallo envio:', e.message))
     }
 
     // Facebook CAPI: reportar conversión real con email + teléfono ingresado
@@ -179,7 +179,7 @@ export async function POST(req) {
       eventName: 'CompleteRegistration',
       email: emailNorm,
       phone: telefonoLimpio,
-    }).catch(() => {})
+    }).catch(e => console.error('[Email] Fallo envio:', e.message))
 
     return NextResponse.json({
       success: true,

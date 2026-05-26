@@ -135,7 +135,7 @@ export async function POST(req) {
             monto: sub.montoCOP,
             fechaVencimiento: nuevaFecha,
           })
-          enviarEmail({ to: owner.email, subject, html }).catch(() => {})
+          enviarEmail({ to: owner.email, subject, html }).catch(e => console.error('[Email] Fallo envio:', e.message))
         }
       }
 
@@ -213,7 +213,7 @@ export async function POST(req) {
             monto: invoice.transaction_amount ?? sub.montoCOP,
             fechaVencimiento: nuevaFecha,
           })
-          enviarEmail({ to: owner.email, subject, html }).catch(() => {})
+          enviarEmail({ to: owner.email, subject, html }).catch(e => console.error('[Email] Fallo envio:', e.message))
         }
       } else if (status === 'rejected') {
         // No desactivar — MP reintenta automáticamente
@@ -232,7 +232,7 @@ export async function POST(req) {
             plan: sub.plan,
             monto: invoice.transaction_amount ?? sub.montoCOP,
           })
-          enviarEmail({ to: ownerFallido.email, subject, html }).catch(() => {})
+          enviarEmail({ to: ownerFallido.email, subject, html }).catch(e => console.error('[Email] Fallo envio:', e.message))
         }
       }
 
@@ -414,7 +414,7 @@ export async function POST(req) {
                 nombreReferido: orgReferida?.nombre || 'Un referido',
                 userId: ownerRef.id,
               })
-              enviarEmail({ to: ownerRef.email, subject: sRef, html: hRef }).catch(() => {})
+              enviarEmail({ to: ownerRef.email, subject: sRef, html: hRef }).catch(e => console.error('[Email] Fallo envio:', e.message))
             }
           }
         }
@@ -440,7 +440,7 @@ export async function POST(req) {
           monto: payment.transaction_amount ?? 0,
           fechaVencimiento: fechaVenc,
         })
-        enviarEmail({ to: owner.email, subject, html }).catch(() => {})
+        enviarEmail({ to: owner.email, subject, html }).catch(e => console.error('[Email] Fallo envio:', e.message))
       }
     } else if (status === 'rejected' || status === 'cancelled') {
       const plan = sanitizarPlan(planRaw)
@@ -460,7 +460,7 @@ export async function POST(req) {
           plan: plan,
           monto: payment.transaction_amount ?? 0,
         })
-        enviarEmail({ to: ownerFallido.email, subject, html }).catch(() => {})
+        enviarEmail({ to: ownerFallido.email, subject, html }).catch(e => console.error('[Email] Fallo envio:', e.message))
       }
     }
     // pending e in_process: no hacer nada, esperar siguiente notificación

@@ -401,7 +401,7 @@ export async function PATCH(req, { params }) {
         monto: montoCOP,
         fechaVencimiento,
       })
-      enviarEmail({ to: owner.email, subject, html }).catch(() => {})
+      enviarEmail({ to: owner.email, subject, html }).catch(e => console.error('[Email] Fallo envio:', e.message))
     }
 
     return NextResponse.json({
