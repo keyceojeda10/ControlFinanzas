@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 import { buildContexto, buildSystemPrompt, buildContextoCobrador, buildSystemPromptCobrador, detectQueryComplexity } from '@/lib/asistente'
 import { getAsistenteLimiter } from '@/lib/rate-limit'
 import { planTieneIA } from '@/lib/planes'
@@ -12,10 +12,19 @@ import { obtenerMemorias, extraerYGuardarMemoria } from '@/lib/asistente-memoria
 
 export const dynamic = 'force-dynamic'
 
-if (!process.env.ANTHROPIC_API_KEY) {
-  console.error('[asistente] ANTHROPIC_API_KEY no está configurada — el asistente no funcionará')
+let _deepseek = null
+function getDeepSeek() {
+  if (!_deepseek) {
+    if (!process.env.DEEPSEEK_API_KEY) {
+      throw new Error('DEEPSEEK_API_KEY no está configurada')
+    }
+    _deepseek = new OpenAI({
+      apiKey: process.env.DEEPSEEK_API_KEY,
+      baseURL: 'https://api.deepseek.com',
+    })
+  }
+  return _deepseek
 }
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 // Build the displayData object shown in the confirmation card
 async function buildDisplayData(toolName, input, orgId) {
@@ -44,7 +53,6 @@ async function buildDisplayData(toolName, input, orgId) {
         fechaInicio: input.fechaInicio || hoy,
         frecuencia: input.frecuencia,
       })
-      // fechaFin es un Date con hora local 00:00 — usar UTC para evitar desfase de un día en servidores UTC
       const fechaFin = calc.fechaFin
         ? new Date(calc.fechaFin).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
         : '—'
@@ -85,7 +93,6 @@ async function buildDisplayData(toolName, input, orgId) {
       }
     }
     case 'adjust_capital': {
-      // Fetch current capital balance
       const capital = await prisma.capital.findFirst({
         where: { organizationId: orgId },
         select: { saldo: true },
@@ -134,7 +141,6 @@ async function buildDisplayData(toolName, input, orgId) {
       }
     }
     case 'register_payment': {
-      // Fetch préstamo para saldo actual
       let saldoActual = null
       try {
         const prestamo = await prisma.prestamo.findFirst({
@@ -182,6 +188,45 @@ async function buildDisplayData(toolName, input, orgId) {
   }
 }
 
+// Helper: run a DeepSeek streaming chat and collect tool calls
+async function runDeepSeekStream(params, controller, enc, emitTokens = true) {
+  const stream = await getDeepSeek().chat.completions.create({ ...params, stream: true })
+
+  let toolCalls = {} // indexed by tool call index
+  let textContent = ''
+
+  for await (const chunk of stream) {
+    const delta = chunk.choices?.[0]?.delta
+    if (!delta) continue
+
+    // Text tokens
+    if (delta.content && emitTokens) {
+      textContent += delta.content
+      controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: delta.content })}\n\n`))
+    }
+
+    // Tool call deltas — DeepSeek streams them in parts
+    if (delta.tool_calls) {
+      for (const tc of delta.tool_calls) {
+        const idx = tc.index
+        if (!toolCalls[idx]) toolCalls[idx] = { id: '', name: '', arguments: '' }
+        if (tc.id) toolCalls[idx].id = tc.id
+        if (tc.function?.name) toolCalls[idx].name = tc.function.name
+        if (tc.function?.arguments) toolCalls[idx].arguments += tc.function.arguments
+      }
+    }
+  }
+
+  // Parse tool call arguments
+  const parsedToolCalls = Object.values(toolCalls).map(tc => {
+    let input = {}
+    try { input = JSON.parse(tc.arguments) } catch {}
+    return { id: tc.id, name: tc.name, input }
+  }).filter(tc => tc.name)
+
+  return { textContent, toolCalls: parsedToolCalls }
+}
+
 export async function POST(req) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
@@ -194,7 +239,6 @@ export async function POST(req) {
     return NextResponse.json({ error: 'Sin permisos para usar el asistente' }, { status: 403 })
   }
 
-  // Plan check solo para owner
   if (isOwner && !planTieneIA(plan)) {
     return NextResponse.json({
       error: 'plan_upgrade_required',
@@ -203,7 +247,6 @@ export async function POST(req) {
     }, { status: 403 })
   }
 
-  // Rate limit por orgId — límite según plan
   const rl = getAsistenteLimiter(orgId, plan)
   if (!rl.ok) {
     return NextResponse.json({
@@ -216,7 +259,6 @@ export async function POST(req) {
   const { message, history = [] } = body
   if (!message?.trim()) return NextResponse.json({ error: 'Mensaje vacío' }, { status: 400 })
 
-  // Build context and prompt based on role
   const [ctx, memorias] = await Promise.all([
     isOwner
       ? buildContexto(orgId)
@@ -230,165 +272,145 @@ export async function POST(req) {
     ? buildSystemPrompt(ctx)
     : buildSystemPromptCobrador(ctx)
 
-  const complexity = detectQueryComplexity(message)
-  // Owners with tools always use Sonnet for better tool calling; cobradores always use Haiku
-  const model = isCobrador
-    ? 'claude-haiku-4-5-20251001'
-    : (complexity === 'simple' ? 'claude-haiku-4-5-20251001' : 'claude-sonnet-4-6')
+  // DeepSeek: deepseek-chat para todo (mucho más barato que Claude)
+  const model = 'deepseek-chat'
 
   const messages = [
+    { role: 'system', content: systemPrompt },
     ...history.slice(-6).map(h => ({ role: h.role, content: h.content })),
     { role: 'user', content: message },
   ]
 
+  const tools = isOwner ? TOOLS_OWNER : isCobrador ? TOOLS_COBRADOR : undefined
+
   const streamParams = {
     model,
     max_tokens: isOwner ? 1024 : 600,
-    system: systemPrompt,
     messages,
-    ...(isOwner
-      ? { tools: TOOLS_OWNER, tool_choice: { type: 'auto' } }
-      : isCobrador
-        ? { tools: TOOLS_COBRADOR, tool_choice: { type: 'auto' } }
-        : {}),
+    ...(tools ? { tools, tool_choice: 'auto' } : {}),
   }
-
-  const stream = anthropic.messages.stream(streamParams)
 
   const readable = new ReadableStream({
     async start(controller) {
       const enc = new TextEncoder()
-      let hasToolUse = false
 
       try {
-        for await (const chunk of stream) {
-          if (chunk.type === 'content_block_delta' && chunk.delta?.type === 'text_delta') {
-            controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: chunk.delta.text })}\n\n`))
-          }
-          if (chunk.type === 'content_block_start' && chunk.content_block?.type === 'tool_use') {
-            hasToolUse = true
-          }
-        }
+        const { textContent, toolCalls } = await runDeepSeekStream(streamParams, controller, enc)
 
-        if (hasToolUse) {
-          const finalMsg = await stream.finalMessage()
-          const toolBlock = finalMsg.content.find(b => b.type === 'tool_use')
-          if (toolBlock) {
-            // Mensaje de estado mientras se procesa — solo si Claude no escribió nada antes
-            const yaEscribio = finalMsg.content.some(b => b.type === 'text' && b.text?.trim())
-            if (!yaEscribio) {
-              const statusMsgs = {
-                lookup_client: 'Buscando...',
-                create_client: 'Creando cliente...',
-                create_loan: 'Preparando préstamo...',
-                register_payment: 'Registrando pago...',
-                adjust_capital: 'Ajustando capital...',
-                create_route: 'Creando ruta...',
-                assign_clients_to_route: 'Asignando clientes...',
-                edit_loan: 'Editando préstamo...',
-                register_expense: 'Registrando gasto...',
-                escalate_support: 'Conectando con soporte...',
-              }
-              const msg = statusMsgs[toolBlock.name]
-              if (msg) controller.enqueue(enc.encode(`data: ${JSON.stringify({ type: 'status', text: msg })}\n\n`))
+        if (toolCalls.length > 0) {
+          const toolCall = toolCalls[0]
+
+          // Status message if model didn't write text before tool call
+          if (!textContent.trim()) {
+            const statusMsgs = {
+              lookup_client: 'Buscando...',
+              create_client: 'Creando cliente...',
+              create_loan: 'Preparando préstamo...',
+              register_payment: 'Registrando pago...',
+              adjust_capital: 'Ajustando capital...',
+              create_route: 'Creando ruta...',
+              assign_clients_to_route: 'Asignando clientes...',
+              edit_loan: 'Editando préstamo...',
+              register_expense: 'Registrando gasto...',
+              escalate_support: 'Conectando con soporte...',
             }
+            const msg = statusMsgs[toolCall.name]
+            if (msg) controller.enqueue(enc.encode(`data: ${JSON.stringify({ type: 'status', text: msg })}\n\n`))
+          }
 
-            // lookup_client is handled server-side without showing a confirmation card
-            if (toolBlock.name === 'lookup_client') {
-              // Búsqueda fuzzy: dividir en palabras para tolerar transcripciones de voz inexactas
-              const buscar = toolBlock.input?.buscar || ''
-              const palabras = buscar.trim().split(/\s+/).filter(Boolean)
-              const condiciones = palabras.length > 1
-                ? palabras.flatMap(p => [{ nombre: { contains: p } }, { cedula: { contains: p } }])
-                : [{ nombre: { contains: buscar } }, { cedula: { contains: buscar } }]
+          if (toolCall.name === 'lookup_client') {
+            // Búsqueda fuzzy
+            const buscar = toolCall.input?.buscar || ''
+            const palabras = buscar.trim().split(/\s+/).filter(Boolean)
+            const condiciones = palabras.length > 1
+              ? palabras.flatMap(p => [{ nombre: { contains: p } }, { cedula: { contains: p } }])
+              : [{ nombre: { contains: buscar } }, { cedula: { contains: buscar } }]
 
-              const clientes = await prisma.cliente.findMany({
-                where: {
-                  organizationId: orgId,
-                  estado: { notIn: ['eliminado'] },
-                  OR: condiciones,
+            const clientes = await prisma.cliente.findMany({
+              where: {
+                organizationId: orgId,
+                estado: { notIn: ['eliminado'] },
+                OR: condiciones,
+              },
+              select: {
+                id: true, nombre: true, cedula: true, telefono: true,
+                prestamos: {
+                  where: { estado: 'activo' },
+                  select: { id: true, totalAPagar: true, cuotaDiaria: true, montoPrestado: true },
+                  take: 1,
                 },
-                select: {
-                  id: true, nombre: true, cedula: true, telefono: true,
-                  prestamos: {
-                    where: { estado: 'activo' },
-                    select: { id: true, totalAPagar: true, cuotaDiaria: true, montoPrestado: true },
-                    take: 1,
-                  },
-                },
-                take: 5,
-              })
+              },
+              take: 5,
+            })
 
-              let lookupResult
-              if (clientes.length > 0) {
-                lookupResult = clientes.map(c => {
-                  const prestamo = c.prestamos?.[0]
-                  const ids = `[id:${c.id}${prestamo ? `|pid:${prestamo.id}` : ''}]`
-                  const info = prestamo
-                    ? `, cuota: $${Math.round(prestamo.cuotaDiaria).toLocaleString('es-CO')}, saldo: $${Math.round(prestamo.totalAPagar).toLocaleString('es-CO')}`
-                    : ', sin préstamo activo'
-                  return `${c.nombre} (cédula: ${c.cedula}${info}) ${ids}`
-                }).join(' | ')
-              } else {
-                // No encontrado — sugerir clientes activos recientes para que Lucas pueda orientar
-                const sugeridos = await prisma.cliente.findMany({
-                  where: { organizationId: orgId, estado: { notIn: ['eliminado', 'inactivo'] }, prestamos: { some: { estado: 'activo' } } },
-                  select: { nombre: true, cedula: true },
-                  orderBy: { createdAt: 'desc' },
-                  take: 3,
-                })
-                const sugeridosTexto = sugeridos.map(c => `${c.nombre} (cédula: ${c.cedula})`).join(', ')
-                lookupResult = `No encontré a nadie con "${buscar}". Clientes activos recientes: ${sugeridosTexto || 'ninguno'}.`
-              }
-
-              // Enviar lookup_result al frontend (para uso interno del cliente)
-              controller.enqueue(enc.encode(`data: ${JSON.stringify({ type: 'lookup_result', result: lookupResult, clientes })}\n\n`))
-
-              // Segunda llamada a Claude con el tool_result para que Lucas pueda continuar la conversación
-              const messagesConToolResult = [
-                ...messages,
-                { role: 'assistant', content: finalMsg.content },
-                {
-                  role: 'user',
-                  content: [{
-                    type: 'tool_result',
-                    tool_use_id: toolBlock.id,
-                    content: lookupResult,
-                  }],
-                },
-              ]
-              const stream2 = anthropic.messages.stream({
-                ...streamParams,
-                messages: messagesConToolResult,
-              })
-              for await (const chunk2 of stream2) {
-                if (chunk2.type === 'content_block_delta' && chunk2.delta?.type === 'text_delta') {
-                  controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: chunk2.delta.text })}\n\n`))
-                }
-              }
-              // Si la segunda respuesta también usa una herramienta (ej: register_payment tras lookup)
-              const finalMsg2 = await stream2.finalMessage()
-              const toolBlock2 = finalMsg2.content.find(b => b.type === 'tool_use')
-              if (toolBlock2 && toolBlock2.name !== 'lookup_client') {
-                const displayData2 = await buildDisplayData(toolBlock2.name, toolBlock2.input, orgId)
-                controller.enqueue(enc.encode(`data: ${JSON.stringify({
-                  type: 'action_proposal',
-                  tool: toolBlock2.name,
-                  input: toolBlock2.input,
-                  displayData: displayData2,
-                })}\n\n`))
-              }
+            let lookupResult
+            if (clientes.length > 0) {
+              lookupResult = clientes.map(c => {
+                const prestamo = c.prestamos?.[0]
+                const ids = `[id:${c.id}${prestamo ? `|pid:${prestamo.id}` : ''}]`
+                const info = prestamo
+                  ? `, cuota: $${Math.round(prestamo.cuotaDiaria).toLocaleString('es-CO')}, saldo: $${Math.round(prestamo.totalAPagar).toLocaleString('es-CO')}`
+                  : ', sin préstamo activo'
+                return `${c.nombre} (cédula: ${c.cedula}${info}) ${ids}`
+              }).join(' | ')
             } else {
-              const displayData = await buildDisplayData(toolBlock.name, toolBlock.input, orgId)
-              controller.enqueue(
-                enc.encode(`data: ${JSON.stringify({
-                  type: 'action_proposal',
-                  tool: toolBlock.name,
-                  input: toolBlock.input,
-                  displayData,
-                })}\n\n`)
-              )
+              const sugeridos = await prisma.cliente.findMany({
+                where: { organizationId: orgId, estado: { notIn: ['eliminado', 'inactivo'] }, prestamos: { some: { estado: 'activo' } } },
+                select: { nombre: true, cedula: true },
+                orderBy: { createdAt: 'desc' },
+                take: 3,
+              })
+              const sugeridosTexto = sugeridos.map(c => `${c.nombre} (cédula: ${c.cedula})`).join(', ')
+              lookupResult = `No encontré a nadie con "${buscar}". Clientes activos recientes: ${sugeridosTexto || 'ninguno'}.`
             }
+
+            controller.enqueue(enc.encode(`data: ${JSON.stringify({ type: 'lookup_result', result: lookupResult, clientes })}\n\n`))
+
+            // Segunda llamada con tool result
+            const messagesConToolResult = [
+              ...messages,
+              {
+                role: 'assistant',
+                content: textContent || null,
+                tool_calls: [{
+                  id: toolCall.id,
+                  type: 'function',
+                  function: { name: toolCall.name, arguments: JSON.stringify(toolCall.input) },
+                }],
+              },
+              {
+                role: 'tool',
+                tool_call_id: toolCall.id,
+                content: lookupResult,
+              },
+            ]
+
+            const { toolCalls: toolCalls2 } = await runDeepSeekStream(
+              { ...streamParams, messages: messagesConToolResult },
+              controller, enc
+            )
+
+            // Si la segunda respuesta usa una herramienta (ej: register_payment tras lookup)
+            if (toolCalls2.length > 0 && toolCalls2[0].name !== 'lookup_client') {
+              const tc2 = toolCalls2[0]
+              const displayData2 = await buildDisplayData(tc2.name, tc2.input, orgId)
+              controller.enqueue(enc.encode(`data: ${JSON.stringify({
+                type: 'action_proposal',
+                tool: tc2.name,
+                input: tc2.input,
+                displayData: displayData2,
+              })}\n\n`))
+            }
+          } else {
+            const displayData = await buildDisplayData(toolCall.name, toolCall.input, orgId)
+            controller.enqueue(
+              enc.encode(`data: ${JSON.stringify({
+                type: 'action_proposal',
+                tool: toolCall.name,
+                input: toolCall.input,
+                displayData,
+              })}\n\n`)
+            )
           }
         }
 
@@ -401,9 +423,9 @@ export async function POST(req) {
           setImmediate(() => extraerYGuardarMemoria(orgId, session.user.id, conversacionCompleta))
         }
       } catch (err) {
+        console.error('[asistente] Error DeepSeek:', err.message)
         try { controller.enqueue(enc.encode(`data: ${JSON.stringify({ error: 'Error al procesar tu consulta.' })}\n\n`)) } catch {}
       } finally {
-        // [DONE] siempre en finally — garantiza que el cliente nunca quede cargando infinito
         try { controller.enqueue(enc.encode('data: [DONE]\n\n')) } catch {}
         controller.close()
       }
