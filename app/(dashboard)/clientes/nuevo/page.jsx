@@ -5,6 +5,7 @@ import { useEffect }   from 'react'
 import { useRouter }   from 'next/navigation'
 import { useAuth }     from '@/hooks/useAuth'
 import ClienteForm     from '@/components/clientes/ClienteForm'
+import { planTieneFotos } from '@/lib/planes'
 
 export default function NuevoClientePage() {
   const router = useRouter()
@@ -61,7 +62,7 @@ export default function NuevoClientePage() {
         </div>
       </div>
 
-      <ClienteForm plan={session?.user?.plan ?? 'starter'} />
+      <ClienteForm plan={session?.user?.plan ?? 'starter'} puedeSubirFoto={planTieneFotos(session?.user?.plan)} />
     </div>
   )
 }

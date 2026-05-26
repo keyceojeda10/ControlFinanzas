@@ -5,6 +5,7 @@ import { useState, useEffect, use } from 'react'
 import { useRouter }                from 'next/navigation'
 import { useAuth }                  from '@/hooks/useAuth'
 import ClienteForm                  from '@/components/clientes/ClienteForm'
+import { planTieneFotos }           from '@/lib/planes'
 import { SkeletonCard }             from '@/components/ui/Skeleton'
 
 export default function EditarClientePage({ params }) {
@@ -89,6 +90,7 @@ export default function EditarClientePage({ params }) {
       <ClienteForm
         clienteInicial={cliente}
         plan={session?.user?.plan ?? 'starter'}
+        puedeSubirFoto={planTieneFotos(session?.user?.plan)}
       />
     </div>
   )

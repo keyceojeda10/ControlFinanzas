@@ -6,6 +6,12 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['@/components/ui', '@/lib'],
   },
+  async rewrites() {
+    return [
+      // Servir fotos subidas via API route (Next.js no sirve archivos agregados a public/ despues del build)
+      { source: '/uploads/:path*', destination: '/api/uploads/:path*' },
+    ]
+  },
   async redirects() {
     return [
       { source: '/register', destination: '/registro', permanent: true },
