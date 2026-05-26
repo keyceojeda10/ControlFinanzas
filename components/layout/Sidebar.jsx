@@ -421,7 +421,7 @@ export default function Sidebar() {
       <div className="px-3 pb-3 pt-3 space-y-2" style={{ borderTop: '1px solid var(--color-border)' }}>
         {/* Fila 1: User + theme + sign out */}
         <div className="flex items-center gap-2">
-          <Avatar nombre={session?.user?.nombre} size={28} fontSize={11} />
+          <Avatar nombre={session?.user?.nombre} avatarId={session?.user?.avatarId} size={28} fontSize={11} />
           <div className="flex-1 min-w-0">
             <p className="text-[11px] font-semibold truncate leading-tight" style={{ color: 'var(--color-text-primary)' }}>
               {session?.user?.nombre}

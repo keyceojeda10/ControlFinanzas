@@ -99,14 +99,14 @@ export default function Header() {
             className="hover:scale-105 focus-visible:outline-none focus-visible:ring-2 transition-all cursor-pointer active:scale-95 rounded-full"
             aria-label="Menu de usuario"
           >
-            <Avatar nombre={nombre} size={40} fontSize={13} />
+            <Avatar nombre={nombre} avatarId={session?.user?.avatarId} size={40} fontSize={13} />
           </button>
 
           {userOpen && (
             <div className="absolute right-0 top-12 w-60 rounded-[14px] shadow-2xl overflow-hidden z-50 glass-strong">
               <div className="px-4 py-3">
                 <div className="flex items-center gap-2.5">
-                  <Avatar nombre={nombre} size={32} fontSize={11} />
+                  <Avatar nombre={nombre} avatarId={session?.user?.avatarId} size={32} fontSize={11} />
                   <div className="min-w-0">
                     <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{nombre}</p>
                     <p className="text-[11px] truncate" style={{ color: 'var(--color-text-muted)' }}>{email}</p>

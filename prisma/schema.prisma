@@ -136,6 +136,7 @@ model User {
   puedeGestionarRutas     Boolean   @default(false)
   emailsMarketing         Boolean   @default(true)
   theme                   String?   @default("system")
+  avatarId                String?
   createdAt               DateTime  @default(now())
   lastLoginAt             DateTime?
   lastActivityAt          DateTime?

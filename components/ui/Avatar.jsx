@@ -1,6 +1,8 @@
 // components/ui/Avatar.jsx
-// Avatar reutilizable: muestra foto si existe, o 2 iniciales con color solido/gradiente
-// unico por nombre. Colores se asignan deterministicamente por hash del nombre.
+// Avatar reutilizable: muestra foto, avatar NFT seleccionado, o 2 iniciales con color
+// solido/gradiente unico por nombre. Colores se asignan deterministicamente por hash del nombre.
+
+import { getAvatarById } from '@/lib/avatars'
 
 const AVATAR_COLORS = [
   { bg: 'linear-gradient(135deg, #6366f1, #818cf8)', text: '#fff' },
@@ -39,10 +41,11 @@ export function getAvatarColor(nombre) {
   return AVATAR_COLORS[hashNombre(nombre) % AVATAR_COLORS.length]
 }
 
-export default function Avatar({ nombre, fotoUrl, size = 40, fontSize, className = '', onClick, style: extraStyle }) {
+export default function Avatar({ nombre, fotoUrl, avatarId, size = 40, fontSize, className = '', onClick, style: extraStyle }) {
   const px = `${size}px`
   const fs = fontSize || Math.round(size * 0.36)
 
+  // Prioridad: foto real > avatar NFT > iniciales
   if (fotoUrl) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
@@ -52,6 +55,19 @@ export default function Avatar({ nombre, fotoUrl, size = 40, fontSize, className
         onClick={onClick}
         className={`rounded-full object-cover shrink-0 ${onClick ? 'cursor-pointer' : ''} ${className}`}
         style={{ width: px, height: px, minWidth: px, ...extraStyle }}
+      />
+    )
+  }
+
+  // Avatar NFT seleccionado por el usuario
+  const nftAvatar = avatarId ? getAvatarById(avatarId) : null
+  if (nftAvatar) {
+    return (
+      <div
+        onClick={onClick}
+        className={`rounded-full shrink-0 overflow-hidden ${onClick ? 'cursor-pointer' : ''} ${className}`}
+        style={{ width: px, height: px, minWidth: px, ...extraStyle }}
+        dangerouslySetInnerHTML={{ __html: nftAvatar.svg }}
       />
     )
   }

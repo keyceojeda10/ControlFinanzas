@@ -11,7 +11,7 @@ export async function GET() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, nombre: true, email: true, telefono: true, rol: true, createdAt: true },
+    select: { id: true, nombre: true, email: true, telefono: true, rol: true, avatarId: true, createdAt: true },
   })
 
   return NextResponse.json(user)
@@ -22,7 +22,7 @@ export async function PATCH(req) {
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
   const body = await req.json()
-  const { nombre, telefono, passwordActual, nuevoPassword } = body
+  const { nombre, telefono, passwordActual, nuevoPassword, avatarId } = body
 
   const updates = {}
 
@@ -52,6 +52,11 @@ export async function PATCH(req) {
         })
       }
     }
+  }
+
+  // Actualizar avatar
+  if (avatarId !== undefined) {
+    updates.avatarId = avatarId || null
   }
 
   // Cambiar contraseña

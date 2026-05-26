@@ -10,6 +10,8 @@ import { Badge }               from '@/components/ui/Badge'
 import { Skeleton }            from '@/components/ui/Skeleton'
 import { formatCOP }           from '@/lib/calculos'
 import { PLANES_CONFIG }       from '@/lib/planes'
+import { AVATARS }             from '@/lib/avatars'
+import Avatar                  from '@/components/ui/Avatar'
 import DiasSinCobroSelector    from '@/components/ui/DiasSinCobroSelector'
 import FestivosManager         from '@/components/ui/FestivosManager'
 import ThemeToggle             from '@/components/ui/ThemeToggle'
@@ -50,11 +52,14 @@ function TabPerfil() {
   const [pwConfirmar, setPwConfirmar] = useState('')
   const [guardandoPw, setGuardandoPw] = useState(false)
   const [msgPw,       setMsgPw]       = useState(null)
+  const [avatarSeleccionado, setAvatarSeleccionado] = useState(null)
+  const [guardandoAvatar, setGuardandoAvatar] = useState(false)
+  const [msgAvatar, setMsgAvatar] = useState(null)
 
   useEffect(() => {
     fetch('/api/configuracion/perfil')
       .then((r) => r.json())
-      .then((d) => { setPerfil(d); setNombre(d.nombre ?? '') })
+      .then((d) => { setPerfil(d); setNombre(d.nombre ?? ''); setAvatarSeleccionado(d.avatarId ?? null) })
       .finally(() => setLoading(false))
   }, [])
 
@@ -72,6 +77,27 @@ function TabPerfil() {
     } catch {
       setMsgNom({ tipo: 'error', texto: 'Error de conexión' })
     } finally { setGuardandoNom(false) }
+  }
+
+  const guardarAvatar = async (id) => {
+    setAvatarSeleccionado(id)
+    setGuardandoAvatar(true); setMsgAvatar(null)
+    try {
+      const res = await fetch('/api/configuracion/perfil', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatarId: id || null }),
+      })
+      if (res.ok) {
+        setMsgAvatar({ tipo: 'success', texto: 'Avatar actualizado' })
+        // Refrescar sesion para que Header/Sidebar lo muestren
+        const event = new Event('visibilitychange')
+        document.dispatchEvent(event)
+      } else {
+        setMsgAvatar({ tipo: 'error', texto: 'Error al guardar avatar' })
+      }
+    } catch {
+      setMsgAvatar({ tipo: 'error', texto: 'Error de conexion' })
+    } finally { setGuardandoAvatar(false) }
   }
 
   const cambiarPassword = async () => {
@@ -134,6 +160,60 @@ function TabPerfil() {
           {msgNom && <Alerta tipo={msgNom.tipo}>{msgNom.texto}</Alerta>}
           <Button onClick={guardarNombre} loading={guardandoNom} size="sm">Guardar nombre</Button>
         </div>
+      </Card>
+
+      <Card>
+        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-3">Avatar de perfil</p>
+        <p className="text-[11px] text-[var(--color-text-muted)] mb-4">
+          Selecciona un avatar para tu perfil. Se mostrara en el menu y en el sidebar.
+        </p>
+
+        {/* Preview actual */}
+        <div className="flex items-center gap-3 mb-4 pb-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
+          <Avatar nombre={nombre || perfil?.nombre} avatarId={avatarSeleccionado} size={56} fontSize={20} />
+          <div>
+            <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{nombre || perfil?.nombre}</p>
+            <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+              {avatarSeleccionado ? AVATARS.find(a => a.id === avatarSeleccionado)?.nombre ?? 'Avatar seleccionado' : 'Usando iniciales'}
+            </p>
+          </div>
+          {avatarSeleccionado && (
+            <button
+              onClick={() => guardarAvatar(null)}
+              disabled={guardandoAvatar}
+              className="ml-auto text-[11px] px-2.5 py-1 rounded-full transition-colors"
+              style={{ color: 'var(--color-danger)', background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)' }}
+            >
+              Quitar
+            </button>
+          )}
+        </div>
+
+        {/* Grid de avatares */}
+        <div className="grid grid-cols-4 sm:grid-cols-6 gap-2.5">
+          {AVATARS.map((av) => (
+            <button
+              key={av.id}
+              onClick={() => guardarAvatar(av.id)}
+              disabled={guardandoAvatar}
+              className={`relative rounded-full overflow-hidden transition-all hover:scale-110 active:scale-95 ${avatarSeleccionado === av.id ? 'ring-2 ring-offset-2 scale-105' : ''}`}
+              style={{
+                aspectRatio: '1',
+                ...(avatarSeleccionado === av.id ? { ringColor: 'var(--color-accent)', '--tw-ring-offset-color': 'var(--color-bg-card)' } : {}),
+              }}
+              title={av.nombre}
+            >
+              <div
+                className="w-full h-full"
+                dangerouslySetInnerHTML={{ __html: av.svg }}
+              />
+              {avatarSeleccionado === av.id && (
+                <div className="absolute inset-0 rounded-full" style={{ border: '2px solid var(--color-accent)' }} />
+              )}
+            </button>
+          ))}
+        </div>
+        {msgAvatar && <div className="mt-3"><Alerta tipo={msgAvatar.tipo}>{msgAvatar.texto}</Alerta></div>}
       </Card>
 
       <Card>
