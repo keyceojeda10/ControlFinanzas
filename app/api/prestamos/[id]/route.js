@@ -28,7 +28,7 @@ async function obtenerPrestamo(id, session) {
   const p = await prisma.prestamo.findFirst({
     where: { id, organizationId: session.user.organizationId },
     include: {
-      cliente: { select: { id: true, nombre: true, cedula: true, telefono: true, rutaId: true, diasSinCobro: true, ruta: { select: { diasSinCobro: true } } } },
+      cliente: { select: { id: true, nombre: true, cedula: true, telefono: true, fotoUrl: true, rutaId: true, diasSinCobro: true, ruta: { select: { diasSinCobro: true } } } },
       pagos: {
         orderBy: { fechaPago: 'desc' },
         include: {
