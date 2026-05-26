@@ -1,6 +1,6 @@
 // components/clientes/ClienteCard.jsx
-// Card de cliente con info financiera al frente: saldo total, próximo cobro,
-// progreso. Mood color según estado/mora. Avatar con anillo.
+// Card de cliente: nombre visible completo, estado, progreso financiero.
+// Layout vertical para que el nombre nunca se trunque en movil.
 
 import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
@@ -25,8 +25,8 @@ function moodLabel(c) {
   if (c.estado === 'inactivo')  return 'Inactivo'
   if (c.diasMoraMax > 7)        return `${c.diasMoraMax}d en mora`
   if (c.estado === 'mora' || c.diasMoraMax > 0) return `${c.diasMoraMax || ''}d vencido`.trim()
-  if (c.pagoHoy)                return 'Pagó hoy'
-  return 'Al día'
+  if (c.pagoHoy)                return 'Pago hoy'
+  return 'Al dia'
 }
 
 export default function ClienteCard({ cliente, actions }) {
@@ -44,13 +44,13 @@ export default function ClienteCard({ cliente, actions }) {
       padding={false}
       className="block px-4 py-3.5 transition-all duration-200 group hover:scale-[1.005]"
     >
+      {/* Fila 1: Avatar + Nombre + Badge + Kebab */}
       <div className="flex items-center gap-3">
-        {/* Avatar */}
         <div className="relative shrink-0">
           <Avatar
             nombre={cliente.nombre}
             fotoUrl={cliente.fotoUrl}
-            size={44}
+            size={40}
             fontSize={14}
             style={cliente.fotoUrl ? { border: `2px solid ${color}` } : undefined}
           />
@@ -58,30 +58,15 @@ export default function ClienteCard({ cliente, actions }) {
             <span
               className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full"
               style={{ background: 'var(--color-success)', border: '2px solid var(--color-bg-card)' }}
-              title="Pagó hoy"
+              title="Pago hoy"
             />
           )}
         </div>
 
-        {/* Info principal */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-baseline justify-between gap-2">
-            <p className="text-sm font-semibold text-[var(--color-text-primary)] truncate leading-tight">
-              {cliente.nombre}
-            </p>
-            <span
-              className="shrink-0 inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
-              style={{
-                background: `${color}26`,
-                color,
-                border: `1px solid ${color}40`,
-              }}
-            >
-              <span className="w-1 h-1 rounded-full" style={{ background: color }} />
-              {label}
-            </span>
-          </div>
-
+          <p className="text-sm font-semibold text-[var(--color-text-primary)] leading-tight line-clamp-1">
+            {cliente.nombre}
+          </p>
           <div className="flex items-center gap-2 mt-0.5">
             <p className="text-[10px] text-[var(--color-text-muted)]">CC {cliente.cedula}</p>
             {cliente.grupoCobro && (
@@ -97,50 +82,59 @@ export default function ClienteCard({ cliente, actions }) {
               </span>
             )}
           </div>
-
-          {/* Progreso si tiene préstamo activo */}
-          {tienePrestamo && (
-            <div className="mt-2">
-              {/* Línea de info: N préstamos · fecha cobro */}
-              <p className="text-[10px] mb-1" style={{ color: 'var(--color-text-muted)' }}>
-                {cliente.prestamosActivos} préstamo{cliente.prestamosActivos > 1 ? 's' : ''}
-                {cliente.proximoCobroLabel && (
-                  <> · <span style={{ color: cliente.diasMoraMax > 0 ? color : 'var(--color-text-secondary)' }}>{cliente.proximoCobroLabel}</span></>
-                )}
-              </p>
-              {/* Barra de progreso con % a la derecha */}
-              <div className="flex items-center gap-1.5">
-                <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
-                  <div
-                    className="h-full rounded-full transition-all"
-                    style={{
-                      width: `${porcentaje}%`,
-                      background: `linear-gradient(90deg, ${color}99, ${color})`,
-                    }}
-                  />
-                </div>
-                <span className="shrink-0 text-[10px] font-mono-display font-semibold" style={{ color }}>{porcentaje}%</span>
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Saldo total si hay préstamo */}
-        {tienePrestamo && saldoTotal > 0 && (
-          <div className="text-right shrink-0 ml-1">
-            <p className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider">Debe</p>
-            <p
-              className="text-[15px] font-mono-display font-bold leading-none mt-0.5"
-              style={{ color: cliente.diasMoraMax > 0 ? color : 'var(--color-text-primary)' }}
-            >
-              {formatCOP(saldoTotal)}
-            </p>
-          </div>
-        )}
+        <span
+          className="shrink-0 inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
+          style={{
+            background: `${color}26`,
+            color,
+            border: `1px solid ${color}40`,
+          }}
+        >
+          <span className="w-1 h-1 rounded-full" style={{ background: color }} />
+          {label}
+        </span>
 
-        {/* Menu de acciones rapidas */}
         {actions?.length > 0 && <CardActionMenu actions={actions} />}
       </div>
+
+      {/* Fila 2: Datos financieros (solo si tiene prestamo) */}
+      {tienePrestamo && (
+        <div className="mt-2.5 ml-[52px]">
+          {/* Saldo + info prestamos */}
+          <div className="flex items-baseline justify-between mb-1.5">
+            <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
+              {cliente.prestamosActivos} prestamo{cliente.prestamosActivos > 1 ? 's' : ''}
+              {cliente.proximoCobroLabel && (
+                <> · <span style={{ color: cliente.diasMoraMax > 0 ? color : 'var(--color-text-secondary)' }}>{cliente.proximoCobroLabel}</span></>
+              )}
+            </p>
+            {saldoTotal > 0 && (
+              <p
+                className="text-[13px] font-mono-display font-bold leading-none"
+                style={{ color: cliente.diasMoraMax > 0 ? color : 'var(--color-text-primary)' }}
+              >
+                {formatCOP(saldoTotal)}
+              </p>
+            )}
+          </div>
+
+          {/* Barra de progreso */}
+          <div className="flex items-center gap-1.5">
+            <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
+              <div
+                className="h-full rounded-full transition-all"
+                style={{
+                  width: `${porcentaje}%`,
+                  background: `linear-gradient(90deg, ${color}99, ${color})`,
+                }}
+              />
+            </div>
+            <span className="shrink-0 text-[10px] font-mono-display font-semibold" style={{ color }}>{porcentaje}%</span>
+          </div>
+        </div>
+      )}
     </Card>
   )
 }
