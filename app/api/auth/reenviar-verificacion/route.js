@@ -1,13 +1,10 @@
 // app/api/auth/reenviar-verificacion/route.js — Reenvía el email de verificación
 import { NextResponse } from 'next/server'
-import crypto from 'crypto'
 import { prisma } from '@/lib/prisma'
 import { enviarEmail, emailVerificacion } from '@/lib/email'
 import { rateLimit, getClientIp } from '@/lib/rate-limit'
 
 const reenvioLimiter = rateLimit('reenvio-verificacion', 3, 60 * 60 * 1000) // 3/hora
-
-const BASE = process.env.NEXTAUTH_URL || 'https://app.control-finanzas.com'
 
 export async function POST(req) {
   try {
@@ -26,16 +23,15 @@ export async function POST(req) {
       return NextResponse.json({ ok: true })
     }
 
-    const tokenVerificacion = crypto.randomBytes(32).toString('hex')
-    const tokenExpira = new Date(Date.now() + 24 * 60 * 60 * 1000)
+    const tokenVerificacion = String(Math.floor(100000 + Math.random() * 900000))
+    const tokenExpira = new Date(Date.now() + 30 * 60 * 1000)
 
     await prisma.user.update({
       where: { id: user.id },
       data: { tokenVerificacion, tokenExpira },
     })
 
-    const link = `${BASE}/api/auth/verificar-email?token=${tokenVerificacion}`
-    const { subject, html } = emailVerificacion({ nombre: user.nombre, link })
+    const { subject, html } = emailVerificacion({ nombre: user.nombre, codigo: tokenVerificacion })
     await enviarEmail({ to: emailNorm, subject, html })
 
     return NextResponse.json({ ok: true })

@@ -1,7 +1,51 @@
-// app/api/auth/verificar-email/route.js — Confirma el email del usuario
+// app/api/auth/verificar-email/route.js — Verifica email con codigo OTP
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+export async function POST(req) {
+  try {
+    const { email, codigo } = await req.json()
+
+    if (!email || !codigo) {
+      return NextResponse.json({ error: 'Email y codigo son requeridos' }, { status: 400 })
+    }
+
+    const emailNorm = email.trim().toLowerCase()
+    const user = await prisma.user.findUnique({ where: { email: emailNorm } })
+
+    if (!user) {
+      return NextResponse.json({ error: 'Codigo invalido' }, { status: 400 })
+    }
+
+    if (user.emailVerificado) {
+      return NextResponse.json({ ok: true, already: true })
+    }
+
+    if (!user.tokenVerificacion || user.tokenVerificacion !== codigo.trim()) {
+      return NextResponse.json({ error: 'Codigo invalido' }, { status: 400 })
+    }
+
+    if (user.tokenExpira && new Date() > new Date(user.tokenExpira)) {
+      return NextResponse.json({ error: 'Codigo expirado. Solicita uno nuevo.' }, { status: 400 })
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerificado:   true,
+        tokenVerificacion: null,
+        tokenExpira:       null,
+      },
+    })
+
+    return NextResponse.json({ ok: true })
+  } catch (err) {
+    console.error('[verificar-email]', err)
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+  }
+}
+
+// Mantener GET para compatibilidad con links viejos que aun no expiran
 const BASE = process.env.NEXTAUTH_URL || 'https://app.control-finanzas.com'
 
 export async function GET(req) {

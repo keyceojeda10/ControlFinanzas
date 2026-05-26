@@ -1,7 +1,6 @@
 // app/api/auth/registro/route.js — Registro de nueva organización
 import { NextResponse } from 'next/server'
 import bcrypt           from 'bcryptjs'
-import crypto           from 'crypto'
 import { prisma }       from '@/lib/prisma'
 import { enviarEmail, emailBienvenida, emailVerificacion } from '@/lib/email'
 import { sendConversionEvent } from '@/lib/facebook-capi'
@@ -103,9 +102,9 @@ export async function POST(req) {
         },
       })
 
-      // Generar token de verificación de email (expira en 24h)
-      const tokenVerificacion = crypto.randomBytes(32).toString('hex')
-      const tokenExpira = new Date(Date.now() + 24 * 60 * 60 * 1000)
+      // Generar codigo OTP de 6 digitos (expira en 30 min)
+      const tokenVerificacion = String(Math.floor(100000 + Math.random() * 900000))
+      const tokenExpira = new Date(Date.now() + 30 * 60 * 1000)
 
       const user = await tx.user.create({
         data: {
@@ -142,10 +141,8 @@ export async function POST(req) {
       return { org, user, vencimiento }
     })
 
-    // Enviar email de verificación (obligatorio antes de usar la app)
-    const BASE = process.env.NEXTAUTH_URL || 'https://app.control-finanzas.com'
-    const linkVerif = `${BASE}/api/auth/verificar-email?token=${resultado.user.tokenVerificacion}`
-    const { subject: svf, html: hvf } = emailVerificacion({ nombre: nombre.trim(), link: linkVerif })
+    // Enviar email de verificación con codigo OTP
+    const { subject: svf, html: hvf } = emailVerificacion({ nombre: nombre.trim(), codigo: resultado.user.tokenVerificacion })
     enviarEmail({ to: emailNorm, subject: svf, html: hvf }).catch(() => {})
 
     // Enviar email de bienvenida en background (no bloquea)

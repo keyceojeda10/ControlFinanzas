@@ -150,7 +150,7 @@ export default function RegistroForm({ refCode, planParam }) {
   const planInicial = validKeys.includes(planParam) ? planParam : 'starter'
 
   const [planSeleccionado, setPlanSeleccionado] = useState(planInicial)
-  const [step, setStep] = useState(1) // 1 = plan, 2 = datos
+  const [step, setStep] = useState(1) // 1 = plan, 2 = datos, 3 = verificacion OTP
   const infoPlan = ALL_PLANES.find(p => p.key === planSeleccionado)
 
   const [form, setForm] = useState({
@@ -165,6 +165,13 @@ export default function RegistroForm({ refCode, planParam }) {
   const [error,    setError]    = useState('')
   const [loading,  setLoading]  = useState(false)
   const [referrer, setReferrer] = useState(null)
+
+  // OTP step 3
+  const [otpDigits, setOtpDigits]       = useState(['', '', '', '', '', ''])
+  const [otpLoading, setOtpLoading]     = useState(false)
+  const [otpError, setOtpError]         = useState('')
+  const [otpReenviado, setOtpReenviado] = useState(false)
+  const [otpReenviando, setOtpReenviando] = useState(false)
 
   useEffect(() => {
     if (!refCode) return
@@ -214,18 +221,109 @@ export default function RegistroForm({ refCode, planParam }) {
         window.fbq('track', 'Lead')
       }
 
+      // Ir al step 3 para ingresar el codigo OTP
+      setStep(3)
+    } catch {
+      setError('Error de conexion. Intenta de nuevo.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Verificar codigo OTP
+  const handleVerificarOtp = async (codigoFinal) => {
+    const codigo = codigoFinal || otpDigits.join('')
+    if (codigo.length !== 6) { setOtpError('Ingresa el codigo de 6 digitos'); return }
+    setOtpLoading(true)
+    setOtpError('')
+    try {
+      const res = await fetch('/api/auth/verificar-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: form.email.trim().toLowerCase(), codigo }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setOtpError(data.error || 'Codigo invalido'); setOtpLoading(false); return }
+
+      // Verificado — hacer login y entrar al dashboard
       const login = await signIn('credentials', {
         email: form.email.trim().toLowerCase(),
         password: form.password,
         redirect: false,
       })
       if (login?.ok) { router.push('/dashboard'); return }
-      router.push('/verificar-email')
+      router.push('/login')
     } catch {
-      setError('Error de conexion. Intenta de nuevo.')
+      setOtpError('Error de conexion')
     } finally {
-      setLoading(false)
+      setOtpLoading(false)
     }
+  }
+
+  // Saltar verificacion — login directo (gracia 7 dias)
+  const handleSaltarVerificacion = async () => {
+    setOtpLoading(true)
+    const login = await signIn('credentials', {
+      email: form.email.trim().toLowerCase(),
+      password: form.password,
+      redirect: false,
+    })
+    if (login?.ok) { router.push('/dashboard'); return }
+    router.push('/login')
+  }
+
+  // Reenviar codigo OTP
+  const handleReenviarOtp = async () => {
+    if (otpReenviando || otpReenviado) return
+    setOtpReenviando(true)
+    try {
+      await fetch('/api/auth/reenviar-verificacion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: form.email.trim().toLowerCase() }),
+      })
+      setOtpReenviado(true)
+      setOtpDigits(['', '', '', '', '', ''])
+      setOtpError('')
+      setTimeout(() => setOtpReenviado(false), 30000)
+    } finally {
+      setOtpReenviando(false)
+    }
+  }
+
+  // Manejar input de digitos OTP
+  const handleOtpChange = (index, value) => {
+    if (!/^\d*$/.test(value)) return
+    const newDigits = [...otpDigits]
+    newDigits[index] = value.slice(-1)
+    setOtpDigits(newDigits)
+    // Auto-focus siguiente
+    if (value && index < 5) {
+      const next = document.getElementById(`otp-${index + 1}`)
+      next?.focus()
+    }
+    // Auto-submit al completar
+    if (value && index === 5) {
+      const codigo = newDigits.join('')
+      if (codigo.length === 6) handleVerificarOtp(codigo)
+    }
+  }
+
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
+      const prev = document.getElementById(`otp-${index - 1}`)
+      prev?.focus()
+    }
+  }
+
+  const handleOtpPaste = (e) => {
+    e.preventDefault()
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+    if (!pasted) return
+    const newDigits = [...otpDigits]
+    for (let i = 0; i < 6; i++) newDigits[i] = pasted[i] || ''
+    setOtpDigits(newDigits)
+    if (pasted.length === 6) handleVerificarOtp(pasted)
   }
 
   return (
@@ -273,6 +371,14 @@ export default function RegistroForm({ refCode, planParam }) {
                 color: step >= 2 ? '#0a0a0a' : '#666',
               }}>2</div>
               <span className="text-[12px] font-medium" style={{ color: step >= 2 ? '#f0f0f5' : '#666' }}>Datos</span>
+            </div>
+            <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.08)' }} />
+            <div className="flex items-center gap-1.5">
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold" style={{
+                background: step >= 3 ? '#f5c518' : 'rgba(255,255,255,0.06)',
+                color: step >= 3 ? '#0a0a0a' : '#666',
+              }}>3</div>
+              <span className="text-[12px] font-medium" style={{ color: step >= 3 ? '#f0f0f5' : '#666' }}>Verificar</span>
             </div>
           </div>
 
@@ -520,12 +626,102 @@ export default function RegistroForm({ refCode, planParam }) {
             </div>
           )}
 
+          {/* ── Step 3: Verificacion OTP ── */}
+          {step === 3 && (
+            <div className="text-center">
+              {/* Icono email */}
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-5"
+                style={{ background: 'rgba(245,197,24,0.1)', border: '2px solid rgba(245,197,24,0.25)' }}>
+                <svg className="w-8 h-8" style={{ color: '#f5c518' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+
+              <h2 className="text-[20px] font-bold mb-2" style={{ color: '#f0f0f5' }}>
+                Verifica tu correo
+              </h2>
+              <p className="text-[13px] mb-1" style={{ color: '#888' }}>
+                Enviamos un codigo de 6 digitos a
+              </p>
+              <p className="text-[14px] font-semibold mb-6" style={{ color: '#f5c518' }}>
+                {form.email.trim().toLowerCase()}
+              </p>
+
+              {/* Error */}
+              {otpError && (
+                <div className="flex items-center justify-center gap-2 text-sm rounded-[10px] px-4 py-2.5 mb-4"
+                  style={{ background: 'rgba(248,113,113,0.10)', border: '1px solid rgba(248,113,113,0.30)', color: '#f87171' }}>
+                  {otpError}
+                </div>
+              )}
+
+              {/* 6-digit OTP input */}
+              <div className="flex justify-center gap-2.5 mb-6" onPaste={handleOtpPaste}>
+                {otpDigits.map((digit, i) => (
+                  <input
+                    key={i}
+                    id={`otp-${i}`}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleOtpChange(i, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                    autoFocus={i === 0}
+                    disabled={otpLoading}
+                    className="w-11 h-13 text-center text-[22px] font-bold rounded-[12px] outline-none transition-all"
+                    style={{
+                      background: 'rgba(255,255,255,0.04)',
+                      border: `1.5px solid ${digit ? 'rgba(245,197,24,0.5)' : 'rgba(255,255,255,0.1)'}`,
+                      color: '#f0f0f5',
+                      caretColor: '#f5c518',
+                    }}
+                  />
+                ))}
+              </div>
+
+              {/* Verificar button */}
+              <button
+                onClick={() => handleVerificarOtp()}
+                disabled={otpLoading || otpDigits.join('').length !== 6}
+                className="w-full h-11 rounded-[12px] text-[14px] font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50 mb-4"
+                style={{ background: '#f5c518', color: '#0a0a0a' }}
+              >
+                {otpLoading ? 'Verificando...' : 'Verificar'}
+              </button>
+
+              {/* Reenviar + Saltar */}
+              <div className="flex flex-col items-center gap-3">
+                <button
+                  onClick={handleReenviarOtp}
+                  disabled={otpReenviando || otpReenviado}
+                  className="text-[13px] font-medium transition-colors disabled:opacity-50"
+                  style={{ color: otpReenviado ? '#22c55e' : '#f5c518' }}
+                >
+                  {otpReenviado ? 'Codigo reenviado' : otpReenviando ? 'Reenviando...' : 'Reenviar codigo'}
+                </button>
+                <button
+                  onClick={handleSaltarVerificacion}
+                  disabled={otpLoading}
+                  className="text-[12px] transition-colors"
+                  style={{ color: '#666' }}
+                >
+                  Saltar por ahora
+                </button>
+              </div>
+
+              <p className="text-[11px] mt-5 leading-relaxed" style={{ color: '#555' }}>
+                Revisa tu bandeja de entrada y la carpeta de spam. El codigo expira en 30 minutos.
+              </p>
+            </div>
+          )}
+
           {/* Footer links */}
           <p className="text-[13px] mt-8 text-center" style={{ color: '#666' }}>
-            Ya tienes cuenta?{' '}
+            {step === 3 ? '' : <>Ya tienes cuenta?{' '}
             <Link href="/login" className="font-medium hover:underline" style={{ color: '#f5c518' }}>
               Inicia sesion
-            </Link>
+            </Link></>}
           </p>
 
           <div className="flex items-center justify-center gap-4 mt-8 text-[11px]" style={{ color: '#444' }}>
