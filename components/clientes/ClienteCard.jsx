@@ -1,6 +1,6 @@
 // components/clientes/ClienteCard.jsx
-// Card de cliente: nombre visible completo, estado, progreso financiero.
-// Layout vertical para que el nombre nunca se trunque en movil.
+// Card de cliente con jerarquia visual clara.
+// Nombre completo siempre visible, datos financieros etiquetados y separados.
 
 import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
@@ -44,9 +44,10 @@ export default function ClienteCard({ cliente, actions }) {
       padding={false}
       className="block px-4 py-3.5 transition-all duration-200 group hover:scale-[1.005]"
     >
-      {/* Fila 1: Avatar + Nombre + Badge + Kebab */}
-      <div className="flex items-center gap-3">
-        <div className="relative shrink-0">
+      {/* ── Seccion superior: identidad del cliente ── */}
+      <div className="flex items-start gap-3">
+        {/* Avatar */}
+        <div className="relative shrink-0 mt-0.5">
           <Avatar
             nombre={cliente.nombre}
             fotoUrl={cliente.fotoUrl}
@@ -58,80 +59,94 @@ export default function ClienteCard({ cliente, actions }) {
             <span
               className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full"
               style={{ background: 'var(--color-success)', border: '2px solid var(--color-bg-card)' }}
-              title="Pago hoy"
             />
           )}
         </div>
 
+        {/* Nombre + Cedula */}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-[var(--color-text-primary)] leading-tight line-clamp-1">
+          <p className="text-[14px] font-semibold text-[var(--color-text-primary)] leading-tight">
             {cliente.nombre}
           </p>
-          <div className="flex items-center gap-2 mt-0.5">
-            <p className="text-[10px] text-[var(--color-text-muted)]">CC {cliente.cedula}</p>
-            {cliente.grupoCobro && (
-              <span
-                className="inline-flex items-center gap-1 text-[9px] px-1 rounded"
-                style={{
-                  color: cliente.grupoCobro.color || 'var(--color-accent)',
-                  background: `${cliente.grupoCobro.color || 'var(--color-accent)'}14`,
-                }}
-              >
-                <span className="w-1 h-1 rounded-full" style={{ background: cliente.grupoCobro.color || 'var(--color-accent)' }} />
-                {cliente.grupoCobro.nombre}
-              </span>
-            )}
-          </div>
+          <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">CC {cliente.cedula}</p>
         </div>
 
-        <span
-          className="shrink-0 inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
-          style={{
-            background: `${color}26`,
-            color,
-            border: `1px solid ${color}40`,
-          }}
-        >
-          <span className="w-1 h-1 rounded-full" style={{ background: color }} />
-          {label}
-        </span>
+        {/* Badges apilados a la derecha */}
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          <span
+            className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
+            style={{
+              background: `${color}20`,
+              color,
+              border: `1px solid ${color}35`,
+            }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
+            {label}
+          </span>
+          {cliente.grupoCobro && (
+            <span
+              className="inline-flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded-full"
+              style={{
+                color: cliente.grupoCobro.color || 'var(--color-accent)',
+                background: `${cliente.grupoCobro.color || 'var(--color-accent)'}14`,
+                border: `1px solid ${cliente.grupoCobro.color || 'var(--color-accent)'}30`,
+              }}
+            >
+              <span className="w-1 h-1 rounded-full" style={{ background: cliente.grupoCobro.color || 'var(--color-accent)' }} />
+              {cliente.grupoCobro.nombre}
+            </span>
+          )}
+        </div>
 
+        {/* Kebab menu */}
         {actions?.length > 0 && <CardActionMenu actions={actions} />}
       </div>
 
-      {/* Fila 2: Datos financieros (solo si tiene prestamo) */}
+      {/* ── Seccion financiera (solo si tiene prestamo) ── */}
       {tienePrestamo && (
-        <div className="mt-2.5 ml-[52px]">
-          {/* Saldo + info prestamos */}
-          <div className="flex items-baseline justify-between mb-1.5">
-            <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
-              {cliente.prestamosActivos} prestamo{cliente.prestamosActivos > 1 ? 's' : ''}
-              {cliente.proximoCobroLabel && (
-                <> · <span style={{ color: cliente.diasMoraMax > 0 ? color : 'var(--color-text-secondary)' }}>{cliente.proximoCobroLabel}</span></>
-              )}
-            </p>
-            {saldoTotal > 0 && (
+        <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--color-border)' }}>
+          {/* Fila: Saldo + Info prestamo */}
+          <div className="flex items-end justify-between mb-2.5">
+            <div>
+              <p className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider">Saldo pendiente</p>
               <p
-                className="text-[13px] font-mono-display font-bold leading-none"
+                className="text-[18px] font-mono-display font-bold leading-none mt-1"
                 style={{ color: cliente.diasMoraMax > 0 ? color : 'var(--color-text-primary)' }}
               >
                 {formatCOP(saldoTotal)}
               </p>
-            )}
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] text-[var(--color-text-muted)]">
+                {cliente.prestamosActivos} prestamo{cliente.prestamosActivos > 1 ? 's' : ''}
+              </p>
+              {cliente.proximoCobroLabel && (
+                <p
+                  className="text-[10px] font-medium mt-0.5 capitalize"
+                  style={{ color: cliente.diasMoraMax > 0 ? color : 'var(--color-text-secondary)' }}
+                >
+                  {cliente.diasMoraMax > 0 ? 'Vencido' : 'Cobro'}: {cliente.proximoCobroLabel}
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Barra de progreso */}
-          <div className="flex items-center gap-1.5">
-            <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
+          <div>
+            <div className="flex items-center justify-between text-[10px] mb-1">
+              <span className="text-[var(--color-text-muted)]">Progreso</span>
+              <span className="font-mono-display font-semibold" style={{ color }}>{porcentaje}%</span>
+            </div>
+            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
               <div
                 className="h-full rounded-full transition-all"
                 style={{
-                  width: `${porcentaje}%`,
-                  background: `linear-gradient(90deg, ${color}99, ${color})`,
+                  width: `${Math.max(porcentaje, 2)}%`,
+                  background: `linear-gradient(90deg, ${color}cc, ${color})`,
                 }}
               />
             </div>
-            <span className="shrink-0 text-[10px] font-mono-display font-semibold" style={{ color }}>{porcentaje}%</span>
           </div>
         </div>
       )}
