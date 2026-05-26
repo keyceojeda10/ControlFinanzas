@@ -19,7 +19,7 @@ export async function GET(req, { params }) {
     where: { id },
     include: {
       users: {
-        select: { id: true, nombre: true, email: true, rol: true, activo: true, createdAt: true },
+        select: { id: true, nombre: true, email: true, rol: true, activo: true, emailVerificado: true, lastLoginAt: true, createdAt: true },
         orderBy: { createdAt: 'asc' },
       },
       suscripciones: {
@@ -408,6 +408,32 @@ export async function PATCH(req, { params }) {
       ok: true,
       mensaje: `Plan ${planNuevo} (${periodoLabel}) asignado. Vigente hasta ${fechaVencimiento.toLocaleDateString('es-CO')}`,
     })
+  }
+
+  if (accion === 'verificarEmail' && body.userId) {
+    const user = await prisma.user.findFirst({
+      where: { id: body.userId, organizationId: id },
+    })
+    if (!user) return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
+
+    const nuevoEstado = !user.emailVerificado
+    await prisma.user.update({
+      where: { id: body.userId },
+      data: {
+        emailVerificado: nuevoEstado,
+        tokenVerificacion: null,
+        tokenExpira: null,
+      },
+    })
+    await prisma.adminLog.create({
+      data: {
+        adminId:        session.user.id,
+        organizacionId: id,
+        accion:         nuevoEstado ? 'verificar_email' : 'desverificar_email',
+        detalle:        `Email de "${user.nombre}" (${user.email}) ${nuevoEstado ? 'verificado' : 'marcado como no verificado'}`,
+      },
+    })
+    return NextResponse.json({ ok: true, mensaje: `Email ${nuevoEstado ? 'verificado' : 'desverificado'}` })
   }
 
   return NextResponse.json({ error: 'Acción no válida' }, { status: 400 })

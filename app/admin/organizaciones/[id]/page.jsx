@@ -513,54 +513,81 @@ export default function OrgDetallePage() {
 
       {/* Usuarios de la organización */}
       <Card>
-        <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-4">Usuarios</p>
-        <div className="space-y-0">
-          <div className="hidden sm:grid grid-cols-[1.2fr_1.5fr_0.8fr_0.8fr_0.9fr] gap-2 text-[10px] text-[var(--color-text-muted)] font-medium uppercase pb-2 border-b border-[var(--color-border)]">
-            <span>Nombre</span>
-            <span>Email</span>
-            <span className="text-center">Rol</span>
-            <span className="text-center">Estado</span>
-            <span className="text-center">Acciones</span>
-          </div>
+        <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-4">
+          Usuarios ({(org.users ?? []).length})
+        </p>
+        <div className="space-y-3">
           {(org.users ?? []).map((u) => (
-            <div key={u.id} className="grid grid-cols-2 sm:grid-cols-[1.2fr_1.5fr_0.8fr_0.8fr_0.9fr] gap-2 py-2.5 border-b border-[var(--color-border)] last:border-0 items-center">
-              <p className="text-sm font-medium text-[white]">{u.nombre}</p>
-              <p className="text-xs text-[var(--color-text-muted)] truncate">{u.email}</p>
-              <div className="text-center">
-                <Badge variant={u.rol === 'owner' ? 'blue' : 'gray'}>{{ owner: 'Admin', cobrador: 'Cobrador' }[u.rol] ?? u.rol}</Badge>
+            <div key={u.id} className="rounded-[12px] border border-[var(--color-border)] p-3.5 bg-[var(--color-bg-base)]">
+              {/* Fila 1: Info del usuario */}
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-[white]">{u.nombre}</p>
+                  <p className="text-xs text-[var(--color-text-muted)] truncate mt-0.5">{u.email}</p>
+                  {u.lastLoginAt && (
+                    <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
+                      Ultimo login: {new Date(u.lastLoginAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  )}
+                  {!u.lastLoginAt && (
+                    <p className="text-[10px] text-[#555] mt-1">Nunca ha iniciado sesion</p>
+                  )}
+                </div>
+                <Badge variant={u.rol === 'owner' ? 'blue' : 'gray'}>
+                  {{ owner: 'Admin', cobrador: 'Cobrador' }[u.rol] ?? u.rol}
+                </Badge>
               </div>
-              <div className="text-center">
+
+              {/* Fila 2: Badges de estado (clickables) */}
+              <div className="flex flex-wrap gap-2 mb-3">
                 <button
                   onClick={() => ejecutarAccion('toggleUsuario', { userId: u.id })}
                   disabled={!!accionando}
-                  title={u.activo ? 'Click para desactivar' : 'Click para activar'}
+                  title={u.activo ? 'Click para desactivar usuario' : 'Click para activar usuario'}
+                  className="cursor-pointer transition-opacity hover:opacity-80 disabled:opacity-50"
                 >
                   <Badge variant={u.activo ? 'green' : 'red'}>
                     {u.activo ? 'Activo' : 'Inactivo'}
                   </Badge>
                 </button>
-              </div>
-              <div className="text-center">
+
                 <button
                   onClick={() => {
-                    const nueva = prompt(`Nueva contraseña para ${u.nombre} (${u.email}):\n\nMínimo 6 caracteres.`)
+                    const accionLabel = u.emailVerificado ? 'desverificar' : 'verificar'
+                    if (!confirm(`¿${u.emailVerificado ? 'Desverificar' : 'Verificar'} el email de ${u.nombre} (${u.email})?`)) return
+                    ejecutarAccion('verificarEmail', { userId: u.id })
+                  }}
+                  disabled={!!accionando}
+                  title={u.emailVerificado ? 'Email verificado — click para desverificar' : 'Email NO verificado — click para verificar'}
+                  className="cursor-pointer transition-opacity hover:opacity-80 disabled:opacity-50"
+                >
+                  <Badge variant={u.emailVerificado ? 'green' : 'yellow'}>
+                    {u.emailVerificado ? 'Email verificado' : 'Email sin verificar'}
+                  </Badge>
+                </button>
+              </div>
+
+              {/* Fila 3: Acciones */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    const nueva = prompt(`Nueva contrasena para ${u.nombre} (${u.email}):\n\nMinimo 6 caracteres.`)
                     if (nueva == null) return
                     const clean = nueva.trim()
                     if (clean.length < 6) {
-                      alert('La contraseña debe tener al menos 6 caracteres')
+                      alert('La contrasena debe tener al menos 6 caracteres')
                       return
                     }
-                    if (!confirm(`¿Restablecer la contraseña de ${u.nombre}?\n\nEl usuario deberá usar la nueva contraseña en su próximo inicio de sesión.`)) return
+                    if (!confirm(`¿Restablecer la contrasena de ${u.nombre}?`)) return
                     ejecutarAccion('resetearPassword', { userId: u.id, nuevaPassword: clean })
                   }}
                   disabled={!!accionando}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium text-[var(--color-accent)] bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.2)] hover:bg-[rgba(245,197,24,0.15)] transition-all disabled:opacity-50"
-                  title="Restablecer contraseña"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] text-[11px] font-medium text-[var(--color-accent)] bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.2)] hover:bg-[rgba(245,197,24,0.15)] transition-all disabled:opacity-50"
                 >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                   </svg>
-                  Reset
+                  Cambiar contrasena
                 </button>
               </div>
             </div>
