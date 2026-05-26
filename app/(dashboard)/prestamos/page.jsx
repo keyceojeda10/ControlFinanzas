@@ -9,7 +9,7 @@ import { guardarEnCache, leerDeCache, obtenerPrestamosOffline } from '@/lib/offl
 import { Button }                             from '@/components/ui/Button'
 import { SkeletonCard }                       from '@/components/ui/Skeleton'
 import PrestamoCard                           from '@/components/prestamos/PrestamoCard'
-import SwipeableCard                          from '@/components/ui/SwipeableCard'
+// SwipeableCard reemplazado por CardActionMenu integrado en PrestamoCard
 import ModalWhatsAppTemplates                 from '@/components/ui/ModalWhatsAppTemplates'
 import Mascota                                from '@/components/ui/Mascota'
 
@@ -278,9 +278,9 @@ export default function PrestamosPage() {
       {!loading && prestamos.length > 0 && (
         <div className="space-y-2.5">
           {prestamos.map((p) => {
-            const actions = []
+            const cardActions = []
             if (p.cliente?.telefono) {
-              actions.push({
+              cardActions.push({
                 icon: IconWA,
                 label: 'WhatsApp',
                 color: '#25D366',
@@ -288,17 +288,15 @@ export default function PrestamosPage() {
               })
             }
             if (p.estado === 'activo') {
-              actions.push({
+              cardActions.push({
                 icon: IconPagar,
-                label: 'Pagar',
+                label: 'Registrar pago',
                 color: '#22c55e',
                 onClick: () => { window.location.href = `/prestamos/${p.id}?openPago=1` },
               })
             }
             return (
-              <SwipeableCard key={p.id} actions={actions}>
-                <PrestamoCard prestamo={p} />
-              </SwipeableCard>
+              <PrestamoCard key={p.id} prestamo={p} actions={cardActions} />
             )
           })}
         </div>

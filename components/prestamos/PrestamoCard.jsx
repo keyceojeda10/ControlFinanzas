@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card'
 import { formatCOP, formatFechaCobroRelativa } from '@/lib/calculos'
 import OfflineBadge from '@/components/offline/OfflineBadge'
 import Avatar from '@/components/ui/Avatar'
+import CardActionMenu from '@/components/ui/CardActionMenu'
 
 const COLOR_OK     = 'var(--color-accent)'    // dorado — al dia
 const COLOR_HOT    = '#f97316'                // naranja — vencido pocos dias
@@ -31,7 +32,7 @@ function moodLabel(p) {
   return 'Al día'
 }
 
-export default function PrestamoCard({ prestamo: p }) {
+export default function PrestamoCard({ prestamo: p, actions }) {
   const color           = moodColor(p)
   const label           = moodLabel(p)
   const porcentaje      = Math.max(0, Math.min(100, p.porcentajePagado ?? 0))
@@ -65,19 +66,22 @@ export default function PrestamoCard({ prestamo: p }) {
             <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">CC {p.cliente?.cedula}</p>
           </div>
         </div>
-        <div className="flex flex-col items-end gap-1 shrink-0">
-          <OfflineBadge id={p.id} />
-          <span
-            className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
-            style={{
-              background: `color-mix(in srgb, ${color} 15%, transparent)`,
-              color,
-              border: `1px solid color-mix(in srgb, ${color} 25%, transparent)`,
-            }}
-          >
-            <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
-            {label}
-          </span>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex flex-col items-end gap-1">
+            <OfflineBadge id={p.id} />
+            <span
+              className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+              style={{
+                background: `color-mix(in srgb, ${color} 15%, transparent)`,
+                color,
+                border: `1px solid color-mix(in srgb, ${color} 25%, transparent)`,
+              }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
+              {label}
+            </span>
+          </div>
+          {actions?.length > 0 && <CardActionMenu actions={actions} />}
         </div>
       </div>
 

@@ -10,7 +10,7 @@ import { Button }        from '@/components/ui/Button'
 import { Modal }         from '@/components/ui/Modal'
 import { SkeletonCard }  from '@/components/ui/Skeleton'
 import ClienteCard       from '@/components/clientes/ClienteCard'
-import SwipeableCard     from '@/components/ui/SwipeableCard'
+// SwipeableCard reemplazado por CardActionMenu integrado en ClienteCard
 import ModalWhatsAppTemplates from '@/components/ui/ModalWhatsAppTemplates'
 import Mascota           from '@/components/ui/Mascota'
 
@@ -574,8 +574,9 @@ export default function ClientesPage() {
                   </div>
                 </label>
               ) : (
-                <SwipeableCard
+                <ClienteCard
                   key={c.id}
+                  cliente={c}
                   actions={[
                     ...(c.telefono ? [{
                       icon: IconWA,
@@ -585,14 +586,12 @@ export default function ClientesPage() {
                     }] : []),
                     ...(c.prestamosActivos > 0 ? [{
                       icon: IconPagar,
-                      label: 'Pagar',
+                      label: 'Cobrar',
                       color: '#22c55e',
                       onClick: () => { window.location.href = `/clientes/${c.id}` },
                     }] : []),
                   ]}
-                >
-                  <ClienteCard cliente={c} />
-                </SwipeableCard>
+                />
               )
             ))}
           </div>

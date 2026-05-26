@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
 import { formatCOP } from '@/lib/calculos'
 import Avatar from '@/components/ui/Avatar'
+import CardActionMenu from '@/components/ui/CardActionMenu'
 
 const COLOR_OK     = 'var(--color-accent)'
 const COLOR_HOT    = '#f97316'
@@ -28,7 +29,7 @@ function moodLabel(c) {
   return 'Al día'
 }
 
-export default function ClienteCard({ cliente }) {
+export default function ClienteCard({ cliente, actions }) {
   const color = moodColor(cliente)
   const label = moodLabel(cliente)
   const saldoTotal = Number(cliente.saldoPendienteTotal ?? 0)
@@ -136,6 +137,9 @@ export default function ClienteCard({ cliente }) {
             </p>
           </div>
         )}
+
+        {/* Menu de acciones rapidas */}
+        {actions?.length > 0 && <CardActionMenu actions={actions} />}
       </div>
     </Card>
   )
