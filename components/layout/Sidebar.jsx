@@ -10,6 +10,7 @@ import { useOffline } from '@/components/providers/OfflineProvider'
 import { useState, useEffect } from 'react'
 import InstallButton from './InstallButton'
 import ThemeToggle from '@/components/ui/ThemeToggle'
+import Avatar from '@/components/ui/Avatar'
 import SyncStatusBadge from '@/components/offline/SyncStatusBadge'
 import CacheAge from '@/components/offline/CacheAge'
 import { limpiarDatosOffline } from '@/lib/offline'
@@ -420,12 +421,7 @@ export default function Sidebar() {
       <div className="px-3 pb-3 pt-3 space-y-2" style={{ borderTop: '1px solid var(--color-border)' }}>
         {/* Fila 1: User + theme + sign out */}
         <div className="flex items-center gap-2">
-          <div
-            className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0"
-            style={{ background: 'var(--color-accent)', color: '#1a1a2e' }}
-          >
-            {session?.user?.nombre?.[0]?.toUpperCase() ?? 'U'}
-          </div>
+          <Avatar nombre={session?.user?.nombre} size={28} fontSize={11} />
           <div className="flex-1 min-w-0">
             <p className="text-[11px] font-semibold truncate leading-tight" style={{ color: 'var(--color-text-primary)' }}>
               {session?.user?.nombre}

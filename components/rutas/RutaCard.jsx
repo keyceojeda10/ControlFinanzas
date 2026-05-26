@@ -4,6 +4,7 @@
 import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
 import { formatCOP } from '@/lib/calculos'
+import Avatar from '@/components/ui/Avatar'
 
 const COLOR_OK   = '#22c55e'
 const COLOR_HOT  = '#f5c518'
@@ -35,8 +36,6 @@ export default function RutaCard({ ruta }) {
   const color = moodColor(progreso, ruta.esperadoHoy)
   const label = moodLabel(progreso, ruta.esperadoHoy)
 
-  // Avatar del cobrador (inicial)
-  const inicial = ruta.cobrador?.nombre?.[0]?.toUpperCase() ?? '?'
   const tieneCobrador = !!ruta.cobrador
 
   return (
@@ -69,12 +68,7 @@ export default function RutaCard({ ruta }) {
             <div className="flex items-center gap-1.5 mt-0.5">
               {tieneCobrador ? (
                 <>
-                  <span
-                    className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold shrink-0"
-                    style={{ background: 'color-mix(in srgb, var(--color-purple) 25%, transparent)', color: 'var(--color-purple)' }}
-                  >
-                    {inicial}
-                  </span>
+                  <Avatar nombre={ruta.cobrador.nombre} size={16} fontSize={7} />
                   <span className="text-[10px] truncate" style={{ color: 'var(--color-purple)' }}>{ruta.cobrador.nombre}</span>
                 </>
               ) : (

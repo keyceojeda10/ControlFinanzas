@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import { Input } from '@/components/ui/Input'
 import { calcularPrestamo, formatCOP } from '@/lib/calculos'
 import ResumenCalculo from '@/components/prestamos/ResumenCalculo'
+import Avatar from '@/components/ui/Avatar'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
 const hoyISO = () => getColombiaDate().toISOString().slice(0, 10)
@@ -86,9 +87,7 @@ export default function WizardPrestamo({ cliente, onComplete }) {
       <div className="text-center mb-6">
         <h2 className="text-xl font-bold text-[var(--color-text-primary)]">Crea un préstamo</h2>
         <div className="flex items-center justify-center gap-2 mt-2">
-          <div className="w-6 h-6 rounded-full bg-[rgba(245,197,24,0.2)] flex items-center justify-center">
-            <span className="text-[var(--color-accent)] text-[9px] font-bold">{cliente.nombre?.[0]?.toUpperCase()}</span>
-          </div>
+          <Avatar nombre={cliente.nombre} size={24} fontSize={9} />
           <span className="text-sm text-[var(--color-accent)] font-medium">{cliente.nombre}</span>
         </div>
       </div>

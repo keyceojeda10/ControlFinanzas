@@ -5,6 +5,7 @@
 import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
 import { formatCOP } from '@/lib/calculos'
+import Avatar from '@/components/ui/Avatar'
 
 const COLOR_OK     = 'var(--color-accent)'
 const COLOR_HOT    = '#f97316'
@@ -30,8 +31,6 @@ function moodLabel(c) {
 export default function ClienteCard({ cliente }) {
   const color = moodColor(cliente)
   const label = moodLabel(cliente)
-  const inicial = cliente.nombre?.[0]?.toUpperCase() ?? '?'
-  const tieneFoto = !!cliente.fotoUrl
   const saldoTotal = Number(cliente.saldoPendienteTotal ?? 0)
   const tienePrestamo = (cliente.prestamosActivos ?? 0) > 0
   const porcentaje = Math.max(0, Math.min(100, cliente.porcentajePagadoPromedio ?? 0))
@@ -45,28 +44,15 @@ export default function ClienteCard({ cliente }) {
       className="block px-4 py-3.5 transition-all duration-200 group hover:scale-[1.005]"
     >
       <div className="flex items-center gap-3">
-        {/* Avatar con anillo del color del estado */}
+        {/* Avatar */}
         <div className="relative shrink-0">
-          {tieneFoto ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={cliente.fotoUrl}
-              alt={cliente.nombre}
-              className="w-11 h-11 rounded-full object-cover"
-              style={{ border: `2px solid ${color}` }}
-            />
-          ) : (
-            <div
-              className="w-11 h-11 rounded-full flex items-center justify-center text-[14px] font-bold"
-              style={{
-                background: `${color}2e`,
-                color,
-                border: `2px solid ${color}66`,
-              }}
-            >
-              {inicial}
-            </div>
-          )}
+          <Avatar
+            nombre={cliente.nombre}
+            fotoUrl={cliente.fotoUrl}
+            size={44}
+            fontSize={14}
+            style={cliente.fotoUrl ? { border: `2px solid ${color}` } : undefined}
+          />
           {cliente.pagoHoy && (
             <span
               className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full"

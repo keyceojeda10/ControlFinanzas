@@ -7,6 +7,7 @@ import { useState, useEffect, useRef, useId } from 'react'
 import Link from 'next/link'
 import { formatCOP, formatFechaCobroRelativa } from '@/lib/calculos'
 import OfflineBadge from '@/components/offline/OfflineBadge'
+import Avatar from '@/components/ui/Avatar'
 
 // ─── Helpers de fecha ────────────────────────────────────────────
 const fmtFecha = (d) => d
@@ -211,8 +212,6 @@ export function PrestamoHeroCard({ prestamo, narrativa, sparklineData }) {
 // ─── 2. Header del cliente con contexto rico ─────────────────────
 export function HeaderClienteContexto({ cliente, prestamo, statsCliente, onWhatsApp }) {
   const color = moodColorFromPrestamo(prestamo)
-  const inicial = cliente?.nombre?.[0]?.toUpperCase() ?? '?'
-  const tieneFoto = !!cliente?.fotoUrl
 
   return (
     <div
@@ -223,29 +222,14 @@ export function HeaderClienteContexto({ cliente, prestamo, statsCliente, onWhats
       }}
     >
       <div className="flex items-center gap-3">
-        {/* Avatar con anillo del color del prestamo */}
-        <div className="shrink-0">
-          {tieneFoto ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={cliente.fotoUrl}
-              alt={cliente.nombre}
-              className="w-12 h-12 rounded-full object-cover"
-              style={{ border: `2px solid ${color}` }}
-            />
-          ) : (
-            <div
-              className="w-12 h-12 rounded-full flex items-center justify-center text-[16px] font-bold"
-              style={{
-                background: `color-mix(in srgb, ${color} 18%, transparent)`,
-                color,
-                border: `2px solid color-mix(in srgb, ${color} 40%, transparent)`,
-              }}
-            >
-              {inicial}
-            </div>
-          )}
-        </div>
+        {/* Avatar */}
+        <Avatar
+          nombre={cliente?.nombre}
+          fotoUrl={cliente?.fotoUrl}
+          size={48}
+          fontSize={16}
+          style={cliente?.fotoUrl ? { border: `2px solid ${color}` } : undefined}
+        />
 
         <div className="flex-1 min-w-0">
           <Link

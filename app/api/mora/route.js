@@ -41,6 +41,7 @@ export async function GET(request) {
           nombre: true,
           cedula: true,
           telefono: true,
+          fotoUrl: true,
           rutaId: true,
           diasSinCobro: true,
           ruta: { select: { nombre: true, diasSinCobro: true } },

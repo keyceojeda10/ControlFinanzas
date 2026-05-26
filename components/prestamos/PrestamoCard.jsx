@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
 import { formatCOP, formatFechaCobroRelativa } from '@/lib/calculos'
 import OfflineBadge from '@/components/offline/OfflineBadge'
+import Avatar from '@/components/ui/Avatar'
 
 const COLOR_OK     = 'var(--color-accent)'    // dorado — al dia
 const COLOR_HOT    = '#f97316'                // naranja — vencido pocos dias
@@ -38,7 +39,6 @@ export default function PrestamoCard({ prestamo: p }) {
   const enMora          = p.diasMora > 0
   const tieneProximo    = p.estado === 'activo' && p.proximoCobro
   const proximoLabel    = tieneProximo ? formatFechaCobroRelativa(p.proximoCobro) : null
-  const inicial         = p.cliente?.nombre?.[0]?.toUpperCase() ?? '?'
 
   return (
     <Card
@@ -51,16 +51,13 @@ export default function PrestamoCard({ prestamo: p }) {
       {/* Top: cliente + estado mood + offline */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0"
-            style={{
-              background: `color-mix(in srgb, ${color} 18%, transparent)`,
-              color,
-              border: `1px solid color-mix(in srgb, ${color} 30%, transparent)`,
-            }}
-          >
-            {inicial}
-          </div>
+          <Avatar
+            nombre={p.cliente?.nombre}
+            fotoUrl={p.cliente?.fotoUrl}
+            size={32}
+            fontSize={12}
+            style={p.cliente?.fotoUrl ? { border: `1px solid ${color}` } : undefined}
+          />
           <div className="min-w-0">
             <p className="text-sm font-semibold text-[var(--color-text-primary)] truncate leading-tight">
               {p.cliente?.nombre}

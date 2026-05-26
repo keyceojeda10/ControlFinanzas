@@ -294,6 +294,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
             <div>
               <p className="text-[12px] font-medium" style={{ color: 'var(--color-text-primary)' }}>
                 {fotoPreview ? 'Foto seleccionada' : 'Agregar foto'}
+                <span className="font-normal text-[10px] ml-1" style={{ color: 'var(--color-text-muted)' }}>(opcional)</span>
               </p>
               <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
                 JPG, PNG o WebP. Max 5MB

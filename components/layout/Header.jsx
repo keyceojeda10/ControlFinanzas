@@ -8,6 +8,7 @@ import { signOut }      from 'next-auth/react'
 import { useAuth }      from '@/hooks/useAuth'
 import { useEffect, useRef, useState } from 'react'
 import ThemeToggle      from '@/components/ui/ThemeToggle'
+import Avatar           from '@/components/ui/Avatar'
 import { limpiarDatosOffline } from '@/lib/offline'
 
 
@@ -42,7 +43,7 @@ export default function Header() {
   const nombre = session?.user?.nombre ?? session?.user?.name ?? 'Usuario'
   const email  = session?.user?.email  ?? ''
   const plan   = session?.user?.plan   ?? 'starter'
-  const inicial = nombre[0]?.toUpperCase() ?? 'U'
+  // inicial ya no se usa directamente, Avatar lo resuelve
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -95,23 +96,17 @@ export default function Header() {
         <div className="relative" ref={userRef}>
           <button
             onClick={() => setUserOpen((v) => !v)}
-            className="w-10 h-10 rounded-full flex items-center justify-center text-[13px] font-bold hover:scale-105 focus-visible:outline-none focus-visible:ring-2 transition-all cursor-pointer active:scale-95"
-            aria-label="Menú de usuario"
-            style={{
-              background: 'var(--color-accent)',
-              color: '#1a1a2e',
-            }}
+            className="hover:scale-105 focus-visible:outline-none focus-visible:ring-2 transition-all cursor-pointer active:scale-95 rounded-full"
+            aria-label="Menu de usuario"
           >
-            {inicial}
+            <Avatar nombre={nombre} size={40} fontSize={13} />
           </button>
 
           {userOpen && (
             <div className="absolute right-0 top-12 w-60 rounded-[14px] shadow-2xl overflow-hidden z-50 glass-strong">
               <div className="px-4 py-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'var(--color-accent)', color: '#1a1a2e' }}>
-                    {inicial}
-                  </div>
+                  <Avatar nombre={nombre} size={32} fontSize={11} />
                   <div className="min-w-0">
                     <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{nombre}</p>
                     <p className="text-[11px] truncate" style={{ color: 'var(--color-text-muted)' }}>{email}</p>

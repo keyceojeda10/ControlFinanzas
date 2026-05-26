@@ -4,6 +4,7 @@
 
 import Link from 'next/link'
 import { formatCOP } from '@/lib/calculos'
+import Avatar from '@/components/ui/Avatar'
 
 const COLOR_OK   = '#22c55e'
 const COLOR_HOT  = '#f5c518'
@@ -47,7 +48,6 @@ export default function CobradorCard({ cobrador, onToggleActivo, toggling }) {
     : 0
   const color = moodColor(progreso, cobrador.esperadoHoy, cobrador.activo)
   const label = moodLabel(progreso, cobrador.esperadoHoy, cobrador.activo)
-  const inicial = cobrador.nombre?.[0]?.toUpperCase() ?? '?'
   const actividad = tiempoUltimaActividad(cobrador.ultimoPago)
 
   return (
@@ -64,16 +64,7 @@ export default function CobradorCard({ cobrador, onToggleActivo, toggling }) {
         <div className="flex items-start gap-3 mb-3">
           {/* Avatar con dot de actividad */}
           <div className="relative shrink-0">
-            <div
-              className="w-12 h-12 rounded-full flex items-center justify-center text-[16px] font-bold"
-              style={{
-                background: `color-mix(in srgb, ${color} 18%, transparent)`,
-                color,
-                border: `2px solid color-mix(in srgb, ${color} 40%, transparent)`,
-              }}
-            >
-              {inicial}
-            </div>
+            <Avatar nombre={cobrador.nombre} size={48} fontSize={16} />
             {actividad?.activo && (
               <span
                 className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full"

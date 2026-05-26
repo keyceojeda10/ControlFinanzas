@@ -6,6 +6,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { formatCOP } from '@/lib/calculos'
+import Avatar from '@/components/ui/Avatar'
 
 const COLOR_OK   = 'var(--color-accent)'
 const COLOR_HOT  = '#f97316'
@@ -59,10 +60,10 @@ function useCountUp(target, duration = 800) {
 export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats, onWhatsApp, puedeSubirFoto = false, onFotoActualizada }) {
   const color = moodColorFromCliente(cliente, prestamosActivos)
   const label = moodLabel(cliente, prestamosActivos)
-  const inicial = cliente?.nombre?.[0]?.toUpperCase() ?? '?'
   const tieneFoto = !!cliente?.fotoUrl
   const fotoInputRef = useRef(null)
   const [subiendoFoto, setSubiendoFoto] = useState(false)
+  const [fotoAbierta, setFotoAbierta] = useState(false)
 
   const handleFotoChange = async (e) => {
     const file = e.target.files?.[0]
@@ -115,26 +116,14 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
         <div className="flex items-start gap-3 mb-4">
           {/* Avatar con overlay de camara si puede subir foto */}
           <div className="relative shrink-0">
-            {tieneFoto ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={cliente.fotoUrl}
-                alt={cliente.nombre}
-                className="w-14 h-14 rounded-full object-cover"
-                style={{ border: `2px solid ${color}` }}
-              />
-            ) : (
-              <div
-                className="w-14 h-14 rounded-full flex items-center justify-center text-[20px] font-bold"
-                style={{
-                  background: `color-mix(in srgb, ${color} 18%, transparent)`,
-                  color,
-                  border: `2px solid color-mix(in srgb, ${color} 40%, transparent)`,
-                }}
-              >
-                {inicial}
-              </div>
-            )}
+            <Avatar
+              nombre={cliente?.nombre}
+              fotoUrl={cliente?.fotoUrl}
+              size={56}
+              fontSize={20}
+              onClick={tieneFoto ? () => setFotoAbierta(true) : undefined}
+              style={tieneFoto ? { border: `2px solid ${color}` } : undefined}
+            />
             {puedeSubirFoto && (
               <>
                 <input ref={fotoInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFotoChange} />
@@ -268,6 +257,32 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
           </div>
         )}
       </div>
+
+      {/* Lightbox foto */}
+      {fotoAbierta && tieneFoto && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          onClick={() => setFotoAbierta(false)}
+        >
+          <button
+            className="absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center bg-white/10 text-white hover:bg-white/20 transition-colors"
+            onClick={() => setFotoAbierta(false)}
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <div className="p-4 max-w-[90vw] max-h-[85vh]" onClick={(e) => e.stopPropagation()}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={cliente.fotoUrl}
+              alt={cliente.nombre}
+              className="max-w-full max-h-[80vh] rounded-2xl object-contain shadow-2xl"
+            />
+            <p className="text-center text-white/80 text-sm mt-3 font-medium">{cliente.nombre}</p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

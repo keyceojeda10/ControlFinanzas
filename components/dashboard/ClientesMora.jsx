@@ -2,6 +2,7 @@
 
 import { Badge } from '@/components/ui/Badge'
 import { formatCOP } from '@/lib/calculos'
+import Avatar from '@/components/ui/Avatar'
 
 export default function ClientesMora({ clientes = [], loading = false }) {
   if (loading) {
@@ -40,11 +41,7 @@ export default function ClientesMora({ clientes = [], loading = false }) {
     <div className="space-y-3">
       {clientes.map((c) => (
         <div key={c.id} className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-[rgba(239,68,68,0.12)] flex items-center justify-center shrink-0">
-            <span className="text-[var(--color-danger)] text-xs font-bold">
-              {c.nombre?.[0]?.toUpperCase() ?? '?'}
-            </span>
-          </div>
+          <Avatar nombre={c.nombre} fotoUrl={c.fotoUrl} size={36} fontSize={12} />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-[#f1f5f9] truncate">{c.nombre}</p>
             <p className="text-xs text-[#8b95a5]">{c.diasMora} días en mora</p>
