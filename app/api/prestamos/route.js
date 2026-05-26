@@ -132,7 +132,7 @@ export async function POST(request) {
 
   const { organizationId, rol } = session.user
   const body = await request.json()
-  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado, cuotaManual, inyeccionPrevia, diaCobroSemana, diaCobroMes } = body
+  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado, cuotaManual, inyeccionPrevia, diaCobroSemana, diaCobroMes, seguro, montoSeguro } = body
 
   const freq = frecuencia || 'diario'
   const frecuenciasValidas = ['diario', 'semanal', 'quincenal', 'mensual']
@@ -274,6 +274,8 @@ export async function POST(request) {
         diasPlazo:     Number(diasPlazo),
         fechaInicio:   new Date(`${fechaInicio}T05:00:00.000Z`), // medianoche Colombia
         fechaFin,
+        seguro:        !!seguro,
+        ...(seguro && montoSeguro > 0 && { montoSeguro: Number(montoSeguro) }),
       },
     })
 

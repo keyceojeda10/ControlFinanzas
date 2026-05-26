@@ -93,6 +93,9 @@ function NuevoPrestamo() {
   // Préstamo en curso (migración)
   const [esEnCurso, setEsEnCurso] = useState(false)
   const [yaAbonado, setYaAbonado] = useState('')
+  // Cobro de seguro (opcional)
+  const [seguro, setSeguro] = useState(false)
+  const [montoSeguro, setMontoSeguro] = useState('')
   // Cuota personalizada (sobrescribe la cuota calculada por el sistema)
   const [cuotaManualActiva, setCuotaManualActiva] = useState(false)
   const [cuotaManual, setCuotaManual] = useState('')
@@ -201,6 +204,7 @@ function NuevoPrestamo() {
         ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
         ...(cuotaManualActiva && Number(cuotaManual) > 0 && { cuotaManual: Number(cuotaManual) }),
         ...(inyeccionPrevia && { inyeccionPrevia }),
+        ...(seguro && Number(montoSeguro) > 0 && { seguro: true, montoSeguro: Number(montoSeguro) }),
       }),
     })
     const data = await res.json()
@@ -230,6 +234,7 @@ function NuevoPrestamo() {
       ...(frecuencia === 'mensual' && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
       ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
       ...(cuotaManualActiva && Number(cuotaManual) > 0 && { cuotaManual: Number(cuotaManual) }),
+      ...(seguro && Number(montoSeguro) > 0 && { seguro: true, montoSeguro: Number(montoSeguro) }),
     }
 
     // Offline: encolar sin intentar fetch (evita esperar timeout)
@@ -743,6 +748,46 @@ function NuevoPrestamo() {
               )}
               <p className="text-[10px] text-[var(--color-text-muted)] leading-snug">
                 Se registrará como pago inicial. El saldo pendiente se calculará automáticamente.
+              </p>
+            </div>
+          )}
+        </SectionCard>
+
+        {/* Cobro de seguro (opcional) */}
+        <SectionCard
+          title="Cobro de seguro (opcional)"
+          color="#6366f1"
+          icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>}
+          accent={
+            <button
+              type="button"
+              onClick={() => { setSeguro(v => !v); if (seguro) setMontoSeguro('') }}
+              className={[
+                'relative w-10 h-[22px] rounded-full transition-colors shrink-0',
+                seguro ? 'bg-[#6366f1]' : 'bg-[var(--color-bg-hover)]',
+              ].join(' ')}
+            >
+              <span className={[
+                'absolute top-[2px] w-[18px] h-[18px] rounded-full bg-white transition-transform shadow-sm',
+                seguro ? 'left-[20px]' : 'left-[2px]',
+              ].join(' ')} />
+            </button>
+          }
+        >
+          {!seguro ? (
+            <p className="text-[11px] text-[var(--color-text-muted)] leading-snug">
+              Activa esta opcion si cobras un seguro adicional al prestamo.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              <MoneyInput
+                label="Monto del seguro (COP)"
+                placeholder="Ej: 10.000"
+                value={montoSeguro}
+                onChange={(e) => setMontoSeguro(e.target.value)}
+              />
+              <p className="text-[10px] text-[var(--color-text-muted)] leading-snug">
+                Este monto queda registrado como referencia. No se suma al total a pagar del prestamo.
               </p>
             </div>
           )}

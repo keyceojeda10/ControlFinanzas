@@ -14,6 +14,7 @@ import { SkeletonCard }              from '@/components/ui/Skeleton'
 import BotonWhatsApp                 from '@/components/ui/BotonWhatsApp'
 import ModalWhatsAppTemplates        from '@/components/ui/ModalWhatsAppTemplates'
 import { formatCOP, formatFechaCobroRelativa } from '@/lib/calculos'
+import { planTieneFotos }            from '@/lib/planes'
 import ScoreCrediticio               from '@/components/clientes/ScoreCrediticio'
 import ClienteHeroCard, { InfoContactoCard, AccionesClienteChips } from '@/components/clientes/ClienteHeroCard'
 import AiTipBanner from '@/components/ui/AiTipBanner'
@@ -350,6 +351,8 @@ export default function ClienteDetallePage({ params }) {
           ? `${historial.filter(p => p.estado === 'completado').length} préstamo${historial.filter(p => p.estado === 'completado').length === 1 ? '' : 's'} completado${historial.filter(p => p.estado === 'completado').length === 1 ? '' : 's'} antes`
           : null}
         onWhatsApp={cliente.telefono ? () => setModalWA(true) : null}
+        puedeSubirFoto={(puedeEditarClientes || esOwner) && planTieneFotos(plan)}
+        onFotoActualizada={(url) => setCliente(prev => ({ ...prev, fotoUrl: url }))}
       />
 
       {/* Tip IA contextual */}

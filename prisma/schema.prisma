@@ -251,6 +251,8 @@ model Prestamo {
   fechaInicio    DateTime
   fechaFin       DateTime
   diasPlazo      Int
+  seguro         Boolean        @default(false)
+  montoSeguro    Float?
   estado         EstadoPrestamo @default(activo)
   createdAt      DateTime       @default(now())
 
