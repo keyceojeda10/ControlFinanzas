@@ -132,7 +132,7 @@ export async function POST(request) {
 
   const { organizationId, rol } = session.user
   const body = await request.json()
-  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado, cuotaManual, inyeccionPrevia, diaCobroSemana, diaCobroMes, seguro, montoSeguro } = body
+  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado, cuotaManual, inyeccionPrevia, diaCobroSemana, diaCobroMes, seguro, montoSeguro, redondeo } = body
 
   const freq = frecuencia || 'diario'
   const frecuenciasValidas = ['diario', 'semanal', 'quincenal', 'mensual']
@@ -191,7 +191,13 @@ export async function POST(request) {
     }
 
     const rutaIdsAsignadas = rutasAsignadas.map(r => r.id)
-    if (!rutaIdsAsignadas.includes(cliente.rutaId)) {
+    if (!cliente.rutaId) {
+      // Cliente sin ruta: auto-asignar a la primera ruta del cobrador
+      await prisma.cliente.update({
+        where: { id: clienteId },
+        data: { rutaId: rutaIdsAsignadas[0] },
+      })
+    } else if (!rutaIdsAsignadas.includes(cliente.rutaId)) {
       return Response.json({ error: 'Solo puedes crear préstamos para clientes de tus rutas asignadas' }, { status: 403 })
     }
   }
@@ -201,8 +207,9 @@ export async function POST(request) {
   if (cuotaManualNum < 0) {
     return Response.json({ error: 'La cuota manual no puede ser negativa' }, { status: 400 })
   }
+  const redondeoValido = ['exacto', 'redondeado', 'cerrado'].includes(redondeo) ? redondeo : 'exacto'
   const { totalAPagar, cuotaDiaria, fechaFin } = calcularPrestamo({
-    montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia: freq,
+    montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia: freq, redondeo: redondeoValido,
     ...(cuotaManualNum > 0 && { cuotaManual: cuotaManualNum }),
   })
 
