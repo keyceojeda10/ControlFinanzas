@@ -2,6 +2,7 @@
 // Botón para imprimir recibo estilo térmico (58mm) via window.open + print.
 'use client'
 
+import { formatCOP } from '@/lib/calculos'
 
 const PRINT_ICON = (
   <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

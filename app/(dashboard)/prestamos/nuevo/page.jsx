@@ -7,7 +7,7 @@ import { useAuth }                                 from '@/hooks/useAuth'
 import { Button }                                  from '@/components/ui/Button'
 import { Input }                                   from '@/components/ui/Input'
 import MoneyInput                                  from '@/components/ui/MoneyInput'
-import { calcularPrestamo }             from '@/lib/calculos'
+import { calcularPrestamo, formatCOP }  from '@/lib/calculos'
 import ResumenCalculo                              from '@/components/prestamos/ResumenCalculo'
 import { guardarPrestamoPendiente, obtenerClientesOffline } from '@/lib/offline'
 

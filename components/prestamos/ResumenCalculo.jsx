@@ -1,5 +1,6 @@
 // components/prestamos/ResumenCalculo.jsx - Panel de resumen en tiempo real
 
+import { formatCOP } from '@/lib/calculos'
 
 const fmt = (v) => formatCOP(v)
 
