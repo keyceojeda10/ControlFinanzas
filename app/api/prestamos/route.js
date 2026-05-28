@@ -69,7 +69,6 @@ export async function GET(request) {
       },
     },
     orderBy: [
-      { cliente: { nombre: 'asc' } },
       { createdAt: 'desc' },
     ],
     ...(page != null && { take: limit, skip: (page - 1) * limit }),
@@ -110,6 +109,8 @@ export async function GET(request) {
     fechaInicio:      p.fechaInicio,
     fechaFin:         p.fechaFin,
     estado:           p.estado,
+    createdAt:        p.createdAt,
+    ultimoPagoAt:     p.ultimoPagoAt,
     // Usa el campo denormalizado (mantenido por refrescarTotalesPrestamo).
     totalPagado:      p.totalPagado ?? 0,
     saldoPendiente:   calcularSaldoPendiente(p),
@@ -118,6 +119,25 @@ export async function GET(request) {
     pagoHoy:          pagoHoy(p),
     proximoCobro:     calcularProximoCobro(p, diasExcluidos),
   }})
+
+  // Reordenar por actividad reciente del cliente, manteniendo juntos los
+  // prestamos del mismo cliente. Actividad = MAX(createdAt, ultimoPagoAt) entre
+  // todos sus prestamos. El cliente con la actividad mas reciente sube primero.
+  const actividadCliente = new Map()
+  for (const p of resultado) {
+    const ts = Math.max(
+      new Date(p.createdAt).getTime(),
+      p.ultimoPagoAt ? new Date(p.ultimoPagoAt).getTime() : 0,
+    )
+    const prev = actividadCliente.get(p.clienteId) ?? 0
+    if (ts > prev) actividadCliente.set(p.clienteId, ts)
+  }
+  resultado.sort((a, b) => {
+    const actA = actividadCliente.get(a.clienteId) ?? 0
+    const actB = actividadCliente.get(b.clienteId) ?? 0
+    if (actA !== actB) return actB - actA
+    return new Date(b.createdAt) - new Date(a.createdAt)
+  })
 
   // If paginated, return object with total; otherwise array for backward compat
   if (page != null) {

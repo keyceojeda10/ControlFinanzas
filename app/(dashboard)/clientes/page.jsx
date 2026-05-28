@@ -10,6 +10,7 @@ import { Button }        from '@/components/ui/Button'
 import { Modal }         from '@/components/ui/Modal'
 import { SkeletonCard }  from '@/components/ui/Skeleton'
 import ClienteCard       from '@/components/clientes/ClienteCard'
+import BadgeNuevo        from '@/components/ui/BadgeNuevo'
 // SwipeableCard reemplazado por CardActionMenu integrado en ClienteCard
 import ModalWhatsAppTemplates from '@/components/ui/ModalWhatsAppTemplates'
 import Mascota           from '@/components/ui/Mascota'
@@ -574,24 +575,28 @@ export default function ClientesPage() {
                   </div>
                 </label>
               ) : (
-                <ClienteCard
-                  key={c.id}
-                  cliente={c}
-                  actions={[
-                    ...(c.telefono ? [{
-                      icon: IconWA,
-                      label: 'WhatsApp',
-                      color: '#25D366',
-                      onClick: () => setWaCliente(c),
-                    }] : []),
-                    ...(c.prestamosActivos > 0 ? [{
-                      icon: IconPagar,
-                      label: 'Cobrar',
-                      color: '#22c55e',
-                      onClick: () => { window.location.href = `/clientes/${c.id}` },
-                    }] : []),
-                  ]}
-                />
+                <div key={c.id} className="relative">
+                  <ClienteCard
+                    cliente={c}
+                    actions={[
+                      ...(c.telefono ? [{
+                        icon: IconWA,
+                        label: 'WhatsApp',
+                        color: '#25D366',
+                        onClick: () => setWaCliente(c),
+                      }] : []),
+                      ...(c.prestamosActivos > 0 ? [{
+                        icon: IconPagar,
+                        label: 'Cobrar',
+                        color: '#22c55e',
+                        onClick: () => { window.location.href = `/clientes/${c.id}` },
+                      }] : []),
+                    ]}
+                  />
+                  <div className="absolute top-2 right-2 z-10 pointer-events-none">
+                    <BadgeNuevo fecha={c.createdAt} />
+                  </div>
+                </div>
               )
             ))}
           </div>

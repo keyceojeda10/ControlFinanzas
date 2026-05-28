@@ -12,6 +12,9 @@ import PrestamoCard                           from '@/components/prestamos/Prest
 // SwipeableCard reemplazado por CardActionMenu integrado en PrestamoCard
 import ModalWhatsAppTemplates                 from '@/components/ui/ModalWhatsAppTemplates'
 import Mascota                                from '@/components/ui/Mascota'
+import BadgeNuevo                             from '@/components/ui/BadgeNuevo'
+import { useCountry }                         from '@/hooks/useCountry'
+import { formatMoney, isHoy }                 from '@/lib/i18n'
 
 const IconWA = (
   <svg className="w-full h-full" fill="currentColor" viewBox="0 0 24 24">
@@ -50,6 +53,22 @@ export default function PrestamosPage() {
   // Modal selector de plantillas WA (se abre desde swipe action)
   const [waContext, setWaContext] = useState(null)  // { cliente, prestamo }
   const hasLoadedOnceRef = useRef(false)
+
+  // Pais del usuario para badge "Nuevo" y formatos
+  const { country } = useCountry()
+
+  // Grupos colapsados manualmente por el usuario. Default: abierto excepto los
+  // que no cumplen heuristica de relevancia. Se guarda el set inverso (cerrados)
+  // para que un grupo nuevo entrante quede abierto por default sin re-pintar.
+  const [gruposCerrados, setGruposCerrados] = useState(() => new Set())
+  const toggleGrupo = useCallback((clienteId) => {
+    setGruposCerrados((prev) => {
+      const next = new Set(prev)
+      if (next.has(clienteId)) next.delete(clienteId)
+      else next.add(clienteId)
+      return next
+    })
+  }, [])
 
   const fetchPrestamos = useCallback(async (q, est, p, { soft = false } = {}) => {
     const shouldUseSoftRefresh = soft && hasLoadedOnceRef.current
@@ -274,70 +293,119 @@ export default function PrestamosPage() {
         </div>
       )}
 
-      {/* Lista agrupada por cliente */}
+      {/* Lista agrupada por cliente (API ya ordena por actividad reciente) */}
       {!loading && prestamos.length > 0 && (() => {
-        // Agrupa preservando el orden de aparicion (API ya ordena por cliente.nombre)
         const grupos = []
         const indice = new Map()
         for (const p of prestamos) {
           const key = p.clienteId
           if (!indice.has(key)) {
             indice.set(key, grupos.length)
-            grupos.push({ cliente: p.cliente, prestamos: [] })
+            grupos.push({ cliente: p.cliente, prestamos: [], tieneNuevo: false, saldoTotal: 0 })
           }
-          grupos[indice.get(key)].prestamos.push(p)
+          const g = grupos[indice.get(key)]
+          g.prestamos.push(p)
+          if (isHoy(p.createdAt, country)) g.tieneNuevo = true
+          g.saldoTotal += p.saldoPendiente ?? 0
         }
         return (
-          <div className="space-y-5">
-            {grupos.map(({ cliente, prestamos: prestCliente }) => (
-              <div key={cliente.id}>
-                {/* Mini-header solo cuando el cliente tiene 2+ prestamos */}
-                {prestCliente.length > 1 && (
-                  <div className="flex items-center gap-2 mb-2 px-1">
-                    <span
-                      className="text-[10px] font-bold uppercase tracking-wider truncate"
-                      style={{ color: 'var(--color-text-muted)' }}
-                    >
-                      {cliente.nombre}
-                    </span>
-                    <span
-                      className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap"
+          <div className="space-y-4">
+            {grupos.map(({ cliente, prestamos: prestCliente, tieneNuevo, saldoTotal }, idx) => {
+              const tieneVarios = prestCliente.length > 1
+              // Default: abierto si trivial (1 prestamo), o primer grupo, o tiene "Nuevo".
+              const defaultAbierto = !tieneVarios || idx === 0 || tieneNuevo
+              // El set guarda los grupos donde el usuario togglo el default.
+              const toggleado = gruposCerrados.has(cliente.id)
+              const abierto = toggleado ? !defaultAbierto : defaultAbierto
+
+              return (
+                <div key={cliente.id}>
+                  {tieneVarios && (
+                    <button
+                      type="button"
+                      onClick={() => toggleGrupo(cliente.id)}
+                      aria-expanded={abierto}
+                      className="w-full flex items-center gap-2 mb-2 px-2 py-1.5 rounded-lg transition-colors text-left"
                       style={{
-                        background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
-                        color: 'var(--color-accent)',
+                        background: abierto
+                          ? 'color-mix(in srgb, var(--color-text-primary) 4%, transparent)'
+                          : 'transparent',
                       }}
                     >
-                      {prestCliente.length} prestamos
-                    </span>
-                    <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
-                  </div>
-                )}
-                <div className="space-y-2.5">
-                  {prestCliente.map((p) => {
-                    const cardActions = []
-                    if (p.cliente?.telefono) {
-                      cardActions.push({
-                        icon: IconWA,
-                        label: 'WhatsApp',
-                        color: '#25D366',
-                        onClick: () => setWaContext({ cliente: p.cliente, prestamo: p }),
-                      })
-                    }
-                    if (p.estado === 'activo') {
-                      cardActions.push({
-                        icon: IconPagar,
-                        label: 'Registrar pago',
-                        color: '#22c55e',
-                        onClick: () => { window.location.href = `/prestamos/${p.id}?openPago=1` },
-                      })
-                    }
-                    return (
-                      <PrestamoCard key={p.id} prestamo={p} actions={cardActions} />
-                    )
-                  })}
+                      <svg
+                        width="10" height="10" viewBox="0 0 20 20" fill="currentColor"
+                        aria-hidden="true"
+                        style={{
+                          color: 'var(--color-text-muted)',
+                          transform: abierto ? 'rotate(90deg)' : 'rotate(0deg)',
+                          transition: 'transform 150ms ease',
+                        }}
+                      >
+                        <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                      </svg>
+                      <span
+                        className="text-[11px] font-bold uppercase tracking-wider truncate"
+                        style={{ color: 'var(--color-text-primary)' }}
+                      >
+                        {cliente.nombre}
+                      </span>
+                      <span
+                        className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap"
+                        style={{
+                          background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
+                          color: 'var(--color-accent)',
+                        }}
+                      >
+                        {prestCliente.length}
+                      </span>
+                      {tieneNuevo && <BadgeNuevo fecha={new Date()} />}
+                      <span
+                        className="ml-auto text-[10px] tabular-nums whitespace-nowrap"
+                        style={{ color: 'var(--color-text-muted)' }}
+                      >
+                        {formatMoney(Math.round(saldoTotal), country)}
+                      </span>
+                    </button>
+                  )}
+                  {abierto && (
+                    <div
+                      className={tieneVarios ? 'space-y-2.5 pl-2 ml-1 border-l' : 'space-y-2.5'}
+                      style={tieneVarios ? { borderColor: 'color-mix(in srgb, var(--color-border) 60%, transparent)' } : undefined}
+                    >
+                      {prestCliente.map((p) => {
+                        const cardActions = []
+                        if (p.cliente?.telefono) {
+                          cardActions.push({
+                            icon: IconWA,
+                            label: 'WhatsApp',
+                            color: '#25D366',
+                            onClick: () => setWaContext({ cliente: p.cliente, prestamo: p }),
+                          })
+                        }
+                        if (p.estado === 'activo') {
+                          cardActions.push({
+                            icon: IconPagar,
+                            label: 'Registrar pago',
+                            color: '#22c55e',
+                            onClick: () => { window.location.href = `/prestamos/${p.id}?openPago=1` },
+                          })
+                        }
+                        return (
+                          <div key={p.id} className="relative">
+                            <PrestamoCard prestamo={p} actions={cardActions} />
+                            {isHoy(p.createdAt, country) && (
+                              <div className="absolute top-2 right-2 z-10 pointer-events-none">
+                                <BadgeNuevo fecha={p.createdAt} />
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )
       })()}

@@ -69,6 +69,7 @@ export async function GET(request) {
       estado:     true,
       rutaId:     true,
       fotoUrl:    true,
+      createdAt:  true,
       diasSinCobro: true,
       ruta:       { select: { id: true, nombre: true, diasSinCobro: true } },
       grupoCobro: { select: { id: true, nombre: true, color: true } },
@@ -86,6 +87,7 @@ export async function GET(request) {
           montoPrestado: true,
           diaCobroMes: true,
           diaCobroSemana: true,
+          createdAt: true,
           // Denormalizados: evitan iterar todos los pagos.
           totalPagado: true,
           ultimoPagoAt: true,
@@ -159,6 +161,18 @@ export async function GET(request) {
       rutaNombre:       c.ruta?.nombre ?? null,
       grupoCobro:       c.grupoCobro ?? null,
       prestamosActivos: c.prestamos.length,
+      createdAt:        c.createdAt,
+      // Actividad reciente del cliente: MAX(createdAt cliente, prestamos.createdAt, ultimoPagoAt)
+      _actividadAt:     (() => {
+        let max = new Date(c.createdAt).getTime()
+        for (const p of c.prestamos) {
+          const tc = p.createdAt ? new Date(p.createdAt).getTime() : 0
+          const tp = p.ultimoPagoAt ? new Date(p.ultimoPagoAt).getTime() : 0
+          if (tc > max) max = tc
+          if (tp > max) max = tp
+        }
+        return max
+      })(),
       // Nuevos campos para card rediseñada
       saldoPendienteTotal:       saldoTotal,
       diasMoraMax,
@@ -167,6 +181,13 @@ export async function GET(request) {
       proximoCobroLabel: proximoCobroMin ? formatFechaCobroContextual(proximoCobroMin, diasMoraMax) : null,
     }
   })
+
+  // Reordenar por actividad reciente del cliente. Tie-break: createdAt cliente desc.
+  resultado.sort((a, b) => {
+    if (a._actividadAt !== b._actividadAt) return b._actividadAt - a._actividadAt
+    return new Date(b.createdAt) - new Date(a.createdAt)
+  })
+  for (const c of resultado) delete c._actividadAt
 
   // If paginated, return object with total; otherwise array for backward compat
   if (page != null) {
