@@ -1,6 +1,7 @@
 'use client'
 // components/gastos/ListaGastos.jsx
 
+import { formatCOP } from '@/lib/calculos'
 import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/hooks/useAuth'
@@ -14,7 +15,6 @@ const ESTADO_COLORS = {
 export default function ListaGastos({ soloPendientes = false, onCountChange, fecha }) {
   const { session } = useAuth()
 
-  const { formatMoney } = useCountry()
   const esOwner = session?.user?.rol === 'owner'
   const [gastos, setGastos] = useState([])
   const [loading, setLoading] = useState(true)
@@ -62,8 +62,8 @@ export default function ListaGastos({ soloPendientes = false, onCountChange, fec
 
   const handleEliminar = async (g) => {
     const msg = g.estado === 'aprobado'
-      ? `Eliminar "${g.description}" por ${formatMoney(g.monto)}? Se revertirá el egreso en capital.`
-      : `Eliminar "${g.description}" por ${formatMoney(g.monto)}?`
+      ? `Eliminar "${g.description}" por ${formatCOP(g.monto)}? Se revertirá el egreso en capital.`
+      : `Eliminar "${g.description}" por ${formatCOP(g.monto)}?`
     if (!confirm(msg)) return
     setEliminando(g.id)
     try {
@@ -104,7 +104,7 @@ export default function ListaGastos({ soloPendientes = false, onCountChange, fec
                 {g.cobradorNombre} • {new Date(g.fecha).toLocaleDateString('es-CO')}
               </p>
             </div>
-            <p className="text-sm font-bold text-[var(--color-text-primary)] font-mono-display">{formatMoney(g.monto)}</p>
+            <p className="text-sm font-bold text-[var(--color-text-primary)] font-mono-display">{formatCOP(g.monto)}</p>
           </div>
           
           <div className="flex items-center justify-between gap-2">

@@ -1,10 +1,10 @@
 'use client'
 // app/(dashboard)/mis-estadisticas/page.jsx — Estadísticas propias del cobrador
 
+import { formatCOP } from '@/lib/calculos'
 import { useState, useEffect } from 'react'
 import { useAuth }             from '@/hooks/useAuth'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
-import { useCountry } from '@/hooks/useCountry'
 
 function fmtFechaCorta(yyyy_mm_dd) {
   const [, m, d] = yyyy_mm_dd.split('-')
@@ -15,7 +15,6 @@ function fmtFechaCorta(yyyy_mm_dd) {
 export default function MisEstadisticasPage() {
   const { session, loading: authLoading } = useAuth()
 
-  const { formatMoney } = useCountry()
   const [data,    setData]    = useState(null)
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState('')
@@ -86,13 +85,13 @@ export default function MisEstadisticasPage() {
           <div>
             <p className="text-[13px]" style={{ color: 'var(--color-text-muted)' }}>Recaudado</p>
             <p className="text-[32px] font-bold font-mono-display leading-none" style={{ color: pctColor }}>
-              {formatMoney(data.recaudadoHoy)}
+              {formatCOP(data.recaudadoHoy)}
             </p>
           </div>
           <div className="text-right">
             <p className="text-[13px]" style={{ color: 'var(--color-text-muted)' }}>Meta</p>
             <p className="text-[20px] font-bold font-mono-display" style={{ color: 'var(--color-text-secondary)' }}>
-              {formatMoney(data.metaHoy)}
+              {formatCOP(data.metaHoy)}
             </p>
           </div>
         </div>
@@ -129,7 +128,7 @@ export default function MisEstadisticasPage() {
                         ? 'var(--color-accent)'
                         : 'color-mix(in srgb, var(--color-accent) 40%, transparent)',
                     }}
-                    title={formatMoney(d.total)}
+                    title={formatCOP(d.total)}
                   />
                 </div>
                 <p className="text-[9px] text-center leading-tight" style={{ color: isHoy ? 'var(--color-accent)' : 'var(--color-text-muted)' }}>
@@ -142,7 +141,7 @@ export default function MisEstadisticasPage() {
         <div className="mt-3 pt-3 border-t flex justify-between text-[11px]" style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}>
           <span>Total semana</span>
           <span className="font-semibold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
-            {formatMoney(data.semana?.reduce((s, d) => s + d.total, 0) ?? 0)}
+            {formatCOP(data.semana?.reduce((s, d) => s + d.total, 0) ?? 0)}
           </span>
         </div>
       </div>

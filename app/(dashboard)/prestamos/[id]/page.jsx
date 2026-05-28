@@ -22,7 +22,6 @@ import BotonCompartir                 from '@/components/ui/BotonCompartir'
 import BotonImprimirRecibo            from '@/components/ui/BotonImprimirRecibo'
 import OfflineBadge                   from '@/components/offline/OfflineBadge'
 import ModalWhatsAppTemplates         from '@/components/ui/ModalWhatsAppTemplates'
-import { useCountry } from '@/hooks/useCountry'
 import {
   PrestamoHeroCard,
   HeaderClienteContexto,
@@ -36,7 +35,7 @@ import {
   ComparativoPrestamosCliente,
   moodColorFromPrestamo,
 } from '@/components/prestamos/PrestamoDetalleViews'
-import { formatFechaCobroRelativa } from '@/lib/calculos'
+import { formatFechaCobroRelativa ,  formatCOP } from '@/lib/calculos'
 import AiTipBanner from '@/components/ui/AiTipBanner'
 import { generarTipPrestamo } from '@/lib/tips/prestamoTips'
 import DiasSinCobroSelector from '@/components/ui/DiasSinCobroSelector'
@@ -65,7 +64,6 @@ export default function PrestamoDetallePage({ params }) {
   const router             = useRouter()
   const { session, puedeGestionarPrestamos } = useAuth()
 
-  const { formatMoney } = useCountry()
   const { lastSyncedAt }   = useOffline()
 
   const [prestamo,     setPrestamo]     = useState(null)
@@ -389,7 +387,7 @@ export default function PrestamoDetallePage({ params }) {
           <p className="text-sm text-[var(--color-danger)] font-semibold">
             {diasMora} días en mora
             {cuotasEnMora > 0 ? ` · ${cuotasEnMora} cuota${cuotasEnMora === 1 ? '' : 's'} vencida${cuotasEnMora === 1 ? '' : 's'}` : ''}
-            {montoEnMora > 0 ? ` · ${formatMoney(montoEnMora)}` : ''}
+            {montoEnMora > 0 ? ` · ${formatCOP(montoEnMora)}` : ''}
           </p>
         </div>
       )}
@@ -521,7 +519,7 @@ export default function PrestamoDetallePage({ params }) {
               Pago {frecuenciaLabel} registrado
             </span>
             <span className="text-[18px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--color-success)' }}>
-              {formatMoney(cuotaDiaria)}
+              {formatCOP(cuotaDiaria)}
             </span>
           </span>
         </div>
@@ -533,7 +531,7 @@ export default function PrestamoDetallePage({ params }) {
           acciones={[
             ...(mostrarAtajosCobro ? [{
               label: 'Cobros',
-              sublabel: hayMontoMora ? `Mora ${formatMoney(montoEnMora)}` : 'Abonos y atajos',
+              sublabel: hayMontoMora ? `Mora ${formatCOP(montoEnMora)}` : 'Abonos y atajos',
               color: hayMontoMora ? 'var(--color-danger)' : 'var(--color-accent)',
               icon: <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
               onClick: () => setModalAtajosCobro(true),
@@ -591,8 +589,8 @@ export default function PrestamoDetallePage({ params }) {
               </svg>
             ),
             items: [
-              { label: 'Prestado', value: formatMoney(montoPrestado) },
-              { label: 'Total a pagar', value: formatMoney(totalAPagar) },
+              { label: 'Prestado', value: formatCOP(montoPrestado) },
+              { label: 'Total a pagar', value: formatCOP(totalAPagar) },
               { label: 'Tasa', value: `${tasaInteres}%` },
               { label: 'Plazo', value: `${diasPlazo} días` },
             ],
@@ -606,7 +604,7 @@ export default function PrestamoDetallePage({ params }) {
               </svg>
             ),
             items: [
-              { label: `Cuota ${frecuenciaLabel}`, value: formatMoney(cuotaDiaria) },
+              { label: `Cuota ${frecuenciaLabel}`, value: formatCOP(cuotaDiaria) },
               { label: 'Cuotas pendientes', value: `${cuotasPendientes}` },
               ...(cobroInfo ? [{ label: cobroInfo.label, value: cobroInfo.value, color: cobroInfo.color }] : []),
               {
@@ -638,7 +636,7 @@ export default function PrestamoDetallePage({ params }) {
               </svg>
             ),
             items: [
-              { label: 'Cobro de seguro', value: montoSeguro ? formatMoney(montoSeguro) : 'Si', color: '#6366f1' },
+              { label: 'Cobro de seguro', value: montoSeguro ? formatCOP(montoSeguro) : 'Si', color: '#6366f1' },
             ],
           }] : []),
         ]}
@@ -755,7 +753,7 @@ export default function PrestamoDetallePage({ params }) {
                     )}
                     {pago.tipo === 'capital' && tasaInteres > 0 && (
                       <span className="text-[10px] px-2 py-1 rounded-[6px]" style={{ background: 'rgba(168, 85, 247, 0.1)', color: 'var(--color-purple)' }}>
-                        -{formatMoney(Math.round(pago.montoPagado * tasaInteres / 100))} int.
+                        -{formatCOP(Math.round(pago.montoPagado * tasaInteres / 100))} int.
                       </span>
                     )}
                     <div className="flex-1" />
@@ -779,7 +777,7 @@ export default function PrestamoDetallePage({ params }) {
                       <button
                         onClick={async () => {
                           if (anulando) return
-                          if (!confirm(`¿Anular pago de ${formatMoney(pago.montoPagado)}?`)) return
+                          if (!confirm(`¿Anular pago de ${formatCOP(pago.montoPagado)}?`)) return
                           setAnulando(pago.id)
                           try {
                             const res = await fetch(`/api/pagos/${pago.id}`, { method: 'DELETE' })
@@ -896,12 +894,12 @@ export default function PrestamoDetallePage({ params }) {
             <div className="bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.3)] rounded-[14px] p-4 space-y-3">
               <p className="text-sm text-[var(--color-danger)] font-semibold">¿Cancelar este préstamo?</p>
               <p className="text-xs text-[var(--color-text-muted)]">
-                Se marcará como cancelado. El saldo pendiente de {formatMoney(saldoPendiente)} quedará sin cobrar.
+                Se marcará como cancelado. El saldo pendiente de {formatCOP(saldoPendiente)} quedará sin cobrar.
               </p>
 
               {hayCobrosRegistrados && (
                 <div className="space-y-2">
-                  <p className="text-[11px] text-[var(--color-text-secondary)]">El préstamo ya tiene cobros registrados ({formatMoney(totalPagadoReal)}). Elige cómo reversar en caja:</p>
+                  <p className="text-[11px] text-[var(--color-text-secondary)]">El préstamo ya tiene cobros registrados ({formatCOP(totalPagadoReal)}). Elige cómo reversar en caja:</p>
 
                   <label className="flex items-start gap-2.5 rounded-[10px] border border-[var(--color-border)] bg-[#131313] px-3 py-2 cursor-pointer">
                     <input
@@ -913,7 +911,7 @@ export default function PrestamoDetallePage({ params }) {
                       className="mt-0.5"
                     />
                     <div>
-                      <p className="text-xs font-semibold text-[var(--color-text-primary)]">Devolver todo el préstamo a caja (+{formatMoney(montoPrestadoRedondeado)})</p>
+                      <p className="text-xs font-semibold text-[var(--color-text-primary)]">Devolver todo el préstamo a caja (+{formatCOP(montoPrestadoRedondeado)})</p>
                       <p className="text-[11px] text-[var(--color-text-muted)]">Conserva los cobros ya registrados y regresa el monto completo prestado.</p>
                     </div>
                   </label>
@@ -928,7 +926,7 @@ export default function PrestamoDetallePage({ params }) {
                       className="mt-0.5"
                     />
                     <div>
-                      <p className="text-xs font-semibold text-[var(--color-text-primary)]">Devolver solo lo pendiente (+{formatMoney(saldoFinancieroPendiente)})</p>
+                      <p className="text-xs font-semibold text-[var(--color-text-primary)]">Devolver solo lo pendiente (+{formatCOP(saldoFinancieroPendiente)})</p>
                       <p className="text-[11px] text-[var(--color-text-muted)]">Calculado como prestado menos cobrado real.</p>
                     </div>
                   </label>
@@ -999,7 +997,7 @@ export default function PrestamoDetallePage({ params }) {
               Pagar mora
               {cuotasEnMora > 0 ? ` (${cuotasEnMora} cuota${cuotasEnMora === 1 ? '' : 's'})` : ''}
               {' · '}
-              {formatMoney(montoEnMora)}
+              {formatCOP(montoEnMora)}
             </button>
           )}
 
@@ -1011,7 +1009,7 @@ export default function PrestamoDetallePage({ params }) {
               }}
               className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--color-accent)] bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.3)] hover:bg-[rgba(245,197,24,0.15)] transition-all"
             >
-              Ponerse al día · {formatMoney(montoParaPonerseAlDia)}
+              Ponerse al día · {formatCOP(montoParaPonerseAlDia)}
             </button>
           )}
 

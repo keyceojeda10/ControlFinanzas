@@ -1,10 +1,10 @@
 // components/rutas/RutaCard.jsx
 // Card premium para lista de rutas. Mood color por % de cobro del dia.
 
+import { formatCOP } from '@/lib/calculos'
 import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
 import Avatar from '@/components/ui/Avatar'
-import { useCountry } from '@/hooks/useCountry'
 
 const COLOR_OK   = '#22c55e'
 const COLOR_HOT  = '#f5c518'
@@ -30,7 +30,6 @@ function moodLabel(progreso, esperadoHoy) {
 }
 
 export default function RutaCard({ ruta }) {
-  const { formatMoney } = useCountry()
   const progreso = ruta.esperadoHoy > 0
     ? Math.min(100, Math.round((ruta.recaudadoHoy / ruta.esperadoHoy) * 100))
     : 0
@@ -110,10 +109,10 @@ export default function RutaCard({ ruta }) {
             textShadow: progreso >= 100 ? `0 0 18px color-mix(in srgb, ${color} 30%, transparent)` : 'none',
           }}
         >
-          {formatMoney(ruta.recaudadoHoy ?? 0)}
+          {formatCOP(ruta.recaudadoHoy ?? 0)}
         </p>
         <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
-          de {formatMoney(ruta.esperadoHoy ?? 0)} esperados
+          de {formatCOP(ruta.esperadoHoy ?? 0)} esperados
         </p>
       </div>
 

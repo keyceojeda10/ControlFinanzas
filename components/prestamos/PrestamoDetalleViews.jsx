@@ -5,10 +5,9 @@
 
 import { useState, useEffect, useRef, useId } from 'react'
 import Link from 'next/link'
-import { formatFechaCobroRelativa } from '@/lib/calculos'
+import { formatFechaCobroRelativa ,  formatCOP } from '@/lib/calculos'
 import OfflineBadge from '@/components/offline/OfflineBadge'
 import Avatar from '@/components/ui/Avatar'
-import { useCountry } from '@/hooks/useCountry'
 
 // ─── Helpers de fecha ────────────────────────────────────────────
 const fmtFecha = (d) => d
@@ -33,7 +32,6 @@ export function moodColorFromPrestamo(p) {
 export function useCountUp(target, duration = 800) {
   const [value, setValue] = useState(0)
 
-  const { formatMoney } = useCountry()
   const startRef = useRef(null)
   const fromRef = useRef(0)
   useEffect(() => {
@@ -168,10 +166,10 @@ export function PrestamoHeroCard({ prestamo, narrativa, sparklineData }) {
                 textShadow: 'none',
               }}
             >
-              {formatMoney(Math.round(animSaldo))}
+              {formatCOP(Math.round(animSaldo))}
             </p>
             <p className="text-[12px] mt-2" style={{ color: 'var(--color-text-secondary)' }}>
-              de {formatMoney(totalAPagar)} totales
+              de {formatCOP(totalAPagar)} totales
             </p>
             {narrativa && (
               <div
@@ -197,7 +195,7 @@ export function PrestamoHeroCard({ prestamo, narrativa, sparklineData }) {
           <DonutPagado pct={pctPagado} color={color} size={64} />
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Ha pagado</p>
-            <p className="text-[14px] font-mono-display font-bold mt-0.5" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(totalPagado)}</p>
+            <p className="text-[14px] font-mono-display font-bold mt-0.5" style={{ color: 'var(--color-text-primary)' }}>{formatCOP(totalPagado)}</p>
           </div>
         </div>
 
@@ -349,7 +347,7 @@ export function BotonPagoPersonalidad({ enMora, frecuenciaLabel, monto, onClick 
           {isUrgente ? 'Pagar ahora · vencido' : `Registrar pago ${frecuenciaLabel}`}
         </span>
         <span className="text-[18px] font-bold font-mono-display mt-0.5">
-          {formatMoney(monto)}
+          {formatCOP(monto)}
         </span>
       </span>
 
@@ -717,7 +715,7 @@ export function PagoMiniCard({ pago, onAnular, anulando, isOffline, children }) 
             className="text-[15px] font-bold font-mono-display leading-none"
             style={{ color: pago.tipo === 'descuento' ? '#3b82f6' : tipoInfo.bg }}
           >
-            {pago.tipo === 'descuento' ? '-' : pago.tipo === 'recargo' ? '+' : ''}{formatMoney(pago.montoPagado)}
+            {pago.tipo === 'descuento' ? '-' : pago.tipo === 'recargo' ? '+' : ''}{formatCOP(pago.montoPagado)}
           </p>
         </div>
       </div>

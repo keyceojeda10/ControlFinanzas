@@ -1,6 +1,7 @@
 'use client'
 // app/(dashboard)/cobradores/[id]/page.jsx - Detalle del cobrador
 
+import { formatCOP } from '@/lib/calculos'
 import { useState, useEffect, useCallback, use } from 'react'
 import { useRouter }                from 'next/navigation'
 import { useAuth }                  from '@/hooks/useAuth'
@@ -11,7 +12,6 @@ import CompartirCredenciales        from '@/components/cobradores/CompartirCrede
 import Link                         from 'next/link'
 import { useOnline }                from '@/hooks/useOnline'
 import OfflineFallback              from '@/components/offline/OfflineFallback'
-import { useCountry } from '@/hooks/useCountry'
 
 export default function CobradorDetallePage({ params }) {
   const online = useOnline()
@@ -24,7 +24,6 @@ function CobradorDetalleInner({ params }) {
   const router      = useRouter()
   const { session } = useAuth()
 
-  const { formatMoney } = useCountry()
   const [data,    setData]    = useState(null)
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState('')
@@ -194,7 +193,7 @@ function CobradorDetalleInner({ params }) {
                       textShadow: '0 0 30px color-mix(in srgb, var(--color-success) 25%, transparent)',
                     }}
                   >
-                    {formatMoney(data.recaudadoHoy ?? 0)}
+                    {formatCOP(data.recaudadoHoy ?? 0)}
                   </p>
                 </div>
                 <div className="flex flex-col gap-1.5 shrink-0">

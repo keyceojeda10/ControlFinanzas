@@ -1,6 +1,7 @@
 'use client'
 // components/prestamos/RegistrarPago.jsx - Modal de registro de pago
 
+import { formatCOP } from '@/lib/calculos'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter }   from 'next/navigation'
 import { Modal }       from '@/components/ui/Modal'
@@ -11,7 +12,6 @@ import BotonCompartir       from '@/components/ui/BotonCompartir'
 import BotonImprimirRecibo  from '@/components/ui/BotonImprimirRecibo'
 import MoneyInput           from '@/components/ui/MoneyInput'
 import { guardarPagoPendiente, actualizarPrestamoOffline }  from '@/lib/offline'
-import { useCountry } from '@/hooks/useCountry'
 
 export default function RegistrarPago({
   prestamoId, cuotaDiaria, saldoPendiente,
@@ -21,7 +21,6 @@ export default function RegistrarPago({
 }) {
   const router = useRouter()
 
-  const { formatMoney } = useCountry()
   // Pre-llena con la cuota, pero nunca más que el saldo pendiente (último pago de saldos pequeños)
   const montoInicial = Math.min(Math.round(cuotaDiaria ?? 0), Math.round(saldoPendiente ?? 0))
   const [monto,        setMonto]        = useState(String(montoInicial))
@@ -290,7 +289,7 @@ export default function RegistrarPago({
                 </svg>
               )}
             </div>
-            <p className="text-[var(--color-text-primary)] font-bold text-lg font-mono-display">{formatMoney(pagoGuardado.montoPagado)}</p>
+            <p className="text-[var(--color-text-primary)] font-bold text-lg font-mono-display">{formatCOP(pagoGuardado.montoPagado)}</p>
             <p className="text-[var(--color-text-muted)] text-sm">
               {pagoGuardado.offline ? 'guardado offline — se sincronizará al conectar' : 'pagado correctamente'}
             </p>
@@ -306,7 +305,7 @@ export default function RegistrarPago({
             >
               <div className="flex justify-between">
                 <span className="text-[var(--color-text-muted)]">Saldo pendiente</span>
-                <span className="text-[var(--color-text-primary)] font-medium font-mono-display">{formatMoney(prestamoWA.saldoPendiente)}</span>
+                <span className="text-[var(--color-text-primary)] font-medium font-mono-display">{formatCOP(prestamoWA.saldoPendiente)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-[var(--color-text-muted)]">Progreso</span>
@@ -352,11 +351,11 @@ export default function RegistrarPago({
 
         <div className="flex justify-between items-center text-sm">
           <span className="text-[var(--color-text-muted)]">Cuota</span>
-          <span className="font-semibold text-[var(--color-text-primary)] font-mono-display">{formatMoney(cuotaDiaria)}</span>
+          <span className="font-semibold text-[var(--color-text-primary)] font-mono-display">{formatCOP(cuotaDiaria)}</span>
         </div>
         <div className="flex justify-between items-center text-sm">
           <span className="text-[var(--color-text-muted)]">Saldo pendiente</span>
-          <span className="font-semibold text-[var(--color-text-primary)] font-mono-display">{formatMoney(saldoPendiente)}</span>
+          <span className="font-semibold text-[var(--color-text-primary)] font-mono-display">{formatCOP(saldoPendiente)}</span>
         </div>
 
         {/* Atajos para no recalcular mora / ponerse al dia manualmente.
@@ -382,7 +381,7 @@ export default function RegistrarPago({
                 Pagar mora
                 {Number(prestamo?.cuotasEnMora) > 0 ? ` (${prestamo.cuotasEnMora} cuota${prestamo.cuotasEnMora === 1 ? '' : 's'})` : ''}
                 {' · '}
-                {formatMoney(prestamo.montoEnMora)}
+                {formatCOP(prestamo.montoEnMora)}
               </button>
             )}
 
@@ -397,7 +396,7 @@ export default function RegistrarPago({
                 }}
                 className="h-10 rounded-[12px] border border-[rgba(245,197,24,0.3)] bg-[rgba(245,197,24,0.1)] text-[var(--color-accent)] text-sm font-semibold hover:bg-[rgba(245,197,24,0.18)] transition-colors"
               >
-                Ponerse al día · {formatMoney(prestamo.montoParaPonerseAlDia)}
+                Ponerse al día · {formatCOP(prestamo.montoParaPonerseAlDia)}
               </button>
             )}
           </div>
@@ -423,7 +422,7 @@ export default function RegistrarPago({
                 <span className={`text-sm font-bold font-mono-display transition-colors ${isSnap ? 'text-[var(--color-accent)]' : 'text-[var(--color-success)]'}`}>
                   {diasAbonados} {diasAbonados === 1 ? 'día' : 'días'}
                   {snapLabel && <span className="text-[10px] font-normal text-[var(--color-text-muted)] ml-1">({snapLabel})</span>}
-                  {' — '}{formatMoney(Number(monto))}
+                  {' — '}{formatCOP(Number(monto))}
                 </span>
               )}
             </div>
@@ -541,7 +540,7 @@ export default function RegistrarPago({
                   const ahorro = Math.round(Number(monto) * (prestamo.tasaInteres / 100) * (diasRest / 30))
                   return (
                     <> Ahorro en intereses: <span className="text-[var(--color-purple)] font-medium font-mono-display">
-                      {formatMoney(ahorro)}
+                      {formatCOP(ahorro)}
                     </span></>
                   )
                 })()}

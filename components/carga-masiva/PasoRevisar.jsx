@@ -1,8 +1,8 @@
 'use client'
 
+import { formatCOP } from '@/lib/calculos'
 import { useState } from 'react'
 import { Badge } from '@/components/ui/Badge'
-import { useCountry } from '@/hooks/useCountry'
 
 const ESTADO_COLORS = {
   valido: 'green',
@@ -18,7 +18,6 @@ const ESTADO_LABELS = {
 export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolver }) {
   const [rutaId, setRutaId] = useState('')
 
-  const { formatMoney } = useCountry()
   const [nuevaRuta, setNuevaRuta] = useState('')
   const [crearNueva, setCrearNueva] = useState(false)
   const [expandida, setExpandida] = useState(null)
@@ -78,7 +77,7 @@ export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolv
           </div>
           <div className="flex justify-between col-span-2">
             <span className="text-[var(--color-text-muted)]">Monto total</span>
-            <span className="text-[var(--color-accent)] font-bold font-mono-display">{formatMoney(resumen.montoTotalDesembolso)}</span>
+            <span className="text-[var(--color-accent)] font-bold font-mono-display">{formatCOP(resumen.montoTotalDesembolso)}</span>
           </div>
         </div>
 
@@ -175,15 +174,15 @@ export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolv
                   <div className="grid grid-cols-3 gap-2 mt-1">
                     <div>
                       <p className="text-[8px] text-[var(--color-text-muted)]">Monto</p>
-                      <p className="text-[10px] text-[var(--color-text-primary)] font-mono-display">{formatMoney(fila.datos.montoPrestado)}</p>
+                      <p className="text-[10px] text-[var(--color-text-primary)] font-mono-display">{formatCOP(fila.datos.montoPrestado)}</p>
                     </div>
                     <div>
                       <p className="text-[8px] text-[var(--color-text-muted)]">Cuota</p>
-                      <p className="text-[10px] text-[var(--color-text-primary)] font-mono-display">{formatMoney(fila.calculado.cuotaDiaria)}</p>
+                      <p className="text-[10px] text-[var(--color-text-primary)] font-mono-display">{formatCOP(fila.calculado.cuotaDiaria)}</p>
                     </div>
                     <div>
                       <p className="text-[8px] text-[var(--color-text-muted)]">Total</p>
-                      <p className="text-[10px] text-[var(--color-accent)] font-mono-display">{formatMoney(fila.calculado.totalAPagar)}</p>
+                      <p className="text-[10px] text-[var(--color-accent)] font-mono-display">{formatCOP(fila.calculado.totalAPagar)}</p>
                     </div>
                   </div>
                 )}

@@ -6,8 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Modal }    from '@/components/ui/Modal'
 import { Button }   from '@/components/ui/Button'
 import { Input }    from '@/components/ui/Input'
-import { calcularPrestamo } from '@/lib/calculos'
-import { useCountry } from '@/hooks/useCountry'
+import { calcularPrestamo ,  formatCOP } from '@/lib/calculos'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
 const hoyISO = () => getColombiaDate().toISOString().slice(0, 10)
@@ -22,7 +21,6 @@ export default function RenovarPrestamo({
 }) {
   const router = useRouter()
 
-  const { formatMoney } = useCountry()
   const [monto,       setMonto]       = useState('')
   const [tasa,        setTasa]        = useState(String(prestamoAnterior?.tasaInteres ?? '20'))
   const [plazo,       setPlazo]       = useState(String(prestamoAnterior?.diasPlazo ?? '30'))
@@ -50,7 +48,7 @@ export default function RenovarPrestamo({
   const handleSubmit = async () => {
     if (montoNum <= 0) { setError('Ingresa el nuevo monto'); return }
     if (montoNum < saldoPendiente) {
-      setError(`El monto debe cubrir al menos el saldo pendiente (${formatMoney(saldoPendiente)})`)
+      setError(`El monto debe cubrir al menos el saldo pendiente (${formatCOP(saldoPendiente)})`)
       return
     }
     if (!tasa || Number(tasa) < 0) { setError('Tasa inválida'); return }
@@ -102,7 +100,7 @@ export default function RenovarPrestamo({
           <div className="flex items-center justify-between">
             <span className="text-xs text-[var(--color-text-muted)]">Saldo a liquidar</span>
             <span className="text-sm font-semibold text-[var(--color-accent)] font-mono-display">
-              {formatMoney(saldoPendiente)}
+              {formatCOP(saldoPendiente)}
             </span>
           </div>
           {clienteNombre && (
@@ -177,7 +175,7 @@ export default function RenovarPrestamo({
             <div className="flex items-center justify-between">
               <span className="text-xs text-[var(--color-text-muted)]">A entregar al cliente</span>
               <span className="text-base font-bold text-[var(--color-success)] font-mono-display">
-                {formatMoney(diferencia)}
+                {formatCOP(diferencia)}
               </span>
             </div>
             {calculo && (
@@ -185,21 +183,21 @@ export default function RenovarPrestamo({
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-[var(--color-text-muted)]">Nueva cuota {frecuencia}</span>
                   <span className="text-sm font-semibold text-[var(--color-text-primary)] font-mono-display">
-                    {formatMoney(calculo.cuotaDiaria)}
+                    {formatCOP(calculo.cuotaDiaria)}
                   </span>
                 </div>
                 {calculo.ultimaCuota && calculo.ultimaCuota !== calculo.cuotaDiaria && calculo.numPeriodos > 1 && (
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-[var(--color-text-muted)]">Última cuota (ajuste)</span>
                     <span className="text-sm font-semibold text-[#8b95a5] font-mono-display">
-                      {formatMoney(calculo.ultimaCuota)}
+                      {formatCOP(calculo.ultimaCuota)}
                     </span>
                   </div>
                 )}
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-[var(--color-text-muted)]">Total a pagar</span>
                   <span className="text-sm font-semibold text-[var(--color-text-primary)] font-mono-display">
-                    {formatMoney(calculo.totalAPagar)}
+                    {formatCOP(calculo.totalAPagar)}
                   </span>
                 </div>
               </>
