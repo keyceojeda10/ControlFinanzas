@@ -500,7 +500,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                     Plan {infoPlan?.nombre}
                   </p>
                   <p className="text-[11px]" style={{ color: '#888' }}>
-                    14 dias gratis · luego {formatPrecio(infoPlan?.precio)}/mes
+                    14 dias gratis · luego {formatMoney(getPrecioPlan(infoPlan?.key, country), country)}/mes
                   </p>
                 </div>
                 <button
