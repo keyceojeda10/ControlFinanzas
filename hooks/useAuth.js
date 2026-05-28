@@ -17,6 +17,8 @@ export function useAuth() {
     rol: session?.user?.rol ?? null,
     organizationId: session?.user?.organizationId ?? null,
     plan: session?.user?.plan ?? null,
+    country: session?.user?.country ?? 'co',
+    timezone: session?.user?.timezone ?? null,
     rutaId: session?.user?.rutaId ?? null,
     esOwner,
     esCobrador: session?.user?.rol === 'cobrador',

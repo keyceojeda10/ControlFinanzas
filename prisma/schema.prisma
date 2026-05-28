@@ -84,6 +84,8 @@ model Organization {
   recoveryEmailStep Int          @default(0)
   diasSinCobro    String?
   capitalEstricto Boolean        @default(false)
+  country         String         @default("co")
+  timezone        String?
   createdAt       DateTime       @default(now())
 
   referidoPor      Organization?     @relation("Referidos", fields: [referidoPorId], references: [id])
