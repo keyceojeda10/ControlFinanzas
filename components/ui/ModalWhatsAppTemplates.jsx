@@ -6,7 +6,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
-import { useCountry } from '@/hooks/useCountry'
+import { formatMoney } from '@/lib/i18n'
 import {
   formatearTelefono,
   abrirWhatsApp,
@@ -147,8 +147,7 @@ _Control Finanzas_`
 export default function ModalWhatsAppTemplates({ open, onClose, cliente, prestamo }) {
   const [selectedId, setSelectedId] = useState(null)
 
-  const { formatMoney } = useCountry()
-  const [textoEditable, setTextoEditable] = useState('')
+    const [textoEditable, setTextoEditable] = useState('')
 
   const tel = formatearTelefono(cliente?.telefono)
 

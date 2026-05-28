@@ -12,7 +12,7 @@ import SpotlightOverlay from '@/components/onboarding/SpotlightOverlay'
 import CobradorOnboarding from '@/components/onboarding/CobradorOnboarding'
 import CacheAge from '@/components/offline/CacheAge'
 import DashboardAiTip from '@/components/dashboard/DashboardAiTip'
-import { useCountry } from '@/hooks/useCountry'
+import { formatMoney } from '@/lib/i18n'
 
 function Skeleton({ className = '' }) {
   return <div className={`animate-pulse rounded-[12px] ${className}`} style={{ background: 'var(--color-bg-hover)' }} />
@@ -1189,8 +1189,7 @@ function BandaSuscripcion({ dias }) {
 export default function DashboardPage() {
   const { session, loading: authLoading, esOwner, puedeCrearClientes, puedeCrearPrestamos } = useAuth()
 
-  const { formatMoney } = useCountry()
-  const [data, setData] = useState(null)
+    const [data, setData] = useState(null)
   const [moraData, setMoraData] = useState(undefined)
   const [capitalData, setCapitalData] = useState(null)
   const [loading, setLoading] = useState(true)

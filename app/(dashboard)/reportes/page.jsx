@@ -6,6 +6,7 @@ import { useAuth }             from '@/hooks/useAuth'
 import { Card }                from '@/components/ui/Card'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
 import { nivelReportes }       from '@/lib/planes'
+import { formatMoney } from '@/lib/i18n'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell,
@@ -87,8 +88,7 @@ function UpgradeNudge({ titulo, planRequerido }) {
 export default function ReportesPage() {
   const { session, esOwner, loading: authLoading } = useAuth()
 
-  const { formatMoney } = useCountry()
-  const plan = session?.user?.plan ?? 'starter'
+    const plan = session?.user?.plan ?? 'starter'
 
   const [resumen,    setResumen]    = useState(null)
   const [ingresos,   setIngresos]   = useState([])

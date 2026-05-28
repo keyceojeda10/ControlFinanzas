@@ -14,7 +14,7 @@ import { SkeletonCard }              from '@/components/ui/Skeleton'
 import AiTipBanner                   from '@/components/ui/AiTipBanner'
 import { generarTipRuta }            from '@/lib/tips/rutaTips'
 import DiasSinCobroSelector          from '@/components/ui/DiasSinCobroSelector'
-import { useCountry } from '@/hooks/useCountry'
+import { formatMoney } from '@/lib/i18n'
 
 // Cargar mapa dinámicamente (evitar SSR con Leaflet)
 const RouteMap = dynamic(() => import('@/components/rutas/RouteMap'), { ssr: false })
@@ -227,8 +227,7 @@ export default function RutaDetallePage({ params }) {
   const router    = useRouter()
   const { esOwner, puedeGestionarRutas } = useAuth()
 
-  const { formatMoney } = useCountry()
-  const { lastSyncedAt } = useOffline()
+    const { lastSyncedAt } = useOffline()
 
   const [ruta,          setRuta]          = useState(null)
   const [loading,       setLoading]       = useState(true)
