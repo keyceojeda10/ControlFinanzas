@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { accionLimiter } from '@/lib/rate-limit'
 import { clearCachedContexto } from '@/lib/asistente-cache'
 import { generarTextoComprobante, formatearTelefono } from '@/lib/whatsapp'
+import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
 
@@ -156,7 +157,30 @@ export async function POST(req) {
       }
 
       case 'register_payment': {
-        const res = await fetch(`${origin}/api/prestamos/${input.prestamoId}/pagos`, {
+        let prestamoId = input.prestamoId
+        if (prestamoId) {
+          const exists = await prisma.prestamo.findFirst({
+            where: { id: prestamoId, organizationId: orgId, estado: 'activo' },
+            select: { id: true },
+          })
+          if (!exists) prestamoId = null
+        }
+        if (!prestamoId && input.clienteNombre) {
+          const palabraClave = input.clienteNombre.split(' ')[0]
+          const cliente = await prisma.cliente.findFirst({
+            where: {
+              organizationId: orgId,
+              nombre: { contains: palabraClave },
+              prestamos: { some: { estado: 'activo' } },
+            },
+            select: { prestamos: { where: { estado: 'activo' }, select: { id: true }, take: 1 } },
+          })
+          prestamoId = cliente?.prestamos?.[0]?.id
+        }
+        if (!prestamoId) {
+          return NextResponse.json({ error: 'No se encontro un prestamo activo para este cliente' }, { status: 404 })
+        }
+        const res = await fetch(`${origin}/api/prestamos/${prestamoId}/pagos`, {
           method: 'POST', headers,
           body: JSON.stringify({
             montoPagado: input.monto,
@@ -172,7 +196,7 @@ export async function POST(req) {
         // Generar link de comprobante WhatsApp si el cliente tiene teléfono
         let waUrl = null
         try {
-          const prestamoRes = await fetch(`${origin}/api/prestamos/${input.prestamoId}`, { headers })
+          const prestamoRes = await fetch(`${origin}/api/prestamos/${prestamoId}`, { headers })
           if (prestamoRes.ok) {
             const pd = await prestamoRes.json()
             const prestamo = pd.prestamo ?? pd

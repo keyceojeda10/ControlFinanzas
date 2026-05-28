@@ -142,11 +142,37 @@ async function buildDisplayData(toolName, input, orgId) {
     }
     case 'register_payment': {
       let saldoActual = null
+      let prestamoIdResuelto = input.prestamoId
       try {
-        const prestamo = await prisma.prestamo.findFirst({
-          where: { id: input.prestamoId, organizationId: orgId },
-          select: { totalAPagar: true, pagos: { select: { montoPagado: true, tipo: true } } },
-        })
+        let prestamo = null
+        if (prestamoIdResuelto) {
+          prestamo = await prisma.prestamo.findFirst({
+            where: { id: prestamoIdResuelto, organizationId: orgId, estado: 'activo' },
+            select: { id: true, totalAPagar: true, pagos: { select: { montoPagado: true, tipo: true } } },
+          })
+        }
+        if (!prestamo && input.clienteNombre) {
+          const palabraClave = input.clienteNombre.split(' ')[0]
+          const cliente = await prisma.cliente.findFirst({
+            where: {
+              organizationId: orgId,
+              nombre: { contains: palabraClave },
+              prestamos: { some: { estado: 'activo' } },
+            },
+            select: {
+              prestamos: {
+                where: { estado: 'activo' },
+                select: { id: true, totalAPagar: true, pagos: { select: { montoPagado: true, tipo: true } } },
+                take: 1,
+              },
+            },
+          })
+          prestamo = cliente?.prestamos?.[0] || null
+          if (prestamo) {
+            prestamoIdResuelto = prestamo.id
+            input.prestamoId = prestamo.id
+          }
+        }
         if (prestamo) {
           const pagado = (prestamo.pagos ?? [])
             .filter(p => !['recargo', 'descuento'].includes(p.tipo))
