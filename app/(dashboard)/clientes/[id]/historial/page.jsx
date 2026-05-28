@@ -1,7 +1,7 @@
 'use client'
 // app/(dashboard)/clientes/[id]/historial/page.jsx - Historial de pagos del cliente
 
-import { formatCOP } from '@/lib/calculos'
+import { formatMoney } from '@/lib/i18n'
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
@@ -143,7 +143,7 @@ export default function HistorialPage() {
           boxShadow: `0 0 30px #22c55e08, 0 1px 2px rgba(0,0,0,0.3)`,
         }}>
           <p className="text-[10px] text-[var(--color-text-muted)]">Total pagado</p>
-          <p className="text-xl font-bold text-[white] mt-1 font-mono-display">{formatCOP(totalPagado)}</p>
+          <p className="text-xl font-bold text-[white] mt-1 font-mono-display">{formatMoney(totalPagado)}</p>
         </Card>
         <Card>
           <p className="text-[10px] text-[var(--color-text-muted)]">Cantidad de pagos</p>

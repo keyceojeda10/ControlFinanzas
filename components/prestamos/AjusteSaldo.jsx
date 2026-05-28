@@ -1,8 +1,8 @@
 'use client'
 // components/prestamos/AjusteSaldo.jsx — Modal de recargo/descuento
 
-import { formatCOP } from '@/lib/calculos'
 import { useState } from 'react'
+import { useCountry } from '@/hooks/useCountry'
 import { Modal }    from '@/components/ui/Modal'
 import { Button }   from '@/components/ui/Button'
 import { Input }    from '@/components/ui/Input'
@@ -35,6 +35,7 @@ export default function AjusteSaldo({
   onClose,
   onSuccess,
 }) {
+  const { formatMoney } = useCountry()
   const [monto, setMonto]           = useState('')
 
   const [nota, setNota]             = useState('')
@@ -52,7 +53,7 @@ export default function AjusteSaldo({
     if (montoNum <= 0) { setError('Ingresa un monto válido'); return }
     if (!nota.trim()) { setError('El motivo es obligatorio'); return }
     if (tipoAjuste === 'descuento' && montoNum > saldoPendiente) {
-      setError(`No puede superar el saldo pendiente (${formatCOP(saldoPendiente)})`)
+      setError(`No puede superar el saldo pendiente (${formatMoney(saldoPendiente)})`)
       return
     }
 
@@ -98,7 +99,7 @@ export default function AjusteSaldo({
         <div className="flex items-center justify-between px-3 py-2.5 rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)]">
           <span className="text-xs text-[var(--color-text-muted)]">Saldo actual</span>
           <span className="text-sm font-semibold text-[var(--color-text-primary)] font-mono-display">
-            {formatCOP(saldoPendiente)}
+            {formatMoney(saldoPendiente)}
           </span>
         </div>
 
@@ -141,13 +142,13 @@ export default function AjusteSaldo({
                 {tipoAjuste === 'recargo' ? 'Recargo' : 'Descuento'}
               </span>
               <span className="text-sm font-semibold font-mono-display" style={{ color: cfg.color }}>
-                {cfg.signo}{formatCOP(montoNum)}
+                {cfg.signo}{formatMoney(montoNum)}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-xs text-[var(--color-text-muted)]">Nuevo saldo</span>
               <span className="text-sm font-bold text-[var(--color-text-primary)] font-mono-display">
-                {formatCOP(nuevoSaldo)}
+                {formatMoney(nuevoSaldo)}
               </span>
             </div>
           </div>

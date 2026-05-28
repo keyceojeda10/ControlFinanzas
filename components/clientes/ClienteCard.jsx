@@ -2,7 +2,7 @@
 // Card de cliente con jerarquia visual clara.
 // Nombre completo siempre visible, datos financieros etiquetados y separados.
 
-import { formatCOP } from '@/lib/calculos'
+import { formatMoney } from '@/lib/i18n'
 import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
 import Avatar from '@/components/ui/Avatar'
@@ -114,7 +114,7 @@ export default function ClienteCard({ cliente, actions }) {
                 className="text-[18px] font-mono-display font-bold leading-none mt-1"
                 style={{ color: cliente.diasMoraMax > 0 ? color : 'var(--color-text-primary)' }}
               >
-                {formatCOP(saldoTotal)}
+                {formatMoney(saldoTotal)}
               </p>
             </div>
             <div className="text-right">

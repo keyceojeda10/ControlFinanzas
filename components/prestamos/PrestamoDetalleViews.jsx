@@ -5,7 +5,8 @@
 
 import { useState, useEffect, useRef, useId } from 'react'
 import Link from 'next/link'
-import { formatFechaCobroRelativa ,  formatCOP } from '@/lib/calculos'
+import { formatFechaCobroRelativa } from '@/lib/calculos'
+import { formatMoney } from '@/lib/i18n'
 import OfflineBadge from '@/components/offline/OfflineBadge'
 import Avatar from '@/components/ui/Avatar'
 
@@ -166,10 +167,10 @@ export function PrestamoHeroCard({ prestamo, narrativa, sparklineData }) {
                 textShadow: 'none',
               }}
             >
-              {formatCOP(Math.round(animSaldo))}
+              {formatMoney(Math.round(animSaldo))}
             </p>
             <p className="text-[12px] mt-2" style={{ color: 'var(--color-text-secondary)' }}>
-              de {formatCOP(totalAPagar)} totales
+              de {formatMoney(totalAPagar)} totales
             </p>
             {narrativa && (
               <div
@@ -195,7 +196,7 @@ export function PrestamoHeroCard({ prestamo, narrativa, sparklineData }) {
           <DonutPagado pct={pctPagado} color={color} size={64} />
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Ha pagado</p>
-            <p className="text-[14px] font-mono-display font-bold mt-0.5" style={{ color: 'var(--color-text-primary)' }}>{formatCOP(totalPagado)}</p>
+            <p className="text-[14px] font-mono-display font-bold mt-0.5" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(totalPagado)}</p>
           </div>
         </div>
 
@@ -347,7 +348,7 @@ export function BotonPagoPersonalidad({ enMora, frecuenciaLabel, monto, onClick 
           {isUrgente ? 'Pagar ahora · vencido' : `Registrar pago ${frecuenciaLabel}`}
         </span>
         <span className="text-[18px] font-bold font-mono-display mt-0.5">
-          {formatCOP(monto)}
+          {formatMoney(monto)}
         </span>
       </span>
 
@@ -715,7 +716,7 @@ export function PagoMiniCard({ pago, onAnular, anulando, isOffline, children }) 
             className="text-[15px] font-bold font-mono-display leading-none"
             style={{ color: pago.tipo === 'descuento' ? '#3b82f6' : tipoInfo.bg }}
           >
-            {pago.tipo === 'descuento' ? '-' : pago.tipo === 'recargo' ? '+' : ''}{formatCOP(pago.montoPagado)}
+            {pago.tipo === 'descuento' ? '-' : pago.tipo === 'recargo' ? '+' : ''}{formatMoney(pago.montoPagado)}
           </p>
         </div>
       </div>

@@ -7,7 +7,8 @@ import { useAuth }                                 from '@/hooks/useAuth'
 import { Button }                                  from '@/components/ui/Button'
 import { Input }                                   from '@/components/ui/Input'
 import MoneyInput                                  from '@/components/ui/MoneyInput'
-import { calcularPrestamo, formatCOP }  from '@/lib/calculos'
+import { calcularPrestamo } from '@/lib/calculos'
+import { formatMoney } from '@/lib/i18n'
 import ResumenCalculo                              from '@/components/prestamos/ResumenCalculo'
 import { guardarPrestamoPendiente, obtenerClientesOffline } from '@/lib/offline'
 
@@ -484,7 +485,7 @@ function NuevoPrestamo() {
               />
               {calculo && Number(monto) > 0 && (
                 <p className="text-[10px] text-[var(--color-info)] font-medium px-0.5">
-                  → {numCuotas} cuotas de <span className="font-mono-display">{formatCOP(calculo.cuotaDiaria)}</span>
+                  → {numCuotas} cuotas de <span className="font-mono-display">{formatMoney(calculo.cuotaDiaria)}</span>
                 </p>
               )}
             </div>
@@ -776,16 +777,16 @@ function NuevoPrestamo() {
                 <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[10px] px-3 py-2.5 space-y-1">
                   <div className="flex justify-between text-xs">
                     <span className="text-[var(--color-text-muted)]">Total a pagar</span>
-                    <span className="text-[var(--color-text-primary)] font-medium font-mono-display">{formatCOP(calculo.totalAPagar)}</span>
+                    <span className="text-[var(--color-text-primary)] font-medium font-mono-display">{formatMoney(calculo.totalAPagar)}</span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-[var(--color-text-muted)]">Ya abonado</span>
-                    <span className="text-[var(--color-success)] font-medium font-mono-display">-{formatCOP(Number(yaAbonado))}</span>
+                    <span className="text-[var(--color-success)] font-medium font-mono-display">-{formatMoney(Number(yaAbonado))}</span>
                   </div>
                   <div className="flex justify-between text-xs border-t border-[var(--color-border)] pt-1">
                     <span className="text-[var(--color-text-muted)] font-semibold">Saldo pendiente</span>
                     <span className="text-[var(--color-accent)] font-bold font-mono-display">
-                      {formatCOP(Math.max(0, calculo.totalAPagar - Number(yaAbonado)))}
+                      {formatMoney(Math.max(0, calculo.totalAPagar - Number(yaAbonado)))}
                     </span>
                   </div>
                 </div>
@@ -869,7 +870,7 @@ function NuevoPrestamo() {
           <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] w-full max-w-md p-5">
             <h3 className="text-base font-semibold text-[var(--color-text-primary)] mb-1">Capital insuficiente</h3>
             <p className="text-sm text-[var(--color-text-primary)] mb-3">
-              Tu saldo actual de capital es <span className="font-mono-display text-[var(--color-accent)]">{formatCOP(modalInyeccion.saldoActual)}</span>. Te faltan <span className="font-mono-display text-[var(--color-danger)]">{formatCOP(modalInyeccion.faltante)}</span> para este préstamo.
+              Tu saldo actual de capital es <span className="font-mono-display text-[var(--color-accent)]">{formatMoney(modalInyeccion.saldoActual)}</span>. Te faltan <span className="font-mono-display text-[var(--color-danger)]">{formatMoney(modalInyeccion.faltante)}</span> para este préstamo.
             </p>
             <p className="text-xs text-[var(--color-text-muted)] mb-4">
               Puedes inyectar ese dinero ahora (por ejemplo, de tus ahorros o de un socio) y el sistema crea el préstamo. La inyección queda registrada en tus movimientos de capital.

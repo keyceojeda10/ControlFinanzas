@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Link                    from 'next/link'
 import { Badge }               from '@/components/ui/Badge'
 import { SkeletonTable }       from '@/components/ui/Skeleton'
-import { formatCOP }           from '@/lib/calculos'
+import { formatMoney }         from '@/lib/i18n'
 
 const planBadge = { starter: 'gray', basic: 'blue', growth: 'yellow', standard: 'purple', professional: 'green', test: 'yellow' }
 const tabs = [
@@ -196,7 +196,7 @@ export default function SuscripcionesPage() {
                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-[4px]"
                       style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}
                     >
-                      PAGADO · {formatCOP(s.montoCOP)}
+                      PAGADO · {formatMoney(s.montoCOP)}
                     </span>
                   )}
                   {s.ownerEmail && (

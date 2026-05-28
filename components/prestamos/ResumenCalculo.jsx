@@ -1,8 +1,8 @@
 // components/prestamos/ResumenCalculo.jsx - Panel de resumen en tiempo real
 
-import { formatCOP } from '@/lib/calculos'
+import { formatMoney } from '@/lib/i18n'
 
-const fmt = (v) => formatCOP(v)
+const fmt = (v) => formatMoney(v)
 
 const fmtFecha = (d) => {
   if (!d) return '—'

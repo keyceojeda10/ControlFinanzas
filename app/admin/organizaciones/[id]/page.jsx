@@ -6,7 +6,7 @@ import { Card }                 from '@/components/ui/Card'
 import { Button }               from '@/components/ui/Button'
 import { Badge }                from '@/components/ui/Badge'
 import { SkeletonCard }         from '@/components/ui/Skeleton'
-import { formatCOP }            from '@/lib/calculos'
+import { formatMoney }          from '@/lib/i18n'
 
 const LIMITES = {
   starter:      { usuarios: 1,  clientes: 150 },
@@ -183,7 +183,7 @@ export default function OrgDetallePage() {
         </div>
         <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-3 py-3 text-center">
           <p className="text-[10px] text-[var(--color-text-muted)]">Cartera activa</p>
-          <p className="text-base font-bold text-[var(--color-success)]">{formatCOP(org.carteraActiva)}</p>
+          <p className="text-base font-bold text-[var(--color-success)]">{formatMoney(org.carteraActiva)}</p>
         </div>
       </div>
 
@@ -209,7 +209,7 @@ export default function OrgDetallePage() {
                     : `${Math.abs(diasRestantes)} días vencida`}
                 </p>
               )}
-              <p className="text-xs text-[var(--color-text-muted)]">Monto: {formatCOP(sub.montoCOP)}</p>
+              <p className="text-xs text-[var(--color-text-muted)]">Monto: {formatMoney(sub.montoCOP)}</p>
             </div>
             <div className="flex gap-2 flex-wrap">
               <Button

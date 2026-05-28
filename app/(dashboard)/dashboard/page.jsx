@@ -1,5 +1,5 @@
 'use client'
-import { formatCOP } from '@/lib/calculos'
+import { formatMoney } from '@/lib/i18n'
 import { useState, useEffect, useCallback, useRef, useId } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
@@ -279,7 +279,7 @@ function Sparkline({ data, color = 'var(--color-success)', ariaLabel, etiquetasD
           }}
         >
           <p className="text-[9px] uppercase tracking-wider mb-0.5" style={{ color: 'var(--color-text-muted)' }}>{dias[activeIdx]}</p>
-          <p className="font-mono-display font-bold" style={{ color }}>{formatCOP(activePoint[2])}</p>
+          <p className="font-mono-display font-bold" style={{ color }}>{formatMoney(activePoint[2])}</p>
         </div>
       )}
     </div>
@@ -292,7 +292,7 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
   const animatedNum = useCountUp(typeof valueRaw === 'number' ? valueRaw : 0, 900)
   const [showInfo, setShowInfo] = useState(false)
   const hasInfo = Boolean(info)
-  const display = typeof valueRaw === 'number' ? formatCOP(Math.round(animatedNum)) : value
+  const display = typeof valueRaw === 'number' ? formatMoney(Math.round(animatedNum)) : value
 
   return (
     <div
@@ -379,7 +379,7 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
             />
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Meta diaria</p>
-              <p className="text-[14px] font-mono-display font-bold mt-0.5" style={{ color: 'var(--color-text-primary)' }}>{formatCOP(metaDiaria)}</p>
+              <p className="text-[14px] font-mono-display font-bold mt-0.5" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(metaDiaria)}</p>
             </div>
           </div>
         )}
@@ -474,7 +474,7 @@ function Heatmap30d({ data, color = '#34d399', label = 'Cobros últimos 30 días
       <div className="flex items-baseline justify-between mb-3">
         <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
         <p className="text-[10px] font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
-          Promedio diario · <span style={{ color: 'var(--color-text-primary)' }}>{formatCOP(Math.round(promedio))}</span>
+          Promedio diario · <span style={{ color: 'var(--color-text-primary)' }}>{formatMoney(Math.round(promedio))}</span>
         </p>
       </div>
       <div className={`grid gap-1`} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
@@ -489,7 +489,7 @@ function Heatmap30d({ data, color = '#34d399', label = 'Cobros últimos 30 días
               border: c.esHoy ? `1.5px solid ${color}` : '1px solid color-mix(in srgb, var(--color-text-muted) 8%, transparent)',
               animationDelay: `${c.idx * 12}ms`,
             }}
-            title={`Hace ${29 - c.idx} día${29 - c.idx === 1 ? '' : 's'}: ${formatCOP(c.valor)}`}
+            title={`Hace ${29 - c.idx} día${29 - c.idx === 1 ? '' : 's'}: ${formatMoney(c.valor)}`}
           />
         ))}
       </div>
@@ -524,7 +524,7 @@ function generarNarrativa({ recaudadoHoy, recaudadoAyer, cuotaDiaria, sparkline7
   if (cuotaDiaria > 0) {
     const pctMeta = (recaudadoHoy / cuotaDiaria) * 100
     if (pctMeta >= 100) return '¡Meta diaria cumplida!'
-    if (pctMeta >= 75) return `Falta poco: $${formatCOP(cuotaDiaria - recaudadoHoy).replace('$', '')} para tu meta`
+    if (pctMeta >= 75) return `Falta poco: $${formatMoney(cuotaDiaria - recaudadoHoy).replace('$', '')} para tu meta`
     if (pctMeta >= 40) return `Vas en ${Math.round(pctMeta)}% de tu meta del día`
   }
 
@@ -555,7 +555,7 @@ function KpiCard({ label, value, valueRaw, format = 'cop', sub, color = 'var(--c
   const displayValue = (() => {
     if (valueRaw === undefined && typeof value !== 'number') return value
     const n = typeof valueRaw === 'number' ? animatedNum : animatedNum
-    if (format === 'cop') return formatCOP(Math.round(n))
+    if (format === 'cop') return formatMoney(Math.round(n))
     return Math.round(n).toLocaleString('es-CO')
   })()
   return (
@@ -753,7 +753,7 @@ function RecaudoCard({ label, color, colorHex, monto, cantidad, cuotaDiaria, ext
           </span>
         )}
       </div>
-      <p className="text-xl font-bold font-mono-display truncate" style={{ color }}>{formatCOP(Math.round(animMonto))}</p>
+      <p className="text-xl font-bold font-mono-display truncate" style={{ color }}>{formatMoney(Math.round(animMonto))}</p>
       <div className="flex items-center gap-1.5 flex-wrap mt-1">
         <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{cantidad} pagos {label.toLowerCase().includes('mes') ? 'en el mes' : 'registrados'}</p>
         {montoAyer !== undefined && montoAyer !== null && (
@@ -868,7 +868,7 @@ function ComparativoChip({ actual, anterior }) {
   return (
     <span className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold inline-flex items-center gap-0.5" style={{ background: `color-mix(in srgb, ${color} 15%, transparent)`, color }}>
       <span>{arrow}</span>
-      <span>{formatCOP(Math.abs(diff))}</span>
+      <span>{formatMoney(Math.abs(diff))}</span>
       <span style={{ opacity: 0.7 }}>vs ayer</span>
     </span>
   )
@@ -1002,31 +1002,31 @@ function ResumenDelDia({ actividad, esOwner }) {
     icon: Icons.pagoIn,
     color: 'var(--color-success)',
     text: `${pagos.cantidad} ${pagos.cantidad === 1 ? 'pago' : 'pagos'}`,
-    monto: formatCOP(pagos.monto),
+    monto: formatMoney(pagos.monto),
   })
   if (prestamos.cantidad > 0) items.push({
     icon: Icons.prestamoOut,
     color: '#f59e0b',
     text: `${prestamos.cantidad} ${prestamos.cantidad === 1 ? 'préstamo entregado' : 'préstamos entregados'}`,
-    monto: formatCOP(prestamos.monto),
+    monto: formatMoney(prestamos.monto),
   })
   if (esOwner && gastos && gastos.cantidad > 0) items.push({
     icon: Icons.gasto,
     color: 'var(--color-warning)',
     text: `${gastos.cantidad} ${gastos.cantidad === 1 ? 'gasto' : 'gastos'}`,
-    monto: formatCOP(gastos.monto),
+    monto: formatMoney(gastos.monto),
   })
   if (esOwner && retiros && retiros.monto > 0) items.push({
     icon: Icons.retiro,
     color: 'var(--color-danger)',
     text: 'Retiro de caja',
-    monto: formatCOP(retiros.monto),
+    monto: formatMoney(retiros.monto),
   })
   if (esOwner && inyecciones && inyecciones.monto > 0) items.push({
     icon: Icons.retiro,
     color: 'var(--color-success)',
     text: 'Inyección de capital',
-    monto: formatCOP(inyecciones.monto),
+    monto: formatMoney(inyecciones.monto),
   })
 
   const sinMovimientos = items.length === 0 && (!desgloseCobradores || desgloseCobradores.length === 0)
@@ -1079,7 +1079,7 @@ function ResumenDelDia({ actividad, esOwner }) {
                   <span className="font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
                     <span style={{ color: 'var(--color-text-muted)' }}>{c.pagos} pagos</span>
                     <span className="mx-1.5" style={{ color: 'var(--color-text-muted)' }}>·</span>
-                    <span style={{ color: 'var(--color-success)' }}>{formatCOP(c.monto)}</span>
+                    <span style={{ color: 'var(--color-success)' }}>{formatMoney(c.monto)}</span>
                   </span>
                 </div>
               ))}
@@ -1446,8 +1446,8 @@ export default function DashboardPage() {
           <HeroCard
             label="Recaudado hoy"
             valueRaw={data.cobros.hoy}
-            value={formatCOP(data.cobros.hoy)}
-            sub={`${data.cobros.cantidadHoy} ${data.cobros.cantidadHoy === 1 ? 'pago registrado' : 'pagos registrados'}${data.cobros.ayer ? ` · ayer ${formatCOP(data.cobros.ayer)}` : ''}`}
+            value={formatMoney(data.cobros.hoy)}
+            sub={`${data.cobros.cantidadHoy} ${data.cobros.cantidadHoy === 1 ? 'pago registrado' : 'pagos registrados'}${data.cobros.ayer ? ` · ayer ${formatMoney(data.cobros.ayer)}` : ''}`}
             color="#22c55e"
             accent="#10b981"
             narrativa={generarNarrativa({
@@ -1462,7 +1462,7 @@ export default function DashboardPage() {
               titulo: 'Recaudado hoy',
               que: 'Total de dinero que has cobrado HOY (en hora Colombia, desde la medianoche).',
               comoSeCalcula: 'Sumo todos los pagos registrados hoy de tipo "completo", "parcial" y "capital". No cuento recargos ni descuentos.',
-              ejemplo: `Llevas ${formatCOP(data.cobros.hoy)} cobrados en ${data.cobros.cantidadHoy} pagos hoy. ${data.prestamos.cuotaDiariaTotal > 0 ? `Eso es el ${Math.min(100, Math.round((data.cobros.hoy / data.prestamos.cuotaDiariaTotal) * 100))}% de tu meta diaria de ${formatCOP(data.prestamos.cuotaDiariaTotal)}.` : ''}${data.cobros.ayer ? ` Ayer cobraste ${formatCOP(data.cobros.ayer)} en ${data.cobros.cantidadAyer} pagos.` : ''}`,
+              ejemplo: `Llevas ${formatMoney(data.cobros.hoy)} cobrados en ${data.cobros.cantidadHoy} pagos hoy. ${data.prestamos.cuotaDiariaTotal > 0 ? `Eso es el ${Math.min(100, Math.round((data.cobros.hoy / data.prestamos.cuotaDiariaTotal) * 100))}% de tu meta diaria de ${formatMoney(data.prestamos.cuotaDiariaTotal)}.` : ''}${data.cobros.ayer ? ` Ayer cobraste ${formatMoney(data.cobros.ayer)} en ${data.cobros.cantidadAyer} pagos.` : ''}`,
               cuandoCambia: 'Sube cada vez que se registra un pago. Se reinicia a $0 a la medianoche (hora Colombia).',
               tip: 'El sparkline muestra los últimos 7 días. La etiqueta "vs ayer" compara con el día anterior completo.',
             }}
@@ -1483,7 +1483,7 @@ export default function DashboardPage() {
               titulo: 'Recaudado este mes',
               que: 'Total cobrado en lo que va del mes actual (desde el día 1 hasta hoy).',
               comoSeCalcula: 'Sumo todos los pagos del mes en curso, excluyendo recargos y descuentos.',
-              ejemplo: `Has cobrado ${formatCOP(data.cobros.mes)} en ${data.cobros.cantidadMes} pagos este mes. Promedio por día: ${formatCOP(Math.round(data.cobros.mes / Math.max(1, new Date().getDate())))}.`,
+              ejemplo: `Has cobrado ${formatMoney(data.cobros.mes)} en ${data.cobros.cantidadMes} pagos este mes. Promedio por día: ${formatMoney(Math.round(data.cobros.mes / Math.max(1, new Date().getDate())))}.`,
               cuandoCambia: 'Sube cada vez que se registra un pago. Se reinicia a $0 el día 1 de cada mes.',
               tip: 'Compara este número con el mes pasado para ver si tu cobro está creciendo.',
             }}
@@ -1496,7 +1496,7 @@ export default function DashboardPage() {
                 {capitalData && (
                   <KpiCard
                     label="Saldo disponible"
-                    value={formatCOP(capitalData.saldo)}
+                    value={formatMoney(capitalData.saldo)}
                     valueRaw={capitalData.saldo}
                     sub={capitalData.saldo < 0 ? 'Capital insuficiente' : 'Capital en caja'}
                     color={capitalData.saldo < 0 ? '#ef4444' : '#06b6d4'}
@@ -1504,7 +1504,7 @@ export default function DashboardPage() {
                       titulo: 'Saldo disponible',
                       que: 'El EFECTIVO que tienes en caja en este momento. Plata real disponible para prestar, retirar o cubrir gastos.',
                       comoSeCalcula: 'Capital inicial + cobros recibidos − desembolsos de préstamos − gastos − retiros + inyecciones.',
-                      ejemplo: `Tienes ${formatCOP(capitalData.saldo)} en caja ahora mismo. ${capitalData.saldo < 0 ? '⚠️ Tu saldo está en negativo: revisa si registraste todos los movimientos correctamente.' : 'Con esto puedes desembolsar nuevos préstamos o retirar utilidades.'}`,
+                      ejemplo: `Tienes ${formatMoney(capitalData.saldo)} en caja ahora mismo. ${capitalData.saldo < 0 ? '⚠️ Tu saldo está en negativo: revisa si registraste todos los movimientos correctamente.' : 'Con esto puedes desembolsar nuevos préstamos o retirar utilidades.'}`,
                       cuandoCambia: 'SUBE: cobros e inyecciones de capital. BAJA: desembolsos de préstamos nuevos, gastos, retiros.',
                       tip: 'Si vas a hacer un préstamo grande, verifica que tengas suficiente saldo aquí antes.',
                     }}
@@ -1514,15 +1514,15 @@ export default function DashboardPage() {
                 {data.finanzas && (
                   <KpiCard
                     label="Patrimonio"
-                    value={formatCOP(data.finanzas.patrimonio)}
+                    value={formatMoney(data.finanzas.patrimonio)}
                     valueRaw={data.finanzas.patrimonio}
                     sub={`Caja + por cobrar - gastos`}
                     color="#10b981"
                     info={{
                       titulo: 'Patrimonio',
                       que: 'Tu foto financiera completa hoy. Cuánto vale tu negocio sumando todo lo que tienes y te deben, menos lo gastado este mes.',
-                      comoSeCalcula: `Saldo en caja (${formatCOP(data.finanzas.cajaDisponible)}) + Por cobrar real (${formatCOP(data.prestamos.saldoPorCobrar)}) − Gastos del mes (${formatCOP(data.finanzas.gastosMes)}) = ${formatCOP(data.finanzas.patrimonio)}.`,
-                      ejemplo: `Tu negocio vale ${formatCOP(data.finanzas.patrimonio)} hoy. Esto incluye lo que tienes en caja, lo que te deben los clientes, y descontando los gastos del mes en curso.`,
+                      comoSeCalcula: `Saldo en caja (${formatMoney(data.finanzas.cajaDisponible)}) + Por cobrar real (${formatMoney(data.prestamos.saldoPorCobrar)}) − Gastos del mes (${formatMoney(data.finanzas.gastosMes)}) = ${formatMoney(data.finanzas.patrimonio)}.`,
+                      ejemplo: `Tu negocio vale ${formatMoney(data.finanzas.patrimonio)} hoy. Esto incluye lo que tienes en caja, lo que te deben los clientes, y descontando los gastos del mes en curso.`,
                       cuandoCambia: 'Se mueve con CADA acción: pagos recibidos, préstamos nuevos, gastos, retiros, todo.',
                       tip: 'Es el indicador más completo de cómo está tu negocio. Compáralo mes a mes para ver si estás creciendo.',
                     }}
@@ -1556,15 +1556,15 @@ export default function DashboardPage() {
             <div className="grid grid-cols-2 gap-3">
               <KpiCard
                 label="Cartera activa"
-                value={formatCOP(data.prestamos.carteraActiva)}
+                value={formatMoney(data.prestamos.carteraActiva)}
                 valueRaw={data.prestamos.carteraActiva}
-                sub={`Capital: ${formatCOP(data.prestamos.capitalPrestado)}`}
+                sub={`Capital: ${formatMoney(data.prestamos.capitalPrestado)}`}
                 color="#f59e0b"
                 info={{
                   titulo: 'Cartera activa',
                   que: 'Todo el dinero que tus clientes te van a pagar EN TOTAL (capital + intereses) cuando terminen sus préstamos. Es como una "promesa de cobro" futura.',
-                  comoSeCalcula: `Sumo el "Total a pagar" de todos los préstamos activos. Capital prestado: ${formatCOP(data.prestamos.capitalPrestado)} + Intereses por ganar: ${formatCOP(data.prestamos.carteraActiva - data.prestamos.capitalPrestado)} = ${formatCOP(data.prestamos.carteraActiva)}.`,
-                  ejemplo: `Vas a recibir ${formatCOP(data.prestamos.carteraActiva)} cuando todos terminen de pagar. De eso, ${formatCOP(data.prestamos.capitalPrestado)} es lo que prestaste y ${formatCOP(data.prestamos.carteraActiva - data.prestamos.capitalPrestado)} es tu ganancia por intereses.`,
+                  comoSeCalcula: `Sumo el "Total a pagar" de todos los préstamos activos. Capital prestado: ${formatMoney(data.prestamos.capitalPrestado)} + Intereses por ganar: ${formatMoney(data.prestamos.carteraActiva - data.prestamos.capitalPrestado)} = ${formatMoney(data.prestamos.carteraActiva)}.`,
+                  ejemplo: `Vas a recibir ${formatMoney(data.prestamos.carteraActiva)} cuando todos terminen de pagar. De eso, ${formatMoney(data.prestamos.capitalPrestado)} es lo que prestaste y ${formatMoney(data.prestamos.carteraActiva - data.prestamos.capitalPrestado)} es tu ganancia por intereses.`,
                   cuandoCambia: 'Solo cambia cuando creas un préstamo nuevo (sube) o un préstamo se completa/cancela (baja). NO baja con los pagos diarios.',
                   tip: '¿Quieres ver cuánto te falta cobrar? Mira "Por cobrar" — ese sí baja con cada pago.',
                 }}
@@ -1573,15 +1573,15 @@ export default function DashboardPage() {
               {data.prestamos.saldoPorCobrar !== undefined && (
                 <KpiCard
                   label="Por cobrar"
-                  value={formatCOP(data.prestamos.saldoPorCobrar)}
+                  value={formatMoney(data.prestamos.saldoPorCobrar)}
                   valueRaw={data.prestamos.saldoPorCobrar}
                   sub="Saldo pendiente real"
                   color="#0ea5e9"
                   info={{
                     titulo: 'Por cobrar',
                     que: 'Lo que REALMENTE te falta cobrar HOY de todos tus préstamos activos.',
-                    comoSeCalcula: `Cartera activa (${formatCOP(data.prestamos.carteraActiva)}) MENOS lo que ya te han pagado tus clientes (${formatCOP(data.prestamos.carteraActiva - data.prestamos.saldoPorCobrar)}) = ${formatCOP(data.prestamos.saldoPorCobrar)}.`,
-                    ejemplo: `Te faltan ${formatCOP(data.prestamos.saldoPorCobrar)} por cobrar. Ya has cobrado ${formatCOP(data.prestamos.carteraActiva - data.prestamos.saldoPorCobrar)} del total prometido.`,
+                    comoSeCalcula: `Cartera activa (${formatMoney(data.prestamos.carteraActiva)}) MENOS lo que ya te han pagado tus clientes (${formatMoney(data.prestamos.carteraActiva - data.prestamos.saldoPorCobrar)}) = ${formatMoney(data.prestamos.saldoPorCobrar)}.`,
+                    ejemplo: `Te faltan ${formatMoney(data.prestamos.saldoPorCobrar)} por cobrar. Ya has cobrado ${formatMoney(data.prestamos.carteraActiva - data.prestamos.saldoPorCobrar)} del total prometido.`,
                     cuandoCambia: 'Baja cada vez que un cliente te paga. Sube cuando creas un préstamo nuevo.',
                     tip: 'Este es el indicador real de "deuda pendiente". El más útil para saber cómo va tu cobro día a día.',
                   }}
@@ -1638,7 +1638,7 @@ export default function DashboardPage() {
             <div className="grid grid-cols-2 gap-3">
               <KpiCard
                 label="Cuota diaria total"
-                value={formatCOP(data.prestamos.cuotaDiariaTotal)}
+                value={formatMoney(data.prestamos.cuotaDiariaTotal)}
                 valueRaw={data.prestamos.cuotaDiariaTotal}
                 sub="Esperado por dia"
                 color="#a855f7"
@@ -1646,7 +1646,7 @@ export default function DashboardPage() {
                   titulo: 'Cuota diaria total',
                   que: 'Lo que DEBERÍAS cobrar en un día normal si todos tus clientes pagaran su cuota del día sin atrasos.',
                   comoSeCalcula: 'Sumo la cuota diaria pactada de cada préstamo activo (la cuota que cada cliente debe pagar todos los días según su frecuencia).',
-                  ejemplo: `Tu meta diaria es ${formatCOP(data.prestamos.cuotaDiariaTotal)}. Si cobraste menos hoy, tienes mora acumulándose. Si cobraste más, hay clientes adelantando pagos.`,
+                  ejemplo: `Tu meta diaria es ${formatMoney(data.prestamos.cuotaDiariaTotal)}. Si cobraste menos hoy, tienes mora acumulándose. Si cobraste más, hay clientes adelantando pagos.`,
                   cuandoCambia: 'Cambia cuando creas un préstamo nuevo, cuando uno se completa, o cuando ajustas la cuota de un préstamo.',
                   tip: 'Compara este número con "Recaudado hoy" para saber qué % de tu meta diaria cumpliste.',
                 }}
@@ -1691,7 +1691,7 @@ export default function DashboardPage() {
                   <p className="text-sm font-medium truncate" style={{ color: 'var(--color-text-primary)' }}>{p.cliente}</p>
                   <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{fechaCorta(p.fecha)} · {p.tipo}</p>
                 </div>
-                <p className="text-sm font-bold shrink-0 ml-3 font-mono-display" style={{ color: 'var(--color-success)' }}>+{formatCOP(p.monto)}</p>
+                <p className="text-sm font-bold shrink-0 ml-3 font-mono-display" style={{ color: 'var(--color-success)' }}>+{formatMoney(p.monto)}</p>
               </div>
             ))}
           </div>
@@ -1720,7 +1720,7 @@ export default function DashboardPage() {
                       <p className="text-sm truncate" style={{ color: 'var(--color-text-primary)' }}>{c.cliente.nombre}</p>
                       <p className="text-[10px]" style={{ color: 'var(--color-danger)' }}>{c.diasMora} días de mora</p>
                     </div>
-                    <p className="text-sm font-bold shrink-0 ml-2 font-mono-display" style={{ color: 'var(--color-danger)' }}>{formatCOP(c.saldoPendiente)}</p>
+                    <p className="text-sm font-bold shrink-0 ml-2 font-mono-display" style={{ color: 'var(--color-danger)' }}>{formatMoney(c.saldoPendiente)}</p>
                   </Link>
                 ))}
               </div>
@@ -1734,7 +1734,7 @@ export default function DashboardPage() {
                       <p className="text-sm truncate" style={{ color: 'var(--color-text-primary)' }}>{c.cliente.nombre}</p>
                       <p className="text-[10px]" style={{ color: 'var(--color-warning)' }}>{c.diasMora} días de mora</p>
                     </div>
-                    <p className="text-sm font-bold shrink-0 ml-2 font-mono-display" style={{ color: 'var(--color-warning)' }}>{formatCOP(c.saldoPendiente)}</p>
+                    <p className="text-sm font-bold shrink-0 ml-2 font-mono-display" style={{ color: 'var(--color-warning)' }}>{formatMoney(c.saldoPendiente)}</p>
                   </Link>
                 ))}
               </div>
@@ -1748,7 +1748,7 @@ export default function DashboardPage() {
                       <p className="text-sm truncate" style={{ color: 'var(--color-text-primary)' }}>{c.cliente.nombre}</p>
                       <p className="text-[10px]" style={{ color: 'var(--color-accent)' }}>{c.diasMora} días de mora</p>
                     </div>
-                    <p className="text-sm font-bold shrink-0 ml-2 font-mono-display" style={{ color: 'var(--color-accent)' }}>{formatCOP(c.saldoPendiente)}</p>
+                    <p className="text-sm font-bold shrink-0 ml-2 font-mono-display" style={{ color: 'var(--color-accent)' }}>{formatMoney(c.saldoPendiente)}</p>
                   </Link>
                 ))}
               </div>
@@ -1762,7 +1762,7 @@ export default function DashboardPage() {
                       <p className="text-sm truncate" style={{ color: 'var(--color-text-primary)' }}>{c.cliente.nombre}</p>
                       <p className="text-[10px]" style={{ color: 'var(--color-success)' }}>{c.diasMora} días de mora</p>
                     </div>
-                    <p className="text-sm font-bold shrink-0 ml-2 font-mono-display" style={{ color: 'var(--color-success)' }}>{formatCOP(c.saldoPendiente)}</p>
+                    <p className="text-sm font-bold shrink-0 ml-2 font-mono-display" style={{ color: 'var(--color-success)' }}>{formatMoney(c.saldoPendiente)}</p>
                   </Link>
                 ))}
               </div>

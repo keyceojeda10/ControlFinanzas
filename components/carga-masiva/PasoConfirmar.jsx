@@ -1,11 +1,12 @@
 'use client'
 
-import { formatCOP } from '@/lib/calculos'
 import { useState } from 'react'
+import { useCountry } from '@/hooks/useCountry'
 import { Button } from '@/components/ui/Button'
 import Link from 'next/link'
 
 export default function PasoConfirmar({ datosImportar, onVolver, onReiniciar }) {
+  const { formatMoney } = useCountry()
   const [importando, setImportando] = useState(false)
 
   const [resultado, setResultado] = useState(null)
@@ -77,7 +78,7 @@ export default function PasoConfirmar({ datosImportar, onVolver, onReiniciar }) 
           )}
           <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[12px] px-3 py-2.5 text-center">
             <p className="text-[10px] text-[var(--color-text-muted)]">Monto desembolsado</p>
-            <p className="text-base font-bold text-[var(--color-text-primary)] font-mono-display">{formatCOP(resultado.montoDesembolsado)}</p>
+            <p className="text-base font-bold text-[var(--color-text-primary)] font-mono-display">{formatMoney(resultado.montoDesembolsado)}</p>
           </div>
         </div>
 

@@ -2,7 +2,7 @@
 // Botón para imprimir recibo estilo térmico (58mm) via window.open + print.
 'use client'
 
-import { formatCOP } from '@/lib/calculos'
+import { formatMoney } from '@/lib/i18n'
 
 const PRINT_ICON = (
   <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -86,14 +86,14 @@ function generarHTMLRecibo(cliente, prestamo, pago, orgNombre) {
 
   <div class="linea-fina">${lineaFina}</div>
 
-  <div class="monto-grande">${formatCOP(pago?.montoPagado ?? 0)}</div>
+  <div class="monto-grande">${formatMoney(pago?.montoPagado ?? 0)}</div>
 
   <div class="linea-fina">${lineaFina}</div>
 
-  <div class="row mt"><span>Total pagado:</span><span>${formatCOP(totalPag)}</span></div>
-  <div class="row"><span>Saldo pendiente:</span><span>${formatCOP(saldo)}</span></div>
-  <div class="row"><span>Total a pagar:</span><span>${formatCOP(totalAPagar)}</span></div>
-  <div class="row"><span>Cuota:</span><span>${formatCOP(cuota)}</span></div>
+  <div class="row mt"><span>Total pagado:</span><span>${formatMoney(totalPag)}</span></div>
+  <div class="row"><span>Saldo pendiente:</span><span>${formatMoney(saldo)}</span></div>
+  <div class="row"><span>Total a pagar:</span><span>${formatMoney(totalAPagar)}</span></div>
+  <div class="row"><span>Cuota:</span><span>${formatMoney(cuota)}</span></div>
   <div class="row"><span>Progreso:</span><span>${progreso}%</span></div>
 
   <div class="linea">${linea}</div>
@@ -139,7 +139,7 @@ function generarHTMLHistorialCompleto(cliente, prestamo, orgNombre) {
           <td>${fmtFechaHora(pago.fechaPago)}</td>
           <td>${getTipoPagoLabel(pago.tipo)}</td>
           <td>${metodo}</td>
-          <td style="text-align:right; font-weight:bold;">${prefijoMonto}${formatCOP(pago.montoPagado || 0)}</td>
+          <td style="text-align:right; font-weight:bold;">${prefijoMonto}${formatMoney(pago.montoPagado || 0)}</td>
         </tr>
       `
     }).join('')
@@ -177,11 +177,11 @@ function generarHTMLHistorialCompleto(cliente, prestamo, orgNombre) {
     <div class="grid">
       <div class="item"><b>Cliente:</b> ${cliente?.nombre || 'N/A'}</div>
       <div class="item"><b>Cédula:</b> ${cliente?.cedula || 'N/A'}</div>
-      <div class="item"><b>Monto prestado:</b> ${formatCOP(montoPrestado)}</div>
-      <div class="item"><b>Total a pagar:</b> ${formatCOP(totalAPagar)}</div>
-      <div class="item"><b>Total pagado:</b> ${formatCOP(totalPagadoReal)}</div>
-      <div class="item"><b>Saldo pendiente:</b> ${formatCOP(saldoPendiente)}</div>
-      <div class="item"><b>Cuota diaria:</b> ${formatCOP(cuotaDiaria)}</div>
+      <div class="item"><b>Monto prestado:</b> ${formatMoney(montoPrestado)}</div>
+      <div class="item"><b>Total a pagar:</b> ${formatMoney(totalAPagar)}</div>
+      <div class="item"><b>Total pagado:</b> ${formatMoney(totalPagadoReal)}</div>
+      <div class="item"><b>Saldo pendiente:</b> ${formatMoney(saldoPendiente)}</div>
+      <div class="item"><b>Cuota diaria:</b> ${formatMoney(cuotaDiaria)}</div>
       <div class="item"><b>Progreso:</b> ${porcentajePagado}%</div>
       <div class="item"><b>Cuotas pagadas:</b> ${cuotasPagadas}</div>
       <div class="item"><b>Cuotas pendientes:</b> ${cuotasPendientes}</div>

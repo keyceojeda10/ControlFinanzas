@@ -2,7 +2,7 @@
 // components/cobradores/CobradorCard.jsx
 // Card premium de cobrador con mood color por desempeño del dia.
 
-import { formatCOP } from '@/lib/calculos'
+import { formatMoney } from '@/lib/i18n'
 import Link from 'next/link'
 import Avatar from '@/components/ui/Avatar'
 
@@ -122,10 +122,10 @@ export default function CobradorCard({ cobrador, onToggleActivo, toggling }) {
                 textShadow: 'none',
               }}
             >
-              {formatCOP(cobrador.recaudadoHoy ?? 0)}
+              {formatMoney(cobrador.recaudadoHoy ?? 0)}
             </p>
             <p className="text-[10px] font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
-              de {formatCOP(cobrador.esperadoHoy ?? 0)}
+              de {formatMoney(cobrador.esperadoHoy ?? 0)}
             </p>
           </div>
           <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>

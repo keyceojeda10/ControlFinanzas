@@ -8,7 +8,7 @@ import { useOnline }           from '@/hooks/useOnline'
 import OfflineFallback         from '@/components/offline/OfflineFallback'
 import FloatingWhatsApp        from '@/components/ui/FloatingWhatsApp'
 import { PLANES_CONFIG, getPrecioPlan } from '@/lib/planes'
-import { formatCOP } from '@/lib/calculos'
+import { formatMoney } from '@/lib/i18n'
 
 const planesBase = [
   { key: 'starter',      nombre: 'Inicial',      features: ['1 usuario', 'Hasta 150 clientes', '1 ruta', 'Dashboard basico'] },
@@ -249,7 +249,7 @@ function PlanPageInner() {
 
         <div className="flex items-baseline gap-1">
           <span className="text-[32px] font-bold leading-none font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
-            {formatCOP(infoPlan.precio)}
+            {formatMoney(infoPlan.precio)}
           </span>
           <span className="text-[12px] font-mono-display" style={{ color: 'var(--color-text-muted)' }}>/mes</span>
         </div>
@@ -485,15 +485,15 @@ function PlanPageInner() {
                       {tieneDesc ? (
                         <div>
                           <span className="text-[10px] line-through font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
-                            {formatCOP(p.precio * meses)}
+                            {formatMoney(p.precio * meses)}
                           </span>
                           <span className="text-[14px] font-bold font-mono-display ml-1" style={{ color: 'var(--color-text-primary)' }}>
-                            {formatCOP(conDescuento)}
+                            {formatMoney(conDescuento)}
                           </span>
                         </div>
                       ) : (
                         <span className="text-[14px] font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
-                          {formatCOP(esSub ? p.precio : conDescuento)}
+                          {formatMoney(esSub ? p.precio : conDescuento)}
                           <span className="text-[10px] font-normal" style={{ color: 'var(--color-text-muted)' }}>
                             /{esSub ? 'mes' : meses === 12 ? 'ano' : meses === 3 ? 'trim.' : 'mes'}
                           </span>
@@ -501,7 +501,7 @@ function PlanPageInner() {
                       )}
                       {ahorro > 0 && !esSub && (
                         <p className="text-[9px] font-mono-display" style={{ color: 'var(--color-success)' }}>
-                          Ahorras {formatCOP(ahorro)}
+                          Ahorras {formatMoney(ahorro)}
                         </p>
                       )}
                     </div>

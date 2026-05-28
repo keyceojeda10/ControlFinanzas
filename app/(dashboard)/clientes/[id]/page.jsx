@@ -13,7 +13,8 @@ import { Card }                      from '@/components/ui/Card'
 import { SkeletonCard }              from '@/components/ui/Skeleton'
 import BotonWhatsApp                 from '@/components/ui/BotonWhatsApp'
 import ModalWhatsAppTemplates        from '@/components/ui/ModalWhatsAppTemplates'
-import { formatFechaCobroRelativa ,  formatCOP } from '@/lib/calculos'
+import { formatFechaCobroRelativa } from '@/lib/calculos'
+import { formatMoney } from '@/lib/i18n'
 import { planTieneFotos }            from '@/lib/planes'
 import ScoreCrediticio               from '@/components/clientes/ScoreCrediticio'
 import ClienteHeroCard, { InfoContactoCard, AccionesClienteChips } from '@/components/clientes/ClienteHeroCard'
@@ -686,9 +687,9 @@ function DeleteClienteModal({ cliente, prestamos, onClose, onDeletePrestamo, onT
                 <div key={p.id} className="p-3 rounded-[12px] bg-[#151515] border border-[#222]">
                   <div className="flex items-center justify-between mb-2">
                     <div>
-                      <p className="text-sm font-medium text-[var(--color-text-primary)]">{formatCOP(p.montoPrestado)}</p>
+                      <p className="text-sm font-medium text-[var(--color-text-primary)]">{formatMoney(p.montoPrestado)}</p>
                       <p className="text-[10px] text-[var(--color-text-muted)]">
-                        Saldo: {formatCOP(p.saldoPendiente)} - {p.estado}
+                        Saldo: {formatMoney(p.saldoPendiente)} - {p.estado}
                       </p>
                     </div>
                   </div>
@@ -736,7 +737,7 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, mini = false }) {
         className="flex items-center gap-3 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-4 py-3 hover:border-[var(--color-border)]/70 transition-colors group"
       >
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-[white]">{formatCOP(p.montoPrestado)}</p>
+          <p className="text-sm text-[white]">{formatMoney(p.montoPrestado)}</p>
           <p className="text-xs text-[var(--color-text-muted)]">
             {new Date(p.fechaInicio).toLocaleDateString('es-CO')}
           </p>
@@ -753,7 +754,7 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, mini = false }) {
     <Card>
       <div className="flex items-start justify-between mb-3">
         <div>
-          <p className="text-base font-bold text-[white]">{formatCOP(p.montoPrestado)}</p>
+          <p className="text-base font-bold text-[white]">{formatMoney(p.montoPrestado)}</p>
           <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
             Prestado el {new Date(p.fechaInicio).toLocaleDateString('es-CO')}
           </p>
@@ -775,7 +776,7 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, mini = false }) {
       {/* Barra de progreso */}
       <div className="mb-3">
         <div className="flex justify-between text-xs text-[var(--color-text-muted)] mb-1.5">
-          <span>Pagado: {formatCOP(p.montoPrestado - (p.saldoPendiente ?? 0))}</span>
+          <span>Pagado: {formatMoney(p.montoPrestado - (p.saldoPendiente ?? 0))}</span>
           <span>{porcentaje}%</span>
         </div>
         <div className="h-1.5 bg-[var(--color-bg-hover)] rounded-full overflow-hidden">
@@ -788,7 +789,7 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, mini = false }) {
           />
         </div>
         <div className="flex justify-between text-xs mt-1.5">
-          <span className="text-[var(--color-text-muted)]">Saldo: <span className="text-[white] font-medium">{formatCOP(p.saldoPendiente)}</span></span>
+          <span className="text-[var(--color-text-muted)]">Saldo: <span className="text-[white] font-medium">{formatMoney(p.saldoPendiente)}</span></span>
           {p.diasMora > 0 && (
             <span className="text-[var(--color-danger)] font-medium">{p.diasMora} días en mora</span>
           )}

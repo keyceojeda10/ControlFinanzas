@@ -1,7 +1,7 @@
 'use client'
 // app/(dashboard)/gastos/page.jsx — Gastos unificados: Gastos del día + Capital
 
-import { formatCOP } from '@/lib/calculos'
+import { formatMoney } from '@/lib/i18n'
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
@@ -142,8 +142,8 @@ export default function GastosPage() {
 
   const handleEliminar = async (gasto) => {
     const msg = gasto.estado === 'aprobado'
-      ? `Eliminar "${gasto.description}" por ${formatCOP(gasto.monto)}? Se revertirá el egreso en capital.`
-      : `Eliminar "${gasto.description}" por ${formatCOP(gasto.monto)}?`
+      ? `Eliminar "${gasto.description}" por ${formatMoney(gasto.monto)}? Se revertirá el egreso en capital.`
+      : `Eliminar "${gasto.description}" por ${formatMoney(gasto.monto)}?`
     if (!confirm(msg)) return
     setProcesando(gasto.id)
     try {
@@ -281,7 +281,7 @@ export default function GastosPage() {
                     textShadow: `0 0 24px color-mix(in srgb, ${TAB_COLORS[estadoTab].color} 25%, transparent)`,
                   }}
                 >
-                  {formatCOP(totales.suma)}
+                  {formatMoney(totales.suma)}
                 </p>
                 <p className="text-[11px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
                   {totales.cantidad} {totales.cantidad === 1 ? 'gasto' : 'gastos'}
@@ -370,7 +370,7 @@ export default function GastosPage() {
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-[15px] font-bold font-mono-display leading-none" style={{ color: eInfo.color }}>
-                          {formatCOP(g.monto)}
+                          {formatMoney(g.monto)}
                         </p>
                       </div>
                     </div>

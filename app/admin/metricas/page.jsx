@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Card }                from '@/components/ui/Card'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
-import { formatCOP }           from '@/lib/calculos'
+import { formatMoney }         from '@/lib/i18n'
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -19,7 +19,7 @@ const CopTooltip = ({ active, payload, label }) => {
     <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-3 py-2 text-xs shadow-xl">
       <p className="text-[var(--color-text-muted)] mb-1">{label}</p>
       {payload.map((p, i) => (
-        <p key={i} className="font-bold font-mono-display" style={{ color: p.color }}>{p.name}: {formatCOP(p.value)}</p>
+        <p key={i} className="font-bold font-mono-display" style={{ color: p.color }}>{p.name}: {formatMoney(p.value)}</p>
       ))}
     </div>
   )

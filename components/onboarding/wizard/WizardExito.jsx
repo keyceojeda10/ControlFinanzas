@@ -1,6 +1,6 @@
 'use client'
 
-import { formatCOP } from '@/lib/calculos'
+import { useCountry } from '@/hooks/useCountry'
 import Confetti from '../Confetti'
 import Mascota from '@/components/ui/Mascota'
 
@@ -12,6 +12,7 @@ const LABEL_FREQ = {
 }
 
 export default function WizardExito({ cliente, prestamo, onFinish, onAddAnother }) {
+  const { formatMoney } = useCountry()
   const labelCuota = LABEL_FREQ[prestamo?.frecuencia] ?? 'Cuota'
 
   return (
@@ -34,15 +35,15 @@ export default function WizardExito({ cliente, prestamo, onFinish, onAddAnother 
         </div>
         <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-3 py-3">
           <p className="text-[10px] text-[var(--color-text-muted)] mb-0.5">Préstamo</p>
-          <p className="text-sm font-bold text-[var(--color-success)]">{formatCOP(prestamo?.montoPrestado ?? 0)}</p>
+          <p className="text-sm font-bold text-[var(--color-success)]">{formatMoney(prestamo?.montoPrestado ?? 0)}</p>
         </div>
         <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-3 py-3">
           <p className="text-[10px] text-[var(--color-text-muted)] mb-0.5">Total a cobrar</p>
-          <p className="text-sm font-bold text-[var(--color-warning)]">{formatCOP(prestamo?.totalAPagar ?? 0)}</p>
+          <p className="text-sm font-bold text-[var(--color-warning)]">{formatMoney(prestamo?.totalAPagar ?? 0)}</p>
         </div>
         <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-3 py-3">
           <p className="text-[10px] text-[var(--color-text-muted)] mb-0.5">{labelCuota}</p>
-          <p className="text-sm font-bold text-[var(--color-purple)]">{formatCOP(prestamo?.cuotaDiaria ?? 0)}</p>
+          <p className="text-sm font-bold text-[var(--color-purple)]">{formatMoney(prestamo?.cuotaDiaria ?? 0)}</p>
         </div>
       </div>
 

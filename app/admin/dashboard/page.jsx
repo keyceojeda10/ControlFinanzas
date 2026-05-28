@@ -5,7 +5,7 @@ import Link                    from 'next/link'
 import { Card }                from '@/components/ui/Card'
 import { Badge }               from '@/components/ui/Badge'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
-import { formatCOP }           from '@/lib/calculos'
+import { formatMoney }         from '@/lib/i18n'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
@@ -16,7 +16,7 @@ const MrrTooltip = ({ active, payload, label }) => {
   return (
     <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-3 py-2 text-xs shadow-xl">
       <p className="text-[var(--color-text-muted)] mb-1">{label}</p>
-      <p className="text-[var(--color-success)] font-bold font-mono-display">{formatCOP(payload[0]?.value ?? 0)}</p>
+      <p className="text-[var(--color-success)] font-bold font-mono-display">{formatMoney(payload[0]?.value ?? 0)}</p>
     </div>
   )
 }
@@ -63,7 +63,7 @@ export default function AdminDashboard() {
       {/* Fila 1 — KPIs principales */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'MRR',               value: formatCOP(stats.mrr),       color: 'var(--color-success)', mono: true  },
+          { label: 'MRR',               value: formatMoney(stats.mrr),       color: 'var(--color-success)', mono: true  },
           { label: 'Orgs activas',       value: stats.totalOrgs,            color: 'var(--color-info)', mono: false },
           { label: 'Por vencer (7d)',    value: stats.suscPorVencer,        color: 'var(--color-warning)', mono: false },
           { label: 'Vencidas',           value: stats.suscVencidas,         color: stats.suscVencidas > 0 ? 'var(--color-danger)' : '#888888', mono: false },
@@ -97,7 +97,7 @@ export default function AdminDashboard() {
               <span className="text-xs text-[var(--color-text-muted)]">{plan}</span>
             </div>
             <p className="text-lg font-bold text-[white]">{cantidad}</p>
-            <p className="text-[10px] text-[var(--color-text-muted)]">MRR: <span className="font-mono-display">{formatCOP(mrr)}</span></p>
+            <p className="text-[10px] text-[var(--color-text-muted)]">MRR: <span className="font-mono-display">{formatMoney(mrr)}</span></p>
           </div>
         ))}
       </div>
@@ -143,7 +143,7 @@ export default function AdminDashboard() {
           }}
         >
           <p className="text-[10px] text-[var(--color-text-muted)]">Cartera total</p>
-          <p className="text-lg font-bold text-[var(--color-success)] font-mono-display">{formatCOP(stats.carteraTotal)}</p>
+          <p className="text-lg font-bold text-[var(--color-success)] font-mono-display">{formatMoney(stats.carteraTotal)}</p>
         </div>
       </div>
 

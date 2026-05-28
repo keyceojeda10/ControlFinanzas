@@ -1,7 +1,7 @@
 'use client'
 // app/(dashboard)/reportes/page.jsx — Reportes escalonados por plan
 
-import { formatCOP } from '@/lib/calculos'
+import { formatMoney } from '@/lib/i18n'
 import { useState, useEffect } from 'react'
 import { useAuth }             from '@/hooks/useAuth'
 import { Card }                from '@/components/ui/Card'
@@ -26,7 +26,7 @@ const CustomTooltip = ({ active, payload, label }) => {
   return (
     <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-3 py-2 text-xs shadow-xl">
       <p className="text-[var(--color-text-muted)] mb-1">{label}</p>
-      <p className="text-[var(--color-success)] font-bold">{formatCOP(payload[0]?.value ?? 0)}</p>
+      <p className="text-[var(--color-success)] font-bold">{formatMoney(payload[0]?.value ?? 0)}</p>
     </div>
   )
 }
@@ -268,7 +268,7 @@ export default function ReportesPage() {
                   textShadow: `0 0 30px color-mix(in srgb, ${heroColor} 25%, transparent)`,
                 }}
               >
-                {formatCOP(resumen.pagos.totalPeriodo)}
+                {formatMoney(resumen.pagos.totalPeriodo)}
               </p>
               <p className="text-[12px] mt-2" style={{ color: 'var(--color-text-muted)' }}>
                 {resumen.pagos.cantidad} pagos registrados
@@ -302,7 +302,7 @@ export default function ReportesPage() {
             },
             {
               label: 'Cartera activa',
-              value: formatCOP(resumen.prestamos.carteraActiva),
+              value: formatMoney(resumen.prestamos.carteraActiva),
               color: '#06b6d4',
               icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
             },
@@ -337,7 +337,7 @@ export default function ReportesPage() {
             }}
           >
             <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-accent)' }}>Capital prestado activo</p>
-            <p className="text-[18px] font-bold font-mono-display mt-1" style={{ color: 'var(--color-text-primary)' }}>{formatCOP(resumen.prestamos.capitalPrestado)}</p>
+            <p className="text-[18px] font-bold font-mono-display mt-1" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(resumen.prestamos.capitalPrestado)}</p>
             <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>en la calle</p>
           </div>
           <div className="rounded-[16px] px-4 py-3 transition-all kpi-lift"
@@ -445,8 +445,8 @@ export default function ReportesPage() {
                   </p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-[14px] font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatCOP(r.saldoPendiente)}</p>
-                  <p className="text-[10px] font-mono-display" style={{ color: 'var(--color-success)' }}>{formatCOP(r.cuotaDiariaTotal)}/día</p>
+                  <p className="text-[14px] font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(r.saldoPendiente)}</p>
+                  <p className="text-[10px] font-mono-display" style={{ color: 'var(--color-success)' }}>{formatMoney(r.cuotaDiariaTotal)}/día</p>
                 </div>
               </div>
             ))}
@@ -493,7 +493,7 @@ export default function ReportesPage() {
                       {medalLabel}
                     </div>
                     <p className="text-[11px] font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{c.nombre}</p>
-                    <p className="text-[12px] font-bold font-mono-display mt-0.5" style={{ color: medalColor }}>{formatCOP(c.totalRecogido || 0)}</p>
+                    <p className="text-[12px] font-bold font-mono-display mt-0.5" style={{ color: medalColor }}>{formatMoney(c.totalRecogido || 0)}</p>
                     <p className="text-[9px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{c.eficiencia}% eficiencia</p>
                   </div>
                 )
@@ -536,11 +536,11 @@ export default function ReportesPage() {
                     />
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-1 text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
-                    <span>Esperado: <span className="font-mono-display">{formatCOP(c.totalEsperado)}</span></span>
-                    <span>Recogido: <span className="font-mono-display" style={{ color: 'var(--color-success)' }}>{formatCOP(c.totalRecogido)}</span></span>
-                    <span>Gastos: <span className="font-mono-display" style={{ color: 'var(--color-danger)' }}>{formatCOP(totalGastos)}</span></span>
-                    <span>Desembolsado: <span className="font-mono-display" style={{ color: 'var(--color-warning)' }}>{formatCOP(totalDesembolsado)}</span></span>
-                    <span>Saldo real: <span className="font-mono-display" style={{ color: saldoRealCaja >= 0 ? 'var(--color-info)' : 'var(--color-danger)' }}>{formatCOP(saldoRealCaja)}</span></span>
+                    <span>Esperado: <span className="font-mono-display">{formatMoney(c.totalEsperado)}</span></span>
+                    <span>Recogido: <span className="font-mono-display" style={{ color: 'var(--color-success)' }}>{formatMoney(c.totalRecogido)}</span></span>
+                    <span>Gastos: <span className="font-mono-display" style={{ color: 'var(--color-danger)' }}>{formatMoney(totalGastos)}</span></span>
+                    <span>Desembolsado: <span className="font-mono-display" style={{ color: 'var(--color-warning)' }}>{formatMoney(totalDesembolsado)}</span></span>
+                    <span>Saldo real: <span className="font-mono-display" style={{ color: saldoRealCaja >= 0 ? 'var(--color-info)' : 'var(--color-danger)' }}>{formatMoney(saldoRealCaja)}</span></span>
                   </div>
                 </div>
               )

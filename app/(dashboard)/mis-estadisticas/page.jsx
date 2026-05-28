@@ -1,7 +1,7 @@
 'use client'
 // app/(dashboard)/mis-estadisticas/page.jsx — Estadísticas propias del cobrador
 
-import { formatCOP } from '@/lib/calculos'
+import { formatMoney } from '@/lib/i18n'
 import { useState, useEffect } from 'react'
 import { useAuth }             from '@/hooks/useAuth'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
@@ -85,13 +85,13 @@ export default function MisEstadisticasPage() {
           <div>
             <p className="text-[13px]" style={{ color: 'var(--color-text-muted)' }}>Recaudado</p>
             <p className="text-[32px] font-bold font-mono-display leading-none" style={{ color: pctColor }}>
-              {formatCOP(data.recaudadoHoy)}
+              {formatMoney(data.recaudadoHoy)}
             </p>
           </div>
           <div className="text-right">
             <p className="text-[13px]" style={{ color: 'var(--color-text-muted)' }}>Meta</p>
             <p className="text-[20px] font-bold font-mono-display" style={{ color: 'var(--color-text-secondary)' }}>
-              {formatCOP(data.metaHoy)}
+              {formatMoney(data.metaHoy)}
             </p>
           </div>
         </div>
@@ -128,7 +128,7 @@ export default function MisEstadisticasPage() {
                         ? 'var(--color-accent)'
                         : 'color-mix(in srgb, var(--color-accent) 40%, transparent)',
                     }}
-                    title={formatCOP(d.total)}
+                    title={formatMoney(d.total)}
                   />
                 </div>
                 <p className="text-[9px] text-center leading-tight" style={{ color: isHoy ? 'var(--color-accent)' : 'var(--color-text-muted)' }}>
@@ -141,7 +141,7 @@ export default function MisEstadisticasPage() {
         <div className="mt-3 pt-3 border-t flex justify-between text-[11px]" style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}>
           <span>Total semana</span>
           <span className="font-semibold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
-            {formatCOP(data.semana?.reduce((s, d) => s + d.total, 0) ?? 0)}
+            {formatMoney(data.semana?.reduce((s, d) => s + d.total, 0) ?? 0)}
           </span>
         </div>
       </div>

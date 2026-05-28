@@ -3,7 +3,7 @@
 // Hero card premium para detalle de cliente. Saldo total + avatar + chips
 // + acciones rapidas. Inspirado en Mercury / Revolut.
 
-import { formatCOP } from '@/lib/calculos'
+import { formatMoney } from '@/lib/i18n'
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Avatar from '@/components/ui/Avatar'
@@ -223,7 +223,7 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
                 textShadow: 'none',
               }}
             >
-              {formatCOP(Math.round(animSaldo))}
+              {formatMoney(Math.round(animSaldo))}
             </p>
             <div className="flex items-center justify-between gap-2 mt-2">
               <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
@@ -233,7 +233,7 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
               </p>
               {totalAPagar > 0 && (
                 <p className="text-[11px] font-mono-display" style={{ color: 'var(--color-text-secondary)' }}>
-                  de {formatCOP(totalAPagar)}
+                  de {formatMoney(totalAPagar)}
                 </p>
               )}
             </div>

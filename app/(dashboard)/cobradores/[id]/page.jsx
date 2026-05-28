@@ -1,7 +1,7 @@
 'use client'
 // app/(dashboard)/cobradores/[id]/page.jsx - Detalle del cobrador
 
-import { formatCOP } from '@/lib/calculos'
+import { formatMoney } from '@/lib/i18n'
 import { useState, useEffect, useCallback, use } from 'react'
 import { useRouter }                from 'next/navigation'
 import { useAuth }                  from '@/hooks/useAuth'
@@ -193,7 +193,7 @@ function CobradorDetalleInner({ params }) {
                       textShadow: '0 0 30px color-mix(in srgb, var(--color-success) 25%, transparent)',
                     }}
                   >
-                    {formatCOP(data.recaudadoHoy ?? 0)}
+                    {formatMoney(data.recaudadoHoy ?? 0)}
                   </p>
                 </div>
                 <div className="flex flex-col gap-1.5 shrink-0">

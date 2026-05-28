@@ -3,7 +3,7 @@
 // Componente unificado para renderizar listas de pagos en distintas vistas
 // (caja, historial de cliente, cobradores, etc).
 
-import { formatCOP } from '@/lib/calculos'
+import { formatMoney } from '@/lib/i18n'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/Badge'
 
@@ -138,7 +138,7 @@ export default function ListadoPagos({
                   className="text-sm font-bold font-mono-display"
                   style={{ color: colorMonto }}
                 >
-                  {prefijoMonto}{formatCOP(pago.montoPagado)}
+                  {prefijoMonto}{formatMoney(pago.montoPagado)}
                 </p>
                 <Badge variant={badge.variant}>{badge.label}</Badge>
               </div>

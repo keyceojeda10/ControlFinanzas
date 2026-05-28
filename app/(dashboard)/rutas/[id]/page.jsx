@@ -1,7 +1,7 @@
 'use client'
 // app/(dashboard)/rutas/[id]/page.jsx - Detalle de ruta
 
-import { formatCOP } from '@/lib/calculos'
+import { formatMoney } from '@/lib/i18n'
 import { useState, useEffect, useRef, useCallback, use } from 'react'
 import { useRouter }                 from 'next/navigation'
 import dynamic                       from 'next/dynamic'
@@ -150,7 +150,7 @@ function HistorialCobros({ rutaId }) {
                         </p>
                       </div>
                       <p className="text-[14px] font-bold font-mono-display text-[var(--color-success)] shrink-0">
-                        {formatCOP(dia.cobrado)}
+                        {formatMoney(dia.cobrado)}
                       </p>
                       <svg className={`w-4 h-4 text-[#777] transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -189,7 +189,7 @@ function HistorialCobros({ rutaId }) {
                                       <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)] shrink-0" />
                                       <span className="text-[12px] text-[#ccc] truncate">{c.nombre}</span>
                                     </div>
-                                    <span className="text-[12px] font-bold font-mono-display text-[var(--color-text-primary)] shrink-0 ml-2">{formatCOP(c.monto)}</span>
+                                    <span className="text-[12px] font-bold font-mono-display text-[var(--color-text-primary)] shrink-0 ml-2">{formatMoney(c.monto)}</span>
                                   </div>
                                 ))}
                               </div>
@@ -567,7 +567,7 @@ export default function RutaDetallePage({ params }) {
         const data = await res.json().catch(() => ({}))
         if (data?.duplicado && !confirmarDuplicado) {
           await fetchRuta()
-          if (confirm(`${nombre} ya recibio un pago por ${formatCOP(cuota)} hace menos de 1 minuto.\n\n¿Registrar este pago de todos modos?`)) {
+          if (confirm(`${nombre} ya recibio un pago por ${formatMoney(cuota)} hace menos de 1 minuto.\n\n¿Registrar este pago de todos modos?`)) {
             setModalPagoRapido({ id: clienteId, nombre, cuota, prestamoActivo, abonoConPendiente: false })
             return ejecutarPagoRapido(metodoPago, { confirmarDuplicado: true })
           }
@@ -1103,10 +1103,10 @@ export default function RutaDetallePage({ params }) {
                       textShadow: `0 0 30px color-mix(in srgb, ${heroColor} 25%, transparent)`,
                     }}
                   >
-                    {formatCOP(ruta.recaudadoHoy ?? 0)}
+                    {formatMoney(ruta.recaudadoHoy ?? 0)}
                   </p>
                   <p className="text-[12px] mt-2" style={{ color: 'var(--color-text-secondary)' }}>
-                    de {formatCOP(ruta.esperadoHoy ?? 0)} esperados
+                    de {formatMoney(ruta.esperadoHoy ?? 0)} esperados
                   </p>
                   {(ruta.clientesConCobroHoy ?? 0) > 0 && (
                     <p className="text-[11px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
@@ -1154,7 +1154,7 @@ export default function RutaDetallePage({ params }) {
                 </div>
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Meta del día</p>
-                  <p className="text-[14px] font-mono-display font-bold mt-0.5" style={{ color: 'var(--color-text-primary)' }}>{formatCOP(ruta.esperadoHoy ?? 0)}</p>
+                  <p className="text-[14px] font-mono-display font-bold mt-0.5" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(ruta.esperadoHoy ?? 0)}</p>
                 </div>
               </div>
 
@@ -1266,8 +1266,8 @@ export default function RutaDetallePage({ params }) {
                 <span className="text-[11px] font-bold" style={{ color: '#06b6d4' }}>{carteraPct}% cobrado</span>
               </div>
               <div className="flex items-baseline justify-between">
-                <p className="text-lg font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatCOP(ruta.carteraTotal)}</p>
-                <p className="text-[11px] font-mono-display" style={{ color: 'var(--color-text-muted)' }}>de {formatCOP(denominadorCartera)}</p>
+                <p className="text-lg font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(ruta.carteraTotal)}</p>
+                <p className="text-[11px] font-mono-display" style={{ color: 'var(--color-text-muted)' }}>de {formatMoney(denominadorCartera)}</p>
               </div>
               <div className="h-1.5 rounded-full overflow-hidden mt-2.5" style={{ background: 'var(--color-bg-hover)' }}>
                 <div className="h-full rounded-full transition-[width] duration-700"
@@ -1502,7 +1502,7 @@ export default function RutaDetallePage({ params }) {
                       ? 'Pago pendiente hoy'
                       : 'Al día'
               const detalleMora = tieneMora
-                ? `${c.diasMora}d mora${c.cuotasEnMora ? ` · ${c.cuotasEnMora} cuota${c.cuotasEnMora === 1 ? '' : 's'}` : ''}${c.montoEnMora ? ` · ${formatCOP(c.montoEnMora)}` : ''}`
+                ? `${c.diasMora}d mora${c.cuotasEnMora ? ` · ${c.cuotasEnMora} cuota${c.cuotasEnMora === 1 ? '' : 's'}` : ''}${c.montoEnMora ? ` · ${formatMoney(c.montoEnMora)}` : ''}`
                 : null
               const cobroLabelContextual = c.diasParaCobro === 0
                 ? 'Hoy'
@@ -1585,7 +1585,7 @@ export default function RutaDetallePage({ params }) {
                       <div className="flex flex-col items-end gap-1.5 shrink-0">
                         {c.cuota > 0 && (
                           <div className="flex items-baseline gap-1">
-                            <p className="text-[13px] font-bold text-[white] font-mono-display leading-none">{formatCOP(c.cuota)}</p>
+                            <p className="text-[13px] font-bold text-[white] font-mono-display leading-none">{formatMoney(c.cuota)}</p>
                             <p className="text-[9px] text-[#777] leading-none">/{c.frecuencia === 'semanal' ? 'sem' : c.frecuencia === 'quincenal' ? 'qna' : c.frecuencia === 'mensual' ? 'mes' : 'dia'}</p>
                           </div>
                         )}
@@ -1679,16 +1679,16 @@ export default function RutaDetallePage({ params }) {
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-[var(--color-text-muted)]">Esperado</span>
-              <span className="text-[white] font-medium font-mono-display">{formatCOP(ruta.cierre.totalEsperado)}</span>
+              <span className="text-[white] font-medium font-mono-display">{formatMoney(ruta.cierre.totalEsperado)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-[var(--color-text-muted)]">Entregado</span>
-              <span className="text-[white] font-medium font-mono-display">{formatCOP(ruta.cierre.totalRecogido)}</span>
+              <span className="text-[white] font-medium font-mono-display">{formatMoney(ruta.cierre.totalRecogido)}</span>
             </div>
             <div className="flex justify-between text-sm font-bold border-t border-[var(--color-border)] pt-2 mt-2">
               <span className="text-[var(--color-text-muted)]">Diferencia</span>
               <span className="font-mono-display" style={{ color: ruta.cierre.diferencia >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
-                {ruta.cierre.diferencia >= 0 ? '+' : ''}{formatCOP(ruta.cierre.diferencia)}
+                {ruta.cierre.diferencia >= 0 ? '+' : ''}{formatMoney(ruta.cierre.diferencia)}
               </span>
             </div>
           </div>
@@ -1837,7 +1837,7 @@ export default function RutaDetallePage({ params }) {
           )}
           <div className="flex justify-between text-sm">
             <span className="text-[var(--color-text-muted)]">Total esperado hoy</span>
-            <span className="font-semibold text-[white] font-mono-display">{formatCOP(ruta.esperadoHoy)}</span>
+            <span className="font-semibold text-[white] font-mono-display">{formatMoney(ruta.esperadoHoy)}</span>
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium text-[var(--color-text-muted)]">Dinero recogido (COP)</label>
@@ -1855,7 +1855,7 @@ export default function RutaDetallePage({ params }) {
             <div className="text-sm">
               <span className="text-[var(--color-text-muted)]">Diferencia: </span>
               <span className="font-mono-display" style={{ color: Number(totalRecogido) >= ruta.esperadoHoy ? 'var(--color-success)' : 'var(--color-danger)', fontWeight: 700 }}>
-                {Number(totalRecogido) >= ruta.esperadoHoy ? '+' : ''}{formatCOP(Number(totalRecogido) - ruta.esperadoHoy)}
+                {Number(totalRecogido) >= ruta.esperadoHoy ? '+' : ''}{formatMoney(Number(totalRecogido) - ruta.esperadoHoy)}
               </span>
             </div>
           )}
@@ -1923,11 +1923,11 @@ export default function RutaDetallePage({ params }) {
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-sm font-semibold text-[var(--color-text-primary)]">Préstamo {i + 1}</p>
                     <span className="text-sm font-bold text-[var(--color-success)] font-mono-display">
-                      {formatCOP(p.saldoPendiente ?? 0)}
+                      {formatMoney(p.saldoPendiente ?? 0)}
                     </span>
                   </div>
                   <p className="text-[11px] text-[var(--color-text-muted)] mt-1">
-                    {frecuenciaPrestamoLabel(p.frecuencia)} · Cuota {formatCOP(p.cuotaDiaria ?? 0)}
+                    {frecuenciaPrestamoLabel(p.frecuencia)} · Cuota {formatMoney(p.cuotaDiaria ?? 0)}
                     {p.diasMora > 0 ? ` · ${p.diasMora}d mora` : ''}
                   </p>
                 </button>
@@ -1960,11 +1960,11 @@ export default function RutaDetallePage({ params }) {
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-sm font-semibold text-[var(--color-text-primary)]">Préstamo {i + 1}</p>
                     <span className="text-sm font-bold text-[var(--color-success)] font-mono-display">
-                      {formatCOP(p.cuotaDiaria ?? 0)}
+                      {formatMoney(p.cuotaDiaria ?? 0)}
                     </span>
                   </div>
                   <p className="text-[11px] text-[var(--color-text-muted)] mt-1">
-                    {frecuenciaPrestamoLabel(p.frecuencia)} · Saldo {formatCOP(p.saldoPendiente ?? 0)}
+                    {frecuenciaPrestamoLabel(p.frecuencia)} · Saldo {formatMoney(p.saldoPendiente ?? 0)}
                     {p.diasMora > 0 ? ` · ${p.diasMora}d mora` : ''}
                   </p>
                 </button>
@@ -1978,7 +1978,7 @@ export default function RutaDetallePage({ params }) {
             <div className="text-center">
               <p className="text-sm text-[var(--color-text-muted)]">Registrar 1 cuota para</p>
               <p className="text-base font-bold text-[var(--color-text-primary)] mt-1">{modalPagoRapido.nombre}</p>
-              <p className="text-lg font-bold text-[var(--color-success)] font-mono-display mt-1">{formatCOP(modalPagoRapido.cuota)}</p>
+              <p className="text-lg font-bold text-[var(--color-success)] font-mono-display mt-1">{formatMoney(modalPagoRapido.cuota)}</p>
             </div>
             {modalPagoRapido.abonoConPendiente && (
               <div className="rounded-[12px] border border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.08)] p-3 text-center">

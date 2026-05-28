@@ -1,6 +1,6 @@
 'use client'
 
-import { formatCOP } from '@/lib/calculos'
+import { formatMoney } from '@/lib/i18n'
 import { useState, useEffect, Suspense } from 'react'
 import Link                    from 'next/link'
 import { useSearchParams }     from 'next/navigation'
@@ -433,7 +433,7 @@ function TabOrganizacion() {
                 <Badge variant={planBadge[org?.plan ?? 'starter']}>
                   {PLAN_NAMES[org?.plan ?? 'starter']}
                 </Badge>
-                <span className="text-xs text-[#888888]"><span className="font-mono-display">{formatCOP(PRECIOS[org?.plan ?? 'starter'])}</span>/mes</span>
+                <span className="text-xs text-[#888888]"><span className="font-mono-display">{formatMoney(PRECIOS[org?.plan ?? 'starter'])}</span>/mes</span>
               </div>
             </div>
             <Link
@@ -518,7 +518,7 @@ function TabSuscripcion() {
               <Badge variant={planBadge[org?.plan ?? 'starter']}>
                 {PLAN_NAMES[org?.plan ?? 'starter']}
               </Badge>
-              <span className="text-xs text-[#888888]"><span className="font-mono-display">{formatCOP(PRECIOS[org?.plan ?? 'starter'])}</span>/mes</span>
+              <span className="text-xs text-[#888888]"><span className="font-mono-display">{formatMoney(PRECIOS[org?.plan ?? 'starter'])}</span>/mes</span>
             </div>
           </div>
           <Link
@@ -600,7 +600,7 @@ function TabSuscripcion() {
                   </Badge>
                 </div>
                 <p className="text-xs text-[#888888] text-right">
-                  {h.montoCOP > 0 ? <span className="font-mono-display">{formatCOP(h.montoCOP)}</span> : 'Gratis'}
+                  {h.montoCOP > 0 ? <span className="font-mono-display">{formatMoney(h.montoCOP)}</span> : 'Gratis'}
                 </p>
               </div>
             ))}
