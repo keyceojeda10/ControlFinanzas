@@ -15,6 +15,7 @@ import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { registrarMovimientoCapital } from '@/lib/capital'
 import { logActividad } from '@/lib/activity-log'
 import { trackEvent } from '@/lib/analytics'
+import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 
 // ─── GET /api/prestamos ─────────────────────────────────────────
 export async function GET(request) {
@@ -59,7 +60,13 @@ export async function GET(request) {
     where,
     include: {
       cliente: { select: { id: true, nombre: true, cedula: true, telefono: true, fotoUrl: true, rutaId: true, diasSinCobro: true, ruta: { select: { diasSinCobro: true } } } },
-      pagos:   { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
+      // Solo los ultimos 10 pagos: suficiente para pagoHoy y calcularCapitalRestante.
+      // El totalPagado real se lee del campo denormalizado del prestamo.
+      pagos: {
+        take: 10,
+        orderBy: { fechaPago: 'desc' },
+        select: { id: true, montoPagado: true, fechaPago: true, tipo: true },
+      },
     },
     orderBy: [
       { cliente: { nombre: 'asc' } },
@@ -74,8 +81,20 @@ export async function GET(request) {
     select: { diasSinCobro: true },
   })
 
+  // Cachear diasExcluidos por cliente: el calculo es identico para todos
+  // los prestamos del mismo cliente, asi que se hace una sola vez.
+  const diasExcluidosCache = new Map()
+  const getDiasExcluidos = (cliente) => {
+    const key = cliente?.id
+    if (!key) return obtenerDiasSinCobro(cliente, cliente?.ruta, org)
+    if (!diasExcluidosCache.has(key)) {
+      diasExcluidosCache.set(key, obtenerDiasSinCobro(cliente, cliente?.ruta, org))
+    }
+    return diasExcluidosCache.get(key)
+  }
+
   const resultado = prestamos.map((p) => {
-    const diasExcluidos = obtenerDiasSinCobro(p.cliente, p.cliente?.ruta, org)
+    const diasExcluidos = getDiasExcluidos(p.cliente)
     return {
     id:               p.id,
     clienteId:        p.clienteId,
@@ -91,7 +110,8 @@ export async function GET(request) {
     fechaInicio:      p.fechaInicio,
     fechaFin:         p.fechaFin,
     estado:           p.estado,
-    totalPagado:      p.pagos.filter(x => !['recargo', 'descuento'].includes(x.tipo)).reduce((a, x) => a + x.montoPagado, 0),
+    // Usa el campo denormalizado (mantenido por refrescarTotalesPrestamo).
+    totalPagado:      p.totalPagado ?? 0,
     saldoPendiente:   calcularSaldoPendiente(p),
     porcentajePagado: calcularPorcentajePagado(p),
     diasMora:         calcularDiasMora(p, diasExcluidos),
@@ -322,6 +342,9 @@ export async function POST(request) {
           nota:           'Abono previo (préstamo en curso)',
         },
       })
+
+      // Refrescar denormalizados del prestamo recien creado con su pago inicial.
+      await refrescarTotalesPrestamo(tx, nuevo.id)
 
       // Registrar recaudo en capital
       await registrarMovimientoCapital(tx, {

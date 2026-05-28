@@ -1196,8 +1196,6 @@ export default function DashboardPage() {
   const [mounted, setMounted] = useState(false)
   const [error, setError] = useState('')
   const [isOffline, setIsOffline] = useState(false)
-  const [fechaActual, setFechaActual] = useState('')
-  const [horaActual, setHoraActual] = useState('')
   const [actualizadoEn, setActualizadoEn] = useState(null)
   const [susInfo, setSusInfo] = useState(null)
 
@@ -1221,17 +1219,6 @@ export default function DashboardPage() {
   const onboarding = useOnboarding(authLoading ? null : esOwner)
 
   useEffect(() => { setMounted(true) }, [])
-
-  useEffect(() => {
-    const update = () => {
-      const now = new Date()
-      setFechaActual(now.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/Bogota' }))
-      setHoraActual(now.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'America/Bogota' }))
-    }
-    update()
-    const interval = setInterval(update, 1000)
-    return () => clearInterval(interval)
-  }, [])
 
   const loadDashboard = useCallback(async () => {
     setIsOffline(false)
@@ -1397,8 +1384,7 @@ export default function DashboardPage() {
               {saludoPorHora()}{session?.user?.nombre ? `, ${session.user.nombre.split(' ')[0]}` : ''}
             </h1>
             <p className="text-[12px] mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-              {fechaActual || 'Resumen de tu cartera hoy'}
-              {horaActual && <span className="font-mono-display ml-1.5" style={{ color: 'var(--color-accent)' }}>{horaActual}</span>}
+              Resumen de tu cartera hoy
             </p>
           </div>
           <div className="shrink-0">

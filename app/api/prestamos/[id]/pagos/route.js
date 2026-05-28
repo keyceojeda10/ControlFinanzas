@@ -22,6 +22,7 @@ import { logActividad } from '@/lib/activity-log'
 import { enviarPushOrg } from '@/lib/push'
 import { trackEvent } from '@/lib/analytics'
 import { getUtcOffset } from '@/lib/i18n'
+import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 
 async function cobradorPuedeGestionarPrestamos(userId) {
   const cobrador = await prisma.user.findUnique({
@@ -230,6 +231,9 @@ export async function POST(request, { params }) {
         fechaPago: new Date(),
       },
     })
+
+    // 1b. Refrescar totalPagado/ultimoPagoAt denormalizados del prestamo.
+    await refrescarTotalesPrestamo(tx, prestamoId)
 
     // 2. Leer el préstamo actualizado con todos los pagos
     let prestamoActualizado = await tx.prestamo.findUnique({

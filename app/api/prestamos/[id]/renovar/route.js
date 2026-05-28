@@ -9,6 +9,7 @@ import { calcularPrestamo, calcularSaldoPendiente } from '@/lib/calculos'
 import { registrarMovimientoCapital } from '@/lib/capital'
 import { logActividad } from '@/lib/activity-log'
 import { trackEvent }   from '@/lib/analytics'
+import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 
 async function cobradorPuedeGestionarPrestamos(userId) {
   const cobrador = await prisma.user.findUnique({
@@ -130,6 +131,8 @@ export async function POST(request, { params }) {
           fechaPago: new Date(),
         },
       })
+      // Refrescar denormalizados del prestamo viejo.
+      await refrescarTotalesPrestamo(tx, prestamoId)
     }
 
     // 2. Marcar el préstamo viejo como completado

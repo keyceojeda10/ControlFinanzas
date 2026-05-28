@@ -6,6 +6,7 @@ import { calcularEstadoCliente, calcularSaldoPendiente } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
 import { registrarMovimientoCapital } from '@/lib/capital'
+import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 
 // ─── PATCH /api/pagos/[id] — Editar fecha del pago (solo owner) ──
 export async function PATCH(request, { params }) {
@@ -46,6 +47,9 @@ export async function PATCH(request, { params }) {
       where: { id: pagoId },
       data: { fechaPago: nuevaFecha },
     })
+
+    // Refrescar ultimoPagoAt (la fecha cambio).
+    await refrescarTotalesPrestamo(tx, pago.prestamoId)
 
     // Recalcular estado del cliente: cambiar la fecha de un pago altera los
     // dias de mora del prestamo, y por lo tanto el estado agregado del cliente.
@@ -107,6 +111,9 @@ export async function DELETE(request, { params }) {
 
     // 1. Eliminar el pago
     await tx.pago.delete({ where: { id: pagoId } })
+
+    // 1b. Refrescar totalPagado/ultimoPagoAt despues de borrar.
+    await refrescarTotalesPrestamo(tx, pago.prestamoId)
 
     // 1b. Si era abono a capital, reversar la reducción de totalAPagar
     // Debe replicar EXACTAMENTE la formula del POST (pagos/route.js) para que

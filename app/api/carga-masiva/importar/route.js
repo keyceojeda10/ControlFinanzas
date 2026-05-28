@@ -10,6 +10,7 @@ import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad }     from '@/lib/activity-log'
 import { trackEvent }       from '@/lib/analytics'
 import { LIMITES_PLAN }     from '@/lib/planes'
+import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 
 export async function POST(request) {
   try {
@@ -172,6 +173,9 @@ export async function POST(request) {
                 },
               })
               pagosRegistrados++
+
+              // Refrescar denormalizados del prestamo recien creado.
+              await refrescarTotalesPrestamo(tx, prestamo.id)
 
               await registrarMovimientoCapital(tx, {
                 organizationId,

@@ -86,7 +86,9 @@ export async function GET(request) {
           montoPrestado: true,
           diaCobroMes: true,
           diaCobroSemana: true,
-          pagos: { select: { montoPagado: true, fechaPago: true, tipo: true } },
+          // Denormalizados: evitan iterar todos los pagos.
+          totalPagado: true,
+          ultimoPagoAt: true,
         },
       },
     },
@@ -104,9 +106,19 @@ export async function GET(request) {
   const hoyCO = new Date(Date.now() - Math.abs(getUtcOffset(country)) * 60 * 60 * 1000)
   const inicioHoyUTC = new Date(Date.UTC(hoyCO.getUTCFullYear(), hoyCO.getUTCMonth(), hoyCO.getUTCDate(), 5, 0, 0))
 
+  // Cachear diasExcluidos por cliente (era N+1 antes).
+  const diasExcluidosCache = new Map()
+  const getDiasExcluidos = (cliente) => {
+    if (!cliente?.id) return obtenerDiasSinCobro(cliente, cliente?.ruta, org)
+    if (!diasExcluidosCache.has(cliente.id)) {
+      diasExcluidosCache.set(cliente.id, obtenerDiasSinCobro(cliente, cliente?.ruta, org))
+    }
+    return diasExcluidosCache.get(cliente.id)
+  }
+
   // Recalcular estado real del cliente y enriquecer con datos para la card.
   const resultado = clientes.map((c) => {
-    const diasExcluidos = obtenerDiasSinCobro(c, c.ruta, org)
+    const diasExcluidos = getDiasExcluidos(c)
     let saldoTotal = 0
     let totalAPagarSum = 0
     let diasMoraMax = 0
@@ -120,11 +132,9 @@ export async function GET(request) {
         const dm = calcularDiasMora(p, diasExcluidos)
         if (dm > diasMoraMax) diasMoraMax = dm
       } catch {}
-      // Pago hoy: alguno de sus pagos cae en el dia actual Colombia
-      if (!pagoHoy && Array.isArray(p.pagos)) {
-        for (const pg of p.pagos) {
-          if (pg.fechaPago && new Date(pg.fechaPago) >= inicioHoyUTC) { pagoHoy = true; break }
-        }
+      // Pago hoy: ultimoPagoAt denormalizado evita iterar todos los pagos.
+      if (!pagoHoy && p.ultimoPagoAt && new Date(p.ultimoPagoAt) >= inicioHoyUTC) {
+        pagoHoy = true
       }
       // Proximo cobro: tomar el mas cercano de todos los prestamos activos
       try {

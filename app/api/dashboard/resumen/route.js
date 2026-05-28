@@ -90,7 +90,9 @@ export async function GET() {
         diasPlazo: true,
         frecuencia: true,
         estado: true,
-        pagos: { select: { montoPagado: true, tipo: true } },
+        // Denormalizados: evitan traer todos los pagos por cada prestamo activo.
+        totalPagado: true,
+        ultimoPagoAt: true,
         cliente: {
           select: {
             id: true,
@@ -283,6 +285,17 @@ export async function GET() {
   let capitalPrestado = 0
   let cuotaDiariaTotal = 0
 
+  // Cachear diasExcluidos por cliente: los prestamos del mismo cliente
+  // comparten el calculo. Evita repetirlo cientos de veces en orgs grandes.
+  const diasExcluidosCache = new Map()
+  const getDiasExcluidos = (cliente) => {
+    if (!cliente?.id) return obtenerDiasSinCobro(cliente, cliente?.ruta, org)
+    if (!diasExcluidosCache.has(cliente.id)) {
+      diasExcluidosCache.set(cliente.id, obtenerDiasSinCobro(cliente, cliente?.ruta, org))
+    }
+    return diasExcluidosCache.get(cliente.id)
+  }
+
   for (const p of prestamosActivosDetalle) {
     clientesActivos.add(p.clienteId)
     // Cartera activa = totalAPagar (capital + intereses esperados). Lo que va
@@ -293,7 +306,7 @@ export async function GET() {
     capitalPrestado += p.montoPrestado ?? 0
     cuotaDiariaTotal += p.cuotaDiaria ?? 0
 
-    const diasExcluidos = obtenerDiasSinCobro(p.cliente, p.cliente?.ruta, org)
+    const diasExcluidos = getDiasExcluidos(p.cliente)
     if (calcularDiasMora(p, diasExcluidos) > 0) {
       clientesMora.add(p.clienteId)
     }

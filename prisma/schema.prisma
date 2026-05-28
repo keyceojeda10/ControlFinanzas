@@ -157,6 +157,7 @@ model User {
   asistenteMemorias  AsistenteMemoria[]
 
   @@index([organizationId])
+  @@index([organizationId, rol, activo])
 }
 
 model Ruta {
@@ -237,6 +238,7 @@ model Cliente {
   @@index([grupoCobroId])
   @@index([rutaId])
   @@index([organizationId, estado])
+  @@index([organizationId, rutaId, estado])
 }
 
 model Prestamo {
@@ -257,6 +259,10 @@ model Prestamo {
   seguro         Boolean        @default(false)
   montoSeguro    Float?
   estado         EstadoPrestamo @default(activo)
+  // Denormalizados desde Pago (mantenidos por lib/prisma-pago-helpers.js).
+  // Evitan recalcular totales iterando todos los pagos en cada lectura.
+  totalPagado    Float          @default(0)
+  ultimoPagoAt   DateTime?
   createdAt      DateTime       @default(now())
 
   cliente      Cliente      @relation(fields: [clienteId], references: [id])
@@ -267,6 +273,7 @@ model Prestamo {
   @@index([clienteId])
   @@index([estado])
   @@index([organizationId, estado])
+  @@index([organizationId, clienteId, estado])
   @@index([createdAt])
 }
 
@@ -291,6 +298,7 @@ model Pago {
   @@index([prestamoId])
   @@index([organizationId, fechaPago])
   @@index([prestamoId, fechaPago])
+  @@index([organizationId, cobradorId, fechaPago])
 }
 
 model CierreCaja {
