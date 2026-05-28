@@ -4,7 +4,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { validarDiasSinCobro } from '@/lib/dias-sin-cobro'
-import { COUNTRY_CODES } from '@/lib/i18n'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -49,7 +48,10 @@ export async function PATCH(req) {
   const orgId = session.user.organizationId
   if (!orgId) return NextResponse.json({ error: 'Sin organización' }, { status: 400 })
 
-  const { nombre, telefono, ciudad, diasSinCobro, country, timezone } = await req.json()
+  // NOTA: `country` y `timezone` NO se aceptan desde este endpoint.
+  // Cambios de pais solo pueden hacerse desde superadmin para evitar corrupcion
+  // de calculos de mora/timezone y precios de planes en organizaciones con datos.
+  const { nombre, telefono, ciudad, diasSinCobro } = await req.json()
 
   if (nombre !== undefined && !nombre?.trim()) {
     return NextResponse.json({ error: 'El nombre es obligatorio' }, { status: 400 })
@@ -70,8 +72,6 @@ export async function PATCH(req) {
       ...(telefono !== undefined && { telefono: telefono?.trim() || null }),
       ...(ciudad !== undefined && { ciudad: ciudad?.trim() || null }),
       ...(diasSinCobroVal !== undefined && { diasSinCobro: diasSinCobroVal }),
-      ...(country !== undefined && COUNTRY_CODES.includes(country) && { country }),
-      ...(timezone !== undefined && { timezone: timezone || null }),
     },
     select: { id: true, nombre: true, plan: true, telefono: true, ciudad: true, diasSinCobro: true, country: true, timezone: true },
   })

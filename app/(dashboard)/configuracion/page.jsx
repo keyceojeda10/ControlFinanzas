@@ -16,9 +16,10 @@ import DiasSinCobroSelector    from '@/components/ui/DiasSinCobroSelector'
 import FestivosManager         from '@/components/ui/FestivosManager'
 import ThemeToggle             from '@/components/ui/ThemeToggle'
 import { useTheme }             from '@/lib/theme/ThemeProvider'
-import { getCountryList } from '@/lib/countries'
+import { getCountryList, COUNTRIES } from '@/lib/countries'
 
 const PAISES_LIST = getCountryList()
+const WHATSAPP_SOPORTE = '573011993001'
 
 const planBadge  = { starter: 'gray', basic: 'blue', growth: 'yellow', standard: 'purple', professional: 'green' }
 const PRECIOS    = Object.fromEntries(Object.entries(PLANES_CONFIG).map(([k, v]) => [k, v.precio]))
@@ -322,7 +323,7 @@ function TabOrganizacion() {
     try {
       const res  = await fetch('/api/configuracion/organizacion', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre, telefono, ciudad, country }),
+        body: JSON.stringify({ nombre, telefono, ciudad }),
       })
       const d = await res.json()
       setMsg(res.ok
@@ -374,11 +375,35 @@ function TabOrganizacion() {
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-[#888888]">Pais</label>
-            <select value={country} onChange={(e) => setCountryState(e.target.value)} className={inputClass}>
-              {PAISES_LIST.map(p => (
-                <option key={p.code} value={p.code}>{p.name}</option>
-              ))}
-            </select>
+            <div
+              className="flex items-center justify-between rounded-[12px] px-3 py-2.5"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <svg className="w-4 h-4 shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 003 12c0-1.605.42-3.113 1.157-4.418" />
+                </svg>
+                <span className="text-sm font-medium text-[var(--color-text-primary)] truncate">
+                  {COUNTRIES[country]?.name ?? 'Colombia'}
+                </span>
+              </div>
+              <a
+                href={`https://wa.me/${WHATSAPP_SOPORTE}?text=${encodeURIComponent(`Hola, soy ${nombre || 'usuario'} y quiero cambiar el pais de mi cuenta. Actualmente esta en ${COUNTRIES[country]?.name ?? 'Colombia'}.`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] font-medium px-2.5 py-1 rounded-[8px] transition-all whitespace-nowrap"
+                style={{
+                  background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
+                  color: 'var(--color-accent)',
+                  border: '1px solid color-mix(in srgb, var(--color-accent) 25%, transparent)',
+                }}
+              >
+                Cambiar pais
+              </a>
+            </div>
+            <p className="text-[10px] text-[#666666] leading-snug px-0.5">
+              Para cambiar el pais asociado a tu cuenta debes contactar a soporte.
+            </p>
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-[#888888]">Ciudad</label>

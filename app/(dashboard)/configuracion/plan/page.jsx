@@ -79,10 +79,8 @@ function PlanPageInner() {
 
   const [estado,       setEstado]       = useState(null)
   const [uso,          setUso]          = useState(null)
-  const [cargando,     setCargando]     = useState('')
   const [loadEstado,   setLoadEstado]   = useState(true)
   const [periodo,      setPeriodo]      = useState('mensual')
-  const [modoPago,     setModoPago]     = useState('suscripcion')
   const [descuentoOrg, setDescuentoOrg] = useState(0)
   const [showPlanes,   setShowPlanes]   = useState(false)
 
@@ -109,7 +107,7 @@ function PlanPageInner() {
 
   const formatFecha = (f) => f ? new Date(f).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' }) : ''
 
-  // ── Payment flows (preserved from original) ──
+  // ── Calculo de precios (conservado) ──
   const calcularPrecio = (precioBase) => {
     const meses = periodo === 'anual' ? 12 : periodo === 'trimestral' ? 3 : 1
     const mesesCobrados = periodo === 'anual' ? 10 : meses
@@ -123,61 +121,21 @@ function PlanPageInner() {
     return { total, conDescuento, descuentoFinal, meses, ahorro }
   }
 
-  const elegirPlan = async (plan) => {
-    if (plan === planActual && periodo === 'mensual') return
-    setCargando(plan + '-unico')
-    try {
-      const res = await fetch('/api/pagos/crear-preferencia', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan, periodo }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        const msg = data.error ?? 'Error al crear el pago'
-        if (confirm(`${msg}\n\n¿Quieres contactar a soporte por WhatsApp?`))
-          window.open(whatsappLink(`Hola, tuve un problema al pagar el plan ${plan} (${periodo}). Error: ${msg}`), '_blank')
-        return
-      }
-      window.location.href = data.initPoint
-    } catch {
-      if (confirm('Error de conexion.\n\n¿Quieres contactar a soporte por WhatsApp?'))
-        window.open(whatsappLink(`Hola, tuve un error de conexion al pagar el plan ${plan}.`), '_blank')
-    } finally { setCargando('') }
+  // ── Activar/renovar plan via WhatsApp (MercadoPago desactivado temporalmente) ──
+  const activarPlanWA = (planKey) => {
+    const info = [...planes, planTest].find(p => p.key === planKey)
+    if (!info) return
+    const { conDescuento, meses } = calcularPrecio(info.precio)
+    const periodoLabel = periodo === 'anual' ? 'anual' : periodo === 'trimestral' ? 'trimestral' : 'mensual'
+    const orgRef = orgNombre ? ` para mi cuenta "${orgNombre}"` : ''
+    const msg = `Hola, quiero activar el plan ${info.nombre} (${periodoLabel})${orgRef}. Valor: ${formatMoney(conDescuento)}${meses > 1 ? ` por ${meses} meses` : '/mes'}.`
+    window.open(whatsappLink(msg), '_blank', 'noopener,noreferrer')
   }
 
-  const crearSuscripcion = async (plan) => {
-    setCargando(plan + '-sub')
-    try {
-      const res = await fetch('/api/pagos/crear-suscripcion', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan, periodo }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        const msg = data.error ?? 'Error al crear la suscripcion'
-        if (confirm(`${msg}\n\n¿Quieres contactar a soporte por WhatsApp?`))
-          window.open(whatsappLink(`Hola, tuve un problema al crear la suscripcion del plan ${plan}. Error: ${msg}`), '_blank')
-        return
-      }
-      window.location.href = data.initPoint
-    } catch {
-      if (confirm('Error de conexion.\n\n¿Quieres contactar a soporte por WhatsApp?'))
-        window.open(whatsappLink(`Hola, tuve un error de conexion al crear la suscripcion del plan ${plan}.`), '_blank')
-    } finally { setCargando('') }
-  }
-
-  const cancelarSuscripcion = async () => {
-    if (!confirm('Se cancelaran los cobros automaticos. Mantendras acceso hasta la fecha de vencimiento.')) return
-    setCargando('cancelando')
-    try {
-      const res = await fetch('/api/pagos/cancelar-suscripcion', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      })
-      if (res.ok) window.location.reload()
-      else { const d = await res.json(); alert(d.error ?? 'Error al cancelar') }
-    } catch { alert('Error de conexion') }
-    finally { setCargando('') }
+  const cancelarPlanWA = () => {
+    const orgRef = orgNombre ? ` de mi cuenta "${orgNombre}"` : ''
+    const msg = `Hola, quiero cancelar la suscripcion${orgRef}.`
+    window.open(whatsappLink(msg), '_blank', 'noopener,noreferrer')
   }
 
   // ── Loading state ──
@@ -358,12 +316,11 @@ function PlanPageInner() {
 
         {tieneRecurrente && !subCancelada && (
           <button
-            onClick={cancelarSuscripcion}
-            disabled={!!cargando}
-            className="w-full h-10 rounded-[12px] text-[12px] font-medium flex items-center justify-center gap-1 transition-colors disabled:opacity-60"
+            onClick={cancelarPlanWA}
+            className="w-full h-10 rounded-[12px] text-[12px] font-medium flex items-center justify-center gap-1 transition-colors"
             style={{ color: 'var(--color-danger)' }}
           >
-            {cargando === 'cancelando' ? <><Spinner /> Cancelando...</> : 'Cancelar suscripcion'}
+            Cancelar suscripcion
           </button>
         )}
       </div>
@@ -380,61 +337,34 @@ function PlanPageInner() {
             </p>
           </div>
 
-          {/* Payment mode toggle */}
+          {/* Period toggle — elige cuanto tiempo activar */}
           <div className="flex justify-center">
-            <div className="inline-flex rounded-[12px] p-1" style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)' }}>
-              {['suscripcion', 'pago_unico'].map(m => (
+            <div className="inline-flex rounded-[12px] p-1 overflow-x-auto" style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)' }}>
+              {[
+                { key: 'mensual', label: 'Mensual' },
+                { key: 'trimestral', label: 'Trimestral', badge: '-10%' },
+                { key: 'anual', label: 'Anual', badge: '2 gratis' },
+              ].map(p => (
                 <button
-                  key={m}
-                  onClick={() => setModoPago(m)}
-                  className="px-4 py-2 rounded-[8px] text-[12px] font-semibold transition-all flex items-center gap-1.5"
-                  style={modoPago === m
+                  key={p.key}
+                  onClick={() => setPeriodo(p.key)}
+                  className="px-3 py-2 rounded-[8px] text-[12px] font-semibold transition-all flex items-center gap-1 whitespace-nowrap"
+                  style={periodo === p.key
                     ? { background: 'var(--color-accent)', color: '#0a0a0a' }
                     : { color: 'var(--color-text-muted)' }
                   }
                 >
-                  {m === 'suscripcion' ? 'Suscripcion' : 'Pago unico'}
-                  {m === 'suscripcion' && (
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{
-                      background: modoPago === m ? 'rgba(0,0,0,0.15)' : 'var(--color-success)',
-                      color: modoPago === m ? '#0a0a0a' : '#fff',
-                    }}>Rec.</span>
+                  {p.label}
+                  {p.badge && (
+                    <span className="text-[9px] font-bold px-1 py-0.5 rounded-full font-mono-display" style={{
+                      background: periodo === p.key ? 'rgba(0,0,0,0.15)' : 'var(--color-success)',
+                      color: periodo === p.key ? '#0a0a0a' : '#fff',
+                    }}>{p.badge}</span>
                   )}
                 </button>
               ))}
             </div>
           </div>
-
-          {/* Period toggle for pago unico */}
-          {modoPago === 'pago_unico' && (
-            <div className="flex justify-center">
-              <div className="inline-flex rounded-[12px] p-1 overflow-x-auto" style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)' }}>
-                {[
-                  { key: 'mensual', label: 'Mensual' },
-                  { key: 'trimestral', label: 'Trimestral', badge: '-10%' },
-                  { key: 'anual', label: 'Anual', badge: '2 gratis' },
-                ].map(p => (
-                  <button
-                    key={p.key}
-                    onClick={() => setPeriodo(p.key)}
-                    className="px-3 py-2 rounded-[8px] text-[12px] font-semibold transition-all flex items-center gap-1 whitespace-nowrap"
-                    style={periodo === p.key
-                      ? { background: 'var(--color-accent)', color: '#0a0a0a' }
-                      : { color: 'var(--color-text-muted)' }
-                    }
-                  >
-                    {p.label}
-                    {p.badge && (
-                      <span className="text-[9px] font-bold px-1 py-0.5 rounded-full font-mono-display" style={{
-                        background: periodo === p.key ? 'rgba(0,0,0,0.15)' : 'var(--color-success)',
-                        color: periodo === p.key ? '#0a0a0a' : '#fff',
-                      }}>{p.badge}</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
 
           {esSuperadmin && (
             <p className="text-[10px] text-center" style={{ color: 'var(--color-text-muted)' }}>
@@ -446,11 +376,10 @@ function PlanPageInner() {
           <div className="space-y-3">
             {(esSuperadmin ? [planTest, ...planes] : planes).map((p) => {
               const esActual = p.key === planActual
-              const esSub = modoPago === 'suscripcion'
               const esTest = p.key === 'test'
               const esRecurrActiva = tieneRecurrente && esActual && !subCancelada
               const { conDescuento, descuentoFinal, meses, ahorro } = calcularPrecio(p.precio)
-              const tieneDesc = !esSub && descuentoFinal > 0
+              const tieneDesc = descuentoFinal > 0
 
               return (
                 <div
@@ -493,13 +422,13 @@ function PlanPageInner() {
                         </div>
                       ) : (
                         <span className="text-[14px] font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
-                          {formatMoney(esSub ? p.precio : conDescuento)}
+                          {formatMoney(conDescuento)}
                           <span className="text-[10px] font-normal" style={{ color: 'var(--color-text-muted)' }}>
-                            /{esSub ? 'mes' : meses === 12 ? 'ano' : meses === 3 ? 'trim.' : 'mes'}
+                            /{meses === 12 ? 'ano' : meses === 3 ? 'trim.' : 'mes'}
                           </span>
                         </span>
                       )}
-                      {ahorro > 0 && !esSub && (
+                      {ahorro > 0 && (
                         <p className="text-[9px] font-mono-display" style={{ color: 'var(--color-success)' }}>
                           Ahorras {formatMoney(ahorro)}
                         </p>
@@ -521,38 +450,22 @@ function PlanPageInner() {
                     }}>
                       Plan actual
                     </div>
-                  ) : subCancelada && esActual ? (
-                    <button
-                      onClick={() => esSub ? crearSuscripcion(p.key) : elegirPlan(p.key)}
-                      disabled={!!cargando}
-                      className="w-full h-9 rounded-[10px] text-[12px] font-semibold transition-all disabled:opacity-60 active:scale-[0.98]"
-                      style={{ background: 'var(--color-accent)', color: '#0a0a0a' }}
-                    >
-                      {cargando ? <><Spinner /> Procesando...</> : 'Renovar'}
-                    </button>
-                  ) : esSub && !esTest ? (
-                    <button
-                      onClick={() => crearSuscripcion(p.key)}
-                      disabled={!!cargando}
-                      className="w-full h-9 rounded-[10px] text-[12px] font-semibold transition-all disabled:opacity-60 active:scale-[0.98]"
-                      style={{
-                        background: esActual ? 'var(--color-bg-hover)' : 'var(--color-accent)',
-                        color: esActual ? 'var(--color-text-muted)' : '#0a0a0a',
-                      }}
-                    >
-                      {cargando === p.key + '-sub' ? <><Spinner /> Procesando...</> : esActual ? 'Plan actual' : tieneRecurrente ? 'Cambiar' : 'Suscribirme'}
-                    </button>
+                  ) : esActual && periodo === 'mensual' && !subCancelada ? (
+                    <div className="h-9 rounded-[10px] flex items-center justify-center text-[12px] font-semibold" style={{
+                      background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)',
+                    }}>
+                      Plan actual
+                    </div>
                   ) : (
                     <button
-                      onClick={() => elegirPlan(p.key)}
-                      disabled={(esActual && periodo === 'mensual') || !!cargando}
-                      className="w-full h-9 rounded-[10px] text-[12px] font-semibold transition-all disabled:opacity-60 active:scale-[0.98]"
-                      style={{
-                        background: esActual && periodo === 'mensual' ? 'var(--color-bg-hover)' : 'var(--color-accent)',
-                        color: esActual && periodo === 'mensual' ? 'var(--color-text-muted)' : '#0a0a0a',
-                      }}
+                      onClick={() => activarPlanWA(p.key)}
+                      className="w-full h-9 rounded-[10px] text-[12px] font-semibold transition-all active:scale-[0.98] flex items-center justify-center gap-1.5"
+                      style={{ background: 'var(--color-accent)', color: '#0a0a0a' }}
                     >
-                      {cargando === p.key + '-unico' ? <><Spinner /> Procesando...</> : esActual && periodo === 'mensual' ? 'Plan actual' : 'Pagar'}
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                      </svg>
+                      {subCancelada && esActual ? 'Renovar' : 'Activar por WhatsApp'}
                     </button>
                   )}
                 </div>
