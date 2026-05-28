@@ -1,8 +1,8 @@
 // components/prestamos/ResumenCalculo.jsx - Panel de resumen en tiempo real
 
-import { formatCOP } from '@/lib/calculos'
+import { useCountry } from '@/hooks/useCountry'
 
-const fmt = (v) => formatCOP(v)
+const fmt = (v) => formatMoney(v)
 
 const fmtFecha = (d) => {
   if (!d) return '—'
@@ -12,6 +12,7 @@ const fmtFecha = (d) => {
 }
 
 export default function ResumenCalculo({ calculo, visible = true }) {
+  const { formatMoney } = useCountry()
   if (!visible) return null
 
   const { totalAPagar, cuotaDiaria, ultimaCuota, totalInteres, fechaFin, frecuencia, numPeriodos } = calculo ?? {}

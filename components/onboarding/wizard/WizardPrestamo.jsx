@@ -2,9 +2,10 @@
 
 import { useState, useMemo } from 'react'
 import { Input } from '@/components/ui/Input'
-import { calcularPrestamo, formatCOP } from '@/lib/calculos'
+import { calcularPrestamo } from '@/lib/calculos'
 import ResumenCalculo from '@/components/prestamos/ResumenCalculo'
 import Avatar from '@/components/ui/Avatar'
+import { useCountry } from '@/hooks/useCountry'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
 const hoyISO = () => getColombiaDate().toISOString().slice(0, 10)
@@ -21,6 +22,8 @@ const DEFAULT_PLAZO = { diario: '30', semanal: '8', quincenal: '4', mensual: '2'
 
 export default function WizardPrestamo({ cliente, onComplete }) {
   const [monto, setMonto] = useState('')
+
+  const { formatMoney } = useCountry()
   const [tasa, setTasa] = useState('20')
   const [plazoUnidades, setPlazoUnidades] = useState('30')
   const [frecuencia, setFrecuencia] = useState('diario')

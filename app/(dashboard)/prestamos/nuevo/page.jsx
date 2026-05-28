@@ -7,9 +7,10 @@ import { useAuth }                                 from '@/hooks/useAuth'
 import { Button }                                  from '@/components/ui/Button'
 import { Input }                                   from '@/components/ui/Input'
 import MoneyInput                                  from '@/components/ui/MoneyInput'
-import { calcularPrestamo, formatCOP }             from '@/lib/calculos'
+import { calcularPrestamo }             from '@/lib/calculos'
 import ResumenCalculo                              from '@/components/prestamos/ResumenCalculo'
 import { guardarPrestamoPendiente, obtenerClientesOffline } from '@/lib/offline'
+import { useCountry } from '@/hooks/useCountry'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
 const hoyISO = () => getColombiaDate().toISOString().slice(0, 10)
@@ -63,6 +64,7 @@ function NuevoPrestamo() {
   const searchParams = useSearchParams()
   const { puedeCrearPrestamos, loading: authLoading } = useAuth()
 
+  const { formatMoney } = useCountry()
   const clienteIdParam = searchParams.get('clienteId') ?? ''
 
   const [clienteId,    setClienteId]    = useState(clienteIdParam)
@@ -99,6 +101,8 @@ function NuevoPrestamo() {
   // Cuota personalizada (sobrescribe la cuota calculada por el sistema)
   const [cuotaManualActiva, setCuotaManualActiva] = useState(false)
   const [cuotaManual, setCuotaManual] = useState('')
+  // Redondeo: 'exacto' ($100), 'redondeado' ($500) o 'cerrado' ($1.000)
+  const [redondeo, setRedondeo] = useState('exacto')
 
   // Guard de permiso
   useEffect(() => {
@@ -179,9 +183,10 @@ function NuevoPrestamo() {
       diasPlazo: p,
       fechaInicio,
       frecuencia,
+      redondeo,
       ...(cm > 0 && { cuotaManual: cm }),
     })
-  }, [monto, tasa, plazo, fechaInicio, frecuencia, cuotaManualActiva, cuotaManual])
+  }, [monto, tasa, plazo, fechaInicio, frecuencia, cuotaManualActiva, cuotaManual, redondeo])
 
   const clientesFiltrados = clientes.filter((c) =>
     c.nombre.toLowerCase().includes(buscadorCliente.toLowerCase()) ||
@@ -203,6 +208,7 @@ function NuevoPrestamo() {
         ...(frecuencia === 'mensual' && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
         ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
         ...(cuotaManualActiva && Number(cuotaManual) > 0 && { cuotaManual: Number(cuotaManual) }),
+        redondeo,
         ...(inyeccionPrevia && { inyeccionPrevia }),
         ...(seguro && Number(montoSeguro) > 0 && { seguro: true, montoSeguro: Number(montoSeguro) }),
       }),
@@ -480,7 +486,7 @@ function NuevoPrestamo() {
               />
               {calculo && Number(monto) > 0 && (
                 <p className="text-[10px] text-[var(--color-info)] font-medium px-0.5">
-                  → {numCuotas} cuotas de <span className="font-mono-display">{formatCOP(calculo.cuotaDiaria)}</span>
+                  → {numCuotas} cuotas de <span className="font-mono-display">{formatMoney(calculo.cuotaDiaria)}</span>
                 </p>
               )}
             </div>
@@ -596,6 +602,46 @@ function NuevoPrestamo() {
               />
               <p className="text-[10px] text-[var(--color-accent)] leading-snug px-0.5">
                 Tú defines el valor exacto de cada cuota. El total a pagar = cuota × {plazoUnidades || 'N'} cuotas.
+              </p>
+            </div>
+          )}
+
+          {/* Redondeo de cuota — solo en modo auto (no manual) */}
+          {modo === 'prestamo' && !cuotaManualActiva && (
+            <div className="flex flex-col gap-1.5">
+              <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">Redondeo de cuota</p>
+              <div className="relative flex h-10 rounded-[12px] bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] p-[3px]">
+                <div
+                  className="absolute top-[3px] bottom-[3px] rounded-[10px] bg-[var(--color-accent)] transition-all duration-200 ease-out"
+                  style={{
+                    width: 'calc(33.333% - 2px)',
+                    left: `calc(${['exacto','redondeado','cerrado'].indexOf(redondeo) * 33.333}% + 1.5px)`,
+                  }}
+                />
+                {[
+                  { value: 'exacto', label: 'Exacto' },
+                  { value: 'redondeado', label: 'Redondeado' },
+                  { value: 'cerrado', label: 'Cerrado' },
+                ].map((r) => (
+                  <button
+                    key={r.value}
+                    type="button"
+                    onClick={() => setRedondeo(r.value)}
+                    className={[
+                      'relative z-[1] flex-1 text-xs font-semibold transition-colors duration-200 cursor-pointer rounded-[10px]',
+                      redondeo === r.value ? 'text-[#0a0a0a]' : 'text-[var(--color-text-muted)]',
+                    ].join(' ')}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-[var(--color-text-muted)] leading-snug px-0.5">
+                {redondeo === 'exacto'
+                  ? 'Al múltiplo de $100 más cercano (fiel al cálculo)'
+                  : redondeo === 'redondeado'
+                  ? 'Al múltiplo de $500 más cercano'
+                  : 'Al múltiplo de $1.000 más cercano'}
               </p>
             </div>
           )}
@@ -732,16 +778,16 @@ function NuevoPrestamo() {
                 <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[10px] px-3 py-2.5 space-y-1">
                   <div className="flex justify-between text-xs">
                     <span className="text-[var(--color-text-muted)]">Total a pagar</span>
-                    <span className="text-[var(--color-text-primary)] font-medium font-mono-display">{formatCOP(calculo.totalAPagar)}</span>
+                    <span className="text-[var(--color-text-primary)] font-medium font-mono-display">{formatMoney(calculo.totalAPagar)}</span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-[var(--color-text-muted)]">Ya abonado</span>
-                    <span className="text-[var(--color-success)] font-medium font-mono-display">-{formatCOP(Number(yaAbonado))}</span>
+                    <span className="text-[var(--color-success)] font-medium font-mono-display">-{formatMoney(Number(yaAbonado))}</span>
                   </div>
                   <div className="flex justify-between text-xs border-t border-[var(--color-border)] pt-1">
                     <span className="text-[var(--color-text-muted)] font-semibold">Saldo pendiente</span>
                     <span className="text-[var(--color-accent)] font-bold font-mono-display">
-                      {formatCOP(Math.max(0, calculo.totalAPagar - Number(yaAbonado)))}
+                      {formatMoney(Math.max(0, calculo.totalAPagar - Number(yaAbonado)))}
                     </span>
                   </div>
                 </div>
@@ -801,6 +847,11 @@ function NuevoPrestamo() {
             icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2a4 4 0 00-4-4H3m18 6v-2a4 4 0 00-4-4h-2M9 7a4 4 0 100-8 4 4 0 000 8zm12 0a4 4 0 100-8 4 4 0 000 8z" /></svg>}
           >
             <ResumenCalculo calculo={calculo} visible={!!calculo} />
+            {calculo && !cuotaManualActiva && (
+              <p className="text-[10px] text-[var(--color-text-muted)] leading-snug mt-2 px-1">
+                Estos valores son calculados automáticamente. Si no corresponden a su forma de cobro, puede cambiar a modo <strong className="text-[var(--color-text)]">Manual</strong> arriba y definir la cuota exacta que desea cobrar.
+              </p>
+            )}
           </SectionCard>
         )}
 
@@ -820,7 +871,7 @@ function NuevoPrestamo() {
           <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] w-full max-w-md p-5">
             <h3 className="text-base font-semibold text-[var(--color-text-primary)] mb-1">Capital insuficiente</h3>
             <p className="text-sm text-[var(--color-text-primary)] mb-3">
-              Tu saldo actual de capital es <span className="font-mono-display text-[var(--color-accent)]">{formatCOP(modalInyeccion.saldoActual)}</span>. Te faltan <span className="font-mono-display text-[var(--color-danger)]">{formatCOP(modalInyeccion.faltante)}</span> para este préstamo.
+              Tu saldo actual de capital es <span className="font-mono-display text-[var(--color-accent)]">{formatMoney(modalInyeccion.saldoActual)}</span>. Te faltan <span className="font-mono-display text-[var(--color-danger)]">{formatMoney(modalInyeccion.faltante)}</span> para este préstamo.
             </p>
             <p className="text-xs text-[var(--color-text-muted)] mb-4">
               Puedes inyectar ese dinero ahora (por ejemplo, de tus ahorros o de un socio) y el sistema crea el préstamo. La inyección queda registrada en tus movimientos de capital.

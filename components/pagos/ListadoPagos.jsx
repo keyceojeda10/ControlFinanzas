@@ -4,8 +4,8 @@
 // (caja, historial de cliente, cobradores, etc).
 
 import Link from 'next/link'
-import { formatCOP } from '@/lib/calculos'
 import { Badge } from '@/components/ui/Badge'
+import { useCountry } from '@/hooks/useCountry'
 
 const TIPO_BADGE = {
   completo:  { label: 'Completo',  variant: 'success' },
@@ -72,6 +72,7 @@ export default function ListadoPagos({
   renderAcciones,
   maxHeight,
 }) {
+  const { formatMoney } = useCountry()
   const lista = Array.isArray(pagos) ? pagos : []
 
   if (lista.length === 0) {
@@ -138,7 +139,7 @@ export default function ListadoPagos({
                   className="text-sm font-bold font-mono-display"
                   style={{ color: colorMonto }}
                 >
-                  {prefijoMonto}{formatCOP(pago.montoPagado)}
+                  {prefijoMonto}{formatMoney(pago.montoPagado)}
                 </p>
                 <Badge variant={badge.variant}>{badge.label}</Badge>
               </div>

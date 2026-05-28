@@ -8,7 +8,6 @@ import { Card }                from '@/components/ui/Card'
 import { Button }              from '@/components/ui/Button'
 import { Badge }               from '@/components/ui/Badge'
 import { Skeleton }            from '@/components/ui/Skeleton'
-import { formatCOP }           from '@/lib/calculos'
 import { PLANES_CONFIG }       from '@/lib/planes'
 import { AVATARS }             from '@/lib/avatars'
 import Avatar                  from '@/components/ui/Avatar'
@@ -16,6 +15,7 @@ import DiasSinCobroSelector    from '@/components/ui/DiasSinCobroSelector'
 import FestivosManager         from '@/components/ui/FestivosManager'
 import ThemeToggle             from '@/components/ui/ThemeToggle'
 import { useTheme }             from '@/lib/theme/ThemeProvider'
+import { useCountry } from '@/hooks/useCountry'
 
 const planBadge  = { starter: 'gray', basic: 'blue', growth: 'yellow', standard: 'purple', professional: 'green' }
 const PRECIOS    = Object.fromEntries(Object.entries(PLANES_CONFIG).map(([k, v]) => [k, v.precio]))
@@ -42,6 +42,8 @@ const inputClass =
 // ══════════════════════════════════════════════════════════════
 function TabPerfil() {
   const { session, updateSession } = useAuth()
+
+  const { formatMoney } = useCountry()
   const [perfil,  setPerfil]  = useState(null)
   const [loading, setLoading] = useState(true)
   const [nombre,       setNombre]       = useState('')
@@ -419,7 +421,7 @@ function TabOrganizacion() {
                 <Badge variant={planBadge[org?.plan ?? 'starter']}>
                   {PLAN_NAMES[org?.plan ?? 'starter']}
                 </Badge>
-                <span className="text-xs text-[#888888]"><span className="font-mono-display">{formatCOP(PRECIOS[org?.plan ?? 'starter'])}</span>/mes</span>
+                <span className="text-xs text-[#888888]"><span className="font-mono-display">{formatMoney(PRECIOS[org?.plan ?? 'starter'])}</span>/mes</span>
               </div>
             </div>
             <Link
@@ -504,7 +506,7 @@ function TabSuscripcion() {
               <Badge variant={planBadge[org?.plan ?? 'starter']}>
                 {PLAN_NAMES[org?.plan ?? 'starter']}
               </Badge>
-              <span className="text-xs text-[#888888]"><span className="font-mono-display">{formatCOP(PRECIOS[org?.plan ?? 'starter'])}</span>/mes</span>
+              <span className="text-xs text-[#888888]"><span className="font-mono-display">{formatMoney(PRECIOS[org?.plan ?? 'starter'])}</span>/mes</span>
             </div>
           </div>
           <Link
@@ -586,7 +588,7 @@ function TabSuscripcion() {
                   </Badge>
                 </div>
                 <p className="text-xs text-[#888888] text-right">
-                  {h.montoCOP > 0 ? <span className="font-mono-display">{formatCOP(h.montoCOP)}</span> : 'Gratis'}
+                  {h.montoCOP > 0 ? <span className="font-mono-display">{formatMoney(h.montoCOP)}</span> : 'Gratis'}
                 </p>
               </div>
             ))}

@@ -20,7 +20,8 @@ function SyncStatusBadgeTrigger() {
   return <SyncStatusBadge variant="full" onClick={() => openSyncDrawer?.()} />
 }
 
-const formatCOPCompact = (monto = 0) => `$${Math.round(monto || 0).toLocaleString('es-CO')}`
+import { formatMoney as formatMoneyFn } from '@/lib/i18n'
+const formatCOPCompact = (monto = 0) => formatMoneyFn(monto)
 
 const NAV_SECTIONS_OWNER = [
   {

@@ -5,8 +5,8 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { formatCOP } from '@/lib/calculos'
 import Avatar from '@/components/ui/Avatar'
+import { useCountry } from '@/hooks/useCountry'
 
 const COLOR_OK   = 'var(--color-accent)'
 const COLOR_HOT  = '#f97316'
@@ -34,6 +34,8 @@ function moodLabel(c, prestamosActivos) {
 
 function useCountUp(target, duration = 800) {
   const [value, setValue] = useState(0)
+
+  const { formatMoney } = useCountry()
   const startRef = useRef(null)
   const fromRef = useRef(0)
   useEffect(() => {
@@ -222,7 +224,7 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
                 textShadow: 'none',
               }}
             >
-              {formatCOP(Math.round(animSaldo))}
+              {formatMoney(Math.round(animSaldo))}
             </p>
             <div className="flex items-center justify-between gap-2 mt-2">
               <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
@@ -232,7 +234,7 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
               </p>
               {totalAPagar > 0 && (
                 <p className="text-[11px] font-mono-display" style={{ color: 'var(--color-text-secondary)' }}>
-                  de {formatCOP(totalAPagar)}
+                  de {formatMoney(totalAPagar)}
                 </p>
               )}
             </div>

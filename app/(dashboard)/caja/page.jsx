@@ -12,10 +12,10 @@ import { Button }              from '@/components/ui/Button'
 import { Badge }              from '@/components/ui/Badge'
 import { Modal }               from '@/components/ui/Modal'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
-import { formatCOP }           from '@/lib/calculos'
 import ReportarGasto          from '@/components/gastos/ReportarGasto'
 import ListaGastos            from '@/components/gastos/ListaGastos'
 import ListadoPagos           from '@/components/pagos/ListadoPagos'
+import { useCountry } from '@/hooks/useCountry'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -62,6 +62,8 @@ export default function CajaPage() {
   const fechaParam = searchParams.get('fecha')
   const tabParam = searchParams.get('tab')
   const { esCobrador, puedeReportarGastos, puedeVerSaldoCaja, puedeVerCapital, loading: authLoading } = useAuth()
+
+  const { formatMoney } = useCountry()
   const { lastSyncedAt } = useOffline()
 
   const [cajaData, setCajaData] = useState(null)
@@ -291,7 +293,7 @@ export default function CajaPage() {
           <p className="text-[11px] text-[var(--color-text-muted)]">{cantidadPagosFiltrados} registro{cantidadPagosFiltrados === 1 ? '' : 's'}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <p className="text-sm font-bold font-mono-display text-[var(--color-success)]">{formatCOP(totalPagosFiltrados)}</p>
+          <p className="text-sm font-bold font-mono-display text-[var(--color-success)]">{formatMoney(totalPagosFiltrados)}</p>
           {!esCobrador && pagosDelDia.length > 0 && (
             <button
               type="button"
@@ -381,16 +383,16 @@ export default function CajaPage() {
               </div>
             </div>
             <p className="text-2xl font-bold font-mono-display text-[var(--color-info)]">
-              {formatCOP(capitalOrganizacion.total || 0)}
+              {formatMoney(capitalOrganizacion.total || 0)}
             </p>
             <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-[var(--color-border)]">
               <div>
                 <p className="text-[10px] text-[var(--color-text-muted)] uppercase">En caja</p>
-                <p className="text-sm font-bold font-mono-display text-[var(--color-success)]">{formatCOP(capitalOrganizacion.saldoCaja || 0)}</p>
+                <p className="text-sm font-bold font-mono-display text-[var(--color-success)]">{formatMoney(capitalOrganizacion.saldoCaja || 0)}</p>
               </div>
               <div>
                 <p className="text-[10px] text-[var(--color-text-muted)] uppercase">En calle (cartera)</p>
-                <p className="text-sm font-bold font-mono-display text-[var(--color-warning)]">{formatCOP(capitalOrganizacion.carteraActiva || 0)}</p>
+                <p className="text-sm font-bold font-mono-display text-[var(--color-warning)]">{formatMoney(capitalOrganizacion.carteraActiva || 0)}</p>
               </div>
             </div>
           </Card>
@@ -415,7 +417,7 @@ export default function CajaPage() {
             )}
           </div>
           <p className="text-3xl font-bold font-mono-display" style={{ color: disponibleHoy >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
-            {formatCOP(disponibleHoy)}
+            {formatMoney(disponibleHoy)}
           </p>
           <p className="text-[11px] text-[var(--color-text-muted)] mt-1">
             {puedeVerSaldoCaja ? 'Saldo compartido con el administrador' : 'Cobrado - Prestado hoy - Gastos'}
@@ -425,12 +427,12 @@ export default function CajaPage() {
             <div className="grid grid-cols-2 gap-2 mt-3">
               <div>
                 <p className="text-[10px] text-[var(--color-text-muted)] uppercase">Base inicial</p>
-                <p className="text-base font-bold font-mono-display text-[var(--color-info)]">{formatCOP(baseInicialDia)}</p>
+                <p className="text-base font-bold font-mono-display text-[var(--color-info)]">{formatMoney(baseInicialDia)}</p>
               </div>
               <div>
                 <p className="text-[10px] text-[var(--color-text-muted)] uppercase">Ajustes manuales</p>
                 <p className="text-base font-bold font-mono-display" style={{ color: ajustesDelDia >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
-                  {ajustesDelDia > 0 ? '+' : ''}{formatCOP(ajustesDelDia)}
+                  {ajustesDelDia > 0 ? '+' : ''}{formatMoney(ajustesDelDia)}
                 </p>
               </div>
             </div>
@@ -439,15 +441,15 @@ export default function CajaPage() {
           <div className="grid grid-cols-3 gap-2 mt-4">
             <div>
               <p className="text-[10px] text-[var(--color-text-muted)] uppercase">Cobrado</p>
-              <p className="text-base font-bold font-mono-display text-[var(--color-success)]">{formatCOP(cobradoHoy)}</p>
+              <p className="text-base font-bold font-mono-display text-[var(--color-success)]">{formatMoney(cobradoHoy)}</p>
             </div>
             <div>
               <p className="text-[10px] text-[var(--color-text-muted)] uppercase">Prestado hoy</p>
-              <p className="text-base font-bold font-mono-display text-[var(--color-warning)]">{prestadoHoy > 0 ? '-' : ''}{formatCOP(prestadoHoy)}</p>
+              <p className="text-base font-bold font-mono-display text-[var(--color-warning)]">{prestadoHoy > 0 ? '-' : ''}{formatMoney(prestadoHoy)}</p>
             </div>
             <div>
               <p className="text-[10px] text-[var(--color-text-muted)] uppercase">Gastos</p>
-              <p className="text-base font-bold font-mono-display text-[var(--color-danger)]">{gastosHoy > 0 ? '-' : ''}{formatCOP(gastosHoy)}</p>
+              <p className="text-base font-bold font-mono-display text-[var(--color-danger)]">{gastosHoy > 0 ? '-' : ''}{formatMoney(gastosHoy)}</p>
             </div>
           </div>
 
@@ -456,16 +458,16 @@ export default function CajaPage() {
             <div className="mt-2 space-y-1.5 text-[11px]">
               <div className="flex justify-between">
                 <span className="text-[var(--color-text-muted)]">Saldo operativo del día</span>
-                <span className="font-semibold" style={{ color: saldoRealCaja >= 0 ? 'var(--color-info)' : 'var(--color-danger)' }}>{formatCOP(saldoRealCaja)}</span>
+                <span className="font-semibold" style={{ color: saldoRealCaja >= 0 ? 'var(--color-info)' : 'var(--color-danger)' }}>{formatMoney(saldoRealCaja)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-[var(--color-text-muted)]">Esperado</span>
-                <span className="font-semibold text-[var(--color-text-primary)]">{formatCOP(stats.esperado || 0)}</span>
+                <span className="font-semibold text-[var(--color-text-primary)]">{formatMoney(stats.esperado || 0)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-[var(--color-text-muted)]">Diferencia vs esperado</span>
                 <span className="font-semibold" style={{ color: diferenciaRecaudo >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
-                  {diferenciaRecaudo >= 0 ? '+' : ''}{formatCOP(diferenciaRecaudo)}
+                  {diferenciaRecaudo >= 0 ? '+' : ''}{formatMoney(diferenciaRecaudo)}
                 </span>
               </div>
             </div>
@@ -483,10 +485,10 @@ export default function CajaPage() {
             </div>
             <div className="space-y-2">
               {[
-                { label: 'Esperado', value: formatCOP(cierreHoy.totalEsperado), color: 'text-[var(--color-text-primary)]' },
-                { label: 'Entregado', value: formatCOP(cierreHoy.totalRecogido), color: 'text-[var(--color-text-primary)]' },
-                { label: 'Gastos', value: formatCOP(cierreHoy.totalGastos || 0), color: 'text-[var(--color-danger)]' },
-                { label: 'Prestado hoy', value: `${cierreDesembolsado > 0 ? '-' : ''}${formatCOP(cierreDesembolsado)}`, color: 'text-[var(--color-warning)]' },
+                { label: 'Esperado', value: formatMoney(cierreHoy.totalEsperado), color: 'text-[var(--color-text-primary)]' },
+                { label: 'Entregado', value: formatMoney(cierreHoy.totalRecogido), color: 'text-[var(--color-text-primary)]' },
+                { label: 'Gastos', value: formatMoney(cierreHoy.totalGastos || 0), color: 'text-[var(--color-danger)]' },
+                { label: 'Prestado hoy', value: `${cierreDesembolsado > 0 ? '-' : ''}${formatMoney(cierreDesembolsado)}`, color: 'text-[var(--color-warning)]' },
               ].map(({ label, value, color }) => (
                 <div key={label} className="flex justify-between text-sm">
                   <span className="text-[var(--color-text-muted)]">{label}</span>
@@ -496,13 +498,13 @@ export default function CajaPage() {
               <div className="flex justify-between text-sm font-bold border-t border-[var(--color-border)] pt-2 mt-2">
                 <span className="text-[var(--color-text-muted)]">Diferencia</span>
                 <span style={{ color: diferencia >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
-                  {diferencia >= 0 ? '+' : ''}{formatCOP(diferencia)}
+                  {diferencia >= 0 ? '+' : ''}{formatMoney(diferencia)}
                 </span>
               </div>
               <div className="flex justify-between text-sm font-bold">
                 <span className="text-[var(--color-text-muted)]">Saldo del día</span>
                 <span style={{ color: cierreSaldoReal >= 0 ? 'var(--color-info)' : 'var(--color-danger)' }}>
-                  {formatCOP(cierreSaldoReal)}
+                  {formatMoney(cierreSaldoReal)}
                 </span>
               </div>
             </div>
@@ -550,7 +552,7 @@ export default function CajaPage() {
             <form onSubmit={registrarCierre} className="space-y-4">
               <div className="flex justify-between text-sm">
                 <span className="text-[var(--color-text-muted)]">{esAyer ? 'Total esperado (ayer)' : 'Total esperado hoy'}</span>
-                <span className="font-semibold text-[var(--color-text-primary)]">{formatCOP(stats.esperado || 0)}</span>
+                <span className="font-semibold text-[var(--color-text-primary)]">{formatMoney(stats.esperado || 0)}</span>
               </div>
               <div className="rounded-[12px] px-3 py-2.5 space-y-2" style={{ background: 'var(--color-warning-dim)', border: '1px solid color-mix(in srgb, var(--color-warning) 25%, transparent)' }}>
                 <p className="text-[11px] text-[var(--color-accent)] leading-snug">
@@ -563,7 +565,7 @@ export default function CajaPage() {
                     onClick={() => setTotalRecogido(String(recaudadoRegistrado))}
                     className="text-[11px] font-semibold text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] transition-colors"
                   >
-                    Usar {formatCOP(recaudadoRegistrado)}
+                    Usar {formatMoney(recaudadoRegistrado)}
                   </button>
                 </div>
               </div>
@@ -581,14 +583,14 @@ export default function CajaPage() {
               </div>
               {totalRecogido !== '' && Number(totalRecogido) !== recaudadoRegistrado && (
                 <p className="text-[11px] text-[var(--color-accent)]">
-                  Este valor no coincide con el cobrado registrado en pagos ({formatCOP(recaudadoRegistrado)}).
+                  Este valor no coincide con el cobrado registrado en pagos ({formatMoney(recaudadoRegistrado)}).
                 </p>
               )}
               {totalRecogido && (
                 <div className="text-sm">
                   <span className="text-[var(--color-text-muted)]">Diferencia: </span>
                   <span style={{ color: Number(totalRecogido) >= (stats.esperado || 0) ? 'var(--color-success)' : 'var(--color-danger)', fontWeight: 700 }}>
-                    {Number(totalRecogido) >= (stats.esperado || 0) ? '+' : ''}{formatCOP(Number(totalRecogido) - (stats.esperado || 0))}
+                    {Number(totalRecogido) >= (stats.esperado || 0) ? '+' : ''}{formatMoney(Number(totalRecogido) - (stats.esperado || 0))}
                   </span>
                 </div>
               )}
@@ -758,7 +760,7 @@ export default function CajaPage() {
                   textShadow: `0 0 30px color-mix(in srgb, ${heroColor} 25%, transparent)`,
                 }}
               >
-                {formatCOP(disponibleHoy)}
+                {formatMoney(disponibleHoy)}
               </p>
               <p className="text-[11px] mt-2" style={{ color: 'var(--color-text-muted)' }}>
                 Base inicial + Cobrado − Prestado − Gastos + Ajustes
@@ -768,15 +770,15 @@ export default function CajaPage() {
               <div className="grid grid-cols-3 gap-2 mt-4 pt-4" style={{ borderTop: `1px solid color-mix(in srgb, ${heroColor} 15%, transparent)` }}>
                 <div className="rounded-[10px] px-2.5 py-2" style={{ background: 'color-mix(in srgb, var(--color-success) 10%, transparent)' }}>
                   <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Cobrado</p>
-                  <p className="text-[14px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--color-success)' }}>{formatCOP(cobradoHoy)}</p>
+                  <p className="text-[14px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--color-success)' }}>{formatMoney(cobradoHoy)}</p>
                 </div>
                 <div className="rounded-[10px] px-2.5 py-2" style={{ background: 'color-mix(in srgb, var(--color-warning) 10%, transparent)' }}>
                   <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Prestado</p>
-                  <p className="text-[14px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--color-warning)' }}>{prestadoHoy > 0 ? '-' : ''}{formatCOP(prestadoHoy)}</p>
+                  <p className="text-[14px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--color-warning)' }}>{prestadoHoy > 0 ? '-' : ''}{formatMoney(prestadoHoy)}</p>
                 </div>
                 <div className="rounded-[10px] px-2.5 py-2" style={{ background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)' }}>
                   <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Gastos</p>
-                  <p className="text-[14px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--color-danger)' }}>{gastosHoy > 0 ? '-' : ''}{formatCOP(gastosHoy)}</p>
+                  <p className="text-[14px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--color-danger)' }}>{gastosHoy > 0 ? '-' : ''}{formatMoney(gastosHoy)}</p>
                 </div>
               </div>
 
@@ -784,12 +786,12 @@ export default function CajaPage() {
                 <div className="grid grid-cols-2 gap-2 mt-2">
                   <div className="rounded-[10px] px-2.5 py-2" style={{ background: 'color-mix(in srgb, var(--color-info) 10%, transparent)' }}>
                     <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Base inicial</p>
-                    <p className="text-[14px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--color-info)' }}>{formatCOP(baseInicialDia)}</p>
+                    <p className="text-[14px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--color-info)' }}>{formatMoney(baseInicialDia)}</p>
                   </div>
                   <div className="rounded-[10px] px-2.5 py-2" style={{ background: 'var(--color-bg-hover)' }}>
                     <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Ajustes</p>
                     <p className="text-[14px] font-bold font-mono-display mt-0.5" style={{ color: ajustesDelDia >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
-                      {ajustesDelDia > 0 ? '+' : ''}{formatCOP(ajustesDelDia)}
+                      {ajustesDelDia > 0 ? '+' : ''}{formatMoney(ajustesDelDia)}
                     </p>
                   </div>
                 </div>
@@ -800,23 +802,23 @@ export default function CajaPage() {
                 <div className="mt-2 space-y-1.5 text-[11px]">
                   <div className="flex justify-between">
                     <span style={{ color: 'var(--color-text-muted)' }}>Saldo operativo del día</span>
-                    <span className="font-semibold font-mono-display" style={{ color: saldoRealCaja >= 0 ? 'var(--color-info)' : 'var(--color-danger)' }}>{formatCOP(saldoRealCaja)}</span>
+                    <span className="font-semibold font-mono-display" style={{ color: saldoRealCaja >= 0 ? 'var(--color-info)' : 'var(--color-danger)' }}>{formatMoney(saldoRealCaja)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span style={{ color: 'var(--color-text-muted)' }}>Esperado</span>
-                    <span className="font-semibold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatCOP(stats.esperado || 0)}</span>
+                    <span className="font-semibold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(stats.esperado || 0)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span style={{ color: 'var(--color-text-muted)' }}>Diferencia vs esperado</span>
                     <span className="font-semibold font-mono-display" style={{ color: diferenciaRecaudo >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
-                      {diferenciaRecaudo >= 0 ? '+' : ''}{formatCOP(diferenciaRecaudo)}
+                      {diferenciaRecaudo >= 0 ? '+' : ''}{formatMoney(diferenciaRecaudo)}
                     </span>
                   </div>
                   {ajustesDelDia !== 0 && (
                     <div className="flex justify-between">
                       <span style={{ color: 'var(--color-text-muted)' }}>Ajustes manuales del día</span>
                       <span className="font-semibold font-mono-display" style={{ color: ajustesDelDia >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
-                        {ajustesDelDia >= 0 ? '+' : ''}{formatCOP(ajustesDelDia)}
+                        {ajustesDelDia >= 0 ? '+' : ''}{formatMoney(ajustesDelDia)}
                       </span>
                     </div>
                   )}
@@ -835,7 +837,7 @@ export default function CajaPage() {
           <p className="text-[11px] text-[var(--color-text-muted)]">Saldo histórico acumulado del negocio</p>
         </div>
         <p className="text-2xl font-bold font-mono-display" style={{ color: saldoGeneralActual >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
-          {formatCOP(saldoGeneralActual)}
+          {formatMoney(saldoGeneralActual)}
         </p>
         <p className="text-[11px] text-[var(--color-text-muted)] mt-1">Para detalle completo de movimientos, revisa Capital.</p>
 
@@ -925,12 +927,12 @@ export default function CajaPage() {
                       <div className="grid grid-cols-2 gap-2">
                         <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
                           <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Entregado</p>
-                          <p className="text-lg font-bold font-mono-display text-[var(--color-text-primary)] mt-0.5">{formatCOP(cierre.totalRecogido)}</p>
+                          <p className="text-lg font-bold font-mono-display text-[var(--color-text-primary)] mt-0.5">{formatMoney(cierre.totalRecogido)}</p>
                         </div>
                         <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
                           <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Diferencia</p>
                           <p className="text-lg font-bold font-mono-display mt-0.5" style={{ color: diff >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
-                            {diff >= 0 ? '+' : ''}{formatCOP(diff)}
+                            {diff >= 0 ? '+' : ''}{formatMoney(diff)}
                           </p>
                         </div>
                       </div>
@@ -940,29 +942,29 @@ export default function CajaPage() {
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                             <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2">
                               <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Esperado</p>
-                              <p className="text-sm font-semibold font-mono-display text-[var(--color-text-primary)]">{formatCOP(cierre.totalEsperado)}</p>
+                              <p className="text-sm font-semibold font-mono-display text-[var(--color-text-primary)]">{formatMoney(cierre.totalEsperado)}</p>
                             </div>
                             <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2">
                               <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Gastos</p>
-                              <p className="text-sm font-semibold font-mono-display text-[var(--color-danger)]">{formatCOP(cierre.totalGastos || 0)}</p>
+                              <p className="text-sm font-semibold font-mono-display text-[var(--color-danger)]">{formatMoney(cierre.totalGastos || 0)}</p>
                             </div>
                             <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2">
                               <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Prestado hoy</p>
-                              <p className="text-sm font-semibold font-mono-display text-[var(--color-warning)]">{cierreDesembolsado > 0 ? '-' : ''}{formatCOP(cierreDesembolsado)}</p>
+                              <p className="text-sm font-semibold font-mono-display text-[var(--color-warning)]">{cierreDesembolsado > 0 ? '-' : ''}{formatMoney(cierreDesembolsado)}</p>
                             </div>
                             <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2">
                               <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Saldo real</p>
                               <p className="text-sm font-semibold font-mono-display" style={{ color: cierreSaldoReal >= 0 ? 'var(--color-info)' : 'var(--color-danger)' }}>
-                                {formatCOP(cierreSaldoReal)}
+                                {formatMoney(cierreSaldoReal)}
                               </p>
                             </div>
                           </div>
 
                           <div className="text-xs text-[var(--color-text-muted)] border-t border-[var(--color-border)] pt-2">
-                            Cobrado registrado en pagos: <span className="text-[var(--color-success)] font-semibold">{formatCOP(recaudadoDiaCobrador)}</span>
+                            Cobrado registrado en pagos: <span className="text-[var(--color-success)] font-semibold">{formatMoney(recaudadoDiaCobrador)}</span>
                             {deltaSistemaVsCierre !== 0 && (
                               <span className="ml-2 text-[var(--color-accent)]">
-                                (diferencia vs cierre: {deltaSistemaVsCierre > 0 ? '+' : ''}{formatCOP(deltaSistemaVsCierre)})
+                                (diferencia vs cierre: {deltaSistemaVsCierre > 0 ? '+' : ''}{formatMoney(deltaSistemaVsCierre)})
                               </span>
                             )}
                           </div>
@@ -986,18 +988,18 @@ export default function CajaPage() {
                           <div className="grid grid-cols-2 gap-2">
                             <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
                               <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Cobrado</p>
-                              <p className="text-lg font-bold font-mono-display text-[var(--color-success)] mt-0.5">{formatCOP(recaudadoDiaCobrador)}</p>
+                              <p className="text-lg font-bold font-mono-display text-[var(--color-success)] mt-0.5">{formatMoney(recaudadoDiaCobrador)}</p>
                             </div>
                             <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
                               <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Sugerido cierre</p>
-                              <p className="text-lg font-bold font-mono-display text-[var(--color-accent)] mt-0.5">{formatCOP(sugeridoCierre)}</p>
+                              <p className="text-lg font-bold font-mono-display text-[var(--color-accent)] mt-0.5">{formatMoney(sugeridoCierre)}</p>
                             </div>
                           </div>
 
                           {expandido && (
                             <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2 mt-2">
                               <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Esperado ruta</p>
-                              <p className="text-sm font-semibold font-mono-display text-[var(--color-text-primary)]">{formatCOP(esperadoDiaCobrador)}</p>
+                              <p className="text-sm font-semibold font-mono-display text-[var(--color-text-primary)]">{formatMoney(esperadoDiaCobrador)}</p>
                             </div>
                           )}
 

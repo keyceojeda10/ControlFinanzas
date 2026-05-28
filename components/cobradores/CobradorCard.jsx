@@ -3,8 +3,8 @@
 // Card premium de cobrador con mood color por desempeño del dia.
 
 import Link from 'next/link'
-import { formatCOP } from '@/lib/calculos'
 import Avatar from '@/components/ui/Avatar'
+import { useCountry } from '@/hooks/useCountry'
 
 const COLOR_OK   = '#22c55e'
 const COLOR_HOT  = '#f5c518'
@@ -43,6 +43,7 @@ function tiempoUltimaActividad(ultimoPago) {
 }
 
 export default function CobradorCard({ cobrador, onToggleActivo, toggling }) {
+  const { formatMoney } = useCountry()
   const progreso = cobrador.esperadoHoy > 0
     ? Math.min(100, Math.round((cobrador.recaudadoHoy / cobrador.esperadoHoy) * 100))
     : 0
@@ -122,10 +123,10 @@ export default function CobradorCard({ cobrador, onToggleActivo, toggling }) {
                 textShadow: 'none',
               }}
             >
-              {formatCOP(cobrador.recaudadoHoy ?? 0)}
+              {formatMoney(cobrador.recaudadoHoy ?? 0)}
             </p>
             <p className="text-[10px] font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
-              de {formatCOP(cobrador.esperadoHoy ?? 0)}
+              de {formatMoney(cobrador.esperadoHoy ?? 0)}
             </p>
           </div>
           <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>

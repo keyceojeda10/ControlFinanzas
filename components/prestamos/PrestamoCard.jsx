@@ -4,10 +4,11 @@
 
 import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
-import { formatCOP, formatFechaCobroRelativa } from '@/lib/calculos'
+import { formatFechaCobroRelativa } from '@/lib/calculos'
 import OfflineBadge from '@/components/offline/OfflineBadge'
 import Avatar from '@/components/ui/Avatar'
 import CardActionMenu from '@/components/ui/CardActionMenu'
+import { useCountry } from '@/hooks/useCountry'
 
 const COLOR_OK     = 'var(--color-accent)'    // dorado — al dia
 const COLOR_HOT    = '#f97316'                // naranja — vencido pocos dias
@@ -33,6 +34,7 @@ function moodLabel(p) {
 }
 
 export default function PrestamoCard({ prestamo: p, actions }) {
+  const { formatMoney } = useCountry()
   const color           = moodColor(p)
   const label           = moodLabel(p)
   const porcentaje      = Math.max(0, Math.min(100, p.porcentajePagado ?? 0))
@@ -96,7 +98,7 @@ export default function PrestamoCard({ prestamo: p, actions }) {
             textShadow: enMora ? `0 0 24px color-mix(in srgb, ${color} 25%, transparent)` : 'none',
           }}
         >
-          {formatCOP(p.saldoPendiente)}
+          {formatMoney(p.saldoPendiente)}
         </p>
       </div>
 
@@ -115,7 +117,7 @@ export default function PrestamoCard({ prestamo: p, actions }) {
         </div>
         <div className="flex items-center justify-between text-[10px] mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
           <span><span className="font-mono-display font-semibold" style={{ color }}>{porcentaje}%</span> pagado</span>
-          <span>de {formatCOP(p.totalAPagar)}</span>
+          <span>de {formatMoney(p.totalAPagar)}</span>
         </div>
       </div>
 
@@ -127,13 +129,13 @@ export default function PrestamoCard({ prestamo: p, actions }) {
         <div>
           <p className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider">Pagado</p>
           <p className="text-[12px] font-mono-display font-semibold mt-0.5" style={{ color: 'var(--color-success)' }}>
-            {formatCOP(pagado)}
+            {formatMoney(pagado)}
           </p>
         </div>
         <div>
           <p className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider">Cuota</p>
           <p className="text-[12px] font-mono-display font-semibold mt-0.5" style={{ color: 'var(--color-text-primary)' }}>
-            {formatCOP(p.cuotaDiaria)}
+            {formatMoney(p.cuotaDiaria)}
           </p>
         </div>
         <div className="text-right">

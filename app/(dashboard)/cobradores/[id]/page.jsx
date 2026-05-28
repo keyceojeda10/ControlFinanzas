@@ -7,11 +7,11 @@ import { useAuth }                  from '@/hooks/useAuth'
 import { Badge }                    from '@/components/ui/Badge'
 import { Card }                     from '@/components/ui/Card'
 import { SkeletonCard }             from '@/components/ui/Skeleton'
-import { formatCOP }                from '@/lib/calculos'
 import CompartirCredenciales        from '@/components/cobradores/CompartirCredenciales'
 import Link                         from 'next/link'
 import { useOnline }                from '@/hooks/useOnline'
 import OfflineFallback              from '@/components/offline/OfflineFallback'
+import { useCountry } from '@/hooks/useCountry'
 
 export default function CobradorDetallePage({ params }) {
   const online = useOnline()
@@ -23,6 +23,8 @@ function CobradorDetalleInner({ params }) {
   const { id }      = use(params)
   const router      = useRouter()
   const { session } = useAuth()
+
+  const { formatMoney } = useCountry()
   const [data,    setData]    = useState(null)
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState('')
@@ -192,7 +194,7 @@ function CobradorDetalleInner({ params }) {
                       textShadow: '0 0 30px color-mix(in srgb, var(--color-success) 25%, transparent)',
                     }}
                   >
-                    {formatCOP(data.recaudadoHoy ?? 0)}
+                    {formatMoney(data.recaudadoHoy ?? 0)}
                   </p>
                 </div>
                 <div className="flex flex-col gap-1.5 shrink-0">

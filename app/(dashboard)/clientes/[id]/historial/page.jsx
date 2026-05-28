@@ -7,13 +7,15 @@ import { useAuth } from '@/hooks/useAuth'
 import { obtenerClienteOffline } from '@/lib/offline'
 import { Card } from '@/components/ui/Card'
 import { SkeletonCard } from '@/components/ui/Skeleton'
-import { formatCOP } from '@/lib/calculos'
 import ListadoPagos from '@/components/pagos/ListadoPagos'
+import { useCountry } from '@/hooks/useCountry'
 
 export default function HistorialPage() {
   const params = useParams()
   const router = useRouter()
   const { session, loading: authLoading } = useAuth()
+
+  const { formatMoney } = useCountry()
   const [historial, setHistorial] = useState([])
   const [loading, setLoading] = useState(true)
   const [filtroFecha, setFiltroFecha] = useState('')
@@ -142,7 +144,7 @@ export default function HistorialPage() {
           boxShadow: `0 0 30px #22c55e08, 0 1px 2px rgba(0,0,0,0.3)`,
         }}>
           <p className="text-[10px] text-[var(--color-text-muted)]">Total pagado</p>
-          <p className="text-xl font-bold text-[white] mt-1 font-mono-display">{formatCOP(totalPagado)}</p>
+          <p className="text-xl font-bold text-[white] mt-1 font-mono-display">{formatMoney(totalPagado)}</p>
         </Card>
         <Card>
           <p className="text-[10px] text-[var(--color-text-muted)]">Cantidad de pagos</p>

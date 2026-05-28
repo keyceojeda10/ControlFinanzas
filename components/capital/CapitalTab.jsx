@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { formatCOP } from '@/lib/calculos'
+import { useCountry } from '@/hooks/useCountry'
 
 const TIPO_LABELS = {
   capital_inicial: 'Capital inicial',
@@ -45,6 +45,8 @@ function fechaCorta(iso) {
 
 export default function CapitalTab() {
   const [resumen, setResumen] = useState(null)
+
+  const { formatMoney } = useCountry()
   const [movimientos, setMovimientos] = useState([])
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -126,7 +128,7 @@ export default function CapitalTab() {
 
   const handleEliminar = async (m) => {
     const label = TIPO_LABELS[m.tipo] || m.tipo
-    const msg = `Eliminar ${label.toLowerCase()} de ${formatCOP(m.monto)}? Se revertirá el efecto en el saldo.`
+    const msg = `Eliminar ${label.toLowerCase()} de ${formatMoney(m.monto)}? Se revertirá el efecto en el saldo.`
     if (!confirm(msg)) return
     setEliminando(m.id)
     try {
@@ -187,7 +189,7 @@ export default function CapitalTab() {
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error || 'No se pudo aplicar el capital sugerido')
-      setFeedback({ tipo: 'ok', mensaje: `Capital sugerido aplicado: ${formatCOP(montoSugerido)}.` })
+      setFeedback({ tipo: 'ok', mensaje: `Capital sugerido aplicado: ${formatMoney(montoSugerido)}.` })
       fetchResumen()
       setPage(1)
       fetchMovimientos()
@@ -236,7 +238,7 @@ export default function CapitalTab() {
           <p className="text-sm text-[var(--color-text-muted)] mb-2">Registra con cuanto capital empiezas para que el sistema lleve el control automaticamente.</p>
           {mostrarSugerido && (
             <p className="text-sm text-[var(--color-success)] mb-4">
-              Sugerencia por historial: <span className="font-semibold font-mono-display">{formatCOP(sugerido.saldo)}</span>
+              Sugerencia por historial: <span className="font-semibold font-mono-display">{formatMoney(sugerido.saldo)}</span>
             </p>
           )}
           <div className="flex flex-col sm:flex-row gap-2 justify-center">
@@ -287,7 +289,7 @@ export default function CapitalTab() {
                   textShadow: 'none',
                 }}
               >
-                {formatCOP(resumen.saldo)}
+                {formatMoney(resumen.saldo)}
               </p>
               {resumen.saldo < 0 && (
                 <p className="text-[12px] mt-2 inline-flex items-center gap-1 px-2 py-1 rounded-full font-medium" style={{ background: 'rgba(239, 68, 68, 0.12)', color: 'var(--color-danger)' }}>
@@ -377,7 +379,7 @@ export default function CapitalTab() {
               Calidad {calidadSugerida}
             </span>
           </div>
-          <p className="text-2xl font-bold font-mono-display text-[var(--color-accent)]">{formatCOP(sugerido.saldo)}</p>
+          <p className="text-2xl font-bold font-mono-display text-[var(--color-accent)]">{formatMoney(sugerido.saldo)}</p>
           <p className="text-[11px] text-[var(--color-text-muted)] mt-1">Tu saldo está en cero. Puedes aplicarlo como capital inicial con un clic.</p>
           <button type="button" onClick={aplicarCapitalSugerido}
             disabled={aplicandoSugerido || Number(sugerido?.saldo || 0) <= 0}
@@ -390,11 +392,11 @@ export default function CapitalTab() {
       {resumen?.mes && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: 'Prestado', value: formatCOP(resumen.mes.desembolsado), sub: `${resumen.mes.prestamosOtorgados} préstamos`, color: '#f97316',
+            { label: 'Prestado', value: formatMoney(resumen.mes.desembolsado), sub: `${resumen.mes.prestamosOtorgados} préstamos`, color: '#f97316',
               icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15M9 12l3 3m0 0l3-3m-3 3V2.25" /></svg> },
-            { label: 'Cobrado', value: formatCOP(resumen.mes.recaudado), sub: `${resumen.mes.pagosRecibidos} pagos`, color: '#22c55e',
+            { label: 'Cobrado', value: formatMoney(resumen.mes.recaudado), sub: `${resumen.mes.pagosRecibidos} pagos`, color: '#22c55e',
               icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m-6 6l3-3m0 0l3 3m-3-3v6.75" /></svg> },
-            { label: 'Gastos', value: formatCOP(resumen.mes.gastos), sub: 'del mes', color: '#ef4444',
+            { label: 'Gastos', value: formatMoney(resumen.mes.gastos), sub: 'del mes', color: '#ef4444',
               icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25M6.75 12h.008v.008H6.75V12z" /></svg> },
           ].map((s, i) => (
             <div key={i} className="rounded-[16px] px-4 py-3 kpi-lift"
@@ -424,7 +426,7 @@ export default function CapitalTab() {
                   <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: balanceColor }}>Balance neto</p>
                 </div>
                 <p className="text-[16px] font-bold font-mono-display leading-tight" style={{ color: balanceColor }}>
-                  {flujo >= 0 ? '+' : ''}{formatCOP(flujo)}
+                  {flujo >= 0 ? '+' : ''}{formatMoney(flujo)}
                 </p>
                 <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Cobrado − Prestado − Gastos</p>
               </div>
@@ -470,9 +472,9 @@ export default function CapitalTab() {
                 <div className="flex items-center gap-2 shrink-0 ml-3">
                   <div className="text-right">
                     <p className={`text-sm font-bold ${esMovimientoIngreso(m) ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
-                      {esMovimientoIngreso(m) ? '+' : '-'}{formatCOP(m.monto)}
+                      {esMovimientoIngreso(m) ? '+' : '-'}{formatMoney(m.monto)}
                     </p>
-                    <p className="text-[10px] text-[var(--color-text-muted)]">Saldo: {formatCOP(m.saldoNuevo)}</p>
+                    <p className="text-[10px] text-[var(--color-text-muted)]">Saldo: {formatMoney(m.saldoNuevo)}</p>
                   </div>
                   {TIPOS_MANUALES.includes(m.tipo) && (
                     <button type="button" onClick={() => handleEliminar(m)} disabled={eliminando === m.id} title="Eliminar movimiento"

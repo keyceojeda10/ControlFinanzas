@@ -6,6 +6,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
+import { useCountry } from '@/hooks/useCountry'
 import {
   formatearTelefono,
   abrirWhatsApp,
@@ -15,8 +16,6 @@ import {
   generarTextoVisita,
   generarTextoComprobantePedido,
 } from '@/lib/whatsapp'
-import { formatCOP } from '@/lib/calculos'
-
 // Definicion de plantillas: filtrables segun estado del prestamo/cliente
 const TEMPLATES = [
   {
@@ -39,11 +38,11 @@ const TEMPLATES = [
       const dias = prestamo.diasMora ?? 0
       return `Hola ${cliente.nombre} 👋
 
-Notamos que tu cuota de ${formatCOP(prestamo.cuotaDiaria || 0)} lleva ${dias} día${dias === 1 ? '' : 's'} pendiente.
+Notamos que tu cuota de ${formatMoney(prestamo.cuotaDiaria || 0)} lleva ${dias} día${dias === 1 ? '' : 's'} pendiente.
 
 ¿Podemos pasar hoy a cobrar? También puedes ponerte al día por transferencia.
 
-💰 Saldo pendiente: ${formatCOP(prestamo.saldoPendiente || 0)}
+💰 Saldo pendiente: ${formatMoney(prestamo.saldoPendiente || 0)}
 
 ¡Gracias!
 
@@ -66,8 +65,8 @@ _Control Finanzas_ 💼`
 Llevamos ${dias} días sin recibir tu pago. Por favor comunícate con nosotros lo antes posible.
 
 📊 *Estado:*
-💰 Saldo pendiente: ${formatCOP(prestamo.saldoPendiente || 0)}
-📅 Cuota diaria: ${formatCOP(prestamo.cuotaDiaria || 0)}
+💰 Saldo pendiente: ${formatMoney(prestamo.saldoPendiente || 0)}
+📅 Cuota diaria: ${formatMoney(prestamo.cuotaDiaria || 0)}
 
 Estamos disponibles para acordar una solución. No dejes que se acumule más.
 
@@ -89,7 +88,7 @@ _Control Finanzas_ 💼`
 
 Tu crédito tiene ${dias} días sin pago. Hemos intentado contactarte sin respuesta.
 
-📊 Saldo total pendiente: ${formatCOP(prestamo.saldoPendiente || 0)}
+📊 Saldo total pendiente: ${formatMoney(prestamo.saldoPendiente || 0)}
 
 Para evitar acciones legales, comunícate HOY mismo. Aún puedes acordar un plan de pago.
 
@@ -147,6 +146,8 @@ _Control Finanzas_`
 
 export default function ModalWhatsAppTemplates({ open, onClose, cliente, prestamo }) {
   const [selectedId, setSelectedId] = useState(null)
+
+  const { formatMoney } = useCountry()
   const [textoEditable, setTextoEditable] = useState('')
 
   const tel = formatearTelefono(cliente?.telefono)

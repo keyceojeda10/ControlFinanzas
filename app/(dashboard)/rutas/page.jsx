@@ -12,11 +12,13 @@ import { Input }               from '@/components/ui/Input'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
 import { Card }                from '@/components/ui/Card'
 import RutaCard                from '@/components/rutas/RutaCard'
-import { formatCOP }           from '@/lib/calculos'
+import { useCountry } from '@/hooks/useCountry'
 
 export default function RutasPage() {
   const router = useRouter()
   const { esOwner, loading: authLoading } = useAuth()
+
+  const { formatMoney } = useCountry()
   const { lastSyncedAt } = useOffline()
   const [rutas,    setRutas]    = useState([])
   const [loading,  setLoading]  = useState(true)

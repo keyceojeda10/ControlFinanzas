@@ -9,9 +9,9 @@ import { Button }              from '@/components/ui/Button'
 import { Card }                from '@/components/ui/Card'
 import CobradorCard            from '@/components/cobradores/CobradorCard'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
-import { formatCOP }           from '@/lib/calculos'
 import { useOnline }           from '@/hooks/useOnline'
 import OfflineFallback         from '@/components/offline/OfflineFallback'
+import { useCountry } from '@/hooks/useCountry'
 
 export default function CobradoresPage() {
   const online = useOnline()
@@ -21,6 +21,8 @@ export default function CobradoresPage() {
 
 function CobradoresPageInner() {
   const { session, esOwner, loading: authLoading } = useAuth()
+
+  const { formatMoney } = useCountry()
   const [cobradores, setCobradores] = useState([])
   const [loading,    setLoading]    = useState(true)
   const [error,      setError]      = useState('')

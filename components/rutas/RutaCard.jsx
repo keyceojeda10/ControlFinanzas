@@ -3,8 +3,8 @@
 
 import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
-import { formatCOP } from '@/lib/calculos'
 import Avatar from '@/components/ui/Avatar'
+import { useCountry } from '@/hooks/useCountry'
 
 const COLOR_OK   = '#22c55e'
 const COLOR_HOT  = '#f5c518'
@@ -30,6 +30,7 @@ function moodLabel(progreso, esperadoHoy) {
 }
 
 export default function RutaCard({ ruta }) {
+  const { formatMoney } = useCountry()
   const progreso = ruta.esperadoHoy > 0
     ? Math.min(100, Math.round((ruta.recaudadoHoy / ruta.esperadoHoy) * 100))
     : 0
@@ -109,10 +110,10 @@ export default function RutaCard({ ruta }) {
             textShadow: progreso >= 100 ? `0 0 18px color-mix(in srgb, ${color} 30%, transparent)` : 'none',
           }}
         >
-          {formatCOP(ruta.recaudadoHoy ?? 0)}
+          {formatMoney(ruta.recaudadoHoy ?? 0)}
         </p>
         <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
-          de {formatCOP(ruta.esperadoHoy ?? 0)} esperados
+          de {formatMoney(ruta.esperadoHoy ?? 0)} esperados
         </p>
       </div>
 

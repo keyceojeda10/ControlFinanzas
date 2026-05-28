@@ -5,8 +5,8 @@ import { useState, useEffect, useMemo } from 'react'
 import { Modal }    from '@/components/ui/Modal'
 import { Button }   from '@/components/ui/Button'
 import { Input }    from '@/components/ui/Input'
-import { formatCOP } from '@/lib/calculos'
 import { encolarMutacion } from '@/lib/offline'
+import { useCountry } from '@/hooks/useCountry'
 
 const toISODate = (d) => {
   const date = d instanceof Date ? d : new Date(d)
@@ -32,6 +32,8 @@ export default function ModificarPlazo({
   onSuccess,
 }) {
   const [modo, setModo] = useState('extender') // 'extender' | 'corregir'
+
+  const { formatMoney } = useCountry()
   const [diasExtra,   setDiasExtra]   = useState('')
   const [nuevaFecha,  setNuevaFecha]  = useState('')
   const [loading,     setLoading]     = useState(false)
@@ -224,7 +226,7 @@ export default function ModificarPlazo({
           </div>
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-[var(--color-text-muted)]">Cuota {frecuencia}</span>
-            <span className="text-xs text-[var(--color-text-primary)] font-mono-display">{formatCOP(cuotaActual)}</span>
+            <span className="text-xs text-[var(--color-text-primary)] font-mono-display">{formatMoney(cuotaActual)}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-[var(--color-text-muted)]">Plazo actual</span>
@@ -268,10 +270,10 @@ export default function ModificarPlazo({
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-[var(--color-text-muted)]">Nueva cuota {frecuencia}</span>
                   <span className="text-xs font-bold text-[var(--color-accent)] font-mono-display">
-                    {formatCOP(preview.nuevaCuota)}
+                    {formatMoney(preview.nuevaCuota)}
                     {preview.cuotaDelta !== 0 && (
                       <span className={`ml-1 text-[9px] ${preview.cuotaDelta < 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
-                        ({preview.cuotaDelta > 0 ? '+' : ''}{formatCOP(Math.abs(preview.cuotaDelta))})
+                        ({preview.cuotaDelta > 0 ? '+' : ''}{formatMoney(Math.abs(preview.cuotaDelta))})
                       </span>
                     )}
                   </span>
@@ -279,7 +281,7 @@ export default function ModificarPlazo({
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-[var(--color-text-muted)]">Total a pagar</span>
                   <span className="text-xs font-semibold text-[var(--color-text-primary)] font-mono-display">
-                    {formatCOP(preview.nuevoTotal)}
+                    {formatMoney(preview.nuevoTotal)}
                   </span>
                 </div>
               </>

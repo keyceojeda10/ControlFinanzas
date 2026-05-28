@@ -1,10 +1,11 @@
 // components/dashboard/ClientesMora.jsx - Lista de clientes en mora
 
 import { Badge } from '@/components/ui/Badge'
-import { formatCOP } from '@/lib/calculos'
 import Avatar from '@/components/ui/Avatar'
+import { useCountry } from '@/hooks/useCountry'
 
 export default function ClientesMora({ clientes = [], loading = false }) {
+  const { formatMoney } = useCountry()
   if (loading) {
     return (
       <div className="space-y-3">
@@ -47,7 +48,7 @@ export default function ClientesMora({ clientes = [], loading = false }) {
             <p className="text-xs text-[#8b95a5]">{c.diasMora} días en mora</p>
           </div>
           <Badge variant="red">
-            <span className="font-mono-display">{formatCOP(c.saldoPendiente ?? 0)}</span>
+            <span className="font-mono-display">{formatMoney(c.saldoPendiente ?? 0)}</span>
           </Badge>
         </div>
       ))}

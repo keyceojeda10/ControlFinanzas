@@ -6,7 +6,8 @@ import { usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useState, useEffect, useRef } from 'react'
 
-const formatCOPCompact = (monto = 0) => `$${Math.round(monto || 0).toLocaleString('es-CO')}`
+import { formatMoney as formatMoneyFn } from '@/lib/i18n'
+const formatCOPCompact = (monto = 0) => formatMoneyFn(monto)
 
 const ITEMS_OWNER = [
   {

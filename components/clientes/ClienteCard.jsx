@@ -4,9 +4,9 @@
 
 import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
-import { formatCOP } from '@/lib/calculos'
 import Avatar from '@/components/ui/Avatar'
 import CardActionMenu from '@/components/ui/CardActionMenu'
+import { useCountry } from '@/hooks/useCountry'
 
 const COLOR_OK     = 'var(--color-accent)'
 const COLOR_HOT    = '#f97316'
@@ -30,6 +30,7 @@ function moodLabel(c) {
 }
 
 export default function ClienteCard({ cliente, actions }) {
+  const { formatMoney } = useCountry()
   const color = moodColor(cliente)
   const label = moodLabel(cliente)
   const saldoTotal = Number(cliente.saldoPendienteTotal ?? 0)
@@ -114,7 +115,7 @@ export default function ClienteCard({ cliente, actions }) {
                 className="text-[18px] font-mono-display font-bold leading-none mt-1"
                 style={{ color: cliente.diasMoraMax > 0 ? color : 'var(--color-text-primary)' }}
               >
-                {formatCOP(saldoTotal)}
+                {formatMoney(saldoTotal)}
               </p>
             </div>
             <div className="text-right">

@@ -6,9 +6,9 @@ import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { Card } from '@/components/ui/Card'
 import { SkeletonCard } from '@/components/ui/Skeleton'
-import { formatCOP } from '@/lib/calculos'
 import CapitalTab from '@/components/capital/CapitalTab'
 import ReportarGasto from '@/components/gastos/ReportarGasto'
+import { useCountry } from '@/hooks/useCountry'
 
 const ESTADO_COLORS = {
   pendiente: 'bg-[var(--color-warning-dim)] text-[var(--color-warning)] border-[color-mix(in_srgb,var(--color-warning)_30%,transparent)]',
@@ -67,6 +67,8 @@ const fmtFecha = (iso) => {
 
 export default function GastosPage() {
   const { esOwner, loading: authLoading } = useAuth()
+
+  const { formatMoney } = useCountry()
   const searchParams = useSearchParams()
 
   // Tab de página: 'dia' | 'capital'
@@ -141,8 +143,8 @@ export default function GastosPage() {
 
   const handleEliminar = async (gasto) => {
     const msg = gasto.estado === 'aprobado'
-      ? `Eliminar "${gasto.description}" por ${formatCOP(gasto.monto)}? Se revertirá el egreso en capital.`
-      : `Eliminar "${gasto.description}" por ${formatCOP(gasto.monto)}?`
+      ? `Eliminar "${gasto.description}" por ${formatMoney(gasto.monto)}? Se revertirá el egreso en capital.`
+      : `Eliminar "${gasto.description}" por ${formatMoney(gasto.monto)}?`
     if (!confirm(msg)) return
     setProcesando(gasto.id)
     try {
@@ -280,7 +282,7 @@ export default function GastosPage() {
                     textShadow: `0 0 24px color-mix(in srgb, ${TAB_COLORS[estadoTab].color} 25%, transparent)`,
                   }}
                 >
-                  {formatCOP(totales.suma)}
+                  {formatMoney(totales.suma)}
                 </p>
                 <p className="text-[11px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
                   {totales.cantidad} {totales.cantidad === 1 ? 'gasto' : 'gastos'}
@@ -369,7 +371,7 @@ export default function GastosPage() {
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-[15px] font-bold font-mono-display leading-none" style={{ color: eInfo.color }}>
-                          {formatCOP(g.monto)}
+                          {formatMoney(g.monto)}
                         </p>
                       </div>
                     </div>
