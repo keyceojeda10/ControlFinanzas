@@ -3,30 +3,37 @@ import { NextResponse }     from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { getUtcOffset } from '@/lib/i18n'
 
 export const dynamic = 'force-dynamic'
 
-const CO_OFFSET = 5 * 60 * 60 * 1000 // UTC-5
-
-function inicioHoyUTC() {
-  const now = new Date(Date.now() - CO_OFFSET)
+function inicioHoyUTC(country = 'co') {
+  const offsetMs = Math.abs(getUtcOffset(country)) * 60 * 60 * 1000
+  const absOffset = Math.abs(getUtcOffset(country))
+  const pad = (n) => String(n).padStart(2, '0')
+  const offsetStr = `-${pad(absOffset)}:00`
+  const now = new Date(Date.now() - offsetMs)
   const yyyy = now.getUTCFullYear()
-  const mm   = String(now.getUTCMonth() + 1).padStart(2, '0')
-  const dd   = String(now.getUTCDate()).padStart(2, '0')
-  return new Date(`${yyyy}-${mm}-${dd}T00:00:00-05:00`)
+  const mm   = pad(now.getUTCMonth() + 1)
+  const dd   = pad(now.getUTCDate())
+  return new Date(`${yyyy}-${mm}-${dd}T00:00:00${offsetStr}`)
 }
 
-function inicio7DiasUTC() {
-  const d = new Date(Date.now() - CO_OFFSET)
+function inicio7DiasUTC(country = 'co') {
+  const offsetMs = Math.abs(getUtcOffset(country)) * 60 * 60 * 1000
+  const absOffset = Math.abs(getUtcOffset(country))
+  const pad = (n) => String(n).padStart(2, '0')
+  const offsetStr = `-${pad(absOffset)}:00`
+  const d = new Date(Date.now() - offsetMs)
   d.setUTCDate(d.getUTCDate() - 6)
   const yyyy = d.getUTCFullYear()
-  const mm   = String(d.getUTCMonth() + 1).padStart(2, '0')
-  const dd   = String(d.getUTCDate()).padStart(2, '0')
-  return new Date(`${yyyy}-${mm}-${dd}T00:00:00-05:00`)
+  const mm   = pad(d.getUTCMonth() + 1)
+  const dd   = pad(d.getUTCDate())
+  return new Date(`${yyyy}-${mm}-${dd}T00:00:00${offsetStr}`)
 }
 
-function toColombiaDateStr(date) {
-  const d = new Date(date.getTime() - CO_OFFSET)
+function toLocalDateStr(date, country = 'co') {
+  const d = new Date(date.getTime() - Math.abs(getUtcOffset(country)) * 60 * 60 * 1000)
   return d.toISOString().slice(0, 10)
 }
 
@@ -35,10 +42,11 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   if (session.user.rol !== 'cobrador') return NextResponse.json({ error: 'Solo cobradores' }, { status: 403 })
 
-  const orgId  = session.user.organizationId
-  const userId = session.user.id
-  const hoy    = inicioHoyUTC()
-  const hace7  = inicio7DiasUTC()
+  const orgId   = session.user.organizationId
+  const userId  = session.user.id
+  const country = session.user.country ?? 'co'
+  const hoy     = inicioHoyUTC(country)
+  const hace7   = inicio7DiasUTC(country)
 
   const [pagosSemana, pagosHoy, ruta, clientesMora] = await Promise.all([
     prisma.pago.findMany({
@@ -103,14 +111,14 @@ export async function GET() {
   // Agrupar pagos semana por fecha Colombia
   const mapaFechas = {}
   for (const p of pagosSemana) {
-    const fecha = toColombiaDateStr(new Date(p.fechaPago))
+    const fecha = toLocalDateStr(new Date(p.fechaPago))
     mapaFechas[fecha] = (mapaFechas[fecha] ?? 0) + Number(p.montoPagado)
   }
 
   // Construir array de 7 días (incluyendo días sin pagos)
   const semana = []
   for (let i = 6; i >= 0; i--) {
-    const d = new Date(Date.now() - CO_OFFSET)
+    const d = new Date(Date.now() - Math.abs(getUtcOffset(country)) * 60 * 60 * 1000)
     d.setUTCDate(d.getUTCDate() - i)
     const fecha = d.toISOString().slice(0, 10)
     semana.push({ fecha, total: mapaFechas[fecha] ?? 0 })

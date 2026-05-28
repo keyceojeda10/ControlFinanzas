@@ -6,17 +6,11 @@ import { prisma }        from '@/lib/prisma'
 import { calcularDiasMora } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { nivelReportes } from '@/lib/planes'
+import { getUtcOffset, getLocalDayRange } from '@/lib/i18n'
 
-const COLOMBIA_OFFSET = 5 * 60 * 60 * 1000 // UTC-5
+const getDayRange = (fechaLocal, country = 'co') => getLocalDayRange(fechaLocal, country)
 
-// Convierte una fecha YYYY-MM-DD de Colombia a rango UTC
-const getColombiaDayRange = (fechaColombia) => {
-  const inicio = new Date(fechaColombia + 'T00:00:00-05:00')
-  const fin    = new Date(fechaColombia + 'T23:59:59.999-05:00')
-  return { inicio, fin }
-}
-
-const toColombiaDate = (date) => new Date(date.getTime() - COLOMBIA_OFFSET)
+const toLocalDate = (date, country = 'co') => new Date(date.getTime() - Math.abs(getUtcOffset(country)) * 60 * 60 * 1000)
 
 export async function GET(req) {
   const session = await getServerSession(authOptions)
@@ -32,20 +26,21 @@ export async function GET(req) {
   let fechaDesde, fechaHasta
   
   if (desde && hasta) {
-    const rangeDesde = getColombiaDayRange(desde)
-    const rangeHasta = getColombiaDayRange(hasta)
+    const rangeDesde = getDayRange(desde)
+    const rangeHasta = getDayRange(hasta)
     fechaDesde = rangeDesde.inicio
     fechaHasta = new Date(rangeHasta.fin.getTime() + 1)
   } else {
     // Default: inicio del mes en Colombia
-    const ahoraColombia = new Date(Date.now() - COLOMBIA_OFFSET)
+    const country = session.user.country ?? 'co'
+    const ahoraColombia = new Date(Date.now() - Math.abs(getUtcOffset(country)) * 60 * 60 * 1000)
     const primerDiaMes = new Date(ahoraColombia.getFullYear(), ahoraColombia.getMonth(), 1)
     const fechaIniColombia = primerDiaMes.toISOString().slice(0, 10)
-    const rangeIni = getColombiaDayRange(fechaIniColombia)
+    const rangeIni = getDayRange(fechaIniColombia)
     fechaDesde = rangeIni.inicio
     
     const fechaFinColombia = ahoraColombia.toISOString().slice(0, 10)
-    const rangeFin = getColombiaDayRange(fechaFinColombia)
+    const rangeFin = getDayRange(fechaFinColombia)
     fechaHasta = new Date(rangeFin.fin.getTime() + 1)
   }
 

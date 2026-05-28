@@ -8,6 +8,7 @@ import { obtenerDiasSinCobro, validarDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
 import { geocodeAddress }   from '@/lib/geocoding'
 import { trackEvent } from '@/lib/analytics'
+import { getUtcOffset } from '@/lib/i18n'
 
 // ─── GET /api/clientes ──────────────────────────────────────────
 export async function GET(request) {
@@ -99,7 +100,8 @@ export async function GET(request) {
   })
 
   // Inicio del dia hoy en hora Colombia para detectar pagoHoy
-  const hoyCO = new Date(Date.now() - 5 * 60 * 60 * 1000)
+  const country = session.user.country ?? 'co'
+  const hoyCO = new Date(Date.now() - Math.abs(getUtcOffset(country)) * 60 * 60 * 1000)
   const inicioHoyUTC = new Date(Date.UTC(hoyCO.getUTCFullYear(), hoyCO.getUTCMonth(), hoyCO.getUTCDate(), 5, 0, 0))
 
   // Recalcular estado real del cliente y enriquecer con datos para la card.

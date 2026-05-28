@@ -2,6 +2,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { getUtcOffset } from '@/lib/i18n'
 
 const escaparCSV = (val) => {
   if (val === null || val === undefined) return ''
@@ -12,10 +13,9 @@ const escaparCSV = (val) => {
   return s
 }
 
-const fmtFechaCO = (d) => {
+const fmtFechaLocal = (d, country = 'co') => {
   if (!d) return ''
-  // Convertir a hora Colombia (UTC-5) y formatear ISO local
-  const local = new Date(new Date(d).getTime() - 5 * 60 * 60 * 1000)
+  const local = new Date(new Date(d).getTime() - Math.abs(getUtcOffset(country)) * 60 * 60 * 1000)
   return local.toISOString().replace('T', ' ').slice(0, 19)
 }
 
@@ -89,7 +89,7 @@ export async function GET(request) {
   ].join(',')
 
   const filas = pagos.map((p) => [
-    fmtFechaCO(p.fechaPago),
+    fmtFechaLocal(p.fechaPago),
     escaparCSV(p.prestamo?.cliente?.nombre),
     escaparCSV(p.prestamo?.cliente?.telefono),
     escaparCSV(p.prestamo?.cliente?.ruta?.nombre),

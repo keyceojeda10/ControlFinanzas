@@ -5,16 +5,13 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { calcularDiasMora, calcularSaldoPendiente } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
+import { getUtcOffset } from '@/lib/i18n'
 
-// Sin cache: cada request lee BD en vivo. Evita que LiteSpeed o cualquier
-// intermediario sirva una respuesta vieja, que es la causa raiz por la que
-// algunos clientes ven KPIs "pegados" entre dias.
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-// Obtener fecha actual en timezone Colombia (UTC-5)
-function getColombiaDate() {
-  return new Date(Date.now() - 5 * 60 * 60 * 1000)
+function getLocalDate(country = 'co') {
+  return new Date(Date.now() - Math.abs(getUtcOffset(country)) * 60 * 60 * 1000)
 }
 
 export async function GET() {
@@ -34,7 +31,8 @@ export async function GET() {
 
   // Rangos UTC que representan "hoy" y "este mes" en hora Colombia (UTC-5)
   // Colombia midnight = UTC 05:00. Fin del día Colombia = UTC 04:59:59 del día siguiente.
-  const hoy = getColombiaDate()
+  const country = session.user.country ?? 'co'
+  const hoy = getLocalDate(country)
   const y = hoy.getUTCFullYear()
   const m = hoy.getUTCMonth()
   const d = hoy.getUTCDate()
@@ -342,8 +340,8 @@ export async function GET() {
   const heatmap30d = Array(30).fill(0)
   for (const p of pagos30Dias) {
     const fecha = new Date(p.fechaPago)
-    // Convertir a hora Colombia restando 5h
-    const fechaCO = new Date(fecha.getTime() - 5 * 60 * 60 * 1000)
+    const offsetMs = Math.abs(getUtcOffset(country)) * 60 * 60 * 1000
+    const fechaCO = new Date(fecha.getTime() - offsetMs)
     const diaCO = Date.UTC(fechaCO.getUTCFullYear(), fechaCO.getUTCMonth(), fechaCO.getUTCDate())
     const hoyCO = Date.UTC(y, m, d)
     const diasAtras = Math.floor((hoyCO - diaCO) / (24 * 60 * 60 * 1000))

@@ -5,18 +5,18 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
 import { getCachedMutation, setCachedMutation, buildMutationKey } from '@/lib/mutation-idempotency'
+import { getUtcOffset, getLocalDateStr } from '@/lib/i18n'
 
-// Funciones de fecha en timezone Colombia (UTC-5)
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
-const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
-const getColombiaDateOnly = () => {
-  const d = getColombiaDate()
-  return d.toISOString().slice(0, 10)
-}
-const diasAtrasDesdeHoy = (fechaHoy, fechaObjetivo) => {
-  const hoy = new Date(fechaHoy + 'T00:00:00-05:00')
-  const objetivo = new Date(fechaObjetivo + 'T00:00:00-05:00')
+const getLocalDate = (country = 'co') => new Date(Date.now() - Math.abs(getUtcOffset(country)) * 60 * 60 * 1000)
+const getLocalDateOnly = (country = 'co') => getLocalDateStr(country)
+const diasAtrasDesdeHoy = (fechaHoy, fechaObjetivo, country = 'co') => {
+  const absOffset = Math.abs(getUtcOffset(country))
+  const pad = (n) => String(n).padStart(2, '0')
+  const offsetStr = `-${pad(absOffset)}:00`
+  const hoy = new Date(fechaHoy + `T00:00:00${offsetStr}`)
+  const objetivo = new Date(fechaObjetivo + `T00:00:00${offsetStr}`)
   return Math.floor((hoy - objetivo) / DAY_MS)
 }
 
@@ -55,7 +55,7 @@ export async function GET(request) {
     fechaFin.setHours(4, 59, 59, 999)
     where.fecha = { gte: fechaInicio, lt: fechaFin }
   } else if (!estadoParam) {
-    const hoy = getColombiaDateOnly()
+    const hoy = getLocalDateOnly()
     const fecha = new Date(hoy + 'T00:00:00')
     const fechaInicio = new Date(fecha)
     fechaInicio.setHours(5, 0, 0, 0)
@@ -125,8 +125,8 @@ export async function POST(req) {
 
   const fechaSolicitada = typeof fecha === 'string' && FECHA_REGEX.test(fecha)
     ? fecha
-    : getColombiaDateOnly()
-  const hoyColombia = getColombiaDateOnly()
+    : getLocalDateOnly()
+  const hoyColombia = getLocalDateOnly()
   const diasAtras = diasAtrasDesdeHoy(hoyColombia, fechaSolicitada)
 
   if (diasAtras < 0) {

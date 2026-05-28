@@ -4,22 +4,14 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { nivelReportes }   from '@/lib/planes'
+import { getUtcOffset, getLocalDayRange } from '@/lib/i18n'
 
-const COLOMBIA_OFFSET = 5 * 60 * 60 * 1000 // UTC-5
+const getDayRange = (fechaLocal, country = 'co') => getLocalDayRange(fechaLocal, country)
 
-// Convierte una fecha YYYY-MM-DD de Colombia a rango UTC
-const getColombiaDayRange = (fechaColombia) => {
-  const inicio = new Date(fechaColombia + 'T00:00:00-05:00')
-  const fin    = new Date(fechaColombia + 'T23:59:59.999-05:00')
-  return { inicio, fin }
-}
+const toLocalDate = (date, country = 'co') => new Date(date.getTime() - Math.abs(getUtcOffset(country)) * 60 * 60 * 1000)
 
-// Ajusta fecha UTC a Colombia para mostrar
-const toColombiaDate = (date) => new Date(date.getTime() - COLOMBIA_OFFSET)
-
-// Función para formatear fecha a YYYY-MM-DD en hora de Colombia
-const formatColombiaDate = (date) => {
-  const d = toColombiaDate(new Date(date))
+const formatLocalDate = (date, country = 'co') => {
+  const d = toLocalDate(new Date(date), country)
   const year = d.getFullYear()
   const month = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
@@ -42,20 +34,21 @@ export async function GET(req) {
   let fechaDesde, fechaHasta
   
   if (desde && hasta) {
-    const rangeDesde = getColombiaDayRange(desde)
-    const rangeHasta = getColombiaDayRange(hasta)
+    const rangeDesde = getDayRange(desde)
+    const rangeHasta = getDayRange(hasta)
     fechaDesde = rangeDesde.inicio
     // Para "hasta", queremos incluir todo el día
     fechaHasta = new Date(rangeHasta.fin.getTime() + 1)
   } else {
     // Default: últimos 30 días desde hoy en Colombia
-    const ahoraColombia = new Date(Date.now() - COLOMBIA_OFFSET)
+    const country = session.user.country ?? 'co'
+    const ahoraColombia = new Date(Date.now() - Math.abs(getUtcOffset(country)) * 60 * 60 * 1000)
     const fechaFinColombia = ahoraColombia.toISOString().slice(0, 10)
-    const rangeFin = getColombiaDayRange(fechaFinColombia)
+    const rangeFin = getDayRange(fechaFinColombia)
     fechaHasta = new Date(rangeFin.fin.getTime() + 1)
     
     const fechaIniColombia = new Date(ahoraColombia.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
-    const rangeIni = getColombiaDayRange(fechaIniColombia)
+    const rangeIni = getDayRange(fechaIniColombia)
     fechaDesde = rangeIni.inicio
   }
 
@@ -73,7 +66,7 @@ export async function GET(req) {
   const grupos = {}
   for (const p of pagos) {
     let key
-    const f = toColombiaDate(new Date(p.fechaPago))
+    const f = toLocalDate(new Date(p.fechaPago))
     if (periodo === 'mensual') {
       key = `${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, '0')}`
     } else if (periodo === 'semanal') {
@@ -81,7 +74,7 @@ export async function GET(req) {
       const week = Math.ceil(((f - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7)
       key = `${f.getFullYear()}-S${String(week).padStart(2, '0')}`
     } else {
-      key = formatColombiaDate(p.fechaPago)
+      key = formatLocalDate(p.fechaPago)
     }
     grupos[key] = (grupos[key] ?? 0) + p.montoPagado
   }

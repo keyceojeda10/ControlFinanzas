@@ -5,18 +5,16 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
 import { registrarMovimientoManualCapital } from '@/lib/capital'
+import { getLocalDateStr, getUtcOffset } from '@/lib/i18n'
 
-const COLOMBIA_OFFSET = 5 * 60 * 60 * 1000 // UTC-5
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
 
-const getHoyColombia = () => {
-  const ahora = new Date(Date.now() - COLOMBIA_OFFSET)
-  return ahora.toISOString().slice(0, 10)
-}
+const getHoyLocal = (country = 'co') => getLocalDateStr(country)
 
-const getFechaOperacionColombia = (fechaColombia) => {
-  // Se fija a mediodía local para evitar desfaces de zona horaria al persistir.
-  return new Date(`${fechaColombia}T12:00:00-05:00`)
+const getFechaOperacionLocal = (fechaLocal, country = 'co') => {
+  const absOffset = Math.abs(getUtcOffset(country))
+  const pad = (n) => String(n).padStart(2, '0')
+  return new Date(`${fechaLocal}T12:00:00-${pad(absOffset)}:00`)
 }
 
 export async function POST(request) {
@@ -36,13 +34,13 @@ export async function POST(request) {
   const descripcion = (body?.descripcion || '').trim()
   const fechaSolicitada = typeof body?.fecha === 'string' && FECHA_REGEX.test(body.fecha)
     ? body.fecha
-    : getHoyColombia()
+    : getHoyLocal()
 
-  if (fechaSolicitada > getHoyColombia()) {
+  if (fechaSolicitada > getHoyLocal()) {
     return Response.json({ error: 'No se pueden registrar movimientos en fechas futuras' }, { status: 400 })
   }
 
-  const createdAtOperacion = getFechaOperacionColombia(fechaSolicitada)
+  const createdAtOperacion = getFechaOperacionLocal(fechaSolicitada)
 
   const tipoMovimiento = ['inyeccion', 'retiro', 'ajuste'].includes(movimientoSolicitado)
     ? movimientoSolicitado

@@ -5,16 +5,16 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
 import { LIMITES_RUTAS, PLANES_CONFIG } from '@/lib/planes'
+import { getUtcOffset } from '@/lib/i18n'
 
-// Funciones de fecha en timezone Colombia (UTC-5)
-// Medianoche Colombia = 05:00 UTC
-const hoy = () => {
+const hoy = (country = 'co') => {
   const now = new Date()
-  const col = new Date(now.getTime() - 5 * 60 * 60 * 1000)
+  const absOffset = Math.abs(getUtcOffset(country))
+  const col = new Date(now.getTime() - absOffset * 60 * 60 * 1000)
   const y = col.getUTCFullYear(), m = col.getUTCMonth(), d = col.getUTCDate()
-  return new Date(Date.UTC(y, m, d, 5, 0, 0, 0))
+  return new Date(Date.UTC(y, m, d, absOffset, 0, 0, 0))
 }
-const manana = () => new Date(hoy().getTime() + 24 * 60 * 60 * 1000)
+const manana = (country = 'co') => new Date(hoy(country).getTime() + 24 * 60 * 60 * 1000)
 
 // ─── GET /api/rutas ─────────────────────────────────────────────
 export async function GET(request) {

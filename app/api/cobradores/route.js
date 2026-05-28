@@ -7,16 +7,16 @@ import bcrypt               from 'bcryptjs'
 import { logActividad } from '@/lib/activity-log'
 
 import { LIMITES_USUARIOS, PLAN_NAMES, PLANES_CONFIG } from '@/lib/planes'
+import { getUtcOffset } from '@/lib/i18n'
 
-// Funciones de fecha en timezone Colombia (UTC-5)
-const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
-const hoy = () => {
-  const d = getColombiaDate()
+const getLocalDate = (country = 'co') => new Date(Date.now() - Math.abs(getUtcOffset(country)) * 60 * 60 * 1000)
+const hoy = (country = 'co') => {
+  const d = getLocalDate(country)
   d.setHours(0, 0, 0, 0)
   return d
 }
-const manana = () => {
-  const d = getColombiaDate()
+const manana = (country = 'co') => {
+  const d = getLocalDate(country)
   d.setDate(d.getDate() + 1)
   d.setHours(0, 0, 0, 0)
   return d

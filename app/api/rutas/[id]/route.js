@@ -14,17 +14,17 @@ import {
   calcularMontoParaPonerseAlDia,
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo, validarDiasSinCobro } from '@/lib/dias-sin-cobro'
+import { getUtcOffset, getLocalDayRange } from '@/lib/i18n'
 
-// Funciones de fecha en timezone Colombia (UTC-5)
-// Medianoche Colombia = 05:00 UTC
-const hoy = () => {
+const hoy = (country = 'co') => {
   const now = new Date()
-  const col = new Date(now.getTime() - 5 * 60 * 60 * 1000)
+  const absOffset = Math.abs(getUtcOffset(country))
+  const col = new Date(now.getTime() - absOffset * 60 * 60 * 1000)
   const y = col.getUTCFullYear(), m = col.getUTCMonth(), d = col.getUTCDate()
-  return new Date(Date.UTC(y, m, d, 5, 0, 0, 0)) // midnight Colombia in UTC
+  return new Date(Date.UTC(y, m, d, absOffset, 0, 0, 0))
 }
-const manana = () => {
-  const h = hoy()
+const manana = (country = 'co') => {
+  const h = hoy(country)
   return new Date(h.getTime() + 24 * 60 * 60 * 1000)
 }
 
@@ -310,9 +310,10 @@ export async function PATCH(request, { params }) {
   const forzar = searchParams.get('forzar') === '1'
   const cambiaCobrador = cobradorId !== undefined && (cobradorId || null) !== ruta.cobradorId
   if (cambiaCobrador && ruta.cobradorId && !forzar) {
-    const hoyCo = new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10)
-    const inicioHoy = new Date(hoyCo + 'T00:00:00-05:00')
-    const finHoy = new Date(hoyCo + 'T23:59:59.999-05:00')
+    const country = session.user.country ?? 'co'
+    const absOffset = Math.abs(getUtcOffset(country))
+    const hoyCo = new Date(Date.now() - absOffset * 60 * 60 * 1000).toISOString().slice(0, 10)
+    const { inicio: inicioHoy, fin: finHoy } = getLocalDayRange(hoyCo, country)
     const [cierreHoy, pagosHoy] = await Promise.all([
       prisma.cierreCaja.findFirst({
         where: { cobradorId: ruta.cobradorId, fecha: { gte: inicioHoy, lte: finHoy } },

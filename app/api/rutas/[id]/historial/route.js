@@ -2,6 +2,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { getUtcOffset } from '@/lib/i18n'
 
 export async function GET(request, { params }) {
   const session = await getServerSession(authOptions)
@@ -87,7 +88,8 @@ export async function GET(request, { params }) {
   // Agrupar por día Colombia
   const porDia = {}
   for (const p of pagos) {
-    const col = new Date(p.fechaPago.getTime() - 5 * 60 * 60 * 1000)
+    const country = session.user.country ?? 'co'
+    const col = new Date(p.fechaPago.getTime() - Math.abs(getUtcOffset(country)) * 60 * 60 * 1000)
     const key = col.toISOString().slice(0, 10)
     if (!porDia[key]) porDia[key] = { cobrado: 0, clientes: {} }
     porDia[key].cobrado += p.montoPagado

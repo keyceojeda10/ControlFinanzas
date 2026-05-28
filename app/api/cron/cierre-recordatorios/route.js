@@ -6,24 +6,23 @@ import { prisma } from '@/lib/prisma'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
 import { enviarPush } from '@/lib/push'
 
+import { getUtcOffset, getLocalDayRange } from '@/lib/i18n'
+
 const CRON_SECRET = process.env.CRON_SECRET
-const COLOMBIA_OFFSET = 5 * 60 * 60 * 1000
 const DAY_MS = 24 * 60 * 60 * 1000
 const MAX_RECORDATORIOS_POR_EJECUCION = 300
 
-const getColombiaDateStr = (valor = new Date()) => {
-  const col = new Date(valor.getTime() - COLOMBIA_OFFSET)
+const getLocalDateStr = (valor = new Date(), country = 'co') => {
+  const col = new Date(valor.getTime() - Math.abs(getUtcOffset(country)) * 60 * 60 * 1000)
   return col.toISOString().slice(0, 10)
 }
 
-const getColombiaDayRange = (fechaColombia) => {
-  const inicio = new Date(fechaColombia + 'T00:00:00-05:00')
-  const fin = new Date(fechaColombia + 'T23:59:59.999-05:00')
-  return { inicio, fin }
-}
+const getDayRange = (fechaLocal, country = 'co') => getLocalDayRange(fechaLocal, country)
 
-const getFechaAnterior = (fechaColombia) => {
-  const base = new Date(fechaColombia + 'T00:00:00-05:00')
+const getFechaAnterior = (fechaLocal, country = 'co') => {
+  const absOffset = Math.abs(getUtcOffset(country))
+  const pad = (n) => String(n).padStart(2, '0')
+  const base = new Date(fechaLocal + `T00:00:00-${pad(absOffset)}:00`)
   const anterior = new Date(base.getTime() - DAY_MS)
   return anterior.toISOString().slice(0, 10)
 }
@@ -83,11 +82,11 @@ export async function POST(req) {
   }
 
   const now = new Date()
-  const fechaHoy = getColombiaDateStr(now)
+  const fechaHoy = getLocalDateStr(now)
   const fechaAyer = getFechaAnterior(fechaHoy)
 
-  const { inicio: inicioHoy, fin: finHoy } = getColombiaDayRange(fechaHoy)
-  const { inicio: inicioAyer, fin: finAyer } = getColombiaDayRange(fechaAyer)
+  const { inicio: inicioHoy, fin: finHoy } = getDayRange(fechaHoy)
+  const { inicio: inicioAyer, fin: finAyer } = getDayRange(fechaAyer)
 
   const cobradores = await prisma.user.findMany({
     where: {

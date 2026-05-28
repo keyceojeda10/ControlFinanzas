@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { getAsistenteUsage } from '@/lib/rate-limit'
 import { PLANES_CONFIG, planTieneIA } from '@/lib/planes'
 import { getCachedContexto } from '@/lib/asistente-cache'
+import { getUtcOffset } from '@/lib/i18n'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,7 +35,7 @@ export async function GET() {
         clientesSinRuta: ctx.alertas.clientesSinRuta,
         prestamosSinPagos: ctx.alertas.prestamosSinPagos,
         pctCobroHoy,
-        diaSemana: new Date(Date.now() - 5 * 60 * 60 * 1000).getDay(),
+        diaSemana: new Date(Date.now() - Math.abs(getUtcOffset(session.user.country ?? 'co')) * 60 * 60 * 1000).getDay(),
       }
     }
   } catch {}

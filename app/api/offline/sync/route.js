@@ -4,13 +4,14 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado, calcularProximoCobro, formatFechaCobro, pagoHoy, tieneCobroPendienteHoy } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro } from '@/lib/dias-sin-cobro'
+import { getUtcOffset } from '@/lib/i18n'
 
-// Medianoche Colombia = 05:00 UTC
-function hoyColombiaUTC() {
+function hoyLocalUTC(country = 'co') {
   const now = new Date()
-  const col = new Date(now.getTime() - 5 * 60 * 60 * 1000)
+  const absOffset = Math.abs(getUtcOffset(country))
+  const col = new Date(now.getTime() - absOffset * 60 * 60 * 1000)
   const y = col.getUTCFullYear(), m = col.getUTCMonth(), d = col.getUTCDate()
-  return new Date(Date.UTC(y, m, d, 5, 0, 0, 0))
+  return new Date(Date.UTC(y, m, d, absOffset, 0, 0, 0))
 }
 
 export async function GET() {
@@ -90,7 +91,7 @@ export async function GET() {
     },
   })
 
-  const inicioHoy = hoyColombiaUTC()
+  const inicioHoy = hoyLocalUTC()
   const finHoy = new Date(inicioHoy.getTime() + 86400000)
 
   // Index clientes enriquecidos por ID para lookup rapido

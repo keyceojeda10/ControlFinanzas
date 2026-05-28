@@ -21,6 +21,7 @@ import { registrarMovimientoCapital } from '@/lib/capital'
 import { logActividad } from '@/lib/activity-log'
 import { enviarPushOrg } from '@/lib/push'
 import { trackEvent } from '@/lib/analytics'
+import { getUtcOffset } from '@/lib/i18n'
 
 async function cobradorPuedeGestionarPrestamos(userId) {
   const cobrador = await prisma.user.findUnique({
@@ -241,7 +242,7 @@ export async function POST(request, { params }) {
     // 2b. Abono a capital: reducir totalAPagar por el ahorro de intereses
     // La tasa es mensual proporcional, así que el ahorro depende de los días restantes
     if (tipo === 'capital') {
-      const ahora = new Date(Date.now() - 5 * 60 * 60 * 1000) // Colombia
+      const ahora = new Date(Date.now() - Math.abs(getUtcOffset(session.user.country ?? 'co')) * 60 * 60 * 1000)
       const inicio = new Date(prestamo.fechaInicio)
       const diasTranscurridos = Math.max(0, Math.floor((ahora - inicio) / (1000 * 60 * 60 * 24)))
       const diasRestantes = Math.max(0, prestamo.diasPlazo - diasTranscurridos)

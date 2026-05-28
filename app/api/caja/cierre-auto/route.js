@@ -2,13 +2,13 @@
 
 import { prisma } from '@/lib/prisma'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
+import { getUtcOffset } from '@/lib/i18n'
 
 const CRON_SECRET = process.env.CRON_SECRET
 
-// Determina si una fecha dada (Date) cae en un dia sin cobro.
-function esDiaSinCobro(fecha, diasExcluidos) {
+function esDiaSinCobro(fecha, diasExcluidos, offsetHoras = -5) {
   if (!diasExcluidos || diasExcluidos.length === 0) return false
-  const col = new Date(fecha.getTime() - 5 * 60 * 60 * 1000)
+  const col = new Date(fecha.getTime() - Math.abs(offsetHoras) * 60 * 60 * 1000)
   return diasExcluidos.includes(col.getUTCDay())
 }
 
@@ -177,7 +177,7 @@ export async function POST(request) {
     // Obtener la fecha de ayer en Colombia (UTC-5)
     // Si son las 5:00 AM UTC, en Colombia son las 12:00 AM (medianoche)
     const now = new Date()
-    const colombiaNow = new Date(now.getTime() - 5 * 60 * 60 * 1000)
+    const colombiaNow = new Date(now.getTime() - Math.abs(getUtcOffset('co')) * 60 * 60 * 1000)
     
     // El cierre es del día anterior
     const fechaCierre = new Date(colombiaNow)
@@ -293,7 +293,7 @@ export async function GET() {
   }
 
   const now = new Date()
-  const colombiaNow = new Date(now.getTime() - 5 * 60 * 60 * 1000)
+  const colombiaNow = new Date(now.getTime() - Math.abs(getUtcOffset('co')) * 60 * 60 * 1000)
   return Response.json({
     serverTime: now.toISOString(),
     colombiaTime: colombiaNow.toISOString(),

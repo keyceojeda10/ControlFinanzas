@@ -4,6 +4,7 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { calcularEstadoCliente, calcularSaldoPendiente } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
+import { getUtcOffset } from '@/lib/i18n'
 import { registrarMovimientoCapital } from '@/lib/capital'
 
 // ─── PATCH /api/pagos/[id] — Editar fecha del pago (solo owner) ──
@@ -113,7 +114,7 @@ export async function DELETE(request, { params }) {
     // POST usa: ahora = new Date(Date.now() - 5h); inicio = new Date(fechaInicio).
     // Aqui usamos pago.fechaPago con la misma resta de 5h — asi `diasTrans` coincide.
     if (pago.tipo === 'capital') {
-      const fechaPagoColombia = new Date(new Date(pago.fechaPago).getTime() - 5 * 60 * 60 * 1000)
+      const fechaPagoColombia = new Date(new Date(pago.fechaPago).getTime() - Math.abs(getUtcOffset(session.user.country ?? 'co')) * 60 * 60 * 1000)
       const inicio = new Date(prestamo.fechaInicio)
       const diasTrans = Math.max(0, Math.floor((fechaPagoColombia - inicio) / (1000 * 60 * 60 * 24)))
       const diasRest = Math.max(0, prestamo.diasPlazo - diasTrans)

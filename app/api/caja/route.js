@@ -5,36 +5,32 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
 import { obtenerDiasSinCobro, esHoySinCobro } from '@/lib/dias-sin-cobro'
+import { getUtcOffset, getLocalDateStr, getLocalDayRange, formatFechaCorta } from '@/lib/i18n'
 
-const COLOMBIA_OFFSET = 5 * 60 * 60 * 1000 // UTC-5
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
 
-const fmtFechaColombia = (d) => {
-  // Si recibimos YYYY-MM-DD, agregar timezone Colombia para evitar que se interprete como UTC
+const fmtFechaLocal = (d, country = 'co') => {
+  const absOffset = Math.abs(getUtcOffset(country))
+  const pad = (n) => String(n).padStart(2, '0')
+  const offsetStr = `-${pad(absOffset)}:00`
   const fecha = typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)
-    ? new Date(d + 'T12:00:00-05:00')
+    ? new Date(d + `T12:00:00${offsetStr}`)
     : new Date(d)
-  return fecha.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'America/Bogota' })
+  return formatFechaCorta(fecha, country)
 }
 
-// Convierte una fecha YYYY-MM-DD de Colombia a rango UTC
-// Ej: "2026-03-04" -> { inicio: 2026-03-04T05:00:00Z, fin: 2026-03-05T04:59:59Z }
-const getColombiaDayRange = (fechaColombia) => {
-  const inicio = new Date(fechaColombia + 'T00:00:00-05:00')
-  const fin    = new Date(fechaColombia + 'T23:59:59.999-05:00')
-  return { inicio, fin }
-}
+const getDayRange = (fechaLocal, country = 'co') => getLocalDayRange(fechaLocal, country)
 
-// Obtiene la fecha de hoy en Colombia como YYYY-MM-DD
-const getHoyColombia = () => {
-  const ahora = new Date(Date.now() - COLOMBIA_OFFSET)
-  return ahora.toISOString().slice(0, 10)
-}
+const getHoyLocal = (country = 'co') => getLocalDateStr(country)
 
-const diasAtrasDesdeHoy = (fechaObjetivo, fechaHoy = getHoyColombia()) => {
-  const hoy = new Date(fechaHoy + 'T00:00:00-05:00')
-  const objetivo = new Date(fechaObjetivo + 'T00:00:00-05:00')
+const diasAtrasDesdeHoy = (fechaObjetivo, country = 'co') => {
+  const absOffset = Math.abs(getUtcOffset(country))
+  const pad = (n) => String(n).padStart(2, '0')
+  const offsetStr = `-${pad(absOffset)}:00`
+  const fechaHoy = getHoyLocal(country)
+  const hoy = new Date(fechaHoy + `T00:00:00${offsetStr}`)
+  const objetivo = new Date(fechaObjetivo + `T00:00:00${offsetStr}`)
   return Math.floor((hoy - objetivo) / DAY_MS)
 }
 
@@ -195,7 +191,7 @@ async function getCajaGeneralStats(organizationId, fechaColombia) {
     return {
       saldoActual: Math.round(capital.saldo || 0),
       fechaInicioAcumulado: capital.createdAt || null,
-      fechaInicioDisplay: capital.createdAt ? fmtFechaColombia(capital.createdAt) : null,
+      fechaInicioDisplay: capital.createdAt ? fmtFechaLocal(capital.createdAt) : null,
     }
   }
 
@@ -204,7 +200,7 @@ async function getCajaGeneralStats(organizationId, fechaColombia) {
     ? fechaColombia
     : new Date(fechaColombia).toISOString().slice(0, 10)
 
-  const { fin } = getColombiaDayRange(fechaCorte)
+  const { fin } = getDayRange(fechaCorte)
 
   const primerCierre = await prisma.cierreCaja.findFirst({
     where: { organizationId },
@@ -265,7 +261,7 @@ async function getCajaGeneralStats(organizationId, fechaColombia) {
   return {
     saldoActual: saldoCierresAcumulado + netoMovimientosCajaAcumulado,
     fechaInicioAcumulado,
-    fechaInicioDisplay: fmtFechaColombia(fechaInicioAcumulado),
+    fechaInicioDisplay: fmtFechaLocal(fechaInicioAcumulado),
   }
 }
 
@@ -275,7 +271,7 @@ async function getCajaGeneralStats(organizationId, fechaColombia) {
 async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaja = true) {
   // Convertir fecha Colombia a UTC
   const fechaStr = typeof fecha === 'string' ? fecha : fecha.toISOString().slice(0, 10)
-  const { inicio, fin } = getColombiaDayRange(fechaStr)
+  const { inicio, fin } = getDayRange(fechaStr)
 
   // Obtener pagos del día usando rango UTC correcto
   const wherePagos = {
@@ -414,9 +410,9 @@ export async function GET(request) {
   const cobradorParam = searchParams.get('cobradorId')
 
   // Usar fecha de Colombia (hoy por defecto)
-  const fechaBase = fechaParam || getHoyColombia()
+  const fechaBase = fechaParam || getHoyLocal()
 
-  const { inicio, fin } = getColombiaDayRange(fechaBase)
+  const { inicio, fin } = getDayRange(fechaBase)
 
   const whereCierres = {
     organizationId,
@@ -602,7 +598,7 @@ export async function GET(request) {
     stats: {
       dia: statsDia,
     },
-    fechaDisplay: fmtFechaColombia(fechaBase),
+    fechaDisplay: fmtFechaLocal(fechaBase),
     fecha: typeof fechaBase === 'string' ? fechaBase : new Date(fechaBase).toISOString().slice(0, 10)
   }
 
@@ -659,7 +655,7 @@ export async function POST(request) {
 
   const fechaColombia = typeof body.fecha === 'string' && FECHA_REGEX.test(body.fecha)
     ? body.fecha
-    : getHoyColombia()
+    : getHoyLocal()
 
   const diasAtras = diasAtrasDesdeHoy(fechaColombia)
   if (diasAtras < 0) {
@@ -671,7 +667,7 @@ export async function POST(request) {
     return Response.json({ error: 'Esta fecha ya no está disponible para ajustes' }, { status: 403 })
   }
 
-  const { inicio, fin } = getColombiaDayRange(fechaColombia)
+  const { inicio, fin } = getDayRange(fechaColombia)
 
   const existeCierre = await prisma.cierreCaja.findFirst({
     where: {
@@ -729,7 +725,7 @@ export async function POST(request) {
       accion: 'ajuste_cierre_caja',
       entidadTipo: 'caja',
       entidadId: cierreActualizado.id,
-      detalle: `Ajuste cierre ${cobrador.nombre} (${fmtFechaColombia(fechaColombia)}) - recogido $${Math.round(totalRecogido).toLocaleString('es-CO')}`,
+      detalle: `Ajuste cierre ${cobrador.nombre} (${fmtFechaLocal(fechaColombia)}) - recogido $${Math.round(totalRecogido).toLocaleString('es-CO')}`,
       ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
     })
 
