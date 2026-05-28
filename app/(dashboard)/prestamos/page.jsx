@@ -274,33 +274,73 @@ export default function PrestamosPage() {
         </div>
       )}
 
-      {/* Lista */}
-      {!loading && prestamos.length > 0 && (
-        <div className="space-y-2.5">
-          {prestamos.map((p) => {
-            const cardActions = []
-            if (p.cliente?.telefono) {
-              cardActions.push({
-                icon: IconWA,
-                label: 'WhatsApp',
-                color: '#25D366',
-                onClick: () => setWaContext({ cliente: p.cliente, prestamo: p }),
-              })
-            }
-            if (p.estado === 'activo') {
-              cardActions.push({
-                icon: IconPagar,
-                label: 'Registrar pago',
-                color: '#22c55e',
-                onClick: () => { window.location.href = `/prestamos/${p.id}?openPago=1` },
-              })
-            }
-            return (
-              <PrestamoCard key={p.id} prestamo={p} actions={cardActions} />
-            )
-          })}
-        </div>
-      )}
+      {/* Lista agrupada por cliente */}
+      {!loading && prestamos.length > 0 && (() => {
+        // Agrupa preservando el orden de aparicion (API ya ordena por cliente.nombre)
+        const grupos = []
+        const indice = new Map()
+        for (const p of prestamos) {
+          const key = p.clienteId
+          if (!indice.has(key)) {
+            indice.set(key, grupos.length)
+            grupos.push({ cliente: p.cliente, prestamos: [] })
+          }
+          grupos[indice.get(key)].prestamos.push(p)
+        }
+        return (
+          <div className="space-y-5">
+            {grupos.map(({ cliente, prestamos: prestCliente }) => (
+              <div key={cliente.id}>
+                {/* Mini-header solo cuando el cliente tiene 2+ prestamos */}
+                {prestCliente.length > 1 && (
+                  <div className="flex items-center gap-2 mb-2 px-1">
+                    <span
+                      className="text-[10px] font-bold uppercase tracking-wider truncate"
+                      style={{ color: 'var(--color-text-muted)' }}
+                    >
+                      {cliente.nombre}
+                    </span>
+                    <span
+                      className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap"
+                      style={{
+                        background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
+                        color: 'var(--color-accent)',
+                      }}
+                    >
+                      {prestCliente.length} prestamos
+                    </span>
+                    <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
+                  </div>
+                )}
+                <div className="space-y-2.5">
+                  {prestCliente.map((p) => {
+                    const cardActions = []
+                    if (p.cliente?.telefono) {
+                      cardActions.push({
+                        icon: IconWA,
+                        label: 'WhatsApp',
+                        color: '#25D366',
+                        onClick: () => setWaContext({ cliente: p.cliente, prestamo: p }),
+                      })
+                    }
+                    if (p.estado === 'activo') {
+                      cardActions.push({
+                        icon: IconPagar,
+                        label: 'Registrar pago',
+                        color: '#22c55e',
+                        onClick: () => { window.location.href = `/prestamos/${p.id}?openPago=1` },
+                      })
+                    }
+                    return (
+                      <PrestamoCard key={p.id} prestamo={p} actions={cardActions} />
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      })()}
 
       {/* Estado vacío */}
       {!loading && !error && prestamos.length === 0 && (

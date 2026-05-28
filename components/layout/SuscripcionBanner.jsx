@@ -1,52 +1,39 @@
 'use client'
 // components/layout/SuscripcionBanner.jsx
-// Aviso in-app de vencimiento de suscripcion. No spamea:
-// - Solo aparece cuando quedan <=7 dias o ya vencio (en periodo de gracia).
-// - Descartable por sesion: si el usuario cierra, no reaparece hasta que recargue el navegador
-//   o cambie la ventana de alerta (ej: pasar de 7 dias a 3 dias).
-// - No aparece si hay suscripcion recurrente autorizada activa (MP cobra solo).
+// Aviso GLOBAL critico de vencimiento (sale en todas las paginas).
+// Solo aparece en estados criticos: vencida o ≤1 dia para vencer.
+// Para rangos de aviso (2-30 dias) se delega al banner del dashboard
+// (BandaSuscripcion en app/(dashboard)/dashboard/page.jsx) que muestra
+// info detallada con barra de progreso.
+//
+// Comportamiento:
+// - No se muestra si hay suscripcion recurrente autorizada activa.
+// - Descartable por sesion via sessionStorage.
+// - Mensaje accionable (sin dias, sin barra) → diferente al del dashboard.
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { usePathname } from 'next/navigation'
 
-function nivel(estado) {
+function nivelCritico(estado) {
   if (estado.vencida) return 'vencida'
   if (estado.diasRestantes <= 1) return 'critico'
-  if (estado.diasRestantes <= 3) return 'urgente'
-  if (estado.diasRestantes <= 7) return 'aviso'
   return null
 }
 
 const ESTILOS = {
   vencida: {
-    bg: 'rgba(239, 68, 68, 0.12)',
-    border: 'rgba(239, 68, 68, 0.35)',
-    fg: 'var(--color-danger)',
-    icon: '⚠',
-    titulo: 'Tu plan expiro',
+    color: 'var(--color-danger)',
+    titulo: 'Tu plan vencio',
+    detalle: 'Renueva para no perder acceso',
+    cta: 'Renovar ahora',
   },
   critico: {
-    bg: 'rgba(239, 68, 68, 0.10)',
-    border: 'rgba(239, 68, 68, 0.30)',
-    fg: 'var(--color-danger)',
-    icon: '⏰',
-    titulo: 'Tu plan vence manana',
-  },
-  urgente: {
-    bg: 'rgba(245, 158, 11, 0.12)',
-    border: 'rgba(245, 158, 11, 0.30)',
-    fg: 'var(--color-warning)',
-    icon: '⏰',
-    titulo: (d) => `Tu plan vence en ${d} dias`,
-  },
-  aviso: {
-    bg: 'rgba(245, 197, 24, 0.10)',
-    border: 'rgba(245, 197, 24, 0.25)',
-    fg: 'var(--color-accent)',
-    icon: '📅',
-    titulo: (d) => `Tu plan vence en ${d} dias`,
+    color: 'var(--color-warning)',
+    titulo: 'Tu plan vence pronto',
+    detalle: 'Activalo antes de que se suspenda',
+    cta: 'Renovar',
   },
 }
 
@@ -54,7 +41,7 @@ export default function SuscripcionBanner() {
   const { data: session } = useSession()
   const pathname = usePathname()
   const [estado, setEstado] = useState(null)
-  const [cerrado, setCerrado] = useState(null) // key descartada en sessionStorage
+  const [cerrado, setCerrado] = useState(null)
 
   const rol = session?.user?.rol
   const orgId = session?.user?.organizationId
@@ -72,7 +59,7 @@ export default function SuscripcionBanner() {
   if (!session?.user || rol === 'superadmin' || !estado) return null
   if (!estado.fechaVencimiento) return null
 
-  // Si tiene recurrente autorizada activa, MP cobra solo — no avisar salvo vencida
+  // No molestar si hay recurrente autorizada activa (MP cobra solo)
   const esRecurrenteOk =
     estado.tipo === 'recurrente' &&
     estado.mpStatus === 'authorized' &&
@@ -80,27 +67,17 @@ export default function SuscripcionBanner() {
 
   const vencida = estado.diasRestantes < 0 || estado.estado === 'vencida'
   const contexto = { ...estado, vencida }
-  const key = nivel(contexto)
+  const nivel = nivelCritico(contexto)
 
-  if (!key) return null
+  if (!nivel) return null
   if (esRecurrenteOk && !vencida) return null
 
-  // Dismiss persiste por sesion + nivel. Cambia de nivel → reaparece.
-  const storageKey = `cf:sub-banner:${key}:${Math.max(0, estado.diasRestantes)}`
+  // Dismiss persiste por sesion + nivel
+  const storageKey = `cf:sub-banner:${nivel}`
   if (cerrado === storageKey) return null
   if (typeof window !== 'undefined' && sessionStorage.getItem(storageKey) === '1') return null
 
-  const style = ESTILOS[key]
-  const titulo = typeof style.titulo === 'function' ? style.titulo(estado.diasRestantes) : style.titulo
-  const fecha = new Date(estado.fechaVencimiento).toLocaleDateString('es-CO', {
-    day: 'numeric', month: 'long',
-  })
-
-  const mensaje = vencida
-    ? `Renueva para seguir usando la app.`
-    : estado.canceladaAt
-      ? `Tu suscripcion se cancelo. Pierdes acceso el ${fecha}.`
-      : `Renueva antes del ${fecha} para no perder acceso.`
+  const config = ESTILOS[nivel]
 
   const cerrar = () => {
     try { sessionStorage.setItem(storageKey, '1') } catch {}
@@ -109,41 +86,62 @@ export default function SuscripcionBanner() {
 
   return (
     <div
-      className="border-b px-4 py-3"
-      style={{ background: style.bg, borderColor: style.border }}
+      className="border-b"
+      style={{
+        background: `color-mix(in srgb, ${config.color} 8%, var(--color-bg-card))`,
+        borderColor: `color-mix(in srgb, ${config.color} 25%, var(--color-border))`,
+      }}
     >
-      <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
-        <div className="flex items-start gap-2.5 flex-1 min-w-0">
-          <span className="text-lg leading-none mt-0.5" style={{ color: style.fg }} aria-hidden>
-            {style.icon}
-          </span>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold" style={{ color: style.fg }}>{titulo}</p>
-            <p className="text-xs text-[var(--color-text-muted)] mt-0.5 leading-relaxed">{mensaje}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-          <Link
-            href="/configuracion/plan"
-            className="h-8 px-4 rounded-[10px] text-xs font-semibold transition-all cursor-pointer inline-flex items-center"
-            style={{
-              background: `color-mix(in srgb, ${style.fg} 18%, transparent)`,
-              color: style.fg,
-              border: `1px solid color-mix(in srgb, ${style.fg} 35%, transparent)`,
-            }}
-          >
-            {vencida ? 'Renovar ahora' : 'Renovar'}
-          </Link>
-          <button
-            onClick={cerrar}
-            aria-label="Cerrar aviso"
-            className="h-8 w-8 rounded-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-hover)] transition-all flex items-center justify-center"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+      <div className="max-w-5xl mx-auto px-4 py-2.5 flex items-center gap-3">
+        {/* Icono SVG (sin emojis) */}
+        <div
+          className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+          style={{ background: `color-mix(in srgb, ${config.color} 18%, transparent)` }}
+        >
+          {nivel === 'vencida' ? (
+            <svg className="w-4 h-4" style={{ color: config.color }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
             </svg>
-          </button>
+          ) : (
+            <svg className="w-4 h-4" style={{ color: config.color }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          )}
         </div>
+
+        {/* Mensaje */}
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-semibold leading-tight" style={{ color: config.color }}>{config.titulo}</p>
+          <p className="text-[11px] mt-0.5 leading-snug" style={{ color: 'var(--color-text-muted)' }}>{config.detalle}</p>
+        </div>
+
+        {/* CTA */}
+        <Link
+          href="/configuracion/plan"
+          className="shrink-0 h-8 px-3 rounded-[10px] text-[12px] font-semibold inline-flex items-center gap-1 transition-all"
+          style={{
+            background: config.color,
+            color: nivel === 'vencida' ? '#fff' : '#0a0a0a',
+            boxShadow: `0 2px 8px color-mix(in srgb, ${config.color} 30%, transparent)`,
+          }}
+        >
+          {config.cta}
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+        </Link>
+
+        {/* Descartar */}
+        <button
+          onClick={cerrar}
+          aria-label="Cerrar aviso"
+          className="h-8 w-8 rounded-[10px] flex items-center justify-center transition-colors shrink-0"
+          style={{ color: 'var(--color-text-muted)' }}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
       </div>
     </div>
   )

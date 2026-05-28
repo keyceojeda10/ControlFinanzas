@@ -362,22 +362,29 @@ export async function POST(req) {
                 id: true, nombre: true, cedula: true, telefono: true,
                 prestamos: {
                   where: { estado: 'activo' },
-                  select: { id: true, totalAPagar: true, cuotaDiaria: true, montoPrestado: true },
-                  take: 1,
+                  select: { id: true, totalAPagar: true, cuotaDiaria: true, montoPrestado: true, fechaInicio: true },
+                  orderBy: { fechaInicio: 'asc' },
                 },
               },
               take: 5,
             })
 
+            const fmtCOP = (n) => `$${Math.round(n).toLocaleString('es-CO')}`
+
             let lookupResult
             if (clientes.length > 0) {
               lookupResult = clientes.map(c => {
-                const prestamo = c.prestamos?.[0]
-                const ids = `[id:${c.id}${prestamo ? `|pid:${prestamo.id}` : ''}]`
-                const info = prestamo
-                  ? `, cuota: $${Math.round(prestamo.cuotaDiaria).toLocaleString('es-CO')}, saldo: $${Math.round(prestamo.totalAPagar).toLocaleString('es-CO')}`
-                  : ', sin préstamo activo'
-                return `${c.nombre} (cédula: ${c.cedula}${info}) ${ids}`
+                const ps = c.prestamos ?? []
+                if (ps.length === 0) {
+                  return `${c.nombre} (cédula: ${c.cedula}, sin préstamo activo) [id:${c.id}]`
+                }
+                if (ps.length === 1) {
+                  const p = ps[0]
+                  return `${c.nombre} (cédula: ${c.cedula}, cuota: ${fmtCOP(p.cuotaDiaria)}, saldo: ${fmtCOP(p.totalAPagar)} [pid:${p.id}]) [id:${c.id}]`
+                }
+                // Múltiples préstamos: listar todos con su pid
+                const lista = ps.map((p, i) => `(${i + 1}) cuota ${fmtCOP(p.cuotaDiaria)}, saldo ${fmtCOP(p.totalAPagar)} [pid:${p.id}]`).join(', ')
+                return `${c.nombre} (cédula: ${c.cedula}) tiene ${ps.length} préstamos activos: ${lista} [id:${c.id}]`
               }).join(' | ')
             } else {
               const sugeridos = await prisma.cliente.findMany({

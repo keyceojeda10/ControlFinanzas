@@ -173,9 +173,16 @@ export async function POST(req) {
               nombre: { contains: palabraClave },
               prestamos: { some: { estado: 'activo' } },
             },
-            select: { prestamos: { where: { estado: 'activo' }, select: { id: true }, take: 1 } },
+            select: { prestamos: { where: { estado: 'activo' }, select: { id: true, cuotaDiaria: true, totalAPagar: true } } },
           })
-          prestamoId = cliente?.prestamos?.[0]?.id
+          const prestamosActivos = cliente?.prestamos ?? []
+          if (prestamosActivos.length === 1) {
+            prestamoId = prestamosActivos[0].id
+          } else if (prestamosActivos.length > 1) {
+            return NextResponse.json({
+              error: `${input.clienteNombre} tiene ${prestamosActivos.length} prestamos activos. Pidele a Lucas que te liste los prestamos y especifica cual quieres registrar el pago.`,
+            }, { status: 400 })
+          }
         }
         if (!prestamoId) {
           return NextResponse.json({ error: 'No se encontro un prestamo activo para este cliente' }, { status: 404 })

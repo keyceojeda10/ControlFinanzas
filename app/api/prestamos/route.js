@@ -61,7 +61,10 @@ export async function GET(request) {
       cliente: { select: { id: true, nombre: true, cedula: true, telefono: true, fotoUrl: true, rutaId: true, diasSinCobro: true, ruta: { select: { diasSinCobro: true } } } },
       pagos:   { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: [
+      { cliente: { nombre: 'asc' } },
+      { createdAt: 'desc' },
+    ],
     ...(page != null && { take: limit, skip: (page - 1) * limit }),
   })
 
