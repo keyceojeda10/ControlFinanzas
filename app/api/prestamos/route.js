@@ -192,11 +192,14 @@ export async function POST(request) {
 
     const rutaIdsAsignadas = rutasAsignadas.map(r => r.id)
     if (!cliente.rutaId) {
-      // Cliente sin ruta: auto-asignar a la primera ruta del cobrador
-      await prisma.cliente.update({
-        where: { id: clienteId },
-        data: { rutaId: rutaIdsAsignadas[0] },
-      })
+      if (rutaIdsAsignadas.length === 1) {
+        await prisma.cliente.update({
+          where: { id: clienteId },
+          data: { rutaId: rutaIdsAsignadas[0] },
+        })
+      } else {
+        return Response.json({ error: 'Este cliente no tiene ruta asignada. Asignale una ruta antes de crear el préstamo.' }, { status: 400 })
+      }
     } else if (!rutaIdsAsignadas.includes(cliente.rutaId)) {
       return Response.json({ error: 'Solo puedes crear préstamos para clientes de tus rutas asignadas' }, { status: 403 })
     }
