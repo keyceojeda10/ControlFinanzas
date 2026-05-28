@@ -2,10 +2,10 @@
 
 import { useState } from 'react'
 import { Input } from '@/components/ui/Input'
-
-const validarTelefono = (v) => /^3\d{9}$/.test(v.replace(/\s/g, ''))
+import { useCountry } from '@/hooks/useCountry'
 
 export default function WizardCliente({ onComplete }) {
+  const { validatePhone, validateDocument, documentConfig, phoneConfig } = useCountry()
   const [form, setForm] = useState({ nombre: '', cedula: '', telefono: '' })
   const [errores, setErrores] = useState({})
   const [loading, setLoading] = useState(false)
@@ -20,12 +20,12 @@ export default function WizardCliente({ onComplete }) {
   const validar = () => {
     const errs = {}
     if (!form.nombre.trim()) errs.nombre = 'El nombre es requerido'
-    if (!form.cedula.trim()) errs.cedula = 'La cedula es requerida'
-    else if (!/^\d{6,12}$/.test(form.cedula.trim()))
-      errs.cedula = 'La cedula debe tener entre 6 y 12 digitos'
-    if (!form.telefono.trim()) errs.telefono = 'El telefono es requerido'
-    else if (!validarTelefono(form.telefono))
-      errs.telefono = 'Ingresa un celular colombiano valido (ej: 3001234567)'
+    if (!form.cedula.trim()) errs.cedula = `${documentConfig.label} es requerido`
+    else if (!validateDocument(form.cedula.trim()))
+      errs.cedula = `${documentConfig.label} no valido (ej: ${documentConfig.placeholder})`
+    if (!form.telefono.trim()) errs.telefono = `El ${phoneConfig.label.toLowerCase()} es requerido`
+    else if (!validatePhone(form.telefono.replace(/\s/g, '')))
+      errs.telefono = `Ingresa un ${phoneConfig.label.toLowerCase()} valido (ej: ${phoneConfig.placeholder})`
     return errs
   }
 
@@ -94,16 +94,16 @@ export default function WizardCliente({ onComplete }) {
             autoComplete="off"
           />
           <Input
-            label="Cedula"
-            placeholder="Ej: 1023456789"
+            label={documentConfig.label}
+            placeholder={`Ej: ${documentConfig.placeholder}`}
             value={form.cedula}
             onChange={set('cedula')}
             error={errores.cedula}
             inputMode="numeric"
           />
           <Input
-            label="Telefono"
-            placeholder="Ej: 3001234567"
+            label={phoneConfig.label}
+            placeholder={`Ej: ${phoneConfig.placeholder}`}
             value={form.telefono}
             onChange={set('telefono')}
             error={errores.telefono}

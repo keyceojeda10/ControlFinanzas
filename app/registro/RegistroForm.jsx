@@ -7,7 +7,10 @@ import Link                    from 'next/link'
 import { PLANES_CONFIG }       from '@/lib/planes'
 import AuthInput               from '@/components/auth/AuthInput'
 import AuthButton              from '@/components/auth/AuthButton'
+import { getCountryConfig, validatePhone } from '@/lib/i18n'
+import { getCountryList } from '@/lib/countries'
 
+const PAISES = getCountryList()
 const formatPrecio = (precio) => `$${precio.toLocaleString('es-CO')}`
 
 // ── Plan definitions with descriptions ─────────────────────
@@ -151,6 +154,8 @@ export default function RegistroForm({ refCode, planParam }) {
 
   const [planSeleccionado, setPlanSeleccionado] = useState(planInicial)
   const [step, setStep] = useState(1) // 1 = plan, 2 = datos, 3 = verificacion OTP
+  const [country, setCountry] = useState('co')
+  const countryCfg = getCountryConfig(country)
   const infoPlan = ALL_PLANES.find(p => p.key === planSeleccionado)
 
   const [form, setForm] = useState({
@@ -191,8 +196,8 @@ export default function RegistroForm({ refCode, planParam }) {
       setError('Todos los campos son obligatorios'); return
     }
     const telefonoLimpio = form.telefono.replace(/\D/g, '')
-    if (!/^3\d{9}$/.test(telefonoLimpio)) {
-      setError('Ingresa un celular colombiano valido (ej: 3001234567)'); return
+    if (!validatePhone(telefonoLimpio, country)) {
+      setError(`Ingresa un ${countryCfg.phoneLabel.toLowerCase()} valido (ej: ${countryCfg.phonePlaceholder})`); return
     }
     if (!form.terminosAceptados) { setError('Debes aceptar los terminos y condiciones'); return }
     if (form.password.length < 8) { setError('La contrasena debe tener al menos 8 caracteres'); return }
@@ -212,6 +217,7 @@ export default function RegistroForm({ refCode, planParam }) {
           terminosAceptados:  form.terminosAceptados,
           ...(refCode ? { ref: refCode } : {}),
           plan: planSeleccionado,
+          country,
         }),
       })
       const data = await res.json()
@@ -542,15 +548,28 @@ export default function RegistroForm({ refCode, planParam }) {
                   }
                 />
 
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[13px] font-medium text-[var(--color-text-secondary)]">Pais</label>
+                  <select
+                    value={country}
+                    onChange={(e) => { setCountry(e.target.value); setForm({ ...form, telefono: '' }) }}
+                    className="h-11 px-3 rounded-[12px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-all"
+                  >
+                    {PAISES.map(p => (
+                      <option key={p.code} value={p.code}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+
                 <AuthInput
-                  label="Celular (WhatsApp)"
+                  label={`${countryCfg.phoneLabel} (WhatsApp)`}
                   type="tel"
                   inputMode="numeric"
                   value={form.telefono}
-                  onChange={(e) => setForm({ ...form, telefono: e.target.value.replace(/\D/g, '').slice(0, 10) })}
-                  placeholder="3001234567"
+                  onChange={(e) => setForm({ ...form, telefono: e.target.value.replace(/\D/g, '').slice(0, countryCfg.phoneDigits) })}
+                  placeholder={countryCfg.phonePlaceholder}
                   autoComplete="tel"
-                  maxLength={10}
+                  maxLength={countryCfg.phoneDigits}
                   icon={
                     <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />

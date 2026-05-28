@@ -6,6 +6,7 @@ import { enviarEmail, emailBienvenida, emailVerificacion } from '@/lib/email'
 import { sendConversionEvent } from '@/lib/facebook-capi'
 import { registroLimiter, getClientIp } from '@/lib/rate-limit'
 import { PLANES_VALIDOS } from '@/lib/planes'
+import { COUNTRY_CODES, getCountryConfig, validatePhone } from '@/lib/i18n'
 
 function generarCodigoReferido() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -33,7 +34,8 @@ export async function POST(req) {
     }
 
     const body = await req.json()
-    const { nombreOrganizacion, nombre, email, telefono, password, ref, terminosAceptados, plan } = body
+    const { nombreOrganizacion, nombre, email, telefono, password, ref, terminosAceptados, plan, country: countryInput } = body
+    const country = COUNTRY_CODES.includes(countryInput) ? countryInput : 'co'
 
     // Validar plan de trial: todos menos el plan interno de test
     const VALID_TRIAL_PLANS = PLANES_VALIDOS.filter((p) => p !== 'test')
@@ -44,10 +46,10 @@ export async function POST(req) {
       return NextResponse.json({ success: false, error: 'Todos los campos son obligatorios' }, { status: 400 })
     }
 
-    // Validar telefono colombiano: 10 digitos, empieza en 3
     const telefonoLimpio = String(telefono).replace(/\D/g, '')
-    if (!/^3\d{9}$/.test(telefonoLimpio)) {
-      return NextResponse.json({ success: false, error: 'Ingresa un celular colombiano valido (10 digitos, empieza en 3)' }, { status: 400 })
+    const phoneCfg = getCountryConfig(country)
+    if (!validatePhone(telefonoLimpio, country)) {
+      return NextResponse.json({ success: false, error: `Ingresa un ${phoneCfg.phoneLabel.toLowerCase()} valido (ej: ${phoneCfg.phonePlaceholder})` }, { status: 400 })
     }
 
     if (password.length < 8) {
@@ -97,6 +99,7 @@ export async function POST(req) {
           plan:          planFinal,
           activo:        true,
           telefono:      telefonoLimpio,
+          country,
           codigoReferido,
           ...(orgReferidora ? { referidoPorId: orgReferidora.id } : {}),
         },

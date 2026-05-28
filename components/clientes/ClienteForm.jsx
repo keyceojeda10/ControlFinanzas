@@ -8,11 +8,11 @@ import { Input, Select }       from '@/components/ui/Input'
 import { Button }              from '@/components/ui/Button'
 import DiasSinCobroSelector    from '@/components/ui/DiasSinCobroSelector'
 import { guardarClientePendiente, encolarMutacion } from '@/lib/offline'
+import { useCountry } from '@/hooks/useCountry'
 
 const LocationPicker = dynamic(() => import('@/components/clientes/LocationPicker'), { ssr: false })
 
-// Validación de teléfono colombiano: 10 dígitos, empieza en 3
-const validarTelefono = (v) => /^3\d{9}$/.test(v.replace(/\s/g, ''))
+// Validacion de telefono movida a useCountry().validatePhone
 
 // Card de seccion con icono cuadrado del color. Definida fuera del componente
 // para que React no la desmonte/remonte en cada render (causa perdida de focus).
@@ -40,6 +40,7 @@ const SectionCard = ({ icon, title, color = 'var(--color-accent)', children }) =
 
 export default function ClienteForm({ clienteInicial = null, plan = 'basic', puedeSubirFoto = false }) {
   const router = useRouter()
+  const { validatePhone, validateDocument, documentConfig, phoneConfig } = useCountry()
   const esEdicion = !!clienteInicial
   const fotoInputRef = useRef(null)
   const [fotoFile, setFotoFile] = useState(null)
@@ -130,11 +131,11 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
     if (!form.cedula.trim())    errs.cedula   = 'La cédula es requerida'
     if (!form.telefono.trim())  errs.telefono = 'El teléfono es requerido'
 
-    if (form.cedula && !/^\d{6,12}$/.test(form.cedula.trim())) {
-      errs.cedula = 'La cédula debe tener entre 6 y 12 dígitos numéricos'
+    if (form.cedula && !validateDocument(form.cedula.trim())) {
+      errs.cedula = `${documentConfig.label} no valido (ej: ${documentConfig.placeholder})`
     }
-    if (form.telefono && !validarTelefono(form.telefono)) {
-      errs.telefono = 'Ingresa un celular colombiano válido (ej: 3001234567)'
+    if (form.telefono && !validatePhone(form.telefono.replace(/\s/g, ''))) {
+      errs.telefono = `Ingresa un ${phoneConfig.label.toLowerCase()} valido (ej: ${phoneConfig.placeholder})`
     }
     return errs
   }
@@ -356,8 +357,8 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input
-            label="Teléfono *"
-            placeholder="Ej: 3001234567"
+            label={`${phoneConfig.label} *`}
+            placeholder={`Ej: ${phoneConfig.placeholder}`}
             value={form.telefono}
             onChange={set('telefono')}
             error={errores.telefono}
