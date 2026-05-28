@@ -4,6 +4,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { preferenceApi, PLANES, buildBackUrls, webhookUrl } from '@/lib/mercadopago'
+import { getCurrency, hasOnlinePayment } from '@/lib/i18n'
+import { getPrecioCobradorExtra } from '@/lib/planes'
 
 export async function POST(req) {
   const session = await getServerSession(authOptions)
@@ -18,7 +20,12 @@ export async function POST(req) {
     return NextResponse.json({ error: 'Tu plan no permite agregar cobradores extra' }, { status: 403 })
   }
 
-  const precio = planInfo.cobradorExtra // 29000
+  const org = await prisma.organization.findUnique({ where: { id: orgId }, select: { country: true } })
+  const country = org?.country ?? 'co'
+  if (!hasOnlinePayment(country)) {
+    return NextResponse.json({ error: 'Pago en linea no disponible para tu pais. Contacta soporte.' }, { status: 400 })
+  }
+  const precio = getPrecioCobradorExtra(country)
 
   const preference = await preferenceApi.create({
     body: {
@@ -28,7 +35,7 @@ export async function POST(req) {
           title:       'Control Finanzas - Cobrador adicional (1 mes)',
           unit_price:  precio,
           quantity:    1,
-          currency_id: 'COP',
+          currency_id: getCurrency(country),
         },
       ],
       back_urls:   buildBackUrls(),
