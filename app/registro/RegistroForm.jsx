@@ -7,11 +7,11 @@ import Link                    from 'next/link'
 import { PLANES_CONFIG }       from '@/lib/planes'
 import AuthInput               from '@/components/auth/AuthInput'
 import AuthButton              from '@/components/auth/AuthButton'
-import { getCountryConfig, validatePhone } from '@/lib/i18n'
+import { getCountryConfig, validatePhone, formatMoney } from '@/lib/i18n'
 import { getCountryList } from '@/lib/countries'
+import { getPrecioPlan } from '@/lib/planes'
 
 const PAISES = getCountryList()
-const formatPrecio = (precio) => `$${precio.toLocaleString('es-CO')}`
 
 // ── Plan definitions with descriptions ─────────────────────
 const PLANES_SOLO = [
@@ -84,7 +84,8 @@ const PLANES_EQUIPO = [
 const ALL_PLANES = [...PLANES_SOLO, ...PLANES_EQUIPO]
 
 // ── Plan card component ────────────────────────────────────
-function PlanCard({ plan, selected, onSelect }) {
+function PlanCard({ plan, selected, onSelect, countryCode = 'co' }) {
+  const precioLocal = getPrecioPlan(plan.key, countryCode)
   const activo = selected === plan.key
   return (
     <button
@@ -121,7 +122,7 @@ function PlanCard({ plan, selected, onSelect }) {
           </span>
         </div>
         <span className="font-mono-display text-[14px] font-bold" style={{ color: activo ? '#f5c518' : '#f0f0f5' }}>
-          {formatPrecio(plan.precio)}
+          {formatMoney(precioLocal, countryCode)}
           <span className="text-[10px] font-normal" style={{ color: '#666' }}>/mes</span>
         </span>
       </div>
@@ -146,7 +147,7 @@ function PlanCard({ plan, selected, onSelect }) {
 }
 
 // ── Main form ──────────────────────────────────────────────
-export default function RegistroForm({ refCode, planParam }) {
+export default function RegistroForm({ refCode, planParam, countryParam }) {
   const router = useRouter()
 
   const validKeys = ALL_PLANES.map(p => p.key)
@@ -154,7 +155,8 @@ export default function RegistroForm({ refCode, planParam }) {
 
   const [planSeleccionado, setPlanSeleccionado] = useState(planInicial)
   const [step, setStep] = useState(1) // 1 = plan, 2 = datos, 3 = verificacion OTP
-  const [country, setCountry] = useState('co')
+  const countryInicial = PAISES.some(p => p.code === countryParam) ? countryParam : 'co'
+  const [country, setCountry] = useState(countryInicial)
   const countryCfg = getCountryConfig(country)
   const infoPlan = ALL_PLANES.find(p => p.key === planSeleccionado)
 
@@ -357,9 +359,26 @@ export default function RegistroForm({ refCode, planParam }) {
           >
             Crea tu <em style={{ color: '#f5c518', fontStyle: 'italic' }}>cuenta</em>
           </h1>
-          <p className="text-[14px] mb-6" style={{ color: '#666' }}>
+          <p className="text-[14px] mb-4" style={{ color: '#666' }}>
             14 dias gratis. Sin tarjeta de credito.
           </p>
+
+          {/* Selector de pais — siempre visible */}
+          <div className="flex items-center gap-3 mb-6 px-3 py-2.5 rounded-[12px]" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <svg className="w-4 h-4 shrink-0" style={{ color: '#9a9ab0' }} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 003 12c0-1.605.42-3.113 1.157-4.418" />
+            </svg>
+            <select
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
+              className="flex-1 bg-transparent text-sm font-medium focus:outline-none cursor-pointer"
+              style={{ color: '#f0f0f5' }}
+            >
+              {PAISES.map(p => (
+                <option key={p.code} value={p.code} style={{ background: '#141419', color: '#f0f0f5' }}>{p.name}</option>
+              ))}
+            </select>
+          </div>
 
           {/* Step indicator */}
           <div className="flex items-center gap-2 mb-6">
@@ -402,7 +421,7 @@ export default function RegistroForm({ refCode, planParam }) {
                 </div>
                 <div className="grid gap-2">
                   {PLANES_SOLO.map(p => (
-                    <PlanCard key={p.key} plan={p} selected={planSeleccionado} onSelect={setPlanSeleccionado} />
+                    <PlanCard key={p.key} plan={p} selected={planSeleccionado} onSelect={setPlanSeleccionado} countryCode={country} />
                   ))}
                 </div>
               </div>
@@ -418,7 +437,7 @@ export default function RegistroForm({ refCode, planParam }) {
                 </div>
                 <div className="grid gap-2">
                   {PLANES_EQUIPO.map(p => (
-                    <PlanCard key={p.key} plan={p} selected={planSeleccionado} onSelect={setPlanSeleccionado} />
+                    <PlanCard key={p.key} plan={p} selected={planSeleccionado} onSelect={setPlanSeleccionado} countryCode={country} />
                   ))}
                 </div>
               </div>
@@ -547,19 +566,6 @@ export default function RegistroForm({ refCode, planParam }) {
                     </svg>
                   }
                 />
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[13px] font-medium text-[var(--color-text-secondary)]">Pais</label>
-                  <select
-                    value={country}
-                    onChange={(e) => { setCountry(e.target.value); setForm({ ...form, telefono: '' }) }}
-                    className="h-11 px-3 rounded-[12px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-all"
-                  >
-                    {PAISES.map(p => (
-                      <option key={p.code} value={p.code}>{p.name}</option>
-                    ))}
-                  </select>
-                </div>
 
                 <AuthInput
                   label={`${countryCfg.phoneLabel} (WhatsApp)`}

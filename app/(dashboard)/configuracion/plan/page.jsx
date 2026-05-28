@@ -7,19 +7,18 @@ import { SkeletonCard }        from '@/components/ui/Skeleton'
 import { useOnline }           from '@/hooks/useOnline'
 import OfflineFallback         from '@/components/offline/OfflineFallback'
 import FloatingWhatsApp        from '@/components/ui/FloatingWhatsApp'
-import { PLANES_CONFIG }       from '@/lib/planes'
+import { PLANES_CONFIG, getPrecioPlan } from '@/lib/planes'
 import { useCountry } from '@/hooks/useCountry'
 
-// ── Plan data ──────────────────────────────────────────────
-const planes = [
-  { key: 'starter',      nombre: 'Inicial',      precio: 39000,  features: ['1 usuario', 'Hasta 150 clientes', '1 ruta', 'Dashboard basico'] },
-  { key: 'basic',        nombre: 'Basico',        precio: 59000,  features: ['1 usuario', 'Hasta 450 clientes', '1 ruta', 'Control de cartera'] },
-  { key: 'growth',       nombre: 'Crecimiento',  precio: 79000,  badge: 'Popular', features: ['2 usuarios', 'Hasta 1,000 clientes', '3 rutas', 'Lucas IA (20/dia)', 'Cierre de caja'] },
-  { key: 'standard',     nombre: 'Profesional',  precio: 119000, features: ['5 usuarios', 'Hasta 2,000 clientes', '6 rutas', 'Lucas IA (60/dia)', 'Reportes avanzados'] },
-  { key: 'professional', nombre: 'Empresarial',  precio: 259000, features: ['10 usuarios', 'Hasta 10,000 clientes', '10 rutas', 'Lucas IA (200/dia)', 'Reportes + exportacion'] },
+const planesBase = [
+  { key: 'starter',      nombre: 'Inicial',      features: ['1 usuario', 'Hasta 150 clientes', '1 ruta', 'Dashboard basico'] },
+  { key: 'basic',        nombre: 'Basico',        features: ['1 usuario', 'Hasta 450 clientes', '1 ruta', 'Control de cartera'] },
+  { key: 'growth',       nombre: 'Crecimiento',  badge: 'Popular', features: ['2 usuarios', 'Hasta 1,000 clientes', '3 rutas', 'Lucas IA (20/dia)', 'Cierre de caja'] },
+  { key: 'standard',     nombre: 'Profesional',  features: ['5 usuarios', 'Hasta 2,000 clientes', '6 rutas', 'Lucas IA (60/dia)', 'Reportes avanzados'] },
+  { key: 'professional', nombre: 'Empresarial',  features: ['10 usuarios', 'Hasta 10,000 clientes', '10 rutas', 'Lucas IA (200/dia)', 'Reportes + exportacion'] },
 ]
 
-const planTest = { key: 'test', nombre: 'Test', precio: 1500, features: ['Solo testing interno', 'NO usar en produccion'] }
+const planTestBase = { key: 'test', nombre: 'Test', features: ['Solo testing interno', 'NO usar en produccion'] }
 
 const WHATSAPP_SOPORTE = '573011993001'
 const whatsappLink = (msg) => `https://wa.me/${WHATSAPP_SOPORTE}?text=${encodeURIComponent(msg)}`
@@ -73,8 +72,10 @@ function PlanPageInner() {
   const router = useRouter()
   const { session, loading: authLoading } = useAuth()
 
-  const { formatMoney } = useCountry()
+  const { formatMoney, country } = useCountry()
   const esSuperadmin = session?.user?.rol === 'superadmin'
+  const planes = planesBase.map(p => ({ ...p, precio: getPrecioPlan(p.key, country) }))
+  const planTest = { ...planTestBase, precio: getPrecioPlan('test', country) }
 
   const [estado,       setEstado]       = useState(null)
   const [uso,          setUso]          = useState(null)
@@ -247,9 +248,8 @@ function PlanPageInner() {
         })()}
 
         <div className="flex items-baseline gap-1">
-          <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>$</span>
           <span className="text-[32px] font-bold leading-none font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
-            {infoPlan.precio.toLocaleString('es-CO')}
+            {formatMoney(infoPlan.precio)}
           </span>
           <span className="text-[12px] font-mono-display" style={{ color: 'var(--color-text-muted)' }}>/mes</span>
         </div>

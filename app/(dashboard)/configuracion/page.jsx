@@ -16,6 +16,9 @@ import FestivosManager         from '@/components/ui/FestivosManager'
 import ThemeToggle             from '@/components/ui/ThemeToggle'
 import { useTheme }             from '@/lib/theme/ThemeProvider'
 import { useCountry } from '@/hooks/useCountry'
+import { getCountryList } from '@/lib/countries'
+
+const PAISES_LIST = getCountryList()
 
 const planBadge  = { starter: 'gray', basic: 'blue', growth: 'yellow', standard: 'purple', professional: 'green' }
 const PRECIOS    = Object.fromEntries(Object.entries(PLANES_CONFIG).map(([k, v]) => [k, v.precio]))
@@ -249,6 +252,7 @@ function TabOrganizacion() {
   const [nombre,   setNombre]   = useState('')
   const [telefono, setTelefono] = useState('')
   const [ciudad,   setCiudad]   = useState('')
+  const [country,  setCountryState] = useState('co')
   const [diasSinCobro, setDiasSinCobro] = useState([])
   const [guardando, setGuardando] = useState(false)
   const [guardandoDSC, setGuardandoDSC] = useState(false)
@@ -265,6 +269,7 @@ function TabOrganizacion() {
         setNombre(d.org?.nombre ?? '')
         setTelefono(d.org?.telefono ?? '')
         setCiudad(d.org?.ciudad ?? '')
+        setCountryState(d.org?.country ?? 'co')
         try { setDiasSinCobro(JSON.parse(d.org?.diasSinCobro || '[]')) } catch { setDiasSinCobro([]) }
       })
       .finally(() => setLoading(false))
@@ -318,7 +323,7 @@ function TabOrganizacion() {
     try {
       const res  = await fetch('/api/configuracion/organizacion', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre, telefono, ciudad }),
+        body: JSON.stringify({ nombre, telefono, ciudad, country }),
       })
       const d = await res.json()
       setMsg(res.ok
@@ -369,8 +374,16 @@ function TabOrganizacion() {
             <input type="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="Ej: 3001234567" className={inputClass} />
           </div>
           <div className="space-y-1.5">
+            <label className="text-xs font-medium text-[#888888]">Pais</label>
+            <select value={country} onChange={(e) => setCountryState(e.target.value)} className={inputClass}>
+              {PAISES_LIST.map(p => (
+                <option key={p.code} value={p.code}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1.5">
             <label className="text-xs font-medium text-[#888888]">Ciudad</label>
-            <input type="text" value={ciudad} onChange={(e) => setCiudad(e.target.value)} placeholder="Ej: Bogotá" className={inputClass} />
+            <input type="text" value={ciudad} onChange={(e) => setCiudad(e.target.value)} placeholder="Ej: Bogota" className={inputClass} />
           </div>
           {msg && <Alerta tipo={msg.tipo}>{msg.texto}</Alerta>}
           <Button onClick={guardar} loading={guardando} size="sm">Guardar cambios</Button>
