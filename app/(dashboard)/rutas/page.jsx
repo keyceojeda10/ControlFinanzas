@@ -12,6 +12,7 @@ import { Input }               from '@/components/ui/Input'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
 import { Card }                from '@/components/ui/Card'
 import RutaCard                from '@/components/rutas/RutaCard'
+import ModalSugerenciasRutas   from '@/components/rutas/ModalSugerenciasRutas'
 import { useCountry } from '@/hooks/useCountry'
 
 export default function RutasPage() {
@@ -30,6 +31,10 @@ export default function RutasPage() {
   const [isOffline, setIsOffline] = useState(false)
   const [backupLoading, setBackupLoading] = useState(false)
   const [restoreLoading, setRestoreLoading] = useState(false)
+  // Recomendaciones de rutas (clientes sin ruta agrupados por similitud)
+  const [recom, setRecom] = useState(null) // { totalSinRuta, ... }
+  const [recomIgnoradoEn, setRecomIgnoradoEn] = useState(null) // valor de totalSinRuta cuando se cerro
+  const [showSugerencias, setShowSugerencias] = useState(false)
   const hasLoadedOnceRef = useRef(false)
 
   const fetchRutas = useCallback(async ({ soft = false } = {}) => {
@@ -89,6 +94,40 @@ export default function RutasPage() {
   }, [])
 
   useEffect(() => { fetchRutas() }, [fetchRutas])
+
+  // Cargar recomendaciones (solo owner, en paralelo, sin bloquear)
+  const fetchRecomendaciones = useCallback(async () => {
+    if (!esOwner) return
+    try {
+      const r = await fetch('/api/rutas/recomendaciones')
+      if (!r.ok) return
+      const d = await r.json()
+      setRecom(d)
+    } catch {}
+  }, [esOwner])
+
+  useEffect(() => {
+    if (!authLoading && esOwner) fetchRecomendaciones()
+  }, [authLoading, esOwner, fetchRecomendaciones])
+
+  // Leer valor "ignorado" desde localStorage al montar
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem('cf-rutas-recomendacion-ignored')
+      if (v !== null) setRecomIgnoradoEn(Number(v))
+    } catch {}
+  }, [])
+
+  const ignorarRecomendacion = () => {
+    const total = recom?.totalSinRuta ?? 0
+    setRecomIgnoradoEn(total)
+    try { localStorage.setItem('cf-rutas-recomendacion-ignored', String(total)) } catch {}
+  }
+
+  const mostrarBannerRec =
+    !!recom &&
+    recom.totalSinRuta >= 3 &&
+    (recomIgnoradoEn === null || recom.totalSinRuta !== recomIgnoradoEn)
 
   // Refresh silencioso cuando llega nueva sincronización global.
   useEffect(() => {
@@ -224,6 +263,46 @@ export default function RutasPage() {
         </form>
       )}
 
+      {mostrarBannerRec && (
+        <div
+          className="rounded-[12px] px-4 py-3 mb-4 flex items-center gap-3"
+          style={{
+            background: 'color-mix(in srgb, var(--color-accent) 6%, transparent)',
+            borderLeft: '2px solid var(--color-accent)',
+          }}
+        >
+          <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--color-accent)' }}>
+            <path d="M12 2 L13.5 10.5 L22 12 L13.5 13.5 L12 22 L10.5 13.5 L2 12 L10.5 10.5 Z" />
+          </svg>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs leading-snug" style={{ color: 'var(--color-text-primary)' }}>
+              Tienes <strong>{recom.totalSinRuta}</strong> cliente{recom.totalSinRuta === 1 ? '' : 's'} sin ruta asignada.
+              {recom.gruposSugeridos?.length > 0 && (
+                <> Detectamos {recom.gruposSugeridos.length} grupo{recom.gruposSugeridos.length === 1 ? '' : 's'} por direccion.</>
+              )}
+            </p>
+          </div>
+          <button
+            onClick={() => setShowSugerencias(true)}
+            className="shrink-0 px-3 py-1.5 rounded-[8px] text-[11px] font-semibold transition-colors"
+            style={{ background: 'var(--color-accent)', color: 'var(--color-bg-base)' }}
+          >
+            Ver sugerencias
+          </button>
+          <button
+            onClick={ignorarRecomendacion}
+            className="shrink-0 w-6 h-6 flex items-center justify-center rounded transition-colors"
+            style={{ color: 'var(--color-text-muted)' }}
+            aria-label="Ignorar"
+            title="Ignorar (solo vuelve a aparecer si hay nuevos clientes sin ruta)"
+          >
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {isOffline && (
         <div className="bg-[var(--color-warning-dim)] border border-[color-mix(in_srgb,var(--color-warning)_30%,transparent)] text-[var(--color-warning)] text-xs rounded-[12px] px-4 py-2.5 mb-4 flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-[var(--color-accent)] animate-pulse shrink-0" />
@@ -263,6 +342,12 @@ export default function RutasPage() {
           {rutas.map((r) => <RutaCard key={r.id} ruta={r} />)}
         </div>
       )}
+
+      <ModalSugerenciasRutas
+        open={showSugerencias}
+        onClose={() => setShowSugerencias(false)}
+        onSuccess={() => { fetchRutas({ soft: true }); fetchRecomendaciones() }}
+      />
     </div>
   )
 }
