@@ -822,9 +822,12 @@ function NuevoPrestamo() {
             {(frecuencia === 'semanal' || frecuencia === 'quincenal') && (
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                  Dia de cobro (opcional)
+                  Dia ancla de cobro
                 </label>
-                <div className="grid grid-cols-7 gap-1 mt-1.5">
+                <p className="text-[10px] mt-0.5 mb-1.5" style={{ color: 'var(--color-text-muted)' }}>
+                  Que dia de la semana se cobra. "Auto" usa el dia de la fecha de inicio.
+                </p>
+                <div className="grid grid-cols-7 gap-1">
                   <button
                     type="button"
                     onClick={() => setDiaCobroSemana('')}
@@ -962,47 +965,116 @@ function NuevoPrestamo() {
 
           </div>
 
-          {/* Revision EN VIVO — siempre visible mientras edita */}
-          {calculo && (
-            <div
-              className="rounded-[16px] p-4 space-y-2"
-              style={{
-                background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 8%, var(--color-bg-card)), var(--color-bg-card))',
-                border: '1px solid color-mix(in srgb, var(--color-success) 25%, var(--color-border))',
-              }}
-            >
-              <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-success)' }}>
-                Revision en vivo
-              </p>
-              <div className="grid grid-cols-2 gap-x-3 gap-y-2">
-                <div>
-                  <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Cuota</p>
-                  <p className="text-base font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(calculo.cuotaDiaria)}</p>
+          {/* Revision EN VIVO — resumen completo del prestamo mientras edita */}
+          {calculo && (() => {
+            // Calcular cuantos cobros totales tendra el prestamo segun frecuencia + dias sin cobro.
+            const diasPlazo = Number(plazo)
+            const diasPorPeriodo = DIAS_POR_PERIODO[frecuencia] || 1
+            const periodos = Math.max(1, Math.round(diasPlazo / diasPorPeriodo))
+            // En frecuencia diaria, descontar los dias sin cobro de la semana.
+            // Aproximacion: si hay N dias sin cobro a la semana, restamos esa proporcion.
+            let cobrosTotales = periodos
+            if (frecuencia === 'diario' && diasSinCobroCliente.length > 0) {
+              const cobrosPorSemana = 7 - diasSinCobroCliente.length
+              const semanas = diasPlazo / 7
+              cobrosTotales = Math.max(1, Math.round(cobrosPorSemana * semanas))
+            }
+            // Etiqueta de frecuencia descriptiva
+            const labelFrecuencia = frecuencia === 'diario'
+              ? `Diaria · ${cobrosTotales} cobros en ${diasPlazo} dias`
+              : frecuencia === 'semanal'
+                ? `Semanal · ${periodos} cobros${diaCobroSemana !== '' ? ' los ' + (DIAS_SEMANA.find(d => d.v === diaCobroSemana)?.l || '') : ''}`
+                : frecuencia === 'quincenal'
+                  ? `Quincenal · ${periodos} cobros`
+                  : `Mensual · ${periodos} cobros${diaCobroMes ? ' el dia ' + diaCobroMes : ''}`
+
+            const totalConSeguro = calculo.totalAPagar + (seguro && Number(montoSeguro) > 0 ? Number(montoSeguro) : 0)
+            const ganancia = calculo.totalAPagar - Number(monto || 0)
+            const pctGanancia = Number(monto) > 0 ? Math.round((ganancia / Number(monto)) * 100) : 0
+            const saldoInicial = esEnCurso && Number(yaAbonado) > 0
+              ? Math.max(0, calculo.totalAPagar - Number(yaAbonado))
+              : null
+
+            const Row = ({ label, value, valueColor }) => (
+              <div className="flex items-center justify-between gap-3 py-1.5 border-b last:border-b-0"
+                style={{ borderColor: 'color-mix(in srgb, var(--color-border) 50%, transparent)' }}
+              >
+                <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>{label}</span>
+                <span className="text-xs font-semibold text-right" style={{ color: valueColor || 'var(--color-text-primary)' }}>
+                  {value}
+                </span>
+              </div>
+            )
+
+            return (
+              <div
+                className="rounded-[16px] p-4"
+                style={{
+                  background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 8%, var(--color-bg-card)), var(--color-bg-card))',
+                  border: '1px solid color-mix(in srgb, var(--color-success) 25%, var(--color-border))',
+                }}
+              >
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--color-success)' }}>
+                  Resumen del prestamo
+                </p>
+
+                {/* Highlights grandes: cuota y total */}
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Cuota {frecuencia === 'diario' ? 'diaria' : frecuencia === 'semanal' ? 'semanal' : frecuencia === 'quincenal' ? 'quincenal' : 'mensual'}</p>
+                    <p className="text-lg font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(calculo.cuotaDiaria)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Total a pagar</p>
+                    <p className="text-lg font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(totalConSeguro)}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Total a pagar</p>
-                  <p className="text-base font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(calculo.totalAPagar)}</p>
-                </div>
-                <div>
-                  <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Ganancia</p>
-                  <p className="text-base font-bold font-mono-display" style={{ color: 'var(--color-success)' }}>
-                    {formatMoney(calculo.totalAPagar - Number(monto || 0))}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Fecha fin</p>
-                  <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-                    {calculo.fechaFin ? new Date(calculo.fechaFin).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
-                  </p>
+
+                {/* Detalles tipo lista — mas legible que grid de 2 columnas */}
+                <div className="space-y-0">
+                  <Row label="Frecuencia" value={labelFrecuencia} />
+                  <Row label="Cobros totales" value={`${cobrosTotales}`} />
+                  <Row label="Fecha fin" value={calculo.fechaFin ? new Date(calculo.fechaFin).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'} />
+                  <Row
+                    label="Ganancia"
+                    value={`${formatMoney(ganancia)} (${pctGanancia}%)`}
+                    valueColor="var(--color-success)"
+                  />
+                  <Row label="Modo cuota" value={cuotaManualActiva ? 'Manual' : `Automatica${!cuotaManualActiva ? ' · ' + redondeo : ''}`} />
+                  {diasSinCobroCliente.length > 0 && (
+                    <Row
+                      label="Dias sin cobro"
+                      value={diasSinCobroCliente
+                        .sort((a, b) => a - b)
+                        .map(n => ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'][n])
+                        .join(', ')}
+                    />
+                  )}
+                  {seguro && Number(montoSeguro) > 0 && (
+                    <Row
+                      label="Seguro incluido"
+                      value={formatMoney(Number(montoSeguro))}
+                      valueColor="#6366f1"
+                    />
+                  )}
+                  {esEnCurso && Number(yaAbonado) > 0 && (
+                    <>
+                      <Row
+                        label="Abono previo"
+                        value={formatMoney(Number(yaAbonado))}
+                        valueColor="var(--color-success)"
+                      />
+                      <Row
+                        label="Saldo pendiente"
+                        value={formatMoney(saldoInicial)}
+                        valueColor="var(--color-accent)"
+                      />
+                    </>
+                  )}
                 </div>
               </div>
-              {seguro && Number(montoSeguro) > 0 && (
-                <p className="text-[11px] pt-2 border-t mt-2" style={{ color: 'var(--color-text-muted)', borderColor: 'var(--color-border)' }}>
-                  Incluye seguro de <span className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(Number(montoSeguro))}</span>
-                </p>
-              )}
-            </div>
-          )}
+            )
+          })()}
         </section>
       )}
 
