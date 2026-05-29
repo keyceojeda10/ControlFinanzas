@@ -68,6 +68,14 @@ export const metadata = {
 
 export const viewport = {
   themeColor: '#1e3a5f',
+  // Fija el zoom para evitar el auto-zoom del navegador movil:
+  // - iOS Safari hace zoom al enfocar inputs con font-size < 16px.
+  // - Android amplia la pantalla al abrir modales.
+  // maximumScale=1 + userScalable=false elimina ese comportamiento.
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({ children }) {
