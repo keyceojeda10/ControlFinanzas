@@ -143,7 +143,10 @@ export default function ClienteCard({ cliente, actions }) {
                 className="h-full rounded-full transition-all"
                 style={{
                   width: `${Math.max(porcentaje, 2)}%`,
-                  background: `linear-gradient(90deg, ${color}cc, ${color})`,
+                  // No concatenar `${color}cc` porque `color` puede ser un var() CSS
+                  // (var(--color-accent)cc es invalido). Usamos color-mix para el degrade
+                  // y un fallback solido al color final.
+                  background: `linear-gradient(90deg, color-mix(in srgb, ${color} 80%, transparent), ${color})`,
                 }}
               />
             </div>
