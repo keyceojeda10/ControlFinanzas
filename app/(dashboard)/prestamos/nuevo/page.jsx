@@ -397,91 +397,159 @@ function NuevoPrestamo() {
       )}
 
       {/* PASO 1 — Cliente */}
-      {paso === 0 && (
-        <section className="mt-8">
-          <h2 className="text-[22px] font-bold leading-tight" style={{ color: 'var(--color-text-primary)' }}>
-            {clienteId ? '¿Para quien es este prestamo?' : 'Elige el cliente'}
-          </h2>
-          <p className="text-sm mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
-            Busca por nombre o cedula. Si ya seleccionaste uno, puedes cambiarlo abajo.
-          </p>
+      {paso === 0 && (() => {
+        const buscando = buscadorCliente.trim().length > 0
+        const clienteSeleccionado = clientes.find(c => c.id === clienteId)
+        // Recientes: los 3 ultimos creados (asumimos que `clientes` viene en
+        // orden segun el API; tomamos los primeros 3 como aproximacion de "recientes").
+        const recientes = clientes.slice(0, 3)
 
-          <div className="mt-7">
-            <div className="relative">
-              <svg
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
-                style={{ color: 'var(--color-text-muted)' }}
-                fill="none" stroke="currentColor" viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        const renderClienteRow = (c, mostrarCheck = true) => (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => {
+              setClienteId(c.id)
+              setClienteNombre(c.nombre)
+              setBuscadorCliente('')
+            }}
+            className="w-full text-left flex items-center gap-3 px-3 py-3 rounded-[12px] border transition-all"
+            style={{
+              background: c.id === clienteId
+                ? 'color-mix(in srgb, var(--color-accent) 12%, transparent)'
+                : 'var(--color-bg-surface)',
+              borderColor: c.id === clienteId
+                ? 'var(--color-accent)'
+                : 'var(--color-border)',
+            }}
+          >
+            <div
+              className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-sm font-bold"
+              style={{
+                background: 'color-mix(in srgb, var(--color-accent) 18%, transparent)',
+                color: 'var(--color-accent)',
+              }}
+            >
+              {c.nombre?.charAt(0)?.toUpperCase() ?? '?'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-sm truncate" style={{ color: 'var(--color-text-primary)' }}>{c.nombre}</p>
+              <p className="text-xs truncate" style={{ color: 'var(--color-text-muted)' }}>CC {c.cedula}</p>
+            </div>
+            {mostrarCheck && c.id === clienteId && (
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" style={{ color: 'var(--color-accent)' }}>
+                <path fillRule="evenodd" d="M16.704 5.29a1 1 0 010 1.415l-7.997 8a1 1 0 01-1.414 0L3.296 10.71a1 1 0 011.415-1.415l3.29 3.29 7.288-7.295a1 1 0 011.415 0z" clipRule="evenodd" />
               </svg>
-              <input
-                type="search"
-                value={buscadorCliente}
-                onChange={(e) => setBuscadorCliente(e.target.value)}
-                placeholder="Buscar por nombre o cedula"
-                className="w-full h-12 pl-10 pr-4 rounded-[12px] border text-sm focus:outline-none transition-colors"
+            )}
+          </button>
+        )
+
+        return (
+          <section className="mt-8">
+            <h2 className="text-[22px] font-bold leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+              {clienteSeleccionado ? '¿Continuamos con este cliente?' : 'Elige el cliente'}
+            </h2>
+            <p className="text-sm mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
+              {clienteSeleccionado
+                ? 'Si necesitas cambiarlo, usa el buscador.'
+                : 'Busca por nombre o cedula, o elige uno de los recientes.'}
+            </p>
+
+            {/* Cliente ya seleccionado: card grande en lugar de fila pequena */}
+            {clienteSeleccionado && !buscando && (
+              <div
+                className="mt-7 rounded-[16px] p-4 flex items-center gap-3"
                 style={{
-                  background: 'var(--color-bg-surface)',
-                  borderColor: 'var(--color-border)',
-                  color: 'var(--color-text-primary)',
+                  background: 'color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card))',
+                  border: '1.5px solid var(--color-accent)',
                 }}
-                autoFocus
-              />
+              >
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 text-base font-bold"
+                  style={{
+                    background: 'color-mix(in srgb, var(--color-accent) 22%, transparent)',
+                    color: 'var(--color-accent)',
+                  }}
+                >
+                  {clienteSeleccionado.nombre?.charAt(0)?.toUpperCase() ?? '?'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-base truncate" style={{ color: 'var(--color-text-primary)' }}>
+                    {clienteSeleccionado.nombre}
+                  </p>
+                  <p className="text-xs truncate" style={{ color: 'var(--color-text-muted)' }}>
+                    CC {clienteSeleccionado.cedula}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setClienteId(''); setClienteNombre('') }}
+                  className="text-xs font-semibold px-2.5 py-1.5 rounded-[8px] transition-colors"
+                  style={{ color: 'var(--color-text-muted)', background: 'var(--color-bg-surface)' }}
+                >
+                  Cambiar
+                </button>
+              </div>
+            )}
+
+            {/* Buscador */}
+            <div className="mt-7">
+              <div className="relative">
+                <svg
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                  style={{ color: 'var(--color-text-muted)' }}
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  type="search"
+                  value={buscadorCliente}
+                  onChange={(e) => setBuscadorCliente(e.target.value)}
+                  placeholder="Buscar por nombre o cedula"
+                  className="w-full h-12 pl-10 pr-4 rounded-[12px] border text-sm focus:outline-none transition-colors"
+                  style={{
+                    background: 'var(--color-bg-surface)',
+                    borderColor: 'var(--color-border)',
+                    color: 'var(--color-text-primary)',
+                  }}
+                />
+              </div>
             </div>
 
-            {/* Lista de resultados — UNA sola lista, sin duplicar el seleccionado */}
-            <div className="mt-3 space-y-1.5 max-h-[60vh] overflow-y-auto pr-1">
-              {clientesFiltrados.length === 0 && (
-                <p className="text-sm text-center py-8" style={{ color: 'var(--color-text-muted)' }}>
-                  {buscadorCliente ? 'Sin resultados. Prueba con otro nombre.' : 'No tienes clientes aun.'}
+            {/* RESULTADOS: solo si esta buscando */}
+            {buscando && (
+              <div className="mt-3 space-y-1.5">
+                {clientesFiltrados.length === 0 ? (
+                  <p className="text-sm text-center py-8" style={{ color: 'var(--color-text-muted)' }}>
+                    Sin resultados. Prueba con otro nombre.
+                  </p>
+                ) : (
+                  clientesFiltrados.slice(0, 8).map((c) => renderClienteRow(c))
+                )}
+              </div>
+            )}
+
+            {/* RECIENTES: solo si NO esta buscando y no hay cliente seleccionado (o hay uno pero queremos mostrar opciones rapidas) */}
+            {!buscando && !clienteSeleccionado && recientes.length > 0 && (
+              <div className="mt-5">
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--color-text-muted)' }}>
+                  Recientes
                 </p>
-              )}
-              {clientesFiltrados.slice(0, 50).map((c) => {
-                const seleccionado = c.id === clienteId
-                return (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => {
-                      setClienteId(c.id)
-                      setClienteNombre(c.nombre)
-                    }}
-                    className="w-full text-left flex items-center gap-3 px-3 py-3 rounded-[12px] border transition-all"
-                    style={{
-                      background: seleccionado
-                        ? 'color-mix(in srgb, var(--color-accent) 12%, transparent)'
-                        : 'var(--color-bg-surface)',
-                      borderColor: seleccionado
-                        ? 'var(--color-accent)'
-                        : 'var(--color-border)',
-                    }}
-                  >
-                    <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-sm font-bold"
-                      style={{
-                        background: 'color-mix(in srgb, var(--color-accent) 18%, transparent)',
-                        color: 'var(--color-accent)',
-                      }}
-                    >
-                      {c.nombre?.charAt(0)?.toUpperCase() ?? '?'}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm truncate" style={{ color: 'var(--color-text-primary)' }}>{c.nombre}</p>
-                      <p className="text-xs truncate" style={{ color: 'var(--color-text-muted)' }}>CC {c.cedula}</p>
-                    </div>
-                    {seleccionado && (
-                      <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" style={{ color: 'var(--color-accent)' }}>
-                        <path fillRule="evenodd" d="M16.704 5.29a1 1 0 010 1.415l-7.997 8a1 1 0 01-1.414 0L3.296 10.71a1 1 0 011.415-1.415l3.29 3.29 7.288-7.295a1 1 0 011.415 0z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </section>
-      )}
+                <div className="space-y-1.5">
+                  {recientes.map((c) => renderClienteRow(c, false))}
+                </div>
+              </div>
+            )}
+
+            {!buscando && !clienteSeleccionado && recientes.length === 0 && (
+              <p className="text-sm text-center py-8 mt-3" style={{ color: 'var(--color-text-muted)' }}>
+                No tienes clientes aun. Crea uno antes de continuar.
+              </p>
+            )}
+          </section>
+        )
+      })()}
 
       {/* PASO 2 — Plan del prestamo (todo en una sola pantalla, con revision en vivo abajo) */}
       {paso === 1 && (
@@ -809,10 +877,11 @@ function NuevoPrestamo() {
 
       {/* Footer fijo abajo */}
       <div
-        className="fixed bottom-0 left-0 right-0 z-30 px-4 py-3 lg:px-6 lg:pb-6 pb-[calc(env(safe-area-inset-bottom)+12px)]"
+        className="fixed left-0 right-0 z-[45] px-4 py-3 lg:px-6 lg:pb-6 bottom-[calc(80px+env(safe-area-inset-bottom))] lg:bottom-0"
         style={{
-          background: 'linear-gradient(to top, var(--color-bg-base) 60%, transparent)',
+          background: 'var(--color-bg-base)',
           borderTop: '1px solid var(--color-border)',
+          boxShadow: '0 -8px 24px rgba(0,0,0,0.3)',
         }}
       >
         <div className="max-w-2xl mx-auto flex items-center gap-3">

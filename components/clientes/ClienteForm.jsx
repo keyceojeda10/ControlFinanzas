@@ -47,8 +47,8 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
   })
 
   const PASOS = [
-    { label: 'Identidad' },
-    { label: 'Contacto' },
+    { label: 'Datos basicos' },
+    { label: 'Ubicacion' },
     { label: 'Organizacion' },
   ]
 
@@ -106,30 +106,42 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
     setErrores((prev) => ({ ...prev, [field]: '' }))
   }
 
-  // Validacion por paso. El paso 1 (Identidad) solo requiere nombre y cedula.
-  // El telefono se valida en el paso 2 (Contacto).
-  const validarPaso = (idx) => {
+  // El paso 1 (Datos basicos) pide nombre, cedula y telefono — los 3 datos
+  // minimos para tener un cliente registrable. Pasos 2 y 3 son opcionales.
+  //
+  // IMPORTANTE: hay dos niveles de validacion:
+  // - camposRequeridosLlenos(idx): solo chequea que los inputs NO esten vacios.
+  //   Esto controla si el boton "Continuar" esta habilitado.
+  // - validarPasoEstricto(idx): incluye validacion de formato (cedula, telefono).
+  //   Solo se ejecuta al hacer click en "Continuar", para que si el formato
+  //   falla el usuario vea el error en el campo y sepa por que no avanzo.
+  const camposRequeridosLlenos = (idx) => {
+    if (idx === 0) {
+      return !!form.nombre.trim() && !!form.cedula.trim() && !!form.telefono.trim()
+    }
+    return true
+  }
+
+  const validarPasoEstricto = (idx) => {
     const errs = {}
     if (idx === 0) {
       if (!form.nombre.trim()) errs.nombre = 'El nombre es requerido'
       if (!form.cedula.trim()) errs.cedula = 'La cedula es requerida'
-      if (form.cedula && !validateDocument(form.cedula.trim())) {
+      else if (!validateDocument(form.cedula.trim())) {
         errs.cedula = `${documentConfig.label} no valido (ej: ${documentConfig.placeholder})`
       }
-    }
-    if (idx === 1) {
       if (!form.telefono.trim()) errs.telefono = 'El telefono es requerido'
-      if (form.telefono && !validatePhone(form.telefono.replace(/\s/g, ''))) {
+      else if (!validatePhone(form.telefono.replace(/\s/g, ''))) {
         errs.telefono = `Ingresa un ${phoneConfig.label.toLowerCase()} valido (ej: ${phoneConfig.placeholder})`
       }
     }
     return errs
   }
 
-  const puedeAvanzar = Object.keys(validarPaso(paso)).length === 0
+  const puedeAvanzar = camposRequeridosLlenos(paso)
 
   const irAlSiguiente = () => {
-    const errs = validarPaso(paso)
+    const errs = validarPasoEstricto(paso)
     if (Object.keys(errs).length) {
       setErrores(errs)
       return
@@ -143,11 +155,10 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
   const handleSubmit = async (e) => {
     e?.preventDefault?.()
     // Validar todos los pasos antes de enviar.
-    const errs = { ...validarPaso(0), ...validarPaso(1) }
+    const errs = validarPasoEstricto(0)
     if (Object.keys(errs).length) {
       setErrores(errs)
-      if (errs.nombre || errs.cedula) setPaso(0)
-      else if (errs.telefono) setPaso(1)
+      setPaso(0)
       return
     }
 
@@ -251,7 +262,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
   for (let i = 0; i < paso; i++) completedIndices.push(i)
 
   return (
-    <div className="max-w-xl mx-auto pb-32">
+    <div className="max-w-xl mx-auto pb-32 lg:pb-32">
       {/* Stepper */}
       <Stepper
         steps={PASOS}
@@ -272,14 +283,14 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
         </div>
       )}
 
-      {/* Paso 1 — Identidad */}
+      {/* Paso 1 — Datos basicos */}
       {paso === 0 && (
         <section className="mt-8">
           <h2 className="text-[22px] font-bold leading-tight" style={{ color: 'var(--color-text-primary)' }}>
             {esEdicion ? 'Datos del cliente' : '¿Quien es tu cliente?'}
           </h2>
           <p className="text-sm mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
-            Empecemos con su nombre y documento de identidad.
+            Nombre, documento y telefono. Lo minimo para registrarlo.
           </p>
 
           {/* Foto */}
@@ -362,21 +373,6 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                 )
               })()}
             </div>
-          </div>
-        </section>
-      )}
-
-      {/* Paso 2 — Contacto */}
-      {paso === 1 && (
-        <section className="mt-8">
-          <h2 className="text-[22px] font-bold leading-tight" style={{ color: 'var(--color-text-primary)' }}>
-            ¿Como lo contactamos?
-          </h2>
-          <p className="text-sm mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
-            Telefono y direccion. Estos datos sirven para visitarlo y enviarle mensajes de WhatsApp.
-          </p>
-
-          <div className="mt-7 space-y-5">
             <Input
               label={phoneConfig.label}
               placeholder={`Ej: ${phoneConfig.placeholder}`}
@@ -384,8 +380,22 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
               onChange={set('telefono')}
               error={errores.telefono}
               inputMode="tel"
-              autoFocus
             />
+          </div>
+        </section>
+      )}
+
+      {/* Paso 2 — Ubicacion */}
+      {paso === 1 && (
+        <section className="mt-8">
+          <h2 className="text-[22px] font-bold leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+            ¿Donde lo ubicamos?
+          </h2>
+          <p className="text-sm mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
+            Direccion y referencias. Sirve para visitarlo y enrutarlo.
+          </p>
+
+          <div className="mt-7 space-y-5">
             <Input
               label="Direccion"
               placeholder="Calle, barrio, ciudad..."
@@ -476,10 +486,11 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
 
       {/* Footer fijo abajo: cancel/atras + siguiente/guardar */}
       <div
-        className="fixed bottom-0 left-0 right-0 z-30 px-4 py-3 lg:px-6 lg:pb-6 pb-[calc(env(safe-area-inset-bottom)+12px)]"
+        className="fixed left-0 right-0 z-[45] px-4 py-3 lg:px-6 lg:pb-6 bottom-[calc(80px+env(safe-area-inset-bottom))] lg:bottom-0"
         style={{
-          background: 'linear-gradient(to top, var(--color-bg-base) 60%, transparent)',
+          background: 'var(--color-bg-base)',
           borderTop: '1px solid var(--color-border)',
+          boxShadow: '0 -8px 24px rgba(0,0,0,0.3)',
         }}
       >
         <div className="max-w-xl mx-auto flex items-center gap-3">
