@@ -7,6 +7,7 @@ import dynamic                 from 'next/dynamic'
 import { Input, Select }       from '@/components/ui/Input'
 import { Button }              from '@/components/ui/Button'
 import DiasSinCobroSelector    from '@/components/ui/DiasSinCobroSelector'
+import Stepper                 from '@/components/ui/Stepper'
 import { guardarClientePendiente, encolarMutacion } from '@/lib/offline'
 import { useCountry } from '@/hooks/useCountry'
 
@@ -65,6 +66,13 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
   const [error,   setError]     = useState('')
   const [scoreData, setScoreData] = useState(null)
   const [avanzadoOpen, setAvanzadoOpen] = useState(false)
+  // Wizard: paso actual (0 = Identidad, 1 = Ubicacion, 2 = Organizacion).
+  const [paso, setPaso] = useState(0)
+  const PASOS = [
+    { label: 'Identidad' },
+    { label: 'Ubicacion' },
+    { label: 'Organizacion' },
+  ]
   const [diasSinCobro, setDiasSinCobro] = useState(() => {
     try { return JSON.parse(clienteInicial?.diasSinCobro || '[]') } catch { return [] }
   })
@@ -140,10 +148,28 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
     return errs
   }
 
+  // Avanza al siguiente paso si la validacion del paso actual pasa.
+  const irAlSiguientePaso = () => {
+    if (paso === 0) {
+      const errs = validar()
+      if (Object.keys(errs).length) {
+        setErrores(errs)
+        return
+      }
+    }
+    setPaso(p => Math.min(PASOS.length - 1, p + 1))
+  }
+
+  const irAlPasoAnterior = () => setPaso(p => Math.max(0, p - 1))
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     const errs = validar()
-    if (Object.keys(errs).length) { setErrores(errs); return }
+    if (Object.keys(errs).length) {
+      setErrores(errs)
+      setPaso(0) // si fallo paso 1, regresar para que el usuario lo vea
+      return
+    }
 
     setLoading(true)
     setError('')
@@ -248,8 +274,41 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
     }
   }
 
+  // Marcado de pasos completados: paso 0 esta completado si no hay errores
+  // y los campos requeridos estan llenos. Pasos 2/3 siempre se consideran
+  // completables (son opcionales).
+  const paso0Listo = !!form.nombre.trim() && !!form.cedula.trim() && !!form.telefono.trim()
+  const completedSet = []
+  if (paso > 0) completedSet.push(0)
+  if (paso > 1) completedSet.push(1)
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+        // En pasos intermedios el submit del form (Enter en input) avanza.
+        if (paso < PASOS.length - 1) {
+          irAlSiguientePaso()
+        } else {
+          handleSubmit(e)
+        }
+      }}
+      className="space-y-4"
+    >
+      {/* Stepper visual */}
+      <div className="mb-2">
+        <Stepper
+          steps={PASOS}
+          activeIndex={paso}
+          completedIndices={completedSet}
+          onChange={(idx) => {
+            // Permitir clicar atras siempre, adelante solo si paso 1 ya esta valido
+            if (idx <= paso) setPaso(idx)
+            else if (paso0Listo) setPaso(idx)
+          }}
+        />
+      </div>
+
       {error && (
         <div className="flex items-center gap-2.5 rounded-[12px] px-4 py-3 text-sm"
           style={{ background: 'var(--color-danger-dim)', color: 'var(--color-danger)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)' }}
@@ -261,7 +320,8 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
         </div>
       )}
 
-      {/* Datos basicos */}
+      {/* PASO 1 — Identidad */}
+      {paso === 0 && (
       <SectionCard
         title="Datos básicos"
         color="var(--color-accent)"
@@ -348,8 +408,10 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
           </div>
         </div>
       </SectionCard>
+      )}
 
-      {/* Contacto */}
+      {/* PASO 2 — Contacto y ubicacion */}
+      {paso === 1 && (
       <SectionCard
         title="Contacto"
         color="#22c55e"
@@ -403,8 +465,10 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
           </div>
         </div>
       </SectionCard>
+      )}
 
-      {/* Ruta + grupo (organizacional) */}
+      {/* PASO 3 — Organizacion (ruta, grupo, dias sin cobro, notas) */}
+      {paso === 2 && <>
       {(!['starter', 'basic'].includes(plan) && rutas.length > 0) || grupos.length > 0 ? (
         <SectionCard
           title="Asignación"
@@ -475,19 +539,42 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
         )}
       </div>
 
-      {/* Botones de accion */}
-      <div className="flex items-center gap-3 pt-2">
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={() => router.back()}
-          disabled={loading}
-        >
-          Cancelar
-        </Button>
-        <Button type="submit" loading={loading}>
-          {esEdicion ? 'Guardar cambios' : 'Crear cliente'}
-        </Button>
+      </>}
+
+      {/* Footer del wizard: Cancelar/Atras a la izquierda, Siguiente/Guardar a la derecha */}
+      <div className="flex items-center justify-between gap-3 pt-2">
+        {paso === 0 ? (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => router.back()}
+            disabled={loading}
+          >
+            Cancelar
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={irAlPasoAnterior}
+            disabled={loading}
+          >
+            ← Atras
+          </Button>
+        )}
+        {paso < PASOS.length - 1 ? (
+          <Button
+            type="button"
+            onClick={irAlSiguientePaso}
+            disabled={paso === 0 && !paso0Listo}
+          >
+            Siguiente →
+          </Button>
+        ) : (
+          <Button type="submit" loading={loading}>
+            {esEdicion ? 'Guardar cambios' : 'Crear cliente'}
+          </Button>
+        )}
       </div>
     </form>
   )
