@@ -18,6 +18,9 @@ export default function RegistrarPago({
   open, onClose, onSuccess,
   cliente, prestamo, rutaNav,
   presetPago,
+  // tabInicial: 'pago' (default) | 'capital' | 'recargo' | 'descuento'
+  // Cuando se abre desde botones "Recargo" / "Descuento" / "Abono a capital".
+  tabInicial = 'pago',
 }) {
   const router = useRouter()
   const { formatMoney } = useCountry()
@@ -43,6 +46,27 @@ export default function RegistrarPago({
   useEffect(() => {
     if (!open) return
 
+    // Si la apertura es para un ajuste (recargo/descuento) o abono a capital,
+    // arrancar con campos limpios. Si es pago normal, pre-llenar con la cuota.
+    if (tabInicial === 'recargo' || tabInicial === 'descuento') {
+      setMonto('')
+      setTipo(tabInicial)
+      setNota('')
+      setDiasAbonados(null)
+      setSliderVisual(1)
+      setError('')
+      return
+    }
+    if (tabInicial === 'capital') {
+      setMonto('')
+      setTipo('capital')
+      setNota('')
+      setDiasAbonados(null)
+      setSliderVisual(1)
+      setError('')
+      return
+    }
+
     const montoBase = Math.min(Math.round(cuotaDiaria ?? 0), Math.round(saldoPendiente ?? 0))
     const montoPreset = Number(presetPago?.monto)
     const montoFinal = montoPreset > 0
@@ -54,7 +78,7 @@ export default function RegistrarPago({
     setDiasAbonados(null)
     setSliderVisual(1)
     setError('')
-  }, [open, presetPago, cuotaDiaria, saldoPendiente])
+  }, [open, presetPago, cuotaDiaria, saldoPendiente, tabInicial])
 
   // Animacion del slider visual: cuando diasAbonados cambia (por boton de mora,
   // ponerse al dia o snap), interpola gradualmente desde el valor visual actual
@@ -91,8 +115,24 @@ export default function RegistrarPago({
   const handleSubmit = async ({ confirmarDuplicado = false } = {}) => {
     let m = Number(monto)
     if (!m || m <= 0) { setError('Ingresa un monto válido'); return }
+    // Nota obligatoria para recargo y descuento (auditoria).
+    if ((tipo === 'recargo' || tipo === 'descuento') && !nota.trim()) {
+      setError('El motivo es obligatorio para recargo y descuento')
+      return
+    }
+    // Descuento: validacion preventiva — no exceder espacio disponible.
+    if (tipo === 'descuento') {
+      const totalPag = Number(prestamo?.totalPagado || 0)
+      const totalAP = Number(prestamo?.totalAPagar || 0)
+      const espacioDescuento = Math.max(0, totalAP - totalPag)
+      if (m > espacioDescuento) {
+        setError(`Maximo permitido: ${formatMoney(espacioDescuento)} (no puede exceder lo no pagado).`)
+        return
+      }
+    }
     // Limitar al saldo en lugar de bloquear (permite cobrar saldos pequeños)
-    if (tipo !== 'recargo' && m > saldoPendiente) {
+    // Excepcion: recargo NO se limita (suma al saldo) y descuento ya valido arriba.
+    if (tipo !== 'recargo' && tipo !== 'descuento' && m > saldoPendiente) {
       m = Math.round(saldoPendiente)
     }
 
@@ -331,15 +371,26 @@ export default function RegistrarPago({
   }
 
   // ── Vista formulario ──────────────────────────────────────────
+  const tituloModal =
+    tipo === 'recargo' ? 'Agregar recargo' :
+    tipo === 'descuento' ? 'Aplicar descuento' :
+    tipo === 'capital' ? 'Abono a capital' :
+    'Registrar pago'
+  const labelBoton =
+    tipo === 'recargo' ? 'Aplicar recargo' :
+    tipo === 'descuento' ? 'Aplicar descuento' :
+    tipo === 'capital' ? 'Confirmar abono' :
+    'Confirmar pago'
+
   return (
     <Modal
       open={open}
       onClose={onClose}
-      title="Registrar pago"
+      title={tituloModal}
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={loading}>Cancelar</Button>
-          <Button onClick={handleSubmit} loading={loading}>Confirmar pago</Button>
+          <Button onClick={handleSubmit} loading={loading}>{labelBoton}</Button>
         </>
       }
     >
@@ -363,7 +414,7 @@ export default function RegistrarPago({
             Al pulsar, calculamos cuantos dias equivale el monto y movemos
             tambien el slider de abono rapido para que el usuario vea visualmente
             el progreso. Si supera 30 dias (max del slider), se capea en 30. */}
-        {tipo !== 'capital' && (() => {
+        {tipo !== 'capital' && tipo !== 'recargo' && tipo !== 'descuento' && (() => {
           const cuota = Math.max(1, Math.round(cuotaDiaria ?? 1))
           const diasParaMonto = (m) => Math.min(30, Math.max(1, Math.round((Number(m) || 0) / cuota)))
           return (
@@ -405,7 +456,7 @@ export default function RegistrarPago({
         })()}
 
         {/* Slider de abono rápido por días */}
-        {tipo !== 'capital' && (() => {
+        {tipo !== 'capital' && tipo !== 'recargo' && tipo !== 'descuento' && (() => {
           const val = diasAbonados || 1
           // Valor mostrado en el slider (puede ser fraccional durante la animacion)
           const visual = sliderVisual
@@ -500,22 +551,27 @@ export default function RegistrarPago({
           />
 
           <div className="flex flex-col gap-1.5">
-            <span className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">Tipo de pago</span>
-            <div className="flex gap-2">
+            <span className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">Tipo</span>
+            <div className="grid grid-cols-3 gap-2">
               {[
                 { key: 'completo', label: 'Completo',  color: 'var(--color-accent)' },
                 { key: 'parcial',  label: 'Parcial',   color: 'var(--color-accent)' },
-                { key: 'capital',  label: 'A Capital',  color: 'var(--color-purple)' },
+                { key: 'capital',  label: 'A capital',  color: 'var(--color-purple)' },
+                { key: 'recargo',  label: 'Recargo',   color: '#f97316' },
+                { key: 'descuento',label: 'Descuento', color: 'var(--color-success)' },
               ].map(({ key, label, color }) => (
                 <button
                   key={key}
                   type="button"
                   onClick={() => {
                     setTipo(key)
-                    if (key === 'capital') { setDiasAbonados(null); setMonto('') }
+                    if (key === 'capital' || key === 'recargo' || key === 'descuento') {
+                      setDiasAbonados(null)
+                      setMonto('')
+                    }
                   }}
                   className={[
-                    'flex-1 h-9 rounded-[10px] border text-sm font-medium transition-all cursor-pointer',
+                    'h-9 rounded-[10px] border text-xs font-medium transition-all cursor-pointer',
                     tipo === key
                       ? `border-[${color}] text-[${color}]`
                       : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-surface)]',
@@ -527,6 +583,37 @@ export default function RegistrarPago({
               ))}
             </div>
           </div>
+
+          {/* Preview para recargo/descuento */}
+          {(tipo === 'recargo' || tipo === 'descuento') && Number(monto) > 0 && (
+            <div
+              className="px-3 py-2.5 rounded-[10px] border"
+              style={{
+                background: tipo === 'recargo' ? 'rgba(249,115,22,0.08)' : 'rgba(34,197,94,0.08)',
+                borderColor: tipo === 'recargo' ? 'rgba(249,115,22,0.2)' : 'rgba(34,197,94,0.2)',
+              }}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-[var(--color-text-muted)]">
+                  {tipo === 'recargo' ? 'Recargo' : 'Descuento'}
+                </span>
+                <span
+                  className="text-sm font-semibold font-mono-display"
+                  style={{ color: tipo === 'recargo' ? '#f97316' : 'var(--color-success)' }}
+                >
+                  {tipo === 'recargo' ? '+' : '−'}{formatMoney(Number(monto))}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[var(--color-text-muted)]">Nuevo saldo</span>
+                <span className="text-sm font-bold text-[var(--color-text-primary)] font-mono-display">
+                  {formatMoney(tipo === 'recargo'
+                    ? saldoPendiente + Number(monto)
+                    : Math.max(0, saldoPendiente - Number(monto)))}
+                </span>
+              </div>
+            </div>
+          )}
 
           {tipo === 'capital' && (
             <div className="bg-[rgba(168,85,247,0.08)] border border-[rgba(168,85,247,0.2)] rounded-[10px] px-3 py-2.5 text-xs">
@@ -596,8 +683,12 @@ export default function RegistrarPago({
           )}
 
           <Input
-            label="Nota (opcional)"
-            placeholder="Ej: Pago adelantado"
+            label={(tipo === 'recargo' || tipo === 'descuento') ? 'Motivo (obligatorio)' : 'Nota (opcional)'}
+            placeholder={
+              tipo === 'recargo' ? 'Ej: Multa por 5 dias de atraso' :
+              tipo === 'descuento' ? 'Ej: Pago anticipado, devolucion' :
+              'Ej: Pago adelantado'
+            }
             value={nota}
             onChange={(e) => setNota(e.target.value)}
           />

@@ -13,7 +13,7 @@ import { Card }                       from '@/components/ui/Card'
 import { Modal }                      from '@/components/ui/Modal'
 import { SkeletonCard }               from '@/components/ui/Skeleton'
 import RegistrarPago                  from '@/components/prestamos/RegistrarPago'
-import AjusteSaldo                    from '@/components/prestamos/AjusteSaldo'
+// AjusteSaldo absorbido por RegistrarPago via prop tabInicial.
 import RenovarPrestamo                from '@/components/prestamos/RenovarPrestamo'
 import ModificarPlazo                 from '@/components/prestamos/ModificarPlazo'
 import EditarDiaCobro                 from '@/components/prestamos/EditarDiaCobro'
@@ -1154,30 +1154,32 @@ export default function PrestamoDetallePage({ params }) {
         presetPago={presetPago}
       />
 
-      {/* Modales de ajuste */}
-      <AjusteSaldo
+      {/* Modales de ajuste: usan el mismo RegistrarPago con tabInicial.
+          Antes habia un AjusteSaldo separado — se unifico para evitar UX divergente. */}
+      <RegistrarPago
         prestamoId={id}
+        cuotaDiaria={cuotaDiaria}
         saldoPendiente={saldoPendiente}
-        totalAPagar={totalAPagar}
-        tipoAjuste="recargo"
         open={modalRecargo}
         onClose={() => setModalRecargo(false)}
-        onSuccess={(prestamoActualizado) => {
-          setPrestamo(prestamoActualizado)
-        }}
+        onSuccess={(prestamoActualizado) => setPrestamo(prestamoActualizado)}
+        cliente={cliente}
+        prestamo={prestamo}
+        tabInicial="recargo"
       />
-      <AjusteSaldo
+      <RegistrarPago
         prestamoId={id}
+        cuotaDiaria={cuotaDiaria}
         saldoPendiente={saldoPendiente}
-        totalAPagar={totalAPagar}
-        totalPagado={totalPagadoReal}
-        tipoAjuste="descuento"
         open={modalDescuento}
         onClose={() => setModalDescuento(false)}
         onSuccess={(prestamoActualizado) => {
           setPrestamo(prestamoActualizado)
           if (prestamoActualizado.estado === 'completado') setCompletado(true)
         }}
+        cliente={cliente}
+        prestamo={prestamo}
+        tabInicial="descuento"
       />
 
       {/* Modal de renovación */}
