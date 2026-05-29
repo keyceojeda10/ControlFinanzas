@@ -120,15 +120,12 @@ export async function GET(request) {
     proximoCobro:     calcularProximoCobro(p, diasExcluidos),
   }})
 
-  // Reordenar por actividad reciente del cliente, manteniendo juntos los
-  // prestamos del mismo cliente. Actividad = MAX(createdAt, ultimoPagoAt) entre
-  // todos sus prestamos. El cliente con la actividad mas reciente sube primero.
+  // Reordenar por createdAt del prestamo mas reciente del cliente, manteniendo
+  // juntos los prestamos del mismo cliente. Los pagos NO mueven la posicion —
+  // solo un prestamo nuevo sube al cliente al tope.
   const actividadCliente = new Map()
   for (const p of resultado) {
-    const ts = Math.max(
-      new Date(p.createdAt).getTime(),
-      p.ultimoPagoAt ? new Date(p.ultimoPagoAt).getTime() : 0,
-    )
+    const ts = new Date(p.createdAt).getTime()
     const prev = actividadCliente.get(p.clienteId) ?? 0
     if (ts > prev) actividadCliente.set(p.clienteId, ts)
   }

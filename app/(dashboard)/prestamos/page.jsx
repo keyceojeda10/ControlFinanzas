@@ -57,19 +57,6 @@ export default function PrestamosPage() {
   // Pais del usuario para badge "Nuevo" y formatos
   const { country } = useCountry()
 
-  // Grupos colapsados manualmente por el usuario. Default: abierto excepto los
-  // que no cumplen heuristica de relevancia. Se guarda el set inverso (cerrados)
-  // para que un grupo nuevo entrante quede abierto por default sin re-pintar.
-  const [gruposCerrados, setGruposCerrados] = useState(() => new Set())
-  const toggleGrupo = useCallback((clienteId) => {
-    setGruposCerrados((prev) => {
-      const next = new Set(prev)
-      if (next.has(clienteId)) next.delete(clienteId)
-      else next.add(clienteId)
-      return next
-    })
-  }, [])
-
   const fetchPrestamos = useCallback(async (q, est, p, { soft = false } = {}) => {
     const shouldUseSoftRefresh = soft && hasLoadedOnceRef.current
     setError('')
@@ -310,39 +297,15 @@ export default function PrestamosPage() {
         }
         return (
           <div className="space-y-4">
-            {grupos.map(({ cliente, prestamos: prestCliente, tieneNuevo, saldoTotal }, idx) => {
+            {grupos.map(({ cliente, prestamos: prestCliente, tieneNuevo, saldoTotal }) => {
               const tieneVarios = prestCliente.length > 1
-              // Default: abierto si trivial (1 prestamo), o primer grupo, o tiene "Nuevo".
-              const defaultAbierto = !tieneVarios || idx === 0 || tieneNuevo
-              // El set guarda los grupos donde el usuario togglo el default.
-              const toggleado = gruposCerrados.has(cliente.id)
-              const abierto = toggleado ? !defaultAbierto : defaultAbierto
-
               return (
                 <div key={cliente.id}>
                   {tieneVarios && (
-                    <button
-                      type="button"
-                      onClick={() => toggleGrupo(cliente.id)}
-                      aria-expanded={abierto}
-                      className="w-full flex items-center gap-2 mb-2 px-2 py-1.5 rounded-lg transition-colors text-left"
-                      style={{
-                        background: abierto
-                          ? 'color-mix(in srgb, var(--color-text-primary) 4%, transparent)'
-                          : 'transparent',
-                      }}
+                    <div
+                      className="flex items-center gap-2 mb-2 px-2 py-1.5 rounded-lg"
+                      style={{ background: 'color-mix(in srgb, var(--color-text-primary) 4%, transparent)' }}
                     >
-                      <svg
-                        width="10" height="10" viewBox="0 0 20 20" fill="currentColor"
-                        aria-hidden="true"
-                        style={{
-                          color: 'var(--color-text-muted)',
-                          transform: abierto ? 'rotate(90deg)' : 'rotate(0deg)',
-                          transition: 'transform 150ms ease',
-                        }}
-                      >
-                        <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
-                      </svg>
                       <span
                         className="text-[11px] font-bold uppercase tracking-wider truncate"
                         style={{ color: 'var(--color-text-primary)' }}
@@ -365,44 +328,42 @@ export default function PrestamosPage() {
                       >
                         {formatMoney(Math.round(saldoTotal), country)}
                       </span>
-                    </button>
-                  )}
-                  {abierto && (
-                    <div
-                      className={tieneVarios ? 'space-y-2.5 pl-2 ml-1 border-l' : 'space-y-2.5'}
-                      style={tieneVarios ? { borderColor: 'color-mix(in srgb, var(--color-border) 60%, transparent)' } : undefined}
-                    >
-                      {prestCliente.map((p) => {
-                        const cardActions = []
-                        if (p.cliente?.telefono) {
-                          cardActions.push({
-                            icon: IconWA,
-                            label: 'WhatsApp',
-                            color: '#25D366',
-                            onClick: () => setWaContext({ cliente: p.cliente, prestamo: p }),
-                          })
-                        }
-                        if (p.estado === 'activo') {
-                          cardActions.push({
-                            icon: IconPagar,
-                            label: 'Registrar pago',
-                            color: '#22c55e',
-                            onClick: () => { window.location.href = `/prestamos/${p.id}?openPago=1` },
-                          })
-                        }
-                        return (
-                          <div key={p.id} className="relative">
-                            <PrestamoCard prestamo={p} actions={cardActions} />
-                            {isHoy(p.createdAt, country) && (
-                              <div className="absolute top-2 right-2 z-10 pointer-events-none">
-                                <BadgeNuevo fecha={p.createdAt} />
-                              </div>
-                            )}
-                          </div>
-                        )
-                      })}
                     </div>
                   )}
+                  <div
+                    className={tieneVarios ? 'space-y-2.5 pl-2 ml-1 border-l' : 'space-y-2.5'}
+                    style={tieneVarios ? { borderColor: 'color-mix(in srgb, var(--color-border) 60%, transparent)' } : undefined}
+                  >
+                    {prestCliente.map((p) => {
+                      const cardActions = []
+                      if (p.cliente?.telefono) {
+                        cardActions.push({
+                          icon: IconWA,
+                          label: 'WhatsApp',
+                          color: '#25D366',
+                          onClick: () => setWaContext({ cliente: p.cliente, prestamo: p }),
+                        })
+                      }
+                      if (p.estado === 'activo') {
+                        cardActions.push({
+                          icon: IconPagar,
+                          label: 'Registrar pago',
+                          color: '#22c55e',
+                          onClick: () => { window.location.href = `/prestamos/${p.id}?openPago=1` },
+                        })
+                      }
+                      return (
+                        <div key={p.id} className="relative">
+                          <PrestamoCard prestamo={p} actions={cardActions} />
+                          {isHoy(p.createdAt, country) && (
+                            <div className="absolute top-2 right-2 z-10 pointer-events-none">
+                              <BadgeNuevo fecha={p.createdAt} />
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
               )
             })}

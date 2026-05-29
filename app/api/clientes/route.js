@@ -162,14 +162,13 @@ export async function GET(request) {
       grupoCobro:       c.grupoCobro ?? null,
       prestamosActivos: c.prestamos.length,
       createdAt:        c.createdAt,
-      // Actividad reciente del cliente: MAX(createdAt cliente, prestamos.createdAt, ultimoPagoAt)
+      // Actividad reciente del cliente: MAX(createdAt cliente, prestamos.createdAt).
+      // Los pagos NO mueven la posicion — solo un prestamo nuevo (o cliente nuevo) sube.
       _actividadAt:     (() => {
         let max = new Date(c.createdAt).getTime()
         for (const p of c.prestamos) {
           const tc = p.createdAt ? new Date(p.createdAt).getTime() : 0
-          const tp = p.ultimoPagoAt ? new Date(p.ultimoPagoAt).getTime() : 0
           if (tc > max) max = tc
-          if (tp > max) max = tp
         }
         return max
       })(),
