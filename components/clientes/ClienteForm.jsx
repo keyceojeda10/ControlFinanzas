@@ -486,11 +486,11 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
 
       {/* Footer fijo abajo: cancel/atras + siguiente/guardar */}
       <div
-        className="fixed left-0 right-0 z-[45] px-4 py-3 lg:px-6 lg:pb-6 bottom-[calc(80px+env(safe-area-inset-bottom))] lg:bottom-0"
+        className="fixed left-0 right-0 bottom-0 z-[45] px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] lg:px-6 lg:pb-6"
         style={{
           background: 'var(--color-bg-base)',
           borderTop: '1px solid var(--color-border)',
-          boxShadow: '0 -8px 24px rgba(0,0,0,0.3)',
+          boxShadow: '0 -4px 12px rgba(0,0,0,0.25)',
         }}
       >
         <div className="max-w-xl mx-auto flex items-center gap-3">

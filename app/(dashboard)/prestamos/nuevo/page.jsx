@@ -11,6 +11,7 @@ import { calcularPrestamo } from '@/lib/calculos'
 import { formatMoney } from '@/lib/i18n'
 import ResumenCalculo                              from '@/components/prestamos/ResumenCalculo'
 import Stepper                                     from '@/components/ui/Stepper'
+import DiasSinCobroSelector                        from '@/components/ui/DiasSinCobroSelector'
 import { guardarPrestamoPendiente, obtenerClientesOffline } from '@/lib/offline'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
@@ -103,6 +104,11 @@ function NuevoPrestamo() {
   const [cuotaManual, setCuotaManual] = useState('')
   // Redondeo: 'exacto' ($100), 'redondeado' ($500) o 'cerrado' ($1.000)
   const [redondeo, setRedondeo] = useState('exacto')
+  // Dias sin cobro especificos para este cliente (se actualizan en su ficha
+  // al crear el prestamo). Permite que en frecuencia diaria se elijan dias
+  // de la semana en que NO se cobra (ej. domingo).
+  const [diasSinCobroCliente, setDiasSinCobroCliente] = useState([])
+  const [diasSinCobroEditado, setDiasSinCobroEditado] = useState(false)
 
   // Wizard: 2 pasos. 0 = Cliente, 1 = Plan (con revision en vivo).
   const [paso, setPaso] = useState(0)
@@ -122,6 +128,20 @@ function NuevoPrestamo() {
       .catch(() => {})
     return () => { cancelado = true }
   }, [clienteId])
+
+  // Cargar dias sin cobro actuales del cliente al seleccionarlo.
+  useEffect(() => {
+    if (!clienteId) { setDiasSinCobroCliente([]); setDiasSinCobroEditado(false); return }
+    const c = clientes.find(x => x.id === clienteId)
+    if (!c) return
+    try {
+      const arr = c.diasSinCobro ? JSON.parse(c.diasSinCobro) : []
+      setDiasSinCobroCliente(Array.isArray(arr) ? arr : [])
+      setDiasSinCobroEditado(false)
+    } catch {
+      setDiasSinCobroCliente([])
+    }
+  }, [clienteId, clientes])
 
   const repetirCondicionesUltimo = () => {
     if (!ultimoPrestamo) return
@@ -316,6 +336,17 @@ function NuevoPrestamo() {
         }
         setError(data?.error ?? 'Error al crear el préstamo')
         return
+      }
+      // Si el usuario edito los dias sin cobro del cliente desde aqui,
+      // sincronizar la ficha del cliente.
+      if (diasSinCobroEditado) {
+        try {
+          await fetch(`/api/clientes/${clienteId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ diasSinCobro: diasSinCobroCliente }),
+          })
+        } catch {}
       }
       router.push(`/prestamos/${data.id}`)
     } catch {
@@ -605,14 +636,31 @@ function NuevoPrestamo() {
             </div>
           </div>
 
-          {/* Monto + tasa */}
+          {/* Monto + chips rapidos */}
           <div className="space-y-4">
             <div>
               <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                Monto del prestamo
+                {modo === 'mercancia' ? 'Valor del articulo' : 'Monto del prestamo'}
               </label>
               <div className="mt-1.5">
-                <MoneyInput value={monto} onChange={(v) => setMonto(v)} placeholder="0" />
+                <MoneyInput value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="0" />
+              </div>
+              {/* Chips rapidos */}
+              <div className="flex gap-1.5 flex-wrap mt-2">
+                {[50000, 100000, 200000, 500000, 1000000].map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setMonto(String(v))}
+                    className="px-2.5 h-7 rounded-[8px] text-[11px] font-medium transition-all"
+                    style={String(monto) === String(v)
+                      ? { background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)', border: '1px solid var(--color-accent)', color: 'var(--color-accent)' }
+                      : { background: 'rgba(255,255,255,0.03)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }
+                    }
+                  >
+                    {v >= 1000000 ? `${v / 1000000}M` : `${v / 1000}k`}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -624,9 +672,12 @@ function NuevoPrestamo() {
                 <Input
                   type="number"
                   inputMode="decimal"
+                  step="0.5"
+                  min="0"
                   value={tasa}
                   onChange={(e) => setTasa(e.target.value)}
                   placeholder="20"
+                  suffix="%"
                 />
               </div>
             ) : (
@@ -640,7 +691,93 @@ function NuevoPrestamo() {
                   value={numCuotas}
                   onChange={(e) => setNumCuotas(e.target.value)}
                   placeholder="10"
+                  suffix="cuotas"
                 />
+              </div>
+            )}
+
+            {/* Modo cuota: Auto vs Manual — destacado, NO escondido en avanzado */}
+            {modo === 'prestamo' && (
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                  Modo de cuota
+                </label>
+                <div className="relative grid grid-cols-2 h-11 mt-1.5 rounded-[12px] bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] p-[3px]">
+                  <div
+                    className="absolute top-[3px] bottom-[3px] left-[3px] w-[calc(50%-3px)] rounded-[10px] bg-[var(--color-accent)] transition-transform duration-200 ease-out"
+                    style={{ transform: cuotaManualActiva ? 'translateX(100%)' : 'translateX(0)' }}
+                  />
+                  {[
+                    { value: false, label: 'Automatica', sub: 'Calcula el sistema' },
+                    { value: true,  label: 'Manual', sub: 'Tu defines la cuota' },
+                  ].map((opt) => (
+                    <button
+                      key={String(opt.value)}
+                      type="button"
+                      onClick={() => {
+                        setCuotaManualActiva(opt.value)
+                        if (!opt.value) setCuotaManual('')
+                        else if (calculo?.cuotaDiaria) setCuotaManual(String(calculo.cuotaDiaria))
+                      }}
+                      className="relative z-[1] flex flex-col items-center justify-center transition-colors duration-200 rounded-[10px]"
+                      style={{ color: cuotaManualActiva === opt.value ? '#0a0a0a' : 'var(--color-text-muted)' }}
+                    >
+                      <span className="text-[12px] font-semibold leading-tight">{opt.label}</span>
+                      <span className="text-[9px] leading-tight opacity-80">{opt.sub}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Cuota manual — solo si esta activo el modo manual */}
+            {modo === 'prestamo' && cuotaManualActiva && (
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                  Cuota exacta
+                </label>
+                <div className="mt-1.5">
+                  <MoneyInput value={cuotaManual} onChange={(e) => setCuotaManual(e.target.value)} placeholder="Ej: 60.000" />
+                </div>
+                <p className="text-[10px] mt-1" style={{ color: 'var(--color-accent)' }}>
+                  Tu defines el valor exacto. Total = cuota × {plazoUnidades || 'N'} cuotas.
+                </p>
+              </div>
+            )}
+
+            {/* Redondeo — solo si auto */}
+            {modo === 'prestamo' && !cuotaManualActiva && (
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                  Redondeo de cuota
+                </label>
+                <div className="relative flex h-10 mt-1.5 rounded-[12px] bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] p-[3px]">
+                  <div
+                    className="absolute top-[3px] bottom-[3px] rounded-[10px] bg-[var(--color-accent)] transition-all duration-200 ease-out"
+                    style={{
+                      width: 'calc(33.333% - 2px)',
+                      left: `calc(${['exacto','redondeado','cerrado'].indexOf(redondeo) * 33.333}% + 1.5px)`,
+                    }}
+                  />
+                  {[
+                    { value: 'exacto', label: 'Exacto' },
+                    { value: 'redondeado', label: 'Redondeado' },
+                    { value: 'cerrado', label: 'Cerrado' },
+                  ].map((r) => (
+                    <button
+                      key={r.value}
+                      type="button"
+                      onClick={() => setRedondeo(r.value)}
+                      className="relative z-[1] flex-1 text-xs font-semibold transition-colors duration-200 rounded-[10px]"
+                      style={{ color: redondeo === r.value ? '#0a0a0a' : 'var(--color-text-muted)' }}
+                    >
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                  {redondeo === 'exacto' ? 'Multiplo de $100' : redondeo === 'redondeado' ? 'Multiplo de $500' : 'Multiplo de $1.000'}
+                </p>
               </div>
             )}
           </div>
@@ -733,6 +870,25 @@ function NuevoPrestamo() {
               </div>
             )}
 
+            {/* Dias sin cobro — disponible para todas las frecuencias.
+                Para diario es util porque permite excluir, p.ej., domingos.
+                Los cambios se guardan en la ficha del cliente al crear el prestamo. */}
+            {clienteId && (
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                  Dias sin cobro (opcional)
+                </label>
+                <p className="text-[10px] mt-0.5 mb-2" style={{ color: 'var(--color-text-muted)' }}>
+                  Marca los dias en que NO se cobra. Se guarda en la ficha del cliente.
+                </p>
+                <DiasSinCobroSelector
+                  value={diasSinCobroCliente}
+                  onChange={(arr) => { setDiasSinCobroCliente(arr); setDiasSinCobroEditado(true) }}
+                  compact
+                />
+              </div>
+            )}
+
             <div>
               <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
                 Fecha de inicio
@@ -773,7 +929,7 @@ function NuevoPrestamo() {
                   Monto del seguro
                 </label>
                 <div className="mt-1.5">
-                  <MoneyInput value={montoSeguro} onChange={(v) => setMontoSeguro(v)} placeholder="0" />
+                  <MoneyInput value={montoSeguro} onChange={(e) => setMontoSeguro(e.target.value)} placeholder="0" />
                 </div>
               </div>
             )}
@@ -799,36 +955,11 @@ function NuevoPrestamo() {
                   Monto ya abonado
                 </label>
                 <div className="mt-1.5">
-                  <MoneyInput value={yaAbonado} onChange={(v) => setYaAbonado(v)} placeholder="0" />
+                  <MoneyInput value={yaAbonado} onChange={(e) => setYaAbonado(e.target.value)} placeholder="0" />
                 </div>
               </div>
             )}
 
-            {/* Cuota manual */}
-            <label className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-[10px] border cursor-pointer"
-              style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)' }}
-            >
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Cuota personalizada</p>
-                <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Sobrescribe la cuota calculada</p>
-              </div>
-              <input
-                type="checkbox"
-                checked={cuotaManualActiva}
-                onChange={(e) => setCuotaManualActiva(e.target.checked)}
-                className="w-5 h-5 accent-[var(--color-accent)]"
-              />
-            </label>
-            {cuotaManualActiva && (
-              <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                  Cuota exacta
-                </label>
-                <div className="mt-1.5">
-                  <MoneyInput value={cuotaManual} onChange={(v) => setCuotaManual(v)} placeholder="0" />
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Revision EN VIVO — siempre visible mientras edita */}
@@ -877,11 +1008,11 @@ function NuevoPrestamo() {
 
       {/* Footer fijo abajo */}
       <div
-        className="fixed left-0 right-0 z-[45] px-4 py-3 lg:px-6 lg:pb-6 bottom-[calc(80px+env(safe-area-inset-bottom))] lg:bottom-0"
+        className="fixed left-0 right-0 bottom-0 z-[45] px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] lg:px-6 lg:pb-6"
         style={{
           background: 'var(--color-bg-base)',
           borderTop: '1px solid var(--color-border)',
-          boxShadow: '0 -8px 24px rgba(0,0,0,0.3)',
+          boxShadow: '0 -4px 12px rgba(0,0,0,0.25)',
         }}
       >
         <div className="max-w-2xl mx-auto flex items-center gap-3">
@@ -934,7 +1065,7 @@ function NuevoPrestamo() {
                 <label className="block text-xs text-[var(--color-text-muted)] mb-1">Monto a inyectar</label>
                 <MoneyInput
                   value={modalInyeccion.montoInyeccion}
-                  onChange={(v) => setModalInyeccion(m => ({ ...m, montoInyeccion: v }))}
+                  onChange={(e) => setModalInyeccion(m => ({ ...m, montoInyeccion: e.target.value }))}
                   placeholder="0"
                 />
               </div>

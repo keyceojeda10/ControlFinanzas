@@ -117,6 +117,14 @@ const MORE_ITEMS_COBRADOR = [
   { label: 'Configuracion', href: '/configuracion', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
 ]
 
+// Rutas (wizards de creacion) donde el BottomNav se oculta para que el
+// footer fijo del wizard ocupe la barra inferior sin solaparse.
+const RUTAS_SIN_BOTTOMNAV = [
+  '/clientes/nuevo',
+  '/clientes/editar',
+  '/prestamos/nuevo',
+]
+
 export default function BottomNav() {
   const pathname = usePathname()
   const { esCobrador } = useAuth()
@@ -129,6 +137,8 @@ export default function BottomNav() {
 
   const isActive = (href) =>
     href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
+
+  const ocultarPorRuta = RUTAS_SIN_BOTTOMNAV.some(r => pathname?.startsWith(r))
 
   // Cierre warning check — solo para cobradores (owners no tienen cierre de caja)
   useEffect(() => {
@@ -169,6 +179,10 @@ export default function BottomNav() {
 
   // Check if any "more" item is active
   const moreActive = moreItems.some(m => pathname === m.href || pathname.startsWith(m.href + '/'))
+
+  // Ocultar BottomNav en wizards (el footer del wizard ocupa esa franja).
+  // IMPORTANTE: este early return va DESPUES de todos los hooks.
+  if (ocultarPorRuta) return null
 
   return (
     <>
