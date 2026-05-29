@@ -1,5 +1,7 @@
 'use client'
-// components/clientes/ClienteForm.jsx - Formulario reutilizable para crear/editar cliente
+// components/clientes/ClienteForm.jsx — Wizard de creacion/edicion de cliente
+// Diseño "pantalla completa enfocada": cada paso tiene una pregunta grande,
+// subtitulo y campos amplios con mucho espacio. Stepper minimalista arriba.
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter }           from 'next/navigation'
@@ -12,32 +14,6 @@ import { guardarClientePendiente, encolarMutacion } from '@/lib/offline'
 import { useCountry } from '@/hooks/useCountry'
 
 const LocationPicker = dynamic(() => import('@/components/clientes/LocationPicker'), { ssr: false })
-
-// Validacion de telefono movida a useCountry().validatePhone
-
-// Card de seccion con icono cuadrado del color. Definida fuera del componente
-// para que React no la desmonte/remonte en cada render (causa perdida de focus).
-const SectionCard = ({ icon, title, color = 'var(--color-accent)', children }) => (
-  <div
-    className="rounded-[16px] p-4"
-    style={{
-      background: `linear-gradient(135deg, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
-      border: '1px solid var(--color-border)',
-    }}
-  >
-    <div className="flex items-center gap-2 mb-3">
-      <div className="w-6 h-6 rounded-[6px] flex items-center justify-center"
-        style={{ background: `color-mix(in srgb, ${color} 18%, transparent)`, color }}
-      >
-        <span className="w-3.5 h-3.5">{icon}</span>
-      </div>
-      <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color }}>
-        {title}
-      </p>
-    </div>
-    <div className="space-y-3">{children}</div>
-  </div>
-)
 
 export default function ClienteForm({ clienteInicial = null, plan = 'basic', puedeSubirFoto = false }) {
   const router = useRouter()
@@ -65,17 +41,16 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
   const [loading, setLoading]   = useState(false)
   const [error,   setError]     = useState('')
   const [scoreData, setScoreData] = useState(null)
-  const [avanzadoOpen, setAvanzadoOpen] = useState(false)
-  // Wizard: paso actual (0 = Identidad, 1 = Ubicacion, 2 = Organizacion).
   const [paso, setPaso] = useState(0)
-  const PASOS = [
-    { label: 'Identidad' },
-    { label: 'Ubicacion' },
-    { label: 'Organizacion' },
-  ]
   const [diasSinCobro, setDiasSinCobro] = useState(() => {
     try { return JSON.parse(clienteInicial?.diasSinCobro || '[]') } catch { return [] }
   })
+
+  const PASOS = [
+    { label: 'Identidad' },
+    { label: 'Contacto' },
+    { label: 'Organizacion' },
+  ]
 
   // Consulta de score crediticio debounced al escribir cédula
   const habilitadoScore = !esEdicion && ['standard', 'professional'].includes(plan)
@@ -95,7 +70,6 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
     return () => clearTimeout(timer)
   }, [form.cedula, habilitadoScore])
 
-  // Cargar rutas solo para plan standard+
   useEffect(() => {
     if (['starter', 'basic'].includes(plan)) return
     fetch('/api/rutas')
@@ -104,7 +78,6 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
       .catch(() => {})
   }, [plan])
 
-  // Cargar grupos para asignación rápida desde el formulario
   useEffect(() => {
     fetch('/api/grupos')
       .then((r) => r.json())
@@ -133,41 +106,48 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
     setErrores((prev) => ({ ...prev, [field]: '' }))
   }
 
-  const validar = () => {
+  // Validacion por paso. El paso 1 (Identidad) solo requiere nombre y cedula.
+  // El telefono se valida en el paso 2 (Contacto).
+  const validarPaso = (idx) => {
     const errs = {}
-    if (!form.nombre.trim())    errs.nombre   = 'El nombre es requerido'
-    if (!form.cedula.trim())    errs.cedula   = 'La cédula es requerida'
-    if (!form.telefono.trim())  errs.telefono = 'El teléfono es requerido'
-
-    if (form.cedula && !validateDocument(form.cedula.trim())) {
-      errs.cedula = `${documentConfig.label} no valido (ej: ${documentConfig.placeholder})`
+    if (idx === 0) {
+      if (!form.nombre.trim()) errs.nombre = 'El nombre es requerido'
+      if (!form.cedula.trim()) errs.cedula = 'La cedula es requerida'
+      if (form.cedula && !validateDocument(form.cedula.trim())) {
+        errs.cedula = `${documentConfig.label} no valido (ej: ${documentConfig.placeholder})`
+      }
     }
-    if (form.telefono && !validatePhone(form.telefono.replace(/\s/g, ''))) {
-      errs.telefono = `Ingresa un ${phoneConfig.label.toLowerCase()} valido (ej: ${phoneConfig.placeholder})`
+    if (idx === 1) {
+      if (!form.telefono.trim()) errs.telefono = 'El telefono es requerido'
+      if (form.telefono && !validatePhone(form.telefono.replace(/\s/g, ''))) {
+        errs.telefono = `Ingresa un ${phoneConfig.label.toLowerCase()} valido (ej: ${phoneConfig.placeholder})`
+      }
     }
     return errs
   }
 
-  // Avanza al siguiente paso si la validacion del paso actual pasa.
-  const irAlSiguientePaso = () => {
-    if (paso === 0) {
-      const errs = validar()
-      if (Object.keys(errs).length) {
-        setErrores(errs)
-        return
-      }
+  const puedeAvanzar = Object.keys(validarPaso(paso)).length === 0
+
+  const irAlSiguiente = () => {
+    const errs = validarPaso(paso)
+    if (Object.keys(errs).length) {
+      setErrores(errs)
+      return
     }
+    setErrores({})
     setPaso(p => Math.min(PASOS.length - 1, p + 1))
   }
 
-  const irAlPasoAnterior = () => setPaso(p => Math.max(0, p - 1))
+  const irAlAnterior = () => setPaso(p => Math.max(0, p - 1))
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    const errs = validar()
+    e?.preventDefault?.()
+    // Validar todos los pasos antes de enviar.
+    const errs = { ...validarPaso(0), ...validarPaso(1) }
     if (Object.keys(errs).length) {
       setErrores(errs)
-      setPaso(0) // si fallo paso 1, regresar para que el usuario lo vea
+      if (errs.nombre || errs.cedula) setPaso(0)
+      else if (errs.telefono) setPaso(1)
       return
     }
 
@@ -188,9 +168,6 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
       diasSinCobro: diasSinCobro.length > 0 ? diasSinCobro : null,
     }
 
-    // Si offline y es creación nueva, encolar y volver a la lista (que ya
-    // está cacheada). No navegamos al detalle por ID temporal porque el SW
-    // no tiene esa URL en cache y mostraría "Sin conexión".
     if (!esEdicion && typeof navigator !== 'undefined' && !navigator.onLine) {
       try {
         await guardarClientePendiente(payload)
@@ -204,7 +181,6 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
       }
     }
 
-    // Si offline y es edicion, encolar mutacion (optimistic update al cache local)
     if (esEdicion && typeof navigator !== 'undefined' && !navigator.onLine) {
       try {
         await encolarMutacion({ tipo: 'cliente.update', entityId: clienteInicial.id, payload })
@@ -228,7 +204,6 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
         body:    JSON.stringify(payload),
       })
 
-      // SW puede responder 503 sin red — encolar
       if (res.status === 503 && !esEdicion && !navigator.onLine) {
         await guardarClientePendiente(payload)
         try { sessionStorage.setItem('cf-toast', 'Cliente guardado. Se sincronizara al volver online.') } catch {}
@@ -245,20 +220,18 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Error al guardar'); return }
 
-      // Subir foto si se selecciono una
       if (fotoFile && data.id) await subirFoto(data.id)
 
       router.push(`/clientes/${data.id}`)
       router.refresh()
     } catch {
-      // Fallback offline si el fetch falló por red
       if (!esEdicion && !navigator.onLine) {
         try {
           await guardarClientePendiente(payload)
           try { sessionStorage.setItem('cf-toast', 'Cliente guardado. Se sincronizara al volver online.') } catch {}
           router.push('/clientes')
           return
-        } catch { /* abajo */ }
+        } catch {}
       }
       if (esEdicion && !navigator.onLine) {
         try {
@@ -266,216 +239,195 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
           try { sessionStorage.setItem('cf-toast', 'Cambios guardados. Se sincronizaran al volver online.') } catch {}
           router.push(`/clientes/${clienteInicial.id}`)
           return
-        } catch { /* abajo */ }
+        } catch {}
       }
-      setError('Error de conexión. Intenta de nuevo.')
+      setError('Error de conexion. Intenta de nuevo.')
     } finally {
       setLoading(false)
     }
   }
 
-  // Marcado de pasos completados: paso 0 esta completado si no hay errores
-  // y los campos requeridos estan llenos. Pasos 2/3 siempre se consideran
-  // completables (son opcionales).
-  const paso0Listo = !!form.nombre.trim() && !!form.cedula.trim() && !!form.telefono.trim()
-  const completedSet = []
-  if (paso > 0) completedSet.push(0)
-  if (paso > 1) completedSet.push(1)
+  const completedIndices = []
+  for (let i = 0; i < paso; i++) completedIndices.push(i)
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault()
-        // En pasos intermedios el submit del form (Enter en input) avanza.
-        if (paso < PASOS.length - 1) {
-          irAlSiguientePaso()
-        } else {
-          handleSubmit(e)
-        }
-      }}
-      className="space-y-4"
-    >
-      {/* Stepper visual */}
-      <div className="mb-2">
-        <Stepper
-          steps={PASOS}
-          activeIndex={paso}
-          completedIndices={completedSet}
-          onChange={(idx) => {
-            // Permitir clicar atras siempre, adelante solo si paso 1 ya esta valido
-            if (idx <= paso) setPaso(idx)
-            else if (paso0Listo) setPaso(idx)
-          }}
-        />
-      </div>
+    <div className="max-w-xl mx-auto pb-32">
+      {/* Stepper */}
+      <Stepper
+        steps={PASOS}
+        activeIndex={paso}
+        completedIndices={completedIndices}
+        onChange={(idx) => {
+          if (idx <= paso) setPaso(idx)
+        }}
+      />
 
+      {/* Error global */}
       {error && (
-        <div className="flex items-center gap-2.5 rounded-[12px] px-4 py-3 text-sm"
+        <div
+          className="mt-6 flex items-center gap-2.5 rounded-[12px] px-4 py-3 text-sm"
           style={{ background: 'var(--color-danger-dim)', color: 'var(--color-danger)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)' }}
         >
-          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-          </svg>
           {error}
         </div>
       )}
 
-      {/* PASO 1 — Identidad */}
+      {/* Paso 1 — Identidad */}
       {paso === 0 && (
-      <SectionCard
-        title="Datos básicos"
-        color="var(--color-accent)"
-        icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>}
-      >
-        {/* Foto del cliente */}
-        {puedeSubirFoto && (
-          <div className="flex items-center gap-3 mb-1">
-            <input ref={fotoInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFotoSelect} />
-            <button
-              type="button"
-              onClick={() => fotoInputRef.current?.click()}
-              className="relative w-16 h-16 rounded-full shrink-0 overflow-hidden transition-all hover:scale-105 active:scale-95"
-              style={{
-                background: fotoPreview ? 'transparent' : 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
-                border: `2px dashed ${fotoPreview ? 'var(--color-accent)' : 'color-mix(in srgb, var(--color-accent) 40%, transparent)'}`,
-              }}
-            >
-              {fotoPreview ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={fotoPreview} alt="Preview" className="w-full h-full object-cover" />
-              ) : (
-                <div className="flex flex-col items-center justify-center w-full h-full" style={{ color: 'var(--color-accent)' }}>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
-                  </svg>
-                </div>
-              )}
-            </button>
+        <section className="mt-8">
+          <h2 className="text-[22px] font-bold leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+            {esEdicion ? 'Datos del cliente' : '¿Quien es tu cliente?'}
+          </h2>
+          <p className="text-sm mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
+            Empecemos con su nombre y documento de identidad.
+          </p>
+
+          {/* Foto */}
+          {puedeSubirFoto && (
+            <div className="flex items-center gap-4 mt-7">
+              <input ref={fotoInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFotoSelect} />
+              <button
+                type="button"
+                onClick={() => fotoInputRef.current?.click()}
+                className="relative w-20 h-20 rounded-full shrink-0 overflow-hidden transition-all active:scale-95"
+                style={{
+                  background: fotoPreview ? 'transparent' : 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
+                  border: `2px dashed ${fotoPreview ? 'var(--color-accent)' : 'color-mix(in srgb, var(--color-accent) 40%, transparent)'}`,
+                }}
+              >
+                {fotoPreview ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={fotoPreview} alt="Preview" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="flex items-center justify-center w-full h-full" style={{ color: 'var(--color-accent)' }}>
+                    <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+                    </svg>
+                  </div>
+                )}
+              </button>
+              <div className="flex-1">
+                <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                  {fotoPreview ? 'Foto del cliente' : 'Agregar foto'}
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                  Opcional. JPG, PNG o WebP (max 5MB).
+                </p>
+                {fotoFile && (
+                  <button
+                    type="button"
+                    onClick={() => { setFotoFile(null); setFotoPreview(clienteInicial?.fotoUrl || null) }}
+                    className="text-xs mt-1.5 font-medium"
+                    style={{ color: 'var(--color-danger)' }}
+                  >
+                    Quitar foto
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="mt-7 space-y-5">
+            <Input
+              label="Nombre completo"
+              placeholder="Ej: Juan Garcia"
+              value={form.nombre}
+              onChange={set('nombre')}
+              error={errores.nombre}
+              autoComplete="name"
+              autoFocus
+            />
             <div>
-              <p className="text-[12px] font-medium" style={{ color: 'var(--color-text-primary)' }}>
-                {fotoPreview ? 'Foto seleccionada' : 'Agregar foto'}
-                <span className="font-normal text-[10px] ml-1" style={{ color: 'var(--color-text-muted)' }}>(opcional)</span>
-              </p>
-              <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
-                JPG, PNG o WebP. Max 5MB
-              </p>
-              {fotoFile && (
-                <button
-                  type="button"
-                  onClick={() => { setFotoFile(null); setFotoPreview(clienteInicial?.fotoUrl || null) }}
-                  className="text-[10px] mt-0.5"
-                  style={{ color: 'var(--color-danger)' }}
-                >
-                  Quitar
-                </button>
-              )}
+              <Input
+                label={`${documentConfig.label}`}
+                placeholder={`Ej: ${documentConfig.placeholder}`}
+                value={form.cedula}
+                onChange={set('cedula')}
+                error={errores.cedula}
+                inputMode="numeric"
+                disabled={esEdicion}
+              />
+              {scoreData?.encontrado && (() => {
+                const sColor = scoreData.score === 'rojo' ? 'var(--color-danger)' : scoreData.score === 'amarillo' ? 'var(--color-accent)' : 'var(--color-success)'
+                return (
+                  <div className="mt-2 text-xs px-3 py-2 rounded-[10px] flex items-center gap-2"
+                    style={{ background: `color-mix(in srgb, ${sColor} 10%, transparent)`, color: sColor, border: `1px solid color-mix(in srgb, ${sColor} 25%, transparent)` }}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: sColor }} />
+                    {scoreData.score === 'rojo' && 'Cliente con mora activa en otras entidades'}
+                    {scoreData.score === 'amarillo' && 'Cliente con creditos activos en otras entidades'}
+                    {scoreData.score === 'verde' && 'Sin historial negativo en la plataforma'}
+                  </div>
+                )
+              })()}
             </div>
           </div>
-        )}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Input
-            label="Nombre completo *"
-            placeholder="Ej: Juan García"
-            value={form.nombre}
-            onChange={set('nombre')}
-            error={errores.nombre}
-            autoComplete="name"
-          />
-          <div>
-            <Input
-              label="Cédula *"
-              placeholder="Ej: 1023456789"
-              value={form.cedula}
-              onChange={set('cedula')}
-              error={errores.cedula}
-              inputMode="numeric"
-              disabled={esEdicion}
-            />
-            {scoreData?.encontrado && (() => {
-              const sColor = scoreData.score === 'rojo' ? 'var(--color-danger)' : scoreData.score === 'amarillo' ? 'var(--color-accent)' : 'var(--color-success)'
-              return (
-                <div className="mt-1.5 text-xs px-3 py-2 rounded-[10px] flex items-center gap-2"
-                  style={{ background: `color-mix(in srgb, ${sColor} 10%, transparent)`, color: sColor, border: `1px solid color-mix(in srgb, ${sColor} 25%, transparent)` }}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: sColor }} />
-                  {scoreData.score === 'rojo' && 'Cliente con mora activa en otras entidades'}
-                  {scoreData.score === 'amarillo' && 'Cliente con créditos activos en otras entidades'}
-                  {scoreData.score === 'verde' && 'Sin historial negativo en la plataforma'}
-                </div>
-              )
-            })()}
-          </div>
-        </div>
-      </SectionCard>
+        </section>
       )}
 
-      {/* PASO 2 — Contacto y ubicacion */}
+      {/* Paso 2 — Contacto */}
       {paso === 1 && (
-      <SectionCard
-        title="Contacto"
-        color="#22c55e"
-        icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" /></svg>}
-      >
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Input
-            label={`${phoneConfig.label} *`}
-            placeholder={`Ej: ${phoneConfig.placeholder}`}
-            value={form.telefono}
-            onChange={set('telefono')}
-            error={errores.telefono}
-            inputMode="tel"
-          />
-          <Input
-            label="Referencia"
-            placeholder="Ej: Tienda La Esquina"
-            value={form.referencia}
-            onChange={set('referencia')}
-            error={errores.referencia}
-            maxLength={100}
-          />
-          <div className="sm:col-span-2 space-y-2">
+        <section className="mt-8">
+          <h2 className="text-[22px] font-bold leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+            ¿Como lo contactamos?
+          </h2>
+          <p className="text-sm mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
+            Telefono y direccion. Estos datos sirven para visitarlo y enviarle mensajes de WhatsApp.
+          </p>
+
+          <div className="mt-7 space-y-5">
             <Input
-              label="Dirección"
+              label={phoneConfig.label}
+              placeholder={`Ej: ${phoneConfig.placeholder}`}
+              value={form.telefono}
+              onChange={set('telefono')}
+              error={errores.telefono}
+              inputMode="tel"
+              autoFocus
+            />
+            <Input
+              label="Direccion"
               placeholder="Calle, barrio, ciudad..."
               value={form.direccion}
               onChange={set('direccion')}
               error={errores.direccion}
             />
-            <LocationPicker
-              latitud={form.latitud}
-              longitud={form.longitud}
-              onLocationChange={(lat, lng) => setForm((prev) => ({ ...prev, latitud: lat, longitud: lng }))}
+            <Input
+              label="Referencia"
+              placeholder="Ej: Tienda La Esquina, frente al colegio"
+              value={form.referencia}
+              onChange={set('referencia')}
+              error={errores.referencia}
+              maxLength={100}
             />
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                Ubicacion en el mapa (opcional)
+              </label>
+              <div className="mt-2">
+                <LocationPicker
+                  latitud={form.latitud}
+                  longitud={form.longitud}
+                  onLocationChange={(lat, lng) => setForm((prev) => ({ ...prev, latitud: lat, longitud: lng }))}
+                />
+              </div>
+            </div>
           </div>
-          <div className="sm:col-span-2 flex flex-col gap-1.5">
-            <label className="text-[11px] font-medium uppercase tracking-[0.05em]" style={{ color: 'var(--color-text-secondary)' }}>
-              Notas
-            </label>
-            <textarea
-              value={form.notas}
-              onChange={(e) => setForm({ ...form, notas: e.target.value })}
-              placeholder="Notas adicionales sobre el cliente..."
-              maxLength={500}
-              rows={3}
-              className="cf-input w-full px-3 py-2 rounded-[12px] border text-sm resize-none"
-              style={{ background: 'var(--color-bg-hover)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
-            />
-            <span className="text-[10px] text-right" style={{ color: 'var(--color-text-muted)' }}>{form.notas.length}/500</span>
-          </div>
-        </div>
-      </SectionCard>
+        </section>
       )}
 
-      {/* PASO 3 — Organizacion (ruta, grupo, dias sin cobro, notas) */}
-      {paso === 2 && <>
-      {(!['starter', 'basic'].includes(plan) && rutas.length > 0) || grupos.length > 0 ? (
-        <SectionCard
-          title="Asignación"
-          color="#a855f7"
-          icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75v11.25m6-9v11.25m5.25-14.25L15 8.25l-6-2.25L3.75 8.25v12l5.25-2.25 6 2.25 5.25-2.25v-12z" /></svg>}
-        >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {/* Paso 3 — Organizacion */}
+      {paso === 2 && (
+        <section className="mt-8">
+          <h2 className="text-[22px] font-bold leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+            ¿Lo asignamos a una ruta?
+          </h2>
+          <p className="text-sm mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
+            Esto es opcional. Si tienes rutas o grupos definidos, asignalo aqui para que aparezca en el listado correcto.
+          </p>
+
+          <div className="mt-7 space-y-5">
             {!['starter', 'basic'].includes(plan) && rutas.length > 0 && (
               <Select label="Ruta" value={form.rutaId} onChange={set('rutaId')}>
                 <option value="">Sin ruta asignada</option>
@@ -492,90 +444,87 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                 ))}
               </Select>
             )}
-          </div>
-        </SectionCard>
-      ) : null}
 
-      {/* Avanzado — collapsable card */}
-      <div className="rounded-[16px] overflow-hidden" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
-        <button
-          type="button"
-          onClick={() => setAvanzadoOpen(v => !v)}
-          className="w-full px-4 py-2.5 flex items-center justify-between gap-2 transition-colors hover:bg-[var(--color-bg-hover)]"
-        >
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-[6px] flex items-center justify-center"
-              style={{ background: 'color-mix(in srgb, var(--color-warning) 18%, transparent)', color: 'var(--color-warning)' }}
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.559.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.894.149c-.424.07-.764.383-.929.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.425-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z" />
-              </svg>
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                Dias sin cobro (opcional)
+              </label>
+              <p className="text-[11px] leading-snug mt-1 mb-2" style={{ color: 'var(--color-text-muted)' }}>
+                Este cliente no sera cobrado en los dias que selecciones. Si no defines nada, hereda de la ruta o la organizacion.
+              </p>
+              <DiasSinCobroSelector value={diasSinCobro} onChange={setDiasSinCobro} compact />
             </div>
-            <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-warning)' }}>
-              Opciones avanzadas
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            {diasSinCobro.length > 0 && (
-              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full"
-                style={{ background: 'color-mix(in srgb, var(--color-warning) 15%, transparent)', color: 'var(--color-warning)' }}
-              >
-                {diasSinCobro.length} {diasSinCobro.length === 1 ? 'día' : 'días'} sin cobro
-              </span>
-            )}
-            <svg className={`w-4 h-4 transition-transform shrink-0 ${avanzadoOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--color-text-muted)' }}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
-        </button>
-        {avanzadoOpen && (
-          <div className="px-4 pb-4 pt-1">
-            <p className="text-[11px] font-medium mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>Días sin cobro</p>
-            <p className="text-[10px] leading-snug mb-2" style={{ color: 'var(--color-text-muted)' }}>
-              Este cliente no será cobrado estos días. Si no configuras nada, hereda de la ruta o la organización.
-            </p>
-            <DiasSinCobroSelector value={diasSinCobro} onChange={setDiasSinCobro} compact />
-          </div>
-        )}
-      </div>
 
-      </>}
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                Notas
+              </label>
+              <textarea
+                value={form.notas}
+                onChange={(e) => setForm({ ...form, notas: e.target.value })}
+                placeholder="Notas adicionales sobre el cliente..."
+                maxLength={500}
+                rows={4}
+                className="cf-input w-full mt-1.5 px-3 py-2.5 rounded-[12px] border text-sm resize-none"
+                style={{ background: 'var(--color-bg-hover)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
+              />
+              <span className="text-[10px] text-right block mt-1" style={{ color: 'var(--color-text-muted)' }}>{form.notas.length}/500</span>
+            </div>
+          </div>
+        </section>
+      )}
 
-      {/* Footer del wizard: Cancelar/Atras a la izquierda, Siguiente/Guardar a la derecha */}
-      <div className="flex items-center justify-between gap-3 pt-2">
-        {paso === 0 ? (
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => router.back()}
-            disabled={loading}
-          >
-            Cancelar
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={irAlPasoAnterior}
-            disabled={loading}
-          >
-            ← Atras
-          </Button>
-        )}
-        {paso < PASOS.length - 1 ? (
-          <Button
-            type="button"
-            onClick={irAlSiguientePaso}
-            disabled={paso === 0 && !paso0Listo}
-          >
-            Siguiente →
-          </Button>
-        ) : (
-          <Button type="submit" loading={loading}>
-            {esEdicion ? 'Guardar cambios' : 'Crear cliente'}
-          </Button>
-        )}
+      {/* Footer fijo abajo: cancel/atras + siguiente/guardar */}
+      <div
+        className="fixed bottom-0 left-0 right-0 z-30 px-4 py-3 lg:px-6 lg:pb-6 pb-[calc(env(safe-area-inset-bottom)+12px)]"
+        style={{
+          background: 'linear-gradient(to top, var(--color-bg-base) 60%, transparent)',
+          borderTop: '1px solid var(--color-border)',
+        }}
+      >
+        <div className="max-w-xl mx-auto flex items-center gap-3">
+          {paso === 0 ? (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => router.back()}
+              disabled={loading}
+              className="flex-1"
+            >
+              Cancelar
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={irAlAnterior}
+              disabled={loading}
+              className="flex-1"
+            >
+              Atras
+            </Button>
+          )}
+          {paso < PASOS.length - 1 ? (
+            <Button
+              type="button"
+              onClick={irAlSiguiente}
+              disabled={!puedeAvanzar}
+              className="flex-[2]"
+            >
+              Continuar
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              loading={loading}
+              className="flex-[2]"
+            >
+              {esEdicion ? 'Guardar cambios' : 'Crear cliente'}
+            </Button>
+          )}
+        </div>
       </div>
-    </form>
+    </div>
   )
 }

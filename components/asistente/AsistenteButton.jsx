@@ -4,6 +4,13 @@ import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import AsistenteChat from './AsistenteChat'
 
+// Rutas donde Lucas se oculta para no estorbar la UX (wizards de creacion).
+const RUTAS_SIN_LUCAS = [
+  '/clientes/nuevo',
+  '/clientes/editar',
+  '/prestamos/nuevo',
+]
+
 export default function AsistenteButton() {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
@@ -18,6 +25,12 @@ export default function AsistenteButton() {
     else document.body.style.overflow = ''
     return () => { document.body.style.overflow = '' }
   }, [open])
+
+  // Ocultar completamente en rutas de wizard (formularios largos).
+  // IMPORTANTE: este early return va DESPUES de todos los hooks para no romper
+  // las reglas de hooks de React.
+  const ocultarPorRuta = RUTAS_SIN_LUCAS.some(r => pathname?.startsWith(r))
+  if (ocultarPorRuta) return null
 
   return (
     <>

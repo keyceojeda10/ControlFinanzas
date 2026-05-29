@@ -104,13 +104,11 @@ function NuevoPrestamo() {
   // Redondeo: 'exacto' ($100), 'redondeado' ($500) o 'cerrado' ($1.000)
   const [redondeo, setRedondeo] = useState('exacto')
 
-  // Wizard: paso actual (0..3)
+  // Wizard: 2 pasos. 0 = Cliente, 1 = Plan (con revision en vivo).
   const [paso, setPaso] = useState(0)
   const PASOS = [
     { label: 'Cliente' },
-    { label: 'Monto' },
-    { label: 'Plan' },
-    { label: 'Revision' },
+    { label: 'Plan del prestamo' },
   ]
 
   // Ultimo prestamo del cliente para "Repetir condiciones".
@@ -253,8 +251,7 @@ function NuevoPrestamo() {
   // Validacion del paso actual antes de avanzar.
   const puedeAvanzarPaso = () => {
     if (paso === 0) return !!clienteId
-    if (paso === 1) return Number(monto) > 0 && (modo === 'mercancia' || Number(tasa) >= 0)
-    if (paso === 2) return Number(plazoUnidades) > 0 && !!fechaInicio
+    if (paso === 1) return Number(monto) > 0 && Number(plazoUnidades) > 0 && !!fechaInicio && !!calculo
     return true
   }
   const irAlSiguientePaso = () => {
@@ -366,611 +363,466 @@ function NuevoPrestamo() {
   if (authLoading) return null
   if (!puedeCrearPrestamos) return null
 
+  // ── Helpers de UI ─────────────────────────────────────────────
+  const FRECUENCIAS = [
+    { key: 'diario',    label: 'Diario' },
+    { key: 'semanal',   label: 'Semanal' },
+    { key: 'quincenal', label: 'Quincenal' },
+    { key: 'mensual',   label: 'Mensual' },
+  ]
+
+  const DIAS_SEMANA = [
+    { v: '1', l: 'Lun' }, { v: '2', l: 'Mar' }, { v: '3', l: 'Mie' },
+    { v: '4', l: 'Jue' }, { v: '5', l: 'Vie' }, { v: '6', l: 'Sab' }, { v: '0', l: 'Dom' },
+  ]
+
+  const completedIndices = paso > 0 ? [0] : []
+
   return (
-    <div className="max-w-xl mx-auto">
-      <div className="mb-5">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm transition-colors mb-3"
-          style={{ color: 'var(--color-text-muted)' }}
+    <div className="max-w-2xl mx-auto pb-44 lg:pb-36">
+      {/* Stepper */}
+      <Stepper
+        steps={PASOS}
+        activeIndex={paso}
+        completedIndices={completedIndices}
+        onChange={(idx) => { if (idx <= paso) setPaso(idx) }}
+      />
+
+      {error && (
+        <div className="mt-6 rounded-[12px] px-4 py-3 text-sm"
+          style={{ background: 'var(--color-danger-dim)', color: 'var(--color-danger)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)' }}
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-          Volver
-        </button>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
-            style={{
-              background: 'linear-gradient(135deg, color-mix(in srgb, #22c55e 22%, transparent), color-mix(in srgb, #22c55e 12%, transparent))',
-              border: '1px solid color-mix(in srgb, #22c55e 30%, transparent)',
-              color: '#22c55e',
-            }}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div>
-            <h1 className="text-xl font-bold leading-tight" style={{ color: 'var(--color-text-primary)' }}>Nuevo préstamo</h1>
-            <p className="text-[12px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Completa los datos para registrar el préstamo</p>
-          </div>
+          {error}
         </div>
-      </div>
+      )}
 
-      <form
-        onSubmit={(e) => {
-          // En pasos intermedios, Enter en input avanza al siguiente paso.
-          // El submit real solo dispara en el paso 4 (Revision).
-          if (paso < PASOS.length - 1) {
-            e.preventDefault()
-            irAlSiguientePaso()
-            return
-          }
-          handleSubmit(e)
-        }}
-        className="space-y-4"
-      >
-        {/* Stepper visual */}
-        <div className="mb-2">
-          <Stepper
-            steps={PASOS}
-            activeIndex={paso}
-            completedIndices={Array.from({ length: paso }, (_, i) => i)}
-            onChange={(idx) => {
-              if (idx <= paso) setPaso(idx)
-              else if (clienteId) setPaso(idx)
-            }}
-          />
-        </div>
+      {/* PASO 1 — Cliente */}
+      {paso === 0 && (
+        <section className="mt-8">
+          <h2 className="text-[22px] font-bold leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+            {clienteId ? '¿Para quien es este prestamo?' : 'Elige el cliente'}
+          </h2>
+          <p className="text-sm mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
+            Busca por nombre o cedula. Si ya seleccionaste uno, puedes cambiarlo abajo.
+          </p>
 
-        {error && (
-          <div className="flex items-center gap-2 bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[12px] px-4 py-3">
-            {error}
-          </div>
-        )}
-
-        {/* Selector de modo (siempre visible al avanzar entre pasos) */}
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => handleModoChange('prestamo')}
-            className={[
-              'flex items-center justify-center gap-2 py-3 rounded-[12px] border text-sm font-medium transition-all',
-              modo === 'prestamo'
-                ? 'bg-[rgba(245,197,24,0.12)] border-[#f5c518] text-[var(--color-accent)]'
-                : 'bg-[var(--color-bg-surface)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[white] hover:border-[var(--color-border-hover)]',
-            ].join(' ')}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Préstamo
-          </button>
-          <button
-            type="button"
-            onClick={() => handleModoChange('mercancia')}
-            className={[
-              'flex items-center justify-center gap-2 py-3 rounded-[12px] border text-sm font-medium transition-all',
-              modo === 'mercancia'
-                ? 'bg-[rgba(59,130,246,0.12)] border-[#3b82f6] text-[var(--color-info)]'
-                : 'bg-[var(--color-bg-surface)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[white] hover:border-[var(--color-border-hover)]',
-            ].join(' ')}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
-            </svg>
-            Mercancía
-          </button>
-        </div>
-
-        {/* PASO 1 — Cliente */}
-        {paso === 0 && <>
-        <SectionCard
-          title="Cliente"
-          color="#3b82f6"
-          icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>}
-        >
-          {clienteIdParam ? (
-            <div className="flex items-center gap-2 h-10 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)]">
-              <div className="w-5 h-5 rounded-full bg-[rgba(59,130,246,0.2)] flex items-center justify-center shrink-0">
-                <span className="text-[var(--color-info)] text-[9px] font-bold">{clienteNombre?.[0]?.toUpperCase()}</span>
-              </div>
-              <span className="text-sm text-[white]">{clienteNombre || clienteIdParam}</span>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-1.5">
-              <input
-                placeholder="Buscar cliente por nombre o cédula…"
-                value={buscadorCliente}
-                onChange={(e) => { setBuscadorCliente(e.target.value); setClienteId('') }}
-                className="w-full h-10 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[white] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all"
-              />
-              {buscadorCliente && (
-                <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[12px] overflow-hidden max-h-40 overflow-y-auto">
-                  {clientesFiltrados.length === 0 ? (
-                    <p className="px-3 py-2.5 text-sm text-[var(--color-text-muted)]">Sin resultados</p>
-                  ) : clientesFiltrados.map((c) => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => {
-                        setClienteId(c.id)
-                        setBuscadorCliente(c.nombre)
-                      }}
-                      className={[
-                        'w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-[var(--color-bg-hover)] transition-colors',
-                        clienteId === c.id ? 'bg-[rgba(245,197,24,0.1)] text-[var(--color-accent)]' : 'text-[white]',
-                      ].join(' ')}
-                    >
-                      <span className="font-medium">{c.nombre}</span>
-                      <span className="text-[var(--color-text-muted)] text-xs">CC {c.cedula}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </SectionCard>
-
-        {/* Chip "Repetir condiciones del prestamo anterior" */}
-        {ultimoPrestamo && (
-          <button
-            type="button"
-            onClick={repetirCondicionesUltimo}
-            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-[12px] border text-left transition-colors"
-            style={{
-              background: 'color-mix(in srgb, var(--color-accent) 8%, transparent)',
-              borderColor: 'color-mix(in srgb, var(--color-accent) 40%, transparent)',
-              color: 'var(--color-accent)',
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 14a6 6 0 110-12 6 6 0 010 12z" />
-              <path d="M11 6h-2v5h5V9h-3z" />
-            </svg>
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-bold uppercase tracking-wider">Repetir condiciones del anterior</p>
-              <p className="text-[10px] truncate" style={{ color: 'var(--color-text-muted)' }}>
-                ${Math.round(ultimoPrestamo.montoPrestado).toLocaleString('es-CO')} · {ultimoPrestamo.tasaInteres}% · {ultimoPrestamo.diasPlazo} dias · {ultimoPrestamo.frecuencia}
-              </p>
-            </div>
-            <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" />
-            </svg>
-          </button>
-        )}
-        </>}
-
-        {/* PASO 2 — Monto */}
-        {paso === 1 && <>
-        <SectionCard
-          title="Monto"
-          color="var(--color-accent)"
-          icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-        >
-          <MoneyInput
-            label={modo === 'mercancia' ? 'Valor del artículo (COP) *' : 'Monto prestado (COP) *'}
-            placeholder={modo === 'mercancia' ? 'Ej: 100.000' : 'Ej: 500.000'}
-            value={monto}
-            onChange={(e) => setMonto(e.target.value)}
-          />
-          {/* Quick monto chips */}
-          <div className="flex gap-1.5 flex-wrap -mt-1">
-            {[50000, 100000, 200000, 500000, 1000000].map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setMonto(String(v))}
-                className={[
-                  'px-2.5 h-7 rounded-[8px] text-[11px] font-medium transition-all cursor-pointer',
-                  String(monto) === String(v)
-                    ? 'bg-[rgba(245,197,24,0.15)] border border-[#f5c518] text-[var(--color-accent)]'
-                    : 'bg-[rgba(255,255,255,0.03)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-surface)]',
-                ].join(' ')}
+          <div className="mt-7">
+            <div className="relative">
+              <svg
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                style={{ color: 'var(--color-text-muted)' }}
+                fill="none" stroke="currentColor" viewBox="0 0 24 24"
               >
-                {v >= 1000000 ? `${v / 1000000}M` : `${v / 1000}k`}
-              </button>
-            ))}
-          </div>
-
-          {/* Modo mercancía: # cuotas + frecuencia primero */}
-          {modo === 'mercancia' && (
-            <div className="flex flex-col gap-1">
-              <Input
-                label="Número de cuotas *"
-                type="number"
-                inputMode="numeric"
-                placeholder="Ej: 10"
-                value={numCuotas}
-                onChange={(e) => setNumCuotas(e.target.value)}
-                suffix="cuotas"
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="search"
+                value={buscadorCliente}
+                onChange={(e) => setBuscadorCliente(e.target.value)}
+                placeholder="Buscar por nombre o cedula"
+                className="w-full h-12 pl-10 pr-4 rounded-[12px] border text-sm focus:outline-none transition-colors"
+                style={{
+                  background: 'var(--color-bg-surface)',
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-text-primary)',
+                }}
+                autoFocus
               />
-              {calculo && Number(monto) > 0 && (
-                <p className="text-[10px] text-[var(--color-info)] font-medium px-0.5">
-                  → {numCuotas} cuotas de <span className="font-mono-display">{formatMoney(calculo.cuotaDiaria)}</span>
+            </div>
+
+            {/* Lista de resultados — UNA sola lista, sin duplicar el seleccionado */}
+            <div className="mt-3 space-y-1.5 max-h-[60vh] overflow-y-auto pr-1">
+              {clientesFiltrados.length === 0 && (
+                <p className="text-sm text-center py-8" style={{ color: 'var(--color-text-muted)' }}>
+                  {buscadorCliente ? 'Sin resultados. Prueba con otro nombre.' : 'No tienes clientes aun.'}
                 </p>
               )}
-            </div>
-          )}
-
-        </SectionCard>
-        </>}
-
-        {/* PASO 3 — Plan de pago + avanzado */}
-        {paso === 2 && <>
-        <SectionCard
-          title="Plan de pago"
-          color="#22c55e"
-          icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-          accent={modo === 'prestamo' && (
-            <div className="relative grid grid-cols-2 h-7 w-[150px] shrink-0 rounded-[8px] bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] p-[2px]">
-              <div
-                className="absolute top-[2px] bottom-[2px] left-[2px] w-[calc(50%-2px)] rounded-[6px] bg-[var(--color-accent)] transition-transform duration-200 ease-out"
-                style={{ transform: cuotaManualActiva ? 'translateX(100%)' : 'translateX(0)' }}
-              />
-              {[
-                { value: false, label: 'Auto' },
-                { value: true,  label: 'Manual' },
-              ].map((opt) => (
-                <button
-                  key={String(opt.value)}
-                  type="button"
-                  onClick={() => {
-                    setCuotaManualActiva(opt.value)
-                    if (!opt.value) setCuotaManual('')
-                    else if (calculo?.cuotaDiaria) setCuotaManual(String(calculo.cuotaDiaria))
-                  }}
-                  className={[
-                    'relative z-[1] flex items-center justify-center text-[10px] font-semibold rounded-[6px] transition-colors duration-200 cursor-pointer',
-                    cuotaManualActiva === opt.value ? 'text-[#0a0a0a]' : 'text-[var(--color-text-muted)]',
-                  ].join(' ')}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          )}
-        >
-          <div className="grid grid-cols-2 gap-3">
-            {/* Tasa */}
-            <div className="flex flex-col gap-1">
-              <Input
-                label="Tasa de interés (%) *"
-                type="number"
-                inputMode="decimal"
-                step="0.5"
-                min="0"
-                placeholder={modo === 'mercancia' ? '0' : 'Ej: 20'}
-                value={tasa}
-                onChange={(e) => setTasa(e.target.value)}
-                suffix="%"
-              />
-              <p className="text-[10px] text-[var(--color-text-muted)] leading-snug px-0.5">
-                {modo === 'mercancia'
-                  ? 'Déjalo en 0% para mercancía sin interés'
-                  : modo === 'prestamo' && cuotaManualActiva
-                  ? 'Solo informativo. La cuota manual define el total a pagar.'
-                  : '% mensual sobre el monto. Ej: 20% sobre $100.000 a 60 días = $40.000 (2 meses)'}
-              </p>
-            </div>
-            {/* Plazo — unidad depende de la frecuencia */}
-            <div className="flex flex-col gap-1">
-              <Input
-                label={
-                  modo === 'mercancia' ? 'Plazo *' :
-                  frecuencia === 'diario'    ? 'Plazo (días) *' :
-                  frecuencia === 'semanal'   ? 'Plazo (semanas) *' :
-                  frecuencia === 'quincenal' ? 'Plazo (quincenas) *' :
-                  'Plazo (meses) *'
-                }
-                type="number"
-                inputMode="numeric"
-                placeholder={
-                  frecuencia === 'diario'    ? 'Ej: 30' :
-                  frecuencia === 'semanal'   ? 'Ej: 8'  :
-                  frecuencia === 'quincenal' ? 'Ej: 4'  :
-                  'Ej: 2'
-                }
-                value={plazoUnidades}
-                onChange={(e) => setPlazoUnidades(e.target.value)}
-                suffix={
-                  frecuencia === 'diario'    ? 'días' :
-                  frecuencia === 'semanal'   ? 'sem.' :
-                  frecuencia === 'quincenal' ? 'quinc.' :
-                  'meses'
-                }
-                disabled={modo === 'mercancia'}
-              />
-              {modo === 'prestamo' && plazoUnidades && (
-                <p className="text-[10px] text-[var(--color-text-muted)] leading-snug px-0.5">
-                  = {plazo} días totales
-                </p>
-              )}
-              {modo === 'mercancia' && (
-                <p className="text-[10px] text-[var(--color-text-muted)] leading-snug px-0.5">
-                  Calculado automáticamente según cuotas
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Cuota manual — solo si está activo el modo manual */}
-          {modo === 'prestamo' && cuotaManualActiva && (
-            <div className="flex flex-col gap-1">
-              <MoneyInput
-                label="Cuota (COP) *"
-                placeholder="Ej: 60.000"
-                value={cuotaManual}
-                onChange={(e) => setCuotaManual(e.target.value)}
-              />
-              <p className="text-[10px] text-[var(--color-accent)] leading-snug px-0.5">
-                Tú defines el valor exacto de cada cuota. El total a pagar = cuota × {plazoUnidades || 'N'} cuotas.
-              </p>
-            </div>
-          )}
-
-          {/* Redondeo de cuota — solo en modo auto (no manual) */}
-          {modo === 'prestamo' && !cuotaManualActiva && (
-            <div className="flex flex-col gap-1.5">
-              <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">Redondeo de cuota</p>
-              <div className="relative flex h-10 rounded-[12px] bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] p-[3px]">
-                <div
-                  className="absolute top-[3px] bottom-[3px] rounded-[10px] bg-[var(--color-accent)] transition-all duration-200 ease-out"
-                  style={{
-                    width: 'calc(33.333% - 2px)',
-                    left: `calc(${['exacto','redondeado','cerrado'].indexOf(redondeo) * 33.333}% + 1.5px)`,
-                  }}
-                />
-                {[
-                  { value: 'exacto', label: 'Exacto' },
-                  { value: 'redondeado', label: 'Redondeado' },
-                  { value: 'cerrado', label: 'Cerrado' },
-                ].map((r) => (
+              {clientesFiltrados.slice(0, 50).map((c) => {
+                const seleccionado = c.id === clienteId
+                return (
                   <button
-                    key={r.value}
+                    key={c.id}
                     type="button"
-                    onClick={() => setRedondeo(r.value)}
-                    className={[
-                      'relative z-[1] flex-1 text-xs font-semibold transition-colors duration-200 cursor-pointer rounded-[10px]',
-                      redondeo === r.value ? 'text-[#0a0a0a]' : 'text-[var(--color-text-muted)]',
-                    ].join(' ')}
+                    onClick={() => {
+                      setClienteId(c.id)
+                      setClienteNombre(c.nombre)
+                    }}
+                    className="w-full text-left flex items-center gap-3 px-3 py-3 rounded-[12px] border transition-all"
+                    style={{
+                      background: seleccionado
+                        ? 'color-mix(in srgb, var(--color-accent) 12%, transparent)'
+                        : 'var(--color-bg-surface)',
+                      borderColor: seleccionado
+                        ? 'var(--color-accent)'
+                        : 'var(--color-border)',
+                    }}
                   >
-                    {r.label}
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-sm font-bold"
+                      style={{
+                        background: 'color-mix(in srgb, var(--color-accent) 18%, transparent)',
+                        color: 'var(--color-accent)',
+                      }}
+                    >
+                      {c.nombre?.charAt(0)?.toUpperCase() ?? '?'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm truncate" style={{ color: 'var(--color-text-primary)' }}>{c.nombre}</p>
+                      <p className="text-xs truncate" style={{ color: 'var(--color-text-muted)' }}>CC {c.cedula}</p>
+                    </div>
+                    {seleccionado && (
+                      <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" style={{ color: 'var(--color-accent)' }}>
+                        <path fillRule="evenodd" d="M16.704 5.29a1 1 0 010 1.415l-7.997 8a1 1 0 01-1.414 0L3.296 10.71a1 1 0 011.415-1.415l3.29 3.29 7.288-7.295a1 1 0 011.415 0z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* PASO 2 — Plan del prestamo (todo en una sola pantalla, con revision en vivo abajo) */}
+      {paso === 1 && (
+        <section className="mt-8 space-y-7">
+          <div>
+            <h2 className="text-[22px] font-bold leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+              Plan del prestamo
+            </h2>
+            <p className="text-sm mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
+              Cliente: <span className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>{clienteNombre || 'sin nombre'}</span>
+              {ultimoPrestamo && (
+                <button
+                  type="button"
+                  onClick={repetirCondicionesUltimo}
+                  className="ml-2 inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                  style={{
+                    background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
+                    color: 'var(--color-accent)',
+                  }}
+                >
+                  ↻ Repetir condiciones del anterior
+                </button>
+              )}
+            </p>
+          </div>
+
+          {/* Tipo: prestamo vs mercancia */}
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--color-text-muted)' }}>Tipo</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => handleModoChange('prestamo')}
+                className="h-11 rounded-[12px] border text-sm font-semibold transition-all"
+                style={modo === 'prestamo'
+                  ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }
+                  : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }
+                }
+              >
+                Prestamo
+              </button>
+              <button
+                type="button"
+                onClick={() => handleModoChange('mercancia')}
+                className="h-11 rounded-[12px] border text-sm font-semibold transition-all"
+                style={modo === 'mercancia'
+                  ? { background: 'color-mix(in srgb, var(--color-info) 12%, transparent)', borderColor: 'var(--color-info)', color: 'var(--color-info)' }
+                  : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }
+                }
+              >
+                Mercancia
+              </button>
+            </div>
+          </div>
+
+          {/* Monto + tasa */}
+          <div className="space-y-4">
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                Monto del prestamo
+              </label>
+              <div className="mt-1.5">
+                <MoneyInput value={monto} onChange={(v) => setMonto(v)} placeholder="0" />
+              </div>
+            </div>
+
+            {modo === 'prestamo' ? (
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                  Tasa de interes (% mensual)
+                </label>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  value={tasa}
+                  onChange={(e) => setTasa(e.target.value)}
+                  placeholder="20"
+                />
+              </div>
+            ) : (
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                  Numero de cuotas
+                </label>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  value={numCuotas}
+                  onChange={(e) => setNumCuotas(e.target.value)}
+                  placeholder="10"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Frecuencia + plazo */}
+          <div className="space-y-4">
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                Frecuencia de cobro
+              </label>
+              <div className="grid grid-cols-4 gap-1.5 mt-1.5">
+                {FRECUENCIAS.map(f => (
+                  <button
+                    key={f.key}
+                    type="button"
+                    onClick={() => handleFrecuenciaChange(f.key)}
+                    className="h-10 rounded-[10px] border text-xs font-semibold transition-all"
+                    style={frecuencia === f.key
+                      ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }
+                      : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }
+                    }
+                  >
+                    {f.label}
                   </button>
                 ))}
               </div>
-              <p className="text-[10px] text-[var(--color-text-muted)] leading-snug px-0.5">
-                {redondeo === 'exacto'
-                  ? 'Al múltiplo de $100 más cercano (fiel al cálculo)'
-                  : redondeo === 'redondeado'
-                  ? 'Al múltiplo de $500 más cercano'
-                  : 'Al múltiplo de $1.000 más cercano'}
-              </p>
             </div>
-          )}
 
-          {/* Frecuencia – segmented control */}
-          <div className="flex flex-col gap-1.5">
-            <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">Frecuencia de cobro</p>
-            <div className="relative flex h-10 rounded-[12px] bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] p-[3px]">
-              {/* Sliding pill */}
-              <div
-                className="absolute top-[3px] bottom-[3px] rounded-[10px] bg-[var(--color-accent)] transition-all duration-200 ease-out"
-                style={{
-                  width: `calc(25% - 1.5px)`,
-                  left: `calc(${['diario','semanal','quincenal','mensual'].indexOf(frecuencia) * 25}% + 1.5px)`,
-                }}
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                Plazo ({frecuencia === 'diario' ? 'dias' : frecuencia === 'semanal' ? 'semanas' : frecuencia === 'quincenal' ? 'quincenas' : 'meses'})
+              </label>
+              <Input
+                type="number"
+                inputMode="numeric"
+                value={plazoUnidades}
+                onChange={(e) => setPlazoUnidades(e.target.value)}
               />
-              {[
-                { value: 'diario', label: 'Diario' },
-                { value: 'semanal', label: 'Semanal' },
-                { value: 'quincenal', label: 'Quinc.' },
-                { value: 'mensual', label: 'Mensual' },
-              ].map((f) => (
-                <button
-                  key={f.value}
-                  type="button"
-                  onClick={() => handleFrecuenciaChange(f.value)}
-                  className={[
-                    'relative z-[1] flex-1 text-xs font-semibold transition-colors duration-200 cursor-pointer rounded-[10px]',
-                    frecuencia === f.value ? 'text-[#0a0a0a]' : 'text-[var(--color-text-muted)]',
-                  ].join(' ')}
-                >
-                  {f.label}
-                </button>
-              ))}
             </div>
 
-            {/* Dia ancla opcional — semanal/quincenal */}
+            {/* Dia ancla solo para semanal/quincenal */}
             {(frecuencia === 'semanal' || frecuencia === 'quincenal') && (
-              <div className="mt-2 flex flex-col gap-1">
-                <label className="text-[11px] font-medium text-[var(--color-text-muted)]">
-                  Cobrar siempre el (opcional)
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                  Dia de cobro (opcional)
                 </label>
-                <select
-                  value={diaCobroSemana}
-                  onChange={(e) => setDiaCobroSemana(e.target.value)}
-                  className="h-9 px-2 rounded-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)]"
-                >
-                  <option value="">Sin día fijo (corre según inicio)</option>
-                  <option value="1">Lunes</option>
-                  <option value="2">Martes</option>
-                  <option value="3">Miércoles</option>
-                  <option value="4">Jueves</option>
-                  <option value="5">Viernes</option>
-                  <option value="6">Sábado</option>
-                  <option value="0">Domingo</option>
-                </select>
-                <p className="text-[10px] text-[var(--color-text-muted)] leading-snug px-0.5">
-                  Si eliges un día, el próximo cobro caerá siempre en ese día aunque los pagos se atrasen.
-                </p>
+                <div className="grid grid-cols-7 gap-1 mt-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setDiaCobroSemana('')}
+                    className="h-9 rounded-[8px] border text-[10px] font-semibold transition-all"
+                    style={diaCobroSemana === ''
+                      ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }
+                      : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }
+                    }
+                  >
+                    Auto
+                  </button>
+                  {DIAS_SEMANA.slice(0, 6).map(d => (
+                    <button
+                      key={d.v}
+                      type="button"
+                      onClick={() => setDiaCobroSemana(d.v)}
+                      className="h-9 rounded-[8px] border text-[10px] font-semibold transition-all"
+                      style={diaCobroSemana === d.v
+                        ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }
+                        : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }
+                      }
+                    >
+                      {d.l}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
-            {/* Dia ancla opcional — mensual */}
+            {/* Dia ancla solo para mensual */}
             {frecuencia === 'mensual' && (
-              <div className="mt-2 flex flex-col gap-1">
-                <label className="text-[11px] font-medium text-[var(--color-text-muted)]">
-                  Día del mes a cobrar (opcional)
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                  Dia del mes para cobro (opcional)
                 </label>
-                <select
+                <Input
+                  type="number"
+                  inputMode="numeric"
                   value={diaCobroMes}
                   onChange={(e) => setDiaCobroMes(e.target.value)}
-                  className="h-9 px-2 rounded-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)]"
-                >
-                  <option value="">Sin día fijo (corre según inicio)</option>
-                  {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
-                </select>
-                <p className="text-[10px] text-[var(--color-text-muted)] leading-snug px-0.5">
-                  Si el mes no tiene ese día (ej. 31 en febrero), se cobra el último día del mes.
-                </p>
+                  placeholder="Auto (segun fecha de inicio)"
+                />
+              </div>
+            )}
+
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                Fecha de inicio
+              </label>
+              <Input
+                type="date"
+                value={fechaInicio}
+                onChange={(e) => setFechaInicio(e.target.value)}
+                max={hoyISO()}
+              />
+            </div>
+          </div>
+
+          {/* Opciones adicionales: seguro, prestamo en curso, cuota manual */}
+          <div className="space-y-3 pt-2 border-t" style={{ borderColor: 'var(--color-border)' }}>
+            <p className="text-[11px] font-semibold uppercase tracking-wide pt-3" style={{ color: 'var(--color-text-muted)' }}>
+              Opciones adicionales
+            </p>
+
+            {/* Seguro */}
+            <label className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-[10px] border cursor-pointer"
+              style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)' }}
+            >
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Cobrar seguro</p>
+                <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Suma un cargo fijo al prestamo</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={seguro}
+                onChange={(e) => setSeguro(e.target.checked)}
+                className="w-5 h-5 accent-[var(--color-accent)]"
+              />
+            </label>
+            {seguro && (
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                  Monto del seguro
+                </label>
+                <div className="mt-1.5">
+                  <MoneyInput value={montoSeguro} onChange={(v) => setMontoSeguro(v)} placeholder="0" />
+                </div>
+              </div>
+            )}
+
+            {/* Prestamo en curso */}
+            <label className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-[10px] border cursor-pointer"
+              style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)' }}
+            >
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Prestamo en curso</p>
+                <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Migrar un prestamo con abonos previos</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={esEnCurso}
+                onChange={(e) => setEsEnCurso(e.target.checked)}
+                className="w-5 h-5 accent-[var(--color-accent)]"
+              />
+            </label>
+            {esEnCurso && (
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                  Monto ya abonado
+                </label>
+                <div className="mt-1.5">
+                  <MoneyInput value={yaAbonado} onChange={(v) => setYaAbonado(v)} placeholder="0" />
+                </div>
+              </div>
+            )}
+
+            {/* Cuota manual */}
+            <label className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-[10px] border cursor-pointer"
+              style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)' }}
+            >
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Cuota personalizada</p>
+                <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Sobrescribe la cuota calculada</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={cuotaManualActiva}
+                onChange={(e) => setCuotaManualActiva(e.target.checked)}
+                className="w-5 h-5 accent-[var(--color-accent)]"
+              />
+            </label>
+            {cuotaManualActiva && (
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                  Cuota exacta
+                </label>
+                <div className="mt-1.5">
+                  <MoneyInput value={cuotaManual} onChange={(v) => setCuotaManual(v)} placeholder="0" />
+                </div>
               </div>
             )}
           </div>
 
-          {/* Fecha inicio */}
-          <div className="flex flex-col gap-1">
-            <Input
-              label="Fecha de inicio *"
-              type="date"
-              value={fechaInicio}
-              onChange={(e) => setFechaInicio(e.target.value)}
-            />
-            <p className="text-[10px] text-[var(--color-text-muted)] leading-snug px-0.5">
-              Por defecto es hoy. Puedes elegir una fecha anterior si el préstamo ya lleva tiempo.
-            </p>
-          </div>
-        </SectionCard>
-
-        {/* Avanzado: prestamo en curso */}
-        <SectionCard
-          title="Préstamo en curso (opcional)"
-          color="var(--color-warning)"
-          icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
-          accent={
-            <button
-              type="button"
-              onClick={() => { setEsEnCurso(v => !v); if (esEnCurso) setYaAbonado('') }}
-              className={[
-                'relative w-10 h-[22px] rounded-full transition-colors shrink-0',
-                esEnCurso ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-bg-hover)]',
-              ].join(' ')}
+          {/* Revision EN VIVO — siempre visible mientras edita */}
+          {calculo && (
+            <div
+              className="rounded-[16px] p-4 space-y-2"
+              style={{
+                background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 8%, var(--color-bg-card)), var(--color-bg-card))',
+                border: '1px solid color-mix(in srgb, var(--color-success) 25%, var(--color-border))',
+              }}
             >
-              <span className={[
-                'absolute top-[2px] w-[18px] h-[18px] rounded-full bg-white transition-transform shadow-sm',
-                esEnCurso ? 'left-[20px]' : 'left-[2px]',
-              ].join(' ')} />
-            </button>
-          }
-        >
-          {!esEnCurso ? (
-            <p className="text-[11px] text-[var(--color-text-muted)] leading-snug">
-              Actívalo si este préstamo ya tiene pagos (migración de cuaderno u otro sistema).
-            </p>
-          ) : (
-            <div className="space-y-2">
-              <MoneyInput
-                label="Total ya abonado (COP)"
-                placeholder="Ej: 150.000"
-                value={yaAbonado}
-                onChange={(e) => setYaAbonado(e.target.value)}
-              />
-              {calculo && Number(yaAbonado) > 0 && (
-                <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[10px] px-3 py-2.5 space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-[var(--color-text-muted)]">Total a pagar</span>
-                    <span className="text-[var(--color-text-primary)] font-medium font-mono-display">{formatMoney(calculo.totalAPagar)}</span>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-[var(--color-text-muted)]">Ya abonado</span>
-                    <span className="text-[var(--color-success)] font-medium font-mono-display">-{formatMoney(Number(yaAbonado))}</span>
-                  </div>
-                  <div className="flex justify-between text-xs border-t border-[var(--color-border)] pt-1">
-                    <span className="text-[var(--color-text-muted)] font-semibold">Saldo pendiente</span>
-                    <span className="text-[var(--color-accent)] font-bold font-mono-display">
-                      {formatMoney(Math.max(0, calculo.totalAPagar - Number(yaAbonado)))}
-                    </span>
-                  </div>
+              <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-success)' }}>
+                Revision en vivo
+              </p>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+                <div>
+                  <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Cuota</p>
+                  <p className="text-base font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(calculo.cuotaDiaria)}</p>
                 </div>
+                <div>
+                  <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Total a pagar</p>
+                  <p className="text-base font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(calculo.totalAPagar)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Ganancia</p>
+                  <p className="text-base font-bold font-mono-display" style={{ color: 'var(--color-success)' }}>
+                    {formatMoney(calculo.totalAPagar - Number(monto || 0))}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Fecha fin</p>
+                  <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                    {calculo.fechaFin ? new Date(calculo.fechaFin).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                  </p>
+                </div>
+              </div>
+              {seguro && Number(montoSeguro) > 0 && (
+                <p className="text-[11px] pt-2 border-t mt-2" style={{ color: 'var(--color-text-muted)', borderColor: 'var(--color-border)' }}>
+                  Incluye seguro de <span className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(Number(montoSeguro))}</span>
+                </p>
               )}
-              <p className="text-[10px] text-[var(--color-text-muted)] leading-snug">
-                Se registrará como pago inicial. El saldo pendiente se calculará automáticamente.
-              </p>
             </div>
           )}
-        </SectionCard>
-        </>}
+        </section>
+      )}
 
-        {/* PASO 4 — Cobro de seguro + Resumen */}
-        {paso === 3 && <>
-        <SectionCard
-          title="Cobro de seguro (opcional)"
-          color="#6366f1"
-          icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>}
-          accent={
-            <button
-              type="button"
-              onClick={() => { setSeguro(v => !v); if (seguro) setMontoSeguro('') }}
-              className={[
-                'relative w-10 h-[22px] rounded-full transition-colors shrink-0',
-                seguro ? 'bg-[#6366f1]' : 'bg-[var(--color-bg-hover)]',
-              ].join(' ')}
-            >
-              <span className={[
-                'absolute top-[2px] w-[18px] h-[18px] rounded-full bg-white transition-transform shadow-sm',
-                seguro ? 'left-[20px]' : 'left-[2px]',
-              ].join(' ')} />
-            </button>
-          }
-        >
-          {!seguro ? (
-            <p className="text-[11px] text-[var(--color-text-muted)] leading-snug">
-              Activa esta opcion si cobras un seguro adicional al prestamo.
-            </p>
-          ) : (
-            <div className="space-y-2">
-              <MoneyInput
-                label="Monto del seguro (COP)"
-                placeholder="Ej: 10.000"
-                value={montoSeguro}
-                onChange={(e) => setMontoSeguro(e.target.value)}
-              />
-              <p className="text-[10px] text-[var(--color-text-muted)] leading-snug">
-                Este monto queda registrado como referencia. No se suma al total a pagar del prestamo.
-              </p>
-            </div>
-          )}
-        </SectionCard>
-
-        {/* Resumen en tiempo real */}
-        {calculo && (
-          <SectionCard
-            title="Resumen"
-            color="#a855f7"
-            icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2a4 4 0 00-4-4H3m18 6v-2a4 4 0 00-4-4h-2M9 7a4 4 0 100-8 4 4 0 000 8zm12 0a4 4 0 100-8 4 4 0 000 8z" /></svg>}
-          >
-            <ResumenCalculo calculo={calculo} visible={!!calculo} />
-            {calculo && !cuotaManualActiva && (
-              <p className="text-[10px] text-[var(--color-text-muted)] leading-snug mt-2 px-1">
-                Estos valores son calculados automáticamente. Si no corresponden a su forma de cobro, puede cambiar a modo <strong className="text-[var(--color-text)]">Manual</strong> arriba y definir la cuota exacta que desea cobrar.
-              </p>
-            )}
-          </SectionCard>
-        )}
-        </>}
-
-        {/* Footer wizard: Atras/Cancelar y Siguiente/Crear */}
-        <div className="flex items-center justify-between gap-3 pt-2">
+      {/* Footer fijo abajo */}
+      <div
+        className="fixed bottom-0 left-0 right-0 z-30 px-4 py-3 lg:px-6 lg:pb-6 pb-[calc(env(safe-area-inset-bottom)+12px)]"
+        style={{
+          background: 'linear-gradient(to top, var(--color-bg-base) 60%, transparent)',
+          borderTop: '1px solid var(--color-border)',
+        }}
+      >
+        <div className="max-w-2xl mx-auto flex items-center gap-3">
           {paso === 0 ? (
-            <Button type="button" variant="secondary" onClick={() => router.back()} disabled={loading}>
+            <Button type="button" variant="secondary" onClick={() => router.back()} disabled={loading} className="flex-1">
               Cancelar
             </Button>
           ) : (
-            <Button type="button" variant="secondary" onClick={irAlPasoAnterior} disabled={loading}>
-              ← Atras
+            <Button type="button" variant="secondary" onClick={irAlPasoAnterior} disabled={loading} className="flex-1">
+              Atras
             </Button>
           )}
           {paso < PASOS.length - 1 ? (
@@ -978,26 +830,34 @@ function NuevoPrestamo() {
               type="button"
               onClick={irAlSiguientePaso}
               disabled={!puedeAvanzarPaso()}
+              className="flex-[2]"
             >
-              Siguiente →
+              Continuar
             </Button>
           ) : (
-            <Button type="submit" loading={loading}>
-              Crear préstamo
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              loading={loading}
+              disabled={!puedeAvanzarPaso()}
+              className="flex-[2]"
+            >
+              Crear prestamo
             </Button>
           )}
         </div>
-      </form>
+      </div>
 
+      {/* Modal de inyeccion de capital (sin cambios) */}
       {modalInyeccion && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
           <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] w-full max-w-md p-5">
             <h3 className="text-base font-semibold text-[var(--color-text-primary)] mb-1">Capital insuficiente</h3>
             <p className="text-sm text-[var(--color-text-primary)] mb-3">
-              Tu saldo actual de capital es <span className="font-mono-display text-[var(--color-accent)]">{formatMoney(modalInyeccion.saldoActual)}</span>. Te faltan <span className="font-mono-display text-[var(--color-danger)]">{formatMoney(modalInyeccion.faltante)}</span> para este préstamo.
+              Tu saldo actual de capital es <span className="font-mono-display text-[var(--color-accent)]">{formatMoney(modalInyeccion.saldoActual)}</span>. Te faltan <span className="font-mono-display text-[var(--color-danger)]">{formatMoney(modalInyeccion.faltante)}</span> para este prestamo.
             </p>
             <p className="text-xs text-[var(--color-text-muted)] mb-4">
-              Puedes inyectar ese dinero ahora (por ejemplo, de tus ahorros o de un socio) y el sistema crea el préstamo. La inyección queda registrada en tus movimientos de capital.
+              Puedes inyectar ese dinero ahora (por ejemplo, de tus ahorros o de un socio) y el sistema crea el prestamo. La inyeccion queda registrada en tus movimientos de capital.
             </p>
 
             <div className="space-y-3">
@@ -1010,7 +870,7 @@ function NuevoPrestamo() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-[var(--color-text-muted)] mb-1">Descripción (opcional)</label>
+                <label className="block text-xs text-[var(--color-text-muted)] mb-1">Descripcion (opcional)</label>
                 <Input
                   type="text"
                   value={modalInyeccion.descripcion}
@@ -1029,7 +889,7 @@ function NuevoPrestamo() {
                 type="button"
                 onClick={() => { setModalInyeccion(null); setError('') }}
                 disabled={inyectando}
-                className="flex-1 px-4 py-2 bg-[var(--color-bg-hover)] text-[var(--color-text-primary)] text-sm font-semibold rounded-[10px] hover:bg-[var(--color-bg-hover)]"
+                className="flex-1 px-4 py-2 bg-[var(--color-bg-hover)] text-[var(--color-text-primary)] text-sm font-semibold rounded-[10px]"
               >
                 Cancelar
               </button>
@@ -1037,7 +897,7 @@ function NuevoPrestamo() {
                 type="button"
                 onClick={confirmarInyeccionYCrear}
                 disabled={inyectando}
-                className="flex-1 px-4 py-2 bg-[var(--color-success)] text-[#0a1f14] text-sm font-semibold rounded-[10px] hover:bg-[color-mix(in_srgb,var(--color-success)_85%,black)] disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-[var(--color-success)] text-[#0a1f14] text-sm font-semibold rounded-[10px] disabled:opacity-50"
               >
                 {inyectando ? 'Procesando...' : 'Inyectar y crear'}
               </button>
@@ -1048,3 +908,4 @@ function NuevoPrestamo() {
     </div>
   )
 }
+
