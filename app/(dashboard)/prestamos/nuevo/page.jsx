@@ -967,32 +967,44 @@ function NuevoPrestamo() {
 
           {/* Revision EN VIVO — resumen completo del prestamo mientras edita */}
           {calculo && (() => {
+            // Nombres completos de dias para que NO se confunda con "MAR" o "JUE".
+            const DIAS_FULL_PLURAL = ['domingos', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabados']
+            const DIAS_FULL_SINGULAR = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado']
+
             // Calcular cuantos cobros totales tendra el prestamo segun frecuencia + dias sin cobro.
             const diasPlazo = Number(plazo)
             const diasPorPeriodo = DIAS_POR_PERIODO[frecuencia] || 1
             const periodos = Math.max(1, Math.round(diasPlazo / diasPorPeriodo))
             // En frecuencia diaria, descontar los dias sin cobro de la semana.
-            // Aproximacion: si hay N dias sin cobro a la semana, restamos esa proporcion.
             let cobrosTotales = periodos
             if (frecuencia === 'diario' && diasSinCobroCliente.length > 0) {
               const cobrosPorSemana = 7 - diasSinCobroCliente.length
               const semanas = diasPlazo / 7
               cobrosTotales = Math.max(1, Math.round(cobrosPorSemana * semanas))
             }
-            // Etiqueta de frecuencia descriptiva
+
+            // Etiqueta de frecuencia descriptiva con nombres COMPLETOS de dias.
+            const diaSemanaFullPlural = diaCobroSemana !== '' ? DIAS_FULL_PLURAL[Number(diaCobroSemana)] : null
             const labelFrecuencia = frecuencia === 'diario'
               ? `Diaria · ${cobrosTotales} cobros en ${diasPlazo} dias`
               : frecuencia === 'semanal'
-                ? `Semanal · ${periodos} cobros${diaCobroSemana !== '' ? ' los ' + (DIAS_SEMANA.find(d => d.v === diaCobroSemana)?.l || '') : ''}`
+                ? `Semanal · ${periodos} cobros${diaSemanaFullPlural ? ' los ' + diaSemanaFullPlural : ''}`
                 : frecuencia === 'quincenal'
-                  ? `Quincenal · ${periodos} cobros`
-                  : `Mensual · ${periodos} cobros${diaCobroMes ? ' el dia ' + diaCobroMes : ''}`
+                  ? `Quincenal · ${periodos} cobros${diaSemanaFullPlural ? ' los ' + diaSemanaFullPlural : ''}`
+                  : `Mensual · ${periodos} cobros${diaCobroMes ? ' el dia ' + diaCobroMes + ' de cada mes' : ''}`
 
             const totalConSeguro = calculo.totalAPagar + (seguro && Number(montoSeguro) > 0 ? Number(montoSeguro) : 0)
             const ganancia = calculo.totalAPagar - Number(monto || 0)
             const pctGanancia = Number(monto) > 0 ? Math.round((ganancia / Number(monto)) * 100) : 0
             const saldoInicial = esEnCurso && Number(yaAbonado) > 0
               ? Math.max(0, calculo.totalAPagar - Number(yaAbonado))
+              : null
+
+            // Formula breve para modo Automatica — ayuda al usuario a entender de
+            // donde sale la cuota cuando no le cuadra y se cambia a Manual.
+            const mesesPlazo = (diasPlazo / 30).toFixed(diasPlazo % 30 === 0 ? 0 : 1)
+            const formulaAuto = !cuotaManualActiva && modo === 'prestamo'
+              ? `Total = monto + (monto × ${tasa || 0}% × ${mesesPlazo} meses). Cuota = total ÷ ${cobrosTotales} cobros.`
               : null
 
             const Row = ({ label, value, valueColor }) => (
@@ -1032,6 +1044,14 @@ function NuevoPrestamo() {
 
                 {/* Detalles tipo lista — mas legible que grid de 2 columnas */}
                 <div className="space-y-0">
+                  <Row label="Monto prestado" value={formatMoney(Number(monto || 0))} />
+                  {modo === 'prestamo' && (
+                    <Row
+                      label="Tasa de interes"
+                      value={`${tasa || 0}% mensual`}
+                      valueColor="var(--color-accent)"
+                    />
+                  )}
                   <Row label="Frecuencia" value={labelFrecuencia} />
                   <Row label="Cobros totales" value={`${cobrosTotales}`} />
                   <Row label="Fecha fin" value={calculo.fechaFin ? new Date(calculo.fechaFin).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'} />
@@ -1046,7 +1066,7 @@ function NuevoPrestamo() {
                       label="Dias sin cobro"
                       value={diasSinCobroCliente
                         .sort((a, b) => a - b)
-                        .map(n => ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'][n])
+                        .map(n => DIAS_FULL_SINGULAR[n].charAt(0).toUpperCase() + DIAS_FULL_SINGULAR[n].slice(1))
                         .join(', ')}
                     />
                   )}
@@ -1072,6 +1092,27 @@ function NuevoPrestamo() {
                     </>
                   )}
                 </div>
+
+                {/* Formula breve: ayuda al usuario a entender de donde sale el
+                    calculo automatico. Si no le cuadra, sabe que debe cambiar a Manual. */}
+                {formulaAuto && (
+                  <div
+                    className="mt-3 pt-3 border-t flex gap-2 items-start"
+                    style={{ borderColor: 'color-mix(in srgb, var(--color-border) 50%, transparent)' }}
+                  >
+                    <svg className="w-3.5 h-3.5 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" style={{ color: 'var(--color-text-muted)' }}>
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
+                    </svg>
+                    <div className="flex-1">
+                      <p className="text-[10px] font-bold uppercase tracking-wide mb-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                        Como se calcula
+                      </p>
+                      <p className="text-[10px] leading-snug" style={{ color: 'var(--color-text-muted)' }}>
+                        {formulaAuto} Si no te cuadra, cambia a <span className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>Manual</span> y define la cuota exacta.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             )
           })()}
