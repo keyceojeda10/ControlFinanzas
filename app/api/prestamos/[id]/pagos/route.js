@@ -275,13 +275,22 @@ export async function POST(request, { params }) {
       })
     }
 
-    // 2d. Descuento: decrementar totalAPagar (piso = total ya pagado)
+    // 2d. Descuento: decrementar totalAPagar.
+    // Rechazar si excede el espacio disponible (totalAPagar - totalPagadoReal):
+    // antes se recortaba silenciosamente con Math.max, generando inconsistencia
+    // contable porque el cobrador creia haber aplicado mas descuento del real.
     if (tipo === 'descuento') {
       const totalPagadoReal = prestamoActualizado.pagos
         .filter(p => !['recargo', 'descuento'].includes(p.tipo))
         .reduce((a, p) => a + p.montoPagado, 0)
-      const nuevoTotal = Math.max(totalPagadoReal, prestamoActualizado.totalAPagar - montoFinal)
-      await tx.prestamo.update({ where: { id: prestamoId }, data: { totalAPagar: nuevoTotal } })
+      const espacioDescuento = prestamoActualizado.totalAPagar - totalPagadoReal
+      if (montoFinal > espacioDescuento) {
+        throw new Error(`DESCUENTO_EXCESIVO:${Math.round(espacioDescuento)}`)
+      }
+      await tx.prestamo.update({
+        where: { id: prestamoId },
+        data: { totalAPagar: prestamoActualizado.totalAPagar - montoFinal },
+      })
       prestamoActualizado = await tx.prestamo.findUnique({
         where: { id: prestamoId },
         include: { pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } } },
@@ -356,6 +365,12 @@ export async function POST(request, { params }) {
     }
     if (err?.message === 'DESCUENTO_EXCEDE_SALDO') {
       return Response.json({ error: 'El descuento excede el saldo pendiente actual' }, { status: 400 })
+    }
+    if (err?.message?.startsWith('DESCUENTO_EXCESIVO:')) {
+      const espacio = err.message.split(':')[1]
+      return Response.json({
+        error: `El descuento excede el espacio disponible. Maximo permitido: $${Number(espacio).toLocaleString('es-CO')}`,
+      }, { status: 400 })
     }
     console.error('[POST /api/prestamos/[id]/pagos]', err)
     return Response.json({ error: 'Error interno del servidor' }, { status: 500 })

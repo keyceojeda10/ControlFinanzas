@@ -1170,6 +1170,7 @@ export default function PrestamoDetallePage({ params }) {
         prestamoId={id}
         saldoPendiente={saldoPendiente}
         totalAPagar={totalAPagar}
+        totalPagado={totalPagadoReal}
         tipoAjuste="descuento"
         open={modalDescuento}
         onClose={() => setModalDescuento(false)}

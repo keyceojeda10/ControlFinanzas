@@ -30,11 +30,15 @@ export default function AjusteSaldo({
   prestamoId,
   saldoPendiente,
   totalAPagar,
+  totalPagado,
   tipoAjuste,
   open,
   onClose,
   onSuccess,
 }) {
+  // Espacio real disponible para descuento = totalAPagar - lo que ya pago el cliente.
+  // No se puede descontar mas que esto sin alterar la integridad contable.
+  const espacioDescuento = Math.max(0, Number(totalAPagar || 0) - Number(totalPagado || 0))
   const { formatMoney } = useCountry()
   const [monto, setMonto]           = useState('')
 
@@ -52,8 +56,8 @@ export default function AjusteSaldo({
   const handleSubmit = async () => {
     if (montoNum <= 0) { setError('Ingresa un monto válido'); return }
     if (!nota.trim()) { setError('El motivo es obligatorio'); return }
-    if (tipoAjuste === 'descuento' && montoNum > saldoPendiente) {
-      setError(`No puede superar el saldo pendiente (${formatMoney(saldoPendiente)})`)
+    if (tipoAjuste === 'descuento' && montoNum > espacioDescuento) {
+      setError(`Maximo permitido: ${formatMoney(espacioDescuento)} (no puede exceder lo no pagado).`)
       return
     }
 
