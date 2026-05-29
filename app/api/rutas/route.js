@@ -6,6 +6,8 @@ import { prisma }           from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
 import { LIMITES_RUTAS, PLANES_CONFIG } from '@/lib/planes'
 import { getUtcOffset } from '@/lib/i18n'
+import { tienePeriodoEsperadoHoy } from '@/lib/calculos'
+import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 
 const hoy = (country = 'co') => {
   const now = new Date()
@@ -34,15 +36,23 @@ export async function GET(request) {
     where,
     include: {
       cobrador: { select: { id: true, nombre: true, email: true } },
+      // diasSinCobro de la ruta para resolver herencia cliente -> ruta -> org.
+      // No es necesario el campo activo aqui porque ya esta en el where.
       clientes: {
         select: {
           id:        true,
           nombre:    true,
           estado:    true,
+          diasSinCobro: true,
           prestamos: {
             select:  {
               estado: true,
               cuotaDiaria: true,
+              frecuencia: true,
+              fechaInicio: true,
+              diasPlazo: true,
+              diaCobroSemana: true,
+              diaCobroMes: true,
               pagos: {
                 where:  { fechaPago: { gte: hoy(), lt: manana() } },
                 select: { montoPagado: true, tipo: true },
@@ -55,17 +65,29 @@ export async function GET(request) {
     orderBy: { nombre: 'asc' },
   })
 
+  const org = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { diasSinCobro: true },
+  })
+
+  // TODO: festivos por organizacion. Por ahora pasamos array vacio (consistente con otros endpoints).
+  const festivos = []
+
   const resultado = rutas.map((r) => {
     let esperadoHoy    = 0
     let recaudadoHoy   = 0
 
     for (const cliente of r.clientes) {
+      const diasExcluidos = obtenerDiasSinCobro(cliente, r, org)
+      const hoySinCobro = esHoySinCobro(diasExcluidos) || esHoyFestivo(festivos)
+
       for (const prestamo of cliente.prestamos) {
-        // Esperado hoy: solo préstamos activos tienen cuota esperada
-        if (prestamo.estado === 'activo') {
+        // Meta: solo cuotas que TOCABA cobrar hoy (segun ciclo de frecuencia
+        // y dia ancla). Antes sumaba todas las cuotas activas y inflaba la cifra.
+        if (prestamo.estado === 'activo' && tienePeriodoEsperadoHoy(prestamo, hoySinCobro, diasExcluidos, festivos)) {
           esperadoHoy += prestamo.cuotaDiaria
         }
-        // Recaudado hoy: incluye pagos de préstamos completados hoy (el pago final cierra)
+        // Recaudado hoy: incluye pagos de prestamos completados hoy (el pago final cierra)
         recaudadoHoy += prestamo.pagos.filter(p => !['recargo', 'descuento'].includes(p.tipo)).reduce((a, p) => a + p.montoPagado, 0)
       }
     }

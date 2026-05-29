@@ -8,6 +8,8 @@ import { logActividad } from '@/lib/activity-log'
 
 import { LIMITES_USUARIOS, PLAN_NAMES, PLANES_CONFIG } from '@/lib/planes'
 import { getUtcOffset } from '@/lib/i18n'
+import { tienePeriodoEsperadoHoy } from '@/lib/calculos'
+import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 
 const getLocalDate = (country = 'co') => new Date(Date.now() - Math.abs(getUtcOffset(country)) * 60 * 60 * 1000)
 const hoy = (country = 'co') => {
@@ -54,12 +56,21 @@ export async function GET(request) {
         select: {
           id:      true,
           nombre:  true,
+          diasSinCobro: true,
           clientes: {
             select: {
               id: true,
+              diasSinCobro: true,
               prestamos: {
                 where: { estado: 'activo' },
-                select: { cuotaDiaria: true, frecuencia: true },
+                select: {
+                  cuotaDiaria: true,
+                  frecuencia: true,
+                  fechaInicio: true,
+                  diasPlazo: true,
+                  diaCobroSemana: true,
+                  diaCobroMes: true,
+                },
               },
             },
           },
@@ -74,17 +85,26 @@ export async function GET(request) {
     orderBy: { nombre: 'asc' },
   })
 
+  const orgCfg = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { diasSinCobro: true },
+  })
+
   const resultado = cobradores.map((c) => {
     const pagosValidos = c.pagos.filter(p => !['recargo', 'descuento'].includes(p.tipo))
     const recaudadoHoy = pagosValidos.reduce((a, p) => a + p.montoPagado, 0)
     const cantidadPagos = pagosValidos.length
     const ultimoPago = c.pagos[0]?.fechaPago ?? null
-    // Esperado hoy: suma de cuotas diarias de los prestamos activos en sus rutas
+    // Esperado hoy: solo cuotas de prestamos cuyo ciclo de cobro toca HOY
+    // (frecuencia diaria, semanal en el dia ancla, mensual en el dia configurado).
+    // Antes sumaba todas las cuotas diarias activas, lo que inflaba la cifra.
     let esperadoHoy = 0
     for (const ruta of c.rutas) {
       for (const cliente of (ruta.clientes ?? [])) {
+        const diasExcluidos = obtenerDiasSinCobro(cliente, ruta, orgCfg)
+        const hoySinCobro = esHoySinCobro(diasExcluidos) || esHoyFestivo([])
         for (const p of (cliente.prestamos ?? [])) {
-          if (p.frecuencia === 'diario' || !p.frecuencia) {
+          if (tienePeriodoEsperadoHoy(p, hoySinCobro, diasExcluidos, [])) {
             esperadoHoy += p.cuotaDiaria ?? 0
           }
         }

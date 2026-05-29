@@ -4,7 +4,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
-import { obtenerDiasSinCobro, esHoySinCobro } from '@/lib/dias-sin-cobro'
+import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
+import { tienePeriodoEsperadoHoy } from '@/lib/calculos'
 import { getUtcOffset, getLocalDateStr, getLocalDayRange, formatFechaCorta } from '@/lib/i18n'
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -52,7 +53,14 @@ async function calcularEsperadoReal(organizationId, cobradorId = null) {
             diasSinCobro: true,
             prestamos: {
               where: { estado: 'activo' },
-              select: { cuotaDiaria: true },
+              select: {
+                cuotaDiaria: true,
+                frecuencia: true,
+                fechaInicio: true,
+                diasPlazo: true,
+                diaCobroSemana: true,
+                diaCobroMes: true,
+              },
             },
           },
         },
@@ -64,11 +72,18 @@ async function calcularEsperadoReal(organizationId, cobradorId = null) {
     }),
   ])
 
+  // Meta del dia: solo cuenta cuotas de prestamos cuyo ciclo de cobro toca
+  // hoy (segun frecuencia + dia ancla). Antes sumaba TODAS las cuotas activas,
+  // lo que inflaba la meta con cuotas semanales/mensuales que no se cobraban hoy.
   return rutas.reduce((total, ruta) =>
     total + ruta.clientes.reduce((a, c) => {
       const diasExcluidos = obtenerDiasSinCobro(c, ruta, org)
-      if (esHoySinCobro(diasExcluidos)) return a
-      return a + c.prestamos.reduce((b, p) => b + p.cuotaDiaria, 0)
+      const hoySinCobro = esHoySinCobro(diasExcluidos) || esHoyFestivo([])
+      return a + c.prestamos.reduce((b, p) => {
+        return tienePeriodoEsperadoHoy(p, hoySinCobro, diasExcluidos, [])
+          ? b + p.cuotaDiaria
+          : b
+      }, 0)
     }, 0), 0)
 }
 
@@ -541,17 +556,30 @@ export async function GET(request) {
         where: { organizationId, activo: true },
         select: {
           cobradorId: true,
+          diasSinCobro: true,
           clientes: {
             select: {
+              diasSinCobro: true,
               prestamos: {
                 where: { estado: 'activo' },
-                select: { cuotaDiaria: true },
+                select: {
+                  cuotaDiaria: true,
+                  frecuencia: true,
+                  fechaInicio: true,
+                  diasPlazo: true,
+                  diaCobroSemana: true,
+                  diaCobroMes: true,
+                },
               },
             },
           },
         },
       }),
     ])
+    const orgCfg = await prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { diasSinCobro: true },
+    })
 
     const recaudoPorCobrador = recaudosDiaRaw.reduce((acc, row) => {
       if (!row.cobradorId) return acc
@@ -561,8 +589,15 @@ export async function GET(request) {
 
     const esperadoPorCobrador = rutasActivas.reduce((acc, ruta) => {
       if (!ruta.cobradorId) return acc
-      const esperadoRuta = ruta.clientes.reduce((totalCliente, cliente) =>
-        totalCliente + cliente.prestamos.reduce((totalPrestamo, p) => totalPrestamo + p.cuotaDiaria, 0), 0)
+      const esperadoRuta = ruta.clientes.reduce((totalCliente, cliente) => {
+        const diasExcluidos = obtenerDiasSinCobro(cliente, ruta, orgCfg)
+        const hoySinCobro = esHoySinCobro(diasExcluidos) || esHoyFestivo([])
+        return totalCliente + cliente.prestamos.reduce((totalPrestamo, p) => {
+          return tienePeriodoEsperadoHoy(p, hoySinCobro, diasExcluidos, [])
+            ? totalPrestamo + p.cuotaDiaria
+            : totalPrestamo
+        }, 0)
+      }, 0)
 
       acc[ruta.cobradorId] = Math.round((acc[ruta.cobradorId] || 0) + esperadoRuta)
       return acc

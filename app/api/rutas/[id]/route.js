@@ -9,6 +9,7 @@ import {
   calcularProximoCobro,
   formatFechaCobro,
   tieneCobroPendienteHoy,
+  tienePeriodoEsperadoHoy,
   calcularCuotasEnMora,
   calcularMontoEnMora,
   calcularMontoParaPonerseAlDia,
@@ -144,7 +145,13 @@ export async function GET(request, { params }) {
       const diasExcluidosPrestamo = obtenerDiasSinCobro(c, ruta, org, p)
 
       cuotaCliente  += p.cuotaDiaria
-      esperadoHoy   += _hoySinCobro ? 0 : p.cuotaDiaria
+      // Meta del dia: solo suma cuotas de prestamos cuyo ciclo de cobro
+      // toca HOY (segun frecuencia + dia ancla + dias excluidos). Antes se
+      // sumaba todo prestamo activo, lo que inflaba la meta con cuotas que
+      // en realidad se cobraban dias despues (ej. cliente con cobro manana).
+      esperadoHoy   += tienePeriodoEsperadoHoy(p, _hoySinCobro, diasExcluidosPrestamo, festivos)
+        ? p.cuotaDiaria
+        : 0
       const saldoPendientePrestamo = calcularSaldoPendiente(p)
       carteraTotal    += saldoPendientePrestamo
       capitalTotal    += p.montoPrestado

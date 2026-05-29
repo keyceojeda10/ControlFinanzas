@@ -2,7 +2,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado, calcularProximoCobro, formatFechaCobro, pagoHoy, tieneCobroPendienteHoy } from '@/lib/calculos'
+import { calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado, calcularProximoCobro, formatFechaCobro, pagoHoy, tieneCobroPendienteHoy, tienePeriodoEsperadoHoy } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
 
@@ -112,25 +112,35 @@ export async function GET() {
       if (!ce) return { ...rc, estado: 'activo', pagoHoy: false, diasMora: 0, cuota: 0, diasDesdeUltimoPago: null }
 
       const activos = ce.prestamos.filter(p => p.estado === 'activo')
-      const cuota = activos.reduce((s, p) => s + (p.cuotaDiaria || 0), 0)
       const diasMora = activos.length > 0 ? Math.max(0, ...activos.map(p => p.diasMora || 0)) : 0
       const pagadoHoy = activos.some(p => p.pagoHoy)
       const estado = activos.length === 0 ? 'completado' : diasMora > 0 ? 'mora' : 'activo'
       const hoySinCobro = Boolean(ce.hoySinCobro)
+      const diasExcluidosCliente = obtenerDiasSinCobro(ce, ce.ruta, org)
       let proximoCobro = null
       let frecuencia = activos[0]?.frecuencia || 'diario'
       let cobroPendienteHoy = false
+      // Cuota = suma de cuotas SOLO de prestamos cuyo ciclo toca hoy.
+      // Esto reemplaza el calculo viejo `activos.reduce(...cuotaDiaria)` que
+      // sumaba todas las cuotas sin filtrar por ciclo.
+      let cuotaEsperadaHoy = 0
 
       for (const p of activos) {
         const pc = p.proximoCobro ? new Date(p.proximoCobro) : null
         if (pc && (!proximoCobro || pc < proximoCobro)) proximoCobro = pc
         frecuencia = p.frecuencia || frecuencia
-        if (!hoySinCobro && tieneCobroPendienteHoy(p, obtenerDiasSinCobro(ce, ce.ruta, org))) {
+        if (!hoySinCobro && tieneCobroPendienteHoy(p, diasExcluidosCliente)) {
           cobroPendienteHoy = true
+        }
+        if (tienePeriodoEsperadoHoy(p, hoySinCobro, diasExcluidosCliente, [])) {
+          cuotaEsperadaHoy += (p.cuotaDiaria || 0)
         }
       }
 
-      esperadoHoy += hoySinCobro ? 0 : cuota
+      // Mantener `cuota` como el monto a cobrar hoy para no romper consumers.
+      const cuota = cuotaEsperadaHoy
+
+      esperadoHoy += cuotaEsperadaHoy
       if (pagadoHoy) {
         recaudadoHoy += activos.reduce((s, p) => {
           return s + p.pagos
