@@ -336,14 +336,9 @@ export default function PrestamosPage() {
               })
             }
             return (
-              <div key={p.id} className="relative">
+              <BadgeNuevo key={p.id} fecha={p.createdAt}>
                 <PrestamoCard prestamo={p} actions={cardActions} />
-                {isHoy(p.createdAt, country) && (
-                  <div className="absolute top-2 right-2 z-10 pointer-events-none">
-                    <BadgeNuevo fecha={p.createdAt} />
-                  </div>
-                )}
-              </div>
+              </BadgeNuevo>
             )
           })}
         </div>
@@ -395,7 +390,19 @@ export default function PrestamosPage() {
                       >
                         {prestCliente.length}
                       </span>
-                      {tieneNuevo && <BadgeNuevo fecha={new Date()} />}
+                      {tieneNuevo && (
+                        <span
+                          className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full whitespace-nowrap"
+                          style={{
+                            background: 'color-mix(in srgb, var(--color-success) 14%, transparent)',
+                            color: 'var(--color-success)',
+                            border: '1px solid color-mix(in srgb, var(--color-success) 35%, transparent)',
+                          }}
+                        >
+                          <span className="w-1 h-1 rounded-full" style={{ background: 'var(--color-success)' }} />
+                          Nuevo
+                        </span>
+                      )}
                       <span
                         className="ml-auto text-[10px] tabular-nums whitespace-nowrap"
                         style={{ color: 'var(--color-text-muted)' }}
@@ -427,14 +434,9 @@ export default function PrestamosPage() {
                         })
                       }
                       return (
-                        <div key={p.id} className="relative">
+                        <BadgeNuevo key={p.id} fecha={p.createdAt}>
                           <PrestamoCard prestamo={p} actions={cardActions} />
-                          {isHoy(p.createdAt, country) && (
-                            <div className="absolute top-2 right-2 z-10 pointer-events-none">
-                              <BadgeNuevo fecha={p.createdAt} />
-                            </div>
-                          )}
-                        </div>
+                        </BadgeNuevo>
                       )
                     })}
                   </div>

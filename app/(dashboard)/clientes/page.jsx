@@ -575,7 +575,7 @@ export default function ClientesPage() {
                   </div>
                 </label>
               ) : (
-                <div key={c.id} className="relative">
+                <BadgeNuevo key={c.id} fecha={c.createdAt}>
                   <ClienteCard
                     cliente={c}
                     actions={[
@@ -593,10 +593,7 @@ export default function ClientesPage() {
                       }] : []),
                     ]}
                   />
-                  <div className="absolute top-2 right-2 z-10 pointer-events-none">
-                    <BadgeNuevo fecha={c.createdAt} />
-                  </div>
-                </div>
+                </BadgeNuevo>
               )
             ))}
           </div>
