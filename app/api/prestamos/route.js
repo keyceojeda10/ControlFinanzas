@@ -120,21 +120,9 @@ export async function GET(request) {
     proximoCobro:     calcularProximoCobro(p, diasExcluidos),
   }})
 
-  // Reordenar por createdAt del prestamo mas reciente del cliente, manteniendo
-  // juntos los prestamos del mismo cliente. Los pagos NO mueven la posicion —
-  // solo un prestamo nuevo sube al cliente al tope.
-  const actividadCliente = new Map()
-  for (const p of resultado) {
-    const ts = new Date(p.createdAt).getTime()
-    const prev = actividadCliente.get(p.clienteId) ?? 0
-    if (ts > prev) actividadCliente.set(p.clienteId, ts)
-  }
-  resultado.sort((a, b) => {
-    const actA = actividadCliente.get(a.clienteId) ?? 0
-    const actB = actividadCliente.get(b.clienteId) ?? 0
-    if (actA !== actB) return actB - actA
-    return new Date(b.createdAt) - new Date(a.createdAt)
-  })
+  // Orden cronologico puro: prestamo mas nuevo arriba (ya viene del Prisma orderBy).
+  // El cliente que quiera ver los prestamos agrupados por persona usa el filtro
+  // "Agrupar por cliente" en el frontend, que reordena ahi.
 
   // If paginated, return object with total; otherwise array for backward compat
   if (page != null) {

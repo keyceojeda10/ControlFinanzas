@@ -57,6 +57,23 @@ export default function PrestamosPage() {
   // Pais del usuario para badge "Nuevo" y formatos
   const { country } = useCountry()
 
+  // Toggle "Agrupar por cliente". Persiste en localStorage para no resetear
+  // la preferencia al cambiar de pagina.
+  const [agrupar, setAgrupar] = useState(false)
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem('cf:prestamos:agrupar')
+      if (v === '1') setAgrupar(true)
+    } catch {}
+  }, [])
+  const toggleAgrupar = useCallback(() => {
+    setAgrupar((prev) => {
+      const next = !prev
+      try { localStorage.setItem('cf:prestamos:agrupar', next ? '1' : '0') } catch {}
+      return next
+    })
+  }, [])
+
   const fetchPrestamos = useCallback(async (q, est, p, { soft = false } = {}) => {
     const shouldUseSoftRefresh = soft && hasLoadedOnceRef.current
     setError('')
@@ -230,32 +247,49 @@ export default function PrestamosPage() {
         })}
       </div>
 
-      {/* Buscador */}
-      <div className="relative mb-5">
-        <svg
-          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)] pointer-events-none"
-          fill="none" stroke="currentColor" viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-        <input
-          type="search"
-          value={buscar}
-          onChange={(e) => setBuscar(e.target.value)}
-          placeholder="Buscar por nombre o cédula del cliente…"
-          className="w-full h-10 pl-9 pr-4 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-sm text-[white] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all"
-        />
-        {buscar && (
-          <button
-            onClick={() => setBuscar('')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[white]"
+      {/* Buscador + toggle agrupar */}
+      <div className="flex items-center gap-2 mb-5">
+        <div className="relative flex-1">
+          <svg
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)] pointer-events-none"
+            fill="none" stroke="currentColor" viewBox="0 0 24 24"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        )}
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="search"
+            value={buscar}
+            onChange={(e) => setBuscar(e.target.value)}
+            placeholder="Buscar por nombre o cédula del cliente…"
+            className="w-full h-10 pl-9 pr-4 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-sm text-[white] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all"
+          />
+          {buscar && (
+            <button
+              onClick={() => setBuscar('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[white]"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={toggleAgrupar}
+          aria-pressed={agrupar}
+          title={agrupar ? 'Mostrar lista cronologica' : 'Agrupar todos los prestamos de cada cliente'}
+          className="shrink-0 h-10 px-3 rounded-[12px] border text-xs font-medium inline-flex items-center gap-1.5 transition-all"
+          style={agrupar
+            ? { color: 'var(--color-accent)', borderColor: 'var(--color-accent)', background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)' }
+            : { color: 'var(--color-text-muted)', borderColor: 'var(--color-border)', background: 'var(--color-bg-surface)' }}
+        >
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM5 9a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zM7 13a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1z" />
+          </svg>
+          Agrupar
+        </button>
       </div>
 
       {/* Offline indicator */}
@@ -280,21 +314,61 @@ export default function PrestamosPage() {
         </div>
       )}
 
-      {/* Lista agrupada por cliente (API ya ordena por actividad reciente) */}
-      {!loading && prestamos.length > 0 && (() => {
+      {/* Lista plana: orden cronologico puro (default) */}
+      {!loading && prestamos.length > 0 && !agrupar && (
+        <div className="space-y-2.5">
+          {prestamos.map((p) => {
+            const cardActions = []
+            if (p.cliente?.telefono) {
+              cardActions.push({
+                icon: IconWA,
+                label: 'WhatsApp',
+                color: '#25D366',
+                onClick: () => setWaContext({ cliente: p.cliente, prestamo: p }),
+              })
+            }
+            if (p.estado === 'activo') {
+              cardActions.push({
+                icon: IconPagar,
+                label: 'Registrar pago',
+                color: '#22c55e',
+                onClick: () => { window.location.href = `/prestamos/${p.id}?openPago=1` },
+              })
+            }
+            return (
+              <div key={p.id} className="relative">
+                <PrestamoCard prestamo={p} actions={cardActions} />
+                {isHoy(p.createdAt, country) && (
+                  <div className="absolute top-2 right-2 z-10 pointer-events-none">
+                    <BadgeNuevo fecha={p.createdAt} />
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Lista agrupada por cliente: solo cuando el toggle esta activo */}
+      {!loading && prestamos.length > 0 && agrupar && (() => {
+        // Agrupa y reordena: cliente con prestamo mas nuevo arriba.
         const grupos = []
         const indice = new Map()
         for (const p of prestamos) {
           const key = p.clienteId
           if (!indice.has(key)) {
             indice.set(key, grupos.length)
-            grupos.push({ cliente: p.cliente, prestamos: [], tieneNuevo: false, saldoTotal: 0 })
+            grupos.push({ cliente: p.cliente, prestamos: [], tieneNuevo: false, saldoTotal: 0, maxCreatedAt: 0 })
           }
           const g = grupos[indice.get(key)]
           g.prestamos.push(p)
           if (isHoy(p.createdAt, country)) g.tieneNuevo = true
           g.saldoTotal += p.saldoPendiente ?? 0
+          const ts = new Date(p.createdAt).getTime()
+          if (ts > g.maxCreatedAt) g.maxCreatedAt = ts
         }
+        // Cliente cuyo prestamo mas nuevo es mas reciente, va primero.
+        grupos.sort((a, b) => b.maxCreatedAt - a.maxCreatedAt)
         return (
           <div className="space-y-4">
             {grupos.map(({ cliente, prestamos: prestCliente, tieneNuevo, saldoTotal }) => {
