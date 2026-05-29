@@ -16,6 +16,7 @@ import { registrarMovimientoCapital } from '@/lib/capital'
 import { logActividad } from '@/lib/activity-log'
 import { trackEvent } from '@/lib/analytics'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
+import { getLocalDateStr } from '@/lib/i18n'
 
 // ─── GET /api/prestamos ─────────────────────────────────────────
 export async function GET(request) {
@@ -193,6 +194,13 @@ export async function POST(request) {
   if (tasaInteres == null || tasaInteres === '') return Response.json({ error: 'La tasa de interés es requerida' }, { status: 400 })
   if (!diasPlazo)     return Response.json({ error: 'El plazo es requerido' },            { status: 400 })
   if (!fechaInicio)   return Response.json({ error: 'La fecha de inicio es requerida' },  { status: 400 })
+
+  // Bloquear fechas futuras: si el cobrador se equivoca con la fecha el prestamo
+  // no aparece en cobro hasta esa fecha (bug silencioso). Comparamos en zona horaria del usuario.
+  const hoyLocal = getLocalDateStr(session.user.country ?? 'co')
+  if (typeof fechaInicio === 'string' && fechaInicio > hoyLocal) {
+    return Response.json({ error: 'La fecha de inicio no puede ser futura' }, { status: 400 })
+  }
 
   if (Number(montoPrestado) <= 0) return Response.json({ error: 'El monto debe ser mayor a 0' }, { status: 400 })
   if (Number(tasaInteres)   < 0)  return Response.json({ error: 'La tasa no puede ser negativa' },  { status: 400 })
