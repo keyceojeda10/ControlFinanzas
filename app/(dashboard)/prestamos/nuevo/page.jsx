@@ -10,6 +10,7 @@ import MoneyInput                                  from '@/components/ui/MoneyIn
 import { calcularPrestamo } from '@/lib/calculos'
 import { formatMoney } from '@/lib/i18n'
 import ResumenCalculo                              from '@/components/prestamos/ResumenCalculo'
+import Stepper                                     from '@/components/ui/Stepper'
 import { guardarPrestamoPendiente, obtenerClientesOffline } from '@/lib/offline'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
@@ -102,6 +103,39 @@ function NuevoPrestamo() {
   const [cuotaManual, setCuotaManual] = useState('')
   // Redondeo: 'exacto' ($100), 'redondeado' ($500) o 'cerrado' ($1.000)
   const [redondeo, setRedondeo] = useState('exacto')
+
+  // Wizard: paso actual (0..3)
+  const [paso, setPaso] = useState(0)
+  const PASOS = [
+    { label: 'Cliente' },
+    { label: 'Monto' },
+    { label: 'Plan' },
+    { label: 'Revision' },
+  ]
+
+  // Ultimo prestamo del cliente para "Repetir condiciones".
+  const [ultimoPrestamo, setUltimoPrestamo] = useState(null)
+  useEffect(() => {
+    if (!clienteId) { setUltimoPrestamo(null); return }
+    let cancelado = false
+    fetch(`/api/prestamos/ultimo-cliente?clienteId=${encodeURIComponent(clienteId)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (!cancelado) setUltimoPrestamo(d?.ultimo || null) })
+      .catch(() => {})
+    return () => { cancelado = true }
+  }, [clienteId])
+
+  const repetirCondicionesUltimo = () => {
+    if (!ultimoPrestamo) return
+    const u = ultimoPrestamo
+    setMonto(String(Math.round(u.montoPrestado)))
+    setTasa(String(u.tasaInteres))
+    setFrecuencia(u.frecuencia || 'diario')
+    const diasPorPer = DIAS_POR_PERIODO[u.frecuencia] || 1
+    setPlazoUnidades(String(Math.max(1, Math.round((u.diasPlazo || 0) / diasPorPer))))
+    if (u.diaCobroSemana != null) setDiaCobroSemana(String(u.diaCobroSemana))
+    if (u.diaCobroMes != null) setDiaCobroMes(String(u.diaCobroMes))
+  }
 
   // Guard de permiso
   useEffect(() => {
@@ -215,6 +249,19 @@ function NuevoPrestamo() {
     const data = await res.json()
     return { ok: res.ok, data }
   }
+
+  // Validacion del paso actual antes de avanzar.
+  const puedeAvanzarPaso = () => {
+    if (paso === 0) return !!clienteId
+    if (paso === 1) return Number(monto) > 0 && (modo === 'mercancia' || Number(tasa) >= 0)
+    if (paso === 2) return Number(plazoUnidades) > 0 && !!fechaInicio
+    return true
+  }
+  const irAlSiguientePaso = () => {
+    if (!puedeAvanzarPaso()) return
+    setPaso(p => Math.min(PASOS.length - 1, p + 1))
+  }
+  const irAlPasoAnterior = () => setPaso(p => Math.max(0, p - 1))
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -351,14 +398,39 @@ function NuevoPrestamo() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form
+        onSubmit={(e) => {
+          // En pasos intermedios, Enter en input avanza al siguiente paso.
+          // El submit real solo dispara en el paso 4 (Revision).
+          if (paso < PASOS.length - 1) {
+            e.preventDefault()
+            irAlSiguientePaso()
+            return
+          }
+          handleSubmit(e)
+        }}
+        className="space-y-4"
+      >
+        {/* Stepper visual */}
+        <div className="mb-2">
+          <Stepper
+            steps={PASOS}
+            activeIndex={paso}
+            completedIndices={Array.from({ length: paso }, (_, i) => i)}
+            onChange={(idx) => {
+              if (idx <= paso) setPaso(idx)
+              else if (clienteId) setPaso(idx)
+            }}
+          />
+        </div>
+
         {error && (
           <div className="flex items-center gap-2 bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[12px] px-4 py-3">
             {error}
           </div>
         )}
 
-        {/* Selector de modo */}
+        {/* Selector de modo (siempre visible al avanzar entre pasos) */}
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
@@ -392,7 +464,8 @@ function NuevoPrestamo() {
           </button>
         </div>
 
-        {/* Cliente */}
+        {/* PASO 1 — Cliente */}
+        {paso === 0 && <>
         <SectionCard
           title="Cliente"
           color="#3b82f6"
@@ -440,7 +513,37 @@ function NuevoPrestamo() {
           )}
         </SectionCard>
 
-        {/* Monto */}
+        {/* Chip "Repetir condiciones del prestamo anterior" */}
+        {ultimoPrestamo && (
+          <button
+            type="button"
+            onClick={repetirCondicionesUltimo}
+            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-[12px] border text-left transition-colors"
+            style={{
+              background: 'color-mix(in srgb, var(--color-accent) 8%, transparent)',
+              borderColor: 'color-mix(in srgb, var(--color-accent) 40%, transparent)',
+              color: 'var(--color-accent)',
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 14a6 6 0 110-12 6 6 0 010 12z" />
+              <path d="M11 6h-2v5h5V9h-3z" />
+            </svg>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-wider">Repetir condiciones del anterior</p>
+              <p className="text-[10px] truncate" style={{ color: 'var(--color-text-muted)' }}>
+                ${Math.round(ultimoPrestamo.montoPrestado).toLocaleString('es-CO')} · {ultimoPrestamo.tasaInteres}% · {ultimoPrestamo.diasPlazo} dias · {ultimoPrestamo.frecuencia}
+              </p>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" />
+            </svg>
+          </button>
+        )}
+        </>}
+
+        {/* PASO 2 — Monto */}
+        {paso === 1 && <>
         <SectionCard
           title="Monto"
           color="var(--color-accent)"
@@ -492,8 +595,10 @@ function NuevoPrestamo() {
           )}
 
         </SectionCard>
+        </>}
 
-        {/* Plan de pago: tasa, plazo, frecuencia */}
+        {/* PASO 3 — Plan de pago + avanzado */}
+        {paso === 2 && <>
         <SectionCard
           title="Plan de pago"
           color="#22c55e"
@@ -797,8 +902,10 @@ function NuevoPrestamo() {
             </div>
           )}
         </SectionCard>
+        </>}
 
-        {/* Cobro de seguro (opcional) */}
+        {/* PASO 4 — Cobro de seguro + Resumen */}
+        {paso === 3 && <>
         <SectionCard
           title="Cobro de seguro (opcional)"
           color="#6366f1"
@@ -853,15 +960,32 @@ function NuevoPrestamo() {
             )}
           </SectionCard>
         )}
+        </>}
 
-        {/* Acciones */}
-        <div className="flex gap-3">
-          <Button type="button" variant="secondary" onClick={() => router.back()} disabled={loading}>
-            Cancelar
-          </Button>
-          <Button type="submit" loading={loading} className="flex-1">
-            Crear préstamo
-          </Button>
+        {/* Footer wizard: Atras/Cancelar y Siguiente/Crear */}
+        <div className="flex items-center justify-between gap-3 pt-2">
+          {paso === 0 ? (
+            <Button type="button" variant="secondary" onClick={() => router.back()} disabled={loading}>
+              Cancelar
+            </Button>
+          ) : (
+            <Button type="button" variant="secondary" onClick={irAlPasoAnterior} disabled={loading}>
+              ← Atras
+            </Button>
+          )}
+          {paso < PASOS.length - 1 ? (
+            <Button
+              type="button"
+              onClick={irAlSiguientePaso}
+              disabled={!puedeAvanzarPaso()}
+            >
+              Siguiente →
+            </Button>
+          ) : (
+            <Button type="submit" loading={loading}>
+              Crear préstamo
+            </Button>
+          )}
         </div>
       </form>
 
