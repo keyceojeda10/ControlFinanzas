@@ -275,6 +275,10 @@ export default function RutaDetallePage({ params }) {
   const [guardandoFestivo, setGuardandoFestivo] = useState(false)
   const [grupoFiltro,    setGrupoFiltro]    = useState(null)
   const [estadoFiltro,   setEstadoFiltro]   = useState(null) // 'pendientes' | 'mora' | 'pagados' | null
+  // Vista de la lista: 'trabajo' = 3 secciones (por cobrar/pagados/proximos) sin drag.
+  // 'ordenar' = lista plana con drag-and-drop para reordenar la ruta.
+  const [modoVista, setModoVista] = useState('trabajo')
+  const [seccionProximosAbierta, setSeccionProximosAbierta] = useState(false)
 
   // Helper: fecha Colombia como string YYYY-MM-DD
   const getColombiaDateStr = () => {
@@ -1089,74 +1093,95 @@ export default function RutaDetallePage({ params }) {
                 )}
               </div>
 
-              {/* Recaudado del dia: numero gigante + donut a la derecha */}
-              <div className="flex items-end justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-secondary)' }}>
-                    Recaudado hoy
-                  </p>
-                  <p
-                    className="font-mono-display font-bold leading-none tracking-tight truncate"
-                    style={{
-                      color: heroColor,
-                      fontSize: 'clamp(28px, 8vw, 40px)',
-                      textShadow: `0 0 30px color-mix(in srgb, ${heroColor} 25%, transparent)`,
-                    }}
-                  >
-                    {formatMoney(ruta.recaudadoHoy ?? 0)}
-                  </p>
-                  <p className="text-[12px] mt-2" style={{ color: 'var(--color-text-secondary)' }}>
-                    de {formatMoney(ruta.esperadoHoy ?? 0)} esperados
-                  </p>
-                  {(ruta.clientesConCobroHoy ?? 0) > 0 && (
-                    <p className="text-[11px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
-                      <span style={{ color: 'var(--color-success)', fontWeight: 600 }}>{ruta.clientesPagaronHoy ?? 0}</span> de <span style={{ color: 'var(--color-text-primary)', fontWeight: 600 }}>{ruta.clientesConCobroHoy}</span> clientes pagaron
-                    </p>
-                  )}
-                </div>
+              {/* "Falta para la meta" como protagonista */}
+              {(() => {
+                const recaudado = ruta.recaudadoHoy ?? 0
+                const meta = ruta.esperadoHoy ?? 0
+                const falta = Math.max(0, meta - recaudado)
+                const metaCumplida = meta > 0 && falta <= 0
+                const sinMeta = meta <= 0
+                return (
+                  <div>
+                    {sinMeta ? (
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                          Meta del dia
+                        </p>
+                        <p className="font-mono-display font-bold leading-none" style={{ color: 'var(--color-text-muted)', fontSize: 'clamp(24px, 7vw, 34px)' }}>
+                          Sin cobros hoy
+                        </p>
+                        <p className="text-[12px] mt-2" style={{ color: 'var(--color-text-muted)' }}>
+                          No hay cuotas programadas para cobrar hoy en esta ruta.
+                        </p>
+                      </div>
+                    ) : metaCumplida ? (
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--color-success)' }}>
+                          Meta del dia
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <svg className="w-7 h-7 shrink-0" fill="none" stroke="var(--color-success)" strokeWidth={2.5} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <p className="font-mono-display font-bold leading-none" style={{ color: 'var(--color-success)', fontSize: 'clamp(26px, 7vw, 36px)' }}>
+                            Meta cumplida
+                          </p>
+                        </div>
+                        <p className="text-[12px] mt-2" style={{ color: 'var(--color-text-secondary)' }}>
+                          Cobraste {formatMoney(recaudado)} de {formatMoney(meta)}
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                          Te faltan
+                        </p>
+                        <p
+                          className="font-mono-display font-bold leading-none tracking-tight"
+                          style={{
+                            color: heroColor,
+                            fontSize: 'clamp(34px, 11vw, 52px)',
+                            textShadow: `0 0 30px color-mix(in srgb, ${heroColor} 25%, transparent)`,
+                          }}
+                        >
+                          {formatMoney(falta)}
+                        </p>
+                        <p className="text-[12px] mt-1.5" style={{ color: 'var(--color-text-secondary)' }}>
+                          para la meta de hoy
+                        </p>
+                      </div>
+                    )}
 
-                {/* Donut % */}
-                <div className="hidden sm:flex shrink-0 items-center justify-center" style={{ width: 84, height: 84 }}>
-                  <div className="relative" style={{ width: 84, height: 84 }}>
-                    <svg width={84} height={84}>
-                      <g transform="rotate(-90 42 42)">
-                        <circle cx={42} cy={42} r={36} fill="none" stroke="var(--color-bg-hover)" strokeWidth="8" />
-                        <circle cx={42} cy={42} r={36} fill="none" stroke={heroColor} strokeWidth="8" strokeLinecap="round"
-                          strokeDasharray={`${(progreso / 100) * (2 * Math.PI * 36)} ${2 * Math.PI * 36}`}
-                        />
-                      </g>
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <p className="font-mono-display font-bold leading-none" style={{ color: heroColor, fontSize: 20 }}>
-                        {progreso}<span style={{ fontSize: 12 }}>%</span>
-                      </p>
-                    </div>
+                    {/* Barra de progreso gruesa */}
+                    {!sinMeta && (
+                      <div className="mt-4">
+                        <div className="h-3 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
+                          <div
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{
+                              width: `${Math.min(100, Math.max(progreso, 2))}%`,
+                              background: `linear-gradient(90deg, color-mix(in srgb, ${heroColor} 75%, transparent), ${heroColor})`,
+                            }}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between mt-2">
+                          <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                            Cobrado <span style={{ color: 'var(--color-text-primary)', fontWeight: 600 }}>{formatMoney(recaudado)}</span> de {formatMoney(meta)}
+                          </p>
+                          <p className="text-[11px] font-mono-display font-bold" style={{ color: heroColor }}>{progreso}%</p>
+                        </div>
+                        {(ruta.clientesConCobroHoy ?? 0) > 0 && (
+                          <p className="text-[11px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                            <span style={{ color: 'var(--color-warning)', fontWeight: 600 }}>{ruta.pendientesHoy ?? 0}</span> por cobrar
+                            {' · '}
+                            <span style={{ color: 'var(--color-success)', fontWeight: 600 }}>{ruta.clientesPagaronHoy ?? 0}</span> ya pagaron
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
-                </div>
-              </div>
-
-              {/* Donut version movil debajo */}
-              <div className="sm:hidden mt-4 pt-3 flex items-center gap-3" style={{ borderTop: `1px solid color-mix(in srgb, ${heroColor} 15%, transparent)` }}>
-                <div className="relative shrink-0" style={{ width: 64, height: 64 }}>
-                  <svg width={64} height={64}>
-                    <g transform="rotate(-90 32 32)">
-                      <circle cx={32} cy={32} r={26} fill="none" stroke="var(--color-bg-hover)" strokeWidth="6" />
-                      <circle cx={32} cy={32} r={26} fill="none" stroke={heroColor} strokeWidth="6" strokeLinecap="round"
-                        strokeDasharray={`${(progreso / 100) * (2 * Math.PI * 26)} ${2 * Math.PI * 26}`}
-                      />
-                    </g>
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <p className="font-mono-display font-bold leading-none" style={{ color: heroColor, fontSize: 16 }}>
-                      {progreso}<span style={{ fontSize: 10 }}>%</span>
-                    </p>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Meta del día</p>
-                  <p className="text-[14px] font-mono-display font-bold mt-0.5" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(ruta.esperadoHoy ?? 0)}</p>
-                </div>
-              </div>
+                )
+              })()}
 
               {/* Controles de owner: cobrador + dias sin cobro + festivo hoy */}
               {esOwner && !editandoNombre && (
@@ -1461,6 +1486,28 @@ export default function RutaDetallePage({ params }) {
           </div>
         )}
 
+        {/* Toggle de vista: Trabajo del dia (3 secciones) vs Ordenar ruta (drag) */}
+        {ruta.clientes?.length > 0 && (
+          <div className="flex gap-1 p-1 mb-3 rounded-[12px]" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
+            {[
+              { key: 'trabajo', label: 'Trabajo del dia' },
+              { key: 'ordenar', label: 'Ordenar ruta' },
+            ].map(t => (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setModoVista(t.key)}
+                className="flex-1 py-2 text-xs font-semibold rounded-[9px] transition-all"
+                style={modoVista === t.key
+                  ? { background: 'var(--color-bg-card)', color: 'var(--color-accent)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' }
+                  : { color: 'var(--color-text-muted)' }}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        )}
+
         {(!ruta.clientes || ruta.clientes.length === 0) ? (
           <div className="flex flex-col items-center py-8 text-center">
             <div className="w-12 h-12 rounded-full bg-[rgba(245,197,24,0.08)] flex items-center justify-center mb-3">
@@ -1470,9 +1517,9 @@ export default function RutaDetallePage({ params }) {
             </div>
             <p className="text-sm text-[#666]">Sin clientes asignados</p>
           </div>
-        ) : (
-          <div className="space-y-1.5" ref={listRef}>
-            {clientesFiltrados.map((c, idx) => {
+        ) : (() => {
+          // Render de una card de cliente. `conGrip` = true en modo ordenar (drag).
+          const renderCard = (c, idx, { conGrip }) => {
               const isCompleted = c.estado === 'completado'
               const pendienteHoy = Boolean(
                 c.cobroPendienteHoy ?? (!c.pagoHoy && !c.hoySinCobro && c.estado !== 'completado')
@@ -1513,21 +1560,22 @@ export default function RutaDetallePage({ params }) {
                     : c.proximoCobroLabel
               const prefijoCobro = c.diasParaCobro != null && c.diasParaCobro < 0 ? 'Debió cobrarse' : 'Próx. cobro'
               const detalleCobro = !isCompleted && cobroLabelContextual ? `${prefijoCobro}: ${cobroLabelContextual}` : null
+              const dragActivo = conGrip && !grupoFiltro
               return (
                 <div
                   key={c.id}
                   id={`cliente-${c.id}`}
                   data-idx={idx}
-                  draggable={!grupoFiltro}
-                  onDragStart={!grupoFiltro ? () => handleDragStart(idx) : undefined}
-                  onDragOver={!grupoFiltro ? (e) => handleDragOver(e, idx) : undefined}
-                  onDrop={!grupoFiltro ? () => handleDrop(idx) : undefined}
-                  onDragEnd={!grupoFiltro ? handleDragEnd : undefined}
-                  onTouchStart={!grupoFiltro ? (e) => handleTouchStart(e, idx) : undefined}
-                  onTouchMove={!grupoFiltro ? (e) => handleTouchMove(e, idx) : undefined}
-                  onTouchEnd={!grupoFiltro ? handleTouchEnd : undefined}
+                  draggable={dragActivo}
+                  onDragStart={dragActivo ? () => handleDragStart(idx) : undefined}
+                  onDragOver={dragActivo ? (e) => handleDragOver(e, idx) : undefined}
+                  onDrop={dragActivo ? () => handleDrop(idx) : undefined}
+                  onDragEnd={dragActivo ? handleDragEnd : undefined}
+                  onTouchStart={dragActivo ? (e) => handleTouchStart(e, idx) : undefined}
+                  onTouchMove={dragActivo ? (e) => handleTouchMove(e, idx) : undefined}
+                  onTouchEnd={dragActivo ? handleTouchEnd : undefined}
                   className={[
-                    'flex items-center gap-0 rounded-[14px] transition-all',
+                    'flex items-stretch gap-0 rounded-[14px] transition-all overflow-hidden',
                     'border',
                     isCompleted ? 'opacity-50' : '',
                     dragIndex === idx ? 'opacity-30 scale-95' : '',
@@ -1535,10 +1583,14 @@ export default function RutaDetallePage({ params }) {
                     highlightId === c.id ? 'border-[#f5c518] bg-[rgba(245,197,24,0.08)]' : '',
                   ].join(' ')}
                 >
-                  {/* Grip */}
+                  {/* Borde lateral de color por estado (se lee de reojo en campo) */}
+                  <div className="w-1 shrink-0 self-stretch" style={{ background: statusColor }} />
+
+                  {/* Grip (solo en modo Ordenar) */}
+                  {conGrip && (
                   <div
                     data-grip="true"
-                    className="flex flex-col items-center justify-center w-11 shrink-0 self-stretch rounded-l-[14px] cursor-grab active:cursor-grabbing touch-none select-none gap-1"
+                    className="flex flex-col items-center justify-center w-11 shrink-0 self-stretch cursor-grab active:cursor-grabbing touch-none select-none gap-1"
                     style={{ background: 'rgba(255,255,255,0.02)' }}
                   >
                     <svg className="w-4 h-4 text-[#666]" viewBox="0 0 24 24" fill="currentColor">
@@ -1547,10 +1599,11 @@ export default function RutaDetallePage({ params }) {
                     </svg>
                     <span className="text-[10px] font-bold text-[#777]">{idx + 1}</span>
                   </div>
+                  )}
 
                   {/* Client content — clickable */}
                   <div
-                    className="flex-1 py-3 pl-2 pr-3 min-w-0 cursor-pointer active:opacity-80"
+                    className="flex-1 py-3 pl-3 pr-3 min-w-0 cursor-pointer active:opacity-80"
                     onClick={() => abrirClienteDesdeRuta(c, idx)}
                   >
                     <div className="flex items-start gap-3 min-w-0">
@@ -1651,8 +1704,8 @@ export default function RutaDetallePage({ params }) {
                     )}
                   </div>
 
-                  {/* Remove button (owner or cobrador con permiso) */}
-                  {puedeGestionarRutas && (
+                  {/* Remove button (owner o cobrador con permiso) — solo en modo ordenar */}
+                  {puedeGestionarRutas && conGrip && (
                     <button
                       onClick={() => setConfirmQuitar({ id: c.id, nombre: c.nombre })}
                       disabled={quitando === c.id}
@@ -1665,9 +1718,92 @@ export default function RutaDetallePage({ params }) {
                   )}
                 </div>
               )
-            })}
-          </div>
-        )}
+          }
+
+          // MODO ORDENAR: lista plana con drag-and-drop (comportamiento original).
+          if (modoVista === 'ordenar') {
+            return (
+              <div className="space-y-1.5" ref={listRef}>
+                {clientesFiltrados.map((c, idx) => renderCard(c, idx, { conGrip: true }))}
+              </div>
+            )
+          }
+
+          // MODO TRABAJO: 3 secciones (por cobrar hoy / pagaron hoy / proximos).
+          const porCobrarHoy = []
+          const yaPagaronHoy = []
+          const proximosYAlDia = []
+          for (const c of clientesFiltrados) {
+            const pendiente = Boolean(c.cobroPendienteHoy ?? (!c.pagoHoy && !c.hoySinCobro && c.estado !== 'completado'))
+            if (pendiente) porCobrarHoy.push(c)
+            else if (c.pagoHoy) yaPagaronHoy.push(c)
+            else proximosYAlDia.push(c)
+          }
+
+          const SectionHeader = ({ titulo, count, color }) => (
+            <div className="flex items-center gap-2 mb-2 mt-1 px-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: color || 'var(--color-text-muted)' }}>
+                {titulo}
+              </span>
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)' }}>
+                {count}
+              </span>
+              <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
+            </div>
+          )
+
+          return (
+            <div className="space-y-5">
+              {/* Por cobrar hoy */}
+              {porCobrarHoy.length > 0 && (
+                <div>
+                  <SectionHeader titulo="Por cobrar hoy" count={porCobrarHoy.length} color="var(--color-warning)" />
+                  <div className="space-y-1.5">
+                    {porCobrarHoy.map((c, i) => renderCard(c, i, { conGrip: false }))}
+                  </div>
+                </div>
+              )}
+
+              {/* Ya pagaron hoy */}
+              {yaPagaronHoy.length > 0 && (
+                <div>
+                  <SectionHeader titulo="Ya pagaron hoy" count={yaPagaronHoy.length} color="var(--color-success)" />
+                  <div className="space-y-1.5">
+                    {yaPagaronHoy.map((c, i) => renderCard(c, i, { conGrip: false }))}
+                  </div>
+                </div>
+              )}
+
+              {/* Proximos y al dia (colapsable) */}
+              {proximosYAlDia.length > 0 && (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setSeccionProximosAbierta(v => !v)}
+                    className="w-full flex items-center gap-2 mb-2 mt-1 px-1"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"
+                      style={{ color: 'var(--color-text-muted)', transform: seccionProximosAbierta ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 150ms ease' }}>
+                      <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+                      Proximos y al dia
+                    </span>
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)' }}>
+                      {proximosYAlDia.length}
+                    </span>
+                    <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
+                  </button>
+                  {seccionProximosAbierta && (
+                    <div className="space-y-1.5">
+                      {proximosYAlDia.map((c, i) => renderCard(c, i, { conGrip: false }))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })()}
       </div>
 
       {/* Cierre de caja */}
