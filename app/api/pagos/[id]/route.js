@@ -7,6 +7,7 @@ import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
 import { registrarMovimientoCapital } from '@/lib/capital'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
+import { logActividad } from '@/lib/activity-log'
 
 // ─── PATCH /api/pagos/[id] — Editar fecha del pago (solo owner) ──
 export async function PATCH(request, { params }) {
@@ -106,7 +107,8 @@ export async function DELETE(request, { params }) {
     select: { diasSinCobro: true },
   })
 
-  await prisma.$transaction(async (tx) => {
+  try {
+    await prisma.$transaction(async (tx) => {
     const prestamo = pago.prestamo
 
     // 1. Eliminar el pago
@@ -198,7 +200,31 @@ export async function DELETE(request, { params }) {
         creadoPorId: session.user.id,
       })
     }
-  })
+    })
+  } catch (err) {
+    // La transaccion hace rollback automatico, pero el cliente recibia un 500
+    // generico sin saber que update fallo. Loggeamos detalle + dejamos rastro
+    // en ActividadLog para que soporte pueda investigar al recibir queja.
+    console.error('[DELETE /api/pagos/[id]]', {
+      pagoId,
+      tipoOriginal: pago.tipo,
+      organizationId,
+      userId,
+      error: err.message,
+      stack: err.stack?.split('\n').slice(0, 5).join('\n'),
+    })
+    logActividad({
+      session,
+      accion: 'anular_pago_fallo',
+      entidadTipo: 'pago',
+      entidadId: pagoId,
+      detalle: `Fallo al anular pago (${pago.tipo}): ${err.message}`,
+      ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+    })
+    return Response.json({
+      error: 'No se pudo anular el pago. El equipo de soporte fue notificado.',
+    }, { status: 500 })
+  }
 
   return Response.json({ ok: true })
 }
