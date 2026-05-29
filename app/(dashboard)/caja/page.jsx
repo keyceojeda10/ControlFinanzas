@@ -61,7 +61,8 @@ export default function CajaPage() {
   const searchParams = useSearchParams()
   const fechaParam = searchParams.get('fecha')
   const tabParam = searchParams.get('tab')
-  const { esCobrador, puedeReportarGastos, puedeVerSaldoCaja, puedeVerCapital, loading: authLoading } = useAuth()
+  const { esCobrador, esOwner, session, puedeReportarGastos, puedeVerSaldoCaja, puedeVerCapital, loading: authLoading } = useAuth()
+  const ownerId = session?.user?.id ?? null
 
   const { lastSyncedAt } = useOffline()
 
@@ -91,6 +92,10 @@ export default function CajaPage() {
   const [modoAjusteCierre, setModoAjusteCierre] = useState(false)
   const [isOffline, setIsOffline] = useState(false)
   const [filtroCobrador, setFiltroCobrador] = useState('')
+  // Historial de cierres del owner (carga perezosa al expandir)
+  const [historialAbierto, setHistorialAbierto] = useState(false)
+  const [historial, setHistorial] = useState(null)
+  const [historialCargando, setHistorialCargando] = useState(false)
   const hasLoadedOnceRef = useRef(false)
 
   useEffect(() => {
@@ -224,10 +229,34 @@ export default function CajaPage() {
       setExito(true)
       setModoAjusteCierre(false)
       setTotalRecogido('')
+      setHistorial(null) // invalida cache historial para que recargue con el nuevo cierre
       await fetchData()
     } finally {
       setGuardando(false)
     }
+  }
+
+  const toggleHistorial = async () => {
+    const next = !historialAbierto
+    setHistorialAbierto(next)
+    if (next && historial === null && !historialCargando) {
+      setHistorialCargando(true)
+      try {
+        const res = await fetch('/api/caja/historial-owner?limit=30')
+        const data = await res.json()
+        if (res.ok) setHistorial(data.cierres || [])
+        else setHistorial([])
+      } catch {
+        setHistorial([])
+      } finally {
+        setHistorialCargando(false)
+      }
+    }
+  }
+
+  const reabrirCierreOwner = () => {
+    setModoAjusteCierre(true)
+    setExito(false)
   }
 
   if (loading) return (
@@ -858,7 +887,203 @@ export default function CajaPage() {
         </div>
       </Card>
 
-      {/* Cobradores */}
+      {/* Mi cierre del dia (owner): aparece si el owner no tiene cobradores
+          o si el mismo registro pagos hoy (caso owner mixto). */}
+      {esOwner && ownerId && (() => {
+        const cierreOwner = cierres.find(c => c.cobradorId === ownerId) || null
+        const ownerHaceCobros = pagosDelDia.some(p => p.cobradorId === ownerId)
+        const ownerSinCobradores = cobradores.length === 0
+        const debeMostrar = ownerSinCobradores || ownerHaceCobros || !!cierreOwner
+        if (!debeMostrar) return null
+
+        const recaudadoOwner = pagosDelDia
+          .filter(p => p.cobradorId === ownerId)
+          .reduce((acc, p) => acc + (p.montoPagado || 0), 0)
+        const mostrarFormulario = !cierreOwner || modoAjusteCierre
+
+        return (
+          <Card>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
+                Mi cierre del dia
+              </p>
+              {cierreOwner && !modoAjusteCierre && (
+                <Badge variant="green">Cerrado</Badge>
+              )}
+            </div>
+
+            {cierreOwner && !modoAjusteCierre ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-3">
+                    <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Recaudado</p>
+                    <p className="text-lg font-bold font-mono-display text-[var(--color-text-primary)] mt-0.5">
+                      {formatMoney(cierreOwner.totalRecogido)}
+                    </p>
+                  </div>
+                  <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-3">
+                    <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Saldo final</p>
+                    <p className="text-lg font-bold font-mono-display mt-0.5" style={{ color: 'var(--color-success)' }}>
+                      {formatMoney(cierreOwner.saldoRealCaja)}
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-[11px]">
+                  <div className="rounded-[8px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2">
+                    <p className="text-[var(--color-text-muted)] uppercase tracking-wide text-[9px]">Esperado</p>
+                    <p className="font-semibold font-mono-display text-[var(--color-text-primary)]">{formatMoney(cierreOwner.totalEsperado)}</p>
+                  </div>
+                  <div className="rounded-[8px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2">
+                    <p className="text-[var(--color-text-muted)] uppercase tracking-wide text-[9px]">Gastos</p>
+                    <p className="font-semibold font-mono-display text-[var(--color-danger)]">{formatMoney(cierreOwner.totalGastos || 0)}</p>
+                  </div>
+                  <div className="rounded-[8px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2">
+                    <p className="text-[var(--color-text-muted)] uppercase tracking-wide text-[9px]">Prestado</p>
+                    <p className="font-semibold font-mono-display text-[var(--color-warning)]">{formatMoney(cierreOwner.totalDesembolsado || 0)}</p>
+                  </div>
+                </div>
+                <p className="text-[10px] text-[var(--color-text-muted)] text-center">
+                  Cerrado {fmtHora(cierreOwner.createdAt)}
+                </p>
+                <button
+                  type="button"
+                  onClick={reabrirCierreOwner}
+                  className="w-full py-2 rounded-[10px] text-xs font-semibold border transition-colors"
+                  style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}
+                >
+                  Reabrir y ajustar
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={registrarCierre} className="space-y-3">
+                {!cierreOwner && (
+                  <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-3">
+                    <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Recaudo del dia</p>
+                    <p className="text-2xl font-bold font-mono-display text-[var(--color-text-primary)] mt-0.5">
+                      {formatMoney(Math.round(recaudadoOwner))}
+                    </p>
+                    <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
+                      Total de cobros registrados hoy. Ajusta si el efectivo entregado es distinto.
+                    </p>
+                  </div>
+                )}
+                <div>
+                  <label className="text-[10px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
+                    Total entregado (efectivo en caja)
+                  </label>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    value={totalRecogido}
+                    onChange={(e) => setTotalRecogido(e.target.value)}
+                    placeholder={String(Math.round(recaudadoOwner))}
+                    className="w-full mt-1 px-3 py-2 rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] text-[var(--color-text-primary)] text-base font-mono-display focus:outline-none focus:border-[var(--color-accent)]"
+                  />
+                </div>
+                {errorCaja && (
+                  <p className="text-xs text-[var(--color-danger)]">{errorCaja}</p>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={guardando}
+                    className="flex-1 py-2.5 rounded-[10px] text-sm font-semibold transition-colors disabled:opacity-50"
+                    style={{ background: 'var(--color-accent)', color: 'var(--color-bg-base)' }}
+                  >
+                    {guardando ? 'Cerrando...' : (cierreOwner ? 'Guardar ajuste' : 'Cerrar dia')}
+                  </button>
+                  {modoAjusteCierre && (
+                    <button
+                      type="button"
+                      onClick={() => { setModoAjusteCierre(false); setTotalRecogido(''); setErrorCaja('') }}
+                      className="px-4 py-2.5 rounded-[10px] text-sm font-semibold border"
+                      style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}
+                    >
+                      Cancelar
+                    </button>
+                  )}
+                </div>
+                {exito && (
+                  <p className="text-xs text-[var(--color-success)] text-center">Cierre registrado.</p>
+                )}
+              </form>
+            )}
+          </Card>
+        )
+      })()}
+
+      {/* Historial de cierres del owner (colapsable) */}
+      {esOwner && ownerId && (
+        <Card>
+          <button
+            type="button"
+            onClick={toggleHistorial}
+            className="w-full flex items-center justify-between text-left"
+            aria-expanded={historialAbierto}
+          >
+            <span className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
+              Historial de cierres
+            </span>
+            <svg
+              width="14" height="14" viewBox="0 0 20 20" fill="currentColor"
+              aria-hidden="true"
+              style={{
+                color: 'var(--color-text-muted)',
+                transform: historialAbierto ? 'rotate(90deg)' : 'rotate(0deg)',
+                transition: 'transform 150ms ease',
+              }}
+            >
+              <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+            </svg>
+          </button>
+          {historialAbierto && (
+            <div className="mt-3 space-y-1.5">
+              {historialCargando && (
+                <p className="text-xs text-[var(--color-text-muted)] text-center py-2">Cargando...</p>
+              )}
+              {!historialCargando && historial && historial.length === 0 && (
+                <p className="text-xs text-[var(--color-text-muted)] text-center py-2">Aun no hay cierres registrados.</p>
+              )}
+              {!historialCargando && historial && historial.length > 0 && historial.map((c) => {
+                const esActual = c.fecha?.slice(0, 10) === fechaSeleccionada
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setFechaSeleccionada(c.fecha.slice(0, 10))}
+                    className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-[10px] border text-left transition-colors"
+                    style={{
+                      background: esActual ? 'color-mix(in srgb, var(--color-accent) 10%, transparent)' : 'transparent',
+                      borderColor: esActual ? 'color-mix(in srgb, var(--color-accent) 40%, transparent)' : 'var(--color-border)',
+                    }}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-xs font-semibold text-[var(--color-text-primary)] tabular-nums">
+                        {fmtFecha(c.fecha)}
+                      </span>
+                      {c.diferencia !== 0 && (
+                        <span
+                          className="text-[10px] tabular-nums"
+                          style={{ color: c.diferencia >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}
+                        >
+                          {c.diferencia >= 0 ? '+' : ''}{formatMoney(c.diferencia)}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs font-bold font-mono-display tabular-nums" style={{ color: 'var(--color-success)' }}>
+                      {formatMoney(c.saldoRealCaja)}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* Cobradores: solo visible si hay al menos uno (cuando no hay, el owner ya
+          ve "Mi cierre del dia" arriba y esta seccion no aporta nada). */}
+      {cobradoresTotal > 0 && (
       <Card>
         <div className="flex items-center justify-between mb-4">
           <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
@@ -1025,6 +1250,7 @@ export default function CajaPage() {
           </div>
         )}
       </Card>
+      )}
 
       </>}
 
