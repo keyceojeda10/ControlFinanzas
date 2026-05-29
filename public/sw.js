@@ -1,6 +1,6 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME = 'cf-v24'
-const API_CACHE  = 'cf-api-v24'
+const CACHE_NAME = 'cf-v25'
+const API_CACHE  = 'cf-api-v25'
 
 // Endpoints que NUNCA deben servirse desde cache si el navegador esta online.
 // Si la red falla, ahi si caemos al cache. Sin esto, microcortes en 4G hacen que

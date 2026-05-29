@@ -15,7 +15,7 @@ export default function BadgeNuevo({ fecha, children, className = '' }) {
   if (!esNuevo) return children ?? null
 
   return (
-    <div className={`relative pb-4 ${className}`}>
+    <div className={`relative ${className}`} style={{ marginBottom: '18px' }}>
       {/* Aro animado pulsante alrededor del card */}
       <div
         aria-hidden="true"
