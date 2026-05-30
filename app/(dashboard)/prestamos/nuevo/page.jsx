@@ -695,7 +695,7 @@ function NuevoPrestamo() {
                   suffix="cuotas"
                 />
               </div>
-            )
+            )}
             {/* Modo de interes: Fijo / Unico / Sobre saldo / Manual */}
             {modo === 'prestamo' && (
               <ModoInteresSelector
@@ -726,6 +726,11 @@ function NuevoPrestamo() {
                 </p>
               </div>
             )}
+
+            {/* Frecuencia de cobro */}
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                Frecuencia de cobro
               </label>
               <div className="grid grid-cols-4 gap-1.5 mt-1.5">
                 {FRECUENCIAS.map(f => (
