@@ -101,12 +101,9 @@ function NuevoPrestamo() {
   const [seguro, setSeguro] = useState(false)
   const [montoSeguro, setMontoSeguro] = useState('')
   // Modo de interes: 'fijo' (clasico, default) | 'unico' | 'saldo' | 'manual'.
-  // Reemplaza el viejo toggle Auto/Manual + redondeo (exacto/redondeado/cerrado).
   const [modoInteres, setModoInteres] = useState('fijo')
   const cuotaManualActiva = modoInteres === 'manual'
   const [cuotaManual, setCuotaManual] = useState('')
-  // redondeo conservado para compatibilidad con calcularPrestamo y API
-  const [redondeo] = useState('exacto')
   // Dias sin cobro especificos para este cliente (se actualizan en su ficha
   // al crear el prestamo). Permite que en frecuencia diaria se elijan dias
   // de la semana en que NO se cobra (ej. domingo).
@@ -237,10 +234,10 @@ function NuevoPrestamo() {
       diasPlazo: p,
       fechaInicio,
       frecuencia,
-      redondeo,
+      modoInteres,
       ...(cm > 0 && { cuotaManual: cm }),
     })
-  }, [monto, tasa, plazo, fechaInicio, frecuencia, cuotaManualActiva, cuotaManual, redondeo])
+  }, [monto, tasa, plazo, fechaInicio, frecuencia, modoInteres, cuotaManualActiva, cuotaManual])
 
   const clientesFiltrados = clientes.filter((c) =>
     c.nombre.toLowerCase().includes(buscadorCliente.toLowerCase()) ||
@@ -262,7 +259,7 @@ function NuevoPrestamo() {
         ...(frecuencia === 'mensual' && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
         ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
         ...(cuotaManualActiva && Number(cuotaManual) > 0 && { cuotaManual: Number(cuotaManual) }),
-        redondeo,
+        modoInteres,
         ...(inyeccionPrevia && { inyeccionPrevia }),
         ...(seguro && Number(montoSeguro) > 0 && { seguro: true, montoSeguro: Number(montoSeguro) }),
       }),
@@ -1006,7 +1003,7 @@ function NuevoPrestamo() {
                     value={`${formatMoney(ganancia)} (${pctGanancia}%)`}
                     valueColor="var(--color-success)"
                   />
-                  <Row label="Modo cuota" value={cuotaManualActiva ? 'Manual' : `Automatica${!cuotaManualActiva ? ' · ' + redondeo : ''}`} />
+                  <Row label="Modo de interes" value={{ fijo: 'Fijo (clasico)', unico: 'Interes unico', saldo: 'Sobre saldo', manual: 'Manual' }[modoInteres] || 'Fijo (clasico)'} />
                   {diasSinCobroCliente.length > 0 && (
                     <Row
                       label="Dias sin cobro"

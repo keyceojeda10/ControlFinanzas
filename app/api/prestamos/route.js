@@ -161,7 +161,7 @@ export async function POST(request) {
 
   const { organizationId, rol } = session.user
   const body = await request.json()
-  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado, cuotaManual, inyeccionPrevia, diaCobroSemana, diaCobroMes, seguro, montoSeguro, redondeo } = body
+  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado, cuotaManual, inyeccionPrevia, diaCobroSemana, diaCobroMes, seguro, montoSeguro, modoInteres } = body
 
   const freq = frecuencia || 'diario'
   const frecuenciasValidas = ['diario', 'semanal', 'quincenal', 'mensual']
@@ -246,11 +246,14 @@ export async function POST(request) {
   if (cuotaManualNum < 0) {
     return Response.json({ error: 'La cuota manual no puede ser negativa' }, { status: 400 })
   }
-  const redondeoValido = ['exacto', 'redondeado', 'cerrado'].includes(redondeo) ? redondeo : 'exacto'
-  const { totalAPagar, cuotaDiaria, fechaFin } = calcularPrestamo({
-    montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia: freq, redondeo: redondeoValido,
+  // Validar modo de interes; si viene cuotaManual el calculo lo trata como manual.
+  const modoValido = ['fijo', 'unico', 'saldo', 'manual'].includes(modoInteres) ? modoInteres : 'fijo'
+  const calc = calcularPrestamo({
+    montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia: freq, modoInteres: modoValido,
     ...(cuotaManualNum > 0 && { cuotaManual: cuotaManualNum }),
   })
+  const { totalAPagar, cuotaDiaria, fechaFin } = calc
+  const modoInteresFinal = calc.modoInteres  // 'manual' si hubo cuotaManual
 
   // Validar abono vs total
   if (abono > totalAPagar) {
@@ -315,6 +318,7 @@ export async function POST(request) {
         totalAPagar,
         cuotaDiaria,
         frecuencia:    freq,
+        modoInteres:   modoInteresFinal,
         diaCobroSemana: diaCobroSemanaDb,
         diaCobroMes:    diaCobroMesDb,
         diasPlazo:     Number(diasPlazo),
