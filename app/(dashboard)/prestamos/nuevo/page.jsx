@@ -695,6 +695,7 @@ function NuevoPrestamo() {
                   suffix="cuotas"
                 />
               </div>
+            )
             {/* Modo de interes: Fijo / Unico / Sobre saldo / Manual */}
             {modo === 'prestamo' && (
               <ModoInteresSelector
