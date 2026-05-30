@@ -37,9 +37,12 @@ export async function POST(request, { params }) {
   const { id: prestamoId } = await params
 
   const body = await request.json()
-  const { montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia } = body
+  const { montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, modoInteres } = body
 
   const freq = frecuencia || 'diario'
+  // Modo de interes para la renovacion. Default 'fijo' (el modelo nuevo);
+  // si el front lo manda explicito, se respeta.
+  const modoRenovacion = ['fijo', 'unico', 'saldo', 'manual'].includes(modoInteres) ? modoInteres : 'fijo'
   if (!['diario', 'semanal', 'quincenal', 'mensual'].includes(freq)) {
     return Response.json({ error: 'Frecuencia no válida' }, { status: 400 })
   }
@@ -84,7 +87,7 @@ export async function POST(request, { params }) {
 
   // Calcular valores del préstamo nuevo
   const { totalAPagar, cuotaDiaria, fechaFin } = calcularPrestamo({
-    montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia: freq,
+    montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia: freq, modoInteres: modoRenovacion,
   })
 
   const diferencia = Number(montoPrestado) - saldoPendiente // lo que recibe en mano

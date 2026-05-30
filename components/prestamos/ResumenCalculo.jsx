@@ -14,7 +14,15 @@ const fmtFecha = (d) => {
 export default function ResumenCalculo({ calculo, visible = true }) {
     if (!visible) return null
 
-  const { totalAPagar, cuotaDiaria, ultimaCuota, totalInteres, fechaFin, frecuencia, numPeriodos } = calculo ?? {}
+  const { totalAPagar, cuotaDiaria, ultimaCuota, totalInteres, fechaFin, frecuencia, numPeriodos, modoInteres } = calculo ?? {}
+
+  const labelModo = {
+    fijo:   'Fijo (clasico)',
+    unico:  'Interes unico',
+    saldo:  'Sobre saldo',
+    manual: 'Manual',
+    proporcional: 'Proporcional',
+  }[modoInteres]
 
   const labelCuota = {
     diario:    'Cuota diaria',
@@ -35,9 +43,17 @@ export default function ResumenCalculo({ calculo, visible = true }) {
 
   return (
     <div className="bg-[#161b27] border border-[var(--color-border)] rounded-[14px] p-4 space-y-3">
-      <p className="text-xs font-semibold text-[#8b95a5] uppercase tracking-wide">
-        Resumen del préstamo
-      </p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-semibold text-[#8b95a5] uppercase tracking-wide">
+          Resumen del préstamo
+        </p>
+        {labelModo && (
+          <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full"
+            style={{ background: 'color-mix(in srgb, var(--color-accent) 14%, transparent)', color: 'var(--color-accent)' }}>
+            {labelModo}
+          </span>
+        )}
+      </div>
       <div className="grid grid-cols-2 gap-3">
         {items.map(({ label, value, accent, sub }) => (
           <div

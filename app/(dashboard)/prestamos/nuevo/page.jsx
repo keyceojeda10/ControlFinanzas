@@ -10,6 +10,7 @@ import MoneyInput                                  from '@/components/ui/MoneyIn
 import { calcularPrestamo } from '@/lib/calculos'
 import { formatMoney } from '@/lib/i18n'
 import ResumenCalculo                              from '@/components/prestamos/ResumenCalculo'
+import ModoInteresSelector                         from '@/components/prestamos/ModoInteresSelector'
 import Stepper                                     from '@/components/ui/Stepper'
 import DiasSinCobroSelector                        from '@/components/ui/DiasSinCobroSelector'
 import { guardarPrestamoPendiente, obtenerClientesOffline } from '@/lib/offline'
@@ -99,11 +100,11 @@ function NuevoPrestamo() {
   // Cobro de seguro (opcional)
   const [seguro, setSeguro] = useState(false)
   const [montoSeguro, setMontoSeguro] = useState('')
-  // Cuota personalizada (sobrescribe la cuota calculada por el sistema)
-  const [cuotaManualActiva, setCuotaManualActiva] = useState(false)
+  // Modo de interes: 'fijo' (clasico, default) | 'unico' | 'saldo' | 'manual'.
+  // Reemplaza el viejo toggle Auto/Manual + redondeo (exacto/redondeado/cerrado).
+  const [modoInteres, setModoInteres] = useState('fijo')
+  const cuotaManualActiva = modoInteres === 'manual'
   const [cuotaManual, setCuotaManual] = useState('')
-  // Redondeo: 'exacto' ($100), 'redondeado' ($500) o 'cerrado' ($1.000)
-  const [redondeo, setRedondeo] = useState('exacto')
   // Dias sin cobro especificos para este cliente (se actualizan en su ficha
   // al crear el prestamo). Permite que en frecuencia diaria se elijan dias
   // de la semana en que NO se cobra (ej. domingo).
@@ -694,43 +695,23 @@ function NuevoPrestamo() {
                   suffix="cuotas"
                 />
               </div>
-            )}
-
-            {/* Modo cuota: Auto vs Manual — destacado, NO escondido en avanzado */}
+            {/* Modo de interes: Fijo / Unico / Sobre saldo / Manual */}
             {modo === 'prestamo' && (
-              <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                  Modo de cuota
-                </label>
-                <div className="relative grid grid-cols-2 h-11 mt-1.5 rounded-[12px] bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] p-[3px]">
-                  <div
-                    className="absolute top-[3px] bottom-[3px] left-[3px] w-[calc(50%-3px)] rounded-[10px] bg-[var(--color-accent)] transition-transform duration-200 ease-out"
-                    style={{ transform: cuotaManualActiva ? 'translateX(100%)' : 'translateX(0)' }}
-                  />
-                  {[
-                    { value: false, label: 'Automatica', sub: 'Calcula el sistema' },
-                    { value: true,  label: 'Manual', sub: 'Tu defines la cuota' },
-                  ].map((opt) => (
-                    <button
-                      key={String(opt.value)}
-                      type="button"
-                      onClick={() => {
-                        setCuotaManualActiva(opt.value)
-                        if (!opt.value) setCuotaManual('')
-                        else if (calculo?.cuotaDiaria) setCuotaManual(String(calculo.cuotaDiaria))
-                      }}
-                      className="relative z-[1] flex flex-col items-center justify-center transition-colors duration-200 rounded-[10px]"
-                      style={{ color: cuotaManualActiva === opt.value ? '#0a0a0a' : 'var(--color-text-muted)' }}
-                    >
-                      <span className="text-[12px] font-semibold leading-tight">{opt.label}</span>
-                      <span className="text-[9px] leading-tight opacity-80">{opt.sub}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <ModoInteresSelector
+                modoInteres={modoInteres}
+                onChange={(m) => {
+                  setModoInteres(m)
+                  if (m !== 'manual') setCuotaManual('')
+                  else if (calculo?.cuotaDiaria) setCuotaManual(String(calculo.cuotaDiaria))
+                }}
+                calculo={calculo}
+                monto={monto}
+                tasa={tasa}
+                frecuencia={frecuencia}
+              />
             )}
 
-            {/* Cuota manual — solo si esta activo el modo manual */}
+            {/* Cuota manual — solo en modo manual */}
             {modo === 'prestamo' && cuotaManualActiva && (
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
@@ -739,54 +720,11 @@ function NuevoPrestamo() {
                 <div className="mt-1.5">
                   <MoneyInput value={cuotaManual} onChange={(e) => setCuotaManual(e.target.value)} placeholder="Ej: 60.000" />
                 </div>
-                <p className="text-[10px] mt-1" style={{ color: 'var(--color-accent)' }}>
-                  Tu defines el valor exacto. Total = cuota × {plazoUnidades || 'N'} cuotas.
+                <p className="text-[10px] mt-1 leading-snug" style={{ color: 'var(--color-text-muted)' }}>
+                  Tu defines la cuota. El total = cuota x numero de cobros.
                 </p>
               </div>
             )}
-
-            {/* Redondeo — solo si auto */}
-            {modo === 'prestamo' && !cuotaManualActiva && (
-              <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                  Redondeo de cuota
-                </label>
-                <div className="relative flex h-10 mt-1.5 rounded-[12px] bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] p-[3px]">
-                  <div
-                    className="absolute top-[3px] bottom-[3px] rounded-[10px] bg-[var(--color-accent)] transition-all duration-200 ease-out"
-                    style={{
-                      width: 'calc(33.333% - 2px)',
-                      left: `calc(${['exacto','redondeado','cerrado'].indexOf(redondeo) * 33.333}% + 1.5px)`,
-                    }}
-                  />
-                  {[
-                    { value: 'exacto', label: 'Exacto' },
-                    { value: 'redondeado', label: 'Redondeado' },
-                    { value: 'cerrado', label: 'Cerrado' },
-                  ].map((r) => (
-                    <button
-                      key={r.value}
-                      type="button"
-                      onClick={() => setRedondeo(r.value)}
-                      className="relative z-[1] flex-1 text-xs font-semibold transition-colors duration-200 rounded-[10px]"
-                      style={{ color: redondeo === r.value ? '#0a0a0a' : 'var(--color-text-muted)' }}
-                    >
-                      {r.label}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
-                  {redondeo === 'exacto' ? 'Multiplo de $100' : redondeo === 'redondeado' ? 'Multiplo de $500' : 'Multiplo de $1.000'}
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Frecuencia + plazo */}
-          <div className="space-y-4">
-            <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                Frecuencia de cobro
               </label>
               <div className="grid grid-cols-4 gap-1.5 mt-1.5">
                 {FRECUENCIAS.map(f => (
@@ -1117,6 +1055,40 @@ function NuevoPrestamo() {
             )
           })()}
         </section>
+      )}
+
+      {/* Barra sticky de resumen en vivo — solo en el paso Plan, sobre el footer.
+          El prestamista ajusta arriba y ve cuota/total aca sin tener que scrollear. */}
+      {paso === 1 && calculo && (
+        <div
+          className="fixed left-0 right-0 z-[44] px-4 lg:px-6"
+          style={{ bottom: 'calc(64px + env(safe-area-inset-bottom))' }}
+        >
+          <div
+            className="max-w-2xl mx-auto rounded-t-[14px] px-4 py-2.5 flex items-center justify-between gap-4"
+            style={{
+              background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 12%, var(--color-bg-card)), var(--color-bg-card))',
+              border: '1px solid color-mix(in srgb, var(--color-success) 30%, var(--color-border))',
+              borderBottom: 'none',
+              boxShadow: '0 -2px 10px rgba(0,0,0,0.2)',
+            }}
+          >
+            <div className="min-w-0">
+              <p className="text-[9px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                {frecuencia === 'diario' ? 'Cuota diaria' : frecuencia === 'semanal' ? 'Cuota semanal' : frecuencia === 'quincenal' ? 'Cuota quincenal' : 'Cuota mensual'}
+              </p>
+              <p className="text-lg font-bold font-mono-display leading-tight truncate" style={{ color: 'var(--color-success)' }}>
+                {formatMoney(calculo.cuotaDiaria)}
+              </p>
+            </div>
+            <div className="text-right min-w-0">
+              <p className="text-[9px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Total a pagar</p>
+              <p className="text-base font-bold font-mono-display leading-tight truncate" style={{ color: 'var(--color-text-primary)' }}>
+                {formatMoney(calculo.totalAPagar)}
+              </p>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Footer fijo abajo */}
