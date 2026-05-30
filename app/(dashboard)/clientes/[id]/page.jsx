@@ -7,6 +7,7 @@ import Link                          from 'next/link'
 import { useAuth }                   from '@/hooks/useAuth'
 import { useOffline }                from '@/components/providers/OfflineProvider'
 import { obtenerClienteOffline, resolverTempId }     from '@/lib/offline'
+import { obtenerCoordsRapido }                       from '@/lib/geo'
 import { Badge }                     from '@/components/ui/Badge'
 import { Button }                    from '@/components/ui/Button'
 import { Card }                      from '@/components/ui/Card'
@@ -211,6 +212,38 @@ export default function ClienteDetallePage({ params }) {
     finally { setActionLoading(false) }
   }
 
+  // Fijar ubicacion del cliente con el GPS del telefono. Pensado para usar
+  // en campo: el cobrador toca el chip al estar frente al cliente y queda
+  // marcado en el mapa para futuros cobros geolocalizados.
+  const [fijandoGPS, setFijandoGPS] = useState(false)
+  const handleFijarUbicacion = async () => {
+    if (fijandoGPS) return
+    const yaTiene = cliente?.latitud != null && cliente?.longitud != null
+    const msg = yaTiene
+      ? 'Vas a reemplazar la ubicacion guardada del cliente por tu posicion actual. Continuar?'
+      : 'Vas a fijar la ubicacion de este cliente con tu posicion actual. Asegurate de estar frente al cliente.'
+    if (!confirm(msg)) return
+    setFijandoGPS(true)
+    try {
+      const coords = await obtenerCoordsRapido(8000)
+      if (!coords) {
+        alert('No se pudo obtener tu ubicacion. Verifica que el GPS este activo y que diste permiso al navegador.')
+        return
+      }
+      const res = await fetch(`/api/clientes/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ latitud: coords.latitud, longitud: coords.longitud }),
+      })
+      if (!res.ok) { const d = await res.json().catch(() => ({})); alert(d.error || 'Error al guardar'); return }
+      setCliente(prev => ({ ...prev, latitud: coords.latitud, longitud: coords.longitud }))
+    } catch {
+      alert('Error de conexion')
+    } finally {
+      setFijandoGPS(false)
+    }
+  }
+
   const handleDeletePrestamo = async (prestamoId) => {
     if (!confirm('¿Eliminar este préstamo y todos sus pagos? Esta acción no se puede deshacer.')) return
     setActionLoading(true)
@@ -382,6 +415,21 @@ export default function ClienteDetallePage({ params }) {
               icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>,
               onClick: () => setModalReagendar(true),
             },
+            ...(puedeEditarClientes ? [{
+              // GPS aqui mismo, en campo. Sin tener que entrar a "Editar".
+              label: fijandoGPS
+                ? 'Capturando GPS...'
+                : (cliente.latitud != null && cliente.longitud != null ? 'Actualizar ubicacion' : 'Fijar ubicacion (GPS)'),
+              color: '#14b8a6',
+              icon: (
+                <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                </svg>
+              ),
+              onClick: handleFijarUbicacion,
+              disabled: fijandoGPS,
+            }] : []),
             {
               label: 'Historial',
               color: '#3b82f6',
