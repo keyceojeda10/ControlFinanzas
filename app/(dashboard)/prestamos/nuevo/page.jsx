@@ -94,6 +94,9 @@ function NuevoPrestamo() {
   // Modo: 'prestamo' (con interés) o 'mercancia' (cuota fija)
   const [modo, setModo] = useState('prestamo')
   const [numCuotas, setNumCuotas] = useState('10')
+  // Mercancia: precio de venta total (lo que le deja la mercancia al cliente).
+  // La ganancia = precioVenta - valor del articulo (monto). La cuota = precioVenta / numCuotas.
+  const [precioVenta, setPrecioVenta] = useState('')
   // Préstamo en curso (migración)
   const [esEnCurso, setEsEnCurso] = useState(false)
   const [yaAbonado, setYaAbonado] = useState('')
@@ -227,17 +230,28 @@ function NuevoPrestamo() {
     const t = Number(tasa)
     const p = Number(plazo)
     if (!m || (tasa === '' || tasa == null) || !p || !fechaInicio) return null
-    const cm = cuotaManualActiva ? Number(cuotaManual) : 0
+    // En mercancia el cobrador pone el PRECIO DE VENTA total; la cuota sale de
+    // repartirlo en numCuotas y la ganancia = precioVenta - valor del articulo.
+    // Internamente se trata como manual (cuota fija) para no tocar el resto del
+    // sistema. En modo prestamo manual la cuota la fija el cobrador directo.
+    let cm = 0
+    if (modo === 'mercancia') {
+      const pv = Number(precioVenta)
+      const nc = Number(numCuotas)
+      cm = pv > 0 && nc > 0 ? Math.round(pv / nc) : 0
+    } else if (cuotaManualActiva) {
+      cm = Number(cuotaManual)
+    }
     return calcularPrestamo({
       montoPrestado: m,
       tasaInteres: t,
       diasPlazo: p,
       fechaInicio,
       frecuencia,
-      modoInteres,
+      modoInteres: modo === 'mercancia' ? 'manual' : modoInteres,
       ...(cm > 0 && { cuotaManual: cm }),
     })
-  }, [monto, tasa, plazo, fechaInicio, frecuencia, modoInteres, cuotaManualActiva, cuotaManual])
+  }, [monto, tasa, plazo, fechaInicio, frecuencia, modo, modoInteres, cuotaManualActiva, cuotaManual, precioVenta, numCuotas])
 
   const clientesFiltrados = clientes.filter((c) =>
     c.nombre.toLowerCase().includes(buscadorCliente.toLowerCase()) ||
@@ -258,8 +272,8 @@ function NuevoPrestamo() {
         ...((frecuencia === 'semanal' || frecuencia === 'quincenal') && diaCobroSemana !== '' && { diaCobroSemana: Number(diaCobroSemana) }),
         ...(frecuencia === 'mensual' && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
         ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
-        ...(cuotaManualActiva && Number(cuotaManual) > 0 && { cuotaManual: Number(cuotaManual) }),
-        modoInteres,
+        ...(calculo?.cuotaDiaria > 0 && (cuotaManualActiva || modo === 'mercancia') && { cuotaManual: calculo.cuotaDiaria }),
+        modoInteres: modo === 'mercancia' ? 'manual' : modoInteres,
         ...(inyeccionPrevia && { inyeccionPrevia }),
         ...(seguro && Number(montoSeguro) > 0 && { seguro: true, montoSeguro: Number(montoSeguro) }),
       }),
@@ -271,7 +285,12 @@ function NuevoPrestamo() {
   // Validacion del paso actual antes de avanzar.
   const puedeAvanzarPaso = () => {
     if (paso === 0) return !!clienteId
-    if (paso === 1) return Number(monto) > 0 && Number(plazoUnidades) > 0 && !!fechaInicio && !!calculo
+    if (paso === 1) {
+      // En mercancia exigimos un precio de venta MAYOR al costo del articulo,
+      // para que la ganancia no quede en 0 — fue el reclamo del cliente.
+      if (modo === 'mercancia' && !(Number(precioVenta) > Number(monto))) return false
+      return Number(monto) > 0 && Number(plazoUnidades) > 0 && !!fechaInicio && !!calculo
+    }
     return true
   }
   const irAlSiguientePaso = () => {
@@ -302,7 +321,8 @@ function NuevoPrestamo() {
       ...((frecuencia === 'semanal' || frecuencia === 'quincenal') && diaCobroSemana !== '' && { diaCobroSemana: Number(diaCobroSemana) }),
       ...(frecuencia === 'mensual' && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
       ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
-      ...(cuotaManualActiva && Number(cuotaManual) > 0 && { cuotaManual: Number(cuotaManual) }),
+      ...(calculo?.cuotaDiaria > 0 && (cuotaManualActiva || modo === 'mercancia') && { cuotaManual: calculo.cuotaDiaria }),
+      modoInteres: modo === 'mercancia' ? 'manual' : modoInteres,
       ...(seguro && Number(montoSeguro) > 0 && { seguro: true, montoSeguro: Number(montoSeguro) }),
     }
 
@@ -695,6 +715,49 @@ function NuevoPrestamo() {
                 />
               </div>
             )}
+
+            {/* Mercancia: precio de venta total. La cuota = precioVenta / numCuotas
+                y la ganancia = precioVenta - valor del articulo. */}
+            {modo === 'mercancia' && (
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                  Precio de venta
+                </label>
+                <div className="mt-1.5">
+                  <MoneyInput value={precioVenta} onChange={(e) => setPrecioVenta(e.target.value)} placeholder="Ej: 120.000" />
+                </div>
+                <p className="text-[10px] mt-1 leading-snug" style={{ color: 'var(--color-text-muted)' }}>
+                  A cuanto le dejas la mercancia al cliente. Tu ganancia = precio de venta − valor del articulo.
+                </p>
+                {/* Vista previa en vivo: cuota + ganancia calculadas */}
+                {Number(precioVenta) > 0 && Number(numCuotas) > 0 && Number(monto) > 0 && (
+                  <div
+                    className="mt-2 rounded-[10px] border px-3 py-2 flex items-center justify-between gap-3"
+                    style={{ background: 'color-mix(in srgb, var(--color-success) 8%, transparent)', borderColor: 'color-mix(in srgb, var(--color-success) 30%, transparent)' }}
+                  >
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Cuota</p>
+                      <p className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>
+                        {formatMoney(Math.round(Number(precioVenta) / Number(numCuotas)))}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Ganancia</p>
+                      <p className="text-sm font-bold" style={{ color: 'var(--color-success)' }}>
+                        {formatMoney(Number(precioVenta) - Number(monto))}
+                        {Number(monto) > 0 ? ` (${Math.round(((Number(precioVenta) - Number(monto)) / Number(monto)) * 100)}%)` : ''}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {Number(precioVenta) > 0 && Number(precioVenta) <= Number(monto) && (
+                  <p className="text-[10px] mt-1.5 font-semibold" style={{ color: 'var(--color-danger)' }}>
+                    El precio de venta debe ser mayor al valor del articulo para que haya ganancia.
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* Modo de interes: Fijo / Unico / Sobre saldo / Manual */}
             {modo === 'prestamo' && (
               <ModoInteresSelector
@@ -987,7 +1050,10 @@ function NuevoPrestamo() {
 
                 {/* Detalles tipo lista — mas legible que grid de 2 columnas */}
                 <div className="space-y-0">
-                  <Row label="Monto prestado" value={formatMoney(Number(monto || 0))} />
+                  <Row label={modo === 'mercancia' ? 'Valor del articulo' : 'Monto prestado'} value={formatMoney(Number(monto || 0))} />
+                  {modo === 'mercancia' && Number(precioVenta) > 0 && (
+                    <Row label="Precio de venta" value={formatMoney(Number(precioVenta))} valueColor="var(--color-accent)" />
+                  )}
                   {modo === 'prestamo' && (
                     <Row
                       label="Tasa de interes"
@@ -1003,7 +1069,7 @@ function NuevoPrestamo() {
                     value={`${formatMoney(ganancia)} (${pctGanancia}%)`}
                     valueColor="var(--color-success)"
                   />
-                  <Row label="Modo de interes" value={{ fijo: 'Fijo (clasico)', unico: 'Interes unico', saldo: 'Sobre saldo', manual: 'Manual' }[modoInteres] || 'Fijo (clasico)'} />
+                  <Row label={modo === 'mercancia' ? 'Tipo' : 'Modo de interes'} value={modo === 'mercancia' ? 'Mercancia' : ({ fijo: 'Fijo (clasico)', unico: 'Interes unico', saldo: 'Sobre saldo', manual: 'Manual' }[modoInteres] || 'Fijo (clasico)')} />
                   {diasSinCobroCliente.length > 0 && (
                     <Row
                       label="Dias sin cobro"
