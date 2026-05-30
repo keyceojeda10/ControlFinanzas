@@ -105,6 +105,8 @@ function NuevoPrestamo() {
   const [modoInteres, setModoInteres] = useState('fijo')
   const cuotaManualActiva = modoInteres === 'manual'
   const [cuotaManual, setCuotaManual] = useState('')
+  // redondeo conservado para compatibilidad con calcularPrestamo y API
+  const [redondeo] = useState('exacto')
   // Dias sin cobro especificos para este cliente (se actualizan en su ficha
   // al crear el prestamo). Permite que en frecuencia diaria se elijan dias
   // de la semana en que NO se cobra (ej. domingo).
