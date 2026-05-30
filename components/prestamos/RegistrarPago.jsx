@@ -12,6 +12,7 @@ import BotonCompartir       from '@/components/ui/BotonCompartir'
 import BotonImprimirRecibo  from '@/components/ui/BotonImprimirRecibo'
 import MoneyInput           from '@/components/ui/MoneyInput'
 import { guardarPagoPendiente, actualizarPrestamoOffline }  from '@/lib/offline'
+import { obtenerCoordsRapido }                              from '@/lib/geo'
 
 export default function RegistrarPago({
   prestamoId, cuotaDiaria, saldoPendiente,
@@ -139,6 +140,13 @@ export default function RegistrarPago({
     setLoading(true)
     setError('')
 
+    // Geolocalizacion del cobro (MVP). No bloquea si falla: timeout corto,
+    // si el usuario nego permiso o el GPS no responde -> coords = null.
+    // Solo se pide para pagos reales, no para ajustes (recargo/descuento) que
+    // los hace el owner desde el detalle del prestamo, no en campo.
+    const necesitaGeo = !['recargo', 'descuento'].includes(tipo)
+    const coords = necesitaGeo ? await obtenerCoordsRapido() : null
+
     // Fix #6: helper para encolar offline — usado tanto en catch de red como en 503 del SW
     const encolarOffline = async () => {
       try {
@@ -151,6 +159,8 @@ export default function RegistrarPago({
           metodoPago,
           plataforma,
           clienteNombre: cliente?.nombre,
+          // Las coords viajan con el pago cuando sincronice.
+          ...(coords ?? {}),
         })
         await actualizarPrestamoOffline(prestamoId, { montoPagado: m, tipo, nota })
         window.dispatchEvent(new Event('paymentQueued'))
@@ -185,7 +195,7 @@ export default function RegistrarPago({
       const res  = await fetch(`/api/prestamos/${prestamoId}/pagos${qs}`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ montoPagado: m, tipo, nota, diasAbonados, metodoPago, plataforma }),
+        body:    JSON.stringify({ montoPagado: m, tipo, nota, diasAbonados, metodoPago, plataforma, ...(coords ?? {}) }),
       })
       // Fix #6: el Service Worker puede responder 503 cuando no hay red en vez
       // de dejar fallar el fetch. Tratarlo igual que offline.

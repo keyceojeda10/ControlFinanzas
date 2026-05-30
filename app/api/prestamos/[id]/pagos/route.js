@@ -23,6 +23,7 @@ import { enviarPushOrg } from '@/lib/push'
 import { trackEvent } from '@/lib/analytics'
 import { getUtcOffset } from '@/lib/i18n'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
+import { sanitizarCoords } from '@/lib/geo'
 
 async function cobradorPuedeGestionarPrestamos(userId) {
   const cobrador = await prisma.user.findUnique({
@@ -74,7 +75,10 @@ export async function POST(request, { params }) {
   })
 
   const body = await request.json()
-  const { montoPagado, tipo, nota, diasAbonados, metodoPago, plataforma } = body
+  const { montoPagado, tipo, nota, diasAbonados, metodoPago, plataforma, latitud, longitud } = body
+  // Sanitizar coords del pago: si vienen fuera de rango, se guardan como null
+  // (no rechazar el pago, MVP de geo es no-bloqueante).
+  const coordsPago = sanitizarCoords(latitud, longitud)
 
   let montoFinal = Number(montoPagado)
 
@@ -229,6 +233,8 @@ export async function POST(request, { params }) {
         plataforma: metodoValido === 'transferencia' ? (plataforma?.trim() || null) : null,
         nota: nota?.trim() || null,
         fechaPago: new Date(),
+        latitud: coordsPago.latitud,
+        longitud: coordsPago.longitud,
       },
     })
 

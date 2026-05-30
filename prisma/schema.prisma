@@ -288,6 +288,10 @@ model Pago {
   metodoPago     String?  // 'efectivo' | 'transferencia'
   plataforma     String?  // Nequi, Daviplata, Bancolombia, etc. (texto libre)
   nota           String?
+  // Geolocalizacion del pago (MVP). Capturada en el browser al confirmar
+  // el cobro. Null cuando el cobrador niega permiso o el GPS falla.
+  latitud        Float?
+  longitud       Float?
   createdAt      DateTime @default(now())
 
   prestamo     Prestamo     @relation(fields: [prestamoId], references: [id])

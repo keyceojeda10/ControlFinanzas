@@ -16,6 +16,7 @@ import {
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo, validarDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { getUtcOffset, getLocalDayRange } from '@/lib/i18n'
+import { distanciaMetros } from '@/lib/geo'
 
 const hoy = (country = 'co') => {
   const now = new Date()
@@ -68,7 +69,7 @@ export async function GET(request, { params }) {
             orderBy: { createdAt: 'asc' },
             include: {
               pagos: {
-                select:  { montoPagado: true, fechaPago: true, tipo: true },
+                select:  { montoPagado: true, fechaPago: true, tipo: true, latitud: true, longitud: true },
                 orderBy: { fechaPago: 'desc' },
               },
             },
@@ -112,6 +113,9 @@ export async function GET(request, { params }) {
   // Cachear fechas para evitar recalcular en cada iteración
   const _hoy = hoy(), _manana = manana()
 
+  // Pines del mapa: pagos del dia con coords, color por distancia con su cliente.
+  const cobrosGeoHoy = []
+
   const clientesEnriquecidos = ruta.clientes.map((c) => {
     // diasSinCobro se resuelve a nivel cliente (sin prestamo individual aquí,
     // ya que la vista de ruta no tiene acceso al campo diasSinCobro del prestamo)
@@ -128,6 +132,8 @@ export async function GET(request, { params }) {
     let frecuencia   = 'diario'
     let proximoCobro = null
     let cobroPendienteHoy = false
+    // Pago de hoy con coords mas reciente — alimenta el badge en la card del cliente.
+    let pagoHoyGeoCliente = null
 
     for (const p of c.prestamos) {
       // Pagos de hoy: contar SIEMPRE (incluye préstamos completados hoy con pago final)
@@ -137,6 +143,29 @@ export async function GET(request, { params }) {
       const montoPagadoHoy = pagosHoy.filter(pg => !['recargo', 'descuento'].includes(pg.tipo)).reduce((a, pg) => a + pg.montoPagado, 0)
       pagadoHoy    += montoPagadoHoy
       recaudadoHoy += montoPagadoHoy
+
+      // Geolocalizacion del cobro: recolectar pagos reales (no ajustes) de hoy
+      // con lat/lng. Cada pago alimenta `cobrosGeoHoy` (pines del mapa) y el
+      // mas reciente del cliente alimenta `pagoHoyGeo` (badge en card).
+      for (const pg of pagosHoy) {
+        if (['recargo', 'descuento'].includes(pg.tipo)) continue
+        if (pg.latitud == null || pg.longitud == null) continue
+        const dist = distanciaMetros(pg.latitud, pg.longitud, c.latitud, c.longitud)
+        cobrosGeoHoy.push({
+          clienteId: c.id,
+          latitud: pg.latitud,
+          longitud: pg.longitud,
+          distanciaMetros: dist,
+        })
+        if (!pagoHoyGeoCliente || new Date(pg.fechaPago) > new Date(pagoHoyGeoCliente.fechaPago)) {
+          pagoHoyGeoCliente = {
+            latitud: pg.latitud,
+            longitud: pg.longitud,
+            distanciaMetros: dist,
+            fechaPago: pg.fechaPago,
+          }
+        }
+      }
 
       // Métricas de cartera/mora solo para préstamos activos
       if (p.estado !== 'activo') continue
@@ -243,6 +272,14 @@ export async function GET(request, { params }) {
       diasParaCobro,
       proximoCobroLabel: proximoCobro ? formatFechaCobro(proximoCobro) : null,
       grupoCobro: c.grupoCobro ?? null,
+      // MVP geolocalizacion: pago mas reciente de hoy con coords, ya con distancia.
+      // null cuando: el cobrador nego permiso, no hubo pago, o pago sin coords.
+      pagoHoyGeo: pagoHoyGeoCliente
+        ? {
+            distanciaMetros: pagoHoyGeoCliente.distanciaMetros,
+            clienteSinCoords: c.latitud == null || c.longitud == null,
+          }
+        : null,
     }
   })
 
@@ -272,6 +309,9 @@ export async function GET(request, { params }) {
     capitalTotal: Math.round(capitalTotal),
     totalAPagarRuta: Math.round(totalAPagarRuta),
     cierre,
+    // MVP geo: pines para el mapa de la ruta. Cada item es un cobro de hoy
+    // con coords; el frontend pinta verde/naranja/rojo por distancia.
+    cobrosGeoHoy,
   })
 }
 

@@ -28,14 +28,15 @@ function createNumberedIcon(number) {
   })
 }
 
-export default function RouteMap({ clientes }) {
+export default function RouteMap({ clientes, cobrosGeoHoy = [] }) {
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
 
   const conCoords = (clientes ?? []).filter((c) => c.latitud != null && c.longitud != null)
 
   useEffect(() => {
-    if (!L || !mapRef.current || conCoords.length === 0) return
+    if (!L || !mapRef.current) return
+    if (conCoords.length === 0 && (cobrosGeoHoy?.length ?? 0) === 0) return
 
     // Limpiar mapa anterior
     if (mapInstanceRef.current) {
@@ -64,6 +65,27 @@ export default function RouteMap({ clientes }) {
       bounds.push([c.latitud, c.longitud])
     })
 
+    // Pines de cobros del dia (MVP geo). Verde <=50m, naranja 50-200m, rojo >200m.
+    ;(cobrosGeoHoy ?? []).forEach((p) => {
+      if (p.latitud == null || p.longitud == null) return
+      const d = p.distanciaMetros
+      const color = d == null || d <= 50 ? '#22c55e' : d <= 200 ? '#f97316' : '#ef4444'
+      L.circleMarker([p.latitud, p.longitud], {
+        radius: 7,
+        fillColor: color,
+        color: '#0a0a0a',
+        weight: 2,
+        fillOpacity: 0.9,
+      })
+        .bindPopup(
+          d == null
+            ? `<span style="color:#0a0a0a">Cobro registrado (cliente sin ubicacion)</span>`
+            : `<span style="color:#0a0a0a">Cobrado a <b>${d < 1000 ? d + 'm' : (d / 1000).toFixed(1) + 'km'}</b> del cliente</span>`,
+        )
+        .addTo(map)
+      bounds.push([p.latitud, p.longitud])
+    })
+
     // Dibujar línea de recorrido
     if (conCoords.length >= 2) {
       L.polyline(
@@ -88,9 +110,9 @@ export default function RouteMap({ clientes }) {
       map.remove()
       mapInstanceRef.current = null
     }
-  }, [clientes]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [clientes, cobrosGeoHoy]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (conCoords.length === 0) {
+  if (conCoords.length === 0 && (cobrosGeoHoy?.length ?? 0) === 0) {
     return (
       <div className="h-[200px] rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] flex items-center justify-center">
         <p className="text-xs text-[var(--color-text-muted)]">Sin clientes con ubicación para mostrar</p>
@@ -106,7 +128,11 @@ export default function RouteMap({ clientes }) {
         style={{ background: '#111111' }}
       />
       <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
-        {conCoords.length} clientes con ubicación • La línea muestra el orden de visita
+        {conCoords.length} clientes con ubicacion
+        {cobrosGeoHoy?.length > 0 && (
+          <> • <span style={{ color: '#22c55e' }}>● </span>{cobrosGeoHoy.length} cobro{cobrosGeoHoy.length === 1 ? '' : 's'} de hoy</>
+        )}
+        {' • '}La linea muestra el orden de visita
       </p>
     </div>
   )

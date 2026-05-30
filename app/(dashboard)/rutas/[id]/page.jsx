@@ -1445,7 +1445,7 @@ export default function RutaDetallePage({ params }) {
       {/* Mini-mapa */}
       {showMap && ruta.clientes && (
         <div className="rounded-[14px] overflow-hidden border border-[#222]">
-          <RouteMap clientes={ruta.clientes} />
+          <RouteMap clientes={ruta.clientes} cobrosGeoHoy={ruta.cobrosGeoHoy ?? []} />
         </div>
       )}
 
@@ -1702,6 +1702,48 @@ export default function RutaDetallePage({ params }) {
                         )}
                       </div>
                     )}
+
+                    {/* Badge de geolocalizacion del cobro (MVP).
+                        - Verde <=50m  · Naranja 50-200m  · Rojo >200m
+                        - Gris si no hay coords (cliente o pago). */}
+                    {c.pagoHoy && (() => {
+                      const geo = c.pagoHoyGeo
+                      if (!geo) {
+                        return (
+                          <div className="mt-1.5 flex items-center gap-1 text-[10px]" style={{ color: '#666' }}>
+                            <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                            </svg>
+                            Cobrado · sin geolocalizacion
+                          </div>
+                        )
+                      }
+                      if (geo.clienteSinCoords || geo.distanciaMetros == null) {
+                        return (
+                          <div className="mt-1.5 flex items-center gap-1 text-[10px]" style={{ color: '#666' }}>
+                            <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                            </svg>
+                            Cobrado · cliente sin ubicacion fijada
+                          </div>
+                        )
+                      }
+                      const d = geo.distanciaMetros
+                      const color = d <= 50 ? 'var(--color-success)' : d <= 200 ? '#f97316' : 'var(--color-danger)'
+                      const sigla = d <= 50 ? '✓' : '⚠'
+                      return (
+                        <div className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded"
+                          style={{
+                            color,
+                            background: `color-mix(in srgb, ${color} 10%, transparent)`,
+                            border: `1px solid color-mix(in srgb, ${color} 30%, transparent)`,
+                          }}
+                        >
+                          <span>{sigla}</span>
+                          <span>Cobrado a {d < 1000 ? `${d}m` : `${(d / 1000).toFixed(1)}km`} del cliente</span>
+                        </div>
+                      )
+                    })()}
                   </div>
 
                   {/* Remove button (owner o cobrador con permiso) — solo en modo ordenar */}
