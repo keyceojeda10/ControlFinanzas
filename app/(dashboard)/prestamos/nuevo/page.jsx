@@ -662,6 +662,27 @@ function NuevoPrestamo() {
 
           {/* Monto + chips rapidos */}
           <div className="space-y-4">
+            {/* Mercancia: nombre del producto (referencia). Opcional. */}
+            {modo === 'mercancia' && (
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                  Nombre del producto <span style={{ opacity: 0.6 }}>(opcional)</span>
+                </label>
+                <div className="mt-1.5">
+                  <Input
+                    type="text"
+                    value={nombreProducto}
+                    onChange={(e) => setNombreProducto(e.target.value)}
+                    placeholder="Ej: Gorra, Reloj Casio, Camisa..."
+                    maxLength={100}
+                  />
+                </div>
+                <p className="text-[10px] mt-1 leading-snug" style={{ color: 'var(--color-text-muted)' }}>
+                  Para saber a que mercancia hace referencia.
+                </p>
+              </div>
+            )}
+
             <div>
               <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
                 {modo === 'mercancia' ? 'Valor del articulo' : 'Monto del prestamo'}
