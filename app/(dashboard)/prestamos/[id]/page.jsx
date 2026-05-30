@@ -244,7 +244,7 @@ export default function PrestamoDetallePage({ params }) {
 
   const {
     cliente, estado, montoPrestado, totalAPagar, cuotaDiaria, frecuencia,
-    tasaInteres, diasPlazo, fechaInicio, fechaFin,
+    tasaInteres, diasPlazo, fechaInicio, fechaFin, nombreProducto,
     totalPagado, saldoPendiente, porcentajePagado, diasMora,
     cuotasPendientes = 0,
     cuotasEnMora = 0,
@@ -590,9 +590,10 @@ export default function PrestamoDetallePage({ params }) {
               </svg>
             ),
             items: [
-              { label: 'Prestado', value: formatMoney(montoPrestado) },
+              ...(nombreProducto ? [{ label: 'Producto', value: nombreProducto }] : []),
+              { label: nombreProducto ? 'Valor artículo' : 'Prestado', value: formatMoney(montoPrestado) },
               { label: 'Total a pagar', value: formatMoney(totalAPagar) },
-              { label: 'Tasa', value: `${tasaInteres}%` },
+              ...(nombreProducto ? [] : [{ label: 'Tasa', value: `${tasaInteres}%` }]),
               { label: 'Plazo', value: `${diasPlazo} días` },
             ],
           },

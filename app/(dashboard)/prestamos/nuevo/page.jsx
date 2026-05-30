@@ -97,6 +97,8 @@ function NuevoPrestamo() {
   // Mercancia: precio de venta total (lo que le deja la mercancia al cliente).
   // La ganancia = precioVenta - valor del articulo (monto). La cuota = precioVenta / numCuotas.
   const [precioVenta, setPrecioVenta] = useState('')
+  // Mercancia: nombre del producto (gorra, reloj...) para dar referencia. Opcional.
+  const [nombreProducto, setNombreProducto] = useState('')
   // Préstamo en curso (migración)
   const [esEnCurso, setEsEnCurso] = useState(false)
   const [yaAbonado, setYaAbonado] = useState('')
@@ -274,6 +276,7 @@ function NuevoPrestamo() {
         ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
         ...(calculo?.cuotaDiaria > 0 && (cuotaManualActiva || modo === 'mercancia') && { cuotaManual: calculo.cuotaDiaria }),
         modoInteres: modo === 'mercancia' ? 'manual' : modoInteres,
+        ...(modo === 'mercancia' && nombreProducto.trim() && { nombreProducto: nombreProducto.trim() }),
         ...(inyeccionPrevia && { inyeccionPrevia }),
         ...(seguro && Number(montoSeguro) > 0 && { seguro: true, montoSeguro: Number(montoSeguro) }),
       }),
@@ -323,6 +326,7 @@ function NuevoPrestamo() {
       ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
       ...(calculo?.cuotaDiaria > 0 && (cuotaManualActiva || modo === 'mercancia') && { cuotaManual: calculo.cuotaDiaria }),
       modoInteres: modo === 'mercancia' ? 'manual' : modoInteres,
+      ...(modo === 'mercancia' && nombreProducto.trim() && { nombreProducto: nombreProducto.trim() }),
       ...(seguro && Number(montoSeguro) > 0 && { seguro: true, montoSeguro: Number(montoSeguro) }),
     }
 
@@ -1050,6 +1054,9 @@ function NuevoPrestamo() {
 
                 {/* Detalles tipo lista — mas legible que grid de 2 columnas */}
                 <div className="space-y-0">
+                  {modo === 'mercancia' && nombreProducto.trim() && (
+                    <Row label="Producto" value={nombreProducto.trim()} />
+                  )}
                   <Row label={modo === 'mercancia' ? 'Valor del articulo' : 'Monto prestado'} value={formatMoney(Number(monto || 0))} />
                   {modo === 'mercancia' && Number(precioVenta) > 0 && (
                     <Row label="Precio de venta" value={formatMoney(Number(precioVenta))} valueColor="var(--color-accent)" />
