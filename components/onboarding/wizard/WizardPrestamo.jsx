@@ -43,7 +43,7 @@ export default function WizardPrestamo({ cliente, onComplete }) {
     const t = Number(tasa)
     const p = Number(plazo)
     if (!m || (tasa === '' || tasa == null) || !p) return null
-    return calcularPrestamo({ montoPrestado: m, tasaInteres: t, diasPlazo: p, fechaInicio, frecuencia })
+    return calcularPrestamo({ montoPrestado: m, tasaInteres: t, diasPlazo: p, fechaInicio, frecuencia, modoInteres: 'fijo' })
   }, [monto, tasa, plazo, fechaInicio, frecuencia])
 
   const handleSubmit = async (e) => {

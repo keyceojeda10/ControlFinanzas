@@ -140,6 +140,7 @@ export async function POST(request) {
                 totalAPagar,
                 cuotaDiaria,
                 frecuencia: p.frecuencia || 'diario',
+                modoInteres: 'fijo',
                 diasPlazo: p.diasPlazo,
                 fechaInicio: new Date(p.fechaInicio),
                 fechaFin,
