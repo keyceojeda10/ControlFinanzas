@@ -44,7 +44,7 @@ export async function GET(req) {
     fechaHasta = new Date(rangeFin.fin.getTime() + 1)
   }
 
-  const [org, prestamosActivosDetalle, prestamosCompletados, pagos] = await Promise.all([
+  const [org, prestamosActivosDetalle, prestamosCompletados, pagos, pagosPeriodo] = await Promise.all([
     prisma.organization.findUnique({
       where: { id: orgId },
       select: { diasSinCobro: true },
@@ -88,7 +88,44 @@ export async function GET(req) {
       _sum: { montoPagado: true },
       _count: true,
     }),
+
+    // Pagos del período CON el prestamo (para repartir interes vs capital).
+    // Se trae montoPrestado y totalAPagar de cada prestamo cobrado para
+    // calcular el interes ganado de forma proporcional.
+    prisma.pago.findMany({
+      where: {
+        prestamo: { organizationId: orgId },
+        fechaPago: { gte: fechaDesde, lt: fechaHasta },
+        tipo: { notIn: ['recargo', 'descuento'] },
+      },
+      select: {
+        montoPagado: true,
+        prestamo: { select: { montoPrestado: true, totalAPagar: true } },
+      },
+    }),
   ])
+
+  // ── Interes ganado (proporcional) ───────────────────────────────
+  // De cada pago, la fraccion de interes = (totalAPagar - montoPrestado) / totalAPagar.
+  // El resto es recuperacion de capital. Funciona para prestamos y mercancia
+  // (ahi el "interes" es la ganancia = precio venta - costo). Es una estimacion
+  // cercana, consistente con como la app reparte interes/capital en otros lados.
+  let interesGanado = 0
+  let capitalRecuperado = 0
+  for (const pago of pagosPeriodo) {
+    const total = pago.prestamo?.totalAPagar ?? 0
+    const capital = pago.prestamo?.montoPrestado ?? 0
+    const monto = pago.montoPagado ?? 0
+    if (total > 0 && total > capital) {
+      const fraccionInteres = (total - capital) / total
+      const interesPago = monto * fraccionInteres
+      interesGanado += interesPago
+      capitalRecuperado += monto - interesPago
+    } else {
+      // Sin interes (o datos incompletos): todo cuenta como capital.
+      capitalRecuperado += monto
+    }
+  }
 
   const clientesActivos = new Set()
   const clientesMora = new Set()
@@ -120,6 +157,8 @@ export async function GET(req) {
     pagos: {
       totalPeriodo: pagos._sum.montoPagado ?? 0,
       cantidad:     pagos._count        ?? 0,
+      interesGanado:      Math.round(interesGanado),
+      capitalRecuperado: Math.round(capitalRecuperado),
     },
     periodo: { desde: desde ?? fechaDesde.toISOString().slice(0, 10), hasta: hasta ?? fechaHasta.toISOString().slice(0, 10) },
   })

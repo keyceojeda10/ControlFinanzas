@@ -327,6 +327,27 @@ export default function ReportesPage() {
         </div>
       )}
 
+      {/* Interés ganado del período — la GANANCIA real (lo que pide el cliente) */}
+      {resumen && resumen.pagos?.interesGanado != null && (
+        <div className="rounded-[16px] px-4 py-4 transition-all kpi-lift"
+          style={{
+            background: `linear-gradient(135deg, color-mix(in srgb, #10b981 12%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
+            border: '1px solid color-mix(in srgb, #10b981 28%, var(--color-border))',
+          }}
+        >
+          <div className="flex items-center gap-1.5 mb-1">
+            <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, #10b981 18%, transparent)', color: '#10b981' }}>
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.281m5.94 2.28l-2.28 5.941" /></svg>
+            </div>
+            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#10b981' }}>Interés ganado</p>
+          </div>
+          <p className="text-[24px] font-bold font-mono-display leading-tight" style={{ color: '#10b981' }}>{formatMoney(resumen.pagos.interesGanado)}</p>
+          <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+            tu ganancia del período · capital recuperado {formatMoney(resumen.pagos.capitalRecuperado ?? 0)}
+          </p>
+        </div>
+      )}
+
       {/* Capital prestado + completados como cards complementarias */}
       {resumen && (
         <div className="grid grid-cols-2 gap-3">

@@ -1475,6 +1475,25 @@ export default function DashboardPage() {
             }}
           />
 
+          {/* Interés ganado este mes — la GANANCIA real (solo owner) */}
+          {esOwner && data.cobros.interesGanadoMes != null && (
+            <RecaudoCard
+              label="Interés ganado este mes"
+              color="#10b981"
+              colorHex="#10b981"
+              monto={data.cobros.interesGanadoMes}
+              cantidad={data.cobros.cantidadMes}
+              info={{
+                titulo: 'Interés ganado este mes',
+                que: 'Tu GANANCIA real del mes: la parte de interés de cada pago cobrado, sin contar la recuperación del capital que prestaste.',
+                comoSeCalcula: 'De cada pago se toma solo la fracción de interés del préstamo (lo que ganas, no lo que recuperas) y se suma en el mes. En mercancía, el interés es la ganancia (precio de venta − costo).',
+                ejemplo: `Este mes llevas ${formatMoney(data.cobros.interesGanadoMes)} de ganancia en intereses. El resto de lo cobrado (${formatMoney(Math.max(0, data.cobros.mes - data.cobros.interesGanadoMes))}) es recuperación del capital que prestaste.`,
+                cuandoCambia: 'Sube cada vez que un cliente paga. Se reinicia el día 1 de cada mes.',
+                tip: 'Esta es tu utilidad bruta del mes, antes de gastos. Para ver cualquier mes anterior usa Reportes con el filtro de fechas.',
+              }}
+            />
+          )}
+
           {/* Tu dinero — Saldo y Patrimonio (solo owner) */}
           {esOwner && (capitalData || data.finanzas) && (
             <KpiGroup title="Tu dinero" icon={Icons.dinero}>

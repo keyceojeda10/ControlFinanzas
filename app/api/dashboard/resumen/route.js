@@ -66,6 +66,7 @@ export async function GET() {
     clientesSinRutaCount,
     clientesSinPagosLargo,
     pagos30Dias,
+    pagosMesDetalle,
   ] = await Promise.all([
     prisma.organization.findUnique({
       where: { id: orgId },
@@ -276,6 +277,20 @@ export async function GET() {
       },
       select: { montoPagado: true, fechaPago: true },
     }),
+
+    // Pagos del mes CON el prestamo para calcular interes ganado proporcional.
+    // Solo owner (el cobrador no ve la ganancia del negocio).
+    esCobrador ? Promise.resolve([]) : prisma.pago.findMany({
+      where: {
+        organizationId: orgId,
+        fechaPago: { gte: inicioMes, lte: finMes },
+        tipo: { notIn: ['recargo', 'descuento'] },
+      },
+      select: {
+        montoPagado: true,
+        prestamo: { select: { montoPrestado: true, totalAPagar: true } },
+      },
+    }),
   ])
 
   const clientesActivos = new Set()
@@ -347,6 +362,24 @@ export async function GET() {
   const cobrosAyerMonto = pagosAyer?._sum?.montoPagado ?? 0
   const cobrosAyerCount = pagosAyer?._count ?? 0
 
+  // Interes ganado este mes (proporcional). Solo owner.
+  // De cada pago, fraccion de interes = (totalAPagar - montoPrestado) / totalAPagar.
+  // Funciona para prestamos y mercancia (ahi el "interes" es la ganancia
+  // = precio venta - costo). El resto del pago es recuperacion de capital.
+  let interesGanadoMes = null
+  if (!esCobrador) {
+    let interes = 0
+    for (const pago of (pagosMesDetalle || [])) {
+      const total = pago.prestamo?.totalAPagar ?? 0
+      const capital = pago.prestamo?.montoPrestado ?? 0
+      const monto = pago.montoPagado ?? 0
+      if (total > 0 && total > capital) {
+        interes += monto * ((total - capital) / total)
+      }
+    }
+    interesGanadoMes = Math.round(interes)
+  }
+
   // Sparkline 7d y Heatmap 30d (de mas viejo a mas reciente, hoy es el ultimo)
   // sparkline7d[6] = hoy, heatmap30d[29] = hoy
   const sparkline7d = Array(7).fill(0)
@@ -390,6 +423,7 @@ export async function GET() {
       cantidadMes: pagosMes._count              ?? 0,
       ayer:        cobrosAyerMonto,
       cantidadAyer: cobrosAyerCount,
+      interesGanadoMes,
       sparkline7d,
       heatmap30d,
     },
