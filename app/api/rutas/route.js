@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
+import { registrarMovimientoCapital } from '@/lib/capital'
 import { LIMITES_RUTAS, PLANES_CONFIG } from '@/lib/planes'
 import { getUtcOffset } from '@/lib/i18n'
 import { tienePeriodoEsperadoHoy } from '@/lib/calculos'
@@ -116,9 +117,10 @@ export async function POST(request) {
   }
 
   const { organizationId, plan } = session.user
-  const { nombre, cobradorId } = await request.json()
+  const { nombre, cobradorId, capitalInicial } = await request.json()
 
   if (!nombre?.trim()) return Response.json({ error: 'El nombre es requerido' }, { status: 400 })
+  const capitalInicialNum = Number(capitalInicial) || 0
 
   // Verificar límite de rutas del plan
   const org = await prisma.organization.findUnique({
@@ -152,6 +154,21 @@ export async function POST(request) {
     },
   })
 
-  logActividad({ session, accion: 'crear_ruta', entidadTipo: 'ruta', entidadId: ruta.id, detalle: `Ruta "${ruta.nombre}" creada`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
+  // Capital propio de la ruta al crearla (opcional). Si no se asigna, la ruta
+  // queda en modo global (saldoCapital 0) como hasta ahora.
+  if (capitalInicialNum > 0) {
+    await prisma.$transaction(async (tx) => {
+      await registrarMovimientoCapital(tx, {
+        organizationId,
+        tipo: 'inyeccion',
+        monto: capitalInicialNum,
+        descripcion: `Capital inicial de la ruta ${ruta.nombre}`,
+        rutaId: ruta.id,
+        creadoPorId: session.user.id,
+      })
+    })
+  }
+
+  logActividad({ session, accion: 'crear_ruta', entidadTipo: 'ruta', entidadId: ruta.id, detalle: `Ruta "${ruta.nombre}" creada${capitalInicialNum > 0 ? ` con capital $${capitalInicialNum.toLocaleString('es-CO')}` : ''}`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
   return Response.json(ruta, { status: 201 })
 }

@@ -3,7 +3,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
-import { registrarMovimientoManualCapital, getSaldosPorRuta } from '@/lib/capital'
+import { registrarMovimientoManualCapital, registrarMovimientoCapital, getSaldosPorRuta } from '@/lib/capital'
+import { calcularSaldoPendiente } from '@/lib/calculos'
 
 // GET — obtener saldo actual y config (capitalEstricto)
 export async function GET() {
@@ -78,7 +79,7 @@ export async function POST(request) {
 
   const { organizationId, id: userId } = session.user
   const body = await request.json()
-  const { tipo, monto, descripcion, rutaId } = body
+  const { tipo, monto, descripcion, rutaId, absorberActivos } = body
   const direccion = body?.direccion === 'ingreso' ? 'ingreso' : 'egreso'
 
   const tiposPermitidos = ['capital_inicial', 'inyeccion', 'retiro', 'ajuste']
@@ -102,8 +103,26 @@ export async function POST(request) {
 
   const montoNum = Number(monto)
 
+  // "Absorber activos": solo aplica al INYECTAR a una ruta. Calcula el saldo
+  // pendiente de los prestamos activos de esa ruta para descontarlo de la
+  // sub-bolsa (sin tocar el saldo global). Se calcula ANTES de la transaccion.
+  let saldoPendienteRuta = 0
+  if (absorberActivos && rutaIdValida && tipo === 'inyeccion') {
+    const prestamosRuta = await prisma.prestamo.findMany({
+      where: {
+        organizationId,
+        estado: 'activo',
+        cliente: { rutaId: rutaIdValida },
+      },
+      include: { pagos: { select: { montoPagado: true, tipo: true } } },
+    })
+    saldoPendienteRuta = Math.round(
+      prestamosRuta.reduce((acc, p) => acc + calcularSaldoPendiente(p), 0)
+    )
+  }
+
   const resultado = await prisma.$transaction(async (tx) => {
-    return registrarMovimientoManualCapital(tx, {
+    const r = await registrarMovimientoManualCapital(tx, {
       organizationId,
       tipo,
       monto: montoNum,
@@ -113,6 +132,22 @@ export async function POST(request) {
       direccion: tipo === 'ajuste' ? direccion : undefined,
       permitirNegativo: false,
     })
+
+    // Ajuste de arranque: descuenta de la SUB-BOLSA de la ruta los prestamos
+    // ya activos, sin mover el saldo global (ese ya es correcto historicamente).
+    if (saldoPendienteRuta > 0) {
+      await registrarMovimientoCapital(tx, {
+        organizationId,
+        tipo: 'ajuste',
+        monto: saldoPendienteRuta,
+        descripcion: `Ajuste de arranque: préstamos activos ya en la ruta`,
+        rutaId: rutaIdValida,
+        ajusteArranqueRuta: true,
+        direccion: 'egreso',
+        creadoPorId: userId,
+      })
+    }
+    return r
   })
 
   logActividad({

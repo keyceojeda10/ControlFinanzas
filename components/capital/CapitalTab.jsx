@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { useCountry } from '@/hooks/useCountry'
+import MoneyInput from '@/components/ui/MoneyInput'
 
 const TIPO_LABELS = {
   capital_inicial: 'Capital inicial',
@@ -68,6 +69,12 @@ export default function CapitalTab() {
   const [confirmEstricto, setConfirmEstricto] = useState(null)
   const [porRuta, setPorRuta] = useState([])
   const [modalRutaId, setModalRutaId] = useState('') // '' = general (sin ruta)
+  const [modalAbsorber, setModalAbsorber] = useState(false) // descontar prestamos activos al inyectar a ruta
+  const [editMov, setEditMov] = useState(null)   // movimiento en edicion { id, monto, descripcion, tipo }
+  const [editMonto, setEditMonto] = useState('')
+  const [editDesc, setEditDesc] = useState('')
+  const [editSaving, setEditSaving] = useState(false)
+  const [editError, setEditError] = useState('')
 
   const fetchResumen = useCallback(() => {
     fetch('/api/capital/resumen')
@@ -147,6 +154,37 @@ export default function CapitalTab() {
     }
   }
 
+  const abrirEditar = (m) => {
+    setEditMov(m)
+    setEditMonto(String(Math.round(m.monto || 0)))
+    setEditDesc(m.descripcion || '')
+    setEditError('')
+  }
+
+  const guardarEditar = async (e) => {
+    e.preventDefault()
+    if (!editMov) return
+    const monto = Number(editMonto)
+    if (!Number.isFinite(monto) || monto <= 0) { setEditError('Ingresa un monto válido'); return }
+    setEditSaving(true)
+    setEditError('')
+    try {
+      const res = await fetch(`/api/capital/movimientos/${editMov.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ monto, descripcion: editDesc }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) { setEditError(data.error || 'No se pudo editar'); return }
+      setEditMov(null)
+      fetchResumen()
+      fetchConfig()
+      fetchMovimientos()
+    } finally {
+      setEditSaving(false)
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
@@ -161,6 +199,7 @@ export default function CapitalTab() {
           monto: Number(modalMonto),
           descripcion: modalDesc,
           ...(modalRutaId && { rutaId: modalRutaId }),
+          ...(modalRutaId && modalTipo === 'inyeccion' && modalAbsorber && { absorberActivos: true }),
         }),
       })
       const data = await res.json()
@@ -170,6 +209,7 @@ export default function CapitalTab() {
       setModalDesc('')
       setModalDireccion('ingreso')
       setModalRutaId('')
+      setModalAbsorber(false)
       fetchResumen()
       fetchConfig()
       setPage(1)
@@ -532,12 +572,20 @@ export default function CapitalTab() {
                     <p className="text-[10px] text-[var(--color-text-muted)]">Saldo: {formatMoney(m.saldoNuevo)}</p>
                   </div>
                   {TIPOS_MANUALES.includes(m.tipo) && (
-                    <button type="button" onClick={() => handleEliminar(m)} disabled={eliminando === m.id} title="Eliminar movimiento"
-                      className="w-7 h-7 flex items-center justify-center rounded-[8px] text-[var(--color-danger)] hover:bg-[var(--color-danger-dim)] disabled:opacity-50 transition-colors">
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
+                    <>
+                      <button type="button" onClick={() => abrirEditar(m)} title="Editar movimiento"
+                        className="w-7 h-7 flex items-center justify-center rounded-[8px] text-[var(--color-accent)] hover:bg-[var(--color-bg-hover)] transition-colors">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                        </svg>
+                      </button>
+                      <button type="button" onClick={() => handleEliminar(m)} disabled={eliminando === m.id} title="Eliminar movimiento"
+                        className="w-7 h-7 flex items-center justify-center rounded-[8px] text-[var(--color-danger)] hover:bg-[var(--color-danger-dim)] disabled:opacity-50 transition-colors">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
@@ -608,10 +656,29 @@ export default function CapitalTab() {
               )}
               <div>
                 <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Monto</label>
-                <input type="text" inputMode="numeric" value={modalMonto} onChange={(e) => setModalMonto(e.target.value.replace(/[^0-9]/g, ''))}
-                  placeholder="0" required
-                  className="w-full bg-[var(--color-bg-base)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-[10px] px-3 py-2.5 text-sm" />
+                <MoneyInput value={modalMonto} onChange={(e) => setModalMonto(e.target.value)} placeholder="0" />
               </div>
+              {/* Absorber: solo al inyectar a una ruta que ya tiene prestamos activos */}
+              {modalRutaId && modalTipo === 'inyeccion' && (() => {
+                const r = porRuta.find(x => x.rutaId === modalRutaId)
+                const yaPrestado = r ? Math.max(0, (r.prestado || 0) - (r.recaudado || 0)) : 0
+                if (yaPrestado <= 0) return null
+                return (
+                  <div className="rounded-[10px] border border-[var(--color-border)] p-3" style={{ background: 'var(--color-bg-base)' }}>
+                    <label className="flex items-start gap-2 cursor-pointer">
+                      <input type="checkbox" checked={modalAbsorber} onChange={(e) => setModalAbsorber(e.target.checked)} className="mt-0.5 accent-[#6366f1]" />
+                      <span className="text-xs text-[var(--color-text-secondary)]">
+                        Esta ruta ya tiene préstamos activos. Descontar lo pendiente de esta inyección.
+                        {Number(modalMonto) > 0 && (
+                          <span className="block mt-1 text-[var(--color-text-muted)]">
+                            Disponible quedaría: <span className="font-semibold" style={{ color: 'var(--color-info)' }}>{formatMoney(Math.max(0, Number(modalMonto) - yaPrestado))}</span>
+                          </span>
+                        )}
+                      </span>
+                    </label>
+                  </div>
+                )
+              })()}
               <div>
                 <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Descripción (opcional)</label>
                 <input type="text" value={modalDesc} onChange={(e) => setModalDesc(e.target.value)}
@@ -620,13 +687,47 @@ export default function CapitalTab() {
               </div>
               {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
               <div className="flex gap-3">
-                <button type="button" onClick={() => { setShowModal(false); setError(''); setModalDireccion('ingreso'); setModalRutaId('') }}
+                <button type="button" onClick={() => { setShowModal(false); setError(''); setModalDireccion('ingreso'); setModalRutaId(''); setModalAbsorber(false) }}
                   className="flex-1 px-4 py-2.5 border border-[var(--color-border)] text-[var(--color-text-muted)] rounded-[10px] text-sm hover:bg-[var(--color-bg-hover)] transition-colors">
                   Cancelar
                 </button>
                 <button type="submit" disabled={saving}
                   className="flex-1 px-4 py-2.5 bg-[var(--color-accent)] text-[#1a1a2e] font-semibold rounded-[10px] text-sm hover:bg-[var(--color-accent-hover)] disabled:opacity-50 transition-colors">
                   {saving ? 'Guardando...' : 'Registrar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: editar movimiento manual (corregir monto mal escrito) */}
+      {editMov && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+          <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] w-full max-w-md p-5">
+            <h2 className="text-lg font-bold text-[var(--color-text-primary)] mb-1">Editar movimiento</h2>
+            <p className="text-xs text-[var(--color-text-muted)] mb-4">
+              Corrige el monto de este {TIPO_LABELS[editMov.tipo]?.toLowerCase() || 'movimiento'}. Se recalculará el saldo.
+            </p>
+            <form onSubmit={guardarEditar} className="space-y-4">
+              <div>
+                <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Monto</label>
+                <MoneyInput value={editMonto} onChange={(e) => setEditMonto(e.target.value)} placeholder="0" />
+              </div>
+              <div>
+                <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Descripción (opcional)</label>
+                <input type="text" value={editDesc} onChange={(e) => setEditDesc(e.target.value)}
+                  className="w-full bg-[var(--color-bg-base)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-[10px] px-3 py-2.5 text-sm" />
+              </div>
+              {editError && <p className="text-sm text-[var(--color-danger)]">{editError}</p>}
+              <div className="flex gap-3">
+                <button type="button" onClick={() => { setEditMov(null); setEditError('') }}
+                  className="flex-1 px-4 py-2.5 border border-[var(--color-border)] text-[var(--color-text-muted)] rounded-[10px] text-sm hover:bg-[var(--color-bg-hover)] transition-colors">
+                  Cancelar
+                </button>
+                <button type="submit" disabled={editSaving}
+                  className="flex-1 px-4 py-2.5 bg-[var(--color-accent)] text-[#1a1a2e] font-semibold rounded-[10px] text-sm hover:bg-[var(--color-accent-hover)] disabled:opacity-50 transition-colors">
+                  {editSaving ? 'Guardando...' : 'Guardar cambios'}
                 </button>
               </div>
             </form>

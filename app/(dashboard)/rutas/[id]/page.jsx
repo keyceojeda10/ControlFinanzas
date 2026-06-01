@@ -11,6 +11,7 @@ import { obtenerRutaOffline, guardarOrdenPendiente } from '@/lib/offline'
 import { Button }                    from '@/components/ui/Button'
 import { Card }                      from '@/components/ui/Card'
 import { Modal }                     from '@/components/ui/Modal'
+import MoneyInput                    from '@/components/ui/MoneyInput'
 import { SkeletonCard }              from '@/components/ui/Skeleton'
 import AiTipBanner                   from '@/components/ui/AiTipBanner'
 import { generarTipRuta }            from '@/lib/tips/rutaTips'
@@ -249,6 +250,7 @@ export default function RutaDetallePage({ params }) {
   const [modalCapital,  setModalCapital]  = useState(null) // 'inyeccion' | 'retiro' | null
   const [capitalMonto,  setCapitalMonto]  = useState('')
   const [capitalDesc,   setCapitalDesc]   = useState('')
+  const [capitalAbsorber, setCapitalAbsorber] = useState(false)
   const [guardandoCapital, setGuardandoCapital] = useState(false)
   const [errorCapital,  setErrorCapital]  = useState('')
   const [dragIndex,     setDragIndex]     = useState(null)
@@ -431,6 +433,7 @@ export default function RutaDetallePage({ params }) {
           monto,
           descripcion: capitalDesc || `${modalCapital === 'inyeccion' ? 'Inyección' : 'Retiro'} ruta ${ruta?.nombre ?? ''}`.trim(),
           rutaId: id,
+          ...(modalCapital === 'inyeccion' && capitalAbsorber && { absorberActivos: true }),
         }),
       })
       const data = await res.json().catch(() => ({}))
@@ -438,6 +441,7 @@ export default function RutaDetallePage({ params }) {
       setModalCapital(null)
       setCapitalMonto('')
       setCapitalDesc('')
+      setCapitalAbsorber(false)
       fetchRuta({ soft: true })
     } finally {
       setGuardandoCapital(false)
@@ -2079,18 +2083,12 @@ export default function RutaDetallePage({ params }) {
             <span className="text-[var(--color-text-muted)]">Total esperado hoy</span>
             <span className="font-semibold text-[white] font-mono-display">{formatMoney(ruta.esperadoHoy)}</span>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-[var(--color-text-muted)]">Dinero recogido (COP)</label>
-            <input
-              type="number"
-              inputMode="numeric"
-              placeholder="Ej: 250000"
-              value={totalRecogido}
-              onChange={(e) => setTotalRecogido(e.target.value)}
-              className="w-full h-10 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[white] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all"
-              autoFocus
-            />
-          </div>
+          <MoneyInput
+            label="Dinero recogido (COP)"
+            placeholder="Ej: 250.000"
+            value={totalRecogido}
+            onChange={(e) => setTotalRecogido(e.target.value)}
+          />
           {totalRecogido && (
             <div className="text-sm">
               <span className="text-[var(--color-text-muted)]">Diferencia: </span>
@@ -2105,11 +2103,11 @@ export default function RutaDetallePage({ params }) {
       {/* Modal: inyectar/retirar capital de la ruta */}
       <Modal
         open={!!modalCapital}
-        onClose={() => { setModalCapital(null); setErrorCapital('') }}
+        onClose={() => { setModalCapital(null); setErrorCapital(''); setCapitalAbsorber(false) }}
         title={modalCapital === 'inyeccion' ? 'Inyectar capital a la ruta' : 'Retirar capital de la ruta'}
         footer={
           <>
-            <Button variant="secondary" onClick={() => { setModalCapital(null); setErrorCapital('') }}>Cancelar</Button>
+            <Button variant="secondary" onClick={() => { setModalCapital(null); setErrorCapital(''); setCapitalAbsorber(false) }}>Cancelar</Button>
             <Button onClick={guardarCapitalRuta} loading={guardandoCapital}>
               {modalCapital === 'inyeccion' ? 'Inyectar' : 'Retirar'}
             </Button>
@@ -2126,18 +2124,28 @@ export default function RutaDetallePage({ params }) {
             <span className="text-[var(--color-text-muted)]">Saldo actual de la ruta</span>
             <span className="font-semibold font-mono-display" style={{ color: 'var(--color-info)' }}>{formatMoney(ruta.saldoCapital || 0)}</span>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-[var(--color-text-muted)]">Monto (COP)</label>
-            <input
-              type="number"
-              inputMode="numeric"
-              placeholder="Ej: 5000000"
-              value={capitalMonto}
-              onChange={(e) => setCapitalMonto(e.target.value)}
-              className="w-full h-10 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[white] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all"
-              autoFocus
-            />
-          </div>
+          <MoneyInput
+            label="Monto (COP)"
+            placeholder="Ej: 5.000.000"
+            value={capitalMonto}
+            onChange={(e) => setCapitalMonto(e.target.value)}
+          />
+          {/* Absorber: solo al inyectar si la ruta ya tiene cartera pendiente */}
+          {modalCapital === 'inyeccion' && (ruta.carteraTotal || 0) > 0 && (
+            <div className="rounded-[10px] border border-[var(--color-border)] p-3" style={{ background: 'var(--color-bg-card)' }}>
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input type="checkbox" checked={capitalAbsorber} onChange={(e) => setCapitalAbsorber(e.target.checked)} className="mt-0.5 accent-[#6366f1]" />
+                <span className="text-xs text-[var(--color-text-secondary)]">
+                  Esta ruta ya tiene {formatMoney(ruta.carteraTotal)} en préstamos por cobrar. Descontar lo pendiente de esta inyección.
+                  {Number(capitalMonto) > 0 && (
+                    <span className="block mt-1 text-[var(--color-text-muted)]">
+                      Disponible quedaría: <span className="font-semibold" style={{ color: 'var(--color-info)' }}>{formatMoney(Math.max(0, Number(capitalMonto) - (ruta.carteraTotal || 0)))}</span>
+                    </span>
+                  )}
+                </span>
+              </label>
+            </div>
+          )}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium text-[var(--color-text-muted)]">Descripción (opcional)</label>
             <input

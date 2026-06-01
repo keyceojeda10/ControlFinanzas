@@ -416,6 +416,7 @@ model MovimientoCapital {
   referenciaId   String?
   referenciaTipo String?
   rutaId         String?         // ruta a la que pertenece el movimiento (null = general)
+  ajusteArranqueRuta Boolean     @default(false) // ajuste que solo afecta la sub-bolsa de la ruta, NO el saldo global (absorber prestamos previos)
   creadoPorId    String?
   createdAt      DateTime        @default(now())
 

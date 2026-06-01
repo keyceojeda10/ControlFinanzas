@@ -9,6 +9,7 @@ import { useOffline }         from '@/components/providers/OfflineProvider'
 import { guardarEnCache, leerDeCache, obtenerRutasOffline } from '@/lib/offline'
 import { Button }              from '@/components/ui/Button'
 import { Input }               from '@/components/ui/Input'
+import MoneyInput              from '@/components/ui/MoneyInput'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
 import { Card }                from '@/components/ui/Card'
 import RutaCard                from '@/components/rutas/RutaCard'
@@ -26,6 +27,7 @@ export default function RutasPage() {
   const [error,    setError]    = useState('')
   const [showForm, setShowForm] = useState(false)
   const [nombre,   setNombre]   = useState('')
+  const [capitalRuta, setCapitalRuta] = useState('')
   const [saving,   setSaving]   = useState(false)
   const [formError, setFormError] = useState('')
   const [isOffline, setIsOffline] = useState(false)
@@ -144,12 +146,13 @@ export default function RutasPage() {
       const res  = await fetch('/api/rutas', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ nombre }),
+        body:    JSON.stringify({ nombre, ...(Number(capitalRuta) > 0 && { capitalInicial: Number(capitalRuta) }) }),
       })
       const data = await res.json()
       if (!res.ok) { setFormError(data.error ?? 'Error al crear la ruta'); return }
       setRutas((prev) => [...prev, { ...data, cantidadClientes: 0, esperadoHoy: 0, recaudadoHoy: 0 }])
       setNombre('')
+      setCapitalRuta('')
       setShowForm(false)
       router.push(`/rutas/${data.id}`)
     } catch {
@@ -249,17 +252,29 @@ export default function RutasPage() {
 
       {/* Mini formulario inline */}
       {showForm && (
-        <form onSubmit={crearRuta} className="bg-[var(--color-bg-surface)] border border-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] rounded-[16px] p-4 mb-4 flex gap-3">
+        <form onSubmit={crearRuta} className="bg-[var(--color-bg-surface)] border border-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] rounded-[16px] p-4 mb-4 space-y-3">
           <Input
             placeholder="Nombre de la ruta (ej: Zona Norte)"
             value={nombre}
             onChange={(e) => { setNombre(e.target.value); setFormError('') }}
             error={formError}
-            containerClassName="flex-1"
             autoFocus
           />
-          <Button type="submit" loading={saving}>Crear</Button>
-          <Button type="button" variant="ghost" onClick={() => setShowForm(false)} disabled={saving}>✕</Button>
+          <div>
+            <MoneyInput
+              label="Capital de la ruta (opcional)"
+              placeholder="Ej: 5.000.000"
+              value={capitalRuta}
+              onChange={(e) => setCapitalRuta(e.target.value)}
+            />
+            <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
+              Asigna un capital propio para esta ruta. Si lo dejas vacío, usa el capital general.
+            </p>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button type="button" variant="ghost" onClick={() => { setShowForm(false); setCapitalRuta('') }} disabled={saving}>Cancelar</Button>
+            <Button type="submit" loading={saving}>Crear ruta</Button>
+          </div>
         </form>
       )}
 

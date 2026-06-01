@@ -12,6 +12,7 @@ import { Card }                from '@/components/ui/Card'
 import { Button }              from '@/components/ui/Button'
 import { Badge }              from '@/components/ui/Badge'
 import { Modal }               from '@/components/ui/Modal'
+import MoneyInput              from '@/components/ui/MoneyInput'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
 import ReportarGasto          from '@/components/gastos/ReportarGasto'
 import ListaGastos            from '@/components/gastos/ListaGastos'
@@ -656,15 +657,11 @@ export default function CajaPage() {
                 </div>
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-[var(--color-text-muted)]">Dinero que vas a entregar (COP)</label>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min="0"
-                  placeholder="Ej: 250000"
+                <MoneyInput
+                  label="Dinero que vas a entregar (COP)"
+                  placeholder="Ej: 250.000"
                   value={totalRecogido}
                   onChange={(e) => setTotalRecogido(e.target.value)}
-                  className="w-full h-10 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all"
                 />
               </div>
               {totalRecogido !== '' && Number(totalRecogido) !== recaudadoRegistrado && (
@@ -1039,16 +1036,13 @@ export default function CajaPage() {
                   </div>
                 )}
                 <div>
-                  <label className="text-[10px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
+                  <label className="text-[10px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-1 block">
                     Total entregado (efectivo en caja)
                   </label>
-                  <input
-                    type="number"
-                    inputMode="numeric"
+                  <MoneyInput
                     value={totalRecogido}
                     onChange={(e) => setTotalRecogido(e.target.value)}
                     placeholder={String(Math.round(recaudadoOwner))}
-                    className="w-full mt-1 px-3 py-2 rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] text-[var(--color-text-primary)] text-base font-mono-display focus:outline-none focus:border-[var(--color-accent)]"
                   />
                 </div>
                 {errorCaja && (
@@ -1396,20 +1390,12 @@ export default function CajaPage() {
             </div>
           </div>
 
-          <div>
-            <label className="block text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em] mb-1.5">
-              Monto (COP)
-            </label>
-            <input
-              type="number"
-              min="1"
-              inputMode="numeric"
-              placeholder="Ej: 85000"
-              value={ajusteMonto}
-              onChange={(e) => setAjusteMonto(e.target.value)}
-              className="w-full h-10 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all"
-            />
-          </div>
+          <MoneyInput
+            label="Monto (COP)"
+            placeholder="Ej: 85.000"
+            value={ajusteMonto}
+            onChange={(e) => setAjusteMonto(e.target.value)}
+          />
 
           <div>
             <label className="block text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em] mb-1.5">
@@ -1458,18 +1444,11 @@ export default function CajaPage() {
           <p className="text-xs text-[var(--color-text-muted)] leading-snug">
             Corrige el total entregado por el cobrador para el día {fmtFecha(fechaSeleccionada)}. Queda registrado quién hizo la corrección.
           </p>
-          <div>
-            <label className="block text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em] mb-1.5">
-              Total entregado
-            </label>
-            <input
-              type="number"
-              inputMode="numeric"
-              value={editMonto}
-              onChange={(e) => setEditMonto(e.target.value)}
-              className="w-full rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2.5 text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all"
-            />
-          </div>
+          <MoneyInput
+            label="Total entregado"
+            value={editMonto}
+            onChange={(e) => setEditMonto(e.target.value)}
+          />
           {editError && <p className="text-sm text-[var(--color-danger)]">{editError}</p>}
           <div className="flex gap-3 pt-2">
             <Button type="button" variant="secondary" onClick={() => { setEditCobrador(null); setEditError('') }} className="flex-1">
