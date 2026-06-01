@@ -28,10 +28,13 @@ export default function RenovarPrestamo({
   const [plazo,       setPlazo]       = useState(String(prestamoAnterior?.diasPlazo ?? '30'))
   const [frecuencia,  setFrecuencia]  = useState(prestamoAnterior?.frecuencia ?? 'diario')
   const [fechaInicio, setFechaInicio] = useState(hoyISO())
+  const [seguro,      setSeguro]      = useState(false)
+  const [montoSeguro, setMontoSeguro] = useState('')
   const [loading,     setLoading]     = useState(false)
   const [error,       setError]       = useState('')
 
   const montoNum = Number(monto) || 0
+  const montoSeguroNum = seguro ? (Number(montoSeguro) || 0) : 0
   const diferencia = Math.max(0, montoNum - saldoPendiente)
 
   const calculo = useMemo(() => {
@@ -68,6 +71,7 @@ export default function RenovarPrestamo({
           diasPlazo:     Number(plazo),
           fechaInicio,
           frecuencia,
+          ...(seguro && montoSeguroNum > 0 && { seguro: true, montoSeguro: montoSeguroNum }),
         }),
       })
       if (!res.ok) {
@@ -86,6 +90,8 @@ export default function RenovarPrestamo({
 
   const handleClose = () => {
     setMonto('')
+    setSeguro(false)
+    setMontoSeguro('')
     setError('')
     onClose?.()
   }
@@ -171,6 +177,33 @@ export default function RenovarPrestamo({
           onChange={(e) => setFechaInicio(e.target.value)}
         />
 
+        {/* Seguro opcional (se suma al total, igual que al crear) */}
+        <div className="rounded-[12px] border border-[var(--color-border)] p-3">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={seguro}
+              onChange={(e) => setSeguro(e.target.checked)}
+              className="w-4 h-4 accent-[#6366f1]"
+            />
+            <span className="text-sm font-medium text-[var(--color-text-primary)]">Cobrar seguro</span>
+          </label>
+          {seguro && (
+            <div className="mt-2.5">
+              <Input
+                label="Monto del seguro"
+                type="number"
+                inputMode="numeric"
+                placeholder="Ej: 10.000"
+                value={montoSeguro}
+                onChange={(e) => setMontoSeguro(e.target.value)}
+                prefix="$"
+              />
+              <p className="text-[10px] text-[var(--color-text-muted)] mt-1">Se suma al total a pagar del nuevo prestamo.</p>
+            </div>
+          )}
+        </div>
+
         {/* Preview: diferencia a entregar + nueva cuota */}
         {montoNum > 0 && (
           <div className="rounded-[12px] border border-[rgba(34,197,94,0.25)] bg-[rgba(34,197,94,0.06)] p-3 space-y-2">
@@ -196,10 +229,18 @@ export default function RenovarPrestamo({
                     </span>
                   </div>
                 )}
+                {montoSeguroNum > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-[var(--color-text-muted)]">Seguro</span>
+                    <span className="text-sm font-semibold font-mono-display" style={{ color: '#6366f1' }}>
+                      {formatMoney(montoSeguroNum)}
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-[var(--color-text-muted)]">Total a pagar</span>
                   <span className="text-sm font-semibold text-[var(--color-text-primary)] font-mono-display">
-                    {formatMoney(calculo.totalAPagar)}
+                    {formatMoney(calculo.totalAPagar + montoSeguroNum)}
                   </span>
                 </div>
               </>

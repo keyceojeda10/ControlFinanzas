@@ -19,10 +19,12 @@ export async function GET(request) {
   const tipo = searchParams.get('tipo')
   const desde = searchParams.get('desde')
   const hasta = searchParams.get('hasta')
+  const rutaId = searchParams.get('rutaId')
 
   const where = {
     organizationId,
     ...(tipo && { tipo }),
+    ...(rutaId && { rutaId }),
     ...(desde || hasta ? {
       createdAt: {
         ...(desde && { gte: new Date(desde) }),

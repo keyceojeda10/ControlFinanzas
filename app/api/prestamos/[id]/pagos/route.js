@@ -339,6 +339,7 @@ export async function POST(request, { params }) {
         descripcion: tipo === 'capital' ? `Abono a capital - préstamo` : `Pago recibido - préstamo`,
         referenciaId: prestamoId,
         referenciaTipo: 'pago',
+        rutaId: prestamo.cliente?.rutaId || null,
         creadoPorId: userId,
       })
     }

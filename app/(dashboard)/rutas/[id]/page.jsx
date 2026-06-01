@@ -245,6 +245,12 @@ export default function RutaDetallePage({ params }) {
   const [totalRecogido, setTotalRecogido] = useState('')
   const [guardandoCaja, setGuardandoCaja] = useState(false)
   const [errorCaja,     setErrorCaja]     = useState('')
+  // Capital de la ruta (inyectar/retirar)
+  const [modalCapital,  setModalCapital]  = useState(null) // 'inyeccion' | 'retiro' | null
+  const [capitalMonto,  setCapitalMonto]  = useState('')
+  const [capitalDesc,   setCapitalDesc]   = useState('')
+  const [guardandoCapital, setGuardandoCapital] = useState(false)
+  const [errorCapital,  setErrorCapital]  = useState('')
   const [dragIndex,     setDragIndex]     = useState(null)
   const [dragOverIdx,   setDragOverIdx]   = useState(null)
   const [ordenGuardado, setOrdenGuardado] = useState(false)
@@ -408,6 +414,35 @@ export default function RutaDetallePage({ params }) {
       setLoading(false)
     }
   }, [id])
+
+  // Inyectar/retirar capital de esta ruta (reusa POST /api/capital con rutaId)
+  const guardarCapitalRuta = async (e) => {
+    e.preventDefault()
+    const monto = Number(capitalMonto)
+    if (!Number.isFinite(monto) || monto <= 0) { setErrorCapital('Ingresa un monto válido'); return }
+    setGuardandoCapital(true)
+    setErrorCapital('')
+    try {
+      const res = await fetch('/api/capital', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: modalCapital,
+          monto,
+          descripcion: capitalDesc || `${modalCapital === 'inyeccion' ? 'Inyección' : 'Retiro'} ruta ${ruta?.nombre ?? ''}`.trim(),
+          rutaId: id,
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) { setErrorCapital(data.error || 'No se pudo registrar'); return }
+      setModalCapital(null)
+      setCapitalMonto('')
+      setCapitalDesc('')
+      fetchRuta({ soft: true })
+    } finally {
+      setGuardandoCapital(false)
+    }
+  }
 
   useEffect(() => {
     fetchRuta()
@@ -1304,6 +1339,33 @@ export default function RutaDetallePage({ params }) {
               </div>
             </div>
 
+            {/* Capital de la ruta — sub-bolsa individual (solo owner) */}
+            {esOwner && ruta.saldoCapital != null && (
+              <div className="rounded-[16px] px-4 py-3.5"
+                style={{ background: `linear-gradient(135deg, color-mix(in srgb, #6366f1 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`, border: '1px solid color-mix(in srgb, #6366f1 25%, var(--color-border))' }}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#6366f1' }}>Capital de la ruta</span>
+                  <span className="text-lg font-bold font-mono-display" style={{ color: ruta.saldoCapital >= 0 ? 'var(--color-info)' : 'var(--color-danger)' }}>
+                    {formatMoney(ruta.saldoCapital)}
+                  </span>
+                </div>
+                <p className="text-[10px] mb-2.5" style={{ color: 'var(--color-text-muted)' }}>Dinero asignado a esta ruta para prestar.</p>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => { setModalCapital('inyeccion'); setCapitalMonto(''); setCapitalDesc(''); setErrorCapital('') }}
+                    className="flex-1 py-1.5 rounded-[8px] text-xs font-semibold"
+                    style={{ background: 'var(--color-success-dim)', color: 'var(--color-success)', border: '1px solid var(--color-success-border)' }}>
+                    Inyectar
+                  </button>
+                  <button type="button" onClick={() => { setModalCapital('retiro'); setCapitalMonto(''); setCapitalDesc(''); setErrorCapital('') }}
+                    className="flex-1 py-1.5 rounded-[8px] text-xs font-semibold"
+                    style={{ background: 'var(--color-danger-dim)', color: 'var(--color-danger)', border: '1px solid var(--color-danger-border)' }}>
+                    Retirar
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Pendientes + Mora como filtros clickeables */}
             <div className="grid grid-cols-2 gap-3">
               <button
@@ -2037,6 +2099,58 @@ export default function RutaDetallePage({ params }) {
               </span>
             </div>
           )}
+        </div>
+      </Modal>
+
+      {/* Modal: inyectar/retirar capital de la ruta */}
+      <Modal
+        open={!!modalCapital}
+        onClose={() => { setModalCapital(null); setErrorCapital('') }}
+        title={modalCapital === 'inyeccion' ? 'Inyectar capital a la ruta' : 'Retirar capital de la ruta'}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => { setModalCapital(null); setErrorCapital('') }}>Cancelar</Button>
+            <Button onClick={guardarCapitalRuta} loading={guardandoCapital}>
+              {modalCapital === 'inyeccion' ? 'Inyectar' : 'Retirar'}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          {errorCapital && (
+            <div className="text-[var(--color-danger)] text-sm bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] rounded-[12px] px-4 py-3">
+              {errorCapital}
+            </div>
+          )}
+          <div className="flex justify-between text-sm">
+            <span className="text-[var(--color-text-muted)]">Saldo actual de la ruta</span>
+            <span className="font-semibold font-mono-display" style={{ color: 'var(--color-info)' }}>{formatMoney(ruta.saldoCapital || 0)}</span>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-[var(--color-text-muted)]">Monto (COP)</label>
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder="Ej: 5000000"
+              value={capitalMonto}
+              onChange={(e) => setCapitalMonto(e.target.value)}
+              className="w-full h-10 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[white] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all"
+              autoFocus
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-[var(--color-text-muted)]">Descripción (opcional)</label>
+            <input
+              type="text"
+              placeholder="Ej: Capital para el mes"
+              value={capitalDesc}
+              onChange={(e) => setCapitalDesc(e.target.value)}
+              className="w-full h-10 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[white] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] transition-all"
+            />
+          </div>
+          <p className="text-[11px] text-[var(--color-text-muted)] leading-snug">
+            Esto afecta el capital de esta ruta y también el saldo general de tu negocio.
+          </p>
         </div>
       </Modal>
 

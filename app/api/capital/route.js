@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
-import { registrarMovimientoManualCapital } from '@/lib/capital'
+import { registrarMovimientoManualCapital, getSaldosPorRuta } from '@/lib/capital'
 
 // GET — obtener saldo actual y config (capitalEstricto)
 export async function GET() {
@@ -15,7 +15,7 @@ export async function GET() {
     return Response.json({ error: 'Solo el administrador puede ver el capital' }, { status: 403 })
   }
 
-  const [capital, org] = await Promise.all([
+  const [capital, org, porRuta] = await Promise.all([
     prisma.capital.findUnique({
       where: { organizationId: session.user.organizationId },
     }),
@@ -23,10 +23,12 @@ export async function GET() {
       where: { id: session.user.organizationId },
       select: { capitalEstricto: true },
     }),
+    getSaldosPorRuta(prisma, session.user.organizationId),
   ])
 
   return Response.json({
     capital,
+    porRuta,
     config: { capitalEstricto: !!org?.capitalEstricto },
   })
 }
@@ -76,7 +78,7 @@ export async function POST(request) {
 
   const { organizationId, id: userId } = session.user
   const body = await request.json()
-  const { tipo, monto, descripcion } = body
+  const { tipo, monto, descripcion, rutaId } = body
   const direccion = body?.direccion === 'ingreso' ? 'ingreso' : 'egreso'
 
   const tiposPermitidos = ['capital_inicial', 'inyeccion', 'retiro', 'ajuste']
@@ -85,6 +87,17 @@ export async function POST(request) {
   }
   if (!monto || Number(monto) <= 0) {
     return Response.json({ error: 'El monto debe ser mayor a 0' }, { status: 400 })
+  }
+
+  // Si viene rutaId, validar que la ruta pertenezca a la organizacion
+  let rutaIdValida = null
+  if (rutaId) {
+    const ruta = await prisma.ruta.findFirst({
+      where: { id: rutaId, organizationId },
+      select: { id: true },
+    })
+    if (!ruta) return Response.json({ error: 'Ruta no válida' }, { status: 400 })
+    rutaIdValida = ruta.id
   }
 
   const montoNum = Number(monto)
@@ -96,6 +109,7 @@ export async function POST(request) {
       monto: montoNum,
       descripcion,
       creadoPorId: userId,
+      rutaId: rutaIdValida,
       direccion: tipo === 'ajuste' ? direccion : undefined,
       permitirNegativo: false,
     })

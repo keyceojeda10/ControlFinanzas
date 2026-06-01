@@ -233,6 +233,7 @@ export async function POST(request) {
           where: { id: clienteId },
           data: { rutaId: rutaIdsAsignadas[0] },
         })
+        cliente.rutaId = rutaIdsAsignadas[0]
       } else {
         return Response.json({ error: 'Este cliente no tiene ruta asignada. Asignale una ruta antes de crear el préstamo.' }, { status: 400 })
       }
@@ -240,6 +241,9 @@ export async function POST(request) {
       return Response.json({ error: 'Solo puedes crear préstamos para clientes de tus rutas asignadas' }, { status: 403 })
     }
   }
+
+  // Ruta a la que se atribuyen los movimientos de capital (sub-bolsa por ruta).
+  const rutaIdCapital = cliente.rutaId || null
 
   // Calcular valores del préstamo (cuotaManual opcional sobreescribe la cuota calculada)
   const cuotaManualNum = Number(cuotaManual) || 0
@@ -293,6 +297,7 @@ export async function POST(request) {
         monto: inyeccionMonto,
         descripcion: inyeccionDescripcion || `Inyección al crear préstamo - ${cliente.nombre}`,
         referenciaTipo: 'caja_capital_manual',
+        rutaId: rutaIdCapital,
         creadoPorId: session.user.id,
       })
       saldoCap += inyeccionMonto
@@ -344,6 +349,7 @@ export async function POST(request) {
       descripcion: `Desembolso préstamo a ${cliente.nombre}`,
       referenciaId: nuevo.id,
       referenciaTipo: 'prestamo',
+      rutaId: rutaIdCapital,
       creadoPorId: session.user.id,
     })
 

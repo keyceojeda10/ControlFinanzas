@@ -37,7 +37,7 @@ export async function POST(request, { params }) {
   const { id: prestamoId } = await params
 
   const body = await request.json()
-  const { montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, modoInteres } = body
+  const { montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, modoInteres, seguro, montoSeguro } = body
 
   const freq = frecuencia || 'diario'
   // Modo de interes para la renovacion. Default 'fijo' (el modelo nuevo);
@@ -85,10 +85,19 @@ export async function POST(request, { params }) {
     }, { status: 400 })
   }
 
+  // Seguro opcional en la renovacion (mismo comportamiento que crear: se suma al total)
+  const conSeguro = !!seguro
+  const montoSeguroNum = conSeguro ? Number(montoSeguro) || 0 : 0
+  if (montoSeguroNum < 0) {
+    return Response.json({ error: 'El monto del seguro no puede ser negativo' }, { status: 400 })
+  }
+
   // Calcular valores del préstamo nuevo
-  const { totalAPagar, cuotaDiaria, fechaFin } = calcularPrestamo({
+  const calcRenov = calcularPrestamo({
     montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia: freq, modoInteres: modoRenovacion,
   })
+  const { cuotaDiaria, fechaFin } = calcRenov
+  const totalAPagar = calcRenov.totalAPagar + montoSeguroNum
 
   const diferencia = Number(montoPrestado) - saldoPendiente // lo que recibe en mano
 
@@ -153,6 +162,7 @@ export async function POST(request, { params }) {
         descripcion: `Liquidación por renovación - ${original.cliente.nombre}`,
         referenciaId: prestamoId,
         referenciaTipo: 'pago',
+        rutaId: original.cliente?.rutaId || null,
         creadoPorId: userId,
       })
     }
@@ -170,6 +180,8 @@ export async function POST(request, { params }) {
         diasPlazo:     Number(diasPlazo),
         fechaInicio:   new Date(fechaInicio),
         fechaFin,
+        seguro:        conSeguro,
+        ...(conSeguro && montoSeguroNum > 0 && { montoSeguro: montoSeguroNum }),
       },
     })
 
@@ -181,6 +193,7 @@ export async function POST(request, { params }) {
       descripcion: `Desembolso por renovación - ${original.cliente.nombre}`,
       referenciaId: nuevo.id,
       referenciaTipo: 'prestamo',
+      rutaId: original.cliente?.rutaId || null,
       creadoPorId: userId,
     })
 

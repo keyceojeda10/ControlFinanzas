@@ -296,6 +296,7 @@ export async function GET(request, { params }) {
     id:          ruta.id,
     nombre:      ruta.nombre,
     diasSinCobro: ruta.diasSinCobro,
+    saldoCapital: Math.round(ruta.saldoCapital || 0),
     cobrador:    ruta.cobrador,
     gruposCobro,
     clientes:    clientesEnriquecidos,

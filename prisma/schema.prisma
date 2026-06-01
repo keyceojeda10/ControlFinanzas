@@ -167,6 +167,7 @@ model Ruta {
   nombre         String
   activo         Boolean  @default(true)
   diasSinCobro   String?
+  saldoCapital   Float    @default(0)   // capital de la sub-bolsa de esta ruta (denormalizado)
   createdAt      DateTime @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id])
@@ -320,6 +321,8 @@ model CierreCaja {
   saldoRealCaja   Float   @default(0)
   diferencia     Float
   createdAt      DateTime @default(now())
+  editadoEn      DateTime?           // se setea al editar/ajustar un cierre ya creado
+  editadoPorId   String?             // quien hizo la ultima edicion (owner o cobrador)
 
   organization Organization @relation(fields: [organizationId], references: [id])
   cobrador     User         @relation(fields: [cobradorId], references: [id])
@@ -412,6 +415,7 @@ model MovimientoCapital {
   descripcion    String?
   referenciaId   String?
   referenciaTipo String?
+  rutaId         String?         // ruta a la que pertenece el movimiento (null = general)
   creadoPorId    String?
   createdAt      DateTime        @default(now())
 
@@ -420,6 +424,7 @@ model MovimientoCapital {
 
   @@index([organizationId])
   @@index([organizationId, createdAt])
+  @@index([organizationId, rutaId, createdAt])
   @@index([capitalId])
   @@index([referenciaId])
 }

@@ -259,6 +259,45 @@ export default function CajaPage() {
     setExito(false)
   }
 
+  // Owner corrige el cierre de un cobrador (modal aparte)
+  const [editCobrador, setEditCobrador] = useState(null) // { id, nombre, totalRecogido }
+  const [editMonto, setEditMonto] = useState('')
+  const [editError, setEditError] = useState('')
+  const [editGuardando, setEditGuardando] = useState(false)
+
+  const abrirEditCierreCobrador = (cobrador, cierre) => {
+    setEditCobrador({ id: cobrador.id, nombre: cobrador.nombre })
+    setEditMonto(String(Math.round(cierre?.totalRecogido || 0)))
+    setEditError('')
+  }
+
+  const guardarEditCierreCobrador = async (e) => {
+    e.preventDefault()
+    if (!editCobrador) return
+    const monto = Number(editMonto)
+    if (!Number.isFinite(monto) || monto < 0) { setEditError('Ingresa un valor válido'); return }
+    setEditGuardando(true)
+    setEditError('')
+    try {
+      const res = await fetch('/api/caja', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          totalRecogido: monto,
+          fecha: fechaSeleccionada,
+          cobradorId: editCobrador.id,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setEditError(data.error ?? 'Error al corregir'); return }
+      setEditCobrador(null)
+      setHistorial(null)
+      await fetchData()
+    } finally {
+      setEditGuardando(false)
+    }
+  }
+
   if (loading) return (
     <div className="max-w-2xl mx-auto space-y-4">
       <SkeletonCard /><SkeletonCard />
@@ -280,6 +319,7 @@ export default function CajaPage() {
   const disponibleHoy = Math.round(stats.disponibleHoy ?? saldoRealCaja)
   const diferenciaRecaudo = cobradoHoy - Math.round(stats.esperado || 0)
   const ajustesDelDia = Math.round(stats.ajustesOperativosDia ?? stats.ajustesManualDia ?? 0)
+  const segurosDia = stats.segurosCobradosDia || { monto: 0, cantidad: 0 }
   const saldoGeneralActual = cajaGeneral.saldoActual ?? 0
   const tasaRecaudo = stats.tasaRecaudo || 0
   const colorRecaudo = tasaRecaudo >= 80 ? 'var(--color-success)' : tasaRecaudo >= 50 ? 'var(--color-accent)' : 'var(--color-danger)'
@@ -481,6 +521,19 @@ export default function CajaPage() {
             </div>
           </div>
 
+          {/* Seguros cobrados hoy — ganancia aparte por cobro de seguro */}
+          {segurosDia.monto > 0 && (
+            <div className="mt-3 rounded-[10px] px-3 py-2.5 flex items-center justify-between"
+              style={{ background: 'color-mix(in srgb, #6366f1 8%, transparent)', border: '1px solid color-mix(in srgb, #6366f1 25%, transparent)' }}
+            >
+              <div>
+                <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Seguros cobrados hoy</p>
+                <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{segurosDia.cantidad} {segurosDia.cantidad === 1 ? 'prestamo' : 'prestamos'}</p>
+              </div>
+              <p className="text-base font-bold font-mono-display" style={{ color: '#6366f1' }}>{formatMoney(segurosDia.monto)}</p>
+            </div>
+          )}
+
           <details className="mt-3 pt-3 border-t border-[var(--color-border)]">
             <summary className="cursor-pointer text-[11px] text-[var(--color-text-muted)]">Ver detalle del cálculo</summary>
             <div className="mt-2 space-y-1.5 text-[11px]">
@@ -509,7 +562,10 @@ export default function CajaPage() {
           <Card>
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Cierre registrado</p>
-              <Badge variant="green">Cerrado</Badge>
+              <div className="flex items-center gap-1.5">
+                {cierreHoy.editadoEn && <Badge variant="gray">Editado</Badge>}
+                <Badge variant="green">Cerrado</Badge>
+              </div>
             </div>
             <div className="space-y-2">
               {[
@@ -537,10 +593,12 @@ export default function CajaPage() {
               </div>
             </div>
 
-            {esAyer && !modoAjusteCierre && (
+            {fechaEditableCobrador && !modoAjusteCierre && (
               <div className="mt-3 pt-3 border-t border-[var(--color-border)] space-y-2">
                 <p className="text-[11px] text-[var(--color-accent)] leading-snug">
-                  Si olvidaste confirmar o corregir el monto ayer, puedes ajustarlo hoy.
+                  {esAyer
+                    ? 'Si olvidaste confirmar o corregir el monto ayer, puedes ajustarlo hoy.'
+                    : 'Si te equivocaste en el cierre, puedes corregirlo.'}
                 </p>
                 <button
                   type="button"
@@ -550,7 +608,7 @@ export default function CajaPage() {
                   }}
                   className="text-xs font-semibold text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] transition-colors"
                 >
-                  Ajustar cierre de este día
+                  Corregir cierre de este día
                 </button>
               </div>
             )}
@@ -822,6 +880,19 @@ export default function CajaPage() {
                       {ajustesDelDia > 0 ? '+' : ''}{formatMoney(ajustesDelDia)}
                     </p>
                   </div>
+                </div>
+              )}
+
+              {/* Seguros cobrados hoy — ganancia aparte por cobro de seguro */}
+              {segurosDia.monto > 0 && (
+                <div className="mt-3 rounded-[10px] px-3 py-2.5 flex items-center justify-between"
+                  style={{ background: 'color-mix(in srgb, #6366f1 10%, transparent)', border: '1px solid color-mix(in srgb, #6366f1 25%, transparent)' }}
+                >
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Seguros cobrados hoy</p>
+                    <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{segurosDia.cantidad} {segurosDia.cantidad === 1 ? 'prestamo' : 'prestamos'}</p>
+                  </div>
+                  <p className="text-base font-bold font-mono-display" style={{ color: '#6366f1' }}>{formatMoney(segurosDia.monto)}</p>
                 </div>
               )}
 
@@ -1195,15 +1266,23 @@ export default function CajaPage() {
                         </div>
                       )}
 
-                      <button
-                        onClick={toggleExpand}
-                        className="w-full mt-2 text-[11px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] flex items-center justify-center gap-1 py-1"
-                      >
-                        {expandido ? 'Ocultar detalle' : 'Ver detalle'}
-                        <svg className={`w-3 h-3 transition-transform ${expandido ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </button>
+                      <div className="flex items-center gap-2 mt-2">
+                        <button
+                          onClick={toggleExpand}
+                          className="flex-1 text-[11px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] flex items-center justify-center gap-1 py-1"
+                        >
+                          {expandido ? 'Ocultar detalle' : 'Ver detalle'}
+                          <svg className={`w-3 h-3 transition-transform ${expandido ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => abrirEditCierreCobrador(c, cierre)}
+                          className="text-[11px] font-semibold text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] py-1 px-2"
+                        >
+                          Corregir cierre
+                        </button>
+                      </div>
                     </>
                   ) : (
                     <div className="space-y-2">
@@ -1364,6 +1443,40 @@ export default function CajaPage() {
             </Button>
             <Button type="submit" loading={guardandoAjuste} className="flex-1">
               Guardar movimiento
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Owner: corregir cierre de un cobrador */}
+      <Modal
+        open={!!editCobrador}
+        onClose={() => { setEditCobrador(null); setEditError('') }}
+        title={`Corregir cierre — ${editCobrador?.nombre ?? ''}`}
+      >
+        <form onSubmit={guardarEditCierreCobrador} className="space-y-4">
+          <p className="text-xs text-[var(--color-text-muted)] leading-snug">
+            Corrige el total entregado por el cobrador para el día {fmtFecha(fechaSeleccionada)}. Queda registrado quién hizo la corrección.
+          </p>
+          <div>
+            <label className="block text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em] mb-1.5">
+              Total entregado
+            </label>
+            <input
+              type="number"
+              inputMode="numeric"
+              value={editMonto}
+              onChange={(e) => setEditMonto(e.target.value)}
+              className="w-full rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2.5 text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all"
+            />
+          </div>
+          {editError && <p className="text-sm text-[var(--color-danger)]">{editError}</p>}
+          <div className="flex gap-3 pt-2">
+            <Button type="button" variant="secondary" onClick={() => { setEditCobrador(null); setEditError('') }} className="flex-1">
+              Cancelar
+            </Button>
+            <Button type="submit" loading={editGuardando} className="flex-1">
+              Guardar corrección
             </Button>
           </div>
         </form>

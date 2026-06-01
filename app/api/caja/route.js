@@ -192,6 +192,32 @@ async function calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId =
   return total
 }
 
+// Suma el monto de seguros cobrados en el día (prestamos creados con seguro=true).
+// El seguro YA viene sumado al total del prestamo; aqui solo se totaliza como
+// referencia de "cuanto se gano en seguros" en el cierre del dia.
+// Owner (cobradorId null): todos los del dia. Cobrador: los de clientes de su ruta.
+async function calcularSegurosDia(organizationId, inicio, fin, cobradorId = null) {
+  const where = {
+    organizationId,
+    seguro: true,
+    montoSeguro: { gt: 0 },
+    createdAt: { gte: inicio, lt: fin },
+    estado: { not: 'cancelado' },
+  }
+  if (cobradorId) {
+    where.cliente = { ruta: { cobradorId } }
+  }
+  const r = await prisma.prestamo.aggregate({
+    where,
+    _sum: { montoSeguro: true },
+    _count: true,
+  })
+  return {
+    monto: Math.round(r._sum?.montoSeguro || 0),
+    cantidad: r._count || 0,
+  }
+}
+
 async function getCajaGeneralStats(organizationId, fechaColombia) {
   const capital = await prisma.capital.findUnique({
     where: { organizationId },
@@ -365,6 +391,7 @@ async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaj
 
   const gastos = gastosDia._sum?.monto || 0
   const desembolsadoDia = await calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId)
+  const segurosCobradosDia = await calcularSegurosDia(organizationId, inicio, fin, cobradorId)
   const ajustesManualDia = movimientosManualDia.reduce((acc, mov) => {
     if (mov.tipo === 'capital_inicial' || mov.tipo === 'inyeccion') return acc + mov.monto
     if (mov.tipo === 'retiro') return acc - mov.monto
@@ -408,6 +435,7 @@ async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaj
     disponibleHoy,
     disponible,
     tasaRecaudo,
+    segurosCobradosDia,
   }
 }
 
@@ -741,6 +769,7 @@ export async function POST(request) {
       return Response.json({ error: 'Ya existe un cierre de caja para hoy' }, { status: 409 })
     }
 
+    const recogidoAntes = Math.round(existeCierre.totalRecogido || 0)
     const cierreActualizado = await prisma.cierreCaja.update({
       where: { id: existeCierre.id },
       data: {
@@ -751,16 +780,19 @@ export async function POST(request) {
         saldoOperativo: Math.round(saldoOperativoDia),
         saldoRealCaja: Math.round(saldoRealCajaDia),
         diferencia: Math.round(diferencia),
+        editadoEn: new Date(),
+        editadoPorId: userId,
       },
       include: { cobrador: { select: { id: true, nombre: true } } },
     })
 
+    const quienEdita = rol === 'owner' && cobradorId !== userId ? ' (editado por admin)' : ''
     logActividad({
       session,
       accion: 'ajuste_cierre_caja',
       entidadTipo: 'caja',
       entidadId: cierreActualizado.id,
-      detalle: `Ajuste cierre ${cobrador.nombre} (${fmtFechaLocal(fechaColombia)}) - recogido $${Math.round(totalRecogido).toLocaleString('es-CO')}`,
+      detalle: `Ajuste cierre ${cobrador.nombre} (${fmtFechaLocal(fechaColombia)})${quienEdita} - recogido $${recogidoAntes.toLocaleString('es-CO')} -> $${Math.round(totalRecogido).toLocaleString('es-CO')}`,
       ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
     })
 

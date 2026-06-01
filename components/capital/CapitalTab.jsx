@@ -66,6 +66,8 @@ export default function CapitalTab() {
   const [capitalEstricto, setCapitalEstricto] = useState(false)
   const [togglingEstricto, setTogglingEstricto] = useState(false)
   const [confirmEstricto, setConfirmEstricto] = useState(null)
+  const [porRuta, setPorRuta] = useState([])
+  const [modalRutaId, setModalRutaId] = useState('') // '' = general (sin ruta)
 
   const fetchResumen = useCallback(() => {
     fetch('/api/capital/resumen')
@@ -78,7 +80,10 @@ export default function CapitalTab() {
   const fetchConfig = useCallback(() => {
     fetch('/api/capital')
       .then(r => r.json())
-      .then(d => setCapitalEstricto(!!d?.config?.capitalEstricto))
+      .then(d => {
+        setCapitalEstricto(!!d?.config?.capitalEstricto)
+        setPorRuta(Array.isArray(d?.porRuta) ? d.porRuta : [])
+      })
       .catch(() => {})
   }, [])
 
@@ -155,6 +160,7 @@ export default function CapitalTab() {
           direccion: modalTipo === 'ajuste' ? modalDireccion : undefined,
           monto: Number(modalMonto),
           descripcion: modalDesc,
+          ...(modalRutaId && { rutaId: modalRutaId }),
         }),
       })
       const data = await res.json()
@@ -163,7 +169,9 @@ export default function CapitalTab() {
       setModalMonto('')
       setModalDesc('')
       setModalDireccion('ingreso')
+      setModalRutaId('')
       fetchResumen()
+      fetchConfig()
       setPage(1)
       fetchMovimientos()
     } catch (err) {
@@ -198,6 +206,14 @@ export default function CapitalTab() {
     } finally {
       setAplicandoSugerido(false)
     }
+  }
+
+  const abrirMovimientoRuta = (rutaId, tipo) => {
+    setModalTipo(tipo)
+    setModalRutaId(rutaId)
+    setModalDireccion('ingreso')
+    setError('')
+    setShowModal(true)
   }
 
   if (loading) return <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="animate-pulse bg-[var(--color-bg-hover)] rounded-[16px] h-20" />)}</div>
@@ -435,6 +451,45 @@ export default function CapitalTab() {
         </div>
       )}
 
+      {/* Capital por ruta — sub-bolsas individuales */}
+      {porRuta.length > 0 && (
+        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] px-4 py-4">
+          <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-3">Capital por ruta</p>
+          <div className="space-y-2.5">
+            {porRuta.map((r) => (
+              <div key={r.rutaId} className="rounded-[12px] border border-[var(--color-border)] p-3" style={{ background: 'var(--color-bg-card)' }}>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{r.nombre}</p>
+                    {r.cobrador && <p className="text-[10px] truncate" style={{ color: 'var(--color-text-muted)' }}>{r.cobrador}</p>}
+                  </div>
+                  <p className="text-base font-bold font-mono-display shrink-0" style={{ color: r.saldoCapital >= 0 ? 'var(--color-info)' : 'var(--color-danger)' }}>
+                    {formatMoney(r.saldoCapital)}
+                  </p>
+                </div>
+                <div className="grid grid-cols-3 gap-2 mt-2 text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
+                  <span>Inyectado: <span className="font-semibold" style={{ color: 'var(--color-success)' }}>{formatMoney(r.inyectado)}</span></span>
+                  <span>Prestado: <span className="font-semibold" style={{ color: 'var(--color-warning)' }}>{formatMoney(r.prestado)}</span></span>
+                  <span>Cobrado: <span className="font-semibold" style={{ color: 'var(--color-info)' }}>{formatMoney(r.recaudado)}</span></span>
+                </div>
+                <div className="flex gap-2 mt-2.5">
+                  <button type="button" onClick={() => abrirMovimientoRuta(r.rutaId, 'inyeccion')}
+                    className="flex-1 py-1.5 rounded-[8px] text-xs font-semibold transition-colors"
+                    style={{ background: 'var(--color-success-dim)', color: 'var(--color-success)', border: '1px solid var(--color-success-border)' }}>
+                    Inyectar
+                  </button>
+                  <button type="button" onClick={() => abrirMovimientoRuta(r.rutaId, 'retiro')}
+                    className="flex-1 py-1.5 rounded-[8px] text-xs font-semibold transition-colors"
+                    style={{ background: 'var(--color-danger-dim)', color: 'var(--color-danger)', border: '1px solid var(--color-danger-border)' }}>
+                    Retirar
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] px-4 py-4">
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Movimientos</p>
@@ -520,6 +575,18 @@ export default function CapitalTab() {
                   <option value="ajuste">Ajuste manual</option>
                 </select>
               </div>
+              {porRuta.length > 0 && modalTipo !== 'capital_inicial' && (
+                <div>
+                  <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Ruta (opcional)</label>
+                  <select value={modalRutaId} onChange={(e) => setModalRutaId(e.target.value)}
+                    className="w-full bg-[var(--color-bg-base)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-[10px] px-3 py-2.5 text-sm">
+                    <option value="">General (sin ruta)</option>
+                    {porRuta.map((r) => (
+                      <option key={r.rutaId} value={r.rutaId}>{r.nombre}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               {modalTipo === 'ajuste' && (
                 <div>
                   <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Direccion del ajuste</label>
@@ -553,7 +620,7 @@ export default function CapitalTab() {
               </div>
               {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
               <div className="flex gap-3">
-                <button type="button" onClick={() => { setShowModal(false); setError(''); setModalDireccion('ingreso') }}
+                <button type="button" onClick={() => { setShowModal(false); setError(''); setModalDireccion('ingreso'); setModalRutaId('') }}
                   className="flex-1 px-4 py-2.5 border border-[var(--color-border)] text-[var(--color-text-muted)] rounded-[10px] text-sm hover:bg-[var(--color-bg-hover)] transition-colors">
                   Cancelar
                 </button>
