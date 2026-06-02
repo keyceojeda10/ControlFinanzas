@@ -241,11 +241,11 @@ function ChatPanel({ lead, onBack, onUpdate }) {
       rec.onstop = async () => {
         stream.getTracks().forEach(t => t.stop())
         setGrabando(false)
-        const tipo = mime.split(';')[0]
-        // Meta no acepta webm; si grabamos webm lo mandamos igual como ogg (el navegador
-        // de Chrome produce opus en ambos). Para maxima compatibilidad usamos extension por mime.
-        const ext = tipo.includes('ogg') ? 'ogg' : tipo.includes('mp4') ? 'm4a' : 'webm'
-        const blob = new Blob(chunks, { type: tipo })
+        // Mandar el audio con su tipo NATIVO (webm/ogg/mp4). El servidor lo
+        // convierte a ogg/opus con ffmpeg antes de enviarlo a Meta.
+        const tipoNativo = mime.split(';')[0]
+        const ext = tipoNativo.includes('ogg') ? 'ogg' : tipoNativo.includes('mp4') ? 'm4a' : 'webm'
+        const blob = new Blob(chunks, { type: tipoNativo })
         await enviarBlob(blob, `nota-voz.${ext}`)
       }
       mediaRecRef.current = rec

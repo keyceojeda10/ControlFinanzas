@@ -10,8 +10,36 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import * as wa from '@/lib/bot/whatsapp-cloud'
 import { guardarMedia, tipoDe } from '@/lib/bot/media-store'
+import { exec } from 'child_process'
+import { promisify } from 'util'
+import fs from 'fs'
+import os from 'os'
+import path from 'path'
+import crypto from 'crypto'
 
+const execAsync = promisify(exec)
 const VENTANA_MS = 24 * 3600 * 1000
+
+// Meta NO acepta audio/webm (lo que graba Chrome). Convertimos cualquier audio
+// a ogg/opus con ffmpeg (instalado en el VPS) para garantizar compatibilidad.
+async function convertirAudioAOgg(buffer, mimeOriginal) {
+  // Si ya es un formato que Meta acepta y no es webm, no convertir.
+  const ok = ['audio/ogg', 'audio/opus', 'audio/mpeg', 'audio/mp4', 'audio/aac', 'audio/amr']
+  if (ok.includes(mimeOriginal)) return { buffer, mime: mimeOriginal }
+
+  const tmp = os.tmpdir()
+  const inPath = path.join(tmp, `wa-in-${crypto.randomUUID()}`)
+  const outPath = path.join(tmp, `wa-out-${crypto.randomUUID()}.ogg`)
+  try {
+    fs.writeFileSync(inPath, buffer)
+    await execAsync(`ffmpeg -y -i "${inPath}" -c:a libopus -b:a 32k "${outPath}"`, { timeout: 30000 })
+    const out = fs.readFileSync(outPath)
+    return { buffer: out, mime: 'audio/ogg' }
+  } finally {
+    fs.existsSync(inPath) && fs.unlinkSync(inPath)
+    fs.existsSync(outPath) && fs.unlinkSync(outPath)
+  }
+}
 
 async function ventanaAbierta(botLeadId) {
   const ultimoLead = await prisma.botConversacion.findFirst({
@@ -53,9 +81,16 @@ export async function POST(request, { params }) {
       if (!file || typeof file === 'string') {
         return NextResponse.json({ error: 'Falta el archivo' }, { status: 400 })
       }
-      const mimetype = file.type || 'application/octet-stream'
+      let mimetype = file.type || 'application/octet-stream'
       const tipo = tipoDe(mimetype) // image | audio | document
-      const buffer = Buffer.from(await file.arrayBuffer())
+      let buffer = Buffer.from(await file.arrayBuffer())
+
+      // Si es audio, convertir a ogg/opus (Meta no acepta webm de Chrome)
+      if (tipo === 'audio') {
+        const conv = await convertirAudioAOgg(buffer, mimetype)
+        buffer = conv.buffer
+        mimetype = conv.mime
+      }
 
       // Subir a Meta y enviar
       const mediaId = await wa.uploadMedia(buffer, mimetype)
