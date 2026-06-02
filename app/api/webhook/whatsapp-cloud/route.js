@@ -88,7 +88,10 @@ async function procesarEventos(body) {
     for (const change of changes) {
       const value = change.value || {}
       const mensajes = value.messages || []
+      const contacts = value.contacts || []
+      const profileName = contacts[0]?.profile?.name || ''
       for (const msg of mensajes) {
+        msg.profile_name = profileName
         await procesarMensaje(msg).catch(e =>
           console.error('[WA Cloud Webhook] Error en mensaje:', e.message)
         )
@@ -145,10 +148,27 @@ async function procesarMensaje(msg) {
 async function _procesarMensajeInternal(msg, fromRaw, tipo, messageId) {
   const telefono = await wa.resolverTelefono(fromRaw)
 
-  const lead = await buscarLeadPorTelefono(telefono || fromRaw)
+  let lead = await buscarLeadPorTelefono(telefono || fromRaw)
+
+  // Si no es lead conocido, crear BotLead automaticamente. Cualquiera que
+  // escriba al numero del bot se vuelve lead y el bot le responde (el propio
+  // prompt filtra a los que no son prestamistas). Si viene de un anuncio CTWA
+  // (msg.referral) guardamos el anuncioId y entra mas "caliente".
   if (!lead) {
-    console.log(`[WA Cloud] Mensaje de ${fromRaw} (${telefono}) — no es lead conocido.`)
-    return
+    const referral = msg.referral || null
+    const nombrePerfil = msg.profile_name || msg.from_name || ''
+    const desdeAnuncio = Boolean(referral)
+    console.log(`[WA Cloud] Lead nuevo${desdeAnuncio ? ' (CTWA ad: ' + (referral.source_id || 'unknown') + ')' : ' (directo)'}: ${fromRaw} (${telefono})`)
+    lead = await prisma.botLead.create({
+      data: {
+        nombre: nombrePerfil || 'Lead WhatsApp',
+        telefono: telefono || fromRaw,
+        anuncioId: desdeAnuncio ? (referral.source_id || '') : undefined,
+        estado: 'interesado',
+        temperatura: desdeAnuncio ? 50 : 40,
+        fechaContacto: new Date(),
+      },
+    })
   }
 
   // Dedup por messageId
