@@ -108,17 +108,26 @@ export async function POST(request) {
   // sub-bolsa (sin tocar el saldo global). Se calcula ANTES de la transaccion.
   let saldoPendienteRuta = 0
   if (absorberActivos && rutaIdValida && tipo === 'inyeccion') {
-    const prestamosRuta = await prisma.prestamo.findMany({
-      where: {
-        organizationId,
-        estado: 'activo',
-        cliente: { rutaId: rutaIdValida },
-      },
-      include: { pagos: { select: { montoPagado: true, tipo: true } } },
+    // Guard de idempotencia: solo se puede absorber UNA vez por ruta. Si ya
+    // existe un ajuste de arranque para esta ruta, no volver a descontar
+    // (evita descontar los prestamos previos multiples veces).
+    const yaAbsorbido = await prisma.movimientoCapital.findFirst({
+      where: { organizationId, rutaId: rutaIdValida, ajusteArranqueRuta: true },
+      select: { id: true },
     })
-    saldoPendienteRuta = Math.round(
-      prestamosRuta.reduce((acc, p) => acc + calcularSaldoPendiente(p), 0)
-    )
+    if (!yaAbsorbido) {
+      const prestamosRuta = await prisma.prestamo.findMany({
+        where: {
+          organizationId,
+          estado: 'activo',
+          cliente: { rutaId: rutaIdValida },
+        },
+        include: { pagos: { select: { montoPagado: true, tipo: true } } },
+      })
+      saldoPendienteRuta = Math.round(
+        prestamosRuta.reduce((acc, p) => acc + calcularSaldoPendiente(p), 0)
+      )
+    }
   }
 
   const resultado = await prisma.$transaction(async (tx) => {

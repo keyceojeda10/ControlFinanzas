@@ -197,25 +197,52 @@ async function calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId =
 // referencia de "cuanto se gano en seguros" en el cierre del dia.
 // Owner (cobradorId null): todos los del dia. Cobrador: los de clientes de su ruta.
 async function calcularSegurosDia(organizationId, inicio, fin, cobradorId = null) {
-  const where = {
+  const baseWhere = {
     organizationId,
     seguro: true,
     montoSeguro: { gt: 0 },
     createdAt: { gte: inicio, lt: fin },
     estado: { not: 'cancelado' },
   }
-  if (cobradorId) {
-    where.cliente = { ruta: { cobradorId } }
+
+  // Vista owner: todos los seguros del dia.
+  if (!cobradorId) {
+    const r = await prisma.prestamo.aggregate({
+      where: baseWhere,
+      _sum: { montoSeguro: true },
+      _count: true,
+    })
+    return { monto: Math.round(r._sum?.montoSeguro || 0), cantidad: r._count || 0 }
   }
-  const r = await prisma.prestamo.aggregate({
-    where,
-    _sum: { montoSeguro: true },
-    _count: true,
-  })
-  return {
-    monto: Math.round(r._sum?.montoSeguro || 0),
-    cantidad: r._count || 0,
+
+  // Vista cobrador: prestamos con seguro de (a) clientes de su ruta o (b) creados
+  // por el (via actividadLog). Mismo criterio que el desembolsado del dia para
+  // que el cuadrito de seguros sea consistente y no deje fuera prestamos que el
+  // cobrador hizo a clientes de otra ruta.
+  const [porRuta, actividades] = await Promise.all([
+    prisma.prestamo.findMany({
+      where: { ...baseWhere, cliente: { ruta: { cobradorId } } },
+      select: { id: true, montoSeguro: true },
+    }),
+    prisma.actividadLog.findMany({
+      where: { organizationId, userId: cobradorId, accion: 'crear_prestamo', createdAt: { gte: inicio, lt: fin } },
+      select: { entidadId: true },
+    }),
+  ])
+
+  const ids = new Map(porRuta.map(p => [p.id, p.montoSeguro || 0]))
+  const idsActividad = actividades.map(a => a.entidadId).filter(Boolean).filter(id => !ids.has(id))
+  if (idsActividad.length > 0) {
+    const extra = await prisma.prestamo.findMany({
+      where: { ...baseWhere, id: { in: idsActividad } },
+      select: { id: true, montoSeguro: true },
+    })
+    for (const p of extra) ids.set(p.id, p.montoSeguro || 0)
   }
+
+  let monto = 0
+  for (const v of ids.values()) monto += v
+  return { monto: Math.round(monto), cantidad: ids.size }
 }
 
 async function getCajaGeneralStats(organizationId, fechaColombia) {

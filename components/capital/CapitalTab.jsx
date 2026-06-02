@@ -661,19 +661,14 @@ export default function CapitalTab() {
               {/* Absorber: solo al inyectar a una ruta que ya tiene prestamos activos */}
               {modalRutaId && modalTipo === 'inyeccion' && (() => {
                 const r = porRuta.find(x => x.rutaId === modalRutaId)
-                const yaPrestado = r ? Math.max(0, (r.prestado || 0) - (r.recaudado || 0)) : 0
-                if (yaPrestado <= 0) return null
+                // Si la ruta ya absorbio sus prestamos previos una vez, no volver a ofrecer.
+                if (!r || (r.arranqueAbsorbido || 0) > 0) return null
                 return (
                   <div className="rounded-[10px] border border-[var(--color-border)] p-3" style={{ background: 'var(--color-bg-base)' }}>
                     <label className="flex items-start gap-2 cursor-pointer">
                       <input type="checkbox" checked={modalAbsorber} onChange={(e) => setModalAbsorber(e.target.checked)} className="mt-0.5 accent-[#6366f1]" />
                       <span className="text-xs text-[var(--color-text-secondary)]">
-                        Esta ruta ya tiene préstamos activos. Descontar lo pendiente de esta inyección.
-                        {Number(modalMonto) > 0 && (
-                          <span className="block mt-1 text-[var(--color-text-muted)]">
-                            Disponible quedaría: <span className="font-semibold" style={{ color: 'var(--color-info)' }}>{formatMoney(Math.max(0, Number(modalMonto) - yaPrestado))}</span>
-                          </span>
-                        )}
+                        Si esta ruta ya tiene préstamos activos de antes, descontar lo que falta por cobrar de esta inyección. El sistema calcula el monto exacto.
                       </span>
                     </label>
                   </div>

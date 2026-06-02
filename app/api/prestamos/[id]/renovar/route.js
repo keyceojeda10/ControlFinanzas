@@ -92,12 +92,13 @@ export async function POST(request, { params }) {
     return Response.json({ error: 'El monto del seguro no puede ser negativo' }, { status: 400 })
   }
 
-  // Calcular valores del préstamo nuevo
-  const calcRenov = calcularPrestamo({
+  // Calcular valores del préstamo nuevo.
+  // IMPORTANTE: el seguro NO se suma a totalAPagar (igual que en crear normal);
+  // se guarda en su campo `montoSeguro` aparte. Asi el saldo pendiente y el
+  // cierre del prestamo se comportan identico a los prestamos normales.
+  const { totalAPagar, cuotaDiaria, fechaFin } = calcularPrestamo({
     montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia: freq, modoInteres: modoRenovacion,
   })
-  const { cuotaDiaria, fechaFin } = calcRenov
-  const totalAPagar = calcRenov.totalAPagar + montoSeguroNum
 
   const diferencia = Number(montoPrestado) - saldoPendiente // lo que recibe en mano
 
