@@ -110,8 +110,39 @@ export default function WhatsAppBotDashboard() {
         ))}
       </div>
 
+      {/* KPIs de conversion */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: 'Leads calientes', value: data.leadsCalientes ?? 0, color: '#ef4444', href: '/admin/whatsapp-bot/chats?filtro=calientes' },
+          { label: 'Clientes registrados', value: data.registrados ?? 0, color: '#10b981' },
+          { label: 'Conversion', value: `${data.tasaConversion ?? 0}%`, color: '#f5c518' },
+        ].map(({ label, value, color, href }) => {
+          const inner = (
+            <>
+              <p className="text-[10px] text-[var(--color-text-muted)]">{label}</p>
+              <p className="text-base font-bold mt-0.5" style={{ color }}>{value}</p>
+            </>
+          )
+          return href ? (
+            <Link key={label} href={href} className="border border-[var(--color-border)] rounded-[12px] px-3 py-3 text-center hover:bg-[rgba(255,255,255,0.03)] transition-all">
+              {inner}
+            </Link>
+          ) : (
+            <div key={label} className="border border-[var(--color-border)] rounded-[12px] px-3 py-3 text-center">
+              {inner}
+            </div>
+          )
+        })}
+      </div>
+
       {/* Acciones rapidas */}
-      <div className="flex gap-3">
+      <div className="flex gap-3 flex-wrap">
+        <Link
+          href="/admin/whatsapp-bot/chats"
+          className="px-4 py-2 rounded-[10px] text-sm font-medium bg-[rgba(16,185,129,0.15)] text-[#10b981] hover:bg-[rgba(16,185,129,0.25)] transition-all"
+        >
+          Ver chats
+        </Link>
         <button
           onClick={toggleBot}
           disabled={toggleando}

@@ -17,6 +17,7 @@ import * as wa from '@/lib/bot/whatsapp-cloud'
 import { transcribirAudio } from '@/lib/bot/transcribe'
 import { responder } from '@/lib/bot/sales-agent'
 import { alertarLeadCaliente } from '@/lib/bot/alertas'
+import { guardarMedia } from '@/lib/bot/media-store'
 
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN
 const APP_SECRET = process.env.WHATSAPP_APP_SECRET
@@ -87,13 +88,39 @@ async function procesarEventos(body) {
     for (const change of changes) {
       const value = change.value || {}
       const mensajes = value.messages || []
-      // value.statuses[] son acks de entrega/lectura: los ignoramos por ahora.
       for (const msg of mensajes) {
         await procesarMensaje(msg).catch(e =>
           console.error('[WA Cloud Webhook] Error en mensaje:', e.message)
         )
       }
+      // Llamadas entrantes (Business Calling API): solo NOTIFICAR, no contestar.
+      const llamadas = value.calls || []
+      for (const call of llamadas) {
+        await procesarLlamada(call).catch(e =>
+          console.error('[WA Cloud Webhook] Error en llamada:', e.message)
+        )
+      }
+      // value.statuses[] (acks de entrega/lectura): se ignoran por ahora.
     }
+  }
+}
+
+// Registra una llamada entrante y notifica (sin contestar en el panel).
+async function procesarLlamada(call) {
+  const fromRaw = call.from || ''
+  const telefono = await wa.resolverTelefono(fromRaw)
+  const lead = await buscarLeadPorTelefono(telefono || fromRaw)
+  const evento = (call.event || call.status || 'llamada').toLowerCase()
+  // Solo nos interesa el inicio de la llamada
+  if (evento && !['connect', 'ringing', 'offer', 'initiated', 'llamada'].includes(evento)) return
+
+  if (lead) {
+    await prisma.botConversacion.create({
+      data: { botLeadId: lead.id, rol: 'lead', texto: '[Llamada entrante de WhatsApp]', tipoMensaje: 'call' },
+    }).catch(() => {})
+    await alertarLeadCaliente(lead, 'Llamada entrante de WhatsApp — el lead intento llamar.', []).catch(() => {})
+  } else {
+    console.log(`[WA Cloud] Llamada entrante de ${fromRaw} (no es lead conocido).`)
   }
 }
 
@@ -155,13 +182,20 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
   let tipoMensaje = 'chat'
   let imagenBase64 = null
   let imagenMime = null
+  // Campos de media a persistir (ruta en disco) para verlos luego en el panel.
+  let media = { mediaPath: null, mediaTipo: null, mediaMime: null }
 
   if (tipo === 'text') {
     texto = msg.text?.body || ''
   } else if (tipo === 'audio') {
     tipoMensaje = 'audio'
-    const media = await wa.downloadMedia(msg.audio?.id)
-    const trans = media ? await transcribirAudio(media.base64, media.mimetype) : { texto: '', costoUsd: 0 }
+    const dl = await wa.downloadMedia(msg.audio?.id)
+    if (dl) {
+      // Guardar el audio en disco para reproducirlo en el panel
+      const saved = guardarMedia(dl.base64, dl.mimetype)
+      if (saved) media = { mediaPath: saved.path, mediaTipo: saved.tipo, mediaMime: saved.mime }
+    }
+    const trans = dl ? await transcribirAudio(dl.base64, dl.mimetype) : { texto: '', costoUsd: 0 }
     if (trans.costoUsd > 0) {
       await prisma.botGastoApi.create({
         data: { proveedor: 'groq', modelo: 'whisper-large-v3-turbo', costoUsd: trans.costoUsd },
@@ -169,20 +203,24 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
     }
     if (!trans.texto) {
       await prisma.botConversacion.create({
-        data: { botLeadId: lead.id, rol: 'lead', texto: '[nota de voz no transcrita]', tipoMensaje: 'audio', messageId },
+        data: { botLeadId: lead.id, rol: 'lead', texto: '[nota de voz]', tipoMensaje: 'audio', messageId, ...media },
       })
       return
     }
     texto = trans.texto
   } else if (tipo === 'image') {
     tipoMensaje = 'image'
-    const media = await wa.downloadMedia(msg.image?.id)
-    imagenBase64 = media?.base64 || null
-    imagenMime = media?.mimetype || 'image/jpeg'
+    const dl = await wa.downloadMedia(msg.image?.id)
+    imagenBase64 = dl?.base64 || null
+    imagenMime = dl?.mimetype || 'image/jpeg'
+    if (dl) {
+      const saved = guardarMedia(dl.base64, dl.mimetype)
+      if (saved) media = { mediaPath: saved.path, mediaTipo: saved.tipo, mediaMime: saved.mime }
+    }
     if (msg.image?.caption) texto = msg.image.caption
     if (!imagenBase64) {
       await prisma.botConversacion.create({
-        data: { botLeadId: lead.id, rol: 'lead', texto: texto || '[imagen no legible]', tipoMensaje: 'image', messageId },
+        data: { botLeadId: lead.id, rol: 'lead', texto: texto || '[imagen no legible]', tipoMensaje: 'image', messageId, ...media },
       })
       return
     }
@@ -190,7 +228,7 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
 
   // Guardar mensaje entrante
   await prisma.botConversacion.create({
-    data: { botLeadId: lead.id, rol: 'lead', texto, tipoMensaje, messageId },
+    data: { botLeadId: lead.id, rol: 'lead', texto, tipoMensaje, messageId, ...media },
   })
 
   // Marcar leido (no critico)

@@ -664,10 +664,14 @@ model BotLead {
 model BotConversacion {
   id          String   @id @default(cuid())
   botLeadId   String
-  rol         String
+  rol         String   // "bot" | "lead" | "admin"
   texto       String   @db.Text
-  tipoMensaje String   @default("chat")
+  tipoMensaje String   @default("chat") // "chat" | "audio" | "image" | "document" | "call"
   messageId   String?
+  mediaPath   String?  // ruta relativa del archivo en disco del VPS (uploads/wa/...)
+  mediaTipo   String?  // "image" | "audio" | "document"
+  mediaMime   String?  // mimetype original (image/jpeg, audio/ogg, ...)
+  mediaWamid  String?  // id del media en Meta (opcional)
   createdAt   DateTime @default(now())
 
   botLead BotLead @relation(fields: [botLeadId], references: [id], onDelete: Cascade)

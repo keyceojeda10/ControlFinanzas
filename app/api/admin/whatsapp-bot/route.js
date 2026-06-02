@@ -4,6 +4,9 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { healthCheck } from '@/lib/bot/whatsapp-cloud'
+import { getTelefonosRegistrados, estaRegistrado } from '@/lib/bot/conversion'
+
+const TEMP_CALIENTE = 60
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -37,6 +40,20 @@ export async function GET() {
   const respondieron = (estados.interesado || 0) + (estados.cerrado || 0)
   const tasaRespuesta = contactados > 0 ? +(respondieron / contactados * 100).toFixed(1) : 0
 
+  // Leads calientes (temperatura alta) y conversion real (cruce con User registrado)
+  const leadsCalientes = await prisma.botLead.count({
+    where: { temperatura: { gte: TEMP_CALIENTE }, estado: { notIn: ['bloqueado', 'no_interesado'] } },
+  })
+
+  let registrados = 0
+  let tasaConversion = 0
+  try {
+    const setReg = await getTelefonosRegistrados()
+    const todos = await prisma.botLead.findMany({ select: { telefono: true } })
+    registrados = todos.filter(l => estaRegistrado(l.telefono, setReg)).length
+    tasaConversion = totalLeads > 0 ? +(registrados / totalLeads * 100).toFixed(1) : 0
+  } catch {}
+
   // Estado de la WhatsApp Cloud API (no bloquear si falla)
   let whatsappCloud = { ok: false, status: 'desconocido' }
   try {
@@ -53,5 +70,8 @@ export async function GET() {
     botActivo: config?.botActivo ?? true,
     whatsappCloud,
     ultimosLeads,
+    leadsCalientes,
+    registrados,
+    tasaConversion,
   })
 }
