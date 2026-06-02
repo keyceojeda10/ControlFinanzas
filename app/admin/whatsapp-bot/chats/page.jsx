@@ -146,6 +146,7 @@ function ChatPanel({ lead, onBack, onUpdate }) {
   const chatRef = useRef(null)
   const fileRef = useRef(null)
   const mediaRecRef = useRef(null)
+  const cancelarRef = useRef(false)
 
   const cargar = useCallback(() => {
     fetch(`/api/admin/whatsapp-bot/leads/${lead.id}/conversacion`)
@@ -225,12 +226,14 @@ function ChatPanel({ lead, onBack, onUpdate }) {
   async function toggleGrabacion() {
     // Si esta grabando -> detener y enviar
     if (grabando) {
+      cancelarRef.current = false
       mediaRecRef.current?.stop()
       return
     }
     // Iniciar grabacion
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      cancelarRef.current = false
       // WhatsApp/Meta acepta audio/ogg (opus) y audio/mp4; usamos lo que soporte el navegador
       const mime = MediaRecorder.isTypeSupported('audio/ogg;codecs=opus') ? 'audio/ogg;codecs=opus'
         : MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
@@ -241,6 +244,7 @@ function ChatPanel({ lead, onBack, onUpdate }) {
       rec.onstop = async () => {
         stream.getTracks().forEach(t => t.stop())
         setGrabando(false)
+        if (cancelarRef.current) return // cancelada: descartar sin enviar
         // Mandar el audio con su tipo NATIVO (webm/ogg/mp4). El servidor lo
         // convierte a ogg/opus con ffmpeg antes de enviarlo a Meta.
         const tipoNativo = mime.split(';')[0]
@@ -255,6 +259,11 @@ function ChatPanel({ lead, onBack, onUpdate }) {
     } catch {
       setAviso('No se pudo acceder al microfono. Revisa los permisos del navegador.')
     }
+  }
+
+  function cancelarGrabacion() {
+    cancelarRef.current = true
+    mediaRecRef.current?.stop()
   }
 
   return (
@@ -301,11 +310,16 @@ function ChatPanel({ lead, onBack, onUpdate }) {
       <div className="flex items-center gap-2 p-2 border-t border-[var(--color-border)]">
         <input ref={fileRef} type="file" accept="image/*,audio/*,application/pdf" onChange={enviarArchivo} className="hidden" />
         {grabando ? (
-          <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-[20px] bg-[rgba(239,68,68,0.12)]">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444] animate-pulse" />
-            <span className="text-sm text-[#ef4444] flex-1">Grabando nota de voz...</span>
-            <span className="text-[11px] text-[var(--color-text-muted)]">Toca el micro para enviar</span>
-          </div>
+          <>
+            <button onClick={cancelarGrabacion} className="text-[#ef4444] hover:opacity-80 p-1.5" title="Cancelar nota de voz">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            </button>
+            <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-[20px] bg-[rgba(239,68,68,0.12)]">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444] animate-pulse" />
+              <span className="text-sm text-[#ef4444] flex-1">Grabando...</span>
+              <span className="text-[11px] text-[var(--color-text-muted)]">Cancelar o enviar</span>
+            </div>
+          </>
         ) : (
           <>
             <button onClick={() => fileRef.current?.click()} disabled={enviando} className="text-[var(--color-text-muted)] hover:text-white p-1.5" title="Adjuntar">
