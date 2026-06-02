@@ -342,6 +342,13 @@ model Suscripcion {
   montoCOP         Int
   mercadopagoId    String?
 
+  // Wompi (pasarela para Colombia, pago via Nequi). gatewayPago indica con que
+  // pasarela se cobro este periodo. wompiTransactionId = id de la transaccion
+  // aprobada (idempotencia). wompiReference = referencia unica que enviamos.
+  gatewayPago        String?   // 'wompi' | 'mercadopago'
+  wompiTransactionId String?   @unique
+  wompiReference     String?
+
   // Suscripción recurrente (MercadoPago PreApproval)
   tipo              TipoSuscripcion  @default(pago_unico)
   preapprovalId     String?          @unique
