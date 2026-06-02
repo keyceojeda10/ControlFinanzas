@@ -67,19 +67,23 @@ export default function WhatsAppBotDashboard() {
 
   if (!data) return <p className="text-[var(--color-danger)] text-sm">Error cargando datos</p>
 
-  const openwaOk = data.openwa?.status === 'CONNECTED' || data.openwa?.status === 'connected'
+  const cloud = data.whatsappCloud || {}
+  const cloudOk = cloud.ok === true
+  const cloudLabel = cloudOk
+    ? `Cloud API${cloud.phone ? ` · ${cloud.phone}` : ''}`
+    : (cloud.status === 'no_configurado' ? 'Sin configurar' : (cloud.status || 'Desconectado'))
 
   return (
     <div className="max-w-4xl mx-auto space-y-5">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-[white]">WhatsApp Bot</h1>
-          <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Bot de ventas para leads de Facebook Ads</p>
+          <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Bot comercial (WhatsApp Cloud API · Meta) para leads de Facebook Ads</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className={`w-2.5 h-2.5 rounded-full ${openwaOk ? 'bg-[#10b981]' : 'bg-[#ef4444]'}`} />
-          <span className="text-xs text-[var(--color-text-muted)]">
-            {openwaOk ? 'Conectado' : data.openwa?.status || 'Desconectado'}
+          <span className={`w-2.5 h-2.5 rounded-full ${cloudOk ? 'bg-[#10b981]' : 'bg-[#ef4444]'}`} />
+          <span className="text-xs text-[var(--color-text-muted)]" title={cloud.tier ? `Tier: ${cloud.tier}${cloud.qualityRating ? ` · Calidad: ${cloud.qualityRating}` : ''}` : ''}>
+            {cloudLabel}
           </span>
         </div>
       </div>

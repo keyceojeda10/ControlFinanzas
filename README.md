@@ -35,7 +35,7 @@ Integraciones:
 - Web Push.
 - Telegram (notificaciones y callbacks).
 - Facebook CAPI / Meta Leads.
-- Microservicio WhatsApp (Baileys, en carpeta separada).
+- Bot comercial de WhatsApp via WhatsApp Cloud API oficial (Meta).
 
 ## Estructura funcional (alto nivel)
 
@@ -46,7 +46,6 @@ Integraciones:
 - `lib`: logica compartida (auth, pagos, analytics, offline, etc).
 - `prisma`: schema, migraciones y seed.
 - `public/sw.js`: service worker para PWA/offline.
-- `baileys-service`: servicio separado para automatizacion de WhatsApp.
 
 ## Requisitos
 
@@ -308,20 +307,24 @@ curl -X POST "http://localhost:3000/api/cron/cierre-recordatorios" \
 	-H "x-cron-secret: TU_CRON_SECRET"
 ```
 
-## Servicio WhatsApp (Baileys)
+## Bot comercial de WhatsApp (Cloud API oficial de Meta)
 
-Se ejecuta aparte del frontend/backend principal:
+El bot de ventas usa la **WhatsApp Cloud API oficial** (no requiere microservicio
+ni navegador). El primer contacto en frio se hace con una **plantilla aprobada**;
+tras la respuesta del lead se abre la ventana de 24h donde el agente (Claude/DeepSeek)
+responde en texto libre. Setup paso a paso en `docs/whatsapp-cloud-setup.md`.
 
-```bash
-cd baileys-service
-npm install
-npm start
-```
+Variables de entorno relevantes:
 
-Variables relevantes del microservicio:
+- `WHATSAPP_ACCESS_TOKEN` — token permanente del System User (Meta).
+- `WHATSAPP_PHONE_NUMBER_ID` — id del numero del bot comercial.
+- `WHATSAPP_WABA_ID` — id de la cuenta de WhatsApp Business.
+- `WHATSAPP_VERIFY_TOKEN` — token para el handshake del webhook.
+- `WHATSAPP_APP_SECRET` — para validar la firma `X-Hub-Signature-256`.
+- `WHATSAPP_TEMPLATE_INICIAL` — nombre de la plantilla de primer contacto.
+- `WHATSAPP_TEMPLATE_SEGUIMIENTO` — (opcional) plantilla para seguimientos en frio.
 
-- `PORT` (default `3003`)
-- `BAILEYS_SECRET`
+Webhook entrante: `app/api/webhook/whatsapp-cloud` (GET verifica, POST recibe mensajes).
 
 ## Estado del README
 

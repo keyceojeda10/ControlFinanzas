@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { getSessionStatus } from '@/lib/bot/openwa-client'
+import { healthCheck } from '@/lib/bot/whatsapp-cloud'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -37,10 +37,10 @@ export async function GET() {
   const respondieron = (estados.interesado || 0) + (estados.cerrado || 0)
   const tasaRespuesta = contactados > 0 ? +(respondieron / contactados * 100).toFixed(1) : 0
 
-  // Estado de OpenWA (no bloquear si falla)
-  let openwaStatus = { status: 'desconocido' }
+  // Estado de la WhatsApp Cloud API (no bloquear si falla)
+  let whatsappCloud = { ok: false, status: 'desconocido' }
   try {
-    openwaStatus = await getSessionStatus()
+    whatsappCloud = await healthCheck()
   } catch {}
 
   return NextResponse.json({
@@ -51,7 +51,7 @@ export async function GET() {
     gastoHoy: +(gastoHoy._sum.costoUsd || 0).toFixed(4),
     gastoTotal: +(gastoTotal._sum.costoUsd || 0).toFixed(4),
     botActivo: config?.botActivo ?? true,
-    openwa: openwaStatus,
+    whatsappCloud,
     ultimosLeads,
   })
 }

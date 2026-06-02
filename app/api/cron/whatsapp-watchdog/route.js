@@ -1,33 +1,25 @@
 // app/api/cron/whatsapp-watchdog/route.js
-// Vigía de la sesión de WhatsApp (gateway OpenWA). Corre por cron cada ~4 min.
+// Vigía de la WhatsApp Cloud API. Corre por cron (ej. cada 30 min).
 //
-// QUÉ HACE:
-//   - Consulta el estado de la sesión (lib/bot/openwa-client.getSessionStatus).
-//   - Si está "ready" / "connected" -> todo bien, resetea contador de fallos.
-//   - Si NO -> intenta reconectar (POST /start) y cuenta el intento.
-//   - Tras MAX_INTENTOS_ANTES_ALERTA fallos seguidos (ya requiere QR humano),
-//     manda UNA alerta a Telegram (bot 'notif', canal independiente del WhatsApp
-//     que justo estaría caído). No repite la alerta hasta que se recupere.
-//
-// El estado entre ejecuciones se guarda en un archivo JSON (sin migración de DB).
-// El gateway zombie (Puppeteer "Target closed") es el caso típico: PM2 lo ve
-// "online" pero la sesión está caída — ver memoria bot_whatsapp_recuperacion.
+// Con la Cloud API oficial NO hay sesion ni QR que vigilar (a diferencia de
+// OpenWA). Lo que puede fallar es el TOKEN (expira/revocado) o que el numero
+// quede inactivo/con baja calidad. Este watchdog hace un health-check y, si el
+// token/numero no responde OK, manda UNA alerta por Telegram (canal 'notif',
+// independiente del WhatsApp). No repite la alerta hasta que se recupere.
 
 import { NextResponse } from 'next/server'
 import fs from 'fs'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
-import * as openwa from '@/lib/bot/openwa-client'
+import { healthCheck } from '@/lib/bot/whatsapp-cloud'
 import { sendMessage } from '@/lib/telegram'
 
-const STATE_FILE = '/tmp/wa-watchdog-state.json'
-const MAX_INTENTOS_ANTES_ALERTA = 2 // tras 2 ciclos sin lograr reconectar -> alerta
-const ESTADOS_OK = new Set(['ready', 'connected', 'authenticated'])
+const STATE_FILE = '/tmp/wa-cloud-watchdog-state.json'
 
 function leerEstado() {
   try {
     return JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'))
   } catch {
-    return { fallos: 0, alertado: false, ultimoStatus: null }
+    return { alertado: false, ultimoStatus: null }
   }
 }
 
@@ -35,7 +27,7 @@ function guardarEstado(s) {
   try {
     fs.writeFileSync(STATE_FILE, JSON.stringify(s))
   } catch (e) {
-    console.error('[WA Watchdog] No se pudo guardar estado:', e.message)
+    console.error('[WA Cloud Watchdog] No se pudo guardar estado:', e.message)
   }
 }
 
@@ -51,63 +43,45 @@ export async function POST(req) {
   const st = leerEstado()
 
   try {
-    const estado = await openwa.getSessionStatus()
-    const status = (estado.status || '').toLowerCase()
+    const health = await healthCheck()
 
-    // CASO 1: sesión sana
-    if (ESTADOS_OK.has(status)) {
-      // Si veníamos de una caída ya alertada, avisar que se recuperó
+    // No configurado: no alertar (aun no se ha terminado el setup de Meta).
+    if (!health.configurado) {
+      guardarEstado({ alertado: false, ultimoStatus: 'no_configurado' })
+      return NextResponse.json({ ok: false, status: 'no_configurado', accion: 'ninguna' })
+    }
+
+    if (health.ok) {
+      // Sano: si veniamos de una caida ya alertada, avisar recuperacion.
       if (st.alertado) {
         await sendMessage(
-          `✅ <b>WhatsApp reconectado</b>\n\nLa sesión del bot volvió a estar activa (status: ${status}). El bot está respondiendo de nuevo.`,
+          `✅ <b>WhatsApp Cloud reconectado</b>\n\nEl numero del bot volvio a responder OK${health.phone ? ` (${health.phone})` : ''}.`,
           null,
           'notif'
         ).catch(() => {})
       }
-      guardarEstado({ fallos: 0, alertado: false, ultimoStatus: status })
-      return NextResponse.json({ ok: true, status, accion: 'ninguna' })
+      guardarEstado({ alertado: false, ultimoStatus: 'ok' })
+      return NextResponse.json({ ok: true, status: 'ok', phone: health.phone, tier: health.tier })
     }
 
-    // CASO 2: sesión caída -> intentar reconectar
-    let reconectoIntento = null
-    try {
-      reconectoIntento = await openwa.startSession()
-    } catch (e) {
-      reconectoIntento = { error: e.message }
-    }
-
-    const fallos = (st.fallos || 0) + 1
+    // Caido: alertar una sola vez.
     let alertaEnviada = false
-
-    // Solo alertar una vez, tras varios fallos (ya necesita QR humano)
-    if (fallos >= MAX_INTENTOS_ANTES_ALERTA && !st.alertado) {
+    if (!st.alertado) {
       const r = await sendMessage(
-        `⚠️ <b>Bot de WhatsApp CAÍDO</b>\n\n` +
-        `La sesión lleva varios minutos sin conectar (status: <code>${status || 'desconocido'}</code>) y los reintentos automáticos no la levantan.\n\n` +
-        `<b>Probablemente necesita re-escanear el QR.</b> El gateway (Puppeteer) suele quedar zombie tras un "Target closed".\n\n` +
-        `Acción: reconectar la sesión y escanear el QR desde el cel del bot (573011993001). ` +
-        `Mientras tanto, los leads que escriban NO reciben respuesta.`,
+        `⚠️ <b>WhatsApp Cloud con problemas</b>\n\n` +
+        `El health-check del numero/token fallo: <code>${health.status || 'error'}</code>.\n\n` +
+        `Posibles causas: token expirado/revocado, numero inactivo o calidad baja en Meta. ` +
+        `Revisar en Meta (WhatsApp Manager / token del System User). Mientras tanto, el bot no envia.`,
         null,
         'notif'
       ).catch(() => null)
       alertaEnviada = Boolean(r && r.ok)
     }
 
-    guardarEstado({
-      fallos,
-      alertado: st.alertado || alertaEnviada,
-      ultimoStatus: status,
-    })
-
-    return NextResponse.json({
-      ok: false,
-      status,
-      accion: 'intento_reconexion',
-      fallos,
-      alertaEnviada,
-    })
+    guardarEstado({ alertado: st.alertado || alertaEnviada, ultimoStatus: health.status })
+    return NextResponse.json({ ok: false, status: health.status, alertaEnviada })
   } catch (err) {
-    console.error('[WA Watchdog] Error:', err.message)
+    console.error('[WA Cloud Watchdog] Error:', err.message)
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
