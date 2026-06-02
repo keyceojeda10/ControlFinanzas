@@ -142,8 +142,10 @@ function ChatPanel({ lead, onBack, onUpdate }) {
   const [enviando, setEnviando] = useState(false)
   const [botActivo, setBotActivo] = useState(lead.botActivo)
   const [aviso, setAviso] = useState('')
+  const [grabando, setGrabando] = useState(false)
   const chatRef = useRef(null)
   const fileRef = useRef(null)
+  const mediaRecRef = useRef(null)
 
   const cargar = useCallback(() => {
     fetch(`/api/admin/whatsapp-bot/leads/${lead.id}/conversacion`)
@@ -197,22 +199,61 @@ function ChatPanel({ lead, onBack, onUpdate }) {
     }
   }
 
-  async function enviarArchivo(e) {
-    const file = e.target.files?.[0]
-    if (!file) return
+  async function enviarBlob(blob, filename) {
     setEnviando(true); setAviso('')
     try {
       const fd = new FormData()
-      fd.append('file', file)
+      fd.append('file', blob, filename)
       const res = await fetch(`/api/admin/whatsapp-bot/leads/${lead.id}/send`, { method: 'POST', body: fd })
       const r = await res.json()
-      if (!res.ok) setAviso(r.mensaje || r.error || 'No se pudo enviar el archivo')
+      if (!res.ok) setAviso(r.mensaje || r.error || 'No se pudo enviar')
       else cargar()
     } catch {
       setAviso('Error de red')
     } finally {
       setEnviando(false)
-      if (fileRef.current) fileRef.current.value = ''
+    }
+  }
+
+  async function enviarArchivo(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    await enviarBlob(file, file.name)
+    if (fileRef.current) fileRef.current.value = ''
+  }
+
+  async function toggleGrabacion() {
+    // Si esta grabando -> detener y enviar
+    if (grabando) {
+      mediaRecRef.current?.stop()
+      return
+    }
+    // Iniciar grabacion
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      // WhatsApp/Meta acepta audio/ogg (opus) y audio/mp4; usamos lo que soporte el navegador
+      const mime = MediaRecorder.isTypeSupported('audio/ogg;codecs=opus') ? 'audio/ogg;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
+        : 'audio/mp4'
+      const rec = new MediaRecorder(stream, { mimeType: mime })
+      const chunks = []
+      rec.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data) }
+      rec.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop())
+        setGrabando(false)
+        const tipo = mime.split(';')[0]
+        // Meta no acepta webm; si grabamos webm lo mandamos igual como ogg (el navegador
+        // de Chrome produce opus en ambos). Para maxima compatibilidad usamos extension por mime.
+        const ext = tipo.includes('ogg') ? 'ogg' : tipo.includes('mp4') ? 'm4a' : 'webm'
+        const blob = new Blob(chunks, { type: tipo })
+        await enviarBlob(blob, `nota-voz.${ext}`)
+      }
+      mediaRecRef.current = rec
+      rec.start()
+      setGrabando(true)
+      setAviso('')
+    } catch {
+      setAviso('No se pudo acceder al microfono. Revisa los permisos del navegador.')
     }
   }
 
@@ -259,19 +300,40 @@ function ChatPanel({ lead, onBack, onUpdate }) {
       {/* Input */}
       <div className="flex items-center gap-2 p-2 border-t border-[var(--color-border)]">
         <input ref={fileRef} type="file" accept="image/*,audio/*,application/pdf" onChange={enviarArchivo} className="hidden" />
-        <button onClick={() => fileRef.current?.click()} disabled={enviando} className="text-[var(--color-text-muted)] hover:text-white p-1.5" title="Adjuntar">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-        </button>
-        <input
-          value={texto}
-          onChange={e => setTexto(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar() } }}
-          placeholder="Escribe un mensaje..."
-          className="flex-1 px-3 py-2 rounded-[20px] bg-[rgba(255,255,255,0.05)] text-sm text-white placeholder:text-[var(--color-text-muted)] outline-none"
-        />
-        <button onClick={enviar} disabled={enviando || !texto.trim()} className="bg-[#10b981] disabled:opacity-40 text-white rounded-full p-2" title="Enviar">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
-        </button>
+        {grabando ? (
+          <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-[20px] bg-[rgba(239,68,68,0.12)]">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444] animate-pulse" />
+            <span className="text-sm text-[#ef4444] flex-1">Grabando nota de voz...</span>
+            <span className="text-[11px] text-[var(--color-text-muted)]">Toca el micro para enviar</span>
+          </div>
+        ) : (
+          <>
+            <button onClick={() => fileRef.current?.click()} disabled={enviando} className="text-[var(--color-text-muted)] hover:text-white p-1.5" title="Adjuntar">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+            </button>
+            <input
+              value={texto}
+              onChange={e => setTexto(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar() } }}
+              placeholder="Escribe un mensaje..."
+              className="flex-1 px-3 py-2 rounded-[20px] bg-[rgba(255,255,255,0.05)] text-sm text-white placeholder:text-[var(--color-text-muted)] outline-none"
+            />
+          </>
+        )}
+        {/* Boton: si hay texto -> enviar; si no -> grabar/parar nota de voz */}
+        {texto.trim() && !grabando ? (
+          <button onClick={enviar} disabled={enviando} className="bg-[#10b981] disabled:opacity-40 text-white rounded-full p-2" title="Enviar">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+          </button>
+        ) : (
+          <button onClick={toggleGrabacion} disabled={enviando} className={`rounded-full p-2 text-white disabled:opacity-40 ${grabando ? 'bg-[#ef4444]' : 'bg-[#10b981]'}`} title={grabando ? 'Detener y enviar' : 'Grabar nota de voz'}>
+            {grabando ? (
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
+            ) : (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-14 0m7 7v3m0-3a4 4 0 01-4-4V7a4 4 0 018 0v4a4 4 0 01-4 4z" /></svg>
+            )}
+          </button>
+        )}
       </div>
     </>
   )
