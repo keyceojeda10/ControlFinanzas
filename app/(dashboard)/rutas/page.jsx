@@ -66,7 +66,7 @@ export default function RutasPage() {
     }, 700)
   }, [])
 
-  // Drag desktop
+  // Drag desktop (mouse)
   const onDragStart = (i) => setDragIndex(i)
   const onDragOver  = (e, i) => { e.preventDefault(); setDragOverIdx(i) }
   const onDrop = (i) => {
@@ -79,6 +79,77 @@ export default function RutasPage() {
     setDragIndex(null); setDragOverIdx(null)
   }
   const onDragEnd = () => { setDragIndex(null); setDragOverIdx(null) }
+
+  // Drag tactil (movil) — el drag nativo HTML5 no funciona con el dedo
+  const listaRef = useRef(null)
+  const tStart = useRef(null)
+  const tNode = useRef(null)
+  const tClone = useRef(null)
+  const tIndex = useRef(null)
+  const tOver = useRef(null)
+
+  const onTouchStart = (e, i) => {
+    const touch = e.touches[0]
+    tStart.current = { y: touch.clientY, started: false, offsetY: null }
+    tIndex.current = i
+    tNode.current = e.currentTarget
+  }
+  const onTouchMove = (e) => {
+    if (tIndex.current === null || !tStart.current) return
+    const touch = e.touches[0]
+    const dy = Math.abs(touch.clientY - tStart.current.y)
+    if (!tStart.current.started && dy < 8) return
+    e.preventDefault()
+    if (!tStart.current.started) {
+      tStart.current.started = true
+      setDragIndex(tIndex.current)
+      const node = tNode.current
+      if (node) {
+        const rect = node.getBoundingClientRect()
+        const clone = node.cloneNode(true)
+        clone.style.position = 'fixed'
+        clone.style.left = `${rect.left}px`
+        clone.style.width = `${rect.width}px`
+        clone.style.top = `${rect.top}px`
+        clone.style.zIndex = '9999'
+        clone.style.opacity = '0.95'
+        clone.style.transform = 'scale(1.02)'
+        clone.style.boxShadow = '0 8px 32px rgba(0,0,0,0.5)'
+        clone.style.border = '1px solid var(--color-accent)'
+        clone.style.pointerEvents = 'none'
+        clone.style.transition = 'none'
+        document.body.appendChild(clone)
+        tClone.current = clone
+        tStart.current.offsetY = touch.clientY - rect.top
+      }
+    }
+    if (tClone.current && tStart.current.offsetY != null) {
+      tClone.current.style.top = `${touch.clientY - tStart.current.offsetY}px`
+    }
+    if (listaRef.current) {
+      const items = listaRef.current.querySelectorAll('[data-idx]')
+      for (const item of items) {
+        const rect = item.getBoundingClientRect()
+        if (touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+          const overIdx = parseInt(item.dataset.idx)
+          if (overIdx !== tOver.current) { tOver.current = overIdx; setDragOverIdx(overIdx) }
+          break
+        }
+      }
+    }
+  }
+  const onTouchEnd = () => {
+    if (tClone.current) { document.body.removeChild(tClone.current); tClone.current = null }
+    if (tIndex.current !== null && tOver.current !== null && tIndex.current !== tOver.current) {
+      const lista = [...rutas]
+      const [moved] = lista.splice(tIndex.current, 1)
+      lista.splice(tOver.current, 0, moved)
+      setRutas(lista)
+      guardarOrdenRutas(lista)
+    }
+    tStart.current = null; tIndex.current = null; tNode.current = null; tOver.current = null
+    setDragIndex(null); setDragOverIdx(null)
+  }
 
   // Mover con botones (subir/bajar) — mas simple y a prueba de fallos en movil
   const moverRuta = (i, dir) => {
@@ -440,25 +511,30 @@ export default function RutasPage() {
 
       {/* Modo ordenar: cards no clicables, con grip (drag) y flechas subir/bajar */}
       {!loading && rutas.length > 0 && modoOrdenar && (
-        <div className="space-y-2">
+        <div className="space-y-2" ref={listaRef}>
           {rutas.map((r, i) => (
             <div
               key={r.id}
+              data-idx={i}
               draggable
               onDragStart={() => onDragStart(i)}
               onDragOver={(e) => onDragOver(e, i)}
               onDrop={() => onDrop(i)}
               onDragEnd={onDragEnd}
+              onTouchStart={(e) => onTouchStart(e, i)}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
               className="flex items-center gap-2 px-3 py-3 rounded-[12px] border transition-all"
               style={{
                 background: 'var(--color-bg-card)',
                 borderColor: dragOverIdx === i ? 'var(--color-accent)' : 'var(--color-border)',
                 opacity: dragIndex === i ? 0.5 : 1,
                 cursor: 'grab',
+                touchAction: 'none',
               }}
             >
               {/* Grip */}
-              <svg className="w-5 h-5 shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="currentColor" viewBox="0 0 24 24">
                 <circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/>
                 <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
                 <circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/>
