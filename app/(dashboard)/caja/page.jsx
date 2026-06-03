@@ -62,7 +62,7 @@ export default function CajaPage() {
   const searchParams = useSearchParams()
   const fechaParam = searchParams.get('fecha')
   const tabParam = searchParams.get('tab')
-  const { esCobrador, esOwner, session, puedeReportarGastos, puedeVerSaldoCaja, puedeVerCapital, loading: authLoading } = useAuth()
+  const { esCobrador, esOwner, session, puedeReportarGastos, puedeVerSaldoCaja, puedeVerCapital, puedeVerCapitalRuta, loading: authLoading } = useAuth()
   const ownerId = session?.user?.id ?? null
 
   const { lastSyncedAt } = useOffline()
@@ -308,6 +308,7 @@ export default function CajaPage() {
   const stats = cajaData?.stats?.dia || {}
   const cajaGeneral = cajaData?.stats?.cajaGeneral || {}
   const capitalOrganizacion = cajaData?.stats?.capitalOrganizacion || null
+  const capitalRutas = cajaData?.stats?.capitalRutas || null
   const cierres = cajaData?.cierres || []
   const cobradores = cajaData?.cobradores || []
   const disponibleOperativo = stats.disponibleOperativo ?? ((stats.recogida || 0) - (stats.gastos || 0))
@@ -464,6 +465,31 @@ export default function CajaPage() {
                 <p className="text-sm font-bold font-mono-display text-[var(--color-warning)]">{formatMoney(capitalOrganizacion.carteraActiva || 0)}</p>
               </div>
             </div>
+          </Card>
+        )}
+
+        {/* Capital de SU(S) ruta(s) (cobrador con permiso verCapitalRuta) */}
+        {puedeVerCapitalRuta && capitalRutas && (
+          <Card>
+            <div className="mb-2">
+              <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
+                {capitalRutas.rutas.length > 1 ? 'Capital de mis rutas' : 'Capital de mi ruta'}
+              </p>
+              <p className="text-[11px] text-[var(--color-text-muted)]">Dinero asignado a tu ruta para prestar</p>
+            </div>
+            <p className="text-2xl font-bold font-mono-display text-[var(--color-info)]">
+              {formatMoney(capitalRutas.total || 0)}
+            </p>
+            {capitalRutas.rutas.length > 1 && (
+              <div className="mt-3 pt-3 border-t border-[var(--color-border)] space-y-1.5">
+                {capitalRutas.rutas.map(r => (
+                  <div key={r.id} className="flex items-center justify-between">
+                    <span className="text-[12px] text-[var(--color-text-muted)] truncate">{r.nombre}</span>
+                    <span className="text-sm font-bold font-mono-display text-[var(--color-text-primary)]">{formatMoney(r.saldoCapital)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </Card>
         )}
 

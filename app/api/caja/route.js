@@ -725,6 +725,24 @@ export async function GET(request) {
     }
   }
 
+  // Cobrador con permiso verCapitalRuta: ve SOLO el capital de SU(S) ruta(s).
+  // Muestra la suma total + el desglose por ruta. No ve el capital global.
+  if (rol === 'cobrador' && permisos?.verCapitalRuta) {
+    const rutaIds = session.user.rutaIds ?? []
+    if (rutaIds.length > 0) {
+      const rutasCobrador = await prisma.ruta.findMany({
+        where: { id: { in: rutaIds }, organizationId },
+        select: { id: true, nombre: true, saldoCapital: true },
+        orderBy: { orden: 'asc' },
+      })
+      const total = rutasCobrador.reduce((a, r) => a + (r.saldoCapital || 0), 0)
+      payload.stats.capitalRutas = {
+        total: Math.round(total),
+        rutas: rutasCobrador.map(r => ({ id: r.id, nombre: r.nombre, saldoCapital: Math.round(r.saldoCapital || 0) })),
+      }
+    }
+  }
+
   return Response.json(payload)
 }
 

@@ -62,6 +62,7 @@ function EditarCobradorInner({ params }) {
     crearClientes:  false,
     editarClientes: false,
     verCapital:     false,
+    verCapitalRuta: false,
     verSaldoCaja:   false,
     gestionarRutas: false,
   })
@@ -86,6 +87,7 @@ function EditarCobradorInner({ params }) {
             crearClientes:  data.permisos.crearClientes  ?? false,
             editarClientes: data.permisos.editarClientes ?? false,
             verCapital:     data.permisos.verCapital     ?? false,
+            verCapitalRuta: data.permisos.verCapitalRuta ?? false,
             verSaldoCaja:   data.permisos.verSaldoCaja   ?? false,
             gestionarRutas: data.permisos.gestionarRutas ?? false,
           })
@@ -278,7 +280,8 @@ function EditarCobradorInner({ params }) {
               { key: 'crearClientes',  label: 'Crear clientes',  desc: 'Puede registrar nuevos clientes (se asignan a su ruta)' },
               { key: 'editarClientes', label: 'Editar clientes', desc: 'Puede modificar datos como teléfono, dirección, etc.' },
               { key: 'verSaldoCaja',   label: 'Ver saldo en caja', desc: 'Muestra al cobrador el mismo saldo en caja que ve el administrador (dinero disponible ahora para prestar)' },
-              { key: 'verCapital',     label: 'Ver capital total de la organización', desc: 'Muestra el patrimonio completo (saldo en caja + cartera activa). Más sensible que el saldo en caja' },
+              { key: 'verCapitalRuta', label: 'Ver capital de su ruta', desc: 'Muestra al cobrador solo el capital/saldo de la(s) ruta(s) que tiene asignada(s), no el de toda la organización' },
+              { key: 'verCapital',     label: 'Ver capital total de la organización', desc: 'Muestra el patrimonio completo (saldo en caja + cartera activa) de TODA la organización. Más sensible' },
               { key: 'gestionarRutas', label: 'Gestionar clientes en rutas', desc: 'Permite añadir y quitar clientes de sus rutas asignadas (para rotar clientes por día)' },
             ].map((p) => (
               <div key={p.key} className="flex items-start justify-between gap-3">

@@ -135,6 +135,7 @@ model User {
   puedeEditarClientes     Boolean   @default(false)
   puedeReportarGastos     Boolean   @default(true)
   puedeVerCapital         Boolean   @default(false)
+  puedeVerCapitalRuta     Boolean   @default(false) // ver capital/caja SOLO de su(s) ruta(s)
   puedeVerSaldoCaja       Boolean   @default(false)
   puedeGestionarRutas     Boolean   @default(false)
   emailsMarketing         Boolean   @default(true)

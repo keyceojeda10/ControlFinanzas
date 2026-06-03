@@ -95,6 +95,7 @@ export async function GET(request, { params }) {
       editarClientes: cobrador.puedeEditarClientes,
       reportarGastos: cobrador.puedeReportarGastos ?? true,
       verCapital:     cobrador.puedeVerCapital ?? false,
+      verCapitalRuta: cobrador.puedeVerCapitalRuta ?? false,
       verSaldoCaja:   cobrador.puedeVerSaldoCaja ?? false,
       gestionarRutas: cobrador.puedeGestionarRutas ?? false,
     },
@@ -170,6 +171,7 @@ export async function PATCH(request, { params }) {
     if (p.editarClientes !== undefined) data.puedeEditarClientes = Boolean(p.editarClientes)
     if (p.reportarGastos !== undefined) data.puedeReportarGastos = Boolean(p.reportarGastos)
     if (p.verCapital !== undefined)     data.puedeVerCapital     = Boolean(p.verCapital)
+    if (p.verCapitalRuta !== undefined) data.puedeVerCapitalRuta = Boolean(p.verCapitalRuta)
     if (p.verSaldoCaja !== undefined)   data.puedeVerSaldoCaja   = Boolean(p.verSaldoCaja)
     if (p.gestionarRutas !== undefined) data.puedeGestionarRutas = Boolean(p.gestionarRutas)
 
@@ -186,7 +188,7 @@ export async function PATCH(request, { params }) {
     where: { id },
     data,
     select: { id: true, nombre: true, email: true, telefono: true, activo: true,
-      puedeCrearPrestamos: true, puedeGestionarPrestamos: true, puedeCrearClientes: true, puedeEditarClientes: true, puedeReportarGastos: true, puedeVerCapital: true, puedeVerSaldoCaja: true, puedeGestionarRutas: true },
+      puedeCrearPrestamos: true, puedeGestionarPrestamos: true, puedeCrearClientes: true, puedeEditarClientes: true, puedeReportarGastos: true, puedeVerCapital: true, puedeVerCapitalRuta: true, puedeVerSaldoCaja: true, puedeGestionarRutas: true },
   })
 
   return Response.json(actualizado)
