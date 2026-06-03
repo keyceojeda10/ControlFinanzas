@@ -131,40 +131,25 @@ export async function POST(request, { params }) {
       }
     }
 
-    // 1. Liquidar el préstamo viejo: crear un pago tipo 'completo' por el saldo
+    // 1. Saldar el préstamo viejo SIN registrar un "pago" de dinero.
+    // IMPORTANTE: el saldo viejo NO es efectivo que recoja el cobrador (es un
+    // "abono falso" si se contara). Por eso NO creamos un pago tipo 'completo'
+    // (que inflaria el recaudado del dia y el cierre de caja). En su lugar
+    // ajustamos totalAPagar del viejo = lo realmente pagado, para que su saldo
+    // quede en 0, y lo marcamos completado. El saldo viejo se "absorbe" en el
+    // prestamo nuevo (que se desembolsa por el monto total).
     if (saldoPendiente > 0) {
-      await tx.pago.create({
-        data: {
-          prestamoId,
-          organizationId,
-          cobradorId: userId,
-          montoPagado: saldoPendiente,
-          tipo: 'completo',
-          nota: `Liquidación por renovación`,
-          fechaPago: new Date(),
-        },
+      const totalPagadoViejo = original.pagos
+        .filter(p => !['recargo', 'descuento'].includes(p.tipo))
+        .reduce((a, p) => a + p.montoPagado, 0)
+      await tx.prestamo.update({
+        where: { id: prestamoId },
+        data: { totalAPagar: Math.round(totalPagadoViejo), estado: 'completado' },
       })
-      // Refrescar denormalizados del prestamo viejo.
-      await refrescarTotalesPrestamo(tx, prestamoId)
-    }
-
-    // 2. Marcar el préstamo viejo como completado
-    await tx.prestamo.update({
-      where: { id: prestamoId },
-      data:  { estado: 'completado' },
-    })
-
-    // 3. Registrar recaudo del saldo liquidado en capital (si había saldo)
-    if (saldoPendiente > 0) {
-      await registrarMovimientoCapital(tx, {
-        organizationId,
-        tipo: 'recaudo',
-        monto: saldoPendiente,
-        descripcion: `Liquidación por renovación - ${original.cliente.nombre}`,
-        referenciaId: prestamoId,
-        referenciaTipo: 'pago',
-        rutaId: original.cliente?.rutaId || null,
-        creadoPorId: userId,
+    } else {
+      await tx.prestamo.update({
+        where: { id: prestamoId },
+        data: { estado: 'completado' },
       })
     }
 
@@ -188,17 +173,23 @@ export async function POST(request, { params }) {
       },
     })
 
-    // 5. Registrar desembolso del nuevo préstamo en capital
-    await registrarMovimientoCapital(tx, {
-      organizationId,
-      tipo: 'desembolso',
-      monto: Number(montoPrestado),
-      descripcion: `Desembolso por renovación - ${original.cliente.nombre}`,
-      referenciaId: nuevo.id,
-      referenciaTipo: 'prestamo',
-      rutaId: original.cliente?.rutaId || null,
-      creadoPorId: userId,
-    })
+    // 5. Registrar en capital SOLO el efectivo real que sale: la diferencia
+    // entregada en mano (monto nuevo - saldo viejo absorbido). El saldo viejo
+    // no volvio a la caja ni salio, asi que NO se registra recaudo ni se
+    // desembolsa el total. Esto mantiene el control de caja exacto (sin abono
+    // falso). Si diferencia=0 (no entrego mas), no hay movimiento de caja.
+    if (diferencia > 0) {
+      await registrarMovimientoCapital(tx, {
+        organizationId,
+        tipo: 'desembolso',
+        monto: diferencia,
+        descripcion: `Desembolso por renovación - ${original.cliente.nombre}`,
+        referenciaId: nuevo.id,
+        referenciaTipo: 'prestamo',
+        rutaId: original.cliente?.rutaId || null,
+        creadoPorId: userId,
+      })
+    }
 
     // 6. Asegurar que el cliente queda activo
     await tx.cliente.update({
