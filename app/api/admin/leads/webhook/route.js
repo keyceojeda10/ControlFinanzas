@@ -190,8 +190,17 @@ async function _processLeadInternal(leadgenId, adId, createdTime) {
 
   console.log('[Leads] Telegram enviado para:', nombre, esRetorno ? '(RETORNO)' : '')
 
+  // Validar teléfono antes de enviar al bot
+  const telDigitos = (telefono || '').replace(/\D/g, '')
+  if (/[a-zA-Z]/.test(telefono)) {
+    console.warn('[Leads] Teléfono con letras, no enviar al bot:', nombre, telefono)
+  } else if (telDigitos.length < 10) {
+    console.warn('[Leads] Teléfono muy corto (<10 dígitos), no enviar al bot:', nombre, telefono)
+  }
+
   // Enviar lead al bot de WhatsApp (integrado)
-  if (telefono && lead) {
+  const telValido = telDigitos.length >= 10 && !/[a-zA-Z]/.test(telefono)
+  if (telValido && telefono && lead) {
     procesarNuevoLead({
       cfLeadId: lead.id, nombre, telefono, cantClientes, esPrestamista, metodoActual, planInteres, anuncioId: adId, esRetorno,
     }).catch(err => console.error('[Leads] Error procesando lead en bot WhatsApp:', err.message))
