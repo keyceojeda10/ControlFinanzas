@@ -309,6 +309,7 @@ export default function PrestamoDetallePage({ params }) {
     montoParaPonerseAlDia = 0,
     pagoHoy: yaPagoHoy, pagos = [], proximoCobro,
     seguro = false, montoSeguro,
+    modoInteres, renovadoDeId,
   } = prestamo
 
   const frecuenciaLabel = {
@@ -428,6 +429,20 @@ export default function PrestamoDetallePage({ params }) {
         </svg>
         Préstamos
       </button>
+
+      {/* ── RENOVADO DE (continuidad) ────────────────────────────── */}
+      {renovadoDeId && (
+        <Link
+          href={`/prestamos/${renovadoDeId}`}
+          className="flex items-center gap-2 bg-[rgba(139,92,246,0.10)] border border-[rgba(139,92,246,0.25)] rounded-[12px] px-3 py-2 text-xs"
+          style={{ color: 'var(--color-purple)' }}
+        >
+          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Renovado del préstamo anterior — ver historial
+        </Link>
+      )}
 
       {/* ── CELEBRACIÓN ──────────────────────────────────────────── */}
       {completado && (
@@ -1346,7 +1361,7 @@ export default function PrestamoDetallePage({ params }) {
       <RenovarPrestamo
         prestamoId={id}
         saldoPendiente={saldoPendiente}
-        prestamoAnterior={{ tasaInteres, diasPlazo, frecuencia }}
+        prestamoAnterior={{ tasaInteres, diasPlazo, frecuencia, modoInteres }}
         clienteNombre={cliente?.nombre}
         open={modalRenovar}
         onClose={() => setModalRenovar(false)}

@@ -23,7 +23,10 @@ export default function RenovarPrestamo({
   const router = useRouter()
   const { formatMoney } = useCountry()
 
-  const [monto,       setMonto]       = useState('')
+  const saldo = Math.max(0, Number(saldoPendiente) || 0)
+  // Dos campos sincronizados: lo que entrega de mas (en mano) y el total que queda debiendo.
+  const [entrega,     setEntrega]     = useState('')  // dinero nuevo que recibe el cliente
+  const [monto,       setMonto]       = useState('')  // total nuevo = saldo + entrega
   const [tasa,        setTasa]        = useState(String(prestamoAnterior?.tasaInteres ?? '20'))
   const [plazo,       setPlazo]       = useState(String(prestamoAnterior?.diasPlazo ?? '30'))
   const [frecuencia,  setFrecuencia]  = useState(prestamoAnterior?.frecuencia ?? 'diario')
@@ -35,7 +38,23 @@ export default function RenovarPrestamo({
 
   const montoNum = Number(monto) || 0
   const montoSeguroNum = seguro ? (Number(montoSeguro) || 0) : 0
-  const diferencia = Math.max(0, montoNum - saldoPendiente)
+  const diferencia = Math.max(0, montoNum - saldo)
+
+  // Al cambiar "entrega": total = saldo + entrega
+  const onChangeEntrega = (v) => {
+    setEntrega(v)
+    const e = Number(v) || 0
+    setMonto(String(Math.round(saldo + e)))
+  }
+  // Al cambiar "total": entrega = total - saldo
+  const onChangeMonto = (v) => {
+    setMonto(v)
+    const t = Number(v) || 0
+    setEntrega(String(Math.max(0, Math.round(t - saldo))))
+  }
+
+  const modoHeredado = ['fijo', 'unico', 'saldo', 'manual'].includes(prestamoAnterior?.modoInteres)
+    ? prestamoAnterior.modoInteres : 'fijo'
 
   const calculo = useMemo(() => {
     if (!montoNum || !tasa || !plazo) return null
@@ -46,14 +65,15 @@ export default function RenovarPrestamo({
         diasPlazo:     Number(plazo),
         fechaInicio,
         frecuencia,
+        modoInteres:   modoHeredado,
       })
     } catch { return null }
-  }, [montoNum, tasa, plazo, fechaInicio, frecuencia])
+  }, [montoNum, tasa, plazo, fechaInicio, frecuencia, modoHeredado])
 
   const handleSubmit = async () => {
-    if (montoNum <= 0) { setError('Ingresa el nuevo monto'); return }
-    if (montoNum < saldoPendiente) {
-      setError(`El monto debe cubrir al menos el saldo pendiente (${formatMoney(saldoPendiente)})`)
+    if (montoNum <= 0) { setError('Ingresa cuánto le entregas o el total'); return }
+    if (montoNum < saldo) {
+      setError(`El total debe cubrir al menos el saldo actual (${formatMoney(saldo)})`)
       return
     }
     if (!tasa || Number(tasa) < 0) { setError('Tasa inválida'); return }
@@ -71,6 +91,7 @@ export default function RenovarPrestamo({
           diasPlazo:     Number(plazo),
           fechaInicio,
           frecuencia,
+          modoInteres:   modoHeredado,
           ...(seguro && montoSeguroNum > 0 && { seguro: true, montoSeguro: montoSeguroNum }),
         }),
       })
@@ -90,6 +111,7 @@ export default function RenovarPrestamo({
 
   const handleClose = () => {
     setMonto('')
+    setEntrega('')
     setSeguro(false)
     setMontoSeguro('')
     setError('')
@@ -97,18 +119,18 @@ export default function RenovarPrestamo({
   }
 
   return (
-    <Modal open={open} onClose={handleClose} title="Renovar préstamo">
+    <Modal open={open} onClose={handleClose} title="Renovar / prestar más">
       <div className="space-y-4">
         <p className="text-xs text-[var(--color-text-muted)]">
-          Liquida el saldo actual y crea un préstamo nuevo. El cliente recibe solo la diferencia.
+          Préstale más a este cliente. El saldo que ya debe se suma al nuevo crédito y se recalcula el interés. Recibe en mano solo lo nuevo.
         </p>
 
-        {/* Saldo a liquidar */}
+        {/* Saldo actual que se absorbe */}
         <div className="px-3 py-2.5 rounded-[10px] bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.2)]">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-[var(--color-text-muted)]">Saldo a liquidar</span>
+            <span className="text-xs text-[var(--color-text-muted)]">Saldo actual (se suma al nuevo)</span>
             <span className="text-sm font-semibold text-[var(--color-accent)] font-mono-display">
-              {formatMoney(saldoPendiente)}
+              {formatMoney(saldo)}
             </span>
           </div>
           {clienteNombre && (
@@ -116,16 +138,30 @@ export default function RenovarPrestamo({
           )}
         </div>
 
-        {/* Nuevo monto */}
-        <Input
-          label="Nuevo monto del préstamo *"
-          type="number"
-          inputMode="numeric"
-          placeholder="0"
-          value={monto}
-          onChange={(e) => setMonto(e.target.value)}
-          prefix="$"
-        />
+        {/* Dos campos sincronizados: entrega (en mano) y total que queda debiendo */}
+        <div className="grid grid-cols-2 gap-3">
+          <Input
+            label="Le entregas (en mano)"
+            type="number"
+            inputMode="numeric"
+            placeholder="0"
+            value={entrega}
+            onChange={(e) => onChangeEntrega(e.target.value)}
+            prefix="$"
+          />
+          <Input
+            label="Queda debiendo (total) *"
+            type="number"
+            inputMode="numeric"
+            placeholder="0"
+            value={monto}
+            onChange={(e) => onChangeMonto(e.target.value)}
+            prefix="$"
+          />
+        </div>
+        <p className="text-[10px] text-[var(--color-text-muted)] -mt-2">
+          Escribe lo que le entregas de más o el total que quedará debiendo; el otro se calcula solo.
+        </p>
 
         {/* Tasa / Plazo */}
         <div className="grid grid-cols-2 gap-3">
@@ -199,7 +235,7 @@ export default function RenovarPrestamo({
                 onChange={(e) => setMontoSeguro(e.target.value)}
                 prefix="$"
               />
-              <p className="text-[10px] text-[var(--color-text-muted)] mt-1">Se suma al total a pagar del nuevo prestamo.</p>
+              <p className="text-[10px] text-[var(--color-text-muted)] mt-1">Se cobra el seguro del nuevo préstamo, igual que en un préstamo nuevo.</p>
             </div>
           )}
         </div>

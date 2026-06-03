@@ -178,10 +178,12 @@ export async function POST(request, { params }) {
         totalAPagar,
         cuotaDiaria,
         frecuencia:    freq,
+        modoInteres:   modoRenovacion,    // persistir el modo usado en el calculo
         diasPlazo:     Number(diasPlazo),
         fechaInicio:   new Date(fechaInicio),
         fechaFin,
         seguro:        conSeguro,
+        renovadoDeId:  prestamoId,         // vinculo de continuidad con el prestamo anterior
         ...(conSeguro && montoSeguroNum > 0 && { montoSeguro: montoSeguroNum }),
       },
     })
