@@ -93,6 +93,15 @@ export default function PrestamoDetallePage({ params }) {
   const [modalWA, setModalWA] = useState(false)
   const [modalDscPrestamo, setModalDscPrestamo] = useState(false)
   const [dscDias, setDscDias] = useState([])
+  // Liquidacion anticipada (cierre por pago total antes del plazo)
+  const [modalLiquidacion, setModalLiquidacion] = useState(false)
+  const [liqData, setLiqData] = useState(null)        // calculo del backend
+  const [liqModalidad, setLiqModalidad] = useState('mesCompleto') // mesCompleto | proporcional
+  const [liqMonto, setLiqMonto] = useState(0)          // monto editable del cierre
+  const [liqNota, setLiqNota] = useState('')
+  const [liqCargando, setLiqCargando] = useState(false)
+  const [liqEnviando, setLiqEnviando] = useState(false)
+  const [liqError, setLiqError] = useState('')
   const [statsCliente, setStatsCliente] = useState(null) // { totalPrestamos, completados, numeroEsteDe }
   const hasLoadedOnceRef = useRef(false)
 
@@ -171,6 +180,53 @@ export default function PrestamoDetallePage({ params }) {
       fetchPrestamo({ soft: true })
     }
   }, [lastSyncedAt, fetchPrestamo])
+
+  // ── Liquidacion anticipada ──────────────────────────────────────
+  async function abrirLiquidacion() {
+    setLiqError(''); setLiqData(null); setLiqNota('')
+    setModalLiquidacion(true)
+    setLiqCargando(true)
+    try {
+      const res = await fetch(`/api/prestamos/${id}/liquidacion`)
+      const data = await res.json()
+      if (!res.ok) { setLiqError(data.error || 'No se pudo calcular'); return }
+      setLiqData(data)
+      // Por defecto, modalidad mes completo (la mas comun en gota a gota)
+      setLiqModalidad('mesCompleto')
+      setLiqMonto(data.mesCompleto?.restanteHoy ?? 0)
+    } catch {
+      setLiqError('Error de red')
+    } finally {
+      setLiqCargando(false)
+    }
+  }
+
+  function seleccionarModalidad(mod) {
+    setLiqModalidad(mod)
+    if (liqData?.[mod]) setLiqMonto(liqData[mod].restanteHoy)
+  }
+
+  async function confirmarLiquidacion() {
+    if (liqEnviando) return
+    if (!liqMonto || liqMonto <= 0) { setLiqError('El monto debe ser mayor a 0'); return }
+    if (!liqNota.trim()) { setLiqError('Indica el motivo (ej: pago anticipado pactado)'); return }
+    setLiqEnviando(true); setLiqError('')
+    try {
+      const res = await fetch(`/api/prestamos/${id}/pagos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ monto: Math.round(liqMonto), tipo: 'liquidacion', nota: liqNota.trim(), modalidad: liqModalidad }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setLiqError(data.error || 'No se pudo cerrar el préstamo'); return }
+      setModalLiquidacion(false)
+      await fetchPrestamo()
+    } catch {
+      setLiqError('Error de red')
+    } finally {
+      setLiqEnviando(false)
+    }
+  }
 
   // Intent param desde rutas: abrir modal de pago al entrar
   useEffect(() => {
@@ -1083,6 +1139,15 @@ export default function PrestamoDetallePage({ params }) {
           </button>
           <button
             onClick={() => {
+              setModalGestionPrestamo(false)
+              abrirLiquidacion()
+            }}
+            className="h-11 rounded-[12px] font-medium text-sm text-[#f5c518] bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.25)] hover:bg-[rgba(245,197,24,0.15)] transition-all col-span-2"
+          >
+            Liquidación anticipada (pago total antes)
+          </button>
+          <button
+            onClick={() => {
               try { setDscDias(prestamo?.diasSinCobro ? JSON.parse(prestamo.diasSinCobro) : []) } catch { setDscDias([]) }
               setModalGestionPrestamo(false)
               setModalDscPrestamo(true)
@@ -1182,6 +1247,94 @@ export default function PrestamoDetallePage({ params }) {
         prestamo={prestamo}
         tabInicial="descuento"
       />
+
+      {/* Modal: Liquidación anticipada (cierre por pago total antes del plazo) */}
+      <Modal open={modalLiquidacion} onClose={() => setModalLiquidacion(false)} title="Liquidación anticipada">
+        <div className="space-y-4">
+          <p className="text-sm text-[var(--color-text-muted)]">
+            El cliente paga todo hoy. Solo se cobra capital + interés de los meses transcurridos; se perdona el interés futuro.
+          </p>
+
+          {liqCargando && <p className="text-sm text-[var(--color-text-muted)]">Calculando...</p>}
+
+          {liqData && !liqCargando && (
+            <>
+              {liqData.aproximado && (
+                <div className="text-[12px] text-[#f5c518] bg-[rgba(245,197,24,0.08)] rounded-[10px] px-3 py-2">
+                  Este préstamo es modo {liqData.modo}; el cálculo es aproximado. Ajusta el monto final según lo pactado.
+                </div>
+              )}
+
+              {/* Selector de modalidad */}
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: 'mesCompleto', label: 'Mes completo' },
+                  { id: 'proporcional', label: 'Proporcional (días)' },
+                ].map(m => {
+                  const d = liqData[m.id]
+                  const activo = liqModalidad === m.id
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => seleccionarModalidad(m.id)}
+                      className={`rounded-[12px] px-3 py-2.5 text-left border transition-all ${activo ? 'border-[#f5c518] bg-[rgba(245,197,24,0.1)]' : 'border-[var(--color-border)] bg-[var(--color-bg-card)]'}`}
+                    >
+                      <p className="text-[11px] text-[var(--color-text-muted)]">{m.label}</p>
+                      <p className="text-base font-bold text-white">${(d?.restanteHoy ?? 0).toLocaleString('es-CO')}</p>
+                      <p className="text-[10px] text-[var(--color-text-muted)]">{(d?.mesesTranscurridos ?? 0)} mes(es) · perdona ${ (d?.interesPerdonado ?? 0).toLocaleString('es-CO')}</p>
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Desglose */}
+              <div className="rounded-[12px] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-[13px] space-y-1">
+                <div className="flex justify-between"><span className="text-[var(--color-text-muted)]">Capital</span><span className="text-white">${(liqData.capital ?? 0).toLocaleString('es-CO')}</span></div>
+                <div className="flex justify-between"><span className="text-[var(--color-text-muted)]">Interés devengado</span><span className="text-white">${(liqData[liqModalidad]?.interesDevengado ?? 0).toLocaleString('es-CO')}</span></div>
+                <div className="flex justify-between"><span className="text-[var(--color-text-muted)]">Ya pagó</span><span className="text-white">${(liqData.totalPagadoReal ?? 0).toLocaleString('es-CO')}</span></div>
+                <div className="flex justify-between border-t border-[var(--color-border)] pt-1 mt-1"><span className="text-[var(--color-text-muted)]">Saldo actual (pactado)</span><span className="text-white">${(liqData.saldoActual ?? 0).toLocaleString('es-CO')}</span></div>
+                <div className="flex justify-between"><span className="text-[#10b981]">Interés que se perdona</span><span className="text-[#10b981] font-semibold">${(liqData[liqModalidad]?.interesPerdonado ?? 0).toLocaleString('es-CO')}</span></div>
+              </div>
+
+              {/* Monto final editable */}
+              <div>
+                <label className="text-[12px] text-[var(--color-text-muted)]">Monto para cerrar hoy (editable)</label>
+                <input
+                  type="number"
+                  value={liqMonto}
+                  onChange={e => setLiqMonto(Number(e.target.value))}
+                  className="w-full mt-1 px-3 py-2.5 rounded-[10px] bg-[rgba(255,255,255,0.05)] text-lg font-bold text-white outline-none border border-[var(--color-border)] focus:border-[#f5c518]"
+                />
+              </div>
+
+              {/* Nota */}
+              <div>
+                <label className="text-[12px] text-[var(--color-text-muted)]">Motivo / nota (obligatorio)</label>
+                <input
+                  type="text"
+                  value={liqNota}
+                  onChange={e => setLiqNota(e.target.value)}
+                  placeholder="Ej: pago anticipado pactado con el cliente"
+                  className="w-full mt-1 px-3 py-2 rounded-[10px] bg-[rgba(255,255,255,0.05)] text-sm text-white outline-none border border-[var(--color-border)] focus:border-[#f5c518]"
+                />
+              </div>
+            </>
+          )}
+
+          {liqError && <p className="text-sm text-[var(--color-danger)]">{liqError}</p>}
+
+          <div className="flex gap-2 pt-1">
+            <button onClick={() => setModalLiquidacion(false)} className="flex-1 h-11 rounded-[12px] text-sm font-medium text-[var(--color-text-muted)] bg-[rgba(255,255,255,0.05)]">Cancelar</button>
+            <button
+              onClick={confirmarLiquidacion}
+              disabled={liqEnviando || liqCargando || !liqData}
+              className="flex-1 h-11 rounded-[12px] text-sm font-bold text-black bg-[#f5c518] disabled:opacity-40"
+            >
+              {liqEnviando ? 'Cerrando...' : 'Cerrar préstamo'}
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Modal de renovación */}
       <RenovarPrestamo

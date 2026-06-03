@@ -47,6 +47,7 @@ enum TipoPago {
   capital
   recargo
   descuento
+  liquidacion
 }
 
 enum EstadoSuscripcion {

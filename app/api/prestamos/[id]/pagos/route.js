@@ -92,18 +92,18 @@ export async function POST(request, { params }) {
   if (!montoFinal || montoFinal <= 0) {
     return Response.json({ error: 'El monto debe ser mayor a 0' }, { status: 400 })
   }
-  if (!['completo', 'parcial', 'capital', 'recargo', 'descuento'].includes(tipo)) {
+  if (!['completo', 'parcial', 'capital', 'recargo', 'descuento', 'liquidacion'].includes(tipo)) {
     return Response.json({ error: 'El tipo de pago no es válido' }, { status: 400 })
   }
 
-  // Recargo y descuento: owner o cobrador autorizado, y requiere nota
-  if (['recargo', 'descuento'].includes(tipo)) {
+  // Recargo, descuento y liquidacion: owner o cobrador autorizado, y requiere nota
+  if (['recargo', 'descuento', 'liquidacion'].includes(tipo)) {
     const puedeGestionar = rol === 'owner'
       ? true
       : (rol === 'cobrador' && await cobradorPuedeGestionarPrestamos(userId))
 
     if (!puedeGestionar) {
-      return Response.json({ error: 'No tienes permiso para aplicar recargos o descuentos' }, { status: 403 })
+      return Response.json({ error: 'No tienes permiso para esta operación' }, { status: 403 })
     }
     if (!nota?.trim()) {
       return Response.json({ error: 'Debes indicar el motivo del ajuste' }, { status: 400 })
@@ -129,9 +129,15 @@ export async function POST(request, { params }) {
     }, { status: 400 })
   }
 
-  // Recargo no tiene límite de saldo; para pagos normales, limitar al saldo
-  if (!['recargo', 'descuento'].includes(tipo)) {
+  // Recargo no tiene límite de saldo; para pagos normales, limitar al saldo.
+  // Liquidacion: el monto de cierre lo define el prestamista (puede ser < saldo
+  // porque perdona interes futuro), no se topa al saldo.
+  if (!['recargo', 'descuento', 'liquidacion'].includes(tipo)) {
     montoFinal = Math.min(montoFinal, saldoActual)
+  }
+  // La liquidacion no puede superar el saldo pendiente (no tiene sentido cobrar mas)
+  if (tipo === 'liquidacion' && montoFinal > saldoActual) {
+    montoFinal = Math.round(saldoActual)
   }
 
   // Idempotencia offline: si la nota incluye [offline:ISO], ese ISO es unique key.
@@ -303,6 +309,27 @@ export async function POST(request, { params }) {
       })
     }
 
+    // 2e. Liquidacion anticipada: el cliente paga el cierre (capital + interes
+    // devengado) que es MENOR al saldo pactado. Ajustamos totalAPagar para que
+    // el saldo quede exactamente en 0, perdonando el interes futuro no devengado.
+    let interesPerdonado = 0
+    if (tipo === 'liquidacion') {
+      const totalPagadoReal = prestamoActualizado.pagos
+        .filter(p => !['recargo', 'descuento'].includes(p.tipo))
+        .reduce((a, p) => a + p.montoPagado, 0)
+      // interes que se perdona = lo que quedaba del total pactado por encima de lo pagado
+      interesPerdonado = Math.max(0, Math.round(prestamoActualizado.totalAPagar - totalPagadoReal))
+      // totalAPagar pasa a ser exactamente lo pagado -> saldo 0
+      await tx.prestamo.update({
+        where: { id: prestamoId },
+        data: { totalAPagar: Math.round(totalPagadoReal) },
+      })
+      prestamoActualizado = await tx.prestamo.findUnique({
+        where: { id: prestamoId },
+        include: { pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } } },
+      })
+    }
+
     const nuevoSaldo = calcularSaldoPendiente(prestamoActualizado)
 
     // 3. Si saldo = 0 → marcar préstamo como completado
@@ -332,11 +359,14 @@ export async function POST(request, { params }) {
 
     // Registrar recaudo en capital (solo pagos reales, no ajustes)
     if (!['recargo', 'descuento'].includes(tipo)) {
+      const descRecaudo = tipo === 'capital' ? `Abono a capital - préstamo`
+        : tipo === 'liquidacion' ? `Liquidación anticipada - préstamo`
+        : `Pago recibido - préstamo`
       await registrarMovimientoCapital(tx, {
         organizationId,
         tipo: 'recaudo',
         monto: montoFinal,
-        descripcion: tipo === 'capital' ? `Abono a capital - préstamo` : `Pago recibido - préstamo`,
+        descripcion: descRecaudo,
         referenciaId: prestamoId,
         referenciaTipo: 'pago',
         rutaId: prestamo.cliente?.rutaId || null,
@@ -353,6 +383,22 @@ export async function POST(request, { params }) {
         descripcion: `Descuento aplicado - préstamo${nota?.trim() ? ` (${nota.trim()})` : ''}`,
         referenciaId: prestamoId,
         referenciaTipo: 'pago',
+        creadoPorId: userId,
+        direccion: 'egreso',
+      })
+    }
+
+    // Liquidacion: registrar el interes futuro PERDONADO como ajuste (egreso),
+    // para que la contabilidad refleje cuanto se condono al cerrar anticipado.
+    if (tipo === 'liquidacion' && interesPerdonado > 0) {
+      await registrarMovimientoCapital(tx, {
+        organizationId,
+        tipo: 'ajuste',
+        monto: interesPerdonado,
+        descripcion: `Interés perdonado por pago anticipado - préstamo${nota?.trim() ? ` (${nota.trim()})` : ''}`,
+        referenciaId: prestamoId,
+        referenciaTipo: 'pago',
+        rutaId: prestamo.cliente?.rutaId || null,
         creadoPorId: userId,
         direccion: 'egreso',
       })
