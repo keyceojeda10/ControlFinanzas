@@ -116,6 +116,92 @@ export async function PATCH(request, { params }) {
   const body = await request.json()
   const { estado, modo, fechaFin: nuevaFechaFinRaw, diasExtra } = body
 
+  // ─── Modo: marcar / desmarcar TARJETA CLAVO ─────────────────────
+  if (typeof body.esClavo === 'boolean') {
+    if (session.user.rol !== 'owner') {
+      return Response.json({ error: 'Solo el administrador puede marcar tarjetas clavo' }, { status: 403 })
+    }
+    if (p.estado !== 'activo') {
+      return Response.json({ error: 'Solo se pueden marcar como clavo los préstamos activos' }, { status: 400 })
+    }
+
+    const marcar = body.esClavo === true
+    const conPerdida = marcar && body.clavoPerdida === true
+    const orgId = session.user.organizationId
+
+    // Capital aun no recuperado (lo que falta volver a caja de lo prestado)
+    const pagosReales = p.pagos.filter(pg => !['recargo', 'descuento'].includes(pg.tipo))
+    const totalPagosReales = pagosReales.reduce((a, pg) => a + Number(pg.montoPagado || 0), 0)
+    const capitalNoRecuperado = Math.max(0, Number(p.montoPrestado) - totalPagosReales)
+
+    const REF_CLAVO_PERDIDA = 'clavo_perdida'
+
+    const actualizado = await prisma.$transaction(async (tx) => {
+      // Si se marca con perdida: registrar el capital no recuperado como egreso/ajuste
+      if (conPerdida && capitalNoRecuperado > 0) {
+        const yaRegistrado = await tx.movimientoCapital.findFirst({
+          where: { organizationId: orgId, referenciaId: id, referenciaTipo: REF_CLAVO_PERDIDA },
+          select: { id: true },
+        })
+        if (!yaRegistrado) {
+          await registrarMovimientoCapital(tx, {
+            organizationId: orgId,
+            tipo: 'ajuste',
+            monto: capitalNoRecuperado,
+            descripcion: `Tarjeta clavo - pérdida de capital`,
+            referenciaId: id,
+            referenciaTipo: REF_CLAVO_PERDIDA,
+            rutaId: p.cliente?.rutaId || null,
+            creadoPorId: session.user.id,
+            direccion: 'egreso',
+          })
+        }
+      }
+      // Si se DESMARCA y antes se registro perdida: revertir ese ajuste (ingreso)
+      if (!marcar) {
+        const perdidaPrevia = await tx.movimientoCapital.findFirst({
+          where: { organizationId: orgId, referenciaId: id, referenciaTipo: REF_CLAVO_PERDIDA },
+          orderBy: { createdAt: 'desc' },
+          select: { id: true, monto: true },
+        })
+        if (perdidaPrevia) {
+          await registrarMovimientoCapital(tx, {
+            organizationId: orgId,
+            tipo: 'ajuste',
+            monto: perdidaPrevia.monto,
+            descripcion: `Reverso pérdida tarjeta clavo (desmarcado)`,
+            referenciaId: id,
+            referenciaTipo: 'clavo_perdida_reverso',
+            rutaId: p.cliente?.rutaId || null,
+            creadoPorId: session.user.id,
+            direccion: 'ingreso',
+          })
+        }
+      }
+      return tx.prestamo.update({
+        where: { id },
+        data: {
+          esClavo: marcar,
+          clavoAt: marcar ? new Date() : null,
+          clavoPerdida: conPerdida,
+        },
+      })
+    })
+
+    logActividad({
+      session,
+      accion: marcar ? 'marcar_clavo' : 'desmarcar_clavo',
+      entidadTipo: 'prestamo',
+      entidadId: id,
+      detalle: marcar
+        ? `Marcado como tarjeta clavo${conPerdida ? ` (pérdida $${Math.round(capitalNoRecuperado).toLocaleString('es-CO')})` : ''} - ${p.cliente?.nombre || ''}`
+        : `Quitado de tarjetas clavo - ${p.cliente?.nombre || ''}`,
+      ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+    })
+
+    return Response.json({ ok: true, esClavo: marcar, clavoPerdida: conPerdida })
+  }
+
   // ─── Modo 1: cambio de estado (cancelar) ────────────────────────
   if (estado) {
     if (session.user.rol !== 'owner') {

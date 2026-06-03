@@ -341,9 +341,11 @@ async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaj
   const fechaStr = typeof fecha === 'string' ? fecha : fecha.toISOString().slice(0, 10)
   const { inicio, fin } = getDayRange(fechaStr)
 
-  // Obtener pagos del día usando rango UTC correcto
+  // Obtener pagos del día usando rango UTC correcto.
+  // Excluir pagos de prestamos clavo: no cuentan en el recaudado normal de caja
+  // (van en la contabilidad aparte de clavos).
   const wherePagos = {
-    prestamo: { organizationId },
+    prestamo: { organizationId, esClavo: false },
     fechaPago: { gte: inicio, lt: fin },
   }
   if (cobradorId) {

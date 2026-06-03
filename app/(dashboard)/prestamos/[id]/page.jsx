@@ -93,6 +93,11 @@ export default function PrestamoDetallePage({ params }) {
   const [modalWA, setModalWA] = useState(false)
   const [modalDscPrestamo, setModalDscPrestamo] = useState(false)
   const [dscDias, setDscDias] = useState([])
+  // Tarjeta clavo
+  const [modalClavo, setModalClavo] = useState(false)
+  const [clavoPerdida, setClavoPerdida] = useState(false)
+  const [clavoEnviando, setClavoEnviando] = useState(false)
+  const [clavoError, setClavoError] = useState('')
   // Liquidacion anticipada (cierre por pago total antes del plazo)
   const [modalLiquidacion, setModalLiquidacion] = useState(false)
   const [liqData, setLiqData] = useState(null)        // calculo del backend
@@ -180,6 +185,38 @@ export default function PrestamoDetallePage({ params }) {
       fetchPrestamo({ soft: true })
     }
   }, [lastSyncedAt, fetchPrestamo])
+
+  // ── Tarjeta clavo ───────────────────────────────────────────────
+  async function confirmarClavo() {
+    if (clavoEnviando) return
+    setClavoEnviando(true); setClavoError('')
+    try {
+      const res = await fetch(`/api/prestamos/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ esClavo: true, clavoPerdida }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setClavoError(data.error || 'No se pudo marcar'); return }
+      setModalClavo(false); setClavoPerdida(false)
+      await fetchPrestamo()
+    } catch {
+      setClavoError('Error de red')
+    } finally {
+      setClavoEnviando(false)
+    }
+  }
+
+  async function quitarClavo() {
+    try {
+      const res = await fetch(`/api/prestamos/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ esClavo: false }),
+      })
+      if (res.ok) await fetchPrestamo()
+    } catch {}
+  }
 
   // ── Liquidacion anticipada ──────────────────────────────────────
   async function abrirLiquidacion() {
@@ -309,7 +346,7 @@ export default function PrestamoDetallePage({ params }) {
     montoParaPonerseAlDia = 0,
     pagoHoy: yaPagoHoy, pagos = [], proximoCobro,
     seguro = false, montoSeguro,
-    modoInteres, renovadoDeId,
+    modoInteres, renovadoDeId, esClavo = false,
   } = prestamo
 
   const frecuenciaLabel = {
@@ -429,6 +466,14 @@ export default function PrestamoDetallePage({ params }) {
         </svg>
         Préstamos
       </button>
+
+      {/* ── BADGE TARJETA CLAVO ──────────────────────────────────── */}
+      {esClavo && (
+        <div className="flex items-center gap-2 bg-[rgba(239,68,68,0.12)] border border-[rgba(239,68,68,0.3)] rounded-[12px] px-3 py-2 text-xs font-semibold text-[#ef4444]">
+          <span className="w-2 h-2 rounded-full bg-[#ef4444]" />
+          Tarjeta clavo — apartado de tus números normales
+        </div>
+      )}
 
       {/* ── RENOVADO DE (continuidad) ────────────────────────────── */}
       {renovadoDeId && (
@@ -1172,6 +1217,47 @@ export default function PrestamoDetallePage({ params }) {
           >
             Días sin cobro
           </button>
+          {/* Tarjeta clavo: marcar o quitar */}
+          {esClavo ? (
+            <button
+              onClick={() => { setModalGestionPrestamo(false); quitarClavo() }}
+              className="h-11 rounded-[12px] font-medium text-sm text-[#22c55e] bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.25)] hover:bg-[rgba(34,197,94,0.15)] transition-all col-span-2"
+            >
+              Quitar de tarjetas clavo
+            </button>
+          ) : (
+            <button
+              onClick={() => { setModalGestionPrestamo(false); setModalClavo(true) }}
+              className="h-11 rounded-[12px] font-medium text-sm text-[#ef4444] bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.25)] hover:bg-[rgba(239,68,68,0.15)] transition-all col-span-2"
+            >
+              Marcar como tarjeta clavo
+            </button>
+          )}
+        </div>
+      </Modal>
+
+      {/* Modal: confirmar marcar tarjeta clavo */}
+      <Modal open={modalClavo} onClose={() => setModalClavo(false)} title="Marcar como tarjeta clavo">
+        <div className="space-y-4">
+          <p className="text-sm text-[var(--color-text-muted)]">
+            Este préstamo saldrá de tus números normales (cartera, saldos, dashboard) y pasará a la contabilidad aparte de tarjetas clavo. Podrás seguir registrando pagos si el cliente abona.
+          </p>
+          <label className="flex items-start gap-2 cursor-pointer rounded-[12px] border border-[var(--color-border)] p-3">
+            <input type="checkbox" checked={clavoPerdida} onChange={e => setClavoPerdida(e.target.checked)} className="w-4 h-4 mt-0.5 accent-[#ef4444]" />
+            <span className="text-sm text-[var(--color-text-primary)]">
+              Registrar el capital prestado como pérdida
+              <span className="block text-[11px] text-[var(--color-text-muted)] mt-0.5">
+                Resta de tu capital el dinero que aún no has recuperado de este préstamo. Si no lo marcas, solo se aparta de la cartera sin tocar tu caja.
+              </span>
+            </span>
+          </label>
+          {clavoError && <p className="text-sm text-[var(--color-danger)]">{clavoError}</p>}
+          <div className="flex gap-3">
+            <button onClick={() => setModalClavo(false)} className="flex-1 h-11 rounded-[12px] text-sm font-medium text-[var(--color-text-muted)] bg-[rgba(255,255,255,0.05)]">Cancelar</button>
+            <button onClick={confirmarClavo} disabled={clavoEnviando} className="flex-1 h-11 rounded-[12px] text-sm font-bold text-white bg-[#ef4444] disabled:opacity-40">
+              {clavoEnviando ? 'Marcando...' : 'Marcar como clavo'}
+            </button>
+          </div>
         </div>
       </Modal>
 

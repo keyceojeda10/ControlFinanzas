@@ -54,6 +54,7 @@ export async function GET(req) {
       where: {
         organizationId: orgId,
         estado: 'activo',
+        esClavo: false,
         cliente: { estado: { notIn: ['eliminado', 'inactivo'] } },
       },
       select: {

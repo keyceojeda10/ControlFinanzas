@@ -98,6 +98,9 @@ export default function ReportesPage() {
   const [error,      setError]      = useState('')
   const [periodoIngresos, setPeriodoIngresos] = useState('diario')
   const [descargando, setDescargando] = useState('')
+  // Seguros por ruta (carga independiente, con su propio periodo)
+  const [seguros, setSeguros] = useState(null)
+  const [periodoSeguros, setPeriodoSeguros] = useState('mes')
 
   const [desde, setDesde] = useState(inicioMes())
   const [hasta, setHasta]  = useState(hoy())
@@ -139,6 +142,16 @@ export default function ReportesPage() {
     else if (!authLoading) setLoading(false)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, periodoIngresos, desde, hasta])
+
+  // Seguros por ruta: carga independiente con su propio periodo
+  useEffect(() => {
+    if (authLoading || !esOwner || nivel < 2) return
+    fetch(`/api/reportes/seguros?periodo=${periodoSeguros}`)
+      .then(r => r.json())
+      .then(d => setSeguros(d?.items ? d : null))
+      .catch(() => {})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, periodoSeguros, nivel])
 
   const exportar = async (tipo) => {
     setDescargando(tipo)
@@ -472,6 +485,59 @@ export default function ReportesPage() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* ── Seguros por ruta ── */}
+      {nivel >= 2 && seguros && (
+        <div className="rounded-[16px] px-4 py-4"
+          style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+        >
+          <div className="flex items-center justify-between mb-3 gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-6 h-6 rounded-[8px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, #8b5cf6 18%, transparent)', color: '#8b5cf6' }}>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <p className="text-[12px] font-bold uppercase tracking-wider truncate" style={{ color: 'var(--color-text-secondary)' }}>Seguros por ruta</p>
+            </div>
+            <select
+              value={periodoSeguros}
+              onChange={e => setPeriodoSeguros(e.target.value)}
+              className="text-[11px] rounded-[8px] px-2 py-1 shrink-0"
+              style={{ background: 'var(--color-bg-base)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+            >
+              <option value="dia">Hoy</option>
+              <option value="semana">7 días</option>
+              <option value="mes">30 días</option>
+              <option value="todo">Histórico</option>
+            </select>
+          </div>
+          {seguros.items.length === 0 ? (
+            <p className="text-[12px] text-center py-3" style={{ color: 'var(--color-text-muted)' }}>Sin seguros cobrados en este período</p>
+          ) : (
+            <>
+              <div className="space-y-2">
+                {seguros.items.map((r) => (
+                  <div key={r.rutaId || 'sin'} className="rounded-[12px] px-3 py-2.5 flex items-center justify-between gap-3"
+                    style={{ background: 'var(--color-bg-base)', border: '1px solid var(--color-border)' }}>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{r.ruta}</p>
+                      <p className="text-[10px] truncate" style={{ color: 'var(--color-purple)' }}>
+                        {r.cobrador} · {r.cantPrestamosConSeguro} {r.cantPrestamosConSeguro === 1 ? 'préstamo' : 'préstamos'}
+                      </p>
+                    </div>
+                    <p className="text-[14px] font-bold font-mono-display shrink-0" style={{ color: '#8b5cf6' }}>{formatMoney(r.totalSeguro)}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: '1px solid var(--color-border)' }}>
+                <span className="text-[12px] font-bold" style={{ color: 'var(--color-text-secondary)' }}>Total seguros</span>
+                <span className="text-[15px] font-bold font-mono-display" style={{ color: '#8b5cf6' }}>{formatMoney(seguros.totalGeneral)}</span>
+              </div>
+            </>
+          )}
         </div>
       )}
 

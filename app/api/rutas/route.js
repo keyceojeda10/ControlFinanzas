@@ -46,6 +46,7 @@ export async function GET(request) {
           estado:    true,
           diasSinCobro: true,
           prestamos: {
+            where:   { esClavo: false }, // los clavos no cuentan en los numeros de la ruta
             select:  {
               estado: true,
               cuotaDiaria: true,

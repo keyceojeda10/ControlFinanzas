@@ -77,6 +77,7 @@ export async function GET() {
       where: {
         organizationId: orgId,
         estado: 'activo',
+        esClavo: false,
         cliente: {
           estado: { notIn: ['eliminado', 'inactivo'] },
           ...filtroRutaCliente,

@@ -1370,6 +1370,24 @@ export default function RutaDetallePage({ params }) {
               </div>
             )}
 
+            {/* Seguros de la ruta (solo owner) */}
+            {esOwner && (ruta.segurosVigentes > 0 || ruta.segurosHoy > 0) && (
+              <div className="rounded-[16px] px-4 py-3.5"
+                style={{ background: `linear-gradient(135deg, color-mix(in srgb, #8b5cf6 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`, border: '1px solid color-mix(in srgb, #8b5cf6 25%, var(--color-border))' }}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8b5cf6' }}>Seguros de la ruta</span>
+                  <span className="text-lg font-bold font-mono-display" style={{ color: '#8b5cf6' }}>
+                    {formatMoney(ruta.segurosVigentes)}
+                  </span>
+                </div>
+                <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
+                  {ruta.segurosVigentesCount} préstamo{ruta.segurosVigentesCount !== 1 ? 's' : ''} activo{ruta.segurosVigentesCount !== 1 ? 's' : ''} con seguro
+                  {ruta.segurosHoy > 0 ? ` · hoy: ${formatMoney(ruta.segurosHoy)} (${ruta.segurosHoyCount})` : ''}
+                </p>
+              </div>
+            )}
+
             {/* Pendientes + Mora como filtros clickeables */}
             <div className="grid grid-cols-2 gap-3">
               <button

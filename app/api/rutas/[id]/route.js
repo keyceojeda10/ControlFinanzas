@@ -66,6 +66,7 @@ export async function GET(request, { params }) {
         include: {
           grupoCobro: { select: { id: true, nombre: true, color: true } },
           prestamos: {
+            where:   { esClavo: false }, // los clavos no entran en la vista/numeros de la ruta
             orderBy: { createdAt: 'asc' },
             include: {
               pagos: {
@@ -292,6 +293,19 @@ export async function GET(request, { params }) {
     },
   })
 
+  // Seguros de esta ruta: total de prestamos activos con seguro + los del dia.
+  const baseSeguro = {
+    organizationId,
+    seguro: true,
+    montoSeguro: { gt: 0 },
+    esClavo: false,
+    cliente: { rutaId: id },
+  }
+  const [segVigente, segHoy] = await Promise.all([
+    prisma.prestamo.aggregate({ where: { ...baseSeguro, estado: 'activo' }, _sum: { montoSeguro: true }, _count: true }),
+    prisma.prestamo.aggregate({ where: { ...baseSeguro, createdAt: { gte: hoy(), lt: manana() } }, _sum: { montoSeguro: true }, _count: true }),
+  ])
+
   return Response.json({
     id:          ruta.id,
     nombre:      ruta.nombre,
@@ -309,6 +323,10 @@ export async function GET(request, { params }) {
     carteraTotal: Math.round(carteraTotal),
     capitalTotal: Math.round(capitalTotal),
     totalAPagarRuta: Math.round(totalAPagarRuta),
+    segurosVigentes: Math.round(segVigente._sum.montoSeguro || 0),
+    segurosVigentesCount: segVigente._count,
+    segurosHoy: Math.round(segHoy._sum.montoSeguro || 0),
+    segurosHoyCount: segHoy._count,
     cierre,
     // MVP geo: pines para el mapa de la ruta. Cada item es un cobro de hoy
     // con coords; el frontend pinta verde/naranja/rojo por distancia.

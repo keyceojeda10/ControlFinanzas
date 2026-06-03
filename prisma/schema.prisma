@@ -269,6 +269,11 @@ model Prestamo {
   totalPagado    Float          @default(0)
   ultimoPagoAt   DateTime?
   renovadoDeId   String?        // id del prestamo del que proviene (si fue una renovacion)
+  // Tarjeta clavo: prestamo malo/incobrable. Se excluye de saldos/cartera/capital
+  // normales y se lleva en contabilidad aparte. Sigue cobrable (pagos van aparte).
+  esClavo        Boolean        @default(false)
+  clavoAt        DateTime?      // cuando se marco como clavo
+  clavoPerdida   Boolean        @default(false) // si al marcarlo se registro el capital como perdida
   createdAt      DateTime       @default(now())
 
   cliente      Cliente      @relation(fields: [clienteId], references: [id])
@@ -282,6 +287,7 @@ model Prestamo {
   @@index([organizationId, clienteId, estado])
   @@index([createdAt])
   @@index([renovadoDeId])
+  @@index([organizationId, esClavo])
 }
 
 model Pago {

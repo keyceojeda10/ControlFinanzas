@@ -21,7 +21,7 @@ export async function GET() {
         where: { estado: 'activo' },
         include: {
           prestamos: {
-            where: { estado: 'activo' },
+            where: { estado: 'activo', esClavo: false },
             select: {
               montoPrestado: true,
               totalAPagar: true,
