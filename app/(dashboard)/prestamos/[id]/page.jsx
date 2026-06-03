@@ -208,14 +208,15 @@ export default function PrestamoDetallePage({ params }) {
 
   async function confirmarLiquidacion() {
     if (liqEnviando) return
-    if (!liqMonto || liqMonto <= 0) { setLiqError('El monto debe ser mayor a 0'); return }
+    // monto puede ser 0: el cliente ya pago lo justo y solo se perdona el interes futuro
+    if (liqMonto < 0) { setLiqError('El monto no puede ser negativo'); return }
     if (!liqNota.trim()) { setLiqError('Indica el motivo (ej: pago anticipado pactado)'); return }
     setLiqEnviando(true); setLiqError('')
     try {
       const res = await fetch(`/api/prestamos/${id}/pagos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ monto: Math.round(liqMonto), tipo: 'liquidacion', nota: liqNota.trim(), modalidad: liqModalidad }),
+        body: JSON.stringify({ montoPagado: Math.round(liqMonto || 0), tipo: 'liquidacion', nota: liqNota.trim(), modalidad: liqModalidad }),
       })
       const data = await res.json()
       if (!res.ok) { setLiqError(data.error || 'No se pudo cerrar el préstamo'); return }
@@ -1300,10 +1301,15 @@ export default function PrestamoDetallePage({ params }) {
               <div>
                 <label className="text-[12px] text-[var(--color-text-muted)]">Monto para cerrar hoy (editable)</label>
                 <input
-                  type="number"
-                  value={liqMonto}
-                  onChange={e => setLiqMonto(Number(e.target.value))}
-                  className="w-full mt-1 px-3 py-2.5 rounded-[10px] bg-[rgba(255,255,255,0.05)] text-lg font-bold text-white outline-none border border-[var(--color-border)] focus:border-[#f5c518]"
+                  type="text"
+                  inputMode="numeric"
+                  value={liqMonto ? liqMonto.toLocaleString('es-CO') : ''}
+                  onChange={e => {
+                    const n = Number((e.target.value || '').replace(/\D/g, ''))
+                    setLiqMonto(Number.isFinite(n) ? n : 0)
+                  }}
+                  placeholder="Escribe el monto a cobrar"
+                  className="w-full mt-1 px-3 py-2.5 rounded-[10px] bg-[rgba(255,255,255,0.05)] text-lg font-bold text-white placeholder:text-[var(--color-text-muted)] placeholder:font-normal placeholder:text-sm outline-none border border-[var(--color-border)] focus:border-[#f5c518]"
                 />
               </div>
 

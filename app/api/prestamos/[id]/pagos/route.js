@@ -89,8 +89,13 @@ export async function POST(request, { params }) {
     montoFinal = Math.round(prestamo.cuotaDiaria * Number(diasAbonados))
   }
 
-  if (!montoFinal || montoFinal <= 0) {
+  // Liquidacion puede ser monto 0: el cliente ya pago lo justo y solo se
+  // perdona el interes futuro restante (cierre sin cobro adicional).
+  if (tipo !== 'liquidacion' && (!montoFinal || montoFinal <= 0)) {
     return Response.json({ error: 'El monto debe ser mayor a 0' }, { status: 400 })
+  }
+  if (tipo === 'liquidacion' && (montoFinal == null || montoFinal < 0 || Number.isNaN(montoFinal))) {
+    montoFinal = 0
   }
   if (!['completo', 'parcial', 'capital', 'recargo', 'descuento', 'liquidacion'].includes(tipo)) {
     return Response.json({ error: 'El tipo de pago no es válido' }, { status: 400 })
@@ -226,23 +231,26 @@ export async function POST(request, { params }) {
       throw new Error('DESCUENTO_EXCEDE_SALDO')
     }
 
-    // 1. Crear el pago
+    // 1. Crear el pago. En liquidacion con monto 0 (el cliente ya pago lo justo
+    // y solo se perdona el interes futuro) no se registra un pago de $0.
     const metodoValido = ['efectivo', 'transferencia'].includes(metodoPago) ? metodoPago : null
-    await tx.pago.create({
-      data: {
-        prestamoId,
-        organizationId,
-        cobradorId: userId,
-        montoPagado: montoFinal,
-        tipo,
-        metodoPago: metodoValido,
-        plataforma: metodoValido === 'transferencia' ? (plataforma?.trim() || null) : null,
-        nota: nota?.trim() || null,
-        fechaPago: new Date(),
-        latitud: coordsPago.latitud,
-        longitud: coordsPago.longitud,
-      },
-    })
+    if (!(tipo === 'liquidacion' && montoFinal === 0)) {
+      await tx.pago.create({
+        data: {
+          prestamoId,
+          organizationId,
+          cobradorId: userId,
+          montoPagado: montoFinal,
+          tipo,
+          metodoPago: metodoValido,
+          plataforma: metodoValido === 'transferencia' ? (plataforma?.trim() || null) : null,
+          nota: nota?.trim() || null,
+          fechaPago: new Date(),
+          latitud: coordsPago.latitud,
+          longitud: coordsPago.longitud,
+        },
+      })
+    }
 
     // 1b. Refrescar totalPagado/ultimoPagoAt denormalizados del prestamo.
     await refrescarTotalesPrestamo(tx, prestamoId)
@@ -357,8 +365,8 @@ export async function POST(request, { params }) {
       data:  { estado: nuevoEstadoCliente },
     })
 
-    // Registrar recaudo en capital (solo pagos reales, no ajustes)
-    if (!['recargo', 'descuento'].includes(tipo)) {
+    // Registrar recaudo en capital (solo pagos reales > 0, no ajustes)
+    if (!['recargo', 'descuento'].includes(tipo) && montoFinal > 0) {
       const descRecaudo = tipo === 'capital' ? `Abono a capital - préstamo`
         : tipo === 'liquidacion' ? `Liquidación anticipada - préstamo`
         : `Pago recibido - préstamo`
