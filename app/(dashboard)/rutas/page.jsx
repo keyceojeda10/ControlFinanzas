@@ -39,6 +39,57 @@ export default function RutasPage() {
   const [showSugerencias, setShowSugerencias] = useState(false)
   const hasLoadedOnceRef = useRef(false)
 
+  // Modo trabajo / ordenar (drag-and-drop de rutas) — solo owner
+  const [modoOrdenar, setModoOrdenar] = useState(false)
+  const [dragIndex, setDragIndex] = useState(null)
+  const [dragOverIdx, setDragOverIdx] = useState(null)
+  const [ordenEstado, setOrdenEstado] = useState('') // '' | 'guardando' | 'guardado' | 'error'
+  const saveOrdenTimer = useRef(null)
+
+  const guardarOrdenRutas = useCallback((lista) => {
+    const rutaIds = lista.map(r => r.id)
+    if (saveOrdenTimer.current) clearTimeout(saveOrdenTimer.current)
+    setOrdenEstado('guardando')
+    saveOrdenTimer.current = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/rutas/reordenar', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rutaIds }),
+        })
+        if (!res.ok) throw new Error('fallo')
+        setOrdenEstado('guardado')
+        setTimeout(() => setOrdenEstado(''), 1500)
+      } catch {
+        setOrdenEstado('error')
+      }
+    }, 700)
+  }, [])
+
+  // Drag desktop
+  const onDragStart = (i) => setDragIndex(i)
+  const onDragOver  = (e, i) => { e.preventDefault(); setDragOverIdx(i) }
+  const onDrop = (i) => {
+    if (dragIndex === null || dragIndex === i) { setDragIndex(null); setDragOverIdx(null); return }
+    const lista = [...rutas]
+    const [moved] = lista.splice(dragIndex, 1)
+    lista.splice(i, 0, moved)
+    setRutas(lista)
+    guardarOrdenRutas(lista)
+    setDragIndex(null); setDragOverIdx(null)
+  }
+  const onDragEnd = () => { setDragIndex(null); setDragOverIdx(null) }
+
+  // Mover con botones (subir/bajar) — mas simple y a prueba de fallos en movil
+  const moverRuta = (i, dir) => {
+    const j = i + dir
+    if (j < 0 || j >= rutas.length) return
+    const lista = [...rutas]
+    ;[lista[i], lista[j]] = [lista[j], lista[i]]
+    setRutas(lista)
+    guardarOrdenRutas(lista)
+  }
+
   const fetchRutas = useCallback(async ({ soft = false } = {}) => {
     const shouldUseSoftRefresh = soft && hasLoadedOnceRef.current
     setError('')
@@ -352,9 +403,93 @@ export default function RutasPage() {
         </div>
       )}
 
-      {!loading && rutas.length > 0 && (
+      {/* Toggle modo trabajo / ordenar (solo owner, con 2+ rutas) */}
+      {!loading && rutas.length > 1 && esOwner && (
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex gap-1 p-1 rounded-[12px]" style={{ background: 'var(--color-bg-hover)' }}>
+            {[
+              { key: false, label: 'Trabajo' },
+              { key: true, label: 'Ordenar' },
+            ].map(t => (
+              <button
+                key={String(t.key)}
+                type="button"
+                onClick={() => setModoOrdenar(t.key)}
+                className="px-3 py-1.5 rounded-[9px] text-xs font-medium transition-all"
+                style={modoOrdenar === t.key
+                  ? { background: 'var(--color-accent)', color: '#000' }
+                  : { color: 'var(--color-text-muted)' }}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          {modoOrdenar && (
+            <span className="text-[11px]" style={{ color: ordenEstado === 'error' ? 'var(--color-danger)' : 'var(--color-text-muted)' }}>
+              {ordenEstado === 'guardando' ? 'Guardando...' : ordenEstado === 'guardado' ? 'Guardado' : ordenEstado === 'error' ? 'Error al guardar' : 'Arrastra o usa las flechas'}
+            </span>
+          )}
+        </div>
+      )}
+
+      {!loading && rutas.length > 0 && !modoOrdenar && (
         <div className="space-y-3">
           {rutas.map((r) => <RutaCard key={r.id} ruta={r} />)}
+        </div>
+      )}
+
+      {/* Modo ordenar: cards no clicables, con grip (drag) y flechas subir/bajar */}
+      {!loading && rutas.length > 0 && modoOrdenar && (
+        <div className="space-y-2">
+          {rutas.map((r, i) => (
+            <div
+              key={r.id}
+              draggable
+              onDragStart={() => onDragStart(i)}
+              onDragOver={(e) => onDragOver(e, i)}
+              onDrop={() => onDrop(i)}
+              onDragEnd={onDragEnd}
+              className="flex items-center gap-2 px-3 py-3 rounded-[12px] border transition-all"
+              style={{
+                background: 'var(--color-bg-card)',
+                borderColor: dragOverIdx === i ? 'var(--color-accent)' : 'var(--color-border)',
+                opacity: dragIndex === i ? 0.5 : 1,
+                cursor: 'grab',
+              }}
+            >
+              {/* Grip */}
+              <svg className="w-5 h-5 shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="currentColor" viewBox="0 0 24 24">
+                <circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/>
+                <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
+                <circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/>
+              </svg>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold truncate" style={{ color: 'var(--color-text-primary)' }}>{r.nombre}</p>
+                <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                  {r.cobrador?.nombre || 'Sin cobrador'} · {r.cantidadClientes} cliente{r.cantidadClientes !== 1 ? 's' : ''}
+                </p>
+              </div>
+              {/* Flechas subir/bajar */}
+              <div className="flex flex-col gap-0.5 shrink-0">
+                <button
+                  type="button" onClick={() => moverRuta(i, -1)} disabled={i === 0}
+                  className="w-7 h-7 flex items-center justify-center rounded-[8px] disabled:opacity-30"
+                  style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-primary)' }}
+                  aria-label="Subir"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7"/></svg>
+                </button>
+                <button
+                  type="button" onClick={() => moverRuta(i, 1)} disabled={i === rutas.length - 1}
+                  className="w-7 h-7 flex items-center justify-center rounded-[8px] disabled:opacity-30"
+                  style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-primary)' }}
+                  aria-label="Bajar"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/></svg>
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
