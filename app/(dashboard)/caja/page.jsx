@@ -18,6 +18,7 @@ import ReportarGasto          from '@/components/gastos/ReportarGasto'
 import ListaGastos            from '@/components/gastos/ListaGastos'
 import ListadoPagos           from '@/components/pagos/ListadoPagos'
 import CajaCobradorDetalle    from '@/components/caja/CajaCobradorDetalle'
+import FiltroPeriodo          from '@/components/caja/FiltroPeriodo'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -94,6 +95,10 @@ export default function CajaPage() {
   const [modoAjusteCierre, setModoAjusteCierre] = useState(false)
   const [isOffline, setIsOffline] = useState(false)
   const [filtroCobrador, setFiltroCobrador] = useState('')
+  // Filtro de periodo de la caja: { modo:'hoy'|'7d'|'30d'|'rango', fecha, desde, hasta }
+  const [periodo, setPeriodo] = useState({ modo: 'hoy', fecha: null, desde: null, hasta: null })
+  // Datos del rango histórico acumulado (cuando modo != 'hoy')
+  const [rangoData, setRangoData] = useState(null)
   // Pestaña "Caja por ruta": cobrador seleccionado + su detalle (caja completa)
   const [cajaRutaCobradorId, setCajaRutaCobradorId] = useState('')
   const [cajaRutaData, setCajaRutaData] = useState(null)
@@ -105,13 +110,17 @@ export default function CajaPage() {
   const [historialCargando, setHistorialCargando] = useState(false)
   const hasLoadedOnceRef = useRef(false)
 
+  // Solo al montar: si llega ?fecha= en la URL (deep-link), úsala como fecha inicial.
+  // No reaccionar a fechaParam después: el usuario cambia la fecha con el input y NO
+  // debemos revertirla a la de la URL (ese era el bug: se devolvía a hoy).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (typeof fechaParam !== 'string' || !FECHA_REGEX.test(fechaParam)) return
     if (fechaParam === fechaSeleccionada) return
     setFechaSeleccionada(fechaParam)
     setExito(false)
     setModoAjusteCierre(false)
-  }, [fechaParam, fechaSeleccionada])
+  }, [])
 
   const fetchData = useCallback(async ({ soft = false } = {}) => {
     const shouldUseSoftRefresh = soft && hasLoadedOnceRef.current
@@ -163,7 +172,10 @@ export default function CajaPage() {
       setCajaRutaLoading(true)
       setCajaRutaError('')
       try {
-        const res = await fetch(`/api/caja/cobrador/${cajaRutaCobradorId}?fecha=${fechaSeleccionada}`)
+        const qs = periodo.modo === 'hoy'
+          ? `fecha=${periodo.fecha || fechaSeleccionada}`
+          : `desde=${periodo.desde}&hasta=${periodo.hasta}`
+        const res = await fetch(`/api/caja/cobrador/${cajaRutaCobradorId}?${qs}`)
         if (!res.ok) {
           const j = await res.json().catch(() => ({}))
           throw new Error(j.error || 'No se pudo cargar la caja del cobrador')
@@ -177,7 +189,7 @@ export default function CajaPage() {
       }
     })()
     return () => { cancelado = true }
-  }, [cajaTab, cajaRutaCobradorId, fechaSeleccionada])
+  }, [cajaTab, cajaRutaCobradorId, fechaSeleccionada, periodo.modo, periodo.fecha, periodo.desde, periodo.hasta])
 
   useEffect(() => {
     if (!authLoading) fetchData()
@@ -195,6 +207,33 @@ export default function CajaPage() {
     setExitoAjuste(false)
     setModoAjusteCierre(false)
   }
+
+  // Cambio del filtro de periodo (Hoy / 7d / 30d / Personalizado).
+  const handlePeriodoChange = (nuevo) => {
+    setPeriodo(nuevo)
+    if (nuevo.modo === 'hoy' && nuevo.fecha) {
+      setFechaSeleccionada(nuevo.fecha)
+      setRangoData(null)
+    }
+  }
+
+  // Carga del histórico acumulado cuando el periodo es un rango (7d/30d/personalizado).
+  useEffect(() => {
+    if (periodo.modo === 'hoy' || !periodo.desde || !periodo.hasta) { setRangoData(null); return }
+    let cancelado = false
+    ;(async () => {
+      try {
+        const qs = new URLSearchParams({ desde: periodo.desde, hasta: periodo.hasta })
+        if (!esCobrador && filtroCobrador) qs.set('cobradorId', filtroCobrador)
+        const res = await fetch(`/api/caja?${qs.toString()}`)
+        const data = await res.json()
+        if (!cancelado) setRangoData(data?.rango || null)
+      } catch {
+        if (!cancelado) setRangoData(null)
+      }
+    })()
+    return () => { cancelado = true }
+  }, [periodo.modo, periodo.desde, periodo.hasta, filtroCobrador, esCobrador])
 
   const registrarAjusteCaja = async (e) => {
     e.preventDefault()
@@ -797,22 +836,19 @@ export default function CajaPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Caja</h1>
-          <p className="text-sm text-[var(--color-text-muted)] mt-0.5">{cajaData?.fechaDisplay || '—'}</p>
-        </div>
-        <input
-          type="date"
-          value={fechaSeleccionada}
-          onChange={handleFechaChange}
-          className="px-3 py-2 rounded-[8px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)]"
-        />
+      <div>
+        <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Caja</h1>
+        <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
+          {periodo.modo === 'hoy' ? (cajaData?.fechaDisplay || '—') : `${periodo.desde} a ${periodo.hasta}`}
+        </p>
       </div>
 
-      {/* Tabs Cobros / Gastos */}
+      {/* Filtro de periodo */}
+      <FiltroPeriodo value={{ ...periodo, fecha: periodo.fecha || fechaSeleccionada }} onChange={handlePeriodoChange} />
+
+      {/* Tabs Caja / Caja por ruta (los Gastos viven en su propio apartado del menú) */}
       <div className="flex gap-1 p-1 rounded-[12px]" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
-        {[{ key: 'cobros', label: 'Cobros del día' }, { key: 'gastos', label: 'Gastos' }, { key: 'porruta', label: 'Caja por ruta' }].map(t => (
+        {[{ key: 'cobros', label: 'Caja del día' }, { key: 'porruta', label: 'Caja por ruta' }].map(t => (
           <button
             key={t.key}
             type="button"
@@ -824,7 +860,7 @@ export default function CajaPage() {
               boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
             } : { color: 'var(--color-text-muted)' }}
           >
-            {t.label}{t.key === 'gastos' && gastosPendientes > 0 ? ` (${gastosPendientes})` : ''}
+            {t.label}
           </button>
         ))}
       </div>
@@ -844,25 +880,6 @@ export default function CajaPage() {
         <div className="bg-[var(--color-success-dim)] border border-[color-mix(in_srgb,var(--color-success)_30%,transparent)] text-[var(--color-success)] text-sm rounded-[12px] px-4 py-3">
           Ajuste de saldo general registrado correctamente.
         </div>
-      )}
-
-      {cajaTab === 'gastos' && (
-        <Card>
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Gastos menores</p>
-            <button
-              onClick={() => setShowGasto(true)}
-              className="p-1.5 rounded-[8px] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-soft)] transition-all"
-              title="Reportar gasto"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                  d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </button>
-          </div>
-          <ListaGastos soloPendientes={false} fecha={fechaSeleccionada} onCountChange={setGastosPendientes} />
-        </Card>
       )}
 
       {cajaTab === 'porruta' && (
@@ -894,11 +911,11 @@ export default function CajaPage() {
             <>
               <div className="flex items-center justify-between gap-2 px-1">
                 <p className="text-sm font-bold text-[var(--color-text-primary)]">Caja de {cajaRutaData.cobrador?.nombre}</p>
-                {cajaRutaData.cerrado ? <Badge variant="green">Cerrado</Badge> : <Badge variant="yellow">Pendiente cierre</Badge>}
+                {cajaRutaData.esRango ? null : (cajaRutaData.cerrado ? <Badge variant="green">Cerrado</Badge> : <Badge variant="yellow">Pendiente cierre</Badge>)}
               </div>
               <CajaCobradorDetalle data={cajaRutaData} />
               <Link
-                href={`/caja/cobrador/${cajaRutaCobradorId}?fecha=${fechaSeleccionada}`}
+                href={`/caja/cobrador/${cajaRutaCobradorId}?${periodo.modo === 'hoy' ? `fecha=${periodo.fecha || fechaSeleccionada}` : `desde=${periodo.desde}&hasta=${periodo.hasta}`}`}
                 className="block text-center text-xs font-semibold text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] py-2 rounded-[10px] border border-[var(--color-border)]"
               >
                 Abrir en pantalla completa
@@ -911,7 +928,56 @@ export default function CajaPage() {
         </div>
       )}
 
-      {cajaTab === 'cobros' && <>
+      {/* Histórico acumulado del rango (7d / 30d / personalizado) */}
+      {cajaTab === 'cobros' && periodo.modo !== 'hoy' && (
+        <div className="space-y-4">
+          <Card>
+            <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-3">
+              Acumulado del periodo
+            </p>
+            {!rangoData ? (
+              <p className="text-sm text-[var(--color-text-muted)]">Cargando…</p>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
+                    <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Cobrado</p>
+                    <p className="text-base font-bold font-mono-display text-[var(--color-success)] mt-0.5">{formatMoney(rangoData.cobrado)}</p>
+                  </div>
+                  <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
+                    <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Prestado</p>
+                    <p className="text-base font-bold font-mono-display text-[var(--color-warning)] mt-0.5">{rangoData.prestado > 0 ? '-' : ''}{formatMoney(rangoData.prestado)}</p>
+                  </div>
+                  <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
+                    <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Gastos</p>
+                    <p className="text-base font-bold font-mono-display text-[var(--color-danger)] mt-0.5">{rangoData.gastos > 0 ? '-' : ''}{formatMoney(rangoData.gastos)}</p>
+                  </div>
+                </div>
+                <p className="text-[11px] text-[var(--color-text-muted)] mt-2">{rangoData.cantidadPagos} pago{rangoData.cantidadPagos === 1 ? '' : 's'} en el periodo.</p>
+              </>
+            )}
+          </Card>
+
+          {rangoData?.pagos?.length > 0 && (
+            <Card>
+              <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-3">Pagos del periodo</p>
+              <div className="space-y-1.5">
+                {rangoData.pagos.map((p) => (
+                  <div key={p.id} className="flex items-center justify-between gap-2 py-2 border-b border-[var(--color-border)] last:border-0">
+                    <div className="min-w-0">
+                      <p className="text-xs text-[var(--color-text-primary)] truncate">{p.clienteNombre}</p>
+                      <p className="text-[10px] text-[var(--color-text-muted)]">{fmtFecha(p.fechaPago)}{p.cobradorNombre ? ` · ${p.cobradorNombre}` : ''}</p>
+                    </div>
+                    <span className="text-sm font-semibold font-mono-display text-[var(--color-success)] shrink-0">+{formatMoney(p.montoPagado)}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {cajaTab === 'cobros' && periodo.modo === 'hoy' && <>
       {/* HERO CARD: Saldo en caja del dia */}
       {(() => {
         const heroColor = disponibleHoy >= 0 ? '#22c55e' : '#ef4444'

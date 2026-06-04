@@ -482,6 +482,10 @@ export async function GET(request) {
   
   const fechaParam = searchParams.get('fecha')
   const cobradorParam = searchParams.get('cobradorId')
+  // Rango histórico (opcional): si llegan desde/hasta, se devuelve un bloque "rango"
+  // con totales acumulados del periodo (sin tocar la vista de día).
+  const desdeParam = searchParams.get('desde')
+  const hastaParam = searchParams.get('hasta')
 
   // Usar fecha de Colombia (hoy por defecto)
   const fechaBase = fechaParam || getHoyLocal()
@@ -771,6 +775,63 @@ export async function GET(request) {
         total: Math.round(total),
         rutas: rutasCobrador.map(r => ({ id: r.id, nombre: r.nombre, saldoCapital: Math.round(r.saldoCapital || 0) })),
       }
+    }
+  }
+
+  // Bloque "rango" (histórico acumulado): solo si llegan desde/hasta válidos.
+  // Devuelve totales del periodo (cobrado, prestado, gastos, # pagos) + lista de pagos,
+  // sin alterar la vista de día. Respeta el cobrador seleccionado (owner) o el propio (cobrador).
+  if (desdeParam && hastaParam && FECHA_REGEX.test(desdeParam) && FECHA_REGEX.test(hastaParam)) {
+    const { inicio: inicioRango } = getDayRange(desdeParam)
+    const { fin: finRango } = getDayRange(hastaParam)
+    const cobradorRango = rol === 'cobrador' ? userId : (cobradorParam || null)
+
+    const wherePagosRango = {
+      organizationId,
+      fechaPago: { gte: inicioRango, lt: finRango },
+      tipo: { notIn: ['recargo', 'descuento'] },
+    }
+    if (cobradorRango) wherePagosRango.cobradorId = cobradorRango
+
+    const whereGastosRango = {
+      organizationId,
+      fecha: { gte: inicioRango, lt: finRango },
+      estado: 'aprobado',
+    }
+    if (cobradorRango) whereGastosRango.cobradorId = cobradorRango
+
+    const [pagosRangoRaw, gastosRangoAgg, prestadoRango] = await Promise.all([
+      prisma.pago.findMany({
+        where: wherePagosRango,
+        select: {
+          id: true, montoPagado: true, fechaPago: true, tipo: true,
+          cobrador: { select: { id: true, nombre: true } },
+          prestamo: { select: { cliente: { select: { nombre: true } } } },
+        },
+        orderBy: { fechaPago: 'desc' },
+        take: 1000,
+      }),
+      prisma.gastoMenor.aggregate({ where: whereGastosRango, _sum: { monto: true } }),
+      calcularDesembolsadoDia(organizationId, inicioRango, finRango, cobradorRango),
+    ])
+
+    const pagosRango = pagosRangoRaw.map((p) => ({
+      id: p.id,
+      montoPagado: Math.round(p.montoPagado || 0),
+      fechaPago: p.fechaPago,
+      cobradorNombre: p.cobrador?.nombre || null,
+      clienteNombre: p.prestamo?.cliente?.nombre || 'Cliente',
+    }))
+    const cobradoRango = pagosRango.reduce((a, p) => a + p.montoPagado, 0)
+
+    payload.rango = {
+      desde: desdeParam,
+      hasta: hastaParam,
+      cobrado: cobradoRango,
+      prestado: Math.round(prestadoRango || 0),
+      gastos: Math.round(gastosRangoAgg._sum?.monto || 0),
+      cantidadPagos: pagosRango.length,
+      pagos: pagosRango,
     }
   }
 

@@ -24,6 +24,8 @@ export default function CajaCobradorPage() {
   const { id } = useParams()
   const searchParams = useSearchParams()
   const fechaParam = searchParams.get('fecha')
+  const desdeParam = searchParams.get('desde')
+  const hastaParam = searchParams.get('hasta')
   const { esOwner, loading: authLoading } = useAuth()
 
   const [data, setData] = useState(null)
@@ -34,7 +36,9 @@ export default function CajaCobradorPage() {
     setLoading(true)
     setError('')
     try {
-      const qs = fechaParam ? `?fecha=${fechaParam}` : ''
+      const qs = (desdeParam && hastaParam)
+        ? `?desde=${desdeParam}&hasta=${hastaParam}`
+        : (fechaParam ? `?fecha=${fechaParam}` : '')
       const res = await fetch(`/api/caja/cobrador/${id}${qs}`)
       if (!res.ok) {
         const j = await res.json().catch(() => ({}))
@@ -46,7 +50,7 @@ export default function CajaCobradorPage() {
     } finally {
       setLoading(false)
     }
-  }, [id, fechaParam])
+  }, [id, fechaParam, desdeParam, hastaParam])
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -90,9 +94,11 @@ export default function CajaCobradorPage() {
         <div className="flex items-center justify-between gap-2">
           <div>
             <h1 className="text-lg font-bold text-[var(--color-text-primary)]">Caja de {data?.cobrador?.nombre}</h1>
-            <p className="text-xs text-[var(--color-text-muted)]">{fmtFecha(data?.fecha)}</p>
+            <p className="text-xs text-[var(--color-text-muted)]">
+              {data?.esRango ? `${data.desde} a ${data.hasta}` : fmtFecha(data?.fecha)}
+            </p>
           </div>
-          {data?.cerrado ? <Badge variant="green">Cerrado</Badge> : <Badge variant="yellow">Pendiente cierre</Badge>}
+          {data?.esRango ? null : (data?.cerrado ? <Badge variant="green">Cerrado</Badge> : <Badge variant="yellow">Pendiente cierre</Badge>)}
         </div>
       </div>
 

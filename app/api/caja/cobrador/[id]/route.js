@@ -95,8 +95,14 @@ export async function GET(request, { params }) {
   const { organizationId, country = 'co' } = session.user
   const { id: cobradorId } = await params
   const { searchParams } = new URL(request.url)
+  // Soporta día único (?fecha=) o rango histórico acumulado (?desde=&hasta=).
+  const desdeParam = searchParams.get('desde')
+  const hastaParam = searchParams.get('hasta')
+  const FECHA_RX = /^\d{4}-\d{2}-\d{2}$/
+  const esRango = desdeParam && hastaParam && FECHA_RX.test(desdeParam) && FECHA_RX.test(hastaParam)
   const fechaBase = searchParams.get('fecha') || getLocalDateStr(country)
-  const { inicio, fin } = getLocalDayRange(fechaBase, country)
+  const { inicio } = esRango ? getLocalDayRange(desdeParam, country) : getLocalDayRange(fechaBase, country)
+  const { fin }    = esRango ? getLocalDayRange(hastaParam, country) : getLocalDayRange(fechaBase, country)
 
   // Validar que el cobrador pertenezca a la organización.
   const cobrador = await prisma.user.findFirst({
@@ -223,18 +229,18 @@ export async function GET(request, { params }) {
       esClavo: false,
       fecha: d.fecha,
     })),
-    ...gastos.map((g) => ({
-      tipo: 'gasto',
-      monto: Math.round(g.monto || 0),
-      concepto: g.description || null,
-      fecha: g.fecha,
-    })),
+    // Los gastos NO se listan en los movimientos de caja (tienen su propio apartado
+    // en el menú). Sí siguen contando en el cálculo del efectivo del día (arriba).
   ].sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
 
   return Response.json({
     cobrador: { id: cobrador.id, nombre: cobrador.nombre },
-    fecha: fechaBase,
-    cerrado: !!cierre,
+    fecha: esRango ? null : fechaBase,
+    esRango,
+    desde: esRango ? desdeParam : null,
+    hasta: esRango ? hastaParam : null,
+    // El cierre es diario; en rango no aplica un único estado de cierre.
+    cerrado: esRango ? null : !!cierre,
     resumen: {
       cobradoDia,
       prestadoDia,
