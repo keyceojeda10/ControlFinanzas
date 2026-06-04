@@ -49,6 +49,7 @@ export async function GET(request) {
       puedeEditarClientes: true,
       puedeReportarGastos: true,
       puedeVerCapital:     true,
+      puedeVerCapitalRuta: true,
       puedeVerSaldoCaja:   true,
       puedeGestionarRutas: true,
       rutas:     {
@@ -122,6 +123,7 @@ export async function GET(request) {
         editarClientes: c.puedeEditarClientes,
         reportarGastos: c.puedeReportarGastos ?? true,
         verCapital:     c.puedeVerCapital ?? false,
+        verCapitalRuta: c.puedeVerCapitalRuta ?? false,
         verSaldoCaja:   c.puedeVerSaldoCaja ?? false,
         gestionarRutas: c.puedeGestionarRutas ?? false,
       },
@@ -196,6 +198,7 @@ export async function POST(request) {
   const gestionarPrestamos = Boolean(permisos?.gestionarPrestamos ?? crearPrestamos)
   const reportarGastos = Boolean(permisos?.reportarGastos ?? true)
   const verCapital = Boolean(permisos?.verCapital)
+  const verCapitalRuta = Boolean(permisos?.verCapitalRuta)
   const verSaldoCaja = Boolean(permisos?.verSaldoCaja)
   const gestionarRutas = Boolean(permisos?.gestionarRutas)
 
@@ -213,6 +216,7 @@ export async function POST(request) {
       puedeEditarClientes: Boolean(permisos?.editarClientes),
       puedeReportarGastos: reportarGastos,
       puedeVerCapital:     verCapital,
+      puedeVerCapitalRuta: verCapitalRuta,
       puedeVerSaldoCaja:   verSaldoCaja,
       puedeGestionarRutas: gestionarRutas,
     },
