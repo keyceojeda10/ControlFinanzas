@@ -1,0 +1,129 @@
+'use client'
+// components/caja/CajaCobradorDetalle.jsx
+// Cuerpo reutilizable de la caja detallada de un cobrador: resumen del día,
+// desglose por ruta y línea de movimientos (cobros + préstamos + gastos).
+// Recibe `data` ya cargada del endpoint GET /api/caja/cobrador/[id].
+// Se usa en la pantalla dedicada /caja/cobrador/[id] y en la pestaña "Caja por ruta".
+
+import { formatMoney } from '@/lib/i18n'
+import { Card } from '@/components/ui/Card'
+
+const fmtHora = (d) => {
+  if (!d) return '—'
+  return new Date(d).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'America/Bogota' })
+}
+
+const MOV_CONFIG = {
+  cobro:    { label: 'Cobro',    color: 'var(--color-success)', signo: '+' },
+  prestamo: { label: 'Préstamo', color: 'var(--color-warning)', signo: '-' },
+  gasto:    { label: 'Gasto',    color: 'var(--color-danger)',  signo: '-' },
+}
+
+export default function CajaCobradorDetalle({ data }) {
+  const r = data?.resumen || {}
+  const movimientos = data?.movimientos || []
+  const porRuta = data?.porRuta || []
+
+  return (
+    <div className="space-y-4">
+      {/* Resumen del día */}
+      <Card>
+        <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Resumen del día</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
+            <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Cobrado</p>
+            <p className="text-base font-bold font-mono-display text-[var(--color-success)] mt-0.5">{formatMoney(r.cobradoDia)}</p>
+          </div>
+          <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
+            <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Prestado</p>
+            <p className="text-base font-bold font-mono-display text-[var(--color-warning)] mt-0.5">{r.prestadoDia > 0 ? '-' : ''}{formatMoney(r.prestadoDia)}</p>
+          </div>
+          <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
+            <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Seguros</p>
+            <p className="text-base font-bold font-mono-display text-[var(--color-info)] mt-0.5">{formatMoney(r.segurosDia)}</p>
+          </div>
+          <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
+            <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Gastos</p>
+            <p className="text-base font-bold font-mono-display text-[var(--color-danger)] mt-0.5">{r.gastosDia > 0 ? '-' : ''}{formatMoney(r.gastosDia)}</p>
+          </div>
+          <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
+            <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Efectivo del día</p>
+            <p className="text-base font-bold font-mono-display mt-0.5" style={{ color: (r.efectivoDia ?? 0) >= 0 ? 'var(--color-info)' : 'var(--color-danger)' }}>{formatMoney(r.efectivoDia)}</p>
+          </div>
+          <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
+            <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Capital en rutas</p>
+            <p className="text-base font-bold font-mono-display text-[var(--color-text-primary)] mt-0.5">{formatMoney(r.capitalRutasTotal)}</p>
+          </div>
+        </div>
+        <p className="text-[11px] text-[var(--color-text-muted)] mt-2">Efectivo del día = cobrado − prestado − gastos.</p>
+      </Card>
+
+      {/* Capital y movimiento por ruta */}
+      {porRuta.length > 0 && (
+        <Card>
+          <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Por ruta</h2>
+          <div className="space-y-2">
+            {porRuta.map((ruta) => (
+              <div key={ruta.rutaId || 'otros'} className="rounded-[12px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-3">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <span className="text-sm font-semibold text-[var(--color-text-primary)]">{ruta.nombre}</span>
+                  {ruta.rutaId && (
+                    <span className="text-[11px] text-[var(--color-text-muted)]">
+                      Capital: <span className="font-semibold font-mono-display text-[var(--color-text-primary)]">{formatMoney(ruta.saldoCapital)}</span>
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Prestado</p>
+                    <p className="text-sm font-semibold font-mono-display text-[var(--color-warning)]">{ruta.prestadoDia > 0 ? '-' : ''}{formatMoney(ruta.prestadoDia)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Cobrado</p>
+                    <p className="text-sm font-semibold font-mono-display text-[var(--color-success)]">{formatMoney(ruta.cobradoDia)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Seguros</p>
+                    <p className="text-sm font-semibold font-mono-display text-[var(--color-info)]">{formatMoney(ruta.segurosDia)}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Movimientos del día */}
+      <Card>
+        <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Movimientos del día</h2>
+        {movimientos.length === 0 ? (
+          <p className="text-sm text-[var(--color-text-muted)]">Sin movimientos registrados este día.</p>
+        ) : (
+          <div className="space-y-1.5">
+            {movimientos.map((m, i) => {
+              const cfg = MOV_CONFIG[m.tipo] || MOV_CONFIG.cobro
+              return (
+                <div key={i} className="flex items-center justify-between gap-2 py-2 border-b border-[var(--color-border)] last:border-0">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[11px] font-semibold" style={{ color: cfg.color }}>{cfg.label}</span>
+                      {m.esClavo && <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-[var(--color-danger)]/15 text-[var(--color-danger)]">CLAVO</span>}
+                      <span className="text-[11px] text-[var(--color-text-muted)]">{fmtHora(m.fecha)}</span>
+                    </div>
+                    <p className="text-xs text-[var(--color-text-primary)] truncate">
+                      {m.tipo === 'gasto' ? (m.concepto || 'Gasto menor') : (m.cliente || 'Cliente')}
+                      {m.rutaNombre ? <span className="text-[var(--color-text-muted)]"> · {m.rutaNombre}</span> : null}
+                    </p>
+                  </div>
+                  <span className="text-sm font-semibold font-mono-display shrink-0" style={{ color: cfg.color }}>
+                    {cfg.signo}{formatMoney(m.monto)}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </Card>
+    </div>
+  )
+}

@@ -234,6 +234,16 @@ const NAV_COBRADOR = [
     ),
   },
   {
+    label: 'Rutas',
+    href:  '/rutas', // el destino se resuelve dinámicamente: 1 ruta → /rutas/[id], varias → /rutas
+    icon: (
+      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+          d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+      </svg>
+    ),
+  },
+  {
     label: 'Caja',
     href:  '/caja',
     icon: (
@@ -273,7 +283,16 @@ export default function Sidebar() {
 
   const { syncMeta, startBulkSync, bulkSyncing, bulkProgress } = useOffline()
   const navSections = esCobrador ? null : NAV_SECTIONS_OWNER
-  const navFlat = esCobrador ? NAV_COBRADOR : null
+  // Para el cobrador, el ítem "Rutas" apunta inteligente: si tiene UNA sola ruta,
+  // va directo a esa ruta; si tiene varias (o ninguna conocida), va al listado.
+  const rutaIdsCobrador = session?.user?.rutaIds ?? []
+  const navFlat = esCobrador
+    ? NAV_COBRADOR.map((item) =>
+        item.label === 'Rutas' && rutaIdsCobrador.length === 1
+          ? { ...item, href: `/rutas/${rutaIdsCobrador[0]}` }
+          : item
+      )
+    : null
 
   // Verificar advertencia de cierre de caja cada minuto
   useEffect(() => {

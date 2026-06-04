@@ -3,6 +3,8 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { registrarMovimientoCapital } from '@/lib/capital'
+import { calcularSaldoPendiente } from '@/lib/calculos'
 
 async function verificarRuta(id, organizationId) {
   return prisma.ruta.findFirst({ where: { id, organizationId } })
@@ -31,7 +33,11 @@ export async function POST(request, { params }) {
   const ruta = await verificarRuta(id, organizationId)
   if (!ruta) return Response.json({ error: 'Ruta no encontrada' }, { status: 404 })
 
-  const { clienteIds, forzar } = await request.json()
+  // descontarCapitalRuta: si true, el saldo pendiente de los préstamos activos de los
+  // clientes asignados se reserva del capital de ESTA ruta (reasignación: no cambia el
+  // total del negocio, solo la sub-bolsa). Resuelve el descuadre de que un cliente que
+  // entra a la ruta con un préstamo no descontaba nada del capital de la ruta.
+  const { clienteIds, forzar, descontarCapitalRuta = false } = await request.json()
   if (!Array.isArray(clienteIds) || !clienteIds.length) {
     return Response.json({ error: 'clienteIds debe ser un array no vacío' }, { status: 400 })
   }
@@ -55,6 +61,14 @@ export async function POST(request, { params }) {
     )
   }
 
+  // Préstamos activos de los clientes a asignar (para descontar su saldo del capital de la ruta).
+  const prestamosActivos = descontarCapitalRuta
+    ? await prisma.prestamo.findMany({
+      where: { clienteId: { in: clienteIds }, organizationId, estado: 'activo', esClavo: false },
+      select: { id: true, totalAPagar: true, totalPagado: true, pagos: { select: { montoPagado: true, tipo: true } } },
+    })
+    : []
+
   // Asignar clientes en transaccion atomica (max orden + updates juntos)
   await prisma.$transaction(async (tx) => {
     const maxOrden = await tx.cliente.aggregate({
@@ -68,6 +82,27 @@ export async function POST(request, { params }) {
         where: { id: clienteIds[i] },
         data: { rutaId: id, ordenRuta: nextOrden + i },
       })
+    }
+
+    // Reservar el saldo pendiente de los préstamos activos en el capital de la ruta.
+    // ajusteArranqueRuta: no altera el saldo global de la org, solo la sub-bolsa de la ruta.
+    if (descontarCapitalRuta) {
+      for (const p of prestamosActivos) {
+        const saldo = Math.round(calcularSaldoPendiente(p))
+        if (saldo <= 0) continue
+        await registrarMovimientoCapital(tx, {
+          organizationId,
+          tipo: 'desembolso',
+          direccion: 'egreso',
+          monto: saldo,
+          descripcion: `Reserva de capital por préstamo de cliente asignado a la ruta`,
+          referenciaId: p.id,
+          referenciaTipo: 'prestamo',
+          rutaId: id,
+          ajusteArranqueRuta: true,
+          creadoPorId: session.user.id,
+        })
+      }
     }
   })
 

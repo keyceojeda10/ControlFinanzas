@@ -83,7 +83,7 @@ export async function GET(request) {
         orderBy:    { fechaPago: 'desc' },
       },
     },
-    orderBy: { nombre: 'asc' },
+    orderBy: [{ orden: 'asc' }, { nombre: 'asc' }],
   })
 
   const orgCfg = await prisma.organization.findUnique({

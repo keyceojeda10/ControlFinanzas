@@ -24,7 +24,7 @@ export default function AuthInput({
     <div className="flex flex-col gap-1.5">
       {label && (
         <label htmlFor={id} className="text-[11px] font-medium uppercase tracking-[0.05em]"
-          style={{ color: '#666' }}
+          style={{ color: 'var(--color-text-muted)' }}
         >
           {label}
         </label>
@@ -32,7 +32,7 @@ export default function AuthInput({
       <div className="relative">
         {icon && (
           <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
-            style={{ color: '#666' }}
+            style={{ color: 'var(--color-text-muted)' }}
           >
             <span className="block w-4 h-4">{icon}</span>
           </span>
@@ -49,9 +49,9 @@ export default function AuthInput({
           style={{
             paddingLeft:  icon ? '38px' : '12px',
             paddingRight: (isPass && showPasswordToggle) ? '40px' : '12px',
-            background:   'rgba(255,255,255,0.03)',
-            border:       '1px solid rgba(255,255,255,0.08)',
-            color:        '#f0f0f5',
+            background:   'var(--color-bg-card)',
+            border:       '1px solid var(--color-border)',
+            color:        'var(--color-text-primary)',
           }}
           {...props}
         />
@@ -61,7 +61,7 @@ export default function AuthInput({
             onClick={() => setShowPass((v) => !v)}
             tabIndex={-1}
             className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-[8px] flex items-center justify-center hover:bg-white/5 transition-colors"
-            style={{ color: '#666' }}
+            style={{ color: 'var(--color-text-muted)' }}
             aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
           >
             {showPass ? (

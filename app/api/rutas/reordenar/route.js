@@ -11,14 +11,22 @@ export async function PUT(request) {
   }
 
   const { organizationId, rol } = session.user
-  // Solo el owner organiza el orden de las rutas
-  if (rol !== 'owner') {
+  // Owner reordena todas las rutas; el cobrador puede reordenar SOLO las suyas.
+  if (rol !== 'owner' && rol !== 'cobrador') {
     return Response.json({ error: 'No tienes permiso para reordenar rutas' }, { status: 403 })
   }
 
   const { rutaIds } = await request.json()
   if (!Array.isArray(rutaIds) || !rutaIds.length) {
     return Response.json({ error: 'rutaIds debe ser un array no vacío' }, { status: 400 })
+  }
+
+  // El cobrador solo puede reordenar rutas que tiene asignadas.
+  if (rol === 'cobrador') {
+    const suyas = new Set(session.user.rutaIds ?? [])
+    if (!rutaIds.every((rid) => suyas.has(rid))) {
+      return Response.json({ error: 'Solo puedes reordenar tus rutas asignadas' }, { status: 403 })
+    }
   }
 
   // Verificar que todas las rutas pertenecen a la organización

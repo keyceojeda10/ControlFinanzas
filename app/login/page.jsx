@@ -175,7 +175,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-2" style={{ background: '#060609' }}>
+    <div className="min-h-screen lg:grid lg:grid-cols-2" style={{ background: 'var(--color-bg-base)' }}>
       {/* ── Left panel: Form ── */}
       <div className="flex flex-col justify-center items-center px-6 py-10 lg:px-12 xl:px-20 min-h-screen lg:min-h-0">
         <div className="w-full max-w-sm">
@@ -188,18 +188,18 @@ export default function LoginPage() {
               >
                 <img src="/logo-icon.svg" alt="" width={24} height={24} />
               </div>
-              <span className="text-[15px] font-bold" style={{ color: '#f0f0f5' }}>Control Finanzas</span>
+              <span className="text-[15px] font-bold" style={{ color: 'var(--color-text-primary)' }}>Control Finanzas</span>
             </div>
           </div>
 
           {/* Heading */}
           <h1
             className="text-[32px] lg:text-[38px] leading-[1.1] font-normal mb-2"
-            style={{ color: '#f0f0f5', fontFamily: "var(--font-serif-display), Georgia, serif" }}
+            style={{ color: 'var(--color-text-primary)', fontFamily: "var(--font-serif-display), Georgia, serif" }}
           >
-            Bienvenido<br />de <em style={{ color: '#f5c518', fontStyle: 'italic' }}>vuelta</em>.
+            Bienvenido<br />de <em style={{ color: 'var(--color-accent)', fontStyle: 'italic' }}>vuelta</em>.
           </h1>
-          <p className="text-[14px] mb-8" style={{ color: '#666' }}>
+          <p className="text-[14px] mb-8" style={{ color: 'var(--color-text-muted)' }}>
             La plataforma de cartera mas usada por prestamistas en Colombia.
           </p>
 
@@ -255,7 +255,7 @@ export default function LoginPage() {
 
             <div className="text-right">
               <Link href="/forgot-password" className="text-xs hover:underline transition-colors"
-                style={{ color: '#666' }}
+                style={{ color: 'var(--color-text-muted)' }}
               >
                 Olvidaste tu contrasena?
               </Link>
@@ -267,15 +267,15 @@ export default function LoginPage() {
           </form>
 
           {/* Sign up link */}
-          <p className="text-[13px] mt-8 text-center" style={{ color: '#666' }}>
+          <p className="text-[13px] mt-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
             Apenas empiezas?{' '}
-            <Link href="/registro" className="font-medium hover:underline" style={{ color: '#f5c518' }}>
+            <Link href="/registro" className="font-medium hover:underline" style={{ color: 'var(--color-accent)' }}>
               Crea tu cuenta
             </Link>
           </p>
 
           {/* Compliance footer */}
-          <div className="flex items-center justify-center gap-4 mt-10 text-[11px]" style={{ color: '#444' }}>
+          <div className="flex items-center justify-center gap-4 mt-10 text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
             <span>Cifrado SSL</span>
             <span>·</span>
             <span>Colombia</span>

@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { getUtcOffset } from '@/lib/i18n'
+import { calcularDiasMora } from '@/lib/calculos'
 
 export const dynamic = 'force-dynamic'
 
@@ -48,7 +49,7 @@ export async function GET() {
   const hoy     = inicioHoyUTC(country)
   const hace7   = inicio7DiasUTC(country)
 
-  const [pagosSemana, pagosHoy, ruta, clientesMora] = await Promise.all([
+  const [pagosSemana, pagosHoy, ruta, clientesRuta] = await Promise.all([
     prisma.pago.findMany({
       where: {
         organizationId: orgId,
@@ -86,17 +87,45 @@ export async function GET() {
         },
       },
     }),
+    // Clientes en mora: NO existe un campo `enMora` en Cliente; la mora se calcula
+    // en memoria desde los préstamos activos (igual que dashboard/resumen y rutas/[id]).
     prisma.cliente.findMany({
       where: {
         organizationId: orgId,
         ruta: { cobradorId: userId },
-        enMora: true,
+        estado: 'activo',
       },
-      select: { nombre: true, diasSinCobro: true },
-      orderBy: { diasSinCobro: 'desc' },
-      take: 10,
+      select: {
+        nombre: true,
+        diasSinCobro: true,
+        prestamos: {
+          where: { estado: 'activo', esClavo: false },
+          select: {
+            estado: true,
+            cuotaDiaria: true,
+            totalAPagar: true,
+            totalPagado: true,
+            fechaInicio: true,
+            frecuencia: true,
+            diasPlazo: true,
+            diaCobroSemana: true,
+            diaCobroMes: true,
+          },
+        },
+      },
     }),
   ])
+
+  // Calcular días de mora por cliente (máximo entre sus préstamos activos) y quedarnos
+  // con los que tienen mora > 0, ordenados desc, top 10.
+  const clientesMora = clientesRuta
+    .map((c) => {
+      const diasMora = c.prestamos.reduce((max, p) => Math.max(max, calcularDiasMora(p)), 0)
+      return { nombre: c.nombre, diasMora }
+    })
+    .filter((c) => c.diasMora > 0)
+    .sort((a, b) => b.diasMora - a.diasMora)
+    .slice(0, 10)
 
   const recaudadoHoy = pagosHoy.reduce((s, p) => s + Number(p.montoPagado), 0)
 
@@ -135,7 +164,7 @@ export async function GET() {
       totalClientesActivos: ruta?._count?.clientes ?? 0,
       clientesMora: clientesMora.map((c) => ({
         nombre: c.nombre,
-        diasSinCobro: c.diasSinCobro ?? 0,
+        diasMora: c.diasMora,
       })),
     },
   })

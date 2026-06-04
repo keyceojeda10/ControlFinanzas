@@ -117,23 +117,23 @@ function PlanCard({ plan, selected, onSelect, countryCode = 'co' }) {
           }}>
             {activo && <div className="w-2 h-2 rounded-full" style={{ background: '#f5c518' }} />}
           </div>
-          <span className="text-[13px] font-semibold" style={{ color: activo ? '#f5c518' : '#f0f0f5' }}>
+          <span className="text-[13px] font-semibold" style={{ color: activo ? '#f5c518' : 'var(--color-text-primary)' }}>
             {plan.nombre}
           </span>
         </div>
-        <span className="font-mono-display text-[14px] font-bold" style={{ color: activo ? '#f5c518' : '#f0f0f5' }}>
+        <span className="font-mono-display text-[14px] font-bold" style={{ color: activo ? '#f5c518' : 'var(--color-text-primary)' }}>
           {formatMoney(precioLocal, countryCode)}
-          <span className="text-[10px] font-normal" style={{ color: '#666' }}>/mes</span>
+          <span className="text-[10px] font-normal" style={{ color: 'var(--color-text-muted)' }}>/mes</span>
         </span>
       </div>
 
-      <p className="text-[11px] leading-relaxed mb-3" style={{ color: '#888' }}>
+      <p className="text-[11px] leading-relaxed mb-3" style={{ color: 'var(--color-text-muted)' }}>
         {plan.descripcion}
       </p>
 
       <ul className="space-y-1">
         {plan.features.map((f, i) => (
-          <li key={i} className="flex items-center gap-1.5 text-[11px]" style={{ color: '#999' }}>
+          <li key={i} className="flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
             <svg className="w-3 h-3 shrink-0" style={{ color: activo ? '#f5c518' : '#666' }} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
@@ -335,7 +335,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#060609' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--color-bg-base)' }}>
       <div className="flex-1 flex flex-col items-center px-4 py-8 lg:py-12">
         <div className="w-full max-w-lg">
 
@@ -348,18 +348,18 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
               >
                 <img src="/logo-icon.svg" alt="" width={22} height={22} />
               </div>
-              <span className="text-[14px] font-bold" style={{ color: '#f0f0f5' }}>Control Finanzas</span>
+              <span className="text-[14px] font-bold" style={{ color: 'var(--color-text-primary)' }}>Control Finanzas</span>
             </Link>
           </div>
 
           {/* Heading */}
           <h1
             className="text-[28px] lg:text-[34px] leading-[1.1] font-normal mb-2"
-            style={{ color: '#f0f0f5', fontFamily: "var(--font-serif-display), Georgia, serif" }}
+            style={{ color: 'var(--color-text-primary)', fontFamily: "var(--font-serif-display), Georgia, serif" }}
           >
             Crea tu <em style={{ color: '#f5c518', fontStyle: 'italic' }}>cuenta</em>
           </h1>
-          <p className="text-[14px] mb-4" style={{ color: '#666' }}>
+          <p className="text-[14px] mb-4" style={{ color: 'var(--color-text-muted)' }}>
             14 dias gratis. Sin tarjeta de credito.
           </p>
 
@@ -372,10 +372,10 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
               value={country}
               onChange={(e) => setCountry(e.target.value)}
               className="flex-1 bg-transparent text-sm font-medium focus:outline-none cursor-pointer"
-              style={{ color: '#f0f0f5' }}
+              style={{ color: 'var(--color-text-primary)' }}
             >
               {PAISES.map(p => (
-                <option key={p.code} value={p.code} style={{ background: '#141419', color: '#f0f0f5' }}>{p.name}</option>
+                <option key={p.code} value={p.code} style={{ background: 'var(--color-bg-card)', color: 'var(--color-text-primary)' }}>{p.name}</option>
               ))}
             </select>
           </div>
@@ -385,25 +385,25 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
             <div className="flex items-center gap-1.5">
               <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold" style={{
                 background: step >= 1 ? '#f5c518' : 'rgba(255,255,255,0.06)',
-                color: step >= 1 ? '#0a0a0a' : '#666',
+                color: step >= 1 ? '#0a0a0a' : 'var(--color-text-muted)',
               }}>1</div>
-              <span className="text-[12px] font-medium" style={{ color: step >= 1 ? '#f0f0f5' : '#666' }}>Plan</span>
+              <span className="text-[12px] font-medium" style={{ color: step >= 1 ? 'var(--color-text-primary)' : 'var(--color-text-muted)' }}>Plan</span>
             </div>
             <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.08)' }} />
             <div className="flex items-center gap-1.5">
               <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold" style={{
                 background: step >= 2 ? '#f5c518' : 'rgba(255,255,255,0.06)',
-                color: step >= 2 ? '#0a0a0a' : '#666',
+                color: step >= 2 ? '#0a0a0a' : 'var(--color-text-muted)',
               }}>2</div>
-              <span className="text-[12px] font-medium" style={{ color: step >= 2 ? '#f0f0f5' : '#666' }}>Datos</span>
+              <span className="text-[12px] font-medium" style={{ color: step >= 2 ? 'var(--color-text-primary)' : 'var(--color-text-muted)' }}>Datos</span>
             </div>
             <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.08)' }} />
             <div className="flex items-center gap-1.5">
               <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold" style={{
                 background: step >= 3 ? '#f5c518' : 'rgba(255,255,255,0.06)',
-                color: step >= 3 ? '#0a0a0a' : '#666',
+                color: step >= 3 ? '#0a0a0a' : 'var(--color-text-muted)',
               }}>3</div>
-              <span className="text-[12px] font-medium" style={{ color: step >= 3 ? '#f0f0f5' : '#666' }}>Verificar</span>
+              <span className="text-[12px] font-medium" style={{ color: step >= 3 ? 'var(--color-text-primary)' : 'var(--color-text-muted)' }}>Verificar</span>
             </div>
           </div>
 
@@ -416,8 +416,8 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                   <svg className="w-4 h-4" style={{ color: '#f5c518' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
                   </svg>
-                  <span className="text-[13px] font-semibold" style={{ color: '#f0f0f5' }}>Cobras solo</span>
-                  <span className="text-[11px]" style={{ color: '#666' }}>Manejas tu cartera sin cobradores</span>
+                  <span className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>Cobras solo</span>
+                  <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Manejas tu cartera sin cobradores</span>
                 </div>
                 <div className="grid gap-2">
                   {PLANES_SOLO.map(p => (
@@ -432,8 +432,8 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                   <svg className="w-4 h-4" style={{ color: '#f5c518' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
                   </svg>
-                  <span className="text-[13px] font-semibold" style={{ color: '#f0f0f5' }}>Necesitas cobradores</span>
-                  <span className="text-[11px]" style={{ color: '#666' }}>Tienes un equipo que cobra por ti</span>
+                  <span className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>Necesitas cobradores</span>
+                  <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Tienes un equipo que cobra por ti</span>
                 </div>
                 <div className="grid gap-2">
                   {PLANES_EQUIPO.map(p => (
@@ -444,12 +444,12 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
 
               {/* Info notices */}
               <div className="space-y-2 mb-6">
-                <div className="flex items-start gap-2 text-[11px] leading-relaxed" style={{ color: '#888' }}>
+                <div className="flex items-start gap-2 text-[11px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
                   <svg className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: '#f5c518' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
                   </svg>
                   <span>
-                    Al terminar la prueba, quedaras en el plan <strong style={{ color: '#f0f0f5' }}>{infoPlan?.nombre}</strong>.
+                    Al terminar la prueba, quedaras en el plan <strong style={{ color: 'var(--color-text-primary)' }}>{infoPlan?.nombre}</strong>.
                     Puedes cambiar de plan en cualquier momento desde la configuracion.
                   </span>
                 </div>
@@ -468,7 +468,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
                   <span className="text-xs">
-                    Referido por <strong style={{ color: '#f0f0f5' }}>{referrer.nombreOrg}</strong>
+                    Referido por <strong style={{ color: 'var(--color-text-primary)' }}>{referrer.nombreOrg}</strong>
                   </span>
                 </div>
               )}
@@ -499,7 +499,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                   <p className="text-[12px] font-semibold" style={{ color: '#f5c518' }}>
                     Plan {infoPlan?.nombre}
                   </p>
-                  <p className="text-[11px]" style={{ color: '#888' }}>
+                  <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
                     14 dias gratis · luego {formatMoney(getPrecioPlan(infoPlan?.key, country), country)}/mes
                   </p>
                 </div>
@@ -573,8 +573,8 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                     <svg className="w-3.5 h-3.5 shrink-0 mt-px" style={{ color: '#22c55e' }} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                     </svg>
-                    <span className="text-[11px] leading-relaxed" style={{ color: '#888' }}>
-                      Solo lo usamos para tu cuenta y para recuperarla. <strong style={{ color: '#aaa' }}>Nunca compartimos ni vendemos tu informacion.</strong>
+                    <span className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+                      Solo lo usamos para tu cuenta y para recuperarla. <strong style={{ color: 'var(--color-text-secondary)' }}>Nunca compartimos ni vendemos tu informacion.</strong>
                     </span>
                   </div>
                 </div>
@@ -632,7 +632,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                     onChange={(e) => setForm({ ...form, terminosAceptados: e.target.checked })}
                     className="mt-0.5 w-4 h-4 rounded cursor-pointer accent-[#f5c518]"
                   />
-                  <span className="text-xs leading-relaxed" style={{ color: '#666' }}>
+                  <span className="text-xs leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
                     Acepto los{' '}
                     <a href="https://control-finanzas.com/terminos-uso" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: '#f5c518' }}>
                       Terminos de uso
@@ -649,7 +649,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                     type="button"
                     onClick={() => setStep(1)}
                     className="h-11 px-4 rounded-[12px] text-[13px] font-medium transition-colors"
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#ccc' }}
+                    style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}
                   >
                     Atras
                   </button>
@@ -674,10 +674,10 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                 </svg>
               </div>
 
-              <h2 className="text-[20px] font-bold mb-2" style={{ color: '#f0f0f5' }}>
+              <h2 className="text-[20px] font-bold mb-2" style={{ color: 'var(--color-text-primary)' }}>
                 Verifica tu correo
               </h2>
-              <p className="text-[13px] mb-1" style={{ color: '#888' }}>
+              <p className="text-[13px] mb-1" style={{ color: 'var(--color-text-muted)' }}>
                 Enviamos un codigo de 6 digitos a
               </p>
               <p className="text-[14px] font-semibold mb-6" style={{ color: '#f5c518' }}>
@@ -708,9 +708,9 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                     disabled={otpLoading}
                     className="w-11 h-13 text-center text-[22px] font-bold rounded-[12px] outline-none transition-all"
                     style={{
-                      background: 'rgba(255,255,255,0.04)',
-                      border: `1.5px solid ${digit ? 'rgba(245,197,24,0.5)' : 'rgba(255,255,255,0.1)'}`,
-                      color: '#f0f0f5',
+                      background: 'var(--color-bg-card)',
+                      border: `1.5px solid ${digit ? 'rgba(245,197,24,0.5)' : 'var(--color-border)'}`,
+                      color: 'var(--color-text-primary)',
                       caretColor: '#f5c518',
                     }}
                   />
@@ -741,27 +741,27 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                   onClick={handleSaltarVerificacion}
                   disabled={otpLoading}
                   className="text-[12px] transition-colors"
-                  style={{ color: '#666' }}
+                  style={{ color: 'var(--color-text-muted)' }}
                 >
                   Saltar por ahora
                 </button>
               </div>
 
-              <p className="text-[11px] mt-5 leading-relaxed" style={{ color: '#555' }}>
+              <p className="text-[11px] mt-5 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
                 Revisa tu bandeja de entrada y la carpeta de spam. El codigo expira en 30 minutos.
               </p>
             </div>
           )}
 
           {/* Footer links */}
-          <p className="text-[13px] mt-8 text-center" style={{ color: '#666' }}>
+          <p className="text-[13px] mt-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
             {step === 3 ? '' : <>Ya tienes cuenta?{' '}
             <Link href="/login" className="font-medium hover:underline" style={{ color: '#f5c518' }}>
               Inicia sesion
             </Link></>}
           </p>
 
-          <div className="flex items-center justify-center gap-2.5 mt-8 text-[11px] flex-wrap" style={{ color: '#555' }}>
+          <div className="flex items-center justify-center gap-2.5 mt-8 text-[11px] flex-wrap" style={{ color: 'var(--color-text-muted)' }}>
             <span className="inline-flex items-center gap-1">
               <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />

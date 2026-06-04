@@ -17,6 +17,7 @@ import { SkeletonCard }        from '@/components/ui/Skeleton'
 import ReportarGasto          from '@/components/gastos/ReportarGasto'
 import ListaGastos            from '@/components/gastos/ListaGastos'
 import ListadoPagos           from '@/components/pagos/ListadoPagos'
+import CajaCobradorDetalle    from '@/components/caja/CajaCobradorDetalle'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -93,6 +94,11 @@ export default function CajaPage() {
   const [modoAjusteCierre, setModoAjusteCierre] = useState(false)
   const [isOffline, setIsOffline] = useState(false)
   const [filtroCobrador, setFiltroCobrador] = useState('')
+  // Pestaña "Caja por ruta": cobrador seleccionado + su detalle (caja completa)
+  const [cajaRutaCobradorId, setCajaRutaCobradorId] = useState('')
+  const [cajaRutaData, setCajaRutaData] = useState(null)
+  const [cajaRutaLoading, setCajaRutaLoading] = useState(false)
+  const [cajaRutaError, setCajaRutaError] = useState('')
   // Historial de cierres del owner (carga perezosa al expandir)
   const [historialAbierto, setHistorialAbierto] = useState(false)
   const [historial, setHistorial] = useState(null)
@@ -145,6 +151,33 @@ export default function CajaPage() {
       hasLoadedOnceRef.current = true
     }
   }, [fechaSeleccionada])
+
+  // Pestaña "Caja por ruta": carga el detalle del cobrador seleccionado.
+  useEffect(() => {
+    if (cajaTab !== 'porruta' || !cajaRutaCobradorId) {
+      setCajaRutaData(null)
+      return
+    }
+    let cancelado = false
+    ;(async () => {
+      setCajaRutaLoading(true)
+      setCajaRutaError('')
+      try {
+        const res = await fetch(`/api/caja/cobrador/${cajaRutaCobradorId}?fecha=${fechaSeleccionada}`)
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}))
+          throw new Error(j.error || 'No se pudo cargar la caja del cobrador')
+        }
+        const data = await res.json()
+        if (!cancelado) setCajaRutaData(data)
+      } catch (e) {
+        if (!cancelado) { setCajaRutaError(e.message); setCajaRutaData(null) }
+      } finally {
+        if (!cancelado) setCajaRutaLoading(false)
+      }
+    })()
+    return () => { cancelado = true }
+  }, [cajaTab, cajaRutaCobradorId, fechaSeleccionada])
 
   useEffect(() => {
     if (!authLoading) fetchData()
@@ -779,7 +812,7 @@ export default function CajaPage() {
 
       {/* Tabs Cobros / Gastos */}
       <div className="flex gap-1 p-1 rounded-[12px]" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
-        {[{ key: 'cobros', label: 'Cobros del día' }, { key: 'gastos', label: 'Gastos' }].map(t => (
+        {[{ key: 'cobros', label: 'Cobros del día' }, { key: 'gastos', label: 'Gastos' }, { key: 'porruta', label: 'Caja por ruta' }].map(t => (
           <button
             key={t.key}
             type="button"
@@ -830,6 +863,52 @@ export default function CajaPage() {
           </div>
           <ListaGastos soloPendientes={false} fecha={fechaSeleccionada} onCountChange={setGastosPendientes} />
         </Card>
+      )}
+
+      {cajaTab === 'porruta' && (
+        <div className="space-y-4">
+          <Card>
+            <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-1">Caja por cobrador / ruta</p>
+            <p className="text-[11px] text-[var(--color-text-muted)] mb-3">
+              Selecciona un cobrador para ver su caja del día: lo que prestó, cobró, los seguros, el efectivo y el capital de cada ruta, con todos sus movimientos.
+            </p>
+            <select
+              value={cajaRutaCobradorId}
+              onChange={(e) => setCajaRutaCobradorId(e.target.value)}
+              className="w-full h-10 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-2 text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-info)]"
+            >
+              <option value="">— Elige un cobrador —</option>
+              {cobradoresParaFiltro.map((c) => (
+                <option key={c.id} value={c.id}>{c.nombre}</option>
+              ))}
+            </select>
+          </Card>
+
+          {cajaRutaLoading && <SkeletonCard />}
+          {cajaRutaError && (
+            <div className="bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[12px] px-4 py-3">
+              {cajaRutaError}
+            </div>
+          )}
+          {!cajaRutaLoading && !cajaRutaError && cajaRutaData && (
+            <>
+              <div className="flex items-center justify-between gap-2 px-1">
+                <p className="text-sm font-bold text-[var(--color-text-primary)]">Caja de {cajaRutaData.cobrador?.nombre}</p>
+                {cajaRutaData.cerrado ? <Badge variant="green">Cerrado</Badge> : <Badge variant="yellow">Pendiente cierre</Badge>}
+              </div>
+              <CajaCobradorDetalle data={cajaRutaData} />
+              <Link
+                href={`/caja/cobrador/${cajaRutaCobradorId}?fecha=${fechaSeleccionada}`}
+                className="block text-center text-xs font-semibold text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] py-2 rounded-[10px] border border-[var(--color-border)]"
+              >
+                Abrir en pantalla completa
+              </Link>
+            </>
+          )}
+          {!cajaRutaLoading && !cajaRutaError && !cajaRutaData && cajaRutaCobradorId === '' && (
+            <p className="text-sm text-[var(--color-text-muted)] text-center py-6">Elige un cobrador para ver su caja detallada.</p>
+          )}
+        </div>
       )}
 
       {cajaTab === 'cobros' && <>
@@ -1225,47 +1304,20 @@ export default function CajaPage() {
               const expandido = !!cobradorExpandido[c.id]
               const toggleExpand = () => setCobradorExpandido((prev) => ({ ...prev, [c.id]: !prev[c.id] }))
 
-              // Caja detallada por cobrador: lo que prestó/cobró, seguros, efectivo del día
-              // y el capital que le queda a sus rutas. Se muestra en el detalle expandido.
-              const prestadoDiaC = Math.round(c.prestadoDia || 0)
-              const segurosDiaC = Math.round(c.segurosDia?.monto || 0)
-              const segurosCantC = c.segurosDia?.cantidad || 0
-              const gastosDiaC = Math.round(c.gastosDia || 0)
-              const efectivoDiaC = Math.round(c.efectivoDia || 0)
-              const capitalRutasC = c.capitalRutas || { total: 0, rutas: [] }
+              // El detalle completo (prestado/cobrado/seguros/efectivo/capital + movimientos)
+              // vive ahora en la pestaña "Caja por ruta". Aquí solo dejamos un acceso directo.
               const detalleCobrador = (
-                <div className="space-y-2 border-t border-[var(--color-border)] pt-3 mt-1">
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2">
-                      <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Prestado</p>
-                      <p className="text-sm font-semibold font-mono-display text-[var(--color-warning)]">{prestadoDiaC > 0 ? '-' : ''}{formatMoney(prestadoDiaC)}</p>
-                    </div>
-                    <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2">
-                      <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Cobrado</p>
-                      <p className="text-sm font-semibold font-mono-display text-[var(--color-success)]">{formatMoney(recaudadoDiaCobrador)}</p>
-                    </div>
-                    <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2">
-                      <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Seguros</p>
-                      <p className="text-sm font-semibold font-mono-display text-[var(--color-info)]">{formatMoney(segurosDiaC)}{segurosCantC > 0 ? <span className="text-[10px] text-[var(--color-text-muted)]"> ·{segurosCantC}</span> : null}</p>
-                    </div>
-                    <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2">
-                      <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Efectivo del día</p>
-                      <p className="text-sm font-semibold font-mono-display" style={{ color: efectivoDiaC >= 0 ? 'var(--color-info)' : 'var(--color-danger)' }}>{formatMoney(efectivoDiaC)}</p>
-                    </div>
-                    <div className="col-span-2 rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2">
-                      <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Capital de ruta{capitalRutasC.rutas.length > 1 ? 's' : ''}</p>
-                      <p className="text-sm font-semibold font-mono-display text-[var(--color-text-primary)]">{formatMoney(capitalRutasC.total)}</p>
-                    </div>
-                  </div>
-                  <Link
-                    href={`/caja/cobrador/${c.id}?fecha=${fechaSeleccionada}`}
+                <div className="border-t border-[var(--color-border)] pt-3 mt-1">
+                  <button
+                    type="button"
+                    onClick={() => { setCajaRutaCobradorId(c.id); setCajaTab('porruta') }}
                     className="w-full text-[12px] font-semibold text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] flex items-center justify-center gap-1 py-2 rounded-[10px] border border-[var(--color-border)]"
                   >
-                    Ver caja completa
+                    Ver caja por ruta de {c.nombre}
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                     </svg>
-                  </Link>
+                  </button>
                 </div>
               )
 

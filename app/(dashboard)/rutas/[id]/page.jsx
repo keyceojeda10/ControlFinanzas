@@ -704,12 +704,28 @@ export default function RutaDetallePage({ params }) {
       const nombres = clientesEnOtraRuta.filter((c) => deOtraRuta.includes(c.id)).map((c) => `${c.nombre} (${c.rutaNombre})`).join(', ')
       if (!confirm(`Los siguientes clientes seran MOVIDOS desde su ruta actual:\n\n${nombres}\n\n¿Continuar?`)) return
     }
+
+    // Si algún cliente que entra ya trae un préstamo activo, preguntar si su saldo se
+    // descuenta del capital de esta ruta (para que el capital de la ruta cuadre).
+    const todos = [...clientesSinRuta, ...clientesEnOtraRuta]
+    const conPrestamo = seleccionados
+      .map((cid) => todos.find((c) => c.id === cid))
+      .filter((c) => c && (c.prestamosActivos > 0 || (c.saldoPendienteTotal || 0) > 0))
+    let descontarCapitalRuta = false
+    if (conPrestamo.length > 0) {
+      const saldoTotal = conPrestamo.reduce((a, c) => a + Math.round(c.saldoPendienteTotal || 0), 0)
+      const nombres = conPrestamo.map((c) => c.nombre).join(', ')
+      descontarCapitalRuta = confirm(
+        `${conPrestamo.length === 1 ? 'Este cliente ya trae' : 'Estos clientes ya traen'} un préstamo activo (saldo $${saldoTotal.toLocaleString('es-CO')}):\n\n${nombres}\n\n¿Descontar ese saldo del capital de ESTA ruta?\n\nAceptar = sí, reservarlo en el capital de la ruta.\nCancelar = no tocar el capital de la ruta.`
+      )
+    }
+
     setAsignando(true)
     try {
       const res = await fetch(`/api/rutas/${id}/clientes`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ clienteIds: seleccionados, forzar: deOtraRuta.length > 0 }),
+        body:    JSON.stringify({ clienteIds: seleccionados, forzar: deOtraRuta.length > 0, descontarCapitalRuta }),
       })
       const data = await res.json()
       if (!res.ok) {

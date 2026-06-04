@@ -120,10 +120,15 @@ export async function POST(request) {
   }
 
   const { organizationId, plan } = session.user
-  const { nombre, cobradorId, capitalInicial } = await request.json()
+  const { nombre, cobradorId, capitalInicial, origenCapital } = await request.json()
 
   if (!nombre?.trim()) return Response.json({ error: 'El nombre es requerido' }, { status: 400 })
   const capitalInicialNum = Number(capitalInicial) || 0
+  // Origen del capital de la ruta:
+  // - 'existente': se mueve del capital que la org YA tiene (NO sube el total, solo se
+  //   asigna a la sub-bolsa de la ruta). Requiere saldo suficiente.
+  // - 'nuevo' (default): inyección nueva, sube el capital total de la org y lo asigna a la ruta.
+  const mueveDelExistente = origenCapital === 'existente'
 
   // Verificar límite de rutas del plan
   const org = await prisma.organization.findUnique({
@@ -149,6 +154,20 @@ export async function POST(request) {
     if (!cobrador) return Response.json({ error: 'Cobrador no válido' }, { status: 400 })
   }
 
+  // Si se mueve del capital existente, validar que la org tenga saldo suficiente.
+  if (capitalInicialNum > 0 && mueveDelExistente) {
+    const cap = await prisma.capital.findUnique({
+      where: { organizationId },
+      select: { saldo: true },
+    })
+    if ((cap?.saldo ?? 0) < capitalInicialNum) {
+      return Response.json(
+        { error: `El capital disponible de la organización ($${Math.round(cap?.saldo ?? 0).toLocaleString('es-CO')}) no alcanza para asignar $${capitalInicialNum.toLocaleString('es-CO')} a la ruta.` },
+        { status: 400 }
+      )
+    }
+  }
+
   const ruta = await prisma.ruta.create({
     data: {
       organizationId,
@@ -165,8 +184,12 @@ export async function POST(request) {
         organizationId,
         tipo: 'inyeccion',
         monto: capitalInicialNum,
-        descripcion: `Capital inicial de la ruta ${ruta.nombre}`,
+        descripcion: mueveDelExistente
+          ? `Asignación de capital existente a la ruta ${ruta.nombre}`
+          : `Capital inicial de la ruta ${ruta.nombre}`,
         rutaId: ruta.id,
+        // Si mueve del existente: NO sube el total de la org (solo asigna a la sub-bolsa).
+        ajusteArranqueRuta: mueveDelExistente,
         creadoPorId: session.user.id,
       })
     })

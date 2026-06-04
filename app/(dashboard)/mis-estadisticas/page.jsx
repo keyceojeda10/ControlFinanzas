@@ -156,7 +156,7 @@ export default function MisEstadisticasPage() {
           </p>
           <div className="space-y-2">
             {data.clientesMora.map((c, i) => {
-              const moraColor = c.diasSinCobro > 30 ? 'var(--color-danger)' : c.diasSinCobro > 14 ? 'var(--color-warning)' : 'var(--color-text-muted)'
+              const moraColor = c.diasMora > 30 ? 'var(--color-danger)' : c.diasMora > 14 ? 'var(--color-warning)' : 'var(--color-text-muted)'
               return (
                 <div key={i} className="flex items-center justify-between px-3 py-2 rounded-[10px]"
                   style={{ background: 'var(--color-bg-base)', border: '1px solid var(--color-border)' }}
@@ -169,7 +169,7 @@ export default function MisEstadisticasPage() {
                       border: `1px solid color-mix(in srgb, ${moraColor} 25%, transparent)`,
                     }}
                   >
-                    {c.diasSinCobro}d sin cobro
+                    {c.diasMora}d en mora
                   </span>
                 </div>
               )

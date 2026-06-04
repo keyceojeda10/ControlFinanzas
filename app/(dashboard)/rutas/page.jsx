@@ -28,6 +28,7 @@ export default function RutasPage() {
   const [showForm, setShowForm] = useState(false)
   const [nombre,   setNombre]   = useState('')
   const [capitalRuta, setCapitalRuta] = useState('')
+  const [origenCapital, setOrigenCapital] = useState('nuevo') // 'nuevo' | 'existente'
   const [saving,   setSaving]   = useState(false)
   const [formError, setFormError] = useState('')
   const [isOffline, setIsOffline] = useState(false)
@@ -268,13 +269,14 @@ export default function RutasPage() {
       const res  = await fetch('/api/rutas', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ nombre, ...(Number(capitalRuta) > 0 && { capitalInicial: Number(capitalRuta) }) }),
+        body:    JSON.stringify({ nombre, ...(Number(capitalRuta) > 0 && { capitalInicial: Number(capitalRuta), origenCapital }) }),
       })
       const data = await res.json()
       if (!res.ok) { setFormError(data.error ?? 'Error al crear la ruta'); return }
       setRutas((prev) => [...prev, { ...data, cantidadClientes: 0, esperadoHoy: 0, recaudadoHoy: 0 }])
       setNombre('')
       setCapitalRuta('')
+      setOrigenCapital('nuevo')
       setShowForm(false)
       router.push(`/rutas/${data.id}`)
     } catch {
@@ -393,6 +395,39 @@ export default function RutasPage() {
               Asigna un capital propio para esta ruta. Si lo dejas vacío, usa el capital general.
             </p>
           </div>
+
+          {/* Origen del capital: solo relevante si se ingresó un monto */}
+          {Number(capitalRuta) > 0 && (
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-wide mb-1.5" style={{ color: 'var(--color-text-muted)' }}>¿De dónde sale este capital?</p>
+              <div className="grid grid-cols-1 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setOrigenCapital('nuevo')}
+                  className="text-left rounded-[10px] border p-2.5 transition-colors"
+                  style={{
+                    borderColor: origenCapital === 'nuevo' ? 'var(--color-accent)' : 'var(--color-border)',
+                    background: origenCapital === 'nuevo' ? 'color-mix(in srgb, var(--color-accent) 8%, transparent)' : 'transparent',
+                  }}
+                >
+                  <p className="text-xs font-semibold" style={{ color: 'var(--color-text-primary)' }}>Es plata nueva (inyección)</p>
+                  <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Entra dinero nuevo: sube el capital total del negocio y se asigna a esta ruta.</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOrigenCapital('existente')}
+                  className="text-left rounded-[10px] border p-2.5 transition-colors"
+                  style={{
+                    borderColor: origenCapital === 'existente' ? 'var(--color-accent)' : 'var(--color-border)',
+                    background: origenCapital === 'existente' ? 'color-mix(in srgb, var(--color-accent) 8%, transparent)' : 'transparent',
+                  }}
+                >
+                  <p className="text-xs font-semibold" style={{ color: 'var(--color-text-primary)' }}>Del capital existente</p>
+                  <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Se mueve del capital que ya tiene el negocio: el total NO cambia, solo se reserva para esta ruta.</p>
+                </button>
+              </div>
+            </div>
+          )}
           <div className="flex gap-2 justify-end">
             <Button type="button" variant="ghost" onClick={() => { setShowForm(false); setCapitalRuta('') }} disabled={saving}>Cancelar</Button>
             <Button type="submit" loading={saving}>Crear ruta</Button>
@@ -474,8 +509,9 @@ export default function RutasPage() {
         </div>
       )}
 
-      {/* Toggle modo trabajo / ordenar (solo owner, con 2+ rutas) */}
-      {!loading && rutas.length > 1 && esOwner && (
+      {/* Toggle modo trabajo / ordenar (owner y cobrador, con 2+ rutas).
+          El cobrador solo puede reordenar sus rutas asignadas (validado en el endpoint). */}
+      {!loading && rutas.length > 1 && (
         <div className="flex items-center justify-between mb-3">
           <div className="flex gap-1 p-1 rounded-[12px]" style={{ background: 'var(--color-bg-hover)' }}>
             {[
