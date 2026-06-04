@@ -205,7 +205,17 @@ export default function ClienteDetallePage({ params }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ accion }),
       })
-      if (!res.ok) { const d = await res.json(); alert(d.error || 'Error'); return }
+      if (!res.ok) {
+        const d = await res.json()
+        // Mismo flujo que el borrado: si tiene préstamos activos, mostrar el modal
+        // para eliminarlos/trasladarlos (eliminar devuelve el capital al saldo).
+        if (d.error === 'tiene_prestamos') {
+          setDeleteData(d.prestamos)
+          setShowDeleteModal(true)
+          return
+        }
+        alert(d.error || 'Error'); return
+      }
       const updated = await res.json()
       setCliente(prev => ({ ...prev, estado: updated.estado }))
     } catch { alert('Error de conexión') }

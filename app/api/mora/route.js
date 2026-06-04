@@ -24,11 +24,15 @@ export async function GET(request) {
     return Response.json({ total: 0, agrupado: { mora1a7: [], mora8a15: [], mora16a30: [], mora31plus: [] }, lista: [] })
   }
 
-  // Filtro para cobradores
+  // Filtro para cobradores. Siempre se excluyen préstamos de clientes eliminados/inactivos
+  // (un cliente fuera de operación no debe figurar en la mora).
   const wherePrestamo = {
     organizationId,
     estado: 'activo',
-    ...(rol === 'cobrador' && { cliente: { rutaId: { in: rutaIds } } }),
+    cliente: {
+      estado: { notIn: ['eliminado', 'inactivo'] },
+      ...(rol === 'cobrador' && { rutaId: { in: rutaIds } }),
+    },
   }
 
   // Obtener préstamos activos vencidos

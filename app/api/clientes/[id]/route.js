@@ -167,6 +167,35 @@ export async function PATCH(request, { params }) {
     if (!cl) return Response.json({ error: 'Cliente no encontrado' }, { status: 404 })
 
     const nuevoEstado = body.accion === 'inactivar' ? 'inactivo' : 'activo'
+
+    // Inactivar con préstamos ACTIVOS dejaba el capital "fantasma" (el préstamo seguía
+    // vivo pero el cliente fuera de los conteos). Bloquear igual que el DELETE: el usuario
+    // debe eliminar o trasladar los préstamos primero (eliminar devuelve el capital).
+    if (nuevoEstado === 'inactivo') {
+      const prestamosActivos = await prisma.prestamo.findMany({
+        where: { clienteId: cid, estado: 'activo' },
+        select: { id: true, montoPrestado: true, totalAPagar: true, pagos: { select: { montoPagado: true, tipo: true } } },
+      })
+      if (prestamosActivos.length > 0) {
+        const prestamosInfo = prestamosActivos.map((p) => {
+          const totalPagado = p.pagos.filter((pg) => !['recargo', 'descuento'].includes(pg.tipo)).reduce((s, pg) => s + pg.montoPagado, 0)
+          return {
+            id: p.id,
+            montoPrestado: p.montoPrestado,
+            totalAPagar: p.totalAPagar,
+            totalPagado,
+            saldoPendiente: p.totalAPagar - totalPagado,
+            estado: 'activo',
+          }
+        })
+        return Response.json({
+          error: 'tiene_prestamos',
+          message: 'Este cliente tiene préstamos activos. Elimínalos o trasládalos antes de inactivarlo.',
+          prestamos: prestamosInfo,
+        }, { status: 409 })
+      }
+    }
+
     const actualizado = await prisma.cliente.update({
       where: { id: cid },
       data: { estado: nuevoEstado },
@@ -282,6 +311,8 @@ export async function DELETE(request, { params }) {
     where: { id, organizationId: session.user.organizationId },
     include: {
       prestamos: {
+        // Solo los ACTIVOS bloquean el borrado (los completados/cancelados no descuadran).
+        where: { estado: 'activo' },
         select: { id: true, montoPrestado: true, totalAPagar: true, estado: true, pagos: { select: { montoPagado: true, tipo: true } } },
       },
     },
@@ -291,7 +322,7 @@ export async function DELETE(request, { params }) {
     return Response.json({ error: 'Cliente no encontrado' }, { status: 404 })
   }
 
-  // Verificar si tiene préstamos
+  // Verificar si tiene préstamos activos
   if (cliente.prestamos.length > 0) {
     const prestamosInfo = cliente.prestamos.map(p => {
       const totalPagado = p.pagos.filter(pago => !['recargo', 'descuento'].includes(pago.tipo)).reduce((sum, pago) => sum + pago.montoPagado, 0)
