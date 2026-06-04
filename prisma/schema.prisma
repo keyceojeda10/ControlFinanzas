@@ -335,6 +335,12 @@ model CierreCaja {
   createdAt      DateTime @default(now())
   editadoEn      DateTime?           // se setea al editar/ajustar un cierre ya creado
   editadoPorId   String?             // quien hizo la ultima edicion (owner o cobrador)
+  // Cuadre del dia: el admin confirma el efectivo fisico que recibio de este cobrador.
+  efectivoRecibido   Float?          // lo que el admin conto/recibio en mano
+  diferenciaRecibido Float?          // efectivoRecibido - totalRecogido(sistema): faltante/sobrante
+  confirmadoEn       DateTime?       // cuando el admin confirmo la recepcion
+  confirmadoPorId    String?         // quien confirmo (auditoria)
+  notaCuadre         String?         // motivo cuando hay diferencia
 
   organization Organization @relation(fields: [organizationId], references: [id])
   cobrador     User         @relation(fields: [cobradorId], references: [id])

@@ -800,7 +800,7 @@ export async function GET(request) {
     }
     if (cobradorRango) whereGastosRango.cobradorId = cobradorRango
 
-    const [pagosRangoRaw, gastosRangoAgg, prestadoRango] = await Promise.all([
+    const [pagosRangoRaw, gastosRangoAgg, prestadoRango, segurosRango] = await Promise.all([
       prisma.pago.findMany({
         where: wherePagosRango,
         select: {
@@ -813,6 +813,7 @@ export async function GET(request) {
       }),
       prisma.gastoMenor.aggregate({ where: whereGastosRango, _sum: { monto: true } }),
       calcularDesembolsadoDia(organizationId, inicioRango, finRango, cobradorRango),
+      calcularSegurosDia(organizationId, inicioRango, finRango, cobradorRango),
     ])
 
     const pagosRango = pagosRangoRaw.map((p) => ({
@@ -823,15 +824,30 @@ export async function GET(request) {
       clienteNombre: p.prestamo?.cliente?.nombre || 'Cliente',
     }))
     const cobradoRango = pagosRango.reduce((a, p) => a + p.montoPagado, 0)
+    const prestadoRangoR = Math.round(prestadoRango || 0)
+    const gastosRangoR = Math.round(gastosRangoAgg._sum?.monto || 0)
+
+    // Resumen por día (para la lista inteligente en semana/mes): agrupa el cobrado por fecha local.
+    const porDiaMap = {}
+    for (const p of pagosRango) {
+      const f = fmtFechaLocal(p.fechaPago)
+      porDiaMap[f] = (porDiaMap[f] || 0) + p.montoPagado
+    }
+    const porDia = Object.entries(porDiaMap)
+      .map(([fecha, cobrado]) => ({ fecha, cobrado: Math.round(cobrado) }))
 
     payload.rango = {
       desde: desdeParam,
       hasta: hastaParam,
       cobrado: cobradoRango,
-      prestado: Math.round(prestadoRango || 0),
-      gastos: Math.round(gastosRangoAgg._sum?.monto || 0),
+      prestado: prestadoRangoR,
+      gastos: gastosRangoR,
+      seguros: { monto: Math.round(segurosRango?.monto || 0), cantidad: segurosRango?.cantidad || 0 },
+      // Efectivo neto del periodo (lo que debería quedar en caja por el flujo del rango).
+      efectivoNeto: cobradoRango - prestadoRangoR - gastosRangoR,
       cantidadPagos: pagosRango.length,
       pagos: pagosRango,
+      porDia,
     }
   }
 

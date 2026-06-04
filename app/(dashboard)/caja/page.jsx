@@ -19,6 +19,8 @@ import ListaGastos            from '@/components/gastos/ListaGastos'
 import ListadoPagos           from '@/components/pagos/ListadoPagos'
 import CajaCobradorDetalle    from '@/components/caja/CajaCobradorDetalle'
 import FiltroPeriodo          from '@/components/caja/FiltroPeriodo'
+import CajaResumen            from '@/components/caja/CajaResumen'
+import CuadreDia              from '@/components/caja/CuadreDia'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -846,9 +848,13 @@ export default function CajaPage() {
       {/* Filtro de periodo */}
       <FiltroPeriodo value={{ ...periodo, fecha: periodo.fecha || fechaSeleccionada }} onChange={handlePeriodoChange} />
 
-      {/* Tabs Caja / Caja por ruta (los Gastos viven en su propio apartado del menú) */}
+      {/* Tabs Caja / Caja por ruta / Cuadre (los Gastos viven en su propio apartado del menú) */}
       <div className="flex gap-1 p-1 rounded-[12px]" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
-        {[{ key: 'cobros', label: 'Caja del día' }, { key: 'porruta', label: 'Caja por ruta' }].map(t => (
+        {[
+          { key: 'cobros', label: 'Caja del día' },
+          { key: 'porruta', label: 'Caja por ruta' },
+          ...(esOwner && cobradoresParaFiltro.length > 0 ? [{ key: 'cuadre', label: 'Cuadre del día' }] : []),
+        ].map(t => (
           <button
             key={t.key}
             type="button"
@@ -928,173 +934,78 @@ export default function CajaPage() {
         </div>
       )}
 
-      {/* Histórico acumulado del rango (7d / 30d / personalizado) */}
+      {/* Cuadre del día: verificación del efectivo de cada cobrador (solo owner) */}
+      {cajaTab === 'cuadre' && (
+        <CuadreDia fecha={periodo.modo === 'hoy' ? (periodo.fecha || fechaSeleccionada) : (periodo.hasta || fechaSeleccionada)} />
+      )}
+
+      {/* Histórico acumulado del rango (7d / 30d / personalizado) — MISMA hero card */}
       {cajaTab === 'cobros' && periodo.modo !== 'hoy' && (
         <div className="space-y-4">
-          <Card>
-            <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-3">
-              Acumulado del periodo
-            </p>
-            {!rangoData ? (
-              <p className="text-sm text-[var(--color-text-muted)]">Cargando…</p>
-            ) : (
-              <>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
-                    <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Cobrado</p>
-                    <p className="text-base font-bold font-mono-display text-[var(--color-success)] mt-0.5">{formatMoney(rangoData.cobrado)}</p>
-                  </div>
-                  <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
-                    <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Prestado</p>
-                    <p className="text-base font-bold font-mono-display text-[var(--color-warning)] mt-0.5">{rangoData.prestado > 0 ? '-' : ''}{formatMoney(rangoData.prestado)}</p>
-                  </div>
-                  <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
-                    <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Gastos</p>
-                    <p className="text-base font-bold font-mono-display text-[var(--color-danger)] mt-0.5">{rangoData.gastos > 0 ? '-' : ''}{formatMoney(rangoData.gastos)}</p>
-                  </div>
-                </div>
-                <p className="text-[11px] text-[var(--color-text-muted)] mt-2">{rangoData.cantidadPagos} pago{rangoData.cantidadPagos === 1 ? '' : 's'} en el periodo.</p>
-              </>
-            )}
-          </Card>
+          {!rangoData ? (
+            <Card><p className="text-sm text-[var(--color-text-muted)]">Cargando…</p></Card>
+          ) : (
+            <>
+              <CajaResumen
+                hero={{
+                  label: 'Efectivo del periodo',
+                  valor: rangoData.efectivoNeto,
+                  subtitulo: 'Cobrado − Prestado − Gastos',
+                  color: rangoData.efectivoNeto >= 0 ? '#22c55e' : '#ef4444',
+                }}
+                cards={[
+                  { label: 'Cobrado', valor: rangoData.cobrado, color: 'var(--color-success)' },
+                  { label: 'Prestado', valor: rangoData.prestado, color: 'var(--color-warning)', signo: '-' },
+                  { label: 'Gastos', valor: rangoData.gastos, color: 'var(--color-danger)', signo: '-' },
+                  ...(rangoData.seguros?.monto > 0 ? [{ label: 'Seguros', valor: rangoData.seguros.monto, color: 'var(--color-info)', sub: `·${rangoData.seguros.cantidad}` }] : []),
+                ]}
+              />
 
-          {rangoData?.pagos?.length > 0 && (
-            <Card>
-              <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-3">Pagos del periodo</p>
-              <div className="space-y-1.5">
-                {rangoData.pagos.map((p) => (
-                  <div key={p.id} className="flex items-center justify-between gap-2 py-2 border-b border-[var(--color-border)] last:border-0">
-                    <div className="min-w-0">
-                      <p className="text-xs text-[var(--color-text-primary)] truncate">{p.clienteNombre}</p>
-                      <p className="text-[10px] text-[var(--color-text-muted)]">{fmtFecha(p.fechaPago)}{p.cobradorNombre ? ` · ${p.cobradorNombre}` : ''}</p>
-                    </div>
-                    <span className="text-sm font-semibold font-mono-display text-[var(--color-success)] shrink-0">+{formatMoney(p.montoPagado)}</span>
+              {/* Lista inteligente: resumen por día */}
+              {rangoData.porDia?.length > 0 && (
+                <Card>
+                  <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-3">Cobrado por día</p>
+                  <div className="space-y-1.5">
+                    {rangoData.porDia.map((d) => (
+                      <div key={d.fecha} className="flex items-center justify-between gap-2 py-2 border-b border-[var(--color-border)] last:border-0">
+                        <p className="text-xs text-[var(--color-text-primary)]">{d.fecha}</p>
+                        <span className="text-sm font-semibold font-mono-display text-[var(--color-success)] shrink-0">+{formatMoney(d.cobrado)}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </Card>
+                  <p className="text-[11px] text-[var(--color-text-muted)] mt-2">{rangoData.cantidadPagos} pago{rangoData.cantidadPagos === 1 ? '' : 's'} en el periodo.</p>
+                </Card>
+              )}
+            </>
           )}
         </div>
       )}
 
       {cajaTab === 'cobros' && periodo.modo === 'hoy' && <>
-      {/* HERO CARD: Saldo en caja del dia */}
-      {(() => {
-        const heroColor = disponibleHoy >= 0 ? '#22c55e' : '#ef4444'
-        return (
-          <div
-            className="cf-hero-card relative rounded-[20px] overflow-hidden"
-            style={{
-              background: `linear-gradient(135deg, color-mix(in srgb, ${heroColor} 14%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, ${heroColor} 8%, var(--color-bg-card)) 100%)`,
-              border: `1px solid color-mix(in srgb, ${heroColor} 25%, var(--color-border))`,
-              boxShadow: `0 8px 32px color-mix(in srgb, ${heroColor} 18%, transparent)`,
-            }}
-          >
-            <div className="hero-glow absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none hidden lg:block"
-              style={{ background: `radial-gradient(circle, color-mix(in srgb, ${heroColor} 35%, transparent), transparent 70%)`, filter: 'blur(20px)' }} />
-            <div className="absolute inset-0 pointer-events-none opacity-[0.04]"
-              style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '16px 16px', color: heroColor }} />
-
-            <div className="relative px-5 py-5 sm:px-6 sm:py-6">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-1.5 h-1.5 rounded-full" style={{ background: heroColor, boxShadow: `0 0 12px ${heroColor}` }} />
-                <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'var(--color-text-secondary)' }}>
-                  Saldo en caja
-                </p>
-                {tasaRecaudo > 0 && (
-                  <span className="ml-auto text-[11px] font-bold" style={{ color: colorRecaudo }}>{tasaRecaudo}% cobrado</span>
-                )}
-              </div>
-
-              <p
-                className="font-mono-display font-bold leading-none tracking-tight"
-                style={{
-                  color: heroColor,
-                  fontSize: 'clamp(32px, 9vw, 44px)',
-                  textShadow: `0 0 30px color-mix(in srgb, ${heroColor} 25%, transparent)`,
-                }}
-              >
-                {formatMoney(disponibleHoy)}
-              </p>
-              <p className="text-[11px] mt-2" style={{ color: 'var(--color-text-muted)' }}>
-                Base inicial + Cobrado − Prestado − Gastos + Ajustes
-              </p>
-
-              {/* Mini-stats: cobrado / prestado / gastos */}
-              <div className="grid grid-cols-3 gap-2 mt-4 pt-4" style={{ borderTop: `1px solid color-mix(in srgb, ${heroColor} 15%, transparent)` }}>
-                <div className="rounded-[10px] px-2.5 py-2" style={{ background: 'color-mix(in srgb, var(--color-success) 10%, transparent)' }}>
-                  <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Cobrado</p>
-                  <p className="text-[14px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--color-success)' }}>{formatMoney(cobradoHoy)}</p>
-                </div>
-                <div className="rounded-[10px] px-2.5 py-2" style={{ background: 'color-mix(in srgb, var(--color-warning) 10%, transparent)' }}>
-                  <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Prestado</p>
-                  <p className="text-[14px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--color-warning)' }}>{prestadoHoy > 0 ? '-' : ''}{formatMoney(prestadoHoy)}</p>
-                </div>
-                <div className="rounded-[10px] px-2.5 py-2" style={{ background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)' }}>
-                  <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Gastos</p>
-                  <p className="text-[14px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--color-danger)' }}>{gastosHoy > 0 ? '-' : ''}{formatMoney(gastosHoy)}</p>
-                </div>
-              </div>
-
-              {!esCobrador && (
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  <div className="rounded-[10px] px-2.5 py-2" style={{ background: 'color-mix(in srgb, var(--color-info) 10%, transparent)' }}>
-                    <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Base inicial</p>
-                    <p className="text-[14px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--color-info)' }}>{formatMoney(baseInicialDia)}</p>
-                  </div>
-                  <div className="rounded-[10px] px-2.5 py-2" style={{ background: 'var(--color-bg-hover)' }}>
-                    <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Ajustes</p>
-                    <p className="text-[14px] font-bold font-mono-display mt-0.5" style={{ color: ajustesDelDia >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
-                      {ajustesDelDia > 0 ? '+' : ''}{formatMoney(ajustesDelDia)}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Seguros cobrados hoy — ganancia aparte por cobro de seguro */}
-              {segurosDia.monto > 0 && (
-                <div className="mt-3 rounded-[10px] px-3 py-2.5 flex items-center justify-between"
-                  style={{ background: 'color-mix(in srgb, #6366f1 10%, transparent)', border: '1px solid color-mix(in srgb, #6366f1 25%, transparent)' }}
-                >
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Seguros cobrados hoy</p>
-                    <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{segurosDia.cantidad} {segurosDia.cantidad === 1 ? 'prestamo' : 'prestamos'}</p>
-                  </div>
-                  <p className="text-base font-bold font-mono-display" style={{ color: '#6366f1' }}>{formatMoney(segurosDia.monto)}</p>
-                </div>
-              )}
-
-              <details className="mt-3 pt-3" style={{ borderTop: `1px solid color-mix(in srgb, ${heroColor} 15%, transparent)` }}>
-                <summary className="cursor-pointer text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Ver detalle del cálculo</summary>
-                <div className="mt-2 space-y-1.5 text-[11px]">
-                  <div className="flex justify-between">
-                    <span style={{ color: 'var(--color-text-muted)' }}>Saldo operativo del día</span>
-                    <span className="font-semibold font-mono-display" style={{ color: saldoRealCaja >= 0 ? 'var(--color-info)' : 'var(--color-danger)' }}>{formatMoney(saldoRealCaja)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span style={{ color: 'var(--color-text-muted)' }}>Esperado</span>
-                    <span className="font-semibold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(stats.esperado || 0)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span style={{ color: 'var(--color-text-muted)' }}>Diferencia vs esperado</span>
-                    <span className="font-semibold font-mono-display" style={{ color: diferenciaRecaudo >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
-                      {diferenciaRecaudo >= 0 ? '+' : ''}{formatMoney(diferenciaRecaudo)}
-                    </span>
-                  </div>
-                  {ajustesDelDia !== 0 && (
-                    <div className="flex justify-between">
-                      <span style={{ color: 'var(--color-text-muted)' }}>Ajustes manuales del día</span>
-                      <span className="font-semibold font-mono-display" style={{ color: ajustesDelDia >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
-                        {ajustesDelDia >= 0 ? '+' : ''}{formatMoney(ajustesDelDia)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </details>
-            </div>
-          </div>
-        )
-      })()}
+      {/* HERO CARD unificada: Saldo/Efectivo en caja del día */}
+      <CajaResumen
+        hero={{
+          label: 'Saldo en caja',
+          valor: disponibleHoy,
+          subtitulo: 'Base inicial + Cobrado − Prestado − Gastos + Ajustes',
+          tasa: tasaRecaudo,
+        }}
+        cards={[
+          { label: 'Cobrado', valor: cobradoHoy, color: 'var(--color-success)' },
+          { label: 'Prestado', valor: prestadoHoy, color: 'var(--color-warning)', signo: '-' },
+          { label: 'Gastos', valor: gastosHoy, color: 'var(--color-danger)', signo: '-' },
+          ...(!esCobrador ? [
+            { label: 'Base inicial', valor: baseInicialDia, color: 'var(--color-info)' },
+            { label: 'Ajustes', valor: ajustesDelDia, color: ajustesDelDia >= 0 ? 'var(--color-success)' : 'var(--color-danger)', signo: '+' },
+          ] : []),
+          ...(segurosDia.monto > 0 ? [{ label: 'Seguros', valor: segurosDia.monto, color: '#6366f1', sub: `·${segurosDia.cantidad}` }] : []),
+        ]}
+        detalle={[
+          { label: 'Saldo operativo del día', valor: saldoRealCaja, color: saldoRealCaja >= 0 ? 'var(--color-info)' : 'var(--color-danger)' },
+          { label: 'Esperado', valor: stats.esperado || 0 },
+          { label: 'Diferencia vs esperado', valor: diferenciaRecaudo, color: diferenciaRecaudo >= 0 ? 'var(--color-success)' : 'var(--color-danger)' },
+        ]}
+      />
 
       {pagosDiaCard}
 

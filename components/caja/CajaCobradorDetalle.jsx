@@ -7,6 +7,7 @@
 
 import { formatMoney } from '@/lib/i18n'
 import { Card } from '@/components/ui/Card'
+import CajaResumen from '@/components/caja/CajaResumen'
 
 const fmtHora = (d) => {
   if (!d) return '—'
@@ -26,37 +27,22 @@ export default function CajaCobradorDetalle({ data }) {
 
   return (
     <div className="space-y-4">
-      {/* Resumen del día */}
-      <Card>
-        <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Resumen del día</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
-            <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Cobrado</p>
-            <p className="text-base font-bold font-mono-display text-[var(--color-success)] mt-0.5">{formatMoney(r.cobradoDia)}</p>
-          </div>
-          <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
-            <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Prestado</p>
-            <p className="text-base font-bold font-mono-display text-[var(--color-warning)] mt-0.5">{r.prestadoDia > 0 ? '-' : ''}{formatMoney(r.prestadoDia)}</p>
-          </div>
-          <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
-            <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Seguros</p>
-            <p className="text-base font-bold font-mono-display text-[var(--color-info)] mt-0.5">{formatMoney(r.segurosDia)}</p>
-          </div>
-          <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
-            <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Gastos</p>
-            <p className="text-base font-bold font-mono-display text-[var(--color-danger)] mt-0.5">{r.gastosDia > 0 ? '-' : ''}{formatMoney(r.gastosDia)}</p>
-          </div>
-          <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
-            <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Efectivo del día</p>
-            <p className="text-base font-bold font-mono-display mt-0.5" style={{ color: (r.efectivoDia ?? 0) >= 0 ? 'var(--color-info)' : 'var(--color-danger)' }}>{formatMoney(r.efectivoDia)}</p>
-          </div>
-          <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
-            <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Capital en rutas</p>
-            <p className="text-base font-bold font-mono-display text-[var(--color-text-primary)] mt-0.5">{formatMoney(r.capitalRutasTotal)}</p>
-          </div>
-        </div>
-        <p className="text-[11px] text-[var(--color-text-muted)] mt-2">Efectivo del día = cobrado − prestado − gastos.</p>
-      </Card>
+      {/* Resumen UNIFICADO: misma hero card que la caja general */}
+      <CajaResumen
+        hero={{
+          label: data?.esRango ? 'Efectivo del periodo' : 'Efectivo del día',
+          valor: r.efectivoDia ?? 0,
+          subtitulo: 'Cobrado − Prestado − Gastos',
+          color: (r.efectivoDia ?? 0) >= 0 ? '#22c55e' : '#ef4444',
+        }}
+        cards={[
+          { label: 'Cobrado', valor: r.cobradoDia, color: 'var(--color-success)' },
+          { label: 'Prestado', valor: r.prestadoDia, color: 'var(--color-warning)', signo: '-' },
+          { label: 'Gastos', valor: r.gastosDia, color: 'var(--color-danger)', signo: '-' },
+          ...((r.segurosDia || 0) > 0 ? [{ label: 'Seguros', valor: r.segurosDia, color: '#6366f1' }] : []),
+          { label: 'Capital en ruta', valor: r.capitalRutasTotal, color: 'var(--color-info)' },
+        ]}
+      />
 
       {/* Capital y movimiento por ruta */}
       {porRuta.length > 0 && (
