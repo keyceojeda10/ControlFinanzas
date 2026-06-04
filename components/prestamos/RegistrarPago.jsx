@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useCountry } from '@/hooks/useCountry'
+import { useAuth }    from '@/hooks/useAuth'
 import { useRouter }   from 'next/navigation'
 import { Modal }       from '@/components/ui/Modal'
 import { Button }      from '@/components/ui/Button'
@@ -25,6 +26,7 @@ export default function RegistrarPago({
 }) {
   const router = useRouter()
   const { formatMoney } = useCountry()
+  const { puedeAplicarDescuentos } = useAuth()
 
   // Pre-llena con la cuota, pero nunca más que el saldo pendiente (último pago de saldos pequeños)
   const montoInicial = Math.min(Math.round(cuotaDiaria ?? 0), Math.round(saldoPendiente ?? 0))
@@ -568,7 +570,8 @@ export default function RegistrarPago({
                 { key: 'parcial',  label: 'Parcial',   color: 'var(--color-accent)' },
                 { key: 'capital',  label: 'A capital',  color: 'var(--color-purple)' },
                 { key: 'recargo',  label: 'Recargo',   color: '#f97316' },
-                { key: 'descuento',label: 'Descuento', color: 'var(--color-success)' },
+                // Descuento solo visible si el usuario tiene el permiso (riesgo: reduce saldo).
+                ...(puedeAplicarDescuentos ? [{ key: 'descuento', label: 'Descuento', color: 'var(--color-success)' }] : []),
               ].map(({ key, label, color }) => (
                 <button
                   key={key}

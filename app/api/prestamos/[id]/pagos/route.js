@@ -33,6 +33,16 @@ async function cobradorPuedeGestionarPrestamos(userId) {
   return Boolean(cobrador?.puedeGestionarPrestamos ?? cobrador?.puedeCrearPrestamos)
 }
 
+// Descuento y liquidacion REDUCEN lo que el cliente debe (riesgo de fraude del cobrador),
+// por eso van detras de un permiso independiente, desactivado por defecto.
+async function cobradorPuedeAplicarDescuentos(userId) {
+  const cobrador = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { puedeAplicarDescuentos: true },
+  })
+  return Boolean(cobrador?.puedeAplicarDescuentos)
+}
+
 // ─── POST /api/prestamos/[id]/pagos ─────────────────────────────
 export async function POST(request, { params }) {
   const session = await getServerSession(authOptions)
@@ -101,13 +111,18 @@ export async function POST(request, { params }) {
     return Response.json({ error: 'El tipo de pago no es válido' }, { status: 400 })
   }
 
-  // Recargo, descuento y liquidacion: owner o cobrador autorizado, y requiere nota
+  // Recargo, descuento y liquidacion requieren autorizacion + nota (auditoria).
+  // - recargo: SUMA al saldo (no regala dinero) -> permiso de gestionar prestamos.
+  // - descuento / liquidacion: REDUCEN el saldo (riesgo de fraude) -> permiso especifico.
   if (['recargo', 'descuento', 'liquidacion'].includes(tipo)) {
-    const puedeGestionar = rol === 'owner'
-      ? true
-      : (rol === 'cobrador' && await cobradorPuedeGestionarPrestamos(userId))
+    let autorizado = rol === 'owner'
+    if (!autorizado && rol === 'cobrador') {
+      autorizado = (tipo === 'recargo')
+        ? await cobradorPuedeGestionarPrestamos(userId)
+        : await cobradorPuedeAplicarDescuentos(userId)
+    }
 
-    if (!puedeGestionar) {
+    if (!autorizado) {
       return Response.json({ error: 'No tienes permiso para esta operación' }, { status: 403 })
     }
     if (!nota?.trim()) {

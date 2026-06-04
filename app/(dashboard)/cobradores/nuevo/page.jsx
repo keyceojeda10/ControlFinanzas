@@ -68,6 +68,7 @@ function NuevoCobradorInner() {
     verCapitalRuta: false,
     verSaldoCaja:   false,
     gestionarRutas: false,
+    aplicarDescuentos: false,
   })
 
   const plan     = session?.user?.plan ?? 'starter'
@@ -343,7 +344,8 @@ function NuevoCobradorInner() {
           <div className="space-y-3">
             {[
               { key: 'crearPrestamos', label: 'Crear préstamos', desc: 'Puede registrar préstamos nuevos para clientes de su ruta' },
-              { key: 'gestionarPrestamos', label: 'Gestión de préstamos', desc: 'Renovar préstamos, modificar plazos, aplicar recargos y descuentos' },
+              { key: 'gestionarPrestamos', label: 'Gestión de préstamos', desc: 'Renovar préstamos, modificar plazos y aplicar recargos' },
+              { key: 'aplicarDescuentos', label: 'Aplicar descuentos y liquidaciones', desc: 'Permite reducir el saldo de un préstamo (descuento o liquidación anticipada). Riesgoso: actívalo solo a cobradores de confianza' },
               { key: 'reportarGastos', label: 'Reportar gastos menores', desc: 'Puede registrar gastos menores en caja (hoy o ayer)' },
               { key: 'crearClientes',  label: 'Crear clientes',  desc: 'Puede registrar nuevos clientes (se asignan a su ruta)' },
               { key: 'editarClientes', label: 'Editar clientes', desc: 'Puede modificar datos como teléfono, dirección, etc.' },

@@ -63,7 +63,7 @@ const tipoPagoBadge = {
 export default function PrestamoDetallePage({ params }) {
   const { id }             = use(params)
   const router             = useRouter()
-  const { session, puedeGestionarPrestamos } = useAuth()
+  const { session, puedeGestionarPrestamos, puedeAplicarDescuentos } = useAuth()
 
   const { lastSyncedAt }   = useOffline()
 
@@ -419,7 +419,9 @@ export default function PrestamoDetallePage({ params }) {
     if (porcentajePagado >= 50) return { icon: ICON_TREND, text: 'Va por buen camino' }
     return null
   })()
-  const mostrarGestionPrestamo = estaActivo && !completado && puedeGestionarPrestamos
+  // El modal de gestión se muestra si puede gestionar préstamos O aplicar descuentos
+  // (un cobrador con solo permiso de descuentos también debe poder abrirlo).
+  const mostrarGestionPrestamo = estaActivo && !completado && (puedeGestionarPrestamos || puedeAplicarDescuentos)
 
   const abrirPagoNormal = () => {
     setPresetPago(null)
@@ -1151,6 +1153,8 @@ export default function PrestamoDetallePage({ params }) {
         title="Gestión del préstamo"
       >
         <div className="grid grid-cols-2 gap-2">
+          {/* Acciones de gestión de préstamos (no reducen saldo) */}
+          {puedeGestionarPrestamos && <>
           <button
             onClick={() => {
               setModalGestionPrestamo(false)
@@ -1189,24 +1193,30 @@ export default function PrestamoDetallePage({ params }) {
           >
             Recargo
           </button>
-          <button
-            onClick={() => {
-              setModalGestionPrestamo(false)
-              setModalDescuento(true)
-            }}
-            className="h-11 rounded-[12px] font-medium text-sm text-[var(--color-success)] bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.2)] hover:bg-[rgba(34,197,94,0.15)] transition-all"
-          >
-            Descuento
-          </button>
-          <button
-            onClick={() => {
-              setModalGestionPrestamo(false)
-              abrirLiquidacion()
-            }}
-            className="h-11 rounded-[12px] font-medium text-sm text-[#f5c518] bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.25)] hover:bg-[rgba(245,197,24,0.15)] transition-all col-span-2"
-          >
-            Liquidación anticipada (pago total antes)
-          </button>
+          </>}
+          {/* Descuento y liquidación reducen el saldo (riesgo): solo con permiso. */}
+          {puedeAplicarDescuentos && (
+            <button
+              onClick={() => {
+                setModalGestionPrestamo(false)
+                setModalDescuento(true)
+              }}
+              className="h-11 rounded-[12px] font-medium text-sm text-[var(--color-success)] bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.2)] hover:bg-[rgba(34,197,94,0.15)] transition-all"
+            >
+              Descuento
+            </button>
+          )}
+          {puedeAplicarDescuentos && (
+            <button
+              onClick={() => {
+                setModalGestionPrestamo(false)
+                abrirLiquidacion()
+              }}
+              className="h-11 rounded-[12px] font-medium text-sm text-[#f5c518] bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.25)] hover:bg-[rgba(245,197,24,0.15)] transition-all col-span-2"
+            >
+              Liquidación anticipada (pago total antes)
+            </button>
+          )}
           <button
             onClick={() => {
               try { setDscDias(prestamo?.diasSinCobro ? JSON.parse(prestamo.diasSinCobro) : []) } catch { setDscDias([]) }

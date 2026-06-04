@@ -98,6 +98,7 @@ export async function GET(request, { params }) {
       verCapitalRuta: cobrador.puedeVerCapitalRuta ?? false,
       verSaldoCaja:   cobrador.puedeVerSaldoCaja ?? false,
       gestionarRutas: cobrador.puedeGestionarRutas ?? false,
+      aplicarDescuentos: cobrador.puedeAplicarDescuentos ?? false,
     },
     ruta,
     recaudadoHoy: cobrador.pagos.filter(p => !['recargo', 'descuento'].includes(p.tipo)).reduce((a, p) => a + p.montoPagado, 0),
@@ -174,6 +175,7 @@ export async function PATCH(request, { params }) {
     if (p.verCapitalRuta !== undefined) data.puedeVerCapitalRuta = Boolean(p.verCapitalRuta)
     if (p.verSaldoCaja !== undefined)   data.puedeVerSaldoCaja   = Boolean(p.verSaldoCaja)
     if (p.gestionarRutas !== undefined) data.puedeGestionarRutas = Boolean(p.gestionarRutas)
+    if (p.aplicarDescuentos !== undefined) data.puedeAplicarDescuentos = Boolean(p.aplicarDescuentos)
 
     if (p.crearPrestamos !== undefined && p.gestionarPrestamos === undefined) {
       data.puedeGestionarPrestamos = Boolean(p.crearPrestamos)

@@ -33,5 +33,6 @@ export function useAuth() {
     puedeVerCapitalRuta: Boolean(permisos.verCapitalRuta),
     puedeVerSaldoCaja:   esOwner || Boolean(permisos.verSaldoCaja),
     puedeGestionarRutas: esOwner || Boolean(permisos.gestionarRutas),
+    puedeAplicarDescuentos: esOwner || Boolean(permisos.aplicarDescuentos),
   }
 }

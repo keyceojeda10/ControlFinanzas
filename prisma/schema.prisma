@@ -138,6 +138,7 @@ model User {
   puedeVerCapitalRuta     Boolean   @default(false) // ver capital/caja SOLO de su(s) ruta(s)
   puedeVerSaldoCaja       Boolean   @default(false)
   puedeGestionarRutas     Boolean   @default(false)
+  puedeAplicarDescuentos  Boolean   @default(false) // aplicar descuentos y liquidaciones (riesgo: reduce saldo)
   orden                   Int       @default(0) // orden manual del cobrador (drag-and-drop en la lista)
   emailsMarketing         Boolean   @default(true)
   theme                   String?   @default("system")

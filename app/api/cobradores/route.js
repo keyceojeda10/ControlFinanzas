@@ -52,6 +52,7 @@ export async function GET(request) {
       puedeVerCapitalRuta: true,
       puedeVerSaldoCaja:   true,
       puedeGestionarRutas: true,
+      puedeAplicarDescuentos: true,
       rutas:     {
         where:  { activo: true },
         select: {
@@ -126,6 +127,7 @@ export async function GET(request) {
         verCapitalRuta: c.puedeVerCapitalRuta ?? false,
         verSaldoCaja:   c.puedeVerSaldoCaja ?? false,
         gestionarRutas: c.puedeGestionarRutas ?? false,
+        aplicarDescuentos: c.puedeAplicarDescuentos ?? false,
       },
       ruta:            c.rutas[0] ? { id: c.rutas[0].id, nombre: c.rutas[0].nombre } : null,
       cantidadClientes: c.rutas[0]?.clientes?.length ?? 0,
@@ -201,6 +203,7 @@ export async function POST(request) {
   const verCapitalRuta = Boolean(permisos?.verCapitalRuta)
   const verSaldoCaja = Boolean(permisos?.verSaldoCaja)
   const gestionarRutas = Boolean(permisos?.gestionarRutas)
+  const aplicarDescuentos = Boolean(permisos?.aplicarDescuentos)
 
   const cobrador = await prisma.user.create({
     data: {
@@ -219,6 +222,7 @@ export async function POST(request) {
       puedeVerCapitalRuta: verCapitalRuta,
       puedeVerSaldoCaja:   verSaldoCaja,
       puedeGestionarRutas: gestionarRutas,
+      puedeAplicarDescuentos: aplicarDescuentos,
     },
     select: { id: true, nombre: true, email: true, telefono: true, activo: true, rol: true,
       puedeCrearPrestamos: true, puedeGestionarPrestamos: true, puedeCrearClientes: true, puedeEditarClientes: true, puedeReportarGastos: true, puedeVerCapital: true, puedeVerSaldoCaja: true, puedeGestionarRutas: true },
