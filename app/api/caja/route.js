@@ -52,7 +52,8 @@ async function calcularEsperadoReal(organizationId, cobradorId = null) {
           select: {
             diasSinCobro: true,
             prestamos: {
-              where: { estado: 'activo' },
+              // El clavo no genera cuota esperada (es el lado negativo): se excluye de la meta.
+              where: { estado: 'activo', esClavo: false },
               select: {
                 cuotaDiaria: true,
                 frecuencia: true,
@@ -342,10 +343,11 @@ async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaj
   const { inicio, fin } = getDayRange(fechaStr)
 
   // Obtener pagos del día usando rango UTC correcto.
-  // Excluir pagos de prestamos clavo: no cuentan en el recaudado normal de caja
-  // (van en la contabilidad aparte de clavos).
+  // Los pagos de un prestamo clavo SI cuentan en el recaudado/caja: es dinero
+  // real que entró y el cobrador debe cuadrarlo. Lo unico que se aisla del clavo
+  // es el lado negativo (mora, cuotas vencidas, cartera/esperado) — no los cobros.
   const wherePagos = {
-    prestamo: { organizationId, esClavo: false },
+    prestamo: { organizationId },
     fechaPago: { gte: inicio, lt: fin },
   }
   if (cobradorId) {
@@ -618,7 +620,8 @@ export async function GET(request) {
             select: {
               diasSinCobro: true,
               prestamos: {
-                where: { estado: 'activo' },
+                // El clavo no aporta cuota esperada al cobrador (es el lado negativo).
+                where: { estado: 'activo', esClavo: false },
                 select: {
                   cuotaDiaria: true,
                   frecuencia: true,
@@ -661,10 +664,29 @@ export async function GET(request) {
     }, {})
 
     const cierreIds = new Set(cierres.map(c => c.cobradorId))
-    cobradores = todosCobradores.map(c => {
+    cobradores = await Promise.all(todosCobradores.map(async (c) => {
       const cierre = cierres.find(ci => ci.cobradorId === c.id) || null
       const recaudadoDia = recaudoPorCobrador[c.id] || 0
       const esperadoDia = esperadoPorCobrador[c.id] || 0
+
+      // Caja detallada por cobrador: lo que prestó, los seguros que generó, sus gastos,
+      // el efectivo que maneja hoy y el capital que le queda a sus rutas (sub-bolsa).
+      const [prestadoDia, segurosDia, gastosAgg, rutasCobrador] = await Promise.all([
+        calcularDesembolsadoDia(organizationId, inicio, fin, c.id),
+        calcularSegurosDia(organizationId, inicio, fin, c.id),
+        prisma.gastoMenor.aggregate({
+          where: { organizationId, cobradorId: c.id, estado: 'aprobado', fecha: { gte: inicio, lt: fin } },
+          _sum: { monto: true },
+        }),
+        prisma.ruta.findMany({
+          where: { cobradorId: c.id, organizationId, activo: true },
+          select: { id: true, nombre: true, saldoCapital: true },
+          orderBy: { orden: 'asc' },
+        }),
+      ])
+      const gastosDiaCobrador = Math.round(gastosAgg._sum?.monto || 0)
+      const prestadoDiaR = Math.round(prestadoDia || 0)
+      const capitalRutasTotal = rutasCobrador.reduce((a, r) => a + (r.saldoCapital || 0), 0)
 
       return {
         id: c.id,
@@ -674,8 +696,17 @@ export async function GET(request) {
         recaudadoDia,
         esperadoDia,
         sugeridoCierre: recaudadoDia,
+        prestadoDia: prestadoDiaR,
+        segurosDia: { monto: Math.round(segurosDia?.monto || 0), cantidad: segurosDia?.cantidad || 0 },
+        gastosDia: gastosDiaCobrador,
+        // Efectivo en mano hoy = cobrado - prestado - gastos.
+        efectivoDia: recaudadoDia - prestadoDiaR - gastosDiaCobrador,
+        capitalRutas: {
+          total: Math.round(capitalRutasTotal),
+          rutas: rutasCobrador.map(r => ({ id: r.id, nombre: r.nombre, saldoCapital: Math.round(r.saldoCapital || 0) })),
+        },
       }
-    })
+    }))
   }
 
   const payload = {

@@ -46,9 +46,11 @@ export async function GET(request) {
           estado:    true,
           diasSinCobro: true,
           prestamos: {
-            where:   { esClavo: false }, // los clavos no cuentan en los numeros de la ruta
+            // Se traen TODOS (incluido clavo): el cobro de hoy de un clavo SÍ suma al
+            // recaudado de la ruta (dinero real). Solo el esperado excluye el clavo abajo.
             select:  {
               estado: true,
+              esClavo: true,
               cuotaDiaria: true,
               frecuencia: true,
               fechaInicio: true,
@@ -86,7 +88,7 @@ export async function GET(request) {
       for (const prestamo of cliente.prestamos) {
         // Meta: solo cuotas que TOCABA cobrar hoy (segun ciclo de frecuencia
         // y dia ancla). Antes sumaba todas las cuotas activas y inflaba la cifra.
-        if (prestamo.estado === 'activo' && tienePeriodoEsperadoHoy(prestamo, hoySinCobro, diasExcluidos, festivos)) {
+        if (prestamo.estado === 'activo' && !prestamo.esClavo && tienePeriodoEsperadoHoy(prestamo, hoySinCobro, diasExcluidos, festivos)) {
           esperadoHoy += prestamo.cuotaDiaria
         }
         // Recaudado hoy: incluye pagos de prestamos completados hoy (el pago final cierra)

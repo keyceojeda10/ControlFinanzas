@@ -1225,6 +1225,50 @@ export default function CajaPage() {
               const expandido = !!cobradorExpandido[c.id]
               const toggleExpand = () => setCobradorExpandido((prev) => ({ ...prev, [c.id]: !prev[c.id] }))
 
+              // Caja detallada por cobrador: lo que prestó/cobró, seguros, efectivo del día
+              // y el capital que le queda a sus rutas. Se muestra en el detalle expandido.
+              const prestadoDiaC = Math.round(c.prestadoDia || 0)
+              const segurosDiaC = Math.round(c.segurosDia?.monto || 0)
+              const segurosCantC = c.segurosDia?.cantidad || 0
+              const gastosDiaC = Math.round(c.gastosDia || 0)
+              const efectivoDiaC = Math.round(c.efectivoDia || 0)
+              const capitalRutasC = c.capitalRutas || { total: 0, rutas: [] }
+              const detalleCobrador = (
+                <div className="space-y-2 border-t border-[var(--color-border)] pt-3 mt-1">
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2">
+                      <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Prestado</p>
+                      <p className="text-sm font-semibold font-mono-display text-[var(--color-warning)]">{prestadoDiaC > 0 ? '-' : ''}{formatMoney(prestadoDiaC)}</p>
+                    </div>
+                    <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2">
+                      <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Cobrado</p>
+                      <p className="text-sm font-semibold font-mono-display text-[var(--color-success)]">{formatMoney(recaudadoDiaCobrador)}</p>
+                    </div>
+                    <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2">
+                      <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Seguros</p>
+                      <p className="text-sm font-semibold font-mono-display text-[var(--color-info)]">{formatMoney(segurosDiaC)}{segurosCantC > 0 ? <span className="text-[10px] text-[var(--color-text-muted)]"> ·{segurosCantC}</span> : null}</p>
+                    </div>
+                    <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2">
+                      <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Efectivo del día</p>
+                      <p className="text-sm font-semibold font-mono-display" style={{ color: efectivoDiaC >= 0 ? 'var(--color-info)' : 'var(--color-danger)' }}>{formatMoney(efectivoDiaC)}</p>
+                    </div>
+                    <div className="col-span-2 rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2">
+                      <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Capital de ruta{capitalRutasC.rutas.length > 1 ? 's' : ''}</p>
+                      <p className="text-sm font-semibold font-mono-display text-[var(--color-text-primary)]">{formatMoney(capitalRutasC.total)}</p>
+                    </div>
+                  </div>
+                  <Link
+                    href={`/caja/cobrador/${c.id}?fecha=${fechaSeleccionada}`}
+                    className="w-full text-[12px] font-semibold text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] flex items-center justify-center gap-1 py-2 rounded-[10px] border border-[var(--color-border)]"
+                  >
+                    Ver caja completa
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                </div>
+              )
+
               return (
                 <div key={c.id} className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[12px] p-3">
                   <div className="flex items-center justify-between gap-2 mb-3">
@@ -1283,6 +1327,8 @@ export default function CajaPage() {
                               </span>
                             )}
                           </div>
+
+                          {detalleCobrador}
                         </div>
                       )}
 
@@ -1320,10 +1366,13 @@ export default function CajaPage() {
                           </div>
 
                           {expandido && (
-                            <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2 mt-2">
-                              <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Esperado ruta</p>
-                              <p className="text-sm font-semibold font-mono-display text-[var(--color-text-primary)]">{formatMoney(esperadoDiaCobrador)}</p>
-                            </div>
+                            <>
+                              <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2 mt-2">
+                                <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Esperado ruta</p>
+                                <p className="text-sm font-semibold font-mono-display text-[var(--color-text-primary)]">{formatMoney(esperadoDiaCobrador)}</p>
+                              </div>
+                              {detalleCobrador}
+                            </>
                           )}
 
                           <p className="text-[11px] text-[var(--color-accent)]">Falta confirmación manual del cobrador para cerrar caja.</p>

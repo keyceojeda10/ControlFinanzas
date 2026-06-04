@@ -66,9 +66,24 @@ export async function GET(request, { params }) {
         include: {
           grupoCobro: { select: { id: true, nombre: true, color: true } },
           prestamos: {
-            where:   { esClavo: false }, // los clavos no entran en la vista/numeros de la ruta
+            // Se traen TODOS (incluido clavo): el cobro de hoy de un clavo sí suma al
+            // recaudado de la ruta (dinero real). El lado negativo del clavo
+            // (cartera/mora/esperado) se salta más abajo con `if (p.esClavo) continue`.
             orderBy: { createdAt: 'asc' },
-            include: {
+            select: {
+              id: true,
+              estado: true,
+              esClavo: true,
+              cuotaDiaria: true,
+              montoPrestado: true,
+              totalAPagar: true,
+              totalPagado: true,
+              frecuencia: true,
+              fechaInicio: true,
+              diasPlazo: true,
+              diaCobroSemana: true,
+              diaCobroMes: true,
+              diasSinCobro: true,
               pagos: {
                 select:  { montoPagado: true, fechaPago: true, tipo: true, latitud: true, longitud: true },
                 orderBy: { fechaPago: 'desc' },
@@ -171,6 +186,11 @@ export async function GET(request, { params }) {
       // Métricas de cartera/mora solo para préstamos activos
       if (p.estado !== 'activo') continue
 
+      // Tarjeta clavo: su cobro de hoy SÍ entró arriba al recaudado (dinero real),
+      // pero el lado negativo del clavo (cartera, mora, cuotas vencidas, esperado)
+      // NO debe descuadrar los números de la ruta. Se salta a partir de aquí.
+      if (p.esClavo) continue
+
       // Resolver diasSinCobro por préstamo individual (incluye campo propio del préstamo)
       const diasExcluidosPrestamo = obtenerDiasSinCobro(c, ruta, org, p)
 
@@ -257,7 +277,9 @@ export async function GET(request, { params }) {
       direccion: c.direccion,
       latitud:   c.latitud,
       longitud:  c.longitud,
-      estado:    c.prestamos.length === 0 ? 'completado' : (mora > 0 ? 'mora' : 'activo'),
+      // El estado del cliente se basa en sus préstamos NO clavo (los clavos no
+      // cuentan en la cartera/estado de la ruta; solo aportan su cobro al recaudado).
+      estado:    c.prestamos.filter((pr) => !pr.esClavo).length === 0 ? 'completado' : (mora > 0 ? 'mora' : 'activo'),
       pagoHoy:   yaPageHoy,
       diasMora:  mora,
       cuotasEnMora: cuotasEnMoraCliente,
