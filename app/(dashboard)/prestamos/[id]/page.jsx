@@ -110,6 +110,7 @@ export default function PrestamoDetallePage({ params }) {
   const [liqEnviando, setLiqEnviando] = useState(false)
   const [liqError, setLiqError] = useState('')
   const [statsCliente, setStatsCliente] = useState(null) // { totalPrestamos, completados, numeroEsteDe }
+  const [historialOpen, setHistorialOpen] = useState(false)
   const hasLoadedOnceRef = useRef(false)
 
   // Leer contexto de ruta activa
@@ -782,14 +783,32 @@ export default function PrestamoDetallePage({ params }) {
         <BotonWhatsApp tipo="prestamo" cliente={cliente} prestamo={prestamo} />
       )}
 
-      {/* ── HISTORIAL DE PAGOS ───────────────────────────────────── */}
+      {/* ── HISTORIAL DE PAGOS (colapsado por defecto) ──────────── */}
       <Card>
-        <div className="flex items-center justify-between gap-2 mb-3">
+        <button
+          type="button"
+          onClick={() => setHistorialOpen(v => !v)}
+          className="w-full flex items-center justify-between gap-2 focus-visible:outline-none"
+        >
           <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
-            Historial de pagos ({(filtroFecha ? pagos.filter(p => {
+            Historial de pagos ({pagos.length})
+          </p>
+          <svg
+            className="w-4 h-4 shrink-0 transition-transform duration-200"
+            style={{ color: 'var(--color-text-muted)', transform: historialOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {historialOpen && <div className="mt-3">
+          <div className="flex items-center justify-between gap-2 mb-3">
+          <p className="text-xs text-[var(--color-text-muted)]">
+            {filtroFecha ? `${pagos.filter(p => {
               const d = new Date(new Date(p.fechaPago).getTime() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10)
               return d === filtroFecha
-            }) : pagos).length}{filtroFecha ? ` de ${pagos.length}` : ''})
+            }).length} de ${pagos.length} en esta fecha` : `${pagos.length} pago${pagos.length === 1 ? '' : 's'}`}
           </p>
           <div className="flex items-center gap-1">
             <label
@@ -1004,6 +1023,7 @@ export default function PrestamoDetallePage({ params }) {
           </div>
           )
         })()}
+        </div>}
       </Card>
 
       {/* ── CANCELAR PRÉSTAMO (solo owner, solo activo) ──────────── */}

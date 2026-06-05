@@ -104,6 +104,7 @@ function NuevoPrestamo() {
   const [yaAbonado, setYaAbonado] = useState('')
   // Cobro de seguro (opcional)
   const [seguro, setSeguro] = useState(false)
+  const [avanzadasOpen, setAvanzadasOpen] = useState(false)
   const [montoSeguro, setMontoSeguro] = useState('')
   // Modo de interes: 'fijo' (clasico, default) | 'unico' | 'saldo' | 'manual'.
   const [modoInteres, setModoInteres] = useState('fijo')
@@ -712,7 +713,7 @@ function NuevoPrestamo() {
             {modo === 'prestamo' ? (
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                  Tasa de interes (% mensual)
+                  Interés que cobras (% mensual)
                 </label>
                 <Input
                   type="number"
@@ -782,6 +783,34 @@ function NuevoPrestamo() {
                 )}
               </div>
             )}
+
+            {/* Frecuencia de cobro — visible SIEMPRE cuando no es diario,
+                o dentro de "Opciones avanzadas" */}
+
+            {/* Opciones avanzadas: modo interés, frecuencia, día ancla, días sin cobro, seguro, en curso */}
+            <button
+              type="button"
+              onClick={() => setAvanzadasOpen(v => !v)}
+              className="flex items-center gap-2 text-[11px] font-semibold transition-colors focus-visible:outline-none"
+              style={{ color: avanzadasOpen ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
+            >
+              <svg
+                className="w-3.5 h-3.5 shrink-0 transition-transform duration-200"
+                style={{ transform: avanzadasOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}
+                fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+              Opciones avanzadas
+              {(!avanzadasOpen && (frecuencia !== 'diario' || modoInteres !== 'fijo' || seguro || esEnCurso)) && (
+                <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold" style={{ background: 'color-mix(in srgb, var(--color-accent) 18%, transparent)', color: 'var(--color-accent)' }}>
+                  activas
+                </span>
+              )}
+            </button>
+
+            {avanzadasOpen && (
+            <div className="space-y-4">
 
             {/* Modo de interes: Fijo / Unico / Sobre saldo / Manual */}
             {modo === 'prestamo' && (
@@ -853,10 +882,10 @@ function NuevoPrestamo() {
             {(frecuencia === 'semanal' || frecuencia === 'quincenal') && (
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                  Dia ancla de cobro
+                  ¿Qué día cobras?
                 </label>
                 <p className="text-[10px] mt-0.5 mb-1.5" style={{ color: 'var(--color-text-muted)' }}>
-                  Que dia de la semana se cobra. "Auto" usa el dia de la fecha de inicio.
+                  Fija el día de la semana en que siempre cobras. "Auto" usa el día de la fecha de inicio.
                 </p>
                 <div className="grid grid-cols-7 gap-1">
                   <button
@@ -935,9 +964,10 @@ function NuevoPrestamo() {
               />
             </div>
           </div>
+          )}
 
           {/* Opciones adicionales: seguro, prestamo en curso, cuota manual */}
-          <div className="space-y-3 pt-2 border-t" style={{ borderColor: 'var(--color-border)' }}>
+          {avanzadasOpen && <div className="space-y-3 pt-2 border-t" style={{ borderColor: 'var(--color-border)' }}>
             <p className="text-[11px] font-semibold uppercase tracking-wide pt-3" style={{ color: 'var(--color-text-muted)' }}>
               Opciones adicionales
             </p>
@@ -973,8 +1003,8 @@ function NuevoPrestamo() {
               style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)' }}
             >
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Prestamo en curso</p>
-                <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Migrar un prestamo con abonos previos</p>
+                <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>El cliente ya había pagado algo antes</p>
+                <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Migrar un préstamo con abonos previos</p>
               </div>
               <input
                 type="checkbox"
@@ -993,6 +1023,8 @@ function NuevoPrestamo() {
                 </div>
               </div>
             )}
+
+            </div>}
 
           </div>
 
@@ -1084,7 +1116,7 @@ function NuevoPrestamo() {
                   )}
                   {modo === 'prestamo' && (
                     <Row
-                      label="Tasa de interes"
+                      label="Interés"
                       value={`${tasa || 0}% mensual`}
                       valueColor="var(--color-accent)"
                     />

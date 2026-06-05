@@ -8,10 +8,10 @@ import { formatMoney } from '@/lib/i18n'
 import { calcularPrestamo } from '@/lib/calculos'
 
 const MODOS = [
-  { key: 'fijo',   label: 'Fijo (clasico)' },
-  { key: 'unico',  label: 'Interes unico' },
-  { key: 'saldo',  label: 'Sobre saldo' },
-  { key: 'manual', label: 'Manual' },
+  { key: 'fijo',   label: 'Clásico' },
+  { key: 'unico',  label: 'De una vez' },
+  { key: 'saldo',  label: 'Sobre lo que falta' },
+  { key: 'manual', label: 'Cuota exacta' },
 ]
 
 // Texto explicativo por modo. Si hay datos, agrega el ejemplo con el caso real.
@@ -61,7 +61,7 @@ export default function ModoInteresSelector({ modoInteres, onChange, calculo, mo
     <div>
       <div className="flex items-center justify-between">
         <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-          Modo de interes
+          ¿Cómo cobras el interés?
         </label>
       </div>
 

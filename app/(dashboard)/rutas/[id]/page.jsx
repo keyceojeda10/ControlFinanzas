@@ -1188,6 +1188,14 @@ export default function RutaDetallePage({ params }) {
                       </div>
                     ) : (
                       <div>
+                        {(ruta.pendientesHoy ?? 0) > 0 && (
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full mb-2" style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)' }}>
+                            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--color-warning)' }} />
+                            <span className="text-[11px] font-bold" style={{ color: 'var(--color-warning)' }}>
+                              {ruta.pendientesHoy} cliente{ruta.pendientesHoy === 1 ? '' : 's'} por cobrar
+                            </span>
+                          </div>
+                        )}
                         <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-secondary)' }}>
                           Te faltan
                         </p>
@@ -1750,7 +1758,7 @@ export default function RutaDetallePage({ params }) {
                             disabled={pagandoRapido === c.id}
                             title={abonoConPendiente ? 'El cliente aun tiene cuotas atrasadas pendientes' : 'Registrar cobro del dia'}
                             className={[
-                              'h-7 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95 px-3 gap-1.5',
+                              'h-9 rounded-[10px] flex items-center justify-center shrink-0 transition-all active:scale-95 px-3 gap-1.5',
                               pagoRapidoOk === c.id
                                 ? 'bg-[var(--color-success)]'
                                 : abonoConPendiente
@@ -1770,13 +1778,13 @@ export default function RutaDetallePage({ params }) {
                             ) : (
                               <>
                                 <svg
-                                  className={`w-3 h-3 ${abonoConPendiente ? 'text-[var(--color-warning)]' : 'text-[var(--color-success)]'}`}
+                                  className={`w-3 h-3 shrink-0 ${abonoConPendiente ? 'text-[var(--color-warning)]' : 'text-[var(--color-success)]'}`}
                                   fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2}
                                 >
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33" />
                                 </svg>
-                                <span className={`text-[10px] font-semibold whitespace-nowrap ${abonoConPendiente ? 'text-[var(--color-warning)]' : 'text-[var(--color-success)]'}`}>
-                                  {abonoConPendiente ? 'Cobrar atraso' : 'Cobro rápido'}
+                                <span className={`text-[11px] font-bold whitespace-nowrap font-mono-display ${abonoConPendiente ? 'text-[var(--color-warning)]' : 'text-[var(--color-success)]'}`}>
+                                  {abonoConPendiente ? `Cobrar · ${formatMoney(c.cuota)}` : `Cobrar · ${formatMoney(c.cuota)}`}
                                 </span>
                               </>
                             )}

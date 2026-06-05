@@ -65,7 +65,7 @@ export default function MisEstadisticasPage() {
   return (
     <div className="max-w-xl mx-auto space-y-5">
       <div>
-        <h1 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Mis estadísticas</h1>
+        <h1 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Mi resumen</h1>
         {data.rutaNombre && (
           <p className="text-[12px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
             Ruta: {data.rutaNombre} · {data.totalClientesActivos} clientes activos

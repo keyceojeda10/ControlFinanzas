@@ -1011,8 +1011,8 @@ export default function CajaPage() {
 
       <Card>
         <div className="mb-2">
-          <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Saldo general</p>
-          <p className="text-[11px] text-[var(--color-text-muted)]">Saldo histórico acumulado del negocio</p>
+          <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Tu patrimonio</p>
+          <p className="text-[11px] text-[var(--color-text-muted)]">Todo el dinero del negocio acumulado</p>
         </div>
         <p className="text-2xl font-bold font-mono-display" style={{ color: saldoGeneralActual >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
           {formatMoney(saldoGeneralActual)}

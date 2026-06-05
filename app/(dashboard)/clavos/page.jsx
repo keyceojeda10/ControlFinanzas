@@ -29,9 +29,9 @@ export default function ClavosPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-white">Tarjetas clavo</h1>
+        <h1 className="text-xl font-bold text-white">Préstamos perdidos</h1>
         <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
-          Préstamos malos apartados de tus números normales. Contabilidad separada.
+          Préstamos que separaste de tu cartera. Si el cliente paga algo, se registra aquí.
         </p>
       </div>
 
@@ -39,7 +39,7 @@ export default function ClavosPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: 'Clavos', value: data.total, color: '#ef4444' },
-          { label: 'Capital atrapado', value: formatMoney(data.capitalEnClavos), color: '#f97316' },
+          { label: 'Dinero en riesgo', value: formatMoney(data.capitalEnClavos), color: '#f97316' },
           { label: 'Saldo en clavos', value: formatMoney(data.saldoEnClavos), color: '#f5c518' },
           { label: 'Recuperado', value: formatMoney(data.recuperado), color: '#22c55e' },
         ].map(({ label, value, color }) => (
@@ -54,7 +54,7 @@ export default function ClavosPage() {
       <div className="border border-[var(--color-border)] rounded-[12px] bg-[var(--color-bg-card)] divide-y divide-[var(--color-border)]">
         {data.items.length === 0 && (
           <p className="px-4 py-8 text-sm text-[var(--color-text-muted)] text-center">
-            No tienes tarjetas clavo. Cuando marques un préstamo como clavo, aparece aquí.
+            No tienes préstamos perdidos. Cuando apartes un préstamo de tu cartera, aparece aquí.
           </p>
         )}
         {data.items.map(it => (

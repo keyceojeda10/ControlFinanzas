@@ -508,7 +508,7 @@ export default function CapitalTab() {
                   </p>
                 </div>
                 <div className="grid grid-cols-3 gap-2 mt-2 text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
-                  <span>Inyectado: <span className="font-semibold" style={{ color: 'var(--color-success)' }}>{formatMoney(r.inyectado)}</span></span>
+                  <span>Agregado: <span className="font-semibold" style={{ color: 'var(--color-success)' }}>{formatMoney(r.inyectado)}</span></span>
                   <span>Prestado: <span className="font-semibold" style={{ color: 'var(--color-warning)' }}>{formatMoney(r.prestado)}</span></span>
                   <span>Cobrado: <span className="font-semibold" style={{ color: 'var(--color-info)' }}>{formatMoney(r.recaudado)}</span></span>
                 </div>
@@ -516,12 +516,12 @@ export default function CapitalTab() {
                   <button type="button" onClick={() => abrirMovimientoRuta(r.rutaId, 'inyeccion')}
                     className="flex-1 py-1.5 rounded-[8px] text-xs font-semibold transition-colors"
                     style={{ background: 'var(--color-success-dim)', color: 'var(--color-success)', border: '1px solid var(--color-success-border)' }}>
-                    Inyectar
+                    Agregar dinero
                   </button>
                   <button type="button" onClick={() => abrirMovimientoRuta(r.rutaId, 'retiro')}
                     className="flex-1 py-1.5 rounded-[8px] text-xs font-semibold transition-colors"
                     style={{ background: 'var(--color-danger-dim)', color: 'var(--color-danger)', border: '1px solid var(--color-danger-border)' }}>
-                    Retirar
+                    Retirar dinero
                   </button>
                 </div>
               </div>
@@ -537,7 +537,7 @@ export default function CapitalTab() {
             className="text-xs bg-[var(--color-bg-base)] border border-[var(--color-border)] text-[var(--color-text-muted)] rounded-lg px-2 py-1">
             <option value="">Todos</option>
             <option value="capital_inicial">Capital inicial</option>
-            <option value="inyeccion">Inyecciones</option>
+            <option value="inyeccion">Dinero agregado</option>
             <option value="retiro">Retiros</option>
             <option value="desembolso">Prestados</option>
             <option value="recaudo">Cobrados</option>
@@ -618,8 +618,8 @@ export default function CapitalTab() {
                 <select value={modalTipo} onChange={(e) => setModalTipo(e.target.value)}
                   className="w-full bg-[var(--color-bg-base)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-[10px] px-3 py-2.5 text-sm">
                   <option value="capital_inicial">Capital inicial</option>
-                  <option value="inyeccion">Inyectar capital</option>
-                  <option value="retiro">Retirar capital</option>
+                  <option value="inyeccion">Agregar dinero</option>
+                  <option value="retiro">Retirar dinero</option>
                   <option value="ajuste">Ajuste manual</option>
                 </select>
               </div>
