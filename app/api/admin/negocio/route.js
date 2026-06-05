@@ -64,9 +64,9 @@ export async function GET() {
         take: 1,
       },
       suscripciones: {
+        where: { OR: [{ mpStatus: null }, { mpStatus: { not: 'pending' } }] },
         orderBy: { createdAt: 'desc' },
-        take: 1,
-        select: { estado: true, montoCOP: true, fechaInicio: true, fechaVencimiento: true },
+        select: { estado: true, montoCOP: true, fechaInicio: true, fechaVencimiento: true, createdAt: true },
       },
       _count: { select: { clientes: true, prestamos: true } },
     },
@@ -83,7 +83,11 @@ export async function GET() {
 
   for (const org of orgs) {
     const owner    = org.users[0] ?? {}
-    const susc     = org.suscripciones[0] ?? null
+    const suscs    = org.suscripciones ?? []
+    // La suscripción vigente es la más reciente sin mpStatus pending
+    const susc     = suscs[0] ?? null
+    // Primera suscripción con pago real (para calcular antigüedad de pago)
+    const primerPago = [...suscs].reverse().find(s => s.montoCOP > 0) ?? null
     const clientes = org._count.clientes
     const prestamos = org._count.prestamos
 
@@ -139,12 +143,13 @@ export async function GET() {
 
     if (esPagante) {
       mrrTotal += precio
+      const fechaDesde = primerPago ? new Date(primerPago.createdAt) : new Date(susc.fechaInicio)
       pagantes.push({
         ...base,
-        fechaInicioPago: susc.fechaInicio,
+        fechaInicioPago:  fechaDesde,
         fechaVencimiento: susc.fechaVencimiento,
         mesesPagando: Math.max(1, Math.floor(
-          (ahora - new Date(susc.fechaInicio)) / (1000 * 60 * 60 * 24 * 30)
+          (ahora - fechaDesde) / (1000 * 60 * 60 * 24 * 30)
         )),
       })
     } else if (esChuneado) {
