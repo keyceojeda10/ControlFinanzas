@@ -17,6 +17,7 @@ import RegistrarPago                  from '@/components/prestamos/RegistrarPago
 import RenovarPrestamo                from '@/components/prestamos/RenovarPrestamo'
 import ModificarPlazo                 from '@/components/prestamos/ModificarPlazo'
 import EditarDiaCobro                 from '@/components/prestamos/EditarDiaCobro'
+import EditarPrestamo                 from '@/components/prestamos/EditarPrestamo'
 import BotonWhatsApp                  from '@/components/ui/BotonWhatsApp'
 import BotonCompartir                 from '@/components/ui/BotonCompartir'
 import BotonImprimirRecibo            from '@/components/ui/BotonImprimirRecibo'
@@ -90,6 +91,7 @@ export default function PrestamoDetallePage({ params }) {
   const [modalRenovar,  setModalRenovar]  = useState(false)
   const [modalPlazo,    setModalPlazo]    = useState(false)
   const [modalDiaCobro, setModalDiaCobro] = useState(false)
+  const [modalEditar,   setModalEditar]   = useState(false)
   const [modalWA, setModalWA] = useState(false)
   const [modalDscPrestamo, setModalDscPrestamo] = useState(false)
   const [dscDias, setDscDias] = useState([])
@@ -422,6 +424,15 @@ export default function PrestamoDetallePage({ params }) {
   // El modal de gestión se muestra si puede gestionar préstamos O aplicar descuentos
   // (un cobrador con solo permiso de descuentos también debe poder abrirlo).
   const mostrarGestionPrestamo = estaActivo && !completado && (puedeGestionarPrestamos || puedeAplicarDescuentos)
+
+  // "Editar préstamo" solo disponible si se creó HOY (misma fecha local Colombia).
+  const esDeHoy = (() => {
+    if (!prestamo?.createdAt) return false
+    const col = new Date(Date.now() - 5 * 60 * 60 * 1000)
+    const hoyISO = col.toISOString().slice(0, 10)
+    const creadoISO = new Date(prestamo.createdAt).toISOString().slice(0, 10)
+    return creadoISO === hoyISO
+  })()
 
   const abrirPagoNormal = () => {
     setPresetPago(null)
@@ -1153,6 +1164,18 @@ export default function PrestamoDetallePage({ params }) {
         title="Gestión del préstamo"
       >
         <div className="grid grid-cols-2 gap-2">
+          {/* Editar préstamo: solo disponible el mismo día que se creó (corrección de errores) */}
+          {(puedeGestionarPrestamos || esOwner) && esDeHoy && (
+            <button
+              onClick={() => { setModalGestionPrestamo(false); setModalEditar(true) }}
+              className="col-span-2 h-11 rounded-[12px] font-semibold text-sm text-[var(--color-text-primary)] bg-[var(--color-bg-hover)] border-2 border-[var(--color-accent)] hover:bg-[rgba(245,197,24,0.1)] transition-all flex items-center justify-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Editar préstamo (creado hoy)
+            </button>
+          )}
           {/* Acciones de gestión de préstamos (no reducen saldo) */}
           {puedeGestionarPrestamos && <>
           <button
@@ -1479,6 +1502,14 @@ export default function PrestamoDetallePage({ params }) {
         open={modalDiaCobro}
         onClose={() => setModalDiaCobro(false)}
         onSuccess={fetchPrestamo}
+      />
+
+      {/* Modal editar préstamo (mismo día que se creó) */}
+      <EditarPrestamo
+        prestamo={prestamo}
+        open={modalEditar}
+        onClose={() => setModalEditar(false)}
+        onSuccess={() => { setModalEditar(false); fetchPrestamo() }}
       />
 
       {/* Modal selector de plantillas WhatsApp (boton circular del header) */}

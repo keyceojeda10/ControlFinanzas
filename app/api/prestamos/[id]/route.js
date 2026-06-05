@@ -12,11 +12,13 @@ import {
   calcularCuotasEnMora,
   calcularMontoEnMora,
   calcularMontoParaPonerseAlDia,
+  calcularPrestamo,
   pagoHoy,
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
 import { registrarMovimientoCapital } from '@/lib/capital'
+import { getLocalDayRange, getLocalDateStr } from '@/lib/i18n'
 import { getCachedMutation, setCachedMutation, buildMutationKey } from '@/lib/mutation-idempotency'
 
 const REF_REVERSO_CANCELACION_DESEMBOLSO = 'prestamo_cancelado_reverso_desembolso'
@@ -451,6 +453,147 @@ export async function PATCH(request, { params }) {
       entidadTipo: 'prestamo',
       entidadId: id,
       detalle: `Día de cobro actualizado (${freq})`,
+      ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+    })
+    if (idempKey) setCachedMutation(idempKey, actualizado)
+    return Response.json(actualizado)
+  }
+
+  // ─── Modo 4: editar préstamo completo (mismo día) ─────────────────
+  if (modo === 'editar') {
+    const puedeGestionar = session.user.rol === 'owner'
+      ? true
+      : (session.user.rol === 'cobrador' && await cobradorPuedeGestionarPrestamos(session.user.id))
+    if (!puedeGestionar) {
+      return Response.json({ error: 'No tienes permiso para editar este préstamo' }, { status: 403 })
+    }
+    if (p.estado !== 'activo') {
+      return Response.json({ error: 'Solo se pueden editar préstamos activos' }, { status: 400 })
+    }
+
+    // Ventana de edición: solo el mismo día que se creó (timezone de la org).
+    const country = session.user.country || 'co'
+    const hoyLocal = getLocalDateStr(country)
+    const { inicio: inicioDia, fin: finDia } = getLocalDayRange(hoyLocal, country)
+    const creadoAt = new Date(p.createdAt)
+    if (creadoAt < inicioDia || creadoAt >= finDia) {
+      return Response.json({
+        error: 'Solo se puede editar un préstamo el mismo día que se creó. Pasado ese día, cancela y crea uno nuevo.',
+      }, { status: 400 })
+    }
+
+    const {
+      montoPrestado: nuevoMonto,
+      tasaInteres,
+      diasPlazo,
+      fechaInicio: fechaInicioRaw,
+      frecuencia,
+      modoInteres,
+      cuotaManual,
+      diaCobroSemana,
+      diaCobroMes,
+      seguro,
+      montoSeguro,
+      nombreProducto,
+      diasSinCobro: nuevosDiasSinCobro,
+    } = body
+
+    const hayPagos = p.pagos.filter(pg => !['recargo', 'descuento'].includes(pg.tipo)).length > 0
+    const montoAnterior = Number(p.montoPrestado)
+    const montoNuevo = nuevoMonto != null ? Number(nuevoMonto) : montoAnterior
+    const montoCambia = Math.abs(montoNuevo - montoAnterior) > 0.01
+
+    if (montoCambia && hayPagos) {
+      return Response.json({
+        error: 'No se puede cambiar el monto porque ya hay pagos registrados. Puedes corregir tasa, plazo y frecuencia.',
+      }, { status: 400 })
+    }
+    if (montoNuevo <= 0) {
+      return Response.json({ error: 'El monto debe ser mayor a 0' }, { status: 400 })
+    }
+
+    // Recalcular cuota y total con los nuevos parámetros.
+    const fechaInicioUsar = fechaInicioRaw ? new Date(fechaInicioRaw) : new Date(p.fechaInicio)
+    const diasPlazoUsar   = diasPlazo ?? p.diasPlazo
+    const frecuenciaUsar  = frecuencia ?? p.frecuencia
+    const modoInteresUsar = modoInteres ?? p.modoInteres
+    const cuotaManualUsar = cuotaManual != null ? Number(cuotaManual) : undefined
+
+    // Si ya hay pagos, recalculamos sobre el saldo pendiente (igual que "extender").
+    // Si no hay pagos, calculamos desde el monto completo.
+    const montoParaCalculo = hayPagos ? calcularSaldoPendiente(p) : montoNuevo
+
+    const calc = calcularPrestamo({
+      montoPrestado: montoParaCalculo,
+      tasaInteres:   tasaInteres ?? p.tasaInteres,
+      diasPlazo:     diasPlazoUsar,
+      fechaInicio:   fechaInicioUsar,
+      frecuencia:    frecuenciaUsar,
+      modoInteres:   modoInteresUsar,
+      cuotaManual:   cuotaManualUsar,
+    })
+
+    const dataUpdate = {
+      montoPrestado: montoNuevo,
+      tasaInteres:   tasaInteres ?? p.tasaInteres,
+      diasPlazo:     diasPlazoUsar,
+      fechaInicio:   fechaInicioUsar,
+      fechaFin:      calc.fechaFin,
+      frecuencia:    frecuenciaUsar,
+      modoInteres:   modoInteresUsar,
+      cuotaDiaria:   calc.cuotaDiaria,
+      // Si hay pagos, el total es lo ya pagado + el nuevo saldo recalculado.
+      totalAPagar:   hayPagos
+        ? (p.totalPagado || 0) + calc.totalAPagar
+        : calc.totalAPagar,
+      diaCobroSemana: diaCobroSemana !== undefined ? diaCobroSemana : p.diaCobroSemana,
+      diaCobroMes:    diaCobroMes    !== undefined ? diaCobroMes    : p.diaCobroMes,
+      seguro:         seguro !== undefined ? Boolean(seguro) : p.seguro,
+      montoSeguro:    montoSeguro != null ? Number(montoSeguro) : p.montoSeguro,
+      nombreProducto: nombreProducto !== undefined ? nombreProducto : p.nombreProducto,
+      diasSinCobro:   nuevosDiasSinCobro !== undefined ? nuevosDiasSinCobro : p.diasSinCobro,
+    }
+
+    // Si el monto cambió, reversar el desembolso anterior y registrar el nuevo.
+    const orgId = session.user.organizationId
+    const rutaId = p.cliente?.rutaId || null
+
+    const actualizado = await prisma.$transaction(async (tx) => {
+      if (montoCambia) {
+        // Reversar desembolso original.
+        await registrarMovimientoCapital(tx, {
+          organizationId: orgId,
+          tipo: 'ajuste',
+          direccion: 'ingreso',
+          monto: montoAnterior,
+          descripcion: `Reverso desembolso - edición préstamo (anterior $${Math.round(montoAnterior).toLocaleString('es-CO')})`,
+          referenciaId: id,
+          referenciaTipo: 'prestamo',
+          rutaId,
+          creadoPorId: session.user.id,
+        })
+        // Registrar nuevo desembolso.
+        await registrarMovimientoCapital(tx, {
+          organizationId: orgId,
+          tipo: 'desembolso',
+          monto: montoNuevo,
+          descripcion: `Desembolso actualizado - edición préstamo ($${Math.round(montoNuevo).toLocaleString('es-CO')})`,
+          referenciaId: id,
+          referenciaTipo: 'prestamo',
+          rutaId,
+          creadoPorId: session.user.id,
+        })
+      }
+      return tx.prestamo.update({ where: { id }, data: dataUpdate })
+    })
+
+    const cambiosMonto = montoCambia ? ` monto ${Math.round(montoAnterior).toLocaleString('es-CO')}→${Math.round(montoNuevo).toLocaleString('es-CO')}` : ''
+    logActividad({
+      session,
+      accion: 'editar_prestamo',
+      entidadTipo: 'prestamo',
+      entidadId: id,
+      detalle: `Préstamo editado el mismo día de creación.${cambiosMonto} cuota→${Math.round(calc.cuotaDiaria).toLocaleString('es-CO')}`,
       ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
     })
     if (idempKey) setCachedMutation(idempKey, actualizado)
