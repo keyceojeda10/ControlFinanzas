@@ -12,19 +12,19 @@ const LS_KEY = 'cf_cobrador_onboarding_dismissed'
 
 const PASOS = [
   {
-    titulo: 'Revisa tu ruta de cobro',
-    descripcion: 'Tu administrador te asigno una ruta con clientes. Entra y mira quienes te tocan hoy.',
-    href: '/rutas',
+    titulo: 'Abre "Mis cobros de hoy"',
+    descripcion: 'Ahi tienes la lista de clientes que te tocan hoy, de todas tus rutas en un solo lugar.',
+    href: '/cobros-hoy',
     icono: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
       </svg>
     ),
   },
   {
-    titulo: 'Registra un pago',
-    descripcion: 'Entra al prestamo del cliente y toca "Registrar pago". Puedes hacerlo sin internet.',
-    href: '/prestamos',
+    titulo: 'Toca "Cobrar" en la lista',
+    descripcion: 'Un toque por cliente y queda registrado con GPS. Funciona sin internet.',
+    href: '/cobros-hoy',
     icono: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -32,9 +32,9 @@ const PASOS = [
     ),
   },
   {
-    titulo: 'Registra gastos menores',
-    descripcion: 'Si tienes gastos de transporte o gasolina, registralos para que el admin los vea.',
-    href: '/caja',
+    titulo: 'Registra tus gastos del dia',
+    descripcion: 'Transporte, gasolina o cualquier gasto de la jornada. El admin los ve al instante.',
+    href: '/gastos',
     icono: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -42,8 +42,8 @@ const PASOS = [
     ),
   },
   {
-    titulo: 'Instala la app',
-    descripcion: 'Instala la app en tu celular para acceder más rápido y usarla sin internet.',
+    titulo: 'Instala la app en tu celular',
+    descripcion: 'Accede mas rapido y cobra sin internet aunque no tengas señal.',
     isInstall: true,
     icono: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

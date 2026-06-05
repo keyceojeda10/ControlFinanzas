@@ -108,7 +108,7 @@ export default function WizardPrestamo({ cliente, onComplete }) {
         <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] p-5 space-y-4">
           {/* Monto */}
           <Input
-            label="Monto prestado (COP)"
+            label="Monto a prestar"
             type="number"
             inputMode="numeric"
             placeholder="Ej: 500000"
@@ -131,7 +131,7 @@ export default function WizardPrestamo({ cliente, onComplete }) {
                 onChange={(e) => setTasa(e.target.value)}
                 suffix="%"
               />
-              <p className="text-[10px] text-[var(--color-text-muted)] leading-snug px-0.5">20% es lo común</p>
+              <p className="text-[10px] text-[var(--color-text-muted)] leading-snug px-0.5">20% mensual es lo más común</p>
             </div>
             <div className="flex flex-col gap-1">
               <Input
@@ -161,7 +161,7 @@ export default function WizardPrestamo({ cliente, onComplete }) {
 
           {/* Frecuencia */}
           <div className="flex flex-col gap-1.5">
-            <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">Frecuencia de cobro</p>
+            <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">¿Cada cuánto cobras?</p>
             <div className="grid grid-cols-4 gap-2">
               {FRECUENCIAS.map((f) => (
                 <button
@@ -185,6 +185,17 @@ export default function WizardPrestamo({ cliente, onComplete }) {
         {/* Resumen en tiempo real */}
         <ResumenCalculo calculo={calculo} visible={!!calculo} />
 
+        {!calculo && (
+          <div className="flex items-start gap-2 px-3 py-2.5 rounded-[10px] bg-[rgba(245,197,24,0.06)] border border-[rgba(245,197,24,0.15)]">
+            <svg className="w-3.5 h-3.5 mt-0.5 shrink-0 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-[10px] text-[var(--color-text-muted)] leading-relaxed">
+              Cuando ingreses el monto verás el resumen del préstamo en tiempo real. Puedes cambiar la frecuencia y el plazo según cómo cobras normalmente.
+            </p>
+          </div>
+        )}
+
         <button
           type="submit"
           disabled={loading}
@@ -195,7 +206,7 @@ export default function WizardPrestamo({ cliente, onComplete }) {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-          ) : 'Crear prestamo'}
+          ) : 'Crear préstamo'}
         </button>
       </form>
     </div>
