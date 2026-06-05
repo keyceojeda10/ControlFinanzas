@@ -169,24 +169,24 @@ function TabPerfil() {
       <Card>
         <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-3">Avatar de perfil</p>
         <p className="text-[11px] text-[var(--color-text-muted)] mb-4">
-          Selecciona un avatar para tu perfil. Se mostrara en el menu y en el sidebar.
+          Se mostrará en el menú y en el sidebar.
         </p>
 
         {/* Preview actual */}
-        <div className="flex items-center gap-3 mb-4 pb-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
-          <Avatar nombre={nombre || perfil?.nombre} avatarId={avatarSeleccionado} size={56} fontSize={20} />
-          <div>
-            <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{nombre || perfil?.nombre}</p>
-            <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
-              {avatarSeleccionado ? AVATARS.find(a => a.id === avatarSeleccionado)?.nombre ?? 'Avatar seleccionado' : 'Usando iniciales'}
+        <div className="flex items-center gap-3 mb-5 pb-5" style={{ borderBottom: '1px solid var(--color-border)' }}>
+          <Avatar nombre={nombre || perfil?.nombre} avatarId={avatarSeleccionado} size={64} fontSize={22} />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{nombre || perfil?.nombre}</p>
+            <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+              {avatarSeleccionado ? AVATARS.find(a => a.id === avatarSeleccionado)?.nombre ?? 'Avatar seleccionado' : 'Usando iniciales del nombre'}
             </p>
           </div>
           {avatarSeleccionado && (
             <button
               onClick={() => guardarAvatar(null)}
               disabled={guardandoAvatar}
-              className="ml-auto text-[11px] px-2.5 py-1 rounded-full transition-colors"
-              style={{ color: 'var(--color-danger)', background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)' }}
+              className="shrink-0 text-[11px] px-3 py-1.5 rounded-full transition-colors font-medium"
+              style={{ color: 'var(--color-danger)', background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--color-danger) 20%, transparent)' }}
             >
               Quitar
             </button>
@@ -194,28 +194,35 @@ function TabPerfil() {
         </div>
 
         {/* Grid de avatares */}
-        <div className="grid grid-cols-4 sm:grid-cols-6 gap-2.5">
-          {AVATARS.map((av) => (
-            <button
-              key={av.id}
-              onClick={() => guardarAvatar(av.id)}
-              disabled={guardandoAvatar}
-              className={`relative rounded-full overflow-hidden transition-all hover:scale-110 active:scale-95 ${avatarSeleccionado === av.id ? 'ring-2 ring-offset-2 scale-105' : ''}`}
-              style={{
-                aspectRatio: '1',
-                ...(avatarSeleccionado === av.id ? { ringColor: 'var(--color-accent)', '--tw-ring-offset-color': 'var(--color-bg-card)' } : {}),
-              }}
-              title={av.nombre}
-            >
-              <div
-                className="w-full h-full"
-                dangerouslySetInnerHTML={{ __html: av.svg }}
-              />
-              {avatarSeleccionado === av.id && (
-                <div className="absolute inset-0 rounded-full" style={{ border: '2px solid var(--color-accent)' }} />
-              )}
-            </button>
-          ))}
+        <div className="grid grid-cols-5 sm:grid-cols-7 gap-3">
+          {AVATARS.map((av) => {
+            const selected = avatarSeleccionado === av.id
+            return (
+              <button
+                key={av.id}
+                onClick={() => guardarAvatar(av.id)}
+                disabled={guardandoAvatar}
+                className="group relative rounded-full overflow-hidden transition-all hover:scale-110 active:scale-95"
+                style={{
+                  aspectRatio: '1',
+                  boxShadow: selected ? '0 0 0 3px var(--color-accent), 0 0 0 5px color-mix(in srgb, var(--color-accent) 20%, transparent)' : 'none',
+                  transform: selected ? 'scale(1.08)' : undefined,
+                }}
+                title={av.nombre}
+              >
+                <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: av.svg }} />
+                {selected && (
+                  <div className="absolute inset-0 flex items-end justify-center pb-1">
+                    <div className="w-4 h-4 rounded-full flex items-center justify-center" style={{ background: 'var(--color-accent)' }}>
+                      <svg className="w-2.5 h-2.5" fill="none" stroke="#000" strokeWidth={2.5} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  </div>
+                )}
+              </button>
+            )
+          })}
         </div>
         {msgAvatar && <div className="mt-3"><Alerta tipo={msgAvatar.tipo}>{msgAvatar.texto}</Alerta></div>}
       </Card>

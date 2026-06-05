@@ -111,6 +111,14 @@ export default function CajaPage() {
   const [historial, setHistorial] = useState(null)
   const [historialCargando, setHistorialCargando] = useState(false)
   const hasLoadedOnceRef = useRef(false)
+  const [bannerCajaVisible, setBannerCajaVisible] = useState(() => {
+    try { return localStorage.getItem('cf-banner-caja') !== 'hidden' } catch { return true }
+  })
+
+  const cerrarBannerCaja = () => {
+    setBannerCajaVisible(false)
+    try { localStorage.setItem('cf-banner-caja', 'hidden') } catch {}
+  }
 
   // Solo al montar: si llega ?fecha= en la URL (deep-link), úsala como fecha inicial.
   // No reaccionar a fechaParam después: el usuario cambia la fecha con el input y NO
@@ -845,15 +853,22 @@ export default function CajaPage() {
         </p>
       </div>
 
-      {/* Banner explicativo */}
-      <div className="rounded-[12px] px-3.5 py-2.5 flex items-start gap-2.5" style={{ background: 'color-mix(in srgb, var(--color-success) 8%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-success) 20%, var(--color-border))' }}>
-        <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--color-success)' }}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75" />
-        </svg>
-        <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-          Aquí ves el efectivo que entró y salió hoy. Cada cobrador cierra su caja al terminar la ruta — tú ves el consolidado y puedes corregir cualquier diferencia.
-        </p>
-      </div>
+      {/* Banner explicativo (colapsable) */}
+      {bannerCajaVisible && (
+        <div className="rounded-[12px] px-3.5 py-2.5 flex items-start gap-2.5" style={{ background: 'color-mix(in srgb, var(--color-success) 8%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-success) 20%, var(--color-border))' }}>
+          <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--color-success)' }}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75" />
+          </svg>
+          <p className="text-xs leading-relaxed flex-1" style={{ color: 'var(--color-text-secondary)' }}>
+            Aquí ves el efectivo que entró y salió hoy. Cada cobrador cierra su caja al terminar la ruta — tú ves el consolidado y puedes corregir cualquier diferencia.
+          </p>
+          <button onClick={cerrarBannerCaja} className="shrink-0 w-5 h-5 flex items-center justify-center rounded-full transition-colors hover:bg-[rgba(255,255,255,0.1)]" style={{ color: 'var(--color-text-muted)' }} title="Cerrar">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
 
       {/* Filtro de periodo */}
       <FiltroPeriodo value={{ ...periodo, fecha: periodo.fecha || fechaSeleccionada }} onChange={handlePeriodoChange} />
