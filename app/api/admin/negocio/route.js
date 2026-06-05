@@ -159,12 +159,14 @@ export async function GET() {
         diasSinPagar: Math.floor((ahora - new Date(susc.fechaVencimiento)) / 86400000),
       })
     } else if (esTrial) {
-      // Muerto: trial, nunca creó cliente, inactivo por más de 7 días
+      const fechaVencTrial = susc
+        ? new Date(susc.fechaVencimiento)
+        : new Date(new Date(org.createdAt).getTime() + 14 * 86400000)
       const esMuerto = clientes === 0 && diasSinActividad > 7
       if (esMuerto) {
-        muertos.push({ ...base, diasRestantesTrial })
+        muertos.push({ ...base, diasRestantesTrial, fechaVencimiento: fechaVencTrial })
       } else {
-        trials.push({ ...base, score, diasRestantesTrial })
+        trials.push({ ...base, score, diasRestantesTrial, fechaVencimiento: fechaVencTrial })
       }
     }
   }
@@ -172,11 +174,34 @@ export async function GET() {
   // Ordenar
   trials.sort((a, b) => b.score - a.score)
   pagantes.sort((a, b) => b.precio - a.precio)
-  churneados.sort((a, b) => a.diasSinPagar - b.diasSinPagar) // más recientes primero
+  churneados.sort((a, b) => a.diasSinPagar - b.diasSinPagar)
 
   // Proyección: qué MRR adicional si convierten los trials con score > 40
   const trialsCalientes = trials.filter(t => t.score >= 40)
   const mrrProyectado = trialsCalientes.reduce((acc, t) => acc + PRECIO(t.plan), 0)
+
+  // Calendario de cobros: próximos 30 días — trials que vencen cada día
+  const calendarioMap = {}
+  for (const t of [...trials, ...muertos]) {
+    const fv = new Date(t.fechaVencimiento)
+    const diffDias = Math.ceil((fv - ahora) / 86400000)
+    if (diffDias < -1 || diffDias > 30) continue // solo próximos 30 días (y vencidos ayer)
+    const diaKey = fv.toISOString().slice(0, 10)
+    if (!calendarioMap[diaKey]) calendarioMap[diaKey] = { dia: diaKey, usuarios: [], mrrPotencial: 0 }
+    calendarioMap[diaKey].usuarios.push({
+      id:           t.id,
+      nombre:       t.nombre,
+      ownerNombre:  t.ownerNombre,
+      ownerTelefono: t.ownerTelefono,
+      plan:         t.plan,
+      planNombre:   t.planNombre,
+      score:        t.score ?? 0,
+      clientes:     t.clientes,
+      diasRestantes: diffDias,
+    })
+    calendarioMap[diaKey].mrrPotencial += PRECIO(t.plan)
+  }
+  const calendario = Object.values(calendarioMap).sort((a, b) => a.dia.localeCompare(b.dia))
 
   return NextResponse.json({
     resumen: {
@@ -196,6 +221,7 @@ export async function GET() {
       registrosSemana,
       registrosMes,
     },
+    calendario,
     registrosPorDia: registrosPorDia.map(r => ({
       dia:   r.dia instanceof Date ? r.dia.toISOString().slice(0, 10) : String(r.dia),
       total: Number(r.total),

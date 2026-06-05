@@ -172,6 +172,107 @@ export default function NegocioPage() {
         </Card>
       </div>
 
+      {/* Calendario de cobros próximos 30 días */}
+      {data.calendario?.length > 0 && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">Vencimientos próximos</h2>
+            <span className="text-[10px] text-[var(--color-text-muted)]">
+              MRR potencial 30d: <span className="font-bold text-[var(--color-accent)]">
+                {formatMoney(data.calendario.reduce((a, d) => a + d.mrrPotencial, 0), 'co')}
+              </span>
+            </span>
+          </div>
+          <div className="space-y-2">
+            {data.calendario.map(dia => {
+              const fecha = new Date(dia.dia + 'T12:00:00')
+              const hoy = new Date(); hoy.setHours(0,0,0,0)
+              const diffDias = Math.round((fecha - hoy) / 86400000)
+              const esHoy    = diffDias === 0
+              const esMañana = diffDias === 1
+              const esVencido = diffDias < 0
+              const labelDia = esVencido ? `Venció hace ${Math.abs(diffDias)}d`
+                : esHoy    ? 'Hoy'
+                : esMañana ? 'Mañana'
+                : fecha.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })
+
+              return (
+                <div
+                  key={dia.dia}
+                  className="rounded-[12px] border overflow-hidden"
+                  style={{
+                    borderColor: esHoy ? 'var(--color-accent)' : esVencido ? 'var(--color-danger)' : 'var(--color-border)',
+                    background: esHoy ? 'rgba(245,197,24,0.05)' : 'var(--color-bg-surface)',
+                  }}
+                >
+                  {/* Header del día */}
+                  <div className="flex items-center justify-between px-4 py-2 border-b border-[var(--color-border)]">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-bold ${esVencido ? 'text-[var(--color-danger)]' : esHoy ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-primary)]'}`}>
+                        {labelDia}
+                      </span>
+                      <span className="text-[10px] text-[var(--color-text-muted)]">
+                        {dia.usuarios.length} usuario{dia.usuarios.length > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    <span className={`text-xs font-bold ${esVencido ? 'text-[var(--color-danger)]' : 'text-[var(--color-success)]'}`}>
+                      {esVencido ? '−' : '+'}{formatMoney(dia.mrrPotencial, 'co')}
+                    </span>
+                  </div>
+                  {/* Lista de usuarios del día */}
+                  <div className="divide-y divide-[var(--color-border)]">
+                    {dia.usuarios.map(u => {
+                      const wa = waLink(u.ownerTelefono, u.ownerNombre,
+                        esVencido
+                          ? `Hola ${u.ownerNombre}, tu período de prueba de Control Finanzas venció. ¿Te ayudo a activar tu plan para seguir sin interrupciones?`
+                          : esHoy
+                          ? `Hola ${u.ownerNombre}, hoy vence tu período de prueba de Control Finanzas. ¿Te ayudo a activar tu plan y seguir sin interrupciones?`
+                          : `Hola ${u.ownerNombre}, en ${u.diasRestantes} día${u.diasRestantes > 1 ? 's' : ''} vence tu período de prueba de Control Finanzas. ¿Tienes alguna duda antes de continuar?`)
+                      return (
+                        <div key={u.id} className="flex items-center justify-between px-4 py-2.5">
+                          <div className="flex items-center gap-3 min-w-0">
+                            {/* Score dot */}
+                            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: SCORE_COLOR(u.score) }} />
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium text-[var(--color-text-primary)] truncate">{u.ownerNombre || u.nombre}</p>
+                              <p className="text-[10px] text-[var(--color-text-muted)]">
+                                {u.planNombre} · {u.clientes} clientes · score {u.score}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0 ml-3">
+                            <span className="text-xs font-bold text-[var(--color-success)]">{formatMoney(PRECIO_PLAN[u.plan] ?? 0, 'co')}</span>
+                            {wa && (
+                              <a href={wa} target="_blank" rel="noopener noreferrer"
+                                className="p-1.5 rounded-[8px] bg-[var(--color-success)]/10 text-[var(--color-success)] hover:bg-[var(--color-success)]/20 transition-all"
+                                title="WhatsApp"
+                              >
+                                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+                                  <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.832-1.438A9.955 9.955 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18a8 8 0 01-4.243-1.212l-.304-.18-2.867.852.852-2.867-.18-.304A8 8 0 1112 20z" />
+                                </svg>
+                              </a>
+                            )}
+                            <a href={`/admin/organizaciones/${u.id}`}
+                              className="p-1.5 rounded-[8px] bg-[rgba(245,197,24,0.1)] text-[var(--color-accent)] hover:bg-[rgba(245,197,24,0.2)] transition-all"
+                              title="Ver detalle"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                            </a>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Tabs */}
       <div className="flex items-center gap-2 mb-4 flex-wrap">
         {TABS.map(t => {
