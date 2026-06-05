@@ -58,6 +58,26 @@ export default function ClienteDetallePage({ params }) {
   const [guardandoFestivo, setGuardandoFestivo] = useState(false)
   const [confirmGPS, setConfirmGPS] = useState(null)
   const [confirmDeletePrestamo, setConfirmDeletePrestamo] = useState(null)
+  const [bannerCartulina, setBannerCartulina] = useState(null)
+
+  // Leer datos de préstamo pendientes de cartulina
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('cf-cartulina-prestamo')
+      if (!raw) return
+      const datos = JSON.parse(raw)
+      if (datos.clienteId === id) {
+        setBannerCartulina(datos)
+      } else {
+        sessionStorage.removeItem('cf-cartulina-prestamo')
+      }
+    } catch {}
+  }, [id])
+
+  const cerrarBannerCartulina = () => {
+    setBannerCartulina(null)
+    try { sessionStorage.removeItem('cf-cartulina-prestamo') } catch {}
+  }
 
   // Leer contexto de ruta activa
   useEffect(() => {
@@ -394,6 +414,37 @@ export default function ClienteDetallePage({ params }) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
+        </div>
+      )}
+
+      {/* Banner cartulina — préstamo detectado pendiente de crear */}
+      {bannerCartulina && (
+        <div className="mb-4 rounded-[12px] px-3.5 py-3 flex items-start gap-3" style={{ background: 'color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-accent) 25%, var(--color-border))' }}>
+          <svg className="w-4 h-4 mt-0.5 shrink-0 text-[var(--color-accent)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-[var(--color-text-primary)]">Préstamo detectado en la cartulina</p>
+            <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
+              {bannerCartulina.montoPrestado ? `${Number(bannerCartulina.montoPrestado).toLocaleString('es-CO')} · ` : ''}
+              {bannerCartulina.frecuencia ?? ''}{bannerCartulina.esEnCurso ? ' · En curso' : ''}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              href={`/prestamos/nuevo?clienteId=${id}&fromCartulina=1`}
+              onClick={() => {}}
+              className="text-[11px] font-semibold px-3 py-1.5 rounded-[8px] bg-[var(--color-accent)] text-[#111] hover:bg-[var(--color-accent-hover)] transition-colors"
+            >
+              Crear préstamo
+            </Link>
+            <button onClick={cerrarBannerCartulina} className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-[rgba(255,255,255,0.1)] transition-colors" style={{ color: 'var(--color-text-muted)' }}>
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
       )}
 

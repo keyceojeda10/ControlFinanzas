@@ -1,15 +1,17 @@
 'use client'
 // app/(dashboard)/clientes/nuevo/page.jsx - Formulario de nuevo cliente
 
-import { useEffect }   from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter }   from 'next/navigation'
 import { useAuth }     from '@/hooks/useAuth'
 import ClienteForm     from '@/components/clientes/ClienteForm'
+import ImportarCartulina from '@/components/clientes/ImportarCartulina'
 import { planTieneFotos } from '@/lib/planes'
 
 export default function NuevoClientePage() {
   const router = useRouter()
   const { session, puedeCrearClientes, loading } = useAuth()
+  const [datosCartulina, setDatosCartulina] = useState(null)
 
   // Owner o cobrador con permiso puede crear clientes
   useEffect(() => {
@@ -62,7 +64,16 @@ export default function NuevoClientePage() {
         </div>
       </div>
 
-      <ClienteForm plan={session?.user?.plan ?? 'starter'} puedeSubirFoto={planTieneFotos(session?.user?.plan)} />
+      {/* Importación desde cartulina — aparece antes del formulario */}
+      <div className="mb-4">
+        <ImportarCartulina onDatosExtraidos={(datos) => setDatosCartulina(datos)} />
+      </div>
+
+      <ClienteForm
+        plan={session?.user?.plan ?? 'starter'}
+        puedeSubirFoto={planTieneFotos(session?.user?.plan)}
+        datosIniciales={datosCartulina}
+      />
     </div>
   )
 }

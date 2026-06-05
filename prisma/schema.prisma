@@ -87,6 +87,8 @@ model Organization {
   capitalEstricto Boolean        @default(false)
   country         String         @default("co")
   timezone        String?
+  cartulinasHoy   Int            @default(0)
+  cartulinasFecha DateTime?
   createdAt       DateTime       @default(now())
 
   referidoPor      Organization?     @relation("Referidos", fields: [referidoPorId], references: [id])

@@ -123,6 +123,34 @@ function NuevoPrestamo() {
     { label: 'Plan del prestamo' },
   ]
 
+  // Pre-llenar desde cartulina si venimos de importar
+  useEffect(() => {
+    if (!searchParams.get('fromCartulina')) return
+    try {
+      const raw = sessionStorage.getItem('cf-cartulina-prestamo')
+      if (!raw) return
+      const datos = JSON.parse(raw)
+      if (datos.montoPrestado)  setMonto(String(datos.montoPrestado))
+      if (datos.tasaInteres)    setTasa(String(datos.tasaInteres))
+      if (datos.frecuencia && ['diario','semanal','quincenal','mensual'].includes(datos.frecuencia)) {
+        setFrecuencia(datos.frecuencia)
+        const dias = datos.diasPlazo || 0
+        const porPeriodo = DIAS_POR_PERIODO[datos.frecuencia] || 1
+        if (dias > 0) setPlazoUnidades(String(Math.round(dias / porPeriodo)))
+      } else if (datos.diasPlazo) {
+        setPlazoUnidades(String(datos.diasPlazo))
+      }
+      if (datos.fechaInicio)    setFechaInicio(datos.fechaInicio)
+      if (datos.esEnCurso)      { setEsEnCurso(true); setAvanzadasOpen(true) }
+      if (datos.yaAbonado)      setYaAbonado(String(datos.yaAbonado))
+      // Limpiar después de consumir
+      sessionStorage.removeItem('cf-cartulina-prestamo')
+      // Avanzar directo al paso 2 si ya tenemos cliente
+      if (datos.clienteId && clienteIdParam) setPaso(1)
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Ultimo prestamo del cliente para "Repetir condiciones".
   const [ultimoPrestamo, setUltimoPrestamo] = useState(null)
   useEffect(() => {

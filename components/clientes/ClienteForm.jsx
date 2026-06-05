@@ -15,7 +15,7 @@ import { useCountry } from '@/hooks/useCountry'
 
 const LocationPicker = dynamic(() => import('@/components/clientes/LocationPicker'), { ssr: false })
 
-export default function ClienteForm({ clienteInicial = null, plan = 'basic', puedeSubirFoto = false }) {
+export default function ClienteForm({ clienteInicial = null, plan = 'basic', puedeSubirFoto = false, datosIniciales = null }) {
   const router = useRouter()
   const { validatePhone, validateDocument, documentConfig, phoneConfig } = useCountry()
   const esEdicion = !!clienteInicial
@@ -24,12 +24,12 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
   const [fotoPreview, setFotoPreview] = useState(clienteInicial?.fotoUrl || null)
 
   const [form, setForm] = useState({
-    nombre:     clienteInicial?.nombre     ?? '',
-    cedula:     clienteInicial?.cedula     ?? '',
-    telefono:   clienteInicial?.telefono   ?? '',
-    direccion:  clienteInicial?.direccion  ?? '',
+    nombre:     clienteInicial?.nombre     ?? datosIniciales?.nombre     ?? '',
+    cedula:     clienteInicial?.cedula     ?? datosIniciales?.cedula     ?? '',
+    telefono:   clienteInicial?.telefono   ?? datosIniciales?.telefono   ?? '',
+    direccion:  clienteInicial?.direccion  ?? datosIniciales?.direccion  ?? '',
     referencia: clienteInicial?.referencia ?? '',
-    notas:      clienteInicial?.notas      ?? '',
+    notas:      clienteInicial?.notas      ?? datosIniciales?.notas      ?? '',
     rutaId:     clienteInicial?.rutaId     ?? '',
     grupoCobroId: clienteInicial?.grupoCobroId ?? '',
     latitud:    clienteInicial?.latitud    ?? null,
@@ -42,6 +42,20 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
   const [error,   setError]     = useState('')
   const [scoreData, setScoreData] = useState(null)
   const [paso, setPaso] = useState(0)
+
+  // Cuando llegan datos de cartulina despues del montaje, pre-llenar los campos
+  useEffect(() => {
+    if (!datosIniciales) return
+    setForm(prev => ({
+      ...prev,
+      nombre:    datosIniciales.nombre    || prev.nombre,
+      cedula:    datosIniciales.cedula    || prev.cedula,
+      telefono:  datosIniciales.telefono  || prev.telefono,
+      direccion: datosIniciales.direccion || prev.direccion,
+      notas:     datosIniciales.notas     || prev.notas,
+    }))
+    setErrores({})
+  }, [datosIniciales])
   const [diasSinCobro, setDiasSinCobro] = useState(() => {
     try { return JSON.parse(clienteInicial?.diasSinCobro || '[]') } catch { return [] }
   })
@@ -232,6 +246,25 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
       if (!res.ok) { setError(data.error ?? 'Error al guardar'); return }
 
       if (fotoFile && data.id) await subirFoto(data.id)
+
+      // Si vinieron datos de cartulina con información de préstamo, guardarlos
+      // en sessionStorage para que /prestamos/nuevo los pre-llene automáticamente
+      if (datosIniciales && data.id) {
+        const datosPrestamo = {}
+        if (datosIniciales.montoPrestado)  datosPrestamo.montoPrestado  = datosIniciales.montoPrestado
+        if (datosIniciales.tasaInteres)    datosPrestamo.tasaInteres    = datosIniciales.tasaInteres
+        if (datosIniciales.diasPlazo)      datosPrestamo.diasPlazo      = datosIniciales.diasPlazo
+        if (datosIniciales.frecuencia)     datosPrestamo.frecuencia     = datosIniciales.frecuencia
+        if (datosIniciales.fechaInicio)    datosPrestamo.fechaInicio    = datosIniciales.fechaInicio
+        if (datosIniciales.cuotasPagadas || datosIniciales.montoPagadoHasta) {
+          datosPrestamo.yaAbonado = datosIniciales.montoPagadoHasta || 0
+          datosPrestamo.esEnCurso = true
+        }
+        if (Object.keys(datosPrestamo).length > 0) {
+          datosPrestamo.clienteId = data.id
+          try { sessionStorage.setItem('cf-cartulina-prestamo', JSON.stringify(datosPrestamo)) } catch {}
+        }
+      }
 
       router.push(`/clientes/${data.id}`)
       router.refresh()
