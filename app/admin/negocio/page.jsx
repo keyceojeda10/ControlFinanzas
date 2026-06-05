@@ -113,9 +113,9 @@ export default function NegocioPage() {
         <Card>
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide mb-1">En la app ahora</p>
+              <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide mb-1">Activos (últ. 15 min)</p>
               <p className="text-2xl font-bold text-[var(--color-success)]">{resumen.activosAhora}</p>
-              <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{resumen.activosHoy30min} en últimos 30min</p>
+              <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{resumen.activosHoy30min} en últimos 30 min</p>
             </div>
             {/* Punto pulsante verde */}
             <span className="relative flex h-2.5 w-2.5 mt-1">

@@ -8,6 +8,9 @@ import { PLANES_CONFIG }    from '@/lib/planes'
 const PRECIO = (plan) => PLANES_CONFIG[plan]?.precio ?? 0
 const NOMBRE_PLAN = (plan) => PLANES_CONFIG[plan]?.nombre ?? plan
 
+const EMAILS_INTERNOS = ['keycejob@gmail.com', 'ccaojd@gmail.com', 'owner@test.com', 'controlfinanzasgmail@gmail.com']
+const sinInternos = { email: { notIn: EMAILS_INTERNOS } }
+
 export async function GET() {
   const session = await getServerSession(authOptions)
   if (!session || session.user.rol !== 'superadmin') {
@@ -15,39 +18,40 @@ export async function GET() {
   }
 
   const ahora = new Date()
-  const hace5min   = new Date(ahora - 5  * 60 * 1000)
+  const hace15min  = new Date(ahora - 15 * 60 * 1000)
   const hace30min  = new Date(ahora - 30 * 60 * 1000)
   const inicioHoy  = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate())
   const inicioAyer = new Date(inicioHoy - 86400000)
   const inicioSemana = new Date(inicioHoy - (inicioHoy.getDay() === 0 ? 6 : inicioHoy.getDay() - 1) * 86400000)
   const inicioMes  = new Date(ahora.getFullYear(), ahora.getMonth(), 1)
 
-  // Activos en tiempo real: owners con lastActivityAt reciente
+  // Activos en tiempo real: owners con lastActivityAt reciente (excluye internos)
   const [activosAhora, activosHoy30min, registrosHoy, registrosAyer, registrosSemana, registrosMes,
          registrosPorDia, orgs] = await Promise.all([
-    // Activos últimos 5 min (prácticamente "en línea ahora")
-    prisma.user.count({ where: { rol: 'owner', lastActivityAt: { gte: hace5min } } }),
+    // Activos últimos 15 min
+    prisma.user.count({ where: { rol: 'owner', lastActivityAt: { gte: hace15min }, ...sinInternos } }),
     // Activos últimos 30 min
-    prisma.user.count({ where: { rol: 'owner', lastActivityAt: { gte: hace30min } } }),
-    // Registros de hoy
-    prisma.organization.count({ where: { createdAt: { gte: inicioHoy } } }),
-    // Registros de ayer
-    prisma.organization.count({ where: { createdAt: { gte: inicioAyer, lt: inicioHoy } } }),
-    // Registros esta semana
-    prisma.organization.count({ where: { createdAt: { gte: inicioSemana } } }),
-    // Registros este mes
-    prisma.organization.count({ where: { createdAt: { gte: inicioMes } } }),
-    // Registros por día últimos 30 días (para mini gráfico)
+    prisma.user.count({ where: { rol: 'owner', lastActivityAt: { gte: hace30min }, ...sinInternos } }),
+    prisma.organization.count({ where: { createdAt: { gte: inicioHoy },              users: { none: { email: { in: EMAILS_INTERNOS } } } } }),
+    prisma.organization.count({ where: { createdAt: { gte: inicioAyer, lt: inicioHoy }, users: { none: { email: { in: EMAILS_INTERNOS } } } } }),
+    prisma.organization.count({ where: { createdAt: { gte: inicioSemana },            users: { none: { email: { in: EMAILS_INTERNOS } } } } }),
+    prisma.organization.count({ where: { createdAt: { gte: inicioMes },               users: { none: { email: { in: EMAILS_INTERNOS } } } } }),
+    // Registros por día últimos 30 días (emails internos excluidos por join)
     prisma.$queryRaw`
-      SELECT DATE(createdAt) as dia, COUNT(*) as total
-      FROM Organization
-      WHERE createdAt >= ${new Date(ahora - 30 * 86400000)}
-      GROUP BY DATE(createdAt)
+      SELECT DATE(o.createdAt) as dia, COUNT(*) as total
+      FROM Organization o
+      WHERE o.createdAt >= ${new Date(ahora - 30 * 86400000)}
+        AND o.id NOT IN (
+          SELECT u.organizationId FROM User u
+          WHERE u.email IN (${EMAILS_INTERNOS[0]}, ${EMAILS_INTERNOS[1]}, ${EMAILS_INTERNOS[2]}, ${EMAILS_INTERNOS[3]})
+            AND u.organizationId IS NOT NULL
+        )
+      GROUP BY DATE(o.createdAt)
       ORDER BY dia ASC
     `,
     // Orgs completas para el análisis principal
     prisma.organization.findMany({
-    where: { activo: true },
+    where: { activo: true, users: { none: { email: { in: EMAILS_INTERNOS } } } },
     select: {
       id:         true,
       nombre:     true,
