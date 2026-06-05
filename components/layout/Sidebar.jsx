@@ -261,7 +261,8 @@ export default function Sidebar() {
   const { session, esCobrador } = useAuth()
   const [fechaHora, setFechaHora] = useState('')
   const [cierreWarning, setCierreWarning] = useState(null)
-  const [masHerramientasOpen, setMasHerramientasOpen] = useState(false)
+  const masHerramientasEnRuta = NAV_MORE_OWNER.some(item => pathname.startsWith(item.href))
+  const [masHerramientasOpen, setMasHerramientasOpen] = useState(masHerramientasEnRuta)
 
   const { syncMeta, startBulkSync, bulkSyncing, bulkProgress } = useOffline()
   // Para el cobrador, el ítem "Rutas" apunta inteligente: si tiene UNA sola ruta,
@@ -275,8 +276,10 @@ export default function Sidebar() {
       )
     : null
 
-  // Abrir "Más herramientas" automáticamente si la ruta activa está dentro
-  const masHerramientasActivo = NAV_MORE_OWNER.some(item => pathname.startsWith(item.href))
+  // Abrir "Más herramientas" automáticamente al navegar a una ruta dentro del grupo
+  useEffect(() => {
+    if (masHerramientasEnRuta) setMasHerramientasOpen(true)
+  }, [masHerramientasEnRuta])
 
   // Verificar advertencia de cierre de caja cada minuto
   useEffect(() => {
@@ -386,19 +389,19 @@ export default function Sidebar() {
                 type="button"
                 onClick={() => setMasHerramientasOpen(v => !v)}
                 className="w-full flex items-center gap-2 px-2 py-1.5 rounded-[8px] text-[11px] font-semibold uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-2"
-                style={{ color: (masHerramientasActivo || masHerramientasOpen) ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
+                style={{ color: masHerramientasOpen ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
               >
                 <span className="flex-1 text-left">Más herramientas</span>
                 <svg
                   className="w-3.5 h-3.5 shrink-0 transition-transform duration-200"
-                  style={{ transform: (masHerramientasOpen || masHerramientasActivo) ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                  style={{ transform: masHerramientasOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
                   fill="none" stroke="currentColor" viewBox="0 0 24 24"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
 
-              {(masHerramientasOpen || masHerramientasActivo) && (
+              {masHerramientasOpen && (
                 <div className="mt-1 space-y-0.5">
                   {NAV_MORE_OWNER.map((item) => {
                     const active = isActive(item.href)
