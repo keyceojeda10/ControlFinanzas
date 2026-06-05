@@ -133,9 +133,16 @@ export default function NegocioPage() {
           </p>
         </Card>
         <Card>
-          <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide mb-1">MRR proyectado realista</p>
-          <p className="text-xl font-bold text-[var(--color-accent)]">{formatMoney(resumen.mrrProyectado, 'co')}</p>
-          <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{resumen.trialsCalientes} trials score ≥ 60 · activos y con datos</p>
+          <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide mb-1">Potencial adicional</p>
+          <p className="text-xl font-bold text-[var(--color-accent)]">
+            +{formatMoney(resumen.mrrProyectado - resumen.mrrActual, 'co')}
+          </p>
+          <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
+            {resumen.trialsCalientes} trials calientes · si todos convierten
+          </p>
+          <p className="text-[10px] font-semibold text-[var(--color-text-primary)] mt-1.5 pt-1.5 border-t border-[var(--color-border)]">
+            = {formatMoney(resumen.mrrProyectado, 'co')} total proyectado
+          </p>
         </Card>
         <Card>
           <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide mb-1">Churn / Muertos</p>
