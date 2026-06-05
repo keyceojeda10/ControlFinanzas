@@ -162,20 +162,25 @@ export async function POST(req) {
     // Nota: la recompensa de referido (+30 días) se otorga cuando el referido
     // paga su primer plan, no al registrarse. Ver webhook de MercadoPago.
 
-    // Buscar lead asociado para vincular y obtener teléfono para CAPI
+    // Buscar lead de Facebook Ads por teléfono del nuevo usuario y vincularlo
     const leadAsociado = await prisma.lead.findFirst({
-      where: { telefono: { not: '' }, estado: { not: 'registrado' } },
+      where: { telefono: telefonoLimpio, estado: { not: 'registrado' } },
       orderBy: { createdAt: 'desc' },
       select: { id: true, telefono: true },
     }).catch(() => null)
 
-    // Si hay un lead reciente sin registrar, vincularlo a esta organización
     if (leadAsociado) {
       prisma.lead.update({
         where: { id: leadAsociado.id },
         data: { estado: 'registrado', organizationId: resultado.org.id },
-      }).catch(e => console.error('[Email] Fallo envio:', e.message))
+      }).catch(e => console.error('[Registro] Fallo vincular lead FB:', e.message))
     }
+
+    // Vincular BotLead (WhatsApp) por teléfono → marcar como convertido
+    prisma.botLead.updateMany({
+      where: { telefono: telefonoLimpio, organizationId: null },
+      data: { organizationId: resultado.org.id, estado: 'registrado' },
+    }).catch(e => console.error('[Registro] Fallo vincular BotLead:', e.message))
 
     // Facebook CAPI: reportar conversión real con email + teléfono ingresado
     sendConversionEvent({

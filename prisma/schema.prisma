@@ -65,52 +65,53 @@ enum TipoSuscripcion {
 // ─── MODELOS ─────────────────────────────────────────────
 
 model Organization {
-  id              String         @id @default(cuid())
-  nombre          String
-  plan            Plan           @default(basic)
-  telefono        String?
-  ciudad          String?
-  activo          Boolean        @default(true)
-  codigoReferido  String?        @unique
-  referidoPorId   String?
-  descuento       Int            @default(0)
-  cobradoresExtra Int            @default(0)
-  rutasExtra      Int            @default(0)
-  estadoContacto  EstadoContacto @default(nuevo)
-  fuenteRegistro  String?
-  planOriginal    Plan?
-  planDemoHasta   DateTime?
-  onboardingStep  Int            @default(0)
-  trialReminderSent Boolean      @default(false)
-  recoveryEmailStep Int          @default(0)
-  diasSinCobro    String?
-  capitalEstricto Boolean        @default(false)
-  country         String         @default("co")
-  timezone        String?
-  cartulinasHoy   Int            @default(0)
-  cartulinasFecha DateTime?
-  createdAt       DateTime       @default(now())
+  id                String         @id @default(cuid())
+  nombre            String
+  plan              Plan           @default(basic)
+  telefono          String?
+  ciudad            String?
+  activo            Boolean        @default(true)
+  codigoReferido    String?        @unique
+  referidoPorId     String?
+  descuento         Int            @default(0)
+  cobradoresExtra   Int            @default(0)
+  rutasExtra        Int            @default(0)
+  estadoContacto    EstadoContacto @default(nuevo)
+  fuenteRegistro    String?
+  planOriginal      Plan?
+  planDemoHasta     DateTime?
+  onboardingStep    Int            @default(0)
+  trialReminderSent Boolean        @default(false)
+  recoveryEmailStep Int            @default(0)
+  diasSinCobro      String?
+  capitalEstricto   Boolean        @default(false)
+  country           String         @default("co")
+  timezone          String?
+  cartulinasHoy     Int            @default(0)
+  cartulinasFecha   DateTime?
+  createdAt         DateTime       @default(now())
 
-  referidoPor      Organization?     @relation("Referidos", fields: [referidoPorId], references: [id])
-  referidos        Organization[]    @relation("Referidos")
-  users            User[]
-  rutas            Ruta[]
-  clientes         Cliente[]
-  prestamos        Prestamo[]
-  pagos            Pago[]
-  cierresCaja      CierreCaja[]
-  suscripciones    Suscripcion[]
-  asistenteMemorias AsistenteMemoria[]
-  adminLogs        AdminLog[]
-  gastosMenores    GastoMenor[]
-  tickets          TicketSoporte[]
-  notasSeguimiento NotaSeguimiento[]
-  leads            Lead[]
-  capital          Capital?
+  referidoPor        Organization?       @relation("Referidos", fields: [referidoPorId], references: [id])
+  referidos          Organization[]      @relation("Referidos")
+  users              User[]
+  rutas              Ruta[]
+  clientes           Cliente[]
+  prestamos          Prestamo[]
+  pagos              Pago[]
+  cierresCaja        CierreCaja[]
+  suscripciones      Suscripcion[]
+  asistenteMemorias  AsistenteMemoria[]
+  adminLogs          AdminLog[]
+  gastosMenores      GastoMenor[]
+  tickets            TicketSoporte[]
+  notasSeguimiento   NotaSeguimiento[]
+  leads              Lead[]
+  botLeads           BotLead[]
+  capital            Capital?
   movimientosCapital MovimientoCapital[]
-  actividadLogs    ActividadLog[]
-  gruposCobro      GrupoCobro[]
-  festivos         Festivo[]
+  actividadLogs      ActividadLog[]
+  gruposCobro        GrupoCobro[]
+  festivos           Festivo[]
   visitasReagendadas VisitaReagendada[]
 
   @@index([createdAt])
@@ -149,18 +150,18 @@ model User {
   lastLoginAt             DateTime?
   lastActivityAt          DateTime?
 
-  organization   Organization?     @relation(fields: [organizationId], references: [id])
-  rutas          Ruta[]            @relation("CobradorRuta")
-  pagos          Pago[]
-  cierresCaja    CierreCaja[]
-  adminLogs      AdminLog[]        @relation("AdminLogs")
-  gastosMenores  GastoMenor[]      @relation("CobradorGastos")
-  tickets        TicketSoporte[]
-  mensajesTicket MensajeTicket[]
-  notasAdmin     NotaSeguimiento[] @relation("NotasAdmin")
-  actividadLogs      ActividadLog[]
-  pushSubscriptions  PushSubscription[]
-  asistenteMemorias  AsistenteMemoria[]
+  organization      Organization?      @relation(fields: [organizationId], references: [id])
+  rutas             Ruta[]             @relation("CobradorRuta")
+  pagos             Pago[]
+  cierresCaja       CierreCaja[]
+  adminLogs         AdminLog[]         @relation("AdminLogs")
+  gastosMenores     GastoMenor[]       @relation("CobradorGastos")
+  tickets           TicketSoporte[]
+  mensajesTicket    MensajeTicket[]
+  notasAdmin        NotaSeguimiento[]  @relation("NotasAdmin")
+  actividadLogs     ActividadLog[]
+  pushSubscriptions PushSubscription[]
+  asistenteMemorias AsistenteMemoria[]
 
   @@index([organizationId])
   @@index([organizationId, rol, activo])
@@ -173,8 +174,8 @@ model Ruta {
   nombre         String
   activo         Boolean  @default(true)
   diasSinCobro   String?
-  saldoCapital   Float    @default(0)   // capital de la sub-bolsa de esta ruta (denormalizado)
-  orden          Int      @default(0)   // orden manual de la ruta (drag-and-drop en la lista)
+  saldoCapital   Float    @default(0) // capital de la sub-bolsa de esta ruta (denormalizado)
+  orden          Int      @default(0) // orden manual de la ruta (drag-and-drop en la lista)
   createdAt      DateTime @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id])
@@ -233,10 +234,10 @@ model Cliente {
   diasSinCobro   String?
   createdAt      DateTime      @default(now())
 
-  organization Organization @relation(fields: [organizationId], references: [id])
-  ruta         Ruta?        @relation(fields: [rutaId], references: [id])
-  grupoCobro   GrupoCobro?  @relation(fields: [grupoCobroId], references: [id], onDelete: SetNull)
-  prestamos    Prestamo[]
+  organization       Organization       @relation(fields: [organizationId], references: [id])
+  ruta               Ruta?              @relation(fields: [rutaId], references: [id])
+  grupoCobro         GrupoCobro?        @relation(fields: [grupoCobroId], references: [id], onDelete: SetNull)
+  prestamos          Prestamo[]
   visitasReagendadas VisitaReagendada[]
 
   @@unique([organizationId, cedula])
@@ -259,9 +260,9 @@ model Prestamo {
   cuotaDiaria    Float
   frecuencia     String         @default("diario")
   modoInteres    String         @default("proporcional") // fijo | unico | saldo | manual | proporcional (legacy)
-  nombreProducto String?        // mercancia: nombre del articulo (gorra, reloj...). null en prestamos de dinero
-  diaCobroSemana Int?           // 0=dom..6=sab — ancla para frecuencia semanal/quincenal (opcional)
-  diaCobroMes    Int?           // 1..31 — ancla para frecuencia mensual (opcional, clamp a ultimo dia)
+  nombreProducto String? // mercancia: nombre del articulo (gorra, reloj...). null en prestamos de dinero
+  diaCobroSemana Int? // 0=dom..6=sab — ancla para frecuencia semanal/quincenal (opcional)
+  diaCobroMes    Int? // 1..31 — ancla para frecuencia mensual (opcional, clamp a ultimo dia)
   diasSinCobro   String?
   fechaInicio    DateTime
   fechaFin       DateTime
@@ -273,11 +274,11 @@ model Prestamo {
   // Evitan recalcular totales iterando todos los pagos en cada lectura.
   totalPagado    Float          @default(0)
   ultimoPagoAt   DateTime?
-  renovadoDeId   String?        // id del prestamo del que proviene (si fue una renovacion)
+  renovadoDeId   String? // id del prestamo del que proviene (si fue una renovacion)
   // Tarjeta clavo: prestamo malo/incobrable. Se excluye de saldos/cartera/capital
   // normales y se lleva en contabilidad aparte. Sigue cobrable (pagos van aparte).
   esClavo        Boolean        @default(false)
-  clavoAt        DateTime?      // cuando se marco como clavo
+  clavoAt        DateTime? // cuando se marco como clavo
   clavoPerdida   Boolean        @default(false) // si al marcarlo se registro el capital como perdida
   createdAt      DateTime       @default(now())
 
@@ -303,8 +304,8 @@ model Pago {
   montoPagado    Float
   fechaPago      DateTime @default(now())
   tipo           TipoPago
-  metodoPago     String?  // 'efectivo' | 'transferencia'
-  plataforma     String?  // Nequi, Daviplata, Bancolombia, etc. (texto libre)
+  metodoPago     String? // 'efectivo' | 'transferencia'
+  plataforma     String? // Nequi, Daviplata, Bancolombia, etc. (texto libre)
   nota           String?
   // Geolocalizacion del pago (MVP). Capturada en el browser al confirmar
   // el cobro. Null cuando el cobrador niega permiso o el GPS falla.
@@ -324,26 +325,26 @@ model Pago {
 }
 
 model CierreCaja {
-  id             String   @id @default(cuid())
-  organizationId String
-  cobradorId     String
-  fecha          DateTime
-  totalEsperado  Float
-  totalRecogido  Float
-  totalGastos    Float    @default(0)
-  totalDesembolsado Float @default(0)
-  saldoOperativo  Float   @default(0)
-  saldoRealCaja   Float   @default(0)
-  diferencia     Float
-  createdAt      DateTime @default(now())
-  editadoEn      DateTime?           // se setea al editar/ajustar un cierre ya creado
-  editadoPorId   String?             // quien hizo la ultima edicion (owner o cobrador)
+  id                 String    @id @default(cuid())
+  organizationId     String
+  cobradorId         String
+  fecha              DateTime
+  totalEsperado      Float
+  totalRecogido      Float
+  totalGastos        Float     @default(0)
+  totalDesembolsado  Float     @default(0)
+  saldoOperativo     Float     @default(0)
+  saldoRealCaja      Float     @default(0)
+  diferencia         Float
+  createdAt          DateTime  @default(now())
+  editadoEn          DateTime? // se setea al editar/ajustar un cierre ya creado
+  editadoPorId       String? // quien hizo la ultima edicion (owner o cobrador)
   // Cuadre del dia: el admin confirma el efectivo fisico que recibio de este cobrador.
-  efectivoRecibido   Float?          // lo que el admin conto/recibio en mano
-  diferenciaRecibido Float?          // efectivoRecibido - totalRecogido(sistema): faltante/sobrante
-  confirmadoEn       DateTime?       // cuando el admin confirmo la recepcion
-  confirmadoPorId    String?         // quien confirmo (auditoria)
-  notaCuadre         String?         // motivo cuando hay diferencia
+  efectivoRecibido   Float? // lo que el admin conto/recibio en mano
+  diferenciaRecibido Float? // efectivoRecibido - totalRecogido(sistema): faltante/sobrante
+  confirmadoEn       DateTime? // cuando el admin confirmo la recepcion
+  confirmadoPorId    String? // quien confirmo (auditoria)
+  notaCuadre         String? // motivo cuando hay diferencia
 
   organization Organization @relation(fields: [organizationId], references: [id])
   cobrador     User         @relation(fields: [cobradorId], references: [id])
@@ -364,16 +365,16 @@ model Suscripcion {
   mercadopagoId    String?
 
   // Suscripción recurrente (MercadoPago PreApproval)
-  tipo              TipoSuscripcion  @default(pago_unico)
-  preapprovalId     String?          @unique
-  mpStatus          String?          // pending, authorized, paused, cancelled
-  frecuenciaMeses   Int              @default(1)
+  tipo              TipoSuscripcion @default(pago_unico)
+  preapprovalId     String?         @unique
+  mpStatus          String? // pending, authorized, paused, cancelled
+  frecuenciaMeses   Int             @default(1)
   ultimoCobroAt     DateTime?
   proximoCobroAt    DateTime?
   canceladaAt       DateTime?
   motivoCancelacion String?
 
-  createdAt        DateTime          @default(now())
+  createdAt DateTime @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id])
 
@@ -421,28 +422,28 @@ model Capital {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  movimientos    MovimientoCapital[]
+  organization Organization        @relation(fields: [organizationId], references: [id])
+  movimientos  MovimientoCapital[]
 }
 
 model MovimientoCapital {
-  id             String          @id @default(cuid())
-  capitalId      String
-  organizationId String
-  tipo           TipoMovimiento
-  monto          Float
-  saldoAnterior  Float
-  saldoNuevo     Float
-  descripcion    String?
-  referenciaId   String?
-  referenciaTipo String?
-  rutaId         String?         // ruta a la que pertenece el movimiento (null = general)
-  ajusteArranqueRuta Boolean     @default(false) // ajuste que solo afecta la sub-bolsa de la ruta, NO el saldo global (absorber prestamos previos)
-  creadoPorId    String?
-  createdAt      DateTime        @default(now())
+  id                 String         @id @default(cuid())
+  capitalId          String
+  organizationId     String
+  tipo               TipoMovimiento
+  monto              Float
+  saldoAnterior      Float
+  saldoNuevo         Float
+  descripcion        String?
+  referenciaId       String?
+  referenciaTipo     String?
+  rutaId             String? // ruta a la que pertenece el movimiento (null = general)
+  ajusteArranqueRuta Boolean        @default(false) // ajuste que solo afecta la sub-bolsa de la ruta, NO el saldo global (absorber prestamos previos)
+  creadoPorId        String?
+  createdAt          DateTime       @default(now())
 
-  capital        Capital          @relation(fields: [capitalId], references: [id])
-  organization   Organization     @relation(fields: [organizationId], references: [id])
+  capital      Capital      @relation(fields: [capitalId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
 
   @@index([organizationId])
   @@index([organizationId, createdAt])
@@ -476,18 +477,18 @@ model AdminLog {
 // ─── ACTIVIDAD / AUDIT LOG ─────────────────────────────────
 
 model ActividadLog {
-  id              String   @id @default(cuid())
-  organizationId  String
-  userId          String
-  accion          String         // crear_prestamo, registrar_pago, crear_cliente, etc.
-  entidadTipo     String         // prestamo, pago, cliente, ruta, gasto, caja, capital
-  entidadId       String?
-  detalle         String?  @db.Text
-  ip              String?
-  createdAt       DateTime @default(now())
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  accion         String // crear_prestamo, registrar_pago, crear_cliente, etc.
+  entidadTipo    String // prestamo, pago, cliente, ruta, gasto, caja, capital
+  entidadId      String?
+  detalle        String?  @db.Text
+  ip             String?
+  createdAt      DateTime @default(now())
 
-  organization    Organization @relation(fields: [organizationId], references: [id])
-  user            User         @relation(fields: [userId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
 
   @@index([organizationId, createdAt])
   @@index([userId])
@@ -500,7 +501,7 @@ model AsistenteMemoria {
   organizationId String
   userId         String
   contenido      String   @db.Text
-  categoria      String   // preferencia | portafolio | comportamiento | accion
+  categoria      String // preferencia | portafolio | comportamiento | accion
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -514,13 +515,13 @@ model AsistenteMemoria {
 // ─── EVENTOS / ANALYTICS ───────────────────────────────
 
 model Evento {
-  id              String   @id @default(cuid())
-  organizationId  String?
-  userId          String?
-  evento          String         // page_view, feature_click, api_call
-  pagina          String?        // /dashboard, /prestamos, etc.
-  metadata        String?  @db.Text
-  createdAt       DateTime @default(now())
+  id             String   @id @default(cuid())
+  organizationId String?
+  userId         String?
+  evento         String // page_view, feature_click, api_call
+  pagina         String? // /dashboard, /prestamos, etc.
+  metadata       String?  @db.Text
+  createdAt      DateTime @default(now())
 
   @@index([createdAt])
   @@index([organizationId, createdAt])
@@ -537,7 +538,7 @@ model PushSubscription {
   auth      String
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
@@ -617,21 +618,21 @@ model NotaSeguimiento {
 // ─── LEADS ──────────────────────────────────────────────
 
 model Lead {
-  id               String        @id @default(cuid())
-  nombre           String
-  telefono         String
-  cantClientes     String?
-  anuncioId        String?
-  estado           String        @default("nuevo")
-  notas            String?       @db.Text
-  organizationId   String?
-  mensajesEnviados      String?       @db.Text
+  id                    String    @id @default(cuid())
+  nombre                String
+  telefono              String
+  cantClientes          String?
+  anuncioId             String?
+  estado                String    @default("nuevo")
+  notas                 String?   @db.Text
+  organizationId        String?
+  mensajesEnviados      String?   @db.Text
   ultimoRecordatorio    DateTime?
-  recordatoriosEnviados Int           @default(0)
+  recordatoriosEnviados Int       @default(0)
   telegramMessageId     Int?
   esPrestamista         String?
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   organization Organization? @relation(fields: [organizationId], references: [id])
   botLeads     BotLead[]
@@ -650,49 +651,53 @@ enum BotLeadEstado {
   no_interesado
   cerrado
   bloqueado
+  registrado
 }
 
 model BotLead {
-  id                   String         @id @default(cuid())
-  cfLeadId             String?
-  nombre               String
-  telefono             String
-  cantClientes         String?
-  esPrestamista        String?
-  metodoActual         String?
-  planInteres          String?
-  anuncioId            String?
-  estado               BotLeadEstado  @default(pendiente)
-  temperatura          Int            @default(0)
-  botActivo            Boolean        @default(true)
-  alertado             Boolean        @default(false)
-  hookId               String?
-  intentosSeguimiento  Int            @default(0)
-  proximoSeguimiento   DateTime?
-  fechaContacto        DateTime?
-  createdAt            DateTime       @default(now())
-  updatedAt            DateTime       @updatedAt
+  id                  String        @id @default(cuid())
+  cfLeadId            String?
+  organizationId      String?
+  nombre              String
+  telefono            String
+  cantClientes        String?
+  esPrestamista       String?
+  metodoActual        String?
+  planInteres         String?
+  anuncioId           String?
+  estado              BotLeadEstado @default(pendiente)
+  temperatura         Int           @default(0)
+  botActivo           Boolean       @default(true)
+  alertado            Boolean       @default(false)
+  hookId              String?
+  intentosSeguimiento Int           @default(0)
+  proximoSeguimiento  DateTime?
+  fechaContacto       DateTime?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
 
-  cfLead         Lead?              @relation(fields: [cfLeadId], references: [id])
+  cfLead         Lead?             @relation(fields: [cfLeadId], references: [id])
+  organization   Organization?     @relation(fields: [organizationId], references: [id])
   conversaciones BotConversacion[]
 
   @@index([telefono])
   @@index([estado])
   @@index([cfLeadId])
+  @@index([organizationId])
   @@index([estado, botActivo, proximoSeguimiento])
 }
 
 model BotConversacion {
   id          String   @id @default(cuid())
   botLeadId   String
-  rol         String   // "bot" | "lead" | "admin"
+  rol         String // "bot" | "lead" | "admin"
   texto       String   @db.Text
   tipoMensaje String   @default("chat") // "chat" | "audio" | "image" | "document" | "call"
   messageId   String?
-  mediaPath   String?  // ruta relativa del archivo en disco del VPS (uploads/wa/...)
-  mediaTipo   String?  // "image" | "audio" | "document"
-  mediaMime   String?  // mimetype original (image/jpeg, audio/ogg, ...)
-  mediaWamid  String?  // id del media en Meta (opcional)
+  mediaPath   String? // ruta relativa del archivo en disco del VPS (uploads/wa/...)
+  mediaTipo   String? // "image" | "audio" | "document"
+  mediaMime   String? // mimetype original (image/jpeg, audio/ogg, ...)
+  mediaWamid  String? // id del media en Meta (opcional)
   createdAt   DateTime @default(now())
 
   botLead BotLead @relation(fields: [botLeadId], references: [id], onDelete: Cascade)
@@ -715,35 +720,35 @@ model BotGastoApi {
 }
 
 model BotConfig {
-  id                String   @id @default(cuid())
-  botActivo         Boolean  @default(true)
-  modoPrueba        Boolean  @default(false)
-  systemPrompt      String   @db.LongText
-  modelo            String   @default("claude-sonnet-4-6")
-  limiteDiario      Int      @default(25)
-  delayMinMs        Int      @default(30000)
-  delayMaxMs        Int      @default(60000)
-  limiteGastoUsd    Float    @default(5.0)
-  whatsappPersonal  String?
-  updatedAt         DateTime @updatedAt
+  id               String   @id @default(cuid())
+  botActivo        Boolean  @default(true)
+  modoPrueba       Boolean  @default(false)
+  systemPrompt     String   @db.LongText
+  modelo           String   @default("claude-sonnet-4-6")
+  limiteDiario     Int      @default(25)
+  delayMinMs       Int      @default(30000)
+  delayMaxMs       Int      @default(60000)
+  limiteGastoUsd   Float    @default(5.0)
+  whatsappPersonal String?
+  updatedAt        DateTime @updatedAt
 }
 
 model VisitaReagendada {
-  id              String   @id @default(cuid())
-  organizationId  String
-  clienteId       String
-  prestamoId      String?
-  cobradorId      String?
-  rutaId          String?
+  id             String  @id @default(cuid())
+  organizationId String
+  clienteId      String
+  prestamoId     String?
+  cobradorId     String?
+  rutaId         String?
 
   fechaOriginal   DateTime
   fechaReagendada DateTime
-  motivo          String   // no_estaba, negocio_cerrado, no_tenia_dinero, pidio_plazo, otro
+  motivo          String // no_estaba, negocio_cerrado, no_tenia_dinero, pidio_plazo, otro
   motivoDetalle   String?  @db.Text
   estado          String   @default("pendiente") // pendiente, completada, vencida
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id])
   cliente      Cliente      @relation(fields: [clienteId], references: [id])
