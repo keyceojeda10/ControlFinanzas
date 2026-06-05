@@ -10,6 +10,7 @@ import { useOffline } from '@/components/providers/OfflineProvider'
 import { useState, useEffect } from 'react'
 import InstallButton from './InstallButton'
 import ThemeToggle from '@/components/ui/ThemeToggle'
+import { useTheme } from '@/lib/theme/ThemeProvider'
 import Avatar from '@/components/ui/Avatar'
 import SyncStatusBadge from '@/components/offline/SyncStatusBadge'
 import CacheAge from '@/components/offline/CacheAge'
@@ -269,6 +270,7 @@ const NAV_COBRADOR = [
 export default function Sidebar() {
   const pathname   = usePathname()
   const { session, esCobrador } = useAuth()
+  const { resolvedTheme } = useTheme()
   const [fechaHora, setFechaHora] = useState('')
   const [cierreWarning, setCierreWarning] = useState(null)
   const masHerramientasEnRuta = NAV_MORE_OWNER.some(item => pathname.startsWith(item.href))
@@ -339,7 +341,7 @@ export default function Sidebar() {
     <aside className="hidden lg:flex flex-col w-60 min-h-screen shrink-0 cf-sidebar">
       {/* Logo */}
       <div className="flex flex-col items-center px-5 py-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
-        <Image src="/logo-full.svg" alt="Control Finanzas" width={160} height={40} priority />
+        <Image src={resolvedTheme === 'light' ? '/logo-dark.svg' : '/logo-full.svg'} alt="Control Finanzas" width={160} height={40} priority />
         {fechaHora && <span className="text-[10px] mt-2" style={{ color: 'var(--color-text-muted)' }}>{fechaHora}</span>}
       </div>
 
