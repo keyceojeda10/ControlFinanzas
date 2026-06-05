@@ -222,7 +222,7 @@ export default function NegocioPage() {
                 {tab === 'pagantes' && <>
                   <th className="text-center px-3 py-3 font-medium">Plan</th>
                   <th className="text-right px-3 py-3 font-medium">$/mes</th>
-                  <th className="text-center px-3 py-3 font-medium hidden sm:table-cell">Pagando desde</th>
+                  <th className="text-center px-3 py-3 font-medium hidden sm:table-cell">Cliente desde</th>
                 </>}
                 {tab === 'trials' && <>
                   <th className="text-center px-3 py-3 font-medium">Score</th>
@@ -299,10 +299,11 @@ export default function NegocioPage() {
                       <td className="px-3 py-3 text-right font-bold text-[var(--color-success)]">
                         {formatMoney(u.precio, u.country ?? 'co')}
                       </td>
-                      <td className="px-3 py-3 text-center text-[var(--color-text-muted)] hidden sm:table-cell">
-                        {u.mesesPagando > 0
-                          ? `${u.mesesPagando}mes${u.mesesPagando > 1 ? 'es' : ''}`
-                          : 'Nuevo'}
+                      <td className="px-3 py-3 text-center hidden sm:table-cell">
+                        <p className="text-[var(--color-text-primary)] font-medium">{hace(u.fechaInicioPago)}</p>
+                        <p className="text-[10px] text-[var(--color-text-muted)]">
+                          {u.fechaInicioPago ? new Date(u.fechaInicioPago).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: '2-digit' }) : '—'}
+                        </p>
                       </td>
                     </>}
 
