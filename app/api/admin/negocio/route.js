@@ -176,8 +176,8 @@ export async function GET() {
   pagantes.sort((a, b) => b.precio - a.precio)
   churneados.sort((a, b) => a.diasSinPagar - b.diasSinPagar)
 
-  // Proyección: qué MRR adicional si convierten los trials con score > 40
-  const trialsCalientes = trials.filter(t => t.score >= 40)
+  // Proyección: qué MRR adicional si convierten los trials con score >= 60 (realista)
+  const trialsCalientes = trials.filter(t => t.score >= 60)
   const mrrProyectado = trialsCalientes.reduce((acc, t) => acc + PRECIO(t.plan), 0)
 
   // Calendario de cobros: próximos 30 días — trials que vencen cada día
@@ -187,7 +187,8 @@ export async function GET() {
     const diffDias = Math.ceil((fv - ahora) / 86400000)
     if (diffDias < -1 || diffDias > 30) continue // solo próximos 30 días (y vencidos ayer)
     const diaKey = fv.toISOString().slice(0, 10)
-    if (!calendarioMap[diaKey]) calendarioMap[diaKey] = { dia: diaKey, usuarios: [], mrrPotencial: 0 }
+    if (!calendarioMap[diaKey]) calendarioMap[diaKey] = { dia: diaKey, usuarios: [], mrrPotencial: 0, mrrCaliente: 0 }
+    const esCaliente = (t.score ?? 0) >= 60
     calendarioMap[diaKey].usuarios.push({
       id:           t.id,
       nombre:       t.nombre,
@@ -200,6 +201,7 @@ export async function GET() {
       diasRestantes: diffDias,
     })
     calendarioMap[diaKey].mrrPotencial += PRECIO(t.plan)
+    if (esCaliente) calendarioMap[diaKey].mrrCaliente += PRECIO(t.plan)
   }
   const calendario = Object.values(calendarioMap).sort((a, b) => a.dia.localeCompare(b.dia))
 
