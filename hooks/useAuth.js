@@ -20,6 +20,7 @@ export function useAuth() {
     country: session?.user?.country ?? 'co',
     timezone: session?.user?.timezone ?? null,
     rutaId: session?.user?.rutaId ?? null,
+    rutaIds: session?.user?.rutaIds ?? [],
     esOwner,
     esCobrador: session?.user?.rol === 'cobrador',
     esSuperadmin: session?.user?.rol === 'superadmin',

@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/Card'
 import { SkeletonCard } from '@/components/ui/Skeleton'
 import CapitalTab from '@/components/capital/CapitalTab'
 import ReportarGasto from '@/components/gastos/ReportarGasto'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 
 const ESTADO_COLORS = {
   pendiente: 'bg-[var(--color-warning-dim)] text-[var(--color-warning)] border-[color-mix(in_srgb,var(--color-warning)_30%,transparent)]',
@@ -85,6 +86,7 @@ export default function GastosPage() {
   const [gastos, setGastos] = useState([])
   const [loading, setLoading] = useState(true)
   const [procesando, setProcesando] = useState(null)
+  const [confirmEliminarGasto, setConfirmEliminarGasto] = useState(null)
 
   const fetchGastos = useCallback(async () => {
     setLoading(true)
@@ -141,10 +143,11 @@ export default function GastosPage() {
   }
 
   const handleEliminar = async (gasto) => {
-    const msg = gasto.estado === 'aprobado'
-      ? `Eliminar "${gasto.description}" por ${formatMoney(gasto.monto)}? Se revertirá el egreso en capital.`
-      : `Eliminar "${gasto.description}" por ${formatMoney(gasto.monto)}?`
-    if (!confirm(msg)) return
+    setConfirmEliminarGasto(gasto)
+  }
+
+  const _doEliminarGasto = async (gasto) => {
+    setConfirmEliminarGasto(null)
     setProcesando(gasto.id)
     try {
       const res = await fetch(`/api/gastos/${gasto.id}`, { method: 'DELETE' })
@@ -205,6 +208,28 @@ export default function GastosPage() {
         onSuccess={() => { setShowReportarGasto(false); fetchGastos() }}
         fecha={fecha || undefined}
       />
+
+      {/* Banner explicativo */}
+      {pageTab === 'dia' && (
+        <div className="rounded-[12px] px-3.5 py-2.5 flex items-start gap-2.5" style={{ background: 'color-mix(in srgb, var(--color-warning) 8%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-warning) 20%, var(--color-border))' }}>
+          <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--color-warning)' }}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25M6.75 12h.008v.008H6.75V12z" />
+          </svg>
+          <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+            Los gastos que reportan tus cobradores en campo — viáticos, papelería, imprevistos. Puedes aprobarlos o rechazarlos y el saldo de capital se actualiza automáticamente.
+          </p>
+        </div>
+      )}
+      {pageTab === 'capital' && (
+        <div className="rounded-[12px] px-3.5 py-2.5 flex items-start gap-2.5" style={{ background: 'color-mix(in srgb, #06b6d4 8%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, #06b6d4 20%, var(--color-border))' }}>
+          <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: '#06b6d4' }}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75" />
+          </svg>
+          <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+            Tu fondo de préstamos. Aquí registras el dinero que metes o sacas del negocio. El saldo refleja cuánto tienes disponible para prestar en este momento.
+          </p>
+        </div>
+      )}
 
       {/* Tabs de página: Gastos del día | Capital */}
       <div
@@ -411,6 +436,20 @@ export default function GastosPage() {
           )}
         </>
       )}
+
+      <ConfirmModal
+        open={!!confirmEliminarGasto}
+        title="Eliminar gasto"
+        message={confirmEliminarGasto
+          ? (confirmEliminarGasto.estado === 'aprobado'
+            ? `Eliminar "${confirmEliminarGasto.description}" por ${formatMoney(confirmEliminarGasto.monto)}? Se revertirá el egreso en capital.`
+            : `Eliminar "${confirmEliminarGasto.description}" por ${formatMoney(confirmEliminarGasto.monto)}?`)
+          : ''}
+        confirmLabel="Eliminar"
+        confirmColor="red"
+        onConfirm={() => _doEliminarGasto(confirmEliminarGasto)}
+        onCancel={() => setConfirmEliminarGasto(null)}
+      />
     </div>
   )
 }

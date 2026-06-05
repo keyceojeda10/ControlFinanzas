@@ -12,6 +12,7 @@ import CompartirCredenciales        from '@/components/cobradores/CompartirCrede
 import Link                         from 'next/link'
 import { useOnline }                from '@/hooks/useOnline'
 import OfflineFallback              from '@/components/offline/OfflineFallback'
+import { ConfirmModal }             from '@/components/ui/ConfirmModal'
 
 export default function CobradorDetallePage({ params }) {
   const online = useOnline()
@@ -29,6 +30,7 @@ function CobradorDetalleInner({ params }) {
   const [error,   setError]   = useState('')
   const [toggling, setToggling] = useState(false)
   const [eliminando, setEliminando] = useState(false)
+  const [confirmEliminar, setConfirmEliminar] = useState(false)
   const [showReenviar, setShowReenviar] = useState(false)
   const [nuevaPass, setNuevaPass]       = useState('')
   const [reseteando, setReseteando]     = useState(false)
@@ -160,13 +162,7 @@ function CobradorDetalleInner({ params }) {
                     </svg>
                   </Link>
                   <button
-                    onClick={async () => {
-                      if (!confirm(`¿Eliminar a "${data.nombre}"? ${data.recaudadoHoy > 0 || data.pagosMes > 0 ? 'Tiene historial de pagos, se desactivará en vez de eliminarse.' : 'Se eliminará permanentemente.'}`)) return
-                      setEliminando(true)
-                      const res = await fetch(`/api/cobradores/${id}`, { method: 'DELETE' })
-                      if (res.ok) router.push('/cobradores')
-                      else { alert('Error al eliminar'); setEliminando(false) }
-                    }}
+                    onClick={() => setConfirmEliminar(true)}
                     disabled={eliminando}
                     className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
                     style={{ background: 'rgba(239, 68, 68, 0.12)', color: 'var(--color-danger)', border: '1px solid rgba(239, 68, 68, 0.25)' }}
@@ -350,6 +346,22 @@ function CobradorDetalleInner({ params }) {
           </div>
         </Card>
       )}
+
+      <ConfirmModal
+        open={confirmEliminar}
+        title={`Eliminar cobrador`}
+        message={data ? `¿Eliminar a "${data.nombre}"? ${data.recaudadoHoy > 0 || data.pagosMes > 0 ? 'Tiene historial de pagos, se desactivará en vez de eliminarse.' : 'Se eliminará permanentemente.'}` : ''}
+        confirmLabel="Eliminar"
+        confirmColor="red"
+        onConfirm={async () => {
+          setConfirmEliminar(false)
+          setEliminando(true)
+          const res = await fetch(`/api/cobradores/${id}`, { method: 'DELETE' })
+          if (res.ok) router.push('/cobradores')
+          else { alert('Error al eliminar'); setEliminando(false) }
+        }}
+        onCancel={() => setConfirmEliminar(false)}
+      />
     </div>
   )
 }

@@ -22,6 +22,7 @@ import ClienteHeroCard, { InfoContactoCard, AccionesClienteChips } from '@/compo
 import AiTipBanner from '@/components/ui/AiTipBanner'
 import { generarTipCliente } from '@/lib/tips/clienteTips'
 import ReagendarVisitaModal from '@/components/visitas/ReagendarVisitaModal'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 
 const estadoBadge = {
   activo:    { variant: 'green',  label: 'Al día'    },
@@ -55,6 +56,8 @@ export default function ClienteDetallePage({ params }) {
   const [rutaNav, setRutaNav]   = useState(null)
   const [festivoHoy, setFestivoHoy] = useState(null)
   const [guardandoFestivo, setGuardandoFestivo] = useState(false)
+  const [confirmGPS, setConfirmGPS] = useState(null)
+  const [confirmDeletePrestamo, setConfirmDeletePrestamo] = useState(null)
 
   // Leer contexto de ruta activa
   useEffect(() => {
@@ -229,10 +232,11 @@ export default function ClienteDetallePage({ params }) {
   const handleFijarUbicacion = async () => {
     if (fijandoGPS) return
     const yaTiene = cliente?.latitud != null && cliente?.longitud != null
-    const msg = yaTiene
-      ? 'Vas a reemplazar la ubicacion guardada del cliente por tu posicion actual. Continuar?'
-      : 'Vas a fijar la ubicacion de este cliente con tu posicion actual. Asegurate de estar frente al cliente.'
-    if (!confirm(msg)) return
+    setConfirmGPS({ yaTiene })
+  }
+
+  const _doFijarUbicacion = async () => {
+    setConfirmGPS(null)
     setFijandoGPS(true)
     try {
       const coords = await obtenerCoordsRapido(8000)
@@ -255,7 +259,11 @@ export default function ClienteDetallePage({ params }) {
   }
 
   const handleDeletePrestamo = async (prestamoId) => {
-    if (!confirm('¿Eliminar este préstamo y todos sus pagos? Esta acción no se puede deshacer.')) return
+    setConfirmDeletePrestamo(prestamoId)
+  }
+
+  const _doDeletePrestamo = async (prestamoId) => {
+    setConfirmDeletePrestamo(null)
     setActionLoading(true)
     try {
       const res = await fetch(`/api/prestamos/${prestamoId}`, { method: 'DELETE' })
@@ -638,6 +646,28 @@ export default function ClienteDetallePage({ params }) {
         clienteNombre={cliente.nombre}
         prestamoId={prestamosActivos[0]?.id || null}
         rutaId={cliente.rutaId || null}
+      />
+
+      <ConfirmModal
+        open={!!confirmGPS}
+        title="Fijar ubicación"
+        message={confirmGPS?.yaTiene
+          ? 'Vas a reemplazar la ubicación guardada del cliente por tu posición actual. ¿Continuar?'
+          : 'Vas a fijar la ubicación de este cliente con tu posición actual. Asegúrate de estar frente al cliente.'}
+        confirmLabel="Fijar ubicación"
+        confirmColor="blue"
+        onConfirm={_doFijarUbicacion}
+        onCancel={() => setConfirmGPS(null)}
+      />
+
+      <ConfirmModal
+        open={!!confirmDeletePrestamo}
+        title="Eliminar préstamo"
+        message="¿Eliminar este préstamo y todos sus pagos? Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        confirmColor="red"
+        onConfirm={() => _doDeletePrestamo(confirmDeletePrestamo)}
+        onCancel={() => setConfirmDeletePrestamo(null)}
       />
     </div>
   )

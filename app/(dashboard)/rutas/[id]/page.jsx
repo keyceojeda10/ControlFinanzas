@@ -16,6 +16,7 @@ import { SkeletonCard }              from '@/components/ui/Skeleton'
 import AiTipBanner                   from '@/components/ui/AiTipBanner'
 import { generarTipRuta }            from '@/lib/tips/rutaTips'
 import DiasSinCobroSelector          from '@/components/ui/DiasSinCobroSelector'
+import { ConfirmModal }              from '@/components/ui/ConfirmModal'
 
 // Cargar mapa dinámicamente (evitar SSR con Leaflet)
 const RouteMap = dynamic(() => import('@/components/rutas/RouteMap'), { ssr: false })
@@ -265,6 +266,7 @@ export default function RutaDetallePage({ params }) {
   const [editandoNombre, setEditandoNombre] = useState(false)
   const [nuevoNombre,    setNuevoNombre]    = useState('')
   const [eliminando,     setEliminando]     = useState(false)
+  const [confirmEliminarRuta, setConfirmEliminarRuta] = useState(false)
   const [optimizando,    setOptimizando]    = useState(false)
   const [optimResult,    setOptimResult]    = useState(null)
   const [showMap,        setShowMap]        = useState(false)
@@ -799,7 +801,11 @@ export default function RutaDetallePage({ params }) {
   }
 
   const eliminarRuta = async () => {
-    if (!confirm(`¿Eliminar la ruta "${ruta.nombre}"? Los clientes quedarán sin ruta asignada.`)) return
+    setConfirmEliminarRuta(true)
+  }
+
+  const _doEliminarRuta = async () => {
+    setConfirmEliminarRuta(false)
     setEliminando(true)
     const res = await fetch(`/api/rutas/${id}`, { method: 'DELETE' })
     if (res.ok) {
@@ -2381,6 +2387,16 @@ export default function RutaDetallePage({ params }) {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        open={confirmEliminarRuta}
+        title="Eliminar ruta"
+        message={ruta ? `¿Eliminar la ruta "${ruta.nombre}"? Los clientes quedarán sin ruta asignada.` : ''}
+        confirmLabel="Eliminar"
+        confirmColor="red"
+        onConfirm={_doEliminarRuta}
+        onCancel={() => setConfirmEliminarRuta(false)}
+      />
     </div>
   )
 }

@@ -41,6 +41,7 @@ import { formatMoney } from '@/lib/i18n'
 import AiTipBanner from '@/components/ui/AiTipBanner'
 import { generarTipPrestamo } from '@/lib/tips/prestamoTips'
 import DiasSinCobroSelector from '@/components/ui/DiasSinCobroSelector'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 
 // ─── Helpers de formato ──────────────────────────────────────────
 const fmtFecha = (d) => d
@@ -64,7 +65,7 @@ const tipoPagoBadge = {
 export default function PrestamoDetallePage({ params }) {
   const { id }             = use(params)
   const router             = useRouter()
-  const { session, puedeGestionarPrestamos, puedeAplicarDescuentos } = useAuth()
+  const { session, esOwner, esCobrador, puedeGestionarPrestamos, puedeAplicarDescuentos } = useAuth()
 
   const { lastSyncedAt }   = useOffline()
 
@@ -82,6 +83,7 @@ export default function PrestamoDetallePage({ params }) {
   const [confirmCancel, setConfirmCancel] = useState(false)
   const [modoReversionCapital, setModoReversionCapital] = useState('devolver_todo')
   const [anulando,     setAnulando]     = useState(null)   // pagoId que se está anulando
+  const [confirmAnularPago, setConfirmAnularPago] = useState(null) // { pagoId, monto }
   const [comprobante,  setComprobante]  = useState(null)   // pagoId del comprobante expandido
   const [editandoFecha, setEditandoFecha] = useState(null) // pagoId cuya fecha se edita
   const [filtroFecha,  setFiltroFecha]  = useState('')    // YYYY-MM-DD opcional para filtrar historial
@@ -683,24 +685,26 @@ export default function PrestamoDetallePage({ params }) {
       <PrestamoHeroCard
         prestamo={prestamo}
         narrativa={narrativaSaldo}
-        sparklineData={sparkline14d.some(v => v > 0) ? sparkline14d : null}
+        sparklineData={esOwner && sparkline14d.some(v => v > 0) ? sparkline14d : null}
       />
 
       {/* Tip IA contextual */}
       <AiTipBanner tip={generarTipPrestamo(prestamo, pagos)} pageKey={`prestamo-${prestamo.id}`} />
 
-      {/* ── 4. STATS INTELIGENTES CONTEXTUALES (chips) ───────────── */}
-      {statsContexto.length > 0 && <StatsContextuales stats={statsContexto} />}
+      {/* ── 4. STATS INTELIGENTES CONTEXTUALES (chips) — solo owner ── */}
+      {esOwner && statsContexto.length > 0 && <StatsContextuales stats={statsContexto} />}
 
-      {/* ── 9. COMPARATIVO PRÉSTAMOS DEL CLIENTE ─────────────────── */}
-      <ComparativoPrestamosCliente
-        totalPrestamosCliente={statsCliente?.totalPrestamos}
-        prestamoNumeroCliente={statsCliente?.numeroEsteDe}
-        prestamosCompletadosCliente={statsCliente?.completados}
-      />
+      {/* ── 9. COMPARATIVO PRÉSTAMOS DEL CLIENTE — solo owner ──────── */}
+      {esOwner && (
+        <ComparativoPrestamosCliente
+          totalPrestamosCliente={statsCliente?.totalPrestamos}
+          prestamoNumeroCliente={statsCliente?.numeroEsteDe}
+          prestamosCompletadosCliente={statsCliente?.completados}
+        />
+      )}
 
-      {/* ── 7. LÍNEA DE TIEMPO DEL PRÉSTAMO ──────────────────────── */}
-      {estaActivo && fechaInicio && fechaFin && (
+      {/* ── 7. LÍNEA DE TIEMPO DEL PRÉSTAMO — solo owner ─────────── */}
+      {esOwner && estaActivo && fechaInicio && fechaFin && (
         <TimelinePrestamo
           fechaInicio={fechaInicio}
           fechaFin={fechaFin}
@@ -926,19 +930,9 @@ export default function PrestamoDetallePage({ params }) {
                     )}
                     {session?.user?.rol === 'owner' && (
                       <button
-                        onClick={async () => {
+                        onClick={() => {
                           if (anulando) return
-                          if (!confirm(`¿Anular pago de ${formatMoney(pago.montoPagado)}?`)) return
-                          setAnulando(pago.id)
-                          try {
-                            const res = await fetch(`/api/pagos/${pago.id}`, { method: 'DELETE' })
-                            if (!res.ok) throw new Error()
-                            await fetchPrestamo()
-                          } catch {
-                            setError('No se pudo anular el pago.')
-                          } finally {
-                            setAnulando(null)
-                          }
+                          setConfirmAnularPago({ pagoId: pago.id, monto: pago.montoPagado })
                         }}
                         disabled={anulando === pago.id}
                         className="w-7 h-7 flex items-center justify-center rounded-[8px] text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger-dim)] transition-colors disabled:opacity-50"
@@ -1257,7 +1251,7 @@ export default function PrestamoDetallePage({ params }) {
               }}
               className="h-11 rounded-[12px] font-medium text-sm text-[#f5c518] bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.25)] hover:bg-[rgba(245,197,24,0.15)] transition-all col-span-2"
             >
-              Liquidación anticipada (pago total antes)
+              Cerrar préstamo anticipado
             </button>
           )}
           <button
@@ -1538,6 +1532,29 @@ export default function PrestamoDetallePage({ params }) {
         onClose={() => setModalWA(false)}
         cliente={cliente}
         prestamo={prestamo}
+      />
+
+      <ConfirmModal
+        open={!!confirmAnularPago}
+        title="Anular pago"
+        message={confirmAnularPago ? `¿Anular pago de ${formatMoney(confirmAnularPago.monto)}?` : ''}
+        confirmLabel="Anular"
+        confirmColor="red"
+        onConfirm={async () => {
+          const { pagoId } = confirmAnularPago
+          setConfirmAnularPago(null)
+          setAnulando(pagoId)
+          try {
+            const res = await fetch(`/api/pagos/${pagoId}`, { method: 'DELETE' })
+            if (!res.ok) throw new Error()
+            await fetchPrestamo()
+          } catch {
+            setError('No se pudo anular el pago.')
+          } finally {
+            setAnulando(null)
+          }
+        }}
+        onCancel={() => setConfirmAnularPago(null)}
       />
     </div>
   )

@@ -185,6 +185,16 @@ const NAV_CUENTA_OWNER = [
 
 const NAV_COBRADOR = [
   {
+    label: 'Mis cobros',
+    href:  '/cobros-hoy',
+    icon: (
+      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+  },
+  {
     label: 'Inicio',
     href:  '/dashboard',
     icon: (
