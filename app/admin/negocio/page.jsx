@@ -1,12 +1,36 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Card }    from '@/components/ui/Card'
 import { Badge }   from '@/components/ui/Badge'
 import { formatMoney } from '@/lib/i18n'
 import { PLANES_CONFIG } from '@/lib/planes'
 
 const PRECIO_PLAN = Object.fromEntries(Object.entries(PLANES_CONFIG).map(([k, v]) => [k, v.precio]))
+
+// Mini sparkline SVG (sin dependencias)
+function Sparkline({ datos, color = '#f5c518', height = 32 }) {
+  if (!datos?.length) return null
+  const vals = datos.map(d => d.total)
+  const max = Math.max(...vals, 1)
+  const w = 120, h = height
+  const pts = vals.map((v, i) => {
+    const x = (i / (vals.length - 1)) * w
+    const y = h - (v / max) * h
+    return `${x},${y}`
+  }).join(' ')
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="opacity-80">
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+      {vals.map((v, i) => {
+        if (i !== vals.length - 1) return null
+        const x = (i / (vals.length - 1)) * w
+        const y = h - (v / max) * h
+        return <circle key={i} cx={x} cy={y} r="2.5" fill={color} />
+      })}
+    </svg>
+  )
+}
 
 const TABS = [
   { key: 'pagantes',   label: 'Pagando ahora',    color: '#22c55e' },
@@ -38,13 +62,22 @@ export default function NegocioPage() {
   const [loading, setLoading] = useState(true)
   const [tab,     setTab]     = useState('pagantes')
   const [q,       setQ]       = useState('')
+  const timerRef = useRef(null)
 
-  useEffect(() => {
+  const cargar = (silencioso = false) => {
+    if (!silencioso) setLoading(true)
     fetch('/api/admin/negocio')
       .then(r => r.json())
       .then(d => setData(d))
       .catch(() => {})
-      .finally(() => setLoading(false))
+      .finally(() => { if (!silencioso) setLoading(false) })
+  }
+
+  useEffect(() => {
+    cargar()
+    // Refresca activos cada 2 minutos en silencio (sin spinner)
+    timerRef.current = setInterval(() => cargar(true), 2 * 60 * 1000)
+    return () => clearInterval(timerRef.current)
   }, [])
 
   if (loading) return (
@@ -74,22 +107,34 @@ export default function NegocioPage() {
         <p className="text-xs text-[var(--color-text-muted)]">Usuarios pagando, trials con potencial, churn y muertos</p>
       </div>
 
-      {/* KPIs principales */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+      {/* Fila 1: Activos ahora + MRR */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+        {/* Activos ahora — el único KPI "tiempo real" */}
+        <Card>
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide mb-1">En la app ahora</p>
+              <p className="text-2xl font-bold text-[var(--color-success)]">{resumen.activosAhora}</p>
+              <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{resumen.activosHoy30min} en últimos 30min</p>
+            </div>
+            {/* Punto pulsante verde */}
+            <span className="relative flex h-2.5 w-2.5 mt-1">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+            </span>
+          </div>
+        </Card>
         <Card>
           <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide mb-1">MRR actual</p>
           <p className="text-xl font-bold text-[var(--color-success)]">{formatMoney(resumen.mrrActual, 'co')}</p>
-          <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{resumen.pagantes} clientes pagando</p>
+          <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
+            {resumen.pagantes} pagando · ticket {resumen.pagantes > 0 ? formatMoney(Math.round(resumen.mrrActual / resumen.pagantes), 'co') : '—'}
+          </p>
         </Card>
         <Card>
           <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide mb-1">MRR proyectado</p>
           <p className="text-xl font-bold text-[var(--color-accent)]">{formatMoney(resumen.mrrProyectado, 'co')}</p>
           <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">si convierten {resumen.trialsCalientes} trials calientes</p>
-        </Card>
-        <Card>
-          <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide mb-1">Trials activos</p>
-          <p className="text-xl font-bold text-[var(--color-text-primary)]">{resumen.trials}</p>
-          <p className="text-[10px] mt-0.5" style={{ color: SCORE_COLOR(60) }}>{resumen.trialsCalientes} con score alto/medio</p>
         </Card>
         <Card>
           <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide mb-1">Churn / Muertos</p>
@@ -98,15 +143,34 @@ export default function NegocioPage() {
         </Card>
       </div>
 
-      {/* Ticket promedio (solo si hay pagantes) */}
-      {resumen.pagantes > 0 && (
-        <div className="mb-5 px-4 py-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] flex items-center gap-4 text-xs text-[var(--color-text-muted)]">
-          <span>Ticket promedio mensual:</span>
-          <span className="font-bold text-[var(--color-text-primary)]">
-            {formatMoney(Math.round(resumen.mrrActual / resumen.pagantes), 'co')}
-          </span>
-        </div>
-      )}
+      {/* Fila 2: Registros por período + sparkline */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        <Card>
+          <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide mb-1">Registros hoy / ayer</p>
+          <p className="text-xl font-bold text-[var(--color-text-primary)]">
+            {resumen.registrosHoy}
+            <span className="text-sm font-normal text-[var(--color-text-muted)]"> / {resumen.registrosAyer}</span>
+          </p>
+          <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">nuevos en el sistema</p>
+        </Card>
+        <Card>
+          <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide mb-1">Esta semana / mes</p>
+          <p className="text-xl font-bold text-[var(--color-text-primary)]">
+            {resumen.registrosSemana}
+            <span className="text-sm font-normal text-[var(--color-text-muted)]"> / {resumen.registrosMes}</span>
+          </p>
+          <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">registros acumulados</p>
+        </Card>
+        <Card className="sm:col-span-2">
+          <div className="flex items-start justify-between mb-1">
+            <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Registros últimos 30 días</p>
+            <p className="text-[10px] font-bold text-[var(--color-accent)]">
+              {data.registrosPorDia?.reduce((a, d) => a + d.total, 0) ?? 0} total
+            </p>
+          </div>
+          <Sparkline datos={data.registrosPorDia} color="var(--color-accent)" height={36} />
+        </Card>
+      </div>
 
       {/* Tabs */}
       <div className="flex items-center gap-2 mb-4 flex-wrap">

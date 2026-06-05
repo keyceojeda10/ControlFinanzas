@@ -15,9 +15,38 @@ export async function GET() {
   }
 
   const ahora = new Date()
+  const hace5min   = new Date(ahora - 5  * 60 * 1000)
+  const hace30min  = new Date(ahora - 30 * 60 * 1000)
+  const inicioHoy  = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate())
+  const inicioAyer = new Date(inicioHoy - 86400000)
+  const inicioSemana = new Date(inicioHoy - (inicioHoy.getDay() === 0 ? 6 : inicioHoy.getDay() - 1) * 86400000)
+  const inicioMes  = new Date(ahora.getFullYear(), ahora.getMonth(), 1)
 
-  // Traer todas las orgs con sus datos clave en una sola query
-  const orgs = await prisma.organization.findMany({
+  // Activos en tiempo real: owners con lastActivityAt reciente
+  const [activosAhora, activosHoy30min, registrosHoy, registrosAyer, registrosSemana, registrosMes,
+         registrosPorDia, orgs] = await Promise.all([
+    // Activos últimos 5 min (prácticamente "en línea ahora")
+    prisma.user.count({ where: { rol: 'owner', lastActivityAt: { gte: hace5min } } }),
+    // Activos últimos 30 min
+    prisma.user.count({ where: { rol: 'owner', lastActivityAt: { gte: hace30min } } }),
+    // Registros de hoy
+    prisma.organization.count({ where: { createdAt: { gte: inicioHoy } } }),
+    // Registros de ayer
+    prisma.organization.count({ where: { createdAt: { gte: inicioAyer, lt: inicioHoy } } }),
+    // Registros esta semana
+    prisma.organization.count({ where: { createdAt: { gte: inicioSemana } } }),
+    // Registros este mes
+    prisma.organization.count({ where: { createdAt: { gte: inicioMes } } }),
+    // Registros por día últimos 30 días (para mini gráfico)
+    prisma.$queryRaw`
+      SELECT DATE(createdAt) as dia, COUNT(*) as total
+      FROM Organization
+      WHERE createdAt >= ${new Date(ahora - 30 * 86400000)}
+      GROUP BY DATE(createdAt)
+      ORDER BY dia ASC
+    `,
+    // Orgs completas para el análisis principal
+    prisma.organization.findMany({
     where: { activo: true },
     select: {
       id:         true,
@@ -38,7 +67,8 @@ export async function GET() {
       _count: { select: { clientes: true, prestamos: true } },
     },
     orderBy: { createdAt: 'desc' },
-  })
+  }),
+  ])
 
   const pagantes  = []
   const trials    = []
@@ -141,14 +171,26 @@ export async function GET() {
 
   return NextResponse.json({
     resumen: {
-      mrrActual:      mrrTotal,
-      mrrProyectado:  mrrTotal + mrrProyectado,
-      pagantes:       pagantes.length,
-      trials:         trials.length,
+      mrrActual:       mrrTotal,
+      mrrProyectado:   mrrTotal + mrrProyectado,
+      pagantes:        pagantes.length,
+      trials:          trials.length,
       trialsCalientes: trialsCalientes.length,
-      muertos:        muertos.length,
-      churneados:     churneados.length,
+      muertos:         muertos.length,
+      churneados:      churneados.length,
+      // Activos en tiempo real
+      activosAhora,
+      activosHoy30min,
+      // Registros por período
+      registrosHoy,
+      registrosAyer,
+      registrosSemana,
+      registrosMes,
     },
+    registrosPorDia: registrosPorDia.map(r => ({
+      dia:   r.dia instanceof Date ? r.dia.toISOString().slice(0, 10) : String(r.dia),
+      total: Number(r.total),
+    })),
     pagantes,
     trials,
     muertos,
