@@ -487,7 +487,7 @@ export default function PrestamoDetallePage({ params }) {
       {esClavo && (
         <div className="flex items-center gap-2 bg-[rgba(239,68,68,0.12)] border border-[rgba(239,68,68,0.3)] rounded-[12px] px-3 py-2 text-xs font-semibold text-[#ef4444]">
           <span className="w-2 h-2 rounded-full bg-[#ef4444]" />
-          Tarjeta clavo — apartado de tus números normales
+          Préstamo perdido — apartado de tus números normales
         </div>
       )}
 
@@ -1270,29 +1270,29 @@ export default function PrestamoDetallePage({ params }) {
               onClick={() => { setModalGestionPrestamo(false); quitarClavo() }}
               className="h-11 rounded-[12px] font-medium text-sm text-[#22c55e] bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.25)] hover:bg-[rgba(34,197,94,0.15)] transition-all col-span-2"
             >
-              Quitar de tarjetas clavo
+              Quitar de préstamos perdidos
             </button>
           ) : (
             <button
               onClick={() => { setModalGestionPrestamo(false); setModalClavo(true) }}
               className="h-11 rounded-[12px] font-medium text-sm text-[#ef4444] bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.25)] hover:bg-[rgba(239,68,68,0.15)] transition-all col-span-2"
             >
-              Marcar como tarjeta clavo
+              Mover a préstamos perdidos
             </button>
           )}
         </div>
       </Modal>
 
-      {/* Modal: confirmar marcar tarjeta clavo */}
-      <Modal open={modalClavo} onClose={() => setModalClavo(false)} title="Marcar como tarjeta clavo">
+      {/* Modal: confirmar mover a préstamos perdidos */}
+      <Modal open={modalClavo} onClose={() => setModalClavo(false)} title="Mover a préstamos perdidos">
         <div className="space-y-4">
           <p className="text-sm text-[var(--color-text-muted)]">
-            Este préstamo saldrá de tus números normales (cartera, saldos, dashboard) y pasará a la contabilidad aparte de tarjetas clavo. Podrás seguir registrando pagos si el cliente abona.
+            Este préstamo saldrá de tus números normales (cartera, saldos, dashboard) y pasará a la sección de préstamos perdidos. Podrás seguir registrando pagos si el cliente abona.
           </p>
           <label className="flex items-start gap-2 cursor-pointer rounded-[12px] border border-[var(--color-border)] p-3">
             <input type="checkbox" checked={clavoPerdida} onChange={e => setClavoPerdida(e.target.checked)} className="w-4 h-4 mt-0.5 accent-[#ef4444]" />
             <span className="text-sm text-[var(--color-text-primary)]">
-              Registrar el capital prestado como pérdida
+              Registrar el capital prestado como dinero en riesgo
               <span className="block text-[11px] text-[var(--color-text-muted)] mt-0.5">
                 Resta de tu capital el dinero que aún no has recuperado de este préstamo. Si no lo marcas, solo se aparta de la cartera sin tocar tu caja.
               </span>
@@ -1302,7 +1302,7 @@ export default function PrestamoDetallePage({ params }) {
           <div className="flex gap-3">
             <button onClick={() => setModalClavo(false)} className="flex-1 h-11 rounded-[12px] text-sm font-medium text-[var(--color-text-muted)] bg-[rgba(255,255,255,0.05)]">Cancelar</button>
             <button onClick={confirmarClavo} disabled={clavoEnviando} className="flex-1 h-11 rounded-[12px] text-sm font-bold text-white bg-[#ef4444] disabled:opacity-40">
-              {clavoEnviando ? 'Marcando...' : 'Marcar como clavo'}
+              {clavoEnviando ? 'Moviendo...' : 'Mover a perdidos'}
             </button>
           </div>
         </div>

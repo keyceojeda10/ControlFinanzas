@@ -23,7 +23,7 @@ export default function ClavosPage() {
     return <div className="max-w-3xl mx-auto space-y-3"><SkeletonCard /><SkeletonCard /></div>
   }
   if (!data || data.error) {
-    return <p className="text-sm text-[var(--color-danger)]">No se pudieron cargar las tarjetas clavo</p>
+    return <p className="text-sm text-[var(--color-danger)]">No se pudieron cargar los préstamos perdidos</p>
   }
 
   return (
