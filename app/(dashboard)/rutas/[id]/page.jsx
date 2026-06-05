@@ -8,6 +8,7 @@ import dynamic                       from 'next/dynamic'
 import { useAuth }                   from '@/hooks/useAuth'
 import { useOffline }                from '@/components/providers/OfflineProvider'
 import { obtenerRutaOffline, guardarOrdenPendiente } from '@/lib/offline'
+import { obtenerCoordsRapido } from '@/lib/geo'
 import { Button }                    from '@/components/ui/Button'
 import { Card }                      from '@/components/ui/Card'
 import { Modal }                     from '@/components/ui/Modal'
@@ -587,12 +588,13 @@ export default function RutaDetallePage({ params }) {
       ...prev,
       clientes: prev.clientes.map(c => c.id === clienteId ? { ...c, pagoHoy: true, cobroPendienteHoy: false } : c)
     } : prev)
+    const coords = await obtenerCoordsRapido().catch(() => null)
     try {
       const url = `/api/prestamos/${prestamoActivo}/pagos${confirmarDuplicado ? '?confirmarDuplicado=1' : ''}`
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ montoPagado: cuota, tipo: 'completo', diasAbonados: 1, metodoPago }),
+        body: JSON.stringify({ montoPagado: cuota, tipo: 'completo', diasAbonados: 1, metodoPago, ...(coords ?? {}) }),
       })
       if (res.ok) {
         const data = await res.json()

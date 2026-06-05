@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
 import { formatMoney } from '@/lib/i18n'
 import { Modal } from '@/components/ui/Modal'
+import { obtenerCoordsRapido } from '@/lib/geo'
 
 export default function CobrosHoyPage() {
   const { esCobrador, loading: authLoading } = useAuth()
@@ -62,6 +63,7 @@ export default function CobrosHoyPage() {
     const { id: clienteId, nombre, cuota, prestamoActivo } = modalPago
     setModalPago(null)
     setPagando(clienteId)
+    const coords = await obtenerCoordsRapido().catch(() => null)
 
     // Optimista: marcar como pagado
     setData(prev => prev ? {
@@ -82,7 +84,7 @@ export default function CobrosHoyPage() {
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ montoPagado: cuota, tipo: 'completo', diasAbonados: 1, metodoPago }),
+        body: JSON.stringify({ montoPagado: cuota, tipo: 'completo', diasAbonados: 1, metodoPago, ...(coords ?? {}) }),
       })
 
       if (res.ok) {
