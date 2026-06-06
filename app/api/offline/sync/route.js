@@ -1,10 +1,14 @@
-// app/api/offline/sync/route.js — Descarga TODOS los datos para modo offline
+// app/api/offline/sync/route.js — Descarga datos para modo offline
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado, calcularProximoCobro, formatFechaCobro, pagoHoy, tieneCobroPendienteHoy, tienePeriodoEsperadoHoy } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
+
+// Rate limit: 1 sync completo cada 2 minutos por usuario
+const syncTimestamps = new Map()
+const SYNC_COOLDOWN_MS = 2 * 60 * 1000
 
 function hoyLocalUTC(country = 'co') {
   const now = new Date()
@@ -24,6 +28,25 @@ export async function GET() {
   const userId = session.user.id
   const rol = session.user.rol
   const rutaIds = session.user.rutaIds ?? []
+
+  // Rate limit: evitar sync masivo simultáneo (cobradores en campo abriendo la app a la vez)
+  const now = Date.now()
+  const lastSync = syncTimestamps.get(userId)
+  if (lastSync && now - lastSync < SYNC_COOLDOWN_MS) {
+    return Response.json(
+      { error: 'Sync demasiado frecuente, espera un momento', retryAfter: Math.ceil((SYNC_COOLDOWN_MS - (now - lastSync)) / 1000) },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((SYNC_COOLDOWN_MS - (now - lastSync)) / 1000)) } }
+    )
+  }
+  syncTimestamps.set(userId, now)
+  // Limpiar entradas viejas para no crecer indefinidamente
+  if (syncTimestamps.size > 5000) {
+    const cutoff = now - SYNC_COOLDOWN_MS * 10
+    for (const [uid, ts] of syncTimestamps) {
+      if (ts < cutoff) syncTimestamps.delete(uid)
+    }
+  }
+
   const org = await prisma.organization.findUnique({
     where: { id: orgId },
     select: { diasSinCobro: true },
@@ -36,7 +59,13 @@ export async function GET() {
     ...(rol === 'cobrador' && rutaIds.length > 0 ? { rutaId: { in: rutaIds } } : {}),
   }
 
-  // ── 1. Todos los clientes con sus préstamos y pagos ──
+  // Límite de pagos históricos: solo 90 días atrás.
+  // Un cobrador no necesita el historial completo para operar offline hoy.
+  // Sin este límite, una org con meses de historia devuelve decenas de miles
+  // de filas por sync, agotando el pool de conexiones bajo carga.
+  const hace90Dias = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+
+  // ── 1. Todos los clientes con sus préstamos y pagos (últimos 90 días) ──
   const clientesRaw = await prisma.cliente.findMany({
     where: clienteWhere,
     include: {
@@ -45,6 +74,7 @@ export async function GET() {
         orderBy: { createdAt: 'desc' },
         include: {
           pagos: {
+            where: { fechaPago: { gte: hace90Dias } },
             orderBy: { fechaPago: 'desc' },
             include: { cobrador: { select: { id: true, nombre: true } } },
           },

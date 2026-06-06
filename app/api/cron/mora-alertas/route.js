@@ -21,20 +21,17 @@ export async function POST(req) {
   tresDiasAtras.setDate(tresDiasAtras.getDate() - 3)
   tresDiasAtras.setHours(0, 0, 0, 0)
 
-  // Buscar préstamos activos sin pago en los últimos 3 días
+  // Usar campo denormalizado ultimoPagoAt en vez de subqueries none/every sobre pagos.
+  // none/every generan dependent subqueries por fila → full table scan a escala.
+  // ultimoPagoAt ya está indexado vía @@index([estado, ultimoPagoAt]).
   const prestamosEnMora = await prisma.prestamo.findMany({
     where: {
       estado: 'activo',
       OR: [
         // Nunca se ha pagado y fue creado hace >3 días
-        { pagos: { none: {} }, createdAt: { lt: tresDiasAtras } },
-        // Tiene pagos pero ninguno en los últimos 3 días
-        {
-          pagos: {
-            some: {},
-            none: { fechaPago: { gte: tresDiasAtras } },
-          },
-        },
+        { ultimoPagoAt: null, createdAt: { lt: tresDiasAtras } },
+        // Último pago fue hace más de 3 días
+        { ultimoPagoAt: { lt: tresDiasAtras } },
       ],
     },
     include: {

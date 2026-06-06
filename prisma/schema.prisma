@@ -294,6 +294,7 @@ model Prestamo {
   @@index([createdAt])
   @@index([renovadoDeId])
   @@index([organizationId, esClavo])
+  @@index([estado, ultimoPagoAt])
 }
 
 model Pago {

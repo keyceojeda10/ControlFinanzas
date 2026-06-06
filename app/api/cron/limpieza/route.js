@@ -19,15 +19,47 @@ export async function POST(req) {
   const limite = new Date()
   limite.setDate(limite.getDate() - DIAS_RETENCION)
 
-  const [eventos, actividad] = await Promise.all([
-    prisma.evento.deleteMany({ where: { createdAt: { lt: limite } } }),
-    prisma.actividadLog.deleteMany({ where: { createdAt: { lt: limite } } }),
-  ])
+  // Borrar en chunks de 2000 filas para evitar bloqueos de tabla prolongados.
+  // Un DELETE masivo en MySQL puede bloquear la tabla por segundos/minutos
+  // cuando hay millones de filas, afectando a todos los usuarios simultáneos.
+  const CHUNK = 2000
+  let eventosTotal = 0
+  let actividadTotal = 0
+
+  // Chunk loop para eventos
+  while (true) {
+    const ids = await prisma.evento.findMany({
+      where: { createdAt: { lt: limite } },
+      select: { id: true },
+      take: CHUNK,
+    })
+    if (ids.length === 0) break
+    const { count } = await prisma.evento.deleteMany({
+      where: { id: { in: ids.map(r => r.id) } },
+    })
+    eventosTotal += count
+    if (ids.length < CHUNK) break
+  }
+
+  // Chunk loop para actividadLog
+  while (true) {
+    const ids = await prisma.actividadLog.findMany({
+      where: { createdAt: { lt: limite } },
+      select: { id: true },
+      take: CHUNK,
+    })
+    if (ids.length === 0) break
+    const { count } = await prisma.actividadLog.deleteMany({
+      where: { id: { in: ids.map(r => r.id) } },
+    })
+    actividadTotal += count
+    if (ids.length < CHUNK) break
+  }
 
   return NextResponse.json({
     ok: true,
-    eventosEliminados: eventos.count,
-    actividadEliminada: actividad.count,
-    mensaje: `Limpieza completada: ${eventos.count} eventos + ${actividad.count} logs eliminados (>${DIAS_RETENCION} días)`,
+    eventosEliminados: eventosTotal,
+    actividadEliminada: actividadTotal,
+    mensaje: `Limpieza completada: ${eventosTotal} eventos + ${actividadTotal} logs eliminados (>${DIAS_RETENCION} días)`,
   })
 }

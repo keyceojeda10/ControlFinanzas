@@ -253,6 +253,8 @@ export async function GET() {
     }),
 
     // Alerta: prestamos activos sin pagos hace +7 dias (clientes "abandonados")
+    // Usa ultimoPagoAt denormalizado en vez de subqueries every/none sobre pagos
+    // (every/none generan dependent subqueries por fila, caros a escala).
     prisma.prestamo.count({
       where: {
         organizationId: orgId,
@@ -262,8 +264,8 @@ export async function GET() {
           ...filtroRutaCliente,
         },
         OR: [
-          { pagos: { none: {} } },
-          { pagos: { every: { fechaPago: { lt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } } },
+          { ultimoPagoAt: null },
+          { ultimoPagoAt: { lt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
         ],
       },
     }),
