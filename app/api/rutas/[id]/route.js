@@ -47,6 +47,9 @@ export async function GET(request, { params }) {
   }
 
   // Config org para días sin cobro + festivos de la organización
+  // Calcular rango de hoy antes del query para filtrarlo en DB (no en JS)
+  const _hoy = hoy(), _manana = manana()
+
   const [org, festivos] = await Promise.all([
     prisma.organization.findUnique({
       where: { id: organizationId },
@@ -84,9 +87,11 @@ export async function GET(request, { params }) {
               diaCobroSemana: true,
               diaCobroMes: true,
               diasSinCobro: true,
+              // Solo pagos de HOY — evita traer meses de historial al cliente
+              // mora/saldo usan totalPagado (denormalizado), no necesitan historial
               pagos: {
-                select:  { montoPagado: true, fechaPago: true, tipo: true, latitud: true, longitud: true },
-                orderBy: { fechaPago: 'desc' },
+                where:  { fechaPago: { gte: _hoy, lt: _manana } },
+                select: { montoPagado: true, fechaPago: true, tipo: true, latitud: true, longitud: true },
               },
             },
           },
@@ -126,9 +131,6 @@ export async function GET(request, { params }) {
   let capitalTotal = 0      // monto original prestado (sin intereses)
   let totalAPagarRuta = 0   // suma de totalAPagar (principal + intereses) — denominador correcto para % cobrado
 
-  // Cachear fechas para evitar recalcular en cada iteración
-  const _hoy = hoy(), _manana = manana()
-
   // Pines del mapa: pagos del dia con coords, color por distancia con su cliente.
   const cobrosGeoHoy = []
 
@@ -152,10 +154,8 @@ export async function GET(request, { params }) {
     let pagoHoyGeoCliente = null
 
     for (const p of c.prestamos) {
-      // Pagos de hoy: contar SIEMPRE (incluye préstamos completados hoy con pago final)
-      const pagosHoy = p.pagos.filter(
-        (pg) => new Date(pg.fechaPago) >= _hoy && new Date(pg.fechaPago) < _manana
-      )
+      // p.pagos ya viene filtrado por hoy desde la query (where fechaPago gte/lt)
+      const pagosHoy = p.pagos
       const montoPagadoHoy = pagosHoy.filter(pg => !['recargo', 'descuento'].includes(pg.tipo)).reduce((a, pg) => a + pg.montoPagado, 0)
       pagadoHoy    += montoPagadoHoy
       recaudadoHoy += montoPagadoHoy

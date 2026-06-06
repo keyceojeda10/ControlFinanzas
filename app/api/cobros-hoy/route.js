@@ -44,6 +44,8 @@ export async function GET() {
     return Response.json({ clientes: [], resumen: { total: 0, pendientes: 0, pagados: 0, esperadoHoy: 0, recaudadoHoy: 0 } })
   }
 
+  const _hoy = hoy(), _manana = manana()
+
   const [org, festivos] = await Promise.all([
     prisma.organization.findUnique({
       where: { id: organizationId },
@@ -55,7 +57,9 @@ export async function GET() {
     }),
   ])
 
-  // Cargar todas las rutas del cobrador con sus clientes y préstamos
+  // Cargar todas las rutas del cobrador con sus clientes y préstamos.
+  // pagos: solo los de HOY (filtramos en DB, no en JS) — evita traer meses de historial.
+  // Los cálculos de mora/saldo usan totalPagado (denormalizado), no necesitan el historial completo.
   const rutas = await prisma.ruta.findMany({
     where: { id: { in: rutaIds }, organizationId, cobradorId: userId },
     select: {
@@ -87,8 +91,8 @@ export async function GET() {
               diaCobroMes: true,
               diasSinCobro: true,
               pagos: {
+                where: { fechaPago: { gte: _hoy, lt: _manana } },
                 select: { id: true, montoPagado: true, fechaPago: true, tipo: true },
-                orderBy: { fechaPago: 'desc' },
               },
             },
           },
@@ -96,8 +100,6 @@ export async function GET() {
       },
     },
   })
-
-  const _hoy = hoy(), _manana = manana()
 
   let totalClientes = 0
   let totalPendientes = 0
@@ -122,9 +124,8 @@ export async function GET() {
       const prestamosActivos = []
 
       for (const p of c.prestamos) {
-        const pagosHoy = p.pagos.filter(
-          (pg) => new Date(pg.fechaPago) >= _hoy && new Date(pg.fechaPago) < _manana
-        )
+        // p.pagos ya viene filtrado por hoy desde la query (where fechaPago gte/lt)
+        const pagosHoy = p.pagos
         const montoPagadoHoy = pagosHoy
           .filter(pg => !['recargo', 'descuento'].includes(pg.tipo))
           .reduce((a, pg) => a + pg.montoPagado, 0)

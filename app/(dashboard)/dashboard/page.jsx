@@ -3,16 +3,19 @@ import { formatMoney } from '@/lib/i18n'
 import { useState, useEffect, useCallback, useRef, useId } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { useAuth } from '@/hooks/useAuth'
 import { guardarEnCache, leerDeCache, obtenerDashboardOffline } from '@/lib/offline'
 import { useOffline } from '@/components/providers/OfflineProvider'
 import { useOnboarding } from '@/components/onboarding/useOnboarding'
 import OnboardingChecklist from '@/components/onboarding/OnboardingChecklist'
-import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
-import SpotlightOverlay from '@/components/onboarding/SpotlightOverlay'
-import CobradorOnboarding from '@/components/onboarding/CobradorOnboarding'
 import CacheAge from '@/components/offline/CacheAge'
-import DashboardAiTip from '@/components/dashboard/DashboardAiTip'
+
+// Carga diferida — solo se descargan si el usuario los necesita
+const OnboardingWizard    = dynamic(() => import('@/components/onboarding/OnboardingWizard'),    { ssr: false })
+const SpotlightOverlay    = dynamic(() => import('@/components/onboarding/SpotlightOverlay'),    { ssr: false })
+const CobradorOnboarding  = dynamic(() => import('@/components/onboarding/CobradorOnboarding'),  { ssr: false })
+const DashboardAiTip      = dynamic(() => import('@/components/dashboard/DashboardAiTip'),       { ssr: false })
 
 function Skeleton({ className = '' }) {
   return <div className={`animate-pulse rounded-[12px] ${className}`} style={{ background: 'var(--color-bg-hover)' }} />

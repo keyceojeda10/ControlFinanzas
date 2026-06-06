@@ -1,6 +1,9 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME = 'cf-v71'
-const API_CACHE  = 'cf-api-v71'
+const CACHE_NAME   = 'cf-v71'
+const API_CACHE    = 'cf-api-v71'
+// Cache inmutable para _next/static — NO se borra entre versiones.
+// Los chunks llevan hash en el nombre, así que nunca hay stale content.
+const STATIC_CACHE = 'cf-static'
 
 // Endpoints que NUNCA deben servirse desde cache si el navegador esta online.
 // Si la red falla, ahi si caemos al cache. Sin esto, microcortes en 4G hacen que
@@ -116,7 +119,7 @@ self.addEventListener('activate', (e) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((k) => k !== CACHE_NAME && k !== API_CACHE)
+          .filter((k) => k !== CACHE_NAME && k !== API_CACHE && k !== STATIC_CACHE)
           .map((k) => caches.delete(k))
       )
     )
@@ -261,7 +264,8 @@ async function cacheFirst(request) {
   try {
     const response = await fetch(request)
     if (response.ok) {
-      const cache = await caches.open(CACHE_NAME)
+      // _next/static usa STATIC_CACHE (inmutable, sobrevive deploys)
+      const cache = await caches.open(STATIC_CACHE)
       cache.put(request, response.clone())
     }
     return response

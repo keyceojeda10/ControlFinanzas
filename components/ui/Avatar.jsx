@@ -53,6 +53,8 @@ export default function Avatar({ nombre, fotoUrl, avatarId, size = 40, fontSize,
         src={fotoUrl}
         alt={nombre || ''}
         onClick={onClick}
+        loading="lazy"
+        decoding="async"
         className={`rounded-full object-cover shrink-0 ${onClick ? 'cursor-pointer' : ''} ${className}`}
         style={{ width: px, height: px, minWidth: px, ...extraStyle }}
       />

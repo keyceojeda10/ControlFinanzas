@@ -10,8 +10,8 @@ export function useOffline() {
   return useContext(OfflineContext)
 }
 
-const MUTATION_SYNC_DELAY = 3000 // 3s after a mutation
-const MIN_AUTO_SYNC_GAP_MS = 20_000
+const MUTATION_SYNC_DELAY  = 3000  // 3s after a mutation
+const MIN_AUTO_SYNC_GAP_MS = 60_000 // gap mínimo entre syncs completos (era 20s, subido a 60s)
 
 export default function OfflineProvider({ children }) {
   const [isOnline, setIsOnline]         = useState(true)
@@ -149,6 +149,19 @@ export default function OfflineProvider({ children }) {
     } catch { /* ignore */ }
   }, [])
 
+  // Solo sube pendientes al servidor — sin descargar datos (para visibility/focus)
+  // NOTA: debe estar despues de refreshPending para evitar referencia a const no inicializada
+  const syncPendingOnly = useCallback(async () => {
+    if (!navigator.onLine) return
+    try {
+      await sincronizarCreaciones()
+      await sincronizarMutaciones()
+      await sincronizarPagos()
+      await sincronizarOrdenes()
+    } catch { /* silent */ }
+    refreshPending()
+  }, [refreshPending])
+
   const descartarPagoFallido = useCallback(async (id) => {
     await eliminarPagoFallido(id)
     refreshPending()
@@ -259,7 +272,7 @@ export default function OfflineProvider({ children }) {
 
   useEffect(() => {
     refreshPending()
-    const interval = setInterval(refreshPending, 10000)
+    const interval = setInterval(refreshPending, 30000) // era 10s, subido a 30s
     return () => clearInterval(interval)
   }, [refreshPending])
 
@@ -305,17 +318,18 @@ export default function OfflineProvider({ children }) {
       requestAutoSync()
     }, 90 * 1000)
 
-    // Sync when user returns to the tab/app (e.g. from WhatsApp, another tab)
+    // Al volver a la pestaña/app: solo subir pendientes (rápido).
+    // El sync completo (descarga) lo hace el intervalo periódico cada 90s.
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
-        requestAutoSync()
+        syncPendingOnly()
       }
     }
     document.addEventListener('visibilitychange', handleVisibility)
 
-    // Sync when window regains focus (covers PWA returning from background)
+    // Focus cubre PWA volviendo de background — igual, solo subir pendientes
     const handleFocus = () => {
-      requestAutoSync()
+      syncPendingOnly()
     }
     window.addEventListener('focus', handleFocus)
 
@@ -325,7 +339,7 @@ export default function OfflineProvider({ children }) {
       document.removeEventListener('visibilitychange', handleVisibility)
       window.removeEventListener('focus', handleFocus)
     }
-  }, [requestAutoSync])
+  }, [requestAutoSync, syncPendingOnly])
 
   // ─── MUTATION SYNC: detect POST/PUT/DELETE to /api/ and re-sync ───
   useEffect(() => {

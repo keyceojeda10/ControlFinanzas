@@ -26,6 +26,8 @@ async function bloquearSiVencida() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.organizationId) return
   if (session.user.rol === 'superadmin') return
+  // Cobradores no tienen suscripción propia — saltamos la query DB en cada request
+  if (session.user.rol === 'cobrador') return
 
   const hdrs = await headers()
   const pathname = hdrs.get('x-invoke-path') || hdrs.get('x-pathname') || ''
