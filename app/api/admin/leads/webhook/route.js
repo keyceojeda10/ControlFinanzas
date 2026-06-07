@@ -8,9 +8,6 @@ import { procesarNuevoLead } from '@/lib/bot/bridge'
 const VERIFY_TOKEN = process.env.FB_LEADS_VERIFY_TOKEN
 const FB_APP_SECRET = process.env.FB_APP_SECRET
 
-// Lock en memoria para evitar procesamiento concurrente del mismo leadgenId
-const processingLeads = new Set()
-
 // Facebook webhook verification (GET)
 export async function GET(request) {
   if (!VERIFY_TOKEN) {
@@ -90,7 +87,7 @@ export async function POST(request) {
 
         console.log('[Leads] Webhook recibido - leadgen_id:', leadgenId)
 
-        processLead(leadgenId, adId, createdTime).catch(err => {
+        _processLeadInternal(leadgenId, adId, createdTime).catch(err => {
           console.error('[Leads] Error procesando lead:', err)
         })
       }
@@ -100,21 +97,6 @@ export async function POST(request) {
   } catch (error) {
     console.error('[Webhook leads]', error)
     return NextResponse.json({ status: 'ok' })
-  }
-}
-
-async function processLead(leadgenId, adId, createdTime) {
-  // Lock: si ya se está procesando este leadgenId, ignorar
-  if (leadgenId && processingLeads.has(leadgenId)) {
-    console.log('[Leads] leadgenId ya en proceso, ignorando duplicado:', leadgenId)
-    return
-  }
-  if (leadgenId) processingLeads.add(leadgenId)
-
-  try {
-    await _processLeadInternal(leadgenId, adId, createdTime)
-  } finally {
-    if (leadgenId) processingLeads.delete(leadgenId)
   }
 }
 
@@ -143,36 +125,55 @@ async function _processLeadInternal(leadgenId, adId, createdTime) {
   // Guardar en DB con protección contra duplicados exactos (mismo leadgenId)
   let lead = null
   let esRetorno = false
+  let yaNotificado = false
   try {
-    // Dedup estricto: solo por leadgenId (el mismo evento exacto)
-    if (leadgenId) {
-      const existsLg = await prisma.lead.findFirst({ where: { notas: { contains: leadgenId } } })
-      if (existsLg) {
-        console.log('[Leads] Lead duplicado (leadgenId), ignorando:', nombre, leadgenId)
-        return
+    // Crear de forma atomica con leadgenId unico: el constraint @unique en
+    // Lead.leadgenId es quien arbitra la concurrencia entre workers del
+    // cluster PM2 y reintentos de Facebook (los locks en memoria no sirven
+    // porque cada worker tiene su propio proceso/heap). Si dos requests
+    // llegan en paralelo para el mismo leadgen_id, solo uno logra el create();
+    // el otro recibe P2002, recupera el lead ya creado y NO vuelve a notificar
+    // ni a disparar el bot — asi se evita el doble mensaje al lead.
+    const notasJson = JSON.stringify({ leadgen_id: leadgenId, metodoActual, planInteres, consent })
+    try {
+      lead = await prisma.lead.create({
+        data: { nombre, telefono, leadgenId: leadgenId || undefined, cantClientes, esPrestamista, anuncioId: adId, notas: notasJson }
+      })
+      console.log('[Leads] Guardado en DB:', nombre, telefono)
+    } catch (createErr) {
+      if (createErr.code === 'P2002' && leadgenId) {
+        const existsLg = await prisma.lead.findUnique({ where: { leadgenId } })
+        if (existsLg) {
+          console.log('[Leads] Lead duplicado (leadgenId), ignorando notificacion repetida:', nombre, leadgenId)
+          yaNotificado = true
+          lead = existsLg
+        } else {
+          throw createErr
+        }
+      } else {
+        throw createErr
       }
     }
 
-    // Verificar si el teléfono ya existe (lead que vuelve a llenar formulario)
-    if (telefono) {
-      const exists = await prisma.lead.findFirst({ where: { telefono } })
-      if (exists) {
+    // Verificar retorno (mismo telefono, leadgen_id distinto = volvio a llenar el form)
+    if (!yaNotificado && telefono) {
+      const previo = await prisma.lead.findFirst({
+        where: { telefono, id: { not: lead.id } },
+        orderBy: { createdAt: 'desc' },
+      })
+      if (previo) {
         esRetorno = true
-        lead = exists
         console.log('[Leads] Lead RETORNO detectado:', nombre, telefono, '- volvió a llenar formulario')
       }
     }
-
-    if (!lead) {
-      const notasJson = JSON.stringify({ leadgen_id: leadgenId, metodoActual, planInteres, consent })
-      lead = await prisma.lead.create({
-        data: { nombre, telefono, cantClientes, esPrestamista, anuncioId: adId, notas: notasJson }
-      })
-      console.log('[Leads] Guardado en DB:', nombre, telefono)
-    }
   } catch (dbErr) {
     console.error('[Leads] DB error:', dbErr.message)
+    return
   }
+
+  // Si el leadgen_id ya existia, otro worker/intento ya proceso este evento
+  // por completo (Telegram + bot). No repetir nada.
+  if (yaNotificado) return
 
   // Enviar Telegram con botones interactivos
   const messageId = await sendLeadNotification(

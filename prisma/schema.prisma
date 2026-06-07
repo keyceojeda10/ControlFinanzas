@@ -622,6 +622,7 @@ model Lead {
   id                    String    @id @default(cuid())
   nombre                String
   telefono              String
+  leadgenId             String?   @unique
   cantClientes          String?
   anuncioId             String?
   estado                String    @default("nuevo")
@@ -681,7 +682,7 @@ model BotLead {
   organization   Organization?     @relation(fields: [organizationId], references: [id])
   conversaciones BotConversacion[]
 
-  @@index([telefono])
+  @@unique([telefono])
   @@index([estado])
   @@index([cfLeadId])
   @@index([organizationId])

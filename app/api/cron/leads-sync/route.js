@@ -48,31 +48,35 @@ export async function POST(req) {
 
       if (nombre.includes('test lead') || nombre.includes('dummy')) continue
 
-      // Dedup por leadgen_id primero
-      const existsLg = await prisma.lead.findFirst({ where: { notas: { contains: fbLead.id } } })
-      if (existsLg) continue
-
-      // Dedup por teléfono
-      if (telefono) {
-        const exists = await prisma.lead.findFirst({ where: { telefono } })
-        if (exists) continue
-      }
-
+      // Crear de forma atomica con leadgenId unico: el constraint @unique en
+      // Lead.leadgenId es quien arbitra la concurrencia entre este cron y el
+      // webhook (ambos pueden procesar el mismo lead en paralelo). Si el
+      // create() choca contra un registro existente, ya fue procesado por el
+      // webhook (o por una corrida previa de este cron) — no notificar de nuevo.
+      let lead
       try {
         const notasJson = JSON.stringify({ leadgen_id: fbLead.id, metodoActual, planInteres, consent })
-        const lead = await prisma.lead.create({
+        lead = await prisma.lead.create({
           data: {
             nombre,
             telefono,
+            leadgenId: fbLead.id || undefined,
             cantClientes,
             esPrestamista,
             anuncioId: 'fb_sync',
             notas: notasJson,
           }
         })
-        console.log('[Leads Sync] Nuevo lead guardado:', nombre, telefono)
-        nuevos++
+      } catch (createErr) {
+        if (createErr.code === 'P2002') continue // ya existe (leadgenId o telefono unico) — no duplicar
+        console.error('[Leads Sync] DB error:', createErr.message)
+        continue
+      }
 
+      console.log('[Leads Sync] Nuevo lead guardado:', nombre, telefono)
+      nuevos++
+
+      try {
         // Enviar Telegram con botones interactivos
         const createdTime = fbLead.created_time
           ? Math.floor(new Date(fbLead.created_time).getTime() / 1000)
@@ -88,8 +92,8 @@ export async function POST(req) {
             data: { telegramMessageId: messageId },
           }).catch(() => {})
         }
-      } catch (dbErr) {
-        console.error('[Leads Sync] DB error:', dbErr.message)
+      } catch (notifErr) {
+        console.error('[Leads Sync] Error notificando:', notifErr.message)
       }
     }
 
