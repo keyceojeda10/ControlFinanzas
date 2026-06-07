@@ -22,10 +22,6 @@ import { guardarMedia } from '@/lib/bot/media-store'
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN
 const APP_SECRET = process.env.WHATSAPP_APP_SECRET
 
-// Lock para evitar procesamiento concurrente del mismo mensaje o lead
-const processingMessages = new Set()
-const processingLeads = new Set()
-
 const TIPOS_SOPORTADOS = new Set(['text', 'audio', 'image'])
 
 // --- GET: verificacion del webhook (Meta lo llama una vez al configurar) ---
@@ -134,32 +130,23 @@ async function procesarMensaje(msg) {
 
   if (!TIPOS_SOPORTADOS.has(tipo)) return
 
-  // Lock por messageId
-  if (messageId && processingMessages.has(messageId)) return
-  if (messageId) processingMessages.add(messageId)
-
-  try {
-    await _procesarMensajeInternal(msg, fromRaw, tipo, messageId)
-  } finally {
-    if (messageId) setTimeout(() => processingMessages.delete(messageId), 30000)
-  }
+  await _procesarMensajeInternal(msg, fromRaw, tipo, messageId)
 }
 
-async function _procesarMensajeInternal(msg, fromRaw, tipo, messageId) {
-  const telefono = await wa.resolverTelefono(fromRaw)
+// Resuelve (o crea) el BotLead para este numero de forma atomica. El
+// constraint @@unique([telefono]) en BotLead es quien arbitra la concurrencia
+// entre workers del cluster PM2 (Meta puede reentregar el mismo evento y un
+// segundo worker llegaria aqui con `lead === null` tambien). Si el create()
+// choca, recuperamos el registro que gano la carrera.
+async function resolverOCrearLead(telefono, fromRaw, msg) {
+  const existente = await buscarLeadPorTelefono(telefono || fromRaw)
+  if (existente) return existente
 
-  let lead = await buscarLeadPorTelefono(telefono || fromRaw)
-
-  // Si no es lead conocido, crear BotLead automaticamente. Cualquiera que
-  // escriba al numero del bot se vuelve lead y el bot le responde (el propio
-  // prompt filtra a los que no son prestamistas). Si viene de un anuncio CTWA
-  // (msg.referral) guardamos el anuncioId y entra mas "caliente".
-  if (!lead) {
-    const referral = msg.referral || null
-    const nombrePerfil = msg.profile_name || msg.from_name || ''
-    const desdeAnuncio = Boolean(referral)
-    console.log(`[WA Cloud] Lead nuevo${desdeAnuncio ? ' (CTWA ad: ' + (referral.source_id || 'unknown') + ')' : ' (directo)'}: ${fromRaw} (${telefono})`)
-    lead = await prisma.botLead.create({
+  const referral = msg.referral || null
+  const nombrePerfil = msg.profile_name || msg.from_name || ''
+  const desdeAnuncio = Boolean(referral)
+  try {
+    const lead = await prisma.botLead.create({
       data: {
         nombre: nombrePerfil || 'Lead WhatsApp',
         telefono: telefono || fromRaw,
@@ -169,31 +156,38 @@ async function _procesarMensajeInternal(msg, fromRaw, tipo, messageId) {
         fechaContacto: new Date(),
       },
     })
+    console.log(`[WA Cloud] Lead nuevo${desdeAnuncio ? ' (CTWA ad: ' + (referral.source_id || 'unknown') + ')' : ' (directo)'}: ${fromRaw} (${telefono})`)
+    return lead
+  } catch (e) {
+    if (e.code === 'P2002') {
+      return prisma.botLead.findUnique({ where: { telefono: telefono || fromRaw } })
+    }
+    throw e
   }
+}
 
-  // Dedup por messageId
-  if (messageId) {
-    const existe = await prisma.botConversacion.findFirst({
-      where: { messageId, rol: 'lead' },
-    })
-    if (existe) return
-  }
+async function _procesarMensajeInternal(msg, fromRaw, tipo, messageId) {
+  const telefono = await wa.resolverTelefono(fromRaw)
+  const lead = await resolverOCrearLead(telefono, fromRaw, msg)
+  if (!lead) return
 
   const botApagado = !lead.botActivo || lead.estado === 'cerrado'
 
-  // Lock por lead
-  if (processingLeads.has(lead.id)) {
-    for (let i = 0; i < 30; i++) {
-      await new Promise(r => setTimeout(r, 500))
-      if (!processingLeads.has(lead.id)) break
-    }
-  }
-  processingLeads.add(lead.id)
+  await _responderAlLead(msg, lead, tipo, messageId, botApagado)
+}
 
+// Inserta el mensaje entrante de forma atomica. El constraint @unique en
+// BotConversacion.messageId es el "claim" real: solo el primer worker que
+// logre el create() continua y responde; si otro worker recibe el mismo
+// evento reentregado por Meta, su create() choca con P2002 y sale en silencio
+// (evita el "doble saludo" — los locks en memoria no sirven en cluster mode).
+async function guardarEntranteAtomico(data) {
   try {
-    await _responderAlLead(msg, lead, tipo, messageId, botApagado)
-  } finally {
-    processingLeads.delete(lead.id)
+    await prisma.botConversacion.create({ data })
+    return true
+  } catch (e) {
+    if (e.code === 'P2002') return false
+    throw e
   }
 }
 
@@ -222,9 +216,7 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
       }).catch(() => {})
     }
     if (!trans.texto) {
-      await prisma.botConversacion.create({
-        data: { botLeadId: lead.id, rol: 'lead', texto: '[nota de voz]', tipoMensaje: 'audio', messageId, ...media },
-      })
+      await guardarEntranteAtomico({ botLeadId: lead.id, rol: 'lead', texto: '[nota de voz]', tipoMensaje: 'audio', messageId, ...media })
       return
     }
     texto = trans.texto
@@ -239,17 +231,15 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
     }
     if (msg.image?.caption) texto = msg.image.caption
     if (!imagenBase64) {
-      await prisma.botConversacion.create({
-        data: { botLeadId: lead.id, rol: 'lead', texto: texto || '[imagen no legible]', tipoMensaje: 'image', messageId, ...media },
-      })
+      await guardarEntranteAtomico({ botLeadId: lead.id, rol: 'lead', texto: texto || '[imagen no legible]', tipoMensaje: 'image', messageId, ...media })
       return
     }
   }
 
-  // Guardar mensaje entrante
-  await prisma.botConversacion.create({
-    data: { botLeadId: lead.id, rol: 'lead', texto, tipoMensaje, messageId, ...media },
-  })
+  // Guardar mensaje entrante. Si otro worker ya lo reclamo (mismo messageId
+  // reentregado por Meta), salimos en silencio: ese worker ya respondio.
+  const reclamado = await guardarEntranteAtomico({ botLeadId: lead.id, rol: 'lead', texto, tipoMensaje, messageId, ...media })
+  if (!reclamado) return
 
   // Marcar leido (no critico)
   wa.markRead(messageId).catch(() => {})

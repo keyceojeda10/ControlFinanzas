@@ -695,7 +695,7 @@ model BotConversacion {
   rol         String // "bot" | "lead" | "admin"
   texto       String   @db.Text
   tipoMensaje String   @default("chat") // "chat" | "audio" | "image" | "document" | "call"
-  messageId   String?
+  messageId   String?  @unique
   mediaPath   String? // ruta relativa del archivo en disco del VPS (uploads/wa/...)
   mediaTipo   String? // "image" | "audio" | "document"
   mediaMime   String? // mimetype original (image/jpeg, audio/ogg, ...)
