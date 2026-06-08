@@ -30,7 +30,8 @@ export default function BotLeadDetalle() {
   const [mensajes, setMensajes] = useState([])
   const [loading, setLoading] = useState(true)
   const chatRef = useRef(null)
-  const userScrolledUp = useRef(false)
+  const cargaInicial = useRef(true)
+  const scrollBloqueado = useRef(false)
 
   const cargar = useCallback(async () => {
     try {
@@ -63,13 +64,17 @@ export default function BotLeadDetalle() {
     return () => clearInterval(interval)
   }, [id])
 
-  // Auto-scroll solo si el usuario esta al fondo o es la carga inicial.
-  // Si subio a leer mensajes anteriores, no lo interrumpimos.
   useEffect(() => {
     const el = chatRef.current
-    if (!el) return
-    const alFondo = el.scrollHeight - el.scrollTop - el.clientHeight < 80
-    if (!userScrolledUp.current || alFondo) {
+    if (!el || mensajes.length === 0) return
+    if (cargaInicial.current) {
+      // Primera carga: ir al fondo sin condicion
+      el.scrollTop = el.scrollHeight
+      cargaInicial.current = false
+      return
+    }
+    // Polling: solo scrollear si el usuario NO esta leyendo hacia arriba
+    if (!scrollBloqueado.current) {
       el.scrollTop = el.scrollHeight
     }
   }, [mensajes])
@@ -77,8 +82,9 @@ export default function BotLeadDetalle() {
   function handleScroll() {
     const el = chatRef.current
     if (!el) return
-    const alFondo = el.scrollHeight - el.scrollTop - el.clientHeight < 80
-    userScrolledUp.current = !alFondo
+    // Si el usuario subio mas de 80px del fondo -> bloquear auto-scroll
+    const distanciaAlFondo = el.scrollHeight - el.scrollTop - el.clientHeight
+    scrollBloqueado.current = distanciaAlFondo > 80
   }
 
   async function cambiarEstado(nuevoEstado) {
