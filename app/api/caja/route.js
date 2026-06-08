@@ -368,7 +368,7 @@ async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaj
   const whereGastosDia = {
     organizationId,
     fecha: { gte: inicio, lt: fin },
-    estado: 'aprobado',
+    estado: { in: ['pendiente', 'aprobado'] },
   }
   if (cobradorId) whereGastosDia.cobradorId = cobradorId
 

@@ -33,12 +33,13 @@ const fmtFecha = (fecha) => {
   })
 }
 
-export default function ReportarGasto({ open, onClose, onSuccess, fecha }) {
+export default function ReportarGasto({ open, onClose, onSuccess, fecha, cobradores = [] }) {
   const [tipo, setTipo] = useState('gasolina')
 
   const { formatMoney } = useCountry()
   const [monto, setMonto] = useState('')
   const [descripcion, setDescripcion] = useState('')
+  const [cobradorSeleccionado, setCobradorSeleccionado] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -53,6 +54,7 @@ export default function ReportarGasto({ open, onClose, onSuccess, fecha }) {
       description: desc,
       monto: m,
       ...(FECHA_REGEX.test(fecha || '') ? { fecha } : {}),
+      ...(cobradorSeleccionado ? { cobradorId: cobradorSeleccionado } : {}),
     }
 
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -105,6 +107,7 @@ export default function ReportarGasto({ open, onClose, onSuccess, fecha }) {
     setTipo('gasolina')
     setMonto('')
     setDescripcion('')
+    setCobradorSeleccionado('')
     setError('')
     onClose?.()
   }
@@ -147,6 +150,25 @@ export default function ReportarGasto({ open, onClose, onSuccess, fecha }) {
             value={descripcion}
             onChange={(e) => setDescripcion(e.target.value)}
           />
+        )}
+
+        {cobradores.length > 0 && (
+          <div>
+            <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em] mb-2">
+              Cobrador (opcional)
+            </p>
+            <select
+              value={cobradorSeleccionado}
+              onChange={(e) => setCobradorSeleccionado(e.target.value)}
+              className="w-full h-10 px-3 rounded-[10px] border text-sm bg-transparent focus:outline-none transition-all"
+              style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-primary)', background: 'var(--color-bg-card)' }}
+            >
+              <option value="">Mi gasto (sin cobrador)</option>
+              {cobradores.map((c) => (
+                <option key={c.id} value={c.id}>{c.nombre}</option>
+              ))}
+            </select>
+          </div>
         )}
 
         <Input

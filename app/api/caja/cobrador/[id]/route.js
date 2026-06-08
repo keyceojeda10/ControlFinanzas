@@ -140,8 +140,8 @@ export async function GET(request, { params }) {
       orderBy: { fechaPago: 'asc' },
     }),
     prisma.gastoMenor.findMany({
-      where: { organizationId, cobradorId, estado: 'aprobado', fecha: { gte: inicio, lt: fin } },
-      select: { monto: true, description: true, fecha: true },
+      where: { organizationId, cobradorId, estado: { in: ['pendiente', 'aprobado'] }, fecha: { gte: inicio, lt: fin } },
+      select: { monto: true, description: true, fecha: true, estado: true },
       orderBy: { fecha: 'asc' },
     }),
     getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId),
@@ -251,5 +251,11 @@ export async function GET(request, { params }) {
     },
     porRuta,
     movimientos,
+    gastos: gastos.map((g) => ({
+      description: g.description,
+      monto: Math.round(g.monto || 0),
+      fecha: g.fecha,
+      estado: g.estado,
+    })),
   })
 }

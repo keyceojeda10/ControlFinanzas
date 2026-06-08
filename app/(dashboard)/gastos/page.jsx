@@ -215,6 +215,7 @@ export default function GastosPage() {
         onClose={() => setShowReportarGasto(false)}
         onSuccess={() => { setShowReportarGasto(false); fetchGastos() }}
         fecha={fecha || undefined}
+        cobradores={cobradores}
       />
 
       {/* Banner explicativo (colapsable) */}

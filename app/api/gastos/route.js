@@ -110,7 +110,7 @@ export async function POST(req) {
   }
 
   const body = await req.json()
-  const { description, monto, fecha } = body
+  const { description, monto, fecha, cobradorId: cobradorIdBody } = body
 
   if (!description?.trim()) {
     return NextResponse.json({ error: 'La descripción es requerida' }, { status: 400 })
@@ -136,12 +136,25 @@ export async function POST(req) {
     return NextResponse.json({ error: 'Solo puedes reportar gastos de hoy o ayer' }, { status: 403 })
   }
 
+  // El cobrador siempre queda como sí mismo. El owner puede asignar a un cobrador.
+  let cobradorIdFinal = null
+  if (session.user.rol === 'cobrador') {
+    cobradorIdFinal = session.user.id
+  } else if (session.user.rol === 'owner' && cobradorIdBody) {
+    // Validar que el cobrador pertenezca a la misma organización
+    const cobExiste = await prisma.user.findFirst({
+      where: { id: cobradorIdBody, organizationId: session.user.organizationId, rol: 'cobrador' },
+      select: { id: true },
+    })
+    if (cobExiste) cobradorIdFinal = cobExiste.id
+  }
+
   const gasto = await prisma.gastoMenor.create({
     data: {
       description: description.trim(),
       monto: Number(monto),
       fecha: new Date(fechaSolicitada + 'T12:00:00-05:00'),
-      cobradorId: session.user.rol === 'cobrador' ? session.user.id : null,
+      cobradorId: cobradorIdFinal,
       organizationId: session.user.organizationId,
     },
   })

@@ -20,10 +20,17 @@ const MOV_CONFIG = {
   gasto:    { label: 'Gasto',    color: 'var(--color-danger)',  signo: '-' },
 }
 
+const GASTO_ESTADO_COLORS = {
+  pendiente: 'var(--color-warning)',
+  aprobado:  'var(--color-success)',
+  rechazado: 'var(--color-danger)',
+}
+
 export default function CajaCobradorDetalle({ data }) {
   const r = data?.resumen || {}
   const movimientos = data?.movimientos || []
   const porRuta = data?.porRuta || []
+  const gastos = data?.gastos || []
 
   return (
     <div className="space-y-4">
@@ -75,6 +82,30 @@ export default function CajaCobradorDetalle({ data }) {
                 </div>
               </div>
             ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Gastos del día */}
+      {gastos.length > 0 && (
+        <Card>
+          <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Gastos del día</h2>
+          <div className="space-y-1.5">
+            {gastos.map((g, i) => {
+              const color = GASTO_ESTADO_COLORS[g.estado] || 'var(--color-warning)'
+              return (
+                <div key={i} className="flex items-center justify-between gap-2 py-2 border-b border-[var(--color-border)] last:border-0">
+                  <div className="min-w-0">
+                    <p className="text-xs text-[var(--color-text-primary)] truncate">{g.description}</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-[10px] font-semibold" style={{ color }}>{g.estado}</span>
+                      <span className="text-[10px] text-[var(--color-text-muted)]">{fmtHora(g.fecha)}</span>
+                    </div>
+                  </div>
+                  <span className="text-sm font-semibold font-mono-display shrink-0 text-[var(--color-danger)]">-{formatMoney(g.monto)}</span>
+                </div>
+              )
+            })}
           </div>
         </Card>
       )}
