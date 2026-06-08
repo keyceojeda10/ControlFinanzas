@@ -147,6 +147,8 @@ function ChatPanel({ lead, onBack, onUpdate }) {
   const fileRef = useRef(null)
   const mediaRecRef = useRef(null)
   const cancelarRef = useRef(false)
+  const cargaInicial = useRef(true)
+  const scrollBloqueado = useRef(false)
 
   const cargar = useCallback(() => {
     fetch(`/api/admin/whatsapp-bot/leads/${lead.id}/conversacion`)
@@ -158,14 +160,31 @@ function ChatPanel({ lead, onBack, onUpdate }) {
   useEffect(() => {
     setBotActivo(lead.botActivo)
     setAviso('')
+    cargaInicial.current = true
+    scrollBloqueado.current = false
     cargar()
     const t = setInterval(cargar, 6000)
     return () => clearInterval(t)
   }, [lead.id, lead.botActivo, cargar])
 
   useEffect(() => {
-    if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight
+    const el = chatRef.current
+    if (!el || mensajes.length === 0) return
+    if (cargaInicial.current) {
+      el.scrollTop = el.scrollHeight
+      cargaInicial.current = false
+      return
+    }
+    if (!scrollBloqueado.current) {
+      el.scrollTop = el.scrollHeight
+    }
   }, [mensajes])
+
+  function handleChatScroll() {
+    const el = chatRef.current
+    if (!el) return
+    scrollBloqueado.current = (el.scrollHeight - el.scrollTop - el.clientHeight) > 80
+  }
 
   async function toggleBot() {
     const nuevo = !botActivo
@@ -298,7 +317,7 @@ function ChatPanel({ lead, onBack, onUpdate }) {
       </div>
 
       {/* Mensajes */}
-      <div ref={chatRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-2 bg-[rgba(0,0,0,0.15)]">
+      <div ref={chatRef} onScroll={handleChatScroll} className="flex-1 overflow-y-auto px-3 py-3 space-y-2 bg-[rgba(0,0,0,0.15)]">
         {mensajes.map(m => <Burbuja key={m.id} m={m} leadId={lead.id} />)}
         {mensajes.length === 0 && <p className="text-center text-sm text-[var(--color-text-muted)] mt-6">Sin mensajes aun</p>}
       </div>
