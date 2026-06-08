@@ -30,6 +30,7 @@ export default function BotLeadDetalle() {
   const [mensajes, setMensajes] = useState([])
   const [loading, setLoading] = useState(true)
   const chatRef = useRef(null)
+  const userScrolledUp = useRef(false)
 
   const cargar = useCallback(async () => {
     try {
@@ -62,12 +63,23 @@ export default function BotLeadDetalle() {
     return () => clearInterval(interval)
   }, [id])
 
-  // Auto scroll al fondo
+  // Auto-scroll solo si el usuario esta al fondo o es la carga inicial.
+  // Si subio a leer mensajes anteriores, no lo interrumpimos.
   useEffect(() => {
-    if (chatRef.current) {
-      chatRef.current.scrollTop = chatRef.current.scrollHeight
+    const el = chatRef.current
+    if (!el) return
+    const alFondo = el.scrollHeight - el.scrollTop - el.clientHeight < 80
+    if (!userScrolledUp.current || alFondo) {
+      el.scrollTop = el.scrollHeight
     }
   }, [mensajes])
+
+  function handleScroll() {
+    const el = chatRef.current
+    if (!el) return
+    const alFondo = el.scrollHeight - el.scrollTop - el.clientHeight < 80
+    userScrolledUp.current = !alFondo
+  }
 
   async function cambiarEstado(nuevoEstado) {
     try {
@@ -230,7 +242,7 @@ export default function BotLeadDetalle() {
         <div className="px-4 py-2.5 border-b border-[var(--color-border)]">
           <h2 className="text-sm font-semibold text-[white]">Conversacion ({mensajes.length})</h2>
         </div>
-        <div ref={chatRef} className="p-4 space-y-3 max-h-[500px] overflow-y-auto">
+        <div ref={chatRef} onScroll={handleScroll} className="p-4 space-y-3 max-h-[500px] overflow-y-auto">
           {mensajes.map(msg => {
             const esBot = msg.rol === 'bot'
             return (
