@@ -7,21 +7,13 @@ import { sendConversionEvent } from '@/lib/facebook-capi'
 import { registroLimiter, getClientIp } from '@/lib/rate-limit'
 import { PLANES_VALIDOS } from '@/lib/planes'
 import { COUNTRY_CODES, getCountryConfig, validatePhone } from '@/lib/i18n'
+import { normalizarEmail } from '@/lib/normalizar-email'
 
 function generarCodigoReferido() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
   let code = 'CF-'
   for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)]
   return code
-}
-
-// Normaliza email: minúsculas + elimina puntos antes del @ (previene duplicados tipo Gmail)
-function normalizarEmail(email) {
-  const lower = email.trim().toLowerCase()
-  const [local, domain] = lower.split('@')
-  if (!domain) return lower
-  // Quitar puntos solo en la parte local (antes del @)
-  return `${local.replace(/\./g, '')}@${domain}`
 }
 
 export async function POST(req) {

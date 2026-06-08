@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { enviarEmail, emailVerificacion } from '@/lib/email'
 import { rateLimit, getClientIp } from '@/lib/rate-limit'
+import { normalizarEmail } from '@/lib/normalizar-email'
 
 const reenvioLimiter = rateLimit('reenvio-verificacion', 3, 60 * 60 * 1000) // 3/hora
 
@@ -15,7 +16,7 @@ export async function POST(req) {
     const { email } = await req.json()
     if (!email) return NextResponse.json({ error: 'Email requerido' }, { status: 400 })
 
-    const emailNorm = email.trim().toLowerCase()
+    const emailNorm = normalizarEmail(email)
     const user = await prisma.user.findUnique({ where: { email: emailNorm } })
 
     // Responder siempre OK para no filtrar si el email existe

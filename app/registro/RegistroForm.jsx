@@ -10,6 +10,7 @@ import AuthButton              from '@/components/auth/AuthButton'
 import { getCountryConfig, validatePhone, formatMoney } from '@/lib/i18n'
 import { getCountryList } from '@/lib/countries'
 import { getPrecioPlan } from '@/lib/planes'
+import { normalizarEmail } from '@/lib/normalizar-email'
 
 const PAISES = getCountryList()
 
@@ -248,14 +249,14 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
       const res = await fetch('/api/auth/verificar-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: form.email.trim().toLowerCase(), codigo }),
+        body: JSON.stringify({ email: normalizarEmail(form.email), codigo }),
       })
       const data = await res.json()
       if (!res.ok) { setOtpError(data.error || 'Codigo invalido'); setOtpLoading(false); return }
 
       // Verificado — hacer login y entrar al dashboard
       const login = await signIn('credentials', {
-        email: form.email.trim().toLowerCase(),
+        email: normalizarEmail(form.email),
         password: form.password,
         redirect: false,
       })
@@ -272,7 +273,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
   const handleSaltarVerificacion = async () => {
     setOtpLoading(true)
     const login = await signIn('credentials', {
-      email: form.email.trim().toLowerCase(),
+      email: normalizarEmail(form.email),
       password: form.password,
       redirect: false,
     })
@@ -288,7 +289,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
       await fetch('/api/auth/reenviar-verificacion', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: form.email.trim().toLowerCase() }),
+        body: JSON.stringify({ email: normalizarEmail(form.email) }),
       })
       setOtpReenviado(true)
       setOtpDigits(['', '', '', '', '', ''])
@@ -681,7 +682,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                 Enviamos un codigo de 6 digitos a
               </p>
               <p className="text-[14px] font-semibold mb-6" style={{ color: '#f5c518' }}>
-                {form.email.trim().toLowerCase()}
+                {normalizarEmail(form.email)}
               </p>
 
               {/* Error */}
