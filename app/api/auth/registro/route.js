@@ -64,16 +64,29 @@ export async function POST(req) {
     // Normalizar email (elimina puntos antes del @ para prevenir duplicados tipo Gmail)
     const emailNorm = normalizarEmail(email)
 
-    // Verificar email único (con email normalizado)
-    const existente = await prisma.user.findUnique({ where: { email: emailNorm } })
+    // Verificar email único. Si ya existe pero NO está verificado → eliminar y permitir re-registro
+    const existente = await prisma.user.findUnique({
+      where: { email: emailNorm },
+      select: { id: true, emailVerificado: true, organizationId: true, createdAt: true },
+    })
     if (existente) {
-      return NextResponse.json({ success: false, error: 'Este email ya está registrado' }, { status: 400 })
+      const horasDesdeRegistro = (Date.now() - new Date(existente.createdAt).getTime()) / (1000 * 60 * 60)
+      if (!existente.emailVerificado && horasDesdeRegistro < 48) {
+        // Cuenta fantasma (registrada pero nunca verificada en menos de 48h) → limpiar
+        await prisma.$transaction([
+          prisma.suscripcion.deleteMany({ where: { organizationId: existente.organizationId } }),
+          prisma.user.delete({ where: { id: existente.id } }),
+          prisma.organization.delete({ where: { id: existente.organizationId } }),
+        ])
+      } else {
+        return NextResponse.json({ success: false, error: 'Este email ya está registrado' }, { status: 400 })
+      }
     }
 
     // Verificar unicidad de teléfono entre owners (solo si se proporcionó)
     if (telefonoLimpio) {
       const ownerConMismoTel = await prisma.user.findFirst({
-        where: { telefono: telefonoLimpio, rol: 'owner' },
+        where: { telefono: telefonoLimpio, rol: 'owner', emailVerificado: true },
         select: { id: true },
       })
       if (ownerConMismoTel) {
