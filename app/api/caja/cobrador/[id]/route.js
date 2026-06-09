@@ -14,9 +14,13 @@ const TIPOS_AJUSTE_PAGO = ['recargo', 'descuento']
 // Lista deduplicada de préstamos que el cobrador entregó en el día, con cliente,
 // monto REAL desembolsado (no montoPrestado, porque en renovaciones el monto del
 // MovimientoCapital ya descuenta el saldo absorbido), ruta y hora.
-async function getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId) {
+// rutaIds: IDs de las rutas activas del cobrador (para capturar desembolsos hechos
+// por el owner en nombre del cobrador — en esos casos creadoPorId es el owner, no el cobrador).
+async function getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId, rutaIds = []) {
   // Fuente primaria: MovimientoCapital de tipo desembolso — tiene el monto real.
   // En renovaciones = diferencia entregada en mano; en préstamos nuevos = montoPrestado.
+  // Busca por creadoPorId (cobrador creó) OR rutaId (movimiento pertenece a su ruta,
+  // aunque lo haya creado el owner).
   const [movimientos, prestamosRutaDia] = await Promise.all([
     prisma.movimientoCapital.findMany({
       where: {
@@ -24,7 +28,10 @@ async function getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId
         tipo: 'desembolso',
         createdAt: { gte: inicio, lt: fin },
         referenciaTipo: 'prestamo',
-        creadoPorId: cobradorId,
+        OR: [
+          { creadoPorId: cobradorId },
+          ...(rutaIds.length > 0 ? [{ rutaId: { in: rutaIds } }] : []),
+        ],
       },
       select: { referenciaId: true, monto: true, rutaId: true, createdAt: true },
     }),
@@ -126,12 +133,16 @@ export async function GET(request, { params }) {
     return Response.json({ error: 'Cobrador no encontrado' }, { status: 404 })
   }
 
-  const [rutas, cobros, gastos, desembolsos, cierre, recargos] = await Promise.all([
-    prisma.ruta.findMany({
-      where: { cobradorId, organizationId, activo: true },
-      select: { id: true, nombre: true, saldoCapital: true },
-      orderBy: { orden: 'asc' },
-    }),
+  // Obtener rutas primero para pasarlas a getDesembolsosCobradorDia y capturar
+  // desembolsos hechos por el owner en rutas del cobrador (creadoPorId = owner).
+  const rutas = await prisma.ruta.findMany({
+    where: { cobradorId, organizationId, activo: true },
+    select: { id: true, nombre: true, saldoCapital: true },
+    orderBy: { orden: 'asc' },
+  })
+  const rutaIds = rutas.map((r) => r.id)
+
+  const [cobros, gastos, desembolsos, cierre, recargos] = await Promise.all([
     // Cobros del día: pagos reales (excluye ajustes) hechos por el cobrador.
     prisma.pago.findMany({
       where: {
@@ -157,7 +168,7 @@ export async function GET(request, { params }) {
       select: { monto: true, description: true, fecha: true, estado: true },
       orderBy: { fecha: 'asc' },
     }),
-    getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId),
+    getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId, rutaIds),
     prisma.cierreCaja.findFirst({
       where: { organizationId, cobradorId, fecha: { gte: inicio, lt: fin } },
       select: { id: true },
