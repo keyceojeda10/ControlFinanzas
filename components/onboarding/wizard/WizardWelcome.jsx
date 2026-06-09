@@ -1,5 +1,7 @@
 'use client'
 
+import { useRef } from 'react'
+
 const FEATURES = [
   {
     icon: (
@@ -62,6 +64,20 @@ const FEATURES = [
 
 export default function WizardWelcome({ nombre, onNext, onDismiss }) {
   const firstName = nombre ? nombre.split(' ')[0] : null
+  const sliderRef = useRef(null)
+  const drag = useRef({ active: false, startX: 0, scrollLeft: 0 })
+
+  const onMouseDown = (e) => {
+    drag.current = { active: true, startX: e.pageX - sliderRef.current.offsetLeft, scrollLeft: sliderRef.current.scrollLeft }
+    sliderRef.current.style.cursor = 'grabbing'
+  }
+  const onMouseUp = () => { drag.current.active = false; if (sliderRef.current) sliderRef.current.style.cursor = 'grab' }
+  const onMouseMove = (e) => {
+    if (!drag.current.active) return
+    e.preventDefault()
+    const x = e.pageX - sliderRef.current.offsetLeft
+    sliderRef.current.scrollLeft = drag.current.scrollLeft - (x - drag.current.startX) * 1.2
+  }
 
   return (
     <div className="flex flex-col" style={{ minHeight: '82vh' }}>
@@ -89,8 +105,15 @@ export default function WizardWelcome({ nombre, onNext, onDismiss }) {
 
       {/* ── Feature strip (scroll horizontal) ── */}
       <div className="relative mb-7">
-        <div className="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <div
+          ref={sliderRef}
+          className="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory select-none"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', cursor: 'grab' }}
+          onMouseDown={onMouseDown}
+          onMouseUp={onMouseUp}
+          onMouseLeave={onMouseUp}
+          onMouseMove={onMouseMove}
+        >
           {FEATURES.map((f, i) => (
             <div key={i}
               className="snap-start shrink-0 rounded-[14px] p-4 flex flex-col"
