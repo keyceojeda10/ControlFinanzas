@@ -113,7 +113,7 @@ export async function GET(request, { params }) {
     return Response.json({ error: 'Cobrador no encontrado' }, { status: 404 })
   }
 
-  const [rutas, cobros, gastos, desembolsos, cierre] = await Promise.all([
+  const [rutas, cobros, gastos, desembolsos, cierre, recargos] = await Promise.all([
     prisma.ruta.findMany({
       where: { cobradorId, organizationId, activo: true },
       select: { id: true, nombre: true, saldoCapital: true },
@@ -149,6 +149,17 @@ export async function GET(request, { params }) {
       where: { organizationId, cobradorId, fecha: { gte: inicio, lt: fin } },
       select: { id: true },
     }),
+    // Recargos aplicados por el cobrador en el día
+    prisma.pago.aggregate({
+      where: {
+        cobradorId,
+        fechaPago: { gte: inicio, lt: fin },
+        tipo: 'recargo',
+        prestamo: { organizationId },
+      },
+      _sum: { montoPagado: true },
+      _count: { id: true },
+    }),
   ])
 
   // Totales del día.
@@ -157,6 +168,8 @@ export async function GET(request, { params }) {
   const gastosDia = Math.round(gastos.reduce((a, g) => a + (g.monto || 0), 0))
   const efectivoDia = cobradoDia - prestadoDia - gastosDia
   const capitalRutasTotal = Math.round(rutas.reduce((a, r) => a + (r.saldoCapital || 0), 0))
+  const recargosMontoTotal = Math.round(recargos._sum?.montoPagado || 0)
+  const recargosCantidad = recargos._count?.id || 0
 
   // Desglose por ruta: prestado / cobrado / seguros + saldoCapital de la ruta.
   // Los seguros se generan al crear el préstamo, así que se cuentan junto al desembolso.
@@ -248,6 +261,8 @@ export async function GET(request, { params }) {
       gastosDia,
       efectivoDia,
       capitalRutasTotal,
+      recargosMonto: recargosMontoTotal,
+      recargosCantidad,
     },
     porRuta,
     movimientos,

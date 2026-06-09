@@ -47,6 +47,7 @@ export default function CajaCobradorDetalle({ data }) {
           { label: 'Prestado', valor: r.prestadoDia, color: 'var(--color-warning)', signo: '-' },
           { label: 'Gastos', valor: r.gastosDia, color: 'var(--color-danger)', signo: '-' },
           ...((r.segurosDia || 0) > 0 ? [{ label: 'Seguros', valor: r.segurosDia, color: '#6366f1' }] : []),
+          ...((r.recargosCantidad || 0) > 0 ? [{ label: `Recargos (${r.recargosCantidad})`, valor: r.recargosMonto, color: '#f97316' }] : []),
           { label: 'Capital en ruta', valor: r.capitalRutasTotal, color: 'var(--color-info)' },
         ]}
       />
