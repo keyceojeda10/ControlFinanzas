@@ -97,8 +97,16 @@ export default function WizardExito({ cliente, prestamo, modoDemo, onFinish }) {
   const labelCuota = LABEL_FREQ[prestamo?.frecuencia] ?? 'Cuota'
   const nextSteps = modoDemo ? NEXT_STEPS_DEMO : NEXT_STEPS_REAL
 
-  // Cleanup automático demo en background al montar
+  // Al montar la pantalla de éxito: marcar onboarding completado (siempre)
+  // y en modo demo también borrar los datos de prueba
   useEffect(() => {
+    // Siempre marcar como completado para que no vuelva a aparecer el wizard
+    fetch('/api/onboarding/progreso', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'dismiss' }),
+    }).catch(() => {})
+
     if (!modoDemo || !cliente?.id) return
     setLimpiando(true)
     fetch('/api/onboarding/demo-cleanup', {
@@ -194,7 +202,7 @@ export default function WizardExito({ cliente, prestamo, modoDemo, onFinish }) {
                 <p className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>{s.titulo}</p>
                 <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{s.desc}</p>
               </div>
-              <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="#33334a" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="var(--color-text-muted)" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </Link>

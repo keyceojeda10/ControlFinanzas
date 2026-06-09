@@ -224,7 +224,7 @@ export default function WizardPrestamo({ cliente, onComplete, modoDemo = false }
                   className="h-9 rounded-[10px] border text-[12px] font-medium transition-all cursor-pointer"
                   style={frecuencia === f.value
                     ? { background: 'rgba(245,197,24,0.15)', border: '1px solid #f5c518', color: '#f5c518' }
-                    : { background: 'transparent', border: '1px solid #222230', color: '#666680' }
+                    : { background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }
                   }>
                   {f.label}
                 </button>
@@ -265,11 +265,11 @@ export default function WizardPrestamo({ cliente, onComplete, modoDemo = false }
                   className="w-full text-left rounded-[12px] p-4 transition-all cursor-pointer"
                   style={metodo === m.value
                     ? { background: m.bg, border: `1px solid ${m.color}55` }
-                    : { background: '#0f0f18', border: '1px solid #1e1e2e' }
+                    : { background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }
                   }>
                   <div className="flex items-start gap-2 mb-1">
                     <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: m.color }} />
-                    <p className="text-[13px] font-semibold" style={{ color: metodo === m.value ? m.color : '#ddddef' }}>
+                    <p className="text-[13px] font-semibold" style={{ color: metodo === m.value ? m.color : 'var(--color-text-primary)' }}>
                       {m.label}
                     </p>
                     {metodo === m.value && (

@@ -88,7 +88,7 @@ export default function WizardFeatures({ modoDemo, onNext }) {
 
       {/* Header */}
       <div className="text-center mb-6">
-        <h2 className="text-[22px] font-bold mb-2" style={{ color: '#f0f0f5', fontFamily: "Georgia, serif" }}>
+        <h2 className="text-[22px] font-bold mb-2" style={{ color: 'var(--color-text-primary)', fontFamily: "Georgia, serif" }}>
           Esto es lo que <em style={{ color: '#f5c518', fontStyle: 'italic' }}>también</em> puedes hacer
         </h2>
         <p className="text-[13px]" style={{ color: 'var(--color-text-muted)' }}>
