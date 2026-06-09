@@ -126,10 +126,10 @@ export default function WizardExito({ cliente, prestamo, modoDemo, onFinish }) {
           </div>
         </div>
 
-        <h1 className="text-[22px] font-bold mb-2 leading-tight" style={{ color: '#f0f0f5' }}>
+        <h1 className="text-[22px] font-bold mb-2 leading-tight" style={{ color: 'var(--color-text-primary)' }}>
           {modoDemo ? '¡Ya viste cómo funciona!' : '¡Tu primer préstamo está listo!'}
         </h1>
-        <p className="text-[13px] mb-6 max-w-[260px] mx-auto leading-relaxed" style={{ color: '#666680' }}>
+        <p className="text-[13px] mb-6 max-w-[260px] mx-auto leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
           {modoDemo
             ? 'Ahora sabes cómo crear clientes y préstamos. Los datos demo ya fueron borrados — tu cuenta está limpia.'
             : 'Tu cartera está activa. Estos son los próximos pasos para sacarle el máximo provecho.'}
@@ -145,8 +145,8 @@ export default function WizardExito({ cliente, prestamo, modoDemo, onFinish }) {
               { label: labelCuota,      value: formatMoney(prestamo.cuotaDiaria),     color: '#a78bfa' },
             ].map((k) => (
               <div key={k.label} className="rounded-[12px] px-3 py-3 text-left"
-                style={{ background: '#0f0f18', border: '1px solid #1e1e2e' }}>
-                <p className="text-[10px] mb-0.5" style={{ color: '#555570' }}>{k.label}</p>
+                style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+                <p className="text-[10px] mb-0.5" style={{ color: 'var(--color-text-muted)' }}>{k.label}</p>
                 <p className="text-[13px] font-bold truncate" style={{ color: k.color }}>{k.value}</p>
               </div>
             ))}
@@ -185,14 +185,14 @@ export default function WizardExito({ cliente, prestamo, modoDemo, onFinish }) {
           {nextSteps.map((s) => (
             <Link key={s.href} href={s.href}
               className="w-full flex items-center gap-3 rounded-[12px] px-4 py-3 text-left transition-all"
-              style={{ background: '#0f0f18', border: '1px solid #1e1e2e' }}>
+              style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
               <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
                 style={{ background: s.bg, color: s.color }}>
                 {s.icon}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-semibold" style={{ color: '#e8e8f0' }}>{s.titulo}</p>
-                <p className="text-[10px]" style={{ color: '#555570' }}>{s.desc}</p>
+                <p className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>{s.titulo}</p>
+                <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{s.desc}</p>
               </div>
               <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="#33334a" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -208,7 +208,7 @@ export default function WizardExito({ cliente, prestamo, modoDemo, onFinish }) {
           style={{ background: '#f5c518', color: '#111' }}>
           Ir al dashboard
         </button>
-        <p className="text-[10px]" style={{ color: '#333348' }}>
+        <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
           Estas opciones también están en el menú lateral
         </p>
       </div>

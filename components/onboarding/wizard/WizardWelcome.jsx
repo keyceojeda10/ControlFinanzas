@@ -91,14 +91,14 @@ export default function WizardWelcome({ nombre, onNext, onDismiss }) {
         </div>
 
         <h1 className="text-[30px] font-bold leading-[1.15] mb-3"
-          style={{ color: '#f0f0f5', fontFamily: "Georgia, 'Times New Roman', serif" }}>
+          style={{ color: 'var(--color-text-primary)', fontFamily: "Georgia, 'Times New Roman', serif" }}>
           {firstName ? (
-            <>{firstName}, bienvenido a<br /><em style={{ color: '#f5c518', fontStyle: 'italic' }}>Control Finanzas</em></>
+            <>{firstName}, bienvenido a<br /><em style={{ color: 'var(--color-accent)', fontStyle: 'italic' }}>Control Finanzas</em></>
           ) : (
-            <>Bienvenido a<br /><em style={{ color: '#f5c518', fontStyle: 'italic' }}>Control Finanzas</em></>
+            <>Bienvenido a<br /><em style={{ color: 'var(--color-accent)', fontStyle: 'italic' }}>Control Finanzas</em></>
           )}
         </h1>
-        <p className="text-[13px] max-w-[260px] mx-auto leading-relaxed" style={{ color: '#7777a0' }}>
+        <p className="text-[13px] max-w-[260px] mx-auto leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
           La plataforma que usan más de 500 prestamistas en Colombia y LATAM para cobrar más y perder menos.
         </p>
       </div>
@@ -117,20 +117,20 @@ export default function WizardWelcome({ nombre, onNext, onDismiss }) {
           {FEATURES.map((f, i) => (
             <div key={i}
               className="snap-start shrink-0 rounded-[14px] p-4 flex flex-col"
-              style={{ width: '220px', background: '#0f0f18', border: '1px solid #1e1e2e' }}>
+              style={{ width: '220px', background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
               <div className="w-9 h-9 rounded-[9px] flex items-center justify-center mb-3"
                 style={{ background: f.bg, color: f.color }}>
                 {f.icon}
               </div>
-              <p className="text-[13px] font-semibold mb-1.5 leading-tight" style={{ color: '#e0e0f0' }}>{f.titulo}</p>
-              <p className="text-[12px] leading-relaxed" style={{ color: '#9090b0' }}>{f.desc}</p>
+              <p className="text-[13px] font-semibold mb-1.5 leading-tight" style={{ color: 'var(--color-text-primary)' }}>{f.titulo}</p>
+              <p className="text-[12px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>{f.desc}</p>
             </div>
           ))}
           {/* spacer */}
           <div className="shrink-0 w-1" />
         </div>
         <div className="absolute right-0 top-0 bottom-1 w-10 pointer-events-none"
-          style={{ background: 'linear-gradient(to right, transparent, #0d0d14)' }} />
+          style={{ background: 'linear-gradient(to right, transparent, var(--color-bg-base))' }} />
       </div>
 
       {/* ── Testimonial ── */}
@@ -140,10 +140,10 @@ export default function WizardWelcome({ nombre, onNext, onDismiss }) {
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0"
             style={{ background: 'linear-gradient(135deg,#f5c518,#f0a800)', color: '#111' }}>RT</div>
           <div>
-            <p className="text-[12px] italic leading-relaxed" style={{ color: '#aaaacc' }}>
+            <p className="text-[12px] italic leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
               "Pasamos de Excel a Control Finanzas y nuestra mora bajó del 14% al 5.2% en cuatro meses."
             </p>
-            <p className="text-[10px] mt-1" style={{ color: '#555570' }}>
+            <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
               Ricardo Tovar · Préstamos del Valle · 800+ clientes activos
             </p>
           </div>
@@ -152,7 +152,7 @@ export default function WizardWelcome({ nombre, onNext, onDismiss }) {
 
       {/* ── Modo selector ── */}
       <div className="flex-1 flex flex-col justify-end gap-3 pb-2">
-        <p className="text-center text-[11px] font-semibold uppercase tracking-widest" style={{ color: '#44445a' }}>
+        <p className="text-center text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--color-text-muted)' }}>
           ¿Cómo quieres empezar?
         </p>
 
@@ -171,11 +171,11 @@ export default function WizardWelcome({ nombre, onNext, onDismiss }) {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
-                <p className="text-[14px] font-bold" style={{ color: '#e8e8f0' }}>Explorar con datos demo</p>
+                <p className="text-[14px] font-bold" style={{ color: 'var(--color-text-primary)' }}>Explorar con datos demo</p>
                 <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
                   style={{ background: 'rgba(167,139,250,0.15)', color: '#a78bfa' }}>Recomendado</span>
               </div>
-              <p className="text-[11px] leading-relaxed" style={{ color: '#666680' }}>
+              <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
                 Usa datos de ejemplo. Al terminar se borran solos — tu cuenta queda limpia.
               </p>
             </div>
@@ -198,8 +198,8 @@ export default function WizardWelcome({ nombre, onNext, onDismiss }) {
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[14px] font-bold mb-0.5" style={{ color: '#e8e8f0' }}>Empezar con mi primer cliente real</p>
-              <p className="text-[11px] leading-relaxed" style={{ color: '#666680' }}>
+              <p className="text-[14px] font-bold mb-0.5" style={{ color: 'var(--color-text-primary)' }}>Empezar con mi primer cliente real</p>
+              <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
                 Registra un cliente de verdad. Ideal si ya tienes cartera lista para migrar.
               </p>
             </div>
@@ -212,7 +212,7 @@ export default function WizardWelcome({ nombre, onNext, onDismiss }) {
         <button
           onClick={onDismiss}
           className="mt-0.5 text-[11px] text-center w-full transition-colors cursor-pointer"
-          style={{ color: '#3e3e52' }}>
+          style={{ color: 'var(--color-text-muted)' }}>
           Ya conozco el sistema — ir al dashboard
         </button>
       </div>

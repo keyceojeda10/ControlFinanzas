@@ -74,10 +74,10 @@ export default function WizardCliente({ onComplete, modoDemo = false }) {
   return (
     <div className="max-w-md mx-auto">
       <div className="text-center mb-6">
-        <h2 className="text-xl font-bold mb-1" style={{ color: '#f0f0f5' }}>
+        <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--color-text-primary)' }}>
           {modoDemo ? 'Cliente de ejemplo' : 'Tu primer cliente'}
         </h2>
-        <p className="text-sm" style={{ color: '#666680' }}>
+        <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
           {modoDemo
             ? 'Datos pre-llenados. Puedes editarlos o dejarlos así.'
             : 'Piensa en el cliente que mejor conoces.'}
@@ -108,7 +108,7 @@ export default function WizardCliente({ onComplete, modoDemo = false }) {
         )}
 
         <div className="rounded-[16px] p-5 space-y-4"
-          style={{ background: '#0f0f18', border: '1px solid #1e1e2e' }}>
+          style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
           <Input
             label="Nombre completo"
             placeholder="Ej: Juan García"

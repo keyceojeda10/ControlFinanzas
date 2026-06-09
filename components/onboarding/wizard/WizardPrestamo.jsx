@@ -125,7 +125,7 @@ export default function WizardPrestamo({ cliente, onComplete, modoDemo = false }
     <div className="max-w-md mx-auto">
       {/* Header */}
       <div className="text-center mb-5">
-        <h2 className="text-xl font-bold mb-1.5" style={{ color: '#f0f0f5' }}>
+        <h2 className="text-xl font-bold mb-1.5" style={{ color: 'var(--color-text-primary)' }}>
           {modoDemo ? 'Préstamo de ejemplo' : 'Crea el préstamo'}
         </h2>
         <div className="flex items-center justify-center gap-2">
@@ -158,7 +158,7 @@ export default function WizardPrestamo({ cliente, onComplete, modoDemo = false }
         )}
 
         <div className="rounded-[16px] p-5 space-y-4"
-          style={{ background: '#0f0f18', border: '1px solid #1e1e2e' }}>
+          style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
 
           {/* Monto */}
           <Input
@@ -185,7 +185,7 @@ export default function WizardPrestamo({ cliente, onComplete, modoDemo = false }
                 onChange={(e) => setTasa(e.target.value)}
                 suffix="%"
               />
-              <p className="text-[10px] mt-1 px-0.5" style={{ color: '#555570' }}>20% mensual es lo más común</p>
+              <p className="text-[10px] mt-1 px-0.5" style={{ color: 'var(--color-text-muted)' }}>20% mensual es lo más común</p>
             </div>
             <div>
               <Input
@@ -207,14 +207,14 @@ export default function WizardPrestamo({ cliente, onComplete, modoDemo = false }
                 }
               />
               {frecuencia !== 'diario' && plazoUnidades && (
-                <p className="text-[10px] mt-1 px-0.5" style={{ color: '#555570' }}>= {plazo} días</p>
+                <p className="text-[10px] mt-1 px-0.5" style={{ color: 'var(--color-text-muted)' }}>= {plazo} días</p>
               )}
             </div>
           </div>
 
           {/* Frecuencia de cobro */}
           <div>
-            <p className="text-[11px] font-medium uppercase tracking-[0.05em] mb-1.5" style={{ color: '#555570' }}>¿Cada cuánto cobras?</p>
+            <p className="text-[11px] font-medium uppercase tracking-[0.05em] mb-1.5" style={{ color: 'var(--color-text-muted)' }}>¿Cada cuánto cobras?</p>
             <div className="grid grid-cols-4 gap-2">
               {FRECUENCIAS.map((f) => (
                 <button
@@ -278,8 +278,8 @@ export default function WizardPrestamo({ cliente, onComplete, modoDemo = false }
                       </svg>
                     )}
                   </div>
-                  <p className="text-[11px] leading-relaxed mb-1.5 pl-4" style={{ color: '#666680' }}>{m.desc}</p>
-                  <p className="text-[10px] pl-4" style={{ color: '#444458', fontStyle: 'italic' }}>{m.ejemplo}</p>
+                  <p className="text-[11px] leading-relaxed mb-1.5 pl-4" style={{ color: 'var(--color-text-muted)' }}>{m.desc}</p>
+                  <p className="text-[10px] pl-4" style={{ color: 'var(--color-text-muted)', fontStyle: 'italic' }}>{m.ejemplo}</p>
                 </button>
               ))}
             </div>
@@ -295,7 +295,7 @@ export default function WizardPrestamo({ cliente, onComplete, modoDemo = false }
             <svg className="w-3.5 h-3.5 mt-0.5 shrink-0" fill="none" stroke="#f5c518" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-[10px] leading-relaxed" style={{ color: '#555570' }}>
+            <p className="text-[10px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
               Ingresa el monto para ver el resumen del préstamo en tiempo real.
             </p>
           </div>

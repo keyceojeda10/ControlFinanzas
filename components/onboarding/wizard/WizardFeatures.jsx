@@ -91,7 +91,7 @@ export default function WizardFeatures({ modoDemo, onNext }) {
         <h2 className="text-[22px] font-bold mb-2" style={{ color: '#f0f0f5', fontFamily: "Georgia, serif" }}>
           Esto es lo que <em style={{ color: '#f5c518', fontStyle: 'italic' }}>también</em> puedes hacer
         </h2>
-        <p className="text-[13px]" style={{ color: '#666680' }}>
+        <p className="text-[13px]" style={{ color: 'var(--color-text-muted)' }}>
           Control Finanzas va mucho más allá de llevar clientes y préstamos.
         </p>
       </div>
@@ -101,7 +101,7 @@ export default function WizardFeatures({ modoDemo, onNext }) {
         {CAPS.map((c) => (
           <div key={c.id}
             className="rounded-[14px] p-4"
-            style={{ background: '#0f0f18', border: '1px solid #1e1e2e' }}>
+            style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
             <div className="flex items-start gap-3">
               <div className="w-11 h-11 rounded-[11px] flex items-center justify-center shrink-0"
                 style={{ background: c.bg, color: c.color }}>
@@ -109,11 +109,11 @@ export default function WizardFeatures({ modoDemo, onNext }) {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <p className="text-[13px] font-semibold" style={{ color: '#e8e8f0' }}>{c.titulo}</p>
+                  <p className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>{c.titulo}</p>
                   <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wide"
                     style={{ background: c.bg, color: c.color }}>{c.tag}</span>
                 </div>
-                <p className="text-[11px] leading-relaxed mb-1.5" style={{ color: '#555570' }}>{c.detalle}</p>
+                <p className="text-[11px] leading-relaxed mb-1.5" style={{ color: 'var(--color-text-muted)' }}>{c.detalle}</p>
                 <div className="flex items-center gap-1">
                   <svg className="w-3 h-3 shrink-0" fill="none" stroke={c.color} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
