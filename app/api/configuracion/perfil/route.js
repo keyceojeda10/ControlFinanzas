@@ -32,26 +32,24 @@ export async function PATCH(req) {
     updates.nombre = nombre.trim()
   }
 
-  // Actualizar telefono (validar celular colombiano)
+  // Actualizar teléfono de WhatsApp personal
   if (telefono !== undefined) {
     const limpio = String(telefono).replace(/\D/g, '')
-    if (!/^3\d{9}$/.test(limpio)) {
-      return NextResponse.json({ error: 'Ingresa un celular colombiano valido (10 digitos, empieza en 3)' }, { status: 400 })
+    if (limpio.length < 7 || limpio.length > 15) {
+      return NextResponse.json({ error: 'Ingresa un número de WhatsApp válido' }, { status: 400 })
     }
-    updates.telefono = limpio
-    // Si la org no tiene telefono, copiarlo del owner
-    if (session.user.rol === 'owner' && session.user.organizationId) {
-      const org = await prisma.organization.findUnique({
-        where: { id: session.user.organizationId },
-        select: { telefono: true },
+    // Verificar que no lo tenga otro owner (solo si cambia respecto al actual)
+    const userActual = await prisma.user.findUnique({ where: { id: session.user.id }, select: { telefono: true } })
+    if (userActual?.telefono !== limpio) {
+      const otro = await prisma.user.findFirst({
+        where: { telefono: limpio, rol: 'owner', id: { not: session.user.id } },
+        select: { id: true },
       })
-      if (!org?.telefono) {
-        await prisma.organization.update({
-          where: { id: session.user.organizationId },
-          data: { telefono: limpio },
-        })
+      if (otro) {
+        return NextResponse.json({ error: 'Ese número ya está registrado en otra cuenta.' }, { status: 409 })
       }
     }
+    updates.telefono = limpio
   }
 
   // Actualizar avatar

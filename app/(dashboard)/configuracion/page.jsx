@@ -60,11 +60,14 @@ function TabPerfil() {
   const [avatarSeleccionado, setAvatarSeleccionado] = useState(null)
   const [guardandoAvatar, setGuardandoAvatar] = useState(false)
   const [msgAvatar, setMsgAvatar] = useState(null)
+  const [telefono,       setTelefono]       = useState('')
+  const [guardandoTel,   setGuardandoTel]   = useState(false)
+  const [msgTel,         setMsgTel]         = useState(null)
 
   useEffect(() => {
     fetch('/api/configuracion/perfil')
       .then((r) => r.json())
-      .then((d) => { setPerfil(d); setNombre(d.nombre ?? ''); setAvatarSeleccionado(d.avatarId ?? null) })
+      .then((d) => { setPerfil(d); setNombre(d.nombre ?? ''); setAvatarSeleccionado(d.avatarId ?? null); setTelefono(d.telefono ?? '') })
       .finally(() => setLoading(false))
   }, [])
 
@@ -102,6 +105,30 @@ function TabPerfil() {
     } catch {
       setMsgAvatar({ tipo: 'error', texto: 'Error de conexion' })
     } finally { setGuardandoAvatar(false) }
+  }
+
+  const guardarTelefono = async () => {
+    setGuardandoTel(true); setMsgTel(null)
+    const limpio = telefono.replace(/\D/g, '')
+    if (limpio && (limpio.length < 7 || limpio.length > 15)) {
+      setMsgTel({ tipo: 'error', texto: 'Ingresa un número de WhatsApp válido' })
+      setGuardandoTel(false); return
+    }
+    try {
+      const res  = await fetch('/api/configuracion/perfil', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telefono: limpio || null }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setPerfil(p => ({ ...p, telefono: limpio || null }))
+        setMsgTel({ tipo: 'success', texto: 'Número de WhatsApp actualizado' })
+      } else {
+        setMsgTel({ tipo: 'error', texto: data.error ?? 'Error al guardar' })
+      }
+    } catch {
+      setMsgTel({ tipo: 'error', texto: 'Error de conexión' })
+    } finally { setGuardandoTel(false) }
   }
 
   const cambiarPassword = async () => {
@@ -153,6 +180,20 @@ function TabPerfil() {
             <input type="email" value={perfil?.email ?? ''} readOnly disabled className={inputClass} />
             <p className="text-[10px] text-[#888888]">El email no se puede cambiar</p>
           </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-[#888888]">Número de WhatsApp</label>
+            <input
+              type="tel"
+              value={telefono}
+              onChange={(e) => setTelefono(e.target.value)}
+              placeholder="Ej: 3001234567"
+              className={inputClass}
+            />
+            <p className="text-[10px] text-[#888888]">Lo usamos para enviarte códigos de verificación. Si lo cambias, usa el nuevo número para iniciar sesión.</p>
+          </div>
+          {msgTel && <Alerta tipo={msgTel.tipo}>{msgTel.texto}</Alerta>}
+          <Button onClick={guardarTelefono} loading={guardandoTel} size="sm">Guardar WhatsApp</Button>
+          <div className="pt-2" style={{ borderTop: '1px solid #1e1e1e' }} />
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-[#888888]">Rol</label>
             <div className="flex items-center gap-2">
