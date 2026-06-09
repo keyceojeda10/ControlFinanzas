@@ -12,6 +12,17 @@ import { useCountry } from '@/hooks/useCountry'
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
 const hoyISO = () => getColombiaDate().toISOString().slice(0, 10)
 
+const DIAS_POR_PERIODO = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }
+const LABEL_PERIODO    = { diario: 'días', semanal: 'semanas', quincenal: 'quincenas', mensual: 'meses' }
+const LABEL_PLAZO      = { diario: 'Plazo (días)', semanal: 'Plazo (semanas)', quincenal: 'Plazo (quincenas)', mensual: 'Plazo (meses)' }
+const DEFAULT_PLAZO    = { diario: '30', semanal: '8', quincenal: '4', mensual: '2' }
+
+// Convierte diasPlazo de DB a unidades de la frecuencia (para mostrar en el input)
+function diasAUnidades(dias, frecuencia) {
+  const d = DIAS_POR_PERIODO[frecuencia] || 1
+  return String(Math.round((Number(dias) || 30) / d))
+}
+
 export default function RenovarPrestamo({
   prestamoId,
   saldoPendiente,
@@ -24,12 +35,18 @@ export default function RenovarPrestamo({
   const { formatMoney } = useCountry()
 
   const saldo = Math.max(0, Number(saldoPendiente) || 0)
+  const freqInicial = prestamoAnterior?.frecuencia ?? 'diario'
   // Dos campos sincronizados: lo que entrega de mas (en mano) y el total que queda debiendo.
   const [entrega,     setEntrega]     = useState('')  // dinero nuevo que recibe el cliente
   const [monto,       setMonto]       = useState('')  // total nuevo = saldo + entrega
   const [tasa,        setTasa]        = useState(String(prestamoAnterior?.tasaInteres ?? '20'))
-  const [plazo,       setPlazo]       = useState(String(prestamoAnterior?.diasPlazo ?? '30'))
-  const [frecuencia,  setFrecuencia]  = useState(prestamoAnterior?.frecuencia ?? 'diario')
+  // plazoUnidades: en unidades de la frecuencia (semanas, quincenas, etc.), NO en días
+  const [plazoUnidades, setPlazoUnidades] = useState(
+    prestamoAnterior?.diasPlazo
+      ? diasAUnidades(prestamoAnterior.diasPlazo, freqInicial)
+      : DEFAULT_PLAZO[freqInicial] ?? '30'
+  )
+  const [frecuencia,  setFrecuencia]  = useState(freqInicial)
   const [fechaInicio, setFechaInicio] = useState(hoyISO())
   const [seguro,      setSeguro]      = useState(false)
   const [montoSeguro, setMontoSeguro] = useState('')
@@ -39,6 +56,13 @@ export default function RenovarPrestamo({
   const montoNum = Number(monto) || 0
   const montoSeguroNum = seguro ? (Number(montoSeguro) || 0) : 0
   const diferencia = Math.max(0, montoNum - saldo)
+  // diasPlazo real = unidades × días por periodo
+  const diasPlazo = (Number(plazoUnidades) || 0) * (DIAS_POR_PERIODO[frecuencia] || 1)
+
+  const handleFrecuenciaChange = (f) => {
+    setFrecuencia(f)
+    setPlazoUnidades(DEFAULT_PLAZO[f] ?? '30')
+  }
 
   // Al cambiar "entrega": total = saldo + entrega
   const onChangeEntrega = (v) => {
@@ -57,18 +81,18 @@ export default function RenovarPrestamo({
     ? prestamoAnterior.modoInteres : 'fijo'
 
   const calculo = useMemo(() => {
-    if (!montoNum || !tasa || !plazo) return null
+    if (!montoNum || !tasa || !diasPlazo) return null
     try {
       return calcularPrestamo({
         montoPrestado: montoNum,
         tasaInteres:   Number(tasa),
-        diasPlazo:     Number(plazo),
+        diasPlazo,
         fechaInicio,
         frecuencia,
         modoInteres:   modoHeredado,
       })
     } catch { return null }
-  }, [montoNum, tasa, plazo, fechaInicio, frecuencia, modoHeredado])
+  }, [montoNum, tasa, diasPlazo, fechaInicio, frecuencia, modoHeredado])
 
   const handleSubmit = async () => {
     if (montoNum <= 0) { setError('Ingresa cuánto le entregas o el total'); return }
@@ -77,7 +101,7 @@ export default function RenovarPrestamo({
       return
     }
     if (!tasa || Number(tasa) < 0) { setError('Tasa inválida'); return }
-    if (!plazo || Number(plazo) <= 0) { setError('Plazo inválido'); return }
+    if (!plazoUnidades || diasPlazo <= 0) { setError('Plazo inválido'); return }
 
     setLoading(true)
     setError('')
@@ -88,7 +112,7 @@ export default function RenovarPrestamo({
         body: JSON.stringify({
           montoPrestado: montoNum,
           tasaInteres:   Number(tasa),
-          diasPlazo:     Number(plazo),
+          diasPlazo,
           fechaInicio,
           frecuencia,
           modoInteres:   modoHeredado,
@@ -115,6 +139,7 @@ export default function RenovarPrestamo({
     setSeguro(false)
     setMontoSeguro('')
     setError('')
+    setPlazoUnidades(DEFAULT_PLAZO[frecuencia] ?? '30')
     onClose?.()
   }
 
@@ -172,13 +197,18 @@ export default function RenovarPrestamo({
             value={tasa}
             onChange={(e) => setTasa(e.target.value)}
           />
-          <Input
-            label="Plazo (días)"
-            type="number"
-            inputMode="numeric"
-            value={plazo}
-            onChange={(e) => setPlazo(e.target.value)}
-          />
+          <div>
+            <Input
+              label={LABEL_PLAZO[frecuencia]}
+              type="number"
+              inputMode="numeric"
+              value={plazoUnidades}
+              onChange={(e) => setPlazoUnidades(e.target.value)}
+            />
+            {frecuencia !== 'diario' && plazoUnidades && (
+              <p className="text-[10px] mt-1 px-0.5 text-[var(--color-text-muted)]">= {diasPlazo} días</p>
+            )}
+          </div>
         </div>
 
         {/* Frecuencia */}
@@ -191,7 +221,7 @@ export default function RenovarPrestamo({
               <button
                 key={f}
                 type="button"
-                onClick={() => setFrecuencia(f)}
+                onClick={() => handleFrecuenciaChange(f)}
                 className={[
                   'h-9 rounded-[10px] border text-xs font-medium capitalize transition-all cursor-pointer',
                   frecuencia === f

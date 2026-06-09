@@ -139,7 +139,9 @@ export async function POST(request) {
       creadoPorId: userId,
       rutaId: rutaIdValida,
       direccion: tipo === 'ajuste' ? direccion : undefined,
-      permitirNegativo: false,
+      // Si el movimiento es para una ruta específica (inyeccion/retiro de sub-bolsa),
+      // permitir saldo global negativo: el dinero viene/va de la ruta, no del pool global.
+      permitirNegativo: !!rutaIdValida,
     })
 
     // Ajuste de arranque: descuenta de la SUB-BOLSA de la ruta los prestamos

@@ -12,72 +12,85 @@ import { getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
 const TIPOS_AJUSTE_PAGO = ['recargo', 'descuento']
 
 // Lista deduplicada de préstamos que el cobrador entregó en el día, con cliente,
-// monto, ruta y hora. Mismo criterio de unión que la caja general: préstamos de su
-// ruta + creados por su perfil (MovimientoCapital desembolso + ActividadLog).
+// monto REAL desembolsado (no montoPrestado, porque en renovaciones el monto del
+// MovimientoCapital ya descuenta el saldo absorbido), ruta y hora.
 async function getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId) {
-  const baseWhere = {
-    organizationId,
-    createdAt: { gte: inicio, lt: fin },
-    estado: { not: 'cancelado' },
-  }
-  const selectPrestamo = {
-    id: true,
-    montoPrestado: true,
-    createdAt: true,
-    cliente: { select: { nombre: true, cedula: true, ruta: { select: { id: true, nombre: true } } } },
-  }
-
-  const [prestamosRuta, movimientosCreador, actividadesCreador] = await Promise.all([
-    prisma.prestamo.findMany({
-      where: { ...baseWhere, cliente: { ruta: { cobradorId } } },
-      select: selectPrestamo,
-    }),
+  // Fuente primaria: MovimientoCapital de tipo desembolso — tiene el monto real.
+  // En renovaciones = diferencia entregada en mano; en préstamos nuevos = montoPrestado.
+  const [movimientos, prestamosRutaDia] = await Promise.all([
     prisma.movimientoCapital.findMany({
       where: {
         organizationId,
         tipo: 'desembolso',
         createdAt: { gte: inicio, lt: fin },
-        creadoPorId: cobradorId,
         referenciaTipo: 'prestamo',
+        creadoPorId: cobradorId,
       },
-      select: { referenciaId: true },
+      select: { referenciaId: true, monto: true, rutaId: true, createdAt: true },
     }),
-    prisma.actividadLog.findMany({
-      where: { organizationId, userId: cobradorId, accion: 'crear_prestamo', createdAt: { gte: inicio, lt: fin } },
-      select: { entidadId: true },
+    // Préstamos de la ruta del cobrador en el día (para detectar los que no tienen
+    // MovimientoCapital — orgs sin capital configurado — y también para obtener nombres).
+    prisma.prestamo.findMany({
+      where: {
+        organizationId,
+        createdAt: { gte: inicio, lt: fin },
+        estado: { not: 'cancelado' },
+        cliente: { ruta: { cobradorId } },
+      },
+      select: {
+        id: true,
+        montoPrestado: true,
+        createdAt: true,
+        cliente: { select: { nombre: true, cedula: true, ruta: { select: { id: true, nombre: true } } } },
+      },
     }),
   ])
 
+  // Mapa de préstamo ID → monto real del MovimientoCapital
+  const montoRealPorPrestamo = new Map()
+  for (const m of movimientos) {
+    if (m.referenciaId) montoRealPorPrestamo.set(m.referenciaId, { monto: m.monto, rutaId: m.rutaId, fecha: m.createdAt })
+  }
+
+  // También buscar préstamos fuera de la ruta que el cobrador creó (via MovimientoCapital)
+  const idsEnRuta = new Set(prestamosRutaDia.map((p) => p.id))
+  const idsExtraConMovimiento = [...montoRealPorPrestamo.keys()].filter((id) => !idsEnRuta.has(id))
+  let prestamosExtra = []
+  if (idsExtraConMovimiento.length > 0) {
+    prestamosExtra = await prisma.prestamo.findMany({
+      where: { organizationId, id: { in: idsExtraConMovimiento }, estado: { not: 'cancelado' } },
+      select: {
+        id: true,
+        montoPrestado: true,
+        createdAt: true,
+        cliente: { select: { nombre: true, cedula: true, ruta: { select: { id: true, nombre: true } } } },
+      },
+    })
+  }
+
   const vistos = new Set()
   const items = []
-  const push = (p) => {
+
+  const agregar = (p, montoOverride) => {
     if (!p || vistos.has(p.id)) return
     vistos.add(p.id)
+    const mov = montoRealPorPrestamo.get(p.id)
     items.push({
       tipo: 'prestamo',
       id: p.id,
-      monto: p.montoPrestado,
+      // Usa el monto del MovimientoCapital si existe (correcto en renovaciones),
+      // o el montoPrestado como fallback (orgs sin capital configurado).
+      monto: mov?.monto ?? montoOverride ?? p.montoPrestado,
       cliente: p.cliente?.nombre || null,
       clienteCedula: p.cliente?.cedula || null,
-      rutaId: p.cliente?.ruta?.id || null,
+      rutaId: p.cliente?.ruta?.id || mov?.rutaId || null,
       rutaNombre: p.cliente?.ruta?.nombre || null,
-      fecha: p.createdAt,
+      fecha: mov?.fecha || p.createdAt,
     })
   }
 
-  for (const p of prestamosRuta) push(p)
-
-  const extraIds = new Set()
-  for (const a of actividadesCreador) if (a.entidadId && !vistos.has(a.entidadId)) extraIds.add(a.entidadId)
-  for (const m of movimientosCreador) if (m.referenciaId && !vistos.has(m.referenciaId)) extraIds.add(m.referenciaId)
-
-  if (extraIds.size > 0) {
-    const extra = await prisma.prestamo.findMany({
-      where: { ...baseWhere, id: { in: [...extraIds] } },
-      select: selectPrestamo,
-    })
-    for (const p of extra) push(p)
-  }
+  for (const p of prestamosRutaDia) agregar(p)
+  for (const p of prestamosExtra) agregar(p)
 
   return items
 }
