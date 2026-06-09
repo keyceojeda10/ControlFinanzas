@@ -94,13 +94,13 @@ export default function WizardWelcome({ nombre, onNext, onDismiss }) {
           {FEATURES.map((f, i) => (
             <div key={i}
               className="snap-start shrink-0 rounded-[14px] p-4 flex flex-col"
-              style={{ width: '180px', background: '#0f0f18', border: '1px solid #1e1e2e' }}>
+              style={{ width: '220px', background: '#0f0f18', border: '1px solid #1e1e2e' }}>
               <div className="w-9 h-9 rounded-[9px] flex items-center justify-center mb-3"
                 style={{ background: f.bg, color: f.color }}>
                 {f.icon}
               </div>
-              <p className="text-[12px] font-semibold mb-1 leading-tight" style={{ color: '#ddddef' }}>{f.titulo}</p>
-              <p className="text-[11px] leading-relaxed" style={{ color: '#5e5e7a' }}>{f.desc}</p>
+              <p className="text-[13px] font-semibold mb-1.5 leading-tight" style={{ color: '#e0e0f0' }}>{f.titulo}</p>
+              <p className="text-[12px] leading-relaxed" style={{ color: '#9090b0' }}>{f.desc}</p>
             </div>
           ))}
           {/* spacer */}
