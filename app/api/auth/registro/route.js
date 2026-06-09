@@ -8,6 +8,7 @@ import { registroLimiter, getClientIp } from '@/lib/rate-limit'
 import { PLANES_VALIDOS } from '@/lib/planes'
 import { COUNTRY_CODES, getCountryConfig, validatePhone } from '@/lib/i18n'
 import { normalizarEmail } from '@/lib/normalizar-email'
+import { sendTemplate } from '@/lib/bot/whatsapp-cloud'
 
 function generarCodigoReferido() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -26,7 +27,7 @@ export async function POST(req) {
     }
 
     const body = await req.json()
-    const { nombreOrganizacion, nombre, email, telefono, password, ref, terminosAceptados, plan, country: countryInput } = body
+    const { nombreOrganizacion, nombre, email, telefono, password, ref, terminosAceptados, plan, country: countryInput, canal } = body
     const country = COUNTRY_CODES.includes(countryInput) ? countryInput : 'co'
 
     // Validar plan de trial: todos menos el plan interno de test
@@ -59,6 +60,15 @@ export async function POST(req) {
     const existente = await prisma.user.findUnique({ where: { email: emailNorm } })
     if (existente) {
       return NextResponse.json({ success: false, error: 'Este email ya está registrado' }, { status: 400 })
+    }
+
+    // Verificar que el teléfono no esté ya registrado como owner de otra cuenta
+    const ownerConMismoTel = await prisma.user.findFirst({
+      where: { telefono: telefonoLimpio, rol: 'owner' },
+      select: { id: true },
+    })
+    if (ownerConMismoTel) {
+      return NextResponse.json({ success: false, error: 'Ya existe una cuenta registrada con ese número de WhatsApp.' }, { status: 409 })
     }
 
     // Buscar organización referidora antes de la transacción
@@ -136,7 +146,14 @@ export async function POST(req) {
       return { org, user, vencimiento }
     })
 
-    // Enviar email de verificación con codigo OTP
+    // Enviar OTP por WhatsApp si el canal elegido es whatsapp (o por defecto)
+    const canalElegido = canal === 'email' ? 'email' : 'whatsapp'
+    if (canalElegido === 'whatsapp' && resultado.user.telefono) {
+      sendTemplate(resultado.user.telefono, 'verificacion_otp', [resultado.user.tokenVerificacion], 'es')
+        .catch(e => console.error('[WA OTP]', e.message))
+    }
+
+    // Siempre enviar email de verificación como respaldo
     const { subject: svf, html: hvf } = emailVerificacion({ nombre: nombre.trim(), codigo: resultado.user.tokenVerificacion })
     enviarEmail({ to: emailNorm, subject: svf, html: hvf }).catch(e => console.error('[Email] Fallo envio:', e.message))
 

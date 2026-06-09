@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { enviarEmail, emailVerificacion } from '@/lib/email'
 import { rateLimit, getClientIp } from '@/lib/rate-limit'
 import { normalizarEmail } from '@/lib/normalizar-email'
+import { sendTemplate } from '@/lib/bot/whatsapp-cloud'
 
 const reenvioLimiter = rateLimit('reenvio-verificacion', 3, 60 * 60 * 1000) // 3/hora
 
@@ -13,7 +14,8 @@ export async function POST(req) {
     const rl = reenvioLimiter(ip)
     if (!rl.ok) return NextResponse.json({ ok: true }) // silencioso
 
-    const { email } = await req.json()
+    const body = await req.json()
+    const { email, canal } = body
     if (!email) return NextResponse.json({ error: 'Email requerido' }, { status: 400 })
 
     const emailNorm = normalizarEmail(email)
@@ -32,6 +34,14 @@ export async function POST(req) {
       data: { tokenVerificacion, tokenExpira },
     })
 
+    // Enviar OTP por WhatsApp si el canal elegido es whatsapp
+    const canalElegido = canal === 'email' ? 'email' : 'whatsapp'
+    if (canalElegido === 'whatsapp' && user.telefono) {
+      sendTemplate(user.telefono, 'verificacion_otp', [tokenVerificacion], 'es')
+        .catch(e => console.error('[WA OTP reenvio]', e.message))
+    }
+
+    // Siempre enviar email como respaldo
     const { subject, html } = emailVerificacion({ nombre: user.nombre, codigo: tokenVerificacion })
     await enviarEmail({ to: emailNorm, subject, html })
 

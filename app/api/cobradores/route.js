@@ -196,6 +196,15 @@ export async function POST(request) {
     ? telefono.replace(/\D/g, '').trim() || null
     : null
 
+  // Teléfono único dentro de la organización (evita duplicados entre cobradores del mismo owner)
+  if (telefonoNorm) {
+    const telEnUso = await prisma.user.findFirst({
+      where: { telefono: telefonoNorm, organizationId },
+      select: { id: true },
+    })
+    if (telEnUso) return Response.json({ error: 'Ese número de WhatsApp ya está asignado a otro usuario de tu organización.' }, { status: 409 })
+  }
+
   const crearPrestamos = Boolean(permisos?.crearPrestamos)
   const gestionarPrestamos = Boolean(permisos?.gestionarPrestamos ?? crearPrestamos)
   const reportarGastos = Boolean(permisos?.reportarGastos ?? true)

@@ -165,11 +165,13 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
     nombreOrganizacion: '',
     nombre:             '',
     email:              '',
+    emailConfirmar:     '',
     telefono:           '',
     password:           '',
     confirmar:          '',
     terminosAceptados:  false,
   })
+  const [verificarPor, setVerificarPor] = useState('whatsapp') // 'whatsapp' | 'email'
   const [error,    setError]    = useState('')
   const [loading,  setLoading]  = useState(false)
   const [referrer, setReferrer] = useState(null)
@@ -202,6 +204,9 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
     if (!validatePhone(telefonoLimpio, country)) {
       setError(`Ingresa un ${countryCfg.phoneLabel.toLowerCase()} valido (ej: ${countryCfg.phonePlaceholder})`); return
     }
+    if (normalizarEmail(form.email) !== normalizarEmail(form.emailConfirmar)) {
+      setError('Los correos electronicos no coinciden'); return
+    }
     if (!form.terminosAceptados) { setError('Debes aceptar los terminos y condiciones'); return }
     if (form.password.length < 8) { setError('La contrasena debe tener al menos 8 caracteres'); return }
     if (form.password !== form.confirmar) { setError('Las contrasenas no coinciden'); return }
@@ -221,6 +226,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
           ...(refCode ? { ref: refCode } : {}),
           plan: planSeleccionado,
           country,
+          canal: verificarPor,
         }),
       })
       const data = await res.json()
@@ -289,7 +295,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
       await fetch('/api/auth/reenviar-verificacion', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: normalizarEmail(form.email) }),
+        body: JSON.stringify({ email: normalizarEmail(form.email), canal: verificarPor }),
       })
       setOtpReenviado(true)
       setOtpDigits(['', '', '', '', '', ''])
@@ -568,20 +574,33 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                       </svg>
                     }
                   />
-                  {/* Mensaje de confianza: ataca el miedo explicito de leads a que
-                      usemos mal su correo. Lenguaje humano, no legalese. */}
+                  <div className="mt-2">
+                    <AuthInput
+                      label="Confirmar correo electronico"
+                      type="email"
+                      value={form.emailConfirmar}
+                      onChange={set('emailConfirmar')}
+                      placeholder="Repite tu correo"
+                      autoComplete="off"
+                      icon={
+                        <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      }
+                    />
+                  </div>
                   <div className="flex items-start gap-1.5 mt-1.5 px-0.5">
-                    <svg className="w-3.5 h-3.5 shrink-0 mt-px" style={{ color: '#22c55e' }} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                    <svg className="w-3.5 h-3.5 shrink-0 mt-px" style={{ color: '#9a9ab0' }} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
                     </svg>
                     <span className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-                      Solo lo usamos para tu cuenta y para recuperarla. <strong style={{ color: 'var(--color-text-secondary)' }}>Nunca compartimos ni vendemos tu informacion.</strong>
+                      Lo usamos para enviarte alertas de cobro y recuperar tu cuenta.
                     </span>
                   </div>
                 </div>
 
                 <AuthInput
-                  label={`${countryCfg.phoneLabel} (WhatsApp)`}
+                  label="Numero de WhatsApp"
                   type="tel"
                   inputMode="numeric"
                   value={form.telefono}
@@ -667,23 +686,70 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
           {/* ── Step 3: Verificacion OTP ── */}
           {step === 3 && (
             <div className="text-center">
-              {/* Icono email */}
+              {/* Icono canal activo */}
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-5"
-                style={{ background: 'rgba(245,197,24,0.1)', border: '2px solid rgba(245,197,24,0.25)' }}>
-                <svg className="w-8 h-8" style={{ color: '#f5c518' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
+                style={{
+                  background: verificarPor === 'whatsapp' ? 'rgba(37,211,102,0.12)' : 'rgba(245,197,24,0.1)',
+                  border: `2px solid ${verificarPor === 'whatsapp' ? 'rgba(37,211,102,0.35)' : 'rgba(245,197,24,0.25)'}`,
+                }}>
+                {verificarPor === 'whatsapp' ? (
+                  <svg className="w-8 h-8" style={{ color: '#25d366' }} fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                  </svg>
+                ) : (
+                  <svg className="w-8 h-8" style={{ color: '#f5c518' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                )}
               </div>
 
               <h2 className="text-[20px] font-bold mb-2" style={{ color: 'var(--color-text-primary)' }}>
-                Verifica tu correo
+                {verificarPor === 'whatsapp' ? 'Revisa tu WhatsApp' : 'Verifica tu correo'}
               </h2>
               <p className="text-[13px] mb-1" style={{ color: 'var(--color-text-muted)' }}>
                 Enviamos un codigo de 6 digitos a
               </p>
-              <p className="text-[14px] font-semibold mb-6" style={{ color: '#f5c518' }}>
-                {normalizarEmail(form.email)}
+              <p className="text-[14px] font-semibold mb-4" style={{ color: verificarPor === 'whatsapp' ? '#25d366' : '#f5c518' }}>
+                {verificarPor === 'whatsapp' ? `+${form.telefono.replace(/\D/g, '')}` : normalizarEmail(form.email)}
               </p>
+
+              {/* Toggle canal */}
+              <button
+                type="button"
+                onClick={async () => {
+                  const nuevo = verificarPor === 'whatsapp' ? 'email' : 'whatsapp'
+                  setVerificarPor(nuevo)
+                  setOtpDigits(['', '', '', '', '', ''])
+                  setOtpError('')
+                  setOtpReenviado(false)
+                  // Reenviar al nuevo canal
+                  try {
+                    await fetch('/api/auth/reenviar-verificacion', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ email: normalizarEmail(form.email), canal: nuevo }),
+                    })
+                  } catch {}
+                }}
+                className="inline-flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-[8px] mb-6 transition-all"
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--color-text-muted)' }}
+              >
+                {verificarPor === 'whatsapp' ? (
+                  <>
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                    </svg>
+                    Verificar por correo en su lugar
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                    </svg>
+                    Verificar por WhatsApp en su lugar
+                  </>
+                )}
+              </button>
 
               {/* Error */}
               {otpError && (
@@ -710,9 +776,9 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                     className="w-11 h-13 text-center text-[22px] font-bold rounded-[12px] outline-none transition-all"
                     style={{
                       background: 'var(--color-bg-card)',
-                      border: `1.5px solid ${digit ? 'rgba(245,197,24,0.5)' : 'var(--color-border)'}`,
+                      border: `1.5px solid ${digit ? (verificarPor === 'whatsapp' ? 'rgba(37,211,102,0.5)' : 'rgba(245,197,24,0.5)') : 'var(--color-border)'}`,
                       color: 'var(--color-text-primary)',
-                      caretColor: '#f5c518',
+                      caretColor: verificarPor === 'whatsapp' ? '#25d366' : '#f5c518',
                     }}
                   />
                 ))}
@@ -723,7 +789,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                 onClick={() => handleVerificarOtp()}
                 disabled={otpLoading || otpDigits.join('').length !== 6}
                 className="w-full h-11 rounded-[12px] text-[14px] font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50 mb-4"
-                style={{ background: '#f5c518', color: '#0a0a0a' }}
+                style={{ background: verificarPor === 'whatsapp' ? '#25d366' : '#f5c518', color: '#0a0a0a' }}
               >
                 {otpLoading ? 'Verificando...' : 'Verificar'}
               </button>
@@ -734,7 +800,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                   onClick={handleReenviarOtp}
                   disabled={otpReenviando || otpReenviado}
                   className="text-[13px] font-medium transition-colors disabled:opacity-50"
-                  style={{ color: otpReenviado ? '#22c55e' : '#f5c518' }}
+                  style={{ color: otpReenviado ? '#22c55e' : verificarPor === 'whatsapp' ? '#25d366' : '#f5c518' }}
                 >
                   {otpReenviado ? 'Codigo reenviado' : otpReenviando ? 'Reenviando...' : 'Reenviar codigo'}
                 </button>
@@ -749,7 +815,9 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
               </div>
 
               <p className="text-[11px] mt-5 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-                Revisa tu bandeja de entrada y la carpeta de spam. El codigo expira en 30 minutos.
+                {verificarPor === 'whatsapp'
+                  ? 'El mensaje llega en segundos. Si no llega, prueba verificar por correo.'
+                  : 'Revisa tu bandeja de entrada y la carpeta de spam. El codigo expira en 30 minutos.'}
               </p>
             </div>
           )}
