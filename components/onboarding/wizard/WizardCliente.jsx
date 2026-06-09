@@ -4,9 +4,17 @@ import { useState } from 'react'
 import { Input } from '@/components/ui/Input'
 import { useCountry } from '@/hooks/useCountry'
 
-export default function WizardCliente({ onComplete }) {
+const DEMO_DATA = {
+  nombre: 'Carlos Ramírez',
+  cedula: '1020304050',
+  telefono: '3001234567',
+}
+
+export default function WizardCliente({ onComplete, modoDemo = false }) {
   const { validatePhone, validateDocument, documentConfig, phoneConfig } = useCountry()
-  const [form, setForm] = useState({ nombre: '', cedula: '', telefono: '' })
+  const [form, setForm] = useState(
+    modoDemo ? { ...DEMO_DATA } : { nombre: '', cedula: '', telefono: '' }
+  )
   const [errores, setErrores] = useState({})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -22,10 +30,10 @@ export default function WizardCliente({ onComplete }) {
     if (!form.nombre.trim()) errs.nombre = 'El nombre es requerido'
     if (!form.cedula.trim()) errs.cedula = `${documentConfig.label} es requerido`
     else if (!validateDocument(form.cedula.trim()))
-      errs.cedula = `${documentConfig.label} no valido (ej: ${documentConfig.placeholder})`
+      errs.cedula = `${documentConfig.label} no válido (ej: ${documentConfig.placeholder})`
     if (!form.telefono.trim()) errs.telefono = `El ${phoneConfig.label.toLowerCase()} es requerido`
     else if (!validatePhone(form.telefono.replace(/\s/g, '')))
-      errs.telefono = `Ingresa un ${phoneConfig.label.toLowerCase()} valido (ej: ${phoneConfig.placeholder})`
+      errs.telefono = `Ingresa un ${phoneConfig.label.toLowerCase()} válido (ej: ${phoneConfig.placeholder})`
     return errs
   }
 
@@ -36,7 +44,6 @@ export default function WizardCliente({ onComplete }) {
 
     setLoading(true)
     setError('')
-
     try {
       const res = await fetch('/api/clientes', {
         method: 'POST',
@@ -45,23 +52,20 @@ export default function WizardCliente({ onComplete }) {
           nombre: form.nombre.trim(),
           cedula: form.cedula.trim(),
           telefono: form.telefono.trim(),
+          esDemo: modoDemo,
         }),
       })
-
       const data = await res.json()
-      if (!res.ok) {
-        setError(data.error ?? 'Error al crear el cliente')
-        return
-      }
-
+      if (!res.ok) { setError(data.error ?? 'Error al crear el cliente'); return }
       onComplete({
         id: data.id,
         nombre: form.nombre.trim(),
         cedula: form.cedula.trim(),
         telefono: form.telefono.trim(),
+        esDemo: modoDemo,
       })
     } catch {
-      setError('Error de conexion. Intenta de nuevo.')
+      setError('Error de conexión. Intenta de nuevo.')
     } finally {
       setLoading(false)
     }
@@ -70,13 +74,32 @@ export default function WizardCliente({ onComplete }) {
   return (
     <div className="max-w-md mx-auto">
       <div className="text-center mb-6">
-        <h2 className="text-xl font-bold text-[var(--color-text-primary)]">Registra tu primer cliente</h2>
-        <p className="text-sm text-[var(--color-text-muted)] mt-1">Piensa en el cliente que mejor conoces</p>
+        <h2 className="text-xl font-bold mb-1" style={{ color: '#f0f0f5' }}>
+          {modoDemo ? 'Cliente de ejemplo' : 'Tu primer cliente'}
+        </h2>
+        <p className="text-sm" style={{ color: '#666680' }}>
+          {modoDemo
+            ? 'Datos pre-llenados. Puedes editarlos o dejarlos así.'
+            : 'Piensa en el cliente que mejor conoces.'}
+        </p>
       </div>
+
+      {modoDemo && (
+        <div className="flex items-center gap-2 px-3 py-2.5 rounded-[10px] mb-4"
+          style={{ background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.2)' }}>
+          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="#a78bfa" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p className="text-[11px]" style={{ color: '#a78bfa' }}>
+            Modo demo — este cliente se borrará automáticamente al finalizar.
+          </p>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="flex items-center gap-2 bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[12px] px-4 py-3">
+          <div className="flex items-center gap-2 text-sm rounded-[12px] px-4 py-3"
+            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#ef4444' }}>
             <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
             </svg>
@@ -84,10 +107,11 @@ export default function WizardCliente({ onComplete }) {
           </div>
         )}
 
-        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] p-5 space-y-4">
+        <div className="rounded-[16px] p-5 space-y-4"
+          style={{ background: '#0f0f18', border: '1px solid #1e1e2e' }}>
           <Input
             label="Nombre completo"
-            placeholder="Ej: Juan Garcia"
+            placeholder="Ej: Juan García"
             value={form.nombre}
             onChange={set('nombre')}
             error={errores.nombre}
@@ -114,14 +138,14 @@ export default function WizardCliente({ onComplete }) {
         <button
           type="submit"
           disabled={loading}
-          className="w-full h-12 rounded-[12px] bg-[var(--color-accent)] text-[#111111] text-base font-bold transition-all hover:bg-[var(--color-accent-hover)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
-        >
+          className="w-full h-12 rounded-[12px] text-base font-bold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+          style={{ background: modoDemo ? '#a78bfa' : '#f5c518', color: modoDemo ? '#fff' : '#111' }}>
           {loading ? (
             <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-          ) : 'Crear cliente'}
+          ) : (modoDemo ? 'Continuar con este cliente' : 'Crear cliente')}
         </button>
       </form>
     </div>
