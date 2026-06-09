@@ -35,14 +35,22 @@ export async function POST(req) {
     const planFinal = VALID_TRIAL_PLANS.includes(plan) ? plan : 'starter'
 
     // Validaciones
-    if (!nombreOrganizacion?.trim() || !nombre?.trim() || !email?.trim() || !password || !telefono?.trim()) {
+    if (!nombreOrganizacion?.trim() || !nombre?.trim() || !email?.trim() || !password) {
       return NextResponse.json({ success: false, error: 'Todos los campos son obligatorios' }, { status: 400 })
     }
 
-    const telefonoLimpio = String(telefono).replace(/\D/g, '')
+    const telefonoLimpio = String(telefono || '').replace(/\D/g, '')
     const phoneCfg = getCountryConfig(country)
-    if (!validatePhone(telefonoLimpio, country)) {
-      return NextResponse.json({ success: false, error: `Ingresa un ${phoneCfg.phoneLabel.toLowerCase()} valido (ej: ${phoneCfg.phonePlaceholder})` }, { status: 400 })
+
+    // Si el canal es whatsapp, el teléfono es obligatorio y debe ser válido
+    const canalRegistro = canal === 'email' ? 'email' : 'whatsapp'
+    if (canalRegistro === 'whatsapp') {
+      if (!telefonoLimpio) {
+        return NextResponse.json({ success: false, error: 'Ingresa tu numero de WhatsApp' }, { status: 400 })
+      }
+      if (!validatePhone(telefonoLimpio, country)) {
+        return NextResponse.json({ success: false, error: `Ingresa un ${phoneCfg.phoneLabel.toLowerCase()} valido (ej: ${phoneCfg.phonePlaceholder})` }, { status: 400 })
+      }
     }
 
     if (password.length < 8) {
@@ -62,13 +70,15 @@ export async function POST(req) {
       return NextResponse.json({ success: false, error: 'Este email ya está registrado' }, { status: 400 })
     }
 
-    // Verificar que el teléfono no esté ya registrado como owner de otra cuenta
-    const ownerConMismoTel = await prisma.user.findFirst({
-      where: { telefono: telefonoLimpio, rol: 'owner' },
-      select: { id: true },
-    })
-    if (ownerConMismoTel) {
-      return NextResponse.json({ success: false, error: 'Ya existe una cuenta registrada con ese número de WhatsApp.' }, { status: 409 })
+    // Verificar unicidad de teléfono entre owners (solo si se proporcionó)
+    if (telefonoLimpio) {
+      const ownerConMismoTel = await prisma.user.findFirst({
+        where: { telefono: telefonoLimpio, rol: 'owner' },
+        select: { id: true },
+      })
+      if (ownerConMismoTel) {
+        return NextResponse.json({ success: false, error: 'Ya existe una cuenta registrada con ese número de WhatsApp.' }, { status: 409 })
+      }
     }
 
     // Buscar organización referidora antes de la transacción
@@ -146,9 +156,8 @@ export async function POST(req) {
       return { org, user, vencimiento }
     })
 
-    // Enviar OTP por WhatsApp si el canal elegido es whatsapp (o por defecto)
-    const canalElegido = canal === 'email' ? 'email' : 'whatsapp'
-    if (canalElegido === 'whatsapp' && resultado.user.telefono) {
+    // Enviar OTP por WhatsApp si el canal elegido es whatsapp
+    if (canalRegistro === 'whatsapp' && resultado.user.telefono) {
       sendTemplate(resultado.user.telefono, 'verificacion_otp', [resultado.user.tokenVerificacion], 'es')
         .catch(e => console.error('[WA OTP]', e.message))
     }
