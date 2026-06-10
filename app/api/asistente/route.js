@@ -418,9 +418,12 @@ export async function POST(req) {
               },
             ]
 
-            const { toolCalls: toolCalls2 } = await runDeepSeekStream(
+            // emitTokens=false: no stremear texto libre aqui. Si el modelo "confirma"
+            // una accion sin emitir el tool_call correspondiente, el usuario veria
+            // "¡Listo, registre tu pago!" sin que nada se haya guardado realmente.
+            const { textContent: textContent2, toolCalls: toolCalls2 } = await runDeepSeekStream(
               { ...streamParams, messages: messagesConToolResult },
-              controller, enc
+              controller, enc, false
             )
 
             // Si la segunda respuesta usa una herramienta (ej: register_payment tras lookup)
@@ -433,6 +436,16 @@ export async function POST(req) {
                 input: tc2.input,
                 displayData: displayData2,
               })}\n\n`))
+            } else if (textContent2.trim()) {
+              // El modelo respondio con texto en vez de proponer la accion. Se
+              // entrega tal cual (suele ser una pregunta de aclaracion legitima),
+              // pero si "suena" a confirmacion de una accion que nunca se propuso,
+              // se corrige para no engañar al usuario.
+              const sonaAConfirmacion = /\b(list[oa]|registr[ée]|cre[ée]|guard[ée]|hech[oa]|complet[ao]do)\b/i.test(textContent2)
+              const mensaje = sonaAConfirmacion
+                ? 'Para registrar esto necesito que confirmes los datos en la tarjeta. ¿Puedes repetirme el monto y a quién es el cobro?'
+                : textContent2
+              controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: mensaje })}\n\n`))
             }
           } else {
             const displayData = await buildDisplayData(toolCall.name, toolCall.input, orgId)
