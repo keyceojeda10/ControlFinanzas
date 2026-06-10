@@ -451,6 +451,11 @@ export async function POST(req) {
                 ? 'Para registrar esto necesito que confirmes los datos en la tarjeta. ¿Puedes repetirme el monto y a quién es el cobro?'
                 : textContent2
               controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: mensaje })}\n\n`))
+            } else {
+              // El modelo no devolvio ni accion ni texto (respuesta vacia o
+              // repitio lookup_client) — sin esto el bubble queda atascado en
+              // "Buscando..." para siempre.
+              controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: '¿Puedes darme más detalles? No logré identificar bien al cliente o la acción.' })}\n\n`))
             }
           } else {
             const displayData = await buildDisplayData(toolCall.name, toolCall.input, orgId)
@@ -467,6 +472,10 @@ export async function POST(req) {
           // Sin tool_call: es una respuesta normal (pregunta, dato, aclaracion).
           // Se emite ahora porque runDeepSeekStream no la streameo en vivo.
           controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: textContent })}\n\n`))
+        } else {
+          // Respuesta totalmente vacia (sin tool_call ni texto) — sin esto el
+          // bubble queda con los puntos de "cargando" para siempre.
+          controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: 'No entendí bien, ¿puedes repetirlo de otra forma?' })}\n\n`))
         }
 
         // fire-and-forget: extraer memoria si hay conversación larga
