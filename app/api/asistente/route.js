@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import OpenAI from 'openai'
+import Anthropic from '@anthropic-ai/sdk'
 import { buildContexto, buildSystemPrompt, buildContextoCobrador, buildSystemPromptCobrador, detectQueryComplexity } from '@/lib/asistente'
 import { getAsistenteLimiter } from '@/lib/rate-limit'
 import { planTieneIA } from '@/lib/planes'
@@ -24,6 +25,102 @@ function getDeepSeek() {
     })
   }
   return _deepseek
+}
+
+let _anthropic = null
+function getAnthropic() {
+  if (!_anthropic && process.env.ANTHROPIC_API_KEY) {
+    _anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  }
+  return _anthropic
+}
+
+// Convierte herramientas formato OpenAI/DeepSeek a formato Anthropic
+function toolsToAnthropic(tools) {
+  return (tools || []).map(t => ({
+    name: t.function.name,
+    description: t.function.description,
+    input_schema: t.function.parameters,
+  }))
+}
+
+// Tool extra solo para el fallback de Claude: permite responder con texto
+// (pregunta de aclaracion, etc.) de forma estructurada en vez de plain text,
+// para que SIEMPRE obtengamos un resultado utilizable.
+const RESPOND_TEXT_TOOL = {
+  name: 'respond_text',
+  description: 'Responde al usuario con un mensaje de texto (pregunta de aclaración, confirmación, explicación). Úsalo cuando no corresponda ejecutar ninguna acción todavía.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      mensaje: { type: 'string', description: 'Mensaje para el usuario' },
+    },
+    required: ['mensaje'],
+  },
+}
+
+// Convierte el array de mensajes (formato OpenAI, incluyendo tool_calls/tool
+// results) a formato Anthropic: separa el system prompt y reescribe los
+// bloques tool_calls/tool en tool_use/tool_result.
+function messagesToAnthropic(messages) {
+  let system = ''
+  const out = []
+  for (const m of messages) {
+    if (m.role === 'system') {
+      system = m.content
+      continue
+    }
+    if (m.role === 'assistant' && m.tool_calls) {
+      const content = []
+      if (m.content) content.push({ type: 'text', text: m.content })
+      for (const tc of m.tool_calls) {
+        let input = {}
+        try { input = JSON.parse(tc.function.arguments) } catch {}
+        content.push({ type: 'tool_use', id: tc.id, name: tc.function.name, input })
+      }
+      out.push({ role: 'assistant', content })
+      continue
+    }
+    if (m.role === 'tool') {
+      out.push({
+        role: 'user',
+        content: [{ type: 'tool_result', tool_use_id: m.tool_call_id, content: m.content }],
+      })
+      continue
+    }
+    out.push({ role: m.role, content: m.content })
+  }
+  return { system, messages: out }
+}
+
+// Fallback a Claude cuando DeepSeek no devuelve nada utilizable (segunda
+// llamada post-lookup). tool_choice:'auto' + RESPOND_TEXT_TOOL garantiza que
+// SIEMPRE haya un tool_use de vuelta (accion propuesta o mensaje de texto).
+async function fallbackClaude(messages, tools) {
+  const anthropic = getAnthropic()
+  if (!anthropic) return null
+
+  const { system, messages: anthMessages } = messagesToAnthropic(messages)
+
+  const resp = await anthropic.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 1024,
+    system,
+    tools: [...toolsToAnthropic(tools), RESPOND_TEXT_TOOL],
+    tool_choice: { type: 'auto' },
+    messages: anthMessages,
+  })
+
+  const toolUse = resp.content.find(b => b.type === 'tool_use')
+  const text = resp.content.filter(b => b.type === 'text').map(b => b.text).join('').trim()
+
+  if (toolUse?.name === 'respond_text') {
+    return { textContent: String(toolUse.input?.mensaje || text || ''), toolCalls: [] }
+  }
+  if (toolUse) {
+    return { textContent: text, toolCalls: [{ id: toolUse.id, name: toolUse.name, input: toolUse.input }] }
+  }
+  return { textContent: text, toolCalls: [] }
 }
 
 // Build the displayData object shown in the confirmation card
@@ -426,10 +523,34 @@ export async function POST(req) {
             // emitTokens=false: no stremear texto libre aqui. Si el modelo "confirma"
             // una accion sin emitir el tool_call correspondiente, el usuario veria
             // "¡Listo, registre tu pago!" sin que nada se haya guardado realmente.
-            const { textContent: textContent2, toolCalls: toolCalls2 } = await runDeepSeekStream(
+            let { textContent: textContent2, toolCalls: toolCalls2 } = await runDeepSeekStream(
               { ...streamParams, messages: messagesConToolResult },
               controller, enc, false
             )
+
+            // DeepSeek con tool_choice:'auto' falla seguido en este segundo turno
+            // (repite lookup_client o devuelve vacio). Si pasa, reintentar con
+            // Claude, que con tool_choice:'auto' + RESPOND_TEXT_TOOL siempre
+            // devuelve algo estructurado (accion o pregunta de aclaracion).
+            const segundaRespuestaInutil =
+              (toolCalls2.length === 0 && !textContent2.trim()) ||
+              (toolCalls2.length > 0 && toolCalls2[0].name === 'lookup_client')
+
+            if (segundaRespuestaInutil) {
+              console.warn('[asistente] DeepSeek no devolvio respuesta util tras lookup, intentando Claude...', {
+                toolCalls2: toolCalls2.map(tc => tc.name),
+                textContent2,
+              })
+              try {
+                const claudeResult = await fallbackClaude(messagesConToolResult, tools)
+                if (claudeResult) {
+                  textContent2 = claudeResult.textContent
+                  toolCalls2 = claudeResult.toolCalls
+                }
+              } catch (claudeErr) {
+                console.error('[asistente] Fallback Claude tambien fallo:', claudeErr)
+              }
+            }
 
             // Si la segunda respuesta usa una herramienta (ej: register_payment tras lookup)
             if (toolCalls2.length > 0 && toolCalls2[0].name !== 'lookup_client') {
@@ -473,9 +594,33 @@ export async function POST(req) {
           // Se emite ahora porque runDeepSeekStream no la streameo en vivo.
           controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: textContent })}\n\n`))
         } else {
-          // Respuesta totalmente vacia (sin tool_call ni texto) — sin esto el
-          // bubble queda con los puntos de "cargando" para siempre.
-          controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: 'No entendí bien, ¿puedes repetirlo de otra forma?' })}\n\n`))
+          // Respuesta totalmente vacia (sin tool_call ni texto) en el primer
+          // turno — reintentar con Claude antes de mostrar el fallback generico.
+          console.warn('[asistente] DeepSeek devolvio respuesta vacia en primer turno, intentando Claude...')
+          let manejado = false
+          try {
+            const claudeResult = await fallbackClaude(messages, tools)
+            if (claudeResult?.toolCalls?.length > 0) {
+              const tc = claudeResult.toolCalls[0]
+              if (tc.name === 'lookup_client') {
+                // No reimplementamos el flujo de lookup aqui; pedimos al usuario que reintente.
+              } else {
+                const displayData = await buildDisplayData(tc.name, tc.input, orgId)
+                controller.enqueue(enc.encode(`data: ${JSON.stringify({
+                  type: 'action_proposal', tool: tc.name, input: tc.input, displayData,
+                })}\n\n`))
+                manejado = true
+              }
+            } else if (claudeResult?.textContent?.trim()) {
+              controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: claudeResult.textContent })}\n\n`))
+              manejado = true
+            }
+          } catch (claudeErr) {
+            console.error('[asistente] Fallback Claude (primer turno) tambien fallo:', claudeErr)
+          }
+          if (!manejado) {
+            controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: 'No entendí bien, ¿puedes repetirlo de otra forma?' })}\n\n`))
+          }
         }
 
         // fire-and-forget: extraer memoria si hay conversación larga
