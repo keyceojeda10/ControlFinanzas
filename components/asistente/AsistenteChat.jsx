@@ -145,7 +145,19 @@ export default function AsistenteChat({ onClose }) {
           try {
             const parsed = JSON.parse(payload)
 
-            if (parsed.error) { setError(parsed.error); break }
+            if (parsed.error) {
+              setError(parsed.error)
+              setMessages(prev => {
+                const copy = [...prev]
+                const last = copy[copy.length - 1]
+                // Si el placeholder del asistente quedo vacio (ej. atascado en
+                // "Buscando..."), quitarlo para no dejarlo colgado visualmente
+                // — el error se muestra aparte.
+                if (last?.role === 'assistant' && !last.content) return copy.slice(0, -1)
+                return copy
+              })
+              break
+            }
 
             if (parsed.type === 'status') {
               setMessages(prev => {

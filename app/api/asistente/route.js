@@ -409,7 +409,7 @@ export async function POST(req) {
               ...messages,
               {
                 role: 'assistant',
-                content: textContent || null,
+                content: textContent || '',
                 tool_calls: [{
                   id: toolCall.id,
                   type: 'function',
@@ -478,7 +478,7 @@ export async function POST(req) {
           setImmediate(() => extraerYGuardarMemoria(orgId, session.user.id, conversacionCompleta))
         }
       } catch (err) {
-        console.error('[asistente] Error DeepSeek:', err.message)
+        console.error('[asistente] Error DeepSeek:', err)
         try { controller.enqueue(enc.encode(`data: ${JSON.stringify({ error: 'Error al procesar tu consulta.' })}\n\n`)) } catch {}
       } finally {
         try { controller.enqueue(enc.encode('data: [DONE]\n\n')) } catch {}
