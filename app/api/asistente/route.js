@@ -321,28 +321,33 @@ export async function POST(req) {
       const enc = new TextEncoder()
 
       try {
-        const { textContent, toolCalls } = await runDeepSeekStream(streamParams, controller, enc)
+        // emitTokens=false: no streamear en vivo. Si el modelo decide llamar
+        // una herramienta, el texto que haya escrito ("Voy a buscar a
+        // Carlitos...") suele ser una promesa de accion que NUNCA se ejecuta
+        // visualmente (el tool_call la reemplaza), asi que se descarta y se
+        // muestra el status message correspondiente en su lugar.
+        const { textContent, toolCalls } = await runDeepSeekStream(streamParams, controller, enc, false)
 
         if (toolCalls.length > 0) {
           const toolCall = toolCalls[0]
 
-          // Status message if model didn't write text before tool call
-          if (!textContent.trim()) {
-            const statusMsgs = {
-              lookup_client: 'Buscando...',
-              create_client: 'Creando cliente...',
-              create_loan: 'Preparando préstamo...',
-              register_payment: 'Registrando pago...',
-              adjust_capital: 'Ajustando capital...',
-              create_route: 'Creando ruta...',
-              assign_clients_to_route: 'Asignando clientes...',
-              edit_loan: 'Editando préstamo...',
-              register_expense: 'Registrando gasto...',
-              escalate_support: 'Conectando con soporte...',
-            }
-            const msg = statusMsgs[toolCall.name]
-            if (msg) controller.enqueue(enc.encode(`data: ${JSON.stringify({ type: 'status', text: msg })}\n\n`))
+          // Status message (se descarta cualquier texto que el modelo haya
+          // escrito junto al tool_call, para no prometer acciones que el
+          // usuario no vera reflejarse).
+          const statusMsgs = {
+            lookup_client: 'Buscando...',
+            create_client: 'Creando cliente...',
+            create_loan: 'Preparando préstamo...',
+            register_payment: 'Registrando pago...',
+            adjust_capital: 'Ajustando capital...',
+            create_route: 'Creando ruta...',
+            assign_clients_to_route: 'Asignando clientes...',
+            edit_loan: 'Editando préstamo...',
+            register_expense: 'Registrando gasto...',
+            escalate_support: 'Conectando con soporte...',
           }
+          const msg = statusMsgs[toolCall.name]
+          if (msg) controller.enqueue(enc.encode(`data: ${JSON.stringify({ type: 'status', text: msg })}\n\n`))
 
           if (toolCall.name === 'lookup_client') {
             // Búsqueda fuzzy
@@ -458,6 +463,10 @@ export async function POST(req) {
               })}\n\n`)
             )
           }
+        } else if (textContent.trim()) {
+          // Sin tool_call: es una respuesta normal (pregunta, dato, aclaracion).
+          // Se emite ahora porque runDeepSeekStream no la streameo en vivo.
+          controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: textContent })}\n\n`))
         }
 
         // fire-and-forget: extraer memoria si hay conversación larga
