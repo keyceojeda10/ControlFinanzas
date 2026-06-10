@@ -529,18 +529,37 @@ export async function POST(req) {
             )
 
             // DeepSeek con tool_choice:'auto' falla seguido en este segundo turno
-            // (repite lookup_client o devuelve vacio). Si pasa, reintentar con
-            // Claude, que con tool_choice:'auto' + RESPOND_TEXT_TOOL siempre
-            // devuelve algo estructurado (accion o pregunta de aclaracion).
-            const segundaRespuestaInutil =
-              (toolCalls2.length === 0 && !textContent2.trim()) ||
+            // (repite lookup_client o devuelve vacio). Si pasa, reintentar la
+            // MISMA llamada con tool_choice:'none' — fuerza una respuesta de
+            // texto (p.ej. la pregunta de CASO B "¿cuál de los 2 préstamos?").
+            const segundaRespuestaInutil = (toolCalls2.length === 0 && !textContent2.trim()) ||
               (toolCalls2.length > 0 && toolCalls2[0].name === 'lookup_client')
 
             if (segundaRespuestaInutil) {
-              console.warn('[asistente] DeepSeek no devolvio respuesta util tras lookup, intentando Claude...', {
+              console.warn('[asistente] DeepSeek no devolvio respuesta util tras lookup, reintentando con tool_choice:none...', {
                 toolCalls2: toolCalls2.map(tc => tc.name),
                 textContent2,
               })
+              try {
+                const retry = await runDeepSeekStream(
+                  { ...streamParams, messages: messagesConToolResult, tool_choice: 'none' },
+                  controller, enc, false
+                )
+                textContent2 = retry.textContent
+                toolCalls2 = retry.toolCalls
+              } catch (retryErr) {
+                console.error('[asistente] Reintento tool_choice:none fallo:', retryErr)
+              }
+            }
+
+            // Si DeepSeek sigue sin devolver nada util, ultimo recurso: Claude
+            // (tool_choice:'auto' + RESPOND_TEXT_TOOL siempre devuelve algo
+            // estructurado). Requiere ANTHROPIC_API_KEY con saldo.
+            const siguenSinNada = (toolCalls2.length === 0 && !textContent2.trim()) ||
+              (toolCalls2.length > 0 && toolCalls2[0].name === 'lookup_client')
+
+            if (siguenSinNada) {
+              console.warn('[asistente] DeepSeek sigue sin respuesta util, intentando Claude...')
               try {
                 const claudeResult = await fallbackClaude(messagesConToolResult, tools)
                 if (claudeResult) {
@@ -595,28 +614,38 @@ export async function POST(req) {
           controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: textContent })}\n\n`))
         } else {
           // Respuesta totalmente vacia (sin tool_call ni texto) en el primer
-          // turno — reintentar con Claude antes de mostrar el fallback generico.
-          console.warn('[asistente] DeepSeek devolvio respuesta vacia en primer turno, intentando Claude...')
+          // turno — reintentar con tool_choice:'none' (fuerza texto), y si
+          // sigue vacio, Claude como ultimo recurso.
+          console.warn('[asistente] DeepSeek devolvio respuesta vacia en primer turno, reintentando...')
           let manejado = false
           try {
-            const claudeResult = await fallbackClaude(messages, tools)
-            if (claudeResult?.toolCalls?.length > 0) {
-              const tc = claudeResult.toolCalls[0]
-              if (tc.name === 'lookup_client') {
-                // No reimplementamos el flujo de lookup aqui; pedimos al usuario que reintente.
-              } else {
-                const displayData = await buildDisplayData(tc.name, tc.input, orgId)
-                controller.enqueue(enc.encode(`data: ${JSON.stringify({
-                  type: 'action_proposal', tool: tc.name, input: tc.input, displayData,
-                })}\n\n`))
-                manejado = true
-              }
-            } else if (claudeResult?.textContent?.trim()) {
-              controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: claudeResult.textContent })}\n\n`))
+            const retry = await runDeepSeekStream({ ...streamParams, tool_choice: 'none' }, controller, enc, false)
+            if (retry.textContent.trim()) {
+              controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: retry.textContent })}\n\n`))
               manejado = true
             }
-          } catch (claudeErr) {
-            console.error('[asistente] Fallback Claude (primer turno) tambien fallo:', claudeErr)
+          } catch (retryErr) {
+            console.error('[asistente] Reintento tool_choice:none (primer turno) fallo:', retryErr)
+          }
+          if (!manejado) {
+            try {
+              const claudeResult = await fallbackClaude(messages, tools)
+              if (claudeResult?.toolCalls?.length > 0) {
+                const tc = claudeResult.toolCalls[0]
+                if (tc.name !== 'lookup_client') {
+                  const displayData = await buildDisplayData(tc.name, tc.input, orgId)
+                  controller.enqueue(enc.encode(`data: ${JSON.stringify({
+                    type: 'action_proposal', tool: tc.name, input: tc.input, displayData,
+                  })}\n\n`))
+                  manejado = true
+                }
+              } else if (claudeResult?.textContent?.trim()) {
+                controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: claudeResult.textContent })}\n\n`))
+                manejado = true
+              }
+            } catch (claudeErr) {
+              console.error('[asistente] Fallback Claude (primer turno) tambien fallo:', claudeErr)
+            }
           }
           if (!manejado) {
             controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: 'No entendí bien, ¿puedes repetirlo de otra forma?' })}\n\n`))
