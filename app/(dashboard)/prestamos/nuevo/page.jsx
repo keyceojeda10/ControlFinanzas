@@ -1229,10 +1229,10 @@ function NuevoPrestamo() {
       {paso === 1 && calculo && (
         <div
           className="fixed left-0 right-0 lg:left-60 z-[44] px-4 lg:px-6"
-          style={{ bottom: 'calc(64px + env(safe-area-inset-bottom))' }}
+          style={{ bottom: 'calc(68px + env(safe-area-inset-bottom))' }}
         >
           <div
-            className="max-w-2xl mx-auto rounded-t-[14px] px-4 py-2.5 flex items-center justify-between gap-4"
+            className="max-w-2xl mx-auto rounded-t-[14px] px-4 py-3 flex items-center justify-between gap-4"
             style={{
               background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 12%, var(--color-bg-card)), var(--color-bg-card))',
               border: '1px solid color-mix(in srgb, var(--color-success) 30%, var(--color-border))',
