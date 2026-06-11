@@ -519,7 +519,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
 
       {/* Footer fijo abajo: cancel/atras + siguiente/guardar */}
       <div
-        className="fixed left-0 right-0 bottom-0 z-[45] px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] lg:px-6 lg:pb-6"
+        className="fixed left-0 right-0 lg:left-60 bottom-0 z-[45] px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] lg:px-6 lg:pb-6"
         style={{
           background: 'var(--color-bg-base)',
           borderTop: '1px solid var(--color-border)',
