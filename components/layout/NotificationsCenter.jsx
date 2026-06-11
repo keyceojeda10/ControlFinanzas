@@ -178,10 +178,19 @@ export default function NotificationsCenter({ size = 'md' }) {
     if (!open && btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect()
       const panelWidth = 256
+      const panelMaxHeight = 360
       const margin = 16
       let left = rect.right - panelWidth
       left = Math.max(margin, Math.min(left, window.innerWidth - panelWidth - margin))
-      setPanelPos({ top: rect.bottom + 8, left })
+
+      // Si no hay espacio suficiente debajo (ej. campana al final del sidebar,
+      // pegada al borde inferior), abrir el panel hacia arriba en su lugar.
+      const espacioAbajo = window.innerHeight - rect.bottom
+      const pos = espacioAbajo < panelMaxHeight + margin
+        ? { bottom: window.innerHeight - rect.top + 8, left }
+        : { top: rect.bottom + 8, left }
+
+      setPanelPos(pos)
     }
     setOpen((v) => !v)
   }
@@ -205,10 +214,14 @@ export default function NotificationsCenter({ size = 'md' }) {
 
       {open && panelPos && (
         <div
-          className="fixed w-64 max-w-[calc(100vw-2rem)] rounded-[14px] shadow-2xl overflow-hidden z-50 glass-strong"
-          style={{ border: '1px solid var(--color-border)', top: panelPos.top, left: panelPos.left }}
+          className="fixed w-64 max-w-[calc(100vw-2rem)] max-h-[360px] overflow-y-auto rounded-[14px] shadow-2xl z-50 glass-strong"
+          style={{
+            border: '1px solid var(--color-border)',
+            left: panelPos.left,
+            ...(panelPos.bottom != null ? { bottom: panelPos.bottom } : { top: panelPos.top }),
+          }}
         >
-          <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--color-border)' }}>
+          <div className="px-4 py-3 sticky top-0 glass-strong" style={{ borderBottom: '1px solid var(--color-border)' }}>
             <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Notificaciones</p>
           </div>
 
