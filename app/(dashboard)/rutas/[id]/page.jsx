@@ -290,6 +290,10 @@ export default function RutaDetallePage({ params }) {
   // 'ordenar' = lista plana con drag-and-drop para reordenar la ruta.
   const [modoVista, setModoVista] = useState('trabajo')
   const [seccionProximosAbierta, setSeccionProximosAbierta] = useState(false)
+  // Vista Auditoria (admin): filtro por estado de cobro hoy, busqueda y fila expandida.
+  const [auditoriaFiltro, setAuditoriaFiltro] = useState('todos') // 'todos' | 'pagaron' | 'pendientes' | 'parciales'
+  const [auditoriaBusqueda, setAuditoriaBusqueda] = useState('')
+  const [auditoriaExpandido, setAuditoriaExpandido] = useState(null)
 
   // Helper: fecha Colombia como string YYYY-MM-DD
   const getColombiaDateStr = () => {
@@ -1602,12 +1606,13 @@ export default function RutaDetallePage({ params }) {
           </div>
         )}
 
-        {/* Toggle de vista: Trabajo del dia (3 secciones) vs Ordenar ruta (drag) */}
+        {/* Toggle de vista: Trabajo del dia (3 secciones) vs Ordenar ruta (drag) vs Auditoria (admin) */}
         {ruta.clientes?.length > 0 && (
           <div className="flex gap-1 p-1 mb-3 rounded-[12px]" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
             {[
               { key: 'trabajo', label: 'Trabajo del dia' },
               { key: 'ordenar', label: 'Ordenar ruta' },
+              ...(puedeGestionarRutas ? [{ key: 'auditoria', label: 'Auditoría' }] : []),
             ].map(t => (
               <button
                 key={t.key}
@@ -1792,7 +1797,7 @@ export default function RutaDetallePage({ params }) {
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33" />
                                 </svg>
                                 <span className={`text-[11px] font-bold whitespace-nowrap font-mono-display ${abonoConPendiente ? 'text-[var(--color-warning)]' : 'text-[var(--color-success)]'}`}>
-                                  {abonoConPendiente ? `Cobrar · ${formatMoney(c.cuota)}` : `Cobrar · ${formatMoney(c.cuota)}`}
+                                  Cobrar
                                 </span>
                               </>
                             )}
@@ -1815,6 +1820,24 @@ export default function RutaDetallePage({ params }) {
                           <span className="font-medium" style={{ color: tieneMora ? '#fecaca' : '#888' }}>
                             {detalleCobro}
                           </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Saldo restante por prestamo. Si hay varios activos, se
+                        referencia cada uno por separado para no sumar saldos
+                        de prestamos distintos en un solo numero confuso. */}
+                    {!isCompleted && c.prestamosActivos?.length > 0 && (
+                      <div className="mt-1 flex items-center gap-1.5 text-[10px] leading-snug flex-wrap" style={{ color: '#888' }}>
+                        {c.prestamosActivos.length === 1 ? (
+                          <span>Saldo: <span className="font-mono-display font-semibold" style={{ color: '#aaa' }}>{formatMoney(c.prestamosActivos[0].saldoPendiente)}</span></span>
+                        ) : (
+                          c.prestamosActivos.map((p, i) => (
+                            <span key={p.id}>
+                              {i > 0 && <span style={{ color: '#555' }}> · </span>}
+                              Préstamo {i + 1}: <span className="font-mono-display font-semibold" style={{ color: '#aaa' }}>{formatMoney(p.saldoPendiente)}</span>
+                            </span>
+                          ))
                         )}
                       </div>
                     )}
@@ -1883,6 +1906,249 @@ export default function RutaDetallePage({ params }) {
             return (
               <div className="space-y-1.5" ref={listRef}>
                 {clientesFiltrados.map((c, idx) => renderCard(c, idx, { conGrip: true }))}
+              </div>
+            )
+          }
+
+          // MODO AUDITORIA (admin): lista compacta para revisar quien pago y quien no,
+          // sin entrar/salir de cada tarjeta. Filtros rapidos + busqueda + fila expandible.
+          if (modoVista === 'auditoria') {
+            const formatHora = (fecha) => {
+              const d = new Date(fecha)
+              return d.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit', hour12: true })
+            }
+            const metodoLabel = { efectivo: 'Efectivo', transferencia: 'Transferencia' }
+
+            // Clasificacion de cada cliente para esta vista.
+            const clasificar = (c) => {
+              if (c.hoySinCobro) return 'sin_cobro'
+              if (c.estado === 'completado') return 'completado'
+              const tienePendiente = Boolean(c.cobroPendienteHoy)
+              if (c.pagoHoy && !tienePendiente) return 'pagaron'
+              if (c.pagoHoy && tienePendiente) return 'parcial'
+              return 'pendientes'
+            }
+
+            let lista = clientesFiltrados.map(c => ({ ...c, _clase: clasificar(c) }))
+
+            const counts = {
+              todos: lista.length,
+              pagaron: lista.filter(c => c._clase === 'pagaron').length,
+              pendientes: lista.filter(c => c._clase === 'pendientes').length,
+              parciales: lista.filter(c => c._clase === 'parcial').length,
+            }
+
+            if (auditoriaFiltro === 'pagaron') lista = lista.filter(c => c._clase === 'pagaron')
+            else if (auditoriaFiltro === 'pendientes') lista = lista.filter(c => c._clase === 'pendientes')
+            else if (auditoriaFiltro === 'parciales') lista = lista.filter(c => c._clase === 'parcial')
+
+            if (auditoriaBusqueda.trim()) {
+              const q = auditoriaBusqueda.trim().toLowerCase()
+              lista = lista.filter(c => c.nombre?.toLowerCase().includes(q))
+            }
+
+            const filtros = [
+              { key: 'todos', label: 'Todos', count: counts.todos },
+              { key: 'pagaron', label: 'Pagaron', count: counts.pagaron },
+              { key: 'pendientes', label: 'Pendientes', count: counts.pendientes },
+              { key: 'parciales', label: 'Abonos parciales', count: counts.parciales },
+            ]
+
+            return (
+              <div className="space-y-3">
+                {/* Buscador */}
+                <div className="relative">
+                  <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="var(--color-text-muted)" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
+                  </svg>
+                  <input
+                    type="text"
+                    value={auditoriaBusqueda}
+                    onChange={(e) => setAuditoriaBusqueda(e.target.value)}
+                    placeholder="Buscar cliente..."
+                    className="w-full pl-9 pr-3 py-2 text-sm rounded-[10px] outline-none"
+                    style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+                  />
+                </div>
+
+                {/* Filtros rapidos con contador */}
+                <div className="flex gap-1.5 overflow-x-auto pb-0.5 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
+                  {filtros.map(f => (
+                    <button
+                      key={f.key}
+                      type="button"
+                      onClick={() => setAuditoriaFiltro(f.key)}
+                      className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold rounded-full transition-all"
+                      style={auditoriaFiltro === f.key
+                        ? { background: 'var(--color-accent)', color: 'white' }
+                        : { background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)' }}
+                    >
+                      {f.label}
+                      <span className="px-1.5 py-px rounded-full text-[10px] font-bold"
+                        style={auditoriaFiltro === f.key
+                          ? { background: 'rgba(255,255,255,0.25)' }
+                          : { background: 'var(--color-bg-card)' }}
+                      >
+                        {f.count}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Lista compacta */}
+                {lista.length === 0 ? (
+                  <div className="text-center py-10 text-sm" style={{ color: 'var(--color-text-muted)' }}>
+                    No hay clientes que coincidan
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    {lista.map((c) => {
+                      const expandido = auditoriaExpandido === c.id
+                      const cfg = {
+                        pagaron:    { color: 'var(--color-success)', label: 'Pago hoy', icon: '✓' },
+                        parcial:    { color: 'var(--color-warning)', label: 'Abono parcial', icon: '½' },
+                        pendientes: { color: 'var(--color-danger)',  label: 'Pendiente', icon: '!' },
+                        completado: { color: 'var(--color-text-muted)', label: 'Completado', icon: '✓' },
+                        sin_cobro:  { color: 'var(--color-text-muted)', label: 'Sin cobro hoy', icon: '–' },
+                      }[c._clase]
+
+                      return (
+                        <div key={c.id} className="rounded-[12px] overflow-hidden transition-all"
+                          style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderLeft: `3px solid ${cfg.color}` }}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setAuditoriaExpandido(expandido ? null : c.id)}
+                            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left"
+                          >
+                            {/* Icono de estado */}
+                            <div className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[12px] font-bold"
+                              style={{ background: `color-mix(in srgb, ${cfg.color} 15%, transparent)`, color: cfg.color }}
+                            >
+                              {cfg.icon}
+                            </div>
+
+                            {/* Nombre + estado */}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>
+                                {c.nombre}
+                              </p>
+                              <p className="text-[10px]" style={{ color: cfg.color }}>
+                                {cfg.label}
+                                {c.diasMora > 0 ? ` · ${c.diasMora}d mora` : ''}
+                              </p>
+                            </div>
+
+                            {/* Cobrado hoy / cuota */}
+                            {c._clase !== 'completado' && c._clase !== 'sin_cobro' && (
+                              <div className="shrink-0 text-right">
+                                <p className="text-[12px] font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
+                                  {formatMoney(c.montoPagadoHoy || 0)}
+                                  <span className="font-normal" style={{ color: 'var(--color-text-muted)' }}> / {formatMoney(c.cuota)}</span>
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Chevron */}
+                            <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"
+                              style={{ color: 'var(--color-text-muted)', transform: expandido ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 150ms ease', flexShrink: 0 }}>
+                              <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+
+                          {/* Detalle expandido */}
+                          {expandido && (
+                            <div className="px-3 pb-3 pt-0.5 space-y-2.5" style={{ borderTop: '1px solid var(--color-border)' }}>
+                              {/* Saldo restante por prestamo */}
+                              {c.prestamosActivos?.length > 0 && (
+                                <div className="pt-2.5">
+                                  <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-muted)' }}>
+                                    Saldo restante
+                                  </p>
+                                  <div className="space-y-1">
+                                    {c.prestamosActivos.map((p, i) => (
+                                      <div key={p.id} className="flex items-center justify-between text-[12px]">
+                                        <span style={{ color: 'var(--color-text-muted)' }}>
+                                          {c.prestamosActivos.length > 1 ? `Préstamo ${i + 1}` : 'Préstamo'}
+                                          {' · '}{formatMoney(p.cuotaDiaria)}/{frecuenciaPrestamoLabel(p.frecuencia)}
+                                        </span>
+                                        <span className="font-mono-display font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                                          {formatMoney(p.saldoPendiente)}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Mora */}
+                              {c.diasMora > 0 && (
+                                <div className="flex items-center justify-between text-[12px] px-2 py-1.5 rounded-[8px]"
+                                  style={{ background: 'color-mix(in srgb, var(--color-danger) 8%, transparent)', color: 'var(--color-danger)' }}
+                                >
+                                  <span>{c.diasMora}d en mora{c.cuotasEnMora ? ` · ${c.cuotasEnMora} cuota${c.cuotasEnMora === 1 ? '' : 's'}` : ''}</span>
+                                  <span className="font-mono-display font-semibold">{formatMoney(c.montoEnMora)}</span>
+                                </div>
+                              )}
+
+                              {/* Pagos de hoy: metodo y hora */}
+                              {c.pagosHoyDetalle?.length > 0 ? (
+                                <div>
+                                  <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-muted)' }}>
+                                    Cobros de hoy
+                                  </p>
+                                  <div className="space-y-1">
+                                    {c.pagosHoyDetalle.map((pg, i) => (
+                                      <div key={i} className="flex items-center justify-between text-[12px]">
+                                        <span style={{ color: 'var(--color-text-muted)' }}>
+                                          {formatHora(pg.fechaPago)}
+                                          {pg.metodoPago ? ` · ${metodoLabel[pg.metodoPago] || pg.metodoPago}` : ''}
+                                        </span>
+                                        <span className="font-mono-display font-semibold" style={{ color: 'var(--color-success)' }}>
+                                          {formatMoney(pg.monto)}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : (
+                                c._clase !== 'completado' && c._clase !== 'sin_cobro' && (
+                                  <p className="text-[12px]" style={{ color: 'var(--color-text-muted)' }}>
+                                    Aun no se ha registrado un cobro hoy.
+                                  </p>
+                                )
+                              )}
+
+                              {/* Acciones rapidas */}
+                              {c._clase !== 'completado' && (
+                                <div className="flex gap-2 pt-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => router.push(`/clientes/${c.id}`)}
+                                    className="flex-1 py-2 text-[12px] font-semibold rounded-[8px] transition-colors"
+                                    style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)' }}
+                                  >
+                                    Ver cliente
+                                  </button>
+                                  {c._clase !== 'pagaron' && (
+                                    <button
+                                      type="button"
+                                      onClick={() => abrirPagoRapido(c)}
+                                      className="flex-1 py-2 text-[12px] font-semibold rounded-[8px] transition-colors"
+                                      style={{ background: 'var(--color-accent)', color: 'white' }}
+                                    >
+                                      Cobrar
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             )
           }

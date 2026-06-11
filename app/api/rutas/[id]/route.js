@@ -91,7 +91,8 @@ export async function GET(request, { params }) {
               // mora/saldo usan totalPagado (denormalizado), no necesitan historial
               pagos: {
                 where:  { fechaPago: { gte: _hoy, lt: _manana } },
-                select: { montoPagado: true, fechaPago: true, tipo: true, latitud: true, longitud: true },
+                orderBy: { fechaPago: 'desc' },
+                select: { montoPagado: true, fechaPago: true, tipo: true, latitud: true, longitud: true, metodoPago: true },
               },
             },
           },
@@ -152,6 +153,8 @@ export async function GET(request, { params }) {
     let cobroPendienteHoy = false
     // Pago de hoy con coords mas reciente — alimenta el badge en la card del cliente.
     let pagoHoyGeoCliente = null
+    // Detalle de pagos de hoy (vista de auditoria): monto, metodo y hora de cada cobro real.
+    const pagosHoyDetalle = []
 
     for (const p of c.prestamos) {
       // p.pagos ya viene filtrado por hoy desde la query (where fechaPago gte/lt)
@@ -159,6 +162,17 @@ export async function GET(request, { params }) {
       const montoPagadoHoy = pagosHoy.filter(pg => !['recargo', 'descuento'].includes(pg.tipo)).reduce((a, pg) => a + pg.montoPagado, 0)
       pagadoHoy    += montoPagadoHoy
       recaudadoHoy += montoPagadoHoy
+
+      // Detalle de pagos reales de hoy (auditoria): un item por pago, mas reciente primero.
+      for (const pg of pagosHoy) {
+        if (['recargo', 'descuento'].includes(pg.tipo)) continue
+        pagosHoyDetalle.push({
+          prestamoId: p.id,
+          monto: pg.montoPagado,
+          metodoPago: pg.metodoPago || null,
+          fechaPago: pg.fechaPago,
+        })
+      }
 
       // Geolocalizacion del cobro: recolectar pagos reales (no ajustes) de hoy
       // con lat/lng. Cada pago alimenta `cobrosGeoHoy` (pines del mapa) y el
@@ -281,6 +295,7 @@ export async function GET(request, { params }) {
       // cuentan en la cartera/estado de la ruta; solo aportan su cobro al recaudado).
       estado:    c.prestamos.filter((pr) => !pr.esClavo).length === 0 ? 'completado' : (mora > 0 ? 'mora' : 'activo'),
       pagoHoy:   yaPageHoy,
+      montoPagadoHoy: Math.round(pagadoHoy),
       diasMora:  mora,
       cuotasEnMora: cuotasEnMoraCliente,
       montoEnMora: Math.round(montoEnMoraCliente),
@@ -303,6 +318,8 @@ export async function GET(request, { params }) {
             clienteSinCoords: c.latitud == null || c.longitud == null,
           }
         : null,
+      // Detalle de pagos reales de hoy (vista de auditoria), mas reciente primero.
+      pagosHoyDetalle,
     }
   })
 
