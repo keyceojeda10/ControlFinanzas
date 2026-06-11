@@ -87,12 +87,16 @@ export async function GET(request, { params }) {
               diaCobroSemana: true,
               diaCobroMes: true,
               diasSinCobro: true,
+              createdAt: true,
+              renovadoDeId: true,
+              seguro: true,
+              montoSeguro: true,
               // Solo pagos de HOY — evita traer meses de historial al cliente
               // mora/saldo usan totalPagado (denormalizado), no necesitan historial
               pagos: {
                 where:  { fechaPago: { gte: _hoy, lt: _manana } },
                 orderBy: { fechaPago: 'desc' },
-                select: { montoPagado: true, fechaPago: true, tipo: true, latitud: true, longitud: true, metodoPago: true },
+                select: { id: true, montoPagado: true, fechaPago: true, createdAt: true, tipo: true, latitud: true, longitud: true, metodoPago: true, cobradorId: true },
               },
             },
           },
@@ -134,6 +138,10 @@ export async function GET(request, { params }) {
 
   // Pines del mapa: pagos del dia con coords, color por distancia con su cliente.
   const cobrosGeoHoy = []
+  // IDs de pagos y prestamos de esta ruta — para cruzar con ActividadLog y
+  // detectar pagos editados/anulados hoy en el feed de "Actividad del día".
+  const pagoIdsRuta = []
+  const prestamoIdsRuta = []
 
   const clientesEnriquecidos = ruta.clientes.map((c) => {
     // diasSinCobro se resuelve a nivel cliente (sin prestamo individual aquí,
@@ -155,20 +163,43 @@ export async function GET(request, { params }) {
     let pagoHoyGeoCliente = null
     // Detalle de pagos de hoy (vista de auditoria): monto, metodo y hora de cada cobro real.
     const pagosHoyDetalle = []
+    // Préstamos creados hoy para este cliente (nuevos o renovaciones), y seguros
+    // cobrados hoy — recorre TODOS los préstamos (no solo activos), porque un
+    // préstamo renovado hoy puede haber quedado liquidado/inactivo de inmediato.
+    const eventosHoy = []
 
     for (const p of c.prestamos) {
+      if (p.createdAt && new Date(p.createdAt) >= _hoy && new Date(p.createdAt) < _manana) {
+        eventosHoy.push({
+          prestamoId: p.id,
+          tipo: p.renovadoDeId ? 'renovacion' : 'prestamo_nuevo',
+          montoPrestado: p.montoPrestado,
+          totalAPagar: p.totalAPagar ?? p.montoPrestado,
+          seguro: !!p.seguro,
+          montoSeguro: p.montoSeguro ?? null,
+          createdAt: p.createdAt,
+        })
+      }
+    }
+
+    for (const p of c.prestamos) {
+      prestamoIdsRuta.push(p.id)
       // p.pagos ya viene filtrado por hoy desde la query (where fechaPago gte/lt)
       const pagosHoy = p.pagos
+      for (const pg of pagosHoy) pagoIdsRuta.push(pg.id)
       const montoPagadoHoy = pagosHoy.filter(pg => !['recargo', 'descuento'].includes(pg.tipo)).reduce((a, pg) => a + pg.montoPagado, 0)
       pagadoHoy    += montoPagadoHoy
       recaudadoHoy += montoPagadoHoy
 
       // Detalle de pagos reales de hoy (auditoria): un item por pago, mas reciente
       // primero. Incluye distancia al cliente cuando el pago trae coords (para
-      // detectar cobros registrados lejos del domicilio).
+      // detectar cobros registrados lejos del domicilio) y si el registro en
+      // sistema (createdAt) difiere mucho de la hora del pago (fechaPago) —
+      // indicio de que se "cuadro" o registro despues, no en el momento del cobro.
       for (const pg of pagosHoy) {
         if (['recargo', 'descuento'].includes(pg.tipo)) continue
         const tieneCoords = pg.latitud != null && pg.longitud != null
+        const minutosRegistroTardio = Math.round((new Date(pg.createdAt) - new Date(pg.fechaPago)) / 60000)
         pagosHoyDetalle.push({
           prestamoId: p.id,
           monto: pg.montoPagado,
@@ -176,6 +207,9 @@ export async function GET(request, { params }) {
           fechaPago: pg.fechaPago,
           distanciaMetros: tieneCoords ? distanciaMetros(pg.latitud, pg.longitud, c.latitud, c.longitud) : null,
           clienteSinCoords: c.latitud == null || c.longitud == null,
+          // > 60 min de diferencia: el pago se registro bastante despues de la
+          // hora que se le asigno (puede ser legitimo, pero vale la pena verlo).
+          registradoTarde: minutosRegistroTardio > 60 ? minutosRegistroTardio : null,
         })
       }
 
@@ -244,6 +278,8 @@ export async function GET(request, { params }) {
         frecuencia: p.frecuencia || 'diario',
         montoPrestado: p.montoPrestado,
         fechaInicio: p.fechaInicio,
+        seguro: !!p.seguro,
+        montoSeguro: p.montoSeguro ?? null,
       })
 
       // Último pago más reciente (pagos ya vienen ordenados por fechaPago desc)
@@ -325,6 +361,8 @@ export async function GET(request, { params }) {
         : null,
       // Detalle de pagos reales de hoy (vista de auditoria), mas reciente primero.
       pagosHoyDetalle,
+      // Préstamos nuevos / renovaciones creados hoy para este cliente.
+      eventosHoy,
     }
   })
 
@@ -349,6 +387,23 @@ export async function GET(request, { params }) {
     prisma.prestamo.aggregate({ where: { ...baseSeguro, estado: 'activo' }, _sum: { montoSeguro: true }, _count: true }),
     prisma.prestamo.aggregate({ where: { ...baseSeguro, createdAt: { gte: hoy(), lt: manana() } }, _sum: { montoSeguro: true }, _count: true }),
   ])
+
+  // Actividad del día (auditoria): pagos editados/anulados y préstamos
+  // editados/eliminados hoy. Para pagos editados, cruza por entidadId (el pago
+  // sigue existiendo). Para anulaciones/eliminaciones la entidad ya no existe,
+  // así que se filtra por el cobrador de la ruta como mejor aproximación.
+  const actividadHoy = await prisma.actividadLog.findMany({
+    where: {
+      organizationId,
+      createdAt: { gte: _hoy, lt: _manana },
+      OR: [
+        { accion: 'editar_pago', entidadId: { in: pagoIdsRuta.length ? pagoIdsRuta : ['__none__'] } },
+        { accion: { in: ['anular_pago', 'editar_prestamo', 'eliminar_prestamo'] }, userId: ruta.cobradorId ?? undefined },
+      ],
+    },
+    select: { id: true, accion: true, entidadTipo: true, entidadId: true, detalle: true, createdAt: true, userId: true, user: { select: { nombre: true } } },
+    orderBy: { createdAt: 'desc' },
+  })
 
   return Response.json({
     id:          ruta.id,
@@ -375,6 +430,8 @@ export async function GET(request, { params }) {
     // MVP geo: pines para el mapa de la ruta. Cada item es un cobro de hoy
     // con coords; el frontend pinta verde/naranja/rojo por distancia.
     cobrosGeoHoy,
+    // Actividad del día (auditoria): pagos editados/anulados, prestamos editados/eliminados.
+    actividadHoy,
   })
 }
 

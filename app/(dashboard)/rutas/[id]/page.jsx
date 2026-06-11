@@ -2017,6 +2017,31 @@ export default function RutaDetallePage({ params }) {
                       )}
                     </div>
                   )}
+
+                  {/* Actividad sospechosa: pagos editados/anulados o prestamos modificados hoy */}
+                  {ruta.actividadHoy?.length > 0 && (
+                    <div className="mt-2.5 pt-2.5 space-y-1" style={{ borderTop: '1px solid var(--color-border)' }}>
+                      <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-danger)' }}>
+                        Actividad del día a revisar
+                      </p>
+                      {ruta.actividadHoy.map((a) => {
+                        const labelMap = {
+                          editar_pago: 'Editó la fecha de un pago',
+                          anular_pago: 'Anuló un pago',
+                          editar_prestamo: 'Editó un préstamo',
+                          eliminar_prestamo: 'Eliminó un préstamo',
+                        }
+                        return (
+                          <div key={a.id} className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                            <span style={{ color: 'var(--color-danger)' }}>{labelMap[a.accion] || a.accion}</span>
+                            {a.user?.nombre ? ` · ${a.user.nombre}` : ''}
+                            {' · '}{formatHora(a.createdAt)}
+                            {a.detalle ? <span className="block text-[10px] opacity-80">{a.detalle}</span> : null}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 {/* Buscador */}
@@ -2134,6 +2159,11 @@ export default function RutaDetallePage({ params }) {
                                         <span style={{ color: 'var(--color-text-muted)' }}>
                                           {c.prestamosActivos.length > 1 ? `Préstamo ${i + 1}` : 'Préstamo'}
                                           {' · '}{formatMoney(p.cuotaDiaria)}/{frecuenciaPrestamoLabel(p.frecuencia)}
+                                          {p.seguro && (
+                                            <span style={{ color: 'var(--color-accent)' }}>
+                                              {' · seguro'}{p.montoSeguro ? ` ${formatMoney(p.montoSeguro)}` : ''}
+                                            </span>
+                                          )}
                                         </span>
                                         <span className="font-mono-display font-semibold" style={{ color: 'var(--color-text-primary)' }}>
                                           {formatMoney(p.saldoPendiente)}
@@ -2141,6 +2171,32 @@ export default function RutaDetallePage({ params }) {
                                       </div>
                                     ))}
                                   </div>
+                                </div>
+                              )}
+
+                              {/* Prestamos nuevos / renovaciones registrados hoy */}
+                              {c.eventosHoy?.length > 0 && (
+                                <div className="px-2 py-1.5 rounded-[8px] space-y-1"
+                                  style={{ background: 'color-mix(in srgb, var(--color-accent) 8%, transparent)' }}
+                                >
+                                  <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-accent)' }}>
+                                    {c.eventosHoy.some(e => e.tipo === 'renovacion') ? 'Renovación / préstamo nuevo hoy' : 'Préstamo nuevo hoy'}
+                                  </p>
+                                  {c.eventosHoy.map((ev, i) => (
+                                    <div key={i} className="flex items-center justify-between text-[12px]">
+                                      <span style={{ color: 'var(--color-text-muted)' }}>
+                                        {ev.tipo === 'renovacion' ? 'Renovación' : 'Préstamo nuevo'}
+                                        {ev.seguro && (
+                                          <span style={{ color: 'var(--color-accent)' }}>
+                                            {' · seguro'}{ev.montoSeguro ? ` ${formatMoney(ev.montoSeguro)}` : ''}
+                                          </span>
+                                        )}
+                                      </span>
+                                      <span className="font-mono-display font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                                        {formatMoney(ev.montoPrestado)}
+                                      </span>
+                                    </div>
+                                  ))}
                                 </div>
                               )}
 
@@ -2177,6 +2233,15 @@ export default function RutaDetallePage({ params }) {
                                             {formatHora(pg.fechaPago)}
                                             {pg.metodoPago ? ` · ${metodoLabel[pg.metodoPago] || pg.metodoPago}` : ''}
                                             {geoLabel && <span style={{ color: geoColor }}> · {geoLabel}</span>}
+                                            {pg.registradoTarde != null && (
+                                              <span style={{ color: 'var(--color-warning)' }}>
+                                                {' · registrado '}
+                                                {pg.registradoTarde >= 60
+                                                  ? `${Math.round(pg.registradoTarde / 60)}h`
+                                                  : `${pg.registradoTarde}min`}
+                                                {' después'}
+                                              </span>
+                                            )}
                                           </span>
                                           <span className="font-mono-display font-semibold" style={{ color: 'var(--color-success)' }}>
                                             {formatMoney(pg.monto)}

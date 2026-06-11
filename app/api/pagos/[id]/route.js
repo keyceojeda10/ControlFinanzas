@@ -43,6 +43,8 @@ export async function PATCH(request, { params }) {
     select: { diasSinCobro: true },
   })
 
+  const fechaAnterior = pago.fechaPago
+
   await prisma.$transaction(async (tx) => {
     await tx.pago.update({
       where: { id: pagoId },
@@ -66,6 +68,15 @@ export async function PATCH(request, { params }) {
     const diasExcluidos = obtenerDiasSinCobro(clienteCfg, clienteCfg?.ruta, org)
     const nuevoEstado = calcularEstadoCliente(todosLosPrestamos, diasExcluidos)
     await tx.cliente.update({ where: { id: clienteId }, data: { estado: nuevoEstado } })
+  })
+
+  logActividad({
+    session,
+    accion: 'editar_pago',
+    entidadTipo: 'pago',
+    entidadId: pagoId,
+    detalle: `Fecha de pago cambiada de ${new Date(fechaAnterior).toISOString()} a ${nuevaFecha.toISOString()} (préstamo ${pago.prestamoId})`,
+    ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
   })
 
   return Response.json({ ok: true })
@@ -225,6 +236,15 @@ export async function DELETE(request, { params }) {
       error: 'No se pudo anular el pago. El equipo de soporte fue notificado.',
     }, { status: 500 })
   }
+
+  logActividad({
+    session,
+    accion: 'anular_pago',
+    entidadTipo: 'pago',
+    entidadId: pagoId,
+    detalle: `Anuló pago de ${pago.montoPagado} (${pago.tipo}) del préstamo ${pago.prestamoId}`,
+    ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+  })
 
   return Response.json({ ok: true })
 }
