@@ -8,6 +8,7 @@ import { signOut }      from 'next-auth/react'
 import { useAuth }      from '@/hooks/useAuth'
 import { useEffect, useRef, useState } from 'react'
 import ThemeToggle      from '@/components/ui/ThemeToggle'
+import NotificationsCenter from '@/components/layout/NotificationsCenter'
 import Avatar           from '@/components/ui/Avatar'
 import { limpiarDatosOffline } from '@/lib/offline'
 
@@ -77,6 +78,9 @@ export default function Header() {
 
       {/* Actions */}
       <div className="flex items-center gap-1.5">
+        {/* Centro de notificaciones */}
+        <NotificationsCenter />
+
         {/* Theme toggle compacto */}
         <ThemeToggle />
 

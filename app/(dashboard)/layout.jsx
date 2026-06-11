@@ -13,9 +13,7 @@ import SinRutaBanner         from '@/components/layout/SinRutaBanner'
 import VerificarEmailBanner  from '@/components/layout/VerificarEmailBanner'
 import SuscripcionBanner     from '@/components/layout/SuscripcionBanner'
 import GlobalSearch        from '@/components/layout/GlobalSearch'
-import NotificationPrompt from '@/components/NotificationPrompt'
 import Analytics          from '@/components/Analytics'
-import { InstallBanner } from '@/components/layout/InstallButton'
 import CompletarTelefonoModal from '@/components/layout/CompletarTelefonoModal'
 import AsistenteButton from '@/components/asistente/AsistenteButton'
 
@@ -81,12 +79,6 @@ export default async function DashboardLayout({ children }) {
 
       {/* Búsqueda global (Ctrl+K) */}
       <GlobalSearch />
-
-      {/* Prompt para activar notificaciones push */}
-      <NotificationPrompt />
-
-      {/* Banner instalar app (una vez por sesion) */}
-      <InstallBanner />
 
       {/* Modal completar telefono (owners sin telefono) */}
       <CompletarTelefonoModal />

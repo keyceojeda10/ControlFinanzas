@@ -8,8 +8,8 @@ import { signOut } from 'next-auth/react'
 import { useAuth } from '@/hooks/useAuth'
 import { useOffline } from '@/components/providers/OfflineProvider'
 import { useState, useEffect } from 'react'
-import InstallButton from './InstallButton'
 import ThemeToggle from '@/components/ui/ThemeToggle'
+import NotificationsCenter from '@/components/layout/NotificationsCenter'
 import { useTheme } from '@/lib/theme/ThemeProvider'
 import Avatar from '@/components/ui/Avatar'
 import SyncStatusBadge from '@/components/offline/SyncStatusBadge'
@@ -538,6 +538,7 @@ export default function Sidebar() {
             </span>
           </div>
           <div className="flex items-center gap-0.5 shrink-0">
+            <NotificationsCenter size="sm" align="left" />
             <ThemeToggle size="sm" />
             <button
               onClick={async () => {
@@ -575,9 +576,6 @@ export default function Sidebar() {
             {bulkProgress ? bulkProgress.message : 'Sync offline'}
           </span>
         </button>
-
-        {/* Instalar app */}
-        <InstallButton variant="desktop" />
 
         {/* Status line */}
         <div className="flex items-center gap-1.5 px-1 pt-0.5">
