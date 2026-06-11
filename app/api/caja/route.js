@@ -505,6 +505,7 @@ export async function GET(request) {
     include: {
       cobrador: { select: { id: true, nombre: true } },
       reabiertoPor: { select: { id: true, nombre: true } },
+      solicitudReaperturaPor: { select: { id: true, nombre: true } },
     },
     orderBy: { createdAt: 'desc' },
   })
@@ -941,6 +942,8 @@ export async function POST(request) {
         // Re-confirmar el cierre vuelve a bloquear nuevos pagos.
         reabiertoEn: null,
         reabiertoPorId: null,
+        solicitudReaperturaEn: null,
+        solicitudReaperturaPorId: null,
       },
       include: { cobrador: { select: { id: true, nombre: true } } },
     })

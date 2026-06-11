@@ -66,6 +66,7 @@ function EditarCobradorInner({ params }) {
     verSaldoCaja:   false,
     gestionarRutas: false,
     aplicarDescuentos: false,
+    reabrirCajaSinAprobacion: false,
   })
 
   useEffect(() => {
@@ -92,6 +93,7 @@ function EditarCobradorInner({ params }) {
             verSaldoCaja:   data.permisos.verSaldoCaja   ?? false,
             gestionarRutas: data.permisos.gestionarRutas ?? false,
             aplicarDescuentos: data.permisos.aplicarDescuentos ?? false,
+            reabrirCajaSinAprobacion: data.permisos.reabrirCajaSinAprobacion ?? false,
           })
         }
       })
@@ -286,6 +288,7 @@ function EditarCobradorInner({ params }) {
               { key: 'verCapitalRuta', label: 'Ver capital de su ruta', desc: 'Muestra al cobrador solo el capital/saldo de la(s) ruta(s) que tiene asignada(s), no el de toda la organización' },
               { key: 'verCapital',     label: 'Ver capital total de la organización', desc: 'Muestra el patrimonio completo (saldo en caja + cartera activa) de TODA la organización. Más sensible' },
               { key: 'gestionarRutas', label: 'Gestionar clientes en rutas', desc: 'Permite añadir y quitar clientes de sus rutas asignadas (para rotar clientes por día)' },
+              { key: 'reabrirCajaSinAprobacion', label: 'Reabrir caja sin aprobación', desc: 'Si cierra su caja y necesita seguir cobrando, puede reabrirla el mismo sin esperar a que el administrador apruebe' },
             ].map((p) => (
               <div key={p.key} className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">

@@ -1,6 +1,11 @@
 // app/api/caja/reabrir/route.js
 // Reabre el cierre de caja del dia para que el cobrador pueda seguir
 // registrando pagos. Deja rastro de quien y cuando lo reabrio.
+//
+// - Owner: reabre directo (y limpia cualquier solicitud pendiente).
+// - Cobrador con permiso `reabrirCajaSinAprobacion`: reabre directo, se avisa al owner.
+// - Cobrador sin ese permiso: queda como SOLICITUD pendiente de aprobacion
+//   (la caja sigue cerrada hasta que el owner apruebe).
 
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
@@ -39,12 +44,45 @@ export async function POST(request) {
 
   const cobrador = await prisma.user.findFirst({
     where: { id: cobradorId, organizationId },
-    select: { nombre: true },
+    select: { nombre: true, puedeReabrirCajaSinAprobacion: true },
   })
 
+  // Cobrador sin permiso: crea/actualiza la solicitud pendiente, NO reabre.
+  if (rol === 'cobrador' && !cobrador?.puedeReabrirCajaSinAprobacion) {
+    if (cierre.solicitudReaperturaEn) return Response.json(cierre, { status: 200 })
+
+    const cierreActualizado = await prisma.cierreCaja.update({
+      where: { id: cierre.id },
+      data: { solicitudReaperturaEn: new Date(), solicitudReaperturaPorId: userId },
+    })
+
+    logActividad({
+      session,
+      accion: 'solicitud_reapertura_cierre_caja',
+      entidadTipo: 'caja',
+      entidadId: cierre.id,
+      detalle: `Solicitud de reapertura de caja ${cobrador?.nombre ?? ''} (${fechaLocal})`,
+      ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+    })
+
+    enviarPushOrg(organizationId, {
+      title: 'Solicitud de reapertura de caja',
+      body: `${session.user.nombre} solicita reabrir su caja del ${fechaLocal} para seguir registrando abonos`,
+      url: '/caja',
+    }).catch(() => {})
+
+    return Response.json(cierreActualizado, { status: 200 })
+  }
+
+  // Owner, o cobrador con permiso: reabre directo.
   const cierreActualizado = await prisma.cierreCaja.update({
     where: { id: cierre.id },
-    data: { reabiertoEn: new Date(), reabiertoPorId: userId },
+    data: {
+      reabiertoEn: new Date(),
+      reabiertoPorId: userId,
+      solicitudReaperturaEn: null,
+      solicitudReaperturaPorId: null,
+    },
   })
 
   logActividad({
@@ -56,7 +94,7 @@ export async function POST(request) {
     ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
   })
 
-  // Si fue el cobrador quien reabrio su propia caja, avisar al/los owner(s).
+  // Si fue el cobrador quien reabrio su propia caja (con permiso), avisar al/los owner(s).
   if (rol === 'cobrador') {
     enviarPushOrg(organizationId, {
       title: 'Caja reabierta',

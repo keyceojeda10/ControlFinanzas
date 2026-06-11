@@ -66,7 +66,7 @@ export default function CajaPage() {
   const searchParams = useSearchParams()
   const fechaParam = searchParams.get('fecha')
   const tabParam = searchParams.get('tab')
-  const { esCobrador, esOwner, session, puedeReportarGastos, puedeVerSaldoCaja, puedeVerCapital, puedeVerCapitalRuta, loading: authLoading } = useAuth()
+  const { esCobrador, esOwner, session, puedeReportarGastos, puedeVerSaldoCaja, puedeVerCapital, puedeVerCapitalRuta, puedeReabrirCajaSinAprobacion, loading: authLoading } = useAuth()
   const ownerId = session?.user?.id ?? null
 
   const { lastSyncedAt } = useOffline()
@@ -96,6 +96,7 @@ export default function CajaPage() {
   )
   const [modoAjusteCierre, setModoAjusteCierre] = useState(false)
   const [reabriendoCierre, setReabriendoCierre] = useState(false)
+  const [procesandoSolicitud, setProcesandoSolicitud] = useState(null)
   const [isOffline, setIsOffline] = useState(false)
   const [filtroCobrador, setFiltroCobrador] = useState('')
   // Filtro de periodo de la caja: { modo:'hoy'|'7d'|'30d'|'rango', fecha, desde, hasta }
@@ -334,6 +335,40 @@ export default function CajaPage() {
       await fetchData()
     } finally {
       setReabriendoCierre(false)
+    }
+  }
+
+  const aprobarReapertura = async (cierreId) => {
+    setProcesandoSolicitud(cierreId)
+    setErrorCaja('')
+    try {
+      const res = await fetch('/api/caja/reabrir/aprobar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cierreId }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setErrorCaja(data.error ?? 'Error al aprobar la reapertura'); return }
+      await fetchData()
+    } finally {
+      setProcesandoSolicitud(null)
+    }
+  }
+
+  const rechazarReapertura = async (cierreId) => {
+    setProcesandoSolicitud(cierreId)
+    setErrorCaja('')
+    try {
+      const res = await fetch('/api/caja/reabrir/rechazar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cierreId }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setErrorCaja(data.error ?? 'Error al rechazar la reapertura'); return }
+      await fetchData()
+    } finally {
+      setProcesandoSolicitud(null)
     }
   }
 
@@ -691,12 +726,21 @@ export default function CajaPage() {
               <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Cierre registrado</p>
               <div className="flex items-center gap-1.5">
                 {cierreHoy.editadoEn && <Badge variant="gray">Editado</Badge>}
-                {cierreHoy.reabiertoEn ? <Badge variant="yellow">Reabierta</Badge> : <Badge variant="green">Cerrado</Badge>}
+                {cierreHoy.reabiertoEn
+                  ? <Badge variant="yellow">Reabierta</Badge>
+                  : cierreHoy.solicitudReaperturaEn
+                    ? <Badge variant="yellow">Solicitud pendiente</Badge>
+                    : <Badge variant="green">Cerrado</Badge>}
               </div>
             </div>
             {cierreHoy.reabiertoEn && (
               <p className="text-[11px] mb-2" style={{ color: 'var(--color-text-muted)' }}>
                 Reabierta por {cierreHoy.reabiertoPor?.nombre || '—'}
+              </p>
+            )}
+            {!cierreHoy.reabiertoEn && cierreHoy.solicitudReaperturaEn && (
+              <p className="text-[11px] mb-2" style={{ color: 'var(--color-text-muted)' }}>
+                Solicitud de reapertura enviada, esperando aprobación del administrador
               </p>
             )}
             <div className="space-y-2">
@@ -725,7 +769,7 @@ export default function CajaPage() {
               </div>
             </div>
 
-            {!esAyer && !cierreHoy.reabiertoEn && (
+            {!esAyer && !cierreHoy.reabiertoEn && !cierreHoy.solicitudReaperturaEn && (
               <div className="mt-3 pt-3 border-t border-[var(--color-border)] space-y-2">
                 <p className="text-[11px] leading-snug" style={{ color: 'var(--color-warning)' }}>
                   Tu caja esta cerrada: no puedes registrar nuevos abonos. Si necesitas seguir cobrando hoy, reabre la caja.
@@ -737,7 +781,9 @@ export default function CajaPage() {
                   className="text-xs font-semibold transition-colors disabled:opacity-50"
                   style={{ color: 'var(--color-warning)' }}
                 >
-                  {reabriendoCierre ? 'Reabriendo...' : 'Reabrir caja'}
+                  {reabriendoCierre
+                    ? 'Enviando...'
+                    : (puedeReabrirCajaSinAprobacion ? 'Reabrir caja' : 'Solicitar reapertura de caja')}
                 </button>
               </div>
             )}
@@ -1370,7 +1416,9 @@ export default function CajaPage() {
                     {c.cerrado ? (
                       cierre?.reabiertoEn
                         ? <Badge variant="yellow">Reabierta</Badge>
-                        : <Badge variant="green">Cerrado</Badge>
+                        : cierre?.solicitudReaperturaEn
+                          ? <Badge variant="yellow">Solicitud pendiente</Badge>
+                          : <Badge variant="green">Cerrado</Badge>
                     ) : (
                       <Badge variant="yellow">Pendiente cierre</Badge>
                     )}
@@ -1379,6 +1427,33 @@ export default function CajaPage() {
                     <p className="text-[11px] mb-2" style={{ color: 'var(--color-text-muted)' }}>
                       Reabierta por {cierre.reabiertoPor?.nombre || '—'}
                     </p>
+                  )}
+                  {!cierre?.reabiertoEn && cierre?.solicitudReaperturaEn && (
+                    <div className="mb-2 p-2 rounded-[10px]" style={{ background: 'var(--color-warning-dim)', border: '1px solid color-mix(in srgb, var(--color-warning) 30%, transparent)' }}>
+                      <p className="text-[11px] mb-2" style={{ color: 'var(--color-warning)' }}>
+                        {cierre.solicitudReaperturaPor?.nombre || c.nombre} solicita reabrir su caja para seguir cobrando
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => aprobarReapertura(cierre.id)}
+                          disabled={procesandoSolicitud === cierre.id}
+                          className="text-[11px] font-semibold px-2.5 py-1 rounded-full transition-colors disabled:opacity-50"
+                          style={{ color: '#1a1a2e', background: 'var(--color-success)' }}
+                        >
+                          Aprobar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => rechazarReapertura(cierre.id)}
+                          disabled={procesandoSolicitud === cierre.id}
+                          className="text-[11px] font-semibold px-2.5 py-1 rounded-full transition-colors disabled:opacity-50"
+                          style={{ color: 'var(--color-text-muted)', background: 'var(--color-bg-hover)' }}
+                        >
+                          Rechazar
+                        </button>
+                      </div>
+                    </div>
                   )}
 
                   {cierre ? (

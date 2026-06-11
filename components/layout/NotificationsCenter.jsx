@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useOffline } from '@/components/providers/OfflineProvider'
 import { InstallGuideModal } from '@/components/layout/InstallButton'
+import { useAuth } from '@/hooks/useAuth'
 
 function isStandalone() {
   if (typeof window === 'undefined') return false
@@ -35,6 +36,7 @@ function BellIcon({ className }) {
 
 export default function NotificationsCenter({ size = 'md' }) {
   const { isOnline, pendingCount, failedDetails, openSyncDrawer } = useOffline()
+  const { esOwner } = useAuth()
   const [open, setOpen] = useState(false)
   const [showInstallGuide, setShowInstallGuide] = useState(false)
   const [deferredPrompt, setDeferredPrompt] = useState(null)
@@ -42,6 +44,8 @@ export default function NotificationsCenter({ size = 'md' }) {
   const [installDismissed, setInstallDismissed] = useState(true)
   const [pushPermission, setPushPermission] = useState('default')
   const [panelPos, setPanelPos] = useState(null)
+  const [solicitudes, setSolicitudes] = useState([])
+  const [procesando, setProcesando] = useState(null)
   const ref = useRef(null)
   const btnRef = useRef(null)
 
@@ -76,6 +80,48 @@ export default function NotificationsCenter({ size = 'md' }) {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  const fetchSolicitudes = async () => {
+    if (!esOwner) return
+    try {
+      const res = await fetch('/api/caja/solicitudes-reapertura')
+      if (!res.ok) return
+      const data = await res.json()
+      setSolicitudes(data.solicitudes || [])
+    } catch {}
+  }
+
+  useEffect(() => {
+    fetchSolicitudes()
+  }, [esOwner])
+
+  const aprobarSolicitud = async (cierreId) => {
+    setProcesando(cierreId)
+    try {
+      const res = await fetch('/api/caja/reabrir/aprobar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cierreId }),
+      })
+      if (res.ok) await fetchSolicitudes()
+    } finally {
+      setProcesando(null)
+    }
+  }
+
+  const rechazarSolicitud = async (cierreId) => {
+    setProcesando(cierreId)
+    try {
+      const res = await fetch('/api/caja/reabrir/rechazar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cierreId }),
+      })
+      if (res.ok) await fetchSolicitudes()
+    } finally {
+      setProcesando(null)
+    }
+  }
 
   const handleInstall = async () => {
     if (deferredPrompt) {
@@ -122,8 +168,9 @@ export default function NotificationsCenter({ size = 'md' }) {
   const showInstallItem = installable && !installDismissed && !isStandalone()
   const showPushItem = pushPermission === 'default'
   const showSyncItem = !isOnline || pendingCount > 0 || failedTotal > 0
+  const showSolicitudesItem = esOwner && solicitudes.length > 0
 
-  const total = (showInstallItem ? 1 : 0) + (showPushItem ? 1 : 0) + (showSyncItem ? 1 : 0)
+  const total = (showInstallItem ? 1 : 0) + (showPushItem ? 1 : 0) + (showSyncItem ? 1 : 0) + solicitudes.length
 
   if (showInstallGuide) return <InstallGuideModal onClose={() => setShowInstallGuide(false)} />
 
@@ -172,6 +219,40 @@ export default function NotificationsCenter({ size = 'md' }) {
           )}
 
           <div className="py-1">
+            {showSolicitudesItem && solicitudes.map((s) => (
+              <div key={s.id} className="flex items-start gap-3 px-4 py-3" style={{ borderBottom: '1px solid var(--color-border)' }}>
+                <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'var(--color-warning-dim)' }}>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--color-warning)' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+                  </svg>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-medium" style={{ color: 'var(--color-text-primary)' }}>
+                    {s.cobrador?.nombre || 'Cobrador'} solicita reabrir su caja
+                  </p>
+                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Para seguir registrando abonos hoy</p>
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      onClick={() => rechazarSolicitud(s.id)}
+                      disabled={procesando === s.id}
+                      className="text-[11px] px-2.5 py-1 rounded-full transition-colors disabled:opacity-50"
+                      style={{ color: 'var(--color-text-muted)', background: 'var(--color-bg-hover)' }}
+                    >
+                      Rechazar
+                    </button>
+                    <button
+                      onClick={() => aprobarSolicitud(s.id)}
+                      disabled={procesando === s.id}
+                      className="text-[11px] font-semibold px-2.5 py-1 rounded-full transition-colors disabled:opacity-50"
+                      style={{ color: '#1a1a2e', background: 'var(--color-success)' }}
+                    >
+                      Aprobar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+
             {showSyncItem && (
               <button
                 onClick={() => { openSyncDrawer?.(); setOpen(false) }}

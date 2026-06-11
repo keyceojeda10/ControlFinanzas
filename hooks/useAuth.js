@@ -35,5 +35,6 @@ export function useAuth() {
     puedeVerSaldoCaja:   esOwner || Boolean(permisos.verSaldoCaja),
     puedeGestionarRutas: esOwner || Boolean(permisos.gestionarRutas),
     puedeAplicarDescuentos: esOwner || Boolean(permisos.aplicarDescuentos),
+    puedeReabrirCajaSinAprobacion: esOwner || Boolean(permisos.reabrirCajaSinAprobacion),
   }
 }

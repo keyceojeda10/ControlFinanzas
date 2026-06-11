@@ -142,6 +142,7 @@ model User {
   puedeVerSaldoCaja       Boolean   @default(false)
   puedeGestionarRutas     Boolean   @default(false)
   puedeAplicarDescuentos  Boolean   @default(false) // aplicar descuentos y liquidaciones (riesgo: reduce saldo)
+  puedeReabrirCajaSinAprobacion Boolean @default(false) // reabrir su propia caja cerrada sin esperar aprobacion del owner
   orden                   Int       @default(0) // orden manual del cobrador (drag-and-drop en la lista)
   emailsMarketing         Boolean   @default(true)
   theme                   String?   @default("system")
@@ -155,6 +156,7 @@ model User {
   pagos             Pago[]
   cierresCaja       CierreCaja[]
   reaperturasCaja   CierreCaja[]       @relation("ReaperturaCierreCaja")
+  solicitudesReaperturaCaja CierreCaja[] @relation("SolicitudReaperturaCierreCaja")
   adminLogs         AdminLog[]         @relation("AdminLogs")
   gastosMenores     GastoMenor[]       @relation("CobradorGastos")
   tickets           TicketSoporte[]
@@ -372,10 +374,15 @@ model CierreCaja {
   // no puede registrar nuevos pagos. Reabrir deja rastro de quien y cuando.
   reabiertoEn        DateTime?
   reabiertoPorId     String?
+  // Solicitud de reapertura: cobradores sin permiso de reabrir directo piden
+  // aprobacion al owner. Mientras este pendiente (sin reabiertoEn), la caja sigue cerrada.
+  solicitudReaperturaEn   DateTime?
+  solicitudReaperturaPorId String?
 
   organization Organization @relation(fields: [organizationId], references: [id])
   cobrador     User         @relation(fields: [cobradorId], references: [id])
   reabiertoPor User?        @relation("ReaperturaCierreCaja", fields: [reabiertoPorId], references: [id])
+  solicitudReaperturaPor User? @relation("SolicitudReaperturaCierreCaja", fields: [solicitudReaperturaPorId], references: [id])
 
   @@index([organizationId])
   @@index([organizationId, fecha])
