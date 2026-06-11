@@ -21,7 +21,7 @@ function ShowcasePanel() {
           <p className="text-[12px] font-mono" style={{ color: '#999' }}>
             EN VIVO · {today}
           </p>
-          <p className="text-[12px] mt-1" style={{ color: '#666' }}>
+          <p className="text-[12px] mt-1" style={{ color: '#888' }}>
             Plataforma operando con normalidad
           </p>
         </div>
@@ -32,26 +32,27 @@ function ShowcasePanel() {
       </div>
 
       {/* Floating cards */}
-      <div className="relative flex-1 my-8">
+      <div className="relative flex-1 my-10 min-h-[420px]">
         {/* Card 1: Recaudo */}
         <div
           className="absolute rounded-[14px] p-5"
           style={{
-            top: '8%', left: '8%', width: '280px',
+            top: '4%', left: '4%', width: '280px',
             background: '#141414', border: '1px solid rgba(255,255,255,0.08)',
+            boxShadow: '0 12px 30px rgba(0,0,0,0.35)',
             transform: 'rotate(-2deg)',
           }}
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] tracking-wider" style={{ color: '#666' }}>RECAUDO DE HOY</span>
+            <span className="text-[11px] tracking-wider" style={{ color: '#888' }}>RECAUDO DE HOY</span>
             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgba(34,197,94,0.12)', color: '#22c55e' }}>+12%</span>
           </div>
           <p className="font-mono text-[28px] font-bold" style={{ color: '#f0f0f5' }}>
-            <span className="text-[12px]" style={{ color: '#666' }}>$</span>38<span style={{ color: '#666' }}>.420.000</span>
+            <span className="text-[12px]" style={{ color: '#888' }}>$</span>38<span style={{ color: '#888' }}>.420.000</span>
           </p>
           <div className="flex items-end gap-[3px] mt-3 h-[28px]">
             {[8,12,10,14,11,16,13,18,15,20,17,22,19,24,28,26].map((h,i) => (
-              <div key={i} className="flex-1 rounded-[1px]" style={{ height: `${h * 1.1}px`, background: i === 14 ? '#f5c518' : '#1f1f1f' }} />
+              <div key={i} className="flex-1 rounded-[1px]" style={{ height: `${h * 1.1}px`, background: i === 14 ? '#f5c518' : '#2a2a2a' }} />
             ))}
           </div>
         </div>
@@ -60,30 +61,31 @@ function ShowcasePanel() {
         <div
           className="absolute rounded-[14px] p-5"
           style={{
-            top: '38%', right: '5%', width: '300px',
+            top: '46%', right: '2%', width: '300px',
             background: '#141414', border: '1px solid rgba(255,255,255,0.08)',
+            boxShadow: '0 12px 30px rgba(0,0,0,0.35)',
             transform: 'rotate(1.5deg)',
           }}
         >
           <div className="flex items-center gap-2.5 mb-3">
-            <div className="w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-bold" style={{ background: 'linear-gradient(135deg,#60a5fa,#a78bfa)', color: '#fff' }}>MR</div>
+            <div className="w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0" style={{ background: 'linear-gradient(135deg,#60a5fa,#a78bfa)', color: '#fff' }}>MR</div>
             <div className="flex-1 min-w-0">
               <p className="text-[13px] font-medium" style={{ color: '#f0f0f5' }}>Marisol Ramirez</p>
-              <p className="text-[11px]" style={{ color: '#666' }}>Cuota 7/24 · PR-1209</p>
+              <p className="text-[11px]" style={{ color: '#888' }}>Cuota 7/24 · PR-1209</p>
             </div>
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgba(245,197,24,0.12)', color: '#f5c518' }}>Pagado</span>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0" style={{ background: 'rgba(245,197,24,0.12)', color: '#f5c518' }}>Pagado</span>
           </div>
-          <div className="grid grid-cols-3 gap-4 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="grid grid-cols-3 gap-4 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
             <div>
-              <p className="text-[10px] font-mono" style={{ color: '#666' }}>MONTO</p>
+              <p className="text-[10px] font-mono" style={{ color: '#888' }}>MONTO</p>
               <p className="text-[14px] font-mono mt-0.5" style={{ color: '#f0f0f5' }}>$ 850.000</p>
             </div>
             <div>
-              <p className="text-[10px] font-mono" style={{ color: '#666' }}>VIA</p>
+              <p className="text-[10px] font-mono" style={{ color: '#888' }}>VIA</p>
               <p className="text-[13px] mt-0.5" style={{ color: '#f0f0f5' }}>Nequi</p>
             </div>
             <div>
-              <p className="text-[10px] font-mono" style={{ color: '#666' }}>HORA</p>
+              <p className="text-[10px] font-mono" style={{ color: '#888' }}>HORA</p>
               <p className="text-[13px] font-mono mt-0.5" style={{ color: '#f0f0f5' }}>14:32</p>
             </div>
           </div>
@@ -93,17 +95,18 @@ function ShowcasePanel() {
         <div
           className="absolute rounded-[14px] p-5"
           style={{
-            bottom: '8%', left: '15%', width: '260px',
+            bottom: '2%', left: '10%', width: '260px',
             background: '#141414', border: '1px solid rgba(255,255,255,0.08)',
+            boxShadow: '0 12px 30px rgba(0,0,0,0.35)',
             transform: 'rotate(-1deg)',
           }}
         >
-          <p className="text-[11px] tracking-wider mb-2.5" style={{ color: '#666' }}>RUTA HOY · DIEGO ORTIZ</p>
+          <p className="text-[11px] tracking-wider mb-2.5" style={{ color: '#888' }}>RUTA HOY · DIEGO ORTIZ</p>
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center font-mono text-[13px] font-bold" style={{ background: 'rgba(245,197,24,0.1)', color: '#f5c518' }}>8</div>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center font-mono text-[13px] font-bold shrink-0" style={{ background: 'rgba(245,197,24,0.1)', color: '#f5c518' }}>8</div>
             <div>
               <p className="text-[13px]" style={{ color: '#f0f0f5' }}>8 visitas programadas</p>
-              <p className="text-[11px]" style={{ color: '#666' }}>Cra 43 → Belen → Estadio</p>
+              <p className="text-[11px]" style={{ color: '#888' }}>Cra 43 → Belen → Estadio</p>
             </div>
           </div>
         </div>
@@ -117,7 +120,7 @@ function ShowcasePanel() {
         >
           &ldquo;Pasamos de Excel a Control Finanzas y nuestra mora bajo del 14% al 5.2% en cuatro meses.&rdquo;
         </blockquote>
-        <p className="text-[12px] mt-4" style={{ color: '#666' }}>
+        <p className="text-[12px] mt-4" style={{ color: '#888' }}>
           — Ricardo Tovar · Prestamos del Valle · 800+ clientes activos
         </p>
       </div>
