@@ -251,7 +251,7 @@ export async function POST(request) {
     return Response.json({ error: 'La cuota manual no puede ser negativa' }, { status: 400 })
   }
   // Validar modo de interes; si viene cuotaManual el calculo lo trata como manual.
-  const modoValido = ['fijo', 'unico', 'saldo', 'manual'].includes(modoInteres) ? modoInteres : 'fijo'
+  const modoValido = ['fijo', 'unico', 'saldo', 'manual', 'lineal'].includes(modoInteres) ? modoInteres : 'fijo'
   const calc = calcularPrestamo({
     montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia: freq, modoInteres: modoValido,
     ...(cuotaManualNum > 0 && { cuotaManual: cuotaManualNum }),
@@ -334,6 +334,23 @@ export async function POST(request) {
         ...(seguro && montoSeguro > 0 && { montoSeguro: Number(montoSeguro) }),
       },
     })
+
+    // Modo 'lineal': persistir la tabla de amortizacion (capital constante +
+    // interes sobre saldo restante, cuota decreciente por periodo).
+    if (modoInteresFinal === 'lineal' && Array.isArray(calc.tablaAmortizacion) && calc.tablaAmortizacion.length > 0) {
+      await tx.cuotaAmortizacion.createMany({
+        data: calc.tablaAmortizacion.map((p) => ({
+          prestamoId: nuevo.id,
+          numeroPeriodo: p.numeroPeriodo,
+          capital: p.capital,
+          interes: p.interes,
+          cuotaTotal: p.cuotaTotal,
+          saldoRestante: p.saldoRestante,
+          fechaEsperada: p.fechaEsperada,
+          pagado: 0,
+        })),
+      })
+    }
 
     // Actualizar estado del cliente a activo
     await tx.cliente.update({

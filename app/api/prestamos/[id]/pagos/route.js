@@ -15,6 +15,10 @@ import {
   calcularMontoEnMora,
   calcularMontoParaPonerseAlDia,
   pagoHoy,
+  tieneTablaAmortizacion,
+  regenerarTablaAmortizacion,
+  recalcularTablaDesdeSaldo,
+  obtenerDiasPorPeriodo,
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { registrarMovimientoCapital } from '@/lib/capital'
@@ -66,6 +70,7 @@ export async function POST(request, { params }) {
         },
       },
       pagos:   { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
+      cuotasAmortizacion: { orderBy: { numeroPeriodo: 'asc' } },
     },
   })
 
@@ -219,7 +224,10 @@ export async function POST(request, { params }) {
     `
     const prestamoLocked = await tx.prestamo.findUnique({
       where: { id: prestamoId },
-      include: { pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } } },
+      include: {
+        pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
+        cuotasAmortizacion: { orderBy: { numeroPeriodo: 'asc' } },
+      },
     })
     if (!prestamoLocked || prestamoLocked.estado !== 'activo') {
       throw new Error('PRESTAMO_NO_ACTIVO')
@@ -275,12 +283,61 @@ export async function POST(request, { params }) {
       where: { id: prestamoId },
       include: {
         pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
+        cuotasAmortizacion: { orderBy: { numeroPeriodo: 'asc' } },
       },
     })
 
     // 2b. Abono a capital: reducir totalAPagar por el ahorro de intereses
     // La tasa es mensual proporcional, así que el ahorro depende de los días restantes
-    if (tipo === 'capital') {
+    if (tipo === 'capital' && tieneTablaAmortizacion(prestamoActualizado)) {
+      // Modo lineal: recalcular las cuotas futuras (no pagadas) sobre el nuevo
+      // saldo de capital, manteniendo intacto lo ya pagado/devengado.
+      const filas = [...prestamoActualizado.cuotasAmortizacion].sort((a, b) => a.numeroPeriodo - b.numeroPeriodo)
+      const filasPagadas = filas.filter(f => (f.pagado || 0) >= f.cuotaTotal)
+      const filasFuturas = filas.filter(f => (f.pagado || 0) < f.cuotaTotal)
+
+      if (filasFuturas.length > 0) {
+        const saldoCapitalRestante = calcularCapitalRestante(prestamoActualizado)
+        const ultimaPagada = filasPagadas[filasPagadas.length - 1]
+        const fechaBase = ultimaPagada ? new Date(ultimaPagada.fechaEsperada) : new Date(prestamo.fechaInicio)
+        const diasPeriodo = obtenerDiasPorPeriodo(prestamoActualizado.frecuencia)
+
+        const tablaRecalculada = recalcularTablaDesdeSaldo({
+          saldoInicial: saldoCapitalRestante,
+          tasaInteres: prestamoActualizado.tasaInteres,
+          numPeriodosRestantes: filasFuturas.length,
+          primerNumeroPeriodo: filasFuturas[0].numeroPeriodo,
+          fechaBase,
+          diasPeriodo,
+        })
+
+        for (const fila of tablaRecalculada) {
+          await tx.cuotaAmortizacion.update({
+            where: { prestamoId_numeroPeriodo: { prestamoId, numeroPeriodo: fila.numeroPeriodo } },
+            data: {
+              capital: fila.capital,
+              interes: fila.interes,
+              cuotaTotal: fila.cuotaTotal,
+              saldoRestante: fila.saldoRestante,
+              fechaEsperada: fila.fechaEsperada,
+              pagado: 0,
+            },
+          })
+        }
+
+        const totalPagadoEnPagadas = filasPagadas.reduce((a, f) => a + f.cuotaTotal, 0)
+        const nuevoTotalAPagar = Math.round(totalPagadoEnPagadas + tablaRecalculada.reduce((a, f) => a + f.cuotaTotal, 0))
+        await tx.prestamo.update({ where: { id: prestamoId }, data: { totalAPagar: nuevoTotalAPagar } })
+      }
+
+      prestamoActualizado = await tx.prestamo.findUnique({
+        where: { id: prestamoId },
+        include: {
+          pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
+          cuotasAmortizacion: { orderBy: { numeroPeriodo: 'asc' } },
+        },
+      })
+    } else if (tipo === 'capital') {
       const ahora = new Date(Date.now() - Math.abs(getUtcOffset(session.user.country ?? 'co')) * 60 * 60 * 1000)
       const inicio = new Date(prestamo.fechaInicio)
       const diasTranscurridos = Math.max(0, Math.floor((ahora - inicio) / (1000 * 60 * 60 * 24)))
@@ -294,7 +351,10 @@ export async function POST(request, { params }) {
       await tx.prestamo.update({ where: { id: prestamoId }, data: { totalAPagar: nuevoTotal } })
       prestamoActualizado = await tx.prestamo.findUnique({
         where: { id: prestamoId },
-        include: { pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } } },
+        include: {
+          pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
+          cuotasAmortizacion: { orderBy: { numeroPeriodo: 'asc' } },
+        },
       })
     }
 
@@ -306,7 +366,10 @@ export async function POST(request, { params }) {
       })
       prestamoActualizado = await tx.prestamo.findUnique({
         where: { id: prestamoId },
-        include: { pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } } },
+        include: {
+          pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
+          cuotasAmortizacion: { orderBy: { numeroPeriodo: 'asc' } },
+        },
       })
     }
 
@@ -328,7 +391,10 @@ export async function POST(request, { params }) {
       })
       prestamoActualizado = await tx.prestamo.findUnique({
         where: { id: prestamoId },
-        include: { pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } } },
+        include: {
+          pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
+          cuotasAmortizacion: { orderBy: { numeroPeriodo: 'asc' } },
+        },
       })
     }
 
@@ -347,9 +413,45 @@ export async function POST(request, { params }) {
         where: { id: prestamoId },
         data: { totalAPagar: Math.round(totalPagadoReal) },
       })
+
+      // Modo lineal: marcar todas las cuotas como pagadas (saldo queda en 0).
+      if (tieneTablaAmortizacion(prestamoActualizado)) {
+        for (const fila of prestamoActualizado.cuotasAmortizacion) {
+          if ((fila.pagado || 0) < fila.cuotaTotal) {
+            await tx.cuotaAmortizacion.update({
+              where: { prestamoId_numeroPeriodo: { prestamoId, numeroPeriodo: fila.numeroPeriodo } },
+              data: { pagado: fila.cuotaTotal },
+            })
+          }
+        }
+      }
+
       prestamoActualizado = await tx.prestamo.findUnique({
         where: { id: prestamoId },
-        include: { pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } } },
+        include: {
+          pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
+          cuotasAmortizacion: { orderBy: { numeroPeriodo: 'asc' } },
+        },
+      })
+    }
+
+    // 2f. Modo lineal: distribuir el total pagado real en cascada sobre la
+    // tabla de amortizacion (cuota mas antigua primero). La liquidacion ya
+    // marca todas las filas como pagadas arriba, no hace falta repetir aqui.
+    if (tipo !== 'liquidacion' && tieneTablaAmortizacion(prestamoActualizado)) {
+      const actualizaciones = regenerarTablaAmortizacion(prestamoActualizado)
+      for (const fila of actualizaciones) {
+        await tx.cuotaAmortizacion.update({
+          where: { prestamoId_numeroPeriodo: { prestamoId, numeroPeriodo: fila.numeroPeriodo } },
+          data: { pagado: fila.pagado },
+        })
+      }
+      prestamoActualizado = await tx.prestamo.findUnique({
+        where: { id: prestamoId },
+        include: {
+          pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
+          cuotasAmortizacion: { orderBy: { numeroPeriodo: 'asc' } },
+        },
       })
     }
 
@@ -474,6 +576,7 @@ export async function POST(request, { params }) {
         orderBy: { fechaPago: 'desc' },
         include: { cobrador: { select: { id: true, nombre: true } } },
       },
+      cuotasAmortizacion: { orderBy: { numeroPeriodo: 'asc' } },
     },
   })
 

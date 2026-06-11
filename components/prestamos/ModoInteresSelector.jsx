@@ -12,6 +12,7 @@ const MODOS = [
   { key: 'unico',  label: 'De una vez' },
   { key: 'saldo',  label: 'Sobre lo que falta' },
   { key: 'manual', label: 'Cuota exacta' },
+  { key: 'lineal', label: 'Cuota decreciente' },
 ]
 
 // Texto explicativo por modo. Si hay datos, agrega el ejemplo con el caso real.
@@ -49,6 +50,15 @@ function explicacion(modo, { monto, tasa, frecuencia }) {
     }
     case 'manual':
       return 'Tu defines la cuota exacta que quieres cobrar. El sistema calcula el total = cuota x numero de cobros. Util para plazos largos o casos a medida.'
+    case 'lineal': {
+      const base = 'El capital se reparte igual en cada cobro y el interes se calcula sobre lo que falta. La cuota empieza alta y BAJA en cada periodo.'
+      if (!hayDatos) return base
+      const r = ej(diasEjemplo)
+      if (!r?.tablaAmortizacion?.length) return base
+      const primera = r.tablaAmortizacion[0]
+      const ultima = r.tablaAmortizacion[r.tablaAmortizacion.length - 1]
+      return `${base}\n\nTu caso: cuota 1 = ${formatMoney(primera.cuotaTotal)}, ultima cuota = ${formatMoney(ultima.cuotaTotal)}.`
+    }
     default:
       return ''
   }

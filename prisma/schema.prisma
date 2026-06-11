@@ -259,7 +259,7 @@ model Prestamo {
   totalAPagar    Float
   cuotaDiaria    Float
   frecuencia     String         @default("diario")
-  modoInteres    String         @default("proporcional") // fijo | unico | saldo | manual | proporcional (legacy)
+  modoInteres    String         @default("proporcional") // fijo | unico | saldo | manual | lineal | proporcional (legacy)
   nombreProducto String? // mercancia: nombre del articulo (gorra, reloj...). null en prestamos de dinero
   diaCobroSemana Int? // 0=dom..6=sab — ancla para frecuencia semanal/quincenal (opcional)
   diaCobroMes    Int? // 1..31 — ancla para frecuencia mensual (opcional, clamp a ultimo dia)
@@ -285,6 +285,7 @@ model Prestamo {
   cliente      Cliente      @relation(fields: [clienteId], references: [id])
   organization Organization @relation(fields: [organizationId], references: [id])
   pagos        Pago[]
+  cuotasAmortizacion CuotaAmortizacion[]
 
   @@index([organizationId])
   @@index([clienteId])
@@ -295,6 +296,26 @@ model Prestamo {
   @@index([renovadoDeId])
   @@index([organizationId, esClavo])
   @@index([estado, ultimoPagoAt])
+}
+
+// Tabla de amortizacion para prestamos en modoInteres = 'lineal' (cuota
+// decreciente: capital constante por periodo + interes sobre saldo restante).
+// Es la fuente de verdad para mora/saldo/desglose de este modo, en vez del
+// cuotaDiaria fijo que usan los demas modos.
+model CuotaAmortizacion {
+  id            String   @id @default(cuid())
+  prestamoId    String
+  prestamo      Prestamo @relation(fields: [prestamoId], references: [id], onDelete: Cascade)
+  numeroPeriodo Int
+  capital       Float
+  interes       Float
+  cuotaTotal    Float
+  saldoRestante Float
+  pagado        Float    @default(0)
+  fechaEsperada DateTime
+
+  @@unique([prestamoId, numeroPeriodo])
+  @@index([prestamoId])
 }
 
 model Pago {

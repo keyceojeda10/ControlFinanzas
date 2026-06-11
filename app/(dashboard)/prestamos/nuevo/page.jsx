@@ -11,6 +11,7 @@ import { calcularPrestamo } from '@/lib/calculos'
 import { formatMoney } from '@/lib/i18n'
 import ResumenCalculo                              from '@/components/prestamos/ResumenCalculo'
 import ModoInteresSelector                         from '@/components/prestamos/ModoInteresSelector'
+import TablaAmortizacion                           from '@/components/prestamos/TablaAmortizacion'
 import Stepper                                     from '@/components/ui/Stepper'
 import DiasSinCobroSelector                        from '@/components/ui/DiasSinCobroSelector'
 import { guardarPrestamoPendiente, obtenerClientesOffline } from '@/lib/offline'
@@ -1157,7 +1158,7 @@ function NuevoPrestamo() {
                     value={`${formatMoney(ganancia)} (${pctGanancia}%)`}
                     valueColor="var(--color-success)"
                   />
-                  <Row label={modo === 'mercancia' ? 'Tipo' : 'Modo de interes'} value={modo === 'mercancia' ? 'Mercancia' : ({ fijo: 'Fijo (clasico)', unico: 'Interes unico', saldo: 'Sobre saldo', manual: 'Manual' }[modoInteres] || 'Fijo (clasico)')} />
+                  <Row label={modo === 'mercancia' ? 'Tipo' : 'Modo de interes'} value={modo === 'mercancia' ? 'Mercancia' : ({ fijo: 'Fijo (clasico)', unico: 'Interes unico', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Cuota decreciente' }[modoInteres] || 'Fijo (clasico)')} />
                   {diasSinCobroCliente.length > 0 && (
                     <Row
                       label="Dias sin cobro"
@@ -1189,6 +1190,12 @@ function NuevoPrestamo() {
                     </>
                   )}
                 </div>
+
+                {modoInteres === 'lineal' && calculo?.tablaAmortizacion?.length > 0 && (
+                  <div className="mt-3 pt-3 border-t" style={{ borderColor: 'color-mix(in srgb, var(--color-border) 50%, transparent)' }}>
+                    <TablaAmortizacion tabla={calculo.tablaAmortizacion} frecuencia={frecuencia} />
+                  </div>
+                )}
 
                 {/* Formula breve: ayuda al usuario a entender de donde sale el
                     calculo automatico. Si no le cuadra, sabe que debe cambiar a Manual. */}

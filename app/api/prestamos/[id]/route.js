@@ -37,6 +37,7 @@ async function obtenerPrestamo(id, session) {
           cobrador: { select: { id: true, nombre: true } },
         },
       },
+      cuotasAmortizacion: { orderBy: { numeroPeriodo: 'asc' } },
     },
   })
   if (!p) return null

@@ -1,6 +1,7 @@
 // components/prestamos/ResumenCalculo.jsx - Panel de resumen en tiempo real
 
 import { formatMoney } from '@/lib/i18n'
+import TablaAmortizacion from './TablaAmortizacion'
 
 const fmt = (v) => formatMoney(v)
 
@@ -21,6 +22,7 @@ export default function ResumenCalculo({ calculo, visible = true }) {
     unico:  'Interes unico',
     saldo:  'Sobre saldo',
     manual: 'Manual',
+    lineal: 'Cuota decreciente',
     proporcional: 'Proporcional',
   }[modoInteres]
 
@@ -71,6 +73,9 @@ export default function ResumenCalculo({ calculo, visible = true }) {
           </div>
         ))}
       </div>
+      {modoInteres === 'lineal' && (
+        <TablaAmortizacion tabla={calculo?.tablaAmortizacion} frecuencia={frecuencia} />
+      )}
     </div>
   )
 }

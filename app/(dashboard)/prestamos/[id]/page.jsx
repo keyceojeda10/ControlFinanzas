@@ -42,6 +42,7 @@ import AiTipBanner from '@/components/ui/AiTipBanner'
 import { generarTipPrestamo } from '@/lib/tips/prestamoTips'
 import DiasSinCobroSelector from '@/components/ui/DiasSinCobroSelector'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import TablaAmortizacion from '@/components/prestamos/TablaAmortizacion'
 
 // ─── Helpers de formato ──────────────────────────────────────────
 const fmtFecha = (d) => d
@@ -352,6 +353,7 @@ export default function PrestamoDetallePage({ params }) {
     pagoHoy: yaPagoHoy, pagos = [], proximoCobro,
     seguro = false, montoSeguro,
     modoInteres, renovadoDeId, esClavo = false,
+    cuotasAmortizacion = [],
   } = prestamo
 
   const frecuenciaLabel = {
@@ -778,6 +780,13 @@ export default function PrestamoDetallePage({ params }) {
           }] : []),
         ]}
       />
+
+      {/* ── TABLA DE AMORTIZACION (solo modo lineal) ──────────────── */}
+      {modoInteres === 'lineal' && cuotasAmortizacion.length > 0 && (
+        <Card>
+          <TablaAmortizacion tabla={cuotasAmortizacion} frecuencia={frecuencia} mostrarPagado />
+        </Card>
+      )}
 
       {/* ── BOTONES WHATSAPP ─────────────────────────────────────── */}
       {cliente?.telefono && estaActivo && enMora && !completado && (
