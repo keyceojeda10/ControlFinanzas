@@ -687,13 +687,18 @@ export default function CajaPage() {
         {/* Cierre */}
         {cierreHoy && !modoAjusteCierre ? (
           <Card>
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-1">
               <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Cierre registrado</p>
               <div className="flex items-center gap-1.5">
                 {cierreHoy.editadoEn && <Badge variant="gray">Editado</Badge>}
                 {cierreHoy.reabiertoEn ? <Badge variant="yellow">Reabierta</Badge> : <Badge variant="green">Cerrado</Badge>}
               </div>
             </div>
+            {cierreHoy.reabiertoEn && (
+              <p className="text-[11px] mb-2" style={{ color: 'var(--color-text-muted)' }}>
+                Reabierta por {cierreHoy.reabiertoPor?.nombre || '—'}
+              </p>
+            )}
             <div className="space-y-2">
               {[
                 { label: 'Esperado', value: formatMoney(cierreHoy.totalEsperado), color: 'text-[var(--color-text-primary)]' },
@@ -1360,7 +1365,7 @@ export default function CajaPage() {
 
               return (
                 <div key={c.id} className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[12px] p-3">
-                  <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center justify-between gap-2 mb-1">
                     <span className="text-sm font-semibold text-[var(--color-text-primary)]">{c.nombre}</span>
                     {c.cerrado ? (
                       cierre?.reabiertoEn
@@ -1370,6 +1375,11 @@ export default function CajaPage() {
                       <Badge variant="yellow">Pendiente cierre</Badge>
                     )}
                   </div>
+                  {cierre?.reabiertoEn && (
+                    <p className="text-[11px] mb-2" style={{ color: 'var(--color-text-muted)' }}>
+                      Reabierta por {cierre.reabiertoPor?.nombre || '—'}
+                    </p>
+                  )}
 
                   {cierre ? (
                     <>

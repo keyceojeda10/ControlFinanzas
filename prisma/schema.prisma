@@ -154,6 +154,7 @@ model User {
   rutas             Ruta[]             @relation("CobradorRuta")
   pagos             Pago[]
   cierresCaja       CierreCaja[]
+  reaperturasCaja   CierreCaja[]       @relation("ReaperturaCierreCaja")
   adminLogs         AdminLog[]         @relation("AdminLogs")
   gastosMenores     GastoMenor[]       @relation("CobradorGastos")
   tickets           TicketSoporte[]
@@ -374,6 +375,7 @@ model CierreCaja {
 
   organization Organization @relation(fields: [organizationId], references: [id])
   cobrador     User         @relation(fields: [cobradorId], references: [id])
+  reabiertoPor User?        @relation("ReaperturaCierreCaja", fields: [reabiertoPorId], references: [id])
 
   @@index([organizationId])
   @@index([organizationId, fecha])

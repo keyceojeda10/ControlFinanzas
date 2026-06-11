@@ -7,6 +7,7 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
 import { getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
+import { enviarPushOrg } from '@/lib/push'
 
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
 
@@ -54,6 +55,15 @@ export async function POST(request) {
     detalle: `Reapertura de caja ${cobrador?.nombre ?? ''} (${fechaLocal})`,
     ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
   })
+
+  // Si fue el cobrador quien reabrio su propia caja, avisar al/los owner(s).
+  if (rol === 'cobrador') {
+    enviarPushOrg(organizationId, {
+      title: 'Caja reabierta',
+      body: `${session.user.nombre} reabrió su caja del ${fechaLocal} para seguir registrando abonos`,
+      url: '/caja',
+    }).catch(() => {})
+  }
 
   return Response.json(cierreActualizado, { status: 200 })
 }

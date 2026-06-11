@@ -504,6 +504,7 @@ export async function GET(request) {
     where: whereCierres,
     include: {
       cobrador: { select: { id: true, nombre: true } },
+      reabiertoPor: { select: { id: true, nombre: true } },
     },
     orderBy: { createdAt: 'desc' },
   })
