@@ -12,6 +12,7 @@ import { Skeleton }            from '@/components/ui/Skeleton'
 import { PLANES_CONFIG }       from '@/lib/planes'
 import { AVATARS }             from '@/lib/avatars'
 import Avatar                  from '@/components/ui/Avatar'
+import { Modal }               from '@/components/ui/Modal'
 import DiasSinCobroSelector    from '@/components/ui/DiasSinCobroSelector'
 import FestivosManager         from '@/components/ui/FestivosManager'
 import ThemeToggle             from '@/components/ui/ThemeToggle'
@@ -60,6 +61,7 @@ function TabPerfil() {
   const [avatarSeleccionado, setAvatarSeleccionado] = useState(null)
   const [guardandoAvatar, setGuardandoAvatar] = useState(false)
   const [msgAvatar, setMsgAvatar] = useState(null)
+  const [avatarPickerOpen, setAvatarPickerOpen] = useState(false)
   const [telefono,       setTelefono]       = useState('')
   const [guardandoTel,   setGuardandoTel]   = useState(false)
   const [msgTel,         setMsgTel]         = useState(null)
@@ -213,35 +215,46 @@ function TabPerfil() {
           Se mostrará en el menú y en el sidebar.
         </p>
 
-        {/* Preview actual */}
-        <div className="flex items-center gap-3 mb-5 pb-5" style={{ borderBottom: '1px solid var(--color-border)' }}>
-          <Avatar nombre={nombre || perfil?.nombre} avatarId={avatarSeleccionado} size={64} fontSize={22} />
+        {/* Preview actual + acciones */}
+        <div className="flex items-center gap-3">
+          <Avatar nombre={nombre || perfil?.nombre} avatarId={avatarSeleccionado} size={56} fontSize={20} />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{nombre || perfil?.nombre}</p>
-            <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--color-text-muted)' }}>
               {avatarSeleccionado ? AVATARS.find(a => a.id === avatarSeleccionado)?.nombre ?? 'Avatar seleccionado' : 'Usando iniciales del nombre'}
             </p>
           </div>
-          {avatarSeleccionado && (
+          <div className="flex items-center gap-2 shrink-0">
             <button
-              onClick={() => guardarAvatar(null)}
-              disabled={guardandoAvatar}
-              className="shrink-0 text-[11px] px-3 py-1.5 rounded-full transition-colors font-medium"
-              style={{ color: 'var(--color-danger)', background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--color-danger) 20%, transparent)' }}
+              onClick={() => setAvatarPickerOpen(true)}
+              className="text-[11px] px-3 py-1.5 rounded-full transition-colors font-medium"
+              style={{ color: 'var(--color-accent)', background: 'var(--color-accent-soft)', border: '1px solid color-mix(in srgb, var(--color-accent) 25%, transparent)' }}
             >
-              Quitar
+              Cambiar
             </button>
-          )}
+            {avatarSeleccionado && (
+              <button
+                onClick={() => guardarAvatar(null)}
+                disabled={guardandoAvatar}
+                className="text-[11px] px-3 py-1.5 rounded-full transition-colors font-medium"
+                style={{ color: 'var(--color-danger)', background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--color-danger) 20%, transparent)' }}
+              >
+                Quitar
+              </button>
+            )}
+          </div>
         </div>
+        {msgAvatar && <div className="mt-3"><Alerta tipo={msgAvatar.tipo}>{msgAvatar.texto}</Alerta></div>}
+      </Card>
 
-        {/* Grid de avatares */}
-        <div className="grid grid-cols-5 sm:grid-cols-7 gap-3">
+      <Modal open={avatarPickerOpen} onClose={() => setAvatarPickerOpen(false)} title="Elige tu avatar" size="lg">
+        <div className="grid grid-cols-5 sm:grid-cols-6 gap-3">
           {AVATARS.map((av) => {
             const selected = avatarSeleccionado === av.id
             return (
               <button
                 key={av.id}
-                onClick={() => guardarAvatar(av.id)}
+                onClick={() => { guardarAvatar(av.id); setAvatarPickerOpen(false) }}
                 disabled={guardandoAvatar}
                 className="group relative rounded-full overflow-hidden transition-all hover:scale-110 active:scale-95"
                 style={{
@@ -265,8 +278,7 @@ function TabPerfil() {
             )
           })}
         </div>
-        {msgAvatar && <div className="mt-3"><Alerta tipo={msgAvatar.tipo}>{msgAvatar.texto}</Alerta></div>}
-      </Card>
+      </Modal>
 
       <Card>
         <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">Cambiar contraseña</p>

@@ -2,7 +2,7 @@
 
 import { useTheme } from '@/lib/theme/ThemeProvider'
 
-export default function ThemeToggle({ variant = 'button' }) {
+export default function ThemeToggle({ variant = 'button', size = 'md' }) {
   const { theme, resolvedTheme, setTheme } = useTheme()
 
   if (variant === 'segmented') {
@@ -36,18 +36,18 @@ export default function ThemeToggle({ variant = 'button' }) {
   }
 
   const toggle = () => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
+  const sizeClass = size === 'sm' ? 'w-7 h-7 rounded-lg hover:bg-[var(--color-bg-hover)]' : 'w-9 h-9 rounded-[10px]'
+  const iconClass = size === 'sm' ? 'w-3.5 h-3.5' : 'w-4 h-4'
   return (
     <button
       onClick={toggle}
       title={`Cambiar a tema ${resolvedTheme === 'dark' ? 'claro' : 'oscuro'}`}
-      className="flex items-center justify-center w-9 h-9 rounded-[10px] transition-colors"
-      style={{
-        background: 'var(--color-bg-hover)',
-        border: '1px solid var(--color-border)',
-        color: 'var(--color-text-primary)',
-      }}
+      className={`flex items-center justify-center transition-colors ${sizeClass}`}
+      style={size === 'sm'
+        ? { color: 'var(--color-text-muted)' }
+        : { background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
     >
-      {resolvedTheme === 'dark' ? <SunIcon className="w-4 h-4" /> : <MoonIcon className="w-4 h-4" />}
+      {resolvedTheme === 'dark' ? <SunIcon className={iconClass} /> : <MoonIcon className={iconClass} />}
     </button>
   )
 }

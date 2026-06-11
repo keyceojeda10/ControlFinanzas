@@ -521,61 +521,66 @@ export default function Sidebar() {
         </div>
       )}
 
-      {/* Footer compacto */}
-      <div className="px-3 pb-3 pt-3 space-y-2" style={{ borderTop: '1px solid var(--color-border)' }}>
-        {/* Fila 1: User + theme + sign out */}
-        <div className="flex items-center gap-2">
-          <Avatar nombre={session?.user?.nombre} avatarId={session?.user?.avatarId} size={28} fontSize={11} />
+      {/* Footer */}
+      <div className="px-3 pb-3 pt-3 space-y-2.5" style={{ borderTop: '1px solid var(--color-border)' }}>
+        {/* Tarjeta de perfil */}
+        <div
+          className="flex items-center gap-2.5 px-2.5 py-2.5 rounded-[12px]"
+          style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)' }}
+        >
+          <Avatar nombre={session?.user?.nombre} avatarId={session?.user?.avatarId} size={32} fontSize={12} />
           <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-semibold truncate leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+            <p className="text-[12px] font-semibold truncate leading-tight" style={{ color: 'var(--color-text-primary)' }}>
               {session?.user?.nombre}
             </p>
-            <span className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>
+            <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
               {{ owner: 'Admin', cobrador: 'Cobrador', superadmin: 'Super Admin' }[session?.user?.rol] ?? session?.user?.rol}
             </span>
           </div>
-          <ThemeToggle />
-          <button
-            onClick={async () => {
-              try { navigator.serviceWorker?.controller?.postMessage({ type: 'CLEAR_API_CACHE' }) } catch {}
-              await limpiarDatosOffline()
-              signOut({ callbackUrl: '/login' })
-            }}
-            className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors shrink-0"
-            style={{ color: 'var(--color-text-muted)' }}
-            title="Cerrar sesion"
-            aria-label="Cerrar sesion"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-0.5 shrink-0">
+            <ThemeToggle size="sm" />
+            <button
+              onClick={async () => {
+                try { navigator.serviceWorker?.controller?.postMessage({ type: 'CLEAR_API_CACHE' }) } catch {}
+                await limpiarDatosOffline()
+                signOut({ callbackUrl: '/login' })
+              }}
+              className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors shrink-0 hover:bg-[var(--color-bg-hover)]"
+              style={{ color: 'var(--color-text-muted)' }}
+              title="Cerrar sesion"
+              aria-label="Cerrar sesion"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
+          </div>
         </div>
 
-        {/* Fila 2: Sync + Install */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={startBulkSync}
-            disabled={bulkSyncing}
-            className="flex-1 flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] focus-visible:outline-none focus-visible:ring-2 transition-colors disabled:opacity-50"
-            style={{
-              background: 'var(--color-success-dim)',
-              border: '1px solid var(--color-success-border)',
-            }}
-          >
-            <svg className={`w-3.5 h-3.5 shrink-0 ${bulkSyncing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--color-success)' }}>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            <span className="text-[11px] font-medium truncate" style={{ color: 'var(--color-success)' }}>
-              {bulkProgress ? bulkProgress.message : 'Sync offline'}
-            </span>
-          </button>
-          <InstallButton variant="desktop" />
-        </div>
+        {/* Sync offline */}
+        <button
+          onClick={startBulkSync}
+          disabled={bulkSyncing}
+          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-[10px] focus-visible:outline-none focus-visible:ring-2 transition-colors disabled:opacity-50"
+          style={{
+            background: 'var(--color-success-dim)',
+            border: '1px solid var(--color-success-border)',
+          }}
+        >
+          <svg className={`w-3.5 h-3.5 shrink-0 ${bulkSyncing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--color-success)' }}>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span className="text-[11px] font-medium truncate" style={{ color: 'var(--color-success)' }}>
+            {bulkProgress ? bulkProgress.message : 'Sync offline'}
+          </span>
+        </button>
 
-        {/* Fila 3: Status line */}
-        <div className="flex items-center gap-1.5 px-1">
+        {/* Instalar app */}
+        <InstallButton variant="desktop" />
+
+        {/* Status line */}
+        <div className="flex items-center gap-1.5 px-1 pt-0.5">
           <SyncStatusBadgeTrigger />
           <span className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>·</span>
           <CacheAge />
