@@ -367,6 +367,10 @@ model CierreCaja {
   confirmadoEn       DateTime? // cuando el admin confirmo la recepcion
   confirmadoPorId    String? // quien confirmo (auditoria)
   notaCuadre         String? // motivo cuando hay diferencia
+  // Reapertura: mientras la caja esta cerrada (sin reabiertoEn), el cobrador
+  // no puede registrar nuevos pagos. Reabrir deja rastro de quien y cuando.
+  reabiertoEn        DateTime?
+  reabiertoPorId     String?
 
   organization Organization @relation(fields: [organizationId], references: [id])
   cobrador     User         @relation(fields: [cobradorId], references: [id])

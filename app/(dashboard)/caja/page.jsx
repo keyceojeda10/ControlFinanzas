@@ -95,6 +95,7 @@ export default function CajaPage() {
       : getColombiaDateStr()
   )
   const [modoAjusteCierre, setModoAjusteCierre] = useState(false)
+  const [reabriendoCierre, setReabriendoCierre] = useState(false)
   const [isOffline, setIsOffline] = useState(false)
   const [filtroCobrador, setFiltroCobrador] = useState('')
   // Filtro de periodo de la caja: { modo:'hoy'|'7d'|'30d'|'rango', fecha, desde, hasta }
@@ -316,6 +317,23 @@ export default function CajaPage() {
       await fetchData()
     } finally {
       setGuardando(false)
+    }
+  }
+
+  const reabrirCierre = async (cobradorId) => {
+    setReabriendoCierre(true)
+    setErrorCaja('')
+    try {
+      const res = await fetch('/api/caja/reabrir', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fecha: fechaSeleccionada, ...(cobradorId ? { cobradorId } : {}) }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setErrorCaja(data.error ?? 'Error al reabrir la caja'); return }
+      await fetchData()
+    } finally {
+      setReabriendoCierre(false)
     }
   }
 
@@ -673,7 +691,7 @@ export default function CajaPage() {
               <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Cierre registrado</p>
               <div className="flex items-center gap-1.5">
                 {cierreHoy.editadoEn && <Badge variant="gray">Editado</Badge>}
-                <Badge variant="green">Cerrado</Badge>
+                {cierreHoy.reabiertoEn ? <Badge variant="yellow">Reabierta</Badge> : <Badge variant="green">Cerrado</Badge>}
               </div>
             </div>
             <div className="space-y-2">
@@ -701,6 +719,23 @@ export default function CajaPage() {
                 </span>
               </div>
             </div>
+
+            {!esAyer && !cierreHoy.reabiertoEn && (
+              <div className="mt-3 pt-3 border-t border-[var(--color-border)] space-y-2">
+                <p className="text-[11px] leading-snug" style={{ color: 'var(--color-warning)' }}>
+                  Tu caja esta cerrada: no puedes registrar nuevos abonos. Si necesitas seguir cobrando hoy, reabre la caja.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => reabrirCierre()}
+                  disabled={reabriendoCierre}
+                  className="text-xs font-semibold transition-colors disabled:opacity-50"
+                  style={{ color: 'var(--color-warning)' }}
+                >
+                  {reabriendoCierre ? 'Reabriendo...' : 'Reabrir caja'}
+                </button>
+              </div>
+            )}
 
             {fechaEditableCobrador && !modoAjusteCierre && (
               <div className="mt-3 pt-3 border-t border-[var(--color-border)] space-y-2">
@@ -1328,7 +1363,9 @@ export default function CajaPage() {
                   <div className="flex items-center justify-between gap-2 mb-3">
                     <span className="text-sm font-semibold text-[var(--color-text-primary)]">{c.nombre}</span>
                     {c.cerrado ? (
-                      <Badge variant="green">Cerrado</Badge>
+                      cierre?.reabiertoEn
+                        ? <Badge variant="yellow">Reabierta</Badge>
+                        : <Badge variant="green">Cerrado</Badge>
                     ) : (
                       <Badge variant="yellow">Pendiente cierre</Badge>
                     )}

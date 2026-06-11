@@ -937,6 +937,9 @@ export async function POST(request) {
         diferencia: Math.round(diferencia),
         editadoEn: new Date(),
         editadoPorId: userId,
+        // Re-confirmar el cierre vuelve a bloquear nuevos pagos.
+        reabiertoEn: null,
+        reabiertoPorId: null,
       },
       include: { cobrador: { select: { id: true, nombre: true } } },
     })

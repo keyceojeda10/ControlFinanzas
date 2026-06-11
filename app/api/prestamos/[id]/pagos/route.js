@@ -25,7 +25,7 @@ import { registrarMovimientoCapital } from '@/lib/capital'
 import { logActividad } from '@/lib/activity-log'
 import { enviarPushOrg } from '@/lib/push'
 import { trackEvent } from '@/lib/analytics'
-import { getUtcOffset } from '@/lib/i18n'
+import { getUtcOffset, getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 import { sanitizarCoords } from '@/lib/geo'
 
@@ -82,6 +82,20 @@ export async function POST(request, { params }) {
   // Cobrador: verificar que el cliente es de su ruta
   if (rol === 'cobrador' && !rutaIds.includes(prestamo.cliente.rutaId)) {
     return Response.json({ error: 'No tienes acceso a este préstamo' }, { status: 403 })
+  }
+
+  // Cobrador: si ya cerro su caja de hoy y nadie la reabrio, no puede registrar mas pagos.
+  if (rol === 'cobrador') {
+    const { inicio, fin } = getLocalDayRange(getLocalDateStr())
+    const cierreHoy = await prisma.cierreCaja.findFirst({
+      where: { organizationId, cobradorId: userId, fecha: { gte: inicio, lt: fin } },
+      select: { reabiertoEn: true },
+    })
+    if (cierreHoy && !cierreHoy.reabiertoEn) {
+      return Response.json({
+        error: 'Ya cerraste tu caja de hoy. Pide a un administrador que reabra la caja para seguir registrando pagos.',
+      }, { status: 403 })
+    }
   }
 
   const org = await prisma.organization.findUnique({
