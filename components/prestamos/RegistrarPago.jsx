@@ -495,7 +495,7 @@ export default function RegistrarPago({
                 El input range nativo va encima invisible para capturar el drag. */}
             <div className="relative h-6 flex items-center select-none">
               {/* Track de fondo */}
-              <div className="absolute inset-x-0 h-2 rounded-full" style={{ background: '#2a2a2a' }} />
+              <div className="absolute inset-x-0 h-2 rounded-full" style={{ background: 'var(--color-bg-hover)' }} />
               {/* Fill verde animado */}
               <div
                 className="absolute h-2 rounded-full"
