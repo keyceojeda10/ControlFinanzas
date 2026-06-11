@@ -41,7 +41,9 @@ export default function NotificationsCenter({ size = 'md' }) {
   const [installable, setInstallable] = useState(false)
   const [installDismissed, setInstallDismissed] = useState(true)
   const [pushPermission, setPushPermission] = useState('default')
+  const [panelPos, setPanelPos] = useState(null)
   const ref = useRef(null)
+  const btnRef = useRef(null)
 
   const failedTotal =
     (failedDetails?.pagos?.length || 0) +
@@ -125,10 +127,23 @@ export default function NotificationsCenter({ size = 'md' }) {
 
   if (showInstallGuide) return <InstallGuideModal onClose={() => setShowInstallGuide(false)} />
 
+  const togglePanel = () => {
+    if (!open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect()
+      const panelWidth = 256
+      const margin = 16
+      let left = rect.right - panelWidth
+      left = Math.max(margin, Math.min(left, window.innerWidth - panelWidth - margin))
+      setPanelPos({ top: rect.bottom + 8, left })
+    }
+    setOpen((v) => !v)
+  }
+
   return (
     <div className="relative" ref={ref}>
       <button
-        onClick={() => setOpen((v) => !v)}
+        ref={btnRef}
+        onClick={togglePanel}
         aria-label="Notificaciones"
         className={`relative flex items-center justify-center rounded-lg transition-colors hover:bg-[var(--color-bg-hover)] ${size === 'sm' ? 'w-7 h-7' : 'w-9 h-9'}`}
         style={{ color: 'var(--color-text-muted)' }}
@@ -141,10 +156,10 @@ export default function NotificationsCenter({ size = 'md' }) {
         )}
       </button>
 
-      {open && (
+      {open && panelPos && (
         <div
-          className="absolute top-11 right-0 w-64 max-w-[calc(100vw-2rem)] rounded-[14px] shadow-2xl overflow-hidden z-50 glass-strong"
-          style={{ border: '1px solid var(--color-border)' }}
+          className="fixed w-64 max-w-[calc(100vw-2rem)] rounded-[14px] shadow-2xl overflow-hidden z-50 glass-strong"
+          style={{ border: '1px solid var(--color-border)', top: panelPos.top, left: panelPos.left }}
         >
           <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--color-border)' }}>
             <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Notificaciones</p>
