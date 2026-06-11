@@ -538,7 +538,7 @@ export default function Sidebar() {
             </span>
           </div>
           <div className="flex items-center gap-0.5 shrink-0">
-            <NotificationsCenter size="sm" align="left" />
+            <NotificationsCenter size="sm" />
             <ThemeToggle size="sm" />
             <button
               onClick={async () => {

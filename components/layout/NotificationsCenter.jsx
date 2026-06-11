@@ -33,7 +33,7 @@ function BellIcon({ className }) {
   )
 }
 
-export default function NotificationsCenter({ align = 'right', size = 'md' }) {
+export default function NotificationsCenter({ size = 'md' }) {
   const { isOnline, pendingCount, failedDetails, openSyncDrawer } = useOffline()
   const [open, setOpen] = useState(false)
   const [showInstallGuide, setShowInstallGuide] = useState(false)
@@ -143,7 +143,7 @@ export default function NotificationsCenter({ align = 'right', size = 'md' }) {
 
       {open && (
         <div
-          className={`absolute top-11 ${align === 'right' ? 'right-0' : 'left-0'} w-72 rounded-[14px] shadow-2xl overflow-hidden z-50 glass-strong`}
+          className="absolute top-11 right-0 w-64 max-w-[calc(100vw-2rem)] rounded-[14px] shadow-2xl overflow-hidden z-50 glass-strong"
           style={{ border: '1px solid var(--color-border)' }}
         >
           <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--color-border)' }}>
