@@ -1954,8 +1954,71 @@ export default function RutaDetallePage({ params }) {
               { key: 'parciales', label: 'Abonos parciales', count: counts.parciales },
             ]
 
+            const pctCobradoHoy = ruta.esperadoHoy > 0 ? Math.min(100, Math.round((ruta.recaudadoHoy / ruta.esperadoHoy) * 100)) : (ruta.recaudadoHoy > 0 ? 100 : 0)
+
             return (
               <div className="space-y-3">
+                {/* Resumen del dia: lo que necesita el admin de un vistazo */}
+                <div className="rounded-[12px] p-3" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+                      Resumen del dia
+                    </p>
+                    <p className="text-[11px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>
+                      {pctCobradoHoy}%
+                    </p>
+                  </div>
+                  {/* Barra de progreso cobrado/esperado */}
+                  <div className="h-1.5 rounded-full overflow-hidden mb-2.5" style={{ background: 'var(--color-bg-hover)' }}>
+                    <div className="h-full rounded-full" style={{
+                      width: `${pctCobradoHoy}%`,
+                      background: pctCobradoHoy >= 100 ? 'var(--color-success)' : 'var(--color-accent)',
+                    }} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Cobrado hoy</p>
+                      <p className="text-[14px] font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
+                        {formatMoney(ruta.recaudadoHoy)}
+                        <span className="text-[11px] font-normal" style={{ color: 'var(--color-text-muted)' }}> / {formatMoney(ruta.esperadoHoy)}</span>
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Pagaron / esperados</p>
+                      <p className="text-[14px] font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
+                        {ruta.clientesPagaronHoy} / {ruta.clientesConCobroHoy}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Pendientes hoy</p>
+                      <p className="text-[14px] font-bold font-mono-display" style={{ color: ruta.pendientesHoy > 0 ? 'var(--color-warning)' : 'var(--color-text-primary)' }}>
+                        {ruta.pendientesHoy}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Clientes en mora</p>
+                      <p className="text-[14px] font-bold font-mono-display" style={{ color: ruta.enMora > 0 ? 'var(--color-danger)' : 'var(--color-text-primary)' }}>
+                        {ruta.enMora}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Cuadre de caja del cobrador, si ya cerro hoy */}
+                  {ruta.cierre && (
+                    <div className="mt-2.5 pt-2.5 flex items-center justify-between text-[11px]" style={{ borderTop: '1px solid var(--color-border)' }}>
+                      <span style={{ color: 'var(--color-text-muted)' }}>
+                        Cierre del cobrador: {formatMoney(ruta.cierre.totalRecogido)}
+                        {ruta.cierre.confirmadoEn ? ' · confirmado' : ' · sin confirmar'}
+                      </span>
+                      {Math.abs(ruta.cierre.diferencia) > 0 && (
+                        <span className="font-mono-display font-semibold" style={{ color: 'var(--color-danger)' }}>
+                          {ruta.cierre.diferencia >= 0 ? '+' : ''}{formatMoney(ruta.cierre.diferencia)}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 {/* Buscador */}
                 <div className="relative">
                   <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="var(--color-text-muted)" viewBox="0 0 24 24">
@@ -2098,17 +2161,29 @@ export default function RutaDetallePage({ params }) {
                                     Cobros de hoy
                                   </p>
                                   <div className="space-y-1">
-                                    {c.pagosHoyDetalle.map((pg, i) => (
-                                      <div key={i} className="flex items-center justify-between text-[12px]">
-                                        <span style={{ color: 'var(--color-text-muted)' }}>
-                                          {formatHora(pg.fechaPago)}
-                                          {pg.metodoPago ? ` · ${metodoLabel[pg.metodoPago] || pg.metodoPago}` : ''}
-                                        </span>
-                                        <span className="font-mono-display font-semibold" style={{ color: 'var(--color-success)' }}>
-                                          {formatMoney(pg.monto)}
-                                        </span>
-                                      </div>
-                                    ))}
+                                    {c.pagosHoyDetalle.map((pg, i) => {
+                                      const d = pg.distanciaMetros
+                                      let geoColor = 'var(--color-text-muted)'
+                                      let geoLabel = null
+                                      if (pg.clienteSinCoords) {
+                                        geoLabel = 'sin ubicación de cliente'
+                                      } else if (d != null) {
+                                        geoColor = d <= 50 ? 'var(--color-success)' : d <= 200 ? '#f97316' : 'var(--color-danger)'
+                                        geoLabel = `${d < 1000 ? `${d}m` : `${(d / 1000).toFixed(1)}km`} del cliente`
+                                      }
+                                      return (
+                                        <div key={i} className="flex items-center justify-between text-[12px]">
+                                          <span style={{ color: 'var(--color-text-muted)' }}>
+                                            {formatHora(pg.fechaPago)}
+                                            {pg.metodoPago ? ` · ${metodoLabel[pg.metodoPago] || pg.metodoPago}` : ''}
+                                            {geoLabel && <span style={{ color: geoColor }}> · {geoLabel}</span>}
+                                          </span>
+                                          <span className="font-mono-display font-semibold" style={{ color: 'var(--color-success)' }}>
+                                            {formatMoney(pg.monto)}
+                                          </span>
+                                        </div>
+                                      )
+                                    })}
                                   </div>
                                 </div>
                               ) : (

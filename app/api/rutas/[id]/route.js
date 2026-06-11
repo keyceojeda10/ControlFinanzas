@@ -163,14 +163,19 @@ export async function GET(request, { params }) {
       pagadoHoy    += montoPagadoHoy
       recaudadoHoy += montoPagadoHoy
 
-      // Detalle de pagos reales de hoy (auditoria): un item por pago, mas reciente primero.
+      // Detalle de pagos reales de hoy (auditoria): un item por pago, mas reciente
+      // primero. Incluye distancia al cliente cuando el pago trae coords (para
+      // detectar cobros registrados lejos del domicilio).
       for (const pg of pagosHoy) {
         if (['recargo', 'descuento'].includes(pg.tipo)) continue
+        const tieneCoords = pg.latitud != null && pg.longitud != null
         pagosHoyDetalle.push({
           prestamoId: p.id,
           monto: pg.montoPagado,
           metodoPago: pg.metodoPago || null,
           fechaPago: pg.fechaPago,
+          distanciaMetros: tieneCoords ? distanciaMetros(pg.latitud, pg.longitud, c.latitud, c.longitud) : null,
+          clienteSinCoords: c.latitud == null || c.longitud == null,
         })
       }
 
