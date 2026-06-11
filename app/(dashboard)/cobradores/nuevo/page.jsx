@@ -56,6 +56,7 @@ function NuevoCobradorInner() {
   const [error,     setError]     = useState('')
   const [creado,    setCreado]    = useState(null)
   const [totalUsers, setTotalUsers] = useState(null)
+  const [limiteUsuarios, setLimiteUsuarios] = useState(null)
   const [limitReached, setLimitReached] = useState(false)
   const [comprando, setComprando] = useState(false)
   const [permisos,  setPermisos]  = useState({
@@ -73,7 +74,7 @@ function NuevoCobradorInner() {
   })
 
   const plan     = session?.user?.plan ?? 'starter'
-  const limite   = LIMITES[plan] ?? 1
+  const limite   = limiteUsuarios ?? (LIMITES[plan] ?? 1)
   const restantes = isFinite(limite) && totalUsers !== null ? Math.max(0, limite - totalUsers) : null
   const puedeComprarExtra = plan === 'growth' || plan === 'standard' || plan === 'professional'
 
@@ -85,6 +86,11 @@ function NuevoCobradorInner() {
     fetch('/api/cobradores')
       .then((r) => r.json())
       .then((d) => setTotalUsers((Array.isArray(d) ? d.length : 0) + 1)) // +1 por el owner
+      .catch(() => {})
+    // Limite real (incluye cobradores extra comprados), no solo el base del plan.
+    fetch('/api/pagos/estado')
+      .then((r) => r.json())
+      .then((d) => { if (typeof d?.limiteUsuarios === 'number') setLimiteUsuarios(d.limiteUsuarios) })
       .catch(() => {})
   }, [])
 

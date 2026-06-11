@@ -3,6 +3,7 @@ import { NextResponse }     from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { LIMITES_USUARIOS }  from '@/lib/planes'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -22,7 +23,7 @@ export async function GET() {
     }),
     prisma.organization.findUnique({
       where: { id: orgId },
-      select: { descuento: true },
+      select: { descuento: true, cobradoresExtra: true },
     }),
     prisma.suscripcion.findFirst({
       where: {
@@ -36,10 +37,12 @@ export async function GET() {
   ])
 
   const descuento = org?.descuento ?? 0
+  const cobradoresExtra = org?.cobradoresExtra ?? 0
 
   if (!sub) {
+    const plan = session.user.plan ?? 'starter'
     return NextResponse.json({
-      plan:             session.user.plan ?? 'starter',
+      plan,
       estado:           'pendiente',
       fechaVencimiento: null,
       diasRestantes:    0,
@@ -51,6 +54,8 @@ export async function GET() {
       preapprovalId:    null,
       canceladaAt:      null,
       tieneRecurrenteActiva: false,
+      cobradoresExtra,
+      limiteUsuarios: (LIMITES_USUARIOS[plan] ?? 1) + cobradoresExtra,
     })
   }
 
@@ -74,5 +79,7 @@ export async function GET() {
     preapprovalId:    subPrincipal.preapprovalId,
     canceladaAt:      subPrincipal.canceladaAt,
     tieneRecurrenteActiva: !!subRecurrente && !subRecurrente.canceladaAt,
+    cobradoresExtra,
+    limiteUsuarios: (LIMITES_USUARIOS[subPrincipal.plan] ?? 1) + cobradoresExtra,
   })
 }
