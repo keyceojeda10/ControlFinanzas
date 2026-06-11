@@ -44,7 +44,7 @@ export async function PATCH(request, { params }) {
     if (body.organizationId !== undefined) data.organizationId = body.organizationId
 
     // Obtener estado anterior para detectar cambio a "registrado"
-    const leadAnterior = body.estado ? await prisma.lead.findUnique({ where: { id }, select: { estado: true, telefono: true } }) : null
+    const leadAnterior = body.estado ? await prisma.lead.findUnique({ where: { id }, select: { estado: true, telefono: true, leadgenId: true } }) : null
 
     const lead = await prisma.lead.update({ where: { id }, data })
 
@@ -53,7 +53,8 @@ export async function PATCH(request, { params }) {
       sendConversionEvent({
         eventName: 'Lead',
         phone: leadAnterior.telefono,
-        customData: { lead_source: 'whatsapp' },
+        leadId: leadAnterior.leadgenId || undefined,
+        customData: { lead_qualification: 'converted', value: 50000, currency: 'COP' },
       }).catch(() => {})
     }
 

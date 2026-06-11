@@ -18,6 +18,7 @@ import { transcribirAudio } from '@/lib/bot/transcribe'
 import { responder } from '@/lib/bot/sales-agent'
 import { alertarLeadCaliente } from '@/lib/bot/alertas'
 import { guardarMedia } from '@/lib/bot/media-store'
+import { notificarEstadoLead } from '@/lib/bot/notificar-meta'
 
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN
 const APP_SECRET = process.env.WHATSAPP_APP_SECRET
@@ -352,6 +353,7 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
         where: { id: lead.id },
         data: { estado: 'interesado', proximoSeguimiento: null },
       })
+      if (lead.estado !== 'interesado') notificarEstadoLead(lead.id, 'qualified').catch(() => {})
     }
   } else {
     if (lead.estado === 'contactado' || lead.estado === 'pendiente') {
@@ -363,6 +365,7 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
           proximoSeguimiento: new Date(Date.now() + dias * 24 * 3600000),
         },
       })
+      notificarEstadoLead(lead.id, 'qualified').catch(() => {})
     }
   }
 

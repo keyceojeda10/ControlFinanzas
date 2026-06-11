@@ -9,6 +9,7 @@ import { PLANES_VALIDOS } from '@/lib/planes'
 import { COUNTRY_CODES, getCountryConfig, validatePhone } from '@/lib/i18n'
 import { normalizarEmail } from '@/lib/normalizar-email'
 import { sendTemplate } from '@/lib/bot/whatsapp-cloud'
+import { notificarEstadoLead } from '@/lib/bot/notificar-meta'
 
 function generarCodigoReferido() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -208,9 +209,15 @@ export async function POST(req) {
     }
 
     // Vincular BotLead (WhatsApp) por teléfono → marcar como convertido
-    prisma.botLead.updateMany({
+    prisma.botLead.findMany({
       where: { telefono: telefonoLimpio, organizationId: null },
-      data: { organizationId: resultado.org.id, estado: 'registrado' },
+      select: { id: true },
+    }).then(async (botLeads) => {
+      await prisma.botLead.updateMany({
+        where: { telefono: telefonoLimpio, organizationId: null },
+        data: { organizationId: resultado.org.id, estado: 'registrado' },
+      })
+      for (const bl of botLeads) notificarEstadoLead(bl.id, 'converted').catch(() => {})
     }).catch(e => console.error('[Registro] Fallo vincular BotLead:', e.message))
 
     // Facebook CAPI: reportar conversión real con email + teléfono ingresado
