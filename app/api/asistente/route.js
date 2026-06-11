@@ -322,10 +322,13 @@ async function runDeepSeekStream(params, controller, enc, emitTokens = true) {
     const delta = chunk.choices?.[0]?.delta
     if (!delta) continue
 
-    // Text tokens
-    if (delta.content && emitTokens) {
+    // Text tokens — siempre se acumulan en textContent; solo se streamean en
+    // vivo al cliente si emitTokens=true.
+    if (delta.content) {
       textContent += delta.content
-      controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: delta.content })}\n\n`))
+      if (emitTokens) {
+        controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: delta.content })}\n\n`))
+      }
     }
 
     // Tool call deltas — DeepSeek streams them in parts
