@@ -854,6 +854,7 @@ function NuevoPrestamo() {
                 monto={monto}
                 tasa={tasa}
                 frecuencia={frecuencia}
+                diasPlazo={plazo}
               />
             )}
 

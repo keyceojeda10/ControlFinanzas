@@ -16,7 +16,7 @@ const MODOS = [
 ]
 
 // Texto explicativo por modo. Si hay datos, agrega el ejemplo con el caso real.
-function explicacion(modo, { monto, tasa, frecuencia }) {
+function explicacion(modo, { monto, tasa, frecuencia, diasPlazo }) {
   const m = Number(monto)
   const t = Number(tasa)
   const hayDatos = m > 0 && t >= 0
@@ -53,7 +53,9 @@ function explicacion(modo, { monto, tasa, frecuencia }) {
     case 'lineal': {
       const base = 'El capital se reparte igual en cada cobro y el interes se calcula sobre lo que falta. La cuota empieza alta y BAJA en cada periodo.'
       if (!hayDatos) return base
-      const r = ej(diasEjemplo)
+      // Usa el plazo real que el usuario ya escribio (no un ejemplo generico a
+      // 2 meses), para que coincida con la tabla del resumen de abajo.
+      const r = ej(Number(diasPlazo) > 0 ? Number(diasPlazo) : diasEjemplo)
       if (!r?.tablaAmortizacion?.length) return base
       const primera = r.tablaAmortizacion[0]
       const ultima = r.tablaAmortizacion[r.tablaAmortizacion.length - 1]
@@ -64,7 +66,7 @@ function explicacion(modo, { monto, tasa, frecuencia }) {
   }
 }
 
-export default function ModoInteresSelector({ modoInteres, onChange, calculo, monto, tasa, frecuencia }) {
+export default function ModoInteresSelector({ modoInteres, onChange, calculo, monto, tasa, frecuencia, diasPlazo }) {
   const [tipOpen, setTipOpen] = useState(null) // key del modo con tooltip abierto
 
   return (
@@ -107,7 +109,7 @@ export default function ModoInteresSelector({ modoInteres, onChange, calculo, mo
                   style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}
                   onClick={() => setTipOpen(null)}
                 >
-                  {explicacion(m.key, { monto, tasa, frecuencia })}
+                  {explicacion(m.key, { monto, tasa, frecuencia, diasPlazo })}
                 </div>
               )}
             </div>
