@@ -748,6 +748,19 @@ html[data-theme="light"] [style*="linear-gradient"][style*="rgba(0,0,0"] {
 
 /* Excepción: avatares redondos pequeños (usan rgba, no hex) — no rompe */
 
+/* Excepción: panel "showcase" del login es siempre oscuro por diseño,
+   independiente del tema. Las heurísticas de arriba reescriben sus
+   fondos/colores inline a tokens claros con !important; estas reglas
+   más específicas restauran los valores oscuros originales. */
+html[data-theme="light"] .cf-showcase[style*="#0d0d0d"],
+html[data-theme="light"] .cf-showcase [style*="#141414"] {
+  background: #141414 !important;
+  background-image: none !important;
+}
+html[data-theme="light"] .cf-showcase[style*="#0d0d0d"] {
+  background: #0d0d0d !important;
+}
+
 /* ===========================================================
    FIX: fondos oscuros hex hardcoded directos en Tailwind
    bg-[#0a0a0a], bg-[#1a1a1a], bg-[#0d0d12], bg-[#111]...

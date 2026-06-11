@@ -12,7 +12,7 @@ function ShowcasePanel() {
 
   return (
     <div
-      className="hidden lg:flex flex-col justify-between relative overflow-hidden p-10 xl:p-14"
+      className="cf-showcase hidden lg:flex flex-col justify-between relative overflow-hidden p-10 xl:p-14"
       style={{ background: '#0d0d0d' }}
     >
       {/* Status bar */}
