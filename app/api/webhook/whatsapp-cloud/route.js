@@ -99,7 +99,13 @@ async function procesarEventos(body) {
           console.error('[WA Cloud Webhook] Error en llamada:', e.message)
         )
       }
-      // value.statuses[] (acks de entrega/lectura): se ignoran por ahora.
+      // Acks de entrega/lectura/fallo de mensajes salientes del bot.
+      const statuses = value.statuses || []
+      for (const status of statuses) {
+        await procesarStatus(status).catch(e =>
+          console.error('[WA Cloud Webhook] Error en status:', e.message)
+        )
+      }
     }
   }
 }
@@ -120,6 +126,38 @@ async function procesarLlamada(call) {
     await alertarLeadCaliente(lead, 'Llamada entrante de WhatsApp — el lead intento llamar.', []).catch(() => {})
   } else {
     console.log(`[WA Cloud] Llamada entrante de ${fromRaw} (no es lead conocido).`)
+  }
+}
+
+// Procesa un ack de estado de un mensaje saliente del bot/admin:
+// status.status -> "sent" | "delivered" | "read" | "failed"
+// status.id     -> wamid del mensaje (lo guardamos al enviar, ver wamidDe()).
+// Solo nos interesa "guardar lo peor/mas reciente conocido"; Meta puede
+// reenviar sent->delivered->read en eventos separados.
+const ESTADO_MAP = { sent: 'enviado', delivered: 'entregado', read: 'leido', failed: 'fallido' }
+
+async function procesarStatus(status) {
+  const wamid = status.id || null
+  const estado = ESTADO_MAP[status.status] || status.status
+  if (!wamid || !estado) return
+
+  const errores = status.errors || []
+  const errorEntrega = errores.length
+    ? errores.map(e => `${e.code}: ${e.title || e.message || ''}`).join('; ')
+    : null
+
+  const data = { estadoEntrega: estado, estadoEntregaEn: new Date() }
+  if (errorEntrega) data.errorEntrega = errorEntrega
+
+  const res = await prisma.botConversacion.updateMany({
+    where: { wamid },
+    data,
+  })
+
+  if (res.count === 0) {
+    console.log(`[WA Cloud] Status '${estado}' para wamid desconocido: ${wamid}`)
+  } else if (estado === 'fallido') {
+    console.error(`[WA Cloud] Mensaje fallido (wamid ${wamid}): ${errorEntrega}`)
   }
 }
 
@@ -255,6 +293,26 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
     return
   }
 
+  // Debounce: esperar 3s para agrupar mensajes rapidos del lead.
+  // Si llegan mas mensajes en ese lapso, este handler se descarta y
+  // el handler del ultimo mensaje responde con todo el historial.
+  const DEBOUNCE_MS = 3000
+  await new Promise(r => setTimeout(r, DEBOUNCE_MS))
+
+  const mensajesRecientes = await prisma.botConversacion.findMany({
+    where: {
+      botLeadId: lead.id,
+      rol: 'lead',
+      createdAt: { gte: new Date(Date.now() - DEBOUNCE_MS - 500) },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 1,
+  })
+  if (mensajesRecientes.length > 0 && mensajesRecientes[0].messageId !== messageId) {
+    console.log(`[WA Cloud] Debounce: ${lead.nombre} envio otro mensaje, este handler se descarta.`)
+    return
+  }
+
   const historial = await prisma.botConversacion.findMany({
     where: { botLeadId: lead.id },
     orderBy: { createdAt: 'desc' },
@@ -277,9 +335,9 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
 
   if (decision.mensaje) {
     try {
-      await wa.sendText(lead.telefono, decision.mensaje)
+      const envio = await wa.sendText(lead.telefono, decision.mensaje)
       await prisma.botConversacion.create({
-        data: { botLeadId: lead.id, rol: 'bot', texto: decision.mensaje },
+        data: { botLeadId: lead.id, rol: 'bot', texto: decision.mensaje, wamid: wa.wamidDe(envio) },
       })
       console.log(`[WA Cloud] -> ${lead.nombre}: ${decision.mensaje.slice(0, 70)}`)
     } catch (e) {

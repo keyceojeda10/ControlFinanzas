@@ -724,17 +724,21 @@ model BotLead {
 }
 
 model BotConversacion {
-  id          String   @id @default(cuid())
-  botLeadId   String
-  rol         String // "bot" | "lead" | "admin"
-  texto       String   @db.Text
-  tipoMensaje String   @default("chat") // "chat" | "audio" | "image" | "document" | "call"
-  messageId   String?  @unique
-  mediaPath   String? // ruta relativa del archivo en disco del VPS (uploads/wa/...)
-  mediaTipo   String? // "image" | "audio" | "document"
-  mediaMime   String? // mimetype original (image/jpeg, audio/ogg, ...)
-  mediaWamid  String? // id del media en Meta (opcional)
-  createdAt   DateTime @default(now())
+  id              String    @id @default(cuid())
+  botLeadId       String
+  rol             String // "bot" | "lead" | "admin"
+  texto           String    @db.Text
+  tipoMensaje     String    @default("chat") // "chat" | "audio" | "image" | "document" | "call"
+  messageId       String?   @unique
+  mediaPath       String? // ruta relativa del archivo en disco del VPS (uploads/wa/...)
+  mediaTipo       String? // "image" | "audio" | "document"
+  mediaMime       String? // mimetype original (image/jpeg, audio/ogg, ...)
+  mediaWamid      String? // id del media en Meta (opcional)
+  wamid           String?   @unique // id del mensaje SALIENTE devuelto por Meta (rol bot/admin)
+  estadoEntrega   String? // "enviado" | "entregado" | "leido" | "fallido" (ack de Meta via webhook statuses)
+  estadoEntregaEn DateTime? // fecha del ultimo ack recibido
+  errorEntrega    String?   @db.Text // detalle del error si estadoEntrega = "fallido"
+  createdAt       DateTime  @default(now())
 
   botLead BotLead @relation(fields: [botLeadId], references: [id], onDelete: Cascade)
 

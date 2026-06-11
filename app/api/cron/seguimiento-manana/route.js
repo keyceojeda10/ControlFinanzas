@@ -74,9 +74,9 @@ export async function POST(req) {
     const texto = mensajePara(tipo, nombre)
 
     try {
-      await wa.sendText(l.telefono, texto)
+      const envio = await wa.sendText(l.telefono, texto)
       await prisma.botConversacion.create({
-        data: { botLeadId: l.id, rol: 'bot', texto },
+        data: { botLeadId: l.id, rol: 'bot', texto, wamid: wa.wamidDe(envio) },
       })
       res.enviados++
       res.detalle.push({ tel: ult10(l.telefono).slice(-4), tipo })

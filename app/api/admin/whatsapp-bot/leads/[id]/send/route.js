@@ -94,7 +94,7 @@ export async function POST(request, { params }) {
 
       // Subir a Meta y enviar
       const mediaId = await wa.uploadMedia(buffer, mimetype)
-      await wa.sendMedia(lead.telefono, mediaId, tipo, caption)
+      const envioMedia = await wa.sendMedia(lead.telefono, mediaId, tipo, caption)
 
       // Guardar copia en disco para el panel
       const saved = guardarMedia(buffer.toString('base64'), mimetype)
@@ -102,6 +102,7 @@ export async function POST(request, { params }) {
         data: {
           botLeadId: id, rol: 'admin', texto: caption || `[${tipo}]`, tipoMensaje: tipo,
           mediaPath: saved?.path || null, mediaTipo: saved?.tipo || tipo, mediaMime: saved?.mime || mimetype,
+          wamid: wa.wamidDe(envioMedia),
         },
       })
       return NextResponse.json({ ok: true, tipo })
@@ -112,9 +113,9 @@ export async function POST(request, { params }) {
     const texto = (body.texto || '').toString().trim()
     if (!texto) return NextResponse.json({ error: 'Texto vacio' }, { status: 400 })
 
-    await wa.sendText(lead.telefono, texto)
+    const envio = await wa.sendText(lead.telefono, texto)
     await prisma.botConversacion.create({
-      data: { botLeadId: id, rol: 'admin', texto, tipoMensaje: 'chat' },
+      data: { botLeadId: id, rol: 'admin', texto, tipoMensaje: 'chat', wamid: wa.wamidDe(envio) },
     })
     return NextResponse.json({ ok: true })
   } catch (e) {

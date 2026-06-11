@@ -402,9 +402,33 @@ function Burbuja({ m, leadId }) {
           <p className="text-[13px] whitespace-pre-wrap break-words">{m.texto}</p>
         )}
       </div>
-      <span className="text-[9px] text-[var(--color-text-muted)] mt-0.5 px-1">
+      <span className="text-[9px] text-[var(--color-text-muted)] mt-0.5 px-1 flex items-center gap-1">
         {new Date(m.createdAt).toLocaleString('es-CO', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+        {!esLead && <EstadoEntrega m={m} />}
       </span>
     </div>
   )
+}
+
+// Indicador de entrega para mensajes salientes (bot/admin), basado en los
+// acks de Meta (value.statuses[] del webhook -> BotConversacion.estadoEntrega).
+function EstadoEntrega({ m }) {
+  if (m.estadoEntrega === 'fallido') {
+    return (
+      <span className="text-[#ef4444] flex items-center gap-0.5" title={m.errorEntrega || 'No entregado'}>
+        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"/></svg>
+        No entregado
+      </span>
+    )
+  }
+  if (m.estadoEntrega === 'leido') {
+    return <svg className="w-3.5 h-3.5 text-[#53bdeb]" fill="currentColor" viewBox="0 0 16 11"><path d="M11.071.653a.5.5 0 0 1 .063.704l-6.5 8a.5.5 0 0 1-.74.036L.653 6.073a.5.5 0 1 1 .694-.72l2.946 2.844 6.16-7.58a.5.5 0 0 1 .618-.064zM15.071.653a.5.5 0 0 1 .063.704l-6.5 8a.5.5 0 0 1-.74.036l-1-.96a.5.5 0 1 1 .694-.72l.61.587 6.16-7.58a.5.5 0 0 1 .618-.064z"/></svg>
+  }
+  if (m.estadoEntrega === 'entregado') {
+    return <svg className="w-3.5 h-3.5 opacity-60" fill="currentColor" viewBox="0 0 16 11"><path d="M11.071.653a.5.5 0 0 1 .063.704l-6.5 8a.5.5 0 0 1-.74.036L.653 6.073a.5.5 0 1 1 .694-.72l2.946 2.844 6.16-7.58a.5.5 0 0 1 .618-.064zM15.071.653a.5.5 0 0 1 .063.704l-6.5 8a.5.5 0 0 1-.74.036l-1-.96a.5.5 0 1 1 .694-.72l.61.587 6.16-7.58a.5.5 0 0 1 .618-.064z"/></svg>
+  }
+  if (m.estadoEntrega === 'enviado') {
+    return <svg className="w-3.5 h-3.5 opacity-50" fill="currentColor" viewBox="0 0 16 11"><path d="M11.071.653a.5.5 0 0 1 .063.704l-6.5 8a.5.5 0 0 1-.74.036L.653 6.073a.5.5 0 1 1 .694-.72l2.946 2.844 6.16-7.58a.5.5 0 0 1 .618-.064z"/></svg>
+  }
+  return null
 }
