@@ -239,6 +239,9 @@ export async function GET(request, { params }) {
     bucket(s.cliente?.ruta?.id).segurosDia += s.montoSeguro || 0
   }
 
+  // Dinero real en mano = base (capital) + cobrado + seguros + recargos - prestado - gastos
+  const dineroEnMano = capitalRutasTotal + cobradoDia + Math.round(segurosDiaTotal) + recargosMontoTotal - prestadoDia - gastosDia
+
   const porRuta = [...porRutaMap.values()].map((r) => ({
     ...r,
     prestadoDia: Math.round(r.prestadoDia),
@@ -285,6 +288,7 @@ export async function GET(request, { params }) {
       gastosDia,
       efectivoDia,
       capitalRutasTotal,
+      dineroEnMano,
       recargosMonto: recargosMontoTotal,
       recargosCantidad,
     },
