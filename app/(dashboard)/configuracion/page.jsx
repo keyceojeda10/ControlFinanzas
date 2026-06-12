@@ -489,6 +489,38 @@ function TabOrganizacion() {
         <Button onClick={guardarDSC} loading={guardandoDSC} size="sm" className="mt-3">Guardar días sin cobro</Button>
       </Card>
 
+      {/* Toggle capital = efectivo en mano */}
+      <Card>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Capital en ruta = efectivo en mano</p>
+            <p className="text-[11px] text-[#666666] leading-snug mt-1">
+              Activa si entregas el capital de la ruta como plata fisica al cobrador. El sistema usara ese valor para calcular el dinero en mano y el cuadre de caja.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={async () => {
+              const nuevoValor = !org?.capitalEsEfectivo
+              try {
+                const res = await fetch('/api/configuracion/organizacion', {
+                  method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ capitalEsEfectivo: nuevoValor }),
+                })
+                if (res.ok) setData(prev => ({ ...prev, org: { ...prev.org, capitalEsEfectivo: nuevoValor } }))
+              } catch {}
+            }}
+            className="shrink-0 relative w-11 h-6 rounded-full transition-colors"
+            style={{ background: org?.capitalEsEfectivo ? 'var(--color-accent)' : 'var(--color-bg-hover)' }}
+          >
+            <span
+              className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform shadow-sm"
+              style={{ transform: org?.capitalEsEfectivo ? 'translateX(20px)' : 'translateX(0)' }}
+            />
+          </button>
+        </div>
+      </Card>
+
       {/* Festivos */}
       <Card>
         <div className="flex items-center gap-2 mb-1">

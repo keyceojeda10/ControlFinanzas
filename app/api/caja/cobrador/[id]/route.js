@@ -124,11 +124,17 @@ export async function GET(request, { params }) {
   const { inicio } = esRango ? getLocalDayRange(desdeParam, country) : getLocalDayRange(fechaBase, country)
   const { fin }    = esRango ? getLocalDayRange(hastaParam, country) : getLocalDayRange(fechaBase, country)
 
-  // Validar que el cobrador pertenezca a la organización.
-  const cobrador = await prisma.user.findFirst({
-    where: { id: cobradorId, organizationId, rol: 'cobrador' },
-    select: { id: true, nombre: true },
-  })
+  // Validar cobrador + leer config de la org en paralelo.
+  const [cobrador, org] = await Promise.all([
+    prisma.user.findFirst({
+      where: { id: cobradorId, organizationId, rol: 'cobrador' },
+      select: { id: true, nombre: true },
+    }),
+    prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { capitalEsEfectivo: true },
+    }),
+  ])
   if (!cobrador) {
     return Response.json({ error: 'Cobrador no encontrado' }, { status: 404 })
   }
@@ -242,6 +248,11 @@ export async function GET(request, { params }) {
   // Efectivo del día incluye seguros y recargos (son plata física cobrada)
   efectivoDia += Math.round(segurosDiaTotal) + recargosMontoTotal
 
+  // Dinero en mano depende de cómo la org interpreta el capital en ruta
+  const dineroEnMano = org?.capitalEsEfectivo
+    ? capitalRutasTotal - gastosDia
+    : efectivoDia
+
   const porRuta = [...porRutaMap.values()].map((r) => ({
     ...r,
     prestadoDia: Math.round(r.prestadoDia),
@@ -288,7 +299,8 @@ export async function GET(request, { params }) {
       gastosDia,
       efectivoDia,
       capitalRutasTotal,
-      dineroEnMano: capitalRutasTotal - gastosDia,
+      dineroEnMano,
+      capitalEsEfectivo: !!org?.capitalEsEfectivo,
       recargosMonto: recargosMontoTotal,
       recargosCantidad,
     },

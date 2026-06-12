@@ -32,23 +32,25 @@ export default function CajaCobradorDetalle({ data }) {
   const porRuta = data?.porRuta || []
   const gastos = data?.gastos || []
 
+  const esCapitalEfectivo = r.capitalEsEfectivo
+
   return (
     <div className="space-y-4">
-      {/* Resumen UNIFICADO: hero = dinero real en mano del cobrador */}
       <CajaResumen
         hero={{
-          label: data?.esRango ? 'Efectivo del periodo' : 'Dinero en mano',
+          label: data?.esRango ? 'Efectivo del periodo' : (esCapitalEfectivo ? 'Dinero en mano' : 'Efectivo del día'),
           valor: r.dineroEnMano ?? 0,
-          subtitulo: 'Capital en ruta − Gastos',
+          subtitulo: esCapitalEfectivo ? 'Capital en ruta − Gastos' : 'Cobrado + Seguros + Recargos − Prestado − Gastos',
           color: (r.dineroEnMano ?? 0) >= 0 ? '#22c55e' : '#ef4444',
         }}
         cards={[
-          { label: 'Capital en ruta', valor: r.capitalRutasTotal, color: 'var(--color-info)' },
+          ...(esCapitalEfectivo ? [{ label: 'Capital en ruta', valor: r.capitalRutasTotal, color: 'var(--color-info)' }] : []),
           { label: 'Cobrado', valor: r.cobradoDia, color: 'var(--color-success)' },
           { label: 'Prestado', valor: r.prestadoDia, color: 'var(--color-warning)', signo: '-' },
           { label: 'Gastos', valor: r.gastosDia, color: 'var(--color-danger)', signo: '-' },
           ...((r.segurosDia || 0) > 0 ? [{ label: 'Seguros', valor: r.segurosDia, color: '#6366f1', signo: '+' }] : []),
           ...((r.recargosCantidad || 0) > 0 ? [{ label: `Recargos (${r.recargosCantidad})`, valor: r.recargosMonto, color: '#f97316', signo: '+' }] : []),
+          ...(!esCapitalEfectivo && (r.capitalRutasTotal || 0) > 0 ? [{ label: 'Capital en ruta', valor: r.capitalRutasTotal, color: 'var(--color-info)' }] : []),
         ]}
       />
 

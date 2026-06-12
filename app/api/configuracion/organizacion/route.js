@@ -14,7 +14,7 @@ export async function GET() {
 
   const org = await prisma.organization.findUnique({
     where: { id: orgId },
-    select: { id: true, nombre: true, plan: true, telefono: true, ciudad: true, diasSinCobro: true, country: true, timezone: true, createdAt: true, activo: true },
+    select: { id: true, nombre: true, plan: true, telefono: true, ciudad: true, diasSinCobro: true, country: true, timezone: true, createdAt: true, activo: true, capitalEsEfectivo: true },
   })
 
   const sub = await prisma.suscripcion.findFirst({
@@ -51,7 +51,7 @@ export async function PATCH(req) {
   // NOTA: `country` y `timezone` NO se aceptan desde este endpoint.
   // Cambios de pais solo pueden hacerse desde superadmin para evitar corrupcion
   // de calculos de mora/timezone y precios de planes en organizaciones con datos.
-  const { nombre, telefono, ciudad, diasSinCobro } = await req.json()
+  const { nombre, telefono, ciudad, diasSinCobro, capitalEsEfectivo } = await req.json()
 
   if (nombre !== undefined && !nombre?.trim()) {
     return NextResponse.json({ error: 'El nombre es obligatorio' }, { status: 400 })
@@ -72,8 +72,9 @@ export async function PATCH(req) {
       ...(telefono !== undefined && { telefono: telefono?.trim() || null }),
       ...(ciudad !== undefined && { ciudad: ciudad?.trim() || null }),
       ...(diasSinCobroVal !== undefined && { diasSinCobro: diasSinCobroVal }),
+      ...(capitalEsEfectivo !== undefined && { capitalEsEfectivo: !!capitalEsEfectivo }),
     },
-    select: { id: true, nombre: true, plan: true, telefono: true, ciudad: true, diasSinCobro: true, country: true, timezone: true },
+    select: { id: true, nombre: true, plan: true, telefono: true, ciudad: true, diasSinCobro: true, country: true, timezone: true, capitalEsEfectivo: true },
   })
 
   return NextResponse.json({ ok: true, org })

@@ -85,7 +85,7 @@ export async function GET(request) {
   const fecha = searchParams.get('fecha') || getLocalDateStr(country)
   const { inicio, fin } = getLocalDayRange(fecha, country)
 
-  const [cobradores, recaudadoMap, esperadoMap, cierres, rutas, gastosPorCobrador] = await Promise.all([
+  const [cobradores, recaudadoMap, esperadoMap, cierres, rutas, gastosPorCobrador, orgConfig] = await Promise.all([
     prisma.user.findMany({
       where: { organizationId, rol: 'cobrador', activo: true },
       select: { id: true, nombre: true },
@@ -100,6 +100,7 @@ export async function GET(request) {
       where: { organizationId, estado: { in: ['pendiente', 'aprobado'] }, fecha: { gte: inicio, lt: fin } },
       _sum: { monto: true },
     }),
+    prisma.organization.findUnique({ where: { id: organizationId }, select: { capitalEsEfectivo: true } }),
   ])
 
   const cierrePorCobrador = {}
@@ -118,7 +119,7 @@ export async function GET(request) {
     const cierre = cierrePorCobrador[c.id] || null
     const capital = capitalPorCobrador[c.id] || 0
     const gastosDelDia = gastosPorCobradorMap[c.id] || 0
-    const recaudadoSistema = capital > 0
+    const recaudadoSistema = orgConfig?.capitalEsEfectivo && capital > 0
       ? capital - gastosDelDia
       : recaudadoMap[c.id] || 0
     const estado = estadoDe(cierre, recaudadoSistema)
@@ -163,6 +164,8 @@ export async function POST(request) {
   const fecha = typeof body.fecha === 'string' && FECHA_REGEX.test(body.fecha) ? body.fecha : getLocalDateStr(country)
   const { inicio, fin } = getLocalDayRange(fecha, country)
 
+  const orgConfig = await prisma.organization.findUnique({ where: { id: organizationId }, select: { capitalEsEfectivo: true } })
+
   // Soporta confirmación individual { cobradorId, efectivoRecibido, nota } o en lote { confirmaciones: [...] }.
   const lista = Array.isArray(body.confirmaciones) && body.confirmaciones.length
     ? body.confirmaciones
@@ -192,10 +195,8 @@ export async function POST(request) {
     })
     const gastosCobrador = Math.round(gastosAgg._sum?.monto || 0)
 
-    // Recaudado del sistema: si tiene capital, es capital - gastos (plata real en mano).
-    // Si no tiene capital, es solo cobros del día.
     let recaudadoSistema
-    if (capitalCobrador > 0) {
+    if (orgConfig?.capitalEsEfectivo && capitalCobrador > 0) {
       recaudadoSistema = capitalCobrador - gastosCobrador
     } else {
       const recaudadoAgg = await prisma.pago.aggregate({
