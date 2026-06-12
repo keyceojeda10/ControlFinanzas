@@ -68,6 +68,10 @@ export async function GET(request) {
         orderBy: { fechaPago: 'desc' },
         select: { id: true, montoPagado: true, fechaPago: true, tipo: true },
       },
+      cuotasAmortizacion: {
+        orderBy: { numeroPeriodo: 'asc' },
+        select: { numeroPeriodo: true, cuotaTotal: true, interes: true, pagado: true, interesPagado: true, fechaEsperada: true },
+      },
     },
     orderBy: [
       { createdAt: 'desc' },

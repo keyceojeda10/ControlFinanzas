@@ -19,6 +19,7 @@ import {
   regenerarTablaAmortizacion,
   recalcularTablaDesdeSaldo,
   obtenerDiasPorPeriodo,
+  calcularInteresesPendientes,
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { registrarMovimientoCapital } from '@/lib/capital'
@@ -126,8 +127,21 @@ export async function POST(request, { params }) {
   if (tipo === 'liquidacion' && (montoFinal == null || montoFinal < 0 || Number.isNaN(montoFinal))) {
     montoFinal = 0
   }
-  if (!['completo', 'parcial', 'capital', 'recargo', 'descuento', 'liquidacion'].includes(tipo)) {
+  if (!['completo', 'parcial', 'capital', 'recargo', 'descuento', 'liquidacion', 'intereses'].includes(tipo)) {
     return Response.json({ error: 'El tipo de pago no es válido' }, { status: 400 })
+  }
+
+  if (tipo === 'intereses') {
+    if (prestamo.modoInteres !== 'lineal') {
+      return Response.json({ error: 'Pago a intereses solo aplica para préstamos con cuota decreciente' }, { status: 400 })
+    }
+    const interesesPendientes = Math.round(calcularInteresesPendientes(prestamo))
+    if (interesesPendientes <= 0) {
+      return Response.json({ error: 'No hay intereses pendientes para pagar' }, { status: 400 })
+    }
+    if (montoFinal > interesesPendientes) {
+      montoFinal = interesesPendientes
+    }
   }
 
   // Recargo, descuento y liquidacion requieren autorizacion + nota (auditoria).
@@ -449,10 +463,38 @@ export async function POST(request, { params }) {
       })
     }
 
-    // 2f. Modo lineal: distribuir el total pagado real en cascada sobre la
+    // 2f. Pago a intereses: distribuir monto a interesPagado de cuotas vencidas
+    if (tipo === 'intereses' && tieneTablaAmortizacion(prestamoActualizado)) {
+      const filasOrdenadas = [...prestamoActualizado.cuotasAmortizacion].sort((a, b) => a.numeroPeriodo - b.numeroPeriodo)
+      const ahora = new Date()
+      let restante = montoFinal
+      for (const fila of filasOrdenadas) {
+        if (restante <= 0) break
+        if (new Date(fila.fechaEsperada) > ahora) continue
+        if ((fila.pagado || 0) >= fila.cuotaTotal) continue
+        const interesNoPagado = Math.max(0, fila.interes - (fila.interesPagado || 0))
+        if (interesNoPagado <= 0) continue
+        const aplicar = Math.min(restante, interesNoPagado)
+        await tx.cuotaAmortizacion.update({
+          where: { prestamoId_numeroPeriodo: { prestamoId, numeroPeriodo: fila.numeroPeriodo } },
+          data: { interesPagado: (fila.interesPagado || 0) + aplicar },
+        })
+        restante -= aplicar
+      }
+      prestamoActualizado = await tx.prestamo.findUnique({
+        where: { id: prestamoId },
+        include: {
+          pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
+          cuotasAmortizacion: { orderBy: { numeroPeriodo: 'asc' } },
+        },
+      })
+    }
+
+    // 2g. Modo lineal: distribuir el total pagado real en cascada sobre la
     // tabla de amortizacion (cuota mas antigua primero). La liquidacion ya
     // marca todas las filas como pagadas arriba, no hace falta repetir aqui.
-    if (tipo !== 'liquidacion' && tieneTablaAmortizacion(prestamoActualizado)) {
+    // Pagos tipo intereses ya se distribuyeron a interesPagado, no a pagado.
+    if (tipo !== 'liquidacion' && tipo !== 'intereses' && tieneTablaAmortizacion(prestamoActualizado)) {
       const actualizaciones = regenerarTablaAmortizacion(prestamoActualizado)
       for (const fila of actualizaciones) {
         await tx.cuotaAmortizacion.update({

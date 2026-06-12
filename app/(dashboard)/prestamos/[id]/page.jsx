@@ -60,7 +60,9 @@ const tipoPagoBadge = {
   parcial:   { variant: 'yellow', label: 'Parcial'   },
   capital:   { variant: 'purple', label: 'A Capital' },
   recargo:   { variant: 'red',    label: 'Recargo'   },
-  descuento: { variant: 'blue',   label: 'Descuento' },
+  descuento:  { variant: 'blue',   label: 'Descuento' },
+  intereses:  { variant: 'yellow', label: 'Intereses' },
+  liquidacion:{ variant: 'green',  label: 'Liquidacion' },
 }
 
 export default function PrestamoDetallePage({ params }) {
@@ -91,6 +93,7 @@ export default function PrestamoDetallePage({ params }) {
   const [rutaNav,      setRutaNav]     = useState(null)
   const [modalRecargo,  setModalRecargo]  = useState(false)
   const [modalDescuento, setModalDescuento] = useState(false)
+  const [modalIntereses, setModalIntereses] = useState(false)
   const [modalRenovar,  setModalRenovar]  = useState(false)
   const [modalPlazo,    setModalPlazo]    = useState(false)
   const [modalDiaCobro, setModalDiaCobro] = useState(false)
@@ -1168,6 +1171,23 @@ export default function PrestamoDetallePage({ params }) {
             </button>
           )}
 
+          {prestamo?.modoInteres === 'lineal' && (() => {
+            const interesesPend = prestamo?.cuotasAmortizacion
+              ?.filter(f => new Date(f.fechaEsperada) <= new Date() && (f.pagado || 0) < f.cuotaTotal)
+              ?.reduce((acc, f) => acc + Math.max(0, f.interes - (f.interesPagado || 0)), 0) ?? 0
+            return interesesPend > 0 ? (
+              <button
+                onClick={() => {
+                  setModalAtajosCobro(false)
+                  setModalIntereses(true)
+                }}
+                className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--color-warning)] bg-[rgba(245,158,11,0.08)] border border-[rgba(245,158,11,0.25)] hover:bg-[rgba(245,158,11,0.15)] transition-all"
+              >
+                Pagar intereses · {formatMoney(interesesPend)}
+              </button>
+            ) : null
+          })()}
+
           <button
             onClick={() => {
               setModalAtajosCobro(false)
@@ -1404,6 +1424,18 @@ export default function PrestamoDetallePage({ params }) {
         cliente={cliente}
         prestamo={prestamo}
         tabInicial="descuento"
+      />
+
+      <RegistrarPago
+        prestamoId={id}
+        cuotaDiaria={cuotaDiaria}
+        saldoPendiente={saldoPendiente}
+        open={modalIntereses}
+        onClose={() => setModalIntereses(false)}
+        onSuccess={(prestamoActualizado) => setPrestamo(prestamoActualizado)}
+        cliente={cliente}
+        prestamo={prestamo}
+        tabInicial="intereses"
       />
 
       {/* Modal: Liquidación anticipada (cierre por pago total antes del plazo) */}

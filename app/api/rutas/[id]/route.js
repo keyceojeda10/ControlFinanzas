@@ -91,8 +91,11 @@ export async function GET(request, { params }) {
               renovadoDeId: true,
               seguro: true,
               montoSeguro: true,
-              // Solo pagos de HOY — evita traer meses de historial al cliente
-              // mora/saldo usan totalPagado (denormalizado), no necesitan historial
+              modoInteres: true,
+              cuotasAmortizacion: {
+                orderBy: { numeroPeriodo: 'asc' },
+                select: { numeroPeriodo: true, capital: true, interes: true, cuotaTotal: true, saldoRestante: true, pagado: true, interesPagado: true, fechaEsperada: true },
+              },
               pagos: {
                 where:  { fechaPago: { gte: _hoy, lt: _manana } },
                 orderBy: { fechaPago: 'desc' },

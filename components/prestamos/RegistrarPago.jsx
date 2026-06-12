@@ -69,6 +69,18 @@ export default function RegistrarPago({
       setError('')
       return
     }
+    if (tabInicial === 'intereses') {
+      const interesesPend = prestamo?.cuotasAmortizacion
+        ?.filter(f => new Date(f.fechaEsperada) <= new Date() && (f.pagado || 0) < f.cuotaTotal)
+        ?.reduce((acc, f) => acc + Math.max(0, f.interes - (f.interesPagado || 0)), 0) ?? 0
+      setMonto(String(Math.round(interesesPend)))
+      setTipo('intereses')
+      setNota('')
+      setDiasAbonados(null)
+      setSliderVisual(1)
+      setError('')
+      return
+    }
 
     const montoBase = Math.min(Math.round(cuotaDiaria ?? 0), Math.round(saldoPendiente ?? 0))
     const montoPreset = Number(presetPago?.monto)
@@ -387,11 +399,13 @@ export default function RegistrarPago({
     tipo === 'recargo' ? 'Agregar recargo' :
     tipo === 'descuento' ? 'Aplicar descuento' :
     tipo === 'capital' ? 'Abono a capital' :
+    tipo === 'intereses' ? 'Pago a intereses' :
     'Registrar pago'
   const labelBoton =
     tipo === 'recargo' ? 'Aplicar recargo' :
     tipo === 'descuento' ? 'Aplicar descuento' :
     tipo === 'capital' ? 'Confirmar abono' :
+    tipo === 'intereses' ? 'Confirmar pago' :
     'Confirmar pago'
 
   return (
@@ -426,7 +440,7 @@ export default function RegistrarPago({
             Al pulsar, calculamos cuantos dias equivale el monto y movemos
             tambien el slider de abono rapido para que el usuario vea visualmente
             el progreso. Si supera 30 dias (max del slider), se capea en 30. */}
-        {tipo !== 'capital' && tipo !== 'recargo' && tipo !== 'descuento' && (() => {
+        {tipo !== 'capital' && tipo !== 'recargo' && tipo !== 'descuento' && tipo !== 'intereses' && (() => {
           const cuota = Math.max(1, Math.round(cuotaDiaria ?? 1))
           const diasParaMonto = (m) => Math.min(30, Math.max(1, Math.round((Number(m) || 0) / cuota)))
           return (
@@ -468,7 +482,7 @@ export default function RegistrarPago({
         })()}
 
         {/* Slider de abono rápido por días */}
-        {tipo !== 'capital' && tipo !== 'recargo' && tipo !== 'descuento' && (() => {
+        {tipo !== 'capital' && tipo !== 'recargo' && tipo !== 'descuento' && tipo !== 'intereses' && (() => {
           const val = diasAbonados || 1
           // Valor mostrado en el slider (puede ser fraccional durante la animacion)
           const visual = sliderVisual
@@ -570,6 +584,7 @@ export default function RegistrarPago({
                 { key: 'parcial',  label: 'Parcial',   color: 'var(--color-accent)' },
                 { key: 'capital',  label: 'A capital',  color: 'var(--color-purple)' },
                 { key: 'recargo',  label: 'Recargo',   color: '#f97316' },
+                ...(prestamo?.modoInteres === 'lineal' ? [{ key: 'intereses', label: 'Intereses', color: 'var(--color-warning)' }] : []),
                 // Descuento solo visible si el usuario tiene el permiso (riesgo: reduce saldo).
                 ...(puedeAplicarDescuentos ? [{ key: 'descuento', label: 'Descuento', color: 'var(--color-success)' }] : []),
               ].map(({ key, label, color }) => (
@@ -578,8 +593,14 @@ export default function RegistrarPago({
                   type="button"
                   onClick={() => {
                     setTipo(key)
-                    if (key === 'capital' || key === 'recargo' || key === 'descuento') {
+                    if (key === 'capital' || key === 'recargo' || key === 'descuento' || key === 'intereses') {
                       setDiasAbonados(null)
+                      if (key === 'intereses') {
+                        const interesesPend = prestamo?.cuotasAmortizacion
+                          ?.filter(f => new Date(f.fechaEsperada) <= new Date() && (f.pagado || 0) < f.cuotaTotal)
+                          ?.reduce((acc, f) => acc + Math.max(0, f.interes - (f.interesPagado || 0)), 0) ?? 0
+                        setMonto(String(Math.round(interesesPend)))
+                      }
                       setMonto('')
                     }
                   }}
@@ -645,6 +666,15 @@ export default function RegistrarPago({
                     </span></>
                   )
                 })()}
+              </p>
+            </div>
+          )}
+
+          {tipo === 'intereses' && (
+            <div className="bg-[rgba(245,158,11,0.08)] border border-[rgba(245,158,11,0.2)] rounded-[10px] px-3 py-2.5 text-xs">
+              <p className="font-medium text-[var(--color-warning)] mb-1">Pago a intereses</p>
+              <p className="text-[var(--color-text-muted)]">
+                Cubre solo los intereses de las cuotas vencidas. El capital queda pendiente pero no genera mora adicional.
               </p>
             </div>
           )}

@@ -48,6 +48,7 @@ enum TipoPago {
   recargo
   descuento
   liquidacion
+  intereses
 }
 
 enum EstadoSuscripcion {
@@ -315,6 +316,7 @@ model CuotaAmortizacion {
   cuotaTotal    Float
   saldoRestante Float
   pagado        Float    @default(0)
+  interesPagado Float    @default(0)
   fechaEsperada DateTime
 
   @@unique([prestamoId, numeroPeriodo])

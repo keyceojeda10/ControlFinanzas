@@ -30,6 +30,7 @@ export default function TablaAmortizacion({ tabla, frecuencia = 'mensual', mostr
       <div className="space-y-1.5">
         {tabla.map((fila) => {
           const completado = mostrarPagado && (fila.pagado || 0) >= fila.cuotaTotal
+          const interesAlDia = mostrarPagado && !completado && (fila.interesPagado || 0) >= fila.interes
           return (
             <div
               key={fila.numeroPeriodo}
@@ -40,13 +41,19 @@ export default function TablaAmortizacion({ tabla, frecuencia = 'mensual', mostr
                   <span
                     className="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
                     style={{
-                      background: completado ? 'var(--color-success)' : 'transparent',
-                      border: completado ? 'none' : '1.5px solid var(--color-border)',
+                      background: completado ? 'var(--color-success)' : interesAlDia ? 'var(--color-warning)' : 'transparent',
+                      border: (completado || interesAlDia) ? 'none' : '1.5px solid var(--color-border)',
                     }}
+                    title={completado ? 'Cuota pagada' : interesAlDia ? 'Intereses al dia' : 'Pendiente'}
                   >
                     {completado && (
                       <svg className="w-2.5 h-2.5" fill="none" stroke="white" strokeWidth={3} viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                    {interesAlDia && (
+                      <svg className="w-2.5 h-2.5" fill="none" stroke="white" strokeWidth={3} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 4h.01" />
                       </svg>
                     )}
                   </span>

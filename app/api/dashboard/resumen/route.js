@@ -95,6 +95,11 @@ export async function GET() {
         // Denormalizados: evitan traer todos los pagos por cada prestamo activo.
         totalPagado: true,
         ultimoPagoAt: true,
+        modoInteres: true,
+        cuotasAmortizacion: {
+          orderBy: { numeroPeriodo: 'asc' },
+          select: { numeroPeriodo: true, cuotaTotal: true, interes: true, pagado: true, interesPagado: true, fechaEsperada: true },
+        },
         cliente: {
           select: {
             id: true,
