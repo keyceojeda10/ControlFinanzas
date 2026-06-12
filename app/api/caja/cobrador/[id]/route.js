@@ -190,7 +190,7 @@ export async function GET(request, { params }) {
   const cobradoDia = Math.round(cobros.reduce((a, p) => a + (p.montoPagado || 0), 0))
   const prestadoDia = Math.round(desembolsos.reduce((a, d) => a + (d.monto || 0), 0))
   const gastosDia = Math.round(gastos.reduce((a, g) => a + (g.monto || 0), 0))
-  const efectivoDia = cobradoDia - prestadoDia - gastosDia
+  let efectivoDia = cobradoDia - prestadoDia - gastosDia
   const capitalRutasTotal = Math.round(rutas.reduce((a, r) => a + (r.saldoCapital || 0), 0))
   const recargosMontoTotal = Math.round(recargos._sum?.montoPagado || 0)
   const recargosCantidad = recargos._count?.id || 0
@@ -239,8 +239,8 @@ export async function GET(request, { params }) {
     bucket(s.cliente?.ruta?.id).segurosDia += s.montoSeguro || 0
   }
 
-  // Dinero real en mano = base (capital) + cobrado + seguros + recargos - prestado - gastos
-  const dineroEnMano = capitalRutasTotal + cobradoDia + Math.round(segurosDiaTotal) + recargosMontoTotal - prestadoDia - gastosDia
+  // Efectivo del día incluye seguros y recargos (son plata física cobrada)
+  efectivoDia += Math.round(segurosDiaTotal) + recargosMontoTotal
 
   const porRuta = [...porRutaMap.values()].map((r) => ({
     ...r,
@@ -288,7 +288,6 @@ export async function GET(request, { params }) {
       gastosDia,
       efectivoDia,
       capitalRutasTotal,
-      dineroEnMano,
       recargosMonto: recargosMontoTotal,
       recargosCantidad,
     },

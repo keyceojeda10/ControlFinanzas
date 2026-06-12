@@ -37,18 +37,18 @@ export default function CajaCobradorDetalle({ data }) {
       {/* Resumen UNIFICADO: hero = dinero real en mano del cobrador */}
       <CajaResumen
         hero={{
-          label: data?.esRango ? 'Efectivo del periodo' : 'Dinero en mano',
-          valor: r.dineroEnMano ?? 0,
-          subtitulo: 'Capital + Cobrado + Seguros + Recargos − Prestado − Gastos',
-          color: (r.dineroEnMano ?? 0) >= 0 ? '#22c55e' : '#ef4444',
+          label: data?.esRango ? 'Efectivo del periodo' : 'Efectivo del día',
+          valor: r.efectivoDia ?? 0,
+          subtitulo: 'Cobrado + Seguros + Recargos − Prestado − Gastos',
+          color: (r.efectivoDia ?? 0) >= 0 ? '#22c55e' : '#ef4444',
         }}
         cards={[
-          { label: 'Capital en ruta', valor: r.capitalRutasTotal, color: 'var(--color-info)' },
           { label: 'Cobrado', valor: r.cobradoDia, color: 'var(--color-success)' },
           { label: 'Prestado', valor: r.prestadoDia, color: 'var(--color-warning)', signo: '-' },
           { label: 'Gastos', valor: r.gastosDia, color: 'var(--color-danger)', signo: '-' },
           ...((r.segurosDia || 0) > 0 ? [{ label: 'Seguros', valor: r.segurosDia, color: '#6366f1', signo: '+' }] : []),
           ...((r.recargosCantidad || 0) > 0 ? [{ label: `Recargos (${r.recargosCantidad})`, valor: r.recargosMonto, color: '#f97316', signo: '+' }] : []),
+          ...((r.capitalRutasTotal || 0) > 0 ? [{ label: 'Capital en ruta', valor: r.capitalRutasTotal, color: 'var(--color-info)' }] : []),
         ]}
       />
 
@@ -82,12 +82,12 @@ export default function CajaCobradorDetalle({ data }) {
                   </div>
                 </div>
                 {ruta.rutaId && (() => {
-                  const saldoRuta = ruta.saldoCapital + ruta.cobradoDia + ruta.segurosDia - ruta.prestadoDia
+                  const flujoRuta = ruta.cobradoDia + ruta.segurosDia - ruta.prestadoDia
                   return (
                     <div className="mt-2 pt-2 border-t border-[var(--color-border)] flex items-center justify-between">
-                      <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Saldo en ruta</span>
-                      <span className="text-sm font-bold font-mono-display" style={{ color: saldoRuta >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
-                        {formatMoney(saldoRuta)}
+                      <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Flujo del día</span>
+                      <span className="text-sm font-bold font-mono-display" style={{ color: flujoRuta >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                        {formatMoney(flujoRuta)}
                       </span>
                     </div>
                   )
