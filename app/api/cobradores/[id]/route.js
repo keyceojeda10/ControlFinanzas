@@ -7,6 +7,7 @@ import bcrypt               from 'bcryptjs'
 import { calcularEstadoCliente } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
+import { normalizarEmail } from '@/lib/normalizar-email'
 
 const hoy = (country = 'co') => {
   const now = new Date()
@@ -135,7 +136,7 @@ export async function PATCH(request, { params }) {
 
   // Email
   if (body.email !== undefined) {
-    const email = body.email.trim().toLowerCase()
+    const email = normalizarEmail(body.email)
     if (!email) return Response.json({ error: 'El correo no puede estar vacío' }, { status: 400 })
     // Verificar unicidad global (excluyendo al propio cobrador)
     const existe = await prisma.user.findFirst({ where: { email, id: { not: id } } })

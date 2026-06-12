@@ -8,6 +8,7 @@ import { logActividad } from '@/lib/activity-log'
 
 import { LIMITES_USUARIOS, PLAN_NAMES, PLANES_CONFIG } from '@/lib/planes'
 import { getUtcOffset } from '@/lib/i18n'
+import { normalizarEmail } from '@/lib/normalizar-email'
 import { tienePeriodoEsperadoHoy } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 
@@ -187,8 +188,11 @@ export async function POST(request) {
   if (!email?.trim())    return Response.json({ error: 'El email es requerido' },     { status: 400 })
   if (!password?.trim()) return Response.json({ error: 'La contraseña es requerida' }, { status: 400 })
 
+  // Normalizar email (quita puntos decorativos de Gmail, lowercase)
+  const emailNorm = normalizarEmail(email)
+
   // Email único global
-  const existeEmail = await prisma.user.findUnique({ where: { email: email.trim() } })
+  const existeEmail = await prisma.user.findUnique({ where: { email: emailNorm } })
   if (existeEmail) return Response.json({ error: 'Este correo ya está en uso. Si la persona ya tiene cuenta, intenta con otro correo o edita un cobrador existente.' }, { status: 409 })
 
   const hashedPassword = await bcrypt.hash(password.trim(), 10)
@@ -221,7 +225,7 @@ export async function POST(request) {
     data: {
       organizationId,
       nombre:   nombre.trim(),
-      email:    email.trim().toLowerCase(),
+      email:    emailNorm,
       telefono: telefonoNorm,
       password: hashedPassword,
       rol:      'cobrador',
