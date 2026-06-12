@@ -33,7 +33,7 @@ export default function FiltroPeriodo({ value, onChange }) {
   const seleccionar = (nuevoModo) => {
     const hoy = hoyLocal()
     if (nuevoModo === 'hoy') {
-      onChange({ modo: 'hoy', fecha: value?.fecha || hoy, desde: null, hasta: null })
+      onChange({ modo: 'hoy', fecha: hoy, desde: null, hasta: null })
     } else if (nuevoModo === 'ayer') {
       onChange({ modo: 'hoy', fecha: restarDias(hoy, 1), desde: null, hasta: null })
     } else if (nuevoModo === '7d') {
