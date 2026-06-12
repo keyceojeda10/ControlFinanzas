@@ -288,6 +288,7 @@ export async function GET(request, { params }) {
       gastosDia,
       efectivoDia,
       capitalRutasTotal,
+      dineroEnMano: capitalRutasTotal - gastosDia,
       recargosMonto: recargosMontoTotal,
       recargosCantidad,
     },
