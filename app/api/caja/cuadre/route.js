@@ -85,7 +85,7 @@ export async function GET(request) {
   const fecha = searchParams.get('fecha') || getLocalDateStr(country)
   const { inicio, fin } = getLocalDayRange(fecha, country)
 
-  const [cobradores, recaudadoMap, esperadoMap, cierres, rutas] = await Promise.all([
+  const [cobradores, recaudadoMap, esperadoMap, cierres, rutas, gastosPorCobrador] = await Promise.all([
     prisma.user.findMany({
       where: { organizationId, rol: 'cobrador', activo: true },
       select: { id: true, nombre: true },
@@ -94,17 +94,33 @@ export async function GET(request) {
     recaudadoPorCobradorDia(organizationId, inicio, fin),
     esperadoPorCobradorDia(organizationId, country),
     prisma.cierreCaja.findMany({ where: { organizationId, fecha: { gte: inicio, lt: fin } } }),
-    prisma.ruta.findMany({ where: { organizationId, activo: true }, select: { cobradorId: true, nombre: true } }),
+    prisma.ruta.findMany({ where: { organizationId, activo: true }, select: { cobradorId: true, nombre: true, saldoCapital: true } }),
+    prisma.gastoMenor.groupBy({
+      by: ['cobradorId'],
+      where: { organizationId, estado: { in: ['pendiente', 'aprobado'] }, fecha: { gte: inicio, lt: fin } },
+      _sum: { monto: true },
+    }),
   ])
 
   const cierrePorCobrador = {}
   for (const c of cierres) cierrePorCobrador[c.cobradorId] = c
   const rutaPorCobrador = {}
-  for (const r of rutas) if (r.cobradorId && !rutaPorCobrador[r.cobradorId]) rutaPorCobrador[r.cobradorId] = r.nombre
+  const capitalPorCobrador = {}
+  for (const r of rutas) {
+    if (!r.cobradorId) continue
+    if (!rutaPorCobrador[r.cobradorId]) rutaPorCobrador[r.cobradorId] = r.nombre
+    capitalPorCobrador[r.cobradorId] = Math.round((capitalPorCobrador[r.cobradorId] || 0) + (r.saldoCapital || 0))
+  }
+  const gastosPorCobradorMap = {}
+  for (const g of gastosPorCobrador) if (g.cobradorId) gastosPorCobradorMap[g.cobradorId] = Math.round(g._sum?.monto || 0)
 
   const filas = cobradores.map((c) => {
     const cierre = cierrePorCobrador[c.id] || null
-    const recaudadoSistema = recaudadoMap[c.id] || 0
+    const capital = capitalPorCobrador[c.id] || 0
+    const gastosDelDia = gastosPorCobradorMap[c.id] || 0
+    const recaudadoSistema = capital > 0
+      ? capital - gastosDelDia
+      : recaudadoMap[c.id] || 0
     const estado = estadoDe(cierre, recaudadoSistema)
     return {
       cobradorId: c.id,
@@ -161,16 +177,34 @@ export async function POST(request) {
 
     const efectivoRecibido = Math.round(Number(item.efectivoRecibido ?? 0))
 
-    // Recaudado del sistema del cobrador en el día (la "verdad").
-    const recaudadoAgg = await prisma.pago.aggregate({
-      where: { organizationId, cobradorId, fechaPago: { gte: inicio, lt: fin }, tipo: { notIn: ['recargo', 'descuento'] } },
-      _sum: { montoPagado: true },
+    // Rutas del cobrador: capital + ruta para ajuste contable.
+    const rutasCobrador = await prisma.ruta.findMany({
+      where: { organizationId, cobradorId, activo: true },
+      select: { id: true, saldoCapital: true },
     })
-    const recaudadoSistema = Math.round(recaudadoAgg._sum?.montoPagado || 0)
-    const diferenciaRecibido = efectivoRecibido - recaudadoSistema
+    const ruta = rutasCobrador[0] || null
+    const capitalCobrador = Math.round(rutasCobrador.reduce((a, r) => a + (r.saldoCapital || 0), 0))
 
-    // Ruta del cobrador (para asentar el ajuste contable en su sub-bolsa).
-    const ruta = await prisma.ruta.findFirst({ where: { organizationId, cobradorId, activo: true }, select: { id: true } })
+    // Gastos del cobrador en el día.
+    const gastosAgg = await prisma.gastoMenor.aggregate({
+      where: { organizationId, cobradorId, estado: { in: ['pendiente', 'aprobado'] }, fecha: { gte: inicio, lt: fin } },
+      _sum: { monto: true },
+    })
+    const gastosCobrador = Math.round(gastosAgg._sum?.monto || 0)
+
+    // Recaudado del sistema: si tiene capital, es capital - gastos (plata real en mano).
+    // Si no tiene capital, es solo cobros del día.
+    let recaudadoSistema
+    if (capitalCobrador > 0) {
+      recaudadoSistema = capitalCobrador - gastosCobrador
+    } else {
+      const recaudadoAgg = await prisma.pago.aggregate({
+        where: { organizationId, cobradorId, fechaPago: { gte: inicio, lt: fin }, tipo: { notIn: ['recargo', 'descuento'] } },
+        _sum: { montoPagado: true },
+      })
+      recaudadoSistema = Math.round(recaudadoAgg._sum?.montoPagado || 0)
+    }
+    const diferenciaRecibido = efectivoRecibido - recaudadoSistema
 
     const cierreExistente = await prisma.cierreCaja.findFirst({ where: { organizationId, cobradorId, fecha: { gte: inicio, lt: fin } } })
 

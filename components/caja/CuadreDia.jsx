@@ -202,7 +202,7 @@ export default function CuadreDia({ fecha }) {
         {modal && (
           <div className="space-y-3">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-[var(--color-text-muted)]">El sistema registró</span>
+              <span className="text-[var(--color-text-muted)]">Dinero en mano (sistema)</span>
               <span className="font-bold font-mono-display text-[var(--color-text-primary)]">{formatMoney(modal.recaudadoSistema)}</span>
             </div>
             <div>
