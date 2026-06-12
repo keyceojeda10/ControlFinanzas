@@ -13,6 +13,15 @@ function netoAjustes(movimientos = []) {
   }, 0)
 }
 
+// Suma los ajustes que reversan un desembolso o recaudo del mismo mes (préstamo
+// eliminado, pago anulado, edición de monto), para no inflar "Prestado"/"Cobrado"
+// con actividad que ya fue revertida.
+function sumaReversiones(movimientos = [], prefijo) {
+  return movimientos.reduce((acc, mov) => {
+    return mov.descripcion?.startsWith(prefijo) ? acc + mov.monto : acc
+  }, 0)
+}
+
 export async function GET() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.organizationId) {
@@ -72,7 +81,7 @@ export async function GET() {
     }),
     prisma.movimientoCapital.findMany({
       where: { organizationId, tipo: 'ajuste', createdAt: { gte: inicioMes } },
-      select: { monto: true, saldoAnterior: true, saldoNuevo: true },
+      select: { monto: true, saldoAnterior: true, saldoNuevo: true, descripcion: true },
     }),
     prisma.prestamo.aggregate({
       where: { organizationId, estado: { not: 'cancelado' } },
@@ -133,8 +142,8 @@ export async function GET() {
     }),
   ])
 
-  const desembolsado = desembolsos._sum.monto ?? 0
-  const recaudado = recaudos._sum.monto ?? 0
+  const desembolsado = (desembolsos._sum.monto ?? 0) - sumaReversiones(ajustes, 'Reverso desembolso')
+  const recaudado = (recaudos._sum.monto ?? 0) - sumaReversiones(ajustes, 'Reverso recaudo') - sumaReversiones(ajustes, 'Reverso pago anulado')
   const gastado = gastos._sum.monto ?? 0
   const inyectado = inyecciones._sum.monto ?? 0
   const retirado = retiros._sum.monto ?? 0
