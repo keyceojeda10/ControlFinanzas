@@ -571,6 +571,7 @@ export default function RutaDetallePage({ params }) {
       id: cliente.id,
       nombre: cliente.nombre,
       cuota,
+      cuotaOriginal: cuota,
       prestamoActivo: p.id,
       abonoConPendiente,
     })
@@ -579,15 +580,16 @@ export default function RutaDetallePage({ params }) {
   const elegirPrestamoPagoRapido = (prestamoId, cuota) => {
     if (!modalPagoRapido) return
     if (!cuota || cuota <= 0) return
-    setModalPagoRapido(prev => prev ? { ...prev, prestamoActivo: prestamoId, cuota } : prev)
+    setModalPagoRapido(prev => prev ? { ...prev, prestamoActivo: prestamoId, cuota, cuotaOriginal: cuota } : prev)
   }
 
   const ejecutarPagoRapido = async (metodoPago, { confirmarDuplicado = false } = {}) => {
     if (!modalPagoRapido || pagandoRapido) return
-    const { id: clienteId, nombre, cuota, prestamoActivo } = modalPagoRapido
+    const { id: clienteId, nombre, cuota, cuotaOriginal, prestamoActivo } = modalPagoRapido
+    if (!cuota || cuota <= 0) return
+    const esCuotaExacta = cuota === (cuotaOriginal ?? cuota)
     setModalPagoRapido(null)
     setPagandoRapido(clienteId)
-    // Marcar optimistamente el pagoHoy en el estado local para ocultar el botón YA
     setRuta(prev => prev ? {
       ...prev,
       clientes: prev.clientes.map(c => c.id === clienteId ? { ...c, pagoHoy: true, cobroPendienteHoy: false } : c)
@@ -595,10 +597,13 @@ export default function RutaDetallePage({ params }) {
     const coords = await obtenerCoordsRapido().catch(() => null)
     try {
       const url = `/api/prestamos/${prestamoActivo}/pagos${confirmarDuplicado ? '?confirmarDuplicado=1' : ''}`
+      const payload = esCuotaExacta
+        ? { montoPagado: cuota, tipo: 'completo', diasAbonados: 1, metodoPago, ...(coords ?? {}) }
+        : { montoPagado: cuota, tipo: 'parcial', metodoPago, ...(coords ?? {}) }
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ montoPagado: cuota, tipo: 'completo', diasAbonados: 1, metodoPago, ...(coords ?? {}) }),
+        body: JSON.stringify(payload),
       })
       if (res.ok) {
         const data = await res.json()
@@ -2732,22 +2737,33 @@ export default function RutaDetallePage({ params }) {
         {modalPagoRapido && modalPagoRapido.prestamoActivo && (
           <div className="space-y-4">
             <div className="text-center">
-              <p className="text-sm text-[var(--color-text-muted)]">Registrar 1 cuota para</p>
+              <p className="text-sm text-[var(--color-text-muted)]">Registrar pago para</p>
               <p className="text-base font-bold text-[var(--color-text-primary)] mt-1">{modalPagoRapido.nombre}</p>
-              <p className="text-lg font-bold text-[var(--color-success)] font-mono-display mt-1">{formatMoney(modalPagoRapido.cuota)}</p>
+            </div>
+            <div>
+              <label className="text-[10px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-1 block">Monto a cobrar</label>
+              <MoneyInput
+                value={String(modalPagoRapido.cuota || '')}
+                onChange={(e) => setModalPagoRapido(prev => prev ? { ...prev, cuota: Number(e.target.value) || 0 } : prev)}
+                placeholder="0"
+              />
+              <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
+                Cuota: {formatMoney(modalPagoRapido.cuotaOriginal ?? modalPagoRapido.cuota)}
+              </p>
             </div>
             {modalPagoRapido.abonoConPendiente && (
               <div className="rounded-[12px] border border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.08)] p-3 text-center">
                 <p className="text-xs text-[var(--color-warning)] font-semibold">El cliente tiene cuotas atrasadas</p>
                 <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
-                  Ya recibio un pago hoy, pero aun debe mas cuotas. Cada registro cubre 1 cuota.
+                  Ya recibio un pago hoy, pero aun debe mas cuotas.
                 </p>
               </div>
             )}
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => ejecutarPagoRapido('efectivo')}
-                className="flex flex-col items-center gap-2 py-4 rounded-[14px] border border-[var(--color-border)] bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(34,197,94,0.08)] hover:border-[rgba(34,197,94,0.3)] transition-all active:scale-95"
+                disabled={!modalPagoRapido.cuota || modalPagoRapido.cuota <= 0}
+                className="flex flex-col items-center gap-2 py-4 rounded-[14px] border border-[var(--color-border)] bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(34,197,94,0.08)] hover:border-[rgba(34,197,94,0.3)] transition-all active:scale-95 disabled:opacity-40"
               >
                 <svg className="w-6 h-6 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -2756,7 +2772,8 @@ export default function RutaDetallePage({ params }) {
               </button>
               <button
                 onClick={() => ejecutarPagoRapido('transferencia')}
-                className="flex flex-col items-center gap-2 py-4 rounded-[14px] border border-[var(--color-border)] bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(59,130,246,0.08)] hover:border-[rgba(59,130,246,0.3)] transition-all active:scale-95"
+                disabled={!modalPagoRapido.cuota || modalPagoRapido.cuota <= 0}
+                className="flex flex-col items-center gap-2 py-4 rounded-[14px] border border-[var(--color-border)] bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(59,130,246,0.08)] hover:border-[rgba(59,130,246,0.3)] transition-all active:scale-95 disabled:opacity-40"
               >
                 <svg className="w-6 h-6 text-[var(--color-info)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />

@@ -7,6 +7,7 @@
 
 const OPCIONES = [
   { key: 'hoy', label: 'Hoy' },
+  { key: 'ayer', label: 'Ayer' },
   { key: '7d',  label: '7 días' },
   { key: '30d', label: '30 días' },
   { key: 'rango', label: 'Personalizado' },
@@ -24,12 +25,17 @@ function restarDias(fechaStr, n) {
 
 export default function FiltroPeriodo({ value, onChange }) {
   // value = { modo, fecha, desde, hasta }
-  const modo = value?.modo || 'hoy'
+  const modoBase = value?.modo || 'hoy'
+  const ayer = restarDias(hoyLocal(), 1)
+  const esAyer = modoBase === 'hoy' && value?.fecha === ayer
+  const modo = esAyer ? 'ayer' : modoBase
 
   const seleccionar = (nuevoModo) => {
     const hoy = hoyLocal()
     if (nuevoModo === 'hoy') {
       onChange({ modo: 'hoy', fecha: value?.fecha || hoy, desde: null, hasta: null })
+    } else if (nuevoModo === 'ayer') {
+      onChange({ modo: 'hoy', fecha: restarDias(hoy, 1), desde: null, hasta: null })
     } else if (nuevoModo === '7d') {
       onChange({ modo: '7d', fecha: null, desde: restarDias(hoy, 6), hasta: hoy })
     } else if (nuevoModo === '30d') {
