@@ -18,7 +18,7 @@ const PAISES = getCountryList()
 const FLAGS = {
   co: '🇨🇴', mx: '🇲🇽', pe: '🇵🇪', ec: '🇪🇨', do: '🇩🇴',
   hn: '🇭🇳', gt: '🇬🇹', sv: '🇸🇻', ni: '🇳🇮', pa: '🇵🇦',
-  ve: '🇻🇪', us: '🇺🇸',
+  ve: '🇻🇪', us: '🇺🇸', cr: '🇨🇷',
 }
 
 // ── Plan definitions ────────────────────────────────────────
@@ -440,13 +440,13 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
             <select
               value={country}
               onChange={(e) => setCountry(e.target.value)}
-              className="flex-1 bg-transparent text-[14px] font-medium focus:outline-none cursor-pointer"
-              style={{ color: '#e8e8f0' }}
+              className="flex-1 text-[14px] font-medium focus:outline-none cursor-pointer appearance-none"
+              style={{ color: '#e8e8f0', background: 'transparent', WebkitAppearance: 'none' }}
             >
               {PAISES.map(p => (
                 <option key={p.code} value={p.code}
                   style={{ background: '#1a1a2e', color: '#e8e8f0' }}>
-                  {FLAGS[p.code] || ''} {p.name}
+                  {p.name}
                 </option>
               ))}
             </select>
