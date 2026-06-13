@@ -209,7 +209,9 @@ export default function ModalWhatsAppTemplates({ open, onClose, cliente, prestam
 
   const handleSelect = (template) => {
     setSelectedId(template.id)
-    setTextoEditable(generarTexto(template, incluirCronograma))
+    const usarCrono = template.id === 'credito_aprobado' && incluirCronograma
+    if (!usarCrono && incluirCronograma) setIncluirCronograma(false)
+    setTextoEditable(generarTexto(template, usarCrono))
   }
 
   const handleToggleCronograma = () => {
@@ -295,8 +297,8 @@ export default function ModalWhatsAppTemplates({ open, onClose, cliente, prestam
           </div>
         </div>
 
-        {/* Toggle: cronograma de cobros */}
-        {tieneCronograma && (
+        {/* Toggle: cronograma de cobros (solo para credito aprobado) */}
+        {tieneCronograma && selectedId === 'credito_aprobado' && (
           <div className="flex items-center gap-3 rounded-[10px] px-3 py-2.5" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
             <button
               type="button"
@@ -305,7 +307,7 @@ export default function ModalWhatsAppTemplates({ open, onClose, cliente, prestam
               onClick={handleToggleCronograma}
               className="relative inline-flex h-5 w-9 flex-shrink-0 rounded-full transition-colors duration-200 ease-in-out"
               style={{
-                background: incluirCronograma ? 'var(--color-primary)' : 'var(--color-border)',
+                background: incluirCronograma ? '#22c55e' : '#d1d5db',
               }}
             >
               <span
