@@ -9,6 +9,7 @@ import { logActividad } from '@/lib/activity-log'
 import { geocodeAddress }   from '@/lib/geocoding'
 import { validarDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { getCachedMutation, setCachedMutation, buildMutationKey } from '@/lib/mutation-idempotency'
+import { validateDocument, getDocumentConfig } from '@/lib/i18n'
 
 // Helper: verificar que el cliente pertenece a la organización (y a la ruta del cobrador)
 async function obtenerCliente(id, session) {
@@ -215,8 +216,10 @@ export async function PATCH(request, { params }) {
 
   // Si cambia la cédula, verificar que no exista otra igual
   if (cedula && cedula.trim() !== clienteBase.cedula) {
-    if (!/^\d{6,12}$/.test(cedula.trim())) {
-      return Response.json({ error: 'La cédula debe tener entre 6 y 12 dígitos numéricos' }, { status: 400 })
+    const country = session.user.country ?? 'co'
+    const docConfig = getDocumentConfig(country)
+    if (!validateDocument(cedula.trim(), country)) {
+      return Response.json({ error: `${docConfig.label} no valido (ej: ${docConfig.placeholder})` }, { status: 400 })
     }
     const existe = await prisma.cliente.findUnique({
       where: {

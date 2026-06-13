@@ -8,7 +8,7 @@ import { obtenerDiasSinCobro, validarDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
 import { geocodeAddress }   from '@/lib/geocoding'
 import { trackEvent } from '@/lib/analytics'
-import { getUtcOffset } from '@/lib/i18n'
+import { getUtcOffset, validateDocument, getDocumentConfig } from '@/lib/i18n'
 
 // ─── GET /api/clientes ──────────────────────────────────────────
 export async function GET(request) {
@@ -254,9 +254,10 @@ export async function POST(request) {
   if (!cedula?.trim())   return Response.json({ error: 'La cédula es requerida' },  { status: 400 })
   if (!telefono?.trim()) return Response.json({ error: 'El teléfono es requerido' }, { status: 400 })
 
-  // Validar cédula: solo números, 6-12 dígitos
-  if (!/^\d{6,12}$/.test(cedula.trim())) {
-    return Response.json({ error: 'La cédula debe tener entre 6 y 12 dígitos numéricos' }, { status: 400 })
+  const country = session.user.country ?? 'co'
+  const docConfig = getDocumentConfig(country)
+  if (!validateDocument(cedula.trim(), country)) {
+    return Response.json({ error: `${docConfig.label} no valido (ej: ${docConfig.placeholder})` }, { status: 400 })
   }
 
   // Verificar cédula única en la organización

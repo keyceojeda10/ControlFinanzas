@@ -71,7 +71,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
   useEffect(() => {
     if (!habilitadoScore) return
     const cedula = form.cedula.trim()
-    if (cedula.length < 6 || !/^\d{6,12}$/.test(cedula)) {
+    if (!validateDocument(cedula)) {
       setScoreData(null)
       return
     }
@@ -389,7 +389,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                 value={form.cedula}
                 onChange={set('cedula')}
                 error={errores.cedula}
-                inputMode="numeric"
+                inputMode={/[a-zA-Z]/.test(documentConfig.placeholder) ? 'text' : 'numeric'}
                 disabled={esEdicion}
               />
               {scoreData?.encontrado && (() => {
