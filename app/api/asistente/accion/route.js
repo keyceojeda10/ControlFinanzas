@@ -221,6 +221,7 @@ export async function POST(req) {
                 { nombre: cliente.nombre, cedula: cliente.cedula },
                 { totalPagado, saldoPendiente, porcentajePagado, diasMora: prestamo.diasMora ?? 0 },
                 { montoPagado: input.monto, fechaPago: ultimoPago?.fechaPago ?? new Date().toISOString() },
+                { orgNombre: session.user.orgNombre },
               )
               waUrl = `https://wa.me/${tel}?text=${encodeURIComponent(texto)}`
             }

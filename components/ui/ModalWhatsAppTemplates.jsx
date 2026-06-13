@@ -10,14 +10,31 @@ import { Button } from '@/components/ui/Button'
 import {
   formatearTelefono,
   abrirWhatsApp,
+  generarTextoPrestamo,
   generarTextoRecordatorio,
   generarTextoFelicitacion,
   generarTextoRenovacion,
   generarTextoVisita,
   generarTextoComprobantePedido,
+  generarCronogramaCobros,
 } from '@/lib/whatsapp'
+
+function firma(orgNombre) {
+  return orgNombre ? `_${orgNombre}_` : '_Control Finanzas_'
+}
+
 // Definicion de plantillas: filtrables segun estado del prestamo/cliente
 const TEMPLATES = [
+  {
+    id: 'credito_aprobado',
+    label: 'Credito aprobado',
+    desc: 'Datos del nuevo credito',
+    icon: '✅',
+    color: '#10b981',
+    aplica: ({ prestamo }) => !!prestamo,
+    generar: ({ cliente, prestamo, orgNombre, cronograma }) =>
+      generarTextoPrestamo(cliente, prestamo, { orgNombre, cronograma }),
+  },
   {
     id: 'recordatorio',
     label: 'Recordatorio amable',
@@ -25,7 +42,7 @@ const TEMPLATES = [
     icon: '🔔',
     color: '#22c55e',
     aplica: ({ prestamo }) => prestamo && prestamo.estado === 'activo' && (prestamo.diasMora ?? 0) === 0,
-    generar: ({ cliente, prestamo }) => generarTextoRecordatorio(cliente, prestamo),
+    generar: ({ cliente, prestamo, orgNombre }) => generarTextoRecordatorio(cliente, prestamo, { orgNombre }),
   },
   {
     id: 'mora_suave',
@@ -34,7 +51,7 @@ const TEMPLATES = [
     icon: '⏰',
     color: '#f59e0b',
     aplica: ({ prestamo }) => prestamo && (prestamo.diasMora ?? 0) > 0 && (prestamo.diasMora ?? 0) <= 3,
-    generar: ({ cliente, prestamo }) => {
+    generar: ({ cliente, prestamo, orgNombre }) => {
       const dias = prestamo.diasMora ?? 0
       return `Hola ${cliente.nombre} 👋
 
@@ -46,7 +63,7 @@ Notamos que tu cuota de ${formatMoney(prestamo.cuotaDiaria || 0)} lleva ${dias} 
 
 ¡Gracias!
 
-_Control Finanzas_ 💼`
+${firma(orgNombre)} 💼`
     },
   },
   {
@@ -56,7 +73,7 @@ _Control Finanzas_ 💼`
     icon: '⚠️',
     color: '#f97316',
     aplica: ({ prestamo }) => prestamo && (prestamo.diasMora ?? 0) > 3 && (prestamo.diasMora ?? 0) <= 15,
-    generar: ({ cliente, prestamo }) => {
+    generar: ({ cliente, prestamo, orgNombre }) => {
       const dias = prestamo.diasMora ?? 0
       return `Hola ${cliente.nombre} 👋
 
@@ -70,7 +87,7 @@ Llevamos ${dias} días sin recibir tu pago. Por favor comunícate con nosotros l
 
 Estamos disponibles para acordar una solución. No dejes que se acumule más.
 
-_Control Finanzas_ 💼`
+${firma(orgNombre)} 💼`
     },
   },
   {
@@ -80,7 +97,7 @@ _Control Finanzas_ 💼`
     icon: '🚨',
     color: '#ef4444',
     aplica: ({ prestamo }) => prestamo && (prestamo.diasMora ?? 0) > 15,
-    generar: ({ cliente, prestamo }) => {
+    generar: ({ cliente, prestamo, orgNombre }) => {
       const dias = prestamo.diasMora ?? 0
       return `${cliente.nombre},
 
@@ -94,7 +111,7 @@ Para evitar acciones legales, comunícate HOY mismo. Aún puedes acordar un plan
 
 Es la última vez que te escribimos por este medio antes de proceder.
 
-_Control Finanzas_`
+${firma(orgNombre)}`
     },
   },
   {
@@ -104,7 +121,7 @@ _Control Finanzas_`
     icon: '🎉',
     color: '#a855f7',
     aplica: ({ prestamo }) => prestamo && prestamo.estado === 'activo' && (prestamo.porcentajePagado ?? 0) >= 50 && (prestamo.diasMora ?? 0) === 0,
-    generar: ({ cliente, prestamo }) => generarTextoFelicitacion(cliente, prestamo),
+    generar: ({ cliente, prestamo, orgNombre }) => generarTextoFelicitacion(cliente, prestamo, { orgNombre }),
   },
   {
     id: 'renovacion',
@@ -113,7 +130,7 @@ _Control Finanzas_`
     icon: '🔄',
     color: '#06b6d4',
     aplica: ({ prestamo }) => prestamo && (prestamo.estado === 'completado' || (prestamo.porcentajePagado ?? 0) >= 80),
-    generar: ({ cliente }) => generarTextoRenovacion(cliente),
+    generar: ({ cliente, orgNombre }) => generarTextoRenovacion(cliente, { orgNombre }),
   },
   {
     id: 'visita',
@@ -122,7 +139,7 @@ _Control Finanzas_`
     icon: '🚶',
     color: '#3b82f6',
     aplica: () => true,
-    generar: ({ cliente }) => generarTextoVisita(cliente),
+    generar: ({ cliente, orgNombre }) => generarTextoVisita(cliente, { orgNombre }),
   },
   {
     id: 'comprobante',
@@ -131,7 +148,7 @@ _Control Finanzas_`
     icon: '📸',
     color: '#8b5cf6',
     aplica: () => true,
-    generar: ({ cliente }) => generarTextoComprobantePedido(cliente),
+    generar: ({ cliente, orgNombre }) => generarTextoComprobantePedido(cliente, { orgNombre }),
   },
   {
     id: 'libre',
@@ -144,12 +161,16 @@ _Control Finanzas_`
   },
 ]
 
-export default function ModalWhatsAppTemplates({ open, onClose, cliente, prestamo }) {
+export default function ModalWhatsAppTemplates({ open, onClose, cliente, prestamo, orgNombre }) {
   const [selectedId, setSelectedId] = useState(null)
-
-    const [textoEditable, setTextoEditable] = useState('')
+  const [textoEditable, setTextoEditable] = useState('')
+  const [incluirCronograma, setIncluirCronograma] = useState(false)
 
   const tel = formatearTelefono(cliente?.telefono)
+
+  const tieneCronograma = useMemo(() => {
+    return !!generarCronogramaCobros(prestamo)
+  }, [prestamo])
 
   // Templates aplicables al contexto actual (filtra segun mora, %pagado, etc.)
   const aplicables = useMemo(() => {
@@ -158,31 +179,45 @@ export default function ModalWhatsAppTemplates({ open, onClose, cliente, prestam
     })
   }, [cliente, prestamo])
 
+  const generarTexto = (template, conCronograma) => {
+    try {
+      return template.generar({
+        cliente,
+        prestamo,
+        orgNombre,
+        cronograma: conCronograma,
+      })
+    } catch {
+      return ''
+    }
+  }
+
   // Reset al abrir/cerrar
   useEffect(() => {
     if (!open) {
       setSelectedId(null)
       setTextoEditable('')
+      setIncluirCronograma(false)
       return
     }
-    // Auto-seleccionar el mas relevante: la primera plantilla aplicable que no sea "libre"
     const sugerido = aplicables.find(t => t.id !== 'libre') || aplicables[0]
     if (sugerido) {
       setSelectedId(sugerido.id)
-      try {
-        setTextoEditable(sugerido.generar({ cliente, prestamo }))
-      } catch {
-        setTextoEditable('')
-      }
+      setTextoEditable(generarTexto(sugerido, false))
     }
-  }, [open, aplicables, cliente, prestamo])
+  }, [open, aplicables, cliente, prestamo, orgNombre])
 
   const handleSelect = (template) => {
     setSelectedId(template.id)
-    try {
-      setTextoEditable(template.generar({ cliente, prestamo }))
-    } catch {
-      setTextoEditable('')
+    setTextoEditable(generarTexto(template, incluirCronograma))
+  }
+
+  const handleToggleCronograma = () => {
+    const next = !incluirCronograma
+    setIncluirCronograma(next)
+    const template = TEMPLATES.find(t => t.id === selectedId)
+    if (template) {
+      setTextoEditable(generarTexto(template, next))
     }
   }
 
@@ -225,7 +260,7 @@ export default function ModalWhatsAppTemplates({ open, onClose, cliente, prestam
       <div className="space-y-4">
         {!tel && (
           <div className="rounded-[10px] px-3 py-2.5 text-[12px]" style={{ background: 'var(--color-warning-dim)', color: 'var(--color-warning)', border: '1px solid color-mix(in srgb, var(--color-warning) 30%, transparent)' }}>
-            ⚠️ Este cliente no tiene un teléfono válido registrado.
+            Este cliente no tiene un telefono valido registrado.
           </div>
         )}
 
@@ -259,6 +294,37 @@ export default function ModalWhatsAppTemplates({ open, onClose, cliente, prestam
             })}
           </div>
         </div>
+
+        {/* Toggle: cronograma de cobros */}
+        {tieneCronograma && (
+          <div className="flex items-center gap-3 rounded-[10px] px-3 py-2.5" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={incluirCronograma}
+              onClick={handleToggleCronograma}
+              className="relative inline-flex h-5 w-9 flex-shrink-0 rounded-full transition-colors duration-200 ease-in-out"
+              style={{
+                background: incluirCronograma ? 'var(--color-primary)' : 'var(--color-border)',
+              }}
+            >
+              <span
+                className="inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform duration-200 ease-in-out"
+                style={{
+                  transform: incluirCronograma ? 'translate(17px, 2px)' : 'translate(2px, 2px)',
+                }}
+              />
+            </button>
+            <div className="flex-1 min-w-0">
+              <p className="text-[12px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                Incluir calendario de cobros
+              </p>
+              <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
+                Muestra las fechas y montos de cada cuota
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Preview editable */}
         <div>

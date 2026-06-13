@@ -38,7 +38,7 @@ const ESTADOS = [
 const LIMIT = 50
 
 export default function PrestamosPage() {
-  const { esOwner, puedeCrearPrestamos, loading: authLoading } = useAuth()
+  const { esOwner, puedeCrearPrestamos, orgNombre, loading: authLoading } = useAuth()
   const { lastSyncedAt } = useOffline()
   const [prestamos, setPrestamos] = useState([])
   const [buscar,    setBuscar]    = useState('')
@@ -512,6 +512,7 @@ export default function PrestamosPage() {
         onClose={() => setWaContext(null)}
         cliente={waContext?.cliente}
         prestamo={waContext?.prestamo}
+        orgNombre={orgNombre}
       />
     </div>
   )

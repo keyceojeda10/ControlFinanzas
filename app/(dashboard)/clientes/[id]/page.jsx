@@ -40,7 +40,7 @@ const estadoPrestamoBadge = {
 export default function ClienteDetallePage({ params }) {
   const { id }     = use(params)
   const router     = useRouter()
-  const { esOwner, puedeCrearPrestamos, puedeEditarClientes, plan } = useAuth()
+  const { esOwner, puedeCrearPrestamos, puedeEditarClientes, plan, orgNombre } = useAuth()
 
   const { lastSyncedAt } = useOffline()
 
@@ -687,6 +687,7 @@ export default function ClienteDetallePage({ params }) {
         onClose={() => setModalWA(false)}
         cliente={cliente}
         prestamo={prestamosActivos[0] || null}
+        orgNombre={orgNombre}
       />
 
       {/* Modal reagendar visita */}
@@ -942,7 +943,7 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, mini = false }) {
           </Button>
         </Link>
         {p.diasMora > 0 && cliente?.telefono && (
-          <BotonWhatsApp tipo="mora" cliente={cliente} prestamo={p} />
+          <BotonWhatsApp tipo="mora" cliente={cliente} prestamo={p} orgNombre={orgNombre} />
         )}
       </div>
     </Card>

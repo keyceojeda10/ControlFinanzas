@@ -30,15 +30,16 @@ const ESTILOS = {
   historial:'bg-[#25d366] hover:bg-[#1da855] text-[var(--color-text-primary)]',
 }
 
-export default function BotonWhatsApp({ tipo, cliente, prestamo, pago }) {
-  // No mostrar si no hay teléfono
+export default function BotonWhatsApp({ tipo, cliente, prestamo, pago, orgNombre }) {
   if (!cliente?.telefono) return null
 
+  const opts = { orgNombre }
+
   const generarEnlace = () => {
-    if (tipo === 'prestamo') return generarEnlacePrestamo(cliente, prestamo)
-    if (tipo === 'pago')     return generarEnlacePago(cliente, prestamo, pago)
-    if (tipo === 'mora')     return generarEnlaceMora(cliente, prestamo)
-    if (tipo === 'historial') return generarEnlaceHistorialCredito(cliente, prestamo)
+    if (tipo === 'prestamo') return generarEnlacePrestamo(cliente, prestamo, opts)
+    if (tipo === 'pago')     return generarEnlacePago(cliente, prestamo, pago, opts)
+    if (tipo === 'mora')     return generarEnlaceMora(cliente, prestamo, opts)
+    if (tipo === 'historial') return generarEnlaceHistorialCredito(cliente, prestamo, opts)
     return null
   }
 

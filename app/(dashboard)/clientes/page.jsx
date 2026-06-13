@@ -42,7 +42,7 @@ const COLORES_GRUPO = [
 ]
 
 export default function ClientesPage() {
-  const { esOwner, puedeCrearClientes, loading: authLoading } = useAuth()
+  const { esOwner, puedeCrearClientes, orgNombre, loading: authLoading } = useAuth()
   const { lastSyncedAt } = useOffline()
   const [clientes, setClientes]   = useState([])
   const [buscar,   setBuscar]     = useState('')
@@ -887,6 +887,7 @@ export default function ClientesPage() {
         onClose={() => setWaCliente(null)}
         cliente={waCliente}
         prestamo={null}
+        orgNombre={orgNombre}
       />
     </div>
   )

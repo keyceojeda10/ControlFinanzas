@@ -11,13 +11,14 @@ const SHARE_ICON = (
   </svg>
 )
 
-export default function BotonCompartir({ tipo = 'pago', cliente, prestamo, pago }) {
+export default function BotonCompartir({ tipo = 'pago', cliente, prestamo, pago, orgNombre }) {
   const [copiado, setCopiado] = useState(false)
 
   const handleClick = async () => {
+    const opts = { orgNombre }
     const texto = tipo === 'historial'
-      ? generarTextoHistorialCredito(cliente, prestamo)
-      : generarTextoComprobante(cliente, prestamo, pago)
+      ? generarTextoHistorialCredito(cliente, prestamo, opts)
+      : generarTextoComprobante(cliente, prestamo, pago, opts)
 
     if (navigator.share) {
       try {
