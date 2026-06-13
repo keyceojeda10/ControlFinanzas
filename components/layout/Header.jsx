@@ -1,23 +1,20 @@
 'use client'
-// components/layout/Header.jsx - Header superior para móvil
+// components/layout/Header.jsx - Header superior para movil (estilo Lemon Cash)
 
-import Image            from 'next/image'
 import Link             from 'next/link'
 import { usePathname }  from 'next/navigation'
 import { signOut }      from 'next-auth/react'
 import { useAuth }      from '@/hooks/useAuth'
 import { useEffect, useRef, useState } from 'react'
-import ThemeToggle      from '@/components/ui/ThemeToggle'
 import NotificationsCenter from '@/components/layout/NotificationsCenter'
 import Avatar           from '@/components/ui/Avatar'
 import { limpiarDatosOffline } from '@/lib/offline'
-
 
 const PAGE_TITLES = {
   '/dashboard':     'Inicio',
   '/clientes':      'Clientes',
   '/carga-masiva':  'Importar clientes',
-  '/prestamos':     'Préstamos',
+  '/prestamos':     'Prestamos',
   '/rutas':         'Rutas',
   '/cobradores':    'Cobradores',
   '/caja':          'Caja',
@@ -25,26 +22,22 @@ const PAGE_TITLES = {
   '/reportes':      'Reportes',
   '/tutoriales':    'Tutoriales',
   '/capital':       'Capital',
-  '/configuracion': 'Configuración',
+  '/configuracion': 'Configuracion',
   '/soporte':       'Soporte',
 }
 
-const PLAN_LABELS = { starter: 'Inicial', basic: 'Básico', growth: 'Crecimiento', standard: 'Profesional', professional: 'Empresarial' }
-
 export default function Header() {
-  const pathname         = usePathname()
+  const pathname = usePathname()
   const { session } = useAuth()
   const [userOpen, setUserOpen] = useState(false)
   const userRef = useRef(null)
 
   const title = Object.entries(PAGE_TITLES).find(([key]) =>
     pathname === key || pathname.startsWith(key + '/')
-  )?.[1] ?? 'Control Finanzas'
+  )?.[1] ?? ''
 
   const nombre = session?.user?.nombre ?? session?.user?.name ?? 'Usuario'
-  const email  = session?.user?.email  ?? ''
-  const plan   = session?.user?.plan   ?? 'starter'
-  // inicial ya no se usa directamente, Avatar lo resuelve
+  const primerNombre = nombre.split(' ')[0]
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -62,118 +55,93 @@ export default function Header() {
 
   return (
     <>
-    {/* Spacer: el header es fixed (no sticky) — sticky causa tearing GPU en Android Chrome.
-        fixed se compone en capa propia predecible. Este div ocupa el hueco de 56px. */}
-    <div className="lg:hidden h-14 shrink-0" aria-hidden />
+    <div className="lg:hidden h-[60px] shrink-0" aria-hidden />
     <header
-      className="lg:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 h-14 cf-header-mobile"
+      className="lg:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 h-[60px]"
+      style={{
+        background: 'var(--color-bg-base)',
+        borderBottom: '1px solid var(--color-border)',
+      }}
     >
-      {/* Logo + Title */}
-      <div className="flex items-center gap-3">
-        <Link href="/dashboard">
-          <Image src="/logo-icon.svg" alt="CF" width={28} height={28} className="shrink-0" />
-        </Link>
-        <span className="text-sm font-semibold tracking-[0.01em]" style={{ color: 'var(--color-text-primary)' }}>{title}</span>
+      {/* Left: Avatar + greeting/title */}
+      <div className="flex items-center gap-3 min-w-0" ref={userRef}>
+        <button
+          onClick={() => setUserOpen((v) => !v)}
+          className="focus-visible:outline-none focus-visible:ring-2 rounded-full active:scale-95 transition-transform"
+          aria-label="Menu de usuario"
+        >
+          <Avatar nombre={nombre} avatarId={session?.user?.avatarId} size={36} fontSize={13} />
+        </button>
+        <div className="min-w-0">
+          {title ? (
+            <p className="text-[15px] font-bold truncate" style={{ color: 'var(--color-text-primary)' }}>{title}</p>
+          ) : (
+            <p className="text-[15px] font-bold truncate" style={{ color: 'var(--color-text-primary)' }}>Hola, {primerNombre}</p>
+          )}
+        </div>
+
+        {/* User dropdown */}
+        {userOpen && (
+          <div
+            className="absolute left-4 top-[56px] w-56 rounded-[16px] shadow-2xl overflow-hidden z-50"
+            style={{
+              background: 'var(--color-bg-card)',
+              border: '1px solid var(--color-border)',
+            }}
+          >
+            <div className="px-4 py-3.5">
+              <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{nombre}</p>
+              <p className="text-[11px] truncate mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{session?.user?.email}</p>
+            </div>
+
+            <div style={{ borderTop: '1px solid var(--color-border)' }} />
+
+            <Link
+              href="/configuracion"
+              className="w-full flex items-center gap-3 px-4 py-3 text-[13px] transition-colors"
+              style={{ color: 'var(--color-text-secondary)' }}
+            >
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Configuracion
+            </Link>
+
+            <div style={{ borderTop: '1px solid var(--color-border)' }} />
+
+            <button
+              onClick={async () => {
+                try { navigator.serviceWorker?.controller?.postMessage({ type: 'CLEAR_API_CACHE' }) } catch {}
+                await limpiarDatosOffline()
+                signOut({ callbackUrl: '/login' })
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 text-[13px] transition-colors"
+              style={{ color: '#ef4444' }}
+            >
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Cerrar sesion
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-1.5">
-        {/* Centro de notificaciones */}
+      {/* Right: action icons */}
+      <div className="flex items-center gap-1">
         <NotificationsCenter />
 
-        {/* Theme toggle compacto */}
-        <ThemeToggle />
-
-        {/* Search button */}
         <button
           onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
-          className="w-10 h-10 flex items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 transition-colors cf-icon-btn"
+          className="w-9 h-9 flex items-center justify-center rounded-full transition-colors active:scale-95"
           aria-label="Buscar"
           style={{ color: 'var(--color-text-secondary)' }}
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+          <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
           </svg>
         </button>
-
-        {/* Avatar with dropdown */}
-        <div className="relative" ref={userRef}>
-          <button
-            onClick={() => setUserOpen((v) => !v)}
-            className="hover:scale-105 focus-visible:outline-none focus-visible:ring-2 transition-all cursor-pointer active:scale-95 rounded-full"
-            aria-label="Menu de usuario"
-          >
-            <Avatar nombre={nombre} avatarId={session?.user?.avatarId} size={40} fontSize={13} />
-          </button>
-
-          {userOpen && (
-            <div className="absolute right-0 top-12 w-60 rounded-[14px] shadow-2xl overflow-hidden z-50 glass-strong">
-              <div className="px-4 py-3">
-                <div className="flex items-center gap-2.5">
-                  <Avatar nombre={nombre} avatarId={session?.user?.avatarId} size={32} fontSize={11} />
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{nombre}</p>
-                    <p className="text-[11px] truncate" style={{ color: 'var(--color-text-muted)' }}>{email}</p>
-                  </div>
-                </div>
-                <div className="mt-2">
-                  <span
-                    className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border"
-                    style={{
-                      background: 'var(--color-accent-soft)',
-                      color: 'var(--color-accent)',
-                      borderColor: 'rgba(245,197,24,0.35)',
-                    }}
-                  >
-                    Plan {PLAN_LABELS[plan] ?? plan}
-                  </span>
-                </div>
-              </div>
-
-              <div style={{ borderTop: '1px solid var(--color-border)' }} />
-
-              <Link
-                href="/configuracion?tab=apariencia"
-                className="w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors cf-menu-item"
-                style={{ color: 'var(--color-text-secondary)' }}
-              >
-                <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-                Apariencia
-              </Link>
-
-              <Link
-                href="/configuracion"
-                className="w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors cf-menu-item"
-                style={{ color: 'var(--color-text-secondary)' }}
-              >
-                <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                Configuración
-              </Link>
-
-              <div style={{ borderTop: '1px solid var(--color-border)' }} />
-
-              <button
-                onClick={async () => {
-                  try { navigator.serviceWorker?.controller?.postMessage({ type: 'CLEAR_API_CACHE' }) } catch {}
-                  await limpiarDatosOffline()
-                  signOut({ callbackUrl: '/login' })
-                }}
-                className="w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors cf-signout-btn"
-                style={{ color: 'var(--color-text-secondary)' }}
-              >
-                <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                Cerrar sesion
-              </button>
-            </div>
-          )}
-        </div>
       </div>
     </header>
     </>
