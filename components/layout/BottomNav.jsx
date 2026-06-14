@@ -330,7 +330,9 @@ export default function BottomNav({ onOpenLucas }) {
         aria-label={fabOpen ? 'Cerrar menú' : 'Acciones rápidas'}
         aria-expanded={fabOpen}
         className={`lg:hidden fixed right-4 z-[60] w-[56px] h-[56px] rounded-full flex items-center justify-center pointer-events-auto active:scale-90 transition-[transform,background] cf-fab-button${fabOpen ? ' cf-fab-open' : ''}`}
-        style={{ bottom: 'max(20px, env(safe-area-inset-bottom, 12px))' }}
+        // +4px: la pill mide 64px y el FAB 56px; con el mismo bottom el FAB
+        // quedaba 4px mas abajo. Sumamos (64-56)/2 para centrar sus ejes.
+        style={{ bottom: 'calc(max(20px, env(safe-area-inset-bottom, 12px)) + 4px)' }}
       >
         <svg
           className="w-7 h-7 cf-fab-icon"
