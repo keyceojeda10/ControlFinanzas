@@ -143,6 +143,8 @@ export async function GET(request) {
 
 // ─── POST /api/prestamos ────────────────────────────────────────
 export async function POST(request) {
+  let faltanteCapital = 0
+  let saldoCapitalActual = 0
   try {
   const session = await getServerSession(authOptions)
   if (!session?.user?.organizationId) {
@@ -282,8 +284,6 @@ export async function POST(request) {
     : ''
 
   // Crear préstamo y actualizar estado del cliente en transacción
-  let faltanteCapital = 0
-  let saldoCapitalActual = 0
   const prestamo = await prisma.$transaction(async (tx) => {
     // Lock + lectura del capital actual
     const capRow = await tx.$queryRaw`
