@@ -6,6 +6,7 @@ import { useState } from 'react'
 export default function AuthInput({
   label,
   icon,
+  iconPath,
   type = 'text',
   value,
   onChange,
@@ -30,11 +31,15 @@ export default function AuthInput({
         </label>
       )}
       <div className="relative">
-        {icon && (
-          <span className="cf-input-icon absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center w-[18px] h-[18px]"
+        {(iconPath || icon) && (
+          <span className="cf-input-icon absolute left-3 top-1/2 -translate-y-1/2 z-10 pointer-events-none flex items-center justify-center w-[18px] h-[18px]"
             style={{ color: 'var(--color-text-secondary)' }}
           >
-            {icon}
+            {iconPath ? (
+              <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d={iconPath} />
+              </svg>
+            ) : icon}
           </span>
         )}
         <input
