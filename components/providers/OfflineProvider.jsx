@@ -433,6 +433,16 @@ export default function OfflineProvider({ children }) {
     }
   }
 
+  // Total de items que fallaron permanentemente (pagos/clientes/prestamos/ediciones).
+  // Importante: estos NO estan en pendingCount, asi que sin esto el badge flotante
+  // desaparece y el cobrador no se entera de que un pago no se guardo.
+  const failedTotal = useMemo(() => (
+    (failedDetails.pagos?.length || 0) +
+    (failedDetails.clientes?.length || 0) +
+    (failedDetails.prestamos?.length || 0) +
+    (failedDetails.mutaciones?.length || 0)
+  ), [failedDetails])
+
   // Set de IDs de entidades con mutaciones/pagos pendientes o fallidos para
   // que las cards muestren un badge "pendiente offline" sin N consultas.
   const pendientesIds = useMemo(() => {
@@ -454,10 +464,10 @@ export default function OfflineProvider({ children }) {
       {children}
 
       {/* Badge flotante unificado para mobile (abre el drawer). Se oculta en desktop (lg+) */}
-      {(!isOnline || pendingCount > 0 || bulkSyncing || conflictos.length > 0) && (
+      {(!isOnline || pendingCount > 0 || bulkSyncing || conflictos.length > 0 || failedTotal > 0) && (
         <button
           onClick={() => setDrawerOpen(true)}
-          className={`lg:hidden fixed bottom-[84px] right-3 z-[9998] h-9 px-3 rounded-full flex items-center gap-2 shadow-lg backdrop-blur-xl bg-[var(--color-bg-surface)] border text-[var(--color-text-primary)] text-xs font-semibold ${conflictos.length > 0 ? 'border-[var(--color-danger)] animate-pulse' : 'border-[var(--color-border)]'}`}
+          className={`lg:hidden fixed bottom-[84px] right-3 z-[9998] h-9 px-3 rounded-full flex items-center gap-2 shadow-lg backdrop-blur-xl bg-[var(--color-bg-surface)] border text-[var(--color-text-primary)] text-xs font-semibold ${(conflictos.length > 0 || failedTotal > 0) ? 'border-[var(--color-danger)] animate-pulse' : 'border-[var(--color-border)]'}`}
           aria-label="Estado de sincronizacion"
         >
           {bulkSyncing ? (
@@ -466,14 +476,16 @@ export default function OfflineProvider({ children }) {
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
           ) : (
-            <span className={`w-2 h-2 rounded-full ${conflictos.length > 0 ? 'bg-[var(--color-danger)]' : !isOnline ? 'bg-[var(--color-warning)] animate-pulse' : 'bg-[var(--color-info)]'}`} />
+            <span className={`w-2 h-2 rounded-full ${(conflictos.length > 0 || failedTotal > 0) ? 'bg-[var(--color-danger)]' : !isOnline ? 'bg-[var(--color-warning)] animate-pulse' : 'bg-[var(--color-info)]'}`} />
           )}
           <span>
             {conflictos.length > 0
               ? `${conflictos.length} conflicto${conflictos.length > 1 ? 's' : ''}`
-              : !isOnline
-                ? (pendingCount > 0 ? `Offline - ${pendingCount}` : 'Offline')
-                : bulkSyncing ? 'Sync...' : `${pendingCount} pendientes`}
+              : failedTotal > 0
+                ? `${failedTotal} sin guardar`
+                : !isOnline
+                  ? (pendingCount > 0 ? `Offline - ${pendingCount}` : 'Offline')
+                  : bulkSyncing ? 'Sync...' : `${pendingCount} pendientes`}
           </span>
         </button>
       )}
