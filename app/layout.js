@@ -35,7 +35,7 @@ const SITE_URL = process.env.NEXTAUTH_URL || 'https://app.control-finanzas.com'
 export const metadata = {
   metadataBase: new URL(SITE_URL),
   title: "Control Finanzas",
-  description: "Gestiona tu cartera de prestamos: clientes, cobros, pagos y reportes en tiempo real.",
+  description: "Gestiona tu cartera de préstamos: clientes, cobros, pagos y reportes en tiempo real.",
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -53,7 +53,7 @@ export const metadata = {
   },
   openGraph: {
     title: 'Control Finanzas',
-    description: 'Gestiona tu cartera de prestamos: clientes, cobros, pagos y reportes en tiempo real.',
+    description: 'Gestiona tu cartera de préstamos: clientes, cobros, pagos y reportes en tiempo real.',
     url: SITE_URL,
     siteName: 'Control Finanzas',
     locale: 'es_CO',
@@ -62,7 +62,7 @@ export const metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Control Finanzas',
-    description: 'Gestiona tu cartera de prestamos en tiempo real.',
+    description: 'Gestiona tu cartera de préstamos en tiempo real.',
   },
 };
 

@@ -32,13 +32,13 @@ function clasificar(textoLead) {
 function mensajePara(tipo, nombre) {
   const saludo = nombre ? `${nombre}, ` : ''
   if (tipo === 'problema_tecnico') {
-    return `Buenos dias ${saludo}quedo pendiente lo que estaba configurando ayer en el sistema. Pudo resolverlo?\n\nSi sigue con dudas, escribale a nuestro equipo de soporte al ${NUM_SOPORTE} (atienden de 7am a 10pm) y le ayudan paso a paso. Aqui tambien estoy si necesita algo.`
+    return `Buenos días ${saludo}quedo pendiente lo que estaba configurando ayer en el sistema. Pudo resolverlo?\n\nSi sigue con dudas, escribale a nuestro equipo de soporte al ${NUM_SOPORTE} (atienden de 7am a 10pm) y le ayudan paso a paso. Aquí también estoy si necesita algo.`
   }
   if (tipo === 'dijo_despues') {
-    return `Buenos dias ${saludo}retomando lo de ayer. Quedo en probar el sistema, le ayudo a registrarse y dejarlo funcionando?\n\nSe registra aqui: https://app.control-finanzas.com/registro?r=2\n\nMe avisa cuando entre y lo acompano.`
+    return `Buenos días ${saludo}retomando lo de ayer. Quedo en probar el sistema, le ayudo a registrarse y dejarlo funcionando?\n\nSe registra aquí: https://app.control-finanzas.com/registro?r=2\n\nMe avisa cuando entre y lo acompano.`
   }
   // media_conversacion
-  return `Buenos dias ${saludo}ayer quedamos a mitad de la conversacion. Sigue interesado en organizar sus prestamos y cobros desde el celular?\n\nLo puede probar gratis 14 dias: https://app.control-finanzas.com/registro?r=2`
+  return `Buenos días ${saludo}ayer quedamos a mitad de la conversacion. Sigue interesado en organizar sus préstamos y cobros desde el celular?\n\nLo puede probar gratis 14 días: https://app.control-finanzas.com/registro?r=2`
 }
 
 export async function POST(req) {

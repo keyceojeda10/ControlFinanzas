@@ -57,7 +57,7 @@ export async function POST(request) {
     const backup = await request.json()
 
     if (!backup?.rutas || !Array.isArray(backup.rutas)) {
-      return Response.json({ error: 'Formato de backup invalido' }, { status: 400 })
+      return Response.json({ error: 'Formato de backup inválido' }, { status: 400 })
     }
 
     // Verificar que las rutas del backup existen en esta org
@@ -100,6 +100,6 @@ export async function POST(request) {
     return Response.json({ ok: true, restaurados: clienteIds.filter((id) => clientesValidos.has(id)).length })
   } catch (err) {
     console.error('[Backup] Error restaurando:', err)
-    return Response.json({ error: 'Error al restaurar la configuracion' }, { status: 500 })
+    return Response.json({ error: 'Error al restaurar la configuración' }, { status: 500 })
   }
 }

@@ -19,7 +19,7 @@ export default function ResumenCalculo({ calculo, visible = true }) {
 
   const labelModo = {
     fijo:   'Fijo (clasico)',
-    unico:  'Interes unico',
+    unico:  'Interés unico',
     saldo:  'Sobre saldo',
     manual: 'Manual',
     lineal: 'Cuota decreciente',

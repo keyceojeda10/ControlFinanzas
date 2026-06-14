@@ -480,7 +480,7 @@ export default function OfflineProvider({ children }) {
     try {
       const result = await sincronizarTodo((progress) => setBulkProgress(progress))
       setSyncMeta({ syncedAt: result.syncedAt, totalClientes: result.clientes, totalPrestamos: result.prestamos, totalRutas: result.rutas })
-      setBulkProgress({ step: 'done', message: `${result.clientes} clientes, ${result.prestamos} prestamos sincronizados` })
+      setBulkProgress({ step: 'done', message: `${result.clientes} clientes, ${result.prestamos} préstamos sincronizados` })
       setTimeout(() => setBulkProgress(null), 4000)
     } catch {
       setBulkProgress({ step: 'error', message: 'Error al sincronizar. Intenta de nuevo.' })

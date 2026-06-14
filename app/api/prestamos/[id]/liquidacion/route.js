@@ -25,10 +25,10 @@ export async function GET(request, { params }) {
     },
   })
   if (!prestamo) {
-    return Response.json({ error: 'Prestamo no encontrado' }, { status: 404 })
+    return Response.json({ error: 'Préstamo no encontrado' }, { status: 404 })
   }
   if (prestamo.estado !== 'activo') {
-    return Response.json({ error: 'El prestamo no esta activo' }, { status: 400 })
+    return Response.json({ error: 'El préstamo no esta activo' }, { status: 400 })
   }
 
   // Dias sin cobro aplicables (cliente > ruta > org > prestamo). Devuelve array.

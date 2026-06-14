@@ -3,7 +3,7 @@ import { readFileSync } from 'fs'
 import { join } from 'path'
 
 export const runtime = 'nodejs'
-export const alt = 'Control Finanzas — Gestiona tu cartera de prestamos'
+export const alt = 'Control Finanzas — Gestiona tu cartera de préstamos'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 

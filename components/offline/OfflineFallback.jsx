@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 // Pantalla amigable para funciones que NO estan disponibles offline.
 // Muestra mensaje claro + boton para volver.
 export default function OfflineFallback({
-  titulo = 'Esta funcion no esta disponible sin conexion',
+  titulo = 'Esta función no esta disponible sin conexión',
   descripcion = 'Vuelve a intentarlo cuando recuperes la red. Puedes seguir usando las partes principales de la app mientras tanto.',
   volverHref = '/dashboard',
   volverLabel = 'Volver al Dashboard',

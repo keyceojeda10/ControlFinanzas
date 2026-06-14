@@ -76,7 +76,7 @@ export async function POST(request) {
 
     const [action, leadId] = data.split(':')
     if (!action || !leadId) {
-      await answerCallback(callbackId, 'Accion no valida', botType)
+      await answerCallback(callbackId, 'Acción no valida', botType)
       return NextResponse.json({ ok: true })
     }
 
@@ -197,7 +197,7 @@ export async function POST(request) {
         break
 
       default:
-        await answerCallback(callbackId, 'Accion desconocida', botType)
+        await answerCallback(callbackId, 'Acción desconocida', botType)
     }
 
     return NextResponse.json({ ok: true })

@@ -1059,7 +1059,7 @@ export default function CajaPage() {
             <>
               <CajaResumen
                 hero={{
-                  label: 'Efectivo del periodo',
+                  label: 'Efectivo del período',
                   valor: rangoData.efectivoNeto,
                   subtitulo: 'Cobrado − Prestado − Gastos',
                   color: rangoData.efectivoNeto >= 0 ? '#22c55e' : '#ef4444',
@@ -1248,7 +1248,7 @@ export default function CajaPage() {
                     className="flex-1 py-2.5 rounded-[10px] text-sm font-semibold transition-colors disabled:opacity-50"
                     style={{ background: 'var(--color-accent)', color: 'var(--color-bg-base)' }}
                   >
-                    {guardando ? 'Cerrando...' : (cierreOwner ? 'Guardar ajuste' : 'Cerrar dia')}
+                    {guardando ? 'Cerrando...' : (cierreOwner ? 'Guardar ajuste' : 'Cerrar día')}
                   </button>
                   {modoAjusteCierre && (
                     <button

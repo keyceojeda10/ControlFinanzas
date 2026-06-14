@@ -117,7 +117,7 @@ export default function ModificarPlazo({
           payload,
           baseUpdatedAt: prestamo?.updatedAt,
         })
-        try { sessionStorage.setItem('cf-toast', 'Plazo modificado. Se sincronizara al volver online.') } catch {}
+        try { sessionStorage.setItem('cf-toast', 'Plazo modificado. Se sincronizará al volver online.') } catch {}
         onSuccess?.()
         handleClose()
       } catch (e) {
@@ -136,7 +136,7 @@ export default function ModificarPlazo({
       })
       if (res.status === 503 && !navigator.onLine) {
         await encolarMutacion({ tipo: 'prestamo.update', entityId: prestamoId, payload, baseUpdatedAt: prestamo?.updatedAt })
-        try { sessionStorage.setItem('cf-toast', 'Plazo modificado. Se sincronizara al volver online.') } catch {}
+        try { sessionStorage.setItem('cf-toast', 'Plazo modificado. Se sincronizará al volver online.') } catch {}
         onSuccess?.()
         handleClose()
         return
@@ -152,7 +152,7 @@ export default function ModificarPlazo({
       if (typeof navigator !== 'undefined' && !navigator.onLine) {
         try {
           await encolarMutacion({ tipo: 'prestamo.update', entityId: prestamoId, payload, baseUpdatedAt: prestamo?.updatedAt })
-          try { sessionStorage.setItem('cf-toast', 'Plazo modificado. Se sincronizara al volver online.') } catch {}
+          try { sessionStorage.setItem('cf-toast', 'Plazo modificado. Se sincronizará al volver online.') } catch {}
           onSuccess?.()
           handleClose()
           return

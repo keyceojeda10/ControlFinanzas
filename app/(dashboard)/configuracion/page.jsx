@@ -105,7 +105,7 @@ function TabPerfil() {
         setMsgAvatar({ tipo: 'error', texto: 'Error al guardar avatar' })
       }
     } catch {
-      setMsgAvatar({ tipo: 'error', texto: 'Error de conexion' })
+      setMsgAvatar({ tipo: 'error', texto: 'Error de conexión' })
     } finally { setGuardandoAvatar(false) }
   }
 
@@ -448,7 +448,7 @@ function TabOrganizacion() {
                 </span>
               </div>
               <a
-                href={`https://wa.me/${WHATSAPP_SOPORTE}?text=${encodeURIComponent(`Hola, soy ${nombre || 'usuario'} y quiero cambiar el pais de mi cuenta. Actualmente esta en ${COUNTRIES[country]?.name ?? 'Colombia'}.`)}`}
+                href={`https://wa.me/${WHATSAPP_SOPORTE}?text=${encodeURIComponent(`Hola, soy ${nombre || 'usuario'} y quiero cambiar el país de mi cuenta. Actualmente esta en ${COUNTRIES[country]?.name ?? 'Colombia'}.`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[11px] font-medium px-2.5 py-1 rounded-[8px] transition-all whitespace-nowrap"

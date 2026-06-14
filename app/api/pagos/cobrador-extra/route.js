@@ -23,7 +23,7 @@ export async function POST(req) {
   const org = await prisma.organization.findUnique({ where: { id: orgId }, select: { country: true } })
   const country = org?.country ?? 'co'
   if (!hasOnlinePayment(country)) {
-    return NextResponse.json({ error: 'Pago en linea no disponible para tu pais. Contacta soporte.' }, { status: 400 })
+    return NextResponse.json({ error: 'Pago en línea no disponible para tu país. Contacta soporte.' }, { status: 400 })
   }
   const precio = getPrecioCobradorExtra(country)
 

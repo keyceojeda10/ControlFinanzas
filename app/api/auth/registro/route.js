@@ -47,10 +47,10 @@ export async function POST(req) {
     const canalRegistro = canal === 'email' ? 'email' : 'whatsapp'
     if (canalRegistro === 'whatsapp') {
       if (!telefonoLimpio) {
-        return NextResponse.json({ success: false, error: 'Ingresa tu numero de WhatsApp' }, { status: 400 })
+        return NextResponse.json({ success: false, error: 'Ingresa tu número de WhatsApp' }, { status: 400 })
       }
       if (!validatePhone(telefonoLimpio, country)) {
-        return NextResponse.json({ success: false, error: `Ingresa un ${phoneCfg.phoneLabel.toLowerCase()} valido (ej: ${phoneCfg.phonePlaceholder})` }, { status: 400 })
+        return NextResponse.json({ success: false, error: `Ingresa un ${phoneCfg.phoneLabel.toLowerCase()} válido (ej: ${phoneCfg.phonePlaceholder})` }, { status: 400 })
       }
     }
 

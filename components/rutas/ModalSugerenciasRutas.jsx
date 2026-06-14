@@ -93,7 +93,7 @@ export default function ModalSugerenciasRutas({ open, onClose, onSuccess }) {
       setGrupos((prev) => prev.filter((g) => g.id !== grupo.id))
       onSuccess?.()
     } catch {
-      setErrores((p) => ({ ...p, [grupo.id]: 'Error de conexion' }))
+      setErrores((p) => ({ ...p, [grupo.id]: 'Error de conexión' }))
     } finally {
       setCreando(null)
     }

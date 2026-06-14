@@ -69,8 +69,8 @@ export async function POST(req) {
     if (!st.alertado) {
       const r = await sendMessage(
         `⚠️ <b>WhatsApp Cloud con problemas</b>\n\n` +
-        `El health-check del numero/token fallo: <code>${health.status || 'error'}</code>.\n\n` +
-        `Posibles causas: token expirado/revocado, numero inactivo o calidad baja en Meta. ` +
+        `El health-check del número/token fallo: <code>${health.status || 'error'}</code>.\n\n` +
+        `Posibles causas: token expirado/revocado, número inactivo o calidad baja en Meta. ` +
         `Revisar en Meta (WhatsApp Manager / token del System User). Mientras tanto, el bot no envia.`,
         null,
         'notif'

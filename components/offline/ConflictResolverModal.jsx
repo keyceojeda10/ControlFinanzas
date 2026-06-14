@@ -9,7 +9,7 @@ export default function ConflictResolverModal({ mutacion, onResolve, onClose }) 
     if (!mutacion) return ''
     if (mutacion.tipo === 'cliente.update') return 'Cliente'
     if (mutacion.tipo === 'prestamo.update') return 'Prestamo'
-    if (mutacion.tipo === 'prestamo.cerrar') return 'Prestamo (cerrar)'
+    if (mutacion.tipo === 'prestamo.cerrar') return 'Préstamo (cerrar)'
     return mutacion.tipo
   }, [mutacion])
 

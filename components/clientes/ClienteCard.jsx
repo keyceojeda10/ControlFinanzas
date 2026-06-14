@@ -26,7 +26,7 @@ function moodLabel(c) {
   if (c.diasMoraMax > 7)        return `${c.diasMoraMax}d en mora`
   if (c.estado === 'mora' || c.diasMoraMax > 0) return `${c.diasMoraMax || ''}d vencido`.trim()
   if (c.pagoHoy)                return 'Pago hoy'
-  return 'Al dia'
+  return 'Al día'
 }
 
 export default function ClienteCard({ cliente, actions }) {

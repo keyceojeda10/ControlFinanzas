@@ -198,7 +198,7 @@ export default function LoginPage() {
             Bienvenido<br />de <em style={{ color: 'var(--color-accent)', fontStyle: 'italic' }}>vuelta</em>.
           </h1>
           <p className="text-[14px] mb-8" style={{ color: 'var(--color-text-muted)' }}>
-            La plataforma de cartera mas usada por prestamistas en Colombia.
+            La plataforma de cartera más usada por prestamistas en Colombia.
           </p>
 
           {/* Form */}

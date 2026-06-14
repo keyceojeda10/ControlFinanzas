@@ -111,7 +111,7 @@ export async function POST(request, { params }) {
     // --- Envio de texto (JSON) ---
     const body = await request.json().catch(() => ({}))
     const texto = (body.texto || '').toString().trim()
-    if (!texto) return NextResponse.json({ error: 'Texto vacio' }, { status: 400 })
+    if (!texto) return NextResponse.json({ error: 'Texto vacío' }, { status: 400 })
 
     const envio = await wa.sendText(lead.telefono, texto)
     await prisma.botConversacion.create({

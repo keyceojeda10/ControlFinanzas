@@ -57,7 +57,7 @@ const CAPS = [
     borderActive: 'rgba(245,197,24,0.35)',
     tag: 'Flexible',
     titulo: 'Múltiples métodos de interés',
-    detalle: 'Interés fijo por periodo, sobre saldo decreciente, o cuota única al inicio. Configura el sistema como tú trabajas — no al revés.',
+    detalle: 'Interés fijo por período, sobre saldo decreciente, o cuota única al inicio. Configura el sistema como tú trabajas — no al revés.',
     beneficio: 'Sin compromisos con un solo método.',
     icon: (
       <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -36,8 +36,8 @@ export default function SyncDrawer({ open, onClose }) {
 
   const descripcionMutacion = (m) => {
     if (m.tipo === 'cliente.update') return `Editar cliente: ${Object.keys(m.payload || {}).join(', ')}`
-    if (m.tipo === 'prestamo.update') return `Editar prestamo: ${Object.keys(m.payload || {}).join(', ')}`
-    if (m.tipo === 'prestamo.cerrar') return `Cerrar prestamo`
+    if (m.tipo === 'prestamo.update') return `Editar préstamo: ${Object.keys(m.payload || {}).join(', ')}`
+    if (m.tipo === 'prestamo.cerrar') return `Cerrar préstamo`
     return m.tipo
   }
 
@@ -50,7 +50,7 @@ export default function SyncDrawer({ open, onClose }) {
             <h2 className="text-base font-bold text-[var(--color-text-primary)]">Sincronización</h2>
             <p className="text-[11px] text-[var(--color-text-muted)]">
               {isOnline ? 'Online' : 'Offline'}
-              {syncMeta?.syncedAt && ` - ultima descarga ${fmtDate(syncMeta.syncedAt)}`}
+              {syncMeta?.syncedAt && ` - última descarga ${fmtDate(syncMeta.syncedAt)}`}
             </p>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-[var(--color-bg-hover)] flex items-center justify-center">
@@ -122,7 +122,7 @@ export default function SyncDrawer({ open, onClose }) {
           })} onDiscard={(c) => descartarItem('cliente', c.tempId)} failed={false} />
 
           <Section title="Préstamos pendientes" items={pendingDetails?.prestamos} render={(p) => ({
-            main: `Prestamo $${Number(p.payload?.montoPrestado || 0).toLocaleString('es-CO')}`,
+            main: `Préstamo $${Number(p.payload?.montoPrestado || 0).toLocaleString('es-CO')}`,
             sub: fmtDate(p.createdAt),
           })} onDiscard={(p) => descartarItem('prestamo', p.tempId)} failed={false} />
 
@@ -149,7 +149,7 @@ export default function SyncDrawer({ open, onClose }) {
               })} onDiscard={(c) => descartarItem('cliente', c.tempId)} failed={true} />
 
               <Section title="Préstamos fallidos" items={failedDetails?.prestamos} render={(p) => ({
-                main: `Prestamo $${Number(p.payload?.montoPrestado || 0).toLocaleString('es-CO')}`,
+                main: `Préstamo $${Number(p.payload?.montoPrestado || 0).toLocaleString('es-CO')}`,
                 sub: p.errorMsg || 'Error',
               })} onDiscard={(p) => descartarItem('prestamo', p.tempId)} failed={true} />
 

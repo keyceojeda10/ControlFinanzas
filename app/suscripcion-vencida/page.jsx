@@ -28,7 +28,7 @@ export default function SuscripcionVencida() {
 
   const planNombre = estado?.plan ?? null
 
-  const waMsg = encodeURIComponent('Hola, mi suscripcion de Control Finanzas vencio. Necesito ayuda para renovar.')
+  const waMsg = encodeURIComponent('Hola, mi suscripción de Control Finanzas vencio. Necesito ayuda para renovar.')
 
   return (
     <div className="relative min-h-dvh flex flex-col items-center justify-center px-4 py-8 overflow-hidden"

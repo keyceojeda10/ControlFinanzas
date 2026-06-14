@@ -623,7 +623,7 @@ export default function RutaDetallePage({ params }) {
         const data = await res.json().catch(() => ({}))
         if (data?.duplicado && !confirmarDuplicado) {
           await fetchRuta()
-          if (confirm(`${nombre} ya recibio un pago por ${formatMoney(cuota)} hace menos de 1 minuto.\n\n¿Registrar este pago de todos modos?`)) {
+          if (confirm(`${nombre} ya recibió un pago por ${formatMoney(cuota)} hace menos de 1 minuto.\n\n¿Registrar este pago de todos modos?`)) {
             setModalPagoRapido({ id: clienteId, nombre, cuota, prestamoActivo, abonoConPendiente: false })
             return ejecutarPagoRapido(metodoPago, { confirmarDuplicado: true })
           }
@@ -715,7 +715,7 @@ export default function RutaDetallePage({ params }) {
     const deOtraRuta = seleccionados.filter((cid) => clientesEnOtraRuta.some((c) => c.id === cid))
     if (deOtraRuta.length > 0) {
       const nombres = clientesEnOtraRuta.filter((c) => deOtraRuta.includes(c.id)).map((c) => `${c.nombre} (${c.rutaNombre})`).join(', ')
-      if (!confirm(`Los siguientes clientes seran MOVIDOS desde su ruta actual:\n\n${nombres}\n\n¿Continuar?`)) return
+      if (!confirm(`Los siguientes clientes serán MOVIDOS desde su ruta actual:\n\n${nombres}\n\n¿Continuar?`)) return
     }
 
     // Si algún cliente que entra ya trae un préstamo activo, preguntar si su saldo se
@@ -1615,7 +1615,7 @@ export default function RutaDetallePage({ params }) {
         {ruta.clientes?.length > 0 && (
           <div className="flex gap-1 p-1 mb-3 rounded-[12px]" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
             {[
-              { key: 'trabajo', label: 'Trabajo del dia' },
+              { key: 'trabajo', label: 'Trabajo del día' },
               { key: 'ordenar', label: 'Ordenar ruta' },
               ...(puedeGestionarRutas ? [{ key: 'auditoria', label: 'Auditoría' }] : []),
             ].map(t => (
@@ -1774,7 +1774,7 @@ export default function RutaDetallePage({ params }) {
                           <button
                             onClick={(e) => { e.stopPropagation(); abrirPagoRapido(c) }}
                             disabled={pagandoRapido === c.id}
-                            title={abonoConPendiente ? 'El cliente aun tiene cuotas atrasadas pendientes' : 'Registrar cobro del dia'}
+                            title={abonoConPendiente ? 'El cliente aun tiene cuotas atrasadas pendientes' : 'Registrar cobro del día'}
                             className={[
                               'h-9 rounded-[10px] flex items-center justify-center shrink-0 transition-all active:scale-95 px-3 gap-1.5',
                               pagoRapidoOk === c.id

@@ -32,7 +32,7 @@ const PASOS = [
     ),
   },
   {
-    titulo: 'Registra tus gastos del dia',
+    titulo: 'Registra tus gastos del día',
     descripcion: 'Transporte, gasolina o cualquier gasto de la jornada. El admin los ve al instante.',
     href: '/gastos',
     icono: (
@@ -43,7 +43,7 @@ const PASOS = [
   },
   {
     titulo: 'Instala la app en tu celular',
-    descripcion: 'Accede mas rapido y cobra sin internet aunque no tengas señal.',
+    descripcion: 'Accede mas rápido y cobra sin internet aunque no tengas señal.',
     isInstall: true,
     icono: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

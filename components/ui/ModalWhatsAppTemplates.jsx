@@ -27,8 +27,8 @@ function firma(orgNombre) {
 const TEMPLATES = [
   {
     id: 'credito_aprobado',
-    label: 'Credito aprobado',
-    desc: 'Datos del nuevo credito',
+    label: 'Crédito aprobado',
+    desc: 'Datos del nuevo crédito',
     icon: '✅',
     color: '#10b981',
     aplica: ({ prestamo }) => !!prestamo,

@@ -257,7 +257,7 @@ export async function POST(request) {
   const country = session.user.country ?? 'co'
   const docConfig = getDocumentConfig(country)
   if (!validateDocument(cedula.trim(), country)) {
-    return Response.json({ error: `${docConfig.label} no valido (ej: ${docConfig.placeholder})` }, { status: 400 })
+    return Response.json({ error: `${docConfig.label} no válido (ej: ${docConfig.placeholder})` }, { status: 400 })
   }
 
   // Verificar cédula única en la organización

@@ -26,8 +26,8 @@ const DEFAULT_PLAZO    = { diario: '30', semanal: '8', quincenal: '4', mensual: 
 const METODOS = [
   {
     value: 'fijo',
-    label: 'Interés fijo por periodo',
-    desc: 'El interés se calcula sobre el capital inicial por cada periodo (semana, mes...). El más usado en Colombia.',
+    label: 'Interés fijo por período',
+    desc: 'El interés se calcula sobre el capital inicial por cada período (semana, mes...). El más usado en Colombia.',
     ejemplo: 'Prestas $500k al 20% mensual → cobras $100k de interés fijo cada mes.',
     color: '#f5c518',
     bg: 'rgba(245,197,24,0.1)',

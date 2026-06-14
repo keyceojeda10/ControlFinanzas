@@ -31,27 +31,27 @@ function explicacion(modo, { monto, tasa, frecuencia, diasPlazo }) {
 
   switch (modo) {
     case 'fijo': {
-      const base = 'El interes sube con el plazo. Cobras el % por cada mes sobre lo prestado.'
+      const base = 'El interés sube con el plazo. Cobras el % por cada mes sobre lo prestado.'
       if (!hayDatos) return base
       const r = ej(diasEjemplo)
-      return `${base}\n\nTu caso (a ~2 meses): interes ${formatMoney(r.totalInteres)}, total ${formatMoney(r.totalAPagar)}.`
+      return `${base}\n\nTu caso (a ~2 meses): interés ${formatMoney(r.totalInteres)}, total ${formatMoney(r.totalAPagar)}.`
     }
     case 'unico': {
       const base = 'Cobras el % una sola vez, sin importar el plazo.'
       if (!hayDatos) return base
       const r = ej(diasEjemplo)
-      return `${base}\n\nTu caso: interes ${formatMoney(r.totalInteres)} fijo, dure lo que dure.`
+      return `${base}\n\nTu caso: interés ${formatMoney(r.totalInteres)} fijo, dure lo que dure.`
     }
     case 'saldo': {
-      const base = 'El interes baja a medida que el cliente abona. Mas justo para el cliente, cuota calculada por amortizacion.'
+      const base = 'El interés baja a medida que el cliente abona. Mas justo para el cliente, cuota calculada por amortizacion.'
       if (!hayDatos) return base
       const r = ej(diasEjemplo)
       return `${base}\n\nTu caso (a ~2 meses): cuota ${formatMoney(r.cuotaDiaria)}, total ${formatMoney(r.totalAPagar)}.`
     }
     case 'manual':
-      return 'Tu defines la cuota exacta que quieres cobrar. El sistema calcula el total = cuota x numero de cobros. Util para plazos largos o casos a medida.'
+      return 'Tu defines la cuota exacta que quieres cobrar. El sistema calcula el total = cuota x número de cobros. Util para plazos largos o casos a medida.'
     case 'lineal': {
-      const base = 'El capital se reparte igual en cada cobro y el interes se calcula sobre lo que falta. La cuota empieza alta y BAJA en cada periodo.'
+      const base = 'El capital se reparte igual en cada cobro y el interés se calcula sobre lo que falta. La cuota empieza alta y BAJA en cada período.'
       if (!hayDatos) return base
       // Usa el plazo real que el usuario ya escribio (no un ejemplo generico a
       // 2 meses), para que coincida con la tabla del resumen de abajo.
@@ -59,7 +59,7 @@ function explicacion(modo, { monto, tasa, frecuencia, diasPlazo }) {
       if (!r?.tablaAmortizacion?.length) return base
       const primera = r.tablaAmortizacion[0]
       const ultima = r.tablaAmortizacion[r.tablaAmortizacion.length - 1]
-      return `${base}\n\nTu caso: cuota 1 = ${formatMoney(primera.cuotaTotal)}, ultima cuota = ${formatMoney(ultima.cuotaTotal)}.`
+      return `${base}\n\nTu caso: cuota 1 = ${formatMoney(primera.cuotaTotal)}, última cuota = ${formatMoney(ultima.cuotaTotal)}.`
     }
     default:
       return ''

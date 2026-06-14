@@ -75,7 +75,7 @@ export async function POST(request, { params }) {
       return Response.json({ error: 'Formato no soportado. Usa JPG, PNG o WebP.' }, { status: 400 })
     }
     if (file.size > MAX_SIZE) {
-      return Response.json({ error: 'Imagen muy pesada. Maximo 5MB.' }, { status: 400 })
+      return Response.json({ error: 'Imagen muy pesada. Máximo 5MB.' }, { status: 400 })
     }
 
     const arrayBuffer = await file.arrayBuffer()

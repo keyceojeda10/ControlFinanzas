@@ -11,11 +11,11 @@ import { PLANES_CONFIG, getPrecioPlan } from '@/lib/planes'
 import { formatMoney } from '@/lib/i18n'
 
 const planesBase = [
-  { key: 'starter',      nombre: 'Inicial',      features: ['1 usuario', 'Hasta 150 clientes', '1 ruta', 'Dashboard basico'] },
+  { key: 'starter',      nombre: 'Inicial',      features: ['1 usuario', 'Hasta 150 clientes', '1 ruta', 'Dashboard básico'] },
   { key: 'basic',        nombre: 'Basico',        features: ['1 usuario', 'Hasta 450 clientes', '1 ruta', 'Control de cartera'] },
-  { key: 'growth',       nombre: 'Crecimiento',  badge: 'Popular', features: ['2 usuarios', 'Hasta 1,000 clientes', '3 rutas', 'Lucas IA (20/dia)', 'Cierre de caja'] },
-  { key: 'standard',     nombre: 'Profesional',  features: ['5 usuarios', 'Hasta 2,000 clientes', '6 rutas', 'Lucas IA (60/dia)', 'Reportes avanzados'] },
-  { key: 'professional', nombre: 'Empresarial',  features: ['10 usuarios', 'Hasta 10,000 clientes', '10 rutas', 'Lucas IA (200/dia)', 'Reportes + exportacion'] },
+  { key: 'growth',       nombre: 'Crecimiento',  badge: 'Popular', features: ['2 usuarios', 'Hasta 1,000 clientes', '3 rutas', 'Lucas IA (20/día)', 'Cierre de caja'] },
+  { key: 'standard',     nombre: 'Profesional',  features: ['5 usuarios', 'Hasta 2,000 clientes', '6 rutas', 'Lucas IA (60/día)', 'Reportes avanzados'] },
+  { key: 'professional', nombre: 'Empresarial',  features: ['10 usuarios', 'Hasta 10,000 clientes', '10 rutas', 'Lucas IA (200/día)', 'Reportes + exportación'] },
 ]
 
 const planTestBase = { key: 'test', nombre: 'Test', features: ['Solo testing interno', 'NO usar en produccion'] }
@@ -134,7 +134,7 @@ function PlanPageInner() {
 
   const cancelarPlanWA = () => {
     const orgRef = orgNombre ? ` de mi cuenta "${orgNombre}"` : ''
-    const msg = `Hola, quiero cancelar la suscripcion${orgRef}.`
+    const msg = `Hola, quiero cancelar la suscripción${orgRef}.`
     window.open(whatsappLink(msg), '_blank', 'noopener,noreferrer')
   }
 

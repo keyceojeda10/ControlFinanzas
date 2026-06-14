@@ -1503,7 +1503,7 @@ export default function DashboardPage() {
               <Link href="/clientes?filtro=mora" className="rounded-[14px] px-3 py-3 transition-all hover:scale-[1.01]" style={{ background: data.clientes.enMora > 0 ? 'color-mix(in srgb, var(--color-danger) 10%, var(--color-bg-card))' : 'var(--color-bg-card)', border: `1px solid ${data.clientes.enMora > 0 ? 'color-mix(in srgb, var(--color-danger) 25%, var(--color-border))' : 'var(--color-border)'}` }}>
                 <p className="text-[10px] mb-0.5" style={{ color: 'var(--color-text-muted)' }}>Clientes en mora</p>
                 <p className="text-2xl font-bold font-mono-display" style={{ color: data.clientes.enMora > 0 ? 'var(--color-danger)' : 'var(--color-success)' }}>{data.clientes.enMora}</p>
-                <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{data.clientes.enMora === 0 ? 'Todo al dia' : `de ${data.clientes.total} activos`}</p>
+                <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{data.clientes.enMora === 0 ? 'Todo al día' : `de ${data.clientes.total} activos`}</p>
               </Link>
               {capitalData ? (
                 <Link href="/caja" className="rounded-[14px] px-3 py-3 transition-all hover:scale-[1.01]" style={{ background: 'color-mix(in srgb, #06b6d4 8%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, #06b6d4 20%, var(--color-border))' }}>

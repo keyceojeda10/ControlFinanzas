@@ -219,7 +219,7 @@ export async function PATCH(request, { params }) {
     const country = session.user.country ?? 'co'
     const docConfig = getDocumentConfig(country)
     if (!validateDocument(cedula.trim(), country)) {
-      return Response.json({ error: `${docConfig.label} no valido (ej: ${docConfig.placeholder})` }, { status: 400 })
+      return Response.json({ error: `${docConfig.label} no válido (ej: ${docConfig.placeholder})` }, { status: 400 })
     }
     const existe = await prisma.cliente.findUnique({
       where: {

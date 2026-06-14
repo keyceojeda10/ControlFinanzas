@@ -48,13 +48,13 @@ export async function POST(request) {
   const { nombre, telefono, cantClientes, esPrestamista, metodoActual, planInteres } = body
 
   if (!telefono) {
-    return NextResponse.json({ error: 'Telefono requerido' }, { status: 400 })
+    return NextResponse.json({ error: 'Teléfono requerido' }, { status: 400 })
   }
 
   // Dedup
   const existe = await prisma.botLead.findFirst({ where: { telefono } })
   if (existe) {
-    return NextResponse.json({ error: 'Ya existe un lead con ese telefono', lead: existe }, { status: 409 })
+    return NextResponse.json({ error: 'Ya existe un lead con ese teléfono', lead: existe }, { status: 409 })
   }
 
   const lead = await prisma.botLead.create({

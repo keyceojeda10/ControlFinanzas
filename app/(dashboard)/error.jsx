@@ -58,12 +58,12 @@ export default function DashboardError({ error, reset }) {
         </div>
 
         <h2 className="text-lg font-bold text-white mb-2">
-          {isOffline ? 'Sin conexion' : 'Error en la pagina'}
+          {isOffline ? 'Sin conexión' : 'Error en la página'}
         </h2>
         <p className="text-sm text-[#888] mb-5">
           {isOffline
-            ? 'No se pudo cargar esta seccion offline. Intenta recargar.'
-            : 'No pudimos cargar esta seccion. Intenta de nuevo.'}
+            ? 'No se pudo cargar esta sección offline. Intenta recargar.'
+            : 'No pudimos cargar esta sección. Intenta de nuevo.'}
         </p>
 
         <div className="flex flex-col gap-2 items-center">

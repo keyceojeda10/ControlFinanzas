@@ -54,15 +54,15 @@ export async function GET() {
     {
       id: 'crear-cliente',
       titulo: 'Registra tu primer cliente',
-      descripcion: 'Nombre, cedula y telefono. En 30 segundos queda en el sistema.',
+      descripcion: 'Nombre, cédula y teléfono. En 30 segundos queda en el sistema.',
       completada: clientes > 0,
       href: '/clientes/nuevo',
       icono: 'cliente',
     },
     {
       id: 'crear-prestamo',
-      titulo: 'Crea un prestamo',
-      descripcion: 'El sistema calcula la cuota y lleva el saldo automaticamente.',
+      titulo: 'Crea un préstamo',
+      descripcion: 'El sistema calcula la cuota y lleva el saldo automáticamente.',
       completada: prestamos > 0,
       href: '/prestamos/nuevo',
       icono: 'prestamo',
@@ -70,7 +70,7 @@ export async function GET() {
     {
       id: 'registrar-pago',
       titulo: 'Registra el primer cobro',
-      descripcion: 'Abre el prestamo y toca "Registrar pago". Funciona sin internet.',
+      descripcion: 'Abre el préstamo y toca "Registrar pago". Funciona sin internet.',
       completada: pagos > 0,
       href: '/prestamos',
       icono: 'pago',
@@ -78,7 +78,7 @@ export async function GET() {
     {
       id: 'crear-ruta',
       titulo: 'Crea una ruta de cobro',
-      descripcion: 'Agrupa clientes por zona. El cobrador ve su recorrido del dia.',
+      descripcion: 'Agrupa clientes por zona. El cobrador ve su recorrido del día.',
       completada: rutas > 0,
       href: '/rutas',
       icono: 'ruta',
@@ -94,7 +94,7 @@ export async function GET() {
     {
       id: 'instalar-app',
       titulo: 'Instala la app en tu celular',
-      descripcion: 'Accede mas rapido y cobra sin internet. Instala desde el navegador.',
+      descripcion: 'Accede mas rápido y cobra sin internet. Instala desde el navegador.',
       completada: false, // se verifica en el cliente (PWA standalone)
       href: '#',
       icono: 'instalar',
@@ -103,7 +103,7 @@ export async function GET() {
     {
       id: 'cierre-caja',
       titulo: 'Haz tu primer cierre de caja',
-      descripcion: 'Cuadra lo recaudado del dia y lleva tu contabilidad al dia.',
+      descripcion: 'Cuadra lo recaudado del día y lleva tu contabilidad al día.',
       completada: cierres > 0,
       href: '/caja',
       icono: 'caja',
@@ -160,5 +160,5 @@ export async function POST(request) {
     return NextResponse.json({ ok: true })
   }
 
-  return NextResponse.json({ error: 'Accion invalida' }, { status: 400 })
+  return NextResponse.json({ error: 'Acción invalida' }, { status: 400 })
 }

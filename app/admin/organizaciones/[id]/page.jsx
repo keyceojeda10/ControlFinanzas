@@ -117,7 +117,7 @@ export default function OrgDetallePage() {
               if (nuevoPlan === org.plan) return
               const fechaVenc = sub ? new Date(sub.fechaVencimiento).toLocaleDateString('es-CO') : null
               const msg = fechaVenc
-                ? `Cambiar plan de "${org.nombre}" de ${org.plan} a ${nuevoPlan}?\n\nSe mantienen las mismas fechas de suscripcion (vence: ${fechaVenc}).`
+                ? `Cambiar plan de "${org.nombre}" de ${org.plan} a ${nuevoPlan}?\n\nSe mantienen las mismas fechas de suscripción (vence: ${fechaVenc}).`
                 : `Cambiar plan de "${org.nombre}" de ${org.plan} a ${nuevoPlan}?`
               if (confirm(msg)) {
                 ejecutarAccion('cambiarPlan', { plan: nuevoPlan })
@@ -571,14 +571,14 @@ export default function OrgDetallePage() {
               <div className="flex gap-2">
                 <button
                   onClick={() => {
-                    const nueva = prompt(`Nueva contrasena para ${u.nombre} (${u.email}):\n\nMinimo 6 caracteres.`)
+                    const nueva = prompt(`Nueva contraseña para ${u.nombre} (${u.email}):\n\nMinimo 6 caracteres.`)
                     if (nueva == null) return
                     const clean = nueva.trim()
                     if (clean.length < 6) {
                       alert('La contraseña debe tener al menos 6 caracteres')
                       return
                     }
-                    if (!confirm(`¿Restablecer la contrasena de ${u.nombre}?`)) return
+                    if (!confirm(`¿Restablecer la contraseña de ${u.nombre}?`)) return
                     ejecutarAccion('resetearPassword', { userId: u.id, nuevaPassword: clean })
                   }}
                   disabled={!!accionando}

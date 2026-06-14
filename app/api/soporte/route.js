@@ -59,7 +59,7 @@ export async function POST(request) {
     const { tipo, asunto, descripcion, solicitaContacto = false, telefonoContacto } = await request.json()
     const TIPOS_VALIDOS = ['bug', 'pregunta', 'solicitud', 'problema_pago', 'otro']
     if (!tipo || !asunto || !descripcion) {
-      return NextResponse.json({ error: 'tipo, asunto y descripcion son requeridos' }, { status: 400 })
+      return NextResponse.json({ error: 'tipo, asunto y descripción son requeridos' }, { status: 400 })
     }
     if (!TIPOS_VALIDOS.includes(tipo)) {
       return NextResponse.json({ error: 'Tipo de ticket no válido' }, { status: 400 })

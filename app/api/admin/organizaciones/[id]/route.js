@@ -385,7 +385,7 @@ export async function PATCH(req, { params }) {
         adminId:        session.user.id,
         organizacionId: id,
         accion:         'pago_directo',
-        detalle:        `Plan ${planNuevo} asignado (pago directo). Periodo: ${periodoLabel}. Monto: $${montoCOP.toLocaleString('es-CO')}. Vigente hasta: ${fechaVencimiento.toLocaleDateString('es-CO')}`,
+        detalle:        `Plan ${planNuevo} asignado (pago directo). Período: ${periodoLabel}. Monto: $${montoCOP.toLocaleString('es-CO')}. Vigente hasta: ${fechaVencimiento.toLocaleDateString('es-CO')}`,
       },
     })
 

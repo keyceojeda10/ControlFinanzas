@@ -44,7 +44,7 @@ export default function TablaAmortizacion({ tabla, frecuencia = 'mensual', mostr
                       background: completado ? 'var(--color-success)' : interesAlDia ? 'var(--color-warning)' : 'transparent',
                       border: (completado || interesAlDia) ? 'none' : '1.5px solid var(--color-border)',
                     }}
-                    title={completado ? 'Cuota pagada' : interesAlDia ? 'Intereses al dia' : 'Pendiente'}
+                    title={completado ? 'Cuota pagada' : interesAlDia ? 'Intereses al día' : 'Pendiente'}
                   >
                     {completado && (
                       <svg className="w-2.5 h-2.5" fill="none" stroke="white" strokeWidth={3} viewBox="0 0 24 24">

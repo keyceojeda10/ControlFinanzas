@@ -279,7 +279,7 @@ export default function PrestamosPage() {
           type="button"
           onClick={toggleAgrupar}
           aria-pressed={agrupar}
-          title={agrupar ? 'Mostrar lista cronologica' : 'Agrupar todos los prestamos de cada cliente'}
+          title={agrupar ? 'Mostrar lista cronologica' : 'Agrupar todos los préstamos de cada cliente'}
           className="shrink-0 h-10 px-3 rounded-[12px] border text-xs font-medium inline-flex items-center gap-1.5 transition-all"
           style={agrupar
             ? { color: 'var(--color-accent)', borderColor: 'var(--color-accent)', background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)' }

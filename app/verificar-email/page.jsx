@@ -30,7 +30,7 @@ function VerificarEmailContent() {
         body: JSON.stringify({ email: email.trim().toLowerCase(), codigo: codigo.trim() }),
       })
       const data = await res.json()
-      if (!res.ok) { setErrorMsg(data.error || 'Codigo invalido'); return }
+      if (!res.ok) { setErrorMsg(data.error || 'Código inválido'); return }
       setVerificado(true)
     } catch {
       setErrorMsg('Error de conexión')
@@ -99,7 +99,7 @@ function VerificarEmailContent() {
         />
         <button onClick={handleReenviar} disabled={reenviando || reenviado || !email}
           className="w-full h-11 rounded-[12px] bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-text-primary)] font-semibold text-sm transition-all disabled:opacity-50">
-          {reenviado ? 'Codigo enviado — revisa tu correo' : reenviando ? 'Enviando...' : 'Enviar codigo'}
+          {reenviado ? 'Código enviado — revisa tu correo' : reenviando ? 'Enviando...' : 'Enviar código'}
         </button>
       </div>
     )
@@ -118,7 +118,7 @@ function VerificarEmailContent() {
       <p className="text-sm text-[var(--color-text-muted)] mb-5">
         {email
           ? <>Ingresa el código que enviamos a <span className="text-[var(--color-text-primary)] font-semibold">{email}</span></>
-          : 'Ingresa tu email y el codigo de verificacion'}
+          : 'Ingresa tu email y el código de verificación'}
       </p>
 
       {errorMsg && (
@@ -164,7 +164,7 @@ function VerificarEmailContent() {
           <button onClick={handleReenviar} disabled={reenviando || reenviado}
             className="text-sm font-medium transition-colors disabled:opacity-50"
             style={{ color: reenviado ? 'var(--color-success)' : 'var(--color-accent)' }}>
-            {reenviado ? 'Codigo reenviado' : reenviando ? 'Reenviando...' : 'Reenviar codigo'}
+            {reenviado ? 'Código reenviado' : reenviando ? 'Reenviando...' : 'Reenviar código'}
           </button>
         )}
         <Link href="/login" className="text-sm hover:underline" style={{ color: 'var(--color-text-muted)' }}>

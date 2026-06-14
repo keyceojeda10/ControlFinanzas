@@ -47,7 +47,7 @@ export default function ReagendarVisitaModal({ open, onClose, clienteId, cliente
   const fechaOpciones = [
     { value: 'hoy', label: 'Hoy mas tarde', date: hoy },
     { value: 'manana', label: `Manana (${formatFechaDisplay(manana)})`, date: manana },
-    { value: 'proximo_habil', label: `Prox. dia habil (${formatFechaDisplay(proximoHabil)})`, date: proximoHabil },
+    { value: 'proximo_habil', label: `Próx. día habil (${formatFechaDisplay(proximoHabil)})`, date: proximoHabil },
     { value: 'custom', label: 'Fecha especifica', date: null },
   ]
 

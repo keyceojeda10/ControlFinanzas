@@ -142,10 +142,10 @@ export default function WhatsAppBotConfig() {
         <h2 className="text-sm font-semibold text-white mb-3">Seguimientos y límites</h2>
         <div className="grid grid-cols-2 gap-3">
           {[
-            { key: 'limiteDiario', label: 'Limite diario mensajes', type: 'number' },
-            { key: 'limiteGastoUsd', label: 'Limite gasto USD/dia', type: 'number', step: '0.5' },
-            { key: 'delayMinMs', label: 'Delay minimo (ms)', type: 'number' },
-            { key: 'delayMaxMs', label: 'Delay maximo (ms)', type: 'number' },
+            { key: 'limiteDiario', label: 'Límite diario mensajes', type: 'number' },
+            { key: 'limiteGastoUsd', label: 'Límite gasto USD/día', type: 'number', step: '0.5' },
+            { key: 'delayMinMs', label: 'Delay mínimo (ms)', type: 'number' },
+            { key: 'delayMaxMs', label: 'Delay máximo (ms)', type: 'number' },
           ].map(f => (
             <div key={f.key}>
               <label className="text-[10px] text-[var(--color-text-muted)] mb-1 block">{f.label}</label>

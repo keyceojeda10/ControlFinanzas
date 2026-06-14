@@ -13,7 +13,7 @@ export async function PATCH(request) {
   const body = await request.json().catch(() => ({}))
   const { theme } = body || {}
   if (!ALLOWED.has(theme)) {
-    return Response.json({ error: 'Tema invalido' }, { status: 400 })
+    return Response.json({ error: 'Tema inválido' }, { status: 400 })
   }
   try {
     await prisma.user.update({

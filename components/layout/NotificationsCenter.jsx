@@ -278,7 +278,7 @@ export default function NotificationsCenter({ size = 'md' }) {
                 </div>
                 <div className="min-w-0">
                   <p className="text-[13px] font-medium" style={{ color: 'var(--color-text-primary)' }}>
-                    {!isOnline ? 'Sin conexion' : failedTotal > 0 ? `${failedTotal} elementos fallidos` : `${pendingCount} pendientes por sincronizar`}
+                    {!isOnline ? 'Sin conexión' : failedTotal > 0 ? `${failedTotal} elementos fallidos` : `${pendingCount} pendientes por sincronizar`}
                   </p>
                   <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Toca para ver el detalle de sincronización</p>
                 </div>

@@ -27,11 +27,11 @@ const PLANES_SOLO = [
     key: 'starter',
     nombre: PLANES_CONFIG.starter.nombre,
     precio: PLANES_CONFIG.starter.precio,
-    descripcion: 'Para carteras pequenas. Ideal si estas empezando.',
+    descripcion: 'Para carteras pequeñas. Ideal si estás empezando.',
     features: [
       `Hasta ${PLANES_CONFIG.starter.maxClientes} clientes`,
       `${PLANES_CONFIG.starter.maxRutas} ruta de cobro`,
-      'Registro de pagos y prestamos',
+      'Registro de pagos y préstamos',
       'WhatsApp recordatorios',
     ],
   },
@@ -39,11 +39,11 @@ const PLANES_SOLO = [
     key: 'basic',
     nombre: PLANES_CONFIG.basic.nombre,
     precio: PLANES_CONFIG.basic.precio,
-    descripcion: 'Para carteras en crecimiento. Mas capacidad.',
+    descripcion: 'Para carteras en crecimiento. Más capacidad.',
     features: [
       `Hasta ${PLANES_CONFIG.basic.maxClientes} clientes`,
       `${PLANES_CONFIG.basic.maxRutas} ruta de cobro`,
-      'Registro de pagos y prestamos',
+      'Registro de pagos y préstamos',
       'WhatsApp recordatorios',
     ],
   },
@@ -58,8 +58,8 @@ const PLANES_EQUIPO = [
     features: [
       `Hasta ${PLANES_CONFIG.growth.maxClientes.toLocaleString('es-CO')} clientes`,
       `${PLANES_CONFIG.growth.maxRutas} rutas · ${PLANES_CONFIG.growth.maxUsuarios} usuarios`,
-      'Asistente IA Lucas (20 consultas/dia)',
-      'Reportes basicos',
+      'Asistente IA Lucas (20 consultas/día)',
+      'Reportes básicos',
     ],
   },
   {
@@ -71,7 +71,7 @@ const PLANES_EQUIPO = [
     features: [
       `Hasta ${PLANES_CONFIG.standard.maxClientes.toLocaleString('es-CO')} clientes`,
       `${PLANES_CONFIG.standard.maxRutas} rutas · ${PLANES_CONFIG.standard.maxUsuarios} usuarios`,
-      'Asistente IA Lucas (60 consultas/dia)',
+      'Asistente IA Lucas (60 consultas/día)',
       'Reportes avanzados',
     ],
   },
@@ -79,12 +79,12 @@ const PLANES_EQUIPO = [
     key: 'professional',
     nombre: PLANES_CONFIG.professional.nombre,
     precio: PLANES_CONFIG.professional.precio,
-    descripcion: 'Maxima capacidad y soporte prioritario.',
+    descripcion: 'Máxima capacidad y soporte prioritario.',
     features: [
       `Hasta ${PLANES_CONFIG.professional.maxClientes.toLocaleString('es-CO')} clientes`,
       `${PLANES_CONFIG.professional.maxRutas} rutas · ${PLANES_CONFIG.professional.maxUsuarios} usuarios`,
-      'Asistente IA Lucas (200 consultas/dia)',
-      'Reportes completos + exportacion',
+      'Asistente IA Lucas (200 consultas/día)',
+      'Reportes completos + exportación',
     ],
   },
 ]
@@ -297,7 +297,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
     if (requiereWhatsApp) {
       const telefonoLimpio = form.telefono.replace(/\D/g, '')
       if (!validatePhone(telefonoLimpio, country)) {
-        setError(`Ingresa un ${countryCfg.phoneLabel.toLowerCase()} valido (ej: ${countryCfg.phonePlaceholder})`); return
+        setError(`Ingresa un ${countryCfg.phoneLabel.toLowerCase()} válido (ej: ${countryCfg.phonePlaceholder})`); return
       }
     }
 
@@ -344,7 +344,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
 
   const handleVerificarOtp = async (codigoFinal) => {
     const codigo = codigoFinal || otpDigits.join('')
-    if (codigo.length !== 6) { setOtpError('Ingresa el codigo de 6 digitos'); return }
+    if (codigo.length !== 6) { setOtpError('Ingresa el código de 6 dígitos'); return }
     setOtpLoading(true)
     setOtpError('')
     try {
@@ -354,7 +354,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
         body: JSON.stringify({ email: normalizarEmail(form.email), codigo }),
       })
       const data = await res.json()
-      if (!res.ok) { setOtpError(data.error || 'Codigo invalido'); setOtpLoading(false); return }
+      if (!res.ok) { setOtpError(data.error || 'Código inválido'); setOtpLoading(false); return }
 
       const login = await signIn('credentials', {
         email: normalizarEmail(form.email),
@@ -364,7 +364,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
       if (login?.ok) { router.push('/dashboard'); return }
       router.push('/login')
     } catch {
-      setOtpError('Error de conexion')
+      setOtpError('Error de conexión')
     } finally {
       setOtpLoading(false)
     }
@@ -669,7 +669,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                 {/* Email */}
                 <div>
                   <AuthInput
-                    label={verificarPor === 'email' ? 'Correo electronico (verificacion)' : 'Correo electronico'}
+                    label={verificarPor === 'email' ? 'Correo electrónico (verificación)' : 'Correo electrónico'}
                     type="email"
                     value={form.email}
                     onChange={set('email')}
@@ -699,7 +699,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                   <p className="text-[11px] mt-1 px-0.5" style={{ color: '#666677' }}>
                     {verificarPor === 'whatsapp'
                       ? 'Para alertas de cobro y recuperar tu cuenta.'
-                      : 'Recibes el codigo de verificacion aqui.'}
+                      : 'Recibes el código de verificación aquí.'}
                   </p>
                 </div>
 
@@ -910,7 +910,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                   className="text-[13px] font-semibold transition-colors disabled:opacity-50"
                   style={{ color: otpReenviado ? '#22c55e' : accentColor }}
                 >
-                  {otpReenviado ? 'Codigo reenviado' : otpReenviando ? 'Reenviando...' : 'Reenviar codigo'}
+                  {otpReenviado ? 'Código reenviado' : otpReenviando ? 'Reenviando...' : 'Reenviar código'}
                 </button>
                 <button
                   onClick={handleSaltarVerificacion}
@@ -924,8 +924,8 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
 
               <p className="text-[12px] mt-5 leading-relaxed" style={{ color: t.textMuted }}>
                 {verificarPor === 'whatsapp'
-                  ? 'El mensaje llega en segundos. Si no llega, usa el boton de verificar por correo.'
-                  : 'Revisa tu bandeja y la carpeta de spam. El codigo expira en 30 minutos.'}
+                  ? 'El mensaje llega en segundos. Si no llega, usa el botón de verificar por correo.'
+                  : 'Revisa tu bandeja y la carpeta de spam. El código expira en 30 minutos.'}
               </p>
             </div>
           )}

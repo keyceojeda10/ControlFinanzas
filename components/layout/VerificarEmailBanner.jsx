@@ -43,7 +43,7 @@ export default function VerificarEmailBanner() {
         body: JSON.stringify({ email, codigo: codigo.trim() }),
       })
       const data = await res.json()
-      if (!res.ok) { setError(data.error || 'Codigo invalido'); return }
+      if (!res.ok) { setError(data.error || 'Código inválido'); return }
       setSuccess(true)
       update?.()
     } catch {

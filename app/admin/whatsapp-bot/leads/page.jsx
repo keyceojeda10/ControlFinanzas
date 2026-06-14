@@ -225,10 +225,10 @@ function ModalCrearLead({ onClose, onCreado }) {
         <h2 className="text-base font-semibold text-white mb-4">Crear lead manual</h2>
         <form onSubmit={guardar} className="space-y-3">
           {[
-            { key: 'nombre', label: 'Nombre', placeholder: 'Juan Perez' },
+            { key: 'nombre', label: 'Nombre', placeholder: 'Juan Pérez' },
             { key: 'telefono', label: 'Telefono', placeholder: '573001234567' },
             { key: 'cantClientes', label: 'Cant. clientes', placeholder: '50' },
-            { key: 'metodoActual', label: 'Metodo actual', placeholder: 'Libreta / Excel / Sistema' },
+            { key: 'metodoActual', label: 'Método actual', placeholder: 'Libreta / Excel / Sistema' },
           ].map(f => (
             <div key={f.key}>
               <label className="text-[11px] text-[var(--color-text-muted)] mb-1 block">{f.label}</label>

@@ -180,12 +180,12 @@ export async function POST(req) {
             prestamoId = prestamosActivos[0].id
           } else if (prestamosActivos.length > 1) {
             return NextResponse.json({
-              error: `${input.clienteNombre} tiene ${prestamosActivos.length} prestamos activos. Pidele a Lucas que te liste los prestamos y especifica cual quieres registrar el pago.`,
+              error: `${input.clienteNombre} tiene ${prestamosActivos.length} préstamos activos. Pidele a Lucas que te liste los préstamos y especifica cual quieres registrar el pago.`,
             }, { status: 400 })
           }
         }
         if (!prestamoId) {
-          return NextResponse.json({ error: 'No se encontro un prestamo activo para este cliente' }, { status: 404 })
+          return NextResponse.json({ error: 'No se encontro un préstamo activo para este cliente' }, { status: 404 })
         }
         const res = await fetch(`${origin}/api/prestamos/${prestamoId}/pagos`, {
           method: 'POST', headers,

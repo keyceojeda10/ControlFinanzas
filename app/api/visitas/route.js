@@ -24,7 +24,7 @@ export async function POST(request) {
     }
 
     if (!MOTIVOS_VALIDOS.includes(motivo)) {
-      return Response.json({ error: 'Motivo invalido' }, { status: 400 })
+      return Response.json({ error: 'Motivo inválido' }, { status: 400 })
     }
 
     // Verificar que el cliente pertenece a la organizacion

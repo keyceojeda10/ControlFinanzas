@@ -141,7 +141,7 @@ export default function RegistrarPago({
       const totalAP = Number(prestamo?.totalAPagar || 0)
       const espacioDescuento = Math.max(0, totalAP - totalPag)
       if (m > espacioDescuento) {
-        setError(`Maximo permitido: ${formatMoney(espacioDescuento)} (no puede exceder lo no pagado).`)
+        setError(`Máximo permitido: ${formatMoney(espacioDescuento)} (no puede exceder lo no pagado).`)
         return
       }
     }
@@ -728,7 +728,7 @@ export default function RegistrarPago({
           <Input
             label={(tipo === 'recargo' || tipo === 'descuento') ? 'Motivo (obligatorio)' : 'Nota (opcional)'}
             placeholder={
-              tipo === 'recargo' ? 'Ej: Multa por 5 dias de atraso' :
+              tipo === 'recargo' ? 'Ej: Multa por 5 días de atraso' :
               tipo === 'descuento' ? 'Ej: Pago anticipado, devolucion' :
               'Ej: Pago adelantado'
             }

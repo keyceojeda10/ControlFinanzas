@@ -8,14 +8,14 @@ export async function POST(req) {
     const { email, codigo } = await req.json()
 
     if (!email || !codigo) {
-      return NextResponse.json({ error: 'Email y codigo son requeridos' }, { status: 400 })
+      return NextResponse.json({ error: 'Email y código son requeridos' }, { status: 400 })
     }
 
     const emailNorm = normalizarEmail(email)
     const user = await prisma.user.findUnique({ where: { email: emailNorm } })
 
     if (!user) {
-      return NextResponse.json({ error: 'Codigo invalido' }, { status: 400 })
+      return NextResponse.json({ error: 'Código inválido' }, { status: 400 })
     }
 
     if (user.emailVerificado) {
@@ -23,11 +23,11 @@ export async function POST(req) {
     }
 
     if (!user.tokenVerificacion || user.tokenVerificacion !== codigo.trim()) {
-      return NextResponse.json({ error: 'Codigo invalido' }, { status: 400 })
+      return NextResponse.json({ error: 'Código inválido' }, { status: 400 })
     }
 
     if (user.tokenExpira && new Date() > new Date(user.tokenExpira)) {
-      return NextResponse.json({ error: 'Codigo expirado. Solicita uno nuevo.' }, { status: 400 })
+      return NextResponse.json({ error: 'Código expirado. Solicita uno nuevo.' }, { status: 400 })
     }
 
     await prisma.user.update({

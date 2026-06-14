@@ -30,9 +30,9 @@ El usuario te envía una foto de una "cartulina" o tarjeta de cobro manual.
 Extrae todos los datos que puedas en el siguiente JSON (omite los campos que no aparezcan claramente):
 {
   "nombre": "",
-  "cedula": "",
-  "telefono": "",
-  "direccion": "",
+  "cédula": "",
+  "teléfono": "",
+  "dirección": "",
   "montoPrestado": 0,
   "tasaInteres": 0,
   "frecuencia": "diario|semanal|quincenal|mensual",
@@ -43,11 +43,11 @@ Extrae todos los datos que puedas en el siguiente JSON (omite los campos que no 
   "notas": ""
 }
 Reglas:
-- cedula y telefono: solo digitos, sin espacios ni guiones
+- cédula y teléfono: solo dígitos, sin espacios ni guiones
 - montoPrestado, tasaInteres, diasPlazo, cuotasPagadas, montoPagadoHasta: numeros sin puntos ni comas
 - Si ves cuotas tachadas, marcadas o con visto bueno, cuentalas en cuotasPagadas
 - Si no puedes leer un campo con certeza, omitelo (no pongas 0 ni texto inventado)
-- Solo devuelve el JSON puro, sin texto antes ni despues, sin markdown`
+- Solo devuelve el JSON puro, sin texto antes ni después, sin markdown`
 
   const intentos = GEMINI_KEYS.length
   for (let i = 0; i < intentos; i++) {

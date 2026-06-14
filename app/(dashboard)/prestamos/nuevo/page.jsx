@@ -121,7 +121,7 @@ function NuevoPrestamo() {
   const [paso, setPaso] = useState(0)
   const PASOS = [
     { label: 'Cliente' },
-    { label: 'Plan del prestamo' },
+    { label: 'Plan del préstamo' },
   ]
 
   // Pre-llenar desde cartulina si venimos de importar
@@ -366,7 +366,7 @@ function NuevoPrestamo() {
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
       try {
         await guardarPrestamoPendiente(payloadOffline)
-        try { sessionStorage.setItem('cf-toast', 'Prestamo guardado. Se sincronizara al volver online.') } catch {}
+        try { sessionStorage.setItem('cf-toast', 'Préstamo guardado. Se sincronizará al volver online.') } catch {}
         router.push('/prestamos')
         return
       } catch {
@@ -407,7 +407,7 @@ function NuevoPrestamo() {
       if (!navigator.onLine) {
         try {
           await guardarPrestamoPendiente(payloadOffline)
-          try { sessionStorage.setItem('cf-toast', 'Prestamo guardado. Se sincronizara al volver online.') } catch {}
+          try { sessionStorage.setItem('cf-toast', 'Préstamo guardado. Se sincronizará al volver online.') } catch {}
           router.push('/prestamos')
           return
         } catch {}
@@ -537,7 +537,7 @@ function NuevoPrestamo() {
             <p className="text-sm mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
               {clienteSeleccionado
                 ? 'Si necesitas cambiarlo, usa el buscador.'
-                : 'Busca por nombre o cedula, o elige uno de los recientes.'}
+                : 'Busca por nombre o cédula, o elige uno de los recientes.'}
             </p>
 
             {/* Cliente ya seleccionado: card grande en lugar de fila pequena */}
@@ -715,7 +715,7 @@ function NuevoPrestamo() {
 
             <div>
               <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                {modo === 'mercancia' ? 'Valor del articulo' : 'Monto del prestamo'}
+                {modo === 'mercancia' ? 'Valor del artículo' : 'Monto del préstamo'}
               </label>
               <div className="mt-1.5">
                 <MoneyInput value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="0" />
@@ -1084,7 +1084,7 @@ function NuevoPrestamo() {
                 ? `Semanal · ${periodos} cobros${diaSemanaFullPlural ? ' los ' + diaSemanaFullPlural : ''}`
                 : frecuencia === 'quincenal'
                   ? `Quincenal · ${periodos} cobros${diaSemanaFullPlural ? ' los ' + diaSemanaFullPlural : ''}`
-                  : `Mensual · ${periodos} cobros${diaCobroMes ? ' el dia ' + diaCobroMes + ' de cada mes' : ''}`
+                  : `Mensual · ${periodos} cobros${diaCobroMes ? ' el día ' + diaCobroMes + ' de cada mes' : ''}`
 
             const totalConSeguro = calculo.totalAPagar + (seguro && Number(montoSeguro) > 0 ? Number(montoSeguro) : 0)
             const ganancia = calculo.totalAPagar - Number(monto || 0)
@@ -1140,7 +1140,7 @@ function NuevoPrestamo() {
                   {modo === 'mercancia' && nombreProducto.trim() && (
                     <Row label="Producto" value={nombreProducto.trim()} />
                   )}
-                  <Row label={modo === 'mercancia' ? 'Valor del articulo' : 'Monto prestado'} value={formatMoney(Number(monto || 0))} />
+                  <Row label={modo === 'mercancia' ? 'Valor del artículo' : 'Monto prestado'} value={formatMoney(Number(monto || 0))} />
                   {modo === 'mercancia' && Number(precioVenta) > 0 && (
                     <Row label="Precio de venta" value={formatMoney(Number(precioVenta))} valueColor="var(--color-accent)" />
                   )}
@@ -1159,7 +1159,7 @@ function NuevoPrestamo() {
                     value={`${formatMoney(ganancia)} (${pctGanancia}%)`}
                     valueColor="var(--color-success)"
                   />
-                  <Row label={modo === 'mercancia' ? 'Tipo' : 'Modo de interes'} value={modo === 'mercancia' ? 'Mercancia' : ({ fijo: 'Fijo (clasico)', unico: 'Interes unico', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Cuota decreciente' }[modoInteres] || 'Fijo (clasico)')} />
+                  <Row label={modo === 'mercancia' ? 'Tipo' : 'Modo de interés'} value={modo === 'mercancia' ? 'Mercancia' : ({ fijo: 'Fijo (clasico)', unico: 'Interés unico', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Cuota decreciente' }[modoInteres] || 'Fijo (clasico)')} />
                   {diasSinCobroCliente.length > 0 && (
                     <Row
                       label="Días sin cobro"

@@ -10,14 +10,14 @@ function generarTip(data) {
 
   // Tip de mora alta
   if (mora?.porcentajeMora > 15) {
-    return `Tu mora esta en ${mora.porcentajeMora.toFixed(1)}% — revisa los clientes con mas dias de atraso para priorizar cobro.`
+    return `Tu mora esta en ${mora.porcentajeMora.toFixed(1)}% — revisa los clientes con mas días de atraso para priorizar cobro.`
   }
 
   // Tip de recaudo vs meta
   if (cobros?.hoy > 0 && prestamos?.cuotaDiariaTotal > 0) {
     const pct = Math.round((cobros.hoy / prestamos.cuotaDiariaTotal) * 100)
     if (pct >= 100) {
-      return `Excelente dia: ya alcanzaste el ${pct}% de tu meta diaria. ${cobros.cantidadHoy} pagos registrados.`
+      return `Excelente día: ya alcanzaste el ${pct}% de tu meta diaria. ${cobros.cantidadHoy} pagos registrados.`
     }
     if (pct < 50 && new Date().getHours() > 14) {
       return `Llevas ${pct}% de tu meta diaria — quedan ${prestamos.cuotaDiariaTotal - cobros.hoy > 0 ? `$${Math.round(prestamos.cuotaDiariaTotal - cobros.hoy).toLocaleString('es-CO')}` : ''} por cobrar hoy.`

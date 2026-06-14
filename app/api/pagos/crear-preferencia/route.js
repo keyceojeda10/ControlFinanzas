@@ -25,7 +25,7 @@ export async function POST(req) {
 
   const country = org?.country ?? 'co'
   if (!hasOnlinePayment(country)) {
-    return NextResponse.json({ error: 'Pago en linea no disponible para tu pais. Contacta soporte.' }, { status: 400 })
+    return NextResponse.json({ error: 'Pago en línea no disponible para tu país. Contacta soporte.' }, { status: 400 })
   }
 
   const descuentoOrg       = org?.descuento ?? 0

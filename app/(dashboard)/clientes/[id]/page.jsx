@@ -488,7 +488,7 @@ export default function ClienteDetallePage({ params }) {
               // GPS aqui mismo, en campo. Sin tener que entrar a "Editar".
               label: fijandoGPS
                 ? 'Capturando GPS...'
-                : (cliente.latitud != null && cliente.longitud != null ? 'Actualizar ubicacion' : 'Fijar ubicacion (GPS)'),
+                : (cliente.latitud != null && cliente.longitud != null ? 'Actualizar ubicación' : 'Fijar ubicación (GPS)'),
               color: '#14b8a6',
               icon: (
                 <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">

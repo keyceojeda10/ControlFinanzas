@@ -61,7 +61,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
   })
 
   const PASOS = [
-    { label: 'Datos basicos' },
+    { label: 'Datos básicos' },
     { label: 'Ubicacion' },
     { label: 'Organizacion' },
   ]
@@ -140,13 +140,13 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
     const errs = {}
     if (idx === 0) {
       if (!form.nombre.trim()) errs.nombre = 'El nombre es requerido'
-      if (!form.cedula.trim()) errs.cedula = 'La cedula es requerida'
+      if (!form.cedula.trim()) errs.cedula = 'La cédula es requerida'
       else if (!validateDocument(form.cedula.trim())) {
-        errs.cedula = `${documentConfig.label} no valido (ej: ${documentConfig.placeholder})`
+        errs.cedula = `${documentConfig.label} no válido (ej: ${documentConfig.placeholder})`
       }
-      if (!form.telefono.trim()) errs.telefono = 'El telefono es requerido'
+      if (!form.telefono.trim()) errs.telefono = 'El teléfono es requerido'
       else if (!validatePhone(form.telefono.replace(/\s/g, ''))) {
-        errs.telefono = `Ingresa un ${phoneConfig.label.toLowerCase()} valido (ej: ${phoneConfig.placeholder})`
+        errs.telefono = `Ingresa un ${phoneConfig.label.toLowerCase()} válido (ej: ${phoneConfig.placeholder})`
       }
     }
     return errs
@@ -196,7 +196,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
     if (!esEdicion && typeof navigator !== 'undefined' && !navigator.onLine) {
       try {
         await guardarClientePendiente(payload)
-        try { sessionStorage.setItem('cf-toast', 'Cliente guardado. Se sincronizara al volver online.') } catch {}
+        try { sessionStorage.setItem('cf-toast', 'Cliente guardado. Se sincronizará al volver online.') } catch {}
         router.push('/clientes')
         return
       } catch {
@@ -231,7 +231,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
 
       if (res.status === 503 && !esEdicion && !navigator.onLine) {
         await guardarClientePendiente(payload)
-        try { sessionStorage.setItem('cf-toast', 'Cliente guardado. Se sincronizara al volver online.') } catch {}
+        try { sessionStorage.setItem('cf-toast', 'Cliente guardado. Se sincronizará al volver online.') } catch {}
         router.push('/clientes')
         return
       }
@@ -272,7 +272,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
       if (!esEdicion && !navigator.onLine) {
         try {
           await guardarClientePendiente(payload)
-          try { sessionStorage.setItem('cf-toast', 'Cliente guardado. Se sincronizara al volver online.') } catch {}
+          try { sessionStorage.setItem('cf-toast', 'Cliente guardado. Se sincronizará al volver online.') } catch {}
           router.push('/clientes')
           return
         } catch {}
