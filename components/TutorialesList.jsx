@@ -221,7 +221,7 @@ export default function TutorialesList({ showCopyButton = false }) {
           type="search"
           value={search}
           onChange={(e) => { setSearch(e.target.value); setActiveCategory(null) }}
-          placeholder="Buscar tutorial... (ej: prestamo, pago, ruta, offline)"
+          placeholder="Buscar tutorial... (ej: préstamo, pago, ruta, offline)"
           className="w-full h-10 pl-10 pr-4 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[var(--color-text-primary)] placeholder-[#555555] focus:outline-none focus:border-[var(--color-accent)] transition-colors"
         />
       </div>

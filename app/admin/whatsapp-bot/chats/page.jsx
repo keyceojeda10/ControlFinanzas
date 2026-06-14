@@ -75,7 +75,7 @@ export default function ChatsPage() {
             <input
               value={q}
               onChange={e => setQ(e.target.value)}
-              placeholder="Buscar nombre o telefono"
+              placeholder="Buscar nombre o teléfono"
               className="w-full px-3 py-2 rounded-[8px] bg-[rgba(255,255,255,0.04)] text-sm text-white placeholder:text-[var(--color-text-muted)] outline-none"
             />
           </div>
@@ -319,7 +319,7 @@ function ChatPanel({ lead, onBack, onUpdate }) {
       {/* Mensajes */}
       <div ref={chatRef} onScroll={handleChatScroll} className="flex-1 overflow-y-auto px-3 py-3 space-y-2 bg-[rgba(0,0,0,0.15)]">
         {mensajes.map(m => <Burbuja key={m.id} m={m} leadId={lead.id} />)}
-        {mensajes.length === 0 && <p className="text-center text-sm text-[var(--color-text-muted)] mt-6">Sin mensajes aun</p>}
+        {mensajes.length === 0 && <p className="text-center text-sm text-[var(--color-text-muted)] mt-6">Sin mensajes aún</p>}
       </div>
 
       {/* Aviso ventana cerrada */}

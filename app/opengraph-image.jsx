@@ -118,7 +118,7 @@ export default async function Image() {
           >
             <span>Gestiona tu cartera</span>
             <span style={{ display: 'flex', flexWrap: 'wrap' }}>
-              <span>de prestamos</span>
+              <span>de préstamos</span>
               <span style={{ width: 14, display: 'flex' }} />
               <span style={{ color: '#f5c518' }}>en tiempo real</span>
             </span>
@@ -248,7 +248,7 @@ export default async function Image() {
                   Clientes activos
                 </span>
                 <span style={{ fontSize: 22, fontWeight: 700, color: '#ffffff', letterSpacing: '-0.02em' }}>
-                  96% al dia
+                  96% al día
                 </span>
               </div>
             </div>

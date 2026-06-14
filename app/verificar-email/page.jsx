@@ -71,7 +71,7 @@ function VerificarEmailContent() {
         <p className="text-sm text-[var(--color-text-muted)] mb-6">Tu cuenta esta activa. Ya puedes ingresar.</p>
         <Link href="/login"
           className="inline-flex items-center justify-center h-11 px-8 rounded-[12px] bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-text-primary)] font-semibold text-sm transition-all">
-          Iniciar sesion
+          Iniciar sesión
         </Link>
       </div>
     )
@@ -117,7 +117,7 @@ function VerificarEmailContent() {
       <h1 className="text-xl font-bold text-[var(--color-text-primary)] mb-2">Verifica tu correo</h1>
       <p className="text-sm text-[var(--color-text-muted)] mb-5">
         {email
-          ? <>Ingresa el codigo que enviamos a <span className="text-[var(--color-text-primary)] font-semibold">{email}</span></>
+          ? <>Ingresa el código que enviamos a <span className="text-[var(--color-text-primary)] font-semibold">{email}</span></>
           : 'Ingresa tu email y el codigo de verificacion'}
       </p>
 
@@ -146,7 +146,7 @@ function VerificarEmailContent() {
         value={codigo}
         onChange={(e) => setCodigo(e.target.value.replace(/\D/g, '').slice(0, 6))}
         onKeyDown={(e) => e.key === 'Enter' && handleVerificar()}
-        placeholder="Codigo de 6 digitos"
+        placeholder="Código de 6 dígitos"
         className="w-full h-11 px-4 rounded-[12px] text-sm text-center font-mono font-bold tracking-[0.3em] mb-4 outline-none"
         style={{ background: 'var(--color-bg-hover)', border: `1px solid ${codigo.length === 6 ? 'var(--color-accent)' : 'var(--color-border)'}`, color: 'var(--color-text-primary)' }}
       />
@@ -168,12 +168,12 @@ function VerificarEmailContent() {
           </button>
         )}
         <Link href="/login" className="text-sm hover:underline" style={{ color: 'var(--color-text-muted)' }}>
-          Ir a iniciar sesion
+          Ir a iniciar sesión
         </Link>
       </div>
 
       <p className="text-[11px] mt-5 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-        Revisa tu bandeja de entrada y la carpeta de spam. El codigo expira en 30 minutos.
+        Revisa tu bandeja de entrada y la carpeta de spam. El código expira en 30 minutos.
       </p>
     </div>
   )

@@ -450,7 +450,7 @@ export default function RutasPage() {
             <p className="text-xs leading-snug" style={{ color: 'var(--color-text-primary)' }}>
               Tienes <strong>{recom.totalSinRuta}</strong> cliente{recom.totalSinRuta === 1 ? '' : 's'} sin ruta asignada.
               {recom.gruposSugeridos?.length > 0 && (
-                <> Detectamos {recom.gruposSugeridos.length} grupo{recom.gruposSugeridos.length === 1 ? '' : 's'} por direccion.</>
+                <> Detectamos {recom.gruposSugeridos.length} grupo{recom.gruposSugeridos.length === 1 ? '' : 's'} por dirección.</>
               )}
             </p>
           </div>

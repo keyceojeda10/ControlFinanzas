@@ -323,7 +323,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
             {esEdicion ? 'Datos del cliente' : '¿Quien es tu cliente?'}
           </h2>
           <p className="text-sm mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
-            Nombre, documento y telefono. Lo minimo para registrarlo.
+            Nombre, documento y teléfono. Lo mínimo para registrarlo.
           </p>
 
           {/* Foto */}
@@ -425,12 +425,12 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
             ¿Donde lo ubicamos?
           </h2>
           <p className="text-sm mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
-            Direccion y referencias. Sirve para visitarlo y enrutarlo.
+            Dirección y referencias. Sirve para visitarlo y enrutarlo.
           </p>
 
           <div className="mt-7 space-y-5">
             <Input
-              label="Direccion"
+              label="Dirección"
               placeholder="Calle, barrio, ciudad..."
               value={form.direccion}
               onChange={set('direccion')}
@@ -467,7 +467,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
             ¿Lo asignamos a una ruta?
           </h2>
           <p className="text-sm mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
-            Esto es opcional. Si tienes rutas o grupos definidos, asignalo aqui para que aparezca en el listado correcto.
+            Esto es opcional. Si tienes rutas o grupos definidos, asignalo aquí para que aparezca en el listado correcto.
           </p>
 
           <div className="mt-7 space-y-5">
@@ -490,10 +490,10 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
 
             <div>
               <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                Dias sin cobro (opcional)
+                Días sin cobro (opcional)
               </label>
               <p className="text-[11px] leading-snug mt-1 mb-2" style={{ color: 'var(--color-text-muted)' }}>
-                Este cliente no sera cobrado en los dias que selecciones. Si no defines nada, hereda de la ruta o la organizacion.
+                Este cliente no será cobrado en los días que selecciones. Si no defines nada, hereda de la ruta o la organizacion.
               </p>
               <DiasSinCobroSelector value={diasSinCobro} onChange={setDiasSinCobro} compact />
             </div>
@@ -545,7 +545,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
               disabled={loading}
               className="flex-1"
             >
-              Atras
+              Atrás
             </Button>
           )}
           {paso < PASOS.length - 1 ? (

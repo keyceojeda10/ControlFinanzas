@@ -645,7 +645,7 @@ export default function ClienteDetallePage({ params }) {
               </div>
               <h3 className="text-base font-semibold text-[var(--color-text-primary)]">Eliminar cliente</h3>
               <p className="text-sm text-[var(--color-text-muted)] text-center">
-                Vas a eliminar a <span className="font-medium text-[var(--color-text-primary)]">{cliente.nombre}</span>. Esta accion no se puede deshacer.
+                Vas a eliminar a <span className="font-medium text-[var(--color-text-primary)]">{cliente.nombre}</span>. Esta acción no se puede deshacer.
               </p>
             </div>
             <div className="flex gap-2">
@@ -772,7 +772,7 @@ function DeleteClienteModal({ cliente, prestamos, onClose, onDeletePrestamo, onT
             </button>
           </div>
           <p className="text-xs text-[var(--color-danger)]">
-            {cliente.nombre} tiene {prestamos.length} prestamo{prestamos.length > 1 ? 's' : ''}.
+            {cliente.nombre} tiene {prestamos.length} préstamo{prestamos.length > 1 ? 's' : ''}.
             Debes eliminarlos o trasladarlos antes de eliminar el cliente.
           </p>
         </div>
@@ -846,7 +846,7 @@ function DeleteClienteModal({ cliente, prestamos, onClose, onDeletePrestamo, onT
                       disabled={loading}
                       className="flex-1 py-2 rounded-[8px] bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-xs font-medium hover:bg-[rgba(239,68,68,0.15)] transition-colors"
                     >
-                      Eliminar prestamo
+                      Eliminar préstamo
                     </button>
                   </div>
                 </div>

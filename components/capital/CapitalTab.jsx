@@ -637,7 +637,7 @@ export default function CapitalTab() {
               )}
               {modalTipo === 'ajuste' && (
                 <div>
-                  <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Direccion del ajuste</label>
+                  <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Dirección del ajuste</label>
                   <div className="grid grid-cols-2 gap-2">
                     {['ingreso', 'egreso'].map(dir => (
                       <button key={dir} type="button" onClick={() => setModalDireccion(dir)}

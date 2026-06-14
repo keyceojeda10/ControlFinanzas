@@ -119,7 +119,7 @@ export default function ClienteCard({ cliente, actions }) {
             </div>
             <div className="text-right">
               <p className="text-[10px] text-[var(--color-text-muted)]">
-                {cliente.prestamosActivos} prestamo{cliente.prestamosActivos > 1 ? 's' : ''}
+                {cliente.prestamosActivos} préstamo{cliente.prestamosActivos > 1 ? 's' : ''}
               </p>
               {cliente.proximoCobroLabel && (
                 <p

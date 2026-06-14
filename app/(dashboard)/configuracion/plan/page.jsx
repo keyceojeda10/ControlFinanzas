@@ -259,10 +259,10 @@ function PlanPageInner() {
 
             <div className="flex items-center justify-between">
               <span className="text-[12px] font-mono-display font-semibold" style={{ color: urgente ? 'var(--color-warning)' : 'var(--color-text-primary)' }}>
-                {dias} dias restantes
+                {dias} días restantes
               </span>
               <span className="text-[11px] font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
-                de {totalDias} dias
+                de {totalDias} días
               </span>
             </div>
           </div>

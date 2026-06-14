@@ -272,7 +272,7 @@ export default function ModalSugerenciasRutas({ open, onClose, onSuccess }) {
 
           {nadaQueMostrar && (
             <p className="text-sm text-center py-8" style={{ color: 'var(--color-text-muted)' }}>
-              Todos los clientes con direccion parecida ya estan agrupados. Buen trabajo.
+              Todos los clientes con dirección parecida ya están agrupados. Buen trabajo.
             </p>
           )}
         </div>

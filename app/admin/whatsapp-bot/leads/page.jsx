@@ -95,7 +95,7 @@ export default function WhatsAppBotLeads() {
       {/* Busqueda */}
       <input
         type="text"
-        placeholder="Buscar por nombre o telefono..."
+        placeholder="Buscar por nombre o teléfono..."
         value={busqueda}
         onChange={e => { setBusqueda(e.target.value); setPagina(1) }}
         className="w-full px-3 py-2 rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] text-sm text-[white] placeholder-[#555] focus:outline-none focus:border-[#f5c518]"

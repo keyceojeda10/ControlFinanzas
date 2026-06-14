@@ -629,7 +629,7 @@ function NuevoPrestamo() {
 
             {!buscando && !clienteSeleccionado && recientes.length === 0 && (
               <p className="text-sm text-center py-8 mt-3" style={{ color: 'var(--color-text-muted)' }}>
-                No tienes clientes aun. Crea uno antes de continuar.
+                No tienes clientes aún. Crea uno antes de continuar.
               </p>
             )}
           </section>
@@ -641,7 +641,7 @@ function NuevoPrestamo() {
         <section className="mt-8 space-y-7">
           <div>
             <h2 className="text-[22px] font-bold leading-tight" style={{ color: 'var(--color-text-primary)' }}>
-              Plan del prestamo
+              Plan del préstamo
             </h2>
             <p className="text-sm mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
               Cliente: <span className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>{clienteNombre || 'sin nombre'}</span>
@@ -674,7 +674,7 @@ function NuevoPrestamo() {
                   : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }
                 }
               >
-                Prestamo
+                Préstamo
               </button>
               <button
                 type="button"
@@ -758,7 +758,7 @@ function NuevoPrestamo() {
             ) : (
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                  Numero de cuotas
+                  Número de cuotas
                 </label>
                 <Input
                   type="number"
@@ -868,7 +868,7 @@ function NuevoPrestamo() {
                   <MoneyInput value={cuotaManual} onChange={(e) => setCuotaManual(e.target.value)} placeholder="Ej: 60.000" />
                 </div>
                 <p className="text-[10px] mt-1 leading-snug" style={{ color: 'var(--color-text-muted)' }}>
-                  Tu defines la cuota. El total = cuota x numero de cobros.
+                  Tu defines la cuota. El total = cuota x número de cobros.
                 </p>
               </div>
             )}
@@ -951,14 +951,14 @@ function NuevoPrestamo() {
             {frecuencia === 'mensual' && (
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                  Dia del mes para cobro (opcional)
+                  Día del mes para cobro (opcional)
                 </label>
                 <Input
                   type="number"
                   inputMode="numeric"
                   value={diaCobroMes}
                   onChange={(e) => setDiaCobroMes(e.target.value)}
-                  placeholder="Auto (segun fecha de inicio)"
+                  placeholder="Auto (según fecha de inicio)"
                 />
               </div>
             )}
@@ -969,10 +969,10 @@ function NuevoPrestamo() {
             {clienteId && (
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                  Dias sin cobro (opcional)
+                  Días sin cobro (opcional)
                 </label>
                 <p className="text-[10px] mt-0.5 mb-2" style={{ color: 'var(--color-text-muted)' }}>
-                  Marca los dias en que NO se cobra. Se guarda en la ficha del cliente.
+                  Marca los días en que NO se cobra. Se guarda en la ficha del cliente.
                 </p>
                 <DiasSinCobroSelector
                   value={diasSinCobroCliente}
@@ -1008,7 +1008,7 @@ function NuevoPrestamo() {
             >
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Cobrar seguro</p>
-                <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Suma un cargo fijo al prestamo</p>
+                <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Suma un cargo fijo al préstamo</p>
               </div>
               <input
                 type="checkbox"
@@ -1120,7 +1120,7 @@ function NuevoPrestamo() {
                 }}
               >
                 <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--color-success)' }}>
-                  Resumen del prestamo
+                  Resumen del préstamo
                 </p>
 
                 {/* Highlights grandes: cuota y total */}
@@ -1162,7 +1162,7 @@ function NuevoPrestamo() {
                   <Row label={modo === 'mercancia' ? 'Tipo' : 'Modo de interes'} value={modo === 'mercancia' ? 'Mercancia' : ({ fijo: 'Fijo (clasico)', unico: 'Interes unico', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Cuota decreciente' }[modoInteres] || 'Fijo (clasico)')} />
                   {diasSinCobroCliente.length > 0 && (
                     <Row
-                      label="Dias sin cobro"
+                      label="Días sin cobro"
                       value={diasSinCobroCliente
                         .sort((a, b) => a - b)
                         .map(n => DIAS_FULL_SINGULAR[n].charAt(0).toUpperCase() + DIAS_FULL_SINGULAR[n].slice(1))
@@ -1274,7 +1274,7 @@ function NuevoPrestamo() {
             </Button>
           ) : (
             <Button type="button" variant="secondary" onClick={irAlPasoAnterior} disabled={loading} className="flex-1">
-              Atras
+              Atrás
             </Button>
           )}
           {paso < PASOS.length - 1 ? (
@@ -1294,7 +1294,7 @@ function NuevoPrestamo() {
               disabled={!puedeAvanzarPaso()}
               className="flex-[2]"
             >
-              Crear prestamo
+              Crear préstamo
             </Button>
           )}
         </div>
@@ -1306,10 +1306,10 @@ function NuevoPrestamo() {
           <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] w-full max-w-md p-5">
             <h3 className="text-base font-semibold text-[var(--color-text-primary)] mb-1">Capital insuficiente</h3>
             <p className="text-sm text-[var(--color-text-primary)] mb-3">
-              Tu saldo actual de capital es <span className="font-mono-display text-[var(--color-accent)]">{formatMoney(modalInyeccion.saldoActual)}</span>. Te faltan <span className="font-mono-display text-[var(--color-danger)]">{formatMoney(modalInyeccion.faltante)}</span> para este prestamo.
+              Tu saldo actual de capital es <span className="font-mono-display text-[var(--color-accent)]">{formatMoney(modalInyeccion.saldoActual)}</span>. Te faltan <span className="font-mono-display text-[var(--color-danger)]">{formatMoney(modalInyeccion.faltante)}</span> para este préstamo.
             </p>
             <p className="text-xs text-[var(--color-text-muted)] mb-4">
-              Puedes inyectar ese dinero ahora (por ejemplo, de tus ahorros o de un socio) y el sistema crea el prestamo. La inyeccion queda registrada en tus movimientos de capital.
+              Puedes inyectar ese dinero ahora (por ejemplo, de tus ahorros o de un socio) y el sistema crea el préstamo. La inyeccion queda registrada en tus movimientos de capital.
             </p>
 
             <div className="space-y-3">

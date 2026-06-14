@@ -67,7 +67,7 @@ export default function PasoConfirmar({ datosImportar, onVolver, onReiniciar }) 
             <p className="text-xl font-bold text-[var(--color-success)]">{resultado.clientesCreados}</p>
           </div>
           <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[12px] px-3 py-2.5 text-center">
-            <p className="text-[10px] text-[var(--color-text-muted)]">Prestamos creados</p>
+            <p className="text-[10px] text-[var(--color-text-muted)]">Préstamos creados</p>
             <p className="text-xl font-bold text-[var(--color-accent)]">{resultado.prestamosCreados}</p>
           </div>
           {resultado.pagosRegistrados > 0 && (
@@ -125,7 +125,7 @@ export default function PasoConfirmar({ datosImportar, onVolver, onReiniciar }) 
         <h2 className="text-lg font-bold text-[var(--color-text-primary)] mb-1">Confirmar importacion</h2>
         <p className="text-sm text-[var(--color-text-muted)]">
           Se importaran <span className="text-[var(--color-accent)] font-semibold">{filas.length}</span> filas.
-          Esta accion no se puede deshacer.
+          Esta acción no se puede deshacer.
         </p>
       </div>
 

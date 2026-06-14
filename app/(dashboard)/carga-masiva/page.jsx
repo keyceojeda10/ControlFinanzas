@@ -100,7 +100,7 @@ function CargaMasivaPageInner() {
         </button>
         <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Importar clientes</h1>
         <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
-          Carga clientes y prestamos de forma masiva
+          Carga clientes y préstamos de forma masiva
         </p>
       </div>
 

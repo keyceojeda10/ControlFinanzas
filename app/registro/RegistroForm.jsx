@@ -291,7 +291,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
       setError('Todos los campos son obligatorios'); return
     }
     if (requiereWhatsApp && !form.telefono.trim()) {
-      setError('Ingresa tu numero de WhatsApp'); return
+      setError('Ingresa tu número de WhatsApp'); return
     }
 
     if (requiereWhatsApp) {
@@ -305,8 +305,8 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
       setError('Los correos electronicos no coinciden'); return
     }
     if (!form.terminosAceptados) { setError('Debes aceptar los terminos y condiciones'); return }
-    if (form.password.length < 8) { setError('La contrasena debe tener al menos 8 caracteres'); return }
-    if (form.password !== form.confirmar) { setError('Las contrasenas no coinciden'); return }
+    if (form.password.length < 8) { setError('La contraseña debe tener al menos 8 caracteres'); return }
+    if (form.password !== form.confirmar) { setError('Las contraseñas no coinciden'); return }
 
     const telefonoLimpio = form.telefono.replace(/\D/g, '')
 
@@ -460,7 +460,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
             Crea tu <em style={{ color: '#f5c518', fontStyle: 'italic' }}>cuenta</em>
           </h1>
           <p className="text-[15px] mb-6" style={{ color: t.textSecondary }}>
-            14 dias gratis · Sin tarjeta de credito
+            14 días gratis · Sin tarjeta de crédito
           </p>
 
           {/* Selector de pais con bandera */}
@@ -589,7 +589,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                 <div>
                   <p className="text-[13px] font-bold" style={{ color: '#f5c518' }}>Plan {infoPlan?.nombre}</p>
                   <p className="text-[12px]" style={{ color: t.textSecondary }}>
-                    14 dias gratis · luego {formatMoney(getPrecioPlan(infoPlan?.key, country), country)}/mes
+                    14 días gratis · luego {formatMoney(getPrecioPlan(infoPlan?.key, country), country)}/mes
                   </p>
                 </div>
                 <button type="button" onClick={() => setStep(1)}
@@ -622,7 +622,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                   label="Nombre del negocio"
                   value={form.nombreOrganizacion}
                   onChange={set('nombreOrganizacion')}
-                  placeholder="Ej: Prestamos Garcia"
+                  placeholder="Ej: Préstamos Garcia"
                   icon={
                     <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
@@ -646,7 +646,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                 {verificarPor === 'whatsapp' && (
                   <div>
                     <AuthInput
-                      label="Numero de WhatsApp"
+                      label="Número de WhatsApp"
                       type="tel"
                       inputMode="numeric"
                       value={form.telefono}
@@ -661,7 +661,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                       }
                     />
                     <p className="text-[11px] mt-1 px-0.5" style={{ color: t.textMuted }}>
-                      Recibes el codigo de verificacion aqui
+                      Recibes el código de verificacion aquí
                     </p>
                   </div>
                 )}
@@ -729,7 +729,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                   type="password"
                   value={form.password}
                   onChange={set('password')}
-                  placeholder="Minimo 8 caracteres"
+                  placeholder="Mínimo 8 caracteres"
                   autoComplete="new-password"
                   showPasswordToggle
                   icon={
@@ -781,7 +781,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                     className="h-12 px-4 rounded-[12px] text-[13px] font-semibold transition-colors shrink-0"
                     style={{ background: t.bgCardHover, border: `1.5px solid ${t.border}`, color: t.textSecondary }}
                   >
-                    Atras
+                    Atrás
                   </button>
                   <div className="flex-1">
                     <AuthButton loading={loading} loadingLabel="Creando cuenta...">
@@ -817,7 +817,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                 {verificarPor === 'whatsapp' ? 'Revisa tu WhatsApp' : 'Verifica tu correo'}
               </h2>
               <p className="text-[14px] mb-1" style={{ color: t.textSecondary }}>
-                Enviamos un codigo de 6 digitos a
+                Enviamos un código de 6 dígitos a
               </p>
               <p className="text-[16px] font-bold mb-5" style={{ color: accentColor }}>
                 {verificarPor === 'whatsapp'
@@ -935,7 +935,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
             {step !== 3 && (
               <>Ya tienes cuenta?{' '}
               <Link href="/login" className="font-semibold hover:underline" style={{ color: '#f5c518' }}>
-                Inicia sesion
+                Inicia sesión
               </Link></>
             )}
           </p>
@@ -945,12 +945,12 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
               <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
               </svg>
-              Conexion cifrada SSL
+              Conexión cifrada SSL
             </span>
             <span>·</span>
-            <span>Tus datos estan seguros</span>
+            <span>Tus datos están seguros</span>
             <span>·</span>
-            <span>Soporte en espanol</span>
+            <span>Soporte en español</span>
           </div>
         </div>
       </div>

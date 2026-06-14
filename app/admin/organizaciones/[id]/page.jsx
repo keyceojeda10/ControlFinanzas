@@ -526,11 +526,11 @@ export default function OrgDetallePage() {
                   <p className="text-xs text-[var(--color-text-muted)] truncate mt-0.5">{u.email}</p>
                   {u.lastLoginAt && (
                     <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
-                      Ultimo login: {new Date(u.lastLoginAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      Último login: {new Date(u.lastLoginAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </p>
                   )}
                   {!u.lastLoginAt && (
-                    <p className="text-[10px] text-[#555] mt-1">Nunca ha iniciado sesion</p>
+                    <p className="text-[10px] text-[#555] mt-1">Nunca ha iniciado sesión</p>
                   )}
                 </div>
                 <Badge variant={u.rol === 'owner' ? 'blue' : 'gray'}>
@@ -575,7 +575,7 @@ export default function OrgDetallePage() {
                     if (nueva == null) return
                     const clean = nueva.trim()
                     if (clean.length < 6) {
-                      alert('La contrasena debe tener al menos 6 caracteres')
+                      alert('La contraseña debe tener al menos 6 caracteres')
                       return
                     }
                     if (!confirm(`¿Restablecer la contrasena de ${u.nombre}?`)) return

@@ -1177,7 +1177,7 @@ export default function RutaDetallePage({ params }) {
                     {sinMeta ? (
                       <div>
                         <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-secondary)' }}>
-                          Meta del dia
+                          Meta del día
                         </p>
                         <p className="font-mono-display font-bold leading-none" style={{ color: 'var(--color-text-muted)', fontSize: 'clamp(24px, 7vw, 34px)' }}>
                           Sin cobros hoy
@@ -1189,7 +1189,7 @@ export default function RutaDetallePage({ params }) {
                     ) : metaCumplida ? (
                       <div>
                         <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--color-success)' }}>
-                          Meta del dia
+                          Meta del día
                         </p>
                         <div className="flex items-center gap-2">
                           <svg className="w-7 h-7 shrink-0" fill="none" stroke="var(--color-success)" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -1967,7 +1967,7 @@ export default function RutaDetallePage({ params }) {
                 <div className="rounded-[12px] p-3" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-                      Resumen del dia
+                      Resumen del día
                     </p>
                     <p className="text-[11px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>
                       {pctCobradoHoy}%
@@ -2356,7 +2356,7 @@ export default function RutaDetallePage({ params }) {
                       <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
                     </svg>
                     <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-                      Proximos y al dia
+                      Próximos y al día
                     </span>
                     <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)' }}>
                       {proximosYAlDia.length}
@@ -2636,7 +2636,7 @@ export default function RutaDetallePage({ params }) {
         }
       >
         <p className="text-sm text-[var(--color-text-muted)]">
-          Se reordenaran los clientes segun su ubicacion GPS para crear la ruta mas corta. Esto puede cambiar el orden que configuraste manualmente.
+          Se reordenarán los clientes según su ubicacion GPS para crear la ruta mas corta. Esto puede cambiar el orden que configuraste manualmente.
         </p>
       </Modal>
 
@@ -2658,7 +2658,7 @@ export default function RutaDetallePage({ params }) {
         }
       >
         <p className="text-sm text-[var(--color-text-muted)]">
-          <span className="text-[var(--color-text-primary)] font-medium">{confirmQuitar?.nombre}</span> sera removido de esta ruta. Podras reasignarlo despues.
+          <span className="text-[var(--color-text-primary)] font-medium">{confirmQuitar?.nombre}</span> será removido de esta ruta. Podrás reasignarlo después.
         </p>
       </Modal>
 
@@ -2755,7 +2755,7 @@ export default function RutaDetallePage({ params }) {
               <div className="rounded-[12px] border border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.08)] p-3 text-center">
                 <p className="text-xs text-[var(--color-warning)] font-semibold">El cliente tiene cuotas atrasadas</p>
                 <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
-                  Ya recibio un pago hoy, pero aun debe mas cuotas.
+                  Ya recibió un pago hoy, pero aún debe mas cuotas.
                 </p>
               </div>
             )}

@@ -227,7 +227,7 @@ export default function NotificationsCenter({ size = 'md' }) {
 
           {total === 0 && (
             <div className="px-4 py-6 text-center">
-              <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Todo al dia. No hay avisos pendientes.</p>
+              <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Todo al día. No hay avisos pendientes.</p>
             </div>
           )}
 
@@ -294,7 +294,7 @@ export default function NotificationsCenter({ size = 'md' }) {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-medium" style={{ color: 'var(--color-text-primary)' }}>Instala la app</p>
-                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Accede mas rapido y usala sin internet</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Accede mas rápido y úsala sin internet</p>
                   <div className="flex gap-2 mt-2">
                     <button onClick={dismissInstall} className="text-[11px] px-2.5 py-1 rounded-full transition-colors" style={{ color: 'var(--color-text-muted)', background: 'var(--color-bg-hover)' }}>
                       Ahora no

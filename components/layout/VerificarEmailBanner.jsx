@@ -81,7 +81,7 @@ export default function VerificarEmailBanner() {
           <div>
             <p className="text-sm text-[var(--color-accent)] font-semibold">Verifica tu correo para asegurar tu cuenta</p>
             <p className="text-xs text-[var(--color-text-muted)] mt-0.5 leading-relaxed">
-              Ingresa el codigo de 6 digitos que enviamos a <span className="text-[var(--color-text-primary)] font-medium">{email}</span>
+              Ingresa el código de 6 dígitos que enviamos a <span className="text-[var(--color-text-primary)] font-medium">{email}</span>
             </p>
           </div>
         </div>

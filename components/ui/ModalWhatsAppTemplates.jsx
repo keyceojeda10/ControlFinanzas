@@ -262,7 +262,7 @@ export default function ModalWhatsAppTemplates({ open, onClose, cliente, prestam
       <div className="space-y-4">
         {!tel && (
           <div className="rounded-[10px] px-3 py-2.5 text-[12px]" style={{ background: 'var(--color-warning-dim)', color: 'var(--color-warning)', border: '1px solid color-mix(in srgb, var(--color-warning) 30%, transparent)' }}>
-            Este cliente no tiene un telefono valido registrado.
+            Este cliente no tiene un teléfono válido registrado.
           </div>
         )}
 

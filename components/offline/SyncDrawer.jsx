@@ -121,7 +121,7 @@ export default function SyncDrawer({ open, onClose }) {
             sub: `Cedula ${c.payload?.cedula || ''} - ${fmtDate(c.createdAt)}`,
           })} onDiscard={(c) => descartarItem('cliente', c.tempId)} failed={false} />
 
-          <Section title="Prestamos pendientes" items={pendingDetails?.prestamos} render={(p) => ({
+          <Section title="Préstamos pendientes" items={pendingDetails?.prestamos} render={(p) => ({
             main: `Prestamo $${Number(p.payload?.montoPrestado || 0).toLocaleString('es-CO')}`,
             sub: fmtDate(p.createdAt),
           })} onDiscard={(p) => descartarItem('prestamo', p.tempId)} failed={false} />
@@ -148,7 +148,7 @@ export default function SyncDrawer({ open, onClose }) {
                 sub: c.errorMsg || 'Error',
               })} onDiscard={(c) => descartarItem('cliente', c.tempId)} failed={true} />
 
-              <Section title="Prestamos fallidos" items={failedDetails?.prestamos} render={(p) => ({
+              <Section title="Préstamos fallidos" items={failedDetails?.prestamos} render={(p) => ({
                 main: `Prestamo $${Number(p.payload?.montoPrestado || 0).toLocaleString('es-CO')}`,
                 sub: p.errorMsg || 'Error',
               })} onDiscard={(p) => descartarItem('prestamo', p.tempId)} failed={true} />

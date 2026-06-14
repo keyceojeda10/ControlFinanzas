@@ -150,10 +150,10 @@ export default function SuscripcionVencida() {
             </svg>
             <div>
               <p className="text-xs font-semibold mb-0.5" style={{ color: 'var(--color-success)' }}>
-                Tus datos estan seguros
+                Tus datos están seguros
               </p>
               <p className="text-[11px] leading-snug" style={{ color: 'var(--color-text-muted)' }}>
-                Clientes, prestamos y pagos quedan intactos. Al renovar todo vuelve donde lo dejaste.
+                Clientes, préstamos y pagos quedan intactos. Al renovar todo vuelve donde lo dejaste.
               </p>
             </div>
           </div>

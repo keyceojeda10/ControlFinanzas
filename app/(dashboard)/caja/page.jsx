@@ -1166,7 +1166,7 @@ export default function CajaPage() {
           <Card>
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
-                Mi cierre del dia
+                Mi cierre del día
               </p>
               {cierreOwner && !modoAjusteCierre && (
                 <Badge variant="green">Cerrado</Badge>
@@ -1219,7 +1219,7 @@ export default function CajaPage() {
               <form onSubmit={registrarCierre} className="space-y-3">
                 {!cierreOwner && (
                   <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-3">
-                    <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Recaudo del dia</p>
+                    <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Recaudo del día</p>
                     <p className="text-2xl font-bold font-mono-display text-[var(--color-text-primary)] mt-0.5">
                       {formatMoney(Math.round(recaudadoOwner))}
                     </p>

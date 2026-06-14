@@ -46,7 +46,7 @@ export default function WhatsAppBotConfig() {
     return <div className="max-w-3xl mx-auto space-y-4"><SkeletonCard /><SkeletonCard /></div>
   }
 
-  if (!config) return <p className="text-[var(--color-danger)] text-sm">Error cargando configuracion</p>
+  if (!config) return <p className="text-[var(--color-danger)] text-sm">Error cargando configuración</p>
 
   return (
     <div className="max-w-3xl mx-auto space-y-5">
@@ -56,7 +56,7 @@ export default function WhatsAppBotConfig() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
           </svg>
         </Link>
-        <h1 className="text-xl font-bold text-[white]">Configuracion del Bot</h1>
+        <h1 className="text-xl font-bold text-[white]">Configuración del Bot</h1>
       </div>
 
       {/* Bot activo toggle */}
@@ -172,7 +172,7 @@ export default function WhatsAppBotConfig() {
           className="w-full px-3 py-2 rounded-[8px] bg-[#0a0a0a] border border-[var(--color-border)] text-sm text-white placeholder-[#555] focus:outline-none"
         />
         <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
-          Numero con indicativo. Recibe alertas de leads calientes y reportes.
+          Número con indicativo. Recibe alertas de leads calientes y reportes.
         </p>
       </div>
 

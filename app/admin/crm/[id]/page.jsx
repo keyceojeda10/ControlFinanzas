@@ -497,7 +497,7 @@ export default function CRMDetailPage({ params }) {
             {/* Timeline */}
             <div className="flex-1 overflow-y-auto space-y-3 max-h-[500px] lg:max-h-[600px]">
               {(data.notas ?? []).length === 0 ? (
-                <p className="text-sm text-[var(--color-text-muted)] text-center py-8">Sin notas aun. Agrega la primera nota de seguimiento.</p>
+                <p className="text-sm text-[var(--color-text-muted)] text-center py-8">Sin notas aún. Agrega la primera nota de seguimiento.</p>
               ) : (
                 (data.notas ?? []).map((n, i) => (
                   <div key={n.id ?? i} className="flex gap-3">

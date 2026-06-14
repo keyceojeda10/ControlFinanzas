@@ -33,7 +33,7 @@ export default function CompletarTelefonoModal() {
     e.preventDefault()
     const limpio = telefono.replace(/\D/g, '')
     if (!/^3\d{9}$/.test(limpio)) {
-      setError('Ingresa un celular colombiano valido (ej: 3001234567)')
+      setError('Ingresa un celular colombiano válido (ej: 3001234567)')
       return
     }
     setLoading(true)
@@ -101,12 +101,12 @@ export default function CompletarTelefonoModal() {
         <h2 className="text-lg font-bold text-center mb-1.5"
           style={{ color: 'var(--color-text-primary)' }}
         >
-          Agrega tu numero de celular
+          Agrega tu número de celular
         </h2>
         <p className="text-sm text-center mb-5"
           style={{ color: 'var(--color-text-secondary)' }}
         >
-          Solo lo usamos para contactarte por <strong style={{ color: '#22c55e' }}>WhatsApp</strong> con avisos de pago, soporte rapido y novedades importantes de tu cuenta.
+          Solo lo usamos para contactarte por <strong style={{ color: '#22c55e' }}>WhatsApp</strong> con avisos de pago, soporte rápido y novedades importantes de tu cuenta.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-3">

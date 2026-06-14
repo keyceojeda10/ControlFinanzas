@@ -548,8 +548,8 @@ export default function Sidebar() {
               }}
               className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors shrink-0 hover:bg-[var(--color-bg-hover)]"
               style={{ color: 'var(--color-text-muted)' }}
-              title="Cerrar sesion"
-              aria-label="Cerrar sesion"
+              title="Cerrar sesión"
+              aria-label="Cerrar sesión"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}

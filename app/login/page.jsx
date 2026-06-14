@@ -121,7 +121,7 @@ function ShowcasePanel() {
           &ldquo;Pasamos de Excel a Control Finanzas y nuestra mora bajo del 14% al 5.2% en cuatro meses.&rdquo;
         </blockquote>
         <p className="text-[12px] mt-4" style={{ color: '#888' }}>
-          — Ricardo Tovar · Prestamos del Valle · 800+ clientes activos
+          — Ricardo Tovar · Préstamos del Valle · 800+ clientes activos
         </p>
       </div>
     </div>
@@ -157,7 +157,7 @@ export default function LoginPage() {
         if (msg.includes('desactivada') || msg.includes('suspendida')) {
           setError(msg)
         } else {
-          setError('Correo o contrasena incorrectos')
+          setError('Correo o contraseña incorrectos')
         }
         return
       }
@@ -171,7 +171,7 @@ export default function LoginPage() {
         router.push('/dashboard')
       }
     } catch {
-      setError('Error al iniciar sesion. Intenta de nuevo.')
+      setError('Error al iniciar sesión. Intenta de nuevo.')
     } finally {
       setLoading(false)
     }
@@ -220,7 +220,7 @@ export default function LoginPage() {
 
             <AuthInput
               id="email"
-              label="Correo o numero de WhatsApp"
+              label="Correo o número de WhatsApp"
               type="text"
               inputMode="email"
               autoComplete="username"
@@ -253,7 +253,7 @@ export default function LoginPage() {
             </div>
 
             <AuthButton loading={loading} loadingLabel="Ingresando...">
-              Iniciar sesion
+              Iniciar sesión
             </AuthButton>
           </form>
 

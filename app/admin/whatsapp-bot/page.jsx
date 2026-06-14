@@ -165,7 +165,7 @@ export default function WhatsAppBotDashboard() {
           href="/admin/whatsapp-bot/config"
           className="px-4 py-2 rounded-[10px] text-sm font-medium bg-[rgba(136,136,136,0.12)] text-[#888888] hover:bg-[rgba(136,136,136,0.2)] transition-all"
         >
-          Configuracion
+          Configuración
         </Link>
       </div>
 
@@ -218,7 +218,7 @@ export default function WhatsAppBotDashboard() {
             </Link>
           ))}
           {(!data.ultimosLeads || data.ultimosLeads.length === 0) && (
-            <p className="px-4 py-6 text-sm text-[var(--color-text-muted)] text-center">Sin leads aun</p>
+            <p className="px-4 py-6 text-sm text-[var(--color-text-muted)] text-center">Sin leads aún</p>
           )}
         </div>
       </div>

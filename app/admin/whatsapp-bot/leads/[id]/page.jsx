@@ -156,7 +156,7 @@ export default function BotLeadDetalle() {
       <div className="border border-[var(--color-border)] rounded-[12px] p-4 bg-[var(--color-bg-card)]">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
           <div>
-            <p className="text-[10px] text-[var(--color-text-muted)]">Telefono</p>
+            <p className="text-[10px] text-[var(--color-text-muted)]">Teléfono</p>
             <p className="text-white font-mono-display text-xs">{lead.telefono}</p>
           </div>
           <div>
@@ -274,7 +274,7 @@ export default function BotLeadDetalle() {
             )
           })}
           {mensajes.length === 0 && (
-            <p className="text-sm text-[var(--color-text-muted)] text-center py-6">Sin mensajes aun</p>
+            <p className="text-sm text-[var(--color-text-muted)] text-center py-6">Sin mensajes aún</p>
           )}
         </div>
       </div>
