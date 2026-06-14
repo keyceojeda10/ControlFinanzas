@@ -32,9 +32,9 @@ export default function AuthInput({
       <div className="relative">
         {icon && (
           <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
-            style={{ color: 'var(--color-text-muted)' }}
+            style={{ color: 'var(--color-text-secondary)' }}
           >
-            <span className="block w-4 h-4">{icon}</span>
+            <span className="block w-[18px] h-[18px]">{icon}</span>
           </span>
         )}
         <input

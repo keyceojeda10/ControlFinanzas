@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useEffect, useRef, useState } from 'react'
 import NotificationsCenter from '@/components/layout/NotificationsCenter'
 import Avatar from '@/components/ui/Avatar'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 import { limpiarDatosOffline } from '@/lib/offline'
 
 export default function Header() {
@@ -105,6 +106,7 @@ export default function Header() {
 
         {/* Right: action icons */}
         <div className="flex items-center gap-1">
+          <ThemeToggle size="sm" />
           <NotificationsCenter />
 
           <button
