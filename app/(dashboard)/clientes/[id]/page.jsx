@@ -559,7 +559,7 @@ export default function ClienteDetallePage({ params }) {
           </h2>
           <div className="space-y-3">
             {prestamosActivos.map((p) => (
-              <PrestamoCard key={p.id} prestamo={p} clienteId={id} cliente={cliente} />
+              <PrestamoCard key={p.id} prestamo={p} clienteId={id} cliente={cliente} orgNombre={orgNombre} />
             ))}
           </div>
         </div>
@@ -860,7 +860,7 @@ function DeleteClienteModal({ cliente, prestamos, onClose, onDeletePrestamo, onT
 }
 
 // ─── Sub-componente: tarjeta de préstamo ─────────────────────────
-function PrestamoCard({ prestamo: p, clienteId, cliente, mini = false }) {
+function PrestamoCard({ prestamo: p, clienteId, cliente, orgNombre, mini = false }) {
   const badge  = estadoPrestamoBadge[p.estado] ?? estadoPrestamoBadge.activo
   const porcentaje = p.porcentajePagado ?? 0
   const enMora = (p.diasMora ?? 0) > 0
