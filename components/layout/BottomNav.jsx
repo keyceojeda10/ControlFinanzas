@@ -49,19 +49,10 @@ const RUTAS_SIN_BOTTOMNAV = [
   '/prestamos/nuevo',
 ]
 
-// Tabs de la pill — diferenciados por rol
-// Owner: Inicio, Clientes, Prestamos, Historial, Mas
-// Cobrador: Inicio, Clientes, Prestamos, Rutas, Mas (lo que tenia antes)
-const PILL_TABS_OWNER = [
+// Tabs de la pill — ambos roles ven Inicio, Clientes, Prestamos, Rutas, Mas
+const PILL_TABS = [
   { id: 'dashboard', href: '/dashboard', icon: 'M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25', iconFill: 'M11.47 3.84a.75.75 0 011.06 0l8.69 8.69a.75.75 0 11-1.06 1.06l-.97-.97V19.5a2.25 2.25 0 01-2.25 2.25h-3a.75.75 0 01-.75-.75v-4.5a.75.75 0 00-.75-.75h-1.5a.75.75 0 00-.75.75v4.5a.75.75 0 01-.75.75h-3A2.25 2.25 0 013.75 19.5v-6.88l-.97.97a.75.75 0 01-1.06-1.06l8.69-8.69z' },
-  { id: 'clientes', href: '/clientes', icon: 'M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128H5.228A2 2 0 013 17.16V17c0-2.796 2.567-5 6-5 1.29 0 2.476.35 3.434.943M12 4.5a3 3 0 110 6 3 3 0 010-6z' },
-  { id: 'prestamos', href: '/prestamos', icon: 'M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
-  { id: 'actividad', href: '/actividad', icon: 'M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z' },
-]
-
-const PILL_TABS_COBRADOR = [
-  { id: 'dashboard', href: '/dashboard', icon: 'M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25', iconFill: 'M11.47 3.84a.75.75 0 011.06 0l8.69 8.69a.75.75 0 11-1.06 1.06l-.97-.97V19.5a2.25 2.25 0 01-2.25 2.25h-3a.75.75 0 01-.75-.75v-4.5a.75.75 0 00-.75-.75h-1.5a.75.75 0 00-.75.75v4.5a.75.75 0 01-.75.75h-3A2.25 2.25 0 013.75 19.5v-6.88l-.97.97a.75.75 0 01-1.06-1.06l8.69-8.69z' },
-  { id: 'clientes', href: '/clientes', icon: 'M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128H5.228A2 2 0 013 17.16V17c0-2.796 2.567-5 6-5 1.29 0 2.476.35 3.434.943M12 4.5a3 3 0 110 6 3 3 0 010-6z' },
+  { id: 'clientes', href: '/clientes', icon: 'M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z' },
   { id: 'prestamos', href: '/prestamos', icon: 'M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
   { id: 'rutas', href: '/rutas', icon: 'M9 6.75V15m0-8.25a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM9 15a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 0V6.75m6-1.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM15 8.25V18m0 0a1.5 1.5 0 110 3 1.5 1.5 0 010-3z' },
 ]
@@ -78,7 +69,6 @@ export default function BottomNav({ onOpenLucas }) {
 
   const moreItems = esCobrador ? MORE_ITEMS_COBRADOR : MORE_ITEMS_OWNER
   const fabItems = esCobrador ? FAB_ITEMS_COBRADOR : FAB_ITEMS_OWNER
-  const pillTabs = esCobrador ? PILL_TABS_COBRADOR : PILL_TABS_OWNER
 
   const isActive = (href) =>
     href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
@@ -254,7 +244,7 @@ export default function BottomNav({ onOpenLucas }) {
             aria-label="Navegacion principal movil"
             className="flex-1 flex items-center justify-around rounded-[22px] py-2 pointer-events-auto cf-nav-pill"
           >
-            {pillTabs.map((tab) => {
+            {PILL_TABS.map((tab) => {
               const active = isActive(tab.href)
               return (
                 <Link
@@ -309,9 +299,7 @@ export default function BottomNav({ onOpenLucas }) {
             }}
             aria-label="Acciones rapidas"
           >
-            <svg className="w-7 h-7" fill="none" stroke="var(--color-accent)" strokeWidth={2.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33" />
-            </svg>
+            <span className="text-[28px] font-black leading-none" style={{ color: 'var(--color-accent)' }}>$</span>
           </button>
         </div>
       </div>
