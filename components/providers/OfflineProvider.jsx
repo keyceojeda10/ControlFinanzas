@@ -344,23 +344,44 @@ export default function OfflineProvider({ children }) {
     }
   }, [requestAutoSync, syncPendingOnly])
 
-  // ─── MUTATION SYNC: detect POST/PUT/DELETE to /api/ and re-sync ───
+  // ─── MUTATION SYNC + TIMEOUT GLOBAL: intercepta fetch a /api/ ───
+  // 1) Timeout: en red intermitente (datos conectados pero sin internet real)
+  //    un fetch sin limite cuelga 30-120s -> pantalla de carga infinita ("limbo").
+  //    Le ponemos un AbortController con timeout: si el server no responde a
+  //    tiempo, el fetch falla rapido y la pagina cae a su cache offline.
+  // 2) Sync: tras una mutacion exitosa, dispara re-sync (comportamiento previo).
   useEffect(() => {
     const originalFetch = window.fetch
     let mutationTimeout = null
 
+    // Endpoints que legitimamente tardan mas (payload grande) -> timeout mayor.
+    const TIMEOUT_LARGO_MS = 45_000 // sync masivo
+    const TIMEOUT_NORMAL_MS = 8_000 // resto de /api/ — en limbo cae a cache en 8s
+    const esSyncMasivo = (u) => u.includes('/api/offline/sync')
+
     window.fetch = function (...args) {
-      const result = originalFetch.apply(this, args)
+      const url = typeof args[0] === 'string' ? args[0] : args[0]?.url || ''
+      const opts = args[1] || {}
+      const method = (opts.method || 'GET').toUpperCase()
+
+      // Solo nuestra API. No tocar requests externos ni los que ya traen su
+      // propio AbortSignal (lib/offline.js ya maneja sus timeouts).
+      const esApi = url.startsWith('/api/') || url.includes('/api/')
+      let result
+      if (esApi && !opts.signal) {
+        const ctrl = new AbortController()
+        const ms = esSyncMasivo(url) ? TIMEOUT_LARGO_MS : TIMEOUT_NORMAL_MS
+        const timer = setTimeout(() => ctrl.abort(), ms)
+        result = originalFetch.apply(this, [args[0], { ...opts, signal: ctrl.signal }])
+        result.finally(() => clearTimeout(timer))
+      } else {
+        result = originalFetch.apply(this, args)
+      }
 
       result.then((response) => {
-        const url = typeof args[0] === 'string' ? args[0] : args[0]?.url || ''
-        const method = (args[1]?.method || 'GET').toUpperCase()
-
-        // Only trigger sync for mutations to our API (not external, not GET)
         // Skip reorder — it saves directly and the sync could overwrite correct order
         const isReorder = url.includes('/reordenar')
         if (url.startsWith('/api/') && method !== 'GET' && response.ok && !isReorder) {
-          // Debounce: if multiple mutations happen quickly, only sync once
           if (mutationTimeout) clearTimeout(mutationTimeout)
           mutationTimeout = setTimeout(() => syncPendingThenFull({ silent: true, signalPages: false }), MUTATION_SYNC_DELAY)
         }
