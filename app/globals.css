@@ -491,17 +491,29 @@ html[data-theme="light"] .cf-header-pill {
 }
 
 /* FAB button ($ circle) */
+/* FAB de acciones rapidas.
+   - Dark: el circulo es claro (--color-text-primary) -> el icono debe ser
+     OSCURO para que se vea (antes era dorado y se perdia sobre el fondo claro).
+   - Light: el circulo es negro -> el icono dorado contrasta bien. */
 .cf-fab-button {
   background: var(--color-text-primary);
   box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 }
 .cf-fab-icon {
-  color: var(--color-accent);
+  color: var(--color-bg-base);
 }
 html[data-theme="light"] .cf-fab-button {
   background: #000;
 }
 html[data-theme="light"] .cf-fab-icon {
+  color: var(--color-accent);
+}
+/* Abierto: el overlay de fondo es dorado -> FAB negro con icono dorado para
+   buen contraste, igual en ambos temas. */
+.cf-fab-button.cf-fab-open {
+  background: #0a0a0a;
+}
+.cf-fab-button.cf-fab-open .cf-fab-icon {
   color: var(--color-accent);
 }
 

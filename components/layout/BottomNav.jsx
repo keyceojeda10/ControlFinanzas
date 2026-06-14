@@ -145,29 +145,44 @@ export default function BottomNav({ onOpenLucas }) {
 
       {/* ─── FAB fullscreen — Lemon Cash style ──────────────────── */}
       <div
-        className="lg:hidden fixed inset-0 z-50 flex flex-col transition-all duration-300"
+        className="lg:hidden fixed inset-0 z-50 flex flex-col"
         style={{
           background: 'var(--color-accent)',
           opacity: fabOpen ? 1 : 0,
           visibility: fabOpen ? 'visible' : 'hidden',
           pointerEvents: fabOpen ? 'auto' : 'none',
+          // Revela desde la esquina del FAB (abajo-derecha) con un clip circular,
+          // y un leve fundido. Se siente como si el boton se expandiera.
+          clipPath: fabOpen
+            ? 'circle(150% at calc(100% - 44px) calc(100% - 40px))'
+            : 'circle(0% at calc(100% - 44px) calc(100% - 40px))',
+          transition: 'clip-path 0.45s cubic-bezier(0.22,1,0.36,1), opacity 0.25s ease, visibility 0.45s',
         }}
       >
-        <div className="flex-1 flex flex-col justify-end px-7 pb-8">
+        {/* Contenido: opciones. El boton para abrir/cerrar es el FAB persistente
+            de abajo (no se duplica aqui), asi no "salta" de posicion. Reservamos
+            espacio inferior (pb) para que la ultima opcion no quede bajo el FAB. */}
+        <div className="flex-1 flex flex-col justify-end px-7 pb-28">
           <p
-            className="text-[15px] font-medium mb-6"
-            style={{ color: 'rgba(0,0,0,0.45)' }}
+            className="text-[15px] font-medium mb-6 transition-all duration-300"
+            style={{ color: 'rgba(0,0,0,0.45)', opacity: fabOpen ? 1 : 0, transform: fabOpen ? 'translateY(0)' : 'translateY(12px)' }}
           >
             Que quieres hacer?
           </p>
 
           <div className="space-y-1">
-            {fabItems.map((item) => (
+            {fabItems.map((item, i) => (
               <button
                 key={item.href}
                 type="button"
                 onClick={() => handleFabAction(item)}
-                className="block w-full text-left py-2 active:opacity-60 transition-opacity"
+                className="block w-full text-left py-2 active:opacity-60"
+                style={{
+                  opacity: fabOpen ? 1 : 0,
+                  transform: fabOpen ? 'translateY(0)' : 'translateY(16px)',
+                  // Stagger: cada opcion entra un pelin despues que la anterior.
+                  transition: `opacity 0.35s ease ${fabOpen ? i * 0.04 + 0.05 : 0}s, transform 0.35s cubic-bezier(0.22,1,0.36,1) ${fabOpen ? i * 0.04 + 0.05 : 0}s`,
+                }}
               >
                 <span className="text-[38px] font-extrabold leading-tight tracking-tight" style={{ color: '#000' }}>
                   {item.label}{' '}
@@ -176,21 +191,6 @@ export default function BottomNav({ onOpenLucas }) {
               </button>
             ))}
           </div>
-        </div>
-
-        {/* Close button — bottom right */}
-        <div className="px-7 pb-10 flex justify-end">
-          <button
-            type="button"
-            onClick={() => setFabOpen(false)}
-            className="w-14 h-14 rounded-full flex items-center justify-center active:scale-90 transition-transform"
-            style={{ background: '#000' }}
-            aria-label="Cerrar menú"
-          >
-            <svg className="w-7 h-7" fill="none" stroke="var(--color-accent)" strokeWidth={2.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
         </div>
       </div>
 
@@ -315,17 +315,31 @@ export default function BottomNav({ onOpenLucas }) {
             </button>
           </nav>
 
-          {/* FAB — separate circle, Lemon Cash style */}
-          <button
-            type="button"
-            onClick={() => { setFabOpen(true); setMoreOpen(false) }}
-            className="w-[56px] h-[56px] rounded-full flex items-center justify-center shrink-0 pointer-events-auto active:scale-90 transition-transform cf-fab-button"
-            aria-label="Acciones rápidas"
-          >
-            <span className="text-[28px] font-black leading-none cf-fab-icon">$</span>
-          </button>
+          {/* Espaciador: reserva el lugar del FAB en la fila (el FAB real es un
+              elemento fixed aparte, en z superior, para no saltar al abrir). */}
+          <div className="w-[56px] h-[56px] shrink-0" aria-hidden />
         </div>
       </div>
+
+      {/* ─── FAB persistente: MISMA posicion abierto y cerrado ───────
+          Vive en z superior al overlay, asi no "salta" entre + y X.
+          El icono rota suavemente de + (cerrado) a X (abierto). */}
+      <button
+        type="button"
+        onClick={() => { setFabOpen(v => !v); setMoreOpen(false) }}
+        aria-label={fabOpen ? 'Cerrar menú' : 'Acciones rápidas'}
+        aria-expanded={fabOpen}
+        className={`lg:hidden fixed right-4 z-[60] w-[56px] h-[56px] rounded-full flex items-center justify-center pointer-events-auto active:scale-90 transition-[transform,background] cf-fab-button${fabOpen ? ' cf-fab-open' : ''}`}
+        style={{ bottom: 'max(20px, env(safe-area-inset-bottom, 12px))' }}
+      >
+        <svg
+          className="w-7 h-7 cf-fab-icon"
+          fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24" aria-hidden="true"
+          style={{ transition: 'transform 0.4s cubic-bezier(0.22,1,0.36,1)', transform: fabOpen ? 'rotate(135deg)' : 'rotate(0deg)' }}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+      </button>
     </>
   )
 }
