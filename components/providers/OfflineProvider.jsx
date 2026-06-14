@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo, createContext, useContext, useCallback } from 'react'
 import SyncDrawer from '@/components/offline/SyncDrawer'
 import { iniciarAutoSync, obtenerPagosPendientes, obtenerPagosFallidos, eliminarPagoFallido, sincronizarPagos, sincronizarOrdenes, sincronizarTodo, obtenerSyncMeta, sincronizarCreaciones, obtenerClientesPendientes, obtenerPrestamosPendientes, obtenerClientesFallidos, obtenerPrestamosFallidos, obtenerMutacionesPendientes, obtenerMutacionesFallidas, obtenerMutacionesConflicto, sincronizarMutaciones, eliminarClienteFallido, eliminarPrestamoFallido, eliminarMutacion, reintentarMutacion } from '@/lib/offline'
+import { ultimoEstadoConexion, hayInternetReal, invalidarCacheConexion } from '@/lib/connectivity'
 
 const OfflineContext = createContext({ isOnline: true, pendingCount: 0, syncing: false, syncMeta: null, lastSyncedAt: 0, openSyncDrawer: () => {} })
 
@@ -211,19 +212,48 @@ export default function OfflineProvider({ children }) {
     }
   }, [refreshPending, syncPendingThenFull])
 
-  // Track online/offline + re-sync when coming back online
+  // Track online/offline REAL (no solo navigator.onLine) + re-sync al volver.
+  // Mantiene isOnline y ultimoEstadoConexion() frescos para que el badge sea
+  // honesto en limbo y el interceptor pueda cortar GETs rapido cuando no hay
+  // internet real.
   useEffect(() => {
-    setIsOnline(navigator.onLine)
-    const goOnline = () => {
-      setIsOnline(true)
-      setTimeout(() => syncPendingThenFull({ silent: false, signalPages: true }), 2000)
+    let cancelado = false
+
+    const evaluar = async ({ forzar = false, syncSiVuelve = false } = {}) => {
+      if (navigator.onLine === false) {
+        if (!cancelado) setIsOnline(false)
+        return
+      }
+      const real = await hayInternetReal({ forzar })
+      if (cancelado) return
+      setIsOnline((prev) => {
+        // Si pasamos de offline -> online real, disparar sync.
+        if (real && !prev && syncSiVuelve) {
+          setTimeout(() => syncPendingThenFull({ silent: false, signalPages: true }), 1500)
+        }
+        return real
+      })
     }
-    const goOffline = () => setIsOnline(false)
+
+    setIsOnline(navigator.onLine)
+    evaluar({ forzar: true })
+
+    const goOnline  = () => { invalidarCacheConexion(); evaluar({ forzar: true, syncSiVuelve: true }) }
+    const goOffline = () => { invalidarCacheConexion(); if (!cancelado) setIsOnline(false) }
     window.addEventListener('online',  goOnline)
     window.addEventListener('offline', goOffline)
+
+    // Ping periodico (cada 15s, pestana visible) para detectar el limbo, que no
+    // dispara ningun evento nativo. Si el internet real cambia, syncSiVuelve.
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') evaluar({ syncSiVuelve: true })
+    }, 15_000)
+
     return () => {
+      cancelado = true
       window.removeEventListener('online',  goOnline)
       window.removeEventListener('offline', goOffline)
+      clearInterval(interval)
     }
   }, [syncPendingThenFull])
 
@@ -355,8 +385,9 @@ export default function OfflineProvider({ children }) {
     let mutationTimeout = null
 
     // Endpoints que legitimamente tardan mas (payload grande) -> timeout mayor.
-    const TIMEOUT_LARGO_MS = 45_000 // sync masivo
-    const TIMEOUT_NORMAL_MS = 8_000 // resto de /api/ — en limbo cae a cache en 8s
+    const TIMEOUT_LARGO_MS  = 45_000 // sync masivo
+    const TIMEOUT_NORMAL_MS = 8_000  // /api/ GET con conexion normal/desconocida
+    const TIMEOUT_LIMBO_MS  = 1_500  // /api/ GET cuando el ping ya confirmo limbo
     const esSyncMasivo = (u) => u.includes('/api/offline/sync')
 
     window.fetch = function (...args) {
@@ -370,7 +401,14 @@ export default function OfflineProvider({ children }) {
       let result
       if (esApi && !opts.signal) {
         const ctrl = new AbortController()
-        const ms = esSyncMasivo(url) ? TIMEOUT_LARGO_MS : TIMEOUT_NORMAL_MS
+        // Si el ultimo ping confirmo que NO hay internet real (limbo) y es un
+        // GET, usamos timeout corto: la pagina cae a su cache casi al instante
+        // en vez de esperar 8s. Las mutaciones (POST/PUT/DELETE) NUNCA se
+        // acortan — tienen su propia logica offline (se encolan).
+        const enLimbo = method === 'GET' && !esSyncMasivo(url) && ultimoEstadoConexion() === false
+        const ms = esSyncMasivo(url)
+          ? TIMEOUT_LARGO_MS
+          : enLimbo ? TIMEOUT_LIMBO_MS : TIMEOUT_NORMAL_MS
         const timer = setTimeout(() => ctrl.abort(), ms)
         result = originalFetch.apply(this, [args[0], { ...opts, signal: ctrl.signal }])
         result.finally(() => clearTimeout(timer))
