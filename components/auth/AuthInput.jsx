@@ -52,7 +52,7 @@ export default function AuthInput({
           required={required}
           className="cf-input w-full h-11 rounded-[12px] text-sm transition-all"
           style={{
-            paddingLeft:  icon ? '38px' : '12px',
+            paddingLeft:  (iconPath || icon) ? '40px' : '12px',
             paddingRight: (isPass && showPasswordToggle) ? '40px' : '12px',
             background:   'var(--color-bg-card)',
             border:       '1px solid var(--color-border)',
