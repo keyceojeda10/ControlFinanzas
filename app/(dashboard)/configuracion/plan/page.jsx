@@ -6,7 +6,6 @@ import { useAuth }             from '@/hooks/useAuth'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
 import { useOnline }           from '@/hooks/useOnline'
 import OfflineFallback         from '@/components/offline/OfflineFallback'
-import FloatingWhatsApp        from '@/components/ui/FloatingWhatsApp'
 import { PLANES_CONFIG, getPrecioPlan } from '@/lib/planes'
 import { formatMoney } from '@/lib/i18n'
 
@@ -493,13 +492,6 @@ function PlanPageInner() {
           Soporte
         </a>
       </div>
-
-      <FloatingWhatsApp
-        mensaje="Hola, necesito ayuda con mi plan en Control Finanzas."
-        label="Soporte WhatsApp"
-        texto="Ayuda"
-        extraBottom={60}
-      />
     </div>
   )
 }

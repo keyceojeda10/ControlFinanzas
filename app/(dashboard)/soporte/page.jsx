@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/Button'
 import { SkeletonCard } from '@/components/ui/Skeleton'
 import { useOnline } from '@/hooks/useOnline'
 import OfflineFallback from '@/components/offline/OfflineFallback'
-import FloatingWhatsApp from '@/components/ui/FloatingWhatsApp'
 
 const WHATSAPP_SOPORTE = '573011993001'
 const whatsappLink = (mensaje) =>
@@ -207,13 +206,6 @@ function SoportePageInner() {
           })}
         </div>
       )}
-
-      <FloatingWhatsApp
-        mensaje="Hola, necesito soporte con Control Finanzas."
-        label="Soporte por WhatsApp"
-        texto="Soporte directo"
-        extraBottom={60}
-      />
     </div>
   )
 }
