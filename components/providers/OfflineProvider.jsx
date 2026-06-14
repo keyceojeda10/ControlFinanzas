@@ -561,7 +561,7 @@ export default function OfflineProvider({ children }) {
 
       {/* Sync result toast */}
       {syncResult && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[9999] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-primary)] text-xs px-4 py-2.5 rounded-[12px] shadow-xl flex items-center gap-2">
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[9999] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-primary)] text-xs px-4 py-2.5 rounded-[12px] shadow-xl flex items-center gap-2 max-w-[90vw]">
           {syncResult.synced > 0 && (
             <span className="text-[var(--color-success)]">{syncResult.synced} cambio{syncResult.synced > 1 ? 's' : ''} sincronizado{syncResult.synced > 1 ? 's' : ''}</span>
           )}

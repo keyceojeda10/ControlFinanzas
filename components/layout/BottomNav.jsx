@@ -63,7 +63,7 @@ const PILL_TABS = [
 
 const ICON_GRID = 'M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z'
 
-export default function BottomNav({ onOpenLucas }) {
+export default function BottomNav({ onOpenLucas, lucasOpen = false }) {
   const pathname = usePathname()
   const router = useRouter()
   const { esCobrador } = useAuth()
@@ -145,7 +145,7 @@ export default function BottomNav({ onOpenLucas }) {
 
       {/* ─── FAB fullscreen — Lemon Cash style ──────────────────── */}
       <div
-        className="lg:hidden fixed inset-0 z-50 flex flex-col"
+        className="lg:hidden fixed inset-0 z-[54] flex flex-col"
         style={{
           background: 'var(--color-accent)',
           opacity: fabOpen ? 1 : 0,
@@ -329,10 +329,20 @@ export default function BottomNav({ onOpenLucas }) {
         onClick={() => { setFabOpen(v => !v); setMoreOpen(false) }}
         aria-label={fabOpen ? 'Cerrar menú' : 'Acciones rápidas'}
         aria-expanded={fabOpen}
-        className={`lg:hidden fixed right-4 z-[60] w-[56px] h-[56px] rounded-full flex items-center justify-center pointer-events-auto active:scale-90 transition-[transform,background] cf-fab-button${fabOpen ? ' cf-fab-open' : ''}`}
-        // +4px: la pill mide 64px y el FAB 56px; con el mismo bottom el FAB
-        // quedaba 4px mas abajo. Sumamos (64-56)/2 para centrar sus ejes.
-        style={{ bottom: 'calc(max(20px, env(safe-area-inset-bottom, 12px)) + 4px)' }}
+        className={`lg:hidden fixed right-4 w-[56px] h-[56px] rounded-full flex items-center justify-center active:scale-90 transition-[transform,background,opacity] cf-fab-button${fabOpen ? ' cf-fab-open' : ''}`}
+        // z dinamico: cerrado en z-[45] (encima de la pill z-40 pero DEBAJO de
+        // chat de Lucas, sheet "Mas" y demas overlays que viven en z-50, asi no
+        // los tapa). Abierto sube a z-[55], por encima de su propio overlay
+        // (z-54). Los modales (z-10001) siempre quedan arriba.
+        // +4px en bottom: pill mide 64px y FAB 56px -> (64-56)/2 para centrar.
+        // Ademas se oculta del todo cuando el sheet "Mas" esta abierto.
+        style={{
+          zIndex: fabOpen ? 55 : 45,
+          bottom: 'calc(max(20px, env(safe-area-inset-bottom, 12px)) + 4px)',
+          opacity: (moreOpen || lucasOpen) ? 0 : 1,
+          visibility: (moreOpen || lucasOpen) ? 'hidden' : 'visible',
+          pointerEvents: (moreOpen || lucasOpen) ? 'none' : 'auto',
+        }}
       >
         <svg
           className="w-7 h-7 cf-fab-icon"

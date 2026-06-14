@@ -9,13 +9,17 @@ const RUTAS_SIN_LUCAS = [
   '/prestamos/nuevo',
 ]
 
-const AsistenteButton = forwardRef(function AsistenteButton(_, ref) {
+const AsistenteButton = forwardRef(function AsistenteButton({ onOpenChange }, ref) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
 
   useImperativeHandle(ref, () => ({
     open: () => setOpen(true),
   }))
+
+  // Notificar al padre (MobileNavGroup) para que oculte el FAB mientras Lucas
+  // esta abierto y no quede por delante del chat.
+  useEffect(() => { onOpenChange?.(open) }, [open, onOpenChange])
 
   useEffect(() => { setOpen(false) }, [pathname])
 

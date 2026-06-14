@@ -87,6 +87,11 @@ html[data-theme="light"] {
 /* ─── Base ──────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+/* Defensa contra scroll/espacio lateral accidental: ningun elemento (toasts,
+   badges flotantes, overlays animados) debe poder generar overflow horizontal.
+   `clip` no crea contexto de scroll ni rompe position:sticky (a diferencia de
+   overflow:hidden). El scroll vertical sigue intacto. */
+html, body { overflow-x: clip; max-width: 100%; }
 
 body {
   /* Movil: fondo solido plano — gradientes bajo sticky header causan tearing GPU en Android */
