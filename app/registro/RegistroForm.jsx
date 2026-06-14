@@ -278,6 +278,13 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
       .catch(() => {})
   }, [refCode])
 
+  // Al cambiar de paso, volver al tope. Sin esto la vista queda con el scroll
+  // del paso anterior (donde el usuario bajo para tocar "Continuar") y el nuevo
+  // paso aparece a mitad/abajo en vez de desde el inicio.
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }, [step])
+
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value })
 
   const handleSubmit = async (e) => {
