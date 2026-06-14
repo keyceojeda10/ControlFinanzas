@@ -295,14 +295,10 @@ export default function BottomNav({ onOpenLucas }) {
           <button
             type="button"
             onClick={() => { setFabOpen(true); setMoreOpen(false) }}
-            className="w-[56px] h-[56px] rounded-full flex items-center justify-center shrink-0 pointer-events-auto active:scale-90 transition-transform"
-            style={{
-              background: '#000',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-            }}
+            className="w-[56px] h-[56px] rounded-full flex items-center justify-center shrink-0 pointer-events-auto active:scale-90 transition-transform cf-fab-button"
             aria-label="Acciones rapidas"
           >
-            <span className="text-[28px] font-black leading-none" style={{ color: 'var(--color-accent)' }}>$</span>
+            <span className="text-[28px] font-black leading-none cf-fab-icon">$</span>
           </button>
         </div>
       </div>

@@ -465,6 +465,21 @@ html[data-theme="light"] .cf-header-pill {
   box-shadow: 0 1px 4px rgba(0,0,0,0.04);
 }
 
+/* FAB button ($ circle) */
+.cf-fab-button {
+  background: var(--color-text-primary);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+.cf-fab-icon {
+  color: var(--color-accent);
+}
+html[data-theme="light"] .cf-fab-button {
+  background: #000;
+}
+html[data-theme="light"] .cf-fab-icon {
+  color: var(--color-accent);
+}
+
 /* Sheet bottom (BottomNav "mas") */
 .cf-sheet {
   background: var(--color-bg-surface);
