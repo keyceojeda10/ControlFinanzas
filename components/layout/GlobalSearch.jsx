@@ -1,7 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/hooks/useAuth'
+import { obtenerComandos, filtrarComandos } from '@/lib/searchCommands'
 
 export default function GlobalSearch() {
   const [open, setOpen] = useState(false)
@@ -12,6 +14,22 @@ export default function GlobalSearch() {
   const inputRef = useRef(null)
   const router = useRouter()
   const debounceRef = useRef(null)
+  const { esCobrador, ...auth } = useAuth()
+
+  // Catalogo de comandos locales (navegacion/acciones/config) segun rol.
+  const comandos = useMemo(() => obtenerComandos({
+    esCobrador,
+    permisos: {
+      puedeCrearPrestamos: auth.puedeCrearPrestamos,
+      puedeCrearClientes: auth.puedeCrearClientes,
+    },
+  }), [esCobrador, auth.puedeCrearPrestamos, auth.puedeCrearClientes])
+
+  // Comandos locales que matchean la query — instantaneo, sin API.
+  const comandosFiltrados = useMemo(
+    () => (query.trim().length >= 1 ? filtrarComandos(comandos, query, 8) : []),
+    [comandos, query]
+  )
 
   // Ctrl+K / Cmd+K to open
   useEffect(() => {
@@ -36,7 +54,7 @@ export default function GlobalSearch() {
     }
   }, [open])
 
-  // Debounced search
+  // Debounced search (solo clientes/prestamos/rutas via API)
   const search = useCallback(async (q) => {
     if (!q || q.length < 2) { setResults(null); return }
     setLoading(true)
@@ -45,7 +63,6 @@ export default function GlobalSearch() {
       if (res.ok) {
         const data = await res.json()
         setResults(data)
-        setSelected(0)
         fetch('/api/analytics/track', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -59,28 +76,24 @@ export default function GlobalSearch() {
   const handleChange = (e) => {
     const val = e.target.value
     setQuery(val)
+    setSelected(0)
     clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => search(val), 300)
   }
 
-  // Build flat list of navigable items
+  // Orden de comandos para render: navegacion primero, luego acciones.
+  const comandosNav = comandosFiltrados.filter((c) => !c.accion)
+  const comandosAccion = comandosFiltrados.filter((c) => c.accion)
+
+  // Build flat list of navigable items en el MISMO orden que el render, para
+  // que los indices de navegacion con teclado coincidan exactamente.
   const allItems = []
+  comandosNav.forEach((c) => allItems.push({ href: c.href }))
+  comandosAccion.forEach((c) => allItems.push({ href: c.href }))
   if (results) {
-    results.clientes?.forEach((c) =>
-      allItems.push({ type: 'cliente', label: c.nombre, sub: c.cedula, href: `/clientes/${c.id}`, id: c.id })
-    )
-    results.prestamos?.forEach((p) =>
-      allItems.push({
-        type: 'prestamo',
-        label: p.clienteNombre,
-        sub: `$${Math.round(p.saldoPendiente).toLocaleString('es-CO')} pendiente`,
-        href: `/prestamos/${p.id}`,
-        id: p.id,
-      })
-    )
-    results.rutas?.forEach((r) =>
-      allItems.push({ type: 'ruta', label: r.nombre, sub: `${r._count?.clientes || 0} clientes`, href: `/rutas/${r.id}`, id: r.id })
-    )
+    results.clientes?.forEach((c) => allItems.push({ href: `/clientes/${c.id}` }))
+    results.prestamos?.forEach((p) => allItems.push({ href: `/prestamos/${p.id}` }))
+    results.rutas?.forEach((r) => allItems.push({ href: `/rutas/${r.id}` }))
   }
 
   // Keyboard navigation
@@ -104,23 +117,37 @@ export default function GlobalSearch() {
 
   if (!open) return null
 
-  const SECTIONS = [
-    { key: 'clientes', label: 'Clientes', color: 'var(--color-accent)', icon: 'M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0' },
-    { key: 'prestamos', label: 'Préstamos', color: 'var(--color-success)', icon: 'M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33' },
-    { key: 'rutas', label: 'Rutas', color: 'var(--color-purple)', icon: 'M9 6.75V15m0-8.25a1.5 1.5 0 0 1 3 0V15m-3 0a1.5 1.5 0 0 0 3 0m3-8.25V15m0-8.25a1.5 1.5 0 0 1 3 0V15m-3 0a1.5 1.5 0 0 0 3 0' },
-  ]
+  const ICON_COLORS = {
+    comando: 'var(--color-info)',
+    accion: 'var(--color-accent)',
+    cliente: 'var(--color-accent)',
+    prestamo: 'var(--color-success)',
+    ruta: 'var(--color-purple)',
+  }
+
+  // Offsets de cada seccion (sin mutar durante el render): cada seccion empieza
+  // donde termina la anterior, siguiendo el mismo orden que allItems.
+  const cli = results?.clientes || []
+  const pre = results?.prestamos || []
+  const rut = results?.rutas || []
+  const OFF_NAV = 0
+  const OFF_ACCION = OFF_NAV + comandosNav.length
+  const OFF_CLI = OFF_ACCION + comandosAccion.length
+  const OFF_PRE = OFF_CLI + cli.length
+  const OFF_RUT = OFF_PRE + pre.length
+
+  const hayAlgo = allItems.length > 0
+  const colorDe = (k) => ICON_COLORS[k] || 'var(--color-text-muted)'
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] sm:pt-[15vh]">
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/72 backdrop-blur-sm" onClick={() => setOpen(false)} />
 
-      {/* Modal */}
-      <div className="relative w-full max-w-lg mx-3 sm:mx-4 bg-[var(--color-bg-card)] border border-[rgba(255,255,255,0.12)] rounded-[16px] shadow-2xl overflow-hidden"
-        style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.25)' }}>
+      <div className="relative w-full max-w-lg mx-3 sm:mx-4 rounded-[16px] shadow-2xl overflow-hidden"
+        style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', boxShadow: '0 4px 16px rgba(0,0,0,0.25)' }}>
         {/* Input */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[rgba(255,255,255,0.08)]">
-          <svg className="w-5 h-5 text-[var(--color-accent)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="flex items-center gap-3 px-4 py-3.5" style={{ borderBottom: '1px solid var(--color-border)' }}>
+          <svg className="w-5 h-5 shrink-0" style={{ color: 'var(--color-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
           </svg>
           <input
@@ -128,115 +155,151 @@ export default function GlobalSearch() {
             value={query}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
-            placeholder="Buscar clientes, préstamos, rutas..."
-            className="flex-1 bg-transparent text-sm text-[#f4f5fa] placeholder-[#9b9ba6] outline-none"
+            placeholder="Buscar clientes, rutas, caja, configuración..."
+            className="flex-1 bg-transparent text-sm outline-none"
+            style={{ color: 'var(--color-text-primary)' }}
           />
           {query && (
-            <button onClick={() => { setQuery(''); setResults(null) }} className="text-[#a2a2ad] hover:text-[var(--color-text-primary)] p-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c518]/65">
+            <button onClick={() => { setQuery(''); setResults(null); setSelected(0) }} className="p-1 rounded-md" style={{ color: 'var(--color-text-muted)' }}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           )}
-          <kbd className="hidden sm:inline text-[10px] text-[#c7c7d2] bg-[#0f0f14] border border-[rgba(255,255,255,0.16)] px-1.5 py-0.5 rounded-md font-mono">ESC</kbd>
+          <kbd className="hidden sm:inline text-[10px] px-1.5 py-0.5 rounded-md font-mono" style={{ color: 'var(--color-text-muted)', background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>ESC</kbd>
         </div>
 
         {/* Results */}
-        <div className="max-h-[60vh] sm:max-h-80 overflow-y-auto">
+        <div className="max-h-[60vh] sm:max-h-96 overflow-y-auto py-1.5">
+          {/* Comandos: navegacion */}
+          {comandosNav.length > 0 && (
+            <div>
+              <SectionLabel color="var(--color-info)">Ir a</SectionLabel>
+              {comandosNav.map((c, i) => (
+                <ResultRow key={c.id} item={c} idx={OFF_NAV + i} color={colorDe('comando')} selected={selected} onSelect={setSelected} onNavigate={navigate} />
+              ))}
+            </div>
+          )}
+
+          {/* Comandos: acciones */}
+          {comandosAccion.length > 0 && (
+            <div>
+              <SectionLabel color="var(--color-accent)">Acciones</SectionLabel>
+              {comandosAccion.map((c, i) => (
+                <ResultRow key={c.id} item={c} idx={OFF_ACCION + i} color={colorDe('accion')} selected={selected} onSelect={setSelected} onNavigate={navigate} />
+              ))}
+            </div>
+          )}
+
+          {/* API: loading */}
           {loading && (
-            <div className="flex justify-center py-8">
-              <div className="w-5 h-5 border-2 border-[var(--color-border)] border-t-[#f5c518] rounded-full animate-spin" />
+            <div className="flex justify-center py-6">
+              <div className="w-5 h-5 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--color-border)', borderTopColor: 'var(--color-accent)' }} />
             </div>
           )}
 
-          {!loading && results && allItems.length === 0 && (
-            <div className="py-8 text-center">
-              <svg className="w-8 h-8 mx-auto text-[#8f8f99] mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-              </svg>
-              <p className="text-sm text-[#b0b0bb]">Sin resultados para "{query}"</p>
-            </div>
-          )}
-
-          {!loading && allItems.length > 0 && (
-            <div className="py-1.5">
-              {SECTIONS.map(({ key, label, color, icon }) => {
-                const items = key === 'clientes' ? results.clientes
-                  : key === 'prestamos' ? results.prestamos
-                  : results.rutas
-                if (!items?.length) return null
-                return (
-                  <div key={key}>
-                    <div className="flex items-center gap-2 px-4 py-2 mt-1">
-                      <div className="w-1 h-3 rounded-full" style={{ background: color }} />
-                      <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#a2a2ad' }}>{label}</p>
-                    </div>
-                    {items.map((item) => {
-                      const itemId = item.id
-                      const idx = allItems.findIndex((x) => x.type === key.replace('s', '').replace('prestamo', 'prestamo') && x.id === itemId)
-                        || allItems.findIndex((x) => x.id === itemId)
-                      const isCliente = key === 'clientes'
-                      const isPrestamo = key === 'prestamos'
-                      const href = isCliente ? `/clientes/${item.id}` : isPrestamo ? `/prestamos/${item.id}` : `/rutas/${item.id}`
-                      return (
-                        <button
-                          key={item.id}
-                          className={[
-                            'w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all rounded-lg mx-0 min-h-[46px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c518]/65 focus-visible:ring-inset',
-                            idx === selected ? 'bg-[rgba(245,197,24,0.12)]' : 'hover:bg-[rgba(255,255,255,0.06)]',
-                          ].join(' ')}
-                          onClick={() => navigate(href)}
-                          onMouseEnter={() => setSelected(idx)}
-                        >
-                          <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: `${color}15` }}>
-                            <svg className="w-4 h-4" style={{ color }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d={icon} />
-                            </svg>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm text-[#f4f5fa] truncate">{isCliente ? item.nombre : isPrestamo ? item.clienteNombre : item.nombre}</p>
-                            <p className="text-[10px] text-[#a2a2ad]">
-                              {isCliente && <>{item.cedula}{item.telefono ? ` \u00B7 ${item.telefono}` : ''}</>}
-                              {isPrestamo && <span className="font-mono-display">${Math.round(item.saldoPendiente).toLocaleString('es-CO')} pendiente</span>}
-                              {key === 'rutas' && <>{item._count?.clientes || 0} clientes</>}
-                            </p>
-                          </div>
-                          {isPrestamo && (
-                            <span className={[
-                              'text-[10px] px-2 py-0.5 rounded-full font-medium',
-                              item.estado === 'activo' ? 'bg-[rgba(34,197,94,0.14)] text-[#59e3a4]' : 'bg-[rgba(148,163,184,0.14)] text-[#c7c7d2]',
-                            ].join(' ')}>
-                              {item.estado}
-                            </span>
-                          )}
-                        </button>
-                      )
-                    })}
-                  </div>
-                )
+          {/* API: clientes */}
+          {results?.clientes?.length > 0 && (
+            <div>
+              <SectionLabel color="var(--color-accent)">Clientes</SectionLabel>
+              {results.clientes.map((c, i) => {
+                const item = { id: `cli-${c.id}`, label: c.nombre, sub: `${c.cedula || ''}${c.telefono ? ` · ${c.telefono}` : ''}`, href: `/clientes/${c.id}`, icon: 'M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0' }
+                return <ResultRow key={item.id} item={item} idx={OFF_CLI + i} color={colorDe('cliente')} selected={selected} onSelect={setSelected} onNavigate={navigate} />
               })}
             </div>
           )}
 
-          {/* Empty state */}
-          {!loading && !results && (
+          {/* API: prestamos */}
+          {results?.prestamos?.length > 0 && (
+            <div>
+              <SectionLabel color="var(--color-success)">Préstamos</SectionLabel>
+              {results.prestamos.map((p, i) => {
+                const item = { id: `pre-${p.id}`, label: p.clienteNombre, sub: `$${Math.round(p.saldoPendiente).toLocaleString('es-CO')} pendiente`, href: `/prestamos/${p.id}`, estado: p.estado, icon: 'M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z' }
+                return <ResultRow key={item.id} item={item} idx={OFF_PRE + i} color={colorDe('prestamo')} selected={selected} onSelect={setSelected} onNavigate={navigate} />
+              })}
+            </div>
+          )}
+
+          {/* API: rutas */}
+          {results?.rutas?.length > 0 && (
+            <div>
+              <SectionLabel color="var(--color-purple)">Rutas</SectionLabel>
+              {results.rutas.map((r, i) => {
+                const item = { id: `rut-${r.id}`, label: r.nombre, sub: `${r._count?.clientes || 0} clientes`, href: `/rutas/${r.id}`, icon: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7' }
+                return <ResultRow key={item.id} item={item} idx={OFF_RUT + i} color={colorDe('ruta')} selected={selected} onSelect={setSelected} onNavigate={navigate} />
+              })}
+            </div>
+          )}
+
+          {/* Sin resultados */}
+          {!loading && query.trim().length >= 1 && !hayAlgo && (
+            <div className="py-8 text-center">
+              <svg className="w-8 h-8 mx-auto mb-2" style={{ color: 'var(--color-text-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+              </svg>
+              <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Sin resultados para "{query}"</p>
+            </div>
+          )}
+
+          {/* Estado inicial (sin query) */}
+          {query.trim().length === 0 && (
             <div className="py-10 text-center">
-              <svg className="w-10 h-10 mx-auto text-[#2a2a2a] mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--color-border-hover)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
               </svg>
-              <p className="text-xs text-[#a2a2ad]">Busca clientes, préstamos o rutas</p>
+              <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Busca clientes, préstamos, rutas, caja, gastos, configuración…</p>
             </div>
           )}
         </div>
 
         {/* Footer — solo desktop */}
-        <div className="hidden sm:flex items-center justify-between px-4 py-2 border-t border-[rgba(255,255,255,0.08)] text-[10px] text-[#a2a2ad]">
+        <div className="hidden sm:flex items-center justify-between px-4 py-2 text-[10px]" style={{ borderTop: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}>
           <div className="flex items-center gap-3">
-            <span><kbd className="bg-[#0f0f14] border border-[rgba(255,255,255,0.16)] text-[#c7c7d2] px-1 py-0.5 rounded-md font-mono">&uarr;</kbd> <kbd className="bg-[#0f0f14] border border-[rgba(255,255,255,0.16)] text-[#c7c7d2] px-1 py-0.5 rounded-md font-mono">&darr;</kbd> navegar</span>
-            <span><kbd className="bg-[#0f0f14] border border-[rgba(255,255,255,0.16)] text-[#c7c7d2] px-1 py-0.5 rounded-md font-mono">Enter</kbd> seleccionar</span>
+            <span><kbd className="px-1 py-0.5 rounded-md font-mono" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>&uarr;</kbd> <kbd className="px-1 py-0.5 rounded-md font-mono" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>&darr;</kbd> navegar</span>
+            <span><kbd className="px-1 py-0.5 rounded-md font-mono" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>Enter</kbd> abrir</span>
           </div>
         </div>
       </div>
     </div>
+  )
+}
+
+// ── Componentes de modulo (no definir dentro del render) ──
+
+function SectionLabel({ color, children }) {
+  return (
+    <div className="flex items-center gap-2 px-4 py-2 mt-1">
+      <div className="w-1 h-3 rounded-full" style={{ background: color }} />
+      <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>{children}</p>
+    </div>
+  )
+}
+
+function ResultRow({ item, idx, color, selected, onSelect, onNavigate }) {
+  return (
+    <button
+      className={[
+        'w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all rounded-lg min-h-[46px] focus-visible:outline-none',
+        idx === selected ? 'bg-[var(--color-accent-soft)]' : 'hover:bg-[var(--color-bg-hover)]',
+      ].join(' ')}
+      onClick={() => onNavigate(item.href)}
+      onMouseEnter={() => onSelect(idx)}
+    >
+      <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: `color-mix(in srgb, ${color} 14%, transparent)` }}>
+        <svg className="w-4 h-4" style={{ color }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+          <path strokeLinecap="round" strokeLinejoin="round" d={item.icon || 'M9 12.75L11.25 15 15 9.75'} />
+        </svg>
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm truncate" style={{ color: 'var(--color-text-primary)' }}>{item.label}</p>
+        {item.sub && <p className="text-[11px] truncate" style={{ color: 'var(--color-text-muted)' }}>{item.sub}</p>}
+      </div>
+      {item.estado && (
+        <span className={[
+          'text-[10px] px-2 py-0.5 rounded-full font-medium',
+          item.estado === 'activo' ? 'bg-[rgba(34,197,94,0.14)] text-[#59e3a4]' : 'bg-[rgba(148,163,184,0.14)] text-[#c7c7d2]',
+        ].join(' ')}>{item.estado}</span>
+      )}
+    </button>
   )
 }
