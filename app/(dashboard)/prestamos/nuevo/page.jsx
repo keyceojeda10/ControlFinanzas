@@ -581,7 +581,7 @@ function NuevoPrestamo() {
             <div className="mt-7">
               <div className="relative">
                 <svg
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-4 h-4 pointer-events-none"
                   style={{ color: 'var(--color-text-muted)' }}
                   fill="none" stroke="currentColor" viewBox="0 0 24 24"
                 >
