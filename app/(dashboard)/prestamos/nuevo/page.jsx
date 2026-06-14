@@ -816,26 +816,46 @@ function NuevoPrestamo() {
             {/* Frecuencia de cobro — visible SIEMPRE cuando no es diario,
                 o dentro de "Opciones avanzadas" */}
 
-            {/* Opciones avanzadas: modo interés, frecuencia, día ancla, días sin cobro, seguro, en curso */}
+            {/* Personalizar préstamo: modo interés, frecuencia, día ancla, días sin cobro, seguro, en curso.
+                Antes era un link gris "Opciones avanzadas" que los usuarios evitaban por miedo.
+                Ahora es una tarjeta visible que invita a abrirla y explica qué hay dentro. */}
             <button
               type="button"
               onClick={() => setAvanzadasOpen(v => !v)}
-              className="flex items-center gap-2 text-[11px] font-semibold transition-colors focus-visible:outline-none"
-              style={{ color: avanzadasOpen ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
+              className="w-full flex items-center gap-3 rounded-[14px] px-4 py-3 transition-all active:scale-[0.99] focus-visible:outline-none"
+              style={{
+                background: avanzadasOpen ? 'color-mix(in srgb, var(--color-accent) 10%, transparent)' : 'color-mix(in srgb, var(--color-accent) 6%, transparent)',
+                border: `1.5px solid color-mix(in srgb, var(--color-accent) ${avanzadasOpen ? 55 : 35}%, transparent)`,
+              }}
             >
+              <div className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
+                style={{ background: 'color-mix(in srgb, var(--color-accent) 18%, transparent)', color: 'var(--color-accent)' }}>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0 text-left">
+                <div className="flex items-center gap-2">
+                  <span className="text-[14px] font-bold" style={{ color: 'var(--color-text-primary)' }}>
+                    Personalizar préstamo
+                  </span>
+                  {(!avanzadasOpen && (frecuencia !== 'diario' || modoInteres !== 'fijo' || seguro || esEnCurso)) && (
+                    <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold" style={{ background: 'var(--color-accent)', color: '#0a0a0a' }}>
+                      activas
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11.5px] mt-0.5 truncate" style={{ color: 'var(--color-text-muted)' }}>
+                  Frecuencia de cobro, tipo de interés, seguro y más
+                </p>
+              </div>
               <svg
-                className="w-3.5 h-3.5 shrink-0 transition-transform duration-200"
-                style={{ transform: avanzadasOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}
+                className="w-5 h-5 shrink-0 transition-transform duration-200"
+                style={{ transform: avanzadasOpen ? 'rotate(90deg)' : 'rotate(0deg)', color: 'var(--color-accent)' }}
                 fill="none" stroke="currentColor" viewBox="0 0 24 24"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
-              Opciones avanzadas
-              {(!avanzadasOpen && (frecuencia !== 'diario' || modoInteres !== 'fijo' || seguro || esEnCurso)) && (
-                <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold" style={{ background: 'color-mix(in srgb, var(--color-accent) 18%, transparent)', color: 'var(--color-accent)' }}>
-                  activas
-                </span>
-              )}
             </button>
 
             {avanzadasOpen && (
