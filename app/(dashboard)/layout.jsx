@@ -7,7 +7,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import Sidebar        from '@/components/layout/Sidebar'
 import Header         from '@/components/layout/Header'
-import BottomNav      from '@/components/layout/BottomNav'
+import MobileNavGroup from '@/components/layout/MobileNavGroup'
 import PageWrapper    from '@/components/layout/PageWrapper'
 import SinRutaBanner         from '@/components/layout/SinRutaBanner'
 import VerificarEmailBanner  from '@/components/layout/VerificarEmailBanner'
@@ -15,7 +15,6 @@ import SuscripcionBanner     from '@/components/layout/SuscripcionBanner'
 import GlobalSearch        from '@/components/layout/GlobalSearch'
 import Analytics          from '@/components/Analytics'
 import CompletarTelefonoModal from '@/components/layout/CompletarTelefonoModal'
-import AsistenteButton from '@/components/asistente/AsistenteButton'
 
 // Bloqueo definitivo de suscripcion vencida: lee DB en cada request.
 // El middleware no puede hacerlo (Edge runtime sin Prisma) y el JWT puede
@@ -74,8 +73,8 @@ export default async function DashboardLayout({ children }) {
         </main>
       </div>
 
-      {/* BottomNav – visible solo en mobile */}
-      <BottomNav />
+      {/* BottomNav + AsistenteButton wired together */}
+      <MobileNavGroup />
 
       {/* Búsqueda global (Ctrl+K) */}
       <GlobalSearch />
@@ -85,9 +84,6 @@ export default async function DashboardLayout({ children }) {
 
       {/* Analytics: page view tracking */}
       <Analytics />
-
-      {/* Asistente IA flotante (solo owners) */}
-      <AsistenteButton />
     </div>
   )
 }

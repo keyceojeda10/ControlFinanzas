@@ -1,49 +1,46 @@
 'use client'
-// components/layout/BottomNav.jsx - Navegacion inferior estilo Lemon Cash
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 
 import { formatMoney as formatMoneyFn } from '@/lib/i18n'
 const formatCOPCompact = (monto = 0) => formatMoneyFn(monto)
 
-// ─── FAB menu items ────────────────────────────────────────────
 const FAB_ITEMS_OWNER = [
-  { label: 'Nuevo prestamo', href: '/prestamos/nuevo', color: '#f5c518', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
-  { label: 'Nuevo cliente', href: '/clientes/nuevo', color: '#22c55e', icon: 'M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z' },
-  { label: 'Registrar gasto', href: '/gastos?nuevo=1', color: '#f97316', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
-  { label: 'Importar clientes', href: '/carga-masiva', color: '#8b5cf6', icon: 'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12' },
+  { label: 'Nuevo', bold: 'prestamo', href: '/prestamos/nuevo' },
+  { label: 'Nuevo', bold: 'cliente', href: '/clientes/nuevo' },
+  { label: 'Registrar', bold: 'gasto', href: '/gastos?nuevo=1' },
+  { label: 'Lucas', bold: 'IA', href: '__lucas__' },
 ]
 
 const FAB_ITEMS_COBRADOR = [
-  { label: 'Mis cobros', href: '/cobros-hoy', color: '#22c55e', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
-  { label: 'Registrar gasto', href: '/gastos?nuevo=1', color: '#f97316', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+  { label: 'Mis', bold: 'cobros', href: '/cobros-hoy' },
+  { label: 'Registrar', bold: 'gasto', href: '/gastos?nuevo=1' },
+  { label: 'Lucas', bold: 'IA', href: '__lucas__' },
 ]
 
-// ─── More sheet items ──────────────────────────────────────────
 const MORE_ITEMS_OWNER = [
   { label: 'Rutas', href: '/rutas', icon: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7' },
-  { label: 'Caja', href: '/caja', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
-  { label: 'Cobradores', href: '/cobradores', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
-  { label: 'Capital', href: '/capital', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
-  { label: 'Reportes', href: '/reportes', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
+  { label: 'Caja', href: '/caja', icon: 'M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z' },
+  { label: 'Cobradores', href: '/cobradores', icon: 'M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128H5.228A2 2 0 013 17.16V17c0-2.796 2.567-5 6-5 1.29 0 2.476.35 3.434.943M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07m0 0A5.006 5.006 0 0012 10c-1.68 0-3.166.793-4.214 2.003M12 4.5a3 3 0 110 6 3 3 0 010-6z' },
+  { label: 'Capital', href: '/capital', icon: 'M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z' },
+  { label: 'Reportes', href: '/reportes', icon: 'M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z' },
   { label: 'Historial', href: '/actividad', icon: 'M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z' },
-  { label: 'Gastos', href: '/gastos', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
-  { label: 'Perdidos', href: '/clavos', icon: 'M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z' },
-  { label: 'Lucas IA', href: '/asistente', icon: 'M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z' },
-  { label: 'Soporte', href: '/soporte', icon: 'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z' },
-  { label: 'Tutoriales', href: '/tutoriales', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
-  { label: 'Config', href: '/configuracion', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
+  { label: 'Gastos', href: '/gastos', icon: 'M9 14.25l6-6m4.5-3.493V21.75l-3.75-1.5-3.75 1.5-3.75-1.5-3.75 1.5V4.757c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0c1.1.128 1.907 1.077 1.907 2.185zM9.75 9h.008v.008H9.75V9zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm4.125 4.5h.008v.008h-.008V13.5zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z' },
+  { label: 'Perdidos', href: '/clavos', icon: 'M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z' },
+  { label: 'Soporte', href: '/soporte', icon: 'M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155' },
+  { label: 'Tutoriales', href: '/tutoriales', icon: 'M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25' },
+  { label: 'Config', href: '/configuracion', icon: 'M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
 ]
 
 const MORE_ITEMS_COBRADOR = [
-  { label: 'Mis cobros', href: '/cobros-hoy', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
-  { label: 'Caja', href: '/caja', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
+  { label: 'Mis cobros', href: '/cobros-hoy', icon: 'M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
+  { label: 'Caja', href: '/caja', icon: 'M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z' },
   { label: 'Mi resumen', href: '/mis-estadisticas', icon: 'M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z' },
-  { label: 'Tutoriales', href: '/tutoriales', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
-  { label: 'Config', href: '/configuracion', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
+  { label: 'Tutoriales', href: '/tutoriales', icon: 'M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25' },
+  { label: 'Config', href: '/configuracion', icon: 'M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
 ]
 
 const RUTAS_SIN_BOTTOMNAV = [
@@ -52,7 +49,26 @@ const RUTAS_SIN_BOTTOMNAV = [
   '/prestamos/nuevo',
 ]
 
-export default function BottomNav() {
+// Tabs de la pill — diferenciados por rol
+// Owner: Inicio, Clientes, Prestamos, Historial, Mas
+// Cobrador: Inicio, Clientes, Prestamos, Rutas, Mas (lo que tenia antes)
+const PILL_TABS_OWNER = [
+  { id: 'dashboard', href: '/dashboard', icon: 'M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25', iconFill: 'M11.47 3.84a.75.75 0 011.06 0l8.69 8.69a.75.75 0 11-1.06 1.06l-.97-.97V19.5a2.25 2.25 0 01-2.25 2.25h-3a.75.75 0 01-.75-.75v-4.5a.75.75 0 00-.75-.75h-1.5a.75.75 0 00-.75.75v4.5a.75.75 0 01-.75.75h-3A2.25 2.25 0 013.75 19.5v-6.88l-.97.97a.75.75 0 01-1.06-1.06l8.69-8.69z' },
+  { id: 'clientes', href: '/clientes', icon: 'M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128H5.228A2 2 0 013 17.16V17c0-2.796 2.567-5 6-5 1.29 0 2.476.35 3.434.943M12 4.5a3 3 0 110 6 3 3 0 010-6z' },
+  { id: 'prestamos', href: '/prestamos', icon: 'M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
+  { id: 'actividad', href: '/actividad', icon: 'M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z' },
+]
+
+const PILL_TABS_COBRADOR = [
+  { id: 'dashboard', href: '/dashboard', icon: 'M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25', iconFill: 'M11.47 3.84a.75.75 0 011.06 0l8.69 8.69a.75.75 0 11-1.06 1.06l-.97-.97V19.5a2.25 2.25 0 01-2.25 2.25h-3a.75.75 0 01-.75-.75v-4.5a.75.75 0 00-.75-.75h-1.5a.75.75 0 00-.75.75v4.5a.75.75 0 01-.75.75h-3A2.25 2.25 0 013.75 19.5v-6.88l-.97.97a.75.75 0 01-1.06-1.06l8.69-8.69z' },
+  { id: 'clientes', href: '/clientes', icon: 'M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128H5.228A2 2 0 013 17.16V17c0-2.796 2.567-5 6-5 1.29 0 2.476.35 3.434.943M12 4.5a3 3 0 110 6 3 3 0 010-6z' },
+  { id: 'prestamos', href: '/prestamos', icon: 'M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
+  { id: 'rutas', href: '/rutas', icon: 'M9 6.75V15m0-8.25a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM9 15a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 0V6.75m6-1.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM15 8.25V18m0 0a1.5 1.5 0 110 3 1.5 1.5 0 010-3z' },
+]
+
+const ICON_GRID = 'M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z'
+
+export default function BottomNav({ onOpenLucas }) {
   const pathname = usePathname()
   const router = useRouter()
   const { esCobrador } = useAuth()
@@ -62,13 +78,13 @@ export default function BottomNav() {
 
   const moreItems = esCobrador ? MORE_ITEMS_COBRADOR : MORE_ITEMS_OWNER
   const fabItems = esCobrador ? FAB_ITEMS_COBRADOR : FAB_ITEMS_OWNER
+  const pillTabs = esCobrador ? PILL_TABS_COBRADOR : PILL_TABS_OWNER
 
   const isActive = (href) =>
     href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
 
   const ocultarPorRuta = RUTAS_SIN_BOTTOMNAV.some(r => pathname?.startsWith(r))
 
-  // Cierre warning check
   useEffect(() => {
     if (!esCobrador) return
     const check = async () => {
@@ -105,13 +121,22 @@ export default function BottomNav() {
 
   if (ocultarPorRuta) return null
 
+  const handleFabAction = (item) => {
+    setFabOpen(false)
+    if (item.href === '__lucas__') {
+      onOpenLucas?.()
+    } else {
+      router.push(item.href)
+    }
+  }
+
   return (
     <>
       {/* Cierre warning pill */}
       {cierreWarning && (
         <Link
           href={warningHref}
-          className="lg:hidden fixed bottom-[78px] left-1/2 -translate-x-1/2 z-40 max-w-[90vw] rounded-full px-3.5 py-2.5 flex items-center gap-2"
+          className="lg:hidden fixed bottom-[90px] left-1/2 -translate-x-1/2 z-40 max-w-[90vw] rounded-full px-3.5 py-2.5 flex items-center gap-2"
           style={{
             background: cierreWarning.showPendingReminder ? 'var(--color-accent-soft)' : 'var(--color-warning-dim)',
             border: `1px solid ${cierreWarning.showPendingReminder ? 'rgba(245,197,24,0.4)' : 'rgba(251,191,36,0.4)'}`,
@@ -123,45 +148,56 @@ export default function BottomNav() {
         </Link>
       )}
 
-      {/* ─── FAB fullscreen overlay ─────────────────────────────── */}
-      {fabOpen && (
-        <div
-          className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end items-center"
-          onClick={() => setFabOpen(false)}
-          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
-        >
-          <div
-            className="w-full max-w-sm px-6 pb-28 space-y-3"
-            onClick={(e) => e.stopPropagation()}
+      {/* ─── FAB fullscreen — Lemon Cash style ──────────────────── */}
+      <div
+        className="lg:hidden fixed inset-0 z-50 flex flex-col transition-all duration-300"
+        style={{
+          background: 'var(--color-accent)',
+          opacity: fabOpen ? 1 : 0,
+          visibility: fabOpen ? 'visible' : 'hidden',
+          pointerEvents: fabOpen ? 'auto' : 'none',
+        }}
+      >
+        <div className="flex-1 flex flex-col justify-end px-7 pb-8">
+          <p
+            className="text-[15px] font-medium mb-6"
+            style={{ color: 'rgba(0,0,0,0.45)' }}
           >
-            <p className="text-center text-[13px] font-semibold mb-4" style={{ color: 'rgba(255,255,255,0.6)' }}>
-              Que quieres hacer?
-            </p>
+            Que quieres hacer?
+          </p>
+
+          <div className="space-y-1">
             {fabItems.map((item) => (
               <button
                 key={item.href}
                 type="button"
-                onClick={() => { setFabOpen(false); router.push(item.href) }}
-                className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all active:scale-[0.97]"
-                style={{
-                  background: 'rgba(255,255,255,0.12)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                }}
+                onClick={() => handleFabAction(item)}
+                className="block w-full text-left py-2 active:opacity-60 transition-opacity"
               >
-                <div
-                  className="w-11 h-11 rounded-full flex items-center justify-center shrink-0"
-                  style={{ background: item.color }}
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="#fff" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
-                  </svg>
-                </div>
-                <span className="text-[15px] font-semibold text-white">{item.label}</span>
+                <span className="text-[38px] font-extrabold leading-tight tracking-tight" style={{ color: '#000' }}>
+                  {item.label}{' '}
+                  <span className="font-normal">{item.bold}</span>
+                </span>
               </button>
             ))}
           </div>
         </div>
-      )}
+
+        {/* Close button — bottom right */}
+        <div className="px-7 pb-10 flex justify-end">
+          <button
+            type="button"
+            onClick={() => setFabOpen(false)}
+            className="w-14 h-14 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+            style={{ background: '#000' }}
+            aria-label="Cerrar menu"
+          >
+            <svg className="w-7 h-7" fill="none" stroke="var(--color-accent)" strokeWidth={2.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
 
       {/* ─── More sheet overlay ─────────────────────────────────── */}
       {moreOpen && (
@@ -197,8 +233,8 @@ export default function BottomNav() {
                       className="flex flex-col items-center gap-1.5 py-4 rounded-2xl transition-all active:scale-95 min-h-[78px] cf-nav-item"
                       style={active ? { background: 'var(--color-accent-soft)', color: 'var(--color-accent)' } : { color: 'var(--color-text-secondary)' }}
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d={item.icon} />
+                      <svg className="w-[22px] h-[22px]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
                       </svg>
                       <span className="text-[12px] font-medium">{item.label}</span>
                     </Link>
@@ -210,91 +246,75 @@ export default function BottomNav() {
         </div>
       )}
 
-      {/* ─── Bottom nav bar ─────────────────────────────────────── */}
-      <nav aria-label="Navegacion principal movil" className="lg:hidden fixed bottom-0 left-0 right-0 z-40 cf-bottomnav-bar">
-        <div className="flex items-stretch relative">
-          {/* Inicio */}
-          <Link
-            href="/dashboard"
-            aria-current={isActive('/dashboard') ? 'page' : undefined}
-            className="flex-1 flex flex-col items-center justify-center gap-0.5 py-3 min-h-[58px] transition-all"
-            style={{ color: isActive('/dashboard') ? 'var(--color-accent)' : 'var(--color-text-secondary)' }}
+      {/* ─── Bottom nav — floating pill + separate FAB ──────────── */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 px-4 pb-5 pointer-events-none" style={{ paddingBottom: 'max(20px, env(safe-area-inset-bottom, 12px))' }}>
+        <div className="flex items-center gap-3">
+          {/* Nav pill */}
+          <nav
+            aria-label="Navegacion principal movil"
+            className="flex-1 flex items-center justify-around rounded-[22px] py-2 pointer-events-auto cf-nav-pill"
           >
-            {isActive('/dashboard') && <span className="absolute inset-x-0 top-0 h-[2px]" style={{ background: 'var(--color-accent)', width: '20%', left: '15%', borderRadius: '0 0 2px 2px' }} />}
-            <svg className="w-6 h-6" fill={isActive('/dashboard') ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={isActive('/dashboard') ? 0 : 1.8}
-                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-            <span className="text-[10px] font-semibold">Inicio</span>
-          </Link>
+            {pillTabs.map((tab) => {
+              const active = isActive(tab.href)
+              return (
+                <Link
+                  key={tab.id}
+                  href={tab.href}
+                  aria-current={active ? 'page' : undefined}
+                  className="relative flex items-center justify-center w-12 h-12 rounded-[16px] transition-all active:scale-90"
+                  style={active ? { background: 'var(--color-text-primary)' } : {}}
+                >
+                  <svg
+                    className="w-[22px] h-[22px]"
+                    fill={active && tab.iconFill ? 'var(--color-bg-base)' : 'none'}
+                    stroke={active && tab.iconFill ? 'none' : active ? 'var(--color-bg-base)' : 'var(--color-text-muted)'}
+                    strokeWidth={1.5}
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d={active && tab.iconFill ? tab.iconFill : tab.icon} />
+                  </svg>
+                </Link>
+              )
+            })}
 
-          {/* Clientes */}
-          <Link
-            href="/clientes"
-            aria-current={isActive('/clientes') ? 'page' : undefined}
-            className="flex-1 flex flex-col items-center justify-center gap-0.5 py-3 min-h-[58px] transition-all"
-            style={{ color: isActive('/clientes') ? 'var(--color-accent)' : 'var(--color-text-secondary)' }}
-          >
-            <svg className="w-6 h-6" fill={isActive('/clientes') ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={isActive('/clientes') ? 0 : 1.8}
-                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            <span className="text-[10px] font-semibold">Clientes</span>
-          </Link>
-
-          {/* FAB central (+) */}
-          <div className="flex-1 flex items-center justify-center">
+            {/* Mas */}
             <button
               type="button"
-              onClick={() => { setFabOpen(v => !v); setMoreOpen(false) }}
-              className="w-[52px] h-[52px] rounded-full flex items-center justify-center shadow-lg transition-all active:scale-90 -mt-5"
-              style={{
-                background: fabOpen ? '#ef4444' : 'var(--color-accent)',
-                boxShadow: fabOpen ? '0 4px 20px rgba(239,68,68,0.4)' : '0 4px 20px rgba(245,197,24,0.4)',
-              }}
-              aria-label={fabOpen ? 'Cerrar menu' : 'Abrir menu de acciones'}
+              onClick={() => { setMoreOpen(v => !v); setFabOpen(false) }}
+              aria-expanded={moreOpen}
+              aria-label="Mas opciones"
+              className="relative flex items-center justify-center w-12 h-12 rounded-[16px] transition-all active:scale-90"
+              style={(moreActive || moreOpen) ? { background: 'var(--color-text-primary)' } : {}}
             >
               <svg
-                className="w-7 h-7 transition-transform duration-200"
-                style={{ transform: fabOpen ? 'rotate(45deg)' : 'none' }}
-                fill="none" stroke="#000" strokeWidth={2.5} viewBox="0 0 24 24"
+                className="w-[22px] h-[22px]"
+                fill="none"
+                stroke={(moreActive || moreOpen) ? 'var(--color-bg-base)' : 'var(--color-text-muted)'}
+                strokeWidth={1.5}
+                viewBox="0 0 24 24"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                <path strokeLinecap="round" strokeLinejoin="round" d={ICON_GRID} />
               </svg>
             </button>
-          </div>
+          </nav>
 
-          {/* Prestamos */}
-          <Link
-            href="/prestamos"
-            aria-current={isActive('/prestamos') ? 'page' : undefined}
-            className="flex-1 flex flex-col items-center justify-center gap-0.5 py-3 min-h-[58px] transition-all"
-            style={{ color: isActive('/prestamos') ? 'var(--color-accent)' : 'var(--color-text-secondary)' }}
-          >
-            <svg className="w-6 h-6" fill={isActive('/prestamos') ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={isActive('/prestamos') ? 0 : 1.8}
-                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span className="text-[10px] font-semibold">Prestamos</span>
-          </Link>
-
-          {/* Mas */}
+          {/* FAB — separate circle, Lemon Cash style */}
           <button
             type="button"
-            onClick={() => { setMoreOpen(v => !v); setFabOpen(false) }}
-            aria-expanded={moreOpen}
-            aria-label="Mas opciones"
-            className="flex-1 flex flex-col items-center justify-center gap-0.5 py-3 min-h-[58px] transition-all"
-            style={{ color: (moreActive || moreOpen) ? 'var(--color-accent)' : 'var(--color-text-secondary)' }}
+            onClick={() => { setFabOpen(true); setMoreOpen(false) }}
+            className="w-[56px] h-[56px] rounded-full flex items-center justify-center shrink-0 pointer-events-auto active:scale-90 transition-transform"
+            style={{
+              background: '#000',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+            }}
+            aria-label="Acciones rapidas"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-                d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+            <svg className="w-7 h-7" fill="none" stroke="var(--color-accent)" strokeWidth={2.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33" />
             </svg>
-            <span className="text-[10px] font-semibold">Mas</span>
           </button>
         </div>
-      </nav>
+      </div>
     </>
   )
 }
