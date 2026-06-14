@@ -392,9 +392,15 @@ html[data-theme="light"] input[type="range"]::-moz-range-track { background: #e2
 .cf-input::placeholder { color: var(--color-text-muted); }
 /* Icono dentro del input (login/auth). Safari iOS colapsa SVG con w/h en %,
    asi que forzamos dimensiones en px directamente sobre el SVG hijo. */
+.cf-input-icon {
+  flex: 0 0 auto;
+}
 .cf-input-icon svg {
   width: 18px !important;
   height: 18px !important;
+  min-width: 18px;
+  min-height: 18px;
+  flex: 0 0 auto;
   display: block;
 }
 .cf-input {

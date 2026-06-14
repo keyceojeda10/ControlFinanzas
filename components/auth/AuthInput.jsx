@@ -31,8 +31,8 @@ export default function AuthInput({
       )}
       <div className="relative">
         {icon && (
-          <span className="cf-input-icon absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center"
-            style={{ color: 'var(--color-text-secondary)', width: 18, height: 18 }}
+          <span className="cf-input-icon absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center w-[18px] h-[18px]"
+            style={{ color: 'var(--color-text-secondary)' }}
           >
             {icon}
           </span>
