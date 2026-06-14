@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { useAuth } from '@/hooks/useAuth'
@@ -35,8 +36,12 @@ export default function Header() {
         className="lg:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 h-[60px]"
         style={{ background: 'var(--color-bg-base)' }}
       >
-        {/* Left: avatar pill — Lemon Cash style */}
-        <div className="flex items-center" ref={userRef}>
+        {/* Left: logo + avatar pill */}
+        <div className="flex items-center gap-3" ref={userRef}>
+          <Link href="/dashboard" className="shrink-0">
+            <Image src="/logo-icon.svg" alt="Control Finanzas" width={30} height={30} className="rounded-lg" />
+          </Link>
+
           <button
             onClick={() => setUserOpen(v => !v)}
             className="flex items-center gap-2.5 rounded-full py-1.5 pl-1.5 pr-4 active:scale-[0.97] transition-transform cf-header-pill"

@@ -12,12 +12,14 @@ const FAB_ITEMS_OWNER = [
   { label: 'Nuevo', bold: 'prestamo', href: '/prestamos/nuevo' },
   { label: 'Nuevo', bold: 'cliente', href: '/clientes/nuevo' },
   { label: 'Registrar', bold: 'gasto', href: '/gastos?nuevo=1' },
+  { label: 'Ver', bold: 'caja', href: '/caja' },
   { label: 'Lucas', bold: 'IA', href: '__lucas__' },
 ]
 
 const FAB_ITEMS_COBRADOR = [
   { label: 'Mis', bold: 'cobros', href: '/cobros-hoy' },
   { label: 'Registrar', bold: 'gasto', href: '/gastos?nuevo=1' },
+  { label: 'Ver', bold: 'caja', href: '/caja' },
   { label: 'Lucas', bold: 'IA', href: '__lucas__' },
 ]
 
