@@ -51,6 +51,9 @@ export default function OfflineProvider({ children }) {
   // By default we also notify pages so visible data stays up to date.
   const syncPendingThenFull = useCallback(async ({ silent = true, signalPages = true } = {}) => {
     if (!navigator.onLine) return
+    // Declarado fuera del try para que el STEP 2 pueda leerlo (const tiene scope
+    // de bloque: si se declara dentro del primer try, el segundo try no lo ve).
+    let totalSynced = 0
     try {
       // STEP 1: Sync pending payments, orders AND creations to server FIRST
       // Orden: creaciones primero (para que los pagos offline puedan referenciar
@@ -59,7 +62,7 @@ export default function OfflineProvider({ children }) {
       const mutResult = await sincronizarMutaciones()
       const payResult = await sincronizarPagos()
       const ordResult = await sincronizarOrdenes()
-      const totalSynced = creResult.synced + mutResult.synced + payResult.synced + ordResult.synced
+      totalSynced = creResult.synced + mutResult.synced + payResult.synced + ordResult.synced
       const totalFailed = creResult.failed + mutResult.failed + payResult.failed + ordResult.failed
       if (totalSynced > 0) {
         setSyncResult({ synced: totalSynced, failed: totalFailed })
