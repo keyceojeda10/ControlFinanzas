@@ -1713,7 +1713,7 @@ export default function DashboardPage() {
                 label="Cuota diaria total"
                 value={formatMoney(data.prestamos.cuotaDiariaTotal)}
                 valueRaw={data.prestamos.cuotaDiariaTotal}
-                sub="Esperado por dia"
+                sub="Esperado por día"
                 color="#a855f7"
                 info={{
                   titulo: 'Cuota diaria total',
@@ -1885,8 +1885,8 @@ export default function DashboardPage() {
           <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--color-text-secondary)' }}>Accesos rápidos</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {puedeCrearClientes && <QuickLink href="/clientes/nuevo" label="Nuevo cliente" desc="Registrar cliente" color="#f5c518" dataTour="nuevo-cliente" />}
-            {puedeCrearPrestamos && <QuickLink href="/prestamos/nuevo" label="Nuevo préstamo" desc="Crear prestamo" color="#22c55e" dataTour="nuevo-prestamo" />}
-            <QuickLink href="/caja" label="Cierre de caja" desc="Registrar cierre del dia" color="#f59e0b" dataTour="caja" />
+            {puedeCrearPrestamos && <QuickLink href="/prestamos/nuevo" label="Nuevo préstamo" desc="Crear préstamo" color="#22c55e" dataTour="nuevo-prestamo" />}
+            <QuickLink href="/caja" label="Cierre de caja" desc="Registrar cierre del día" color="#f59e0b" dataTour="caja" />
             <QuickLink href="/clientes" label="Clientes" desc="Ver cartera completa" color="#a855f7" dataTour="prestamos" />
           </div>
         </div>

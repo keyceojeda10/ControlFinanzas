@@ -638,7 +638,7 @@ export default function RutaDetallePage({ params }) {
         await fetchRuta()
       }
     } catch {
-      alert('Error de conexion. Verifica tu red.')
+      alert('Error de conexión. Verifica tu red.')
       await fetchRuta()
     } finally { setPagandoRapido(null) }
   }
@@ -1858,7 +1858,7 @@ export default function RutaDetallePage({ params }) {
                             <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                             </svg>
-                            Cobrado · sin geolocalizacion
+                            Cobrado · sin geolocalización
                           </div>
                         )
                       }
@@ -1868,7 +1868,7 @@ export default function RutaDetallePage({ params }) {
                             <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                             </svg>
-                            Cobrado · cliente sin ubicacion fijada
+                            Cobrado · cliente sin ubicación fijada
                           </div>
                         )
                       }
@@ -2636,7 +2636,7 @@ export default function RutaDetallePage({ params }) {
         }
       >
         <p className="text-sm text-[var(--color-text-muted)]">
-          Se reordenarán los clientes según su ubicacion GPS para crear la ruta mas corta. Esto puede cambiar el orden que configuraste manualmente.
+          Se reordenarán los clientes según su ubicación GPS para crear la ruta mas corta. Esto puede cambiar el orden que configuraste manualmente.
         </p>
       </Modal>
 

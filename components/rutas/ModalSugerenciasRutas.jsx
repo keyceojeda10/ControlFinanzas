@@ -115,7 +115,7 @@ export default function ModalSugerenciasRutas({ open, onClose, onSuccess }) {
       setSugerencias((prev) => prev.filter((_, i) => i !== idx))
       onSuccess?.()
     } catch {
-      alert('Error de conexion')
+      alert('Error de conexión')
     } finally {
       setAgregando(null)
     }
@@ -266,7 +266,7 @@ export default function ModalSugerenciasRutas({ open, onClose, onSuccess }) {
 
           {datos.sueltos > 0 && grupos.length > 0 && (
             <p className="text-[11px] text-center" style={{ color: 'var(--color-text-muted)' }}>
-              {datos.sueltos} cliente{datos.sueltos === 1 ? '' : 's'} sin agrupacion clara. Asigna manualmente desde su perfil.
+              {datos.sueltos} cliente{datos.sueltos === 1 ? '' : 's'} sin agrupación clara. Asigna manualmente desde su perfil.
             </p>
           )}
 

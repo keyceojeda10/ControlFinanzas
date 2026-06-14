@@ -434,7 +434,7 @@ function TabOrganizacion() {
             <input type="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="Ej: 3001234567" className={inputClass} />
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[#888888]">Pais</label>
+            <label className="text-xs font-medium text-[#888888]">País</label>
             <div
               className="flex items-center justify-between rounded-[12px] px-3 py-2.5"
               style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
@@ -458,16 +458,16 @@ function TabOrganizacion() {
                   border: '1px solid color-mix(in srgb, var(--color-accent) 25%, transparent)',
                 }}
               >
-                Cambiar pais
+                Cambiar país
               </a>
             </div>
             <p className="text-[10px] text-[#666666] leading-snug px-0.5">
-              Para cambiar el pais asociado a tu cuenta debes contactar a soporte.
+              Para cambiar el país asociado a tu cuenta debes contactar a soporte.
             </p>
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-[#888888]">Ciudad</label>
-            <input type="text" value={ciudad} onChange={(e) => setCiudad(e.target.value)} placeholder="Ej: Bogota" className={inputClass} />
+            <input type="text" value={ciudad} onChange={(e) => setCiudad(e.target.value)} placeholder="Ej: Bogotá" className={inputClass} />
           </div>
           {msg && <Alerta tipo={msg.tipo}>{msg.texto}</Alerta>}
           <Button onClick={guardar} loading={guardando} size="sm">Guardar cambios</Button>
@@ -495,7 +495,7 @@ function TabOrganizacion() {
           <div className="min-w-0">
             <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Capital en ruta = efectivo en mano</p>
             <p className="text-[11px] text-[#666666] leading-snug mt-1">
-              Activa si entregas el capital de la ruta como plata fisica al cobrador. El sistema usara ese valor para calcular el dinero en mano y el cuadre de caja.
+              Activa si entregas el capital de la ruta como plata física al cobrador. El sistema usará ese valor para calcular el dinero en mano y el cuadre de caja.
             </p>
           </div>
           <button

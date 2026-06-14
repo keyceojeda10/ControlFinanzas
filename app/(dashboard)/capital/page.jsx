@@ -18,7 +18,7 @@ export default function CapitalPage() {
   if (!esOwner) {
     return (
       <div className="max-w-3xl mx-auto py-10 text-center">
-        <p className="text-[var(--color-text-muted)]">No tienes acceso a esta seccion.</p>
+        <p className="text-[var(--color-text-muted)]">No tienes acceso a esta sección.</p>
       </div>
     )
   }

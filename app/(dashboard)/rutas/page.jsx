@@ -299,7 +299,7 @@ export default function RutasPage() {
       a.download = `rutas-backup-${new Date().toISOString().slice(0, 10)}.json`
       a.click()
       URL.revokeObjectURL(url)
-    } catch { alert('Error de conexion') } finally { setBackupLoading(false) }
+    } catch { alert('Error de conexión') } finally { setBackupLoading(false) }
   }
 
   const restaurarBackup = async () => {

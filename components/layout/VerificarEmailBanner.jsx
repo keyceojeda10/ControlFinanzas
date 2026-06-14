@@ -47,7 +47,7 @@ export default function VerificarEmailBanner() {
       setSuccess(true)
       update?.()
     } catch {
-      setError('Error de conexion')
+      setError('Error de conexión')
     } finally {
       setLoading(false)
     }

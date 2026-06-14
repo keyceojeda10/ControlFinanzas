@@ -13,7 +13,7 @@ export default function TutorialesPage() {
       <div className="mb-6">
         <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Tutoriales</h1>
         <p className="text-sm text-[var(--color-text-muted)] mt-1">
-          Aprende a usar cada funcion del sistema paso a paso
+          Aprende a usar cada función del sistema paso a paso
         </p>
       </div>
       <TutorialesList showCopyButton={false} />

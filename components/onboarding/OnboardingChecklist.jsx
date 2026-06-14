@@ -70,7 +70,7 @@ export default function OnboardingChecklist({ misiones, completadas, total, prog
               onClick={onDismiss}
               className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-muted)] transition-colors"
             >
-              Ya conozco el sistema, ocultar guia
+              Ya conozco el sistema, ocultar guía
             </button>
           </div>
         </div>

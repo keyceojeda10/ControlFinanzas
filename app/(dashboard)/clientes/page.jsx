@@ -268,7 +268,7 @@ export default function ClientesPage() {
   const guardarNombreGrupo = async (grupo, valorCrudo) => {
     const nombreLimpio = valorCrudo.trim()
     if (!nombreLimpio) {
-      setError('El nombre del grupo no puede quedar vacio.')
+      setError('El nombre del grupo no puede quedar vacío.')
       setEditandoGrupo(null)
       return
     }

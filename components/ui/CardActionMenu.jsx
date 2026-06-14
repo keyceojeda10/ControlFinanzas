@@ -31,7 +31,7 @@ export default function CardActionMenu({ actions = [] }) {
         onClick={() => setOpen(v => !v)}
         className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:bg-[var(--color-bg-hover)] active:scale-90 cursor-pointer"
         style={{ color: 'var(--color-text-muted)' }}
-        aria-label="Acciones rapidas"
+        aria-label="Acciones rápidas"
       >
         <svg className="w-[18px] h-[18px]" fill="currentColor" viewBox="0 0 24 24">
           <circle cx="12" cy="5" r="2" />

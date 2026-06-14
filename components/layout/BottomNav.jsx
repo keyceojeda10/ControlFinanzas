@@ -183,7 +183,7 @@ export default function BottomNav({ onOpenLucas }) {
             onClick={() => setFabOpen(false)}
             className="w-14 h-14 rounded-full flex items-center justify-center active:scale-90 transition-transform"
             style={{ background: '#000' }}
-            aria-label="Cerrar menu"
+            aria-label="Cerrar menú"
           >
             <svg className="w-7 h-7" fill="none" stroke="var(--color-accent)" strokeWidth={2.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -199,7 +199,7 @@ export default function BottomNav({ onOpenLucas }) {
           onClick={() => setMoreOpen(false)}
           role="button"
           tabIndex={-1}
-          aria-label="Cerrar menu"
+          aria-label="Cerrar menú"
         >
           <div
             className="absolute bottom-0 left-0 right-0 rounded-t-[24px] overflow-hidden animate-slide-up cf-sheet"
@@ -211,7 +211,7 @@ export default function BottomNav({ onOpenLucas }) {
             </div>
 
             <div className="px-4 pb-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--color-text-secondary)' }}>Navegacion</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--color-text-secondary)' }}>Navegación</p>
             </div>
 
             <div className="px-2 pb-8 overflow-y-auto">
@@ -244,7 +244,7 @@ export default function BottomNav({ onOpenLucas }) {
         <div className="flex items-center gap-3">
           {/* Nav pill */}
           <nav
-            aria-label="Navegacion principal movil"
+            aria-label="Navegación principal móvil"
             className="flex-1 flex items-center justify-around rounded-[22px] py-2 pointer-events-auto cf-nav-pill"
           >
             {PILL_TABS.map((tab) => {
@@ -296,7 +296,7 @@ export default function BottomNav({ onOpenLucas }) {
             type="button"
             onClick={() => { setFabOpen(true); setMoreOpen(false) }}
             className="w-[56px] h-[56px] rounded-full flex items-center justify-center shrink-0 pointer-events-auto active:scale-90 transition-transform cf-fab-button"
-            aria-label="Acciones rapidas"
+            aria-label="Acciones rápidas"
           >
             <span className="text-[28px] font-black leading-none cf-fab-icon">$</span>
           </button>

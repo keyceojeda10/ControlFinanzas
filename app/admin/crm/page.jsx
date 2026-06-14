@@ -309,7 +309,7 @@ export default function CRMPage() {
           >
             <option value="">Todos los planes</option>
             <option value="starter">Inicial</option>
-            <option value="basic">Basico</option>
+            <option value="basic">Básico</option>
             <option value="growth">Crecimiento</option>
             <option value="standard">Profesional</option>
             <option value="professional">Empresarial</option>

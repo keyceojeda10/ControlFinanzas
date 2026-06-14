@@ -185,7 +185,7 @@ export default function WhatsAppBotDashboard() {
       {/* Ultimos leads */}
       <div className="border border-[var(--color-border)] rounded-[12px] bg-[var(--color-bg-card)]">
         <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
-          <h2 className="text-sm font-semibold text-[white]">Ultimos leads</h2>
+          <h2 className="text-sm font-semibold text-[white]">Últimos leads</h2>
           <Link href="/admin/whatsapp-bot/leads" className="text-xs text-[#3b82f6] hover:underline">
             Ver todos
           </Link>
@@ -231,7 +231,7 @@ export default function WhatsAppBotDashboard() {
             <p className="text-lg font-bold text-[#8b5cf6] font-mono-display">US${data.gastoTotal}</p>
           </div>
           <Link href="/admin/whatsapp-bot/config" className="text-xs text-[var(--color-text-muted)] hover:text-white transition-all">
-            Limite: US${data.limiteGastoUsd || '5.00'}
+            Límite: US${data.limiteGastoUsd || '5.00'}
           </Link>
         </div>
       </div>

@@ -63,7 +63,7 @@ export default function ReagendarVisitaModal({ open, onClose, clienteId, cliente
     if (fechaOpcion === 'custom' && !fechaCustom) { setError('Selecciona una fecha'); return }
 
     const fecha = getFechaReagendada()
-    if (!fecha) { setError('Fecha invalida'); return }
+    if (!fecha) { setError('Fecha inválida'); return }
 
     setLoading(true)
     setError('')

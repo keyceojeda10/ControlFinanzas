@@ -139,7 +139,7 @@ export default function WhatsAppBotConfig() {
 
       {/* Delays y limites */}
       <div className="border border-[var(--color-border)] rounded-[12px] p-4 bg-[var(--color-bg-card)]">
-        <h2 className="text-sm font-semibold text-white mb-3">Seguimientos y limites</h2>
+        <h2 className="text-sm font-semibold text-white mb-3">Seguimientos y límites</h2>
         <div className="grid grid-cols-2 gap-3">
           {[
             { key: 'limiteDiario', label: 'Limite diario mensajes', type: 'number' },

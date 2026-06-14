@@ -87,7 +87,7 @@ export default function WizardWelcome({ nombre, onNext, onDismiss }) {
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-widest mb-5"
           style={{ background: 'rgba(245,197,24,0.1)', color: '#f5c518', border: '1px solid rgba(245,197,24,0.18)' }}>
           <span className="w-1.5 h-1.5 rounded-full bg-[#f5c518] animate-pulse inline-block" />
-          Tu periodo de prueba está activo
+          Tu período de prueba está activo
         </div>
 
         <h1 className="text-[30px] font-bold leading-[1.15] mb-3"

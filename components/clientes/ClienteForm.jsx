@@ -285,7 +285,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
           return
         } catch {}
       }
-      setError('Error de conexion. Intenta de nuevo.')
+      setError('Error de conexión. Intenta de nuevo.')
     } finally {
       setLoading(false)
     }
@@ -375,7 +375,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
           <div className="mt-7 space-y-5">
             <Input
               label="Nombre completo"
-              placeholder="Ej: Juan Garcia"
+              placeholder="Ej: Juan García"
               value={form.nombre}
               onChange={set('nombre')}
               error={errores.nombre}
@@ -446,7 +446,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
             />
             <div>
               <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                Ubicacion en el mapa (opcional)
+                Ubicación en el mapa (opcional)
               </label>
               <div className="mt-2">
                 <LocationPicker
@@ -493,7 +493,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                 Días sin cobro (opcional)
               </label>
               <p className="text-[11px] leading-snug mt-1 mb-2" style={{ color: 'var(--color-text-muted)' }}>
-                Este cliente no será cobrado en los días que selecciones. Si no defines nada, hereda de la ruta o la organizacion.
+                Este cliente no será cobrado en los días que selecciones. Si no defines nada, hereda de la ruta o la organización.
               </p>
               <DiasSinCobroSelector value={diasSinCobro} onChange={setDiasSinCobro} compact />
             </div>

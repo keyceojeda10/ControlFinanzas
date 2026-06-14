@@ -246,7 +246,7 @@ function NuevoCobradorInner() {
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-semibold text-[var(--color-text-primary)]">Limite alcanzado</p>
+                <p className="text-sm font-semibold text-[var(--color-text-primary)]">Límite alcanzado</p>
                 <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
                   Has usado todos los espacios de tu plan. Agrega un cobrador adicional por <span className="text-[var(--color-accent)] font-bold">$19.000/mes</span>.
                 </p>
@@ -272,7 +272,7 @@ function NuevoCobradorInner() {
 
         {limitReached && !puedeComprarExtra && (
           <div className="bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.2)] rounded-[12px] p-4 text-center">
-            <p className="text-sm text-[var(--color-danger)] font-medium">Limite alcanzado</p>
+            <p className="text-sm text-[var(--color-danger)] font-medium">Límite alcanzado</p>
             <p className="text-xs text-[var(--color-text-muted)] mt-1">
               Tu plan no permite cobradores extra. Actualiza al plan Crecimiento, Profesional o Empresarial.
             </p>

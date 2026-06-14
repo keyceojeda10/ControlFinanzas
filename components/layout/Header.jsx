@@ -46,7 +46,7 @@ export default function Header() {
           <button
             onClick={() => setUserOpen(v => !v)}
             className="flex items-center gap-2.5 rounded-full py-1.5 pl-1.5 pr-4 active:scale-[0.97] transition-transform cf-header-pill"
-            aria-label="Menu de usuario"
+            aria-label="Menú de usuario"
           >
             <div className="relative">
               <Avatar nombre={nombre} avatarId={session?.user?.avatarId} size={34} fontSize={12} />

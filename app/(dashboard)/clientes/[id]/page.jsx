@@ -261,7 +261,7 @@ export default function ClienteDetallePage({ params }) {
     try {
       const coords = await obtenerCoordsRapido(8000)
       if (!coords) {
-        alert('No se pudo obtener tu ubicacion. Verifica que el GPS este activo y que diste permiso al navegador.')
+        alert('No se pudo obtener tu ubicación. Verifica que el GPS este activo y que diste permiso al navegador.')
         return
       }
       const res = await fetch(`/api/clientes/${id}`, {
@@ -272,7 +272,7 @@ export default function ClienteDetallePage({ params }) {
       if (!res.ok) { const d = await res.json().catch(() => ({})); alert(d.error || 'Error al guardar'); return }
       setCliente(prev => ({ ...prev, latitud: coords.latitud, longitud: coords.longitud }))
     } catch {
-      alert('Error de conexion')
+      alert('Error de conexión')
     } finally {
       setFijandoGPS(false)
     }
@@ -790,7 +790,7 @@ function DeleteClienteModal({ cliente, prestamos, onClose, onDeletePrestamo, onT
                 type="text"
                 value={buscar}
                 onChange={e => setBuscar(e.target.value)}
-                placeholder="Buscar cliente por nombre o cedula..."
+                placeholder="Buscar cliente por nombre o cédula..."
                 className="w-full mb-2 px-3 py-2 bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[10px] text-sm text-[var(--color-text-primary)] placeholder-[#555] focus:outline-none focus:border-[var(--color-accent)]"
               />
               {loadingClientes ? (

@@ -47,7 +47,7 @@ export default function SyncDrawer({ open, onClose }) {
       <div className="relative w-full max-w-md h-full bg-[var(--color-bg-base)] border-l border-[var(--color-border)] shadow-2xl overflow-y-auto">
         <div className="sticky top-0 z-10 bg-[var(--color-bg-base)] border-b border-[var(--color-border)] px-4 py-3 flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold text-[var(--color-text-primary)]">Sincronizacion</h2>
+            <h2 className="text-base font-bold text-[var(--color-text-primary)]">Sincronización</h2>
             <p className="text-[11px] text-[var(--color-text-muted)]">
               {isOnline ? 'Online' : 'Offline'}
               {syncMeta?.syncedAt && ` - ultima descarga ${fmtDate(syncMeta.syncedAt)}`}
@@ -89,7 +89,7 @@ export default function SyncDrawer({ open, onClose }) {
                 </p>
               </div>
               <p className="text-[11px] text-[var(--color-text-muted)] mb-2">
-                Alguien modifico estos registros mientras editabas offline. Revisa y decide.
+                Alguien modificó estos registros mientras editabas offline. Revisa y decide.
               </p>
               <ul className="space-y-1.5">
                 {conflictos.map((m) => (

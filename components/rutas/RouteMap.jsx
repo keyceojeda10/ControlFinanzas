@@ -128,11 +128,11 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [] }) {
         style={{ background: '#111111' }}
       />
       <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
-        {conCoords.length} clientes con ubicacion
+        {conCoords.length} clientes con ubicación
         {cobrosGeoHoy?.length > 0 && (
           <> • <span style={{ color: '#22c55e' }}>● </span>{cobrosGeoHoy.length} cobro{cobrosGeoHoy.length === 1 ? '' : 's'} de hoy</>
         )}
-        {' • '}La linea muestra el orden de visita
+        {' • '}La línea muestra el orden de visita
       </p>
     </div>
   )

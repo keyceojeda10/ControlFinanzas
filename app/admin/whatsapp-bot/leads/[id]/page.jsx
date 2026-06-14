@@ -197,7 +197,7 @@ export default function BotLeadDetalle() {
           )}
           {lead.metodoActual && (
             <div>
-              <p className="text-[10px] text-[var(--color-text-muted)]">Metodo</p>
+              <p className="text-[10px] text-[var(--color-text-muted)]">Método</p>
               <p className="text-xs text-white">{lead.metodoActual}</p>
             </div>
           )}
@@ -246,7 +246,7 @@ export default function BotLeadDetalle() {
       {/* Chat */}
       <div className="border border-[var(--color-border)] rounded-[12px] bg-[var(--color-bg-card)] overflow-hidden">
         <div className="px-4 py-2.5 border-b border-[var(--color-border)]">
-          <h2 className="text-sm font-semibold text-[white]">Conversacion ({mensajes.length})</h2>
+          <h2 className="text-sm font-semibold text-[white]">Conversación ({mensajes.length})</h2>
         </div>
         <div ref={chatRef} onScroll={handleScroll} className="p-4 space-y-3 max-h-[500px] overflow-y-auto">
           {mensajes.map(msg => {

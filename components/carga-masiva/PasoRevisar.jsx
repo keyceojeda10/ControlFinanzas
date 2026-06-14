@@ -73,7 +73,7 @@ export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolv
             <span className="text-[var(--color-text-primary)] font-medium">{resumen.prestamosDinero}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-[var(--color-text-muted)]">Mercancias</span>
+            <span className="text-[var(--color-text-muted)]">Mercancías</span>
             <span className="text-[var(--color-text-primary)] font-medium">{resumen.prestamosMercancia}</span>
           </div>
           <div className="flex justify-between col-span-2">
@@ -84,7 +84,7 @@ export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolv
 
         {resumen.excedePlan && (
           <div className="bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-xs rounded-[10px] px-3 py-2 mt-2">
-            Excedes el limite de tu plan ({resumen.limiteClientes} clientes).
+            Excedes el límite de tu plan ({resumen.limiteClientes} clientes).
             Tienes {resumen.clientesActuales}, necesitas {resumen.clientesNuevos} nuevos.
             Espacio disponible: {resumen.espacioDisponible}.
           </div>

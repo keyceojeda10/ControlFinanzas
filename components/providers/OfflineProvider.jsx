@@ -527,7 +527,7 @@ export default function OfflineProvider({ children }) {
         <button
           onClick={() => setDrawerOpen(true)}
           className={`lg:hidden fixed bottom-[84px] right-3 z-[9998] h-9 px-3 rounded-full flex items-center gap-2 shadow-lg backdrop-blur-xl bg-[var(--color-bg-surface)] border text-[var(--color-text-primary)] text-xs font-semibold ${(conflictos.length > 0 || failedTotal > 0) ? 'border-[var(--color-danger)] animate-pulse' : 'border-[var(--color-border)]'}`}
-          aria-label="Estado de sincronizacion"
+          aria-label="Estado de sincronización"
         >
           {bulkSyncing ? (
             <svg className="w-3 h-3 animate-spin text-[var(--color-info)]" fill="none" viewBox="0 0 24 24">

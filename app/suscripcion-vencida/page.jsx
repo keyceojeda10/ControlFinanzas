@@ -103,7 +103,7 @@ export default function SuscripcionVencida() {
             </h1>
             <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
               {fechaVencimiento
-                ? <>Vencio el <strong style={{ color: 'var(--color-text-primary)' }}>{fechaVencimiento}</strong>
+                ? <>Venció el <strong style={{ color: 'var(--color-text-primary)' }}>{fechaVencimiento}</strong>
                     {diasVencida > 0 && <> · hace {diasVencida} día{diasVencida !== 1 ? 's' : ''}</>}
                   </>
                 : 'Tu plan ya no esta activo.'}

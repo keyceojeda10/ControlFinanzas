@@ -115,7 +115,7 @@ export default function CobradorOnboarding({ userId }) {
         </div>
         <div className="flex-1 text-left min-w-0">
           <p className="text-sm font-bold text-[var(--color-text-primary)]">Primeros pasos como cobrador</p>
-          <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">Aprende lo basico para empezar a cobrar</p>
+          <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">Aprende lo básico para empezar a cobrar</p>
         </div>
         <svg
           className={`w-5 h-5 text-[var(--color-text-muted)] transition-transform duration-200 shrink-0 ${expanded ? 'rotate-180' : ''}`}
@@ -176,7 +176,7 @@ export default function CobradorOnboarding({ userId }) {
               onClick={handleDismiss}
               className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-muted)] transition-colors"
             >
-              Ya entendi, ocultar guia
+              Ya entendí, ocultar guía
             </button>
           </div>
         </div>

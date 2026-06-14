@@ -302,9 +302,9 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
     }
 
     if (normalizarEmail(form.email) !== normalizarEmail(form.emailConfirmar)) {
-      setError('Los correos electronicos no coinciden'); return
+      setError('Los correos electrónicos no coinciden'); return
     }
-    if (!form.terminosAceptados) { setError('Debes aceptar los terminos y condiciones'); return }
+    if (!form.terminosAceptados) { setError('Debes aceptar los términos y condiciones'); return }
     if (form.password.length < 8) { setError('La contraseña debe tener al menos 8 caracteres'); return }
     if (form.password !== form.confirmar) { setError('Las contraseñas no coinciden'); return }
 
@@ -336,7 +336,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
       }
       setStep(3)
     } catch {
-      setError('Error de conexion. Intenta de nuevo.')
+      setError('Error de conexión. Intenta de nuevo.')
     } finally {
       setLoading(false)
     }
@@ -552,7 +552,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
                 </svg>
                 <span>
-                  Al terminar la prueba quedaras en <strong style={{ color: t.text }}>{infoPlan?.nombre}</strong>. Puedes cambiar de plan cuando quieras.
+                  Al terminar la prueba quedarás en <strong style={{ color: t.text }}>{infoPlan?.nombre}</strong>. Puedes cambiar de plan cuando quieras.
                 </span>
               </div>
 
@@ -622,7 +622,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                   label="Nombre del negocio"
                   value={form.nombreOrganizacion}
                   onChange={set('nombreOrganizacion')}
-                  placeholder="Ej: Préstamos Garcia"
+                  placeholder="Ej: Préstamos García"
                   icon={
                     <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
@@ -634,7 +634,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                   label="Tu nombre"
                   value={form.nombre}
                   onChange={set('nombre')}
-                  placeholder="Ej: Carlos Garcia"
+                  placeholder="Ej: Carlos García"
                   icon={
                     <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
@@ -661,7 +661,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                       }
                     />
                     <p className="text-[11px] mt-1 px-0.5" style={{ color: t.textMuted }}>
-                      Recibes el código de verificacion aquí
+                      Recibes el código de verificación aquí
                     </p>
                   </div>
                 )}
@@ -725,7 +725,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                 )}
 
                 <AuthInput
-                  label="Contrasena"
+                  label="Contraseña"
                   type="password"
                   value={form.password}
                   onChange={set('password')}
@@ -740,11 +740,11 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                 />
 
                 <AuthInput
-                  label="Confirmar contrasena"
+                  label="Confirmar contraseña"
                   type="password"
                   value={form.confirmar}
                   onChange={set('confirmar')}
-                  placeholder="Repite tu contrasena"
+                  placeholder="Repite tu contraseña"
                   autoComplete="new-password"
                   showPasswordToggle
                   icon={
@@ -765,11 +765,11 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                     Acepto los{' '}
                     <a href="https://control-finanzas.com/terminos-uso" target="_blank" rel="noopener noreferrer"
                       className="hover:underline" style={{ color: '#f5c518' }}>
-                      Terminos de uso
+                      Términos de uso
                     </a>{' '}y la{' '}
                     <a href="https://control-finanzas.com/privacidad" target="_blank" rel="noopener noreferrer"
                       className="hover:underline" style={{ color: '#f5c518' }}>
-                      Politica de privacidad
+                      Política de privacidad
                     </a>
                   </span>
                 </label>

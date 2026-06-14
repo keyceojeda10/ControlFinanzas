@@ -70,7 +70,7 @@ function ShowcasePanel() {
           <div className="flex items-center gap-2.5 mb-3">
             <div className="w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0" style={{ background: 'linear-gradient(135deg,#60a5fa,#a78bfa)', color: '#fff' }}>MR</div>
             <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-medium" style={{ color: '#f0f0f5' }}>Marisol Ramirez</p>
+              <p className="text-[13px] font-medium" style={{ color: '#f0f0f5' }}>Marisol Ramírez</p>
               <p className="text-[11px]" style={{ color: '#888' }}>Cuota 7/24 · PR-1209</p>
             </div>
             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0" style={{ background: 'rgba(245,197,24,0.12)', color: '#f5c518' }}>Pagado</span>
@@ -106,7 +106,7 @@ function ShowcasePanel() {
             <div className="w-8 h-8 rounded-lg flex items-center justify-center font-mono text-[13px] font-bold shrink-0" style={{ background: 'rgba(245,197,24,0.1)', color: '#f5c518' }}>8</div>
             <div>
               <p className="text-[13px]" style={{ color: '#f0f0f5' }}>8 visitas programadas</p>
-              <p className="text-[11px]" style={{ color: '#888' }}>Cra 43 → Belen → Estadio</p>
+              <p className="text-[11px]" style={{ color: '#888' }}>Cra 43 → Belén → Estadio</p>
             </div>
           </div>
         </div>
@@ -233,7 +233,7 @@ export default function LoginPage() {
 
             <AuthInput
               id="password"
-              label="Contrasena"
+              label="Contraseña"
               type="password"
               autoComplete="current-password"
               required
@@ -248,7 +248,7 @@ export default function LoginPage() {
               <Link href="/forgot-password" className="text-xs hover:underline transition-colors"
                 style={{ color: 'var(--color-text-muted)' }}
               >
-                Olvidaste tu contrasena?
+                Olvidaste tu contraseña?
               </Link>
             </div>
 

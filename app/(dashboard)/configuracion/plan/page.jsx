@@ -237,7 +237,7 @@ function PlanPageInner() {
                   background: 'var(--color-bg-hover)',
                   border: '1px solid var(--color-border)',
                   color: 'var(--color-text-muted)',
-                }}>Renovacion automatica</span>
+                }}>Renovación automática</span>
               )}
             </div>
 
@@ -320,7 +320,7 @@ function PlanPageInner() {
             className="w-full h-10 rounded-[12px] text-[12px] font-medium flex items-center justify-center gap-1 transition-colors"
             style={{ color: 'var(--color-danger)' }}
           >
-            Cancelar suscripcion
+            Cancelar suscripción
           </button>
         )}
       </div>

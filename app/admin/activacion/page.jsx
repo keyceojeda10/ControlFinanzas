@@ -67,8 +67,8 @@ export default function ActivacionPage() {
   return (
     <div className="max-w-5xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-lg font-bold text-[var(--color-text-primary)]">Panel de Activacion</h1>
-        <p className="text-xs text-[var(--color-text-muted)]">Monitorea registros, activacion y trial de usuarios</p>
+        <h1 className="text-lg font-bold text-[var(--color-text-primary)]">Panel de Activación</h1>
+        <p className="text-xs text-[var(--color-text-muted)]">Monitorea registros, activación y trial de usuarios</p>
       </div>
 
       {/* Resumen cards */}

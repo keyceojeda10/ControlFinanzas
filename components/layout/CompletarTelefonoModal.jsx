@@ -51,7 +51,7 @@ export default function CompletarTelefonoModal() {
       }
       setOpen(false)
     } catch {
-      setError('Error de conexion. Intenta de nuevo.')
+      setError('Error de conexión. Intenta de nuevo.')
     } finally {
       setLoading(false)
     }

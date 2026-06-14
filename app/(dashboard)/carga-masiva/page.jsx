@@ -60,7 +60,7 @@ function CargaMasivaPageInner() {
       setRutas(data.rutas)
       setPaso(2)
     } catch {
-      setError('Error de conexion. Intenta de nuevo.')
+      setError('Error de conexión. Intenta de nuevo.')
     } finally {
       setValidando(false)
     }

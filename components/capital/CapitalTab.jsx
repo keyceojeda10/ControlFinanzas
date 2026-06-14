@@ -291,7 +291,7 @@ export default function CapitalTab() {
       {noConfigurado && (
         <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-hover)] rounded-[16px] px-5 py-5 text-center">
           <p className="text-[var(--color-text-primary)] font-medium mb-2">Configura tu capital inicial</p>
-          <p className="text-sm text-[var(--color-text-muted)] mb-2">Registra con cuanto capital empiezas para que el sistema lleve el control automaticamente.</p>
+          <p className="text-sm text-[var(--color-text-muted)] mb-2">Registra con cuanto capital empiezas para que el sistema lleve el control automáticamente.</p>
           {mostrarSugerido && (
             <p className="text-sm text-[var(--color-success)] mb-4">
               Sugerencia por historial: <span className="font-semibold font-mono-display">{formatMoney(sugerido.saldo)}</span>

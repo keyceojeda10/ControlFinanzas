@@ -20,7 +20,7 @@ export default function ConflictResolverModal({ mutacion, onResolve, onClose }) 
   const campos = Object.keys(payload).filter(k => payload[k] !== undefined)
 
   const fmt = (v) => {
-    if (v == null || v === '') return <span className="italic text-[var(--color-text-muted)]">(vacio)</span>
+    if (v == null || v === '') return <span className="italic text-[var(--color-text-muted)]">(vacío)</span>
     if (typeof v === 'number') return v.toLocaleString('es-CO')
     if (typeof v === 'boolean') return v ? 'si' : 'no'
     return String(v)
@@ -36,9 +36,9 @@ export default function ConflictResolverModal({ mutacion, onResolve, onClose }) 
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4a2 2 0 00-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z" />
             </svg>
             <div className="flex-1 min-w-0">
-              <h2 className="text-sm font-bold text-[var(--color-text-primary)]">Conflicto de edicion</h2>
+              <h2 className="text-sm font-bold text-[var(--color-text-primary)]">Conflicto de edición</h2>
               <p className="text-[11px] text-[var(--color-text-muted)]">
-                {tipoLabel} - tu cambio choco con una modificacion en el servidor.
+                {tipoLabel} - tu cambio chocó con una modificación en el servidor.
               </p>
             </div>
           </div>

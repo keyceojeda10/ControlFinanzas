@@ -193,7 +193,7 @@ function ModalCrearLead({ onClose, onCreado }) {
 
   async function guardar(e) {
     e.preventDefault()
-    if (!form.telefono) { setError('Telefono requerido'); return }
+    if (!form.telefono) { setError('Teléfono requerido'); return }
     setSaving(true)
     setError('')
     try {

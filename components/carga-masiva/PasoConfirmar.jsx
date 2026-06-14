@@ -30,7 +30,7 @@ export default function PasoConfirmar({ datosImportar, onVolver, onReiniciar }) 
       }
       setResultado(data.resultado)
     } catch {
-      setError('Error de conexion. Intenta de nuevo.')
+      setError('Error de conexión. Intenta de nuevo.')
     } finally {
       setImportando(false)
     }
@@ -122,16 +122,16 @@ export default function PasoConfirmar({ datosImportar, onVolver, onReiniciar }) 
         <svg className="w-12 h-12 text-[var(--color-accent)] mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
         </svg>
-        <h2 className="text-lg font-bold text-[var(--color-text-primary)] mb-1">Confirmar importacion</h2>
+        <h2 className="text-lg font-bold text-[var(--color-text-primary)] mb-1">Confirmar importación</h2>
         <p className="text-sm text-[var(--color-text-muted)]">
-          Se importaran <span className="text-[var(--color-accent)] font-semibold">{filas.length}</span> filas.
+          Se importarán <span className="text-[var(--color-accent)] font-semibold">{filas.length}</span> filas.
           Esta acción no se puede deshacer.
         </p>
       </div>
 
       {crearRuta && (
         <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[12px] px-3 py-2.5">
-          <p className="text-[10px] text-[var(--color-text-muted)]">Se creara la ruta</p>
+          <p className="text-[10px] text-[var(--color-text-muted)]">Se creará la ruta</p>
           <p className="text-sm font-semibold text-[var(--color-text-primary)]">{crearRuta}</p>
         </div>
       )}

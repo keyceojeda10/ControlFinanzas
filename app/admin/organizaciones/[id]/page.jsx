@@ -247,7 +247,7 @@ export default function OrgDetallePage() {
       <Card>
         <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-4">Asignar plan (pago directo)</p>
         <p className="text-xs text-[var(--color-text-muted)] mb-4">
-          Usa esto cuando el cliente te paga directamente (transferencia, efectivo, etc.). Se activa igual que si pagara por MercadoPago: actualiza suscripción, le llega email de confirmación y se procesan referidos.
+          Usa esto cuando el cliente te paga directamente (transferencia, efectivo, etc.). Se activa igual que si pagará por MercadoPago: actualiza suscripción, le llega email de confirmación y se procesan referidos.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
           <div className="flex flex-col gap-1">
@@ -258,14 +258,14 @@ export default function OrgDetallePage() {
               className="h-9 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-xs text-[white] focus:outline-none focus:border-[var(--color-accent)]"
             >
               <option value="starter">Inicial ($39.000/mes)</option>
-              <option value="basic">Basico ($59.000/mes)</option>
+              <option value="basic">Básico ($59.000/mes)</option>
               <option value="growth">Crecimiento ($79.000/mes)</option>
               <option value="standard">Profesional ($119.000/mes)</option>
               <option value="professional">Empresarial ($259.000/mes)</option>
             </select>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] text-[var(--color-text-muted)]">Periodo</label>
+            <label className="text-[10px] text-[var(--color-text-muted)]">Período</label>
             <select
               value={pagoDirecto.periodo}
               onChange={(e) => setPagoDirecto(p => ({ ...p, periodo: e.target.value }))}
@@ -587,7 +587,7 @@ export default function OrgDetallePage() {
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                   </svg>
-                  Cambiar contrasena
+                  Cambiar contraseña
                 </button>
               </div>
             </div>

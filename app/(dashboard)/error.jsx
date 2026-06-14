@@ -75,14 +75,14 @@ export default function DashboardError({ error, reset }) {
           </button>
           {isOffline && (
             <p className="text-xs text-[#f5c518] mt-2">
-              Usa el boton &quot;Preparar offline&quot; en el Dashboard antes de salir a cobrar
+              Usa el botón "Preparar offline" en el Dashboard antes de salir a cobrar
             </p>
           )}
         </div>
 
         {error?.message && (
           <details className="mt-5 text-left bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-xl p-3">
-            <summary className="text-xs text-[var(--color-text-muted)] cursor-pointer">Detalles tecnicos</summary>
+            <summary className="text-xs text-[var(--color-text-muted)] cursor-pointer">Detalles técnicos</summary>
             <pre className="mt-2 text-xs text-[var(--color-danger)] whitespace-pre-wrap break-words">{error.message}{error.digest ? `\n\ndigest: ${error.digest}` : ''}</pre>
           </details>
         )}

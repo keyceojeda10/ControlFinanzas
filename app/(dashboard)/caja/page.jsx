@@ -1084,7 +1084,7 @@ export default function CajaPage() {
                       </div>
                     ))}
                   </div>
-                  <p className="text-[11px] text-[var(--color-text-muted)] mt-2">{rangoData.cantidadPagos} pago{rangoData.cantidadPagos === 1 ? '' : 's'} en el periodo.</p>
+                  <p className="text-[11px] text-[var(--color-text-muted)] mt-2">{rangoData.cantidadPagos} pago{rangoData.cantidadPagos === 1 ? '' : 's'} en el período.</p>
                 </Card>
               )}
             </>

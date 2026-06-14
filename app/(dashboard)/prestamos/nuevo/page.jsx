@@ -591,7 +591,7 @@ function NuevoPrestamo() {
                   type="search"
                   value={buscadorCliente}
                   onChange={(e) => setBuscadorCliente(e.target.value)}
-                  placeholder="Buscar por nombre o cedula"
+                  placeholder="Buscar por nombre o cédula"
                   className="w-full h-12 pl-10 pr-4 rounded-[12px] border text-sm focus:outline-none transition-colors"
                   style={{
                     background: 'var(--color-bg-surface)',
@@ -685,7 +685,7 @@ function NuevoPrestamo() {
                   : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }
                 }
               >
-                Mercancia
+                Mercancía
               </button>
             </div>
           </div>
@@ -708,7 +708,7 @@ function NuevoPrestamo() {
                   />
                 </div>
                 <p className="text-[10px] mt-1 leading-snug" style={{ color: 'var(--color-text-muted)' }}>
-                  Para saber a que mercancia hace referencia.
+                  Para saber a que mercancía hace referencia.
                 </p>
               </div>
             )}
@@ -782,7 +782,7 @@ function NuevoPrestamo() {
                   <MoneyInput value={precioVenta} onChange={(e) => setPrecioVenta(e.target.value)} placeholder="Ej: 120.000" />
                 </div>
                 <p className="text-[10px] mt-1 leading-snug" style={{ color: 'var(--color-text-muted)' }}>
-                  A cuanto le dejas la mercancia al cliente. Tu ganancia = precio de venta − valor del articulo.
+                  A cuanto le dejas la mercancía al cliente. Tu ganancia = precio de venta − valor del artículo.
                 </p>
                 {/* Vista previa en vivo: cuota + ganancia calculadas */}
                 {Number(precioVenta) > 0 && Number(numCuotas) > 0 && Number(monto) > 0 && (
@@ -807,7 +807,7 @@ function NuevoPrestamo() {
                 )}
                 {Number(precioVenta) > 0 && Number(precioVenta) <= Number(monto) && (
                   <p className="text-[10px] mt-1.5 font-semibold" style={{ color: 'var(--color-danger)' }}>
-                    El precio de venta debe ser mayor al valor del articulo para que haya ganancia.
+                    El precio de venta debe ser mayor al valor del artículo para que haya ganancia.
                   </p>
                 )}
               </div>
@@ -1309,7 +1309,7 @@ function NuevoPrestamo() {
               Tu saldo actual de capital es <span className="font-mono-display text-[var(--color-accent)]">{formatMoney(modalInyeccion.saldoActual)}</span>. Te faltan <span className="font-mono-display text-[var(--color-danger)]">{formatMoney(modalInyeccion.faltante)}</span> para este préstamo.
             </p>
             <p className="text-xs text-[var(--color-text-muted)] mb-4">
-              Puedes inyectar ese dinero ahora (por ejemplo, de tus ahorros o de un socio) y el sistema crea el préstamo. La inyeccion queda registrada en tus movimientos de capital.
+              Puedes inyectar ese dinero ahora (por ejemplo, de tus ahorros o de un socio) y el sistema crea el préstamo. La inyección queda registrada en tus movimientos de capital.
             </p>
 
             <div className="space-y-3">
@@ -1322,7 +1322,7 @@ function NuevoPrestamo() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-[var(--color-text-muted)] mb-1">Descripcion (opcional)</label>
+                <label className="block text-xs text-[var(--color-text-muted)] mb-1">Descripción (opcional)</label>
                 <Input
                   type="text"
                   value={modalInyeccion.descripcion}

@@ -166,7 +166,7 @@ export default function OrganizacionesPage() {
             onChange={(e) => setFiltSub(e.target.value)}
             className="h-8 px-2 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-xs text-[white] focus:outline-none focus:border-[var(--color-info)]"
           >
-            <option value="">Toda suscripcion</option>
+            <option value="">Toda suscripción</option>
             <option value="pagado">Pagados</option>
             <option value="trial">Trials</option>
             <option value="vencido">Vencidos</option>
