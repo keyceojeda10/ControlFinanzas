@@ -95,7 +95,10 @@ export async function DELETE(request, { params }) {
     where: { id: pagoId, organizationId },
     include: {
       prestamo: {
-        include: { pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } } },
+        include: {
+          pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
+          cliente: { select: { rutaId: true } },
+        },
       },
     },
   })
@@ -188,6 +191,11 @@ export async function DELETE(request, { params }) {
     // Pagos reales (completo, parcial, capital): se registro recaudo (ingreso) → reverso con egreso
     // Descuento: se registro ajuste egreso → reverso con ingreso
     // Recargo: no toca capital
+    // rutaId del cliente: el reverso debe descontar de la MISMA sub-bolsa de
+    // ruta donde el pago original sumo capital. Sin esto, el saldoCapital de la
+    // ruta no baja y la caja del cobrador (modo capital=efectivo) deja el monto
+    // anulado como "fantasma".
+    const rutaIdReverso = prestamo.cliente?.rutaId || null
     if (!['recargo', 'descuento'].includes(pago.tipo)) {
       await registrarMovimientoCapital(tx, {
         organizationId,
@@ -197,6 +205,7 @@ export async function DELETE(request, { params }) {
         descripcion: `Reverso pago anulado - préstamo`,
         referenciaId: prestamo.id,
         referenciaTipo: 'pago',
+        rutaId: rutaIdReverso,
         creadoPorId: session.user.id,
       })
     } else if (pago.tipo === 'descuento') {
@@ -208,6 +217,7 @@ export async function DELETE(request, { params }) {
         descripcion: `Reverso descuento anulado - préstamo`,
         referenciaId: prestamo.id,
         referenciaTipo: 'pago',
+        rutaId: rutaIdReverso,
         creadoPorId: session.user.id,
       })
     }

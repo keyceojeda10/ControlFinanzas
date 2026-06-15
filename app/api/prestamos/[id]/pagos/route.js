@@ -569,6 +569,7 @@ export async function POST(request, { params }) {
         descripcion: `Descuento aplicado - préstamo${nota?.trim() ? ` (${nota.trim()})` : ''}`,
         referenciaId: prestamoId,
         referenciaTipo: 'pago',
+        rutaId: prestamo.cliente?.rutaId || null,
         creadoPorId: userId,
         direccion: 'egreso',
       })

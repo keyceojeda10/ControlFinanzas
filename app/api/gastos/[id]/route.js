@@ -6,6 +6,20 @@ import { prisma } from '@/lib/prisma'
 import { registrarMovimientoCapital } from '@/lib/capital'
 import { logActividad } from '@/lib/activity-log'
 
+// Ruta a la que se imputa el gasto (sub-bolsa de capital): la primera ruta
+// activa del cobrador. Sin esto, el gasto baja el capital global pero NO el
+// saldoCapital de la ruta, y la caja del cobrador (modo capital=efectivo)
+// queda sin descontar el gasto.
+async function rutaDelGasto(client, organizationId, cobradorId) {
+  if (!cobradorId) return null
+  const ruta = await client.ruta.findFirst({
+    where: { organizationId, cobradorId, activo: true },
+    orderBy: { orden: 'asc' },
+    select: { id: true },
+  })
+  return ruta?.id || null
+}
+
 export async function PATCH(req, { params }) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
@@ -34,6 +48,8 @@ export async function PATCH(req, { params }) {
     return NextResponse.json({ error: 'Este gasto ya fue aprobado' }, { status: 409 })
   }
 
+  const rutaId = await rutaDelGasto(prisma, session.user.organizationId, gastoExistente.cobradorId)
+
   const gasto = await prisma.$transaction(async (tx) => {
     const gastoActualizado = await tx.gastoMenor.update({
       where: { id },
@@ -49,6 +65,7 @@ export async function PATCH(req, { params }) {
         descripcion: `Gasto: ${gastoExistente.description}`,
         referenciaId: id,
         referenciaTipo: 'gasto',
+        rutaId,
         creadoPorId: session.user.id,
       })
     }
@@ -63,6 +80,7 @@ export async function PATCH(req, { params }) {
         descripcion: `Reverso gasto rechazado: ${gastoExistente.description}`,
         referenciaId: id,
         referenciaTipo: 'gasto',
+        rutaId,
         creadoPorId: session.user.id,
       })
     }
@@ -89,6 +107,8 @@ export async function DELETE(req, { params }) {
     return NextResponse.json({ error: 'Gasto no encontrado' }, { status: 404 })
   }
 
+  const rutaId = await rutaDelGasto(prisma, session.user.organizationId, gasto.cobradorId)
+
   await prisma.$transaction(async (tx) => {
     // Si estaba aprobado, revertir el egreso de capital con un movimiento opuesto
     if (gasto.estado === 'aprobado') {
@@ -99,6 +119,7 @@ export async function DELETE(req, { params }) {
         descripcion: `Reverso gasto eliminado: ${gasto.description}`,
         referenciaId: id,
         referenciaTipo: 'gasto',
+        rutaId,
         creadoPorId: session.user.id,
         direccion: 'ingreso',
       })
