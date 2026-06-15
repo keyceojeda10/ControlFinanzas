@@ -16,9 +16,11 @@ El motor (`motor.mjs`) navega el sistema real, captura cada paso y lo anota.
 ### Onboarding / primeros pasos
 - [x] crear-cuenta — ✅ (3 pasos) · `crear-cuenta.mjs` (público; plan, datos, verificar)
 - [x] crear-cliente — ✅ (4 pasos) · `crear-cliente.mjs` (incluye importar cartulina)
-- [ ] primer-ingreso — demo vs cliente real (PENDIENTE: requiere cuenta NUEVA
-      verificada; el recorrido solo aparece el primer ingreso. Capturar cuando
-      haya una cuenta de prueba recién creada / con código de verificación a mano)
+- [x] primer-ingreso — ✅ (4 pasos) · `primer-ingreso.mjs` (bienvenida, demo vs
+      cliente real, ir al dashboard). Capturada con una cuenta de prueba creada
+      directo en DB (emailVerificado=true, onboardingCompletado=false) y borrada
+      al terminar. NOTA: el email se guarda normalizado (sin puntos en el local
+      part, ver lib/normalizar-email.js) — usarlo asi para loguear.
 
 ### Operación diaria
 - [x] crear-prestamo — ✅ (6 pasos) · `crear-prestamo.mjs`
@@ -41,8 +43,13 @@ El motor (`motor.mjs`) navega el sistema real, captura cada paso y lo anota.
 - [x] lucas-ia — ✅ (3 pasos) · `lucas-ia.mjs`
 - [x] configuracion — ✅ (5 pasos) · `configuracion.mjs` (perfil, organización, apariencia, notificaciones)
 
+## Estado: BIBLIOTECA COMPLETA — 15/15 guías ✅
+Siguiente y último paso: integración al bot (subir imágenes al VPS + enseñarle
+a enviar la guía correcta por WhatsApp cuando preguntan "cómo hago X").
+
 ## Notas
-- Las guías de onboarding (primer-ingreso) requieren una cuenta recién creada
-  sin onboarding completado.
+- Para onboarding (primer-ingreso) se crea una cuenta de prueba directo en DB
+  (emailVerificado=true, onboardingCompletado=false) y se borra al terminar.
+  Recordar normalizar el email (sin puntos en el local part) para poder loguear.
 - `output/` y `.creds.json` están en .gitignore (binarios pesados / credenciales).
 - Integración al bot: ÚLTIMO paso, cuando la biblioteca esté completa.
