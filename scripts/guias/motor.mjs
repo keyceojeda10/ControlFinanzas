@@ -60,34 +60,34 @@ async function anotar(buffer, out, { titulo, msg, box, forma }) {
   await sharp(buffer).composite([{ input: Buffer.from(svg), top:0, left:0 }]).png().toFile(out)
 }
 
-// API principal. def = { slug, titulo, login (bool), pasos: [...] }
-// Cada paso = { goto?, accion?(page), resaltar?(page)->locator, titulo, msg, forma, scrollTo? }
-export async function generarGuia(def) {
-  const outDir = join(__dir, 'output', def.slug)
-  mkdirSync(outDir, { recursive: true })
+// Inicia UNA sesion (browser + page logueado) reutilizable para varias guias.
+// Asi evitamos el rate-limit de login al generar muchas guias seguidas.
+// Devuelve { browser, page }. Recuerda cerrar browser al terminar.
+export async function iniciarSesion() {
   const browser = await chromium.launch()
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })
   const page = await ctx.newPage()
-
-  if (def.login) {
-    const { email, pass } = leerCreds()
-    await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2500)
-    await page.fill('input#email', email)
-    await page.fill('input#password', pass)
-    await page.getByRole('button', { name: /Iniciar sesi/i }).click()
-    // Esperar a estar realmente dentro (URL sale de /login) antes de seguir,
-    // si no, un goto temprano puede pisar la sesion y caer de vuelta a /login.
-    try {
-      await page.waitForURL((u) => !u.pathname.includes('/login'), { timeout: 25000 })
-    } catch {}
-    await page.waitForTimeout(3000)
-    if (page.url().includes('/login')) {
-      await browser.close()
-      throw new Error('Login no completo (sigue en /login). Revisa credenciales o reintenta.')
-    }
+  const { email, pass } = leerCreds()
+  await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' })
+  await page.waitForTimeout(2500)
+  await page.fill('input#email', email)
+  await page.fill('input#password', pass)
+  await page.getByRole('button', { name: /Iniciar sesi/i }).click()
+  try {
+    await page.waitForURL((u) => !u.pathname.includes('/login'), { timeout: 25000 })
+  } catch {}
+  await page.waitForTimeout(3000)
+  if (page.url().includes('/login')) {
+    await browser.close()
+    throw new Error('Login no completo (sigue en /login). Revisa credenciales o reintenta.')
   }
+  return { browser, page }
+}
 
+// Ejecuta los pasos de una guia sobre una page ya logueada. No abre/cierra browser.
+export async function correrPasos(def, page) {
+  const outDir = join(__dir, 'output', def.slug)
+  mkdirSync(outDir, { recursive: true })
   console.log(`\n=== Guia: ${def.slug} ===`)
   let i = 0
   for (const paso of def.pasos) {
@@ -102,6 +102,15 @@ export async function generarGuia(def) {
     await anotar(buffer, out, { titulo: paso.titulo, msg: paso.msg, box, forma: paso.forma })
     console.log(`  paso ${i}: ${out}${box?'':' (sin resaltado)'}`)
   }
-  await browser.close()
   console.log(`Listo: ${i} pasos en ${outDir}`)
+}
+
+// API principal (retrocompatible). def = { slug, titulo, login (bool), pasos: [...] }
+// Cada paso = { goto?, accion?(page), resaltar?(page)->locator, titulo, msg, forma, scrollTo? }
+// Si se pasa una `page` ya logueada, la reutiliza (no abre/cierra browser).
+export async function generarGuia(def, page = null) {
+  if (page) return correrPasos(def, page)
+  const { browser, page: p } = await iniciarSesion()
+  await correrPasos(def, p)
+  await browser.close()
 }
