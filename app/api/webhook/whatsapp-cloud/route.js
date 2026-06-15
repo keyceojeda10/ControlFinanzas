@@ -344,18 +344,15 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
       // Si el mensaje incluye el link de registro, el preview automatico de la
       // Cloud API sale cuadrado/pequeno (Meta no respeta el banner grande en
       // mensajes salientes de API). Para que se vea bien, mandamos el banner
-      // og.png como imagen ANTES del texto. Solo una vez por mensaje.
+      // og.png como imagen CON el mensaje del bot de caption: asi van juntos en
+      // una sola burbuja (imagen grande arriba, texto + link debajo).
       const mandaLinkRegistro = /app\.control-finanzas\.com\/registro/i.test(decision.mensaje)
+      let envio
       if (mandaLinkRegistro) {
-        try {
-          await wa.sendImageLink(lead.telefono, BANNER_URL, 'Control Finanzas — Gestiona tu cartera de préstamos')
-        } catch (e) {
-          console.error(`[WA Cloud] No se pudo enviar el banner de registro:`, e.message)
-        }
+        envio = await wa.sendImageLink(lead.telefono, BANNER_URL, decision.mensaje)
+      } else {
+        envio = await wa.sendText(lead.telefono, decision.mensaje)
       }
-      // Si ya mandamos el banner, apagamos el preview del texto para no duplicar
-      // la imagen (saldria el banner + la tarjeta cuadrada del preview).
-      const envio = await wa.sendText(lead.telefono, decision.mensaje, !mandaLinkRegistro)
       await prisma.botConversacion.create({
         data: { botLeadId: lead.id, rol: 'bot', texto: decision.mensaje, wamid: wa.wamidDe(envio) },
       })
