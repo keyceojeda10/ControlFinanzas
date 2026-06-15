@@ -50,3 +50,7 @@ next-env.d.ts
 
 # env local
 .env.local
+
+# guias visuales: imagenes generadas (pesadas, se regeneran) y credenciales
+/scripts/guias/output/
+/scripts/guias/.creds.json
