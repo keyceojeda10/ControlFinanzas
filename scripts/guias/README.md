@@ -14,9 +14,11 @@ El motor (`motor.mjs`) navega el sistema real, captura cada paso y lo anota.
 ## Estado de la biblioteca
 
 ### Onboarding / primeros pasos
-- [ ] crear-cuenta — registro (3 pasos: plan, datos, verificar) — PÚBLICO
-- [ ] primer-ingreso — demo vs cliente real (requiere cuenta NUEVA)
-- [ ] crear-cliente — registrar primer cliente
+- [x] crear-cuenta — ✅ (3 pasos) · `crear-cuenta.mjs` (público; plan, datos, verificar)
+- [x] crear-cliente — ✅ (4 pasos) · `crear-cliente.mjs` (incluye importar cartulina)
+- [ ] primer-ingreso — demo vs cliente real (PENDIENTE: requiere cuenta NUEVA
+      verificada; el recorrido solo aparece el primer ingreso. Capturar cuando
+      haya una cuenta de prueba recién creada / con código de verificación a mano)
 
 ### Operación diaria
 - [x] crear-prestamo — ✅ (6 pasos) · `crear-prestamo.mjs`
