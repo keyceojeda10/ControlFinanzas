@@ -35,9 +35,9 @@ El motor (`motor.mjs`) navega el sistema real, captura cada paso y lo anota.
 - [x] organizar-ruta — ✅ (3 pasos) · `organizar-ruta.mjs`
 
 ### Avanzado / configuración
-- [ ] crear-cobrador — crear cobrador y darle acceso
-- [ ] lucas-ia — registrar pago por voz, preguntar ganancias
-- [ ] configuracion — tema, datos del negocio, notificaciones
+- [x] crear-cobrador — ✅ (4 pasos) · `crear-cobrador.mjs`
+- [x] lucas-ia — ✅ (3 pasos) · `lucas-ia.mjs`
+- [x] configuracion — ✅ (5 pasos) · `configuracion.mjs` (perfil, organización, apariencia, notificaciones)
 
 ## Notas
 - Las guías de onboarding (primer-ingreso) requieren una cuenta recién creada
