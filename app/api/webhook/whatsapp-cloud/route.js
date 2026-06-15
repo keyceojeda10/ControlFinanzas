@@ -24,6 +24,10 @@ import { enviarGuia } from '@/lib/bot/guias-sender'
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN
 const APP_SECRET = process.env.WHATSAPP_APP_SECRET
 
+// Banner para acompanar el link de registro (el preview automatico de la Cloud
+// API sale cuadrado; mandamos la imagen aparte para que se vea el banner grande).
+const BANNER_URL = (process.env.GUIAS_BASE_URL || 'https://app.control-finanzas.com') + '/og.png'
+
 const TIPOS_SOPORTADOS = new Set(['text', 'audio', 'image'])
 
 // --- GET: verificacion del webhook (Meta lo llama una vez al configurar) ---
@@ -337,7 +341,21 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
 
   if (decision.mensaje) {
     try {
-      const envio = await wa.sendText(lead.telefono, decision.mensaje)
+      // Si el mensaje incluye el link de registro, el preview automatico de la
+      // Cloud API sale cuadrado/pequeno (Meta no respeta el banner grande en
+      // mensajes salientes de API). Para que se vea bien, mandamos el banner
+      // og.png como imagen ANTES del texto. Solo una vez por mensaje.
+      const mandaLinkRegistro = /app\.control-finanzas\.com\/registro/i.test(decision.mensaje)
+      if (mandaLinkRegistro) {
+        try {
+          await wa.sendImageLink(lead.telefono, BANNER_URL, 'Control Finanzas — Gestiona tu cartera de préstamos')
+        } catch (e) {
+          console.error(`[WA Cloud] No se pudo enviar el banner de registro:`, e.message)
+        }
+      }
+      // Si ya mandamos el banner, apagamos el preview del texto para no duplicar
+      // la imagen (saldria el banner + la tarjeta cuadrada del preview).
+      const envio = await wa.sendText(lead.telefono, decision.mensaje, !mandaLinkRegistro)
       await prisma.botConversacion.create({
         data: { botLeadId: lead.id, rol: 'bot', texto: decision.mensaje, wamid: wa.wamidDe(envio) },
       })
