@@ -9,6 +9,7 @@ import { logActividad } from '@/lib/activity-log'
 import { geocodeAddress }   from '@/lib/geocoding'
 import { trackEvent } from '@/lib/analytics'
 import { getUtcOffset, validateDocument, getDocumentConfig } from '@/lib/i18n'
+import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 
 // ─── GET /api/clientes ──────────────────────────────────────────
 export async function GET(request) {
@@ -207,6 +208,8 @@ export async function POST(request) {
   if (!session?.user?.organizationId) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
   }
+  const bloqueoSub = await bloquearSiSuscripcionVencida(session)
+  if (bloqueoSub) return bloqueoSub
   // Verificar permisos: owner siempre puede, cobrador solo si tiene permiso
   let autoRutaId = null
   if (session.user.rol !== 'owner') {

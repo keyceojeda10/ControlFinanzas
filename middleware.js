@@ -11,6 +11,29 @@ export async function middleware(request) {
 
   const { pathname } = request.nextUrl
 
+  // ─── Bloqueo por suscripcion vencida a nivel API ──────────────────
+  // La validacion del layout solo cubre PAGINAS; las API routes no pasan por
+  // el layout, asi que un trial vencido podia seguir registrando datos via API
+  // (sobre todo por el sync offline de la PWA). Aqui cortamos eso para TODAS
+  // las /api/* de un solo punto, usando el suscripcionVencimiento del JWT
+  // (se refresca cada 15 min). Exentas: lo necesario para pagar/desbloquear,
+  // auth, crons (corren con secret, sin sesion) y superadmin.
+  if (pathname.startsWith('/api/')) {
+    const EXENTAS = ['/api/auth/', '/api/pagos/', '/api/plan/', '/api/webhook/',
+      '/api/cron/', '/api/admin/', '/api/health', '/api/ping', '/api/analytics/',
+      '/api/unsubscribe', '/api/logo', '/api/telegram/', '/api/uploads/']
+    const exenta = EXENTAS.some((p) => pathname.startsWith(p))
+    if (!exenta && token && token.rol !== 'superadmin' && token.suscripcionVencimiento) {
+      if (new Date(token.suscripcionVencimiento) < new Date()) {
+        return NextResponse.json(
+          { error: 'Tu suscripción está vencida. Renueva tu plan para continuar.', suscripcionVencida: true },
+          { status: 403 }
+        )
+      }
+    }
+    return NextResponse.next()
+  }
+
   // ─── /admin/* → solo superadmin ────────────────────────
   if (pathname.startsWith('/admin')) {
     if (!token) {
@@ -86,6 +109,7 @@ export async function middleware(request) {
 
 export const config = {
   matcher: [
+    '/api/:path*',
     '/admin/:path*',
     '/dashboard/:path*',
     '/clientes/:path*',

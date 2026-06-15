@@ -10,6 +10,7 @@ import { registrarMovimientoCapital } from '@/lib/capital'
 import { logActividad } from '@/lib/activity-log'
 import { trackEvent }   from '@/lib/analytics'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
+import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 
 async function cobradorPuedeGestionarPrestamos(userId) {
   const cobrador = await prisma.user.findUnique({
@@ -24,6 +25,8 @@ export async function POST(request, { params }) {
   if (!session?.user?.organizationId) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
   }
+  const bloqueoSub = await bloquearSiSuscripcionVencida(session)
+  if (bloqueoSub) return bloqueoSub
 
   const puedeGestionar = session.user.rol === 'owner'
     ? true

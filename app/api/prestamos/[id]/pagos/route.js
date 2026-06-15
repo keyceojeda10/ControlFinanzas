@@ -29,6 +29,7 @@ import { trackEvent } from '@/lib/analytics'
 import { getUtcOffset, getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 import { sanitizarCoords } from '@/lib/geo'
+import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 
 async function cobradorPuedeGestionarPrestamos(userId) {
   const cobrador = await prisma.user.findUnique({
@@ -54,6 +55,10 @@ export async function POST(request, { params }) {
   if (!session?.user?.organizationId) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
   }
+  // Respaldo (defensa en profundidad) por si el JWT esta stale: el middleware
+  // ya bloquea /api/* con suscripcion vencida, pero confirmamos contra DB.
+  const bloqueoSub = await bloquearSiSuscripcionVencida(session)
+  if (bloqueoSub) return bloqueoSub
 
   const { rol, rutaIds = [], organizationId, id: userId } = session.user
   const { id: prestamoId } = await params

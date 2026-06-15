@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
 import { getCachedMutation, setCachedMutation, buildMutationKey } from '@/lib/mutation-idempotency'
 import { getUtcOffset, getLocalDateStr } from '@/lib/i18n'
+import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -90,6 +91,8 @@ export async function POST(req) {
   if (session.user.rol !== 'cobrador' && session.user.rol !== 'owner') {
     return NextResponse.json({ error: 'No tienes permisos para reportar gastos' }, { status: 403 })
   }
+  const bloqueoSub = await bloquearSiSuscripcionVencida(session)
+  if (bloqueoSub) return bloqueoSub
 
   const mutationId = req.headers.get('x-mutation-id')
   const idemKey = mutationId ? buildMutationKey(session, mutationId, 'gasto.create') : null

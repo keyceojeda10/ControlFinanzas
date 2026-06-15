@@ -17,6 +17,7 @@ import { logActividad } from '@/lib/activity-log'
 import { trackEvent } from '@/lib/analytics'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 import { getLocalDateStr } from '@/lib/i18n'
+import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 
 // ─── GET /api/prestamos ─────────────────────────────────────────
 export async function GET(request) {
@@ -150,6 +151,8 @@ export async function POST(request) {
   if (!session?.user?.organizationId) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
   }
+  const bloqueoSub = await bloquearSiSuscripcionVencida(session)
+  if (bloqueoSub) return bloqueoSub
   // Verificar permisos: owner siempre puede, cobrador solo si tiene permiso
   if (session.user.rol !== 'owner') {
     if (session.user.rol === 'cobrador') {
