@@ -19,6 +19,7 @@ import { responder } from '@/lib/bot/sales-agent'
 import { alertarLeadCaliente } from '@/lib/bot/alertas'
 import { guardarMedia } from '@/lib/bot/media-store'
 import { notificarEstadoLead } from '@/lib/bot/notificar-meta'
+import { enviarGuia } from '@/lib/bot/guias-sender'
 
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN
 const APP_SECRET = process.env.WHATSAPP_APP_SECRET
@@ -343,6 +344,24 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
       console.log(`[WA Cloud] -> ${lead.nombre}: ${decision.mensaje.slice(0, 70)}`)
     } catch (e) {
       console.error(`[WA Cloud] Error enviando a ${lead.nombre}:`, e.message)
+    }
+  }
+
+  // Guia visual: el agente decidio enviar capturas (el usuario ya las acepto).
+  // Se mandan despues del texto, como imagenes con caption "Paso N de M".
+  if (decision.enviarGuia) {
+    try {
+      const res = await enviarGuia(lead.telefono, decision.enviarGuia)
+      if (res.ok) {
+        await prisma.botConversacion.create({
+          data: { botLeadId: lead.id, rol: 'bot', texto: `[Guia enviada: ${res.slug} — ${res.enviadas}/${res.total} imagenes]`, tipoMensaje: 'image' },
+        }).catch(() => {})
+        console.log(`[WA Cloud] -> ${lead.nombre}: guia ${res.slug} (${res.enviadas}/${res.total})`)
+      } else {
+        console.error(`[WA Cloud] Guia no enviada a ${lead.nombre}: ${res.error}`)
+      }
+    } catch (e) {
+      console.error(`[WA Cloud] Error enviando guia a ${lead.nombre}:`, e.message)
     }
   }
 
