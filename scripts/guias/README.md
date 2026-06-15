@@ -25,9 +25,9 @@ El motor (`motor.mjs`) navega el sistema real, captura cada paso y lo anota.
 - [ ] renovar-prestamo — (opción "Renovar" en el sheet Gestión)
 
 ### Dinero / caja
-- [ ] ver-caja — dónde está y cómo cuadrarla
-- [ ] capital — agregar y retirar plata (botones Inyectar/Retirar en la ruta, o en Capital)
-- [ ] pagar-mensualidad — cómo pagar el servicio
+- [x] ver-caja — ✅ (5 pasos) · `ver-caja.mjs`
+- [x] capital — ✅ (3 pasos) · `capital.mjs` (Movimiento general + Agregar/Retirar por ruta)
+- [x] pagar-mensualidad — ✅ (3 pasos) · `pagar-mensualidad.mjs`
 
 ### Rutas
 - [x] crear-ruta — ✅ (3 pasos) · `crear-ruta.mjs`
