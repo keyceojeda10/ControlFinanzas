@@ -12,6 +12,7 @@ import {
   sendMessage,
 } from '@/lib/telegram'
 import { MENSAJES } from '@/lib/leadMessages'
+import { aplicarLeccion } from '@/lib/bot/autocritica'
 
 const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET
 const NOTIF_WEBHOOK_SECRET = process.env.TELEGRAM_NOTIF_WEBHOOK_SECRET
@@ -196,7 +197,46 @@ export async function POST(request) {
         await answerCallback(callbackId, '', botType)
         break
 
-      default:
+      case 'leccion_ok': {
+        try {
+          await prisma.botLeccion.update({
+            where: { id: leadId },
+            data: { estado: 'aprobada' },
+          })
+          await aplicarLeccion(leadId)
+          await answerCallback(callbackId, 'Leccion aprobada y aplicada', botType)
+          if (messageId) {
+            await editMessageReplyMarkup(messageId, {
+              inline_keyboard: [[{ text: '\u2705 APROBADA', callback_data: 'noop:0' }]],
+            }, botType)
+          }
+        } catch (e) {
+          console.error('[Telegram Callback] Error aprobando leccion:', e.message)
+          await answerCallback(callbackId, 'Error: ' + e.message, botType)
+        }
+        break
+      }
+
+      case 'leccion_no': {
+        try {
+          await prisma.botLeccion.update({
+            where: { id: leadId },
+            data: { estado: 'rechazada' },
+          })
+          await answerCallback(callbackId, 'Leccion rechazada', botType)
+          if (messageId) {
+            await editMessageReplyMarkup(messageId, {
+              inline_keyboard: [[{ text: '\u274C RECHAZADA', callback_data: 'noop:0' }]],
+            }, botType)
+          }
+        } catch (e) {
+          console.error('[Telegram Callback] Error rechazando leccion:', e.message)
+          await answerCallback(callbackId, 'Error: ' + e.message, botType)
+        }
+        break
+      }
+
+            default:
         await answerCallback(callbackId, 'Acción desconocida', botType)
     }
 

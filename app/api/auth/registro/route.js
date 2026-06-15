@@ -127,6 +127,7 @@ export async function POST(req) {
           telefono:      telefonoLimpio,
           country,
           codigoReferido,
+          planDemoHasta: new Date(Date.now() + 14 * 24 * 3600 * 1000),
           ...(orgReferidora ? { referidoPorId: orgReferidora.id } : {}),
         },
       })
