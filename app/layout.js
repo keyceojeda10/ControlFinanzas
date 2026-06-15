@@ -58,11 +58,23 @@ export const metadata = {
     siteName: 'Control Finanzas',
     locale: 'es_CO',
     type: 'website',
+    // PNG estatico (no dinamico via next/og) para que WhatsApp/Meta lo
+    // scrapeen al instante sin cold start y muestren el banner completo.
+    images: [
+      {
+        url: '/og.png',
+        width: 1200,
+        height: 630,
+        alt: 'Control Finanzas — Gestiona tu cartera de préstamos',
+        type: 'image/png',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Control Finanzas',
     description: 'Gestiona tu cartera de préstamos en tiempo real.',
+    images: ['/og.png'],
   },
 };
 
