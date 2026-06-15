@@ -76,7 +76,16 @@ export async function generarGuia(def) {
     await page.fill('input#email', email)
     await page.fill('input#password', pass)
     await page.getByRole('button', { name: /Iniciar sesi/i }).click()
-    await page.waitForTimeout(7000)
+    // Esperar a estar realmente dentro (URL sale de /login) antes de seguir,
+    // si no, un goto temprano puede pisar la sesion y caer de vuelta a /login.
+    try {
+      await page.waitForURL((u) => !u.pathname.includes('/login'), { timeout: 25000 })
+    } catch {}
+    await page.waitForTimeout(3000)
+    if (page.url().includes('/login')) {
+      await browser.close()
+      throw new Error('Login no completo (sigue en /login). Revisa credenciales o reintenta.')
+    }
   }
 
   console.log(`\n=== Guia: ${def.slug} ===`)

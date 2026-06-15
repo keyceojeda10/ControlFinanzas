@@ -19,19 +19,22 @@ El motor (`motor.mjs`) navega el sistema real, captura cada paso y lo anota.
 - [ ] crear-cliente — registrar primer cliente
 
 ### Operación diaria
-- [x] crear-prestamo — ✅ hecha (6 pasos) · `crear-prestamo.mjs`
-- [x] registrar-pago — ✅ hecha (4 pasos) · `registrar-pago.mjs`
-- [ ] editar-eliminar-prestamo — 3 puntitos, editar, eliminar
-- [ ] liquidar-prestamo — pago total anticipado
-- [ ] renovar-prestamo
+- [x] crear-prestamo — ✅ (6 pasos) · `crear-prestamo.mjs`
+- [x] registrar-pago — ✅ (4 pasos) · `registrar-pago.mjs`
+- [x] editar-eliminar-prestamo — ✅ (5 pasos) · `editar-eliminar-prestamo.mjs` (incluye Modificar plazo, Cerrar anticipado, Cancelar)
+- [ ] renovar-prestamo — (opción "Renovar" en el sheet Gestión)
 
 ### Dinero / caja
 - [ ] ver-caja — dónde está y cómo cuadrarla
-- [ ] capital — agregar y retirar plata
+- [ ] capital — agregar y retirar plata (botones Inyectar/Retirar en la ruta, o en Capital)
 - [ ] pagar-mensualidad — cómo pagar el servicio
 
+### Rutas
+- [x] crear-ruta — ✅ (3 pasos) · `crear-ruta.mjs`
+- [x] cobrar-desde-ruta — ✅ (4 pasos) · `cobrar-desde-ruta.mjs`
+- [x] organizar-ruta — ✅ (3 pasos) · `organizar-ruta.mjs`
+
 ### Avanzado / configuración
-- [ ] crear-ruta — crear ruta y asignar clientes
 - [ ] crear-cobrador — crear cobrador y darle acceso
 - [ ] lucas-ia — registrar pago por voz, preguntar ganancias
 - [ ] configuracion — tema, datos del negocio, notificaciones
