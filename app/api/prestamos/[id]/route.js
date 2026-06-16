@@ -406,6 +406,63 @@ export async function PATCH(request, { params }) {
     return Response.json(actualizado)
   }
 
+  // ─── Modo 2b: corregir fecha de INICIO (mantiene el plazo) ─────
+  // Mueve fechaInicio y desplaza fechaFin la misma cantidad de dias para
+  // conservar diasPlazo. NO toca cuota, total ni pagos. La mora / proximo
+  // cobro / estado se recalculan solos al leer el prestamo.
+  if (modo === 'corregirInicio') {
+    const puedeGestionar = session.user.rol === 'owner'
+      ? true
+      : (session.user.rol === 'cobrador' && await cobradorPuedeGestionarPrestamos(session.user.id))
+    if (!puedeGestionar) {
+      return Response.json({ error: 'No tienes permiso para corregir la fecha de inicio' }, { status: 403 })
+    }
+    if (p.estado !== 'activo') {
+      return Response.json({ error: 'Solo se puede corregir la fecha de inicio de préstamos activos' }, { status: 400 })
+    }
+
+    const nuevaFechaInicioRaw = body.fechaInicio
+    if (!nuevaFechaInicioRaw) {
+      return Response.json({ error: 'La nueva fecha de inicio es requerida' }, { status: 400 })
+    }
+    const nuevaFechaInicio = new Date(nuevaFechaInicioRaw)
+    if (isNaN(nuevaFechaInicio.getTime())) {
+      return Response.json({ error: 'Fecha inválida' }, { status: 400 })
+    }
+
+    // No permitir fecha futura (la org en su timezone).
+    const country = session.user.country || 'co'
+    const { fin: finHoy } = getLocalDayRange(getLocalDateStr(country), country)
+    if (nuevaFechaInicio >= finHoy) {
+      return Response.json({ error: 'La fecha de inicio no puede ser futura' }, { status: 400 })
+    }
+
+    const inicioAnterior = new Date(p.fechaInicio)
+    // Desplazar fechaFin la misma cantidad de dias (conserva diasPlazo).
+    const deltaMs = nuevaFechaInicio.getTime() - inicioAnterior.getTime()
+    const nuevaFechaFin = new Date(new Date(p.fechaFin).getTime() + deltaMs)
+
+    const actualizado = await prisma.prestamo.update({
+      where: { id },
+      data: {
+        fechaInicio: nuevaFechaInicio,
+        fechaFin: nuevaFechaFin,
+        // diasPlazo se mantiene; cuota/total/pagos intactos.
+      },
+    })
+
+    logActividad({
+      session,
+      accion: 'editar_prestamo',
+      entidadTipo: 'prestamo',
+      entidadId: id,
+      detalle: `Fecha de inicio corregida: ${inicioAnterior.toISOString().slice(0,10)}→${nuevaFechaInicio.toISOString().slice(0,10)} (fin: ${new Date(p.fechaFin).toISOString().slice(0,10)}→${nuevaFechaFin.toISOString().slice(0,10)})`,
+      ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+    })
+    if (idempKey) setCachedMutation(idempKey, actualizado)
+    return Response.json(actualizado)
+  }
+
   // ─── Modo 3: editar dia de cobro (ancla) ───────────────────────
   if (modo === 'diaCobro') {
     const puedeGestionar = session.user.rol === 'owner'

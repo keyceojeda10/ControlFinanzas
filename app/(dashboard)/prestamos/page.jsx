@@ -35,6 +35,15 @@ const ESTADOS = [
   { value: 'cancelado',  label: 'Cancelados' },
 ]
 
+// Filtro por frecuencia de cobro (se aplica del lado cliente sobre lo cargado).
+const FRECUENCIAS = [
+  { value: '',          label: 'Toda frecuencia' },
+  { value: 'diario',    label: 'Diarios'    },
+  { value: 'semanal',   label: 'Semanales'  },
+  { value: 'quincenal', label: 'Quincenales' },
+  { value: 'mensual',   label: 'Mensuales'  },
+]
+
 const LIMIT = 50
 
 export default function PrestamosPage() {
@@ -43,6 +52,7 @@ export default function PrestamosPage() {
   const [prestamos, setPrestamos] = useState([])
   const [buscar,    setBuscar]    = useState('')
   const [estado,    setEstado]    = useState('activo')
+  const [frecuencia, setFrecuencia] = useState('')
   const [loading,   setLoading]   = useState(true)
   const [error,     setError]     = useState('')
   const [page,      setPage]      = useState(1)
@@ -74,11 +84,11 @@ export default function PrestamosPage() {
     })
   }, [])
 
-  const fetchPrestamos = useCallback(async (q, est, p, { soft = false } = {}) => {
+  const fetchPrestamos = useCallback(async (q, est, p, { soft = false, frec = '' } = {}) => {
     const shouldUseSoftRefresh = soft && hasLoadedOnceRef.current
     setError('')
     setIsOffline(false)
-    const cacheKey = `prestamos:${q || ''}:${est || ''}:${p}`
+    const cacheKey = `prestamos:${q || ''}:${est || ''}:${frec || ''}:${p}`
 
     // Cache-first: pintar al instante desde IndexedDB si hay datos de este
     // filtro, y revalidar en segundo plano. Sin cache → skeleton.
@@ -107,6 +117,7 @@ export default function PrestamosPage() {
             const apiEstado = est === 'mora' ? 'activo' : est
             if (apiEstado) filtered = filtered.filter(pr => pr.estado === apiEstado)
             if (est === 'mora') filtered = filtered.filter(pr => pr.diasMora > 0)
+            if (frec) filtered = filtered.filter(pr => (pr.frecuencia || 'diario') === frec)
             if (q) {
               const ql = q.toLowerCase()
               filtered = filtered.filter(pr => pr.cliente?.nombre?.toLowerCase().includes(ql) || pr.cliente?.cedula?.includes(ql))
@@ -128,6 +139,7 @@ export default function PrestamosPage() {
       // "mora" no es un estado en BD — pedimos activos y filtramos client-side
       const apiEstado = est === 'mora' ? 'activo' : est
       if (apiEstado) params.set('estado', apiEstado)
+      if (frec) params.set('frecuencia', frec)
       params.set('page', String(p))
       params.set('limit', String(LIMIT))
       const res = await fetch(`/api/prestamos?${params}`)
@@ -150,6 +162,7 @@ export default function PrestamosPage() {
             const apiEstado = est === 'mora' ? 'activo' : est
             if (apiEstado) filtered = filtered.filter(pr => pr.estado === apiEstado)
             if (est === 'mora') filtered = filtered.filter(pr => pr.diasMora > 0)
+            if (frec) filtered = filtered.filter(pr => (pr.frecuencia || 'diario') === frec)
             if (q) {
               const ql = q.toLowerCase()
               filtered = filtered.filter(pr => pr.cliente?.nombre?.toLowerCase().includes(ql) || pr.cliente?.cedula?.includes(ql))
@@ -175,26 +188,33 @@ export default function PrestamosPage() {
     }
   }, [])
 
-  useEffect(() => { setPage(1); fetchPrestamos('', estado, 1) }, [fetchPrestamos, estado])
+  useEffect(() => { setPage(1); fetchPrestamos('', estado, 1, { frec: frecuencia }) }, [fetchPrestamos, estado, frecuencia])
 
   useEffect(() => {
     setPage(1)
-    const t = setTimeout(() => fetchPrestamos(buscar, estado, 1), 300)
+    const t = setTimeout(() => fetchPrestamos(buscar, estado, 1, { frec: frecuencia }), 300)
     return () => clearTimeout(t)
-  }, [buscar, estado, fetchPrestamos])
+  }, [buscar, estado, frecuencia, fetchPrestamos])
 
   // Cambio de página
   useEffect(() => {
-    if (page > 1) fetchPrestamos(buscar, estado, page)
+    if (page > 1) fetchPrestamos(buscar, estado, page, { frec: frecuencia })
   }, [page]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Refresh silencioso cuando llega nueva sincronización global.
   useEffect(() => {
     if (!lastSyncedAt) return
-    fetchPrestamos(buscar, estado, page, { soft: true })
-  }, [lastSyncedAt, fetchPrestamos, buscar, estado, page])
+    fetchPrestamos(buscar, estado, page, { soft: true, frec: frecuencia })
+  }, [lastSyncedAt, fetchPrestamos, buscar, estado, frecuencia, page])
 
   const enMoraCount = prestamos.filter((p) => p.diasMora > 0).length
+
+  // El servidor ya filtra por frecuencia (ver fetchPrestamos). En offline el
+  // cache tambien la aplica. Se mantiene un filtro client-side defensivo por si
+  // llega data sin filtrar (no hace daño: es idempotente).
+  const prestamosVisibles = frecuencia
+    ? prestamos.filter((p) => (p.frecuencia || 'diario') === frecuencia)
+    : prestamos
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -203,8 +223,8 @@ export default function PrestamosPage() {
         <div>
           <h1 className="text-xl font-bold text-[white]">Préstamos</h1>
           <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
-            {loading ? '…' : `${total} préstamo${total !== 1 ? 's' : ''}`}
-            {enMoraCount > 0 && (
+            {loading ? '…' : `${total} préstamo${total !== 1 ? 's' : ''}${frecuencia ? ' ' + (FRECUENCIAS.find((f) => f.value === frecuencia)?.label.toLowerCase()) : ''}`}
+            {!frecuencia && enMoraCount > 0 && (
               <span className="ml-2 text-[var(--color-danger)]">· {enMoraCount} en mora</span>
             )}
           </p>
@@ -233,6 +253,29 @@ export default function PrestamosPage() {
             <button
               key={value}
               onClick={() => setEstado(value)}
+              className={[
+                'shrink-0 px-3 h-8 rounded-full text-xs font-medium border transition-all',
+                isActive
+                  ? 'border-current'
+                  : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] hover:text-[white]',
+              ].join(' ')}
+              style={isActive ? { color: accent, backgroundColor: `${accent}20` } : undefined}
+            >
+              {label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Filtro de frecuencia de cobro */}
+      <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-none pb-1">
+        {FRECUENCIAS.map(({ value, label }) => {
+          const isActive = frecuencia === value
+          const accent = 'var(--color-info)'
+          return (
+            <button
+              key={value || 'todas'}
+              onClick={() => setFrecuencia(value)}
               className={[
                 'shrink-0 px-3 h-8 rounded-full text-xs font-medium border transition-all',
                 isActive
@@ -315,9 +358,9 @@ export default function PrestamosPage() {
       )}
 
       {/* Lista plana: orden cronologico puro (default) */}
-      {!loading && prestamos.length > 0 && !agrupar && (
+      {!loading && prestamosVisibles.length > 0 && !agrupar && (
         <div className="space-y-2.5">
-          {prestamos.map((p) => {
+          {prestamosVisibles.map((p) => {
             const cardActions = []
             if (p.cliente?.telefono) {
               cardActions.push({
@@ -345,11 +388,11 @@ export default function PrestamosPage() {
       )}
 
       {/* Lista agrupada por cliente: solo cuando el toggle esta activo */}
-      {!loading && prestamos.length > 0 && agrupar && (() => {
+      {!loading && prestamosVisibles.length > 0 && agrupar && (() => {
         // Agrupa y reordena: cliente con prestamo mas nuevo arriba.
         const grupos = []
         const indice = new Map()
-        for (const p of prestamos) {
+        for (const p of prestamosVisibles) {
           const key = p.clienteId
           if (!indice.has(key)) {
             indice.set(key, grupos.length)
@@ -447,8 +490,25 @@ export default function PrestamosPage() {
         )
       })()}
 
+      {/* Vacío con filtro de frecuencia activo (server o cliente no devolvió de esa frecuencia) */}
+      {!loading && !error && frecuencia && prestamosVisibles.length === 0 && !buscar && (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="mb-4">
+            <Mascota variant="empty" size={100} />
+          </div>
+          <p className="text-sm font-medium text-[white]">
+            No hay préstamos {FRECUENCIAS.find((f) => f.value === frecuencia)?.label.toLowerCase()}
+          </p>
+          <p className="text-xs text-[var(--color-text-muted)] mt-1">
+            <button onClick={() => setFrecuencia('')} className="text-[var(--color-info)] hover:underline">
+              Ver toda frecuencia
+            </button>
+          </p>
+        </div>
+      )}
+
       {/* Estado vacío */}
-      {!loading && !error && prestamos.length === 0 && (
+      {!loading && !error && prestamosVisibles.length === 0 && !(frecuencia && !buscar) && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="mb-4">
             <Mascota variant={buscar ? 'thinking' : 'empty'} size={100} />

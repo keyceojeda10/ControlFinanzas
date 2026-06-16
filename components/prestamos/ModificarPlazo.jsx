@@ -36,6 +36,7 @@ export default function ModificarPlazo({
 
   const [diasExtra,   setDiasExtra]   = useState('')
   const [nuevaFecha,  setNuevaFecha]  = useState('')
+  const [nuevaFechaInicio, setNuevaFechaInicio] = useState('')
   const [loading,     setLoading]     = useState(false)
   const [error,       setError]       = useState('')
 
@@ -53,7 +54,19 @@ export default function ModificarPlazo({
       setDiasExtra('')
       setError('')
     }
-  }, [open, fechaFinActual])
+    if (open && fechaInicio) {
+      setNuevaFechaInicio(toISODate(fechaInicio))
+    }
+  }, [open, fechaFinActual, fechaInicio])
+
+  // Preview de corregir inicio: nueva fecha fin = fin actual + (nuevoInicio - inicioActual)
+  const previewInicio = useMemo(() => {
+    if (modo !== 'corregirInicio' || !nuevaFechaInicio || !fechaInicio || !fechaFinActual) return null
+    const delta = diffDays(toISODate(fechaInicio), nuevaFechaInicio)
+    if (delta === 0) return null
+    const nuevaFin = addDays(fechaFinActual, delta)
+    return { delta, nuevaFin: toISODate(nuevaFin) }
+  }, [modo, nuevaFechaInicio, fechaInicio, fechaFinActual])
 
   // Cálculos del preview
   const diasPorPeriodo = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }[frecuencia] || 1
@@ -97,16 +110,24 @@ export default function ModificarPlazo({
   }
 
   const handleSubmit = async () => {
-    if (!nuevaFecha) { setError('Ingresa la nueva fecha'); return }
-    if (preview && preview.nuevoDiasPlazo <= 0) {
-      setError('La fecha debe ser posterior al inicio del préstamo')
-      return
+    if (modo === 'corregirInicio') {
+      if (!nuevaFechaInicio) { setError('Ingresa la nueva fecha de inicio'); return }
+      const hoy = toISODate(new Date())
+      if (nuevaFechaInicio > hoy) { setError('La fecha de inicio no puede ser futura'); return }
+    } else {
+      if (!nuevaFecha) { setError('Ingresa la nueva fecha'); return }
+      if (preview && preview.nuevoDiasPlazo <= 0) {
+        setError('La fecha debe ser posterior al inicio del préstamo')
+        return
+      }
     }
 
     setLoading(true)
     setError('')
 
-    const payload = { modo, fechaFin: nuevaFecha }
+    const payload = modo === 'corregirInicio'
+      ? { modo, fechaInicio: nuevaFechaInicio }
+      : { modo, fechaFin: nuevaFecha }
 
     // Offline: encolar mutacion y cerrar. El servidor recalculara cuota al sincronizar.
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -178,7 +199,7 @@ export default function ModificarPlazo({
           <label className="block text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em] mb-1.5">
             ¿Qué quieres hacer?
           </label>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
               onClick={() => setModo('extender')}
@@ -207,10 +228,27 @@ export default function ModificarPlazo({
               ].join(' ')}
             >
               <div className={`text-xs font-semibold ${modo === 'corregir' ? 'text-[var(--color-info)]' : 'text-[var(--color-text-primary)]'}`}>
-                Corregir fecha
+                Corregir fin
               </div>
               <div className="text-[10px] text-[var(--color-text-muted)] mt-0.5 leading-tight">
-                Error al crear. No toca cuota.
+                Error en fecha fin. No toca cuota.
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setModo('corregirInicio')}
+              className={[
+                'h-auto py-2.5 px-3 rounded-[10px] border text-left transition-all cursor-pointer',
+                modo === 'corregirInicio'
+                  ? 'bg-[rgba(59,130,246,0.1)] border-[#3b82f6]'
+                  : 'bg-transparent border-[var(--color-border)] hover:bg-[var(--color-bg-surface)]',
+              ].join(' ')}
+            >
+              <div className={`text-xs font-semibold ${modo === 'corregirInicio' ? 'text-[var(--color-info)]' : 'text-[var(--color-text-primary)]'}`}>
+                Corregir inicio
+              </div>
+              <div className="text-[10px] text-[var(--color-text-muted)] mt-0.5 leading-tight">
+                Error en fecha inicio. Mueve el fin igual.
               </div>
             </button>
           </div>
@@ -218,6 +256,14 @@ export default function ModificarPlazo({
 
         {/* Resumen actual */}
         <div className="px-3 py-2.5 rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] space-y-1">
+          {modo === 'corregirInicio' && (
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-[var(--color-text-muted)]">Fecha inicio actual</span>
+              <span className="text-xs text-[var(--color-text-primary)] font-mono-display">
+                {fechaInicio ? new Date(fechaInicio).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+              </span>
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-[var(--color-text-muted)]">Fecha fin actual</span>
             <span className="text-xs text-[var(--color-text-primary)] font-mono-display">
@@ -234,26 +280,50 @@ export default function ModificarPlazo({
           </div>
         </div>
 
-        {/* Inputs bidireccionales */}
-        <div className="grid grid-cols-2 gap-3">
+        {/* Inputs: fecha fin (extender/corregir) o fecha inicio (corregirInicio) */}
+        {modo === 'corregirInicio' ? (
           <Input
-            label="Días extra"
-            type="number"
-            inputMode="numeric"
-            placeholder="Ej: 15"
-            value={diasExtra}
-            onChange={(e) => handleDiasChange(e.target.value)}
-          />
-          <Input
-            label="Nueva fecha fin"
+            label="Nueva fecha de inicio"
             type="date"
-            value={nuevaFecha}
-            onChange={(e) => handleFechaChange(e.target.value)}
+            value={nuevaFechaInicio}
+            onChange={(e) => setNuevaFechaInicio(e.target.value)}
           />
-        </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Días extra"
+              type="number"
+              inputMode="numeric"
+              placeholder="Ej: 15"
+              value={diasExtra}
+              onChange={(e) => handleDiasChange(e.target.value)}
+            />
+            <Input
+              label="Nueva fecha fin"
+              type="date"
+              value={nuevaFecha}
+              onChange={(e) => handleFechaChange(e.target.value)}
+            />
+          </div>
+        )}
+
+        {/* Preview corregir inicio */}
+        {modo === 'corregirInicio' && previewInicio && (
+          <div className="rounded-[12px] border p-3 space-y-1.5" style={{ background: 'rgba(59,130,246,0.06)', borderColor: 'rgba(59,130,246,0.25)' }}>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-[var(--color-text-muted)]">Nueva fecha fin</span>
+              <span className="text-xs font-semibold text-[var(--color-text-primary)] font-mono-display">
+                {new Date(previewInicio.nuevaFin + 'T00:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </span>
+            </div>
+            <p className="text-[10px] text-[var(--color-text-muted)] leading-snug pt-1">
+              Se corre el inicio {previewInicio.delta > 0 ? `+${previewInicio.delta}` : previewInicio.delta} días y el fin se mueve igual. La cuota, el total y los pagos no cambian.
+            </p>
+          </div>
+        )}
 
         {/* Preview */}
-        {preview && (
+        {modo !== 'corregirInicio' && preview && (
           <div
             className="rounded-[12px] border p-3 space-y-1.5"
             style={{
@@ -301,7 +371,7 @@ export default function ModificarPlazo({
             Cancelar
           </Button>
           <Button onClick={handleSubmit} loading={loading} className="flex-1">
-            {modo === 'extender' ? 'Extender plazo' : 'Corregir fecha'}
+            {modo === 'extender' ? 'Extender plazo' : modo === 'corregirInicio' ? 'Corregir inicio' : 'Corregir fin'}
           </Button>
         </div>
       </div>

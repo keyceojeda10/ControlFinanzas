@@ -31,6 +31,8 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url)
   const clienteId = searchParams.get('clienteId')
   const estado    = searchParams.get('estado')
+  const frecuenciaRaw = searchParams.get('frecuencia')
+  const frecuencia = ['diario', 'semanal', 'quincenal', 'mensual'].includes(frecuenciaRaw) ? frecuenciaRaw : null
   const buscar    = searchParams.get('buscar')?.trim()
   const page      = searchParams.get('page') ? Number(searchParams.get('page')) : null
   const limit     = Math.min(Number(searchParams.get('limit')) || 50, 100)
@@ -44,6 +46,7 @@ export async function GET(request) {
     organizationId,
     ...(clienteId && { clienteId }),
     ...(estado    && { estado }),
+    ...(frecuencia && { frecuencia }),
     // Combinar filtros de cliente: búsqueda + restricción de ruta para cobrador
     ...((buscar || rol === 'cobrador') && {
       cliente: {
