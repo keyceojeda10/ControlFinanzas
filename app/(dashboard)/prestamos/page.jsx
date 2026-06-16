@@ -231,14 +231,13 @@ export default function PrestamosPage() {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Link
-            href="/calculadora"
-            title="Calculadora de préstamos"
-            aria-label="Calculadora de préstamos"
-            className="h-10 w-10 inline-flex items-center justify-center rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] hover:border-[var(--color-accent)] transition-all"
+            href="/prestamos/simulador"
+            className="h-10 px-3 inline-flex items-center gap-1.5 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-xs font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] hover:border-[var(--color-accent)] transition-all"
           >
-            <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m-6 4h6m-2 5h2M5 3h14a1 1 0 011 1v16a1 1 0 01-1 1H5a1 1 0 01-1-1V4a1 1 0 011-1z" />
             </svg>
+            Simulador
           </Link>
           {!authLoading && puedeCrearPrestamos && (
             <Link href="/prestamos/nuevo">

@@ -18,6 +18,7 @@ import AiTipBanner                   from '@/components/ui/AiTipBanner'
 import { generarTipRuta }            from '@/lib/tips/rutaTips'
 import DiasSinCobroSelector          from '@/components/ui/DiasSinCobroSelector'
 import { ConfirmModal }              from '@/components/ui/ConfirmModal'
+import HojaRutaImprimible            from '@/components/rutas/HojaRutaImprimible'
 
 // Cargar mapa dinámicamente (evitar SSR con Leaflet)
 const RouteMap = dynamic(() => import('@/components/rutas/RouteMap'), { ssr: false })
@@ -1556,6 +1557,14 @@ export default function RutaDetallePage({ params }) {
             </button>
           </>
         )}
+        {puedeGestionarRutas && (ruta.clientes?.length ?? 0) > 0 && (
+          <button onClick={() => window.print()} className="shrink-0 h-8 px-3 rounded-[10px] border border-[#222] bg-[var(--color-bg-card)] text-[11px] text-[var(--color-text-secondary)] font-medium active:scale-95 transition-transform inline-flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 9V2h12v7m-12 0h12m-12 0a2 2 0 00-2 2v5a2 2 0 002 2h1m11-9a2 2 0 012 2v5a2 2 0 01-2 2h-1m-10 0v4h8v-4m-8 0h8" />
+            </svg>
+            Imprimir lista
+          </button>
+        )}
       </div>
 
       {/* Resultado de optimización */}
@@ -2409,6 +2418,9 @@ export default function RutaDetallePage({ params }) {
 
       {/* Historial de cobros */}
       <HistorialCobros rutaId={id} />
+
+      {/* Hoja de cobro imprimible (oculta en pantalla, solo @media print) */}
+      <HojaRutaImprimible ruta={ruta} clientes={ruta.clientes} />
 
       {/* Modal: agregar clientes */}
       <Modal

@@ -333,6 +333,7 @@ export async function GET(request, { params }) {
       nombre:    c.nombre,
       cedula:    c.cedula,
       direccion: c.direccion,
+      telefono:  c.telefono,
       latitud:   c.latitud,
       longitud:  c.longitud,
       // El estado del cliente se basa en sus préstamos NO clavo (los clavos no

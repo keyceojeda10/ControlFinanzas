@@ -1,11 +1,12 @@
 'use client'
-// app/(dashboard)/calculadora/page.jsx
-// Calculadora / simulador de préstamos. Usa la MISMA lógica de cálculo del
-// sistema (calcularPrestamo) para que el número coincida con el préstamo real
-// cuando el usuario lo cree. No crea cliente, no toca BD, no guarda nada.
-// Pensada para mostrarle/compartirle la cotización al cliente final.
+// app/(dashboard)/prestamos/simulador/page.jsx
+// Simulador de préstamos (sub-sección de Préstamos). Usa la MISMA lógica de
+// cálculo del sistema (calcularPrestamo) para que el número coincida con el
+// préstamo real cuando el usuario lo cree. No crea cliente, no toca BD, no
+// guarda nada. Pensado para mostrarle/compartirle la cotización al cliente.
 
 import { useState, useMemo } from 'react'
+import Link from 'next/link'
 import MoneyInput from '@/components/ui/MoneyInput'
 import ModoInteresSelector from '@/components/prestamos/ModoInteresSelector'
 import TablaAmortizacion from '@/components/prestamos/TablaAmortizacion'
@@ -113,9 +114,18 @@ export default function CalculadoraPage() {
     <div className="max-w-2xl mx-auto pb-28">
       {/* Header */}
       <header className="mb-6">
-        <h1 className="text-xl font-bold text-[white]">Calculadora de préstamos</h1>
+        <Link
+          href="/prestamos"
+          className="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors mb-2"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          Préstamos
+        </Link>
+        <h1 className="text-xl font-bold text-[white]">Simulador de préstamos</h1>
         <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
-          Simula una cuota para mostrarle a tu cliente. No registra nada.
+          Calcula la cuota para mostrarle a tu cliente, sin registrar nada.
         </p>
       </header>
 
