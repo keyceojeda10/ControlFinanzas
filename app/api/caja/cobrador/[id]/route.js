@@ -196,6 +196,11 @@ export async function GET(request, { params }) {
   const cobradoDia = Math.round(cobros.reduce((a, p) => a + (p.montoPagado || 0), 0))
   const prestadoDia = Math.round(desembolsos.reduce((a, d) => a + (d.monto || 0), 0))
   const gastosDia = Math.round(gastos.reduce((a, g) => a + (g.monto || 0), 0))
+  // Gastos aún PENDIENTES: no han bajado el saldoCapital de la ruta todavía.
+  // Los APROBADOS ya descontaron del saldoCapital (ver fix en gastos/[id]).
+  const gastosPendientesDia = Math.round(
+    gastos.filter((g) => g.estado === 'pendiente').reduce((a, g) => a + (g.monto || 0), 0)
+  )
   let efectivoDia = cobradoDia - prestadoDia - gastosDia
   const capitalRutasTotal = Math.round(rutas.reduce((a, r) => a + (r.saldoCapital || 0), 0))
   const recargosMontoTotal = Math.round(recargos._sum?.montoPagado || 0)
@@ -248,9 +253,12 @@ export async function GET(request, { params }) {
   // Efectivo del día incluye seguros y recargos (son plata física cobrada)
   efectivoDia += Math.round(segurosDiaTotal) + recargosMontoTotal
 
-  // Dinero en mano depende de cómo la org interpreta el capital en ruta
+  // Dinero en mano depende de cómo la org interpreta el capital en ruta.
+  // En modo capitalEsEfectivo el saldoCapital YA tiene restados los gastos
+  // aprobados, así que solo se restan los que siguen pendientes (evita el
+  // doble descuento que dejaba "dinero en mano" por debajo del "capital en ruta").
   const dineroEnMano = org?.capitalEsEfectivo
-    ? capitalRutasTotal - gastosDia
+    ? capitalRutasTotal - gastosPendientesDia
     : efectivoDia
 
   const porRuta = [...porRutaMap.values()].map((r) => ({

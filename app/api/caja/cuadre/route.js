@@ -95,9 +95,12 @@ export async function GET(request) {
     esperadoPorCobradorDia(organizationId, country),
     prisma.cierreCaja.findMany({ where: { organizationId, fecha: { gte: inicio, lt: fin } } }),
     prisma.ruta.findMany({ where: { organizationId, activo: true }, select: { cobradorId: true, nombre: true, saldoCapital: true } }),
+    // Solo gastos PENDIENTES: los aprobados ya descontaron del saldoCapital de
+    // la ruta (ver fix en gastos/[id]), así que restarlos otra vez del capital
+    // sería doble conteo.
     prisma.gastoMenor.groupBy({
       by: ['cobradorId'],
-      where: { organizationId, estado: { in: ['pendiente', 'aprobado'] }, fecha: { gte: inicio, lt: fin } },
+      where: { organizationId, estado: 'pendiente', fecha: { gte: inicio, lt: fin } },
       _sum: { monto: true },
     }),
     prisma.organization.findUnique({ where: { id: organizationId }, select: { capitalEsEfectivo: true } }),
@@ -188,9 +191,10 @@ export async function POST(request) {
     const ruta = rutasCobrador[0] || null
     const capitalCobrador = Math.round(rutasCobrador.reduce((a, r) => a + (r.saldoCapital || 0), 0))
 
-    // Gastos del cobrador en el día.
+    // Gastos PENDIENTES del cobrador en el día (los aprobados ya bajaron el
+    // saldoCapital de la ruta; restarlos de nuevo sería doble conteo).
     const gastosAgg = await prisma.gastoMenor.aggregate({
-      where: { organizationId, cobradorId, estado: { in: ['pendiente', 'aprobado'] }, fecha: { gte: inicio, lt: fin } },
+      where: { organizationId, cobradorId, estado: 'pendiente', fecha: { gte: inicio, lt: fin } },
       _sum: { monto: true },
     })
     const gastosCobrador = Math.round(gastosAgg._sum?.monto || 0)
