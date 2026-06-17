@@ -21,6 +21,8 @@ export default function EditarDiaCobro({ prestamoId, prestamo, open, onClose, on
   const esSemana = frecuencia === 'semanal' || frecuencia === 'quincenal'
   const esMes = frecuencia === 'mensual'
 
+  // modo: 'semana' = por dia de la semana, 'mes' = por numero de dia del mes
+  const [modo, setModo] = useState('semana')
   const [valor, setValor] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -28,9 +30,21 @@ export default function EditarDiaCobro({ prestamoId, prestamo, open, onClose, on
   useEffect(() => {
     if (!open) return
     setError('')
-    if (esSemana) setValor(prestamo?.diaCobroSemana != null ? String(prestamo.diaCobroSemana) : '')
-    else if (esMes) setValor(prestamo?.diaCobroMes != null ? String(prestamo.diaCobroMes) : '')
-    else setValor('')
+    if (esSemana) {
+      if (prestamo?.diaCobroMes != null && prestamo?.diaCobroSemana == null) {
+        setModo('mes')
+        setValor(String(prestamo.diaCobroMes))
+      } else {
+        setModo('semana')
+        setValor(prestamo?.diaCobroSemana != null ? String(prestamo.diaCobroSemana) : '')
+      }
+    } else if (esMes) {
+      setModo('mes')
+      setValor(prestamo?.diaCobroMes != null ? String(prestamo.diaCobroMes) : '')
+    } else {
+      setModo('semana')
+      setValor('')
+    }
   }, [open, esSemana, esMes, prestamo?.diaCobroSemana, prestamo?.diaCobroMes])
 
   const handleClose = () => { setError(''); onClose?.() }
@@ -40,10 +54,14 @@ export default function EditarDiaCobro({ prestamoId, prestamo, open, onClose, on
     setError('')
 
     const payload = { modo: 'diaCobro' }
-    if (esSemana) payload.diaCobroSemana = valor === '' ? null : Number(valor)
-    else if (esMes) payload.diaCobroMes = valor === '' ? null : Number(valor)
+    if (modo === 'semana' && esSemana) {
+      payload.diaCobroSemana = valor === '' ? null : Number(valor)
+      payload.diaCobroMes = null
+    } else {
+      payload.diaCobroMes = valor === '' ? null : Number(valor)
+      payload.diaCobroSemana = null
+    }
 
-    // Offline: encolar y salir
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
       try {
         await encolarMutacion({
@@ -108,14 +126,43 @@ export default function EditarDiaCobro({ prestamoId, prestamo, open, onClose, on
     <Modal open={open} onClose={handleClose} title="Día de cobro">
       <div className="space-y-4">
         <p className="text-xs text-[var(--color-text-muted)] leading-snug">
-          {esSemana
+          {modo === 'semana'
             ? 'Fija el día de la semana en que siempre se cobra. Aunque se atrase un pago, el próximo cobro caerá en ese día.'
             : 'Fija el día del mes en que siempre se cobra. Si el mes no tiene ese día, se cobra el último día disponible.'}
         </p>
 
+        {esSemana && (
+          <div className="flex gap-1 p-1 rounded-[12px]" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
+            <button
+              type="button"
+              onClick={() => { setModo('semana'); setValor('') }}
+              className="flex-1 py-1.5 text-[11px] font-semibold rounded-[9px] transition-all"
+              style={modo === 'semana' ? {
+                background: 'var(--color-bg-card)',
+                color: 'var(--color-accent)',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+              } : { color: 'var(--color-text-muted)' }}
+            >
+              Día de la semana
+            </button>
+            <button
+              type="button"
+              onClick={() => { setModo('mes'); setValor('') }}
+              className="flex-1 py-1.5 text-[11px] font-semibold rounded-[9px] transition-all"
+              style={modo === 'mes' ? {
+                background: 'var(--color-bg-card)',
+                color: 'var(--color-accent)',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+              } : { color: 'var(--color-text-muted)' }}
+            >
+              Día del mes
+            </button>
+          </div>
+        )}
+
         <div className="flex flex-col gap-1.5">
           <label className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">
-            {esSemana ? 'Día de la semana' : 'Día del mes'}
+            {modo === 'semana' ? 'Día de la semana' : 'Día del mes'}
           </label>
           <select
             value={valor}
@@ -123,7 +170,7 @@ export default function EditarDiaCobro({ prestamoId, prestamo, open, onClose, on
             className="h-10 px-2 rounded-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)]"
           >
             <option value="">Sin día fijo (corre según inicio)</option>
-            {esSemana
+            {modo === 'semana'
               ? DIAS_SEMANA.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)
               : Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
                   <option key={d} value={d}>{d}</option>

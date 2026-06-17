@@ -479,15 +479,31 @@ export async function PATCH(request, { params }) {
     const dataUpdate = {}
 
     if (freq === 'semanal' || freq === 'quincenal') {
-      const raw = body?.diaCobroSemana
-      if (raw === null || raw === '' || raw === undefined) {
-        dataUpdate.diaCobroSemana = null
-      } else {
-        const v = Number(raw)
-        if (!Number.isInteger(v) || v < 0 || v > 6) {
-          return Response.json({ error: 'Día de la semana inválido (0-6)' }, { status: 400 })
+      // Semanal/quincenal acepta dia de la semana O dia del mes (mutuamente excluyentes)
+      if (body?.diaCobroMes !== undefined && body?.diaCobroMes !== null) {
+        const v = Number(body.diaCobroMes)
+        if (body.diaCobroMes === '' || body.diaCobroMes === null) {
+          dataUpdate.diaCobroMes = null
+          dataUpdate.diaCobroSemana = null
+        } else if (!Number.isInteger(v) || v < 1 || v > 31) {
+          return Response.json({ error: 'Día del mes inválido (1-31)' }, { status: 400 })
+        } else {
+          dataUpdate.diaCobroMes = v
+          dataUpdate.diaCobroSemana = null
         }
-        dataUpdate.diaCobroSemana = v
+      } else {
+        const raw = body?.diaCobroSemana
+        if (raw === null || raw === '' || raw === undefined) {
+          dataUpdate.diaCobroSemana = null
+          dataUpdate.diaCobroMes = null
+        } else {
+          const v = Number(raw)
+          if (!Number.isInteger(v) || v < 0 || v > 6) {
+            return Response.json({ error: 'Día de la semana inválido (0-6)' }, { status: 400 })
+          }
+          dataUpdate.diaCobroSemana = v
+          dataUpdate.diaCobroMes = null
+        }
       }
     } else if (freq === 'mensual') {
       const raw = body?.diaCobroMes
