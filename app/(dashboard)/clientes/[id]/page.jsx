@@ -551,6 +551,22 @@ export default function ClienteDetallePage({ params }) {
       {/* Info de contacto */}
       <InfoContactoCard cliente={cliente} />
 
+      {/* Tope de préstamo — solo owner */}
+      {esOwner && (
+        <TopePrestamoCard
+          tope={cliente.montoMaximoPrestamo}
+          onSave={async (nuevoTope) => {
+            const res = await fetch(`/api/clientes/${id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ montoMaximoPrestamo: nuevoTope }),
+            })
+            if (!res.ok) throw new Error('Error al guardar')
+            setCliente(prev => ({ ...prev, montoMaximoPrestamo: nuevoTope }))
+          }}
+        />
+      )}
+
       {/* Préstamos activos */}
       {prestamosActivos.length > 0 && (
         <div>
@@ -856,6 +872,115 @@ function DeleteClienteModal({ cliente, prestamos, onClose, onDeletePrestamo, onT
         </div>
       </div>
     </div>
+  )
+}
+
+// ─── Sub-componente: tope de préstamo editable inline ─────────────
+function TopePrestamoCard({ tope, onSave }) {
+  const [editando, setEditando] = useState(false)
+  const [valor, setValor] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const formatDisplay = (v) => {
+    const n = Number(v)
+    if (!n || n <= 0) return ''
+    return n.toLocaleString('es-CO')
+  }
+
+  const handleEditar = () => {
+    setValor(tope > 0 ? String(tope) : '')
+    setEditando(true)
+  }
+
+  const handleGuardar = async () => {
+    setSaving(true)
+    try {
+      const raw = String(valor).replace(/\D/g, '')
+      const num = Number(raw) || null
+      await onSave(num)
+      setEditando(false)
+    } catch {
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleChange = (e) => {
+    const raw = e.target.value.replace(/\D/g, '')
+    setValor(raw)
+  }
+
+  const displayValor = valor ? Number(valor).toLocaleString('es-CO') : ''
+
+  if (editando) {
+    return (
+      <div className="rounded-[14px] border p-3.5 flex items-center gap-3" style={{ background: 'color-mix(in srgb, var(--color-warning) 5%, var(--color-bg-card))', borderColor: 'color-mix(in srgb, var(--color-warning) 20%, var(--color-border))' }}>
+        <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-warning) 15%, transparent)' }}>
+          <svg className="w-4 h-4" style={{ color: 'var(--color-warning)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+          </svg>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="relative flex items-center">
+            <span className="absolute left-2.5 text-[var(--color-text-muted)] text-sm pointer-events-none">$</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={displayValor}
+              onChange={handleChange}
+              placeholder="Sin limite"
+              autoFocus
+              className="w-full h-9 rounded-[10px] border text-sm pl-7 pr-3 bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.08)] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[rgba(245,197,24,0.2)] transition-all"
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            onClick={() => setEditando(false)}
+            className="h-8 px-2.5 rounded-[8px] border border-[var(--color-border)] text-xs text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleGuardar}
+            disabled={saving}
+            className="h-8 px-3 rounded-[8px] bg-[var(--color-accent)] text-[#111] text-xs font-semibold hover:bg-[var(--color-accent-hover)] transition-colors disabled:opacity-50"
+          >
+            {saving ? '...' : 'Guardar'}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <button
+      onClick={handleEditar}
+      className="w-full rounded-[14px] border p-3.5 flex items-center gap-3 text-left transition-colors hover:border-[color-mix(in_srgb,var(--color-warning)_40%,var(--color-border))] active:scale-[0.99]"
+      style={{
+        background: tope > 0
+          ? 'color-mix(in srgb, var(--color-warning) 5%, var(--color-bg-card))'
+          : 'var(--color-bg-card)',
+        borderColor: tope > 0
+          ? 'color-mix(in srgb, var(--color-warning) 20%, var(--color-border))'
+          : 'var(--color-border)',
+      }}
+    >
+      <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: tope > 0 ? 'color-mix(in srgb, var(--color-warning) 15%, transparent)' : 'color-mix(in srgb, var(--color-text-muted) 10%, transparent)' }}>
+        <svg className="w-4 h-4" style={{ color: tope > 0 ? 'var(--color-warning)' : 'var(--color-text-muted)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+        </svg>
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[11px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Tope de préstamo</p>
+        <p className="text-sm font-semibold mt-0.5" style={{ color: tope > 0 ? 'var(--color-warning)' : 'var(--color-text-muted)' }}>
+          {tope > 0 ? `$${formatDisplay(tope)}` : 'Sin limite'}
+        </p>
+      </div>
+      <svg className="w-4 h-4 shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+      </svg>
+    </button>
   )
 }
 
