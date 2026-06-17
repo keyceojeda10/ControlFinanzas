@@ -10,7 +10,7 @@ const OPCIONES = [
   { key: 'ayer', label: 'Ayer' },
   { key: '7d',  label: '7 días' },
   { key: '30d', label: '30 días' },
-  { key: 'rango', label: 'Personalizado' },
+  { key: 'rango', label: 'Rango' },
 ]
 
 // Fecha local Colombia (UTC-5) en formato YYYY-MM-DD.

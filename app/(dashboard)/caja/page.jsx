@@ -554,19 +554,9 @@ export default function CajaPage() {
       <div className="max-w-xl mx-auto space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div
-              className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
-              style={{ background: 'color-mix(in srgb, var(--color-success) 12%, transparent)', color: 'var(--color-success)' }}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Caja del dia</h1>
-              <p className="text-[12px] text-[var(--color-text-secondary)] mt-0.5">{cajaData?.fechaDisplay || '—'}</p>
-            </div>
+          <div>
+            <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Caja del dia</h1>
+            <p className="text-[12px] text-[var(--color-text-secondary)] mt-0.5">{cajaData?.fechaDisplay || '—'}</p>
           </div>
           <input
             type="date"
@@ -942,21 +932,11 @@ export default function CajaPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Caja</h1>
-          <p className="text-[12px] text-[var(--color-text-secondary)] mt-0.5">
-            {periodo.modo === 'hoy' ? (cajaData?.fechaDisplay || '—') : `${periodo.desde} a ${periodo.hasta}`}
-          </p>
-        </div>
-        <div
-          className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
-          style={{ background: 'color-mix(in srgb, var(--color-success) 12%, transparent)', color: 'var(--color-success)' }}
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-        </div>
+      <div>
+        <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Caja</h1>
+        <p className="text-[12px] text-[var(--color-text-secondary)] mt-0.5">
+          {periodo.modo === 'hoy' ? (cajaData?.fechaDisplay || '—') : `${periodo.desde} a ${periodo.hasta}`}
+        </p>
       </div>
 
       {/* Banner explicativo (colapsable) */}
@@ -979,8 +959,8 @@ export default function CajaPage() {
       {/* Filtro de periodo */}
       <FiltroPeriodo value={{ ...periodo, fecha: periodo.fecha || fechaSeleccionada }} onChange={handlePeriodoChange} />
 
-      {/* Tabs premium */}
-      <div className="flex gap-1 p-1 rounded-[14px]" style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)' }}>
+      {/* Tabs */}
+      <div className="flex gap-1 p-1 rounded-[12px]" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
         {[
           { key: 'cobros', label: 'Caja del dia' },
           { key: 'porruta', label: 'Por ruta' },
@@ -990,13 +970,12 @@ export default function CajaPage() {
             key={t.key}
             type="button"
             onClick={() => setCajaTab(t.key)}
-            className="flex-1 py-2.5 text-xs font-bold rounded-[10px] transition-all relative"
+            className="flex-1 py-1.5 text-[11px] font-semibold rounded-[9px] transition-all"
             style={cajaTab === t.key ? {
-              background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 12%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)',
+              background: 'var(--color-bg-card)',
               color: 'var(--color-accent)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-              border: '1px solid color-mix(in srgb, var(--color-accent) 20%, var(--color-border))',
-            } : { color: 'var(--color-text-muted)', border: '1px solid transparent' }}
+              boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+            } : { color: 'var(--color-text-muted)' }}
           >
             {t.label}
           </button>
