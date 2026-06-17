@@ -219,17 +219,9 @@ export default function PrestamosPage() {
   return (
     <div className="max-w-3xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
-        <div>
+      <div className="mb-5">
+        <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-[white]">Préstamos</h1>
-          <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
-            {loading ? '…' : `${total} préstamo${total !== 1 ? 's' : ''}${frecuencia ? ' ' + (FRECUENCIAS.find((f) => f.value === frecuencia)?.label.toLowerCase()) : ''}`}
-            {!frecuencia && enMoraCount > 0 && (
-              <span className="ml-2 text-[var(--color-danger)]">· {enMoraCount} en mora</span>
-            )}
-          </p>
-        </div>
-        <div className="flex flex-col items-end gap-1.5 shrink-0">
           {!authLoading && puedeCrearPrestamos && (
             <Link href="/prestamos/nuevo">
               <Button
@@ -243,14 +235,22 @@ export default function PrestamosPage() {
               </Button>
             </Link>
           )}
+        </div>
+        <div className="flex items-center justify-between mt-1">
+          <p className="text-sm text-[var(--color-text-muted)]">
+            {loading ? '…' : `${total} préstamo${total !== 1 ? 's' : ''}${frecuencia ? ' ' + (FRECUENCIAS.find((f) => f.value === frecuencia)?.label.toLowerCase()) : ''}`}
+            {!frecuencia && enMoraCount > 0 && (
+              <span className="ml-2 text-[var(--color-danger)]">· {enMoraCount} en mora</span>
+            )}
+          </p>
           <Link
             href="/prestamos/simulador"
-            className="h-7 px-2.5 inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[10px] font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:border-[var(--color-accent)] transition-all"
+            className="h-7 px-2.5 inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[10px] font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:border-[var(--color-accent)] transition-all shrink-0"
           >
             <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m-6 4h6m-2 5h2M5 3h14a1 1 0 011 1v16a1 1 0 01-1 1H5a1 1 0 01-1-1V4a1 1 0 011-1z" />
             </svg>
-            Simulador
+            Simulador de préstamos
           </Link>
         </div>
       </div>
