@@ -229,16 +229,7 @@ export default function PrestamosPage() {
             )}
           </p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <Link
-            href="/prestamos/simulador"
-            className="h-10 px-3 inline-flex items-center gap-1.5 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-xs font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] hover:border-[var(--color-accent)] transition-all"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m-6 4h6m-2 5h2M5 3h14a1 1 0 011 1v16a1 1 0 01-1 1H5a1 1 0 01-1-1V4a1 1 0 011-1z" />
-            </svg>
-            Simulador
-          </Link>
+        <div className="flex flex-col items-end gap-1.5 shrink-0">
           {!authLoading && puedeCrearPrestamos && (
             <Link href="/prestamos/nuevo">
               <Button
@@ -252,6 +243,15 @@ export default function PrestamosPage() {
               </Button>
             </Link>
           )}
+          <Link
+            href="/prestamos/simulador"
+            className="h-7 px-2.5 inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[10px] font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:border-[var(--color-accent)] transition-all"
+          >
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m-6 4h6m-2 5h2M5 3h14a1 1 0 011 1v16a1 1 0 01-1 1H5a1 1 0 01-1-1V4a1 1 0 011-1z" />
+            </svg>
+            Simulador
+          </Link>
         </div>
       </div>
 
