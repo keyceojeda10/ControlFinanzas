@@ -824,19 +824,18 @@ function QuickLink({ href, label, desc, color, dataTour }) {
     <Link
       href={href}
       data-tour={dataTour}
-      className="rounded-[16px] px-4 py-4 transition-all duration-200 group flex items-center gap-3 hover:scale-[1.01]"
+      className="relative overflow-hidden rounded-[16px] px-4 py-4 transition-all duration-200 group flex items-center gap-3 active:scale-[0.98]"
       style={{
-        background: `linear-gradient(135deg, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, var(--color-bg-card) 100%)`,
-        border: '1px solid var(--color-border)',
+        background: `linear-gradient(145deg, color-mix(in srgb, ${color} 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
+        border: `1px solid color-mix(in srgb, ${color} 18%, var(--color-border))`,
       }}
-      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = `0 4px 14px color-mix(in srgb, ${color} 18%, transparent)`; e.currentTarget.style.borderColor = `color-mix(in srgb, ${color} 25%, var(--color-border))` }}
-      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'var(--color-border)' }}
     >
-      <div className="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0" style={{ background: `color-mix(in srgb, ${color} 15%, transparent)` }}>
+      <div className="absolute -top-8 -right-8 w-20 h-20 rounded-full opacity-[0.05] pointer-events-none" style={{ background: `radial-gradient(circle, ${color}, transparent 70%)` }} />
+      <div className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 relative z-10" style={{ background: `color-mix(in srgb, ${color} 15%, transparent)` }}>
         <div className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
       </div>
-      <div className="min-w-0">
-        <p className="text-sm font-medium leading-tight" style={{ color: 'var(--color-text-primary)' }}>{label}</p>
+      <div className="min-w-0 relative z-10">
+        <p className="text-sm font-semibold leading-tight" style={{ color: 'var(--color-text-primary)' }}>{label}</p>
         <p className="text-[10px] leading-tight mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{desc}</p>
       </div>
     </Link>
@@ -1201,6 +1200,7 @@ export default function DashboardPage() {
   const [isOffline, setIsOffline] = useState(false)
   const [actualizadoEn, setActualizadoEn] = useState(null)
   const [susInfo, setSusInfo] = useState(null)
+  const [equipoData, setEquipoData] = useState(null)
 
   // Vista simple = solo lo esencial (Cobros + Tu dinero). Vista pro = todo.
   const [vistaSimple, setVistaSimple] = useState(false)
@@ -1307,7 +1307,13 @@ export default function DashboardPage() {
   const refreshAll = useCallback(() => {
     loadDashboard()
     loadMora()
-    if (esOwner) loadCapital()
+    if (esOwner) {
+      loadCapital()
+      fetch(`/api/equipo/resumen?t=${Date.now()}`, { cache: 'no-store' })
+        .then(r => r.json())
+        .then(d => { if (d.cobradores) setEquipoData(d) })
+        .catch(() => {})
+    }
   }, [loadDashboard, loadMora, loadCapital, esOwner])
 
   useEffect(() => { loadDashboard() }, [loadDashboard, lastSyncedAt])
@@ -1338,6 +1344,10 @@ export default function DashboardPage() {
   useEffect(() => {
     if (authLoading || !esOwner) return
     loadCapital()
+    fetch(`/api/equipo/resumen?t=${Date.now()}`, { cache: 'no-store' })
+      .then(r => r.json())
+      .then(d => { if (d.cobradores) setEquipoData(d) })
+      .catch(() => {})
   }, [authLoading, esOwner, loadCapital])
 
   const moraPct = data ? (data.clientes.total > 0 ? Math.round((data.clientes.enMora / data.clientes.total) * 100) : 0) : 0
@@ -1423,43 +1433,154 @@ export default function DashboardPage() {
       )}
       {error && <div className="text-sm rounded-[12px] px-4 py-3" style={{ background: 'var(--color-danger-dim)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)', color: 'var(--color-danger)' }}>{error}</div>}
 
-      {/* Acciones rápidas — siempre visibles para el owner */}
+      {/* Acciones rapidas — owner: botones premium horizontales */}
       {esOwner && (
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-2.5">
           {puedeCrearPrestamos && (
             <Link
               href="/prestamos/nuevo"
-              className="flex flex-col items-center gap-1.5 rounded-[14px] px-2 py-3 transition-all hover:scale-[1.02] active:scale-[0.98]"
-              style={{ background: 'color-mix(in srgb, #22c55e 12%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, #22c55e 25%, var(--color-border))' }}
+              className="group relative overflow-hidden rounded-[16px] px-3 py-4 flex flex-col items-center gap-2 transition-all active:scale-[0.97]"
+              style={{
+                background: 'linear-gradient(145deg, color-mix(in srgb, #22c55e 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)',
+                border: '1px solid color-mix(in srgb, #22c55e 20%, var(--color-border))',
+              }}
             >
-              <div className="w-8 h-8 rounded-[10px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, #22c55e 18%, transparent)' }}>
-                <svg className="w-4 h-4" fill="none" stroke="#22c55e" strokeWidth={2.2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+              <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full opacity-[0.07] pointer-events-none" style={{ background: 'radial-gradient(circle, #22c55e, transparent 70%)' }} />
+              <div className="w-10 h-10 rounded-[12px] flex items-center justify-center relative z-10" style={{ background: 'color-mix(in srgb, #22c55e 15%, transparent)' }}>
+                <svg className="w-5 h-5" fill="none" stroke="#22c55e" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
               </div>
-              <span className="text-[11px] font-semibold text-center leading-tight" style={{ color: '#22c55e' }}>Nuevo préstamo</span>
+              <span className="text-[11px] font-bold text-center leading-tight relative z-10" style={{ color: '#22c55e' }}>Nuevo prestamo</span>
             </Link>
           )}
           {puedeCrearClientes && (
             <Link
               href="/clientes/nuevo"
-              className="flex flex-col items-center gap-1.5 rounded-[14px] px-2 py-3 transition-all hover:scale-[1.02] active:scale-[0.98]"
-              style={{ background: 'color-mix(in srgb, #f5c518 12%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, #f5c518 25%, var(--color-border))' }}
+              className="group relative overflow-hidden rounded-[16px] px-3 py-4 flex flex-col items-center gap-2 transition-all active:scale-[0.97]"
+              style={{
+                background: 'linear-gradient(145deg, color-mix(in srgb, #f5c518 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)',
+                border: '1px solid color-mix(in srgb, #f5c518 20%, var(--color-border))',
+              }}
             >
-              <div className="w-8 h-8 rounded-[10px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, #f5c518 18%, transparent)' }}>
-                <svg className="w-4 h-4" fill="none" stroke="#f5c518" strokeWidth={2.2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" /></svg>
+              <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full opacity-[0.07] pointer-events-none" style={{ background: 'radial-gradient(circle, #f5c518, transparent 70%)' }} />
+              <div className="w-10 h-10 rounded-[12px] flex items-center justify-center relative z-10" style={{ background: 'color-mix(in srgb, #f5c518 15%, transparent)' }}>
+                <svg className="w-5 h-5" fill="none" stroke="#f5c518" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" /></svg>
               </div>
-              <span className="text-[11px] font-semibold text-center leading-tight" style={{ color: '#f5c518' }}>Nuevo cliente</span>
+              <span className="text-[11px] font-bold text-center leading-tight relative z-10" style={{ color: '#f5c518' }}>Nuevo cliente</span>
             </Link>
           )}
           <Link
             href="/caja"
-            className="flex flex-col items-center gap-1.5 rounded-[14px] px-2 py-3 transition-all hover:scale-[1.02] active:scale-[0.98]"
-            style={{ background: 'color-mix(in srgb, #06b6d4 12%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, #06b6d4 25%, var(--color-border))' }}
+            className="group relative overflow-hidden rounded-[16px] px-3 py-4 flex flex-col items-center gap-2 transition-all active:scale-[0.97]"
+            style={{
+              background: 'linear-gradient(145deg, color-mix(in srgb, #06b6d4 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)',
+              border: '1px solid color-mix(in srgb, #06b6d4 20%, var(--color-border))',
+            }}
           >
-            <div className="w-8 h-8 rounded-[10px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, #06b6d4 18%, transparent)' }}>
-              <svg className="w-4 h-4" fill="none" stroke="#06b6d4" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full opacity-[0.07] pointer-events-none" style={{ background: 'radial-gradient(circle, #06b6d4, transparent 70%)' }} />
+            <div className="w-10 h-10 rounded-[12px] flex items-center justify-center relative z-10" style={{ background: 'color-mix(in srgb, #06b6d4 15%, transparent)' }}>
+              <svg className="w-5 h-5" fill="none" stroke="#06b6d4" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
             </div>
-            <span className="text-[11px] font-semibold text-center leading-tight" style={{ color: '#06b6d4' }}>Ver caja</span>
+            <span className="text-[11px] font-bold text-center leading-tight relative z-10" style={{ color: '#06b6d4' }}>Ver caja</span>
           </Link>
+        </div>
+      )}
+
+      {/* Mi equipo — solo owner con cobradores activos */}
+      {esOwner && equipoData && equipoData.cobradores.length > 0 && (
+        <div
+          className="rounded-[20px] overflow-hidden"
+          style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+        >
+          <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid var(--color-border)' }}>
+            <div className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, #8b5cf6 15%, transparent)', color: '#8b5cf6' }}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+              </svg>
+            </div>
+            <h2 className="text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Mi equipo</h2>
+            <span className="ml-auto text-[10px] font-mono-display px-2 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, #8b5cf6 12%, transparent)', color: '#8b5cf6' }}>
+              {equipoData.cobradores.length}
+            </span>
+          </div>
+          <div className="divide-y" style={{ borderColor: 'var(--color-border)' }}>
+            {equipoData.cobradores.map(c => {
+              const inactivo = c.minutesSinceActivity !== null && c.minutesSinceActivity > 120
+              const tiempoStr = c.minutesSinceActivity === null
+                ? 'Sin registro'
+                : c.minutesSinceActivity < 5
+                  ? 'Ahora'
+                  : c.minutesSinceActivity < 60
+                    ? `${c.minutesSinceActivity}min`
+                    : c.minutesSinceActivity < 1440
+                      ? `${Math.floor(c.minutesSinceActivity / 60)}h`
+                      : `${Math.floor(c.minutesSinceActivity / 1440)}d`
+              return (
+                <div key={c.id} className="px-4 py-3 flex items-center gap-3">
+                  {/* Avatar */}
+                  <div
+                    className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 text-sm font-bold relative"
+                    style={{
+                      background: inactivo
+                        ? 'color-mix(in srgb, var(--color-danger) 12%, transparent)'
+                        : 'color-mix(in srgb, #8b5cf6 12%, transparent)',
+                      color: inactivo ? 'var(--color-danger)' : '#8b5cf6',
+                    }}
+                  >
+                    {c.nombre.charAt(0).toUpperCase()}
+                    <div
+                      className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2"
+                      style={{
+                        borderColor: 'var(--color-bg-card)',
+                        background: c.minutesSinceActivity !== null && c.minutesSinceActivity < 15
+                          ? 'var(--color-success)'
+                          : inactivo
+                            ? 'var(--color-danger)'
+                            : 'var(--color-text-muted)',
+                      }}
+                    />
+                  </div>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-[14px] font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{c.nombre}</p>
+                      {inactivo && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md shrink-0" style={{ background: 'color-mix(in srgb, var(--color-danger) 15%, transparent)', color: 'var(--color-danger)' }}>
+                          Inactivo
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      {c.rutas.length > 0 && (
+                        <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{c.rutas.join(', ')}</span>
+                      )}
+                      <span className="text-[10px]" style={{ color: inactivo ? 'var(--color-danger)' : 'var(--color-text-muted)' }}>
+                        {tiempoStr}
+                      </span>
+                    </div>
+                  </div>
+                  {/* Stats */}
+                  <div className="shrink-0 text-right">
+                    <p className="text-sm font-bold font-mono-display" style={{ color: c.recaudadoHoy > 0 ? 'var(--color-success)' : 'var(--color-text-muted)' }}>
+                      {formatMoney(c.recaudadoHoy)}
+                    </p>
+                    <div className="flex items-center justify-end gap-1 mt-0.5">
+                      <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{c.pagosHoy} cobros</span>
+                      {c.cajaCerrada && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md" style={{
+                          background: c.cajaDiferencia === 0
+                            ? 'color-mix(in srgb, var(--color-success) 15%, transparent)'
+                            : 'color-mix(in srgb, var(--color-warning) 15%, transparent)',
+                          color: c.cajaDiferencia === 0 ? 'var(--color-success)' : 'var(--color-warning)',
+                        }}>
+                          Caja OK
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
 
