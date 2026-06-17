@@ -5,9 +5,9 @@ import AsistenteChat from './AsistenteChat'
 
 const RUTAS_SIN_LUCAS = [
   '/clientes/nuevo',
-  '/clientes/editar',
   '/prestamos/nuevo',
 ]
+const PATRON_SIN_LUCAS = /^\/clientes\/[^/]+\/editar/
 
 const AsistenteButton = forwardRef(function AsistenteButton({ onOpenChange }, ref) {
   const [open, setOpen] = useState(false)
@@ -30,7 +30,7 @@ const AsistenteButton = forwardRef(function AsistenteButton({ onOpenChange }, re
     return () => { document.body.style.overflow = '' }
   }, [open])
 
-  const ocultarPorRuta = RUTAS_SIN_LUCAS.some(r => pathname?.startsWith(r))
+  const ocultarPorRuta = RUTAS_SIN_LUCAS.some(r => pathname?.startsWith(r)) || PATRON_SIN_LUCAS.test(pathname)
   if (ocultarPorRuta) return null
 
   return (

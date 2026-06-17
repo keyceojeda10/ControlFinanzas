@@ -50,9 +50,9 @@ const MORE_ITEMS_COBRADOR = [
 
 const RUTAS_SIN_BOTTOMNAV = [
   '/clientes/nuevo',
-  '/clientes/editar',
   '/prestamos/nuevo',
 ]
+const PATRON_SIN_BOTTOMNAV = /^\/clientes\/[^/]+\/editar/
 
 // Tabs de la pill — ambos roles ven Inicio, Clientes, Prestamos, Rutas, Mas
 const PILL_TABS = [
@@ -78,7 +78,7 @@ export default function BottomNav({ onOpenLucas, lucasOpen = false }) {
   const isActive = (href) =>
     href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
 
-  const ocultarPorRuta = RUTAS_SIN_BOTTOMNAV.some(r => pathname?.startsWith(r))
+  const ocultarPorRuta = RUTAS_SIN_BOTTOMNAV.some(r => pathname?.startsWith(r)) || PATRON_SIN_BOTTOMNAV.test(pathname)
 
   useEffect(() => {
     if (!esCobrador) return

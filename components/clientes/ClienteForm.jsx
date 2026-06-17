@@ -8,6 +8,7 @@ import { useRouter }           from 'next/navigation'
 import dynamic                 from 'next/dynamic'
 import { Input, Select }       from '@/components/ui/Input'
 import { Button }              from '@/components/ui/Button'
+import MoneyInput              from '@/components/ui/MoneyInput'
 import DiasSinCobroSelector    from '@/components/ui/DiasSinCobroSelector'
 import Stepper                 from '@/components/ui/Stepper'
 import { guardarClientePendiente, encolarMutacion } from '@/lib/offline'
@@ -509,13 +510,10 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                 <p className="text-[11px] leading-snug mt-1 mb-2" style={{ color: 'var(--color-text-muted)' }}>
                   Monto maximo que se le puede prestar a este cliente. Dejalo vacio para sin limite.
                 </p>
-                <Input
-                  type="number"
-                  inputMode="numeric"
+                <MoneyInput
                   value={form.montoMaximoPrestamo}
                   onChange={(e) => setForm({ ...form, montoMaximoPrestamo: e.target.value })}
                   placeholder="Sin limite"
-                  min="0"
                 />
               </div>
             )}
