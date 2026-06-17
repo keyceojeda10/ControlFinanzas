@@ -105,7 +105,7 @@ export default function ModoInteresSelector({ modoInteres, onChange, calculo, mo
 
               {tipOpen === m.key && (
                 <div
-                  className="absolute z-30 left-0 right-0 mt-1 p-3 rounded-[10px] text-[11px] leading-relaxed shadow-lg whitespace-pre-line"
+                  className="absolute z-30 left-0 right-0 bottom-full mb-1 p-3 rounded-[10px] text-[11px] leading-relaxed shadow-lg whitespace-pre-line"
                   style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}
                   onClick={() => setTipOpen(null)}
                 >
