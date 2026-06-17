@@ -553,16 +553,26 @@ export default function CajaPage() {
     return (
       <div className="max-w-xl mx-auto space-y-4">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Caja del día</h1>
-            <p className="text-sm text-[var(--color-text-muted)] mt-0.5">{cajaData?.fechaDisplay || '—'}</p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
+              style={{ background: 'color-mix(in srgb, var(--color-success) 12%, transparent)', color: 'var(--color-success)' }}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Caja del dia</h1>
+              <p className="text-[12px] text-[var(--color-text-secondary)] mt-0.5">{cajaData?.fechaDisplay || '—'}</p>
+            </div>
           </div>
           <input
             type="date"
             value={fechaSeleccionada}
             onChange={handleFechaChange}
-            className="px-3 py-2 rounded-[8px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)]"
+            className="px-3 py-2 rounded-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)]"
           />
         </div>
 
@@ -932,11 +942,21 @@ export default function CajaPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-4">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Caja</h1>
-        <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
-          {periodo.modo === 'hoy' ? (cajaData?.fechaDisplay || '—') : `${periodo.desde} a ${periodo.hasta}`}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Caja</h1>
+          <p className="text-[12px] text-[var(--color-text-secondary)] mt-0.5">
+            {periodo.modo === 'hoy' ? (cajaData?.fechaDisplay || '—') : `${periodo.desde} a ${periodo.hasta}`}
+          </p>
+        </div>
+        <div
+          className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
+          style={{ background: 'color-mix(in srgb, var(--color-success) 12%, transparent)', color: 'var(--color-success)' }}
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </div>
       </div>
 
       {/* Banner explicativo (colapsable) */}
@@ -959,23 +979,24 @@ export default function CajaPage() {
       {/* Filtro de periodo */}
       <FiltroPeriodo value={{ ...periodo, fecha: periodo.fecha || fechaSeleccionada }} onChange={handlePeriodoChange} />
 
-      {/* Tabs Caja / Caja por ruta / Cuadre (los Gastos viven en su propio apartado del menú) */}
-      <div className="flex gap-1 p-1 rounded-[12px]" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
+      {/* Tabs premium */}
+      <div className="flex gap-1 p-1 rounded-[14px]" style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)' }}>
         {[
-          { key: 'cobros', label: 'Caja del día' },
-          { key: 'porruta', label: 'Caja por ruta' },
-          ...(esOwner && cobradoresParaFiltro.length > 0 ? [{ key: 'cuadre', label: 'Cuadre del día' }] : []),
+          { key: 'cobros', label: 'Caja del dia' },
+          { key: 'porruta', label: 'Por ruta' },
+          ...(esOwner && cobradoresParaFiltro.length > 0 ? [{ key: 'cuadre', label: 'Cuadre' }] : []),
         ].map(t => (
           <button
             key={t.key}
             type="button"
             onClick={() => setCajaTab(t.key)}
-            className="flex-1 py-2 text-xs font-semibold rounded-[9px] transition-all"
+            className="flex-1 py-2.5 text-xs font-bold rounded-[10px] transition-all relative"
             style={cajaTab === t.key ? {
-              background: 'var(--color-bg-card)',
+              background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 12%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)',
               color: 'var(--color-accent)',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
-            } : { color: 'var(--color-text-muted)' }}
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+              border: '1px solid color-mix(in srgb, var(--color-accent) 20%, var(--color-border))',
+            } : { color: 'var(--color-text-muted)', border: '1px solid transparent' }}
           >
             {t.label}
           </button>
@@ -1120,33 +1141,40 @@ export default function CajaPage() {
 
       {pagosDiaCard}
 
-      <Card>
-        <div className="mb-2">
-          <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Tu patrimonio</p>
-          <p className="text-[11px] text-[var(--color-text-muted)]">Todo el dinero del negocio acumulado</p>
-        </div>
-        <p className="text-2xl font-bold font-mono-display" style={{ color: saldoGeneralActual >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
-          {formatMoney(saldoGeneralActual)}
-        </p>
-        <p className="text-[11px] text-[var(--color-text-muted)] mt-1">Para detalle completo de movimientos, revisa Capital.</p>
+      <div
+        className="relative rounded-[20px] overflow-hidden px-5 py-5"
+        style={{
+          background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 60%)',
+          border: '1px solid color-mix(in srgb, var(--color-accent) 18%, var(--color-border))',
+        }}
+      >
+        <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-[0.06] pointer-events-none" style={{ background: 'radial-gradient(circle, var(--color-accent), transparent 70%)' }} />
+        <div className="relative">
+          <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Tu patrimonio</p>
+          <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>Todo el dinero del negocio acumulado</p>
+          <p className="text-3xl font-extrabold font-mono-display mt-2" style={{ color: saldoGeneralActual >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+            {formatMoney(saldoGeneralActual)}
+          </p>
 
-        <div className="mt-4 pt-3 border-t border-[var(--color-border)] space-y-2">
-          <button
-            type="button"
-            onClick={() => {
-              setShowAjusteCaja(true)
-              setErrorAjuste('')
-              setAjusteDireccion('ingreso')
-            }}
-            className="w-full h-10 rounded-[10px] text-sm font-semibold text-[#1a1a2e] bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] transition-colors"
-          >
-            Ajustar saldo general
-          </button>
-          <Link href="/capital?view=manual-movements" className="block text-center text-xs font-medium text-[var(--color-info)] hover:underline">
-            Ver más movimientos en Capital
-          </Link>
+          <div className="mt-4 pt-3 space-y-2" style={{ borderTop: '1px solid color-mix(in srgb, var(--color-accent) 12%, transparent)' }}>
+            <button
+              type="button"
+              onClick={() => {
+                setShowAjusteCaja(true)
+                setErrorAjuste('')
+                setAjusteDireccion('ingreso')
+              }}
+              className="w-full h-11 rounded-[12px] text-sm font-bold transition-all active:scale-[0.98]"
+              style={{ background: 'var(--color-accent)', color: 'var(--color-bg-base)' }}
+            >
+              Ajustar saldo general
+            </button>
+            <Link href="/capital?view=manual-movements" className="block text-center text-xs font-semibold py-1" style={{ color: 'var(--color-info)' }}>
+              Ver movimientos en Capital
+            </Link>
+          </div>
         </div>
-      </Card>
+      </div>
 
       {/* Mi cierre del dia (owner): aparece si el owner no tiene cobradores
           o si el mismo registro pagos hoy (caso owner mixto). */}
@@ -1342,21 +1370,28 @@ export default function CajaPage() {
       {/* Cobradores: solo visible si hay al menos uno (cuando no hay, el owner ya
           ve "Mi cierre del dia" arriba y esta seccion no aporta nada). */}
       {cobradoresTotal > 0 && (
-      <Card>
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
-            Cobradores
-          </p>
-          {cobradoresTotal > 0 && (
-            <span className="text-xs text-[var(--color-text-muted)]">
-              <span className="font-bold" style={{ color: cobradoresCerrados === cobradoresTotal ? 'var(--color-success)' : 'var(--color-accent)' }}>
-                {cobradoresCerrados}/{cobradoresTotal}
-              </span> cerraron
-            </span>
-          )}
+      <div className="rounded-[20px] overflow-hidden" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+        <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid var(--color-border)' }}>
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, #8b5cf6 15%, transparent)', color: '#8b5cf6' }}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+              </svg>
+            </div>
+            <h2 className="text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Cobradores</h2>
+          </div>
+          <span className="text-[11px] font-mono-display px-2 py-0.5 rounded-md" style={{
+            background: cobradoresCerrados === cobradoresTotal
+              ? 'color-mix(in srgb, var(--color-success) 12%, transparent)'
+              : 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
+            color: cobradoresCerrados === cobradoresTotal ? 'var(--color-success)' : 'var(--color-accent)',
+          }}>
+            {cobradoresCerrados}/{cobradoresTotal} cerraron
+          </span>
         </div>
 
-        {cobradoresTotal > 0 && (
+        <div className="px-4 py-3">
+        {cobradoresTotal > 0 && (pendientesConRecaudo > 0 || pendientesSinMovimiento > 0) && (
           <div className="mb-3 text-[11px] space-y-1">
             {pendientesConRecaudo > 0 && (
               <p className="text-[var(--color-accent)]">
@@ -1573,7 +1608,8 @@ export default function CajaPage() {
             })}
           </div>
         )}
-      </Card>
+        </div>
+      </div>
       )}
 
       </>}
