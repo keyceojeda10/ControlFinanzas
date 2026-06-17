@@ -315,6 +315,8 @@ function NuevoPrestamo() {
     return { ok: res.ok, data }
   }
 
+  const clienteSeleccionado = clientes.find(c => c.id === clienteId) ?? null
+
   // Validacion del paso actual antes de avanzar.
   const puedeAvanzarPaso = () => {
     if (paso === 0) return !!clienteId
@@ -483,7 +485,6 @@ function NuevoPrestamo() {
       {/* PASO 1 — Cliente */}
       {paso === 0 && (() => {
         const buscando = buscadorCliente.trim().length > 0
-        const clienteSeleccionado = clientes.find(c => c.id === clienteId)
         // Recientes: los 3 ultimos creados (asumimos que `clientes` viene en
         // orden segun el API; tomamos los primeros 3 como aproximacion de "recientes").
         const recientes = clientes.slice(0, 3)
