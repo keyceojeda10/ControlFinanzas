@@ -11,7 +11,9 @@ export function Card({ as: Component = 'div', children, className = '', padding 
       ].join(' ')}
       style={{
         background: 'var(--color-bg-card)',
-        border: '1px solid var(--color-border)',
+        border: glowColor
+          ? `1px solid color-mix(in srgb, ${glowColor} 25%, var(--color-border))`
+          : '1px solid var(--color-border)',
         ...propsStyle,
       }}
       {...restProps}

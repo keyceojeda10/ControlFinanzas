@@ -101,43 +101,40 @@ export default function PrestamoCard({ prestamo: p, actions }) {
         </p>
       </div>
 
-      {/* Progress bar con marca % */}
+      {/* Progress bar */}
       <div className="mb-3">
-        <div className="h-2 rounded-full overflow-hidden relative" style={{ background: 'var(--color-bg-hover)' }}>
+        <div className="h-2.5 rounded-full overflow-hidden relative" style={{ background: 'var(--color-bg-hover)' }}>
           <div
             className="h-full rounded-full transition-[width] duration-500"
             style={{
               width: `${porcentaje}%`,
               background: porcentaje === 100
-                ? `linear-gradient(90deg, ${COLOR_DONE}, ${COLOR_DONE})`
-                : `linear-gradient(90deg, color-mix(in srgb, ${color} 70%, transparent), ${color})`,
+                ? COLOR_DONE
+                : `linear-gradient(90deg, color-mix(in srgb, ${color} 60%, transparent), ${color})`,
             }}
           />
         </div>
-        <div className="flex items-center justify-between text-[10px] mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
+        <div className="flex items-center justify-between text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
           <span><span className="font-mono-display font-semibold" style={{ color }}>{porcentaje}%</span> pagado</span>
           <span>de {formatMoney(p.totalAPagar)}</span>
         </div>
       </div>
 
-      {/* Footer: micro-stats en 3 columnas */}
-      <div
-        className="grid grid-cols-3 gap-2 pt-3"
-        style={{ borderTop: '1px solid var(--color-border)' }}
-      >
-        <div>
+      {/* Footer: micro-stats */}
+      <div className="grid grid-cols-3 gap-1.5 pt-3" style={{ borderTop: '1px solid var(--color-border)' }}>
+        <div className="rounded-[8px] px-2 py-1.5" style={{ background: 'color-mix(in srgb, var(--color-success) 8%, transparent)' }}>
           <p className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider">Pagado</p>
           <p className="text-[12px] font-mono-display font-semibold mt-0.5" style={{ color: 'var(--color-success)' }}>
             {formatMoney(pagado)}
           </p>
         </div>
-        <div>
+        <div className="rounded-[8px] px-2 py-1.5" style={{ background: 'color-mix(in srgb, var(--color-text-primary) 5%, transparent)' }}>
           <p className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider">Cuota</p>
           <p className="text-[12px] font-mono-display font-semibold mt-0.5" style={{ color: 'var(--color-text-primary)' }}>
             {formatMoney(p.cuotaDiaria)}
           </p>
         </div>
-        <div className="text-right">
+        <div className="rounded-[8px] px-2 py-1.5 text-right" style={{ background: enMora ? `color-mix(in srgb, ${color} 8%, transparent)` : 'color-mix(in srgb, var(--color-info) 8%, transparent)' }}>
           <p className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider">Próx. cobro</p>
           <p
             className="text-[12px] font-semibold mt-0.5 capitalize truncate"

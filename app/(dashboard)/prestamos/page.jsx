@@ -221,7 +221,7 @@ export default function PrestamosPage() {
       {/* Header */}
       <div className="mb-5">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-[white]">Préstamos</h1>
+          <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Préstamos</h1>
           {!authLoading && puedeCrearPrestamos && (
             <Link href="/prestamos/nuevo">
               <Button
@@ -256,7 +256,7 @@ export default function PrestamosPage() {
       </div>
 
       {/* Filtro de estado */}
-      <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-none pb-1">
+      <div className="flex gap-1 p-1 rounded-[12px] mb-3" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
         {ESTADOS.map(({ value, label, color }) => {
           const isActive = estado === value
           const accent = color ?? 'var(--color-accent)'
@@ -264,13 +264,12 @@ export default function PrestamosPage() {
             <button
               key={value}
               onClick={() => setEstado(value)}
-              className={[
-                'shrink-0 px-3 h-8 rounded-full text-xs font-medium border transition-all',
-                isActive
-                  ? 'border-current'
-                  : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] hover:text-[white]',
-              ].join(' ')}
-              style={isActive ? { color: accent, backgroundColor: `${accent}20` } : undefined}
+              className="flex-1 py-1.5 text-[11px] font-semibold rounded-[9px] transition-all"
+              style={isActive ? {
+                background: 'var(--color-bg-card)',
+                color: accent,
+                boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+              } : { color: 'var(--color-text-muted)' }}
             >
               {label}
             </button>
@@ -279,21 +278,19 @@ export default function PrestamosPage() {
       </div>
 
       {/* Filtro de frecuencia de cobro */}
-      <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-none pb-1">
+      <div className="flex gap-1 p-1 rounded-[12px] mb-4" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
         {FRECUENCIAS.map(({ value, label }) => {
           const isActive = frecuencia === value
-          const accent = 'var(--color-info)'
           return (
             <button
               key={value || 'todas'}
               onClick={() => setFrecuencia(value)}
-              className={[
-                'shrink-0 px-3 h-8 rounded-full text-xs font-medium border transition-all',
-                isActive
-                  ? 'border-current'
-                  : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] hover:text-[white]',
-              ].join(' ')}
-              style={isActive ? { color: accent, backgroundColor: `${accent}20` } : undefined}
+              className="flex-1 py-1.5 text-[11px] font-semibold rounded-[9px] transition-all"
+              style={isActive ? {
+                background: 'var(--color-bg-card)',
+                color: 'var(--color-info)',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+              } : { color: 'var(--color-text-muted)' }}
             >
               {label}
             </button>
@@ -316,12 +313,12 @@ export default function PrestamosPage() {
             value={buscar}
             onChange={(e) => setBuscar(e.target.value)}
             placeholder="Buscar por nombre o cédula del cliente…"
-            className="w-full h-10 pl-9 pr-4 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-sm text-[white] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all"
+            className="w-full h-10 pl-9 pr-4 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all"
           />
           {buscar && (
             <button
               onClick={() => setBuscar('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[white]"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -507,7 +504,7 @@ export default function PrestamosPage() {
           <div className="mb-4">
             <Mascota variant="empty" size={100} />
           </div>
-          <p className="text-sm font-medium text-[white]">
+          <p className="text-sm font-medium text-[var(--color-text-primary)]">
             No hay préstamos {FRECUENCIAS.find((f) => f.value === frecuencia)?.label.toLowerCase()}
           </p>
           <p className="text-xs text-[var(--color-text-muted)] mt-1">
@@ -526,7 +523,7 @@ export default function PrestamosPage() {
           </div>
           {buscar ? (
             <>
-              <p className="text-sm font-medium text-[white]">Sin resultados</p>
+              <p className="text-sm font-medium text-[var(--color-text-primary)]">Sin resultados</p>
               <p className="text-xs text-[var(--color-text-muted)] mt-1">No hay préstamos para "{buscar}"</p>
               <button onClick={() => setBuscar('')} className="mt-3 text-xs text-[var(--color-accent)] hover:underline">
                 Limpiar búsqueda
@@ -534,7 +531,7 @@ export default function PrestamosPage() {
             </>
           ) : (
             <>
-              <p className="text-sm font-medium text-[white]">
+              <p className="text-sm font-medium text-[var(--color-text-primary)]">
                 {estado === 'activo' ? 'No hay préstamos activos' : estado === 'mora' ? 'No hay préstamos en mora' : 'Sin préstamos'}
               </p>
               <p className="text-xs text-[var(--color-text-muted)] mt-1">
