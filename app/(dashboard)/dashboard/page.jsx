@@ -1433,54 +1433,6 @@ export default function DashboardPage() {
       )}
       {error && <div className="text-sm rounded-[12px] px-4 py-3" style={{ background: 'var(--color-danger-dim)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)', color: 'var(--color-danger)' }}>{error}</div>}
 
-      {/* Acciones rapidas — owner */}
-      {esOwner && (
-        <div className="grid grid-cols-3 gap-2.5">
-          {puedeCrearPrestamos && (
-            <Link
-              href="/prestamos/nuevo"
-              className="group relative overflow-hidden rounded-[16px] px-3 py-4 flex flex-col items-center gap-2 transition-all active:scale-[0.97]"
-              style={{
-                background: 'linear-gradient(145deg, color-mix(in srgb, #22c55e 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)',
-                border: '1px solid color-mix(in srgb, #22c55e 20%, var(--color-border))',
-              }}
-            >
-              <div className="w-10 h-10 rounded-[12px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, #22c55e 15%, transparent)' }}>
-                <svg className="w-5 h-5" fill="none" stroke="#22c55e" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-              </div>
-              <span className="text-[11px] font-bold text-center leading-tight" style={{ color: '#22c55e' }}>Nuevo<br/>prestamo</span>
-            </Link>
-          )}
-          {puedeCrearClientes && (
-            <Link
-              href="/clientes/nuevo"
-              className="group relative overflow-hidden rounded-[16px] px-3 py-4 flex flex-col items-center gap-2 transition-all active:scale-[0.97]"
-              style={{
-                background: 'linear-gradient(145deg, color-mix(in srgb, #f5c518 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)',
-                border: '1px solid color-mix(in srgb, #f5c518 20%, var(--color-border))',
-              }}
-            >
-              <div className="w-10 h-10 rounded-[12px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, #f5c518 15%, transparent)' }}>
-                <svg className="w-5 h-5" fill="none" stroke="#f5c518" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" /></svg>
-              </div>
-              <span className="text-[11px] font-bold text-center leading-tight" style={{ color: '#f5c518' }}>Crear<br/>cliente</span>
-            </Link>
-          )}
-          <Link
-            href="/caja"
-            className="group relative overflow-hidden rounded-[16px] px-3 py-4 flex flex-col items-center gap-2 transition-all active:scale-[0.97]"
-            style={{
-              background: 'linear-gradient(145deg, color-mix(in srgb, #06b6d4 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)',
-              border: '1px solid color-mix(in srgb, #06b6d4 20%, var(--color-border))',
-            }}
-          >
-            <div className="w-10 h-10 rounded-[12px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, #06b6d4 15%, transparent)' }}>
-              <svg className="w-5 h-5" fill="none" stroke="#06b6d4" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-            </div>
-            <span className="text-[11px] font-bold text-center leading-tight" style={{ color: '#06b6d4' }}>Ver<br/>caja</span>
-          </Link>
-        </div>
-      )}
 
       {/* Mi equipo — solo owner con cobradores activos */}
       {esOwner && equipoData && equipoData.cobradores.length > 0 && (
