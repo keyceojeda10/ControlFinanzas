@@ -61,6 +61,14 @@ export default function CajaCobradorDetalle({ data }) {
           <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Gestion de la ruta</h2>
           <div className="grid grid-cols-2 gap-2">
             <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
+              <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Cobros hoy</p>
+              <p className="text-lg font-bold font-mono-display text-[var(--color-accent)] mt-0.5">{g.clientesCobrados}</p>
+            </div>
+            <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
+              <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Clientes activos</p>
+              <p className="text-lg font-bold font-mono-display text-[var(--color-text-primary)] mt-0.5">{g.clientesActivos}</p>
+            </div>
+            <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
               <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Clientes nuevos</p>
               <p className="text-lg font-bold font-mono-display text-[var(--color-info)] mt-0.5">{g.clientesNuevos}</p>
             </div>
@@ -71,10 +79,6 @@ export default function CajaCobradorDetalle({ data }) {
             <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
               <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Renovaciones</p>
               <p className="text-lg font-bold font-mono-display text-[var(--color-warning)] mt-0.5">{g.renovaciones}</p>
-            </div>
-            <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
-              <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Clientes activos</p>
-              <p className="text-lg font-bold font-mono-display text-[var(--color-text-primary)] mt-0.5">{g.clientesActivos}</p>
             </div>
           </div>
         </Card>

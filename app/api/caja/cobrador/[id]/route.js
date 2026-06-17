@@ -293,7 +293,7 @@ export async function GET(request, { params }) {
   ].sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
 
   // KPIs informativos de gestión por ruta
-  const [clientesNuevos, prestamosNuevos, renovaciones, clientesActivos] = await Promise.all([
+  const [clientesNuevos, prestamosNuevos, renovaciones, clientesActivos, cobrosDia] = await Promise.all([
     prisma.cliente.count({
       where: {
         organizationId,
@@ -323,8 +323,18 @@ export async function GET(request, { params }) {
       where: {
         organizationId,
         rutaId: { in: rutaIds },
-        prestamos: { some: { estado: 'activo' } },
+        prestamos: { some: { estado: 'activo', esClavo: false } },
       },
+    }),
+    prisma.pago.findMany({
+      where: {
+        cobradorId,
+        fechaPago: { gte: inicio, lt: fin },
+        tipo: { notIn: TIPOS_AJUSTE_PAGO },
+        prestamo: { organizationId },
+      },
+      select: { prestamo: { select: { clienteId: true } } },
+      distinct: ['prestamoId'],
     }),
   ])
 
@@ -352,6 +362,7 @@ export async function GET(request, { params }) {
       prestamosNuevos,
       renovaciones,
       clientesActivos,
+      clientesCobrados: new Set(cobrosDia.map(p => p.prestamo?.clienteId)).size,
     },
     porRuta,
     movimientos,
