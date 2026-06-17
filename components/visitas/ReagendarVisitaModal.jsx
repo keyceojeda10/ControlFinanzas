@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/Button'
 const MOTIVOS = [
   { value: 'no_estaba', label: 'No estaba en casa' },
   { value: 'negocio_cerrado', label: 'Negocio cerrado' },
-  { value: 'no_tenia_dinero', label: 'No tenia dinero' },
-  { value: 'pidio_plazo', label: 'Pidio plazo' },
+  { value: 'no_tenia_dinero', label: 'No tenía dinero' },
+  { value: 'pidio_plazo', label: 'Pidió plazo' },
   { value: 'otro', label: 'Otro' },
 ]
 
@@ -45,10 +45,10 @@ export default function ReagendarVisitaModal({ open, onClose, clienteId, cliente
   const proximoHabil = calcularProximoDiaHabil()
 
   const fechaOpciones = [
-    { value: 'hoy', label: 'Hoy mas tarde', date: hoy },
-    { value: 'manana', label: `Manana (${formatFechaDisplay(manana)})`, date: manana },
-    { value: 'proximo_habil', label: `Próx. día habil (${formatFechaDisplay(proximoHabil)})`, date: proximoHabil },
-    { value: 'custom', label: 'Fecha especifica', date: null },
+    { value: 'hoy', label: 'Hoy más tarde', date: hoy },
+    { value: 'manana', label: `Mañana (${formatFechaDisplay(manana)})`, date: manana },
+    { value: 'proximo_habil', label: `Próx. día hábil (${formatFechaDisplay(proximoHabil)})`, date: proximoHabil },
+    { value: 'custom', label: 'Fecha específica', date: null },
   ]
 
   const getFechaReagendada = () => {
