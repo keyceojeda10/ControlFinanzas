@@ -256,7 +256,7 @@ export default function PrestamosPage() {
       </div>
 
       {/* Filtro de estado */}
-      <div className="flex gap-1 p-1 rounded-[12px] mb-3" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
+      <div className="flex gap-1.5 mb-3 overflow-x-auto scrollbar-none pb-0.5">
         {ESTADOS.map(({ value, label, color }) => {
           const isActive = estado === value
           const accent = color ?? 'var(--color-accent)'
@@ -264,12 +264,12 @@ export default function PrestamosPage() {
             <button
               key={value}
               onClick={() => setEstado(value)}
-              className="flex-1 py-1.5 text-[11px] font-semibold rounded-[9px] transition-all"
+              className="shrink-0 px-3.5 py-1.5 text-[11px] font-semibold rounded-full transition-all"
               style={isActive ? {
-                background: 'var(--color-bg-card)',
+                background: `color-mix(in srgb, ${accent} 14%, transparent)`,
                 color: accent,
-                boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
-              } : { color: 'var(--color-text-muted)' }}
+                border: `1px solid color-mix(in srgb, ${accent} 30%, transparent)`,
+              } : { color: 'var(--color-text-muted)', background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
             >
               {label}
             </button>
@@ -278,19 +278,20 @@ export default function PrestamosPage() {
       </div>
 
       {/* Filtro de frecuencia de cobro */}
-      <div className="flex gap-1 p-1 rounded-[12px] mb-4" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
+      <div className="flex gap-1.5 mb-4 overflow-x-auto scrollbar-none pb-0.5">
         {FRECUENCIAS.map(({ value, label }) => {
           const isActive = frecuencia === value
+          const accent = 'var(--color-info)'
           return (
             <button
               key={value || 'todas'}
               onClick={() => setFrecuencia(value)}
-              className="flex-1 py-1.5 text-[11px] font-semibold rounded-[9px] transition-all"
+              className="shrink-0 px-3.5 py-1.5 text-[11px] font-semibold rounded-full transition-all"
               style={isActive ? {
-                background: 'var(--color-bg-card)',
-                color: 'var(--color-info)',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
-              } : { color: 'var(--color-text-muted)' }}
+                background: `color-mix(in srgb, ${accent} 14%, transparent)`,
+                color: accent,
+                border: `1px solid color-mix(in srgb, ${accent} 30%, transparent)`,
+              } : { color: 'var(--color-text-muted)', background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
             >
               {label}
             </button>
