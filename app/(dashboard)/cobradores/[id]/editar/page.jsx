@@ -292,7 +292,7 @@ function EditarCobradorInner({ params }) {
             ].map((p) => (
               <div key={p.key} className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[white]">{p.label}</p>
+                  <p className="text-sm text-[var(--color-text-primary)]">{p.label}</p>
                   <p className="text-[10px] text-[var(--color-text-muted)] leading-snug">{p.desc}</p>
                 </div>
                 <button

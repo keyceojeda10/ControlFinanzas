@@ -40,7 +40,7 @@ function Alerta({ tipo = 'success', children }) {
 }
 
 const inputClass =
-  'w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[white] placeholder-[#777777] focus:outline-none focus:border-[#f5c518] transition-all disabled:opacity-50 disabled:cursor-not-allowed'
+  'w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[var(--color-text-primary)] placeholder-[#777777] focus:outline-none focus:border-[#f5c518] transition-all disabled:opacity-50 disabled:cursor-not-allowed'
 
 // ══════════════════════════════════════════════════════════════
 // TAB 1 — MI PERFIL
@@ -555,7 +555,7 @@ function TabOrganizacion() {
             </div>
             <Link
               href="/configuracion/plan"
-              className="px-3 py-1.5 rounded-[8px] text-xs font-medium bg-[#2a2a2a] text-[#888888] hover:text-[white] hover:bg-[#333333] transition-all"
+              className="px-3 py-1.5 rounded-[8px] text-xs font-medium bg-[#2a2a2a] text-[#888888] hover:text-[var(--color-text-primary)] hover:bg-[#333333] transition-all"
             >
               Cambiar plan
             </Link>
@@ -966,7 +966,7 @@ function ConfiguracionContent() {
   return (
     <div className="max-w-2xl mx-auto space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-[white]">Configuración</h1>
+        <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Configuración</h1>
         <p className="text-sm text-[#888888] mt-0.5">Gestiona tu perfil y tu organización</p>
       </div>
 
@@ -1028,3 +1028,4 @@ export default function ConfiguracionPage() {
     </Suspense>
   )
 }
+

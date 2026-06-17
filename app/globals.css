@@ -165,6 +165,16 @@ html[data-theme="light"] .glow-purple { box-shadow: none; }
 
 /* ─── Shimmer ─────────────────────────────────── */
 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+@keyframes skeletonShimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
+.skeleton-shimmer {
+  background: linear-gradient(90deg, var(--color-bg-hover) 0%, rgba(255,255,255,0.04) 50%, var(--color-bg-hover) 100%);
+  background-size: 400px 100%;
+  animation: skeletonShimmer 1.5s ease-in-out infinite;
+}
+html[data-theme="light"] .skeleton-shimmer {
+  background: linear-gradient(90deg, var(--color-bg-hover) 0%, rgba(0,0,0,0.03) 50%, var(--color-bg-hover) 100%);
+  background-size: 400px 100%;
+}
 .progress-shimmer {
   background: linear-gradient(90deg, #34d399 0%, #f5c518 50%, #34d399 100%);
   background-size: 200% 100%;

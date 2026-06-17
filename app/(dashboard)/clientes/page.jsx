@@ -370,7 +370,7 @@ export default function ClientesPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-4">
         <div className="min-w-0">
-          <h1 className="text-xl font-bold text-[white]">Clientes</h1>
+          <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Clientes</h1>
           <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
             {loading ? '...' : `${total} cliente${total !== 1 ? 's' : ''}`}
             {!loading && moraCount > 0 && (
@@ -412,12 +412,12 @@ export default function ClientesPage() {
               value={buscar}
               onChange={(e) => setBuscar(e.target.value)}
               placeholder={modoAsignar ? 'Buscar cliente para asignar…' : 'Buscar por nombre, cédula o teléfono…'}
-              className="w-full h-10 pl-9 pr-9 rounded-[12px] border border-[var(--color-border)] bg-[#161616] text-sm text-[white] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all"
+              className="w-full h-10 pl-9 pr-9 rounded-[12px] border border-[var(--color-border)] bg-[#161616] text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all"
             />
             {buscar && (
               <button
                 onClick={() => setBuscar('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center text-[var(--color-text-muted)] hover:text-[white]"
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
                 aria-label="Limpiar búsqueda"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -457,7 +457,7 @@ export default function ClientesPage() {
                   'shrink-0 px-3 h-8 rounded-full text-[12px] font-medium border transition-all',
                   isActive
                     ? 'border-current'
-                    : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] hover:text-[white]',
+                    : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] hover:text-[var(--color-text-primary)]',
                 ].join(' ')}
                 style={isActive ? { color: accent, backgroundColor: `${accent}20` } : undefined}
               >
@@ -599,7 +599,7 @@ export default function ClientesPage() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <p className="text-sm font-medium text-[white]">Sin clientes {estado === 'mora' ? 'en mora' : estado === 'activo' ? 'al día' : 'cancelados'}</p>
+            <p className="text-sm font-medium text-[var(--color-text-primary)]">Sin clientes {estado === 'mora' ? 'en mora' : estado === 'activo' ? 'al día' : 'cancelados'}</p>
             <button onClick={() => setEstado('')} className="mt-2 text-xs text-[var(--color-accent)] hover:underline">
               Ver todos
             </button>
@@ -615,7 +615,7 @@ export default function ClientesPage() {
           </div>
           {buscar ? (
             <>
-              <p className="text-sm font-medium text-[white]">Sin resultados</p>
+              <p className="text-sm font-medium text-[var(--color-text-primary)]">Sin resultados</p>
               <p className="text-xs text-[var(--color-text-muted)] mt-1">No se encontró ningún cliente con "{buscar}"</p>
               <button onClick={() => setBuscar('')} className="mt-3 text-xs text-[var(--color-accent)] hover:underline">
                 Limpiar búsqueda
@@ -623,14 +623,14 @@ export default function ClientesPage() {
             </>
           ) : grupoFiltro ? (
             <>
-              <p className="text-sm font-medium text-[white]">Sin clientes en este grupo</p>
+              <p className="text-sm font-medium text-[var(--color-text-primary)]">Sin clientes en este grupo</p>
               <button onClick={() => setGrupoFiltro('')} className="mt-3 text-xs text-[var(--color-accent)] hover:underline">
                 Ver todos los grupos
               </button>
             </>
           ) : (
             <>
-              <p className="text-sm font-medium text-[white]">No hay clientes aún</p>
+              <p className="text-sm font-medium text-[var(--color-text-primary)]">No hay clientes aún</p>
               <p className="text-xs text-[var(--color-text-muted)] mt-1">Crea el primer cliente para comenzar</p>
               {!authLoading && puedeCrearClientes && (
                 <Link href="/clientes/nuevo" className="mt-4">
@@ -892,3 +892,4 @@ export default function ClientesPage() {
     </div>
   )
 }
+

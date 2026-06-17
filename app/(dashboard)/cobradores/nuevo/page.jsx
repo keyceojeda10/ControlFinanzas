@@ -151,7 +151,7 @@ function NuevoCobradorInner() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-base font-bold text-[white] mb-1">¡Cobrador creado!</h2>
+          <h2 className="text-base font-bold text-[var(--color-text-primary)] mb-1">¡Cobrador creado!</h2>
           <p className="text-xs text-[var(--color-text-muted)] mb-5">
             Guarda estas credenciales — la contraseña no se mostrará de nuevo.
           </p>
@@ -159,11 +159,11 @@ function NuevoCobradorInner() {
           <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[12px] p-4 text-left mb-4 space-y-2">
             <div>
               <p className="text-[10px] text-[var(--color-text-muted)]">Nombre</p>
-              <p className="text-sm font-medium text-[white]">{creado.nombre}</p>
+              <p className="text-sm font-medium text-[var(--color-text-primary)]">{creado.nombre}</p>
             </div>
             <div>
               <p className="text-[10px] text-[var(--color-text-muted)]">Email</p>
-              <p className="text-sm font-medium text-[white]">{creado.email}</p>
+              <p className="text-sm font-medium text-[var(--color-text-primary)]">{creado.email}</p>
             </div>
             <div>
               <p className="text-[10px] text-[var(--color-text-muted)]">Contraseña temporal</p>
@@ -364,7 +364,7 @@ function NuevoCobradorInner() {
             ].map((p) => (
               <div key={p.key} className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[white]">{p.label}</p>
+                  <p className="text-sm text-[var(--color-text-primary)]">{p.label}</p>
                   <p className="text-[10px] text-[var(--color-text-muted)] leading-snug">{p.desc}</p>
                 </div>
                 <button
@@ -413,3 +413,4 @@ function NuevoCobradorInner() {
     </div>
   )
 }
+

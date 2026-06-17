@@ -123,7 +123,7 @@ export default function CalculadoraPage() {
           </svg>
           Préstamos
         </Link>
-        <h1 className="text-xl font-bold text-[white]">Simulador de préstamos</h1>
+        <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Simulador de préstamos</h1>
         <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
           Calcula la cuota para mostrarle a tu cliente, sin registrar nada.
         </p>
@@ -268,7 +268,7 @@ export default function CalculadoraPage() {
             <div className="px-5 py-5 bg-[var(--color-bg-card)]">
               <div className="text-center py-2">
                 <p className="text-xs text-[var(--color-text-muted)]">{freqInfo.cuotaLabel}</p>
-                <p className="text-4xl font-extrabold font-mono-display text-[white] leading-none mt-1">
+                <p className="text-4xl font-extrabold font-mono-display text-[var(--color-text-primary)] leading-none mt-1">
                   {formatMoney(calculo.cuotaDiaria)}
                 </p>
                 <p className="text-sm text-[var(--color-text-secondary)] mt-2">
@@ -331,7 +331,7 @@ export default function CalculadoraPage() {
             <div className="w-12 h-12 rounded-[14px] mx-auto flex items-center justify-center mb-3" style={{ background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', color: 'var(--color-accent)' }}>
               <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m-6 4h6m-2 5h2M5 3h14a1 1 0 011 1v16a1 1 0 01-1 1H5a1 1 0 01-1-1V4a1 1 0 011-1z" /></svg>
             </div>
-            <p className="text-sm font-medium text-[white]">Escribe el monto para ver la simulación</p>
+            <p className="text-sm font-medium text-[var(--color-text-primary)]">Escribe el monto para ver la simulación</p>
             <p className="text-xs text-[var(--color-text-muted)] mt-1">El cálculo aparece al instante.</p>
           </section>
         )}
@@ -353,3 +353,4 @@ function Row({ k, v, strong, accent }) {
     </div>
   )
 }
+

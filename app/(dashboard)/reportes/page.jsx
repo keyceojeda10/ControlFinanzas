@@ -35,7 +35,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 function PlanGate() {
   return (
     <div className="max-w-xl mx-auto mt-8">
-      <h1 className="text-xl font-bold text-[white] mb-6">Reportes</h1>
+      <h1 className="text-xl font-bold text-[var(--color-text-primary)] mb-6">Reportes</h1>
       <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] p-8 text-center">
         <div className="w-14 h-14 rounded-full bg-[rgba(245,158,11,0.12)] flex items-center justify-center mx-auto mb-4">
           <svg className="w-7 h-7 text-[var(--color-warning)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -43,7 +43,7 @@ function PlanGate() {
               d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
         </div>
-        <p className="text-base font-bold text-[white] mb-2">Reportes avanzados</p>
+        <p className="text-base font-bold text-[var(--color-text-primary)] mb-2">Reportes avanzados</p>
         <p className="text-sm text-[var(--color-text-muted)] mb-5">
           Accede a gráficas de ingresos, métricas de cobradores, análisis de cartera y exportación a Excel.
         </p>
@@ -687,3 +687,4 @@ export default function ReportesPage() {
     </div>
   )
 }
+

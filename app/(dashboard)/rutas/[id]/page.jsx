@@ -1060,7 +1060,7 @@ export default function RutaDetallePage({ params }) {
 
   return (
     <div className="max-w-2xl mx-auto space-y-4">
-      <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[white] transition-colors">
+      <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
@@ -1498,7 +1498,7 @@ export default function RutaDetallePage({ params }) {
       {/* Banner: Continuar ruta */}
       {banner && (
         <div className="bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.2)] rounded-[16px] px-4 py-3">
-          <p className="text-sm text-[white]">
+          <p className="text-sm text-[var(--color-text-primary)]">
             {banner.label} <strong className="text-[var(--color-accent)]">{banner.clienteNombre}</strong>
           </p>
           <div className="flex gap-2 mt-2">
@@ -1745,7 +1745,7 @@ export default function RutaDetallePage({ params }) {
                       {/* Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 min-w-0">
-                          <p className="text-[13px] font-semibold text-[white] truncate">{c.nombre}</p>
+                          <p className="text-[13px] font-semibold text-[var(--color-text-primary)] truncate">{c.nombre}</p>
                           {c.grupoCobro && !grupoFiltro && (
                             <span className="shrink-0 w-2 h-2 rounded-full" style={{ background: c.grupoCobro.color || '#666' }} title={c.grupoCobro.nombre} />
                           )}
@@ -1773,7 +1773,7 @@ export default function RutaDetallePage({ params }) {
                       <div className="flex flex-col items-end gap-1.5 shrink-0">
                         {c.cuota > 0 && (
                           <div className="flex items-baseline gap-1">
-                            <p className="text-[13px] font-bold text-[white] font-mono-display leading-none">{formatMoney(c.cuota)}</p>
+                            <p className="text-[13px] font-bold text-[var(--color-text-primary)] font-mono-display leading-none">{formatMoney(c.cuota)}</p>
                             <p className="text-[9px] text-[#777] leading-none">/{c.frecuencia === 'semanal' ? 'sem' : c.frecuencia === 'quincenal' ? 'qna' : c.frecuencia === 'mensual' ? 'mes' : 'dia'}</p>
                           </div>
                         )}
@@ -2393,11 +2393,11 @@ export default function RutaDetallePage({ params }) {
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-[var(--color-text-muted)]">Esperado</span>
-              <span className="text-[white] font-medium font-mono-display">{formatMoney(ruta.cierre.totalEsperado)}</span>
+              <span className="text-[var(--color-text-primary)] font-medium font-mono-display">{formatMoney(ruta.cierre.totalEsperado)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-[var(--color-text-muted)]">Entregado</span>
-              <span className="text-[white] font-medium font-mono-display">{formatMoney(ruta.cierre.totalRecogido)}</span>
+              <span className="text-[var(--color-text-primary)] font-medium font-mono-display">{formatMoney(ruta.cierre.totalRecogido)}</span>
             </div>
             <div className="flex justify-between text-sm font-bold border-t border-[var(--color-border)] pt-2 mt-2">
               <span className="text-[var(--color-text-muted)]">Diferencia</span>
@@ -2486,7 +2486,7 @@ export default function RutaDetallePage({ params }) {
                   className="accent-[#f5c518]"
                 />
                 <div>
-                  <p className="text-sm font-medium text-[white]">{c.nombre}</p>
+                  <p className="text-sm font-medium text-[var(--color-text-primary)]">{c.nombre}</p>
                   <p className="text-xs text-[var(--color-text-muted)]">CC {c.cedula}</p>
                 </div>
               </label>
@@ -2521,7 +2521,7 @@ export default function RutaDetallePage({ params }) {
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-[white] truncate">{c.nombre}</p>
+                    <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">{c.nombre}</p>
                     <span className="shrink-0 text-[10px] font-medium text-[var(--color-warning)] bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.2)] px-1.5 py-0.5 rounded-full">
                       En: {c.rutaNombre}
                     </span>
@@ -2554,7 +2554,7 @@ export default function RutaDetallePage({ params }) {
           )}
           <div className="flex justify-between text-sm">
             <span className="text-[var(--color-text-muted)]">Total esperado hoy</span>
-            <span className="font-semibold text-[white] font-mono-display">{formatMoney(ruta.esperadoHoy)}</span>
+            <span className="font-semibold text-[var(--color-text-primary)] font-mono-display">{formatMoney(ruta.esperadoHoy)}</span>
           </div>
           <MoneyInput
             label="Dinero recogido (COP)"
@@ -2626,7 +2626,7 @@ export default function RutaDetallePage({ params }) {
               placeholder="Ej: Capital para el mes"
               value={capitalDesc}
               onChange={(e) => setCapitalDesc(e.target.value)}
-              className="w-full h-10 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[white] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] transition-all"
+              className="w-full h-10 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] transition-all"
             />
           </div>
           <p className="text-[11px] text-[var(--color-text-muted)] leading-snug">

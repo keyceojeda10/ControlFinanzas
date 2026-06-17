@@ -381,7 +381,7 @@ export default function ClienteDetallePage({ params }) {
       {/* Back */}
       <button
         onClick={() => router.back()}
-        className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[white] transition-colors"
+        className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -877,7 +877,7 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, orgNombre, mini = false
         className="flex items-center gap-3 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-4 py-3 hover:border-[var(--color-border)]/70 transition-colors group"
       >
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-[white]">{formatMoney(p.montoPrestado)}</p>
+          <p className="text-sm text-[var(--color-text-primary)]">{formatMoney(p.montoPrestado)}</p>
           <p className="text-xs text-[var(--color-text-muted)]">
             {new Date(p.fechaInicio).toLocaleDateString('es-CO')}
           </p>
@@ -894,7 +894,7 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, orgNombre, mini = false
     <Card>
       <div className="flex items-start justify-between mb-3">
         <div>
-          <p className="text-base font-bold text-[white]">{formatMoney(p.montoPrestado)}</p>
+          <p className="text-base font-bold text-[var(--color-text-primary)]">{formatMoney(p.montoPrestado)}</p>
           <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
             Prestado el {new Date(p.fechaInicio).toLocaleDateString('es-CO')}
           </p>
@@ -929,7 +929,7 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, orgNombre, mini = false
           />
         </div>
         <div className="flex justify-between text-xs mt-1.5">
-          <span className="text-[var(--color-text-muted)]">Saldo: <span className="text-[white] font-medium">{formatMoney(p.saldoPendiente)}</span></span>
+          <span className="text-[var(--color-text-muted)]">Saldo: <span className="text-[var(--color-text-primary)] font-medium">{formatMoney(p.saldoPendiente)}</span></span>
           {p.diasMora > 0 && (
             <span className="text-[var(--color-danger)] font-medium">{p.diasMora} días en mora</span>
           )}

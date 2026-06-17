@@ -3,8 +3,7 @@
 export function Skeleton({ className = '', ...props }) {
   return (
     <div
-      className={['animate-pulse rounded-[6px]', className].join(' ')}
-      style={{ background: 'var(--color-bg-hover)' }}
+      className={['skeleton-shimmer rounded-[6px]', className].join(' ')}
       {...props}
     />
   )

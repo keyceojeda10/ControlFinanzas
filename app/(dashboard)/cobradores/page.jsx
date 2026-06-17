@@ -184,7 +184,7 @@ function CobradoresPageInner() {
   if (!authLoading && ['starter', 'basic'].includes(plan)) {
     return (
       <div className="max-w-xl mx-auto">
-        <h1 className="text-xl font-bold text-[white] mb-6">Cobradores</h1>
+        <h1 className="text-xl font-bold text-[var(--color-text-primary)] mb-6">Cobradores</h1>
         <div
           className="border border-[var(--color-border)] rounded-[16px] p-8 text-center"
           style={{
@@ -198,7 +198,7 @@ function CobradoresPageInner() {
                 d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
           </div>
-          <p className="text-base font-bold text-[white] mb-2">Función de plan premium</p>
+          <p className="text-base font-bold text-[var(--color-text-primary)] mb-2">Función de plan premium</p>
           <p className="text-sm text-[var(--color-text-muted)] mb-5">
             Actualiza tu plan para agregar cobradores y gestionar rutas de cobro.
           </p>
@@ -216,7 +216,7 @@ function CobradoresPageInner() {
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-[white]">Cobradores</h1>
+          <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Cobradores</h1>
           <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
             {loading ? '…' : `${cobradores.length} cobrador${cobradores.length !== 1 ? 'es' : ''}`}
           </p>
@@ -256,7 +256,7 @@ function CobradoresPageInner() {
                 d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
           </div>
-          <p className="text-sm font-medium text-[white]">Sin cobradores aún</p>
+          <p className="text-sm font-medium text-[var(--color-text-primary)]">Sin cobradores aún</p>
           <p className="text-xs text-[var(--color-text-muted)] mt-1">Crea el primer cobrador para asignarle una ruta</p>
           <Link href="/cobradores/nuevo" className="mt-4">
             <Button size="sm">Crear cobrador</Button>

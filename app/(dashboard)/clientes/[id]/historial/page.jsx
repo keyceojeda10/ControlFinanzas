@@ -72,7 +72,7 @@ export default function HistorialPage() {
     <div className="max-w-2xl mx-auto space-y-4">
       <button
         onClick={() => router.back()}
-        className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[white] transition-colors"
+        className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -81,7 +81,7 @@ export default function HistorialPage() {
       </button>
 
       <div className="mb-4">
-        <h1 className="text-xl font-bold text-[white]">Historial de Pagos</h1>
+        <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Historial de Pagos</h1>
         <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
           Todos los pagos de todos los préstamos
         </p>
@@ -143,11 +143,11 @@ export default function HistorialPage() {
           boxShadow: `0 0 30px #22c55e08, 0 1px 2px rgba(0,0,0,0.3)`,
         }}>
           <p className="text-[10px] text-[var(--color-text-muted)]">Total pagado</p>
-          <p className="text-xl font-bold text-[white] mt-1 font-mono-display">{formatMoney(totalPagado)}</p>
+          <p className="text-xl font-bold text-[var(--color-text-primary)] mt-1 font-mono-display">{formatMoney(totalPagado)}</p>
         </Card>
         <Card>
           <p className="text-[10px] text-[var(--color-text-muted)]">Cantidad de pagos</p>
-          <p className="text-xl font-bold text-[white] mt-1 font-mono-display">{totalPagos}</p>
+          <p className="text-xl font-bold text-[var(--color-text-primary)] mt-1 font-mono-display">{totalPagos}</p>
         </Card>
       </div>
 

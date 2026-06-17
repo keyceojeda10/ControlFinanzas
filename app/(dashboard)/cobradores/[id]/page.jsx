@@ -94,7 +94,7 @@ function CobradorDetalleInner({ params }) {
       {/* Back */}
       <button
         onClick={() => router.back()}
-        className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[white] transition-colors"
+        className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -315,7 +315,7 @@ function CobradorDetalleInner({ params }) {
               </svg>
             </div>
             <div>
-              <p className="text-sm font-semibold text-[white]">{ruta.nombre}</p>
+              <p className="text-sm font-semibold text-[var(--color-text-primary)]">{ruta.nombre}</p>
               <p className="text-xs text-[var(--color-text-muted)]">{clientes.length} clientes</p>
             </div>
           </Link>
@@ -337,7 +337,7 @@ function CobradorDetalleInner({ params }) {
                 href={`/clientes/${c.id}`}
                 className="flex items-center justify-between py-2 border-b border-[var(--color-border)] last:border-0 hover:bg-[var(--color-bg-card)] -mx-1 px-1 rounded-[8px] transition-colors"
               >
-                <p className="text-sm text-[white]">{c.nombre}</p>
+                <p className="text-sm text-[var(--color-text-primary)]">{c.nombre}</p>
                 <Badge variant={c.estado === 'mora' ? 'red' : c.estado === 'activo' ? 'green' : 'gray'}>
                   {c.estado === 'mora' ? 'En mora' : c.estado === 'activo' ? 'Al día' : 'Cancelado'}
                 </Badge>
