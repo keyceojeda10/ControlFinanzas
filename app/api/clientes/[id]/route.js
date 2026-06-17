@@ -204,7 +204,17 @@ export async function PATCH(request, { params }) {
     return Response.json(actualizado)
   }
 
-  const { nombre, cedula, telefono, direccion, referencia, notas, fotoUrl, rutaId, latitud, longitud, diasSinCobro, grupoCobroId } = body
+  const { nombre, cedula, telefono, direccion, referencia, notas, fotoUrl, rutaId, latitud, longitud, diasSinCobro, grupoCobroId, montoMaximoPrestamo } = body
+
+  if (montoMaximoPrestamo !== undefined) {
+    if (session.user.rol !== 'owner') {
+      return Response.json({ error: 'Solo el administrador puede modificar el tope de prestamo' }, { status: 403 })
+    }
+    const tope = Number(montoMaximoPrestamo)
+    if (montoMaximoPrestamo !== null && montoMaximoPrestamo !== '' && (!Number.isFinite(tope) || tope < 0)) {
+      return Response.json({ error: 'El tope de prestamo no puede ser negativo' }, { status: 400 })
+    }
+  }
 
   // Validar días sin cobro
   let diasSinCobroVal
@@ -288,6 +298,9 @@ export async function PATCH(request, { params }) {
       ...(lat          !== undefined && { latitud:    lat }),
       ...(lng          !== undefined && { longitud:   lng }),
       ...(diasSinCobroVal !== undefined && { diasSinCobro: diasSinCobroVal }),
+      ...(montoMaximoPrestamo !== undefined && session.user.rol === 'owner' && {
+        montoMaximoPrestamo: (!montoMaximoPrestamo && montoMaximoPrestamo !== 0) ? null : Number(montoMaximoPrestamo) || null,
+      }),
     },
   })
 

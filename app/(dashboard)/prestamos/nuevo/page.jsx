@@ -319,9 +319,8 @@ function NuevoPrestamo() {
   const puedeAvanzarPaso = () => {
     if (paso === 0) return !!clienteId
     if (paso === 1) {
-      // En mercancia exigimos un precio de venta MAYOR al costo del articulo,
-      // para que la ganancia no quede en 0 — fue el reclamo del cliente.
       if (modo === 'mercancia' && !(Number(precioVenta) > Number(monto))) return false
+      if (clienteSeleccionado?.montoMaximoPrestamo > 0 && Number(monto) > clienteSeleccionado.montoMaximoPrestamo) return false
       return Number(monto) > 0 && Number(plazoUnidades) > 0 && !!fechaInicio && !!calculo
     }
     return true
@@ -577,6 +576,23 @@ function NuevoPrestamo() {
               </div>
             )}
 
+            {clienteSeleccionado?.montoMaximoPrestamo > 0 && (
+              <div
+                className="mt-3 rounded-[12px] px-3.5 py-2.5 flex items-center gap-2.5"
+                style={{ background: 'color-mix(in srgb, var(--color-warning) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--color-warning) 25%, transparent)' }}
+              >
+                <svg className="w-4 h-4 shrink-0" style={{ color: 'var(--color-warning)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Tope de prestamo</p>
+                  <p className="text-sm font-bold font-mono-display" style={{ color: 'var(--color-warning)' }}>
+                    {formatMoney(clienteSeleccionado.montoMaximoPrestamo)}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Buscador */}
             <div className="mt-7">
               <div className="relative">
@@ -737,6 +753,11 @@ function NuevoPrestamo() {
                   </button>
                 ))}
               </div>
+              {clienteSeleccionado?.montoMaximoPrestamo > 0 && Number(monto) > clienteSeleccionado.montoMaximoPrestamo && (
+                <p className="text-xs mt-2 font-semibold" style={{ color: 'var(--color-danger)' }}>
+                  Supera el tope de {formatMoney(clienteSeleccionado.montoMaximoPrestamo)} para este cliente
+                </p>
+              )}
             </div>
 
             {modo === 'prestamo' ? (

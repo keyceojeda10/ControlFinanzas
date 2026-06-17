@@ -15,7 +15,7 @@ import { useCountry } from '@/hooks/useCountry'
 
 const LocationPicker = dynamic(() => import('@/components/clientes/LocationPicker'), { ssr: false })
 
-export default function ClienteForm({ clienteInicial = null, plan = 'basic', puedeSubirFoto = false, datosIniciales = null }) {
+export default function ClienteForm({ clienteInicial = null, plan = 'basic', puedeSubirFoto = false, datosIniciales = null, esOwner = false }) {
   const router = useRouter()
   const { validatePhone, validateDocument, documentConfig, phoneConfig } = useCountry()
   const esEdicion = !!clienteInicial
@@ -34,6 +34,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
     grupoCobroId: clienteInicial?.grupoCobroId ?? '',
     latitud:    clienteInicial?.latitud    ?? null,
     longitud:   clienteInicial?.longitud   ?? null,
+    montoMaximoPrestamo: clienteInicial?.montoMaximoPrestamo ?? '',
   })
   const [errores, setErrores]   = useState({})
   const [rutas,   setRutas]     = useState([])
@@ -191,6 +192,8 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
       latitud:    form.latitud,
       longitud:   form.longitud,
       diasSinCobro: diasSinCobro.length > 0 ? diasSinCobro : null,
+      ...(esOwner && form.montoMaximoPrestamo !== '' && { montoMaximoPrestamo: Number(form.montoMaximoPrestamo) || null }),
+      ...(esOwner && form.montoMaximoPrestamo === '' && esEdicion && { montoMaximoPrestamo: null }),
     }
 
     if (!esEdicion && typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -497,6 +500,25 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
               </p>
               <DiasSinCobroSelector value={diasSinCobro} onChange={setDiasSinCobro} compact />
             </div>
+
+            {esOwner && (
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                  Tope maximo de prestamo
+                </label>
+                <p className="text-[11px] leading-snug mt-1 mb-2" style={{ color: 'var(--color-text-muted)' }}>
+                  Monto maximo que se le puede prestar a este cliente. Dejalo vacio para sin limite.
+                </p>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  value={form.montoMaximoPrestamo}
+                  onChange={(e) => setForm({ ...form, montoMaximoPrestamo: e.target.value })}
+                  placeholder="Sin limite"
+                  min="0"
+                />
+              </div>
+            )}
 
             <div>
               <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>

@@ -237,8 +237,9 @@ model Cliente {
   longitud       Float?
   estado         EstadoCliente @default(activo)
   eliminadoEn    DateTime?
-  diasSinCobro   String?
-  createdAt      DateTime      @default(now())
+  diasSinCobro        String?
+  montoMaximoPrestamo Float?
+  createdAt           DateTime      @default(now())
 
   organization       Organization       @relation(fields: [organizationId], references: [id])
   ruta               Ruta?              @relation(fields: [rutaId], references: [id])

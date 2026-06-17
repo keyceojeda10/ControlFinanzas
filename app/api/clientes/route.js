@@ -72,6 +72,7 @@ export async function GET(request) {
       fotoUrl:    true,
       createdAt:  true,
       diasSinCobro: true,
+      montoMaximoPrestamo: true,
       ruta:       { select: { id: true, nombre: true, diasSinCobro: true } },
       grupoCobro: { select: { id: true, nombre: true, color: true } },
       prestamos: {

@@ -226,6 +226,12 @@ export async function POST(request) {
   })
   if (!cliente) return Response.json({ error: 'Cliente no encontrado' }, { status: 404 })
 
+  if (cliente.montoMaximoPrestamo && Number(montoPrestado) > cliente.montoMaximoPrestamo) {
+    return Response.json({
+      error: `El monto supera el tope de este cliente (${Math.round(cliente.montoMaximoPrestamo).toLocaleString('es-CO')})`,
+    }, { status: 400 })
+  }
+
   // El cobrador puede crear préstamos a clientes de cualquiera de sus rutas
   // asignadas (consistente con GET /api/prestamos que ya filtra por rutaIds[]).
   if (rol === 'cobrador') {

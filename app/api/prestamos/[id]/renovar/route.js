@@ -66,7 +66,7 @@ export async function POST(request, { params }) {
   const original = await prisma.prestamo.findFirst({
     where: { id: prestamoId, organizationId },
     include: {
-      cliente: { select: { id: true, nombre: true, rutaId: true } },
+      cliente: { select: { id: true, nombre: true, rutaId: true, montoMaximoPrestamo: true } },
       pagos:   { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
     },
   })
@@ -80,6 +80,12 @@ export async function POST(request, { params }) {
   }
 
   const saldoPendiente = calcularSaldoPendiente(original)
+
+  if (original.cliente.montoMaximoPrestamo && Number(montoPrestado) > original.cliente.montoMaximoPrestamo) {
+    return Response.json({
+      error: `El monto supera el tope de este cliente (${Math.round(original.cliente.montoMaximoPrestamo).toLocaleString('es-CO')})`,
+    }, { status: 400 })
+  }
 
   // El nuevo monto debe cubrir al menos el saldo pendiente
   if (Number(montoPrestado) < saldoPendiente) {

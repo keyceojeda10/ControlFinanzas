@@ -11,7 +11,7 @@ import { SkeletonCard }             from '@/components/ui/Skeleton'
 export default function EditarClientePage({ params }) {
   const { id }              = use(params)
   const router              = useRouter()
-  const { session, puedeEditarClientes, loading: authLoading } = useAuth()
+  const { session, puedeEditarClientes, esOwner, loading: authLoading } = useAuth()
 
   const [cliente,  setCliente]  = useState(null)
   const [loading,  setLoading]  = useState(true)
@@ -91,6 +91,7 @@ export default function EditarClientePage({ params }) {
         clienteInicial={cliente}
         plan={session?.user?.plan ?? 'starter'}
         puedeSubirFoto={planTieneFotos(session?.user?.plan)}
+        esOwner={esOwner}
       />
     </div>
   )

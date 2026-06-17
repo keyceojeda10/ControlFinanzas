@@ -26,8 +26,9 @@ function diasAUnidades(dias, frecuencia) {
 export default function RenovarPrestamo({
   prestamoId,
   saldoPendiente,
-  prestamoAnterior,     // para heredar tasa/plazo/frecuencia como defaults
+  prestamoAnterior,
   clienteNombre,
+  montoMaximoPrestamo,
   open,
   onClose,
 }) {
@@ -314,13 +315,24 @@ export default function RenovarPrestamo({
           </div>
         )}
 
+        {montoMaximoPrestamo > 0 && montoNum > montoMaximoPrestamo && (
+          <p className="text-xs font-semibold" style={{ color: 'var(--color-danger)' }}>
+            Supera el tope de {formatMoney(montoMaximoPrestamo)} para este cliente
+          </p>
+        )}
+
         {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
 
         <div className="flex gap-3 pt-2">
           <Button variant="secondary" onClick={handleClose} className="flex-1">
             Cancelar
           </Button>
-          <Button onClick={handleSubmit} loading={loading} className="flex-1">
+          <Button
+            onClick={handleSubmit}
+            loading={loading}
+            disabled={montoMaximoPrestamo > 0 && montoNum > montoMaximoPrestamo}
+            className="flex-1"
+          >
             Renovar
           </Button>
         </div>

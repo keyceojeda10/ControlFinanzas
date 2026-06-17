@@ -10,7 +10,7 @@ import { planTieneFotos } from '@/lib/planes'
 
 export default function NuevoClientePage() {
   const router = useRouter()
-  const { session, puedeCrearClientes, loading } = useAuth()
+  const { session, puedeCrearClientes, esOwner, loading } = useAuth()
   const [datosCartulina, setDatosCartulina] = useState(null)
 
   // Owner o cobrador con permiso puede crear clientes
@@ -73,6 +73,7 @@ export default function NuevoClientePage() {
         plan={session?.user?.plan ?? 'starter'}
         puedeSubirFoto={planTieneFotos(session?.user?.plan)}
         datosIniciales={datosCartulina}
+        esOwner={esOwner}
       />
     </div>
   )
