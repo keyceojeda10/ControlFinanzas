@@ -292,13 +292,48 @@ export async function GET(request, { params }) {
     // en el menú). Sí siguen contando en el cálculo del efectivo del día (arriba).
   ].sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
 
+  // KPIs informativos de gestión por ruta
+  const [clientesNuevos, prestamosNuevos, renovaciones, clientesActivos] = await Promise.all([
+    prisma.cliente.count({
+      where: {
+        organizationId,
+        rutaId: { in: rutaIds },
+        createdAt: { gte: inicio, lt: fin },
+      },
+    }),
+    prisma.prestamo.count({
+      where: {
+        organizationId,
+        createdAt: { gte: inicio, lt: fin },
+        estado: { not: 'cancelado' },
+        renovadoDeId: null,
+        cliente: { rutaId: { in: rutaIds } },
+      },
+    }),
+    prisma.prestamo.count({
+      where: {
+        organizationId,
+        createdAt: { gte: inicio, lt: fin },
+        estado: { not: 'cancelado' },
+        renovadoDeId: { not: null },
+        cliente: { rutaId: { in: rutaIds } },
+      },
+    }),
+    prisma.cliente.count({
+      where: {
+        organizationId,
+        rutaId: { in: rutaIds },
+        prestamos: { some: { estado: 'activo' } },
+      },
+    }),
+  ])
+
   return Response.json({
     cobrador: { id: cobrador.id, nombre: cobrador.nombre },
     fecha: esRango ? null : fechaBase,
     esRango,
     desde: esRango ? desdeParam : null,
     hasta: esRango ? hastaParam : null,
-    // El cierre es diario; en rango no aplica un único estado de cierre.
     cerrado: esRango ? null : !!cierre,
     resumen: {
       cobradoDia,
@@ -311,6 +346,12 @@ export async function GET(request, { params }) {
       capitalEsEfectivo: !!org?.capitalEsEfectivo,
       recargosMonto: recargosMontoTotal,
       recargosCantidad,
+    },
+    gestion: {
+      clientesNuevos,
+      prestamosNuevos,
+      renovaciones,
+      clientesActivos,
     },
     porRuta,
     movimientos,
