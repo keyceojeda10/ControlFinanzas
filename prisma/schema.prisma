@@ -813,3 +813,16 @@ model VisitaReagendada {
   @@index([organizationId, clienteId])
   @@index([organizationId, fechaReagendada])
 }
+
+model PushLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  tipo           String   // celebracion, recordatorio, etc.
+  clave          String   // dedup key (e.g. cierre-perfecto-userId-2026-06-17)
+  titulo         String
+  cuerpo         String   @db.Text
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, tipo, createdAt])
+  @@index([organizationId, clave])
+}
