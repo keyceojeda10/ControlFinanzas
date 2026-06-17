@@ -84,7 +84,6 @@ export async function POST(req) {
       where: {
         organizationId: org.id,
         fechaPago: { gte: inicio, lte: fin },
-        anulado: { not: true },
       },
       _sum: { montoPagado: true },
       _count: { id: true },
@@ -98,8 +97,7 @@ export async function POST(req) {
         where: {
           organizationId: org.id,
           fechaPago: { gte: sieteDiasAtras, lt: inicio },
-          anulado: { not: true },
-        },
+          },
         _sum: { montoPagado: true },
       })
       const promedioSemanal = (pagosSemana._sum.montoPagado || 0) / 7

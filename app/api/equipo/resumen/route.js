@@ -54,7 +54,6 @@ export async function GET() {
         organizationId: orgId,
         cobradorId: { in: cobradorIds },
         fechaPago: { gte: inicioDiaUTC, lte: finDiaUTC },
-        anulado: { not: true },
       },
       _sum: { montoPagado: true },
       _count: { id: true },
