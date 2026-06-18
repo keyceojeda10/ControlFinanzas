@@ -83,6 +83,7 @@ function NuevoPrestamo() {
   // - mensual: 1..31 (string '' = sin ancla)
   const [diaCobroSemana, setDiaCobroSemana] = useState('')
   const [diaCobroMes, setDiaCobroMes]       = useState('')
+  const [modoDiaCobro, setModoDiaCobro]     = useState('semana') // 'semana' | 'mes'
   // Dias totales derivados de plazoUnidades × diasPorPeriodo
   const plazo = String((Number(plazoUnidades) || 0) * (DIAS_POR_PERIODO[frecuencia] || 1))
   const [fechaInicio,  setFechaInicio]  = useState(hoyISO())
@@ -244,6 +245,9 @@ function NuevoPrestamo() {
   // Cuando cambia frecuencia en modo prestamo, resetear plazo al default de esa frecuencia
   const handleFrecuenciaChange = (nuevaFreq) => {
     setFrecuencia(nuevaFreq)
+    setDiaCobroSemana('')
+    setDiaCobroMes('')
+    setModoDiaCobro('semana')
     if (modo === 'prestamo') {
       setPlazoUnidades(defaultPlazoPorFrecuencia(nuevaFreq))
     }
@@ -301,8 +305,8 @@ function NuevoPrestamo() {
         diasPlazo: Number(plazo),
         fechaInicio,
         frecuencia,
-        ...((frecuencia === 'semanal' || frecuencia === 'quincenal') && diaCobroSemana !== '' && { diaCobroSemana: Number(diaCobroSemana) }),
-        ...(frecuencia === 'mensual' && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
+        ...((frecuencia === 'semanal' || (frecuencia === 'quincenal' && modoDiaCobro === 'semana')) && diaCobroSemana !== '' && { diaCobroSemana: Number(diaCobroSemana) }),
+        ...((frecuencia === 'mensual' || (frecuencia === 'quincenal' && modoDiaCobro === 'mes')) && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
         ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
         ...(calculo?.cuotaDiaria > 0 && (cuotaManualActiva || modo === 'mercancia') && { cuotaManual: calculo.cuotaDiaria }),
         modoInteres: modo === 'mercancia' ? 'manual' : modoInteres,
@@ -950,8 +954,8 @@ function NuevoPrestamo() {
               />
             </div>
 
-            {/* Dia ancla solo para semanal/quincenal */}
-            {(frecuencia === 'semanal' || frecuencia === 'quincenal') && (
+            {/* Dia ancla para semanal */}
+            {frecuencia === 'semanal' && (
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
                   ¿Qué día cobras?
@@ -989,18 +993,104 @@ function NuevoPrestamo() {
               </div>
             )}
 
-            {/* Dia ancla solo para mensual */}
+            {/* Dia ancla para quincenal — toggle semana/mes */}
+            {frecuencia === 'quincenal' && (
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                  ¿Qué día cobras?
+                </label>
+                <p className="text-[10px] mt-0.5 mb-1.5" style={{ color: 'var(--color-text-muted)' }}>
+                  {modoDiaCobro === 'semana'
+                    ? 'Fija el día de la semana en que siempre cobras.'
+                    : 'Fija el día del mes en que cobras. Si el mes no tiene ese día, se cobra el último día disponible.'}
+                </p>
+                <div className="flex gap-1 p-1 rounded-[10px] mb-2" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
+                  <button
+                    type="button"
+                    onClick={() => { setModoDiaCobro('semana'); setDiaCobroMes('') }}
+                    className="flex-1 py-1.5 text-[10px] font-semibold rounded-[7px] transition-all"
+                    style={modoDiaCobro === 'semana'
+                      ? { background: 'var(--color-bg-card)', color: 'var(--color-accent)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' }
+                      : { color: 'var(--color-text-muted)' }}
+                  >
+                    Día de la semana
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setModoDiaCobro('mes'); setDiaCobroSemana('') }}
+                    className="flex-1 py-1.5 text-[10px] font-semibold rounded-[7px] transition-all"
+                    style={modoDiaCobro === 'mes'
+                      ? { background: 'var(--color-bg-card)', color: 'var(--color-accent)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' }
+                      : { color: 'var(--color-text-muted)' }}
+                  >
+                    Día del mes
+                  </button>
+                </div>
+                {modoDiaCobro === 'semana' ? (
+                  <div className="grid grid-cols-7 gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setDiaCobroSemana('')}
+                      className="h-9 rounded-[8px] border text-[10px] font-semibold transition-all"
+                      style={diaCobroSemana === ''
+                        ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }
+                        : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }
+                      }
+                    >
+                      Auto
+                    </button>
+                    {DIAS_SEMANA.slice(0, 6).map(d => (
+                      <button
+                        key={d.v}
+                        type="button"
+                        onClick={() => setDiaCobroSemana(d.v)}
+                        className="h-9 rounded-[8px] border text-[10px] font-semibold transition-all"
+                        style={diaCobroSemana === d.v
+                          ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }
+                          : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }
+                        }
+                      >
+                        {d.l}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    value={diaCobroMes}
+                    onChange={(e) => {
+                      const v = e.target.value
+                      if (v === '' || (Number(v) >= 1 && Number(v) <= 31)) setDiaCobroMes(v)
+                    }}
+                    placeholder="Auto (según fecha de inicio)"
+                    min={1}
+                    max={31}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Dia ancla para mensual */}
             {frecuencia === 'mensual' && (
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
                   Día del mes para cobro (opcional)
                 </label>
+                <p className="text-[10px] mt-0.5 mb-1.5" style={{ color: 'var(--color-text-muted)' }}>
+                  Fija el día del mes en que siempre cobras. Si el mes no tiene ese día, se cobra el último día disponible.
+                </p>
                 <Input
                   type="number"
                   inputMode="numeric"
                   value={diaCobroMes}
-                  onChange={(e) => setDiaCobroMes(e.target.value)}
+                  onChange={(e) => {
+                    const v = e.target.value
+                    if (v === '' || (Number(v) >= 1 && Number(v) <= 31)) setDiaCobroMes(v)
+                  }}
                   placeholder="Auto (según fecha de inicio)"
+                  min={1}
+                  max={31}
                 />
               </div>
             )}
@@ -1120,13 +1210,14 @@ function NuevoPrestamo() {
 
             // Etiqueta de frecuencia descriptiva con nombres COMPLETOS de dias.
             const diaSemanaFullPlural = diaCobroSemana !== '' ? DIAS_FULL_PLURAL[Number(diaCobroSemana)] : null
+            const labelDiaMes = diaCobroMes ? ' el día ' + diaCobroMes + ' de cada mes' : ''
             const labelFrecuencia = frecuencia === 'diario'
               ? `Diaria · ${cobrosTotales} cobros en ${diasPlazo} dias`
               : frecuencia === 'semanal'
                 ? `Semanal · ${periodos} cobros${diaSemanaFullPlural ? ' los ' + diaSemanaFullPlural : ''}`
                 : frecuencia === 'quincenal'
-                  ? `Quincenal · ${periodos} cobros${diaSemanaFullPlural ? ' los ' + diaSemanaFullPlural : ''}`
-                  : `Mensual · ${periodos} cobros${diaCobroMes ? ' el día ' + diaCobroMes + ' de cada mes' : ''}`
+                  ? `Quincenal · ${periodos} cobros${modoDiaCobro === 'mes' && diaCobroMes ? labelDiaMes : diaSemanaFullPlural ? ' los ' + diaSemanaFullPlural : ''}`
+                  : `Mensual · ${periodos} cobros${labelDiaMes}`
 
             const totalConSeguro = calculo.totalAPagar + (seguro && Number(montoSeguro) > 0 ? Number(montoSeguro) : 0)
             const ganancia = calculo.totalAPagar - Number(monto || 0)
