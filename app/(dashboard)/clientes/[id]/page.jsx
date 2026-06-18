@@ -551,11 +551,11 @@ export default function ClienteDetallePage({ params }) {
       {/* Info de contacto */}
       <InfoContactoCard cliente={cliente} />
 
-      {/* Tope de préstamo — solo owner */}
-      {esOwner && (
+      {/* Tope de préstamo — owner edita, cobrador solo ve */}
+      {(esOwner || cliente.montoMaximoPrestamo > 0) && (
         <TopePrestamoCard
           tope={cliente.montoMaximoPrestamo}
-          onSave={async (nuevoTope) => {
+          onSave={esOwner ? async (nuevoTope) => {
             const res = await fetch(`/api/clientes/${id}`, {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json' },
@@ -563,7 +563,7 @@ export default function ClienteDetallePage({ params }) {
             })
             if (!res.ok) throw new Error('Error al guardar')
             setCliente(prev => ({ ...prev, montoMaximoPrestamo: nuevoTope }))
-          }}
+          } : null}
         />
       )}
 
@@ -887,7 +887,10 @@ function TopePrestamoCard({ tope, onSave }) {
     return n.toLocaleString('es-CO')
   }
 
+  const editable = typeof onSave === 'function'
+
   const handleEditar = () => {
+    if (!editable) return
     setValor(tope > 0 ? String(tope) : '')
     setEditando(true)
   }
@@ -953,10 +956,12 @@ function TopePrestamoCard({ tope, onSave }) {
     )
   }
 
+  const Tag = editable ? 'button' : 'div'
+
   return (
-    <button
-      onClick={handleEditar}
-      className="w-full rounded-[14px] border p-3.5 flex items-center gap-3 text-left transition-colors hover:border-[color-mix(in_srgb,var(--color-warning)_40%,var(--color-border))] active:scale-[0.99]"
+    <Tag
+      {...(editable ? { onClick: handleEditar } : {})}
+      className={`w-full rounded-[14px] border p-3.5 flex items-center gap-3 text-left transition-colors${editable ? ' hover:border-[color-mix(in_srgb,var(--color-warning)_40%,var(--color-border))] active:scale-[0.99] cursor-pointer' : ''}`}
       style={{
         background: tope > 0
           ? 'color-mix(in srgb, var(--color-warning) 5%, var(--color-bg-card))'
@@ -977,10 +982,12 @@ function TopePrestamoCard({ tope, onSave }) {
           {tope > 0 ? `$${formatDisplay(tope)}` : 'Sin limite'}
         </p>
       </div>
-      <svg className="w-4 h-4 shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
-      </svg>
-    </button>
+      {editable && (
+        <svg className="w-4 h-4 shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+        </svg>
+      )}
+    </Tag>
   )
 }
 
