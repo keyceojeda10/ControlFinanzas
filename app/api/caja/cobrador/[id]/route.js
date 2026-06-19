@@ -195,7 +195,7 @@ export async function GET(request, { params }) {
       _sum: { montoPagado: true },
       _count: { id: true },
     }),
-    // Primer movimiento del día por ruta para calcular saldo de apertura
+    // Movimientos del día por ruta para calcular delta neto y saldo de apertura
     rutaIds.length > 0
       ? prisma.movimientoCapital.findMany({
           where: {
@@ -203,21 +203,38 @@ export async function GET(request, { params }) {
             rutaId: { in: rutaIds },
             createdAt: { gte: inicio, lt: fin },
           },
-          orderBy: { createdAt: 'asc' },
-          distinct: ['rutaId'],
-          select: { rutaId: true, saldoAnterior: true },
+          select: { rutaId: true, tipo: true, monto: true, saldoAnterior: true, saldoNuevo: true, ajusteArranqueRuta: true, descripcion: true },
         })
       : [],
   ])
 
-  // Saldo de apertura: el saldoAnterior del primer movimiento del día.
-  // Si no hubo movimientos, el saldo de inicio = saldo actual (no cambió).
-  const saldoAperturaPorRuta = new Map()
+  // Saldo de apertura = saldoCapital actual - delta neto del día.
+  // Cada movimiento incrementó o decrementó la sub-bolsa de la ruta:
+  //   ingreso (recaudo, inyeccion, capital_inicial) → +monto
+  //   egreso (desembolso, gasto, retiro) → −monto
+  //   ajuste → usamos la diferencia saldoNuevo−saldoAnterior del capital global
+  //            para determinar la dirección (positiva = ingreso a la ruta)
+  const TIPOS_INGRESO = new Set(['recaudo', 'inyeccion', 'capital_inicial'])
+  const TIPOS_EGRESO = new Set(['desembolso', 'gasto', 'retiro'])
+  const deltaPorRuta = new Map()
   for (const m of primerMovPorRuta) {
-    if (m.rutaId) saldoAperturaPorRuta.set(m.rutaId, Math.round(m.saldoAnterior))
+    if (!m.rutaId) continue
+    const prev = deltaPorRuta.get(m.rutaId) || 0
+    let delta = 0
+    if (TIPOS_INGRESO.has(m.tipo)) delta = m.monto
+    else if (TIPOS_EGRESO.has(m.tipo)) delta = -m.monto
+    else if (m.tipo === 'ajuste') {
+      if (m.ajusteArranqueRuta) {
+        delta = m.monto
+      } else {
+        delta = (m.saldoNuevo >= m.saldoAnterior) ? m.monto : -m.monto
+      }
+    }
+    deltaPorRuta.set(m.rutaId, prev + delta)
   }
   const saldoAperturaTotal = rutas.reduce((acc, r) => {
-    return acc + (saldoAperturaPorRuta.get(r.id) ?? Math.round(r.saldoCapital || 0))
+    const delta = deltaPorRuta.get(r.id) || 0
+    return acc + Math.round((r.saldoCapital || 0) - delta)
   }, 0)
 
   // Totales del día.
