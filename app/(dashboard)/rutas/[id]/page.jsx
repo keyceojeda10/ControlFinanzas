@@ -244,6 +244,7 @@ export default function RutaDetallePage({ params }) {
   const [buscarCliente, setBuscarCliente] = useState('')
   const [errorAsignar, setErrorAsignar] = useState('')
   const [asignando,     setAsignando]     = useState(false)
+  const [posicionesNuevos, setPosicionesNuevos] = useState({})
   const [quitando,      setQuitando]      = useState(null)
   const [modalCaja,     setModalCaja]     = useState(false)
   const [totalRecogido, setTotalRecogido] = useState('')
@@ -414,12 +415,14 @@ export default function RutaDetallePage({ params }) {
       // If SW returned stale cache (offline flag), prefer IndexedDB
       if (data.offline) throw new Error('offline')
       setRuta(data)
+      return data
     } catch {
       try {
         const cached = await obtenerRutaOffline(id)
-        if (cached) { setRuta(cached); setLoading(false); return }
+        if (cached) { setRuta(cached); setLoading(false); return cached }
       } catch {}
       if (!soft) setError('No se pudo cargar la ruta.')
+      return null
     } finally {
       setLoading(false)
     }
@@ -703,11 +706,14 @@ export default function RutaDetallePage({ params }) {
     setClientesEnOtraRuta(lista.filter((c) => c.rutaId && c.rutaId !== id))
     setSeleccionados([])
     setErrorAsignar('')
+    setPosicionesNuevos({})
     setModalClientes(true)
   }
 
-  const toggleSeleccion = (cid) =>
+  const toggleSeleccion = (cid) => {
     setSeleccionados((prev) => prev.includes(cid) ? prev.filter((x) => x !== cid) : [...prev, cid])
+    if (seleccionados.includes(cid)) setPosicionesNuevos(prev => { const n = { ...prev }; delete n[cid]; return n })
+  }
 
   const asignarClientes = async () => {
     if (!seleccionados.length) return
@@ -747,7 +753,28 @@ export default function RutaDetallePage({ params }) {
         return
       }
       setModalClientes(false)
-      fetchRuta()
+      const rutaActualizada = await fetchRuta()
+      const tieneAlgunaPosicion = seleccionados.some(cid => posicionesNuevos[cid])
+      if (tieneAlgunaPosicion && rutaActualizada?.clientes) {
+        const nuevosIds = new Set(seleccionados)
+        const sinNuevos = rutaActualizada.clientes.filter(c => !nuevosIds.has(c.id))
+        const soloNuevos = seleccionados
+          .map(cid => rutaActualizada.clientes.find(c => c.id === cid))
+          .filter(Boolean)
+          .sort((a, b) => {
+            const pa = parseInt(posicionesNuevos[a.id], 10) || Infinity
+            const pb = parseInt(posicionesNuevos[b.id], 10) || Infinity
+            return pa - pb
+          })
+        let reordenados = [...sinNuevos]
+        for (const cliente of soloNuevos) {
+          const posRaw = parseInt(posicionesNuevos[cliente.id], 10)
+          const pos = posRaw ? Math.max(0, Math.min(posRaw - 1, reordenados.length)) : reordenados.length
+          reordenados.splice(pos, 0, cliente)
+        }
+        setRuta(prev => ({ ...prev, clientes: reordenados }))
+        guardarOrden(reordenados)
+      }
     } catch {
       setErrorAsignar('Error de conexión')
     } finally {
@@ -2521,10 +2548,29 @@ export default function RutaDetallePage({ params }) {
                   onChange={() => toggleSeleccion(c.id)}
                   className="accent-[#f5c518]"
                 />
-                <div>
+                <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-[var(--color-text-primary)]">{c.nombre}</p>
                   <p className="text-xs text-[var(--color-text-muted)]">CC {c.cedula}</p>
                 </div>
+                {seleccionados.includes(c.id) && (
+                  <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.preventDefault()}>
+                    <span className="text-[10px] text-[var(--color-text-muted)]">#</span>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      placeholder="Final"
+                      value={posicionesNuevos[c.id] || ''}
+                      onChange={(e) => {
+                        const v = e.target.value
+                        setPosicionesNuevos(prev => ({ ...prev, [c.id]: v }))
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-14 h-7 text-center text-[11px] font-semibold tabular-nums rounded-[7px] border bg-[var(--color-bg-surface)] focus:border-[var(--color-accent)] focus:outline-none transition-colors"
+                      style={{ color: 'var(--color-text-primary)', borderColor: 'var(--color-border)' }}
+                      min={1}
+                    />
+                  </div>
+                )}
               </label>
             ))}
             {clientesEnOtraRuta.filter(c => {
@@ -2564,6 +2610,25 @@ export default function RutaDetallePage({ params }) {
                   </div>
                   <p className="text-xs text-[var(--color-text-muted)]">CC {c.cedula}</p>
                 </div>
+                {seleccionados.includes(c.id) && (
+                  <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.preventDefault()}>
+                    <span className="text-[10px] text-[var(--color-text-muted)]">#</span>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      placeholder="Final"
+                      value={posicionesNuevos[c.id] || ''}
+                      onChange={(e) => {
+                        const v = e.target.value
+                        setPosicionesNuevos(prev => ({ ...prev, [c.id]: v }))
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-14 h-7 text-center text-[11px] font-semibold tabular-nums rounded-[7px] border bg-[var(--color-bg-surface)] focus:border-[var(--color-accent)] focus:outline-none transition-colors"
+                      style={{ color: 'var(--color-text-primary)', borderColor: 'var(--color-border)' }}
+                      min={1}
+                    />
+                  </div>
+                )}
               </label>
             ))}
           </div>
