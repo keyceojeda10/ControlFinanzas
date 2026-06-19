@@ -1655,6 +1655,8 @@ export default function RutaDetallePage({ params }) {
         ) : (() => {
           // Render de una card de cliente. `conGrip` = true en modo ordenar (drag).
           const renderCard = (c, idx, { conGrip }) => {
+              const globalIdx = conGrip && !grupoFiltro ? idx : (ruta.clientes ?? []).findIndex(x => x.id === c.id)
+              const numPos = globalIdx + 1
               const isCompleted = c.estado === 'completado'
               const pendienteHoy = Boolean(
                 c.cobroPendienteHoy ?? (!c.pagoHoy && !c.hoySinCobro && c.estado !== 'completado')
@@ -1721,19 +1723,53 @@ export default function RutaDetallePage({ params }) {
                   {/* Borde lateral de color por estado (se lee de reojo en campo) */}
                   <div className="w-1 shrink-0 self-stretch" style={{ background: statusColor }} />
 
-                  {/* Grip (solo en modo Ordenar) */}
+                  {/* Grip + input de posicion (modo Ordenar) */}
                   {conGrip && (
                   <div
                     data-grip="true"
-                    className="flex flex-col items-center justify-center w-11 shrink-0 self-stretch cursor-grab active:cursor-grabbing touch-none select-none gap-1"
+                    className="flex flex-col items-center justify-center w-12 shrink-0 self-stretch cursor-grab active:cursor-grabbing touch-none select-none gap-0.5"
                     style={{ background: 'rgba(255,255,255,0.02)' }}
                   >
-                    <svg className="w-4 h-4 text-[#666]" viewBox="0 0 24 24" fill="currentColor">
+                    <svg className="w-3.5 h-3.5 text-[#555]" viewBox="0 0 24 24" fill="currentColor">
                       <circle cx="9" cy="7" r="1.5" /><circle cx="15" cy="7" r="1.5" />
                       <circle cx="9" cy="13" r="1.5" /><circle cx="15" cy="13" r="1.5" />
                     </svg>
-                    <span className="text-[10px] font-bold text-[#777]">{idx + 1}</span>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      defaultValue={numPos}
+                      key={`pos-${c.id}-${numPos}`}
+                      onFocus={(e) => { e.target.select(); e.stopPropagation() }}
+                      onClick={(e) => e.stopPropagation()}
+                      onTouchStart={(e) => e.stopPropagation()}
+                      onBlur={(e) => {
+                        if (grupoFiltro) { e.target.value = numPos; return }
+                        const newPos = parseInt(e.target.value, 10)
+                        if (!newPos || newPos < 1 || newPos > ruta.clientes.length || newPos === numPos) {
+                          e.target.value = numPos
+                          return
+                        }
+                        const nuevos = [...ruta.clientes]
+                        const [moved] = nuevos.splice(globalIdx, 1)
+                        nuevos.splice(newPos - 1, 0, moved)
+                        setRuta(prev => ({ ...prev, clientes: nuevos }))
+                        guardarOrden(nuevos)
+                      }}
+                      onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur() }}
+                      className="w-8 h-5 text-center text-[10px] font-bold tabular-nums rounded-[5px] border bg-transparent cursor-text
+                        focus:bg-[var(--color-bg-card)] focus:border-[var(--color-accent)] focus:cursor-text focus:outline-none transition-colors"
+                      style={{ color: 'var(--color-text-muted)', borderColor: 'var(--color-border)' }}
+                      min={1}
+                      max={clientes.length}
+                    />
                   </div>
+                  )}
+
+                  {/* Numero de posicion (modo trabajo) */}
+                  {!conGrip && (
+                    <div className="flex items-center justify-center w-8 shrink-0 self-stretch">
+                      <span className="text-[11px] font-bold tabular-nums" style={{ color: 'var(--color-text-muted)' }}>{numPos}</span>
+                    </div>
                   )}
 
                   {/* Client content — clickable */}
