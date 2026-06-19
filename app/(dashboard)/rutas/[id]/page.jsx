@@ -1792,10 +1792,20 @@ export default function RutaDetallePage({ params }) {
                   </div>
                   )}
 
-                  {/* Numero de posicion (modo trabajo) */}
+                  {/* Numero racing (modo trabajo) */}
                   {!conGrip && (
-                    <div className="flex items-center justify-center w-8 shrink-0 self-stretch">
-                      <span className="text-[11px] font-bold tabular-nums" style={{ color: 'var(--color-text-muted)' }}>{numPos}</span>
+                    <div className="flex items-center justify-center w-10 shrink-0 self-stretch relative overflow-hidden">
+                      <span
+                        className="absolute inset-0 flex items-center justify-center font-black tabular-nums italic leading-none select-none pointer-events-none"
+                        style={{
+                          fontSize: 'clamp(32px, 4vw, 44px)',
+                          color: 'var(--color-text-primary)',
+                          opacity: 0.07,
+                          letterSpacing: '-0.04em',
+                          fontFamily: 'system-ui, sans-serif',
+                        }}
+                      >{numPos}</span>
+                      <span className="relative text-[10px] font-bold tabular-nums" style={{ color: 'var(--color-text-muted)' }}>{numPos}</span>
                     </div>
                   )}
 

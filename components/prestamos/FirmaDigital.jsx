@@ -12,7 +12,7 @@ function formatFecha(d) {
 
 const FREQ_LABEL = { diario: 'Diario', semanal: 'Semanal', quincenal: 'Quincenal', mensual: 'Mensual' }
 
-function generarComprobante(prestamo) {
+async function generarComprobante(prestamo) {
   const p = prestamo
   const cliente = p.cliente || {}
   const pagos = (p.pagos || []).filter(x => !['recargo', 'descuento'].includes(x.tipo))
@@ -20,23 +20,37 @@ function generarComprobante(prestamo) {
 
   const w = 800
   const lineH = 28
-  let y = 40
+
+  // Load firma image first so we know its height
+  let firmaImg = null
+  if (p.firmaUrl) {
+    try {
+      firmaImg = await new Promise((resolve, reject) => {
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        img.onload = () => resolve(img)
+        img.onerror = reject
+        img.src = p.firmaUrl
+      })
+    } catch {}
+  }
+
+  const pagosToShow = pagos.slice(0, 50)
+  const headerH = 280
+  const desgH = 8 * lineH + 40
+  const pagosH = pagosToShow.length > 0 ? 60 + pagosToShow.length * lineH + (pagos.length > 50 ? lineH : 0) : 0
+  const firmaDrawH = firmaImg ? 150 : 40
+  const totalH = headerH + desgH + pagosH + firmaDrawH + 100
 
   const canvas = document.createElement('canvas')
-  const ctx = canvas.getContext('2d')
-
-  // Pre-calc height
-  const pagosToShow = pagos.slice(0, 50)
-  const headerH = 220
-  const pagosH = pagosToShow.length > 0 ? 60 + pagosToShow.length * lineH : 0
-  const firmaH = p.firmaUrl ? 200 : 40
-  const totalH = headerH + pagosH + firmaH + 120
   canvas.width = w
   canvas.height = totalH
+  const ctx = canvas.getContext('2d')
 
-  // Background
   ctx.fillStyle = '#ffffff'
   ctx.fillRect(0, 0, w, totalH)
+
+  let y = 40
 
   // Title
   ctx.fillStyle = '#111111'
@@ -49,7 +63,6 @@ function generarComprobante(prestamo) {
     ctx.fillText('CANCELADO', w - 160, y)
   }
 
-  // Separator
   y += 15
   ctx.strokeStyle = '#e5e5e5'
   ctx.beginPath(); ctx.moveTo(40, y); ctx.lineTo(w - 40, y); ctx.stroke()
@@ -62,14 +75,10 @@ function generarComprobante(prestamo) {
 
   ctx.fillStyle = '#111111'
   ctx.font = '15px system-ui, sans-serif'
-  y += 26
-  ctx.fillText(`Nombre: ${cliente.nombre || '—'}`, 40, y)
-  y += 24
-  ctx.fillText(`Cedula: ${cliente.cedula || '—'}`, 40, y)
-  y += 24
-  ctx.fillText(`Telefono: ${cliente.telefono || '—'}`, 40, y)
+  y += 26; ctx.fillText(`Nombre: ${cliente.nombre || '—'}`, 40, y)
+  y += 24; ctx.fillText(`Cedula: ${cliente.cedula || '—'}`, 40, y)
+  y += 24; ctx.fillText(`Telefono: ${cliente.telefono || '—'}`, 40, y)
 
-  // Separator
   y += 20
   ctx.strokeStyle = '#e5e5e5'
   ctx.beginPath(); ctx.moveTo(40, y); ctx.lineTo(w - 40, y); ctx.stroke()
@@ -143,7 +152,21 @@ function generarComprobante(prestamo) {
   ctx.font = '13px system-ui, sans-serif'
   ctx.fillText('FIRMA DEL CLIENTE', 40, y)
 
-  return { canvas, ctx, firmaY: y, w, totalH }
+  if (firmaImg) {
+    const firmaW = 300
+    const fH = (firmaImg.height / firmaImg.width) * firmaW
+    y += 15
+    ctx.fillStyle = '#1a1a1a'
+    ctx.fillRect(38, y - 2, firmaW + 4, fH + 4)
+    ctx.drawImage(firmaImg, 40, y, firmaW, fH)
+  } else {
+    y += 20
+    ctx.fillStyle = '#999999'
+    ctx.font = 'italic 13px system-ui, sans-serif'
+    ctx.fillText('Sin firma', 40, y)
+  }
+
+  return canvas
 }
 
 export default function FirmaDigital({ prestamo, onSave }) {
@@ -240,27 +263,7 @@ export default function FirmaDigital({ prestamo, onSave }) {
     if (!prestamo) return
     setDescargando(true)
     try {
-      const { canvas, ctx, firmaY, w } = generarComprobante(prestamo)
-
-      // Draw firma image if exists
-      if (firmaUrl) {
-        const img = new Image()
-        img.crossOrigin = 'anonymous'
-        await new Promise((resolve, reject) => {
-          img.onload = resolve
-          img.onerror = reject
-          img.src = firmaUrl
-        })
-        const firmaW = 300
-        const firmaH = (img.height / img.width) * firmaW
-        ctx.drawImage(img, 40, firmaY + 15, firmaW, firmaH)
-      } else {
-        ctx.fillStyle = '#999999'
-        ctx.font = 'italic 13px system-ui, sans-serif'
-        ctx.fillText('Sin firma', 40, firmaY + 35)
-      }
-
-      // Download
+      const canvas = await generarComprobante(prestamo)
       const link = document.createElement('a')
       link.download = `comprobante-prestamo-${prestamo.cliente?.nombre?.replace(/\s+/g, '-') || prestamoId}.png`
       link.href = canvas.toDataURL('image/png')
