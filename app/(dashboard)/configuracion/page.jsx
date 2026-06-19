@@ -521,6 +521,38 @@ function TabOrganizacion() {
         </div>
       </Card>
 
+      {/* Toggle modo abreviado de montos */}
+      <Card>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Modo abreviado de montos</p>
+            <p className="text-[11px] text-[#666666] leading-snug mt-1">
+              Escribe montos sin los ultimos tres ceros. Por ejemplo, 100 se convierte en 100.000 y 1.500 en 1.500.000.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={async () => {
+              const nuevoValor = !org?.modoAbreviado
+              try {
+                const res = await fetch('/api/configuracion/organizacion', {
+                  method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ modoAbreviado: nuevoValor }),
+                })
+                if (res.ok) setData(prev => ({ ...prev, org: { ...prev.org, modoAbreviado: nuevoValor } }))
+              } catch {}
+            }}
+            className="shrink-0 relative w-11 h-6 rounded-full transition-colors"
+            style={{ background: org?.modoAbreviado ? 'var(--color-accent)' : 'var(--color-bg-hover)' }}
+          >
+            <span
+              className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform shadow-sm"
+              style={{ transform: org?.modoAbreviado ? 'translateX(20px)' : 'translateX(0)' }}
+            />
+          </button>
+        </div>
+      </Card>
+
       {/* Festivos */}
       <Card>
         <div className="flex items-center gap-2 mb-1">

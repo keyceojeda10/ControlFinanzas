@@ -88,6 +88,7 @@ model Organization {
   diasSinCobro      String?
   capitalEstricto   Boolean        @default(false)
   capitalEsEfectivo Boolean        @default(false)
+  modoAbreviado     Boolean        @default(false)
   country           String         @default("co")
   timezone          String?
   cartulinasHoy     Int            @default(0)
