@@ -1760,7 +1760,7 @@ export default function RutaDetallePage({ params }) {
                         focus:bg-[var(--color-bg-card)] focus:border-[var(--color-accent)] focus:cursor-text focus:outline-none transition-colors"
                       style={{ color: 'var(--color-text-muted)', borderColor: 'var(--color-border)' }}
                       min={1}
-                      max={clientes.length}
+                      max={ruta.clientes.length}
                     />
                   </div>
                   )}
