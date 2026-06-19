@@ -3,11 +3,158 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
+import { formatMoney } from '@/lib/i18n'
 
-export default function FirmaDigital({ prestamoId, firmaUrl, onSave }) {
-  const [open, setOpen] = useState(false)
+function formatFecha(d) {
+  if (!d) return '—'
+  return new Date(d).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+const FREQ_LABEL = { diario: 'Diario', semanal: 'Semanal', quincenal: 'Quincenal', mensual: 'Mensual' }
+
+function generarComprobante(prestamo) {
+  const p = prestamo
+  const cliente = p.cliente || {}
+  const pagos = (p.pagos || []).filter(x => !['recargo', 'descuento'].includes(x.tipo))
+  const completado = p.estado === 'completado'
+
+  const w = 800
+  const lineH = 28
+  let y = 40
+
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+
+  // Pre-calc height
+  const pagosToShow = pagos.slice(0, 50)
+  const headerH = 220
+  const pagosH = pagosToShow.length > 0 ? 60 + pagosToShow.length * lineH : 0
+  const firmaH = p.firmaUrl ? 200 : 40
+  const totalH = headerH + pagosH + firmaH + 120
+  canvas.width = w
+  canvas.height = totalH
+
+  // Background
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(0, 0, w, totalH)
+
+  // Title
+  ctx.fillStyle = '#111111'
+  ctx.font = 'bold 22px system-ui, sans-serif'
+  ctx.fillText('Comprobante de prestamo', 40, y += 30)
+
+  if (completado) {
+    ctx.fillStyle = '#16a34a'
+    ctx.font = 'bold 16px system-ui, sans-serif'
+    ctx.fillText('CANCELADO', w - 160, y)
+  }
+
+  // Separator
+  y += 15
+  ctx.strokeStyle = '#e5e5e5'
+  ctx.beginPath(); ctx.moveTo(40, y); ctx.lineTo(w - 40, y); ctx.stroke()
+
+  // Client data
+  y += 30
+  ctx.fillStyle = '#666666'
+  ctx.font = '13px system-ui, sans-serif'
+  ctx.fillText('DATOS DEL CLIENTE', 40, y)
+
+  ctx.fillStyle = '#111111'
+  ctx.font = '15px system-ui, sans-serif'
+  y += 26
+  ctx.fillText(`Nombre: ${cliente.nombre || '—'}`, 40, y)
+  y += 24
+  ctx.fillText(`Cedula: ${cliente.cedula || '—'}`, 40, y)
+  y += 24
+  ctx.fillText(`Telefono: ${cliente.telefono || '—'}`, 40, y)
+
+  // Separator
+  y += 20
+  ctx.strokeStyle = '#e5e5e5'
+  ctx.beginPath(); ctx.moveTo(40, y); ctx.lineTo(w - 40, y); ctx.stroke()
+
+  // Loan details
+  y += 25
+  ctx.fillStyle = '#666666'
+  ctx.font = '13px system-ui, sans-serif'
+  ctx.fillText('DESGLOSE DEL PRESTAMO', 40, y)
+
+  const rows = [
+    ['Monto prestado', formatMoney(p.montoPrestado)],
+    ['Total a pagar', formatMoney(p.totalAPagar)],
+    ['Cuota', formatMoney(p.cuotaDiaria)],
+    ['Frecuencia', FREQ_LABEL[p.frecuencia] || p.frecuencia],
+    ['Fecha inicio', formatFecha(p.fechaInicio)],
+    ['Fecha fin', formatFecha(p.fechaFin)],
+    ['Total pagado', formatMoney(p.totalPagado ?? 0)],
+    ['Saldo pendiente', formatMoney(p.saldoPendiente ?? 0)],
+  ]
+
+  y += 8
+  rows.forEach(([label, value]) => {
+    y += lineH
+    ctx.fillStyle = '#555555'
+    ctx.font = '14px system-ui, sans-serif'
+    ctx.fillText(label, 40, y)
+    ctx.fillStyle = '#111111'
+    ctx.font = 'bold 14px system-ui, sans-serif'
+    ctx.textAlign = 'right'
+    ctx.fillText(value, w - 40, y)
+    ctx.textAlign = 'left'
+  })
+
+  // Pagos
+  if (pagosToShow.length > 0) {
+    y += 30
+    ctx.strokeStyle = '#e5e5e5'
+    ctx.beginPath(); ctx.moveTo(40, y); ctx.lineTo(w - 40, y); ctx.stroke()
+    y += 25
+    ctx.fillStyle = '#666666'
+    ctx.font = '13px system-ui, sans-serif'
+    ctx.fillText(`HISTORIAL DE PAGOS (${pagos.length})`, 40, y)
+
+    y += 8
+    pagosToShow.forEach((pago) => {
+      y += lineH
+      ctx.fillStyle = '#555555'
+      ctx.font = '13px system-ui, sans-serif'
+      ctx.fillText(formatFecha(pago.fechaPago), 40, y)
+      ctx.fillStyle = '#111111'
+      ctx.font = 'bold 13px system-ui, sans-serif'
+      ctx.textAlign = 'right'
+      ctx.fillText(formatMoney(pago.montoPagado), w - 40, y)
+      ctx.textAlign = 'left'
+    })
+    if (pagos.length > 50) {
+      y += lineH
+      ctx.fillStyle = '#999999'
+      ctx.font = 'italic 12px system-ui, sans-serif'
+      ctx.fillText(`... y ${pagos.length - 50} pagos mas`, 40, y)
+    }
+  }
+
+  // Firma
+  y += 30
+  ctx.strokeStyle = '#e5e5e5'
+  ctx.beginPath(); ctx.moveTo(40, y); ctx.lineTo(w - 40, y); ctx.stroke()
+  y += 25
+  ctx.fillStyle = '#666666'
+  ctx.font = '13px system-ui, sans-serif'
+  ctx.fillText('FIRMA DEL CLIENTE', 40, y)
+
+  return { canvas, ctx, firmaY: y, w, totalH }
+}
+
+export default function FirmaDigital({ prestamo, onSave }) {
+  const prestamoId = prestamo?.id
+  const firmaUrl = prestamo?.firmaUrl
+
+  const [modalFirmar, setModalFirmar] = useState(false)
+  const [modalVer, setModalVer] = useState(false)
   const [saving, setSaving] = useState(false)
   const [hasStrokes, setHasStrokes] = useState(false)
+  const [descargando, setDescargando] = useState(false)
   const canvasRef = useRef(null)
   const isDrawing = useRef(false)
   const lastPoint = useRef(null)
@@ -28,27 +175,23 @@ export default function FirmaDigital({ prestamoId, firmaUrl, onSave }) {
   }, [])
 
   useEffect(() => {
-    if (open) {
+    if (modalFirmar) {
       setTimeout(setupCanvas, 50)
       setHasStrokes(false)
     }
-  }, [open, setupCanvas])
+  }, [modalFirmar, setupCanvas])
 
   const getPoint = (e) => {
     const canvas = canvasRef.current
     const rect = canvas.getBoundingClientRect()
     const touch = e.touches?.[0]
-    const x = (touch?.clientX ?? e.clientX) - rect.left
-    const y = (touch?.clientY ?? e.clientY) - rect.top
-    return { x, y }
+    return {
+      x: (touch?.clientX ?? e.clientX) - rect.left,
+      y: (touch?.clientY ?? e.clientY) - rect.top,
+    }
   }
 
-  const startDraw = (e) => {
-    e.preventDefault()
-    isDrawing.current = true
-    lastPoint.current = getPoint(e)
-  }
-
+  const startDraw = (e) => { e.preventDefault(); isDrawing.current = true; lastPoint.current = getPoint(e) }
   const draw = (e) => {
     if (!isDrawing.current) return
     e.preventDefault()
@@ -62,17 +205,12 @@ export default function FirmaDigital({ prestamoId, firmaUrl, onSave }) {
     lastPoint.current = point
     if (!hasStrokes) setHasStrokes(true)
   }
-
-  const endDraw = () => {
-    isDrawing.current = false
-    lastPoint.current = null
-  }
+  const endDraw = () => { isDrawing.current = false; lastPoint.current = null }
 
   const limpiar = () => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
     setHasStrokes(false)
   }
 
@@ -90,7 +228,7 @@ export default function FirmaDigital({ prestamoId, firmaUrl, onSave }) {
       if (!res.ok) throw new Error()
       const data = await res.json()
       onSave?.(data.firmaUrl)
-      setOpen(false)
+      setModalFirmar(false)
     } catch {
       alert('Error al guardar la firma')
     } finally {
@@ -98,13 +236,47 @@ export default function FirmaDigital({ prestamoId, firmaUrl, onSave }) {
     }
   }
 
+  const descargarComprobante = async () => {
+    if (!prestamo) return
+    setDescargando(true)
+    try {
+      const { canvas, ctx, firmaY, w } = generarComprobante(prestamo)
+
+      // Draw firma image if exists
+      if (firmaUrl) {
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        await new Promise((resolve, reject) => {
+          img.onload = resolve
+          img.onerror = reject
+          img.src = firmaUrl
+        })
+        const firmaW = 300
+        const firmaH = (img.height / img.width) * firmaW
+        ctx.drawImage(img, 40, firmaY + 15, firmaW, firmaH)
+      } else {
+        ctx.fillStyle = '#999999'
+        ctx.font = 'italic 13px system-ui, sans-serif'
+        ctx.fillText('Sin firma', 40, firmaY + 35)
+      }
+
+      // Download
+      const link = document.createElement('a')
+      link.download = `comprobante-prestamo-${prestamo.cliente?.nombre?.replace(/\s+/g, '-') || prestamoId}.png`
+      link.href = canvas.toDataURL('image/png')
+      link.click()
+    } catch {
+      alert('Error al generar comprobante')
+    } finally {
+      setDescargando(false)
+    }
+  }
+
   return (
     <>
-      {/* Boton / preview */}
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="w-full rounded-[14px] border p-3 flex items-center gap-3 text-left transition-colors active:scale-[0.99]"
+      {/* Card visible */}
+      <div
+        className="w-full rounded-[14px] border overflow-hidden"
         style={{
           background: firmaUrl
             ? 'color-mix(in srgb, var(--color-success) 5%, var(--color-bg-card))'
@@ -114,30 +286,81 @@ export default function FirmaDigital({ prestamoId, firmaUrl, onSave }) {
             : 'var(--color-border)',
         }}
       >
-        <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0"
-          style={{ background: firmaUrl ? 'color-mix(in srgb, var(--color-success) 15%, transparent)' : 'color-mix(in srgb, var(--color-text-muted) 10%, transparent)' }}
-        >
-          <svg className="w-4 h-4" style={{ color: firmaUrl ? 'var(--color-success)' : 'var(--color-text-muted)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" />
-          </svg>
+        {/* Header */}
+        <div className="p-3 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0"
+            style={{ background: firmaUrl ? 'color-mix(in srgb, var(--color-success) 15%, transparent)' : 'color-mix(in srgb, var(--color-text-muted) 10%, transparent)' }}
+          >
+            <svg className="w-4 h-4" style={{ color: firmaUrl ? 'var(--color-success)' : 'var(--color-text-muted)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" />
+            </svg>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Firma del cliente</p>
+            {!firmaUrl && (
+              <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Sin firma</p>
+            )}
+          </div>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[11px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Firma del cliente</p>
-          {firmaUrl ? (
-            <div className="mt-1 h-10 rounded-[8px] overflow-hidden" style={{ background: 'rgba(0,0,0,0.3)' }}>
+
+        {/* Firma visible */}
+        {firmaUrl && (
+          <button
+            type="button"
+            onClick={() => setModalVer(true)}
+            className="w-full px-3 pb-2"
+          >
+            <div className="rounded-[10px] overflow-hidden w-full" style={{ background: '#1a1a1a', height: 80 }}>
               <img src={firmaUrl} alt="Firma" className="h-full w-auto object-contain mx-auto" style={{ filter: 'brightness(1.2)' }} />
             </div>
-          ) : (
-            <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Toca para firmar</p>
-          )}
-        </div>
-        <svg className="w-4 h-4 shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-        </svg>
-      </button>
+          </button>
+        )}
 
-      {/* Modal canvas */}
-      <Modal open={open} onClose={() => setOpen(false)} title="Firma del cliente">
+        {/* Botones */}
+        <div className="px-3 pb-3 flex gap-2">
+          <button
+            type="button"
+            onClick={() => setModalFirmar(true)}
+            className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-[8px] text-[11px] font-medium transition-colors"
+            style={{
+              background: 'rgba(255,255,255,0.06)',
+              color: 'var(--color-text-secondary)',
+            }}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" />
+            </svg>
+            {firmaUrl ? 'Modificar' : 'Firmar'}
+          </button>
+          <button
+            type="button"
+            onClick={descargarComprobante}
+            disabled={descargando}
+            className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-[8px] text-[11px] font-medium transition-colors"
+            style={{
+              background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
+              color: 'var(--color-accent)',
+            }}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+            {descargando ? 'Generando...' : 'Comprobante'}
+          </button>
+        </div>
+      </div>
+
+      {/* Modal ver firma ampliada */}
+      <Modal open={modalVer} onClose={() => setModalVer(false)} title="Firma del cliente">
+        {firmaUrl && (
+          <div className="rounded-[12px] overflow-hidden" style={{ background: '#1a1a1a' }}>
+            <img src={firmaUrl} alt="Firma" className="w-full object-contain" style={{ filter: 'brightness(1.2)', maxHeight: 300 }} />
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal firmar/re-firmar */}
+      <Modal open={modalFirmar} onClose={() => setModalFirmar(false)} title={firmaUrl ? 'Modificar firma' : 'Firma del cliente'}>
         <div className="space-y-3">
           <p className="text-[11px] text-[var(--color-text-muted)]">
             El cliente firma con el dedo sobre el recuadro.

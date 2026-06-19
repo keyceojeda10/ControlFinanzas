@@ -811,8 +811,7 @@ export default function PrestamoDetallePage({ params }) {
 
       {/* ── FIRMA DIGITAL ──────────────────────────────────────── */}
       <FirmaDigital
-        prestamoId={prestamo.id}
-        firmaUrl={prestamo.firmaUrl}
+        prestamo={prestamo}
         onSave={(url) => setPrestamo(prev => ({ ...prev, firmaUrl: url }))}
       />
 
