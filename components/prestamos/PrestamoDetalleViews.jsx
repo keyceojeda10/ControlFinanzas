@@ -306,8 +306,9 @@ export function BotonPagoPersonalidad({ enMora, frecuenciaLabel, monto, onClick 
   return (
     <button
       onClick={onClick}
-      className="w-full h-16 rounded-[16px] text-white transition-all duration-200 active:scale-[0.98] relative overflow-hidden group flex items-center px-4"
+      className="w-full h-16 rounded-[16px] transition-all duration-200 active:scale-[0.98] relative overflow-hidden group flex items-center px-4"
       style={{
+        color: '#ffffff',
         background: isUrgente
           ? 'linear-gradient(135deg, #ef4444, #dc2626)'
           : 'linear-gradient(135deg, #22c55e, #16a34a)',

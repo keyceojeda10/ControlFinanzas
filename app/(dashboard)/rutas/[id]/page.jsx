@@ -1862,8 +1862,8 @@ export default function RutaDetallePage({ params }) {
                               pagoRapidoOk === c.id
                                 ? 'bg-[var(--color-success)]'
                                 : abonoConPendiente
-                                  ? 'bg-[#f59e0b] hover:bg-[#d97706]'
-                                  : 'bg-[#22c55e] hover:bg-[#16a34a]',
+                                  ? 'bg-[rgba(245,158,11,0.12)] border border-[rgba(245,158,11,0.35)] hover:bg-[rgba(245,158,11,0.22)]'
+                                  : 'bg-[rgba(34,197,94,0.12)] border border-[rgba(34,197,94,0.3)] hover:bg-[rgba(34,197,94,0.25)]',
                             ].join(' ')}
                           >
                             {pagandoRapido === c.id ? (
@@ -1878,12 +1878,12 @@ export default function RutaDetallePage({ params }) {
                             ) : (
                               <>
                                 <svg
-                                  className="w-3 h-3 shrink-0 text-white"
+                                  className={`w-3 h-3 shrink-0 ${abonoConPendiente ? 'text-[var(--color-warning)]' : 'text-[var(--color-success)]'}`}
                                   fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2}
                                 >
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33" />
                                 </svg>
-                                <span className="text-[11px] font-bold whitespace-nowrap font-mono-display text-white">
+                                <span className={`text-[11px] font-bold whitespace-nowrap font-mono-display ${abonoConPendiente ? 'text-[var(--color-warning)]' : 'text-[var(--color-success)]'}`}>
                                   Cobrar
                                 </span>
                               </>
