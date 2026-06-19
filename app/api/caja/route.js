@@ -106,7 +106,16 @@ async function calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId =
   }
 
   // Vista por cobrador: combinar (a) clientes de su ruta y (b) préstamos creados por su perfil.
-  const [prestamosRuta, movimientosCreador, actividadesCreador] = await Promise.all([
+  // Para renovaciones, el MovimientoCapital tiene el monto real entregado en mano
+  // (no el montoPrestado completo), así que se prioriza el monto del movimiento.
+  // Buscar rutas del cobrador para incluir movimientos hechos por el owner en sus rutas
+  const rutasCobrador = await prisma.ruta.findMany({
+    where: { cobradorId, organizationId, activo: true },
+    select: { id: true },
+  })
+  const rutaIds = rutasCobrador.map(r => r.id)
+
+  const [prestamosRuta, movimientosDesembolso, actividadesCreador] = await Promise.all([
     prisma.prestamo.findMany({
       where: {
         ...baseWherePrestamos,
@@ -114,15 +123,19 @@ async function calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId =
       },
       select: { id: true, montoPrestado: true },
     }),
+    // Movimientos de desembolso: por el cobrador O en sus rutas (incluye los del owner)
     prisma.movimientoCapital.findMany({
       where: {
         organizationId,
         tipo: 'desembolso',
         createdAt: { gte: inicio, lt: fin },
-        creadoPorId: cobradorId,
         referenciaTipo: 'prestamo',
+        OR: [
+          { creadoPorId: cobradorId },
+          ...(rutaIds.length > 0 ? [{ rutaId: { in: rutaIds } }] : []),
+        ],
       },
-      select: { referenciaId: true, monto: true },
+      select: { referenciaId: true, monto: true, createdAt: true },
     }),
     prisma.actividadLog.findMany({
       where: {
@@ -134,6 +147,16 @@ async function calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId =
       select: { entidadId: true },
     }),
   ])
+
+  // Mapa de préstamo → monto real del movimiento (el más reciente gana si hubo edición)
+  const montoRealPorPrestamo = new Map()
+  for (const m of movimientosDesembolso) {
+    if (!m.referenciaId) continue
+    const prev = montoRealPorPrestamo.get(m.referenciaId)
+    if (!prev || m.createdAt > prev.createdAt) {
+      montoRealPorPrestamo.set(m.referenciaId, { monto: m.monto, createdAt: m.createdAt })
+    }
+  }
 
   const prestamoIdsActividad = actividadesCreador
     .map((a) => a.entidadId)
@@ -151,43 +174,31 @@ async function calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId =
     })
     : []
 
-  const referenciasMovimiento = movimientosCreador
-    .map((mov) => mov.referenciaId)
-    .filter((id) => !!id)
+  const idsContabilizados = new Set()
+  let total = 0
 
-  const prestamosReferenciados = referenciasMovimiento.length
-    ? await prisma.prestamo.findMany({
-      where: {
-        organizationId,
-        id: { in: referenciasMovimiento },
-        createdAt: { gte: inicio, lt: fin },
-        estado: { not: 'cancelado' },
-      },
-      select: { id: true },
-    })
-    : []
-
-  const referenciasValidas = new Set(prestamosReferenciados.map((p) => p.id))
-
-  const idsContabilizados = new Set(prestamosRuta.map((p) => p.id))
-  let total = prestamosRuta.reduce((acc, p) => acc + p.montoPrestado, 0)
-
-  for (const p of prestamosActividad) {
-    if (!idsContabilizados.has(p.id)) {
-      total += p.montoPrestado
-      idsContabilizados.add(p.id)
-    }
+  // Préstamos de la ruta: usar monto del movimiento si existe (correcto en renovaciones)
+  for (const p of prestamosRuta) {
+    if (idsContabilizados.has(p.id)) continue
+    idsContabilizados.add(p.id)
+    const mov = montoRealPorPrestamo.get(p.id)
+    total += mov ? mov.monto : p.montoPrestado
   }
 
-  for (const mov of movimientosCreador) {
-    if (!mov.referenciaId) {
-      continue
-    }
-    if (!referenciasValidas.has(mov.referenciaId)) continue
-    if (!idsContabilizados.has(mov.referenciaId)) {
-      total += mov.monto
-      idsContabilizados.add(mov.referenciaId)
-    }
+  // Préstamos creados por el cobrador fuera de su ruta
+  for (const p of prestamosActividad) {
+    if (idsContabilizados.has(p.id)) continue
+    idsContabilizados.add(p.id)
+    const mov = montoRealPorPrestamo.get(p.id)
+    total += mov ? mov.monto : p.montoPrestado
+  }
+
+  // Movimientos del cobrador sin préstamo en ruta/actividad
+  for (const mov of movimientosDesembolso) {
+    if (!mov.referenciaId || idsContabilizados.has(mov.referenciaId)) continue
+    idsContabilizados.add(mov.referenciaId)
+    const real = montoRealPorPrestamo.get(mov.referenciaId)
+    total += real ? real.monto : mov.monto
   }
 
   return total
