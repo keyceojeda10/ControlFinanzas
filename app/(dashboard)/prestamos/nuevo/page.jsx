@@ -137,7 +137,9 @@ function NuevoPrestamo() {
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
     ctx.lineWidth = 2.5
-    ctx.strokeStyle = '#ffffff'
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    ctx.strokeStyle = '#111111'
   }, [])
 
   const firmaGetPoint = (e) => {
@@ -168,7 +170,8 @@ function NuevoPrestamo() {
     const canvas = firmaCanvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
     setFirmaStrokes(false)
     setFirmaBase64(null)
   }
@@ -1511,7 +1514,7 @@ function NuevoPrestamo() {
               <p className="text-[11px] mb-2" style={{ color: 'var(--color-text-muted)' }}>
                 El cliente firma con el dedo sobre el recuadro. Opcional.
               </p>
-              <div className="relative rounded-[12px] overflow-hidden border" style={{ borderColor: 'var(--color-border)', background: '#1a1a1a' }}>
+              <div className="relative rounded-[12px] overflow-hidden border" style={{ borderColor: 'var(--color-border)', background: '#ffffff' }}>
                 <canvas
                   ref={firmaCanvasRef}
                   className="w-full touch-none"
@@ -1526,7 +1529,7 @@ function NuevoPrestamo() {
                 />
                 {!firmaStrokes && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <p className="text-sm text-[#555]">Firmar aqui</p>
+                    <p className="text-sm text-[#aaa]">Firmar aqui</p>
                   </div>
                 )}
               </div>

@@ -156,8 +156,8 @@ async function generarComprobante(prestamo) {
     const firmaW = 300
     const fH = (firmaImg.height / firmaImg.width) * firmaW
     y += 15
-    ctx.fillStyle = '#1a1a1a'
-    ctx.fillRect(38, y - 2, firmaW + 4, fH + 4)
+    ctx.strokeStyle = '#e5e5e5'
+    ctx.strokeRect(38, y - 2, firmaW + 4, fH + 4)
     ctx.drawImage(firmaImg, 40, y, firmaW, fH)
   } else {
     y += 20
@@ -194,7 +194,9 @@ export default function FirmaDigital({ prestamo, onSave }) {
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
     ctx.lineWidth = 2.5
-    ctx.strokeStyle = '#ffffff'
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    ctx.strokeStyle = '#111111'
   }, [])
 
   useEffect(() => {
@@ -233,7 +235,9 @@ export default function FirmaDigital({ prestamo, onSave }) {
   const limpiar = () => {
     const canvas = canvasRef.current
     if (!canvas) return
-    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
+    const ctx = canvas.getContext('2d')
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
     setHasStrokes(false)
   }
 
@@ -313,8 +317,8 @@ export default function FirmaDigital({ prestamo, onSave }) {
             onClick={() => setModalVer(true)}
             className="w-full px-3 pb-2"
           >
-            <div className="rounded-[10px] overflow-hidden w-full" style={{ background: '#1a1a1a', height: 80 }}>
-              <img src={firmaUrl} alt="Firma" className="h-full w-auto object-contain mx-auto" style={{ filter: 'brightness(1.2)' }} />
+            <div className="rounded-[10px] overflow-hidden w-full border" style={{ background: '#ffffff', borderColor: 'var(--color-border)', height: 80 }}>
+              <img src={firmaUrl} alt="Firma" className="h-full w-auto object-contain mx-auto" />
             </div>
           </button>
         )}
@@ -356,8 +360,8 @@ export default function FirmaDigital({ prestamo, onSave }) {
       {/* Modal ver firma ampliada */}
       <Modal open={modalVer} onClose={() => setModalVer(false)} title="Firma del cliente">
         {firmaUrl && (
-          <div className="rounded-[12px] overflow-hidden" style={{ background: '#1a1a1a' }}>
-            <img src={firmaUrl} alt="Firma" className="w-full object-contain" style={{ filter: 'brightness(1.2)', maxHeight: 300 }} />
+          <div className="rounded-[12px] overflow-hidden border" style={{ background: '#ffffff', borderColor: 'var(--color-border)' }}>
+            <img src={firmaUrl} alt="Firma" className="w-full object-contain" style={{ maxHeight: 300 }} />
           </div>
         )}
       </Modal>
@@ -368,7 +372,7 @@ export default function FirmaDigital({ prestamo, onSave }) {
           <p className="text-[11px] text-[var(--color-text-muted)]">
             El cliente firma con el dedo sobre el recuadro.
           </p>
-          <div className="relative rounded-[12px] overflow-hidden border" style={{ borderColor: 'var(--color-border)', background: '#1a1a1a' }}>
+          <div className="relative rounded-[12px] overflow-hidden border" style={{ borderColor: 'var(--color-border)', background: '#ffffff' }}>
             <canvas
               ref={canvasRef}
               className="w-full touch-none"
@@ -383,7 +387,7 @@ export default function FirmaDigital({ prestamo, onSave }) {
             />
             {!hasStrokes && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <p className="text-sm text-[#555]">Firmar aqui</p>
+                <p className="text-sm text-[#aaa]">Firmar aqui</p>
               </div>
             )}
           </div>

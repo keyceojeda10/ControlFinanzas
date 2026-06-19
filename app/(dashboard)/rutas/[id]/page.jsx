@@ -1794,11 +1794,14 @@ export default function RutaDetallePage({ params }) {
 
                   {/* Numero racing (modo trabajo) — ocupa todo el alto de la card */}
                   {!conGrip && (
-                    <div className="flex items-center justify-center w-10 shrink-0 self-stretch relative overflow-hidden">
+                    <div
+                      className="flex items-center justify-center shrink-0 self-stretch relative overflow-hidden"
+                      style={{ width: numPos > 99 ? 52 : numPos > 9 ? 40 : 32 }}
+                    >
                       <span
                         className="absolute inset-0 flex items-center justify-center font-black tabular-nums italic select-none pointer-events-none"
                         style={{
-                          fontSize: numPos > 99 ? '60px' : '80px',
+                          fontSize: numPos > 99 ? '50px' : numPos > 9 ? '70px' : '80px',
                           lineHeight: 1,
                           color: 'var(--color-text-primary)',
                           opacity: 0.08,
