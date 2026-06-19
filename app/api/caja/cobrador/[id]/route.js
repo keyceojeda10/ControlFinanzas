@@ -53,10 +53,15 @@ async function getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId
     }),
   ])
 
-  // Mapa de préstamo ID → monto real del MovimientoCapital
+  // Mapa de préstamo ID → monto real del MovimientoCapital (el más reciente gana,
+  // porque al editar un préstamo se crea un nuevo desembolso con el monto corregido).
   const montoRealPorPrestamo = new Map()
   for (const m of movimientos) {
-    if (m.referenciaId) montoRealPorPrestamo.set(m.referenciaId, { monto: m.monto, rutaId: m.rutaId, fecha: m.createdAt })
+    if (!m.referenciaId) continue
+    const prev = montoRealPorPrestamo.get(m.referenciaId)
+    if (!prev || m.createdAt > prev.fecha) {
+      montoRealPorPrestamo.set(m.referenciaId, { monto: m.monto, rutaId: m.rutaId, fecha: m.createdAt })
+    }
   }
 
   // También buscar préstamos fuera de la ruta que el cobrador creó (via MovimientoCapital)
