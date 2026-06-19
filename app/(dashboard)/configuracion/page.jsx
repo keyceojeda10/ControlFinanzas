@@ -307,6 +307,7 @@ function TabPerfil() {
 // TAB 2 — MI ORGANIZACIÓN
 // ══════════════════════════════════════════════════════════════
 function TabOrganizacion() {
+  const { updateSession } = useAuth()
   const [data,     setData]     = useState(null)
   const [loading,  setLoading]  = useState(true)
   const [nombre,   setNombre]   = useState('')
@@ -539,7 +540,10 @@ function TabOrganizacion() {
                   method: 'PATCH', headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ modoAbreviado: nuevoValor }),
                 })
-                if (res.ok) setData(prev => ({ ...prev, org: { ...prev.org, modoAbreviado: nuevoValor } }))
+                if (res.ok) {
+                  setData(prev => ({ ...prev, org: { ...prev.org, modoAbreviado: nuevoValor } }))
+                  if (updateSession) await updateSession()
+                }
               } catch {}
             }}
             className="shrink-0 relative w-11 h-6 rounded-full transition-colors"

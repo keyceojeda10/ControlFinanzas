@@ -1,7 +1,7 @@
 'use client'
 // app/(dashboard)/prestamos/nuevo/page.jsx - Formulario de nuevo préstamo
 
-import { useState, useEffect, useMemo, Suspense } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams }              from 'next/navigation'
 import { useAuth }                                 from '@/hooks/useAuth'
 import { Button }                                  from '@/components/ui/Button'
@@ -118,11 +118,67 @@ function NuevoPrestamo() {
   const [diasSinCobroCliente, setDiasSinCobroCliente] = useState([])
   const [diasSinCobroEditado, setDiasSinCobroEditado] = useState(false)
 
-  // Wizard: 2 pasos. 0 = Cliente, 1 = Plan (con revision en vivo).
+  // Firma digital del cliente (capturada en paso 2)
+  const [firmaBase64, setFirmaBase64] = useState(null)
+  const [firmaStrokes, setFirmaStrokes] = useState(false)
+  const firmaCanvasRef = useRef(null)
+  const firmaDrawing = useRef(false)
+  const firmaLastPt = useRef(null)
+
+  const setupFirmaCanvas = useCallback(() => {
+    const canvas = firmaCanvasRef.current
+    if (!canvas) return
+    const rect = canvas.getBoundingClientRect()
+    const dpr = window.devicePixelRatio || 1
+    canvas.width = rect.width * dpr
+    canvas.height = rect.height * dpr
+    const ctx = canvas.getContext('2d')
+    ctx.scale(dpr, dpr)
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
+    ctx.lineWidth = 2.5
+    ctx.strokeStyle = '#ffffff'
+  }, [])
+
+  const firmaGetPoint = (e) => {
+    const canvas = firmaCanvasRef.current
+    const rect = canvas.getBoundingClientRect()
+    const touch = e.touches?.[0]
+    return {
+      x: (touch?.clientX ?? e.clientX) - rect.left,
+      y: (touch?.clientY ?? e.clientY) - rect.top,
+    }
+  }
+  const firmaStart = (e) => { e.preventDefault(); firmaDrawing.current = true; firmaLastPt.current = firmaGetPoint(e) }
+  const firmaDraw = (e) => {
+    if (!firmaDrawing.current) return
+    e.preventDefault()
+    const ctx = firmaCanvasRef.current?.getContext('2d')
+    if (!ctx) return
+    const pt = firmaGetPoint(e)
+    ctx.beginPath()
+    ctx.moveTo(firmaLastPt.current.x, firmaLastPt.current.y)
+    ctx.lineTo(pt.x, pt.y)
+    ctx.stroke()
+    firmaLastPt.current = pt
+    if (!firmaStrokes) setFirmaStrokes(true)
+  }
+  const firmaEnd = () => { firmaDrawing.current = false; firmaLastPt.current = null }
+  const firmaLimpiar = () => {
+    const canvas = firmaCanvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    setFirmaStrokes(false)
+    setFirmaBase64(null)
+  }
+
+  // Wizard: 3 pasos. 0 = Cliente, 1 = Plan, 2 = Confirmar y firma.
   const [paso, setPaso] = useState(0)
   const PASOS = [
     { label: 'Cliente' },
-    { label: 'Plan del préstamo' },
+    { label: 'Datos' },
+    { label: 'Confirmar' },
   ]
 
   // Pre-llenar desde cartulina si venimos de importar
@@ -329,6 +385,7 @@ function NuevoPrestamo() {
       if (clienteSeleccionado?.montoMaximoPrestamo > 0 && Number(monto) > clienteSeleccionado.montoMaximoPrestamo) return false
       return Number(monto) > 0 && Number(plazoUnidades) > 0 && !!fechaInicio && !!calculo
     }
+    if (paso === 2) return !!calculo
     return true
   }
   const irAlSiguientePaso = () => {
@@ -336,6 +393,10 @@ function NuevoPrestamo() {
     setPaso(p => Math.min(PASOS.length - 1, p + 1))
   }
   const irAlPasoAnterior = () => setPaso(p => Math.max(0, p - 1))
+
+  useEffect(() => {
+    if (paso === 2) setTimeout(setupFirmaCanvas, 80)
+  }, [paso, setupFirmaCanvas])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -395,6 +456,17 @@ function NuevoPrestamo() {
         }
         setError(data?.error ?? 'Error al crear el préstamo')
         return
+      }
+      // Subir firma si el cliente firmo en el canvas
+      const firmaData = firmaStrokes ? firmaCanvasRef.current?.toDataURL('image/png') : null
+      if (firmaData && data.id) {
+        try {
+          await fetch(`/api/prestamos/${data.id}/firma`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ firma: firmaData }),
+          })
+        } catch {}
       }
       // Si el usuario edito los dias sin cobro del cliente desde aqui,
       // sincronizar la ficha del cliente.
@@ -1410,6 +1482,68 @@ function NuevoPrestamo() {
           })()}
         </section>
       )}
+
+      {/* ═══ PASO 2: CONFIRMAR + FIRMA ═══ */}
+      {paso === 2 && calculo && (() => {
+        const labelFrecuencia = { diario: 'Diario', semanal: 'Semanal', quincenal: 'Quincenal', mensual: 'Mensual' }[frecuencia]
+        return (
+          <section className="space-y-4 pb-28">
+            <SectionCard
+              icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+              title="Resumen del prestamo"
+              color="var(--color-success)"
+            >
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between"><span style={{ color: 'var(--color-text-muted)' }}>Cliente</span><span className="font-semibold">{clienteSeleccionado?.nombre}</span></div>
+                <div className="flex justify-between"><span style={{ color: 'var(--color-text-muted)' }}>Monto</span><span className="font-semibold font-mono-display">{formatMoney(Number(monto))}</span></div>
+                <div className="flex justify-between"><span style={{ color: 'var(--color-text-muted)' }}>Total a pagar</span><span className="font-semibold font-mono-display" style={{ color: 'var(--color-accent)' }}>{formatMoney(calculo.totalAPagar)}</span></div>
+                <div className="flex justify-between"><span style={{ color: 'var(--color-text-muted)' }}>Cuota</span><span className="font-semibold font-mono-display" style={{ color: 'var(--color-success)' }}>{formatMoney(calculo.cuotaDiaria)}</span></div>
+                <div className="flex justify-between"><span style={{ color: 'var(--color-text-muted)' }}>Frecuencia</span><span>{labelFrecuencia}</span></div>
+                <div className="flex justify-between"><span style={{ color: 'var(--color-text-muted)' }}>Plazo</span><span>{plazoUnidades} {frecuencia === 'diario' ? 'dias' : frecuencia === 'semanal' ? 'semanas' : frecuencia === 'quincenal' ? 'quincenas' : 'meses'}</span></div>
+              </div>
+            </SectionCard>
+
+            <SectionCard
+              icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" /></svg>}
+              title="Firma del cliente"
+              color="#6366f1"
+            >
+              <p className="text-[11px] mb-2" style={{ color: 'var(--color-text-muted)' }}>
+                El cliente firma con el dedo sobre el recuadro. Opcional.
+              </p>
+              <div className="relative rounded-[12px] overflow-hidden border" style={{ borderColor: 'var(--color-border)', background: '#1a1a1a' }}>
+                <canvas
+                  ref={firmaCanvasRef}
+                  className="w-full touch-none"
+                  style={{ height: 180, cursor: 'crosshair' }}
+                  onMouseDown={firmaStart}
+                  onMouseMove={firmaDraw}
+                  onMouseUp={firmaEnd}
+                  onMouseLeave={firmaEnd}
+                  onTouchStart={firmaStart}
+                  onTouchMove={firmaDraw}
+                  onTouchEnd={firmaEnd}
+                />
+                {!firmaStrokes && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <p className="text-sm text-[#555]">Firmar aqui</p>
+                  </div>
+                )}
+              </div>
+              {firmaStrokes && (
+                <button
+                  type="button"
+                  onClick={firmaLimpiar}
+                  className="mt-2 text-[11px] font-medium px-3 py-1 rounded-[8px] transition-colors"
+                  style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--color-text-muted)' }}
+                >
+                  Limpiar firma
+                </button>
+              )}
+            </SectionCard>
+          </section>
+        )
+      })()}
 
       {/* Barra sticky de resumen en vivo — solo en el paso Plan, sobre el footer.
           El prestamista ajusta arriba y ve cuota/total aca sin tener que scrollear. */}
