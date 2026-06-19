@@ -23,6 +23,7 @@ import BotonCompartir                 from '@/components/ui/BotonCompartir'
 import BotonImprimirRecibo            from '@/components/ui/BotonImprimirRecibo'
 import OfflineBadge                   from '@/components/offline/OfflineBadge'
 import ModalWhatsAppTemplates         from '@/components/ui/ModalWhatsAppTemplates'
+import FirmaDigital                   from '@/components/prestamos/FirmaDigital'
 import {
   PrestamoHeroCard,
   HeaderClienteContexto,
@@ -807,6 +808,13 @@ export default function PrestamoDetallePage({ params }) {
           Enviar resumen por WhatsApp
         </button>
       )}
+
+      {/* ── FIRMA DIGITAL ──────────────────────────────────────── */}
+      <FirmaDigital
+        prestamoId={prestamo.id}
+        firmaUrl={prestamo.firmaUrl}
+        onSave={(url) => setPrestamo(prev => ({ ...prev, firmaUrl: url }))}
+      />
 
       {/* ── HISTORIAL DE PAGOS (colapsado por defecto) ──────────── */}
       <Card>

@@ -284,6 +284,7 @@ model Prestamo {
   renovadoDeId   String? // id del prestamo del que proviene (si fue una renovacion)
   // Tarjeta clavo: prestamo malo/incobrable. Se excluye de saldos/cartera/capital
   // normales y se lleva en contabilidad aparte. Sigue cobrable (pagos van aparte).
+  firmaUrl       String? // ruta a la imagen PNG de la firma del cliente
   esClavo        Boolean        @default(false)
   clavoAt        DateTime? // cuando se marco como clavo
   clavoPerdida   Boolean        @default(false) // si al marcarlo se registro el capital como perdida
