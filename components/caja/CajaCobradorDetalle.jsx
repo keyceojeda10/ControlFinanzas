@@ -55,6 +55,31 @@ export default function CajaCobradorDetalle({ data }) {
         ]}
       />
 
+      {/* Alerta gastos pendientes */}
+      {(r.gastosPendientesCantidad || 0) > 0 && (
+        <div
+          className="flex items-start gap-2.5 p-3 rounded-[12px] border"
+          style={{
+            background: 'color-mix(in srgb, var(--color-warning) 8%, var(--color-bg-card))',
+            borderColor: 'color-mix(in srgb, var(--color-warning) 25%, var(--color-border))',
+          }}
+        >
+          <svg className="w-4 h-4 shrink-0 mt-0.5" style={{ color: 'var(--color-warning)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+          </svg>
+          <div>
+            <p className="text-[12px] font-semibold" style={{ color: 'var(--color-warning)' }}>
+              {r.gastosPendientesCantidad} gasto{r.gastosPendientesCantidad > 1 ? 's' : ''} pendiente{r.gastosPendientesCantidad > 1 ? 's' : ''} por aprobar ({formatMoney(r.gastosPendientesMonto)})
+            </p>
+            {esCapitalEfectivo && (
+              <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                El capital en ruta no refleja este gasto hasta que se apruebe
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* KPIs de gestion */}
       {g && (
         <Card>

@@ -361,6 +361,8 @@ export async function GET(request, { params }) {
       capitalEsEfectivo: !!org?.capitalEsEfectivo,
       recargosMonto: recargosMontoTotal,
       recargosCantidad,
+      gastosPendientesMonto: gastosPendientesDia,
+      gastosPendientesCantidad: gastos.filter((g) => g.estado === 'pendiente').length,
     },
     gestion: {
       clientesNuevos,
