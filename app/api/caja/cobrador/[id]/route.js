@@ -153,7 +153,7 @@ export async function GET(request, { params }) {
   })
   const rutaIds = rutas.map((r) => r.id)
 
-  const [cobros, gastos, desembolsos, cierre, recargos] = await Promise.all([
+  const [cobros, gastos, desembolsos, cierre, recargos, primerMovPorRuta] = await Promise.all([
     // Cobros del día: pagos reales (excluye ajustes) hechos por el cobrador.
     prisma.pago.findMany({
       where: {
@@ -195,7 +195,30 @@ export async function GET(request, { params }) {
       _sum: { montoPagado: true },
       _count: { id: true },
     }),
+    // Primer movimiento del día por ruta para calcular saldo de apertura
+    rutaIds.length > 0
+      ? prisma.movimientoCapital.findMany({
+          where: {
+            organizationId,
+            rutaId: { in: rutaIds },
+            createdAt: { gte: inicio, lt: fin },
+          },
+          orderBy: { createdAt: 'asc' },
+          distinct: ['rutaId'],
+          select: { rutaId: true, saldoAnterior: true },
+        })
+      : [],
   ])
+
+  // Saldo de apertura: el saldoAnterior del primer movimiento del día.
+  // Si no hubo movimientos, el saldo de inicio = saldo actual (no cambió).
+  const saldoAperturaPorRuta = new Map()
+  for (const m of primerMovPorRuta) {
+    if (m.rutaId) saldoAperturaPorRuta.set(m.rutaId, Math.round(m.saldoAnterior))
+  }
+  const saldoAperturaTotal = rutas.reduce((acc, r) => {
+    return acc + (saldoAperturaPorRuta.get(r.id) ?? Math.round(r.saldoCapital || 0))
+  }, 0)
 
   // Totales del día.
   const cobradoDia = Math.round(cobros.reduce((a, p) => a + (p.montoPagado || 0), 0))
@@ -363,6 +386,7 @@ export async function GET(request, { params }) {
       recargosCantidad,
       gastosPendientesMonto: gastosPendientesDia,
       gastosPendientesCantidad: gastos.filter((g) => g.estado === 'pendiente').length,
+      saldoApertura: saldoAperturaTotal,
     },
     gestion: {
       clientesNuevos,
