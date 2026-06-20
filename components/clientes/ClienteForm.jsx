@@ -90,6 +90,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
   }, [form.cedula, habilitadoScore])
 
   useEffect(() => {
+    console.log('[CF] ClienteForm plan:', plan, 'esEdicion:', esEdicion)
     if (['starter', 'basic'].includes(plan)) return
     fetch('/api/rutas')
       .then((r) => r.json())
@@ -101,9 +102,12 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
     if (!form.rutaId) { setClientesRuta([]); setPosicionEnRuta('final'); return }
     setLoadingClientesRuta(true)
     fetch(`/api/rutas/${form.rutaId}/orden`)
-      .then(r => r.json())
-      .then(data => setClientesRuta(Array.isArray(data) ? data : []))
-      .catch(() => setClientesRuta([]))
+      .then(r => { console.log('[CF] orden response status:', r.status); return r.json() })
+      .then(data => {
+        console.log('[CF] clientesRuta loaded:', Array.isArray(data) ? data.length : 'not-array', 'esEdicion:', esEdicion)
+        setClientesRuta(Array.isArray(data) ? data : [])
+      })
+      .catch(err => { console.error('[CF] orden fetch error:', err); setClientesRuta([]) })
       .finally(() => setLoadingClientesRuta(false))
     setPosicionEnRuta('final')
   }, [form.rutaId])
