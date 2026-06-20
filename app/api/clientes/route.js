@@ -244,7 +244,7 @@ export async function POST(request) {
   }
 
   const body = await request.json()
-  const { nombre, cedula, telefono, direccion, referencia, notas, fotoUrl, rutaId, latitud, longitud, grupoCobroId, diasSinCobro } = body
+  const { nombre, cedula, telefono, direccion, referencia, notas, fotoUrl, rutaId, latitud, longitud, grupoCobroId, diasSinCobro, posicionEnRuta } = body
 
   let diasSinCobroVal
   try {
@@ -332,6 +332,61 @@ export async function POST(request) {
     if (geo) { lat = geo.lat; lng = geo.lng }
   }
 
+  const rutaFinal = rutaId || autoRutaId || null
+  let ordenRutaFinal = null
+
+  if (rutaFinal && posicionEnRuta) {
+    // Calcular el ordenRuta según la posición solicitada
+    await prisma.$transaction(async (tx) => {
+      const clientesRuta = await tx.cliente.findMany({
+        where: { rutaId: rutaFinal, organizationId },
+        select: { id: true, ordenRuta: true },
+        orderBy: { ordenRuta: 'asc' },
+      })
+
+      if (posicionEnRuta === 'inicio') {
+        // Desplazar todos +1 y poner el nuevo en 0
+        for (const c of clientesRuta) {
+          await tx.cliente.update({
+            where: { id: c.id },
+            data: { ordenRuta: (c.ordenRuta ?? 0) + 1 },
+          })
+        }
+        ordenRutaFinal = 0
+      } else if (posicionEnRuta === 'final') {
+        const max = clientesRuta.reduce((m, c) => Math.max(m, c.ordenRuta ?? 0), -1)
+        ordenRutaFinal = max + 1
+      } else {
+        // posicionEnRuta es un clienteId → insertar después de ese cliente
+        const idx = clientesRuta.findIndex(c => c.id === posicionEnRuta)
+        if (idx >= 0) {
+          const ordenDespuesDe = clientesRuta[idx].ordenRuta ?? 0
+          // Desplazar los que están después
+          for (const c of clientesRuta) {
+            if ((c.ordenRuta ?? 0) > ordenDespuesDe) {
+              await tx.cliente.update({
+                where: { id: c.id },
+                data: { ordenRuta: (c.ordenRuta ?? 0) + 1 },
+              })
+            }
+          }
+          ordenRutaFinal = ordenDespuesDe + 1
+        } else {
+          // Cliente referencia no encontrado, poner al final
+          const max = clientesRuta.reduce((m, c) => Math.max(m, c.ordenRuta ?? 0), -1)
+          ordenRutaFinal = max + 1
+        }
+      }
+    })
+  } else if (rutaFinal) {
+    // Sin posición explícita: poner al final
+    const maxOrden = await prisma.cliente.aggregate({
+      where: { rutaId: rutaFinal, organizationId },
+      _max: { ordenRuta: true },
+    })
+    ordenRutaFinal = (maxOrden._max.ordenRuta ?? -1) + 1
+  }
+
   const cliente = await prisma.cliente.create({
     data: {
       organizationId,
@@ -342,11 +397,12 @@ export async function POST(request) {
       referencia: referencia?.trim()  || null,
       notas:      notas?.trim()      || null,
       fotoUrl:    fotoUrl?.trim() && /^https?:\/\/.+/i.test(fotoUrl.trim()) ? fotoUrl.trim() : null,
-      rutaId:     rutaId || autoRutaId || null,
+      rutaId:     rutaFinal,
       grupoCobroId: grupoCobroId || null,
       latitud:    lat,
       longitud:   lng,
       ...(diasSinCobroVal !== undefined && { diasSinCobro: diasSinCobroVal }),
+      ...(ordenRutaFinal != null && { ordenRuta: ordenRutaFinal }),
     },
   })
 

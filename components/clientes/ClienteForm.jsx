@@ -44,6 +44,9 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
   const [error,   setError]     = useState('')
   const [scoreData, setScoreData] = useState(null)
   const [paso, setPaso] = useState(0)
+  const [posicionEnRuta, setPosicionEnRuta] = useState('final')
+  const [clientesRuta, setClientesRuta] = useState([])
+  const [loadingClientesRuta, setLoadingClientesRuta] = useState(false)
 
   // Cuando llegan datos de cartulina despues del montaje, pre-llenar los campos
   useEffect(() => {
@@ -93,6 +96,17 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
       .then((data) => setRutas(Array.isArray(data) ? data : []))
       .catch(() => {})
   }, [plan])
+
+  useEffect(() => {
+    if (!form.rutaId) { setClientesRuta([]); setPosicionEnRuta('final'); return }
+    setLoadingClientesRuta(true)
+    fetch(`/api/rutas/${form.rutaId}/orden`)
+      .then(r => r.json())
+      .then(data => setClientesRuta(Array.isArray(data) ? data : []))
+      .catch(() => setClientesRuta([]))
+      .finally(() => setLoadingClientesRuta(false))
+    setPosicionEnRuta('final')
+  }, [form.rutaId])
 
   useEffect(() => {
     fetch('/api/grupos')
@@ -189,6 +203,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
       referencia: form.referencia.trim() || undefined,
       notas:      form.notas.trim()      || undefined,
       rutaId:     form.rutaId || undefined,
+      posicionEnRuta: form.rutaId && posicionEnRuta !== 'final' ? posicionEnRuta : undefined,
       grupoCobroId: form.grupoCobroId || undefined,
       latitud:    form.latitud,
       longitud:   form.longitud,
@@ -476,12 +491,31 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
 
           <div className="mt-7 space-y-5">
             {!['starter', 'basic'].includes(plan) && rutas.length > 0 && (
-              <Select label="Ruta" value={form.rutaId} onChange={set('rutaId')}>
-                <option value="">Sin ruta asignada</option>
-                {rutas.map((r) => (
-                  <option key={r.id} value={r.id}>{r.nombre}</option>
-                ))}
-              </Select>
+              <>
+                <Select label="Ruta" value={form.rutaId} onChange={set('rutaId')}>
+                  <option value="">Sin ruta asignada</option>
+                  {rutas.map((r) => (
+                    <option key={r.id} value={r.id}>{r.nombre}</option>
+                  ))}
+                </Select>
+
+                {form.rutaId && !esEdicion && clientesRuta.length > 0 && (
+                  <Select
+                    label="Posicion en la ruta"
+                    value={posicionEnRuta}
+                    onChange={(e) => setPosicionEnRuta(e.target.value)}
+                  >
+                    <option value="final">Al final de la ruta</option>
+                    <option value="inicio">Al inicio de la ruta</option>
+                    {clientesRuta.map((c, i) => (
+                      <option key={c.id} value={c.id}>Despues de {i + 1}. {c.nombre}</option>
+                    ))}
+                  </Select>
+                )}
+                {form.rutaId && !esEdicion && loadingClientesRuta && (
+                  <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Cargando clientes de la ruta...</p>
+                )}
+              </>
             )}
             {grupos.length > 0 && (
               <Select label="Grupo de cobro" value={form.grupoCobroId} onChange={set('grupoCobroId')}>
