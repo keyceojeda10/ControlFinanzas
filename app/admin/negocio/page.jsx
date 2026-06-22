@@ -434,7 +434,7 @@ function CalendarioVencimientos({ calendario }) {
         <div className="px-4 py-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)]">
           <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide mb-1">Potencial caliente (score ≥ 60)</p>
           <p className="text-xl font-bold text-[var(--color-success)]">{formatMoney(mrrCaliente, 'co')}</p>
-          <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">usuarios activos con datos reales</p>
+          <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">activos, con prestamos y entrando seguido</p>
         </div>
         <div className="px-4 py-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)]">
           <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide mb-1">Potencial total (todos)</p>
@@ -495,7 +495,7 @@ function CalendarioVencimientos({ calendario }) {
                       : esHoy
                       ? `Hola ${u.ownerNombre}, hoy vence tu período de prueba de Control Finanzas. ¿Te ayudo a activar tu plan y seguir sin interrupciones?`
                       : `Hola ${u.ownerNombre}, en ${u.diasRestantes} día${u.diasRestantes > 1 ? 's' : ''} vence tu período de prueba de Control Finanzas. ¿Tienes alguna duda antes de continuar?`)
-                  const esCaliente = u.score >= 60
+                  const esCaliente = u.score >= 60 && ((u.clientes ?? 0) >= 3 || (u.prestamos ?? 0) >= 3)
                   return (
                     <div key={u.id} className={`flex items-center justify-between px-4 py-2.5 ${esCaliente ? '' : 'opacity-60'}`}>
                       <div className="flex items-center gap-3 min-w-0">
@@ -503,7 +503,7 @@ function CalendarioVencimientos({ calendario }) {
                         <div className="min-w-0">
                           <p className="text-xs font-medium text-[var(--color-text-primary)] truncate">{u.ownerNombre || u.nombre}</p>
                           <p className="text-[10px] text-[var(--color-text-muted)]">
-                            {u.planNombre} · {u.clientes} clientes · score {u.score}
+                            {u.planNombre} · {u.clientes}c · {u.prestamos ?? 0}p · score {u.score}
                           </p>
                         </div>
                       </div>

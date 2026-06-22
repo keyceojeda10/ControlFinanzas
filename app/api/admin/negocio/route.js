@@ -107,20 +107,32 @@ export async function GET() {
       : Math.max(0, 14 - diasDesdeRegistro)
 
     // Score de conversión para trials (0-100)
-    // Factores: clientes creados, préstamos, días en plataforma, actividad reciente
+    // Calibrado con datos reales: pagantes tienen mediana 53 clientes, 72 préstamos,
+    // 0 días sin actividad. El factor #1 es frecuencia de uso (se loguean diario).
+    // Para ser "caliente" (>=60) se REQUIERE actividad reciente + datos reales.
     let score = 0
     if (esTrial) {
-      // Clientes: hasta 40 puntos (4+ clientes = máximo)
-      score += Math.min(40, clientes * 10)
-      // Préstamos: hasta 20 puntos
-      score += Math.min(20, prestamos * 4)
-      // Actividad reciente: hasta 30 puntos
-      if (diasSinActividad <= 1)       score += 30
-      else if (diasSinActividad <= 3)  score += 20
-      else if (diasSinActividad <= 7)  score += 10
-      else if (diasSinActividad <= 14) score += 5
-      // Días en plataforma: hasta 10 puntos (más tiempo = más comprometido)
-      score += Math.min(10, diasDesdeRegistro)
+      // Actividad reciente: hasta 45 pts — sin esto es imposible llegar a 60
+      if (diasSinActividad <= 1)       score += 45
+      else if (diasSinActividad <= 2)  score += 35
+      else if (diasSinActividad <= 3)  score += 25
+      else if (diasSinActividad <= 7)  score += 12
+      // >7 días = 0 pts (techo ~55 con datos perfectos, nunca "caliente")
+
+      // Préstamos activos: hasta 30 pts
+      if (prestamos >= 10)       score += 30
+      else if (prestamos >= 5)   score += 25
+      else if (prestamos >= 3)   score += 18
+      else if (prestamos >= 1)   score += 10
+
+      // Clientes registrados: hasta 20 pts
+      if (clientes >= 10)       score += 20
+      else if (clientes >= 5)   score += 16
+      else if (clientes >= 3)   score += 11
+      else if (clientes >= 1)   score += 5
+
+      // Días en plataforma: hasta 5 pts
+      score += Math.min(5, Math.floor(diasDesdeRegistro / 2))
     }
 
     const base = {
@@ -162,7 +174,9 @@ export async function GET() {
       const fechaVencTrial = susc
         ? new Date(susc.fechaVencimiento)
         : new Date(new Date(org.createdAt).getTime() + 14 * 86400000)
-      const esMuerto = clientes === 0 && diasSinActividad > 7
+      const esMuerto = (clientes === 0 && diasSinActividad > 7)
+        || (prestamos === 0 && diasSinActividad > 14)
+        || (diasSinActividad > 30)
       if (esMuerto) {
         muertos.push({ ...base, diasRestantesTrial, fechaVencimiento: fechaVencTrial })
       } else {
@@ -176,8 +190,8 @@ export async function GET() {
   pagantes.sort((a, b) => b.precio - a.precio)
   churneados.sort((a, b) => a.diasSinPagar - b.diasSinPagar)
 
-  // Proyección: qué MRR adicional si convierten los trials con score >= 60 (realista)
-  const trialsCalientes = trials.filter(t => t.score >= 60)
+  // Proyección: score >= 60 + mínimo de datos reales (3+ clientes o 3+ préstamos)
+  const trialsCalientes = trials.filter(t => t.score >= 60 && (t.clientes >= 3 || t.prestamos >= 3))
   const mrrProyectado = trialsCalientes.reduce((acc, t) => acc + PRECIO(t.plan), 0)
 
   // Calendario de cobros: próximos 30 días — trials que vencen cada día
@@ -188,7 +202,7 @@ export async function GET() {
     if (diffDias < -1 || diffDias > 30) continue // solo próximos 30 días (y vencidos ayer)
     const diaKey = fv.toISOString().slice(0, 10)
     if (!calendarioMap[diaKey]) calendarioMap[diaKey] = { dia: diaKey, usuarios: [], mrrPotencial: 0, mrrCaliente: 0 }
-    const esCaliente = (t.score ?? 0) >= 60
+    const esCaliente = (t.score ?? 0) >= 60 && (t.clientes >= 3 || t.prestamos >= 3)
     calendarioMap[diaKey].usuarios.push({
       id:           t.id,
       nombre:       t.nombre,
@@ -198,6 +212,7 @@ export async function GET() {
       planNombre:   t.planNombre,
       score:        t.score ?? 0,
       clientes:     t.clientes,
+      prestamos:    t.prestamos,
       diasRestantes: diffDias,
     })
     calendarioMap[diaKey].mrrPotencial += PRECIO(t.plan)
