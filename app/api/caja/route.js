@@ -617,6 +617,7 @@ export async function GET(request) {
       prisma.user.findMany({
         where: { organizationId, rol: 'cobrador', activo: true },
         select: { id: true, nombre: true },
+        orderBy: [{ orden: 'asc' }, { nombre: 'asc' }],
       }),
       prisma.pago.groupBy({
         by: ['cobradorId'],

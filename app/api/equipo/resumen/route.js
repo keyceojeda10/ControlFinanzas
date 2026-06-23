@@ -31,6 +31,7 @@ export async function GET() {
 
   const cobradores = await prisma.user.findMany({
     where: { organizationId: orgId, rol: 'cobrador', activo: true },
+    orderBy: [{ orden: 'asc' }, { nombre: 'asc' }],
     select: {
       id: true,
       nombre: true,

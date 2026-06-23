@@ -1897,17 +1897,17 @@ export default function RutaDetallePage({ params }) {
                     </div>
 
                     {(detalleMora || detalleCobro) && (
-                      <div className="mt-1.5 flex items-center gap-1.5 text-[10px] leading-snug capitalize">
+                      <div className="mt-1.5 flex items-center gap-1.5 text-xs leading-snug capitalize">
                         {detalleMora && (
-                          <span className="font-medium" style={{ color: 'var(--color-danger)' }}>
+                          <span className="font-semibold" style={{ color: 'var(--color-danger)' }}>
                             {detalleMora}
                           </span>
                         )}
                         {detalleMora && detalleCobro && (
-                          <span style={{ color: '#555' }}>·</span>
+                          <span style={{ color: '#666' }}>·</span>
                         )}
                         {detalleCobro && (
-                          <span className="font-medium" style={{ color: tieneMora ? '#fecaca' : '#888' }}>
+                          <span className="font-medium" style={{ color: tieneMora ? '#fecaca' : 'var(--color-text-muted)' }}>
                             {detalleCobro}
                           </span>
                         )}
@@ -1918,14 +1918,14 @@ export default function RutaDetallePage({ params }) {
                         referencia cada uno por separado para no sumar saldos
                         de prestamos distintos en un solo numero confuso. */}
                     {!isCompleted && c.prestamosActivos?.length > 0 && (
-                      <div className="mt-1 flex items-center gap-1.5 text-[10px] leading-snug flex-wrap" style={{ color: '#888' }}>
+                      <div className="mt-1 flex items-center gap-1.5 text-xs leading-snug flex-wrap" style={{ color: 'var(--color-text-muted)' }}>
                         {c.prestamosActivos.length === 1 ? (
-                          <span>Saldo: <span className="font-mono-display font-semibold" style={{ color: '#aaa' }}>{formatMoney(c.prestamosActivos[0].saldoPendiente)}</span></span>
+                          <span>Saldo: <span className="font-mono-display font-semibold" style={{ color: 'var(--color-text-secondary, #ccc)' }}>{formatMoney(c.prestamosActivos[0].saldoPendiente)}</span></span>
                         ) : (
                           c.prestamosActivos.map((p, i) => (
                             <span key={p.id}>
-                              {i > 0 && <span style={{ color: '#555' }}> · </span>}
-                              Préstamo {i + 1}: <span className="font-mono-display font-semibold" style={{ color: '#aaa' }}>{formatMoney(p.saldoPendiente)}</span>
+                              {i > 0 && <span style={{ color: '#666' }}> · </span>}
+                              Préstamo {i + 1}: <span className="font-mono-display font-semibold" style={{ color: 'var(--color-text-secondary, #ccc)' }}>{formatMoney(p.saldoPendiente)}</span>
                             </span>
                           ))
                         )}
