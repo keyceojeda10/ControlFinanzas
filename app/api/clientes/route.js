@@ -87,12 +87,17 @@ export async function GET(request) {
           frecuencia: true,
           totalAPagar: true,
           montoPrestado: true,
+          modoInteres: true,
           diaCobroMes: true,
           diaCobroSemana: true,
           createdAt: true,
           // Denormalizados: evitan iterar todos los pagos.
           totalPagado: true,
           ultimoPagoAt: true,
+          cuotasAmortizacion: {
+            select: { numeroPeriodo: true, cuotaTotal: true, interes: true, capital: true, pagado: true, interesPagado: true, fechaEsperada: true },
+            orderBy: { numeroPeriodo: 'asc' },
+          },
         },
       },
     },

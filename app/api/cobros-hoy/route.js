@@ -90,6 +90,11 @@ export async function GET() {
               diaCobroSemana: true,
               diaCobroMes: true,
               diasSinCobro: true,
+              modoInteres: true,
+              cuotasAmortizacion: {
+                select: { numeroPeriodo: true, cuotaTotal: true, interes: true, capital: true, pagado: true, interesPagado: true, fechaEsperada: true },
+                orderBy: { numeroPeriodo: 'asc' },
+              },
               pagos: {
                 where: { fechaPago: { gte: _hoy, lt: _manana } },
                 select: { id: true, montoPagado: true, fechaPago: true, tipo: true },
