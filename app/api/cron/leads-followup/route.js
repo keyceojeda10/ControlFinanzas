@@ -21,6 +21,10 @@ import { cronLimiter, getClientIp } from '@/lib/rate-limit'
 // LÍMITE: máximo 5 días desde creación. Después no se envían más alertas.
 
 export async function POST(req) {
+  // Seguimientos desactivados: el bot multi-agente los maneja automaticamente.
+  // Los escalamientos prioritarios ahora van por WhatsApp al admin.
+  return NextResponse.json({ enviados: 0, desactivado: true })
+
   const cronSecret = req.headers.get('x-cron-secret')
   const CRON_SECRET = process.env.CRON_SECRET
   if (!CRON_SECRET || cronSecret !== CRON_SECRET) {
