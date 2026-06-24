@@ -299,12 +299,14 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
     return
   }
 
-  // Debounce: esperar 3s para agrupar mensajes rapidos del lead.
+  // Debounce: esperar 5s para agrupar mensajes rapidos del lead.
   // Si llegan mas mensajes en ese lapso, este handler se descarta y
   // el handler del ultimo mensaje responde con todo el historial.
-  const DEBOUNCE_MS = 3000
+  const DEBOUNCE_MS = 5000
   await new Promise(r => setTimeout(r, DEBOUNCE_MS))
 
+  // Buscar el ultimo mensaje del lead en la ventana de debounce.
+  // Si llego otro despues del nuestro, este handler se descarta.
   const mensajesRecientes = await prisma.botConversacion.findMany({
     where: {
       botLeadId: lead.id,
@@ -316,6 +318,19 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
   })
   if (mensajesRecientes.length > 0 && mensajesRecientes[0].messageId !== messageId) {
     console.log(`[WA Cloud] Debounce: ${lead.nombre} envio otro mensaje, este handler se descarta.`)
+    return
+  }
+
+  // Anti-doble: si el bot ya respondio despues de nuestro mensaje, no
+  // responder de nuevo (otro worker o handler anterior ya lo hizo).
+  const ultimoBot = await prisma.botConversacion.findFirst({
+    where: { botLeadId: lead.id, rol: 'bot' },
+    orderBy: { createdAt: 'desc' },
+    select: { createdAt: true },
+  })
+  const miMsg = mensajesRecientes[0] || null
+  if (ultimoBot && miMsg && ultimoBot.createdAt > miMsg.createdAt) {
+    console.log(`[WA Cloud] Anti-doble: ${lead.nombre} ya tiene respuesta reciente, este handler se descarta.`)
     return
   }
 
