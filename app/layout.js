@@ -56,7 +56,7 @@ export const metadata = {
     description: 'Gestiona tu cartera de préstamos: clientes, cobros, pagos y reportes en tiempo real.',
     url: SITE_URL,
     siteName: 'Control Finanzas',
-    locale: 'es_CO',
+    locale: 'es_LA',
     type: 'website',
     // PNG estatico (no dinamico via next/og) para que WhatsApp/Meta lo
     // scrapeen al instante sin cold start y muestren el banner completo.
