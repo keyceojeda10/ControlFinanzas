@@ -62,7 +62,7 @@ export const metadata = {
     // scrapeen al instante sin cold start y muestren el banner completo.
     images: [
       {
-        url: '/og.png',
+        url: '/og.png?v=2',
         width: 1200,
         height: 630,
         alt: 'Control Finanzas — Gestiona tu cartera de préstamos',
@@ -74,7 +74,7 @@ export const metadata = {
     card: 'summary_large_image',
     title: 'Control Finanzas',
     description: 'Gestiona tu cartera de préstamos en tiempo real.',
-    images: ['/og.png'],
+    images: ['/og.png?v=2'],
   },
 };
 
