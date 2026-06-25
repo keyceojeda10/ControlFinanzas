@@ -28,6 +28,8 @@ export default function OrgDetallePage() {
   const [demoDias, setDemoDias] = useState('1')
   const [pagoDirecto, setPagoDirecto] = useState({ plan: 'starter', periodo: 'mensual', monto: '', extender: false })
   const [cobradoresInput, setCobradoresInput] = useState('')
+  const [extensionDias, setExtensionDias] = useState('')
+  const [diaFijoPago, setDiaFijoPago] = useState('')
 
   const fetchOrg = useCallback(async () => {
     try {
@@ -60,16 +62,17 @@ export default function OrgDetallePage() {
     }
   }
 
-  const accionSuscripcion = async (subId, accion) => {
+  const accionSuscripcion = async (subId, accion, extra = {}) => {
     setAccionando(accion)
     try {
       const res = await fetch(`/api/admin/suscripciones/${subId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accion }),
+        body: JSON.stringify({ accion, ...extra }),
       })
+      const data = await res.json()
       if (res.ok) await fetchOrg()
-      else alert((await res.json()).error ?? 'Error')
+      else alert(data.error ?? 'Error')
     } catch { alert('Error de conexión') } finally {
       setAccionando('')
     }
@@ -211,33 +214,79 @@ export default function OrgDetallePage() {
               )}
               <p className="text-xs text-[var(--color-text-muted)]">Monto: {formatMoney(sub.montoCOP)}</p>
             </div>
-            <div className="flex gap-2 flex-wrap">
-              <Button
-                variant="primary"
-                size="sm"
-                loading={accionando === 'renovar'}
-                onClick={() => accionSuscripcion(sub.id, 'renovar')}
-              >
-                Renovar 30d
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                loading={accionando === 'gracia'}
-                onClick={() => accionSuscripcion(sub.id, 'gracia')}
-              >
-                Gracia 7d
-              </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                loading={accionando === 'cancelar'}
-                onClick={() => {
-                  if (confirm('¿Cancelar esta suscripción?')) accionSuscripcion(sub.id, 'cancelar')
-                }}
-              >
-                Cancelar
-              </Button>
+            <div className="flex flex-col gap-3 w-full sm:w-auto">
+              <div className="flex gap-2 flex-wrap items-end">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] text-[var(--color-text-muted)]">Dias</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="365"
+                    value={extensionDias}
+                    onChange={(e) => setExtensionDias(e.target.value)}
+                    placeholder="30"
+                    className="w-20 h-9 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[white] focus:outline-none focus:border-[var(--color-accent)]"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] text-[var(--color-text-muted)]">Dia fijo (opcional)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="31"
+                    value={diaFijoPago}
+                    onChange={(e) => setDiaFijoPago(e.target.value)}
+                    placeholder="Ej: 28"
+                    className="w-20 h-9 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[white] focus:outline-none focus:border-[var(--color-accent)]"
+                  />
+                </div>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  loading={accionando === 'renovar'}
+                  onClick={() => {
+                    const dias = parseInt(extensionDias) || 30
+                    const diaFijo = parseInt(diaFijoPago) || null
+                    const label = diaFijo ? `${dias} dias (dia fijo: ${diaFijo})` : `${dias} dias`
+                    if (confirm(`Renovar suscripcion de "${org.nombre}" por ${label}?`)) {
+                      accionSuscripcion(sub.id, 'renovar', { dias, diaFijo })
+                    }
+                  }}
+                >
+                  Renovar
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  loading={accionando === 'extender'}
+                  onClick={() => {
+                    const dias = parseInt(extensionDias)
+                    const diaFijo = parseInt(diaFijoPago) || null
+                    if (!dias || dias < 1) { alert('Ingresa la cantidad de dias'); return }
+                    const label = diaFijo ? `${dias} dias (dia fijo: ${diaFijo})` : `${dias} dias`
+                    if (confirm(`Extender suscripcion de "${org.nombre}" por ${label}?`)) {
+                      accionSuscripcion(sub.id, 'extender', { dias, diaFijo })
+                    }
+                  }}
+                >
+                  Extender
+                </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  loading={accionando === 'cancelar'}
+                  onClick={() => {
+                    if (confirm('Cancelar esta suscripcion?')) accionSuscripcion(sub.id, 'cancelar')
+                  }}
+                >
+                  Cancelar
+                </Button>
+              </div>
+              {diaFijoPago && (
+                <p className="text-[10px] text-[var(--color-accent)]">
+                  Con dia fijo {diaFijoPago}: al renovar/extender, la fecha se ajusta para que venza el dia {diaFijoPago} del mes
+                </p>
+              )}
             </div>
           </div>
         </Card>

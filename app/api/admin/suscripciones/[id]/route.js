@@ -4,6 +4,20 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 
+function calcularNuevaFecha(base, dias, diaFijo) {
+  const fecha = new Date(base)
+  if (diaFijo && diaFijo >= 1 && diaFijo <= 31) {
+    fecha.setDate(fecha.getDate() + dias)
+    fecha.setDate(diaFijo)
+    if (fecha <= base) fecha.setMonth(fecha.getMonth() + 1)
+    const ultimoDia = new Date(fecha.getFullYear(), fecha.getMonth() + 1, 0).getDate()
+    if (diaFijo > ultimoDia) fecha.setDate(ultimoDia)
+  } else {
+    fecha.setDate(fecha.getDate() + dias)
+  }
+  return fecha
+}
+
 export async function PATCH(req, { params }) {
   const session = await getServerSession(authOptions)
   if (!session || session.user.rol !== 'superadmin') {
@@ -23,13 +37,16 @@ export async function PATCH(req, { params }) {
   const orgNombre = sub.organization.nombre
 
   if (accion === 'renovar') {
-    const ahora = new Date()
-    const base = new Date(sub.fechaVencimiento) > ahora ? new Date(sub.fechaVencimiento) : ahora
-    const nuevaFecha = new Date(base)
-    nuevaFecha.setDate(nuevaFecha.getDate() + 30)
+    const dias    = parseInt(body.dias) || 30
+    const diaFijo = parseInt(body.diaFijo) || null
+    if (dias < 1 || dias > 365) {
+      return NextResponse.json({ error: 'Días debe estar entre 1 y 365' }, { status: 400 })
+    }
 
-    // Marcar la suscripción anterior como vencida y crear una nueva
-    // para conservar historial de pagos (permite calcular meses pagando correctamente)
+    const ahora = new Date()
+    const base  = new Date(sub.fechaVencimiento) > ahora ? new Date(sub.fechaVencimiento) : ahora
+    const nuevaFecha = calcularNuevaFecha(base, dias, diaFijo)
+
     await prisma.$transaction([
       prisma.suscripcion.update({
         where: { id },
@@ -46,35 +63,43 @@ export async function PATCH(req, { params }) {
         },
       }),
     ])
+    const label = diaFijo ? `${dias}d (día fijo: ${diaFijo})` : `${dias} días`
     await prisma.adminLog.create({
       data: {
         adminId:        session.user.id,
         organizacionId: sub.organization.id,
         accion:         'renovar_suscripcion',
-        detalle:        `Suscripción de "${orgNombre}" renovada 30 días hasta ${nuevaFecha.toISOString().slice(0, 10)}`,
+        detalle:        `Suscripción de "${orgNombre}" renovada ${label} hasta ${nuevaFecha.toISOString().slice(0, 10)}`,
       },
     })
-    return NextResponse.json({ ok: true, mensaje: 'Suscripción renovada 30 días' })
+    return NextResponse.json({ ok: true, mensaje: `Suscripción renovada hasta ${nuevaFecha.toISOString().slice(0, 10)}` })
   }
 
-  if (accion === 'gracia') {
+  if (accion === 'extender') {
+    const dias    = parseInt(body.dias)
+    const diaFijo = parseInt(body.diaFijo) || null
+    if (!dias || dias < 1 || dias > 365) {
+      return NextResponse.json({ error: 'Días debe estar entre 1 y 365' }, { status: 400 })
+    }
+
     const ahora = new Date()
-    const base = new Date(sub.fechaVencimiento) > ahora ? new Date(sub.fechaVencimiento) : ahora
-    const nuevaFecha = new Date(base)
-    nuevaFecha.setDate(nuevaFecha.getDate() + 7)
+    const base  = new Date(sub.fechaVencimiento) > ahora ? new Date(sub.fechaVencimiento) : ahora
+    const nuevaFecha = calcularNuevaFecha(base, dias, diaFijo)
+
     await prisma.suscripcion.update({
       where: { id },
       data: { fechaVencimiento: nuevaFecha, estado: 'activa' },
     })
+    const label = diaFijo ? `${dias}d (día fijo: ${diaFijo})` : `${dias} días`
     await prisma.adminLog.create({
       data: {
         adminId:        session.user.id,
         organizacionId: sub.organization.id,
-        accion:         'gracia_suscripcion',
-        detalle:        `Gracia de 7 días aplicada a "${orgNombre}" hasta ${nuevaFecha.toISOString().slice(0, 10)}`,
+        accion:         'extender_suscripcion',
+        detalle:        `Extensión de ${label} aplicada a "${orgNombre}" hasta ${nuevaFecha.toISOString().slice(0, 10)}`,
       },
     })
-    return NextResponse.json({ ok: true, mensaje: 'Gracia de 7 días aplicada' })
+    return NextResponse.json({ ok: true, mensaje: `Extendida hasta ${nuevaFecha.toISOString().slice(0, 10)}` })
   }
 
   if (accion === 'cancelar') {
