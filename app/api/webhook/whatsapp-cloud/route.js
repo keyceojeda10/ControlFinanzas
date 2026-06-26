@@ -20,6 +20,7 @@ import { alertarLeadCaliente } from '@/lib/bot/alertas'
 import { guardarMedia } from '@/lib/bot/media-store'
 import { notificarEstadoLead } from '@/lib/bot/notificar-meta'
 import { enviarGuia } from '@/lib/bot/guias-sender'
+import { esMensajeAutomatico } from '@/lib/bot/filtros'
 
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN
 const APP_SECRET = process.env.WHATSAPP_APP_SECRET
@@ -290,6 +291,14 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
 
   if (botApagado) {
     console.log(`[WA Cloud] Lead ${lead.nombre} con bot apagado — mensaje guardado.`)
+    return
+  }
+
+  // Filtrar mensajes automaticos de empresa (bienvenida, autorespuesta, etc.)
+  // Estos llegan cuando el lead tiene su propio bot/negocio en WhatsApp.
+  // Se guardan en historial pero el bot NO responde.
+  if (esMensajeAutomatico(texto)) {
+    console.log(`[WA Cloud] Mensaje automatico detectado de ${lead.nombre} — guardado, no se responde.`)
     return
   }
 
