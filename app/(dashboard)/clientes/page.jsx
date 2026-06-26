@@ -67,14 +67,25 @@ export default function ClientesPage() {
   const [grupoAsignar, setGrupoAsignar] = useState('')
   const [asignandoGrupo, setAsignandoGrupo] = useState(false)
 
+  const [rutaIdFiltro, setRutaIdFiltro] = useState('')
+  const [rutas,        setRutas]       = useState([])
+
   const [isOffline, setIsOffline] = useState(false)
   const hasLoadedOnceRef = useRef(false)
 
-  const fetchClientes = useCallback(async (q, p, grupoId = '', { soft = false } = {}) => {
+  useEffect(() => {
+    if (!esOwner) return
+    fetch('/api/rutas').then(r => r.ok ? r.json() : []).then(data => {
+      const list = Array.isArray(data) ? data : (data.rutas || [])
+      setRutas(list.map(r => ({ id: r.id, nombre: r.nombre })))
+    }).catch(() => {})
+  }, [esOwner])
+
+  const fetchClientes = useCallback(async (q, p, grupoId = '', rutaId = '', { soft = false } = {}) => {
     const shouldUseSoftRefresh = soft && hasLoadedOnceRef.current
     setError('')
     setIsOffline(false)
-    const cacheKey = `clientes:${q || ''}:${p}:${grupoId || 'all'}`
+    const cacheKey = `clientes:${q || ''}:${p}:${grupoId || 'all'}:${rutaId || 'all'}`
 
     // Cache-first: si hay datos cacheados para este filtro, pintarlos al
     // instante y revalidar en segundo plano. Sin cache → skeleton.
@@ -124,6 +135,7 @@ export default function ClientesPage() {
       const params = new URLSearchParams()
       if (q) params.set('buscar', q)
       if (grupoId) params.set('grupo', grupoId)
+      if (rutaId) params.set('rutaId', rutaId)
       params.set('page', String(p))
       params.set('limit', String(LIMIT))
       const res = await fetch(`/api/clientes?${params}`)
@@ -192,23 +204,23 @@ export default function ClientesPage() {
     setPage(1)
   }, [buscar])
 
-  // Cambiar filtro de grupo reinicia paginación y selección (mantiene modo asignar activo)
+  // Cambiar filtro de grupo o ruta reinicia paginación y selección
   useEffect(() => {
     setPage(1)
     setSelAsignar([])
-  }, [grupoFiltro])
+  }, [grupoFiltro, rutaIdFiltro])
 
   // Carga de clientes con debounce
   useEffect(() => {
-    const t = setTimeout(() => fetchClientes(buscar, page, grupoFiltro), 280)
+    const t = setTimeout(() => fetchClientes(buscar, page, grupoFiltro, rutaIdFiltro), 280)
     return () => clearTimeout(t)
-  }, [fetchClientes, buscar, page, grupoFiltro])
+  }, [fetchClientes, buscar, page, grupoFiltro, rutaIdFiltro])
 
   // Refresh silencioso cuando hay nueva sincronización global.
   useEffect(() => {
     if (!lastSyncedAt) return
-    fetchClientes(buscar, page, grupoFiltro, { soft: true })
-  }, [lastSyncedAt, fetchClientes, buscar, page, grupoFiltro])
+    fetchClientes(buscar, page, grupoFiltro, rutaIdFiltro, { soft: true })
+  }, [lastSyncedAt, fetchClientes, buscar, page, grupoFiltro, rutaIdFiltro])
 
   const getApiError = async (res, fallback) => {
     try {
@@ -258,7 +270,7 @@ export default function ClientesPage() {
       }
 
       fetchGrupos()
-      fetchClientes(buscar, page, grupoFiltro, { soft: true })
+      fetchClientes(buscar, page, grupoFiltro, rutaIdFiltro, { soft: true })
       return true
     } catch {}
     setError('No se pudo actualizar el grupo.')
@@ -292,7 +304,7 @@ export default function ClientesPage() {
 
       if (grupoFiltro === grupoId) setGrupoFiltro('')
       fetchGrupos()
-      fetchClientes(buscar, page, grupoFiltro === grupoId ? '' : grupoFiltro, { soft: true })
+      fetchClientes(buscar, page, grupoFiltro === grupoId ? '' : grupoFiltro, rutaIdFiltro, { soft: true })
     } catch {
       setError('No se pudo eliminar el grupo.')
     }
@@ -326,7 +338,7 @@ export default function ClientesPage() {
       setModoAsignar(false)
       setSelAsignar([])
       setGrupoAsignar('')
-      fetchClientes(buscar, page, grupoFiltro, { soft: true })
+      fetchClientes(buscar, page, grupoFiltro, rutaIdFiltro, { soft: true })
       fetchGrupos()
     } catch {
       setError('No se pudo asignar el grupo a los clientes seleccionados.')
@@ -336,7 +348,7 @@ export default function ClientesPage() {
   }
 
   const moraCount = clientes.filter((c) => c.estado === 'mora').length
-  const filtrosActivos = (estado ? 1 : 0) + (grupoFiltro ? 1 : 0)
+  const filtrosActivos = (estado ? 1 : 0) + (grupoFiltro ? 1 : 0) + (rutaIdFiltro ? 1 : 0)
   const tieneBusqueda = !!buscar.trim()
   const grupoActivoLabel = grupoFiltro === '_none'
     ? 'Sin grupo'
@@ -347,6 +359,7 @@ export default function ClientesPage() {
     setBuscar('')
     setEstado('')
     setGrupoFiltro('')
+    setRutaIdFiltro('')
     setModoAsignar(false)
     setSelAsignar([])
     setGrupoAsignar('')
@@ -475,7 +488,19 @@ export default function ClientesPage() {
           )}
         </div>
 
-        {/* Fila 3: chip del grupo activo (si hay filtro) */}
+        {/* Fila 3: filtro de ruta (solo owner con rutas) */}
+        {esOwner && rutas.length > 1 && (
+          <select
+            value={rutaIdFiltro}
+            onChange={e => setRutaIdFiltro(e.target.value)}
+            className="h-8 px-2 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[11px] text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-all"
+          >
+            <option value="">Todas las rutas</option>
+            {rutas.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
+          </select>
+        )}
+
+        {/* Chip del grupo activo (si hay filtro) */}
         {grupoFiltro && (
           <div className="flex items-center gap-1.5">
             <span className="text-[10px] text-[var(--color-text-muted)]">Filtrado por grupo:</span>

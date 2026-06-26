@@ -53,11 +53,17 @@ export default function PrestamosPage() {
   const [buscar,    setBuscar]    = useState('')
   const [estado,    setEstado]    = useState('activo')
   const [frecuencia, setFrecuencia] = useState('')
+  const [rutaId,    setRutaId]    = useState('')
+  const [creadoPorId, setCreadoPorId] = useState('')
+  const [renovacion, setRenovacion] = useState('')
   const [loading,   setLoading]   = useState(true)
   const [error,     setError]     = useState('')
   const [page,      setPage]      = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total,     setTotal]     = useState(0)
+  const [rutas,     setRutas]     = useState([])
+  const [usuarios,  setUsuarios]  = useState([])
+  const [showFiltros, setShowFiltros] = useState(false)
 
   const [isOffline, setIsOffline] = useState(false)
   // Modal selector de plantillas WA (se abre desde swipe action)
@@ -66,6 +72,19 @@ export default function PrestamosPage() {
 
   // Pais del usuario para badge "Nuevo" y formatos
   const { country } = useCountry()
+
+  // Cargar rutas y usuarios para filtros avanzados (solo owner)
+  useEffect(() => {
+    if (!esOwner) return
+    fetch('/api/rutas').then(r => r.ok ? r.json() : []).then(data => {
+      const list = Array.isArray(data) ? data : (data.rutas || [])
+      setRutas(list.map(r => ({ id: r.id, nombre: r.nombre })))
+    }).catch(() => {})
+    fetch('/api/cobradores').then(r => r.ok ? r.json() : []).then(data => {
+      const list = Array.isArray(data) ? data : []
+      setUsuarios(list.map(u => ({ id: u.id, nombre: u.nombre })))
+    }).catch(() => {})
+  }, [esOwner])
 
   // Toggle "Agrupar por cliente". Persiste en localStorage para no resetear
   // la preferencia al cambiar de pagina.
@@ -84,11 +103,11 @@ export default function PrestamosPage() {
     })
   }, [])
 
-  const fetchPrestamos = useCallback(async (q, est, p, { soft = false, frec = '' } = {}) => {
+  const fetchPrestamos = useCallback(async (q, est, p, { soft = false, frec = '', ruta = '', creador = '', renov = '' } = {}) => {
     const shouldUseSoftRefresh = soft && hasLoadedOnceRef.current
     setError('')
     setIsOffline(false)
-    const cacheKey = `prestamos:${q || ''}:${est || ''}:${frec || ''}:${p}`
+    const cacheKey = `prestamos:${q || ''}:${est || ''}:${frec || ''}:${ruta || ''}:${creador || ''}:${renov || ''}:${p}`
 
     // Cache-first: pintar al instante desde IndexedDB si hay datos de este
     // filtro, y revalidar en segundo plano. Sin cache → skeleton.
@@ -140,6 +159,9 @@ export default function PrestamosPage() {
       const apiEstado = est === 'mora' ? 'activo' : est
       if (apiEstado) params.set('estado', apiEstado)
       if (frec) params.set('frecuencia', frec)
+      if (ruta) params.set('rutaId', ruta)
+      if (creador) params.set('creadoPorId', creador)
+      if (renov) params.set('renovacion', renov)
       params.set('page', String(p))
       params.set('limit', String(LIMIT))
       const res = await fetch(`/api/prestamos?${params}`)
@@ -188,24 +210,26 @@ export default function PrestamosPage() {
     }
   }, [])
 
-  useEffect(() => { setPage(1); fetchPrestamos('', estado, 1, { frec: frecuencia }) }, [fetchPrestamos, estado, frecuencia])
+  const filtrosExtra = { frec: frecuencia, ruta: rutaId, creador: creadoPorId, renov: renovacion }
+
+  useEffect(() => { setPage(1); fetchPrestamos('', estado, 1, filtrosExtra) }, [fetchPrestamos, estado, frecuencia, rutaId, creadoPorId, renovacion]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     setPage(1)
-    const t = setTimeout(() => fetchPrestamos(buscar, estado, 1, { frec: frecuencia }), 300)
+    const t = setTimeout(() => fetchPrestamos(buscar, estado, 1, filtrosExtra), 300)
     return () => clearTimeout(t)
-  }, [buscar, estado, frecuencia, fetchPrestamos])
+  }, [buscar, estado, frecuencia, rutaId, creadoPorId, renovacion, fetchPrestamos]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cambio de página
   useEffect(() => {
-    if (page > 1) fetchPrestamos(buscar, estado, page, { frec: frecuencia })
+    if (page > 1) fetchPrestamos(buscar, estado, page, filtrosExtra)
   }, [page]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Refresh silencioso cuando llega nueva sincronización global.
   useEffect(() => {
     if (!lastSyncedAt) return
-    fetchPrestamos(buscar, estado, page, { soft: true, frec: frecuencia })
-  }, [lastSyncedAt, fetchPrestamos, buscar, estado, frecuencia, page])
+    fetchPrestamos(buscar, estado, page, { soft: true, ...filtrosExtra })
+  }, [lastSyncedAt, fetchPrestamos, buscar, estado, frecuencia, rutaId, creadoPorId, renovacion, page]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const enMoraCount = prestamos.filter((p) => p.diasMora > 0).length
 
@@ -298,6 +322,69 @@ export default function PrestamosPage() {
           )
         })}
       </div>
+
+      {/* Filtros avanzados (solo owner) */}
+      {esOwner && (
+        <>
+          <button
+            type="button"
+            onClick={() => setShowFiltros(!showFiltros)}
+            className="flex items-center gap-1.5 mb-3 text-[11px] font-semibold transition-colors"
+            style={{ color: (rutaId || creadoPorId || renovacion) ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+            Filtros avanzados
+            {(rutaId || creadoPorId || renovacion) && (
+              <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold" style={{ background: 'var(--color-accent)', color: '#fff' }}>
+                {[rutaId, creadoPorId, renovacion].filter(Boolean).length}
+              </span>
+            )}
+            <svg className={`w-3 h-3 transition-transform ${showFiltros ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          {showFiltros && (
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              <select
+                value={rutaId}
+                onChange={e => setRutaId(e.target.value)}
+                className="h-9 px-2 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[11px] text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-all truncate"
+              >
+                <option value="">Todas las rutas</option>
+                {rutas.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
+              </select>
+              <select
+                value={creadoPorId}
+                onChange={e => setCreadoPorId(e.target.value)}
+                className="h-9 px-2 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[11px] text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-all truncate"
+              >
+                <option value="">Todos los creadores</option>
+                {usuarios.map(u => <option key={u.id} value={u.id}>{u.nombre}</option>)}
+              </select>
+              <select
+                value={renovacion}
+                onChange={e => setRenovacion(e.target.value)}
+                className="h-9 px-2 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[11px] text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-all truncate"
+              >
+                <option value="">Renovaciones</option>
+                <option value="si">Solo renovados</option>
+                <option value="no">Solo nuevos</option>
+              </select>
+              {(rutaId || creadoPorId || renovacion) && (
+                <button
+                  onClick={() => { setRutaId(''); setCreadoPorId(''); setRenovacion('') }}
+                  className="col-span-3 text-[10px] font-medium py-1 rounded-lg transition-colors"
+                  style={{ color: 'var(--color-danger)' }}
+                >
+                  Limpiar filtros
+                </button>
+              )}
+            </div>
+          )}
+        </>
+      )}
 
       {/* Buscador + toggle agrupar */}
       <div className="flex items-center gap-2 mb-5">

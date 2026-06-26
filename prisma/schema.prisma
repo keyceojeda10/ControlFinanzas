@@ -282,6 +282,7 @@ model Prestamo {
   // Evitan recalcular totales iterando todos los pagos en cada lectura.
   totalPagado    Float          @default(0)
   ultimoPagoAt   DateTime?
+  creadoPorId    String? // id del User que creo el prestamo (auditoria)
   renovadoDeId   String? // id del prestamo del que proviene (si fue una renovacion)
   // Tarjeta clavo: prestamo malo/incobrable. Se excluye de saldos/cartera/capital
   // normales y se lleva en contabilidad aparte. Sigue cobrable (pagos van aparte).
@@ -303,6 +304,7 @@ model Prestamo {
   @@index([organizationId, clienteId, estado])
   @@index([createdAt])
   @@index([renovadoDeId])
+  @@index([creadoPorId])
   @@index([organizationId, esClavo])
   @@index([estado, ultimoPagoAt])
 }

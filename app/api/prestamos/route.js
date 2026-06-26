@@ -34,6 +34,9 @@ export async function GET(request) {
   const frecuenciaRaw = searchParams.get('frecuencia')
   const frecuencia = ['diario', 'semanal', 'quincenal', 'mensual'].includes(frecuenciaRaw) ? frecuenciaRaw : null
   const buscar    = searchParams.get('buscar')?.trim()
+  const rutaId    = searchParams.get('rutaId')
+  const creadoPorId = searchParams.get('creadoPorId')
+  const renovacion = searchParams.get('renovacion') // 'si' | 'no' | null
   const page      = searchParams.get('page') ? Number(searchParams.get('page')) : null
   const limit     = Math.min(Number(searchParams.get('limit')) || 50, 100)
 
@@ -42,29 +45,31 @@ export async function GET(request) {
     return Response.json(page != null ? { prestamos: [], total: 0, page, totalPages: 0 } : [])
   }
 
+  const clienteWhere = {
+    ...(rol === 'cobrador' && { rutaId: { in: rutaIds } }),
+    ...(rutaId && { rutaId }),
+    ...(buscar && {
+      OR: [
+        { nombre: { contains: buscar } },
+        { cedula: { contains: buscar } },
+      ],
+    }),
+  }
   const where = {
     organizationId,
     ...(clienteId && { clienteId }),
     ...(estado    && { estado }),
     ...(frecuencia && { frecuencia }),
-    // Combinar filtros de cliente: búsqueda + restricción de ruta para cobrador
-    ...((buscar || rol === 'cobrador') && {
-      cliente: {
-        ...(rol === 'cobrador' && { rutaId: { in: rutaIds } }),
-        ...(buscar && {
-          OR: [
-            { nombre: { contains: buscar } },
-            { cedula: { contains: buscar } },
-          ],
-        }),
-      },
-    }),
+    ...(creadoPorId && { creadoPorId }),
+    ...(renovacion === 'si' && { renovadoDeId: { not: null } }),
+    ...(renovacion === 'no' && { renovadoDeId: null }),
+    ...(Object.keys(clienteWhere).length > 0 && { cliente: clienteWhere }),
   }
 
   const prestamos = await prisma.prestamo.findMany({
     where,
     include: {
-      cliente: { select: { id: true, nombre: true, cedula: true, telefono: true, fotoUrl: true, rutaId: true, diasSinCobro: true, ruta: { select: { diasSinCobro: true } } } },
+      cliente: { select: { id: true, nombre: true, cedula: true, telefono: true, fotoUrl: true, rutaId: true, diasSinCobro: true, ruta: { select: { id: true, nombre: true, diasSinCobro: true } } } },
       // Solo los ultimos 10 pagos: suficiente para pagoHoy y calcularCapitalRestante.
       // El totalPagado real se lee del campo denormalizado del prestamo.
       pagos: {
@@ -89,6 +94,17 @@ export async function GET(request) {
     select: { diasSinCobro: true },
   })
 
+  // Lookup de nombres de creadores para auditoría
+  const creadorIds = [...new Set(prestamos.map(p => p.creadoPorId).filter(Boolean))]
+  const creadoresMap = new Map()
+  if (creadorIds.length > 0) {
+    const users = await prisma.user.findMany({
+      where: { id: { in: creadorIds } },
+      select: { id: true, nombre: true },
+    })
+    users.forEach(u => creadoresMap.set(u.id, u.nombre))
+  }
+
   // Cachear diasExcluidos por cliente: el calculo es identico para todos
   // los prestamos del mismo cliente, asi que se hace una sola vez.
   const diasExcluidosCache = new Map()
@@ -107,6 +123,9 @@ export async function GET(request) {
     id:               p.id,
     clienteId:        p.clienteId,
     cliente:          p.cliente,
+    creadoPorId:      p.creadoPorId,
+    creadoPorNombre:  creadoresMap.get(p.creadoPorId) || null,
+    renovadoDeId:     p.renovadoDeId,
     montoPrestado:    p.montoPrestado,
     totalAPagar:      p.totalAPagar,
     cuotaDiaria:      p.cuotaDiaria,
@@ -334,6 +353,7 @@ export async function POST(request) {
       data: {
         clienteId,
         organizationId,
+        creadoPorId: session.user.id,
         montoPrestado: Number(montoPrestado),
         tasaInteres:   Number(tasaInteres),
         totalAPagar,

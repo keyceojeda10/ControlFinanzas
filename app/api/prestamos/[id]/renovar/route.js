@@ -167,6 +167,7 @@ export async function POST(request, { params }) {
       data: {
         clienteId:     original.clienteId,
         organizationId,
+        creadoPorId:   session.user.id,
         montoPrestado: Number(montoPrestado),
         tasaInteres:   Number(tasaInteres),
         totalAPagar,

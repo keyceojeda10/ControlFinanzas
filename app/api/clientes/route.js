@@ -22,6 +22,7 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url)
   const buscar = searchParams.get('buscar')?.trim() ?? ''
   const grupo = searchParams.get('grupo')?.trim() ?? ''
+  const rutaIdFiltro = searchParams.get('rutaId')?.trim() ?? ''
   const page = searchParams.get('page') ? Number(searchParams.get('page')) : null
   const limit = Math.min(Number(searchParams.get('limit')) || 50, 100)
 
@@ -32,8 +33,10 @@ export async function GET(request) {
     return Response.json(page != null ? { clientes: [], total: 0, page, totalPages: 0 } : [])
   }
 
-  // Cobrador → solo clientes de sus rutas
-  const filtroRuta = rol === 'cobrador' ? { rutaId: { in: rutaIds } } : {}
+  // Cobrador → solo clientes de sus rutas. Owner puede filtrar por ruta específica.
+  const filtroRuta = rol === 'cobrador'
+    ? { rutaId: { in: rutaIds } }
+    : (rutaIdFiltro ? { rutaId: rutaIdFiltro } : {})
 
   // Filtro de búsqueda por nombre, cédula, teléfono o referencia
   const filtroBuscar = buscar
