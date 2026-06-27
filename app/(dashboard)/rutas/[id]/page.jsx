@@ -1898,7 +1898,7 @@ export default function RutaDetallePage({ params }) {
                     </div>
 
                     {(detalleMora || detalleCobro) && (
-                      <div className="mt-1.5 flex items-center gap-1.5 text-xs leading-snug capitalize">
+                      <div className="mt-1.5 flex items-center gap-1.5 text-[10px] leading-snug capitalize">
                         {detalleMora && (
                           <span className="font-semibold" style={{ color: 'var(--color-danger)' }}>
                             {detalleMora}
@@ -1915,22 +1915,21 @@ export default function RutaDetallePage({ params }) {
                       </div>
                     )}
 
-                    {/* Saldo restante por prestamo. Si hay varios activos, se
-                        referencia cada uno por separado para no sumar saldos
-                        de prestamos distintos en un solo numero confuso. */}
                     {!isCompleted && c.prestamosActivos?.length > 0 && (
-                      <div className="mt-1 flex items-center gap-1.5 text-xs leading-snug flex-wrap" style={{ color: 'var(--color-text-muted)' }}>
-                        {c.prestamosActivos.length === 1 ? (
-                          <span>Saldo: <span className="font-mono-display font-semibold" style={{ color: 'var(--color-text-secondary, #ccc)' }}>{formatMoney(c.prestamosActivos[0].saldoPendiente)}</span></span>
-                        ) : (
-                          c.prestamosActivos.map((p, i) => (
-                            <span key={p.id}>
-                              {i > 0 && <span style={{ color: '#666' }}> · </span>}
-                              Préstamo {i + 1}: <span className="font-mono-display font-semibold" style={{ color: 'var(--color-text-secondary, #ccc)' }}>{formatMoney(p.saldoPendiente)}</span>
-                            </span>
-                          ))
-                        )}
-                      </div>
+                      c.prestamosActivos.length === 1 ? (
+                        <div className="mt-1 text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
+                          Saldo: <span className="font-mono-display font-semibold" style={{ color: 'var(--color-text-secondary, #ccc)' }}>{formatMoney(c.prestamosActivos[0].saldoPendiente)}</span>
+                        </div>
+                      ) : (
+                        <div className="mt-1.5 grid gap-px rounded-[8px] overflow-hidden" style={{ background: 'var(--color-border)', border: '1px solid var(--color-border)' }}>
+                          {c.prestamosActivos.map((p, i) => (
+                            <div key={p.id} className="flex items-center justify-between px-2 py-1" style={{ background: 'var(--color-bg-base)' }}>
+                              <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Préstamo {i + 1}</span>
+                              <span className="text-[10px] font-mono-display font-semibold" style={{ color: 'var(--color-text-secondary, #ccc)' }}>{formatMoney(p.saldoPendiente)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )
                     )}
 
                     {/* Badge de geolocalizacion del cobro (MVP).
