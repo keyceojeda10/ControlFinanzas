@@ -472,7 +472,6 @@ export default function MigradorPage() {
           accept="image/jpeg,image/png,image/webp"
           className="hidden"
           onChange={handleFotoPerfil}
-          capture="environment"
         />
 
         {/* Header de ficha */}
