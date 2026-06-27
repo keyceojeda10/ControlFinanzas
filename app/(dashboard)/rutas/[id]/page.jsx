@@ -1754,7 +1754,7 @@ export default function RutaDetallePage({ params }) {
                   {conGrip && (
                   <div
                     data-grip="true"
-                    className="flex flex-col items-center justify-center w-12 shrink-0 self-stretch cursor-grab active:cursor-grabbing touch-none select-none gap-0.5"
+                    className="flex flex-col items-center justify-center w-14 shrink-0 self-stretch cursor-grab active:cursor-grabbing touch-none select-none gap-0.5"
                     style={{ background: 'rgba(255,255,255,0.02)' }}
                   >
                     <svg className="w-3.5 h-3.5 text-[#555]" viewBox="0 0 24 24" fill="currentColor">
@@ -1783,7 +1783,7 @@ export default function RutaDetallePage({ params }) {
                         guardarOrden(nuevos)
                       }}
                       onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur() }}
-                      className="w-10 h-5 text-center text-[10px] font-bold tabular-nums rounded-[5px] border bg-transparent cursor-text
+                      className="w-12 h-6 text-center text-[11px] font-bold tabular-nums rounded-[6px] border bg-transparent cursor-text
                         focus:bg-[var(--color-bg-card)] focus:border-[var(--color-accent)] focus:cursor-text focus:outline-none transition-colors"
                       style={{ color: 'var(--color-text-muted)', borderColor: 'var(--color-border)' }}
                       min={1}
