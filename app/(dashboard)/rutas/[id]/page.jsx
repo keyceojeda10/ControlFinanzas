@@ -1897,82 +1897,77 @@ export default function RutaDetallePage({ params }) {
                       </div>
                     </div>
 
-                    {(detalleMora || detalleCobro) && (
-                      <div className="mt-1.5 flex items-center gap-1.5 text-[10px] leading-snug capitalize">
+                    {/* Info consolidada: mora, cobro, saldos, geo */}
+                    {!isCompleted && (detalleMora || detalleCobro || c.prestamosActivos?.length > 0 || c.pagoHoy) && (
+                      <div className="mt-2 rounded-[10px] px-2.5 py-2 space-y-1.5" style={{ background: 'var(--color-bg-base)', border: '1px solid color-mix(in srgb, var(--color-border) 60%, transparent)' }}>
                         {detalleMora && (
-                          <span className="font-semibold" style={{ color: 'var(--color-danger)' }}>
-                            {detalleMora}
-                          </span>
-                        )}
-                        {detalleMora && detalleCobro && (
-                          <span style={{ color: '#666' }}>·</span>
+                          <div className="flex items-center gap-1.5 text-[10px]">
+                            <svg className="w-3 h-3 shrink-0" style={{ color: 'var(--color-danger)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" />
+                            </svg>
+                            <span className="font-semibold capitalize" style={{ color: 'var(--color-danger)' }}>{detalleMora}</span>
+                          </div>
                         )}
                         {detalleCobro && (
-                          <span className="font-medium" style={{ color: tieneMora ? '#fecaca' : 'var(--color-text-muted)' }}>
-                            {detalleCobro}
-                          </span>
+                          <div className="flex items-center gap-1.5 text-[10px]">
+                            <svg className="w-3 h-3 shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                            </svg>
+                            <span className="font-medium capitalize" style={{ color: tieneMora ? '#fecaca' : 'var(--color-text-muted)' }}>{detalleCobro}</span>
+                          </div>
                         )}
+                        {c.prestamosActivos?.length > 0 && (
+                          <div className="flex items-start gap-1.5 text-[10px]">
+                            <svg className="w-3 h-3 shrink-0 mt-px" style={{ color: 'var(--color-text-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                            </svg>
+                            <div className="flex-1 min-w-0">
+                              {c.prestamosActivos.map((p, i) => (
+                                <div key={p.id} className="flex items-center justify-between">
+                                  <span style={{ color: 'var(--color-text-muted)' }}>
+                                    {c.prestamosActivos.length > 1 ? `Saldo ${i + 1}` : 'Saldo'}
+                                  </span>
+                                  <span className="font-mono-display font-semibold" style={{ color: 'var(--color-text-secondary, #ccc)' }}>{formatMoney(p.saldoPendiente)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {c.pagoHoy && (() => {
+                          const geo = c.pagoHoyGeo
+                          if (!geo) {
+                            return (
+                              <div className="flex items-center gap-1.5 text-[10px]" style={{ color: '#666' }}>
+                                <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                                </svg>
+                                <span>sin geolocalización</span>
+                              </div>
+                            )
+                          }
+                          if (geo.clienteSinCoords || geo.distanciaMetros == null) {
+                            return (
+                              <div className="flex items-center gap-1.5 text-[10px]" style={{ color: '#666' }}>
+                                <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                                </svg>
+                                <span>cliente sin ubicación fijada</span>
+                              </div>
+                            )
+                          }
+                          const d = geo.distanciaMetros
+                          const geoColor = d <= 50 ? 'var(--color-success)' : d <= 200 ? '#f97316' : 'var(--color-danger)'
+                          return (
+                            <div className="flex items-center gap-1.5 text-[10px] font-medium" style={{ color: geoColor }}>
+                              <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                              </svg>
+                              <span>{d <= 50 ? '✓' : '⚠'} a {d < 1000 ? `${d}m` : `${(d / 1000).toFixed(1)}km`} del cliente</span>
+                            </div>
+                          )
+                        })()}
                       </div>
                     )}
-
-                    {!isCompleted && c.prestamosActivos?.length > 0 && (
-                      c.prestamosActivos.length === 1 ? (
-                        <div className="mt-1 text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
-                          Saldo: <span className="font-mono-display font-semibold" style={{ color: 'var(--color-text-secondary, #ccc)' }}>{formatMoney(c.prestamosActivos[0].saldoPendiente)}</span>
-                        </div>
-                      ) : (
-                        <div className="mt-1.5 grid gap-px rounded-[8px] overflow-hidden" style={{ background: 'var(--color-border)', border: '1px solid var(--color-border)' }}>
-                          {c.prestamosActivos.map((p, i) => (
-                            <div key={p.id} className="flex items-center justify-between px-2 py-1" style={{ background: 'var(--color-bg-base)' }}>
-                              <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Préstamo {i + 1}</span>
-                              <span className="text-[10px] font-mono-display font-semibold" style={{ color: 'var(--color-text-secondary, #ccc)' }}>{formatMoney(p.saldoPendiente)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )
-                    )}
-
-                    {/* Badge de geolocalizacion del cobro (MVP).
-                        - Verde <=50m  · Naranja 50-200m  · Rojo >200m
-                        - Gris si no hay coords (cliente o pago). */}
-                    {c.pagoHoy && (() => {
-                      const geo = c.pagoHoyGeo
-                      if (!geo) {
-                        return (
-                          <div className="mt-1.5 flex items-center gap-1 text-[10px]" style={{ color: '#666' }}>
-                            <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                            </svg>
-                            Cobrado · sin geolocalización
-                          </div>
-                        )
-                      }
-                      if (geo.clienteSinCoords || geo.distanciaMetros == null) {
-                        return (
-                          <div className="mt-1.5 flex items-center gap-1 text-[10px]" style={{ color: '#666' }}>
-                            <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                            </svg>
-                            Cobrado · cliente sin ubicación fijada
-                          </div>
-                        )
-                      }
-                      const d = geo.distanciaMetros
-                      const color = d <= 50 ? 'var(--color-success)' : d <= 200 ? '#f97316' : 'var(--color-danger)'
-                      const sigla = d <= 50 ? '✓' : '⚠'
-                      return (
-                        <div className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded"
-                          style={{
-                            color,
-                            background: `color-mix(in srgb, ${color} 10%, transparent)`,
-                            border: `1px solid color-mix(in srgb, ${color} 30%, transparent)`,
-                          }}
-                        >
-                          <span>{sigla}</span>
-                          <span>Cobrado a {d < 1000 ? `${d}m` : `${(d / 1000).toFixed(1)}km`} del cliente</span>
-                        </div>
-                      )
-                    })()}
                   </div>
 
                   {/* Remove button (owner o cobrador con permiso) — solo en modo ordenar */}
@@ -2181,6 +2176,7 @@ export default function RutaDetallePage({ params }) {
                 ) : (
                   <div className="space-y-1.5">
                     {lista.map((c) => {
+                      const auditNumPos = (ruta.clientes ?? []).findIndex(x => x.id === c.id) + 1
                       const expandido = auditoriaExpandido === c.id
                       const cfg = {
                         pagaron:    { color: 'var(--color-success)', label: 'Pago hoy', icon: '✓' },
@@ -2199,6 +2195,13 @@ export default function RutaDetallePage({ params }) {
                             onClick={() => setAuditoriaExpandido(expandido ? null : c.id)}
                             className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left"
                           >
+                            {/* Numero de posicion */}
+                            {auditNumPos > 0 && (
+                              <span className="shrink-0 w-5 text-[11px] font-bold tabular-nums text-right" style={{ color: 'var(--color-text-muted)', opacity: 0.5 }}>
+                                {auditNumPos}
+                              </span>
+                            )}
+
                             {/* Icono de estado */}
                             <div className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[12px] font-bold"
                               style={{ background: `color-mix(in srgb, ${cfg.color} 15%, transparent)`, color: cfg.color }}
