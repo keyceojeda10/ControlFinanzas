@@ -12,8 +12,8 @@ const FEATURES = [
     ),
     color: '#a78bfa',
     bg: 'rgba(167,139,250,0.12)',
-    titulo: 'Importa cartulinas con foto',
-    desc: 'Saca foto a tu tarjeta y el sistema registra todo automáticamente.',
+    titulo: 'Importa con foto',
+    desc: 'Cartulina, cuaderno, libreta. Le tomas foto y el sistema extrae todo.',
   },
   {
     icon: (
@@ -62,7 +62,58 @@ const FEATURES = [
   },
 ]
 
-export default function WizardWelcome({ nombre, onNext, onDismiss }) {
+const IMPORT_OPTIONS = [
+  {
+    id: 'migrador',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+          d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+      </svg>
+    ),
+    color: '#f5c518',
+    bg: 'rgba(245,197,24,0.06)',
+    border: 'rgba(245,197,24,0.18)',
+    titulo: 'Uno por uno (rápido)',
+    desc: 'Cliente + préstamo en una sola pantalla. El más ágil para migrar.',
+    tag: 'Recomendado',
+    tagColor: '#f5c518',
+    href: '/migrador',
+  },
+  {
+    id: 'foto',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+          d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    ),
+    color: '#a78bfa',
+    bg: 'rgba(167,139,250,0.07)',
+    border: 'rgba(167,139,250,0.22)',
+    titulo: 'Foto de cartulina o cuaderno',
+    desc: 'Tómale foto a tu registro y la IA extrae nombre, monto, pagos...',
+    href: '/clientes/nuevo',
+  },
+  {
+    id: 'excel',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+          d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z" />
+      </svg>
+    ),
+    color: '#22c55e',
+    bg: 'rgba(34,197,94,0.07)',
+    border: 'rgba(34,197,94,0.22)',
+    titulo: 'Subir archivo Excel o CSV',
+    desc: 'Si ya tienes una hoja de cálculo con tus clientes, súbela directo.',
+    href: '/carga-masiva',
+  },
+]
+
+export default function WizardWelcome({ nombre, onNext, onDismiss, onNavigate }) {
   const firstName = nombre ? nombre.split(' ')[0] : null
   const sliderRef = useRef(null)
   const drag = useRef({ active: false, startX: 0, scrollLeft: 0 })
@@ -79,10 +130,16 @@ export default function WizardWelcome({ nombre, onNext, onDismiss }) {
     sliderRef.current.scrollLeft = drag.current.scrollLeft - (x - drag.current.startX) * 1.2
   }
 
+  const handleImportOption = (opt) => {
+    if (onNavigate) {
+      onNavigate(opt.href)
+    }
+  }
+
   return (
     <div className="flex flex-col" style={{ minHeight: '82vh' }}>
 
-      {/* ── Hero ── */}
+      {/* Hero */}
       <div className="text-center pt-1 pb-5">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-widest mb-5"
           style={{ background: 'rgba(245,197,24,0.1)', color: '#f5c518', border: '1px solid rgba(245,197,24,0.18)' }}>
@@ -103,8 +160,8 @@ export default function WizardWelcome({ nombre, onNext, onDismiss }) {
         </p>
       </div>
 
-      {/* ── Feature strip (scroll horizontal) ── */}
-      <div className="relative mb-7">
+      {/* Feature strip */}
+      <div className="relative mb-6">
         <div
           ref={sliderRef}
           className="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory select-none"
@@ -126,86 +183,69 @@ export default function WizardWelcome({ nombre, onNext, onDismiss }) {
               <p className="text-[12px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>{f.desc}</p>
             </div>
           ))}
-          {/* spacer */}
           <div className="shrink-0 w-1" />
         </div>
         <div className="absolute right-0 top-0 bottom-1 w-10 pointer-events-none"
           style={{ background: 'linear-gradient(to right, transparent, var(--color-bg-base))' }} />
       </div>
 
-      {/* ── Testimonial ── */}
-      <div className="mx-1 mb-7 px-4 py-3 rounded-[14px]"
-        style={{ background: 'rgba(245,197,24,0.05)', border: '1px solid rgba(245,197,24,0.12)' }}>
-        <div className="flex items-start gap-3">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0"
-            style={{ background: 'linear-gradient(135deg,#f5c518,#f0a800)', color: '#111' }}>RT</div>
-          <div>
-            <p className="text-[12px] italic leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-              "Pasamos de Excel a Control Finanzas y nuestra mora bajó del 14% al 5.2% en cuatro meses."
-            </p>
-            <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
-              Ricardo Tovar · Préstamos del Valle · 800+ clientes activos
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Modo selector ── */}
-      <div className="flex-1 flex flex-col justify-end gap-3 pb-2">
-        <p className="text-center text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--color-text-muted)' }}>
-          ¿Cómo quieres empezar?
+      {/* Import options */}
+      <div className="flex-1 flex flex-col justify-end gap-2.5 pb-2">
+        <p className="text-center text-[11px] font-semibold uppercase tracking-widest mb-1" style={{ color: 'var(--color-text-muted)' }}>
+          Trae tu cartera al sistema
         </p>
 
-        {/* Demo */}
+        {IMPORT_OPTIONS.map((opt) => (
+          <button
+            key={opt.id}
+            onClick={() => handleImportOption(opt)}
+            className="group w-full rounded-[16px] p-3.5 text-left transition-all active:scale-[0.98] cursor-pointer"
+            style={{ background: opt.bg, border: `1px solid ${opt.border}` }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
+                style={{ background: `color-mix(in srgb, ${opt.color} 15%, transparent)`, color: opt.color }}>
+                {opt.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <p className="text-[14px] font-bold" style={{ color: 'var(--color-text-primary)' }}>{opt.titulo}</p>
+                  {opt.tag && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                      style={{ background: `color-mix(in srgb, ${opt.tagColor} 15%, transparent)`, color: opt.tagColor }}>
+                      {opt.tag}
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+                  {opt.desc}
+                </p>
+              </div>
+              <svg className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke={opt.color} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </button>
+        ))}
+
+        {/* Demo option — smaller, secondary */}
         <button
           onClick={() => onNext(true)}
-          className="group w-full rounded-[16px] p-4 text-left transition-all active:scale-[0.98] cursor-pointer"
-          style={{ background: 'rgba(167,139,250,0.07)', border: '1px solid rgba(167,139,250,0.22)' }}>
+          className="group w-full rounded-[12px] p-3 text-left transition-all active:scale-[0.98] cursor-pointer mt-1"
+          style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)' }}
+        >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
-              style={{ background: 'rgba(167,139,250,0.15)', color: '#a78bfa' }}>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0"
+              style={{ background: 'rgba(167,139,250,0.12)', color: '#a78bfa' }}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-0.5">
-                <p className="text-[14px] font-bold" style={{ color: 'var(--color-text-primary)' }}>Explorar con datos demo</p>
-                <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
-                  style={{ background: 'rgba(167,139,250,0.15)', color: '#a78bfa' }}>Recomendado</span>
-              </div>
-              <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-                Usa datos de ejemplo. Al terminar se borran solos — tu cuenta queda limpia.
-              </p>
+              <p className="text-[13px] font-semibold" style={{ color: 'var(--color-text-secondary)' }}>Solo quiero explorar primero</p>
+              <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Datos demo que se borran al terminar</p>
             </div>
-            <svg className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke="#a78bfa" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </div>
-        </button>
-
-        {/* Real */}
-        <button
-          onClick={() => onNext(false)}
-          className="group w-full rounded-[16px] p-4 text-left transition-all active:scale-[0.98] cursor-pointer"
-          style={{ background: 'rgba(245,197,24,0.06)', border: '1px solid rgba(245,197,24,0.18)' }}>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
-              style={{ background: 'rgba(245,197,24,0.12)', color: '#f5c518' }}>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[14px] font-bold mb-0.5" style={{ color: 'var(--color-text-primary)' }}>Empezar con mi primer cliente real</p>
-              <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-                Registra un cliente de verdad. Ideal si ya tienes cartera lista para migrar.
-              </p>
-            </div>
-            <svg className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke="#f5c518" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
           </div>
         </button>
 

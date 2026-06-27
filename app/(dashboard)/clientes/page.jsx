@@ -390,6 +390,17 @@ export default function ClientesPage() {
               <span className="ml-2 text-[var(--color-danger)]">· {moraCount} en mora</span>
             )}
           </p>
+          {esOwner && (
+            <Link
+              href="/migrador"
+              className="h-7 px-2.5 inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[10px] font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:border-[var(--color-accent)] transition-all shrink-0"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+              </svg>
+              Migrador express
+            </Link>
+          )}
         </div>
         {!authLoading && puedeCrearClientes && (
           <Link href="/clientes/nuevo" className="shrink-0">

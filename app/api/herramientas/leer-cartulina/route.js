@@ -26,7 +26,7 @@ async function llamarGemini(base64, mimeType) {
   if (GEMINI_KEYS.length === 0) throw new Error('No hay claves Gemini configuradas')
 
   const PROMPT = `Eres un asistente para una app de gestión de préstamos informales en Colombia/LATAM.
-El usuario te envía una foto de una "cartulina" o tarjeta de cobro manual.
+El usuario te envía una foto de un registro de préstamo. Puede ser una cartulina, cuaderno, libreta, hoja, tarjeta de cobro, anotación en papel, o cualquier documento manuscrito o impreso donde se registre información de un préstamo.
 Extrae todos los datos que puedas en el siguiente JSON (omite los campos que no aparezcan claramente):
 {
   "nombre": "",
@@ -46,6 +46,8 @@ Reglas:
 - cédula y teléfono: solo dígitos, sin espacios ni guiones
 - montoPrestado, tasaInteres, diasPlazo, cuotasPagadas, montoPagadoHasta: numeros sin puntos ni comas
 - Si ves cuotas tachadas, marcadas o con visto bueno, cuentalas en cuotasPagadas
+- Si detectas la frecuencia de cobro por el patron de pagos (diario, semanal, etc.), incluyela
+- Si ves un total a pagar y un monto prestado, calcula la tasa si no esta explicita
 - Si no puedes leer un campo con certeza, omitelo (no pongas 0 ni texto inventado)
 - Solo devuelve el JSON puro, sin texto antes ni después, sin markdown`
 
@@ -175,7 +177,7 @@ export async function POST(req) {
   if (usadasHoy + fotos.length > limite) {
     const restantes = Math.max(0, limite - usadasHoy)
     return NextResponse.json({
-      error: `Alcanzaste el límite de ${limite} cartulinas por día en tu plan. ${restantes > 0 ? `Puedes leer ${restantes} más hoy.` : 'Se renueva a medianoche.'}`,
+      error: `Alcanzaste el límite de ${limite} lecturas por día en tu plan. ${restantes > 0 ? `Puedes leer ${restantes} más hoy.` : 'Se renueva a medianoche.'}`,
       codigo: 'LIMITE_ALCANZADO',
       limite,
       usadas: usadasHoy,
@@ -227,7 +229,7 @@ export async function POST(req) {
     return NextResponse.json({
       error: erroresFotos.length
         ? erroresFotos.join('. ')
-        : 'No pudimos leer ninguna cartulina. Intenta con mejor iluminación y más cerca.',
+        : 'No pudimos leer la foto. Intenta con mejor iluminación y más cerca.',
     }, { status: 422 })
   }
 

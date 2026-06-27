@@ -53,10 +53,10 @@ export async function GET() {
   const misiones = [
     {
       id: 'crear-cliente',
-      titulo: 'Registra tu primer cliente',
-      descripcion: 'Nombre, cédula y teléfono. En 30 segundos queda en el sistema.',
+      titulo: 'Sube tu cartera de clientes',
+      descripcion: 'Usa el migrador, tómale foto a tu cuaderno, o sube un Excel.',
       completada: clientes > 0,
-      href: '/clientes/nuevo',
+      href: '/migrador',
       icono: 'cliente',
     },
     {
@@ -64,7 +64,7 @@ export async function GET() {
       titulo: 'Crea un préstamo',
       descripcion: 'El sistema calcula la cuota y lleva el saldo automáticamente.',
       completada: prestamos > 0,
-      href: '/prestamos/nuevo',
+      href: clientes > 0 ? '/prestamos/nuevo' : '/migrador',
       icono: 'prestamo',
     },
     {

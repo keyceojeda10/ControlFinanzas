@@ -79,7 +79,7 @@ export default function ImportarCartulina({ onDatosExtraidos }) {
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
-          Importar desde cartulina
+          Importar desde foto
         </button>
       )}
 
@@ -105,7 +105,7 @@ export default function ImportarCartulina({ onDatosExtraidos }) {
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
             <div>
-              <p className="text-sm font-medium text-[var(--color-text-primary)]">Leyendo cartulina…</p>
+              <p className="text-sm font-medium text-[var(--color-text-primary)]">Leyendo foto...</p>
               <p className="text-[11px] text-[var(--color-text-muted)]">La IA está extrayendo los datos</p>
             </div>
           </div>
@@ -160,7 +160,7 @@ export default function ImportarCartulina({ onDatosExtraidos }) {
       {/* Hint */}
       {estado === 'idle' && (
         <p className="text-[10px] text-[var(--color-text-muted)] text-center mt-1.5">
-          Sube hasta 5 fotos si el préstamo ocupa varias cartulinas
+          Cartulina, cuaderno, libreta... hasta 5 fotos por cliente
         </p>
       )}
     </div>

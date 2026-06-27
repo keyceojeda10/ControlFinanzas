@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter }   from 'next/navigation'
+import Link            from 'next/link'
 import { useAuth }     from '@/hooks/useAuth'
 import ClienteForm     from '@/components/clientes/ClienteForm'
 import ImportarCartulina from '@/components/clientes/ImportarCartulina'

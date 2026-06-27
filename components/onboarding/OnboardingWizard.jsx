@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import WizardProgress  from './wizard/WizardProgress'
 import WizardWelcome   from './wizard/WizardWelcome'
 import WizardCliente   from './wizard/WizardCliente'
@@ -18,6 +19,7 @@ import WizardExito     from './wizard/WizardExito'
 */
 
 export default function OnboardingWizard({ nombre, onComplete, onDismiss, initialStep = 0 }) {
+  const router = useRouter()
   const [step,          setStep]          = useState(initialStep)
   const [modoDemo,      setModoDemo]      = useState(null)
   const [clienteCreado, setClienteCreado] = useState(null)
@@ -90,6 +92,7 @@ export default function OnboardingWizard({ nombre, onComplete, onDismiss, initia
           nombre={nombre}
           onNext={handleWelcomeDone}
           onDismiss={onDismiss}
+          onNavigate={(href) => { onDismiss?.(); router.push(href) }}
         />
       )}
 
