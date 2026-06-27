@@ -460,16 +460,15 @@ export default function MigradorPage() {
         <input
           ref={fotoRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept="image/*"
           multiple
           className="hidden"
           onChange={handleFoto}
-          capture="environment"
         />
         <input
           ref={el => { fotoPerfilRef.current = el }}
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept="image/*"
           className="hidden"
           onChange={handleFotoPerfil}
         />

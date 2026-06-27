@@ -61,11 +61,10 @@ export default function ImportarCartulina({ onDatosExtraidos }) {
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept="image/*"
         multiple
         className="hidden"
         onChange={handleArchivos}
-        capture="environment"
       />
 
       {/* Estado idle — botón principal */}
