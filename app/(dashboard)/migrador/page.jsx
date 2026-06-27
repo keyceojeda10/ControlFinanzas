@@ -65,6 +65,9 @@ export default function MigradorPage() {
   const [successMsg, setSuccessMsg] = useState('')
   const [ocrLoading, setOcrLoading] = useState(false)
   const [ocrMsg, setOcrMsg] = useState('')
+  const [fotoPerfilRef] = useState(() => ({ current: null }))
+  const [fotoPerfil, setFotoPerfil] = useState(null)
+  const [fotoPerfilPreview, setFotoPerfilPreview] = useState(null)
 
   useEffect(() => {
     if (!authLoading && !esOwner) router.replace('/dashboard')
@@ -194,6 +197,22 @@ export default function MigradorPage() {
     }
   }
 
+  const handleFotoPerfil = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setFotoPerfil(file)
+    setFotoPerfilPreview(URL.createObjectURL(file))
+  }
+
+  const subirFotoPerfil = async (clienteId) => {
+    if (!fotoPerfil) return
+    try {
+      const fd = new FormData()
+      fd.append('foto', fotoPerfil)
+      await fetch(`/api/clientes/${clienteId}/foto`, { method: 'POST', body: fd })
+    } catch {}
+  }
+
   const guardar = async (continuar) => {
     if (!ficha.nombre.trim()) {
       setError('El nombre del cliente es obligatorio')
@@ -243,6 +262,9 @@ export default function MigradorPage() {
         return
       }
 
+      // 1b. Subir foto de perfil si hay
+      await subirFotoPerfil(dataCliente.id)
+
       // 2. Crear préstamo
       const prestamoPayload = {
         clienteId: dataCliente.id,
@@ -283,6 +305,9 @@ export default function MigradorPage() {
 
       if (continuar) {
         setFicha(fichaVacia(defaults))
+        setFotoPerfil(null)
+        if (fotoPerfilPreview) URL.revokeObjectURL(fotoPerfilPreview)
+        setFotoPerfilPreview(null)
         setSuccessMsg(`${ficha.nombre.trim()} guardado`)
         setTimeout(() => setSuccessMsg(''), 3000)
         setTimeout(() => nombreRef.current?.focus(), 100)
@@ -431,7 +456,7 @@ export default function MigradorPage() {
       <div className="rounded-[14px] border overflow-hidden mb-4"
         style={{ background: 'var(--color-bg-card)', borderColor: 'var(--color-border)' }}>
 
-        {/* Hidden file input for OCR */}
+        {/* Hidden file inputs */}
         <input
           ref={fotoRef}
           type="file"
@@ -441,6 +466,14 @@ export default function MigradorPage() {
           onChange={handleFoto}
           capture="environment"
         />
+        <input
+          ref={el => { fotoPerfilRef.current = el }}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={handleFotoPerfil}
+          capture="environment"
+        />
 
         {/* Header de ficha */}
         <div className="px-4 py-3 flex items-center justify-between"
@@ -448,43 +481,56 @@ export default function MigradorPage() {
           <span className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
             Cliente {creados.length + 1}
           </span>
-          <div className="flex items-center gap-2">
-            {creados.length > 0 && (
-              <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
-                {creados.length} creado{creados.length !== 1 ? 's' : ''}
-              </span>
-            )}
-            <button
-              type="button"
-              onClick={() => fotoRef.current?.click()}
-              disabled={ocrLoading}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] text-[11px] font-semibold border transition-all disabled:opacity-50"
-              style={{ borderColor: 'var(--color-accent)', color: 'var(--color-accent)', background: 'var(--color-accent-soft)' }}
-            >
+          {creados.length > 0 && (
+            <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+              {creados.length} creado{creados.length !== 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
+
+        {/* Banner OCR — importar desde foto */}
+        <div className="mx-4 mt-3">
+          <button
+            type="button"
+            onClick={() => fotoRef.current?.click()}
+            disabled={ocrLoading}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-[12px] border-2 border-dashed transition-all active:scale-[0.98] disabled:opacity-60"
+            style={{ borderColor: 'color-mix(in srgb, var(--color-accent) 50%, transparent)', background: 'color-mix(in srgb, var(--color-accent) 6%, transparent)' }}
+          >
+            <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
+              style={{ background: 'var(--color-accent-soft)', color: 'var(--color-accent)' }}>
               {ocrLoading ? (
-                <>
-                  <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  Leyendo...
-                </>
+                <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
               ) : (
-                <>
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  Foto
-                </>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+                </svg>
               )}
-            </button>
-          </div>
+            </div>
+            <div className="text-left min-w-0">
+              <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                {ocrLoading ? 'Leyendo foto...' : 'Importar desde foto'}
+              </p>
+              <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                Cartulina, cuaderno, libreta... detecta los datos
+              </p>
+            </div>
+            {!ocrLoading && (
+              <svg className="w-4 h-4 shrink-0 ml-auto" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"
+                style={{ color: 'var(--color-text-muted)' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            )}
+          </button>
         </div>
 
         {/* OCR result message */}
         {ocrMsg && (
-          <div className="mx-4 mt-3 flex items-center gap-2 px-3 py-2 rounded-[10px] text-[12px]"
+          <div className="mx-4 mt-2 flex items-center gap-2 px-3 py-2 rounded-[10px] text-[12px]"
             style={{ background: 'var(--color-info-dim, var(--color-accent-soft))', color: 'var(--color-info, var(--color-accent))', border: '1px solid color-mix(in srgb, var(--color-accent) 25%, transparent)' }}>
             <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -499,16 +545,35 @@ export default function MigradorPage() {
             <h3 className="text-[11px] font-semibold uppercase tracking-wide mb-2"
               style={{ color: 'var(--color-accent)' }}>Datos del cliente</h3>
             <div className="space-y-2.5">
-              <input
-                ref={nombreRef}
-                type="text"
-                placeholder="Nombre *"
-                autoFocus
-                value={ficha.nombre}
-                onChange={e => set('nombre', e.target.value)}
-                className="w-full h-11 rounded-[10px] border px-3 text-sm"
-                style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
-              />
+              <div className="flex items-center gap-2.5">
+                {/* Foto de perfil */}
+                <button
+                  type="button"
+                  onClick={() => fotoPerfilRef.current?.click()}
+                  className="w-11 h-11 rounded-full shrink-0 flex items-center justify-center border-2 border-dashed overflow-hidden transition-all active:scale-95"
+                  style={{ borderColor: fotoPerfilPreview ? 'var(--color-accent)' : 'var(--color-border)', background: fotoPerfilPreview ? 'transparent' : 'var(--color-bg-base)' }}
+                  title="Foto de perfil"
+                >
+                  {fotoPerfilPreview ? (
+                    <img src={fotoPerfilPreview} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"
+                      style={{ color: 'var(--color-text-muted)' }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                    </svg>
+                  )}
+                </button>
+                <input
+                  ref={nombreRef}
+                  type="text"
+                  placeholder="Nombre *"
+                  autoFocus
+                  value={ficha.nombre}
+                  onChange={e => set('nombre', e.target.value)}
+                  className="flex-1 h-11 rounded-[10px] border px-3 text-sm"
+                  style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
+                />
+              </div>
               <div className="grid grid-cols-2 gap-2.5">
                 <input
                   type="text"
