@@ -166,9 +166,9 @@ export default function LoginPage() {
       const session    = await sessionRes.json()
 
       if (session?.user?.rol === 'superadmin') {
-        router.push('/admin/dashboard')
+        window.location.href = '/admin/dashboard'
       } else {
-        router.push('/dashboard')
+        window.location.href = '/dashboard'
       }
     } catch {
       setError('Error al iniciar sesión. Intenta de nuevo.')
