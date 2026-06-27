@@ -173,21 +173,20 @@ export default function BottomNav({ onOpenLucas, lucasOpen = false }) {
             ¿Qué quieres hacer?
           </p>
 
-          <div className="space-y-1">
+          <div className="space-y-2">
             {fabItems.map((item, i) => (
               <button
                 key={item.href}
                 type="button"
                 onClick={() => handleFabAction(item)}
-                className="block w-full text-left py-2 active:opacity-60"
+                className="block w-full text-left py-1.5 active:opacity-60"
                 style={{
                   opacity: fabOpen ? 1 : 0,
                   transform: fabOpen ? 'translateY(0)' : 'translateY(16px)',
-                  // Stagger: cada opcion entra un pelin despues que la anterior.
                   transition: `opacity 0.35s ease ${fabOpen ? i * 0.04 + 0.05 : 0}s, transform 0.35s cubic-bezier(0.22,1,0.36,1) ${fabOpen ? i * 0.04 + 0.05 : 0}s`,
                 }}
               >
-                <span className="text-[38px] font-extrabold leading-tight tracking-tight" style={{ color: '#000' }}>
+                <span className="text-[30px] font-extrabold leading-snug tracking-tight" style={{ color: '#000' }}>
                   {item.label}{' '}
                   <span className="font-normal">{item.bold}</span>
                 </span>
@@ -209,30 +208,30 @@ export default function BottomNav({ onOpenLucas, lucasOpen = false }) {
           <div
             className="absolute bottom-0 left-0 right-0 rounded-t-[24px] overflow-hidden animate-slide-up cf-sheet"
             onClick={(e) => e.stopPropagation()}
-            style={{ maxHeight: '70vh' }}
+            style={{ maxHeight: '75vh' }}
           >
-            <div className="flex justify-center pt-3 pb-2">
+            <div className="flex justify-center pt-3 pb-1.5">
               <div className="w-10 h-1 rounded-full" style={{ background: 'var(--color-border-hover)' }} />
             </div>
 
-            <div className="px-4 pb-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--color-text-secondary)' }}>Navegación</p>
+            <div className="px-4 pb-1.5">
+              <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--color-text-secondary)' }}>Navegación</p>
             </div>
 
-            <div className="px-2 pb-8 overflow-y-auto">
+            <div className="px-2 pb-6 overflow-y-auto">
               <div className="grid grid-cols-3 gap-1">
                 {moreItems.map((item) => {
                   const esLucas = item.href === '__lucas__'
                   const active = !esLucas && (pathname === item.href || pathname.startsWith(item.href + '/'))
                   const contenido = (
                     <>
-                      <svg className="w-[22px] h-[22px]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
                       </svg>
-                      <span className="text-[12px] font-medium">{item.label}</span>
+                      <span className="text-[11px] font-medium">{item.label}</span>
                     </>
                   )
-                  const clases = "flex flex-col items-center gap-1.5 py-4 rounded-2xl transition-all active:scale-95 min-h-[78px] cf-nav-item"
+                  const clases = "flex flex-col items-center gap-1 py-3 rounded-2xl transition-all active:scale-95 cf-nav-item"
                   const estilo = active ? { background: 'var(--color-accent-soft)', color: 'var(--color-accent)' } : { color: 'var(--color-text-secondary)' }
 
                   if (esLucas) {
