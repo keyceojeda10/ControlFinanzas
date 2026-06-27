@@ -1783,7 +1783,7 @@ export default function RutaDetallePage({ params }) {
                         guardarOrden(nuevos)
                       }}
                       onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur() }}
-                      className="w-8 h-5 text-center text-[10px] font-bold tabular-nums rounded-[5px] border bg-transparent cursor-text
+                      className="w-10 h-5 text-center text-[10px] font-bold tabular-nums rounded-[5px] border bg-transparent cursor-text
                         focus:bg-[var(--color-bg-card)] focus:border-[var(--color-accent)] focus:cursor-text focus:outline-none transition-colors"
                       style={{ color: 'var(--color-text-muted)', borderColor: 'var(--color-border)' }}
                       min={1}
@@ -1795,18 +1795,19 @@ export default function RutaDetallePage({ params }) {
                   {/* Numero racing (modo trabajo) — ocupa todo el alto de la card */}
                   {!conGrip && (
                     <div
-                      className="flex items-center justify-center shrink-0 self-stretch relative overflow-hidden"
-                      style={{ width: numPos > 99 ? 52 : numPos > 9 ? 40 : 32 }}
+                      className="flex items-center justify-center shrink-0 self-stretch relative"
+                      style={{ width: numPos > 999 ? 44 : numPos > 99 ? 38 : numPos > 9 ? 36 : 30 }}
                     >
                       <span
-                        className="absolute inset-0 flex items-center justify-center font-black tabular-nums italic select-none pointer-events-none"
+                        className="absolute font-black tabular-nums italic select-none pointer-events-none"
                         style={{
-                          fontSize: numPos > 99 ? '50px' : numPos > 9 ? '70px' : '80px',
+                          fontSize: numPos > 999 ? '36px' : numPos > 99 ? '44px' : numPos > 9 ? '70px' : '80px',
                           lineHeight: 1,
                           color: 'var(--color-text-primary)',
                           opacity: 0.08,
                           letterSpacing: '-0.05em',
                           fontFamily: 'system-ui, sans-serif',
+                          whiteSpace: 'nowrap',
                         }}
                       >{numPos}</span>
                     </div>
