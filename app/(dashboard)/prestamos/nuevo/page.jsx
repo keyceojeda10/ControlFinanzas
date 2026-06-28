@@ -106,7 +106,6 @@ function NuevoPrestamo() {
   const [yaAbonado, setYaAbonado] = useState('')
   // Cobro de seguro (opcional)
   const [seguro, setSeguro] = useState(false)
-  const [avanzadasOpen, setAvanzadasOpen] = useState(false)
   const [montoSeguro, setMontoSeguro] = useState('')
   // Modo de interes: 'fijo' (clasico, default) | 'unico' | 'saldo' | 'manual'.
   const [modoInteres, setModoInteres] = useState('fijo')
@@ -176,13 +175,19 @@ function NuevoPrestamo() {
     setFirmaBase64(null)
   }
 
-  // Wizard: 3 pasos. 0 = Cliente, 1 = Plan, 2 = Confirmar y firma.
+  // Wizard: 3 pasos. 0 = Cliente, 1 = Plan (sub-pasos internos), 2 = Confirmar y firma.
   const [paso, setPaso] = useState(0)
+  const [subPaso, setSubPaso] = useState(0) // sub-paso dentro del paso 1
   const PASOS = [
     { label: 'Cliente' },
     { label: 'Datos' },
     { label: 'Confirmar' },
   ]
+
+  // Sub-pasos del wizard de datos (paso 1)
+  // 0: Monto, 1: Frecuencia, 2: Interes+Plazo, 3: Tipo interes (avanzado), 4: Opciones extras
+  const SUB_PASOS_LABELS = ['Monto', 'Cobro', 'Plazo', 'Tipo', 'Extras']
+  const TOTAL_SUB_PASOS = modo === 'mercancia' ? 3 : 5
 
   // Pre-llenar desde cartulina si venimos de importar
   useEffect(() => {
@@ -202,7 +207,7 @@ function NuevoPrestamo() {
         setPlazoUnidades(String(datos.diasPlazo))
       }
       if (datos.fechaInicio)    setFechaInicio(datos.fechaInicio)
-      if (datos.esEnCurso)      { setEsEnCurso(true); setAvanzadasOpen(true) }
+      if (datos.esEnCurso)      setEsEnCurso(true)
       if (datos.yaAbonado)      setYaAbonado(String(datos.yaAbonado))
       // Limpiar después de consumir
       sessionStorage.removeItem('cf-cartulina-prestamo')
@@ -380,11 +385,22 @@ function NuevoPrestamo() {
 
   const clienteSeleccionado = clientes.find(c => c.id === clienteId) ?? null
 
-  // Validacion del paso actual antes de avanzar.
+  const puedeAvanzarSubPaso = () => {
+    if (subPaso === 0) {
+      if (modo === 'mercancia') return Number(monto) > 0 && Number(precioVenta) > Number(monto) && Number(numCuotas) > 0
+      return Number(monto) > 0
+    }
+    if (subPaso === 1) return true
+    if (subPaso === 2) {
+      if (modo === 'mercancia') return true
+      return Number(tasa) >= 0 && Number(plazoUnidades) > 0
+    }
+    return true
+  }
+
   const puedeAvanzarPaso = () => {
     if (paso === 0) return !!clienteId
     if (paso === 1) {
-      if (modo === 'mercancia' && !(Number(precioVenta) > Number(monto))) return false
       if (clienteSeleccionado?.montoMaximoPrestamo > 0 && Number(monto) > clienteSeleccionado.montoMaximoPrestamo) return false
       return Number(monto) > 0 && Number(plazoUnidades) > 0 && !!fechaInicio && !!calculo
     }
@@ -392,10 +408,21 @@ function NuevoPrestamo() {
     return true
   }
   const irAlSiguientePaso = () => {
+    if (paso === 1 && subPaso < TOTAL_SUB_PASOS - 1) {
+      if (!puedeAvanzarSubPaso()) return
+      setSubPaso(s => s + 1)
+      return
+    }
     if (!puedeAvanzarPaso()) return
     setPaso(p => Math.min(PASOS.length - 1, p + 1))
   }
-  const irAlPasoAnterior = () => setPaso(p => Math.max(0, p - 1))
+  const irAlPasoAnterior = () => {
+    if (paso === 1 && subPaso > 0) {
+      setSubPaso(s => s - 1)
+      return
+    }
+    setPaso(p => Math.max(0, p - 1))
+  }
 
   useEffect(() => {
     if (paso === 2) setTimeout(setupFirmaCanvas, 80)
@@ -732,238 +759,315 @@ function NuevoPrestamo() {
         )
       })()}
 
-      {/* PASO 2 — Plan del prestamo (todo en una sola pantalla, con revision en vivo abajo) */}
+      {/* PASO 2 — Wizard guiado con sub-pasos */}
       {paso === 1 && (
-        <section className="mt-8 space-y-7">
+        <section className="mt-8 space-y-6">
+          {/* Barra de progreso del sub-paso */}
           <div>
-            <h2 className="text-[22px] font-bold leading-tight" style={{ color: 'var(--color-text-primary)' }}>
-              Plan del préstamo
-            </h2>
-            <p className="text-sm mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
-              Cliente: <span className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>{clienteNombre || 'sin nombre'}</span>
-              {ultimoPrestamo && (
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                {clienteNombre || 'Cliente'}
+              </p>
+              {ultimoPrestamo && subPaso === 0 && (
                 <button
                   type="button"
-                  onClick={repetirCondicionesUltimo}
-                  className="ml-2 inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full"
-                  style={{
-                    background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
-                    color: 'var(--color-accent)',
-                  }}
+                  onClick={() => { repetirCondicionesUltimo(); setSubPaso(TOTAL_SUB_PASOS - 1) }}
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                  style={{ background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', color: 'var(--color-accent)' }}
                 >
-                  ↻ Repetir condiciones del anterior
+                  Repetir anterior
                 </button>
               )}
+            </div>
+            <div className="flex gap-1">
+              {Array.from({ length: TOTAL_SUB_PASOS }, (_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => { if (i < subPaso) setSubPaso(i) }}
+                  className="h-1 rounded-full flex-1 transition-all"
+                  style={{
+                    background: i <= subPaso ? 'var(--color-accent)' : 'var(--color-border)',
+                    cursor: i < subPaso ? 'pointer' : 'default',
+                  }}
+                />
+              ))}
+            </div>
+            <p className="text-[10px] mt-1 text-right" style={{ color: 'var(--color-text-muted)' }}>
+              Paso {subPaso + 1} de {TOTAL_SUB_PASOS}
             </p>
           </div>
 
-          {/* Tipo: prestamo vs mercancia */}
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--color-text-muted)' }}>Tipo</p>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleModoChange('prestamo')}
-                className="h-11 rounded-[12px] border text-sm font-semibold transition-all"
-                style={modo === 'prestamo'
-                  ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }
-                  : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }
-                }
-              >
-                Préstamo
-              </button>
-              <button
-                type="button"
-                onClick={() => handleModoChange('mercancia')}
-                className="h-11 rounded-[12px] border text-sm font-semibold transition-all"
-                style={modo === 'mercancia'
-                  ? { background: 'color-mix(in srgb, var(--color-info) 12%, transparent)', borderColor: 'var(--color-info)', color: 'var(--color-info)' }
-                  : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }
-                }
-              >
-                Mercancía
-              </button>
-            </div>
-          </div>
-
-          {/* Monto + chips rapidos */}
-          <div className="space-y-4">
-            {/* Mercancia: nombre del producto (referencia). Opcional. */}
-            {modo === 'mercancia' && (
+          {/* SUB-PASO 0: Tipo + Monto */}
+          {subPaso === 0 && (
+            <div className="space-y-6">
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                  Nombre del producto <span style={{ opacity: 0.6 }}>(opcional)</span>
-                </label>
-                <div className="mt-1.5">
-                  <Input
-                    type="text"
-                    value={nombreProducto}
-                    onChange={(e) => setNombreProducto(e.target.value)}
-                    placeholder="Ej: Gorra, Reloj Casio, Camisa..."
-                    maxLength={100}
-                  />
-                </div>
-                <p className="text-[10px] mt-1 leading-snug" style={{ color: 'var(--color-text-muted)' }}>
-                  Para saber a que mercancía hace referencia.
+                <h2 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>
+                  {modo === 'mercancia' ? 'Cuanto vale el articulo?' : 'Cuanto le prestas?'}
+                </h2>
+                <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                  {modo === 'mercancia' ? 'El valor real de la mercancia.' : 'El dinero que le entregas al cliente.'}
                 </p>
               </div>
-            )}
 
-            <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                {modo === 'mercancia' ? 'Valor del artículo' : 'Monto del préstamo'}
-              </label>
-              <div className="mt-1.5">
-                <MoneyInput value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="0" />
+              {/* Tipo toggle */}
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => handleModoChange('prestamo')}
+                  className="h-11 rounded-xl border text-sm font-semibold transition-all"
+                  style={modo === 'prestamo'
+                    ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }
+                    : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}
+                >Prestamo</button>
+                <button type="button" onClick={() => handleModoChange('mercancia')}
+                  className="h-11 rounded-xl border text-sm font-semibold transition-all"
+                  style={modo === 'mercancia'
+                    ? { background: 'color-mix(in srgb, var(--color-info) 12%, transparent)', borderColor: 'var(--color-info)', color: 'var(--color-info)' }
+                    : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}
+                >Mercancia</button>
               </div>
-              {/* Chips rapidos */}
-              <div className="flex gap-1.5 flex-wrap mt-2">
-                {[50000, 100000, 200000, 500000, 1000000].map((v) => (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => setMonto(String(v))}
-                    className="px-2.5 h-7 rounded-[8px] text-[11px] font-medium transition-all"
-                    style={String(monto) === String(v)
-                      ? { background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)', border: '1px solid var(--color-accent)', color: 'var(--color-accent)' }
-                      : { background: 'rgba(255,255,255,0.03)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }
-                    }
-                  >
-                    {v >= 1000000 ? `${v / 1000000}M` : `${v / 1000}k`}
-                  </button>
-                ))}
-              </div>
-              {clienteSeleccionado?.montoMaximoPrestamo > 0 && Number(monto) > clienteSeleccionado.montoMaximoPrestamo && (
-                <p className="text-xs mt-2 font-semibold" style={{ color: 'var(--color-danger)' }}>
-                  Supera el tope de {formatMoney(clienteSeleccionado.montoMaximoPrestamo)} para este cliente
-                </p>
-              )}
-            </div>
 
-            {modo === 'prestamo' ? (
-              <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                  Interés que cobras (% mensual)
-                </label>
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  step="0.5"
-                  min="0"
-                  value={tasa}
-                  onChange={(e) => setTasa(e.target.value)}
-                  placeholder="20"
-                  suffix="%"
-                />
-              </div>
-            ) : (
-              <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                  Número de cuotas
-                </label>
-                <Input
-                  type="number"
-                  inputMode="numeric"
-                  value={numCuotas}
-                  onChange={(e) => setNumCuotas(e.target.value)}
-                  placeholder="10"
-                  suffix="cuotas"
-                />
-              </div>
-            )}
-
-            {/* Mercancia: precio de venta total. La cuota = precioVenta / numCuotas
-                y la ganancia = precioVenta - valor del articulo. */}
-            {modo === 'mercancia' && (
-              <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                  Precio de venta
-                </label>
-                <div className="mt-1.5">
-                  <MoneyInput value={precioVenta} onChange={(e) => setPrecioVenta(e.target.value)} placeholder="Ej: 120.000" />
-                </div>
-                <p className="text-[10px] mt-1 leading-snug" style={{ color: 'var(--color-text-muted)' }}>
-                  A cuanto le dejas la mercancía al cliente. Tu ganancia = precio de venta − valor del artículo.
-                </p>
-                {/* Vista previa en vivo: cuota + ganancia calculadas */}
-                {Number(precioVenta) > 0 && Number(numCuotas) > 0 && Number(monto) > 0 && (
-                  <div
-                    className="mt-2 rounded-[10px] border px-3 py-2 flex items-center justify-between gap-3"
-                    style={{ background: 'color-mix(in srgb, var(--color-success) 8%, transparent)', borderColor: 'color-mix(in srgb, var(--color-success) 30%, transparent)' }}
-                  >
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Cuota</p>
-                      <p className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>
-                        {formatMoney(Math.round(Number(precioVenta) / Number(numCuotas)))}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Ganancia</p>
-                      <p className="text-sm font-bold" style={{ color: 'var(--color-success)' }}>
-                        {formatMoney(Number(precioVenta) - Number(monto))}
-                        {Number(monto) > 0 ? ` (${Math.round(((Number(precioVenta) - Number(monto)) / Number(monto)) * 100)}%)` : ''}
-                      </p>
-                    </div>
+              {modo === 'mercancia' && (
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                    Nombre del producto <span style={{ opacity: 0.6 }}>(opcional)</span>
+                  </label>
+                  <div className="mt-1.5">
+                    <Input type="text" value={nombreProducto} onChange={(e) => setNombreProducto(e.target.value)} placeholder="Ej: Gorra, Reloj Casio..." maxLength={100} />
                   </div>
-                )}
-                {Number(precioVenta) > 0 && Number(precioVenta) <= Number(monto) && (
-                  <p className="text-[10px] mt-1.5 font-semibold" style={{ color: 'var(--color-danger)' }}>
-                    El precio de venta debe ser mayor al valor del artículo para que haya ganancia.
+                </div>
+              )}
+
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                  {modo === 'mercancia' ? 'Valor del articulo' : 'Monto del prestamo'}
+                </label>
+                <div className="mt-1.5">
+                  <MoneyInput value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="0" />
+                </div>
+                <div className="flex gap-1.5 flex-wrap mt-2">
+                  {[50000, 100000, 200000, 500000, 1000000].map((v) => (
+                    <button key={v} type="button" onClick={() => setMonto(String(v))}
+                      className="px-2.5 h-7 rounded-lg text-[11px] font-medium transition-all"
+                      style={String(monto) === String(v)
+                        ? { background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)', border: '1px solid var(--color-accent)', color: 'var(--color-accent)' }
+                        : { background: 'rgba(255,255,255,0.03)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}
+                    >{v >= 1000000 ? `${v / 1000000}M` : `${v / 1000}k`}</button>
+                  ))}
+                </div>
+                {clienteSeleccionado?.montoMaximoPrestamo > 0 && Number(monto) > clienteSeleccionado.montoMaximoPrestamo && (
+                  <p className="text-xs mt-2 font-semibold" style={{ color: 'var(--color-danger)' }}>
+                    Supera el tope de {formatMoney(clienteSeleccionado.montoMaximoPrestamo)}
                   </p>
                 )}
               </div>
-            )}
 
-            {/* Frecuencia de cobro — visible SIEMPRE cuando no es diario,
-                o dentro de "Opciones avanzadas" */}
+              {modo === 'mercancia' && (
+                <>
+                  <div>
+                    <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Numero de cuotas</label>
+                    <Input type="number" inputMode="numeric" value={numCuotas} onChange={(e) => setNumCuotas(e.target.value)} placeholder="10" suffix="cuotas" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Precio de venta</label>
+                    <div className="mt-1.5"><MoneyInput value={precioVenta} onChange={(e) => setPrecioVenta(e.target.value)} placeholder="Ej: 120.000" /></div>
+                    <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>Tu ganancia = precio de venta - valor del articulo.</p>
+                    {Number(precioVenta) > 0 && Number(numCuotas) > 0 && Number(monto) > 0 && (
+                      <div className="mt-2 rounded-xl border px-3 py-2 flex items-center justify-between gap-3"
+                        style={{ background: 'color-mix(in srgb, var(--color-success) 8%, transparent)', borderColor: 'color-mix(in srgb, var(--color-success) 30%, transparent)' }}>
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Cuota</p>
+                          <p className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(Math.round(Number(precioVenta) / Number(numCuotas)))}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Ganancia</p>
+                          <p className="text-sm font-bold" style={{ color: 'var(--color-success)' }}>
+                            {formatMoney(Number(precioVenta) - Number(monto))}
+                            {Number(monto) > 0 ? ` (${Math.round(((Number(precioVenta) - Number(monto)) / Number(monto)) * 100)}%)` : ''}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {Number(precioVenta) > 0 && Number(precioVenta) <= Number(monto) && (
+                      <p className="text-[10px] mt-1.5 font-semibold" style={{ color: 'var(--color-danger)' }}>El precio de venta debe ser mayor al valor del articulo.</p>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
 
-            {/* Personalizar préstamo: modo interés, frecuencia, día ancla, días sin cobro, seguro, en curso.
-                Antes era un link gris "Opciones avanzadas" que los usuarios evitaban por miedo.
-                Ahora es una tarjeta visible que invita a abrirla y explica qué hay dentro. */}
-            <button
-              type="button"
-              onClick={() => setAvanzadasOpen(v => !v)}
-              className="w-full flex items-center gap-3 rounded-[14px] px-4 py-3 transition-all active:scale-[0.99] focus-visible:outline-none"
-              style={{
-                background: avanzadasOpen ? 'color-mix(in srgb, var(--color-accent) 10%, transparent)' : 'color-mix(in srgb, var(--color-accent) 6%, transparent)',
-                border: `1.5px solid color-mix(in srgb, var(--color-accent) ${avanzadasOpen ? 55 : 35}%, transparent)`,
-              }}
-            >
-              <div className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
-                style={{ background: 'color-mix(in srgb, var(--color-accent) 18%, transparent)', color: 'var(--color-accent)' }}>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
-                </svg>
+          {/* SUB-PASO 1: Frecuencia de cobro */}
+          {subPaso === 1 && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Cada cuanto cobra?</h2>
+                <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>Elige la frecuencia con que el cliente paga las cuotas.</p>
               </div>
-              <div className="flex-1 min-w-0 text-left">
-                <div className="flex items-center gap-2">
-                  <span className="text-[14px] font-bold" style={{ color: 'var(--color-text-primary)' }}>
-                    Personalizar préstamo
-                  </span>
-                  {(!avanzadasOpen && (frecuencia !== 'diario' || modoInteres !== 'fijo' || seguro || esEnCurso)) && (
-                    <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold" style={{ background: 'var(--color-accent)', color: '#0a0a0a' }}>
-                      activas
-                    </span>
+
+              <div className="space-y-2">
+                {FRECUENCIAS.map(f => {
+                  const activo = frecuencia === f.key
+                  const descs = { diario: 'Cobra todos los dias habiles', semanal: 'Cobra una vez por semana', quincenal: 'Cobra cada dos semanas', mensual: 'Cobra una vez al mes' }
+                  return (
+                    <button key={f.key} type="button" onClick={() => handleFrecuenciaChange(f.key)}
+                      className="w-full text-left rounded-xl p-4 transition-all"
+                      style={{
+                        background: activo ? 'color-mix(in srgb, var(--color-accent) 8%, transparent)' : 'var(--color-bg-surface)',
+                        border: activo ? '1.5px solid var(--color-accent)' : '1px solid var(--color-border)',
+                      }}>
+                      <div className="flex items-center gap-3">
+                        <div className="w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center"
+                          style={{ borderColor: activo ? 'var(--color-accent)' : 'var(--color-border)' }}>
+                          {activo && <div className="w-2 h-2 rounded-full" style={{ background: 'var(--color-accent)' }} />}
+                        </div>
+                        <div>
+                          <span className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{f.label}</span>
+                          <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>{descs[f.key]}</p>
+                        </div>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Dia ancla para semanal */}
+              {frecuencia === 'semanal' && (
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Que dia cobras?</label>
+                  <p className="text-[10px] mt-0.5 mb-1.5" style={{ color: 'var(--color-text-muted)' }}>Fija el dia de la semana. "Auto" usa el dia de inicio.</p>
+                  <div className="grid grid-cols-7 gap-1">
+                    <button type="button" onClick={() => setDiaCobroSemana('')}
+                      className="h-9 rounded-lg border text-[10px] font-semibold transition-all"
+                      style={diaCobroSemana === '' ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' } : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}>Auto</button>
+                    {DIAS_SEMANA.slice(0, 6).map(d => (
+                      <button key={d.v} type="button" onClick={() => setDiaCobroSemana(d.v)}
+                        className="h-9 rounded-lg border text-[10px] font-semibold transition-all"
+                        style={diaCobroSemana === d.v ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' } : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}>{d.l}</button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Dia ancla para quincenal */}
+              {frecuencia === 'quincenal' && (
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Que dia cobras?</label>
+                  <div className="flex gap-1 p-1 rounded-[10px] mb-2 mt-1.5" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
+                    <button type="button" onClick={() => { setModoDiaCobro('semana'); setDiaCobroMes('') }}
+                      className="flex-1 py-1.5 text-[10px] font-semibold rounded-[7px] transition-all"
+                      style={modoDiaCobro === 'semana' ? { background: 'var(--color-bg-card)', color: 'var(--color-accent)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' } : { color: 'var(--color-text-muted)' }}>Dia de la semana</button>
+                    <button type="button" onClick={() => { setModoDiaCobro('mes'); setDiaCobroSemana('') }}
+                      className="flex-1 py-1.5 text-[10px] font-semibold rounded-[7px] transition-all"
+                      style={modoDiaCobro === 'mes' ? { background: 'var(--color-bg-card)', color: 'var(--color-accent)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' } : { color: 'var(--color-text-muted)' }}>Dia del mes</button>
+                  </div>
+                  {modoDiaCobro === 'semana' ? (
+                    <div className="grid grid-cols-7 gap-1">
+                      <button type="button" onClick={() => setDiaCobroSemana('')}
+                        className="h-9 rounded-lg border text-[10px] font-semibold transition-all"
+                        style={diaCobroSemana === '' ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' } : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}>Auto</button>
+                      {DIAS_SEMANA.slice(0, 6).map(d => (
+                        <button key={d.v} type="button" onClick={() => setDiaCobroSemana(d.v)}
+                          className="h-9 rounded-lg border text-[10px] font-semibold transition-all"
+                          style={diaCobroSemana === d.v ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' } : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}>{d.l}</button>
+                      ))}
+                    </div>
+                  ) : (
+                    <Input type="number" inputMode="numeric" value={diaCobroMes}
+                      onChange={(e) => { const v = e.target.value; if (v === '' || (Number(v) >= 1 && Number(v) <= 31)) setDiaCobroMes(v) }}
+                      placeholder="Auto (segun fecha de inicio)" min={1} max={31} />
                   )}
                 </div>
-                <p className="text-[11.5px] mt-0.5 truncate" style={{ color: 'var(--color-text-muted)' }}>
-                  Frecuencia de cobro, tipo de interés, seguro y más
-                </p>
+              )}
+
+              {/* Dia ancla para mensual */}
+              {frecuencia === 'mensual' && (
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Que dia cobras?</label>
+                  <div className="flex gap-1 p-1 rounded-[10px] mb-2 mt-1.5" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
+                    <button type="button" onClick={() => { setModoDiaCobro('semana'); setDiaCobroMes('') }}
+                      className="flex-1 py-1.5 text-[10px] font-semibold rounded-[7px] transition-all"
+                      style={modoDiaCobro === 'semana' ? { background: 'var(--color-bg-card)', color: 'var(--color-accent)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' } : { color: 'var(--color-text-muted)' }}>Dia de la semana</button>
+                    <button type="button" onClick={() => { setModoDiaCobro('mes'); setDiaCobroSemana('') }}
+                      className="flex-1 py-1.5 text-[10px] font-semibold rounded-[7px] transition-all"
+                      style={modoDiaCobro === 'mes' ? { background: 'var(--color-bg-card)', color: 'var(--color-accent)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' } : { color: 'var(--color-text-muted)' }}>Dia del mes</button>
+                  </div>
+                  {modoDiaCobro === 'semana' ? (
+                    <div className="grid grid-cols-7 gap-1">
+                      <button type="button" onClick={() => setDiaCobroSemana('')}
+                        className="h-9 rounded-lg border text-[10px] font-semibold transition-all"
+                        style={diaCobroSemana === '' ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' } : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}>Auto</button>
+                      {DIAS_SEMANA.slice(0, 6).map(d => (
+                        <button key={d.v} type="button" onClick={() => setDiaCobroSemana(d.v)}
+                          className="h-9 rounded-lg border text-[10px] font-semibold transition-all"
+                          style={diaCobroSemana === d.v ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' } : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}>{d.l}</button>
+                      ))}
+                    </div>
+                  ) : (
+                    <Input type="number" inputMode="numeric" value={diaCobroMes}
+                      onChange={(e) => { const v = e.target.value; if (v === '' || (Number(v) >= 1 && Number(v) <= 31)) setDiaCobroMes(v) }}
+                      placeholder="Auto (segun fecha de inicio)" min={1} max={31} />
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* SUB-PASO 2: Interes + Plazo */}
+          {subPaso === 2 && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Cuanto de interes?</h2>
+                <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>Define la tasa y en cuanto tiempo paga.</p>
               </div>
-              <svg
-                className="w-5 h-5 shrink-0 transition-transform duration-200"
-                style={{ transform: avanzadasOpen ? 'rotate(90deg)' : 'rotate(0deg)', color: 'var(--color-accent)' }}
-                fill="none" stroke="currentColor" viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
 
-            {avanzadasOpen && (
-            <div className="space-y-4">
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Interes mensual</label>
+                <Input type="number" inputMode="decimal" step="0.5" min="0" value={tasa} onChange={(e) => setTasa(e.target.value)} placeholder="20" suffix="%" />
+                {Number(monto) > 0 && Number(tasa) > 0 && (
+                  <p className="text-[11px] mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
+                    Al {tasa}% sobre {formatMoney(Number(monto))} = {formatMoney(Math.round(Number(monto) * Number(tasa) / 100))} de interes por mes
+                  </p>
+                )}
+              </div>
 
-            {/* Modo de interes: Fijo / Unico / Sobre saldo / Manual */}
-            {modo === 'prestamo' && (
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                  En cuanto tiempo paga? ({frecuencia === 'diario' ? 'dias' : frecuencia === 'semanal' ? 'semanas' : frecuencia === 'quincenal' ? 'quincenas' : 'meses'})
+                </label>
+                <Input type="number" inputMode="numeric" value={plazoUnidades} onChange={(e) => setPlazoUnidades(e.target.value)} />
+                {frecuencia !== 'diario' && plazoUnidades && (
+                  <p className="text-[10px] mt-1 px-0.5" style={{ color: 'var(--color-text-muted)' }}>= {plazo} dias</p>
+                )}
+              </div>
+
+              {/* Preview en vivo */}
+              {calculo && (
+                <div className="rounded-xl p-3 space-y-2" style={{ background: 'color-mix(in srgb, var(--color-success) 6%, transparent)', border: '1px solid color-mix(in srgb, var(--color-success) 20%, transparent)' }}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Cuota {frecuencia === 'diario' ? 'diaria' : frecuencia}</span>
+                    <span className="text-lg font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(calculo.cuotaDiaria)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Total a pagar</span>
+                    <span className="text-sm font-semibold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(calculo.totalAPagar)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Ganancia</span>
+                    <span className="text-sm font-semibold font-mono-display" style={{ color: 'var(--color-success)' }}>{formatMoney(calculo.totalAPagar - Number(monto))}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* SUB-PASO 3: Tipo de interes */}
+          {subPaso === 3 && modo === 'prestamo' && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Como cobra el interes?</h2>
+                <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>La mayoria usa el clasico. Si no estas seguro, dejalo asi.</p>
+              </div>
+
               <ModoInteresSelector
                 modoInteres={modoInteres}
                 onChange={(m) => {
@@ -977,512 +1081,128 @@ function NuevoPrestamo() {
                 frecuencia={frecuencia}
                 diasPlazo={plazo}
               />
-            )}
 
-            {/* Cuota manual — solo en modo manual */}
-            {modo === 'prestamo' && cuotaManualActiva && (
-              <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                  Cuota exacta
-                </label>
-                <div className="mt-1.5">
-                  <MoneyInput value={cuotaManual} onChange={(e) => setCuotaManual(e.target.value)} placeholder="Ej: 60.000" />
-                </div>
-                <p className="text-[10px] mt-1 leading-snug" style={{ color: 'var(--color-text-muted)' }}>
-                  Tu defines la cuota. El total = cuota x número de cobros.
-                </p>
-              </div>
-            )}
-
-            {/* Frecuencia de cobro */}
-            <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                Frecuencia de cobro
-              </label>
-              <div className="grid grid-cols-4 gap-1.5 mt-1.5">
-                {FRECUENCIAS.map(f => (
-                  <button
-                    key={f.key}
-                    type="button"
-                    onClick={() => handleFrecuenciaChange(f.key)}
-                    className="h-10 rounded-[10px] border text-xs font-semibold transition-all"
-                    style={frecuencia === f.key
-                      ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }
-                      : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }
-                    }
-                  >
-                    {f.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                Plazo ({frecuencia === 'diario' ? 'dias' : frecuencia === 'semanal' ? 'semanas' : frecuencia === 'quincenal' ? 'quincenas' : 'meses'})
-              </label>
-              <Input
-                type="number"
-                inputMode="numeric"
-                value={plazoUnidades}
-                onChange={(e) => setPlazoUnidades(e.target.value)}
-              />
-            </div>
-
-            {/* Dia ancla para semanal */}
-            {frecuencia === 'semanal' && (
-              <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                  ¿Qué día cobras?
-                </label>
-                <p className="text-[10px] mt-0.5 mb-1.5" style={{ color: 'var(--color-text-muted)' }}>
-                  Fija el día de la semana en que siempre cobras. "Auto" usa el día de la fecha de inicio.
-                </p>
-                <div className="grid grid-cols-7 gap-1">
-                  <button
-                    type="button"
-                    onClick={() => setDiaCobroSemana('')}
-                    className="h-9 rounded-[8px] border text-[10px] font-semibold transition-all"
-                    style={diaCobroSemana === ''
-                      ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }
-                      : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }
-                    }
-                  >
-                    Auto
-                  </button>
-                  {DIAS_SEMANA.slice(0, 6).map(d => (
-                    <button
-                      key={d.v}
-                      type="button"
-                      onClick={() => setDiaCobroSemana(d.v)}
-                      className="h-9 rounded-[8px] border text-[10px] font-semibold transition-all"
-                      style={diaCobroSemana === d.v
-                        ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }
-                        : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }
-                      }
-                    >
-                      {d.l}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Dia ancla para quincenal — toggle semana/mes */}
-            {frecuencia === 'quincenal' && (
-              <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                  ¿Qué día cobras?
-                </label>
-                <p className="text-[10px] mt-0.5 mb-1.5" style={{ color: 'var(--color-text-muted)' }}>
-                  {modoDiaCobro === 'semana'
-                    ? 'Fija el día de la semana en que siempre cobras.'
-                    : 'Fija el día del mes en que cobras. Si el mes no tiene ese día, se cobra el último día disponible.'}
-                </p>
-                <div className="flex gap-1 p-1 rounded-[10px] mb-2" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
-                  <button
-                    type="button"
-                    onClick={() => { setModoDiaCobro('semana'); setDiaCobroMes('') }}
-                    className="flex-1 py-1.5 text-[10px] font-semibold rounded-[7px] transition-all"
-                    style={modoDiaCobro === 'semana'
-                      ? { background: 'var(--color-bg-card)', color: 'var(--color-accent)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' }
-                      : { color: 'var(--color-text-muted)' }}
-                  >
-                    Día de la semana
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setModoDiaCobro('mes'); setDiaCobroSemana('') }}
-                    className="flex-1 py-1.5 text-[10px] font-semibold rounded-[7px] transition-all"
-                    style={modoDiaCobro === 'mes'
-                      ? { background: 'var(--color-bg-card)', color: 'var(--color-accent)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' }
-                      : { color: 'var(--color-text-muted)' }}
-                  >
-                    Día del mes
-                  </button>
-                </div>
-                {modoDiaCobro === 'semana' ? (
-                  <div className="grid grid-cols-7 gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setDiaCobroSemana('')}
-                      className="h-9 rounded-[8px] border text-[10px] font-semibold transition-all"
-                      style={diaCobroSemana === ''
-                        ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }
-                        : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }
-                      }
-                    >
-                      Auto
-                    </button>
-                    {DIAS_SEMANA.slice(0, 6).map(d => (
-                      <button
-                        key={d.v}
-                        type="button"
-                        onClick={() => setDiaCobroSemana(d.v)}
-                        className="h-9 rounded-[8px] border text-[10px] font-semibold transition-all"
-                        style={diaCobroSemana === d.v
-                          ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }
-                          : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }
-                        }
-                      >
-                        {d.l}
-                      </button>
-                    ))}
+              {cuotaManualActiva && (
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Cuota exacta</label>
+                  <div className="mt-1.5">
+                    <MoneyInput value={cuotaManual} onChange={(e) => setCuotaManual(e.target.value)} placeholder="Ej: 60.000" />
                   </div>
-                ) : (
-                  <Input
-                    type="number"
-                    inputMode="numeric"
-                    value={diaCobroMes}
-                    onChange={(e) => {
-                      const v = e.target.value
-                      if (v === '' || (Number(v) >= 1 && Number(v) <= 31)) setDiaCobroMes(v)
-                    }}
-                    placeholder="Auto (según fecha de inicio)"
-                    min={1}
-                    max={31}
-                  />
-                )}
-              </div>
-            )}
-
-            {/* Dia ancla para mensual — toggle semana/mes */}
-            {frecuencia === 'mensual' && (
-              <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                  ¿Qué día cobras?
-                </label>
-                <p className="text-[10px] mt-0.5 mb-1.5" style={{ color: 'var(--color-text-muted)' }}>
-                  {modoDiaCobro === 'semana'
-                    ? 'Fija el día de la semana en que siempre cobras.'
-                    : 'Fija el día del mes en que cobras. Si el mes no tiene ese día, se cobra el último día disponible.'}
-                </p>
-                <div className="flex gap-1 p-1 rounded-[10px] mb-2" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
-                  <button
-                    type="button"
-                    onClick={() => { setModoDiaCobro('semana'); setDiaCobroMes('') }}
-                    className="flex-1 py-1.5 text-[10px] font-semibold rounded-[7px] transition-all"
-                    style={modoDiaCobro === 'semana'
-                      ? { background: 'var(--color-bg-card)', color: 'var(--color-accent)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' }
-                      : { color: 'var(--color-text-muted)' }}
-                  >
-                    Día de la semana
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setModoDiaCobro('mes'); setDiaCobroSemana('') }}
-                    className="flex-1 py-1.5 text-[10px] font-semibold rounded-[7px] transition-all"
-                    style={modoDiaCobro === 'mes'
-                      ? { background: 'var(--color-bg-card)', color: 'var(--color-accent)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' }
-                      : { color: 'var(--color-text-muted)' }}
-                  >
-                    Día del mes
-                  </button>
+                  <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>Tu defines la cuota. Total = cuota x numero de cobros.</p>
                 </div>
-                {modoDiaCobro === 'semana' ? (
-                  <div className="grid grid-cols-7 gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setDiaCobroSemana('')}
-                      className="h-9 rounded-[8px] border text-[10px] font-semibold transition-all"
-                      style={diaCobroSemana === ''
-                        ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }
-                        : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }
-                      }
-                    >
-                      Auto
-                    </button>
-                    {DIAS_SEMANA.slice(0, 6).map(d => (
-                      <button
-                        key={d.v}
-                        type="button"
-                        onClick={() => setDiaCobroSemana(d.v)}
-                        className="h-9 rounded-[8px] border text-[10px] font-semibold transition-all"
-                        style={diaCobroSemana === d.v
-                          ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }
-                          : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }
-                        }
-                      >
-                        {d.l}
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <Input
-                    type="number"
-                    inputMode="numeric"
-                    value={diaCobroMes}
-                    onChange={(e) => {
-                      const v = e.target.value
-                      if (v === '' || (Number(v) >= 1 && Number(v) <= 31)) setDiaCobroMes(v)
-                    }}
-                    placeholder="Auto (según fecha de inicio)"
-                    min={1}
-                    max={31}
-                  />
-                )}
-              </div>
-            )}
-
-            {/* Dias sin cobro — disponible para todas las frecuencias.
-                Para diario es util porque permite excluir, p.ej., domingos.
-                Los cambios se guardan en la ficha del cliente al crear el prestamo. */}
-            {clienteId && (
-              <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                  Días sin cobro (opcional)
-                </label>
-                <p className="text-[10px] mt-0.5 mb-2" style={{ color: 'var(--color-text-muted)' }}>
-                  Marca los días en que NO se cobra. Se guarda en la ficha del cliente.
-                </p>
-                <DiasSinCobroSelector
-                  value={diasSinCobroCliente}
-                  onChange={(arr) => { setDiasSinCobroCliente(arr); setDiasSinCobroEditado(true) }}
-                  compact
-                />
-              </div>
-            )}
-
-            <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                Fecha de inicio
-              </label>
-              <Input
-                type="date"
-                value={fechaInicio}
-                onChange={(e) => setFechaInicio(e.target.value)}
-                max={hoyISO()}
-              />
+              )}
             </div>
-          </div>
           )}
 
-          {/* Opciones adicionales: seguro, prestamo en curso, cuota manual */}
-          {avanzadasOpen && <div className="space-y-3 pt-2 border-t" style={{ borderColor: 'var(--color-border)' }}>
-            <p className="text-[11px] font-semibold uppercase tracking-wide pt-3" style={{ color: 'var(--color-text-muted)' }}>
-              Opciones adicionales
-            </p>
-
-            {/* Seguro */}
-            <label className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-[10px] border cursor-pointer"
-              style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)' }}
-            >
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Cobrar seguro</p>
-                <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Suma un cargo fijo al préstamo</p>
-              </div>
-              <input
-                type="checkbox"
-                checked={seguro}
-                onChange={(e) => setSeguro(e.target.checked)}
-                className="w-5 h-5 accent-[var(--color-accent)]"
-              />
-            </label>
-            {seguro && (
+          {/* SUB-PASO 4: Opciones adicionales */}
+          {subPaso === (modo === 'mercancia' ? 2 : 4) && (
+            <div className="space-y-6">
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                  Monto del seguro
-                </label>
-                <div className="mt-1.5">
-                  <MoneyInput value={montoSeguro} onChange={(e) => setMontoSeguro(e.target.value)} placeholder="0" />
-                </div>
+                <h2 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Opciones adicionales</h2>
+                <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>Todo es opcional. Si no necesitas nada, avanza.</p>
               </div>
-            )}
 
-            {/* Prestamo en curso */}
-            <label className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-[10px] border cursor-pointer"
-              style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)' }}
-            >
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>El cliente ya había pagado algo antes</p>
-                <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Migrar un préstamo con abonos previos</p>
-              </div>
-              <input
-                type="checkbox"
-                checked={esEnCurso}
-                onChange={(e) => setEsEnCurso(e.target.checked)}
-                className="w-5 h-5 accent-[var(--color-accent)]"
-              />
-            </label>
-            {esEnCurso && (
+              {clienteId && (
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Dias sin cobro</label>
+                  <p className="text-[10px] mt-0.5 mb-2" style={{ color: 'var(--color-text-muted)' }}>Dias en que NO se cobra. Se guarda en la ficha del cliente.</p>
+                  <DiasSinCobroSelector value={diasSinCobroCliente} onChange={(arr) => { setDiasSinCobroCliente(arr); setDiasSinCobroEditado(true) }} compact />
+                </div>
+              )}
+
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                  Monto ya abonado
-                </label>
-                <div className="mt-1.5">
-                  <MoneyInput value={yaAbonado} onChange={(e) => setYaAbonado(e.target.value)} placeholder="0" />
-                </div>
+                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Fecha de inicio</label>
+                <Input type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} max={hoyISO()} />
               </div>
-            )}
 
-            </div>}
-
-          </div>
-
-          {/* Revision EN VIVO — resumen completo del prestamo mientras edita */}
-          {calculo && (() => {
-            // Nombres completos de dias para que NO se confunda con "MAR" o "JUE".
-            const DIAS_FULL_PLURAL = ['domingos', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabados']
-            const DIAS_FULL_SINGULAR = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado']
-
-            // Calcular cuantos cobros totales tendra el prestamo segun frecuencia + dias sin cobro.
-            const diasPlazo = Number(plazo)
-            const diasPorPeriodo = DIAS_POR_PERIODO[frecuencia] || 1
-            const periodos = Math.max(1, Math.round(diasPlazo / diasPorPeriodo))
-            // En frecuencia diaria, descontar los dias sin cobro de la semana.
-            let cobrosTotales = periodos
-            if (frecuencia === 'diario' && diasSinCobroCliente.length > 0) {
-              const cobrosPorSemana = 7 - diasSinCobroCliente.length
-              const semanas = diasPlazo / 7
-              cobrosTotales = Math.max(1, Math.round(cobrosPorSemana * semanas))
-            }
-
-            // Etiqueta de frecuencia descriptiva con nombres COMPLETOS de dias.
-            const diaSemanaFullPlural = diaCobroSemana !== '' ? DIAS_FULL_PLURAL[Number(diaCobroSemana)] : null
-            const labelDiaMes = diaCobroMes ? ' el día ' + diaCobroMes + ' de cada mes' : ''
-            const labelFrecuencia = frecuencia === 'diario'
-              ? `Diaria · ${cobrosTotales} cobros en ${diasPlazo} dias`
-              : frecuencia === 'semanal'
-                ? `Semanal · ${periodos} cobros${diaSemanaFullPlural ? ' los ' + diaSemanaFullPlural : ''}`
-                : frecuencia === 'quincenal'
-                  ? `Quincenal · ${periodos} cobros${modoDiaCobro === 'mes' && diaCobroMes ? labelDiaMes : diaSemanaFullPlural ? ' los ' + diaSemanaFullPlural : ''}`
-                  : `Mensual · ${periodos} cobros${modoDiaCobro === 'mes' && diaCobroMes ? labelDiaMes : diaSemanaFullPlural ? ' los ' + diaSemanaFullPlural : ''}`
-
-            const totalConSeguro = calculo.totalAPagar + (seguro && Number(montoSeguro) > 0 ? Number(montoSeguro) : 0)
-            const ganancia = calculo.totalAPagar - Number(monto || 0)
-            const pctGanancia = Number(monto) > 0 ? Math.round((ganancia / Number(monto)) * 100) : 0
-            const saldoInicial = esEnCurso && Number(yaAbonado) > 0
-              ? Math.max(0, calculo.totalAPagar - Number(yaAbonado))
-              : null
-
-            // Formula breve para modo Automatica — ayuda al usuario a entender de
-            // donde sale la cuota cuando no le cuadra y se cambia a Manual.
-            const mesesPlazo = (diasPlazo / 30).toFixed(diasPlazo % 30 === 0 ? 0 : 1)
-            const formulaAuto = !cuotaManualActiva && modo === 'prestamo'
-              ? `Total = monto + (monto × ${tasa || 0}% × ${mesesPlazo} meses). Cuota = total ÷ ${cobrosTotales} cobros.`
-              : null
-
-            const Row = ({ label, value, valueColor }) => (
-              <div className="flex items-center justify-between gap-3 py-1.5 border-b last:border-b-0"
-                style={{ borderColor: 'color-mix(in srgb, var(--color-border) 50%, transparent)' }}
-              >
-                <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>{label}</span>
-                <span className="text-xs font-semibold text-right" style={{ color: valueColor || 'var(--color-text-primary)' }}>
-                  {value}
-                </span>
-              </div>
-            )
-
-            return (
-              <div
-                className="rounded-[16px] p-4"
-                style={{
-                  background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 8%, var(--color-bg-card)), var(--color-bg-card))',
-                  border: '1px solid color-mix(in srgb, var(--color-success) 25%, var(--color-border))',
-                }}
-              >
-                <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--color-success)' }}>
-                  Resumen del préstamo
-                </p>
-
-                {/* Highlights grandes: cuota y total */}
-                <div className="grid grid-cols-2 gap-3 mb-3">
-                  <div>
-                    <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Cuota {frecuencia === 'diario' ? 'diaria' : frecuencia === 'semanal' ? 'semanal' : frecuencia === 'quincenal' ? 'quincenal' : 'mensual'}</p>
-                    <p className="text-lg font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(calculo.cuotaDiaria)}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Total a pagar</p>
-                    <p className="text-lg font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(totalConSeguro)}</p>
-                  </div>
+              <label className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border cursor-pointer"
+                style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)' }}>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Cobrar seguro</p>
+                  <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Suma un cargo fijo al prestamo</p>
                 </div>
-
-                {/* Detalles tipo lista — mas legible que grid de 2 columnas */}
-                <div className="space-y-0">
-                  {modo === 'mercancia' && nombreProducto.trim() && (
-                    <Row label="Producto" value={nombreProducto.trim()} />
-                  )}
-                  <Row label={modo === 'mercancia' ? 'Valor del artículo' : 'Monto prestado'} value={formatMoney(Number(monto || 0))} />
-                  {modo === 'mercancia' && Number(precioVenta) > 0 && (
-                    <Row label="Precio de venta" value={formatMoney(Number(precioVenta))} valueColor="var(--color-accent)" />
-                  )}
-                  {modo === 'prestamo' && (
-                    <Row
-                      label="Interés"
-                      value={`${tasa || 0}% mensual`}
-                      valueColor="var(--color-accent)"
-                    />
-                  )}
-                  <Row label="Frecuencia" value={labelFrecuencia} />
-                  <Row label="Cobros totales" value={`${cobrosTotales}`} />
-                  <Row label="Fecha fin" value={calculo.fechaFin ? new Date(calculo.fechaFin).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'} />
-                  <Row
-                    label="Ganancia"
-                    value={`${formatMoney(ganancia)} (${pctGanancia}%)`}
-                    valueColor="var(--color-success)"
-                  />
-                  <Row label={modo === 'mercancia' ? 'Tipo' : 'Modo de interés'} value={modo === 'mercancia' ? 'Mercancia' : ({ fijo: 'Fijo (clasico)', unico: 'Interés unico', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Cuota decreciente' }[modoInteres] || 'Fijo (clasico)')} />
-                  {diasSinCobroCliente.length > 0 && (
-                    <Row
-                      label="Días sin cobro"
-                      value={diasSinCobroCliente
-                        .sort((a, b) => a - b)
-                        .map(n => DIAS_FULL_SINGULAR[n].charAt(0).toUpperCase() + DIAS_FULL_SINGULAR[n].slice(1))
-                        .join(', ')}
-                    />
-                  )}
-                  {seguro && Number(montoSeguro) > 0 && (
-                    <Row
-                      label="Seguro incluido"
-                      value={formatMoney(Number(montoSeguro))}
-                      valueColor="#6366f1"
-                    />
-                  )}
-                  {esEnCurso && Number(yaAbonado) > 0 && (
-                    <>
-                      <Row
-                        label="Abono previo"
-                        value={formatMoney(Number(yaAbonado))}
-                        valueColor="var(--color-success)"
-                      />
-                      <Row
-                        label="Saldo pendiente"
-                        value={formatMoney(saldoInicial)}
-                        valueColor="var(--color-accent)"
-                      />
-                    </>
-                  )}
+                <input type="checkbox" checked={seguro} onChange={(e) => setSeguro(e.target.checked)} className="w-5 h-5 accent-[var(--color-accent)]" />
+              </label>
+              {seguro && (
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Monto del seguro</label>
+                  <div className="mt-1.5"><MoneyInput value={montoSeguro} onChange={(e) => setMontoSeguro(e.target.value)} placeholder="0" /></div>
                 </div>
+              )}
 
-                {modoInteres === 'lineal' && calculo?.tablaAmortizacion?.length > 0 && (
-                  <div className="mt-3 pt-3 border-t" style={{ borderColor: 'color-mix(in srgb, var(--color-border) 50%, transparent)' }}>
-                    <TablaAmortizacion tabla={calculo.tablaAmortizacion} frecuencia={frecuencia} />
+              <label className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border cursor-pointer"
+                style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)' }}>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Ya habia pagado algo antes</p>
+                  <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Migrar un prestamo con abonos previos</p>
+                </div>
+                <input type="checkbox" checked={esEnCurso} onChange={(e) => setEsEnCurso(e.target.checked)} className="w-5 h-5 accent-[var(--color-accent)]" />
+              </label>
+              {esEnCurso && (
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Monto ya abonado</label>
+                  <div className="mt-1.5"><MoneyInput value={yaAbonado} onChange={(e) => setYaAbonado(e.target.value)} placeholder="0" /></div>
+                </div>
+              )}
+
+              {/* Resumen completo antes de confirmar */}
+              {calculo && (() => {
+                const DIAS_FULL_PLURAL = ['domingos', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabados']
+                const DIAS_FULL_SINGULAR = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado']
+                const diasPlazoNum = Number(plazo)
+                const diasPorPeriodo = DIAS_POR_PERIODO[frecuencia] || 1
+                const periodos = Math.max(1, Math.round(diasPlazoNum / diasPorPeriodo))
+                let cobrosTotales = periodos
+                if (frecuencia === 'diario' && diasSinCobroCliente.length > 0) {
+                  const cobrosPorSemana = 7 - diasSinCobroCliente.length
+                  cobrosTotales = Math.max(1, Math.round((cobrosPorSemana * diasPlazoNum) / 7))
+                }
+                const totalConSeguro = calculo.totalAPagar + (seguro && Number(montoSeguro) > 0 ? Number(montoSeguro) : 0)
+                const ganancia = calculo.totalAPagar - Number(monto || 0)
+                const pctGanancia = Number(monto) > 0 ? Math.round((ganancia / Number(monto)) * 100) : 0
+
+                const Row = ({ label, value, valueColor }) => (
+                  <div className="flex items-center justify-between gap-3 py-1.5 border-b last:border-b-0"
+                    style={{ borderColor: 'color-mix(in srgb, var(--color-border) 50%, transparent)' }}>
+                    <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>{label}</span>
+                    <span className="text-xs font-semibold text-right" style={{ color: valueColor || 'var(--color-text-primary)' }}>{value}</span>
                   </div>
-                )}
+                )
 
-                {/* Formula breve: ayuda al usuario a entender de donde sale el
-                    calculo automatico. Si no le cuadra, sabe que debe cambiar a Manual. */}
-                {formulaAuto && (
-                  <div
-                    className="mt-3 pt-3 border-t flex gap-2 items-start"
-                    style={{ borderColor: 'color-mix(in srgb, var(--color-border) 50%, transparent)' }}
-                  >
-                    <svg className="w-3.5 h-3.5 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" style={{ color: 'var(--color-text-muted)' }}>
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
-                    </svg>
-                    <div className="flex-1">
-                      <p className="text-[10px] font-bold uppercase tracking-wide mb-0.5" style={{ color: 'var(--color-text-muted)' }}>
-                        Como se calcula
-                      </p>
-                      <p className="text-[10px] leading-snug" style={{ color: 'var(--color-text-muted)' }}>
-                        {formulaAuto} Si no te cuadra, cambia a <span className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>Manual</span> y define la cuota exacta.
-                      </p>
+                return (
+                  <div className="rounded-2xl p-4"
+                    style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 8%, var(--color-bg-card)), var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-success) 25%, var(--color-border))' }}>
+                    <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--color-success)' }}>Resumen del prestamo</p>
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                      <div>
+                        <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Cuota {frecuencia === 'diario' ? 'diaria' : frecuencia}</p>
+                        <p className="text-lg font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(calculo.cuotaDiaria)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Total a pagar</p>
+                        <p className="text-lg font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(totalConSeguro)}</p>
+                      </div>
                     </div>
+                    <div className="space-y-0">
+                      <Row label="Monto prestado" value={formatMoney(Number(monto || 0))} />
+                      {modo === 'prestamo' && <Row label="Interes" value={`${tasa || 0}% mensual`} valueColor="var(--color-accent)" />}
+                      <Row label="Cobros totales" value={`${cobrosTotales}`} />
+                      <Row label="Ganancia" value={`${formatMoney(ganancia)} (${pctGanancia}%)`} valueColor="var(--color-success)" />
+                      <Row label="Modo" value={({ fijo: 'Clasico', unico: 'De una vez', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente' }[modoInteres] || 'Clasico')} />
+                      {diasSinCobroCliente.length > 0 && <Row label="Sin cobro" value={diasSinCobroCliente.sort((a, b) => a - b).map(n => DIAS_FULL_SINGULAR[n].charAt(0).toUpperCase() + DIAS_FULL_SINGULAR[n].slice(1)).join(', ')} />}
+                      {seguro && Number(montoSeguro) > 0 && <Row label="Seguro" value={formatMoney(Number(montoSeguro))} valueColor="#6366f1" />}
+                      {esEnCurso && Number(yaAbonado) > 0 && <Row label="Abono previo" value={formatMoney(Number(yaAbonado))} valueColor="var(--color-success)" />}
+                    </div>
+                    {modoInteres === 'lineal' && calculo?.tablaAmortizacion?.length > 0 && (
+                      <div className="mt-3 pt-3 border-t" style={{ borderColor: 'color-mix(in srgb, var(--color-border) 50%, transparent)' }}>
+                        <TablaAmortizacion tabla={calculo.tablaAmortizacion} frecuencia={frecuencia} />
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            )
-          })()}
+                )
+              })()}
+            </div>
+          )}
         </section>
       )}
 
@@ -1548,9 +1268,8 @@ function NuevoPrestamo() {
         )
       })()}
 
-      {/* Barra sticky de resumen en vivo — solo en el paso Plan, sobre el footer.
-          El prestamista ajusta arriba y ve cuota/total aca sin tener que scrollear. */}
-      {paso === 1 && calculo && (
+      {/* Barra sticky de resumen en vivo — visible en sub-pasos 2+ del wizard */}
+      {paso === 1 && calculo && subPaso >= 2 && (
         <div
           className="fixed left-0 right-0 lg:left-60 z-[44] px-4 lg:px-6"
           style={{ bottom: 'calc(68px + env(safe-area-inset-bottom))' }}
@@ -1605,10 +1324,10 @@ function NuevoPrestamo() {
             <Button
               type="button"
               onClick={irAlSiguientePaso}
-              disabled={!puedeAvanzarPaso()}
+              disabled={paso === 0 ? !puedeAvanzarPaso() : paso === 1 ? !puedeAvanzarSubPaso() : false}
               className="flex-[2]"
             >
-              Continuar
+              {paso === 1 && subPaso === TOTAL_SUB_PASOS - 1 ? 'Revisar prestamo' : 'Continuar'}
             </Button>
           ) : (
             <Button
@@ -1618,7 +1337,7 @@ function NuevoPrestamo() {
               disabled={!puedeAvanzarPaso()}
               className="flex-[2]"
             >
-              Crear préstamo
+              Crear prestamo
             </Button>
           )}
         </div>

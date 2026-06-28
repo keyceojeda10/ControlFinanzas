@@ -545,15 +545,17 @@ export async function PATCH(request, { params }) {
       return Response.json({ error: 'Solo se pueden editar préstamos activos' }, { status: 400 })
     }
 
-    // Ventana de edición: solo el mismo día que se creó (timezone de la org).
-    const country = session.user.country || 'co'
-    const hoyLocal = getLocalDateStr(country)
-    const { inicio: inicioDia, fin: finDia } = getLocalDayRange(hoyLocal, country)
-    const creadoAt = new Date(p.createdAt)
-    if (creadoAt < inicioDia || creadoAt >= finDia) {
-      return Response.json({
-        error: 'Solo se puede editar un préstamo el mismo día que se creó. Pasado ese día, cancela y crea uno nuevo.',
-      }, { status: 400 })
+    // Ventana de edición: owner puede siempre, cobrador solo el mismo día.
+    if (session.user.rol !== 'owner') {
+      const country = session.user.country || 'co'
+      const hoyLocal = getLocalDateStr(country)
+      const { inicio: inicioDia, fin: finDia } = getLocalDayRange(hoyLocal, country)
+      const creadoAt = new Date(p.createdAt)
+      if (creadoAt < inicioDia || creadoAt >= finDia) {
+        return Response.json({
+          error: 'Solo se puede editar un préstamo el mismo día que se creó. Pasado ese día, cancela y crea uno nuevo.',
+        }, { status: 400 })
+      }
     }
 
     const {

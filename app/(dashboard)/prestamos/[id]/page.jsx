@@ -434,7 +434,6 @@ export default function PrestamoDetallePage({ params }) {
   // (un cobrador con solo permiso de descuentos también debe poder abrirlo).
   const mostrarGestionPrestamo = estaActivo && !completado && (puedeGestionarPrestamos || puedeAplicarDescuentos)
 
-  // "Editar préstamo" solo disponible si se creó HOY (misma fecha local Colombia).
   const esDeHoy = (() => {
     if (!prestamo?.createdAt) return false
     const col = new Date(Date.now() - 5 * 60 * 60 * 1000)
@@ -442,6 +441,7 @@ export default function PrestamoDetallePage({ params }) {
     const creadoISO = new Date(prestamo.createdAt).toISOString().slice(0, 10)
     return creadoISO === hoyISO
   })()
+  const puedeEditar = esOwner || esDeHoy
 
   const abrirPagoNormal = () => {
     setPresetPago(null)
@@ -1227,8 +1227,7 @@ export default function PrestamoDetallePage({ params }) {
         title="Gestión del préstamo"
       >
         <div className="grid grid-cols-2 gap-2">
-          {/* Editar préstamo: solo disponible el mismo día que se creó (corrección de errores) */}
-          {(puedeGestionarPrestamos || esOwner) && esDeHoy && (
+          {(puedeGestionarPrestamos || esOwner) && puedeEditar && (
             <button
               onClick={() => { setModalGestionPrestamo(false); setModalEditar(true) }}
               className="col-span-2 h-11 rounded-[12px] font-semibold text-sm text-[var(--color-text-primary)] bg-[var(--color-bg-hover)] border-2 border-[var(--color-accent)] hover:bg-[rgba(245,197,24,0.1)] transition-all flex items-center justify-center gap-2"
@@ -1236,7 +1235,7 @@ export default function PrestamoDetallePage({ params }) {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
-              Editar préstamo (creado hoy)
+              Editar préstamo
             </button>
           )}
           {/* Acciones de gestión de préstamos (no reducen saldo) */}

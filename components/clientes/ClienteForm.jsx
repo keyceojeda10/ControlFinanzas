@@ -47,6 +47,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
   const [posicionEnRuta, setPosicionEnRuta] = useState('final')
   const [clientesRuta, setClientesRuta] = useState([])
   const [loadingClientesRuta, setLoadingClientesRuta] = useState(false)
+  const [clienteCreado, setClienteCreado] = useState(null)
 
   // Cuando llegan datos de cartulina despues del montaje, pre-llenar los campos
   useEffect(() => {
@@ -283,10 +284,11 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
           datosPrestamo.clienteId = data.id
           try { sessionStorage.setItem('cf-cartulina-prestamo', JSON.stringify(datosPrestamo)) } catch {}
         }
+        router.push(`/prestamos/nuevo`)
+        return
       }
 
-      router.push(`/clientes/${data.id}`)
-      router.refresh()
+      setClienteCreado({ id: data.id, nombre: form.nombre || data.nombre })
     } catch {
       if (!esEdicion && !navigator.onLine) {
         try {
@@ -623,6 +625,39 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
           )}
         </div>
       </div>
+
+      {clienteCreado && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
+          <div
+            className="w-[90%] max-w-sm rounded-2xl p-6 text-center"
+            style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+          >
+            <div className="mx-auto mb-4 w-14 h-14 rounded-full flex items-center justify-center" style={{ background: 'rgba(34,197,94,0.12)' }}>
+              <svg className="w-7 h-7 text-green-500" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold mb-1" style={{ color: 'var(--color-text-primary)' }}>Cliente creado</h3>
+            <p className="text-sm mb-6" style={{ color: 'var(--color-text-secondary)' }}>{clienteCreado.nombre}</p>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => router.push(`/prestamos/nuevo?clienteId=${clienteCreado.id}`)}
+                className="w-full h-12 rounded-xl font-semibold text-sm text-black transition-all"
+                style={{ background: 'var(--color-accent)' }}
+              >
+                Crear prestamo ahora
+              </button>
+              <button
+                onClick={() => { router.push(`/clientes/${clienteCreado.id}`); router.refresh() }}
+                className="w-full h-11 rounded-xl font-medium text-sm transition-all"
+                style={{ color: 'var(--color-text-secondary)', background: 'var(--color-bg-hover)' }}
+              >
+                Ver ficha del cliente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

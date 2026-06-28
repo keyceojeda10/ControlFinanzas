@@ -1,6 +1,4 @@
 'use client'
-// components/prestamos/RenovarPrestamo.jsx — Modal de renovación de préstamo
-
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Modal }    from '@/components/ui/Modal'
@@ -13,11 +11,9 @@ const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
 const hoyISO = () => getColombiaDate().toISOString().slice(0, 10)
 
 const DIAS_POR_PERIODO = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }
-const LABEL_PERIODO    = { diario: 'días', semanal: 'semanas', quincenal: 'quincenas', mensual: 'meses' }
 const LABEL_PLAZO      = { diario: 'Plazo (días)', semanal: 'Plazo (semanas)', quincenal: 'Plazo (quincenas)', mensual: 'Plazo (meses)' }
 const DEFAULT_PLAZO    = { diario: '30', semanal: '8', quincenal: '4', mensual: '2' }
 
-// Convierte diasPlazo de DB a unidades de la frecuencia (para mostrar en el input)
 function diasAUnidades(dias, frecuencia) {
   const d = DIAS_POR_PERIODO[frecuencia] || 1
   return String(Math.round((Number(dias) || 30) / d))
@@ -37,11 +33,9 @@ export default function RenovarPrestamo({
 
   const saldo = Math.max(0, Number(saldoPendiente) || 0)
   const freqInicial = prestamoAnterior?.frecuencia ?? 'diario'
-  // Dos campos sincronizados: lo que entrega de mas (en mano) y el total que queda debiendo.
-  const [entrega,     setEntrega]     = useState('')  // dinero nuevo que recibe el cliente
-  const [monto,       setMonto]       = useState('')  // total nuevo = saldo + entrega
+
+  const [monto,       setMonto]       = useState('')
   const [tasa,        setTasa]        = useState(String(prestamoAnterior?.tasaInteres ?? '20'))
-  // plazoUnidades: en unidades de la frecuencia (semanas, quincenas, etc.), NO en días
   const [plazoUnidades, setPlazoUnidades] = useState(
     prestamoAnterior?.diasPlazo
       ? diasAUnidades(prestamoAnterior.diasPlazo, freqInicial)
@@ -53,30 +47,12 @@ export default function RenovarPrestamo({
   const [montoSeguro, setMontoSeguro] = useState('')
   const [loading,     setLoading]     = useState(false)
   const [error,       setError]       = useState('')
+  const [masOpciones, setMasOpciones] = useState(false)
 
   const montoNum = Number(monto) || 0
   const montoSeguroNum = seguro ? (Number(montoSeguro) || 0) : 0
-  const diferencia = Math.max(0, montoNum - saldo)
-  // diasPlazo real = unidades × días por periodo
+  const enMano = Math.max(0, montoNum - saldo)
   const diasPlazo = (Number(plazoUnidades) || 0) * (DIAS_POR_PERIODO[frecuencia] || 1)
-
-  const handleFrecuenciaChange = (f) => {
-    setFrecuencia(f)
-    setPlazoUnidades(DEFAULT_PLAZO[f] ?? '30')
-  }
-
-  // Al cambiar "entrega": total = saldo + entrega
-  const onChangeEntrega = (v) => {
-    setEntrega(v)
-    const e = Number(v) || 0
-    setMonto(String(Math.round(saldo + e)))
-  }
-  // Al cambiar "total": entrega = total - saldo
-  const onChangeMonto = (v) => {
-    setMonto(v)
-    const t = Number(v) || 0
-    setEntrega(String(Math.max(0, Math.round(t - saldo))))
-  }
 
   const modoHeredado = ['fijo', 'unico', 'saldo', 'manual'].includes(prestamoAnterior?.modoInteres)
     ? prestamoAnterior.modoInteres : 'fijo'
@@ -96,13 +72,13 @@ export default function RenovarPrestamo({
   }, [montoNum, tasa, diasPlazo, fechaInicio, frecuencia, modoHeredado])
 
   const handleSubmit = async () => {
-    if (montoNum <= 0) { setError('Ingresa cuánto le entregas o el total'); return }
+    if (montoNum <= 0) { setError('Ingresa el total del nuevo prestamo'); return }
     if (montoNum < saldo) {
       setError(`El total debe cubrir al menos el saldo actual (${formatMoney(saldo)})`)
       return
     }
-    if (!tasa || Number(tasa) < 0) { setError('Tasa inválida'); return }
-    if (!plazoUnidades || diasPlazo <= 0) { setError('Plazo inválido'); return }
+    if (!tasa || Number(tasa) < 0) { setError('Tasa invalida'); return }
+    if (!plazoUnidades || diasPlazo <= 0) { setError('Plazo invalido'); return }
 
     setLoading(true)
     setError('')
@@ -136,60 +112,92 @@ export default function RenovarPrestamo({
 
   const handleClose = () => {
     setMonto('')
-    setEntrega('')
     setSeguro(false)
     setMontoSeguro('')
     setError('')
+    setMasOpciones(false)
     setPlazoUnidades(DEFAULT_PLAZO[frecuencia] ?? '30')
     onClose?.()
   }
 
   return (
-    <Modal open={open} onClose={handleClose} title="Renovar / prestar más">
+    <Modal open={open} onClose={handleClose} title="Renovar prestamo">
       <div className="space-y-4">
-        <p className="text-xs text-[var(--color-text-muted)]">
-          Préstale más a este cliente. El saldo que ya debe se suma al nuevo crédito y se recalcula el interés. Recibe en mano solo lo nuevo.
-        </p>
 
-        {/* Saldo actual que se absorbe */}
-        <div className="px-3 py-2.5 rounded-[10px] bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.2)]">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-[var(--color-text-muted)]">Saldo actual (se suma al nuevo)</span>
-            <span className="text-sm font-semibold text-[var(--color-accent)] font-mono-display">
-              {formatMoney(saldo)}
-            </span>
+        {/* Saldo actual */}
+        <div className="rounded-xl p-3" style={{ background: 'rgba(245,197,24,0.06)', border: '1px solid rgba(245,197,24,0.2)' }}>
+          <div className="flex items-center gap-2 mb-1">
+            <svg className="w-4 h-4 text-[var(--color-accent)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+            </svg>
+            <span className="text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>Saldo pendiente actual</span>
           </div>
-          {clienteNombre && (
-            <p className="text-[10px] text-[#666] mt-0.5">{clienteNombre}</p>
-          )}
+          <p className="text-xl font-bold font-mono-display" style={{ color: 'var(--color-accent)' }}>{formatMoney(saldo)}</p>
+          {clienteNombre && <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{clienteNombre}</p>}
         </div>
 
-        {/* Dos campos sincronizados: entrega (en mano) y total que queda debiendo */}
-        <div className="grid grid-cols-2 gap-3">
-          <Input
-            label="Le entregas (en mano)"
-            type="number"
-            inputMode="numeric"
-            placeholder="0"
-            value={entrega}
-            onChange={(e) => onChangeEntrega(e.target.value)}
-            prefix="$"
-          />
-          <Input
-            label="Queda debiendo (total) *"
-            type="number"
-            inputMode="numeric"
-            placeholder="0"
-            value={monto}
-            onChange={(e) => onChangeMonto(e.target.value)}
-            prefix="$"
-          />
+        {/* Input principal */}
+        <div>
+          <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--color-text-primary)' }}>
+            Total del nuevo prestamo
+          </label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium" style={{ color: 'var(--color-text-muted)' }}>$</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder={formatMoney(saldo * 2).replace(/[^0-9.,]/g, '')}
+              value={monto}
+              onChange={(e) => setMonto(e.target.value)}
+              autoFocus
+              className="w-full h-14 pl-7 pr-3 text-xl font-bold rounded-xl outline-none font-mono-display"
+              style={{
+                background: 'var(--color-bg-surface)',
+                border: '2px solid var(--color-border)',
+                color: 'var(--color-text-primary)',
+              }}
+            />
+          </div>
+          <p className="text-[11px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
+            Incluye lo que ya debe. Ejemplo: debe {formatMoney(saldo)} y le prestas {formatMoney(saldo)} mas = total {formatMoney(saldo * 2)}
+          </p>
         </div>
-        <p className="text-[10px] text-[var(--color-text-muted)] -mt-2">
-          Escribe lo que le entregas de más o el total que quedará debiendo; el otro se calcula solo.
-        </p>
 
-        {/* Tasa / Plazo */}
+        {/* Desglose automatico */}
+        {montoNum > 0 && (
+          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--color-border)' }}>
+            <div className="px-3 py-2 flex items-center justify-between" style={{ background: 'var(--color-bg-surface)' }}>
+              <div className="flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5" style={{ color: 'var(--color-text-muted)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+                <span className="text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>Saldo absorbido</span>
+              </div>
+              <span className="text-sm font-semibold font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
+                {formatMoney(Math.min(saldo, montoNum))}
+              </span>
+            </div>
+            <div className="px-3 py-2.5 flex items-center justify-between" style={{ borderTop: '1px solid var(--color-border)' }}>
+              <div className="flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                </svg>
+                <span className="text-xs font-semibold" style={{ color: 'var(--color-text-primary)' }}>Le entregas en mano</span>
+              </div>
+              <span className="text-lg font-bold font-mono-display text-green-500">
+                {formatMoney(enMano)}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {montoNum > 0 && montoNum < saldo && (
+          <p className="text-xs font-medium" style={{ color: 'var(--color-danger)' }}>
+            El total debe ser al menos {formatMoney(saldo)} (el saldo actual)
+          </p>
+        )}
+
+        {/* Tasa + Plazo */}
         <div className="grid grid-cols-2 gap-3">
           <Input
             label="Tasa (%)"
@@ -207,28 +215,27 @@ export default function RenovarPrestamo({
               onChange={(e) => setPlazoUnidades(e.target.value)}
             />
             {frecuencia !== 'diario' && plazoUnidades && (
-              <p className="text-[10px] mt-1 px-0.5 text-[var(--color-text-muted)]">= {diasPlazo} días</p>
+              <p className="text-[10px] mt-1 px-0.5" style={{ color: 'var(--color-text-muted)' }}>= {diasPlazo} dias</p>
             )}
           </div>
         </div>
 
         {/* Frecuencia */}
         <div>
-          <label className="block text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em] mb-1.5">
-            Frecuencia
+          <label className="block text-[11px] font-medium uppercase tracking-[0.05em] mb-1.5" style={{ color: 'var(--color-text-muted)' }}>
+            Frecuencia de cobro
           </label>
           <div className="grid grid-cols-4 gap-1.5">
             {['diario', 'semanal', 'quincenal', 'mensual'].map((f) => (
               <button
                 key={f}
                 type="button"
-                onClick={() => handleFrecuenciaChange(f)}
-                className={[
-                  'h-9 rounded-[10px] border text-xs font-medium capitalize transition-all cursor-pointer',
-                  frecuencia === f
-                    ? 'bg-[rgba(245,197,24,0.12)] border-[#f5c518] text-[var(--color-accent)]'
-                    : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-surface)]',
-                ].join(' ')}
+                onClick={() => { setFrecuencia(f); setPlazoUnidades(DEFAULT_PLAZO[f] ?? '30') }}
+                className="h-9 rounded-[10px] border text-xs font-medium capitalize transition-all cursor-pointer"
+                style={frecuencia === f
+                  ? { background: 'rgba(245,197,24,0.12)', borderColor: '#f5c518', color: 'var(--color-accent)' }
+                  : { background: 'transparent', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }
+                }
               >
                 {f}
               </button>
@@ -236,82 +243,85 @@ export default function RenovarPrestamo({
           </div>
         </div>
 
-        {/* Fecha inicio */}
-        <Input
-          label="Fecha de inicio"
-          type="date"
-          value={fechaInicio}
-          onChange={(e) => setFechaInicio(e.target.value)}
-        />
+        {/* Mas opciones colapsable */}
+        <button
+          type="button"
+          onClick={() => setMasOpciones(!masOpciones)}
+          className="w-full flex items-center justify-center gap-1.5 text-xs font-medium py-1.5 transition-colors"
+          style={{ color: 'var(--color-text-muted)' }}
+        >
+          <svg className={`w-3.5 h-3.5 transition-transform ${masOpciones ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+          {masOpciones ? 'Menos opciones' : 'Mas opciones'}
+        </button>
 
-        {/* Seguro opcional (se suma al total, igual que al crear) */}
-        <div className="rounded-[12px] border border-[var(--color-border)] p-3">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={seguro}
-              onChange={(e) => setSeguro(e.target.checked)}
-              className="w-4 h-4 accent-[#6366f1]"
+        {masOpciones && (
+          <div className="space-y-3">
+            <Input
+              label="Fecha de inicio"
+              type="date"
+              value={fechaInicio}
+              onChange={(e) => setFechaInicio(e.target.value)}
             />
-            <span className="text-sm font-medium text-[var(--color-text-primary)]">Cobrar seguro</span>
-          </label>
-          {seguro && (
-            <div className="mt-2.5">
-              <Input
-                label="Monto del seguro"
-                type="number"
-                inputMode="numeric"
-                placeholder="Ej: 10.000"
-                value={montoSeguro}
-                onChange={(e) => setMontoSeguro(e.target.value)}
-                prefix="$"
-              />
-              <p className="text-[10px] text-[var(--color-text-muted)] mt-1">Se cobra el seguro del nuevo préstamo, igual que en un préstamo nuevo.</p>
+            <div className="rounded-xl p-3" style={{ border: '1px solid var(--color-border)' }}>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={seguro}
+                  onChange={(e) => setSeguro(e.target.checked)}
+                  className="w-4 h-4 accent-[#6366f1]"
+                />
+                <span className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>Cobrar seguro</span>
+              </label>
+              {seguro && (
+                <div className="mt-2.5">
+                  <Input
+                    label="Monto del seguro"
+                    type="number"
+                    inputMode="numeric"
+                    placeholder="Ej: 10.000"
+                    value={montoSeguro}
+                    onChange={(e) => setMontoSeguro(e.target.value)}
+                    prefix="$"
+                  />
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Preview: diferencia a entregar + nueva cuota */}
-        {montoNum > 0 && (
-          <div className="rounded-[12px] border border-[rgba(34,197,94,0.25)] bg-[rgba(34,197,94,0.06)] p-3 space-y-2">
+        {/* Preview cuota */}
+        {calculo && montoNum >= saldo && (
+          <div className="rounded-xl p-3 space-y-2" style={{ background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.2)' }}>
             <div className="flex items-center justify-between">
-              <span className="text-xs text-[var(--color-text-muted)]">A entregar al cliente</span>
-              <span className="text-base font-bold text-[var(--color-success)] font-mono-display">
-                {formatMoney(diferencia)}
+              <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Cuota {frecuencia}</span>
+              <span className="text-base font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
+                {formatMoney(calculo.cuotaDiaria)}
               </span>
             </div>
-            {calculo && (
-              <>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--color-text-muted)]">Nueva cuota {frecuencia}</span>
-                  <span className="text-sm font-semibold text-[var(--color-text-primary)] font-mono-display">
-                    {formatMoney(calculo.cuotaDiaria)}
-                  </span>
-                </div>
-                {calculo.ultimaCuota && calculo.ultimaCuota !== calculo.cuotaDiaria && calculo.numPeriodos > 1 && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-[var(--color-text-muted)]">Última cuota (ajuste)</span>
-                    <span className="text-sm font-semibold text-[#8b95a5] font-mono-display">
-                      {formatMoney(calculo.ultimaCuota)}
-                    </span>
-                  </div>
-                )}
-                {montoSeguroNum > 0 && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-[var(--color-text-muted)]">Seguro</span>
-                    <span className="text-sm font-semibold font-mono-display" style={{ color: '#6366f1' }}>
-                      {formatMoney(montoSeguroNum)}
-                    </span>
-                  </div>
-                )}
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--color-text-muted)]">Total a pagar</span>
-                  <span className="text-sm font-semibold text-[var(--color-text-primary)] font-mono-display">
-                    {formatMoney(calculo.totalAPagar + montoSeguroNum)}
-                  </span>
-                </div>
-              </>
+            {calculo.ultimaCuota && calculo.ultimaCuota !== calculo.cuotaDiaria && calculo.numPeriodos > 1 && (
+              <div className="flex items-center justify-between">
+                <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Ultima cuota (ajuste)</span>
+                <span className="text-sm font-semibold font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
+                  {formatMoney(calculo.ultimaCuota)}
+                </span>
+              </div>
             )}
+            {montoSeguroNum > 0 && (
+              <div className="flex items-center justify-between">
+                <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Seguro</span>
+                <span className="text-sm font-semibold font-mono-display" style={{ color: '#6366f1' }}>
+                  {formatMoney(montoSeguroNum)}
+                </span>
+              </div>
+            )}
+            <div className="flex items-center justify-between pt-1" style={{ borderTop: '1px solid rgba(34,197,94,0.15)' }}>
+              <span className="text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>Total a pagar</span>
+              <span className="text-sm font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
+                {formatMoney(calculo.totalAPagar + montoSeguroNum)}
+              </span>
+            </div>
           </div>
         )}
 
@@ -321,7 +331,7 @@ export default function RenovarPrestamo({
           </p>
         )}
 
-        {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
+        {error && <p className="text-sm" style={{ color: 'var(--color-danger)' }}>{error}</p>}
 
         <div className="flex gap-3 pt-2">
           <Button variant="secondary" onClick={handleClose} className="flex-1">
@@ -330,7 +340,7 @@ export default function RenovarPrestamo({
           <Button
             onClick={handleSubmit}
             loading={loading}
-            disabled={montoMaximoPrestamo > 0 && montoNum > montoMaximoPrestamo}
+            disabled={(montoMaximoPrestamo > 0 && montoNum > montoMaximoPrestamo) || (montoNum > 0 && montoNum < saldo)}
             className="flex-1"
           >
             Renovar
