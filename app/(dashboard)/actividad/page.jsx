@@ -60,27 +60,56 @@ function getIcon(accion) {
   return renderIcon ? renderIcon(config.color) : null
 }
 
-function tiempoRelativo(fecha) {
-  const diff = Date.now() - new Date(fecha).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'Ahora'
-  if (mins < 60) return `Hace ${mins} min`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `Hace ${hrs}h`
-  const dias = Math.floor(hrs / 24)
-  if (dias < 7) return `Hace ${dias}d`
-  return new Date(fecha).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })
+function formatHora(fecha) {
+  return new Date(fecha).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit', hour12: true })
 }
 
-const FILTROS_TIPO = [
-  { value: '', label: 'Todas' },
-  { value: 'crear_prestamo', label: 'Préstamos creados' },
+function labelFechaGrupo(dateStr) {
+  const hoy = new Date()
+  const fecha = new Date(dateStr + 'T12:00:00')
+  const hoyStr = hoy.toISOString().slice(0, 10)
+  const ayerDate = new Date(hoy)
+  ayerDate.setDate(ayerDate.getDate() - 1)
+  const ayerStr = ayerDate.toISOString().slice(0, 10)
+
+  if (dateStr === hoyStr) return 'Hoy'
+  if (dateStr === ayerStr) return 'Ayer'
+  return fecha.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })
+}
+
+function agruparPorDia(items) {
+  const grupos = []
+  let currentKey = null
+  for (const item of items) {
+    const key = new Date(item.createdAt).toISOString().slice(0, 10)
+    if (key !== currentKey) {
+      currentKey = key
+      grupos.push({ key, label: labelFechaGrupo(key), items: [] })
+    }
+    grupos[grupos.length - 1].items.push(item)
+  }
+  return grupos
+}
+
+const FILTROS_RAPIDOS = [
+  { value: '', label: 'Todo' },
+  { value: 'registrar_pago', label: 'Pagos' },
+  { value: 'crear_prestamo', label: 'Prestamos' },
+  { value: 'cierre_caja', label: 'Cierres' },
+  { value: 'crear_cliente', label: 'Clientes' },
+]
+
+const FILTROS_COMPLETOS = [
+  { value: '', label: 'Todas las acciones' },
+  { value: 'crear_prestamo', label: 'Prestamos creados' },
   { value: 'registrar_pago', label: 'Pagos registrados' },
+  { value: 'editar_pago', label: 'Pagos editados' },
+  { value: 'anular_pago', label: 'Pagos anulados' },
   { value: 'crear_cliente', label: 'Clientes creados' },
   { value: 'editar_cliente', label: 'Clientes editados' },
   { value: 'eliminar_cliente', label: 'Clientes eliminados' },
-  { value: 'editar_prestamo', label: 'Préstamos editados' },
-  { value: 'eliminar_prestamo', label: 'Préstamos eliminados' },
+  { value: 'editar_prestamo', label: 'Prestamos editados' },
+  { value: 'eliminar_prestamo', label: 'Prestamos eliminados' },
   { value: 'crear_ruta', label: 'Rutas creadas' },
   { value: 'crear_cobrador', label: 'Cobradores creados' },
   { value: 'cierre_caja', label: 'Cierres de caja' },
@@ -104,9 +133,9 @@ function ActividadPageInner() {
   const [desde, setDesde] = useState('')
   const [hasta, setHasta] = useState('')
   const [usuarios, setUsuarios] = useState([])
+  const [mostrarFiltrosAvanzados, setMostrarFiltrosAvanzados] = useState(false)
   const loaderRef = useRef(null)
 
-  // Fetch org users for filter dropdown
   useEffect(() => {
     fetch('/api/cobradores')
       .then(r => r.ok ? r.json() : [])
@@ -124,7 +153,7 @@ function ActividadPageInner() {
     if (filtroUsuario) params.set('userId', filtroUsuario)
     if (desde) params.set('desde', desde)
     if (hasta) params.set('hasta', hasta)
-    params.set('limit', '20')
+    params.set('limit', '30')
 
     const res = await fetch(`/api/actividad?${params}`)
     if (!res.ok) return
@@ -136,7 +165,6 @@ function ActividadPageInner() {
     setLoading(false)
   }, [filtroTipo, filtroUsuario, desde, hasta])
 
-  // Reset on filter change
   useEffect(() => {
     setLoading(true)
     setItems([])
@@ -145,7 +173,6 @@ function ActividadPageInner() {
     fetchActividad(null, true)
   }, [fetchActividad])
 
-  // Infinite scroll
   useEffect(() => {
     if (!loaderRef.current || !hasMore) return
     const observer = new IntersectionObserver(
@@ -160,137 +187,222 @@ function ActividadPageInner() {
     return () => observer.disconnect()
   }, [cursor, hasMore, fetchActividad])
 
+  const hayFiltrosAvanzados = filtroUsuario || desde || hasta
+  const filtroActivoEnChips = FILTROS_RAPIDOS.some(f => f.value === filtroTipo)
+  const grupos = agruparPorDia(items)
+
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-lg font-bold text-[var(--color-text-primary)]">Actividad</h1>
-          <p className="text-xs text-[#777]">Historial de acciones en tu negocio</p>
-        </div>
+    <div className="max-w-2xl mx-auto px-4 py-6">
+      {/* Header */}
+      <div className="mb-5">
+        <h1 className="text-lg font-bold" style={{ color: 'var(--color-text-primary)' }}>Actividad</h1>
+        <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+          Todo lo que pasa en tu negocio, en orden
+        </p>
       </div>
 
-      {/* Filtros */}
-      <div className="mb-5 flex flex-wrap gap-2">
-        <select
-          value={filtroTipo}
-          onChange={(e) => setFiltroTipo(e.target.value)}
-          className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-[var(--color-text-primary)] text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-[var(--color-accent)]"
-        >
-          {FILTROS_TIPO.map(f => (
-            <option key={f.value} value={f.value}>{f.label}</option>
-          ))}
-        </select>
-
-        <select
-          value={filtroUsuario}
-          onChange={(e) => setFiltroUsuario(e.target.value)}
-          className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-[var(--color-text-primary)] text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-[var(--color-accent)]"
-        >
-          <option value="">Todos los usuarios</option>
-          {usuarios.map(u => (
-            <option key={u.id} value={u.id}>{u.nombre}</option>
-          ))}
-        </select>
-
-        <label className="relative cursor-pointer">
-          <span className={`absolute inset-0 flex items-center px-3 text-xs pointer-events-none truncate ${desde ? 'text-[var(--color-text-primary)]' : 'text-[#777]'}`}>
-            {desde ? new Date(desde + 'T12:00').toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' }) : 'Desde'}
-          </span>
-          <input
-            type="date"
-            value={desde}
-            onChange={(e) => setDesde(e.target.value)}
-            className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-[var(--color-accent)] [color-scheme:dark] w-[90px]"
-            style={{ color: 'transparent', WebkitTextFillColor: 'transparent' }}
-          />
-        </label>
-        <label className="relative cursor-pointer">
-          <span className={`absolute inset-0 flex items-center px-3 text-xs pointer-events-none truncate ${hasta ? 'text-[var(--color-text-primary)]' : 'text-[#777]'}`}>
-            {hasta ? new Date(hasta + 'T12:00').toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' }) : 'Hasta'}
-          </span>
-          <input
-            type="date"
-            value={hasta}
-            onChange={(e) => setHasta(e.target.value)}
-            className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-[var(--color-accent)] [color-scheme:dark] w-[90px]"
-            style={{ color: 'transparent', WebkitTextFillColor: 'transparent' }}
-          />
-        </label>
-        {(filtroTipo || filtroUsuario || desde || hasta) && (
+      {/* Filtros rapidos — chips */}
+      <div className="flex gap-1.5 overflow-x-auto pb-2 -mx-1 px-1 mb-3" style={{ scrollbarWidth: 'none' }}>
+        {FILTROS_RAPIDOS.map(f => (
           <button
-            onClick={() => { setFiltroTipo(''); setFiltroUsuario(''); setDesde(''); setHasta('') }}
-            className="text-xs text-[var(--color-accent)] hover:text-[var(--color-accent)]/80 px-2 py-2"
+            key={f.value}
+            onClick={() => setFiltroTipo(filtroTipo === f.value ? '' : f.value)}
+            className="shrink-0 px-3 py-1.5 text-[11px] font-semibold rounded-full transition-all"
+            style={filtroTipo === f.value
+              ? { background: 'var(--color-accent)', color: '#000' }
+              : { background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)' }}
           >
-            Limpiar
+            {f.label}
           </button>
-        )}
+        ))}
+        <button
+          onClick={() => setMostrarFiltrosAvanzados(!mostrarFiltrosAvanzados)}
+          className="shrink-0 px-2.5 py-1.5 text-[11px] font-semibold rounded-full transition-all flex items-center gap-1"
+          style={{
+            background: hayFiltrosAvanzados ? 'color-mix(in srgb, var(--color-accent) 15%, transparent)' : 'var(--color-bg-hover)',
+            color: hayFiltrosAvanzados ? 'var(--color-accent)' : 'var(--color-text-muted)',
+            border: `1px solid ${hayFiltrosAvanzados ? 'var(--color-accent)' : 'var(--color-border)'}`,
+          }}
+        >
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
+          </svg>
+          Filtros
+          {hayFiltrosAvanzados && (
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--color-accent)' }} />
+          )}
+        </button>
       </div>
 
-      {/* Lista de actividad */}
+      {/* Filtros avanzados — expandibles */}
+      {mostrarFiltrosAvanzados && (
+        <div className="mb-4 p-3 rounded-[12px] space-y-2.5" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+          {!filtroActivoEnChips && (
+            <div>
+              <label className="text-[10px] font-bold uppercase tracking-wider block mb-1" style={{ color: 'var(--color-text-muted)' }}>Tipo de accion</label>
+              <select
+                value={filtroTipo}
+                onChange={(e) => setFiltroTipo(e.target.value)}
+                className="w-full text-[12px] rounded-[8px] px-2.5 py-2 focus:outline-none"
+                style={{ background: 'var(--color-bg-base)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+              >
+                {FILTROS_COMPLETOS.map(f => (
+                  <option key={f.value} value={f.value}>{f.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          {usuarios.length > 0 && (
+            <div>
+              <label className="text-[10px] font-bold uppercase tracking-wider block mb-1" style={{ color: 'var(--color-text-muted)' }}>Usuario</label>
+              <select
+                value={filtroUsuario}
+                onChange={(e) => setFiltroUsuario(e.target.value)}
+                className="w-full text-[12px] rounded-[8px] px-2.5 py-2 focus:outline-none"
+                style={{ background: 'var(--color-bg-base)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+              >
+                <option value="">Todos</option>
+                {usuarios.map(u => (
+                  <option key={u.id} value={u.id}>{u.nombre}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[10px] font-bold uppercase tracking-wider block mb-1" style={{ color: 'var(--color-text-muted)' }}>Desde</label>
+              <input
+                type="date"
+                value={desde}
+                onChange={(e) => setDesde(e.target.value)}
+                className="w-full text-[12px] rounded-[8px] px-2.5 py-2 focus:outline-none [color-scheme:dark]"
+                style={{ background: 'var(--color-bg-base)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold uppercase tracking-wider block mb-1" style={{ color: 'var(--color-text-muted)' }}>Hasta</label>
+              <input
+                type="date"
+                value={hasta}
+                onChange={(e) => setHasta(e.target.value)}
+                className="w-full text-[12px] rounded-[8px] px-2.5 py-2 focus:outline-none [color-scheme:dark]"
+                style={{ background: 'var(--color-bg-base)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+              />
+            </div>
+          </div>
+          {hayFiltrosAvanzados && (
+            <button
+              onClick={() => { setFiltroUsuario(''); setDesde(''); setHasta('') }}
+              className="text-[11px] font-semibold pt-1"
+              style={{ color: 'var(--color-accent)' }}
+            >
+              Limpiar filtros
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Loading */}
       {loading && items.length === 0 ? (
-        <div className="space-y-2">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="flex items-center gap-3 px-3 py-2.5 animate-pulse rounded-xl bg-[rgba(255,255,255,0.02)]">
-              <div className="w-7 h-7 rounded-lg bg-[#222]" />
-              <div className="flex-1">
-                <div className="h-3 w-40 bg-[#222] rounded" />
+        <div className="space-y-3">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="flex items-center gap-3 animate-pulse">
+              <div className="w-8 h-8 rounded-[10px] shrink-0" style={{ background: 'var(--color-bg-hover)' }} />
+              <div className="flex-1 space-y-1.5">
+                <div className="h-3 rounded" style={{ width: '60%', background: 'var(--color-bg-hover)' }} />
+                <div className="h-2 rounded" style={{ width: '35%', background: 'var(--color-bg-hover)' }} />
               </div>
-              <div className="h-2.5 w-12 bg-[#222] rounded" />
+              <div className="h-2.5 w-10 rounded" style={{ background: 'var(--color-bg-hover)' }} />
             </div>
           ))}
         </div>
       ) : items.length === 0 ? (
         <div className="text-center py-16">
-          <svg className="w-12 h-12 mx-auto text-[#666] mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-          </svg>
-          <p className="text-sm text-[#777]">No hay actividad registrada</p>
-          <p className="text-xs text-[var(--color-text-muted)] mt-1">Las acciones aparecerán aquí automáticamente</p>
+          <div className="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center" style={{ background: 'var(--color-bg-hover)' }}>
+            <svg className="w-7 h-7" fill="none" stroke="var(--color-text-muted)" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+          </div>
+          <p className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>No hay actividad</p>
+          <p className="text-[11px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
+            {filtroTipo || hayFiltrosAvanzados ? 'No hay resultados con estos filtros' : 'Las acciones apareceran aqui automaticamente'}
+          </p>
         </div>
       ) : (
-        <div className="rounded-[16px] overflow-hidden border border-[rgba(255,255,255,0.06)]" style={{ background: 'rgba(255,255,255,0.02)' }}>
-          {items.map((item, idx) => {
-            const config = ACCIONES[item.accion] || { label: item.accion, color: '#888' }
-            const icon = getIcon(item.accion)
-
-            return (
-              <div
-                key={item.id}
-                className={[
-                  'flex items-center gap-3 px-4 py-3',
-                  idx !== items.length - 1 ? 'border-b border-[rgba(255,255,255,0.04)]' : '',
-                ].join(' ')}
-              >
-                {/* Icono con color distintivo */}
-                <div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: `${config.color}18` }}
-                >
-                  {icon}
-                </div>
-
-                {/* Contenido en una linea */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-[13px] text-[var(--color-text-primary)] leading-tight">
-                    <span className="font-semibold">{item.user?.nombre}</span>
-                    {' '}
-                    <span className="text-[var(--color-text-secondary)]">{config.label?.toLowerCase()}</span>
-                  </p>
-                  {item.detalle && (
-                    <p className="text-[11px] mt-0.5 truncate" style={{ color: config.color }}>{item.detalle}</p>
-                  )}
-                </div>
-
-                {/* Tiempo a la derecha */}
-                <span className="text-[10px] text-[var(--color-text-muted)] shrink-0 whitespace-nowrap">{tiempoRelativo(item.createdAt)}</span>
+        <div className="space-y-5">
+          {grupos.map(grupo => (
+            <div key={grupo.key}>
+              {/* Separador de dia */}
+              <div className="flex items-center gap-2.5 mb-2.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider shrink-0" style={{ color: 'var(--color-text-muted)' }}>
+                  {grupo.label}
+                </span>
+                <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
               </div>
-            )
-          })}
 
-          {/* Loader for infinite scroll */}
+              {/* Timeline de items del dia */}
+              <div className="relative pl-5">
+                {/* Linea vertical */}
+                <div className="absolute left-[11px] top-2 bottom-2 w-px" style={{ background: 'var(--color-border)' }} />
+
+                <div className="space-y-0.5">
+                  {grupo.items.map((item) => {
+                    const config = ACCIONES[item.accion] || { label: item.accion, color: '#888' }
+                    const icon = getIcon(item.accion)
+                    const esDestructiva = item.accion?.startsWith('eliminar') || item.accion === 'anular_pago'
+
+                    return (
+                      <div key={item.id} className="relative flex items-start gap-2.5 py-2">
+                        {/* Dot en la linea */}
+                        <div
+                          className="absolute -left-5 top-3 w-[9px] h-[9px] rounded-full border-2 shrink-0"
+                          style={{
+                            borderColor: config.color,
+                            background: 'var(--color-bg-base)',
+                          }}
+                        />
+
+                        {/* Icono */}
+                        <div
+                          className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0"
+                          style={{ background: `color-mix(in srgb, ${config.color} 12%, transparent)` }}
+                        >
+                          {icon}
+                        </div>
+
+                        {/* Contenido */}
+                        <div className="flex-1 min-w-0 pt-0.5">
+                          <p className="text-[12px] leading-snug" style={{ color: 'var(--color-text-primary)' }}>
+                            <span className="font-semibold">{item.user?.nombre || 'Sistema'}</span>
+                            {' '}
+                            <span style={{ color: 'var(--color-text-muted)' }}>{config.label?.toLowerCase()}</span>
+                          </p>
+                          {item.detalle && (
+                            <p
+                              className="text-[11px] mt-0.5 leading-snug"
+                              style={{ color: esDestructiva ? 'var(--color-danger)' : 'var(--color-text-muted)' }}
+                            >
+                              {item.detalle}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Hora */}
+                        <span className="text-[10px] shrink-0 pt-1 tabular-nums" style={{ color: 'var(--color-text-muted)' }}>
+                          {formatHora(item.createdAt)}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* Loader infinite scroll */}
           {hasMore && (
-            <div ref={loaderRef} className="flex justify-center py-3 border-t border-[rgba(255,255,255,0.04)]">
-              <div className="w-5 h-5 border-2 border-[var(--color-border)] border-t-[#f5c518] rounded-full animate-spin" />
+            <div ref={loaderRef} className="flex justify-center py-4">
+              <div className="w-5 h-5 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--color-border)', borderTopColor: 'var(--color-accent)' }} />
             </div>
           )}
         </div>
