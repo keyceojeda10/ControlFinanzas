@@ -460,6 +460,7 @@ export default function MigradorPage() {
 
       setFicha(nueva)
       setVista('formulario')
+      window.scrollTo({ top: 0, behavior: 'instant' })
     } catch {
       setOcrError('Error de conexion al leer la foto')
     } finally {
@@ -594,6 +595,7 @@ export default function MigradorPage() {
 
       setFicha(fichaVacia(defaults))
       setVista('lista')
+      window.scrollTo({ top: 0, behavior: 'instant' })
       setTimeout(() => setSuccessMsg(''), 3000)
     } catch {
       setError('Error de conexion')
@@ -639,6 +641,7 @@ export default function MigradorPage() {
     setEditandoIdx(idx)
     setVista('formulario')
     setError('')
+    window.scrollTo({ top: 0, behavior: 'instant' })
   }
 
   if (authLoading || !esOwner) return null
@@ -651,7 +654,7 @@ export default function MigradorPage() {
     <div className="max-w-lg mx-auto pb-32">
       {/* Header */}
       <div className="mb-5">
-        <button onClick={() => vista === 'lista' ? router.back() : (() => { setVista('lista'); setEditandoIdx(null); setError(''); setOcrError('') })()}
+        <button onClick={() => vista === 'lista' ? router.back() : (() => { setVista('lista'); setEditandoIdx(null); setError(''); setOcrError(''); window.scrollTo({ top: 0, behavior: 'instant' }) })()}
           className="flex items-center gap-1.5 text-sm mb-3 transition-colors"
           style={{ color: 'var(--color-text-muted)' }}>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -796,7 +799,7 @@ export default function MigradorPage() {
           )}
 
           {/* Botón agregar */}
-          <button type="button" onClick={() => { setFicha(fichaVacia(defaults)); setEditandoIdx(null); setVista('selector'); setError(''); setOcrError('') }}
+          <button type="button" onClick={() => { setFicha(fichaVacia(defaults)); setEditandoIdx(null); setVista('selector'); setError(''); setOcrError(''); window.scrollTo({ top: 0, behavior: 'instant' }) }}
             className="w-full h-14 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
             style={{ background: 'var(--color-accent)', color: '#000' }}>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -820,7 +823,7 @@ export default function MigradorPage() {
       {vista === 'selector' && (
         <SelectorMetodo
           onFoto={() => fotoRef.current?.click()}
-          onManual={() => { setFicha(fichaVacia(defaults)); setVista('formulario') }}
+          onManual={() => { setFicha(fichaVacia(defaults)); setVista('formulario'); window.scrollTo({ top: 0, behavior: 'instant' }) }}
           ocrLoading={ocrLoading}
           ocrError={ocrError}
           fotoInputRef={fotoRef}

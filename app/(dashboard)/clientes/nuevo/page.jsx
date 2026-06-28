@@ -44,6 +44,7 @@ export default function NuevoClientePage() {
       if (json.advertencias?.length) setOcrAdvertencias(json.advertencias)
       setDatosCartulina(json.datos)
       setMetodo('foto')
+      window.scrollTo({ top: 0, behavior: 'instant' })
     } catch {
       setOcrError('Error de conexion. Intenta de nuevo.')
     } finally {
@@ -124,7 +125,7 @@ export default function NuevoClientePage() {
           {/* Opcion: Manual */}
           <button
             type="button"
-            onClick={() => setMetodo('manual')}
+            onClick={() => { setMetodo('manual'); window.scrollTo({ top: 0, behavior: 'instant' }) }}
             disabled={ocrLoading}
             className="w-full text-left rounded-2xl p-5 transition-all active:scale-[0.98] disabled:opacity-60"
             style={{
