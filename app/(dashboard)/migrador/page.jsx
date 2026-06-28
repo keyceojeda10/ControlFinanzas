@@ -57,61 +57,78 @@ function calcularFicha(ficha) {
 }
 
 // ─── Vista: selector foto vs manual ───────────────────────────────
-function SelectorMetodo({ onFoto, onManual, ocrLoading, ocrError, fotoInputRef, onFotoChange }) {
+function SelectorMetodo({ onFoto, onManual, ocrLoading, ocrError, fotoInputRef, onFotoChange, numero }) {
   return (
-    <div className="space-y-3 mt-4">
-      <input ref={fotoInputRef} type="file" accept="image/*" multiple className="hidden" onChange={onFotoChange} />
-      <button type="button" onClick={onFoto} disabled={ocrLoading}
-        className="w-full text-left rounded-2xl p-5 transition-all active:scale-[0.98] disabled:opacity-60"
-        style={{
-          background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card)), var(--color-bg-card))',
-          border: '1.5px solid color-mix(in srgb, var(--color-accent) 30%, var(--color-border))',
-        }}>
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)', color: 'var(--color-accent)' }}>
-            {ocrLoading ? (
-              <svg className="animate-spin w-6 h-6" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-            ) : (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
-              </svg>
-            )}
+    <div>
+      <div className="mb-5">
+        <div className="flex items-center gap-2.5 mb-2">
+          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+            style={{ background: 'var(--color-accent)', color: '#000' }}>
+            {numero}
           </div>
-          <div className="flex-1">
-            <h3 className="text-base font-bold" style={{ color: 'var(--color-text-primary)' }}>
-              {ocrLoading ? 'Leyendo foto...' : 'Desde foto'}
-            </h3>
-            <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-              {ocrLoading ? 'La IA esta extrayendo los datos' : 'Cartulina, cuaderno o libreta. La IA llena los campos.'}
-            </p>
-          </div>
+          <h2 className="text-lg font-bold" style={{ color: 'var(--color-text-primary)' }}>
+            Agregar cliente #{numero}
+          </h2>
         </div>
-      </button>
+        <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+          Si tienes una foto de la cartulina, cuaderno o libreta del cliente, la IA puede leer los datos por ti. Si no, puedes escribir todo manual.
+        </p>
+      </div>
 
-      <button type="button" onClick={onManual} disabled={ocrLoading}
-        className="w-full text-left rounded-2xl p-5 transition-all active:scale-[0.98] disabled:opacity-60"
-        style={{ background: 'var(--color-bg-card)', border: '1.5px solid var(--color-border)' }}>
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: 'color-mix(in srgb, var(--color-info, #3b82f6) 12%, transparent)', color: 'var(--color-info, #3b82f6)' }}>
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" />
-            </svg>
+      <div className="space-y-3">
+        <input ref={fotoInputRef} type="file" accept="image/*" multiple className="hidden" onChange={onFotoChange} />
+        <button type="button" onClick={onFoto} disabled={ocrLoading}
+          className="w-full text-left rounded-2xl p-5 transition-all active:scale-[0.98] disabled:opacity-60"
+          style={{
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card)), var(--color-bg-card))',
+            border: '1.5px solid color-mix(in srgb, var(--color-accent) 30%, var(--color-border))',
+          }}>
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+              style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)', color: 'var(--color-accent)' }}>
+              {ocrLoading ? (
+                <svg className="animate-spin w-6 h-6" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+                </svg>
+              )}
+            </div>
+            <div className="flex-1">
+              <h3 className="text-base font-bold" style={{ color: 'var(--color-text-primary)' }}>
+                {ocrLoading ? 'Leyendo foto...' : 'Desde foto'}
+              </h3>
+              <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                {ocrLoading ? 'La IA esta extrayendo los datos' : 'Toma una foto y los campos se llenan solos. Puedes corregir lo que quieras antes de guardar.'}
+              </p>
+            </div>
           </div>
-          <div className="flex-1">
-            <h3 className="text-base font-bold" style={{ color: 'var(--color-text-primary)' }}>Crear manual</h3>
-            <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Escribe los datos paso a paso.</p>
+        </button>
+
+        <button type="button" onClick={onManual} disabled={ocrLoading}
+          className="w-full text-left rounded-2xl p-5 transition-all active:scale-[0.98] disabled:opacity-60"
+          style={{ background: 'var(--color-bg-card)', border: '1.5px solid var(--color-border)' }}>
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+              style={{ background: 'color-mix(in srgb, var(--color-info, #3b82f6) 12%, transparent)', color: 'var(--color-info, #3b82f6)' }}>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-base font-bold" style={{ color: 'var(--color-text-primary)' }}>Escribir manual</h3>
+              <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Escribe el nombre, cedula, monto y condiciones del prestamo.</p>
+            </div>
           </div>
-        </div>
-      </button>
+        </button>
+      </div>
 
       {ocrError && (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm"
+        <div className="mt-4 flex items-center gap-2 px-4 py-3 rounded-xl text-sm"
           style={{ background: 'var(--color-danger-dim)', color: 'var(--color-danger)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)' }}>
           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
@@ -124,9 +141,10 @@ function SelectorMetodo({ onFoto, onManual, ocrLoading, ocrError, fotoInputRef, 
 }
 
 // ─── Vista: formulario de cliente + préstamo ──────────────────────
-function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId, nombreRef, error, onGuardar, saving, editando }) {
+function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId, nombreRef, error, onGuardar, saving, editando, numero }) {
   const freqLabel = FRECUENCIAS.find(f => f.key === ficha.frecuencia)?.label?.toLowerCase() || ficha.frecuencia
   const unidadPlazo = { diario: 'dias', semanal: 'semanas', quincenal: 'quincenas', mensual: 'meses' }[ficha.frecuencia] || 'dias'
+  const [modoInteresTocado, setModoInteresTocado] = useState(editando)
 
   const handleFrecuenciaChange = (freq) => {
     set('frecuencia', freq)
@@ -140,13 +158,30 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
   }, [calculo, ficha.yaAbonado])
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      {/* ── ENCABEZADO ── */}
+      {!editando && (
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+            style={{ background: 'var(--color-accent)', color: '#000' }}>
+            {numero}
+          </div>
+          <div>
+            <h2 className="text-base font-bold" style={{ color: 'var(--color-text-primary)' }}>Cliente #{numero}</h2>
+            <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Completa los datos y configura su prestamo</p>
+          </div>
+        </div>
+      )}
+
       {/* ── DATOS DEL CLIENTE ── */}
       <div>
-        <h3 className="text-[11px] font-semibold uppercase tracking-wide mb-2"
+        <h3 className="text-[11px] font-semibold uppercase tracking-wide mb-1"
           style={{ color: 'var(--color-accent)' }}>Datos del cliente</h3>
+        <p className="text-[11px] mb-2.5" style={{ color: 'var(--color-text-muted)' }}>
+          Nombre, cedula y telefono son obligatorios. La direccion es opcional.
+        </p>
         <div className="space-y-2.5">
-          <input ref={nombreRef} type="text" placeholder="Nombre *" autoFocus
+          <input ref={nombreRef} type="text" placeholder="Nombre completo *" autoFocus
             value={ficha.nombre} onChange={e => set('nombre', e.target.value)}
             className="w-full h-11 rounded-[10px] border px-3 text-sm"
             style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
@@ -160,7 +195,7 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
               className="w-full h-11 rounded-[10px] border px-3 text-sm"
               style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
           </div>
-          <input type="text" placeholder="Direccion"
+          <input type="text" placeholder="Direccion (opcional)"
             value={ficha.direccion} onChange={e => set('direccion', e.target.value)}
             className="w-full h-11 rounded-[10px] border px-3 text-sm"
             style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
@@ -169,13 +204,19 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
 
       {/* ── PRÉSTAMO ── */}
       <div>
-        <h3 className="text-[11px] font-semibold uppercase tracking-wide mb-2"
-          style={{ color: 'var(--color-accent)' }}>Prestamo</h3>
+        <h3 className="text-[11px] font-semibold uppercase tracking-wide mb-1"
+          style={{ color: 'var(--color-accent)' }}>Condiciones del prestamo</h3>
+        <p className="text-[11px] mb-2.5" style={{ color: 'var(--color-text-muted)' }}>
+          Configura el monto, la tasa, la frecuencia de cobro y el plazo. Si este cliente tiene condiciones diferentes a los demas, puedes cambiarlo aqui.
+        </p>
         <div className="space-y-3">
+          {/* Monto */}
           <div>
+            <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
+              style={{ color: 'var(--color-text-muted)' }}>Cuanto le prestas?</label>
             <input type="number" inputMode="numeric" placeholder="Monto prestado *"
               value={ficha.monto} onChange={e => set('monto', e.target.value)}
-              className="w-full h-11 rounded-[10px] border px-3 text-sm"
+              className="w-full h-12 rounded-[10px] border px-3 text-base font-semibold"
               style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
             <div className="flex gap-1.5 mt-1.5 flex-wrap">
               {CHIPS_MONTO.map(v => (
@@ -192,6 +233,7 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
             </div>
           </div>
 
+          {/* Tasa + Frecuencia + Plazo */}
           <div className="grid grid-cols-3 gap-2.5">
             <div>
               <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
@@ -220,38 +262,45 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
             </div>
           </div>
 
-          <ModoInteresSelector modoInteres={ficha.modoInteres} onChange={v => set('modoInteres', v)}
+          {/* Modo interés */}
+          <ModoInteresSelector modoInteres={ficha.modoInteres} onChange={v => { set('modoInteres', v); setModoInteresTocado(true) }}
             monto={ficha.monto} tasa={ficha.tasa} frecuencia={ficha.frecuencia} diasPlazo={diasPlazo} />
 
+          {/* Fecha inicio */}
           <div>
             <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
-              style={{ color: 'var(--color-text-muted)' }}>Fecha de inicio</label>
+              style={{ color: 'var(--color-text-muted)' }}>Fecha de inicio del prestamo</label>
             <input type="date" value={ficha.fechaInicio} onChange={e => set('fechaInicio', e.target.value)}
               max={hoyISO()} className="w-full h-10 rounded-[10px] border px-3 text-sm"
               style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
           </div>
 
+          {/* Préstamo en curso */}
           <label className="flex items-center gap-2.5 cursor-pointer">
             <input type="checkbox" checked={ficha.esEnCurso} onChange={e => set('esEnCurso', e.target.checked)}
               className="w-4 h-4 rounded accent-[var(--color-accent)]" />
-            <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>Ya tiene abonos (prestamo en curso)</span>
+            <div>
+              <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>Este prestamo ya tiene abonos</span>
+              <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Activalo si el cliente ya venia pagando y estas migrando un prestamo en curso</p>
+            </div>
           </label>
 
           {ficha.esEnCurso && (
             <div>
               <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
-                style={{ color: 'var(--color-text-muted)' }}>Ya ha pagado</label>
-              <input type="number" inputMode="numeric" placeholder="Monto ya abonado"
+                style={{ color: 'var(--color-text-muted)' }}>Cuanto ha pagado hasta ahora?</label>
+              <input type="number" inputMode="numeric" placeholder="Monto total ya abonado"
                 value={ficha.yaAbonado} onChange={e => set('yaAbonado', e.target.value)}
                 className="w-full h-10 rounded-[10px] border px-3 text-sm"
                 style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
             </div>
           )}
 
+          {/* Ruta */}
           {rutas.length > 0 && !defaultRutaId && (
             <div>
               <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
-                style={{ color: 'var(--color-text-muted)' }}>Ruta</label>
+                style={{ color: 'var(--color-text-muted)' }}>Ruta de cobro</label>
               <select value={ficha.rutaId} onChange={e => set('rutaId', e.target.value)}
                 className="w-full h-10 rounded-[10px] border px-3 text-sm"
                 style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}>
@@ -263,28 +312,41 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
         </div>
       </div>
 
-      {/* ── RESUMEN EN VIVO ── */}
-      {calculo && (
-        <div className="rounded-[12px] p-3.5 space-y-1.5"
-          style={{ background: 'var(--color-bg-base)', border: '1px solid var(--color-border)' }}>
-          <div className="flex justify-between items-center">
-            <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Total a pagar</span>
-            <span className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(calculo.totalAPagar)}</span>
+      {/* ── RESUMEN DEL PRESTAMO (solo después de elegir modo de interés) ── */}
+      {calculo && modoInteresTocado && (
+        <div className="rounded-[12px] overflow-hidden"
+          style={{ border: '1.5px solid color-mix(in srgb, var(--color-success) 35%, var(--color-border))' }}>
+          <div className="px-3.5 py-2" style={{ background: 'color-mix(in srgb, var(--color-success) 10%, var(--color-bg-base))' }}>
+            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-success)' }}>
+              Resumen del prestamo
+            </p>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Cuota {freqLabel}</span>
-            <span className="text-sm font-semibold" style={{ color: 'var(--color-accent)' }}>{formatMoney(calculo.cuotaDiaria)}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Interes</span>
-            <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{formatMoney(calculo.totalInteres)}</span>
-          </div>
-          {ficha.esEnCurso && Number(ficha.yaAbonado) > 0 && saldoPendiente !== null && (
-            <div className="flex justify-between items-center pt-1.5" style={{ borderTop: '1px dashed var(--color-border)' }}>
-              <span className="text-xs font-semibold" style={{ color: 'var(--color-text-muted)' }}>Saldo pendiente</span>
-              <span className="text-sm font-bold" style={{ color: 'var(--color-success)' }}>{formatMoney(saldoPendiente)}</span>
+          <div className="px-3.5 py-3 space-y-1.5" style={{ background: 'var(--color-bg-base)' }}>
+            <div className="flex justify-between items-center">
+              <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Cuota {freqLabel}</span>
+              <span className="text-base font-bold" style={{ color: 'var(--color-success)' }}>{formatMoney(calculo.cuotaDiaria)}</span>
             </div>
-          )}
+            <div className="flex justify-between items-center">
+              <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Total a pagar</span>
+              <span className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(calculo.totalAPagar)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Ganancia (interes)</span>
+              <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{formatMoney(calculo.totalInteres)}</span>
+            </div>
+            {calculo.numeroCuotas && (
+              <div className="flex justify-between items-center">
+                <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Numero de cuotas</span>
+                <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{calculo.numeroCuotas}</span>
+              </div>
+            )}
+            {ficha.esEnCurso && Number(ficha.yaAbonado) > 0 && saldoPendiente !== null && (
+              <div className="flex justify-between items-center pt-1.5" style={{ borderTop: '1px dashed var(--color-border)' }}>
+                <span className="text-xs font-semibold" style={{ color: 'var(--color-text-muted)' }}>Saldo pendiente</span>
+                <span className="text-sm font-bold" style={{ color: 'var(--color-accent)' }}>{formatMoney(saldoPendiente)}</span>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -311,25 +373,22 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
             </svg>
             {editando ? 'Actualizando...' : 'Guardando...'}
           </span>
-        ) : editando ? 'Guardar cambios' : 'Agregar cliente'}
+        ) : editando ? 'Guardar cambios' : 'Guardar y agregar siguiente'}
       </button>
     </div>
   )
 }
 
 // ─── Vista: card de cliente en la lista ───────────────────────────
-function ClienteCard({ item, onEditar, onEliminar, eliminando }) {
+function ClienteCard({ item, indice, onEditar, onEliminar, eliminando }) {
   const freqLabel = FRECUENCIAS.find(f => f.key === item.frecuencia)?.label || item.frecuencia
   return (
     <div className="rounded-[14px] border overflow-hidden transition-all"
       style={{ background: 'var(--color-bg-card)', borderColor: 'var(--color-border)' }}>
       <div className="flex items-center gap-3 px-4 py-3">
-        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-          style={{ background: 'var(--color-success-dim)' }}>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            style={{ color: 'var(--color-success)' }}>
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-          </svg>
+        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-[11px] font-bold"
+          style={{ background: 'var(--color-success-dim)', color: 'var(--color-success)' }}>
+          {indice}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold truncate" style={{ color: 'var(--color-text-primary)' }}>{item.nombre}</p>
@@ -337,9 +396,10 @@ function ClienteCard({ item, onEditar, onEliminar, eliminando }) {
             {formatMoney(item.monto)} · {freqLabel} · Cuota {formatMoney(item.cuota)}
           </p>
         </div>
-        <span className="text-xs font-bold shrink-0" style={{ color: 'var(--color-accent)' }}>
-          {formatMoney(item.totalAPagar)}
-        </span>
+        <div className="text-right shrink-0">
+          <p className="text-xs font-bold" style={{ color: 'var(--color-accent)' }}>{formatMoney(item.totalAPagar)}</p>
+          <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>total</p>
+        </div>
       </div>
       <div className="flex border-t" style={{ borderColor: 'var(--color-border)' }}>
         <button type="button" onClick={onEditar}
@@ -381,14 +441,13 @@ export default function MigradorPage() {
   const fotoRef = useRef(null)
 
   const [rutas, setRutas] = useState([])
-  const [configOpen, setConfigOpen] = useState(true)
 
   const [defaults, setDefaults] = useState({
     tasa: '20', frecuencia: 'diario', modoInteres: 'fijo', rutaId: '',
   })
 
-  // vista: 'lista' | 'selector' | 'formulario'
-  const [vista, setVista] = useState('lista')
+  // vista: 'config' | 'lista' | 'selector' | 'formulario'
+  const [vista, setVista] = useState('config')
   const [ficha, setFicha] = useState(() => fichaVacia(defaults))
   const [creados, setCreados] = useState([])
   const [editandoIdx, setEditandoIdx] = useState(null)
@@ -417,6 +476,11 @@ export default function MigradorPage() {
 
   const updateDefault = useCallback((campo, valor) => {
     setDefaults(prev => ({ ...prev, [campo]: valor }))
+  }, [])
+
+  const irA = useCallback((v) => {
+    setVista(v)
+    window.scrollTo({ top: 0, behavior: 'instant' })
   }, [])
 
   // ── OCR ──
@@ -459,8 +523,7 @@ export default function MigradorPage() {
       }
 
       setFicha(nueva)
-      setVista('formulario')
-      window.scrollTo({ top: 0, behavior: 'instant' })
+      irA('formulario')
     } catch {
       setOcrError('Error de conexion al leer la foto')
     } finally {
@@ -484,7 +547,6 @@ export default function MigradorPage() {
       const item = esEdicion ? creados[editandoIdx] : null
 
       if (esEdicion && item) {
-        // ── EDITAR: PATCH cliente + PATCH prestamo ──
         const clienteRes = await fetch(`/api/clientes/${item.clienteId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -541,7 +603,6 @@ export default function MigradorPage() {
         setEditandoIdx(null)
         setSuccessMsg(`${ficha.nombre.trim()} actualizado`)
       } else {
-        // ── CREAR: POST cliente + POST prestamo ──
         const clientePayload = {
           nombre: ficha.nombre.trim(),
           cedula: ficha.cedula.trim(),
@@ -573,7 +634,7 @@ export default function MigradorPage() {
         const dataPrestamo = await resPrestamo.json()
         if (!resPrestamo.ok) { setError(dataPrestamo.error || 'Cliente creado pero error en el prestamo'); setSaving(false); return }
 
-        setCreados(prev => [{
+        setCreados(prev => [...prev, {
           nombre: ficha.nombre.trim(),
           cedula: ficha.cedula.trim(),
           telefono: ficha.telefono.trim(),
@@ -588,15 +649,14 @@ export default function MigradorPage() {
           cuota: calculo.cuotaDiaria,
           clienteId: dataCliente.id,
           prestamoId: dataPrestamo.id,
-        }, ...prev])
+        }])
 
         setSuccessMsg(`${ficha.nombre.trim()} guardado`)
       }
 
       setFicha(fichaVacia(defaults))
-      setVista('lista')
-      window.scrollTo({ top: 0, behavior: 'instant' })
-      setTimeout(() => setSuccessMsg(''), 3000)
+      irA('selector')
+      setTimeout(() => setSuccessMsg(''), 4000)
     } catch {
       setError('Error de conexion')
     } finally {
@@ -604,7 +664,7 @@ export default function MigradorPage() {
     }
   }
 
-  // ── Eliminar (cancelar prestamo + inactivar cliente) ──
+  // ── Eliminar ──
   const eliminar = async (idx) => {
     const item = creados[idx]
     if (!item) return
@@ -639,196 +699,283 @@ export default function MigradorPage() {
       esEnCurso: false, yaAbonado: '', rutaId: item.rutaId || defaults.rutaId,
     })
     setEditandoIdx(idx)
-    setVista('formulario')
+    irA('formulario')
     setError('')
-    window.scrollTo({ top: 0, behavior: 'instant' })
   }
 
   if (authLoading || !esOwner) return null
 
-  // ─── Resumen de la lista ──────────────────────────────────
   const totalCapital = creados.reduce((s, c) => s + c.monto, 0)
   const totalAPagarGlobal = creados.reduce((s, c) => s + c.totalAPagar, 0)
+  const proximoNumero = creados.length + 1
+
+  // ── Header dinámico ──
+  const headerTitulo = {
+    config: 'Migrador de cartera',
+    lista: 'Tu cartera',
+    selector: 'Agregar cliente',
+    formulario: editandoIdx !== null ? `Editar: ${creados[editandoIdx]?.nombre || 'cliente'}` : `Cliente #${proximoNumero}`,
+  }[vista]
+
+  const headerSub = {
+    config: 'Configura los valores base antes de empezar',
+    lista: `${creados.length} cliente${creados.length !== 1 ? 's' : ''} agregado${creados.length !== 1 ? 's' : ''}`,
+    selector: 'Como quieres registrar este cliente?',
+    formulario: editandoIdx !== null ? 'Modifica lo que necesites y guarda' : 'Completa los datos y su prestamo',
+  }[vista]
+
+  const volverLabel = {
+    config: 'Salir',
+    lista: 'Salir del migrador',
+    selector: creados.length > 0 ? 'Ver mis clientes' : 'Volver',
+    formulario: 'Volver',
+  }[vista]
+
+  const handleVolver = () => {
+    if (vista === 'config') { router.back(); return }
+    if (vista === 'lista') { router.back(); return }
+    if (vista === 'selector') {
+      if (creados.length > 0) { irA('lista') } else { irA('config') }
+      return
+    }
+    if (vista === 'formulario') {
+      setEditandoIdx(null)
+      setError('')
+      if (creados.length > 0) { irA('selector') } else { irA('selector') }
+    }
+  }
 
   return (
     <div className="max-w-lg mx-auto pb-32">
       {/* Header */}
       <div className="mb-5">
-        <button onClick={() => vista === 'lista' ? router.back() : (() => { setVista('lista'); setEditandoIdx(null); setError(''); setOcrError(''); window.scrollTo({ top: 0, behavior: 'instant' }) })()}
+        <button onClick={handleVolver}
           className="flex items-center gap-1.5 text-sm mb-3 transition-colors"
           style={{ color: 'var(--color-text-muted)' }}>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          {vista === 'lista' ? 'Volver' : 'Volver a la lista'}
+          {volverLabel}
         </button>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>
-              {vista === 'formulario' && editandoIdx !== null ? 'Editar cliente' : vista === 'formulario' ? 'Nuevo cliente' : vista === 'selector' ? 'Agregar cliente' : 'Migrador de cartera'}
-            </h1>
-            <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-              {vista === 'formulario' && editandoIdx !== null ? 'Modifica los datos y guarda' : vista === 'formulario' ? 'Completa los datos del cliente y su prestamo' : vista === 'selector' ? 'Como quieres registrarlo?' : 'Agrega clientes con prestamo, uno tras otro'}
-            </p>
+            <h1 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>{headerTitulo}</h1>
+            <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{headerSub}</p>
           </div>
-          {vista === 'lista' && creados.length > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
+          {creados.length > 0 && vista !== 'lista' && (
+            <button type="button" onClick={() => irA('lista')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-colors"
               style={{ background: 'var(--color-success-dim)', color: 'var(--color-success)' }}>
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
               </svg>
               {creados.length}
-            </div>
+            </button>
           )}
         </div>
       </div>
 
-      {/* ════════ VISTA: LISTA ════════ */}
-      {vista === 'lista' && (
-        <>
-          {/* Configuración base */}
-          <div className="rounded-[14px] border mb-4 overflow-hidden"
+      {/* Success msg (global) */}
+      {successMsg && (
+        <div className="flex items-center gap-2 px-4 py-2.5 rounded-[12px] mb-4 text-sm font-medium"
+          style={{ background: 'var(--color-success-dim)', color: 'var(--color-success)', border: '1px solid var(--color-success-border)' }}>
+          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+          </svg>
+          {successMsg}
+        </div>
+      )}
+
+      {/* ════════ VISTA: CONFIG INICIAL ════════ */}
+      {vista === 'config' && (
+        <div>
+          <div className="rounded-[14px] border overflow-hidden mb-5"
             style={{ background: 'var(--color-bg-card)', borderColor: 'var(--color-border)' }}>
-            <button type="button" onClick={() => setConfigOpen(v => !v)}
-              className="w-full flex items-center justify-between px-4 py-3 text-left">
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                  style={{ color: 'var(--color-accent)' }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Configuracion base</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
-                  {defaults.tasa}% · {FRECUENCIAS.find(f => f.key === defaults.frecuencia)?.label}
-                </span>
-                <svg className="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                  style={{ color: 'var(--color-text-muted)', transform: configOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </button>
-            {configOpen && (
-              <div className="px-4 pb-4 space-y-3" style={{ borderTop: '1px solid var(--color-border)' }}>
-                <p className="text-[11px] pt-3" style={{ color: 'var(--color-text-muted)' }}>
-                  Estos valores se aplican a cada cliente nuevo.
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
-                      style={{ color: 'var(--color-text-muted)' }}>Tasa %</label>
-                    <input type="number" inputMode="decimal" value={defaults.tasa}
-                      onChange={e => updateDefault('tasa', e.target.value)}
-                      className="w-full h-10 rounded-[10px] border px-3 text-sm"
-                      style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
-                      style={{ color: 'var(--color-text-muted)' }}>Frecuencia</label>
-                    <select value={defaults.frecuencia} onChange={e => updateDefault('frecuencia', e.target.value)}
-                      className="w-full h-10 rounded-[10px] border px-3 text-sm"
-                      style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}>
-                      {FRECUENCIAS.map(f => <option key={f.key} value={f.key}>{f.label}</option>)}
-                    </select>
-                  </div>
+            <div className="p-4 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)', color: 'var(--color-accent)' }}>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round"
+                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
                 </div>
-                {rutas.length > 0 && (
-                  <div>
-                    <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
-                      style={{ color: 'var(--color-text-muted)' }}>Ruta</label>
-                    <select value={defaults.rutaId} onChange={e => updateDefault('rutaId', e.target.value)}
-                      className="w-full h-10 rounded-[10px] border px-3 text-sm"
-                      style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}>
-                      <option value="">Sin ruta</option>
-                      {rutas.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
-                    </select>
-                  </div>
-                )}
+                <div>
+                  <h2 className="text-base font-bold" style={{ color: 'var(--color-text-primary)' }}>Valores por defecto</h2>
+                  <p className="text-[12px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                    Estos valores se aplicaran a cada cliente nuevo como punto de partida. Si algun cliente tiene condiciones diferentes, podras cambiarlo al momento de crearlo.
+                  </p>
+                </div>
               </div>
-            )}
-          </div>
 
-          {/* Success msg */}
-          {successMsg && (
-            <div className="flex items-center gap-2 px-4 py-2.5 rounded-[12px] mb-4 text-sm font-medium"
-              style={{ background: 'var(--color-success-dim)', color: 'var(--color-success)', border: '1px solid var(--color-success-border)' }}>
-              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-              </svg>
-              {successMsg}
-            </div>
-          )}
-
-          {/* Resumen global */}
-          {creados.length > 0 && (
-            <div className="rounded-[14px] border p-4 mb-4"
-              style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 6%, var(--color-bg-card)), var(--color-bg-card))', borderColor: 'color-mix(in srgb, var(--color-accent) 25%, var(--color-border))' }}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-accent)' }}>
-                  Resumen
-                </span>
-                <span className="text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                  {creados.length} cliente{creados.length !== 1 ? 's' : ''}
-                </span>
-              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Capital prestado</p>
-                  <p className="text-base font-bold" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(totalCapital)}</p>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
+                    style={{ color: 'var(--color-text-muted)' }}>Tasa de interes %</label>
+                  <input type="number" inputMode="decimal" value={defaults.tasa}
+                    onChange={e => updateDefault('tasa', e.target.value)}
+                    className="w-full h-11 rounded-[10px] border px-3 text-sm"
+                    style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
                 </div>
                 <div>
-                  <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Total a cobrar</p>
-                  <p className="text-base font-bold" style={{ color: 'var(--color-accent)' }}>{formatMoney(totalAPagarGlobal)}</p>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
+                    style={{ color: 'var(--color-text-muted)' }}>Frecuencia de cobro</label>
+                  <select value={defaults.frecuencia} onChange={e => updateDefault('frecuencia', e.target.value)}
+                    className="w-full h-11 rounded-[10px] border px-3 text-sm"
+                    style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}>
+                    {FRECUENCIAS.map(f => <option key={f.key} value={f.key}>{f.label}</option>)}
+                  </select>
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* Lista de creados */}
-          {creados.length > 0 && (
-            <div className="space-y-2 mb-5">
-              {creados.map((c, i) => (
-                <ClienteCard key={c.clienteId} item={c}
-                  onEditar={() => abrirEdicion(i)}
-                  onEliminar={() => eliminar(i)}
-                  eliminando={eliminandoIdx === i} />
-              ))}
+              {rutas.length > 0 && (
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
+                    style={{ color: 'var(--color-text-muted)' }}>Ruta de cobro</label>
+                  <select value={defaults.rutaId} onChange={e => updateDefault('rutaId', e.target.value)}
+                    className="w-full h-11 rounded-[10px] border px-3 text-sm"
+                    style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}>
+                    <option value="">Sin ruta</option>
+                    {rutas.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
+                  </select>
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
-          {/* Botón agregar */}
-          <button type="button" onClick={() => { setFicha(fichaVacia(defaults)); setEditandoIdx(null); setVista('selector'); setError(''); setOcrError(''); window.scrollTo({ top: 0, behavior: 'instant' }) }}
+          <button type="button" onClick={() => irA('selector')}
             className="w-full h-14 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
             style={{ background: 'var(--color-accent)', color: '#000' }}>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
-            Agregar cliente
+            Empezar a agregar clientes
+          </button>
+        </div>
+      )}
+
+      {/* ════════ VISTA: LISTA ════════ */}
+      {vista === 'lista' && (
+        <>
+          {/* Config colapsada — editable */}
+          <button type="button" onClick={() => irA('config')}
+            className="w-full flex items-center justify-between px-4 py-2.5 rounded-[12px] border mb-4 text-left transition-colors"
+            style={{ background: 'var(--color-bg-card)', borderColor: 'var(--color-border)' }}>
+            <div className="flex items-center gap-2">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"
+                style={{ color: 'var(--color-accent)' }}>
+                <path strokeLinecap="round" strokeLinejoin="round"
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span className="text-xs font-medium" style={{ color: 'var(--color-text-secondary)' }}>Valores base</span>
+            </div>
+            <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+              {defaults.tasa}% · {FRECUENCIAS.find(f => f.key === defaults.frecuencia)?.label} · Editar
+            </span>
           </button>
 
-          {/* Botón terminar */}
-          {creados.length > 0 && (
-            <button type="button" onClick={() => router.push('/prestamos')}
-              className="w-full h-12 rounded-2xl text-sm font-semibold mt-3 border transition-all"
-              style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)', background: 'var(--color-bg-surface)' }}>
-              Ir a prestamos
-            </button>
-          )}
+          {/* Resumen global */}
+          <div className="rounded-[14px] border p-4 mb-4"
+            style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 6%, var(--color-bg-card)), var(--color-bg-card))', borderColor: 'color-mix(in srgb, var(--color-accent) 25%, var(--color-border))' }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-accent)' }}>
+                Resumen de cartera
+              </span>
+              <span className="text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                {creados.length} cliente{creados.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Capital prestado</p>
+                <p className="text-base font-bold" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(totalCapital)}</p>
+              </div>
+              <div>
+                <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Total a cobrar</p>
+                <p className="text-base font-bold" style={{ color: 'var(--color-accent)' }}>{formatMoney(totalAPagarGlobal)}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Lista de creados */}
+          <div className="space-y-2 mb-5">
+            {creados.map((c, i) => (
+              <ClienteCard key={c.clienteId} item={c} indice={i + 1}
+                onEditar={() => abrirEdicion(i)}
+                onEliminar={() => eliminar(i)}
+                eliminando={eliminandoIdx === i} />
+            ))}
+          </div>
+
+          {/* Boton agregar otro */}
+          <button type="button" onClick={() => { setFicha(fichaVacia(defaults)); setEditandoIdx(null); setError(''); setOcrError(''); irA('selector') }}
+            className="w-full h-14 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+            style={{ background: 'var(--color-accent)', color: '#000' }}>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Agregar otro cliente
+          </button>
+
+          <button type="button" onClick={() => router.push('/prestamos')}
+            className="w-full h-12 rounded-2xl text-sm font-semibold mt-3 border transition-all"
+            style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)', background: 'var(--color-bg-surface)' }}>
+            Termine, ir a prestamos
+          </button>
         </>
       )}
 
       {/* ════════ VISTA: SELECTOR ════════ */}
       {vista === 'selector' && (
-        <SelectorMetodo
-          onFoto={() => fotoRef.current?.click()}
-          onManual={() => { setFicha(fichaVacia(defaults)); setVista('formulario'); window.scrollTo({ top: 0, behavior: 'instant' }) }}
-          ocrLoading={ocrLoading}
-          ocrError={ocrError}
-          fotoInputRef={fotoRef}
-          onFotoChange={handleFoto}
-        />
+        <>
+          {/* Mini-lista de clientes ya creados (contexto visual) */}
+          {creados.length > 0 && (
+            <div className="mb-5">
+              <button type="button" onClick={() => irA('lista')}
+                className="w-full text-left rounded-[12px] border px-4 py-3 transition-colors"
+                style={{ background: 'var(--color-bg-card)', borderColor: 'var(--color-border)' }}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"
+                      style={{ color: 'var(--color-success)' }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
+                      {creados.length} cliente{creados.length !== 1 ? 's' : ''} agregado{creados.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-medium" style={{ color: 'var(--color-accent)' }}>Ver lista</span>
+                </div>
+                <div className="mt-1.5 flex gap-1 flex-wrap">
+                  {creados.slice(-5).map((c, i) => (
+                    <span key={i} className="text-[10px] px-2 py-0.5 rounded-full"
+                      style={{ background: 'var(--color-bg-base)', color: 'var(--color-text-muted)' }}>
+                      {c.nombre.split(' ')[0]}
+                    </span>
+                  ))}
+                  {creados.length > 5 && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full"
+                      style={{ background: 'var(--color-bg-base)', color: 'var(--color-text-muted)' }}>
+                      +{creados.length - 5} mas
+                    </span>
+                  )}
+                </div>
+              </button>
+            </div>
+          )}
+
+          <SelectorMetodo
+            onFoto={() => fotoRef.current?.click()}
+            onManual={() => { setFicha(fichaVacia(defaults)); irA('formulario') }}
+            ocrLoading={ocrLoading}
+            ocrError={ocrError}
+            fotoInputRef={fotoRef}
+            onFotoChange={handleFoto}
+            numero={proximoNumero}
+          />
+        </>
       )}
 
       {/* ════════ VISTA: FORMULARIO ════════ */}
@@ -839,7 +986,7 @@ export default function MigradorPage() {
             ficha={ficha} set={set} calculo={calculo} diasPlazo={diasPlazo}
             rutas={rutas} defaultRutaId={defaults.rutaId} nombreRef={nombreRef}
             error={error} onGuardar={guardar} saving={saving}
-            editando={editandoIdx !== null}
+            editando={editandoIdx !== null} numero={proximoNumero}
           />
         </div>
       )}

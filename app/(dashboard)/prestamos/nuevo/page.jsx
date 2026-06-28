@@ -1044,21 +1044,15 @@ function NuevoPrestamo() {
                 )}
               </div>
 
-              {/* Preview en vivo */}
-              {calculo && (
-                <div className="rounded-xl p-3 space-y-2" style={{ background: 'color-mix(in srgb, var(--color-success) 6%, transparent)', border: '1px solid color-mix(in srgb, var(--color-success) 20%, transparent)' }}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Cuota {frecuencia === 'diario' ? 'diaria' : frecuencia}</span>
-                    <span className="text-lg font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(calculo.cuotaDiaria)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Total a pagar</span>
-                    <span className="text-sm font-semibold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(calculo.totalAPagar)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Ganancia</span>
-                    <span className="text-sm font-semibold font-mono-display" style={{ color: 'var(--color-success)' }}>{formatMoney(calculo.totalAPagar - Number(monto))}</span>
-                  </div>
+              {/* Preview del interes mensual (sin cuota/total — eso depende del modo de interes que se elige en el paso siguiente) */}
+              {Number(monto) > 0 && Number(tasa) > 0 && Number(plazoUnidades) > 0 && (
+                <div className="rounded-xl px-3 py-2.5" style={{ background: 'color-mix(in srgb, var(--color-accent) 6%, transparent)', border: '1px solid color-mix(in srgb, var(--color-accent) 15%, transparent)' }}>
+                  <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                    {formatMoney(Number(monto))} al {tasa}% por {plazoUnidades} {frecuencia === 'diario' ? 'dias' : frecuencia === 'semanal' ? 'semanas' : frecuencia === 'quincenal' ? 'quincenas' : 'meses'}
+                  </p>
+                  <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                    La cuota exacta depende del modo de interes que elijas en el siguiente paso.
+                  </p>
                 </div>
               )}
             </div>
