@@ -3,11 +3,36 @@ import { formatMoney } from '@/lib/i18n'
 import { calcularPrestamo } from '@/lib/calculos'
 
 const MODOS = [
-  { key: 'fijo',   label: 'Cuota fija, interes sobre el total',  tag: 'Clasico',         desc: 'La cuota es la misma siempre. El metodo mas usado.' },
-  { key: 'unico',  label: 'Interes de una sola vez',             tag: 'De una vez',       desc: 'Cobra todo el interes al inicio, sin importar el plazo.' },
-  { key: 'saldo',  label: 'Interes sobre lo que falta',          tag: 'Como los bancos',  desc: 'El interes baja a medida que paga.' },
-  { key: 'manual', label: 'Yo decido la cuota',                  tag: 'Manual',           desc: 'Tu pones la cuota exacta que quieras cobrar.' },
-  { key: 'lineal', label: 'Cuota que va bajando',                tag: 'Decreciente',      desc: 'Empieza pagando mas y cada vez paga menos.' },
+  {
+    key: 'fijo',
+    label: 'Cuota fija',
+    tag: 'Clasico',
+    desc: 'La cuota es la misma todos los dias. Capital + interes repartidos en partes iguales. Es el metodo mas usado.',
+  },
+  {
+    key: 'unico',
+    label: 'Interes de una sola vez',
+    tag: 'De una vez',
+    desc: 'El cliente paga todo el interes al inicio (o al final). Las cuotas solo devuelven el capital. Ideal para prestamos cortos.',
+  },
+  {
+    key: 'saldo',
+    label: 'Interes sobre lo que falta',
+    tag: 'Como los bancos',
+    desc: 'El interes se calcula sobre el saldo pendiente: a medida que paga capital, el interes baja. La cuota empieza alta y va bajando.',
+  },
+  {
+    key: 'manual',
+    label: 'Yo decido la cuota',
+    tag: 'Manual',
+    desc: 'Tu pones la cuota exacta que quieras cobrar. El sistema calcula cuantas cuotas necesita para pagar el total.',
+  },
+  {
+    key: 'lineal',
+    label: 'Cuota que va bajando',
+    tag: 'Decreciente',
+    desc: 'Capital e interes se cobran por separado. El capital se divide en partes iguales y el interes baja cada periodo porque se calcula sobre lo que falta.',
+  },
 ]
 
 function calcularEjemplo(modo, { monto, tasa, frecuencia, diasPlazo }) {

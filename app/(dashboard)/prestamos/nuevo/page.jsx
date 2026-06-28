@@ -411,17 +411,21 @@ function NuevoPrestamo() {
     if (paso === 1 && subPaso < TOTAL_SUB_PASOS - 1) {
       if (!puedeAvanzarSubPaso()) return
       setSubPaso(s => s + 1)
+      window.scrollTo({ top: 0, behavior: 'instant' })
       return
     }
     if (!puedeAvanzarPaso()) return
     setPaso(p => Math.min(PASOS.length - 1, p + 1))
+    window.scrollTo({ top: 0, behavior: 'instant' })
   }
   const irAlPasoAnterior = () => {
     if (paso === 1 && subPaso > 0) {
       setSubPaso(s => s - 1)
+      window.scrollTo({ top: 0, behavior: 'instant' })
       return
     }
     setPaso(p => Math.max(0, p - 1))
+    window.scrollTo({ top: 0, behavior: 'instant' })
   }
 
   useEffect(() => {
@@ -1269,7 +1273,7 @@ function NuevoPrestamo() {
       })()}
 
       {/* Barra sticky de resumen en vivo — visible en sub-pasos 2+ del wizard */}
-      {paso === 1 && calculo && subPaso >= 2 && (
+      {paso === 1 && calculo && subPaso >= (modo === 'mercancia' ? 2 : 4) && (
         <div
           className="fixed left-0 right-0 lg:left-60 z-[44] px-4 lg:px-6"
           style={{ bottom: 'calc(68px + env(safe-area-inset-bottom))' }}
