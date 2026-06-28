@@ -442,12 +442,10 @@ export default function MigradorPage() {
 
   const [rutas, setRutas] = useState([])
 
-  const [defaults, setDefaults] = useState({
-    tasa: '20', frecuencia: 'diario', modoInteres: 'fijo', rutaId: '',
-  })
+  const defaults = { tasa: '20', frecuencia: 'diario', modoInteres: 'fijo', rutaId: '' }
 
-  // vista: 'config' | 'lista' | 'selector' | 'formulario'
-  const [vista, setVista] = useState('config')
+  // vista: 'lista' | 'selector' | 'formulario'
+  const [vista, setVista] = useState('selector')
   const [ficha, setFicha] = useState(() => fichaVacia(defaults))
   const [creados, setCreados] = useState([])
   const [editandoIdx, setEditandoIdx] = useState(null)
@@ -473,10 +471,6 @@ export default function MigradorPage() {
     setFicha(prev => ({ ...prev, [campo]: valor }))
     if (error) setError('')
   }, [error])
-
-  const updateDefault = useCallback((campo, valor) => {
-    setDefaults(prev => ({ ...prev, [campo]: valor }))
-  }, [])
 
   const irA = useCallback((v) => {
     setVista(v)
@@ -711,37 +705,33 @@ export default function MigradorPage() {
 
   // ── Header dinámico ──
   const headerTitulo = {
-    config: 'Migrador de cartera',
     lista: 'Tu cartera',
-    selector: 'Agregar cliente',
+    selector: creados.length > 0 ? 'Agregar cliente' : 'Migrador de cartera',
     formulario: editandoIdx !== null ? `Editar: ${creados[editandoIdx]?.nombre || 'cliente'}` : `Cliente #${proximoNumero}`,
   }[vista]
 
   const headerSub = {
-    config: 'Configura los valores base antes de empezar',
     lista: `${creados.length} cliente${creados.length !== 1 ? 's' : ''} agregado${creados.length !== 1 ? 's' : ''}`,
-    selector: 'Como quieres registrar este cliente?',
+    selector: creados.length > 0 ? 'Como quieres registrar este cliente?' : 'Agrega tus clientes con foto o manual, uno a uno',
     formulario: editandoIdx !== null ? 'Modifica lo que necesites y guarda' : 'Completa los datos y su prestamo',
   }[vista]
 
   const volverLabel = {
-    config: 'Salir',
     lista: 'Salir del migrador',
-    selector: creados.length > 0 ? 'Ver mis clientes' : 'Volver',
+    selector: creados.length > 0 ? 'Ver mis clientes' : 'Salir',
     formulario: 'Volver',
   }[vista]
 
   const handleVolver = () => {
-    if (vista === 'config') { router.back(); return }
     if (vista === 'lista') { router.back(); return }
     if (vista === 'selector') {
-      if (creados.length > 0) { irA('lista') } else { irA('config') }
+      if (creados.length > 0) { irA('lista') } else { router.back() }
       return
     }
     if (vista === 'formulario') {
       setEditandoIdx(null)
       setError('')
-      if (creados.length > 0) { irA('selector') } else { irA('selector') }
+      irA('selector')
     }
   }
 
@@ -786,96 +776,9 @@ export default function MigradorPage() {
         </div>
       )}
 
-      {/* ════════ VISTA: CONFIG INICIAL ════════ */}
-      {vista === 'config' && (
-        <div>
-          <div className="rounded-[14px] border overflow-hidden mb-5"
-            style={{ background: 'var(--color-bg-card)', borderColor: 'var(--color-border)' }}>
-            <div className="p-4 space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)', color: 'var(--color-accent)' }}>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round"
-                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <h2 className="text-base font-bold" style={{ color: 'var(--color-text-primary)' }}>Valores por defecto</h2>
-                  <p className="text-[12px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-                    Estos valores se aplicaran a cada cliente nuevo como punto de partida. Si algun cliente tiene condiciones diferentes, podras cambiarlo al momento de crearlo.
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
-                    style={{ color: 'var(--color-text-muted)' }}>Tasa de interes %</label>
-                  <input type="number" inputMode="decimal" value={defaults.tasa}
-                    onChange={e => updateDefault('tasa', e.target.value)}
-                    className="w-full h-11 rounded-[10px] border px-3 text-sm"
-                    style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
-                </div>
-                <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
-                    style={{ color: 'var(--color-text-muted)' }}>Frecuencia de cobro</label>
-                  <select value={defaults.frecuencia} onChange={e => updateDefault('frecuencia', e.target.value)}
-                    className="w-full h-11 rounded-[10px] border px-3 text-sm"
-                    style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}>
-                    {FRECUENCIAS.map(f => <option key={f.key} value={f.key}>{f.label}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              {rutas.length > 0 && (
-                <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
-                    style={{ color: 'var(--color-text-muted)' }}>Ruta de cobro</label>
-                  <select value={defaults.rutaId} onChange={e => updateDefault('rutaId', e.target.value)}
-                    className="w-full h-11 rounded-[10px] border px-3 text-sm"
-                    style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}>
-                    <option value="">Sin ruta</option>
-                    {rutas.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
-                  </select>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <button type="button" onClick={() => irA('selector')}
-            className="w-full h-14 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-            style={{ background: 'var(--color-accent)', color: '#000' }}>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            Empezar a agregar clientes
-          </button>
-        </div>
-      )}
-
       {/* ════════ VISTA: LISTA ════════ */}
       {vista === 'lista' && (
         <>
-          {/* Config colapsada — editable */}
-          <button type="button" onClick={() => irA('config')}
-            className="w-full flex items-center justify-between px-4 py-2.5 rounded-[12px] border mb-4 text-left transition-colors"
-            style={{ background: 'var(--color-bg-card)', borderColor: 'var(--color-border)' }}>
-            <div className="flex items-center gap-2">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"
-                style={{ color: 'var(--color-accent)' }}>
-                <path strokeLinecap="round" strokeLinejoin="round"
-                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <span className="text-xs font-medium" style={{ color: 'var(--color-text-secondary)' }}>Valores base</span>
-            </div>
-            <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
-              {defaults.tasa}% · {FRECUENCIAS.find(f => f.key === defaults.frecuencia)?.label} · Editar
-            </span>
-          </button>
-
           {/* Resumen global */}
           <div className="rounded-[14px] border p-4 mb-4"
             style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 6%, var(--color-bg-card)), var(--color-bg-card))', borderColor: 'color-mix(in srgb, var(--color-accent) 25%, var(--color-border))' }}>
