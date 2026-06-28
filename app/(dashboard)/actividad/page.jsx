@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { ACCIONES } from '@/lib/activity-log'
+import { ACCIONES } from '@/lib/activity-log-types'
 import { useOnline } from '@/hooks/useOnline'
 import OfflineFallback from '@/components/offline/OfflineFallback'
 
