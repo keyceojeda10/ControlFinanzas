@@ -307,8 +307,8 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
     >
       {/* Orb decorativo estatico */}
       <div
-        className="hero-glow absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none hidden lg:block"
-        style={{ background: `radial-gradient(circle, ${color}30, transparent 70%)`, filter: 'blur(20px)' }}
+        className="hero-glow absolute -top-12 -right-12 w-36 h-36 rounded-full pointer-events-none hidden lg:block"
+        style={{ background: `radial-gradient(circle, ${color}20, transparent 70%)`, filter: 'blur(24px)' }}
       />
       {/* Patron de puntos sutil */}
       <div
@@ -316,9 +316,9 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
         style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '16px 16px', color }}
       />
 
-      <div className="relative px-5 py-5 sm:px-6 sm:py-6">
+      <div className="relative px-5 py-4 sm:px-6 sm:py-5">
         {/* Header con label + boton info */}
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2 mb-2">
           <div className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
           <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
           {hasInfo && (
@@ -340,16 +340,16 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
               className="font-mono-display font-bold leading-none tracking-tight truncate"
               style={{
                 color,
-                fontSize: 'clamp(32px, 9vw, 52px)',
+                fontSize: 'clamp(32px, 9vw, 44px)',
               }}
             >
               {display}
             </p>
             {sub && (
-              <p className="text-[12px] mt-2" style={{ color: 'var(--color-text-secondary)' }}>{sub}</p>
+              <p className="text-[12px] mt-1.5" style={{ color: 'var(--color-text-secondary)' }}>{sub}</p>
             )}
             {narrativa && (
-              <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium" style={{ background: `${color}15`, color, border: `1px solid ${color}25` }}>
+              <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium" style={{ background: `${color}15`, color, border: `1px solid ${color}25` }}>
                 <span>{narrativa}</span>
               </div>
             )}
@@ -362,8 +362,8 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
                 value={typeof valueRaw === 'number' ? valueRaw : 0}
                 max={metaDiaria}
                 color={color}
-                size={84}
-                strokeWidth={8}
+                size={76}
+                strokeWidth={7}
                 label="Meta hoy"
               />
             </div>
@@ -372,13 +372,13 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
 
         {/* Donut version movil (debajo del numero) */}
         {metaDiaria && metaDiaria > 0 && (
-          <div className="sm:hidden mt-4 flex items-center gap-3 pt-3" style={{ borderTop: `1px solid color-mix(in srgb, ${color} 15%, transparent)` }}>
+          <div className="sm:hidden mt-3 flex items-center gap-3 pt-3" style={{ borderTop: `1px solid color-mix(in srgb, ${color} 15%, transparent)` }}>
             <DonutProgress
               value={typeof valueRaw === 'number' ? valueRaw : 0}
               max={metaDiaria}
               color={color}
-              size={64}
-              strokeWidth={6}
+              size={56}
+              strokeWidth={5}
             />
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Meta diaria</p>
@@ -388,7 +388,7 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
         )}
 
         {sparklineData && sparklineData.length > 0 && (
-          <div className="mt-4">
+          <div className="mt-3">
             <Sparkline data={sparklineData} color={color} ariaLabel="Tendencia ultimos 7 dias" />
           </div>
         )}
