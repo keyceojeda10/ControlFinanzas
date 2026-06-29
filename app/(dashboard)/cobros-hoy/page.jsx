@@ -466,7 +466,7 @@ export default function CobrosHoyPage() {
                     <span className="text-sm font-bold font-mono-display" style={{ color: 'var(--color-success)' }}>{formatMoney(p.cuotaDiaria ?? 0)}</span>
                   </div>
                   {p.diasMora > 0 && (
-                    <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-danger)' }}>{p.diasMora} dias de atraso</p>
+                    <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-danger)' }}>{p.diasMora} días de atraso</p>
                   )}
                 </button>
               ))}
