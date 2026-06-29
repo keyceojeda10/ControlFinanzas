@@ -616,14 +616,24 @@ function ClienteCard({ cliente, pagando, pagoOk, onCobrar, showRuta = true }) {
       {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="text-[15px] font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{cliente.nombre}</p>
+        {cliente.direccion && (
+          <p className="text-[10px] truncate mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{cliente.direccion}</p>
+        )}
         <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
           {enMora && !pagado && (
-            <span
-              className="text-[10px] font-bold px-2 py-0.5 rounded-md"
-              style={{ background: 'color-mix(in srgb, var(--color-danger) 15%, transparent)', color: 'var(--color-danger)' }}
-            >
-              {cliente.diasMora}d atraso
-            </span>
+            <>
+              <span
+                className="text-[10px] font-bold px-2 py-0.5 rounded-md"
+                style={{ background: 'color-mix(in srgb, var(--color-danger) 15%, transparent)', color: 'var(--color-danger)' }}
+              >
+                {cliente.diasMora}d atraso
+              </span>
+              {cliente.montoParaPonerseAlDia > cliente.cuota && (
+                <span className="text-[10px]" style={{ color: 'var(--color-warning)' }}>
+                  Al dia: {formatMoney(cliente.montoParaPonerseAlDia)}
+                </span>
+              )}
+            </>
           )}
           {showRuta && cliente.rutaNombre && (
             <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{cliente.rutaNombre}</span>
