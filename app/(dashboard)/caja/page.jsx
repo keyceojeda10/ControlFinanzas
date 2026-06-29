@@ -777,8 +777,8 @@ export default function CajaPage() {
             )}
             <div className="space-y-2">
               {[
-                { label: 'Esperado', value: formatMoney(cierreHoy.totalEsperado), color: 'text-[var(--color-text-primary)]' },
-                { label: 'Entregado', value: formatMoney(cierreHoy.totalRecogido), color: 'text-[var(--color-text-primary)]' },
+                { label: 'Deberias tener', value: formatMoney(cierreHoy.totalEsperado), color: 'text-[var(--color-text-primary)]' },
+                { label: 'Entregaste', value: formatMoney(cierreHoy.totalRecogido), color: 'text-[var(--color-text-primary)]' },
                 { label: 'Gastos', value: formatMoney(cierreHoy.totalGastos || 0), color: 'text-[var(--color-danger)]' },
                 { label: 'Prestado hoy', value: `${cierreDesembolsado > 0 ? '-' : ''}${formatMoney(cierreDesembolsado)}`, color: 'text-[var(--color-warning)]' },
               ].map(({ label, value, color }) => (
@@ -804,7 +804,7 @@ export default function CajaPage() {
             {!esAyer && !cierreHoy.reabiertoEn && !cierreHoy.solicitudReaperturaEn && (
               <div className="mt-3 pt-3 border-t border-[var(--color-border)] space-y-2">
                 <p className="text-[11px] leading-snug" style={{ color: 'var(--color-warning)' }}>
-                  Tu caja esta cerrada: no puedes registrar nuevos abonos. Si necesitas seguir cobrando hoy, reabre la caja.
+                  Ya entregaste la caja de hoy. Si necesitas seguir cobrando, reabre la caja.
                 </p>
                 <button
                   type="button"
@@ -824,8 +824,8 @@ export default function CajaPage() {
               <div className="mt-3 pt-3 border-t border-[var(--color-border)] space-y-2">
                 <p className="text-[11px] text-[var(--color-accent)] leading-snug">
                   {esAyer
-                    ? 'Si olvidaste confirmar o corregir el monto ayer, puedes ajustarlo hoy.'
-                    : 'Si te equivocaste en el cierre, puedes corregirlo.'}
+                    ? 'Puedes corregir el monto que entregaste ayer.'
+                    : 'Puedes corregir el monto si te equivocaste.'}
                 </p>
                 <button
                   type="button"
@@ -844,8 +844,8 @@ export default function CajaPage() {
           <Card>
             <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-4">
               {modoAjusteCierre
-                ? 'Ajustar cierre'
-                : (esAyer ? 'Registrar cierre pendiente (ayer)' : 'Registrar cierre del día')}
+                ? 'Corregir monto entregado'
+                : (esAyer ? 'Cierre pendiente de ayer' : 'Entregar caja del dia')}
             </p>
             {exito && (
               <div className="mb-4 flex items-center gap-2 bg-[var(--color-success-dim)] border border-[color-mix(in_srgb,var(--color-success)_30%,transparent)] text-[var(--color-success)] text-sm rounded-[12px] px-4 py-3">
@@ -859,20 +859,20 @@ export default function CajaPage() {
             )}
             {esAyer && (
               <p className="mb-3 text-[11px] text-[var(--color-accent)] leading-snug">
-                Estás cerrando el día anterior. Este ajuste evita que se pierda la gestión del cobrador.
+                Estas reportando lo de ayer. Anota cuanto efectivo recogiste para que quede registrado.
               </p>
             )}
             <form onSubmit={registrarCierre} className="space-y-4">
               <div className="flex justify-between text-sm">
-                <span className="text-[var(--color-text-muted)]">{esAyer ? 'Total esperado (ayer)' : 'Total esperado hoy'}</span>
+                <span className="text-[var(--color-text-muted)]">{esAyer ? 'Deberias tener (ayer)' : 'Deberias tener en caja'}</span>
                 <span className="font-semibold text-[var(--color-text-primary)]">{formatMoney(stats.esperado || 0)}</span>
               </div>
               <div className="rounded-[12px] px-3 py-2.5 space-y-2" style={{ background: 'var(--color-warning-dim)', border: '1px solid color-mix(in srgb, var(--color-warning) 25%, transparent)' }}>
                 <p className="text-[11px] text-[var(--color-accent)] leading-snug">
-                  Solo confirmas cuanto dinero en efectivo tienes. No registra pagos ni descuenta saldo de prestamos.
+                  Esto no cobra ni descuenta nada. Solo reportas cuanto dinero fisico tienes para entregar.
                 </p>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] text-[var(--color-text-secondary)]">Cobrado ya registrado en sistema</span>
+                  <span className="text-[11px] text-[var(--color-text-secondary)]">Segun los pagos registrados hoy</span>
                   <button
                     type="button"
                     onClick={() => setTotalRecogido(String(recaudadoRegistrado))}
@@ -892,7 +892,7 @@ export default function CajaPage() {
               </div>
               {totalRecogido !== '' && Number(totalRecogido) !== recaudadoRegistrado && (
                 <p className="text-[11px] text-[var(--color-accent)]">
-                  Este valor no coincide con el cobrado registrado en pagos ({formatMoney(recaudadoRegistrado)}).
+                  No coincide con lo cobrado en sistema ({formatMoney(recaudadoRegistrado)}). Si la diferencia es correcta, continua.
                 </p>
               )}
               {totalRecogido && (
@@ -904,7 +904,7 @@ export default function CajaPage() {
                 </div>
               )}
               <Button type="submit" loading={guardando} className="w-full">
-                {modoAjusteCierre ? 'Guardar ajuste de cierre' : 'Registrar cierre de caja'}
+                {modoAjusteCierre ? 'Guardar correccion' : 'Confirmar y entregar caja'}
               </Button>
             </form>
           </Card>

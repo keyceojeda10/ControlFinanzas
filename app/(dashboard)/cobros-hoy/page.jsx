@@ -22,6 +22,8 @@ export default function CobrosHoyPage() {
   const undoTimerRef = useRef(null)
   const [metaCumplida, setMetaCumplida] = useState(false)
   const [rutasColapsadas, setRutasColapsadas] = useState({})
+  const [montoParcial, setMontoParcial] = useState('')
+  const [modoParcial, setModoParcial] = useState(false)
 
   const fetchCobros = useCallback(async () => {
     try {
@@ -58,6 +60,8 @@ export default function CobrosHoyPage() {
     const p = activos[0]
     const cuota = p.cuotaDiaria || cliente.cuota
     if (!cuota || cuota <= 0) return
+    setModoParcial(false)
+    setMontoParcial('')
     setModalPago({ id: cliente.id, nombre: cliente.nombre, cuota, prestamoActivo: p.id, prestamosActivos: activos, abonoConPendiente: cliente.pagoHoy && cliente.cobroPendienteHoy })
   }
 
@@ -66,11 +70,15 @@ export default function CobrosHoyPage() {
     setModalPago(prev => prev ? { ...prev, prestamoActivo: prestamoId, cuota } : prev)
   }
 
-  const ejecutarPago = async (metodoPago, { confirmarDuplicado = false } = {}) => {
+  const ejecutarPago = async (metodoPago, { confirmarDuplicado = false, montoCustom = null } = {}) => {
     try { sessionStorage.setItem('cf-ultimo-metodo-pago', metodoPago) } catch {}
     if (!modalPago || pagando) return
     const { id: clienteId, nombre, cuota, prestamoActivo } = modalPago
+    const montoFinal = montoCustom ?? cuota
+    const tipoPago = montoCustom && montoCustom < cuota ? 'parcial' : 'completo'
     setModalPago(null)
+    setModoParcial(false)
+    setMontoParcial('')
     setPagando(clienteId)
     const coords = await obtenerCoordsRapido().catch(() => null)
 
@@ -81,9 +89,9 @@ export default function CobrosHoyPage() {
       ),
       resumen: {
         ...prev.resumen,
-        pendientes: Math.max(0, prev.resumen.pendientes - 1),
-        pagados: prev.resumen.pagados + 1,
-        recaudadoHoy: prev.resumen.recaudadoHoy + cuota,
+        pendientes: tipoPago === 'completo' ? Math.max(0, prev.resumen.pendientes - 1) : prev.resumen.pendientes,
+        pagados: tipoPago === 'completo' ? prev.resumen.pagados + 1 : prev.resumen.pagados,
+        recaudadoHoy: prev.resumen.recaudadoHoy + montoFinal,
       }
     } : prev)
 
@@ -92,7 +100,7 @@ export default function CobrosHoyPage() {
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ montoPagado: cuota, tipo: 'completo', diasAbonados: 1, metodoPago, ...(coords ?? {}) }),
+        body: JSON.stringify({ montoPagado: montoFinal, tipo: tipoPago, diasAbonados: tipoPago === 'completo' ? 1 : 0, metodoPago, ...(coords ?? {}) }),
       })
 
       if (res.ok) {
@@ -472,10 +480,36 @@ export default function CobrosHoyPage() {
           return (
           <div className="space-y-4">
             <div className="text-center">
-              <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Registrar 1 cuota para</p>
+              <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{modoParcial ? 'Pago parcial para' : 'Registrar 1 cuota para'}</p>
               <p className="text-base font-bold mt-1" style={{ color: 'var(--color-text-primary)' }}>{modalPago.nombre}</p>
-              <p className="text-3xl font-extrabold font-mono-display mt-2" style={{ color: 'var(--color-success)' }}>{formatMoney(modalPago.cuota)}</p>
+              {!modoParcial ? (
+                <p className="text-3xl font-extrabold font-mono-display mt-2" style={{ color: 'var(--color-success)' }}>{formatMoney(modalPago.cuota)}</p>
+              ) : (
+                <div className="mt-3 relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg font-bold" style={{ color: 'var(--color-text-muted)' }}>$</span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    value={montoParcial}
+                    onChange={e => setMontoParcial(e.target.value)}
+                    placeholder="Monto"
+                    autoFocus
+                    className="w-full text-center text-2xl font-extrabold font-mono-display py-3 pl-8 pr-3 rounded-[14px] border outline-none"
+                    style={{ background: 'var(--color-bg-elevated)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
+                    min={1}
+                    max={modalPago.cuota}
+                  />
+                  <p className="text-[11px] mt-1.5" style={{ color: 'var(--color-text-muted)' }}>Cuota completa: {formatMoney(modalPago.cuota)}</p>
+                </div>
+              )}
             </div>
+            <button
+              onClick={() => { setModoParcial(!modoParcial); setMontoParcial('') }}
+              className="w-full text-center text-[12px] font-medium py-1.5 rounded-lg transition-all"
+              style={{ color: 'var(--color-text-secondary)' }}
+            >
+              {modoParcial ? 'Cobrar cuota completa' : 'Cobrar otro monto'}
+            </button>
             {modalPago.abonoConPendiente && (
               <div className="rounded-[12px] px-3 py-2.5 text-center" style={{ background: 'color-mix(in srgb, var(--color-warning) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--color-warning) 25%, transparent)' }}>
                 <p className="text-xs font-semibold" style={{ color: 'var(--color-warning)' }}>Tiene cuotas atrasadas</p>
@@ -484,7 +518,11 @@ export default function CobrosHoyPage() {
             )}
             <div className="grid grid-cols-2 gap-3">
               <button
-                onClick={() => ejecutarPago('efectivo')}
+                onClick={() => {
+                  const monto = modoParcial ? parseFloat(montoParcial) : null
+                  if (modoParcial && (!monto || monto <= 0 || monto > modalPago.cuota)) return
+                  ejecutarPago('efectivo', { montoCustom: monto })
+                }}
                 className="flex flex-col items-center gap-2.5 py-5 rounded-[16px] border transition-all active:scale-95 hover:border-[color-mix(in_srgb,var(--color-success)_40%,var(--color-border))] relative"
                 style={{
                   background: ultimoMetodo === 'efectivo'
@@ -509,7 +547,11 @@ export default function CobrosHoyPage() {
                 <span className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Efectivo</span>
               </button>
               <button
-                onClick={() => ejecutarPago('transferencia')}
+                onClick={() => {
+                  const monto = modoParcial ? parseFloat(montoParcial) : null
+                  if (modoParcial && (!monto || monto <= 0 || monto > modalPago.cuota)) return
+                  ejecutarPago('transferencia', { montoCustom: monto })
+                }}
                 className="flex flex-col items-center gap-2.5 py-5 rounded-[16px] border transition-all active:scale-95 hover:border-[color-mix(in_srgb,var(--color-info)_40%,var(--color-border))] relative"
                 style={{
                   background: ultimoMetodo === 'transferencia'
