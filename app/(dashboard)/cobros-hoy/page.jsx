@@ -622,7 +622,7 @@ function ClienteCard({ cliente, pagando, pagoOk, onCobrar, showRuta = true }) {
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <p className="text-[15px] font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{cliente.nombre}</p>
+        <Link href={`/clientes/${cliente.id}`} className="text-[15px] font-semibold truncate block" style={{ color: 'var(--color-text-primary)' }}>{cliente.nombre}</Link>
         {cliente.direccion && (
           <p className="text-[10px] truncate mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{cliente.direccion}</p>
         )}
