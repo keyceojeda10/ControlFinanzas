@@ -44,7 +44,7 @@ const COLORES_GRUPO = [
 ]
 
 export default function ClientesPage() {
-  const { esOwner, puedeCrearClientes, orgNombre, loading: authLoading } = useAuth()
+  const { esOwner, puedeCrearClientes, puedeCrearPrestamos, orgNombre, loading: authLoading } = useAuth()
   const { lastSyncedAt } = useOffline()
   const searchParams = useSearchParams()
   const [clientes, setClientes]   = useState([])
