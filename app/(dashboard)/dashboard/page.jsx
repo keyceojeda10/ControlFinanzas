@@ -305,14 +305,9 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
         border: '1px solid var(--color-border)',
       }}
     >
-      {/* Orb decorativo estatico */}
-      <div
-        className="hero-glow absolute -top-12 -right-12 w-36 h-36 rounded-full pointer-events-none hidden lg:block"
-        style={{ background: `radial-gradient(circle, ${color}20, transparent 70%)`, filter: 'blur(24px)' }}
-      />
       {/* Patron de puntos sutil */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-[0.04]"
+        className="absolute inset-0 pointer-events-none opacity-[0.03]"
         style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '16px 16px', color }}
       />
 
