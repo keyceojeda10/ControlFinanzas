@@ -377,6 +377,27 @@ export default function CobrosHoyPage() {
         </div>
       )}
 
+      {/* ── Todos cobrados ── */}
+      {pendientes.length === 0 && pagados.length > 0 && (
+        <div
+          className="rounded-[16px] px-4 py-3 flex items-center gap-3"
+          style={{
+            background: 'color-mix(in srgb, var(--color-success) 10%, var(--color-bg-card))',
+            border: '1px solid color-mix(in srgb, var(--color-success) 25%, var(--color-border))',
+          }}
+        >
+          <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-success) 20%, transparent)' }}>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--color-success)' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-sm font-semibold" style={{ color: 'var(--color-success)' }}>Todos cobrados</p>
+            <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>No quedan cobros pendientes por hoy</p>
+          </div>
+        </div>
+      )}
+
       {/* ── Lista: cobrados ── */}
       {pagados.length > 0 && (
         <div className="space-y-2">

@@ -630,6 +630,12 @@ export default function ClientesPage() {
                         color: '#22c55e',
                         onClick: () => { window.location.href = `/clientes/${c.id}` },
                       }] : []),
+                      ...(puedeCrearPrestamos && c.prestamosActivos === 0 ? [{
+                        icon: IconPagar,
+                        label: 'Prestar',
+                        color: 'var(--color-accent)',
+                        onClick: () => { window.location.href = `/prestamos/nuevo?clienteId=${c.id}` },
+                      }] : []),
                     ]}
                   />
                 </BadgeNuevo>
