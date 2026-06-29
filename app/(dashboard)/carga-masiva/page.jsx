@@ -1,19 +1,21 @@
 'use client'
-// app/(dashboard)/carga-masiva/page.jsx - Importación masiva de clientes y préstamos
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
+import { aplicarMapeo } from '@/lib/carga-masiva'
 import PasoSubir from '@/components/carga-masiva/PasoSubir'
+import PasoMapear from '@/components/carga-masiva/PasoMapear'
 import PasoRevisar from '@/components/carga-masiva/PasoRevisar'
 import PasoConfirmar from '@/components/carga-masiva/PasoConfirmar'
 import { useOnline } from '@/hooks/useOnline'
 import OfflineFallback from '@/components/offline/OfflineFallback'
 
 const PASOS = [
-  { num: 1, label: 'Subir datos' },
-  { num: 2, label: 'Revisar' },
-  { num: 3, label: 'Importar' },
+  { num: 1, label: 'Subir' },
+  { num: 2, label: 'Columnas' },
+  { num: 3, label: 'Revisar' },
+  { num: 4, label: 'Importar' },
 ]
 
 export default function CargaMasivaPage() {
@@ -30,56 +32,83 @@ function CargaMasivaPageInner() {
   const [validando, setValidando] = useState(false)
   const [error, setError] = useState('')
 
-  // Datos entre pasos
+  const [headersCrudos, setHeadersCrudos] = useState([])
+  const [filasCrudas, setFilasCrudas] = useState([])
+
   const [filasValidadas, setFilasValidadas] = useState([])
   const [resumen, setResumen] = useState(null)
   const [rutas, setRutas] = useState([])
+
   const [datosImportar, setDatosImportar] = useState(null)
 
   useEffect(() => {
     if (!authLoading && !esOwner) router.replace('/dashboard')
   }, [authLoading, esOwner, router])
 
-  // Paso 1 → 2: enviar datos crudos a la API de validación
-  const handleDatos = async (filasCrudas) => {
+  const handleDatosCrudos = ({ headers, filas }) => {
+    setHeadersCrudos(headers)
+    setFilasCrudas(filas)
+    setError('')
+    setPaso(2)
+  }
+
+  const handleMapeoConfirmado = async (mapeo) => {
     setValidando(true)
     setError('')
     try {
+      const filasNormalizadas = aplicarMapeo(filasCrudas, mapeo)
+
+      if (filasNormalizadas.length === 0) {
+        setError('No se encontraron filas con datos de nombre o cedula despues de aplicar el mapeo')
+        setValidando(false)
+        return
+      }
+
       const res = await fetch('/api/carga-masiva/validar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filas: filasCrudas }),
+        body: JSON.stringify({ filas: filasNormalizadas }),
       })
       const data = await res.json()
       if (!res.ok) {
         setError(data.error || 'Error al validar')
+        setValidando(false)
         return
       }
       setFilasValidadas(data.filas)
       setResumen(data.resumen)
       setRutas(data.rutas)
-      setPaso(2)
+      setPaso(3)
     } catch {
-      setError('Error de conexión. Intenta de nuevo.')
+      setError('Error de conexion. Intenta de nuevo.')
     } finally {
       setValidando(false)
     }
   }
 
-  // Paso 2 → 3: confirmar las filas válidas
   const handleConfirmar = (datos) => {
     setDatosImportar(datos)
-    setPaso(3)
+    setPaso(4)
   }
 
-  // Reiniciar
   const handleReiniciar = () => {
     setPaso(1)
+    setHeadersCrudos([])
+    setFilasCrudas([])
     setFilasValidadas([])
     setResumen(null)
     setRutas([])
     setDatosImportar(null)
     setError('')
+  }
+
+  const handleVolver = () => {
+    if (paso === 1) {
+      router.back()
+    } else {
+      setError('')
+      setPaso(p => p - 1)
+    }
   }
 
   if (authLoading) return null
@@ -90,7 +119,7 @@ function CargaMasivaPageInner() {
       {/* Header */}
       <div className="mb-6">
         <button
-          onClick={() => paso === 1 ? router.back() : setPaso(p => p - 1)}
+          onClick={handleVolver}
           className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors mb-4"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -98,16 +127,16 @@ function CargaMasivaPageInner() {
           </svg>
           {paso === 1 ? 'Volver' : 'Paso anterior'}
         </button>
-        <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Importar clientes</h1>
+        <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Importar clientes desde archivo</h1>
         <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
-          Carga clientes y préstamos de forma masiva
+          Sube tu Excel o CSV y el sistema detecta las columnas
         </p>
       </div>
 
       {/* Indicador de pasos */}
-      <div className="flex items-center gap-2 mb-6">
+      <div className="flex items-center gap-1.5 mb-6">
         {PASOS.map((p, i) => (
-          <div key={p.num} className="flex items-center gap-2 flex-1">
+          <div key={p.num} className="flex items-center gap-1.5 flex-1">
             <div className={[
               'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-colors',
               paso >= p.num
@@ -121,7 +150,7 @@ function CargaMasivaPageInner() {
               ) : p.num}
             </div>
             <span className={[
-              'text-xs font-medium hidden sm:block',
+              'text-[10px] font-medium hidden sm:block',
               paso >= p.num ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-muted)]',
             ].join(' ')}>
               {p.label}
@@ -153,23 +182,32 @@ function CargaMasivaPageInner() {
       )}
 
       {!validando && paso === 1 && (
-        <PasoSubir onDatos={handleDatos} />
+        <PasoSubir onDatos={handleDatosCrudos} />
       )}
 
-      {!validando && paso === 2 && resumen && (
+      {!validando && paso === 2 && headersCrudos.length > 0 && (
+        <PasoMapear
+          headers={headersCrudos}
+          filas={filasCrudas}
+          onConfirmar={handleMapeoConfirmado}
+          onVolver={handleVolver}
+        />
+      )}
+
+      {!validando && paso === 3 && resumen && (
         <PasoRevisar
           filas={filasValidadas}
           resumen={resumen}
           rutas={rutas}
           onConfirmar={handleConfirmar}
-          onVolver={() => setPaso(1)}
+          onVolver={handleVolver}
         />
       )}
 
-      {!validando && paso === 3 && datosImportar && (
+      {!validando && paso === 4 && datosImportar && (
         <PasoConfirmar
           datosImportar={datosImportar}
-          onVolver={() => setPaso(2)}
+          onVolver={handleVolver}
           onReiniciar={handleReiniciar}
         />
       )}

@@ -2,10 +2,9 @@
 
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/Button'
-import { parsearTexto } from '@/lib/carga-masiva'
 
 export default function PasoSubir({ onDatos }) {
-  const [modo, setModo] = useState('archivo') // 'archivo' | 'pegar'
+  const [modo, setModo] = useState('archivo')
   const [texto, setTexto] = useState('')
   const [error, setError] = useState('')
   const [cargando, setCargando] = useState(false)
@@ -25,40 +24,23 @@ export default function PasoSubir({ onDatos }) {
       const rows = XLSX.utils.sheet_to_json(ws, { defval: '' })
 
       if (rows.length === 0) {
-        setError('El archivo está vacío o no tiene datos')
+        setError('El archivo esta vacio o no tiene datos')
         return
       }
       if (rows.length > 500) {
-        setError('Máximo 500 filas. Tu archivo tiene ' + rows.length)
+        setError('Maximo 500 filas. Tu archivo tiene ' + rows.length)
         return
       }
 
-      // Normalizar headers (el xlsx los lee como están)
-      const filas = rows.map(row => {
-        const obj = {}
-        for (const [key, val] of Object.entries(row)) {
-          const k = key.trim().toLowerCase()
-            .replace(/[áàä]/g, 'a').replace(/[éèë]/g, 'e').replace(/[íìï]/g, 'i')
-            .replace(/[óòö]/g, 'o').replace(/[úùü]/g, 'u').replace(/ñ/g, 'n')
-            .replace(/\s+/g, '')
-            .replace('montoprestado', 'montoPrestado')
-            .replace('tasainteres', 'tasaInteres')
-            .replace('diasplazo', 'diasPlazo')
-            .replace('fechainicio', 'fechaInicio')
-            .replace('abonadohasta', 'abonadoHasta')
-          obj[k] = val
-        }
-        return obj
-      }).filter(obj => obj.nombre || obj.cedula)
-
-      if (filas.length === 0) {
-        setError('No se encontraron filas válidas')
+      const headers = Object.keys(rows[0])
+      if (headers.length === 0) {
+        setError('No se encontraron columnas en el archivo')
         return
       }
 
-      onDatos(filas)
+      onDatos({ headers, filas: rows })
     } catch {
-      setError('Error al leer el archivo. Asegúrate de que sea un .xlsx o .xls válido.')
+      setError('Error al leer el archivo. Asegurate de que sea un .xlsx, .xls o .csv valido.')
     } finally {
       setCargando(false)
     }
@@ -70,44 +52,55 @@ export default function PasoSubir({ onDatos }) {
       setError('Pega los datos primero')
       return
     }
-    const filas = parsearTexto(texto)
+    const lineas = texto.trim().split('\n').filter(l => l.trim())
+    if (lineas.length < 2) {
+      setError('Necesitas al menos una fila de encabezado y una de datos')
+      return
+    }
+
+    const sep = lineas[0].includes('\t') ? '\t' : lineas[0].includes(';') ? ';' : ','
+    const headers = lineas[0].split(sep).map(h => h.trim()).filter(Boolean)
+    if (headers.length === 0) {
+      setError('No se encontraron columnas en la primera fila')
+      return
+    }
+
+    const filas = lineas.slice(1).map(linea => {
+      const valores = linea.split(sep)
+      const obj = {}
+      headers.forEach((h, i) => { obj[h] = valores[i]?.trim() ?? '' })
+      return obj
+    }).filter(obj => {
+      return Object.values(obj).some(v => String(v).trim())
+    })
+
     if (filas.length === 0) {
-      setError('No se encontraron datos válidos. La primera fila debe ser el encabezado.')
+      setError('No se encontraron filas con datos')
       return
     }
     if (filas.length > 500) {
-      setError('Máximo 500 filas. Tienes ' + filas.length)
+      setError('Maximo 500 filas. Tienes ' + filas.length)
       return
     }
-    onDatos(filas)
+
+    onDatos({ headers, filas })
   }
 
   return (
     <div className="space-y-4">
-      {/* Descargar plantilla */}
-      <div className="bg-[#161b27] border border-[var(--color-border)] rounded-[14px] p-4">
+      {/* Explicacion */}
+      <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[14px] p-4">
         <div className="flex items-start gap-3">
           <div className="w-9 h-9 rounded-full bg-[rgba(245,197,24,0.12)] flex items-center justify-center shrink-0 mt-0.5">
             <svg className="w-4 h-4 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-[var(--color-text-primary)]">Plantilla Excel</p>
-            <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5 leading-snug">
-              Descarga la plantilla, llena los datos de tus clientes y prestamos, y subela aqui.
-              Incluye instrucciones y ejemplos.
+            <p className="text-sm font-semibold text-[var(--color-text-primary)]">Sube cualquier Excel o CSV</p>
+            <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5 leading-snug">
+              No necesitas una plantilla especial. Sube el archivo que ya tengas con tus clientes y el sistema detecta automaticamente las columnas.
             </p>
-            <a
-              href="/api/carga-masiva/plantilla"
-              download
-              className="inline-flex items-center gap-1.5 mt-2 text-xs font-medium text-[var(--color-accent)] hover:text-[#f0b800] transition-colors"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              Descargar plantilla
-            </a>
           </div>
         </div>
       </div>
@@ -179,7 +172,7 @@ export default function PasoSubir({ onDatos }) {
           <textarea
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
-            placeholder={'nombre\tcedula\ttelefono\ttipo\tmontoPrestado\ttasaInteres\tdiasplazo\tfrecuencia\tfechaInicio\tabonadoHasta\nJuan Perez\t1234567890\t3001234567\tprestamo\t500000\t20\t30\tdiario\t01/04/2026\t'}
+            placeholder={'Nombre\tCedula\tTelefono\tMonto\tInteres\tPlazo\nJuan Perez\t1234567890\t3001234567\t500000\t20\t30'}
             rows={8}
             className="w-full bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[12px] px-3 py-3 text-xs text-[var(--color-text-primary)] font-mono placeholder-[#444444] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all resize-none"
           />
@@ -188,6 +181,20 @@ export default function PasoSubir({ onDatos }) {
           </Button>
         </div>
       )}
+
+      {/* Link plantilla opcional */}
+      <div className="text-center">
+        <a
+          href="/api/carga-masiva/plantilla"
+          download
+          className="inline-flex items-center gap-1.5 text-[11px] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
+        >
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Descargar plantilla de ejemplo (opcional)
+        </a>
+      </div>
     </div>
   )
 }
