@@ -837,7 +837,7 @@ export default function CajaPage() {
               </div>
               <div className="rounded-[12px] px-3 py-2.5 space-y-2" style={{ background: 'var(--color-warning-dim)', border: '1px solid color-mix(in srgb, var(--color-warning) 25%, transparent)' }}>
                 <p className="text-[11px] text-[var(--color-accent)] leading-snug">
-                  Importante: el cierre de caja no registra pagos ni descuenta saldo de préstamos.
+                  Solo confirmas cuanto dinero en efectivo tienes. No registra pagos ni descuenta saldo de prestamos.
                 </p>
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[11px] text-[var(--color-text-secondary)]">Cobrado ya registrado en sistema</span>
@@ -852,7 +852,7 @@ export default function CajaPage() {
               </div>
               <div className="flex flex-col gap-1.5">
                 <MoneyInput
-                  label="Dinero que vas a entregar (COP)"
+                  label="Dinero en caja que vas a entregar al dueño"
                   placeholder="Ej: 250.000"
                   value={totalRecogido}
                   onChange={(e) => setTotalRecogido(e.target.value)}

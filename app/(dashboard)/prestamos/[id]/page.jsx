@@ -117,7 +117,7 @@ export default function PrestamoDetallePage({ params }) {
   const [liqEnviando, setLiqEnviando] = useState(false)
   const [liqError, setLiqError] = useState('')
   const [statsCliente, setStatsCliente] = useState(null) // { totalPrestamos, completados, numeroEsteDe }
-  const [historialOpen, setHistorialOpen] = useState(false)
+  const [historialOpen, setHistorialOpen] = useState(true)
   const hasLoadedOnceRef = useRef(false)
 
   // Leer contexto de ruta activa
