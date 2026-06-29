@@ -513,10 +513,14 @@ export default function PrestamoDetallePage({ params }) {
 
       {/* ── CELEBRACIÓN ──────────────────────────────────────────── */}
       {completado && (
-        <div className="bg-[rgba(16,185,129,0.12)] border border-[rgba(16,185,129,0.3)] rounded-[16px] p-4 text-center animate-pulse">
-          <p className="text-2xl mb-1">🎉</p>
-          <p className="text-[var(--color-success)] font-bold">¡Préstamo completado!</p>
-          <p className="text-xs text-[var(--color-text-muted)] mt-0.5">El cliente terminó de pagar</p>
+        <div className="bg-[rgba(16,185,129,0.12)] border border-[rgba(16,185,129,0.3)] rounded-[16px] p-4 text-center">
+          <div className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--color-success) 20%, transparent)' }}>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--color-success)' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <p className="text-[var(--color-success)] font-bold">Prestamo completado</p>
+          <p className="text-xs text-[var(--color-text-muted)] mt-0.5">El cliente termino de pagar</p>
         </div>
       )}
 
