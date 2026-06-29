@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
 import { calcularPrestamo } from '@/lib/calculos'
 import { formatMoney } from '@/lib/i18n'
@@ -764,6 +765,19 @@ export default function MigradorPage() {
           )}
         </div>
       </div>
+
+      {/* Link a carga masiva Excel */}
+      {vista === 'selector' && (
+        <Link href="/carga-masiva"
+          className="flex items-center gap-2 px-3 py-2 rounded-[10px] mb-4 text-[12px] transition-colors"
+          style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.18)', color: 'var(--color-text-muted)' }}>
+          <svg className="w-3.5 h-3.5 shrink-0" style={{ color: '#22c55e' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+              d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          <span>Tienes un archivo Excel? <span className="font-semibold" style={{ color: '#22c55e' }}>Importalo aqui</span></span>
+        </Link>
+      )}
 
       {/* Success msg (global) */}
       {successMsg && (

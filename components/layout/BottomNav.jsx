@@ -12,7 +12,6 @@ const FAB_ITEMS_OWNER = [
   { label: 'Nuevo', bold: 'préstamo', href: '/prestamos/nuevo' },
   { label: 'Nuevo', bold: 'cliente', href: '/clientes/nuevo' },
   { label: 'Migrar', bold: 'cartera', href: '/migrador' },
-  { label: 'Importar', bold: 'Excel', href: '/carga-masiva' },
   { label: 'Registrar', bold: 'gasto', href: '/gastos?nuevo=1' },
   { label: 'Ver', bold: 'caja', href: '/caja' },
   { label: 'Ver', bold: 'mi plan', href: '/configuracion/plan' },
