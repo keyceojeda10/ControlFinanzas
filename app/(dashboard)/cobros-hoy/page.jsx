@@ -286,8 +286,15 @@ export default function CobrosHoyPage() {
       )}
 
       {error && (
-        <div className="text-sm rounded-[12px] px-4 py-3" style={{ background: 'var(--color-danger-dim)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)', color: 'var(--color-danger)' }}>
-          {error}
+        <div className="rounded-[12px] px-4 py-3 flex items-center justify-between gap-3" style={{ background: 'var(--color-danger-dim)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)' }}>
+          <p className="text-sm" style={{ color: 'var(--color-danger)' }}>{error}</p>
+          <button
+            onClick={fetchCobros}
+            className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg transition-all active:scale-95"
+            style={{ background: 'color-mix(in srgb, var(--color-danger) 20%, transparent)', color: 'var(--color-danger)' }}
+          >
+            Reintentar
+          </button>
         </div>
       )}
 
