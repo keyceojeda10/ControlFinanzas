@@ -21,6 +21,7 @@ export default function CobrosHoyPage() {
   const [confirmDuplicado, setConfirmDuplicado] = useState(null)
   const undoTimerRef = useRef(null)
   const [metaCumplida, setMetaCumplida] = useState(false)
+  const [rutasColapsadas, setRutasColapsadas] = useState({})
 
   const fetchCobros = useCallback(async () => {
     try {
@@ -66,6 +67,7 @@ export default function CobrosHoyPage() {
   }
 
   const ejecutarPago = async (metodoPago, { confirmarDuplicado = false } = {}) => {
+    try { sessionStorage.setItem('cf-ultimo-metodo-pago', metodoPago) } catch {}
     if (!modalPago || pagando) return
     const { id: clienteId, nombre, cuota, prestamoActivo } = modalPago
     setModalPago(null)
@@ -156,6 +158,16 @@ export default function CobrosHoyPage() {
   const resumen = data?.resumen ?? {}
   const pendientes = clientes.filter(c => c.cobroPendienteHoy)
   const pagados = clientes.filter(c => !c.cobroPendienteHoy && c.pagoHoy)
+
+  const rutasPendientes = (() => {
+    const map = {}
+    pendientes.forEach(c => {
+      const ruta = c.rutaNombre || 'Sin ruta'
+      if (!map[ruta]) map[ruta] = []
+      map[ruta].push(c)
+    })
+    return Object.entries(map).sort((a, b) => a[0].localeCompare(b[0]))
+  })()
   const pct = resumen.esperadoHoy > 0
     ? Math.min(100, Math.round((resumen.recaudadoHoy / resumen.esperadoHoy) * 100))
     : 0
@@ -279,7 +291,7 @@ export default function CobrosHoyPage() {
         </div>
       )}
 
-      {/* ── Lista: pendientes ── */}
+      {/* ── Lista: pendientes agrupados por ruta ── */}
       {pendientes.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center gap-2 px-1">
@@ -288,17 +300,73 @@ export default function CobrosHoyPage() {
               Por cobrar ({pendientes.length})
             </p>
           </div>
-          <StaggeredList className="space-y-1.5">
-            {pendientes.map(c => (
-              <ClienteCard
-                key={c.id}
-                cliente={c}
-                pagando={pagando === c.id}
-                pagoOk={pagoOk === c.id}
-                onCobrar={() => abrirPago(c)}
-              />
-            ))}
-          </StaggeredList>
+
+          {rutasPendientes.length === 1 ? (
+            <StaggeredList className="space-y-1.5">
+              {rutasPendientes[0][1].map(c => (
+                <ClienteCard
+                  key={c.id}
+                  cliente={c}
+                  pagando={pagando === c.id}
+                  pagoOk={pagoOk === c.id}
+                  onCobrar={() => abrirPago(c)}
+                />
+              ))}
+            </StaggeredList>
+          ) : (
+            <div className="space-y-3">
+              {rutasPendientes.map(([ruta, clientes]) => {
+                const colapsada = rutasColapsadas[ruta] ?? false
+                return (
+                  <div key={ruta} className="space-y-1.5">
+                    <button
+                      onClick={() => setRutasColapsadas(prev => ({ ...prev, [ruta]: !prev[ruta] }))}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-[12px] transition-all active:scale-[0.99]"
+                      style={{
+                        background: 'color-mix(in srgb, var(--color-accent) 6%, var(--color-bg-card))',
+                        border: '1px solid color-mix(in srgb, var(--color-accent) 12%, var(--color-border))',
+                      }}
+                    >
+                      <svg
+                        className="w-3.5 h-3.5 transition-transform shrink-0"
+                        style={{ color: 'var(--color-accent)', transform: colapsada ? 'rotate(-90deg)' : 'rotate(0deg)' }}
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                      </svg>
+                      <svg className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--color-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                      </svg>
+                      <span className="text-xs font-semibold flex-1 text-left truncate" style={{ color: 'var(--color-text-primary)' }}>
+                        {ruta}
+                      </span>
+                      <span
+                        className="text-[10px] font-bold px-2 py-0.5 rounded-md shrink-0"
+                        style={{ background: 'color-mix(in srgb, var(--color-warning) 15%, transparent)', color: 'var(--color-warning)' }}
+                      >
+                        {clientes.length}
+                      </span>
+                    </button>
+                    {!colapsada && (
+                      <StaggeredList className="space-y-1.5">
+                        {clientes.map(c => (
+                          <ClienteCard
+                            key={c.id}
+                            cliente={c}
+                            pagando={pagando === c.id}
+                            pagoOk={pagoOk === c.id}
+                            onCobrar={() => abrirPago(c)}
+                            showRuta={false}
+                          />
+                        ))}
+                      </StaggeredList>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -370,7 +438,10 @@ export default function CobrosHoyPage() {
           </div>
         )}
 
-        {modalPago && modalPago.prestamoActivo && (
+        {modalPago && modalPago.prestamoActivo && (() => {
+          let ultimoMetodo = null
+          try { ultimoMetodo = sessionStorage.getItem('cf-ultimo-metodo-pago') } catch {}
+          return (
           <div className="space-y-4">
             <div className="text-center">
               <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Registrar 1 cuota para</p>
@@ -386,9 +457,19 @@ export default function CobrosHoyPage() {
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => ejecutarPago('efectivo')}
-                className="flex flex-col items-center gap-2.5 py-5 rounded-[16px] border transition-all active:scale-95 hover:border-[color-mix(in_srgb,var(--color-success)_40%,var(--color-border))]"
-                style={{ background: 'color-mix(in srgb, var(--color-success) 5%, var(--color-bg-card))', borderColor: 'var(--color-border)' }}
+                className="flex flex-col items-center gap-2.5 py-5 rounded-[16px] border transition-all active:scale-95 hover:border-[color-mix(in_srgb,var(--color-success)_40%,var(--color-border))] relative"
+                style={{
+                  background: ultimoMetodo === 'efectivo'
+                    ? 'color-mix(in srgb, var(--color-success) 10%, var(--color-bg-card))'
+                    : 'color-mix(in srgb, var(--color-success) 5%, var(--color-bg-card))',
+                  borderColor: ultimoMetodo === 'efectivo'
+                    ? 'color-mix(in srgb, var(--color-success) 35%, var(--color-border))'
+                    : 'var(--color-border)',
+                }}
               >
+                {ultimoMetodo === 'efectivo' && (
+                  <span className="absolute top-2 right-2 text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--color-success) 15%, transparent)', color: 'var(--color-success)' }}>Ultimo</span>
+                )}
                 <div
                   className="w-11 h-11 rounded-[12px] flex items-center justify-center"
                   style={{ background: 'color-mix(in srgb, var(--color-success) 15%, transparent)', color: 'var(--color-success)' }}
@@ -401,9 +482,19 @@ export default function CobrosHoyPage() {
               </button>
               <button
                 onClick={() => ejecutarPago('transferencia')}
-                className="flex flex-col items-center gap-2.5 py-5 rounded-[16px] border transition-all active:scale-95 hover:border-[color-mix(in_srgb,var(--color-info)_40%,var(--color-border))]"
-                style={{ background: 'color-mix(in srgb, var(--color-info) 5%, var(--color-bg-card))', borderColor: 'var(--color-border)' }}
+                className="flex flex-col items-center gap-2.5 py-5 rounded-[16px] border transition-all active:scale-95 hover:border-[color-mix(in_srgb,var(--color-info)_40%,var(--color-border))] relative"
+                style={{
+                  background: ultimoMetodo === 'transferencia'
+                    ? 'color-mix(in srgb, var(--color-info) 10%, var(--color-bg-card))'
+                    : 'color-mix(in srgb, var(--color-info) 5%, var(--color-bg-card))',
+                  borderColor: ultimoMetodo === 'transferencia'
+                    ? 'color-mix(in srgb, var(--color-info) 35%, var(--color-border))'
+                    : 'var(--color-border)',
+                }}
               >
+                {ultimoMetodo === 'transferencia' && (
+                  <span className="absolute top-2 right-2 text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--color-info) 15%, transparent)', color: 'var(--color-info)' }}>Ultimo</span>
+                )}
                 <div
                   className="w-11 h-11 rounded-[12px] flex items-center justify-center"
                   style={{ background: 'color-mix(in srgb, var(--color-info) 15%, transparent)', color: 'var(--color-info)' }}
@@ -416,7 +507,8 @@ export default function CobrosHoyPage() {
               </button>
             </div>
           </div>
-        )}
+          )
+        })()}
       </Modal>
 
       {/* ── Modal: confirmar pago duplicado ── */}
@@ -480,7 +572,7 @@ export default function CobrosHoyPage() {
   )
 }
 
-function ClienteCard({ cliente, pagando, pagoOk, onCobrar }) {
+function ClienteCard({ cliente, pagando, pagoOk, onCobrar, showRuta = true }) {
   const pagado = !cliente.cobroPendienteHoy && cliente.pagoHoy
   const enMora = cliente.diasMora > 0
 
@@ -533,7 +625,7 @@ function ClienteCard({ cliente, pagando, pagoOk, onCobrar }) {
               {cliente.diasMora}d atraso
             </span>
           )}
-          {cliente.rutaNombre && (
+          {showRuta && cliente.rutaNombre && (
             <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{cliente.rutaNombre}</span>
           )}
           {pagado && (

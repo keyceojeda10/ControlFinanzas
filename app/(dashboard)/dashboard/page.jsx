@@ -1825,32 +1825,6 @@ export default function DashboardPage() {
           )}
         </>
       )}
-      {(loading || !mounted) ? <Skeleton className="h-44" /> : data && data.ultimosPagos.length > 0 && (
-        <div
-          className="rounded-[16px] px-4 py-4"
-          style={{
-            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, var(--color-bg-card) 100%)',
-            border: '1px solid var(--color-border)',
-            boxShadow: '0 4px 12px rgba(20,20,40,0.08)',
-          }}
-        >
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-secondary)' }}>Últimos pagos</p>
-            <Link href="/prestamos" className="text-[11px] hover:underline" style={{ color: 'var(--color-accent)' }}>Ver todos →</Link>
-          </div>
-          <div className="space-y-0 divide-y" style={{ borderColor: 'var(--color-border)' }}>
-            {data.ultimosPagos.map((p) => (
-              <div key={p.id} className="flex items-center justify-between py-2.5" style={{ borderTopColor: 'var(--color-border)' }}>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate" style={{ color: 'var(--color-text-primary)' }}>{p.cliente}</p>
-                  <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{fechaCorta(p.fecha)} · {p.tipo}</p>
-                </div>
-                <p className="text-sm font-bold shrink-0 ml-3 font-mono-display" style={{ color: 'var(--color-success)' }}>+{formatMoney(p.monto)}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
       {!loading && mounted && moraData !== undefined && moraData.total > 0 && (
         <div
           className="rounded-[16px] px-4 py-4"
@@ -1921,6 +1895,32 @@ export default function DashboardPage() {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+      {(loading || !mounted) ? <Skeleton className="h-44" /> : data && data.ultimosPagos.length > 0 && (
+        <div
+          className="rounded-[16px] px-4 py-4"
+          style={{
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, var(--color-bg-card) 100%)',
+            border: '1px solid var(--color-border)',
+            boxShadow: '0 4px 12px rgba(20,20,40,0.08)',
+          }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-secondary)' }}>Últimos pagos</p>
+            <Link href="/prestamos" className="text-[11px] hover:underline" style={{ color: 'var(--color-accent)' }}>Ver todos →</Link>
+          </div>
+          <div className="space-y-0 divide-y" style={{ borderColor: 'var(--color-border)' }}>
+            {data.ultimosPagos.map((p) => (
+              <div key={p.id} className="flex items-center justify-between py-2.5" style={{ borderTopColor: 'var(--color-border)' }}>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate" style={{ color: 'var(--color-text-primary)' }}>{p.cliente}</p>
+                  <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{fechaCorta(p.fecha)} · {p.tipo}</p>
+                </div>
+                <p className="text-sm font-bold shrink-0 ml-3 font-mono-display" style={{ color: 'var(--color-success)' }}>+{formatMoney(p.monto)}</p>
+              </div>
+            ))}
           </div>
         </div>
       )}

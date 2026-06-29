@@ -2,6 +2,7 @@
 // app/(dashboard)/clientes/page.jsx - Lista de clientes
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth }       from '@/hooks/useAuth'
 import { useOffline }    from '@/components/providers/OfflineProvider'
@@ -45,9 +46,10 @@ const COLORES_GRUPO = [
 export default function ClientesPage() {
   const { esOwner, puedeCrearClientes, orgNombre, loading: authLoading } = useAuth()
   const { lastSyncedAt } = useOffline()
+  const searchParams = useSearchParams()
   const [clientes, setClientes]   = useState([])
   const [buscar,   setBuscar]     = useState('')
-  const [estado,   setEstado]     = useState('')
+  const [estado,   setEstado]     = useState(() => searchParams?.get('filtro') || '')
   const [loading,  setLoading]    = useState(true)
   const [error,    setError]      = useState('')
   const [page,     setPage]       = useState(1)

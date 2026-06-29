@@ -734,14 +734,46 @@ export default function CajaPage() {
               </div>
             </div>
             {cierreHoy.reabiertoEn && (
-              <p className="text-[11px] mb-2" style={{ color: 'var(--color-text-muted)' }}>
-                Reabierta por {cierreHoy.reabiertoPor?.nombre || '—'}
-              </p>
+              <div
+                className="rounded-[10px] px-3 py-2.5 mb-2 flex items-start gap-2"
+                style={{
+                  background: 'color-mix(in srgb, var(--color-success) 10%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--color-success) 20%, transparent)',
+                }}
+              >
+                <svg className="w-4 h-4 shrink-0 mt-0.5" style={{ color: 'var(--color-success)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <p className="text-[11px] font-semibold" style={{ color: 'var(--color-success)' }}>
+                    Caja reabierta — puedes seguir cobrando
+                  </p>
+                  <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                    Reabierta por {cierreHoy.reabiertoPor?.nombre || '—'}
+                  </p>
+                </div>
+              </div>
             )}
             {!cierreHoy.reabiertoEn && cierreHoy.solicitudReaperturaEn && (
-              <p className="text-[11px] mb-2" style={{ color: 'var(--color-text-muted)' }}>
-                Solicitud de reapertura enviada, esperando aprobación del administrador
-              </p>
+              <div
+                className="rounded-[10px] px-3 py-2.5 mb-2 flex items-start gap-2"
+                style={{
+                  background: 'color-mix(in srgb, var(--color-warning) 10%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--color-warning) 20%, transparent)',
+                }}
+              >
+                <svg className="w-4 h-4 shrink-0 mt-0.5 animate-pulse" style={{ color: 'var(--color-warning)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <p className="text-[11px] font-semibold" style={{ color: 'var(--color-warning)' }}>
+                    Solicitud de reapertura enviada
+                  </p>
+                  <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                    Esperando aprobacion del administrador
+                  </p>
+                </div>
+              </div>
             )}
             <div className="space-y-2">
               {[
