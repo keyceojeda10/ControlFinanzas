@@ -288,6 +288,11 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
         return
       }
 
+      if (esEdicion) {
+        router.push(`/clientes/${data.id}`)
+        router.refresh()
+        return
+      }
       setClienteCreado({ id: data.id, nombre: form.nombre || data.nombre })
     } catch {
       if (!esEdicion && !navigator.onLine) {

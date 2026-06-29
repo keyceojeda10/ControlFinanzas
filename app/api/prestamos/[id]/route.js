@@ -669,7 +669,7 @@ export async function PATCH(request, { params }) {
       accion: 'editar_prestamo',
       entidadTipo: 'prestamo',
       entidadId: id,
-      detalle: `Préstamo editado el mismo día de creación.${cambiosMonto} cuota→${Math.round(calc.cuotaDiaria).toLocaleString('es-CO')}`,
+      detalle: `Préstamo editado.${cambiosMonto} cuota→${Math.round(calc.cuotaDiaria).toLocaleString('es-CO')}`,
       ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
     })
     if (idempKey) setCachedMutation(idempKey, actualizado)

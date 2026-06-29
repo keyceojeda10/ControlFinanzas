@@ -178,16 +178,16 @@ function NuevoPrestamo() {
   // Wizard: 3 pasos. 0 = Cliente, 1 = Plan (sub-pasos internos), 2 = Confirmar y firma.
   const [paso, setPaso] = useState(0)
   const [subPaso, setSubPaso] = useState(0) // sub-paso dentro del paso 1
-  const PASOS = [
-    { label: 'Cliente' },
-    { label: 'Datos' },
-    { label: 'Confirmar' },
-  ]
 
   // Sub-pasos del wizard de datos (paso 1)
-  // 0: Monto, 1: Frecuencia, 2: Interes+Plazo, 3: Tipo interes (avanzado), 4: Opciones extras
   const SUB_PASOS_LABELS = ['Monto', 'Cobro', 'Plazo', 'Tipo', 'Extras']
   const TOTAL_SUB_PASOS = modo === 'mercancia' ? 3 : 5
+
+  const PASOS = [
+    { label: 'Cliente' },
+    { label: SUB_PASOS_LABELS[subPaso] || 'Datos' },
+    { label: 'Confirmar' },
+  ]
 
   // Pre-llenar desde cartulina si venimos de importar
   useEffect(() => {

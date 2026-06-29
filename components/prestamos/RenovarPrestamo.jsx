@@ -33,6 +33,8 @@ export default function RenovarPrestamo({
 
   const saldo = Math.max(0, Number(saldoPendiente) || 0)
   const freqInicial = prestamoAnterior?.frecuencia ?? 'diario'
+  const cuotaAnterior = prestamoAnterior?.cuotaDiaria ?? 0
+  const montoAnterior = prestamoAnterior?.montoPrestado ?? 0
 
   const [monto,       setMonto]       = useState('')
   const [tasa,        setTasa]        = useState(String(prestamoAnterior?.tasaInteres ?? '20'))
@@ -120,20 +122,50 @@ export default function RenovarPrestamo({
     onClose?.()
   }
 
+  const cuotaCambio = calculo && cuotaAnterior
+    ? calculo.cuotaDiaria - cuotaAnterior
+    : null
+
   return (
     <Modal open={open} onClose={handleClose} title="Renovar prestamo">
       <div className="space-y-4">
 
-        {/* Saldo actual */}
+        {/* Warning: el prestamo actual se cerrara */}
+        <div className="rounded-xl p-3 flex items-start gap-2.5" style={{ background: 'rgba(251,146,60,0.08)', border: '1px solid rgba(251,146,60,0.25)' }}>
+          <svg className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#fb923c' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
+          <div>
+            <p className="text-xs font-semibold" style={{ color: '#fb923c' }}>El prestamo actual se cerrara</p>
+            <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+              El saldo pendiente se absorbe en el nuevo prestamo. El anterior queda como completado.
+            </p>
+          </div>
+        </div>
+
+        {/* Resumen del prestamo actual */}
         <div className="rounded-xl p-3" style={{ background: 'rgba(245,197,24,0.06)', border: '1px solid rgba(245,197,24,0.2)' }}>
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-2">
             <svg className="w-4 h-4 text-[var(--color-accent)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
             </svg>
-            <span className="text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>Saldo pendiente actual</span>
+            <span className="text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>Prestamo actual</span>
           </div>
-          <p className="text-xl font-bold font-mono-display" style={{ color: 'var(--color-accent)' }}>{formatMoney(saldo)}</p>
-          {clienteNombre && <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{clienteNombre}</p>}
+          {clienteNombre && <p className="text-[11px] mb-1.5" style={{ color: 'var(--color-text-muted)' }}>{clienteNombre}</p>}
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Presto</span>
+              <span className="text-sm font-semibold font-mono-display" style={{ color: 'var(--color-text-secondary)' }}>{formatMoney(montoAnterior)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Cuota</span>
+              <span className="text-sm font-semibold font-mono-display" style={{ color: 'var(--color-text-secondary)' }}>{formatMoney(cuotaAnterior)}</span>
+            </div>
+            <div className="flex items-center justify-between col-span-2">
+              <span className="text-[11px] font-medium" style={{ color: 'var(--color-accent)' }}>Saldo pendiente</span>
+              <span className="text-lg font-bold font-mono-display" style={{ color: 'var(--color-accent)' }}>{formatMoney(saldo)}</span>
+            </div>
+          </div>
         </div>
 
         {/* Input principal */}
@@ -159,7 +191,7 @@ export default function RenovarPrestamo({
             />
           </div>
           <p className="text-[11px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
-            Incluye lo que ya debe. Ejemplo: debe {formatMoney(saldo)} y le prestas {formatMoney(saldo)} mas = total {formatMoney(saldo * 2)}
+            Incluye lo que ya debe. Ej: debe {formatMoney(saldo)}, le prestas {formatMoney(saldo)} mas = total {formatMoney(saldo * 2)}
           </p>
         </div>
 
@@ -291,15 +323,23 @@ export default function RenovarPrestamo({
           </div>
         )}
 
-        {/* Preview cuota */}
+        {/* Preview cuota + comparacion */}
         {calculo && montoNum >= saldo && (
           <div className="rounded-xl p-3 space-y-2" style={{ background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.2)' }}>
             <div className="flex items-center justify-between">
-              <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Cuota {frecuencia}</span>
+              <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Nueva cuota {frecuencia}</span>
               <span className="text-base font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
                 {formatMoney(calculo.cuotaDiaria)}
               </span>
             </div>
+            {cuotaCambio !== null && cuotaCambio !== 0 && (
+              <div className="flex items-center justify-between">
+                <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>vs cuota anterior</span>
+                <span className="text-xs font-semibold" style={{ color: cuotaCambio > 0 ? 'var(--color-danger)' : '#22c55e' }}>
+                  {cuotaCambio > 0 ? '+' : ''}{formatMoney(cuotaCambio)}
+                </span>
+              </div>
+            )}
             {calculo.ultimaCuota && calculo.ultimaCuota !== calculo.cuotaDiaria && calculo.numPeriodos > 1 && (
               <div className="flex items-center justify-between">
                 <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Ultima cuota (ajuste)</span>
