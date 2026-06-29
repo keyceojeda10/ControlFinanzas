@@ -513,7 +513,7 @@ export default function CobrosHoyPage() {
             {modalPago.abonoConPendiente && (
               <div className="rounded-[12px] px-3 py-2.5 text-center" style={{ background: 'color-mix(in srgb, var(--color-warning) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--color-warning) 25%, transparent)' }}>
                 <p className="text-xs font-semibold" style={{ color: 'var(--color-warning)' }}>Tiene cuotas atrasadas</p>
-                <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Ya pago hoy pero aun debe mas. Cada registro cubre 1 cuota.</p>
+                <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Ya pagó hoy pero aún debe mas. Cada registro cubre 1 cuota.</p>
               </div>
             )}
             <div className="grid grid-cols-2 gap-3">
@@ -709,7 +709,7 @@ function ClienteCard({ cliente, pagando, pagoOk, onCobrar, showRuta = true }) {
             <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{cliente.rutaNombre}</span>
           )}
           {pagado && (
-            <span className="text-[10px] font-medium" style={{ color: 'var(--color-success)' }}>Pago hoy</span>
+            <span className="text-[10px] font-medium" style={{ color: 'var(--color-success)' }}>Pagó hoy</span>
           )}
         </div>
       </div>

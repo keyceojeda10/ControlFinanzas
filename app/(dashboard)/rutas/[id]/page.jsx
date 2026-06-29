@@ -2196,7 +2196,7 @@ export default function RutaDetallePage({ params }) {
                       const auditNumPos = (ruta.clientes ?? []).findIndex(x => x.id === c.id) + 1
                       const expandido = auditoriaExpandido === c.id
                       const cfg = {
-                        pagaron:    { color: 'var(--color-success)', label: 'Pago hoy', icon: '✓' },
+                        pagaron:    { color: 'var(--color-success)', label: 'Pagó hoy', icon: '✓' },
                         parcial:    { color: 'var(--color-warning)', label: 'Abono parcial', icon: '½' },
                         pendientes: { color: 'var(--color-danger)',  label: 'Pendiente', icon: '!' },
                         completado: { color: 'var(--color-text-muted)', label: 'Completado', icon: '✓' },
