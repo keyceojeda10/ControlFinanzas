@@ -1,12 +1,14 @@
 // components/ui/Card.jsx
 
-export function Card({ as: Component = 'div', children, className = '', padding = true, glowColor, ...props }) {
+export function Card({ as: Component = 'div', children, className = '', padding = true, glowColor, elevation = 1, hoverable = false, ...props }) {
   const { style: propsStyle, ...restProps } = props
   return (
     <Component
       className={[
         'cf-hero-card rounded-[16px]',
         padding ? 'p-5' : '',
+        `elevation-${elevation}`,
+        hoverable ? 'hover-lift' : '',
         className,
       ].join(' ')}
       style={{

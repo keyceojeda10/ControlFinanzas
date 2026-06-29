@@ -397,15 +397,8 @@ export default function Sidebar() {
                     key={item.href}
                     href={item.href}
                     aria-current={active ? 'page' : undefined}
-                    className="group flex items-center gap-2.5 px-2 py-2 rounded-[10px] text-[13px] font-medium transition-colors duration-150 min-h-[38px] focus-visible:outline-none focus-visible:ring-2 relative"
-                    style={{
-                      background: active ? 'rgba(245,197,24,0.08)' : 'transparent',
-                      color: active ? 'var(--color-accent)' : 'var(--color-text-secondary)',
-                    }}
+                    className={`cf-nav-link${active ? ' active' : ''} group flex items-center gap-2.5 px-2 py-2 rounded-[10px] text-[13px] font-medium min-h-[38px] focus-visible:outline-none focus-visible:ring-2`}
                   >
-                    {active && (
-                      <span className="absolute left-0 top-2 bottom-2 w-[2px] rounded-full" style={{ background: 'var(--color-accent)' }} />
-                    )}
                     <span className="w-5 h-5 flex items-center justify-center shrink-0" style={{ color: active ? 'var(--color-accent)' : 'var(--color-text-muted)' }}>
                       {item.icon}
                     </span>
@@ -442,15 +435,8 @@ export default function Sidebar() {
                         key={item.href}
                         href={item.href}
                         aria-current={active ? 'page' : undefined}
-                        className="group flex items-center gap-2.5 px-2 py-2 rounded-[10px] text-[13px] font-medium transition-colors duration-150 min-h-[38px] focus-visible:outline-none focus-visible:ring-2 relative"
-                        style={{
-                          background: active ? 'rgba(245,197,24,0.08)' : 'transparent',
-                          color: active ? 'var(--color-accent)' : 'var(--color-text-secondary)',
-                        }}
+                        className={`cf-nav-link${active ? ' active' : ''} group flex items-center gap-2.5 px-2 py-2 rounded-[10px] text-[13px] font-medium min-h-[38px] focus-visible:outline-none focus-visible:ring-2`}
                       >
-                        {active && (
-                          <span className="absolute left-0 top-2 bottom-2 w-[2px] rounded-full" style={{ background: 'var(--color-accent)' }} />
-                        )}
                         <span className="w-5 h-5 flex items-center justify-center shrink-0" style={{ color: active ? 'var(--color-accent)' : 'var(--color-text-muted)' }}>
                           {item.icon}
                         </span>
@@ -473,15 +459,8 @@ export default function Sidebar() {
                       key={item.href}
                       href={item.href}
                       aria-current={active ? 'page' : undefined}
-                      className="group flex items-center gap-2.5 px-2 py-2 rounded-[10px] text-[13px] font-medium transition-colors duration-150 min-h-[38px] focus-visible:outline-none focus-visible:ring-2 relative"
-                      style={{
-                        background: active ? 'rgba(245,197,24,0.08)' : 'transparent',
-                        color: active ? 'var(--color-accent)' : 'var(--color-text-secondary)',
-                      }}
+                      className={`cf-nav-link${active ? ' active' : ''} group flex items-center gap-2.5 px-2 py-2 rounded-[10px] text-[13px] font-medium min-h-[38px] focus-visible:outline-none focus-visible:ring-2`}
                     >
-                      {active && (
-                        <span className="absolute left-0 top-2 bottom-2 w-[2px] rounded-full" style={{ background: 'var(--color-accent)' }} />
-                      )}
                       <span className="w-5 h-5 flex items-center justify-center shrink-0" style={{ color: active ? 'var(--color-accent)' : 'var(--color-text-muted)' }}>
                         {item.icon}
                       </span>
@@ -499,15 +478,8 @@ export default function Sidebar() {
               key={item.href}
               href={item.href}
               aria-current={active ? 'page' : undefined}
-              className="group flex items-center gap-2.5 px-2 py-2 rounded-[10px] text-[13px] font-medium transition-colors duration-150 min-h-[38px] focus-visible:outline-none focus-visible:ring-2 relative"
-              style={{
-                background: active ? 'rgba(245,197,24,0.08)' : 'transparent',
-                color: active ? 'var(--color-accent)' : 'var(--color-text-secondary)',
-              }}
+              className={`cf-nav-link${active ? ' active' : ''} group flex items-center gap-2.5 px-2 py-2 rounded-[10px] text-[13px] font-medium min-h-[38px] focus-visible:outline-none focus-visible:ring-2`}
             >
-              {active && (
-                <span className="absolute left-0 top-2 bottom-2 w-[2px] rounded-full" style={{ background: 'var(--color-accent)' }} />
-              )}
               <span className="w-5 h-5 flex items-center justify-center shrink-0" style={{ color: active ? 'var(--color-accent)' : 'var(--color-text-muted)' }}>
                 {item.icon}
               </span>

@@ -11,6 +11,7 @@ import { Modal }         from '@/components/ui/Modal'
 import { SkeletonCard }  from '@/components/ui/Skeleton'
 import ClienteCard       from '@/components/clientes/ClienteCard'
 import BadgeNuevo        from '@/components/ui/BadgeNuevo'
+import { StaggeredList } from '@/components/ui/StaggeredList'
 // SwipeableCard reemplazado por CardActionMenu integrado en ClienteCard
 import ModalWhatsAppTemplates from '@/components/ui/ModalWhatsAppTemplates'
 import Mascota           from '@/components/ui/Mascota'
@@ -571,7 +572,7 @@ export default function ClientesPage() {
       {!loading && clientes.length > 0 && (() => {
         const filtrados = estado ? clientes.filter((c) => c.estado === estado) : clientes
         return filtrados.length > 0 ? (
-          <div className="space-y-2.5">
+          <StaggeredList className="space-y-2.5">
             {filtrados.map((c) => (
               modoAsignar ? (
                 <label
@@ -632,7 +633,7 @@ export default function ClientesPage() {
                 </BadgeNuevo>
               )
             ))}
-          </div>
+          </StaggeredList>
         ) : (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <p className="text-sm font-medium text-[var(--color-text-primary)]">Sin clientes {estado === 'mora' ? 'en mora' : estado === 'activo' ? 'al día' : 'cancelados'}</p>

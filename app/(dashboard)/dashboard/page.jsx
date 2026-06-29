@@ -299,7 +299,7 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
 
   return (
     <div
-      className="cf-hero-card relative rounded-[20px] overflow-hidden kpi-lift"
+      className="cf-hero-card cf-gradient-mesh relative rounded-[20px] overflow-hidden kpi-lift elevation-2"
       style={{
         background: 'var(--color-bg-card)',
         border: '1px solid var(--color-border)',

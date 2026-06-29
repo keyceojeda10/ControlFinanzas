@@ -9,6 +9,7 @@ import { guardarEnCache, leerDeCache, obtenerPrestamosOffline } from '@/lib/offl
 import { Button }                             from '@/components/ui/Button'
 import { SkeletonCard }                       from '@/components/ui/Skeleton'
 import PrestamoCard                           from '@/components/prestamos/PrestamoCard'
+import { StaggeredList }                      from '@/components/ui/StaggeredList'
 // SwipeableCard reemplazado por CardActionMenu integrado en PrestamoCard
 import ModalWhatsAppTemplates                 from '@/components/ui/ModalWhatsAppTemplates'
 import Mascota                                from '@/components/ui/Mascota'
@@ -442,7 +443,7 @@ export default function PrestamosPage() {
 
       {/* Lista plana: orden cronologico puro (default) */}
       {!loading && prestamosVisibles.length > 0 && !agrupar && (
-        <div className="space-y-2.5">
+        <StaggeredList className="space-y-2.5">
           {prestamosVisibles.map((p) => {
             const cardActions = []
             if (p.cliente?.telefono) {
@@ -467,7 +468,7 @@ export default function PrestamosPage() {
               </BadgeNuevo>
             )
           })}
-        </div>
+        </StaggeredList>
       )}
 
       {/* Lista agrupada por cliente: solo cuando el toggle esta activo */}

@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { formatMoney } from '@/lib/i18n'
 import { Modal } from '@/components/ui/Modal'
 import { obtenerCoordsRapido } from '@/lib/geo'
+import { StaggeredList } from '@/components/ui/StaggeredList'
 
 export default function CobrosHoyPage() {
   const { esCobrador, loading: authLoading } = useAuth()
@@ -287,15 +288,17 @@ export default function CobrosHoyPage() {
               Por cobrar ({pendientes.length})
             </p>
           </div>
-          {pendientes.map(c => (
-            <ClienteCard
-              key={c.id}
-              cliente={c}
-              pagando={pagando === c.id}
-              pagoOk={pagoOk === c.id}
-              onCobrar={() => abrirPago(c)}
-            />
-          ))}
+          <StaggeredList className="space-y-1.5">
+            {pendientes.map(c => (
+              <ClienteCard
+                key={c.id}
+                cliente={c}
+                pagando={pagando === c.id}
+                pagoOk={pagoOk === c.id}
+                onCobrar={() => abrirPago(c)}
+              />
+            ))}
+          </StaggeredList>
         </div>
       )}
 
@@ -308,15 +311,17 @@ export default function CobrosHoyPage() {
               Cobrados hoy ({pagados.length})
             </p>
           </div>
-          {pagados.map(c => (
-            <ClienteCard
-              key={c.id}
-              cliente={c}
-              pagando={false}
-              pagoOk={pagoOk === c.id}
-              onCobrar={() => abrirPago(c)}
-            />
-          ))}
+          <StaggeredList className="space-y-1.5">
+            {pagados.map(c => (
+              <ClienteCard
+                key={c.id}
+                cliente={c}
+                pagando={false}
+                pagoOk={pagoOk === c.id}
+                onCobrar={() => abrirPago(c)}
+              />
+            ))}
+          </StaggeredList>
         </div>
       )}
 

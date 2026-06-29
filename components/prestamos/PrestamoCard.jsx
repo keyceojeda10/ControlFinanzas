@@ -48,7 +48,8 @@ export default function PrestamoCard({ prestamo: p, actions }) {
       href={`/prestamos/${p.id}`}
       glowColor={color}
       padding={false}
-      className="block px-4 py-4 transition-all duration-200 group hover:scale-[1.005]"
+      hoverable
+      className="block px-4 py-4 group"
     >
       {/* Top: cliente + estado mood + offline */}
       <div className="flex items-center justify-between mb-3">

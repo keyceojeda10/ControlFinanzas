@@ -42,7 +42,8 @@ export default function ClienteCard({ cliente, actions }) {
       href={`/clientes/${cliente.id}`}
       glowColor={color}
       padding={false}
-      className="block px-4 py-3.5 transition-all duration-200 group hover:scale-[1.005]"
+      hoverable
+      className="block px-4 py-3.5 group"
     >
       {/* ── Seccion superior: identidad del cliente ── */}
       <div className="flex items-start gap-3">

@@ -76,7 +76,7 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }) {
       className="fixed inset-0 z-[10001] flex items-end sm:items-center justify-center p-0 sm:p-4"
       onClick={(e) => { if (e.target === overlayRef.current) onClose?.() }}
     >
-      <div className="absolute inset-0 cf-modal-overlay backdrop-blur-md" />
+      <div className="absolute inset-0 cf-modal-overlay backdrop-blur-md animate-overlay-in" />
 
       <div
         ref={dialogRef}
@@ -87,7 +87,7 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }) {
           'relative w-full cf-modal-dialog',
           'rounded-t-[20px] sm:rounded-[20px]',
           'max-h-[90vh] flex flex-col',
-          'animate-slide-up sm:animate-none',
+          'animate-slide-up sm:animate-modal-in',
           sizes[size] ?? sizes.md,
         ].join(' ')}
       >

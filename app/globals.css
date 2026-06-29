@@ -156,6 +156,55 @@ html[data-theme="light"] .glass-card {
   box-shadow: 0 4px 14px rgba(20, 20, 40, 0.05);
 }
 
+/* ─── Elevation / Depth System ──────────────────────── */
+.elevation-0 {
+  box-shadow: none;
+}
+.elevation-1 {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
+}
+.elevation-2 {
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15), 0 2px 6px rgba(0,0,0,0.08);
+}
+.elevation-3 {
+  box-shadow: 0 12px 40px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Hover lift: cards se elevan sutilmente al hover */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.18), 0 3px 8px rgba(0,0,0,0.1);
+  border-color: var(--color-border-hover);
+}
+
+/* Light theme shadows - mas visibles */
+html[data-theme="light"] .elevation-1 {
+  box-shadow: 0 1px 3px rgba(20,20,40,0.06), 0 1px 2px rgba(20,20,40,0.04);
+}
+html[data-theme="light"] .elevation-2 {
+  box-shadow: 0 4px 14px rgba(20,20,40,0.08), 0 2px 6px rgba(20,20,40,0.04);
+}
+html[data-theme="light"] .elevation-3 {
+  box-shadow: 0 12px 40px rgba(20,20,40,0.12), 0 4px 12px rgba(20,20,40,0.06);
+}
+html[data-theme="light"] .hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(20,20,40,0.1), 0 3px 8px rgba(20,20,40,0.05);
+}
+
+/* En mobile, reducir el hover lift (no hay hover real, es para focus) */
+@media (max-width: 1023px) {
+  .hover-lift:hover {
+    transform: none;
+  }
+  .hover-lift:active {
+    transform: scale(0.99);
+  }
+}
+
 /* ─── Glow effects (neutralizados — diseño sobrio) ──────────── */
 .glow-gold, .glow-green, .glow-red, .glow-purple { box-shadow: none; }
 html[data-theme="light"] .glow-gold,
@@ -193,12 +242,89 @@ html[data-theme="light"] .progress-shimmer {
 .animate-card-in-2 { animation-delay: 0.1s; }
 .animate-card-in-3 { animation-delay: 0.15s; }
 .animate-card-in-4 { animation-delay: 0.2s; }
+.animate-card-in-5 { animation-delay: 0.25s; }
+.animate-card-in-6 { animation-delay: 0.30s; }
+.animate-card-in-7 { animation-delay: 0.35s; }
+.animate-card-in-8 { animation-delay: 0.40s; }
+.animate-card-in-9 { animation-delay: 0.45s; }
+/* Mobile: duracion mas corta y desplazamiento mas sutil */
 @media (max-width: 1023px) {
-  .animate-card-in, .animate-card-in-1, .animate-card-in-2, .animate-card-in-3, .animate-card-in-4 { animation: none; }
+  .animate-card-in { animation-duration: 0.25s; }
+}
+@keyframes cardFadeUpMobile { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 1023px) {
+  .animate-card-in { animation-name: cardFadeUpMobile; }
+}
+
+/* ─── Stagger list animation ─────────────────────────────────
+   Uso: aplica clase .stagger-item a cada hijo de una lista.
+   El delay se controla via custom property --stagger-delay
+   (inyectada por el componente StaggeredList).
+   ─────────────────────────────────────────────────────────── */
+@keyframes staggerFadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.stagger-item {
+  opacity: 0;
+  animation: staggerFadeUp 0.28s ease-out both;
+  animation-delay: var(--stagger-delay, 0s);
+}
+
+/* ─── Content fade-in (crossfade skeleton → contenido) ──────── */
+@keyframes contentFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.fade-in-content {
+  animation: contentFadeIn 0.3s ease-out both;
 }
 
 @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 .animate-slide-up { animation: slideUp 0.25s ease-out; }
+
+/* ─── Modal animations ───────────────────────────────────── */
+@keyframes modalScaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-modal-in {
+  animation: modalScaleIn 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.animate-overlay-in {
+  animation: overlayFadeIn 0.15s ease-out both;
+}
+
+/* ─── Gradient mesh decorativo ──────────────────────────── */
+.cf-gradient-mesh {
+  position: relative;
+}
+.cf-gradient-mesh::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(ellipse 60% 50% at 0% 0%, rgba(245,197,24,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse 40% 60% at 100% 0%, rgba(192,132,252,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 40% at 50% 100%, rgba(52,211,153,0.04) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+.cf-gradient-mesh > * {
+  position: relative;
+  z-index: 1;
+}
+html[data-theme="light"] .cf-gradient-mesh::before {
+  background:
+    radial-gradient(ellipse 60% 50% at 0% 0%, rgba(245,197,24,0.12) 0%, transparent 50%),
+    radial-gradient(ellipse 40% 60% at 100% 0%, rgba(167,139,250,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 40% at 50% 100%, rgba(34,201,160,0.08) 0%, transparent 50%);
+}
 
 /* ─── Hero card glow (estatico, sin pulsacion) ────────────────── */
 .hero-glow { opacity: 0.2; }
@@ -563,6 +689,34 @@ html[data-theme="light"] .cf-sidebar {
 .cf-signout-btn:hover {
   background: var(--color-danger-dim);
   color: var(--color-danger);
+}
+
+/* ─── Sidebar active indicator ──────────────────────────── */
+.cf-nav-link {
+  position: relative;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+.cf-nav-link::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%) scaleY(0);
+  width: 3px;
+  height: 60%;
+  border-radius: 0 3px 3px 0;
+  background: var(--color-accent);
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cf-nav-link.active::before {
+  transform: translateY(-50%) scaleY(1);
+}
+.cf-nav-link:hover:not(.active) {
+  background: var(--color-bg-hover);
+}
+.cf-nav-link.active {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
 }
 
 /* ─── Modal ────────────────────────────── */
