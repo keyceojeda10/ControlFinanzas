@@ -2,6 +2,7 @@
 // app/(dashboard)/prestamos/page.jsx - Lista de préstamos
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link                                   from 'next/link'
 import { useAuth }                            from '@/hooks/useAuth'
 import { useOffline }                         from '@/components/providers/OfflineProvider'
@@ -50,10 +51,11 @@ const LIMIT = 50
 export default function PrestamosPage() {
   const { esOwner, puedeCrearPrestamos, orgNombre, loading: authLoading } = useAuth()
   const { lastSyncedAt } = useOffline()
+  const searchParams = useSearchParams()
   const [prestamos, setPrestamos] = useState([])
   const [buscar,    setBuscar]    = useState('')
-  const [estado,    setEstado]    = useState('activo')
-  const [frecuencia, setFrecuencia] = useState('')
+  const [estado,    setEstado]    = useState(() => searchParams?.get('estado') || 'activo')
+  const [frecuencia, setFrecuencia] = useState(() => searchParams?.get('frecuencia') || '')
   const [rutaId,    setRutaId]    = useState('')
   const [renovacion, setRenovacion] = useState('')
   const [loading,   setLoading]   = useState(true)
