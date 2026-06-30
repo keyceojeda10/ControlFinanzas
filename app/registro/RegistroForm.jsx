@@ -341,6 +341,13 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
       if (typeof window !== 'undefined' && window.fbq) {
         window.fbq('track', 'Lead')
       }
+      if (typeof window !== 'undefined' && window.gtag) {
+        window.gtag('event', 'conversion', {
+          send_to: 'AW-18050279366/LY3nCKOGrcgcEMbPhZ9D',
+          value: 39000.0,
+          currency: 'COP',
+        })
+      }
       setStep(3)
     } catch {
       setError('Error de conexión. Intenta de nuevo.')

@@ -463,6 +463,58 @@ export async function PATCH(request, { params }) {
     return Response.json(actualizado)
   }
 
+  // ─── Modo: cambiar fecha de próximo cobro manualmente ──────────
+  if (modo === 'proximoCobro') {
+    const puedeGestionar = session.user.rol === 'owner'
+      ? true
+      : (session.user.rol === 'cobrador' && await cobradorPuedeGestionarPrestamos(session.user.id))
+    if (!puedeGestionar) {
+      return Response.json({ error: 'No tienes permiso para cambiar la fecha de cobro' }, { status: 403 })
+    }
+    if (p.estado !== 'activo') {
+      return Response.json({ error: 'Solo se puede cambiar la fecha de cobro de préstamos activos' }, { status: 400 })
+    }
+
+    const fechaRaw = body.proximoCobro
+    if (fechaRaw === null) {
+      const actualizado = await prisma.prestamo.update({
+        where: { id },
+        data: { proximoCobroManual: null },
+      })
+      logActividad({
+        session,
+        accion: 'editar_prestamo',
+        entidadTipo: 'prestamo',
+        entidadId: id,
+        detalle: `Próximo cobro restaurado a automático`,
+        ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+      })
+      if (idempKey) setCachedMutation(idempKey, actualizado)
+      return Response.json(actualizado)
+    }
+
+    const fecha = new Date(fechaRaw)
+    if (isNaN(fecha.getTime())) {
+      return Response.json({ error: 'Fecha inválida' }, { status: 400 })
+    }
+
+    const actualizado = await prisma.prestamo.update({
+      where: { id },
+      data: { proximoCobroManual: fecha },
+    })
+
+    logActividad({
+      session,
+      accion: 'editar_prestamo',
+      entidadTipo: 'prestamo',
+      entidadId: id,
+      detalle: `Próximo cobro cambiado manualmente a ${fecha.toISOString().slice(0, 10)}`,
+      ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+    })
+    if (idempKey) setCachedMutation(idempKey, actualizado)
+    return Response.json(actualizado)
+  }
+
   // ─── Modo 3: editar dia de cobro (ancla) ───────────────────────
   if (modo === 'diaCobro') {
     const puedeGestionar = session.user.rol === 'owner'

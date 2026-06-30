@@ -17,6 +17,7 @@ import RegistrarPago                  from '@/components/prestamos/RegistrarPago
 import RenovarPrestamo                from '@/components/prestamos/RenovarPrestamo'
 import ModificarPlazo                 from '@/components/prestamos/ModificarPlazo'
 import EditarDiaCobro                 from '@/components/prestamos/EditarDiaCobro'
+import EditarProximoCobro             from '@/components/prestamos/EditarProximoCobro'
 import EditarPrestamo                 from '@/components/prestamos/EditarPrestamo'
 import BotonWhatsApp                  from '@/components/ui/BotonWhatsApp'
 import BotonCompartir                 from '@/components/ui/BotonCompartir'
@@ -98,6 +99,7 @@ export default function PrestamoDetallePage({ params }) {
   const [modalRenovar,  setModalRenovar]  = useState(false)
   const [modalPlazo,    setModalPlazo]    = useState(false)
   const [modalDiaCobro, setModalDiaCobro] = useState(false)
+  const [modalProximoCobro, setModalProximoCobro] = useState(false)
   const [modalEditar,   setModalEditar]   = useState(false)
   const [modalWA, setModalWA] = useState(false)
   const [modalDscPrestamo, setModalDscPrestamo] = useState(false)
@@ -1276,6 +1278,15 @@ export default function PrestamoDetallePage({ params }) {
           <button
             onClick={() => {
               setModalGestionPrestamo(false)
+              setModalProximoCobro(true)
+            }}
+            className="h-11 rounded-[12px] font-medium text-sm text-[#8b5cf6] bg-[rgba(139,92,246,0.08)] border border-[rgba(139,92,246,0.25)] hover:bg-[rgba(139,92,246,0.15)] transition-all"
+          >
+            Próximo cobro
+          </button>
+          <button
+            onClick={() => {
+              setModalGestionPrestamo(false)
               setModalRecargo(true)
             }}
             className="h-11 rounded-[12px] font-medium text-sm text-[#f97316] bg-[rgba(249,115,22,0.08)] border border-[rgba(249,115,22,0.2)] hover:bg-[rgba(249,115,22,0.15)] transition-all"
@@ -1580,6 +1591,14 @@ export default function PrestamoDetallePage({ params }) {
         prestamo={prestamo}
         open={modalDiaCobro}
         onClose={() => setModalDiaCobro(false)}
+        onSuccess={fetchPrestamo}
+      />
+
+      <EditarProximoCobro
+        prestamoId={id}
+        prestamo={prestamo}
+        open={modalProximoCobro}
+        onClose={() => setModalProximoCobro(false)}
         onSuccess={fetchPrestamo}
       />
 
