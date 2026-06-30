@@ -294,7 +294,9 @@ export default function RutaDetallePage({ params }) {
   // 'ordenar' = lista plana con drag-and-drop para reordenar la ruta.
   const [modoVista, setModoVista] = useState('trabajo')
   const [seccionProximosAbierta, setSeccionProximosAbierta] = useState(false)
-  const [vistaPlana, setVistaPlana] = useState(false)
+  const [vistaPlana, setVistaPlana] = useState(() => {
+    try { return localStorage.getItem('cf-ruta-vistaPlana') !== 'agrupada' } catch { return true }
+  })
   // Vista Auditoria (admin): filtro por estado de cobro hoy, busqueda y fila expandida.
   const [auditoriaFiltro, setAuditoriaFiltro] = useState('todos') // 'todos' | 'pagaron' | 'pendientes' | 'parciales'
   const [auditoriaBusqueda, setAuditoriaBusqueda] = useState('')
@@ -2496,7 +2498,7 @@ export default function RutaDetallePage({ params }) {
               <div className="flex items-center justify-end px-1">
                 <button
                   type="button"
-                  onClick={() => setVistaPlana(v => !v)}
+                  onClick={() => setVistaPlana(v => { const next = !v; try { localStorage.setItem('cf-ruta-vistaPlana', next ? 'plana' : 'agrupada') } catch {} return next })}
                   className="flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-[8px] transition-all active:scale-95"
                   style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)' }}
                 >
