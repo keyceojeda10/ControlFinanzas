@@ -64,6 +64,11 @@ export default function LineasCreditoPage() {
         )}
       </div>
 
+      {/* Explicacion */}
+      <div className="mb-4 p-3 rounded-xl text-[11px] text-[var(--color-text-muted)] leading-relaxed" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+        Una linea de credito funciona como un cupo rotativo: le apruebas un monto maximo al cliente y el puede pedir plata varias veces sin crear un prestamo nuevo cada vez. Al final del mes se genera un corte con lo que debe (capital + intereses) y puede pagar todo o una parte. Lo que no pague, rota al siguiente mes.
+      </div>
+
       {/* Filtros */}
       <div className="flex gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide">
         {ESTADOS.map(e => (

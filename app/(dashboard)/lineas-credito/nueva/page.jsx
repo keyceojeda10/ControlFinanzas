@@ -94,7 +94,10 @@ export default function NuevaLineaPage() {
       </button>
 
       <h1 className="text-lg font-bold text-[var(--color-text-primary)] mb-1">Nueva linea de credito</h1>
-      <p className="text-xs text-[var(--color-text-muted)] mb-5">Cupo rotativo tipo tarjeta. El cliente puede usar y pagar multiples veces.</p>
+      <p className="text-xs text-[var(--color-text-muted)] mb-2">Crea un cupo rotativo para tu cliente, similar a una tarjeta de credito.</p>
+      <div className="mb-5 p-3 rounded-xl text-[11px] text-[var(--color-text-muted)] leading-relaxed" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+        El cliente podra pedir plata del cupo varias veces sin crear un prestamo nuevo. Cada mes se genera un corte (estado de cuenta) con lo que debe, y puede pagar todo o una parte. Lo que no pague, rota al siguiente mes con intereses.
+      </div>
 
       {/* Paso 0: Seleccionar cliente */}
       {paso === 0 && (
@@ -157,11 +160,12 @@ export default function NuevaLineaPage() {
             <div>
               <label className="text-xs font-medium text-[var(--color-text-secondary)] mb-1.5 block">Cupo maximo</label>
               <MoneyInput value={cupoMaximo} onChange={setCupoMaximo} placeholder="500000" />
+              <p className="text-[11px] text-[var(--color-text-muted)] mt-1">Es el tope que el cliente puede tener en uso al mismo tiempo. Puede pedir varias veces hasta llegar a este monto.</p>
             </div>
 
             {/* Tasa */}
             <div>
-              <label className="text-xs font-medium text-[var(--color-text-secondary)] mb-1.5 block">Tasa de interes (% mensual)</label>
+              <label className="text-xs font-medium text-[var(--color-text-secondary)] mb-1.5 block">Tasa de interes mensual (%)</label>
               <input
                 type="number"
                 inputMode="decimal"
@@ -179,7 +183,7 @@ export default function NuevaLineaPage() {
 
             {/* Modo interes */}
             <div>
-              <label className="text-xs font-medium text-[var(--color-text-secondary)] mb-1.5 block">Metodo de interes</label>
+              <label className="text-xs font-medium text-[var(--color-text-secondary)] mb-1.5 block">Como se calcula el interes</label>
               <div className="space-y-2">
                 {MODOS_INTERES.map(m => (
                   <button
@@ -215,6 +219,7 @@ export default function NuevaLineaPage() {
                   <option key={d} value={d}>{d === 30 ? '30 (ultimo del mes)' : d}</option>
                 ))}
               </select>
+              <p className="text-[11px] text-[var(--color-text-muted)] mt-1">Ese dia se genera el estado de cuenta del mes: cuanto debe en total (capital + intereses) y cuanto ha pagado.</p>
             </div>
 
             {/* Pago minimo */}
@@ -228,7 +233,7 @@ export default function NuevaLineaPage() {
                 className="w-full h-10 px-3 rounded-xl bg-[var(--color-bg-card)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)]"
                 placeholder="0"
               />
-              <p className="text-[11px] text-[var(--color-text-muted)] mt-1">0 = sin pago minimo obligatorio</p>
+              <p className="text-[11px] text-[var(--color-text-muted)] mt-1">Porcentaje minimo que el cliente debe pagar cada mes. Dejalo en 0 si no quieres exigir un minimo obligatorio.</p>
             </div>
 
             {/* Notas */}

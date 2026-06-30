@@ -130,9 +130,12 @@ export default function DetalleLineaPage({ params }) {
         <div className="flex items-center justify-between text-[11px] px-2 py-1.5 mt-1">
           <span className="text-[var(--color-text-muted)]">Tasa: {linea.tasaInteres}% mensual</span>
           <span className="text-[var(--color-text-muted)]">
-            {linea.modoInteres === 'fijo_mensual' ? 'Fijo mensual' : linea.modoInteres === 'diario_saldo' ? 'Diario' : 'Al corte'}
+            {linea.modoInteres === 'fijo_mensual' ? 'Interes fijo mensual' : linea.modoInteres === 'diario_saldo' ? 'Interes diario sobre saldo' : 'Interes al corte'}
           </span>
         </div>
+        <p className="text-[10px] text-[var(--color-text-muted)] px-2 mt-1 leading-relaxed">
+          El cupo es el maximo que puede tener en uso. Cada vez que pide plata baja el disponible, y cada vez que paga sube de nuevo.
+        </p>
       </Card>
 
       {/* Acciones */}
@@ -155,7 +158,8 @@ export default function DetalleLineaPage({ params }) {
       {/* Cortes (estados de cuenta) */}
       {linea.cortesLinea?.length > 0 && (
         <div className="mb-5">
-          <h2 className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-2">Estados de cuenta</h2>
+          <h2 className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-1">Estados de cuenta</h2>
+          <p className="text-[10px] text-[var(--color-text-muted)] mb-2 leading-relaxed">Resumen de cada mes: lo que debia + lo que pidio + intereses - lo que pago = saldo nuevo.</p>
           <div className="space-y-2">
             {linea.cortesLinea.map(corte => (
               <Card key={corte.id} className="p-3">
@@ -303,8 +307,8 @@ function ModalDesembolso({ lineaId, cupoDisponible, onClose, onSuccess }) {
     <div className="fixed inset-0 z-[10001] flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full sm:max-w-md bg-[var(--color-bg-surface)] rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl">
-        <h3 className="text-sm font-bold text-[var(--color-text-primary)] mb-4">Registrar desembolso</h3>
-        <p className="text-[11px] text-[var(--color-text-muted)] mb-3">Cupo disponible: {formatMoney(cupoDisponible)}</p>
+        <h3 className="text-sm font-bold text-[var(--color-text-primary)] mb-1">Registrar desembolso</h3>
+        <p className="text-[11px] text-[var(--color-text-muted)] mb-3">Registra el dinero que el cliente esta pidiendo de su cupo. Disponible: {formatMoney(cupoDisponible)}</p>
 
         <MoneyInput value={monto} onChange={setMonto} placeholder="Monto" />
         <input
@@ -362,8 +366,8 @@ function ModalPago({ lineaId, saldoTotal, onClose, onSuccess }) {
     <div className="fixed inset-0 z-[10001] flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full sm:max-w-md bg-[var(--color-bg-surface)] rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl">
-        <h3 className="text-sm font-bold text-[var(--color-text-primary)] mb-4">Registrar pago</h3>
-        <p className="text-[11px] text-[var(--color-text-muted)] mb-3">Saldo total: {formatMoney(saldoTotal)}</p>
+        <h3 className="text-sm font-bold text-[var(--color-text-primary)] mb-1">Registrar pago</h3>
+        <p className="text-[11px] text-[var(--color-text-muted)] mb-3">El pago primero cubre intereses pendientes y el resto va a capital, liberando cupo. Saldo actual: {formatMoney(saldoTotal)}</p>
 
         <MoneyInput value={monto} onChange={setMonto} placeholder="Monto del pago" />
 
@@ -435,7 +439,7 @@ function ModalCorte({ lineaId, onClose, onSuccess }) {
       <div className="relative w-full sm:max-w-md bg-[var(--color-bg-surface)] rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl">
         <h3 className="text-sm font-bold text-[var(--color-text-primary)] mb-2">Generar corte mensual</h3>
         <p className="text-xs text-[var(--color-text-muted)] mb-4">
-          Se generara el estado de cuenta del periodo actual. Suma saldo anterior + desembolsos + intereses - pagos.
+          Genera el estado de cuenta de este mes. Calcula cuanto debe el cliente sumando lo que ya debia, mas lo que pidio este mes, mas los intereses, menos lo que ha pagado. El resultado es el saldo que rota al siguiente mes.
         </p>
 
         {error && <p className="text-xs text-[var(--color-danger)] mb-3">{error}</p>}
