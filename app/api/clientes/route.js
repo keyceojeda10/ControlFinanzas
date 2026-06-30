@@ -103,6 +103,10 @@ export async function GET(request) {
           },
         },
       },
+      lineasCredito: {
+        where: { estado: 'activa' },
+        select: { id: true },
+      },
     },
     orderBy: [{ ordenRuta: 'asc' }, { nombre: 'asc' }],
     ...(page != null && { take: limit, skip: (page - 1) * limit }),
@@ -171,6 +175,7 @@ export async function GET(request) {
       rutaNombre:       c.ruta?.nombre ?? null,
       grupoCobro:       c.grupoCobro ?? null,
       prestamosActivos: c.prestamos.length,
+      lineasCreditoActivas: c.lineasCredito?.length ?? 0,
       createdAt:        c.createdAt,
       // Actividad reciente del cliente: MAX(createdAt cliente, prestamos.createdAt).
       // Los pagos NO mueven la posicion — solo un prestamo nuevo (o cliente nuevo) sube.

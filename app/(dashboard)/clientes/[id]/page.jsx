@@ -581,6 +581,77 @@ export default function ClienteDetallePage({ params }) {
         </div>
       )}
 
+      {/* Líneas de crédito */}
+      {cliente.lineasCredito?.filter(lc => lc.estado === 'activa').length > 0 && (
+        <div>
+          <h2 className="text-sm font-semibold text-[var(--color-text-muted)] mb-3 uppercase tracking-wide">
+            Lineas de credito
+          </h2>
+          <div className="space-y-3">
+            {cliente.lineasCredito.filter(lc => lc.estado === 'activa').map(lc => {
+              const porcentaje = lc.cupoMaximo > 0 ? Math.round((lc.capitalUsado || 0) / lc.cupoMaximo * 100) : 0
+              return (
+                <Card
+                  key={lc.id}
+                  as={Link}
+                  href={`/lineas-credito/${lc.id}`}
+                  hoverable
+                  padding={false}
+                  glowColor="#8b5cf6"
+                  className="block px-4 py-3.5"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <svg className="w-4 h-4" style={{ color: '#8b5cf6' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                      </svg>
+                      <span className="text-xs font-semibold text-[var(--color-text-primary)]">Linea de credito</span>
+                    </div>
+                    <span
+                      className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
+                      style={{ background: '#8b5cf620', color: '#8b5cf6', border: '1px solid #8b5cf635' }}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#8b5cf6' }} />
+                      Activa
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-center mb-2">
+                    <div>
+                      <p className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider">Cupo</p>
+                      <p className="text-xs font-mono-display font-bold text-[var(--color-text-primary)] mt-0.5">{formatMoney(lc.cupoMaximo)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider">Usado</p>
+                      <p className="text-xs font-mono-display font-bold text-[var(--color-text-primary)] mt-0.5">{formatMoney(lc.capitalUsado || 0)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider">Disponible</p>
+                      <p className="text-xs font-mono-display font-bold mt-0.5" style={{ color: '#8b5cf6' }}>{formatMoney(lc.cupoDisponible || 0)}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between text-[10px] mb-1">
+                      <span className="text-[var(--color-text-muted)]">Uso del cupo</span>
+                      <span className="font-mono-display font-semibold" style={{ color: porcentaje > 80 ? 'var(--color-danger)' : '#8b5cf6' }}>{porcentaje}%</span>
+                    </div>
+                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${Math.max(porcentaje, 2)}%`,
+                          background: porcentaje > 80 ? 'var(--color-danger)' : 'linear-gradient(90deg, #8b5cf6cc, #8b5cf6)',
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-[var(--color-text-muted)] mt-2">Tasa: {lc.tasaInteres}% mensual · Corte dia {lc.diaCorte}</p>
+                </Card>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Sin préstamos activos */}
       {prestamosActivos.length === 0 && (
         <Card>

@@ -51,6 +51,20 @@ export async function GET(request, { params }) {
             },
           },
         },
+        lineasCredito: {
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            cupoMaximo: true,
+            tasaInteres: true,
+            modoInteres: true,
+            diaCorte: true,
+            estado: true,
+            createdAt: true,
+            desembolsos: { select: { monto: true } },
+            pagosLinea: { select: { montoACapital: true } },
+          },
+        },
       },
     })
 
@@ -93,6 +107,14 @@ export async function GET(request, { params }) {
       }
     })
 
+    const lineasEnriquecidas = (cliente.lineasCredito || []).map(lc => {
+      const totalDesembolsado = (lc.desembolsos || []).reduce((s, d) => s + d.monto, 0)
+      const totalPagadoCapital = (lc.pagosLinea || []).reduce((s, p) => s + p.montoACapital, 0)
+      const capitalUsado = totalDesembolsado - totalPagadoCapital
+      const cupoDisponible = Math.max(0, lc.cupoMaximo - capitalUsado)
+      return { ...lc, capitalUsado, cupoDisponible, desembolsos: undefined, pagosLinea: undefined }
+    })
+
     // Para calcularEstadoCliente usamos diasExcluidos a nivel cliente (sin prestamo)
     const diasExcluidos = obtenerDiasSinCobro(cliente, cliente.ruta, org)
     let estadoCalculado
@@ -103,7 +125,7 @@ export async function GET(request, { params }) {
       estadoCalculado = cliente.estado || 'activo'
     }
 
-    return Response.json({ ...cliente, estado: estadoCalculado, prestamos: prestamosEnriquecidos })
+    return Response.json({ ...cliente, estado: estadoCalculado, prestamos: prestamosEnriquecidos, lineasCredito: lineasEnriquecidas })
   } catch (err) {
     console.error(`[GET /api/clientes/${id}] error fatal:`, err)
     return Response.json({ error: 'Error interno al cargar el cliente', detalle: err?.message }, { status: 500 })
