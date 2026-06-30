@@ -329,6 +329,7 @@ export default function RutaDetallePage({ params }) {
 
     sessionStorage.setItem(`ruta-scroll-${id}`, clienteRuta.id)
     sessionStorage.setItem(`ruta-scrollY-${id}`, String(window.scrollY))
+    sessionStorage.setItem(`ruta-modo-${id}`, modoVista)
 
     localStorage.setItem(`cf-ruta-progress-${id}`, JSON.stringify({
       clienteId: clienteRuta.id,
@@ -483,6 +484,8 @@ export default function RutaDetallePage({ params }) {
 
   // Feature 2: Auto-scroll al cliente visitado al volver de su ficha
   const scrollRestoredRef = useRef(false)
+  const pendingScrollRef = useRef(null)
+
   useEffect(() => {
     if (!ruta?.clientes?.length || scrollRestoredRef.current) return
     const scrollTo = sessionStorage.getItem(`ruta-scroll-${id}`)
@@ -491,6 +494,15 @@ export default function RutaDetallePage({ params }) {
     sessionStorage.removeItem(`ruta-scroll-${id}`)
     const savedY = sessionStorage.getItem(`ruta-scrollY-${id}`)
     sessionStorage.removeItem(`ruta-scrollY-${id}`)
+    const savedModo = sessionStorage.getItem(`ruta-modo-${id}`)
+    sessionStorage.removeItem(`ruta-modo-${id}`)
+
+    if (savedModo && savedModo !== modoVista) {
+      pendingScrollRef.current = { scrollTo, savedY }
+      setModoVista(savedModo)
+      return
+    }
+
     requestAnimationFrame(() => {
       const el = document.getElementById(`cliente-${scrollTo}`)
       if (savedY) {
@@ -504,6 +516,26 @@ export default function RutaDetallePage({ params }) {
       }
     })
   }, [ruta, id])
+
+  useEffect(() => {
+    if (!pendingScrollRef.current) return
+    const { scrollTo, savedY } = pendingScrollRef.current
+    pendingScrollRef.current = null
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const el = document.getElementById(`cliente-${scrollTo}`)
+        if (savedY) {
+          window.scrollTo(0, parseInt(savedY, 10))
+        } else if (el) {
+          el.scrollIntoView({ behavior: 'instant', block: 'center' })
+        }
+        if (el) {
+          setHighlightId(scrollTo)
+          setTimeout(() => setHighlightId(null), 2000)
+        }
+      })
+    })
+  }, [modoVista])
 
   // Feature 3: Banner "Continuar ruta" / "Nueva ruta"
   useEffect(() => {
