@@ -117,6 +117,10 @@ model Organization {
   gruposCobro        GrupoCobro[]
   festivos           Festivo[]
   visitasReagendadas VisitaReagendada[]
+  lineasCredito      LineaCredito[]
+  desembolsosLinea   DesembolsoLinea[]
+  pagosLinea         PagoLinea[]
+  cortesLinea        CorteLinea[]
 
   @@index([createdAt])
 }
@@ -146,6 +150,7 @@ model User {
   puedeVerSaldoCaja       Boolean   @default(false)
   puedeGestionarRutas     Boolean   @default(false)
   puedeAplicarDescuentos  Boolean   @default(false) // aplicar descuentos y liquidaciones (riesgo: reduce saldo)
+  puedeDesembolsarLinea Boolean @default(false)
   puedeReabrirCajaSinAprobacion Boolean @default(false) // reabrir su propia caja cerrada sin esperar aprobacion del owner
   orden                   Int       @default(0) // orden manual del cobrador (drag-and-drop en la lista)
   emailsMarketing         Boolean   @default(true)
@@ -247,6 +252,7 @@ model Cliente {
   grupoCobro         GrupoCobro?        @relation(fields: [grupoCobroId], references: [id], onDelete: SetNull)
   prestamos          Prestamo[]
   visitasReagendadas VisitaReagendada[]
+  lineasCredito      LineaCredito[]
 
   @@unique([organizationId, cedula])
   @@index([organizationId])
@@ -830,4 +836,93 @@ model PushLog {
 
   @@index([organizationId, tipo, createdAt])
   @@index([organizationId, clave])
+}
+
+// ─── LÍNEAS DE CRÉDITO ROTATIVAS ────────────────────────
+
+model LineaCredito {
+  id              String   @id @default(cuid())
+  clienteId       String
+  organizationId  String
+  cupoMaximo      Float
+  tasaInteres     Float
+  modoInteres     String   @default("fijo_mensual")
+  diaCorte        Int      @default(30)
+  pagoMinimoPct   Float    @default(0)
+  estado          String   @default("activa")
+  creadoPorId     String?
+  notas           String?  @db.Text
+  createdAt       DateTime @default(now())
+
+  cliente      Cliente          @relation(fields: [clienteId], references: [id])
+  organization Organization     @relation(fields: [organizationId], references: [id])
+  desembolsos  DesembolsoLinea[]
+  pagosLinea   PagoLinea[]
+  cortesLinea  CorteLinea[]
+
+  @@index([organizationId])
+  @@index([clienteId])
+  @@index([organizationId, estado])
+}
+
+model DesembolsoLinea {
+  id              String   @id @default(cuid())
+  lineaCreditoId  String
+  organizationId  String
+  monto           Float
+  nota            String?
+  registradoPorId String?
+  createdAt       DateTime @default(now())
+
+  lineaCredito LineaCredito  @relation(fields: [lineaCreditoId], references: [id])
+  organization Organization  @relation(fields: [organizationId], references: [id])
+
+  @@index([lineaCreditoId])
+  @@index([organizationId, createdAt])
+}
+
+model PagoLinea {
+  id              String   @id @default(cuid())
+  lineaCreditoId  String
+  organizationId  String
+  corteLineaId    String?
+  montoTotal      Float
+  montoAInteres   Float
+  montoACapital   Float
+  metodoPago      String?
+  cobradorId      String?
+  latitud         Float?
+  longitud        Float?
+  nota            String?
+  createdAt       DateTime @default(now())
+
+  lineaCredito LineaCredito  @relation(fields: [lineaCreditoId], references: [id])
+  organization Organization  @relation(fields: [organizationId], references: [id])
+  corteLinea   CorteLinea?   @relation(fields: [corteLineaId], references: [id])
+
+  @@index([lineaCreditoId])
+  @@index([organizationId, createdAt])
+}
+
+model CorteLinea {
+  id                 String   @id @default(cuid())
+  lineaCreditoId     String
+  organizationId     String
+  periodo            String
+  fechaCorte         DateTime
+  saldoAnterior      Float
+  totalDesembolsos   Float
+  interesesGenerados Float
+  totalCargos        Float
+  totalPagado        Float
+  saldoNuevo         Float
+  pagoMinimo         Float
+  createdAt          DateTime @default(now())
+
+  lineaCredito LineaCredito  @relation(fields: [lineaCreditoId], references: [id])
+  organization Organization  @relation(fields: [organizationId], references: [id])
+  pagos        PagoLinea[]
+
+  @@unique([lineaCreditoId, periodo])
+  @@index([organizationId])
 }

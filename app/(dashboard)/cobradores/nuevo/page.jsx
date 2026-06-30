@@ -70,6 +70,7 @@ function NuevoCobradorInner() {
     verSaldoCaja:   false,
     gestionarRutas: false,
     aplicarDescuentos: false,
+    desembolsarLinea: false,
     reabrirCajaSinAprobacion: false,
   })
 
@@ -353,6 +354,7 @@ function NuevoCobradorInner() {
               { key: 'crearPrestamos', label: 'Crear préstamos', desc: 'Puede registrar préstamos nuevos para clientes de su ruta' },
               { key: 'gestionarPrestamos', label: 'Gestión de préstamos', desc: 'Renovar préstamos, modificar plazos y aplicar recargos' },
               { key: 'aplicarDescuentos', label: 'Aplicar descuentos y liquidaciones', desc: 'Permite reducir el saldo de un préstamo (descuento o liquidación anticipada). Riesgoso: actívalo solo a cobradores de confianza' },
+              { key: 'desembolsarLinea', label: 'Desembolsar lineas de credito', desc: 'Permite registrar desembolsos en lineas de credito rotativas de los clientes de su ruta' },
               { key: 'reportarGastos', label: 'Reportar gastos menores', desc: 'Puede registrar gastos menores en caja (hoy o ayer)' },
               { key: 'crearClientes',  label: 'Crear clientes',  desc: 'Puede registrar nuevos clientes (se asignan a su ruta)' },
               { key: 'editarClientes', label: 'Editar clientes', desc: 'Puede modificar datos como teléfono, dirección, etc.' },

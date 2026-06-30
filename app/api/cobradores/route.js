@@ -130,6 +130,7 @@ export async function GET(request) {
         verSaldoCaja:   c.puedeVerSaldoCaja ?? false,
         gestionarRutas: c.puedeGestionarRutas ?? false,
         aplicarDescuentos: c.puedeAplicarDescuentos ?? false,
+        desembolsarLinea: c.puedeDesembolsarLinea ?? false,
         reabrirCajaSinAprobacion: c.puedeReabrirCajaSinAprobacion ?? false,
       },
       ruta:            c.rutas[0] ? { id: c.rutas[0].id, nombre: c.rutas[0].nombre } : null,
@@ -219,6 +220,7 @@ export async function POST(request) {
   const verSaldoCaja = Boolean(permisos?.verSaldoCaja)
   const gestionarRutas = Boolean(permisos?.gestionarRutas)
   const aplicarDescuentos = Boolean(permisos?.aplicarDescuentos)
+  const desembolsarLinea = Boolean(permisos?.desembolsarLinea)
   const reabrirCajaSinAprobacion = Boolean(permisos?.reabrirCajaSinAprobacion)
 
   const cobrador = await prisma.user.create({
@@ -239,10 +241,11 @@ export async function POST(request) {
       puedeVerSaldoCaja:   verSaldoCaja,
       puedeGestionarRutas: gestionarRutas,
       puedeAplicarDescuentos: aplicarDescuentos,
+      puedeDesembolsarLinea: desembolsarLinea,
       puedeReabrirCajaSinAprobacion: reabrirCajaSinAprobacion,
     },
     select: { id: true, nombre: true, email: true, telefono: true, activo: true, rol: true,
-      puedeCrearPrestamos: true, puedeGestionarPrestamos: true, puedeCrearClientes: true, puedeEditarClientes: true, puedeReportarGastos: true, puedeVerCapital: true, puedeVerSaldoCaja: true, puedeGestionarRutas: true, puedeAplicarDescuentos: true, puedeReabrirCajaSinAprobacion: true },
+      puedeCrearPrestamos: true, puedeGestionarPrestamos: true, puedeCrearClientes: true, puedeEditarClientes: true, puedeReportarGastos: true, puedeVerCapital: true, puedeVerSaldoCaja: true, puedeGestionarRutas: true, puedeAplicarDescuentos: true, puedeDesembolsarLinea: true, puedeReabrirCajaSinAprobacion: true },
   })
 
   logActividad({ session, accion: 'crear_cobrador', entidadTipo: 'usuario', entidadId: cobrador.id, detalle: `Cobrador ${cobrador.nombre} creado`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
