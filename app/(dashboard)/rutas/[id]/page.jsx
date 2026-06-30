@@ -294,6 +294,7 @@ export default function RutaDetallePage({ params }) {
   // 'ordenar' = lista plana con drag-and-drop para reordenar la ruta.
   const [modoVista, setModoVista] = useState('trabajo')
   const [seccionProximosAbierta, setSeccionProximosAbierta] = useState(false)
+  const [vistaPlana, setVistaPlana] = useState(false)
   // Vista Auditoria (admin): filtro por estado de cobro hoy, busqueda y fila expandida.
   const [auditoriaFiltro, setAuditoriaFiltro] = useState('todos') // 'todos' | 'pagaron' | 'pendientes' | 'parciales'
   const [auditoriaBusqueda, setAuditoriaBusqueda] = useState('')
@@ -2491,52 +2492,86 @@ export default function RutaDetallePage({ params }) {
 
           return (
             <div className="space-y-5">
-              {/* Por cobrar hoy */}
-              {porCobrarHoy.length > 0 && (
-                <div>
-                  <SectionHeader titulo="Por cobrar hoy" count={porCobrarHoy.length} color="var(--color-warning)" />
-                  <div className="space-y-1.5">
-                    {porCobrarHoy.map((c, i) => renderCard(c, i, { conGrip: false }))}
-                  </div>
-                </div>
-              )}
+              {/* Toggle vista agrupada / todos */}
+              <div className="flex items-center justify-end px-1">
+                <button
+                  type="button"
+                  onClick={() => setVistaPlana(v => !v)}
+                  className="flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-[8px] transition-all active:scale-95"
+                  style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)' }}
+                >
+                  {vistaPlana ? (
+                    <>
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6z" />
+                      </svg>
+                      Agrupar
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
+                      </svg>
+                      Ver todos
+                    </>
+                  )}
+                </button>
+              </div>
 
-              {/* Ya pagaron hoy */}
-              {yaPagaronHoy.length > 0 && (
-                <div>
-                  <SectionHeader titulo="Ya pagaron hoy" count={yaPagaronHoy.length} color="var(--color-success)" />
-                  <div className="space-y-1.5">
-                    {yaPagaronHoy.map((c, i) => renderCard(c, i, { conGrip: false }))}
-                  </div>
+              {vistaPlana ? (
+                <div className="space-y-1.5">
+                  {clientesFiltrados.map((c, idx) => renderCard(c, idx, { conGrip: false }))}
                 </div>
-              )}
-
-              {/* Proximos y al dia (colapsable) */}
-              {proximosYAlDia.length > 0 && (
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => setSeccionProximosAbierta(v => !v)}
-                    className="w-full flex items-center gap-2 mb-2 mt-1 px-1"
-                  >
-                    <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"
-                      style={{ color: 'var(--color-text-muted)', transform: seccionProximosAbierta ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 150ms ease' }}>
-                      <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-                      Próximos y al día
-                    </span>
-                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)' }}>
-                      {proximosYAlDia.length}
-                    </span>
-                    <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
-                  </button>
-                  {seccionProximosAbierta && (
-                    <div className="space-y-1.5">
-                      {proximosYAlDia.map((c, i) => renderCard(c, i, { conGrip: false }))}
+              ) : (
+                <>
+                  {/* Por cobrar hoy */}
+                  {porCobrarHoy.length > 0 && (
+                    <div>
+                      <SectionHeader titulo="Por cobrar hoy" count={porCobrarHoy.length} color="var(--color-warning)" />
+                      <div className="space-y-1.5">
+                        {porCobrarHoy.map((c, i) => renderCard(c, i, { conGrip: false }))}
+                      </div>
                     </div>
                   )}
-                </div>
+
+                  {/* Ya pagaron hoy */}
+                  {yaPagaronHoy.length > 0 && (
+                    <div>
+                      <SectionHeader titulo="Ya pagaron hoy" count={yaPagaronHoy.length} color="var(--color-success)" />
+                      <div className="space-y-1.5">
+                        {yaPagaronHoy.map((c, i) => renderCard(c, i, { conGrip: false }))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Proximos y al dia (colapsable) */}
+                  {proximosYAlDia.length > 0 && (
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => setSeccionProximosAbierta(v => !v)}
+                        className="w-full flex items-center gap-2 mb-2 mt-1 px-1"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"
+                          style={{ color: 'var(--color-text-muted)', transform: seccionProximosAbierta ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 150ms ease' }}>
+                          <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                        </svg>
+                        <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+                          Próximos y al día
+                        </span>
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)' }}>
+                          {proximosYAlDia.length}
+                        </span>
+                        <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
+                      </button>
+                      {seccionProximosAbierta && (
+                        <div className="space-y-1.5">
+                          {proximosYAlDia.map((c, i) => renderCard(c, i, { conGrip: false }))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )
