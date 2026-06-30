@@ -493,7 +493,7 @@ export async function PATCH(request, { params }) {
       return Response.json(actualizado)
     }
 
-    const fecha = new Date(fechaRaw)
+    const fecha = new Date(`${fechaRaw}T12:00:00Z`)
     if (isNaN(fecha.getTime())) {
       return Response.json({ error: 'Fecha inválida' }, { status: 400 })
     }
