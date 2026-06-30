@@ -32,7 +32,14 @@ export default function SuscripcionVencida() {
 
   return (
     <div className="relative min-h-dvh flex flex-col items-center justify-center px-4 py-8 overflow-hidden"
-      style={{ background: '#060609' }}
+      style={{
+        background: '#060609',
+        '--color-text-primary': '#f0f0f5',
+        '--color-text-muted': '#8a8aa0',
+        '--color-danger': '#f87171',
+        '--color-success': '#4ade80',
+        '--color-accent': '#f5c518',
+      }}
     >
       {/* Aurora */}
       <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none">
