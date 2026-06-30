@@ -58,9 +58,9 @@ export default function LineasCreditoPage() {
           </p>
         </div>
         {esOwner && (
-          <Button as={Link} href="/lineas-credito/nueva" size="sm">
+          <Link href="/lineas-credito/nueva" className="cf-btn-primary inline-flex items-center justify-center font-medium rounded-[12px] border transition-all h-9 px-3 text-xs">
             + Nueva linea
-          </Button>
+          </Link>
         )}
       </div>
 
@@ -107,9 +107,9 @@ export default function LineasCreditoPage() {
             {buscar || estado ? 'No se encontraron lineas con esos filtros' : 'No hay lineas de credito creadas'}
           </p>
           {esOwner && !buscar && !estado && (
-            <Button as={Link} href="/lineas-credito/nueva" size="sm" className="mt-4">
+            <Link href="/lineas-credito/nueva" className="cf-btn-primary inline-flex items-center justify-center font-medium rounded-[12px] border transition-all h-9 px-3 text-xs mt-4">
               Crear primera linea
-            </Button>
+            </Link>
           )}
         </div>
       ) : (
