@@ -1168,9 +1168,8 @@ function NuevoPrestamo() {
                 </div>
               )}
 
-              {/* Resumen completo antes de confirmar */}
+              {/* Resumen completo antes de confirmar — editable */}
               {calculo && (() => {
-                const DIAS_FULL_PLURAL = ['domingos', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabados']
                 const DIAS_FULL_SINGULAR = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado']
                 const diasPlazoNum = Number(plazo)
                 const diasPorPeriodo = DIAS_POR_PERIODO[frecuencia] || 1
@@ -1183,41 +1182,116 @@ function NuevoPrestamo() {
                 const totalConSeguro = calculo.totalAPagar + (seguro && Number(montoSeguro) > 0 ? Number(montoSeguro) : 0)
                 const ganancia = calculo.totalAPagar - Number(monto || 0)
                 const pctGanancia = Number(monto) > 0 ? Math.round((ganancia / Number(monto)) * 100) : 0
-
-                const Row = ({ label, value, valueColor }) => (
-                  <div className="flex items-center justify-between gap-3 py-1.5 border-b last:border-b-0"
-                    style={{ borderColor: 'color-mix(in srgb, var(--color-border) 50%, transparent)' }}>
-                    <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>{label}</span>
-                    <span className="text-xs font-semibold text-right" style={{ color: valueColor || 'var(--color-text-primary)' }}>{value}</span>
-                  </div>
-                )
+                const labelFreq = { diario: 'diaria', semanal: 'semanal', quincenal: 'quincenal', mensual: 'mensual' }[frecuencia]
+                const unidadPlazoL = { diario: 'dias', semanal: 'semanas', quincenal: 'quincenas', mensual: 'meses' }[frecuencia]
+                const modoLabel = { fijo: 'Clasico', unico: 'De una vez', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente' }[modoInteres] || 'Clasico'
+                const pencil = <svg className="w-3 h-3 shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" /></svg>
 
                 return (
-                  <div className="rounded-2xl p-4"
-                    style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 8%, var(--color-bg-card)), var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-success) 25%, var(--color-border))' }}>
-                    <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--color-success)' }}>Resumen del prestamo</p>
-                    <div className="grid grid-cols-2 gap-3 mb-3">
-                      <div>
-                        <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Cuota {frecuencia === 'diario' ? 'diaria' : frecuencia}</p>
-                        <p className="text-lg font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(calculo.cuotaDiaria)}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Total a pagar</p>
-                        <p className="text-lg font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(totalConSeguro)}</p>
-                      </div>
+                  <div className="rounded-2xl overflow-hidden"
+                    style={{ border: '1px solid color-mix(in srgb, var(--color-success) 25%, var(--color-border))' }}>
+                    <div className="px-4 py-2.5 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 8%, var(--color-bg-card)), var(--color-bg-card))' }}>
+                      <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-success)' }}>Resumen del prestamo</p>
+                      <span className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>Toca para editar</span>
                     </div>
-                    <div className="space-y-0">
-                      <Row label="Monto prestado" value={formatMoney(Number(monto || 0))} />
-                      {modo === 'prestamo' && <Row label="Interes" value={`${tasa || 0}% mensual`} valueColor="var(--color-accent)" />}
-                      <Row label="Cobros totales" value={`${cobrosTotales}`} />
-                      <Row label="Ganancia" value={`${formatMoney(ganancia)} (${pctGanancia}%)`} valueColor="var(--color-success)" />
-                      <Row label="Modo" value={({ fijo: 'Clasico', unico: 'De una vez', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente' }[modoInteres] || 'Clasico')} />
-                      {diasSinCobroCliente.length > 0 && <Row label="Sin cobro" value={diasSinCobroCliente.sort((a, b) => a - b).map(n => DIAS_FULL_SINGULAR[n].charAt(0).toUpperCase() + DIAS_FULL_SINGULAR[n].slice(1)).join(', ')} />}
-                      {seguro && Number(montoSeguro) > 0 && <Row label="Seguro" value={formatMoney(Number(montoSeguro))} valueColor="#6366f1" />}
-                      {esEnCurso && Number(yaAbonado) > 0 && <Row label="Abono previo" value={formatMoney(Number(yaAbonado))} valueColor="var(--color-success)" />}
+                    <div className="px-4 py-2" style={{ background: 'var(--color-bg-card)' }}>
+                      {/* Cuota + Total — calculados, no editables */}
+                      <div className="grid grid-cols-2 gap-3 pb-2 mb-1" style={{ borderBottom: '2px solid color-mix(in srgb, var(--color-success) 20%, var(--color-border))' }}>
+                        <div>
+                          <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Cuota {labelFreq}</p>
+                          <p className="text-lg font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(calculo.cuotaDiaria)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Total a pagar</p>
+                          <p className="text-lg font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(totalConSeguro)}</p>
+                        </div>
+                      </div>
+
+                      {/* Editables */}
+                      <div className="space-y-0 text-sm">
+                        <EditableRow label="Monto prestado" value={formatMoney(Number(monto || 0))} pencil={pencil}
+                          editor={<MoneyInput value={monto} onChange={e => setMonto(e.target.value)} autoFocus />} />
+
+                        {modo === 'prestamo' && (
+                          <EditableRow label="Interes" value={`${tasa || 0}% mensual`} valueColor="var(--color-accent)" pencil={pencil}
+                            editor={
+                              <div className="flex items-center gap-1.5">
+                                <input type="number" inputMode="decimal" value={tasa} onChange={e => setTasa(e.target.value)}
+                                  className="w-20 h-8 rounded-lg border px-2 text-sm text-right"
+                                  style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus />
+                                <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>% mensual</span>
+                              </div>
+                            } />
+                        )}
+
+                        <EditableRow label="Frecuencia" value={{ diario: 'Diario', semanal: 'Semanal', quincenal: 'Quincenal', mensual: 'Mensual' }[frecuencia]} pencil={pencil}
+                          editor={
+                            <select value={frecuencia} onChange={e => { setFrecuencia(e.target.value); const nd = { diario: '30', semanal: '8', quincenal: '4', mensual: '2' }[e.target.value]; if (nd) setPlazoUnidades(nd) }}
+                              className="h-8 rounded-lg border px-2 text-sm"
+                              style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus>
+                              <option value="diario">Diario</option><option value="semanal">Semanal</option><option value="quincenal">Quincenal</option><option value="mensual">Mensual</option>
+                            </select>
+                          } />
+
+                        <EditableRow label="Plazo" value={`${plazoUnidades} ${unidadPlazoL}`} pencil={pencil}
+                          editor={
+                            <div className="flex items-center gap-1.5">
+                              <input type="number" inputMode="numeric" value={plazoUnidades} onChange={e => setPlazoUnidades(e.target.value)}
+                                className="w-20 h-8 rounded-lg border px-2 text-sm text-right"
+                                style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus />
+                              <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{unidadPlazoL}</span>
+                            </div>
+                          } />
+
+                        {modo === 'prestamo' && (
+                          <EditableRow label="Modo" value={modoLabel} pencil={pencil}
+                            editor={
+                              <select value={modoInteres} onChange={e => setModoInteres(e.target.value)}
+                                className="h-8 rounded-lg border px-2 text-sm"
+                                style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus>
+                                <option value="fijo">Clasico</option><option value="unico">De una vez</option><option value="saldo">Sobre saldo</option><option value="manual">Manual</option><option value="lineal">Decreciente</option>
+                              </select>
+                            } />
+                        )}
+
+                        {cuotaManualActiva && (
+                          <EditableRow label="Cuota exacta" value={formatMoney(Number(cuotaManual || 0))} pencil={pencil}
+                            editor={<MoneyInput value={cuotaManual} onChange={e => setCuotaManual(e.target.value)} autoFocus />} />
+                        )}
+                      </div>
+
+                      {/* Info calculada — read only */}
+                      <div className="space-y-0 mt-1 pt-1" style={{ borderTop: '1px dashed color-mix(in srgb, var(--color-border) 70%, transparent)' }}>
+                        <div className="flex items-center justify-between py-1.5">
+                          <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Cobros totales</span>
+                          <span className="text-xs font-semibold" style={{ color: 'var(--color-text-primary)' }}>{cobrosTotales}</span>
+                        </div>
+                        <div className="flex items-center justify-between py-1.5">
+                          <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Ganancia</span>
+                          <span className="text-xs font-semibold" style={{ color: 'var(--color-success)' }}>{formatMoney(ganancia)} ({pctGanancia}%)</span>
+                        </div>
+                        {diasSinCobroCliente.length > 0 && (
+                          <div className="flex items-center justify-between py-1.5">
+                            <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Sin cobro</span>
+                            <span className="text-xs font-semibold" style={{ color: 'var(--color-text-primary)' }}>{diasSinCobroCliente.sort((a, b) => a - b).map(n => DIAS_FULL_SINGULAR[n].charAt(0).toUpperCase() + DIAS_FULL_SINGULAR[n].slice(1)).join(', ')}</span>
+                          </div>
+                        )}
+                        {seguro && Number(montoSeguro) > 0 && (
+                          <div className="flex items-center justify-between py-1.5">
+                            <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Seguro</span>
+                            <span className="text-xs font-semibold" style={{ color: '#6366f1' }}>{formatMoney(Number(montoSeguro))}</span>
+                          </div>
+                        )}
+                        {esEnCurso && Number(yaAbonado) > 0 && (
+                          <div className="flex items-center justify-between py-1.5">
+                            <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Abono previo</span>
+                            <span className="text-xs font-semibold" style={{ color: 'var(--color-success)' }}>{formatMoney(Number(yaAbonado))}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     {modoInteres === 'lineal' && calculo?.tablaAmortizacion?.length > 0 && (
-                      <div className="mt-3 pt-3 border-t" style={{ borderColor: 'color-mix(in srgb, var(--color-border) 50%, transparent)' }}>
+                      <div className="px-4 py-3 border-t" style={{ borderColor: 'color-mix(in srgb, var(--color-border) 50%, transparent)', background: 'var(--color-bg-card)' }}>
                         <TablaAmortizacion tabla={calculo.tablaAmortizacion} frecuencia={frecuencia} />
                       </div>
                     )}
