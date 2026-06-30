@@ -127,7 +127,7 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
             />
             {puedeSubirFoto && (
               <>
-                <input ref={fotoInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFotoChange} />
+                <input ref={fotoInputRef} type="file" accept="image/*" className="hidden" onChange={handleFotoChange} />
                 <button
                   type="button"
                   onClick={() => fotoInputRef.current?.click()}

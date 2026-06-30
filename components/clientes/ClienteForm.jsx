@@ -355,7 +355,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
           {/* Foto */}
           {puedeSubirFoto && (
             <div className="flex items-center gap-4 mt-7">
-              <input ref={fotoInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFotoSelect} />
+              <input ref={fotoInputRef} type="file" accept="image/*" className="hidden" onChange={handleFotoSelect} />
               <button
                 type="button"
                 onClick={() => fotoInputRef.current?.click()}
