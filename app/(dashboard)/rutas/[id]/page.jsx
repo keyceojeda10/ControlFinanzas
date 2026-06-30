@@ -19,6 +19,7 @@ import { generarTipRuta }            from '@/lib/tips/rutaTips'
 import DiasSinCobroSelector          from '@/components/ui/DiasSinCobroSelector'
 import { ConfirmModal }              from '@/components/ui/ConfirmModal'
 import HojaRutaImprimible            from '@/components/rutas/HojaRutaImprimible'
+import ModalWhatsAppTemplates        from '@/components/ui/ModalWhatsAppTemplates'
 
 // Cargar mapa dinámicamente (evitar SSR con Leaflet)
 const RouteMap = dynamic(() => import('@/components/rutas/RouteMap'), { ssr: false })
@@ -229,7 +230,7 @@ function HistorialCobros({ rutaId }) {
 export default function RutaDetallePage({ params }) {
   const { id }    = use(params)
   const router    = useRouter()
-  const { esOwner, puedeGestionarRutas } = useAuth()
+  const { esOwner, puedeGestionarRutas, orgNombre } = useAuth()
 
     const { lastSyncedAt } = useOffline()
 
@@ -281,6 +282,7 @@ export default function RutaDetallePage({ params }) {
   const [modalSeleccionPrestamo, setModalSeleccionPrestamo] = useState(null) // { clienteId, clienteNombre, idxRuta, prestamos }
   const [undoPago,       setUndoPago]       = useState(null)  // { pagoId, prestamoId, clienteNombre, timer }
   const undoTimerRef = useRef(null)
+  const [modalWA,        setModalWA]        = useState(null) // { cliente, prestamo }
   const [modalDiasSC,    setModalDiasSC]    = useState(false)
   const [diasSCRuta,     setDiasSCRuta]     = useState([])
   const [guardandoDSC,   setGuardandoDSC]   = useState(false)
@@ -325,11 +327,8 @@ export default function RutaDetallePage({ params }) {
     const currentIndex = idxRuta >= 0 ? idxRuta : ruta.clientes.findIndex((cl) => cl.id === clienteRuta.id)
     if (currentIndex < 0) return
 
-    const nextIdx = Math.min(currentIndex + 1, ruta.clientes.length - 1)
-    const nextCliente = ruta.clientes[nextIdx]
-    if (nextCliente?.id) {
-      sessionStorage.setItem(`ruta-scroll-${id}`, nextCliente.id)
-    }
+    sessionStorage.setItem(`ruta-scroll-${id}`, clienteRuta.id)
+    sessionStorage.setItem(`ruta-scrollY-${id}`, String(window.scrollY))
 
     localStorage.setItem(`cf-ruta-progress-${id}`, JSON.stringify({
       clienteId: clienteRuta.id,
@@ -482,16 +481,24 @@ export default function RutaDetallePage({ params }) {
     }
   }, [lastSyncedAt, fetchRuta])
 
-  // Feature 2: Auto-scroll al siguiente cliente al volver
+  // Feature 2: Auto-scroll al cliente visitado al volver de su ficha
+  const scrollRestoredRef = useRef(false)
   useEffect(() => {
-    if (!ruta?.clientes?.length) return
+    if (!ruta?.clientes?.length || scrollRestoredRef.current) return
     const scrollTo = sessionStorage.getItem(`ruta-scroll-${id}`)
     if (!scrollTo) return
+    scrollRestoredRef.current = true
     sessionStorage.removeItem(`ruta-scroll-${id}`)
+    const savedY = sessionStorage.getItem(`ruta-scrollY-${id}`)
+    sessionStorage.removeItem(`ruta-scrollY-${id}`)
     requestAnimationFrame(() => {
       const el = document.getElementById(`cliente-${scrollTo}`)
+      if (savedY) {
+        window.scrollTo(0, parseInt(savedY, 10))
+      } else if (el) {
+        el.scrollIntoView({ behavior: 'instant', block: 'center' })
+      }
       if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
         setHighlightId(scrollTo)
         setTimeout(() => setHighlightId(null), 2000)
       }
@@ -501,8 +508,7 @@ export default function RutaDetallePage({ params }) {
   // Feature 3: Banner "Continuar ruta" / "Nueva ruta"
   useEffect(() => {
     if (!ruta?.clientes?.length) return
-    // No mostrar banner si acabamos de volver de un cliente (scroll restoration)
-    if (sessionStorage.getItem(`ruta-scroll-${id}`)) return
+    if (scrollRestoredRef.current) return
 
     const saved = localStorage.getItem(`cf-ruta-progress-${id}`)
     if (!saved) return
@@ -1846,14 +1852,39 @@ export default function RutaDetallePage({ params }) {
                         </div>
                       </div>
 
-                      {/* Right side: cuota arriba, boton abajo */}
+                      {/* Right side: cuota + WA + cobrar */}
                       <div className="flex flex-col items-end gap-1.5 shrink-0">
-                        {c.cuota > 0 && (
-                          <div className="flex items-baseline gap-1">
-                            <p className="text-[13px] font-bold text-[var(--color-text-primary)] font-mono-display leading-none">{formatMoney(c.cuota)}</p>
-                            <p className="text-[9px] text-[#777] leading-none">/{c.frecuencia === 'semanal' ? 'sem' : c.frecuencia === 'quincenal' ? 'qna' : c.frecuencia === 'mensual' ? 'mes' : 'dia'}</p>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-1.5">
+                          {c.cuota > 0 && (
+                            <div className="flex items-baseline gap-1">
+                              <p className="text-[13px] font-bold text-[var(--color-text-primary)] font-mono-display leading-none">{formatMoney(c.cuota)}</p>
+                              <p className="text-[9px] text-[#777] leading-none">/{c.frecuencia === 'semanal' ? 'sem' : c.frecuencia === 'quincenal' ? 'qna' : c.frecuencia === 'mensual' ? 'mes' : 'dia'}</p>
+                            </div>
+                          )}
+                          {c.telefono && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                const p = c.prestamosActivos?.[0]
+                                setModalWA({
+                                  cliente: { id: c.id, nombre: c.nombre, telefono: c.telefono, cedula: c.cedula, direccion: c.direccion },
+                                  prestamo: p ? {
+                                    ...p,
+                                    estado: c.estado === 'completado' ? 'completado' : 'activo',
+                                    porcentajePagado: p.totalAPagar > 0 ? Math.round((p.totalPagado / p.totalAPagar) * 100) : 0,
+                                  } : null,
+                                })
+                              }}
+                              className="w-7 h-7 rounded-[8px] flex items-center justify-center transition-all active:scale-90"
+                              style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)' }}
+                              title="Enviar WhatsApp"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="#22c55e" viewBox="0 0 24 24">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+                              </svg>
+                            </button>
+                          )}
+                        </div>
 
                         {/* Quick pay button */}
                         {!isCompleted && c.cuota > 0 && c.prestamoActivo && (!c.pagoHoy || pendienteHoy) && (
@@ -2967,6 +2998,15 @@ export default function RutaDetallePage({ params }) {
         confirmColor="red"
         onConfirm={_doEliminarRuta}
         onCancel={() => setConfirmEliminarRuta(false)}
+      />
+
+      {/* Modal: plantillas WhatsApp desde la ruta */}
+      <ModalWhatsAppTemplates
+        open={!!modalWA}
+        onClose={() => setModalWA(null)}
+        cliente={modalWA?.cliente}
+        prestamo={modalWA?.prestamo}
+        orgNombre={orgNombre}
       />
     </div>
   )
