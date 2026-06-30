@@ -159,7 +159,7 @@ export default function NuevaLineaPage() {
             {/* Cupo */}
             <div>
               <label className="text-xs font-medium text-[var(--color-text-secondary)] mb-1.5 block">Cupo maximo</label>
-              <MoneyInput value={cupoMaximo} onChange={setCupoMaximo} placeholder="500000" />
+              <MoneyInput value={cupoMaximo} onChange={(e) => setCupoMaximo(e.target.value)} placeholder="500000" />
               <p className="text-[11px] text-[var(--color-text-muted)] mt-1">Es el tope que el cliente puede tener en uso al mismo tiempo. Puede pedir varias veces hasta llegar a este monto.</p>
             </div>
 

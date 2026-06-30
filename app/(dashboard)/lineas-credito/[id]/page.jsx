@@ -310,7 +310,7 @@ function ModalDesembolso({ lineaId, cupoDisponible, onClose, onSuccess }) {
         <h3 className="text-sm font-bold text-[var(--color-text-primary)] mb-1">Registrar desembolso</h3>
         <p className="text-[11px] text-[var(--color-text-muted)] mb-3">Registra el dinero que el cliente esta pidiendo de su cupo. Disponible: {formatMoney(cupoDisponible)}</p>
 
-        <MoneyInput value={monto} onChange={setMonto} placeholder="Monto" />
+        <MoneyInput value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="Monto" />
         <input
           type="text"
           value={nota}
@@ -369,7 +369,7 @@ function ModalPago({ lineaId, saldoTotal, onClose, onSuccess }) {
         <h3 className="text-sm font-bold text-[var(--color-text-primary)] mb-1">Registrar pago</h3>
         <p className="text-[11px] text-[var(--color-text-muted)] mb-3">El pago primero cubre intereses pendientes y el resto va a capital, liberando cupo. Saldo actual: {formatMoney(saldoTotal)}</p>
 
-        <MoneyInput value={monto} onChange={setMonto} placeholder="Monto del pago" />
+        <MoneyInput value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="Monto del pago" />
 
         <div className="flex gap-2 mt-3">
           {['efectivo', 'transferencia'].map(m => (
