@@ -35,6 +35,7 @@ function fichaVacia(defaults) {
     fechaInicio: hoyISO(),
     esEnCurso: false,
     yaAbonado: '',
+    cuotaManual: '',
     rutaId: defaults.rutaId,
   }
 }
@@ -48,11 +49,13 @@ function calcularFicha(ficha) {
   const t = Number(ficha.tasa)
   const d = Number(calcularDiasPlazo(ficha.plazoUnidades, ficha.frecuencia))
   if (m <= 0 || t < 0 || d <= 0) return null
+  const cm = ficha.modoInteres === 'manual' ? Number(ficha.cuotaManual) : 0
   try {
     return calcularPrestamo({
       montoPrestado: m, tasaInteres: t, diasPlazo: d,
       fechaInicio: ficha.fechaInicio || hoyISO(),
       frecuencia: ficha.frecuencia, modoInteres: ficha.modoInteres,
+      ...(cm > 0 && { cuotaManual: cm }),
     })
   } catch { return null }
 }
@@ -264,8 +267,20 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
           </div>
 
           {/* Modo interés */}
-          <ModoInteresSelector modoInteres={ficha.modoInteres} onChange={v => { set('modoInteres', v); setModoInteresTocado(true) }}
+          <ModoInteresSelector modoInteres={ficha.modoInteres} onChange={v => { set('modoInteres', v); setModoInteresTocado(true); if (v !== 'manual') set('cuotaManual', '') }}
             monto={ficha.monto} tasa={ficha.tasa} frecuencia={ficha.frecuencia} diasPlazo={diasPlazo} />
+
+          {ficha.modoInteres === 'manual' && (
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
+                style={{ color: 'var(--color-text-muted)' }}>Cuota exacta por periodo</label>
+              <input type="number" inputMode="numeric" placeholder="Ej: 60000"
+                value={ficha.cuotaManual} onChange={e => set('cuotaManual', e.target.value)}
+                className="w-full h-10 rounded-[10px] border px-3 text-sm"
+                style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
+              <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>Tu defines la cuota. Total = cuota x numero de cobros.</p>
+            </div>
+          )}
 
           {/* Fecha inicio */}
           <div>
@@ -466,7 +481,7 @@ export default function MigradorPage() {
   }, [])
 
   const diasPlazo = useMemo(() => calcularDiasPlazo(ficha.plazoUnidades, ficha.frecuencia), [ficha.plazoUnidades, ficha.frecuencia])
-  const calculo = useMemo(() => calcularFicha(ficha), [ficha.monto, ficha.tasa, diasPlazo, ficha.fechaInicio, ficha.frecuencia, ficha.modoInteres])
+  const calculo = useMemo(() => calcularFicha(ficha), [ficha.monto, ficha.tasa, diasPlazo, ficha.fechaInicio, ficha.frecuencia, ficha.modoInteres, ficha.cuotaManual])
 
   const set = useCallback((campo, valor) => {
     setFicha(prev => ({ ...prev, [campo]: valor }))
@@ -570,6 +585,7 @@ export default function MigradorPage() {
             fechaInicio: ficha.fechaInicio,
             frecuencia: ficha.frecuencia,
             modoInteres: ficha.modoInteres,
+            ...(ficha.modoInteres === 'manual' && calculo?.cuotaDiaria > 0 && { cuotaManual: calculo.cuotaDiaria }),
           }),
         })
         if (!prestamoRes.ok) {
@@ -620,6 +636,7 @@ export default function MigradorPage() {
           fechaInicio: ficha.fechaInicio,
           frecuencia: ficha.frecuencia,
           modoInteres: ficha.modoInteres,
+          ...(ficha.modoInteres === 'manual' && calculo?.cuotaDiaria > 0 && { cuotaManual: calculo.cuotaDiaria }),
           ...(ficha.esEnCurso && Number(ficha.yaAbonado) > 0 && { yaAbonado: Number(ficha.yaAbonado) }),
         }
         const resPrestamo = await fetch('/api/prestamos', {
@@ -691,7 +708,8 @@ export default function MigradorPage() {
       direccion: item.direccion || '', monto: String(item.monto), tasa: String(item.tasa),
       frecuencia: item.frecuencia, plazoUnidades: item.plazoUnidades || PLAZO_DEFAULT[item.frecuencia],
       modoInteres: item.modoInteres || defaults.modoInteres, fechaInicio: item.fechaInicio || hoyISO(),
-      esEnCurso: false, yaAbonado: '', rutaId: item.rutaId || defaults.rutaId,
+      esEnCurso: false, yaAbonado: '', cuotaManual: item.cuotaManual ? String(item.cuotaManual) : '',
+      rutaId: item.rutaId || defaults.rutaId,
     })
     setEditandoIdx(idx)
     irA('formulario')
