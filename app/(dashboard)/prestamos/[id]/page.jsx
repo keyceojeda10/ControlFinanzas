@@ -587,9 +587,10 @@ export default function PrestamoDetallePage({ params }) {
 
       {/* ── SIGUIENTE EN RUTA (después de pago) ──────────────────── */}
       {rutaNav && (exito || yaPagoHoy) && (() => {
-        const idx = rutaNav.clientes.findIndex(c => c.id === cliente?.id)
+        const idx = rutaNav.clientes?.findIndex(c => c.id === cliente?.id) ?? -1
+        if (idx < 0) return null
         const isLast = idx >= rutaNav.clientes.length - 1
-        const nextCliente = !isLast && idx >= 0 ? rutaNav.clientes[idx + 1] : null
+        const nextCliente = !isLast ? rutaNav.clientes[idx + 1] : null
 
         const navigateNext = () => {
           if (!nextCliente) return
@@ -603,14 +604,16 @@ export default function PrestamoDetallePage({ params }) {
           navigator.onLine ? router.push(url) : (window.location.href = url)
         }
 
-        return isLast ? (
+        if (isLast || !nextCliente) return (
           <button
             onClick={() => { sessionStorage.removeItem('cf-ruta-nav'); const u = `/rutas/${rutaNav.rutaId}`; navigator.onLine ? router.push(u) : (window.location.href = u) }}
             className="w-full py-3.5 rounded-[14px] bg-[var(--color-success)] text-[var(--color-text-primary)] text-sm font-semibold active:scale-[0.98] transition-all"
           >
             Ruta finalizada · Volver a {rutaNav.rutaNombre}
           </button>
-        ) : (
+        )
+
+        return (
           <button
             onClick={navigateNext}
             className="w-full py-3.5 rounded-[14px] text-sm font-semibold active:scale-[0.98] transition-all"
