@@ -47,6 +47,31 @@ const SectionCard = ({ icon, title, color = 'var(--color-accent)', children, acc
   </div>
 )
 
+function EditableRow({ label, value, pencil, editor, valueColor }) {
+  const [editing, setEditing] = useState(false)
+  return (
+    <div className="py-2 border-b" style={{ borderColor: 'color-mix(in srgb, var(--color-border) 50%, transparent)' }}>
+      {editing ? (
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{label}</span>
+            <button type="button" onClick={() => setEditing(false)} className="text-[10px] font-semibold px-2 py-0.5 rounded-md" style={{ color: 'var(--color-success)', background: 'color-mix(in srgb, var(--color-success) 12%, transparent)' }}>OK</button>
+          </div>
+          {editor}
+        </div>
+      ) : (
+        <button type="button" onClick={() => setEditing(true)} className="flex justify-between items-center w-full text-left group">
+          <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{label}</span>
+          <span className="flex items-center gap-1.5">
+            <span className="font-semibold text-sm" style={{ color: valueColor || 'var(--color-text-primary)' }}>{value}</span>
+            <span className="opacity-40 group-hover:opacity-100 transition-opacity">{pencil}</span>
+          </span>
+        </button>
+      )}
+    </div>
+  )
+}
+
 // Wrapper con Suspense requerido por useSearchParams en Next.js build
 export default function NuevoPrestamoPage() {
   return (
@@ -1207,20 +1232,116 @@ function NuevoPrestamo() {
       {/* ═══ PASO 2: CONFIRMAR + FIRMA ═══ */}
       {paso === 2 && calculo && (() => {
         const labelFrecuencia = { diario: 'Diario', semanal: 'Semanal', quincenal: 'Quincenal', mensual: 'Mensual' }[frecuencia]
+        const unidadPlazoLabel = { diario: 'dias', semanal: 'semanas', quincenal: 'quincenas', mensual: 'meses' }[frecuencia]
+        const modoLabel = { fijo: 'Clasico', unico: 'De una vez', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente' }[modoInteres] || 'Clasico'
+        const pencilIcon = <svg className="w-3 h-3 shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" /></svg>
         return (
           <section className="space-y-4 pb-28">
             <SectionCard
               icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
               title="Resumen del prestamo"
               color="var(--color-success)"
+              accent={<span className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>Toca un campo para editar</span>}
             >
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between"><span style={{ color: 'var(--color-text-muted)' }}>Cliente</span><span className="font-semibold">{clienteSeleccionado?.nombre}</span></div>
-                <div className="flex justify-between"><span style={{ color: 'var(--color-text-muted)' }}>Monto</span><span className="font-semibold font-mono-display">{formatMoney(Number(monto))}</span></div>
-                <div className="flex justify-between"><span style={{ color: 'var(--color-text-muted)' }}>Total a pagar</span><span className="font-semibold font-mono-display" style={{ color: 'var(--color-accent)' }}>{formatMoney(calculo.totalAPagar)}</span></div>
-                <div className="flex justify-between"><span style={{ color: 'var(--color-text-muted)' }}>Cuota</span><span className="font-semibold font-mono-display" style={{ color: 'var(--color-success)' }}>{formatMoney(calculo.cuotaDiaria)}</span></div>
-                <div className="flex justify-between"><span style={{ color: 'var(--color-text-muted)' }}>Frecuencia</span><span>{labelFrecuencia}</span></div>
-                <div className="flex justify-between"><span style={{ color: 'var(--color-text-muted)' }}>Plazo</span><span>{plazoUnidades} {frecuencia === 'diario' ? 'dias' : frecuencia === 'semanal' ? 'semanas' : frecuencia === 'quincenal' ? 'quincenas' : 'meses'}</span></div>
+              <div className="space-y-0 text-sm">
+                {/* Cliente — no editable */}
+                <div className="flex justify-between py-2 border-b" style={{ borderColor: 'color-mix(in srgb, var(--color-border) 50%, transparent)' }}>
+                  <span style={{ color: 'var(--color-text-muted)' }}>Cliente</span>
+                  <span className="font-semibold">{clienteSeleccionado?.nombre}</span>
+                </div>
+
+                {/* Monto — editable */}
+                <EditableRow label="Monto" value={formatMoney(Number(monto))}
+                  pencil={pencilIcon}
+                  editor={<MoneyInput value={monto} onChange={e => setMonto(e.target.value)} autoFocus />}
+                />
+
+                {/* Tasa — editable (solo prestamo, no mercancia) */}
+                {modo === 'prestamo' && (
+                  <EditableRow label="Interes" value={`${tasa}% mensual`}
+                    pencil={pencilIcon}
+                    editor={
+                      <div className="flex items-center gap-1.5">
+                        <input type="number" inputMode="decimal" value={tasa} onChange={e => setTasa(e.target.value)}
+                          className="w-20 h-8 rounded-lg border px-2 text-sm text-right"
+                          style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus />
+                        <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>% mensual</span>
+                      </div>
+                    }
+                  />
+                )}
+
+                {/* Frecuencia — editable */}
+                <EditableRow label="Frecuencia" value={labelFrecuencia}
+                  pencil={pencilIcon}
+                  editor={
+                    <select value={frecuencia} onChange={e => { setFrecuencia(e.target.value); const newDefault = { diario: '30', semanal: '8', quincenal: '4', mensual: '2' }[e.target.value]; if (newDefault) setPlazoUnidades(newDefault) }}
+                      className="h-8 rounded-lg border px-2 text-sm"
+                      style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus>
+                      <option value="diario">Diario</option>
+                      <option value="semanal">Semanal</option>
+                      <option value="quincenal">Quincenal</option>
+                      <option value="mensual">Mensual</option>
+                    </select>
+                  }
+                />
+
+                {/* Plazo — editable */}
+                <EditableRow label="Plazo" value={`${plazoUnidades} ${unidadPlazoLabel}`}
+                  pencil={pencilIcon}
+                  editor={
+                    <div className="flex items-center gap-1.5">
+                      <input type="number" inputMode="numeric" value={plazoUnidades} onChange={e => setPlazoUnidades(e.target.value)}
+                        className="w-20 h-8 rounded-lg border px-2 text-sm text-right"
+                        style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus />
+                      <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{unidadPlazoLabel}</span>
+                    </div>
+                  }
+                />
+
+                {/* Modo interés — editable (solo prestamo) */}
+                {modo === 'prestamo' && (
+                  <EditableRow label="Modo" value={modoLabel}
+                    pencil={pencilIcon}
+                    editor={
+                      <select value={modoInteres} onChange={e => setModoInteres(e.target.value)}
+                        className="h-8 rounded-lg border px-2 text-sm"
+                        style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus>
+                        <option value="fijo">Clasico</option>
+                        <option value="unico">De una vez</option>
+                        <option value="saldo">Sobre saldo</option>
+                        <option value="manual">Manual</option>
+                        <option value="lineal">Decreciente</option>
+                      </select>
+                    }
+                  />
+                )}
+
+                {/* Cuota manual — editable si modo manual */}
+                {cuotaManualActiva && (
+                  <EditableRow label="Cuota exacta" value={formatMoney(Number(cuotaManual || 0))}
+                    pencil={pencilIcon}
+                    editor={<MoneyInput value={cuotaManual} onChange={e => setCuotaManual(e.target.value)} autoFocus />}
+                  />
+                )}
+
+                {/* Calculados — read only */}
+                <div className="pt-2 mt-1 space-y-2" style={{ borderTop: '2px solid color-mix(in srgb, var(--color-success) 25%, var(--color-border))' }}>
+                  <div className="flex justify-between">
+                    <span style={{ color: 'var(--color-text-muted)' }}>Cuota {frecuencia === 'diario' ? 'diaria' : labelFrecuencia.toLowerCase()}</span>
+                    <span className="font-bold font-mono-display" style={{ color: 'var(--color-success)' }}>{formatMoney(calculo.cuotaDiaria)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span style={{ color: 'var(--color-text-muted)' }}>Total a pagar</span>
+                    <span className="font-bold font-mono-display" style={{ color: 'var(--color-accent)' }}>{formatMoney(calculo.totalAPagar)}</span>
+                  </div>
+                  {calculo.totalInteres > 0 && (
+                    <div className="flex justify-between">
+                      <span style={{ color: 'var(--color-text-muted)' }}>Ganancia</span>
+                      <span className="font-semibold font-mono-display" style={{ color: 'var(--color-success)' }}>{formatMoney(calculo.totalInteres)}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </SectionCard>
 

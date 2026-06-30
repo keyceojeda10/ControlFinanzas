@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { calcularPrestamo } from '@/lib/calculos'
 import { formatMoney } from '@/lib/i18n'
 import ModoInteresSelector from '@/components/prestamos/ModoInteresSelector'
+import DiasSinCobroSelector from '@/components/ui/DiasSinCobroSelector'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
 const hoyISO = () => getColombiaDate().toISOString().slice(0, 10)
@@ -36,6 +37,7 @@ function fichaVacia(defaults) {
     esEnCurso: false,
     yaAbonado: '',
     cuotaManual: '',
+    diasSinCobro: [],
     rutaId: defaults.rutaId,
   }
 }
@@ -139,6 +141,31 @@ function SelectorMetodo({ onFoto, onManual, ocrLoading, ocrError, fotoInputRef, 
           </svg>
           {ocrError}
         </div>
+      )}
+    </div>
+  )
+}
+
+function EditableResumenRow({ label, value, children, valueColor }) {
+  const [editing, setEditing] = useState(false)
+  return (
+    <div>
+      {editing ? (
+        <div className="space-y-1.5 py-1">
+          <div className="flex items-center justify-between">
+            <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{label}</span>
+            <button type="button" onClick={() => setEditing(false)} className="text-[10px] font-semibold px-2 py-0.5 rounded-md" style={{ color: 'var(--color-success)', background: 'color-mix(in srgb, var(--color-success) 12%, transparent)' }}>OK</button>
+          </div>
+          {children}
+        </div>
+      ) : (
+        <button type="button" onClick={() => setEditing(true)} className="flex justify-between items-center w-full py-1 text-left group">
+          <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{label}</span>
+          <span className="flex items-center gap-1.5">
+            <span className="text-sm font-semibold" style={{ color: valueColor || 'var(--color-text-primary)' }}>{value}</span>
+            <svg className="w-2.5 h-2.5 opacity-40 group-hover:opacity-100 transition-opacity shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" /></svg>
+          </span>
+        </button>
       )}
     </div>
   )
@@ -291,6 +318,14 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
               style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
           </div>
 
+          {/* Días sin cobro */}
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
+              style={{ color: 'var(--color-text-muted)' }}>Dias sin cobro</label>
+            <p className="text-[10px] mb-2" style={{ color: 'var(--color-text-muted)' }}>Dias de la semana en que NO se cobra a este cliente.</p>
+            <DiasSinCobroSelector value={ficha.diasSinCobro} onChange={arr => set('diasSinCobro', arr)} compact />
+          </div>
+
           {/* Préstamo en curso */}
           <label className="flex items-center gap-2.5 cursor-pointer">
             <input type="checkbox" checked={ficha.esEnCurso} onChange={e => set('esEnCurso', e.target.checked)}
@@ -332,30 +367,95 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
       {calculo && modoInteresTocado && (
         <div className="rounded-[12px] overflow-hidden"
           style={{ border: '1.5px solid color-mix(in srgb, var(--color-success) 35%, var(--color-border))' }}>
-          <div className="px-3.5 py-2" style={{ background: 'color-mix(in srgb, var(--color-success) 10%, var(--color-bg-base))' }}>
+          <div className="px-3.5 py-2 flex items-center justify-between" style={{ background: 'color-mix(in srgb, var(--color-success) 10%, var(--color-bg-base))' }}>
             <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-success)' }}>
               Resumen del prestamo
             </p>
+            <span className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>Toca para editar</span>
           </div>
-          <div className="px-3.5 py-3 space-y-1.5" style={{ background: 'var(--color-bg-base)' }}>
-            <div className="flex justify-between items-center">
-              <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Cuota {freqLabel}</span>
-              <span className="text-base font-bold" style={{ color: 'var(--color-success)' }}>{formatMoney(calculo.cuotaDiaria)}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Total a pagar</span>
-              <span className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(calculo.totalAPagar)}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Ganancia (interes)</span>
-              <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{formatMoney(calculo.totalInteres)}</span>
-            </div>
-            {calculo.numeroCuotas && (
-              <div className="flex justify-between items-center">
-                <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Numero de cuotas</span>
-                <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{calculo.numeroCuotas}</span>
+          <div className="px-3.5 py-2 space-y-0" style={{ background: 'var(--color-bg-base)' }}>
+            {/* Editable: Monto */}
+            <EditableResumenRow label="Monto" value={formatMoney(Number(ficha.monto))}>
+              <input type="number" inputMode="numeric" value={ficha.monto} onChange={e => set('monto', e.target.value)}
+                className="w-full h-8 rounded-lg border px-2 text-sm"
+                style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus />
+            </EditableResumenRow>
+
+            {/* Editable: Tasa */}
+            <EditableResumenRow label="Interes" value={`${ficha.tasa}% mensual`}>
+              <div className="flex items-center gap-1.5">
+                <input type="number" inputMode="decimal" value={ficha.tasa} onChange={e => set('tasa', e.target.value)}
+                  className="w-20 h-8 rounded-lg border px-2 text-sm text-right"
+                  style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus />
+                <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>% mensual</span>
               </div>
+            </EditableResumenRow>
+
+            {/* Editable: Frecuencia */}
+            <EditableResumenRow label="Frecuencia" value={FRECUENCIAS.find(f => f.key === ficha.frecuencia)?.label || ficha.frecuencia}>
+              <select value={ficha.frecuencia} onChange={e => handleFrecuenciaChange(e.target.value)}
+                className="w-full h-8 rounded-lg border px-2 text-sm"
+                style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus>
+                {FRECUENCIAS.map(f => <option key={f.key} value={f.key}>{f.label}</option>)}
+              </select>
+            </EditableResumenRow>
+
+            {/* Editable: Plazo */}
+            <EditableResumenRow label="Plazo" value={`${ficha.plazoUnidades} ${unidadPlazo}`}>
+              <div className="flex items-center gap-1.5">
+                <input type="number" inputMode="numeric" value={ficha.plazoUnidades} onChange={e => set('plazoUnidades', e.target.value)}
+                  className="w-20 h-8 rounded-lg border px-2 text-sm text-right"
+                  style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus />
+                <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{unidadPlazo}</span>
+              </div>
+            </EditableResumenRow>
+
+            {/* Editable: Modo interés */}
+            <EditableResumenRow label="Modo" value={{ fijo: 'Clasico', unico: 'De una vez', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente' }[ficha.modoInteres] || 'Clasico'}>
+              <select value={ficha.modoInteres} onChange={e => { set('modoInteres', e.target.value); setModoInteresTocado(true); if (e.target.value !== 'manual') set('cuotaManual', '') }}
+                className="w-full h-8 rounded-lg border px-2 text-sm"
+                style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus>
+                <option value="fijo">Clasico</option>
+                <option value="unico">De una vez</option>
+                <option value="saldo">Sobre saldo</option>
+                <option value="manual">Manual</option>
+                <option value="lineal">Decreciente</option>
+              </select>
+            </EditableResumenRow>
+
+            {/* Editable: Cuota manual (si aplica) */}
+            {ficha.modoInteres === 'manual' && (
+              <EditableResumenRow label="Cuota exacta" value={formatMoney(Number(ficha.cuotaManual || 0))}>
+                <input type="number" inputMode="numeric" value={ficha.cuotaManual} onChange={e => set('cuotaManual', e.target.value)}
+                  className="w-full h-8 rounded-lg border px-2 text-sm"
+                  style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus />
+              </EditableResumenRow>
             )}
+
+            {/* Calculados — read only */}
+            <div className="pt-2 mt-1 space-y-1.5" style={{ borderTop: '2px solid color-mix(in srgb, var(--color-success) 25%, var(--color-border))' }}>
+              <div className="flex justify-between items-center">
+                <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Cuota {freqLabel}</span>
+                <span className="text-base font-bold" style={{ color: 'var(--color-success)' }}>{formatMoney(calculo.cuotaDiaria)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Total a pagar</span>
+                <span className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(calculo.totalAPagar)}</span>
+              </div>
+              {calculo.totalInteres > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Ganancia</span>
+                  <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{formatMoney(calculo.totalInteres)}</span>
+                </div>
+              )}
+              {calculo.numeroCuotas && (
+                <div className="flex justify-between items-center">
+                  <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Numero de cuotas</span>
+                  <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{calculo.numeroCuotas}</span>
+                </div>
+              )}
+            </div>
+
             {ficha.esEnCurso && Number(ficha.yaAbonado) > 0 && saldoPendiente !== null && (
               <div className="flex justify-between items-center pt-1.5" style={{ borderTop: '1px dashed var(--color-border)' }}>
                 <span className="text-xs font-semibold" style={{ color: 'var(--color-text-muted)' }}>Saldo pendiente</span>
@@ -565,6 +665,7 @@ export default function MigradorPage() {
             cedula: ficha.cedula.trim(),
             telefono: ficha.telefono.trim(),
             ...(ficha.direccion.trim() ? { direccion: ficha.direccion.trim() } : {}),
+            diasSinCobro: ficha.diasSinCobro,
           }),
         })
         if (!clienteRes.ok) {
@@ -620,6 +721,7 @@ export default function MigradorPage() {
           telefono: ficha.telefono.trim(),
           ...(ficha.direccion.trim() && { direccion: ficha.direccion.trim() }),
           ...(ficha.rutaId && { rutaId: ficha.rutaId }),
+          ...(ficha.diasSinCobro.length > 0 && { diasSinCobro: ficha.diasSinCobro }),
         }
         const resCliente = await fetch('/api/clientes', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -657,6 +759,7 @@ export default function MigradorPage() {
           plazoUnidades: ficha.plazoUnidades,
           modoInteres: ficha.modoInteres,
           fechaInicio: ficha.fechaInicio,
+          diasSinCobro: ficha.diasSinCobro,
           totalAPagar: calculo.totalAPagar,
           cuota: calculo.cuotaDiaria,
           clienteId: dataCliente.id,
@@ -709,6 +812,7 @@ export default function MigradorPage() {
       frecuencia: item.frecuencia, plazoUnidades: item.plazoUnidades || PLAZO_DEFAULT[item.frecuencia],
       modoInteres: item.modoInteres || defaults.modoInteres, fechaInicio: item.fechaInicio || hoyISO(),
       esEnCurso: false, yaAbonado: '', cuotaManual: item.cuotaManual ? String(item.cuotaManual) : '',
+      diasSinCobro: item.diasSinCobro || [],
       rutaId: item.rutaId || defaults.rutaId,
     })
     setEditandoIdx(idx)
