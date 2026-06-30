@@ -4,7 +4,7 @@
 // + acciones rapidas. Inspirado en Mercury / Revolut.
 
 import { formatMoney } from '@/lib/i18n'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import Avatar from '@/components/ui/Avatar'
 
@@ -56,6 +56,131 @@ function useCountUp(target, duration = 800) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target, duration])
   return value
+}
+
+function FotoLightbox({ src, alt, onClose }) {
+  const [scale, setScale] = useState(1)
+  const [translate, setTranslate] = useState({ x: 0, y: 0 })
+  const gestureRef = useRef({ startDist: 0, startScale: 1, startX: 0, startY: 0, startTx: 0, startTy: 0, isPanning: false, lastTap: 0 })
+  const containerRef = useRef(null)
+
+  const clampTranslate = useCallback((tx, ty, s) => {
+    if (s <= 1) return { x: 0, y: 0 }
+    const maxX = (s - 1) * window.innerWidth / 2
+    const maxY = (s - 1) * window.innerHeight / 2
+    return { x: Math.max(-maxX, Math.min(maxX, tx)), y: Math.max(-maxY, Math.min(maxY, ty)) }
+  }, [])
+
+  const handleTouchStart = useCallback((e) => {
+    const g = gestureRef.current
+    if (e.touches.length === 2) {
+      const dx = e.touches[1].clientX - e.touches[0].clientX
+      const dy = e.touches[1].clientY - e.touches[0].clientY
+      g.startDist = Math.hypot(dx, dy)
+      g.startScale = scale
+      g.isPanning = false
+    } else if (e.touches.length === 1) {
+      const now = Date.now()
+      if (now - g.lastTap < 300) {
+        e.preventDefault()
+        if (scale > 1.5) {
+          setScale(1)
+          setTranslate({ x: 0, y: 0 })
+        } else {
+          setScale(3)
+        }
+        g.lastTap = 0
+        return
+      }
+      g.lastTap = now
+      g.startX = e.touches[0].clientX
+      g.startY = e.touches[0].clientY
+      g.startTx = translate.x
+      g.startTy = translate.y
+      g.isPanning = scale > 1
+    }
+  }, [scale, translate])
+
+  const handleTouchMove = useCallback((e) => {
+    const g = gestureRef.current
+    if (e.touches.length === 2 && g.startDist > 0) {
+      e.preventDefault()
+      const dx = e.touches[1].clientX - e.touches[0].clientX
+      const dy = e.touches[1].clientY - e.touches[0].clientY
+      const dist = Math.hypot(dx, dy)
+      const newScale = Math.max(1, Math.min(5, g.startScale * (dist / g.startDist)))
+      setScale(newScale)
+      if (newScale <= 1) setTranslate({ x: 0, y: 0 })
+    } else if (e.touches.length === 1 && g.isPanning) {
+      e.preventDefault()
+      const dx = e.touches[0].clientX - g.startX
+      const dy = e.touches[0].clientY - g.startY
+      const clamped = clampTranslate(g.startTx + dx, g.startTy + dy, scale)
+      setTranslate(clamped)
+    }
+  }, [scale, clampTranslate])
+
+  const handleTouchEnd = useCallback((e) => {
+    gestureRef.current.startDist = 0
+    gestureRef.current.isPanning = false
+    if (e.touches.length === 0 && scale <= 1) {
+      setTranslate({ x: 0, y: 0 })
+    }
+  }, [scale])
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black" style={{ touchAction: 'none' }}>
+      <button
+        className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full flex items-center justify-center bg-white/15 text-white active:bg-white/30 transition-colors"
+        onClick={onClose}
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      {scale > 1 && (
+        <button
+          className="absolute top-4 left-4 z-10 px-3 py-1.5 rounded-full bg-white/15 text-white text-xs font-medium active:bg-white/30 transition-colors"
+          onClick={() => { setScale(1); setTranslate({ x: 0, y: 0 }) }}
+        >
+          Restablecer
+        </button>
+      )}
+      <div
+        ref={containerRef}
+        className="w-full h-full flex items-center justify-center"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onClick={(e) => { if (scale <= 1 && e.target === containerRef.current) onClose() }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={alt}
+          draggable={false}
+          className="select-none"
+          style={{
+            maxWidth: '100vw',
+            maxHeight: '100vh',
+            width: 'auto',
+            height: 'auto',
+            objectFit: 'contain',
+            transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
+            transition: gestureRef.current?.startDist > 0 ? 'none' : 'transform 0.2s ease-out',
+          }}
+        />
+      </div>
+      <p className="absolute bottom-6 left-0 right-0 text-center text-white/60 text-xs font-medium pointer-events-none">
+        {scale <= 1 ? 'Doble toque para ampliar' : `${Math.round(scale * 100)}%`}
+      </p>
+    </div>
+  )
 }
 
 export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats, onWhatsApp, puedeSubirFoto = false, onFotoActualizada }) {
@@ -261,28 +386,7 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
 
       {/* Lightbox foto */}
       {fotoAbierta && tieneFoto && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
-          onClick={() => setFotoAbierta(false)}
-        >
-          <button
-            className="absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center bg-white/10 text-white hover:bg-white/20 transition-colors"
-            onClick={() => setFotoAbierta(false)}
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          <div className="p-4 max-w-[90vw] max-h-[85vh]" onClick={(e) => e.stopPropagation()}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={cliente.fotoUrl}
-              alt={cliente.nombre}
-              className="max-w-full max-h-[80vh] rounded-2xl object-contain shadow-2xl"
-            />
-            <p className="text-center text-white/80 text-sm mt-3 font-medium">{cliente.nombre}</p>
-          </div>
-        </div>
+        <FotoLightbox src={cliente.fotoUrl} alt={cliente.nombre} onClose={() => setFotoAbierta(false)} />
       )}
     </div>
   )
