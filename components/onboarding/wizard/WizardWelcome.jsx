@@ -1,7 +1,5 @@
 'use client'
 
-import Link from 'next/link'
-
 export default function WizardWelcome({ nombre, onNext, onDismiss, onNavigate }) {
   const firstName = nombre ? nombre.split(' ')[0] : null
 
@@ -52,7 +50,7 @@ export default function WizardWelcome({ nombre, onNext, onDismiss, onNavigate })
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
-                <p className="text-[15px] font-bold" style={{ color: 'var(--color-text-primary)' }}>Agregar uno por uno</p>
+                <p className="text-[15px] font-bold" style={{ color: 'var(--color-text-primary)' }}>Migrar mis clientes</p>
                 <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
                   style={{ background: 'rgba(245,197,24,0.15)', color: '#f5c518' }}>
                   Recomendado
