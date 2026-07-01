@@ -181,11 +181,26 @@ export default function ClientesPage() {
 
   const [isOffline, setIsOffline] = useState(false)
   const hasLoadedOnceRef = useRef(false)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
     const goOnline = () => { setIsOffline(false) }
     window.addEventListener('online', goOnline)
     return () => window.removeEventListener('online', goOnline)
+  }, [])
+
+  useEffect(() => {
+    const bump = () => { if (hasLoadedOnceRef.current) setRefreshKey(k => k + 1) }
+    const onVisible = () => { if (document.visibilityState === 'visible') bump() }
+    const onPageShow = (e) => { if (e.persisted) bump() }
+    window.addEventListener('focus', bump)
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('pageshow', onPageShow)
+    return () => {
+      window.removeEventListener('focus', bump)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('pageshow', onPageShow)
+    }
   }, [])
 
   useEffect(() => {
@@ -327,9 +342,9 @@ export default function ClientesPage() {
 
   // Carga de clientes con debounce
   useEffect(() => {
-    const t = setTimeout(() => fetchClientes(buscar, page, grupoFiltro, rutaIdFiltro), 280)
+    const t = setTimeout(() => fetchClientes(buscar, page, grupoFiltro, rutaIdFiltro, { soft: refreshKey > 0 }), 280)
     return () => clearTimeout(t)
-  }, [fetchClientes, buscar, page, grupoFiltro, rutaIdFiltro])
+  }, [fetchClientes, buscar, page, grupoFiltro, rutaIdFiltro, refreshKey])
 
   // Refresh silencioso cuando hay nueva sincronización global.
   useEffect(() => {

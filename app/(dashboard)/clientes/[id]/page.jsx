@@ -6,7 +6,7 @@ import { useRouter }                 from 'next/navigation'
 import Link                          from 'next/link'
 import { useAuth }                   from '@/hooks/useAuth'
 import { useOffline }                from '@/components/providers/OfflineProvider'
-import { obtenerClienteOffline, resolverTempId }     from '@/lib/offline'
+import { obtenerClienteOffline, resolverTempId, invalidarCachePorPrefijo } from '@/lib/offline'
 import { obtenerCoordsRapido }                       from '@/lib/geo'
 import { Badge }                     from '@/components/ui/Badge'
 import { Button }                    from '@/components/ui/Button'
@@ -196,6 +196,7 @@ export default function ClienteDetallePage({ params }) {
         return
       }
       if (!res.ok) { alert(data.error || 'Error'); return }
+      invalidarCachePorPrefijo('clientes:').catch(() => {})
       router.push('/clientes')
     } catch { alert('Error de conexión') }
     finally { setActionLoading(false) }

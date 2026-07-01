@@ -11,7 +11,7 @@ import { Button }              from '@/components/ui/Button'
 import MoneyInput              from '@/components/ui/MoneyInput'
 import DiasSinCobroSelector    from '@/components/ui/DiasSinCobroSelector'
 import Stepper                 from '@/components/ui/Stepper'
-import { guardarClientePendiente, encolarMutacion } from '@/lib/offline'
+import { guardarClientePendiente, encolarMutacion, invalidarCachePorPrefijo } from '@/lib/offline'
 import { useCountry } from '@/hooks/useCountry'
 
 const LocationPicker = dynamic(() => import('@/components/clientes/LocationPicker'), { ssr: false })
@@ -264,6 +264,8 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
 
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Error al guardar'); return }
+
+      invalidarCachePorPrefijo('clientes:').catch(() => {})
 
       if (fotoFile && data.id) await subirFoto(data.id)
 

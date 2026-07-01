@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { calcularPrestamo } from '@/lib/calculos'
 import { formatMoney } from '@/lib/i18n'
 import MoneyInput from '@/components/ui/MoneyInput'
+import { invalidarCachePorPrefijo } from '@/lib/offline'
 import ModoInteresSelector from '@/components/prestamos/ModoInteresSelector'
 import DiasSinCobroSelector from '@/components/ui/DiasSinCobroSelector'
 
@@ -736,6 +737,7 @@ export default function MigradorPage() {
         })
         const dataCliente = await resCliente.json()
         if (!resCliente.ok) { setError(dataCliente.error || 'Error al crear el cliente'); setSaving(false); return }
+        invalidarCachePorPrefijo('clientes:').catch(() => {})
 
         const prestamoPayload = {
           clienteId: dataCliente.id,
