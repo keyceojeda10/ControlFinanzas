@@ -46,6 +46,8 @@ export default function NotificationsCenter({ size = 'md' }) {
   const [panelPos, setPanelPos] = useState(null)
   const [solicitudes, setSolicitudes] = useState([])
   const [procesando, setProcesando] = useState(null)
+  const [notifInApp, setNotifInApp] = useState([])
+  const [notifNoLeidas, setNotifNoLeidas] = useState(0)
   const ref = useRef(null)
   const btnRef = useRef(null)
 
@@ -94,6 +96,47 @@ export default function NotificationsCenter({ size = 'md' }) {
   useEffect(() => {
     fetchSolicitudes()
   }, [esOwner])
+
+  const fetchNotifCount = async () => {
+    try {
+      const res = await fetch('/api/notificaciones?count=1')
+      if (!res.ok) return
+      const data = await res.json()
+      setNotifNoLeidas(data.count || 0)
+    } catch {}
+  }
+
+  const fetchNotificaciones = async () => {
+    try {
+      const res = await fetch('/api/notificaciones')
+      if (!res.ok) return
+      const data = await res.json()
+      setNotifInApp(data)
+      setNotifNoLeidas(data.filter(n => !n.leida).length)
+    } catch {}
+  }
+
+  useEffect(() => {
+    fetchNotifCount()
+    const interval = setInterval(fetchNotifCount, 60000)
+    return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    if (open) fetchNotificaciones()
+  }, [open])
+
+  const marcarLeida = async (id) => {
+    setNotifInApp(prev => prev.map(n => n.id === id ? { ...n, leida: true } : n))
+    setNotifNoLeidas(prev => Math.max(0, prev - 1))
+    try { await fetch('/api/notificaciones', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }) } catch {}
+  }
+
+  const marcarTodasLeidas = async () => {
+    setNotifInApp(prev => prev.map(n => ({ ...n, leida: true })))
+    setNotifNoLeidas(0)
+    try { await fetch('/api/notificaciones', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ marcarTodasLeidas: true }) }) } catch {}
+  }
 
   const aprobarSolicitud = async (cierreId) => {
     setProcesando(cierreId)
@@ -170,7 +213,7 @@ export default function NotificationsCenter({ size = 'md' }) {
   const showSyncItem = !isOnline || pendingCount > 0 || failedTotal > 0
   const showSolicitudesItem = esOwner && solicitudes.length > 0
 
-  const total = (showInstallItem ? 1 : 0) + (showPushItem ? 1 : 0) + (showSyncItem ? 1 : 0) + solicitudes.length
+  const total = (showInstallItem ? 1 : 0) + (showPushItem ? 1 : 0) + (showSyncItem ? 1 : 0) + solicitudes.length + notifNoLeidas
 
   if (showInstallGuide) return <InstallGuideModal onClose={() => setShowInstallGuide(false)} />
 
@@ -225,13 +268,59 @@ export default function NotificationsCenter({ size = 'md' }) {
             <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Notificaciones</p>
           </div>
 
-          {total === 0 && (
+          {total === 0 && notifInApp.length === 0 && (
             <div className="px-4 py-6 text-center">
               <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Todo al día. No hay avisos pendientes.</p>
             </div>
           )}
 
           <div className="py-1">
+            {notifInApp.length > 0 && (
+              <>
+                {notifNoLeidas > 0 && (
+                  <div className="flex items-center justify-between px-4 py-2" style={{ borderBottom: '1px solid var(--color-border)' }}>
+                    <p className="text-[11px] font-medium" style={{ color: 'var(--color-text-muted)' }}>{notifNoLeidas} sin leer</p>
+                    <button onClick={marcarTodasLeidas} className="text-[11px] font-medium" style={{ color: 'var(--color-accent)' }}>Marcar todas</button>
+                  </div>
+                )}
+                {notifInApp.map((n) => (
+                  <button
+                    key={n.id}
+                    onClick={() => {
+                      if (!n.leida) marcarLeida(n.id)
+                      if (n.datos) {
+                        try {
+                          const d = JSON.parse(n.datos)
+                          if (d.clienteId) {
+                            window.location.href = `/clientes/${d.clienteId}`
+                            setOpen(false)
+                          }
+                        } catch {}
+                      }
+                    }}
+                    className="w-full flex items-start gap-3 px-4 py-3 text-left transition-colors cf-menu-item"
+                    style={{ borderBottom: '1px solid var(--color-border)', opacity: n.leida ? 0.6 : 1 }}
+                  >
+                    <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: n.leida ? 'var(--color-bg-hover)' : 'var(--color-accent-soft)' }}>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: n.leida ? 'var(--color-text-muted)' : 'var(--color-accent)' }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                      </svg>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px] font-medium" style={{ color: 'var(--color-text-primary)' }}>{n.titulo}</p>
+                      <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{n.mensaje}</p>
+                      <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                        {new Date(n.createdAt).toLocaleDateString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                    {!n.leida && (
+                      <div className="w-2 h-2 rounded-full shrink-0 mt-1.5" style={{ background: 'var(--color-accent)' }} />
+                    )}
+                  </button>
+                ))}
+              </>
+            )}
+
             {showSolicitudesItem && solicitudes.map((s) => (
               <div key={s.id} className="flex items-start gap-3 px-4 py-3" style={{ borderBottom: '1px solid var(--color-border)' }}>
                 <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'var(--color-warning-dim)' }}>

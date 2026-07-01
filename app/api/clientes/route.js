@@ -107,6 +107,7 @@ export async function GET(request) {
         where: { estado: 'activa' },
         select: { id: true },
       },
+      ...(rol !== 'cobrador' && { creadoPor: { select: { id: true, nombre: true, name: true } } }),
     },
     orderBy: [{ ordenRuta: 'asc' }, { nombre: 'asc' }],
     ...(page != null && { take: limit, skip: (page - 1) * limit }),
@@ -414,10 +415,30 @@ export async function POST(request) {
       grupoCobroId: grupoCobroId || null,
       latitud:    lat,
       longitud:   lng,
+      creadoPorId: session.user.id,
       ...(diasSinCobroVal !== undefined && { diasSinCobro: diasSinCobroVal }),
       ...(ordenRutaFinal != null && { ordenRuta: ordenRutaFinal }),
     },
   })
+
+  if (session.user.rol === 'cobrador') {
+    const owners = await prisma.user.findMany({
+      where: { organizationId, rol: 'owner' },
+      select: { id: true },
+    })
+    for (const o of owners) {
+      await prisma.notificacion.create({
+        data: {
+          organizationId,
+          userId: o.id,
+          tipo: 'cliente_creado_por_cobrador',
+          titulo: 'Nuevo cliente registrado',
+          mensaje: `${session.user.name || 'Un cobrador'} registró al cliente ${nombre.trim()} (${cedula.trim()})`,
+          datos: JSON.stringify({ clienteId: cliente.id, cobradorId: session.user.id, cobradorNombre: session.user.name }),
+        },
+      })
+    }
+  }
 
   logActividad({ session, accion: 'crear_cliente', entidadTipo: 'cliente', entidadId: cliente.id, detalle: `Cliente ${nombre.trim()} (${cedula.trim()})`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
   trackEvent({ organizationId, userId: session.user.id, evento: 'crear_cliente' })

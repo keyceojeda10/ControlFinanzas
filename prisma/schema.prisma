@@ -121,6 +121,7 @@ model Organization {
   desembolsosLinea   DesembolsoLinea[]
   pagosLinea         PagoLinea[]
   cortesLinea        CorteLinea[]
+  notificaciones     Notificacion[]
 
   @@index([createdAt])
 }
@@ -174,6 +175,8 @@ model User {
   actividadLogs     ActividadLog[]
   pushSubscriptions PushSubscription[]
   asistenteMemorias AsistenteMemoria[]
+  clientesCreadosPor Cliente[]         @relation("ClientesCreadosPor")
+  notificaciones    Notificacion[]     @relation("NotificacionesUsuario")
 
   @@index([organizationId])
   @@index([organizationId, rol, activo])
@@ -245,11 +248,13 @@ model Cliente {
   eliminadoEn    DateTime?
   diasSinCobro        String?
   montoMaximoPrestamo Float?
+  creadoPorId         String?
   createdAt           DateTime      @default(now())
 
   organization       Organization       @relation(fields: [organizationId], references: [id])
   ruta               Ruta?              @relation(fields: [rutaId], references: [id])
   grupoCobro         GrupoCobro?        @relation(fields: [grupoCobroId], references: [id], onDelete: SetNull)
+  creadoPor          User?              @relation("ClientesCreadosPor", fields: [creadoPorId], references: [id])
   prestamos          Prestamo[]
   visitasReagendadas VisitaReagendada[]
   lineasCredito      LineaCredito[]
@@ -260,6 +265,7 @@ model Cliente {
   @@index([estado])
   @@index([grupoCobroId])
   @@index([rutaId])
+  @@index([creadoPorId])
   @@index([organizationId, estado])
   @@index([organizationId, rutaId, estado])
 }
@@ -926,4 +932,22 @@ model CorteLinea {
 
   @@unique([lineaCreditoId, periodo])
   @@index([organizationId])
+}
+
+model Notificacion {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  tipo           String
+  titulo         String
+  mensaje        String   @db.Text
+  datos          String?  @db.Text
+  leida          Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  usuario      User         @relation("NotificacionesUsuario", fields: [userId], references: [id])
+
+  @@index([userId, leida])
+  @@index([organizationId, createdAt])
 }
