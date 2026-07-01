@@ -1,10 +1,6 @@
 'use client'
-// components/layout/NotificationsCenter.jsx
-// Centro de notificaciones: agrupa avisos (instalar app, activar push, sync
-// pendiente) en un panel desplegable detras de un icono de campana, en vez
-// de banners flotantes que tapaban el boton de Lucas y estorbaban en movil.
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useOffline } from '@/components/providers/OfflineProvider'
 import { InstallGuideModal } from '@/components/layout/InstallButton'
 import { useAuth } from '@/hooks/useAuth'
@@ -34,6 +30,26 @@ function BellIcon({ className }) {
   )
 }
 
+function DownloadIcon({ className }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+    </svg>
+  )
+}
+
+function UserIcon({ className }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+    </svg>
+  )
+}
+
+const TOAST_DURATION = 5000
+const TOAST_COOLDOWN_KEY = 'cf-toast-last-shown'
+const TOAST_COOLDOWN_MS = 5 * 60 * 1000
+
 export default function NotificationsCenter({ size = 'md' }) {
   const { isOnline, pendingCount, failedDetails, openSyncDrawer } = useOffline()
   const { esOwner } = useAuth()
@@ -43,13 +59,22 @@ export default function NotificationsCenter({ size = 'md' }) {
   const [installable, setInstallable] = useState(false)
   const [installDismissed, setInstallDismissed] = useState(true)
   const [pushPermission, setPushPermission] = useState('default')
+  const [pushDismissed, setPushDismissed] = useState(true)
   const [panelPos, setPanelPos] = useState(null)
   const [solicitudes, setSolicitudes] = useState([])
   const [procesando, setProcesando] = useState(null)
   const [notifInApp, setNotifInApp] = useState([])
   const [notifNoLeidas, setNotifNoLeidas] = useState(0)
+
+  // Toast state
+  const [toast, setToast] = useState(null)       // { icon, title, message, phase }
+  const [toastPhase, setToastPhase] = useState('hidden') // hidden | entering | visible | absorbing | absorbed
+  const [bellPulse, setBellPulse] = useState(false)
+
   const ref = useRef(null)
   const btnRef = useRef(null)
+  const toastTimerRef = useRef(null)
+  const toastShownRef = useRef(false)
 
   const failedTotal =
     (failedDetails?.pagos?.length || 0) +
@@ -57,6 +82,7 @@ export default function NotificationsCenter({ size = 'md' }) {
     (failedDetails?.prestamos?.length || 0) +
     (failedDetails?.mutaciones?.length || 0)
 
+  // ─── Install prompt ───
   useEffect(() => {
     if (isStandalone()) return
     const dismissedAt = localStorage.getItem('cf-install-dismissed')
@@ -65,16 +91,20 @@ export default function NotificationsCenter({ size = 'md' }) {
 
     const handler = (e) => { e.preventDefault(); setDeferredPrompt(e); setInstallable(true) }
     window.addEventListener('beforeinstallprompt', handler)
-    // En navegadores sin beforeinstallprompt (iOS/Safari) igual mostramos la guia manual
     const timer = setTimeout(() => setInstallable(true), 1500)
     return () => { window.removeEventListener('beforeinstallprompt', handler); clearTimeout(timer) }
   }, [])
 
+  // ─── Push permission ───
   useEffect(() => {
     if (typeof Notification === 'undefined') return
     setPushPermission(Notification.permission)
+    const dismissedAt = localStorage.getItem('cf-push-dismissed')
+    const recentlyDismissed = dismissedAt && Date.now() - parseInt(dismissedAt) < 7 * 24 * 60 * 60 * 1000
+    setPushDismissed(!!recentlyDismissed)
   }, [open])
 
+  // ─── Click outside ───
   useEffect(() => {
     function handleClickOutside(e) {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false)
@@ -83,6 +113,7 @@ export default function NotificationsCenter({ size = 'md' }) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  // ─── Solicitudes ───
   const fetchSolicitudes = async () => {
     if (!esOwner) return
     try {
@@ -97,6 +128,7 @@ export default function NotificationsCenter({ size = 'md' }) {
     fetchSolicitudes()
   }, [esOwner])
 
+  // ─── Notificaciones in-app ───
   const fetchNotifCount = async () => {
     try {
       const res = await fetch('/api/notificaciones?count=1')
@@ -138,6 +170,7 @@ export default function NotificationsCenter({ size = 'md' }) {
     try { await fetch('/api/notificaciones', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ marcarTodasLeidas: true }) }) } catch {}
   }
 
+  // ─── Solicitudes actions ───
   const aprobarSolicitud = async (cierreId) => {
     setProcesando(cierreId)
     try {
@@ -166,6 +199,7 @@ export default function NotificationsCenter({ size = 'md' }) {
     }
   }
 
+  // ─── Install / Push actions ───
   const handleInstall = async () => {
     if (deferredPrompt) {
       deferredPrompt.prompt()
@@ -180,6 +214,11 @@ export default function NotificationsCenter({ size = 'md' }) {
   const dismissInstall = () => {
     localStorage.setItem('cf-install-dismissed', String(Date.now()))
     setInstallDismissed(true)
+  }
+
+  const dismissPush = () => {
+    localStorage.setItem('cf-push-dismissed', String(Date.now()))
+    setPushDismissed(true)
   }
 
   const subscribePush = async () => {
@@ -209,15 +248,104 @@ export default function NotificationsCenter({ size = 'md' }) {
   }
 
   const showInstallItem = installable && !installDismissed && !isStandalone()
-  const showPushItem = pushPermission === 'default'
+  const showPushItem = pushPermission === 'default' && !pushDismissed
   const showSyncItem = !isOnline || pendingCount > 0 || failedTotal > 0
   const showSolicitudesItem = esOwner && solicitudes.length > 0
 
   const total = (showInstallItem ? 1 : 0) + (showPushItem ? 1 : 0) + (showSyncItem ? 1 : 0) + solicitudes.length + notifNoLeidas
 
+  // ─── Toast logic ───
+  const pickToast = useCallback(() => {
+    if (showInstallItem) {
+      return { icon: 'download', title: 'Instala la app', message: 'Accede mas rapido y usala sin internet' }
+    }
+    if (showPushItem) {
+      return { icon: 'bell', title: 'Activa notificaciones', message: 'Recibe alertas de pagos, mora y vencimientos' }
+    }
+    if (notifNoLeidas > 0) {
+      const first = notifInApp.find(n => !n.leida)
+      if (first) return { icon: 'user', title: first.titulo, message: first.mensaje }
+      return { icon: 'bell', title: `${notifNoLeidas} notificaciones`, message: 'Tienes avisos sin leer' }
+    }
+    return null
+  }, [showInstallItem, showPushItem, notifNoLeidas, notifInApp])
+
+  useEffect(() => {
+    if (toastShownRef.current || open) return
+
+    const lastShown = localStorage.getItem(TOAST_COOLDOWN_KEY)
+    if (lastShown && Date.now() - parseInt(lastShown) < TOAST_COOLDOWN_MS) return
+
+    const candidate = pickToast()
+    if (!candidate || total === 0) return
+
+    toastShownRef.current = true
+    const delay = setTimeout(() => {
+      setToast(candidate)
+      setToastPhase('entering')
+      localStorage.setItem(TOAST_COOLDOWN_KEY, String(Date.now()))
+
+      setTimeout(() => setToastPhase('visible'), 50)
+
+      toastTimerRef.current = setTimeout(() => {
+        absorb()
+      }, TOAST_DURATION)
+    }, 1200)
+
+    return () => clearTimeout(delay)
+  }, [total, open, pickToast])
+
+  const absorb = useCallback(() => {
+    clearTimeout(toastTimerRef.current)
+    setToastPhase('absorbing')
+    setTimeout(() => {
+      setToastPhase('absorbed')
+      setBellPulse(true)
+      setTimeout(() => {
+        setToast(null)
+        setToastPhase('hidden')
+        setBellPulse(false)
+      }, 400)
+    }, 500)
+  }, [])
+
+  const dismissToast = useCallback(() => {
+    clearTimeout(toastTimerRef.current)
+    setToastPhase('absorbing')
+    setTimeout(() => {
+      setToast(null)
+      setToastPhase('hidden')
+    }, 500)
+  }, [])
+
+  const handleToastClick = useCallback(() => {
+    clearTimeout(toastTimerRef.current)
+    setToast(null)
+    setToastPhase('hidden')
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect()
+      const panelWidth = 256
+      const margin = 16
+      let left = rect.right - panelWidth
+      left = Math.max(margin, Math.min(left, window.innerWidth - panelWidth - margin))
+      const panelMaxHeight = 360
+      const espacioAbajo = window.innerHeight - rect.bottom
+      const pos = espacioAbajo < panelMaxHeight + margin
+        ? { bottom: window.innerHeight - rect.top + 8, left }
+        : { top: rect.bottom + 8, left }
+      setPanelPos(pos)
+    }
+    setOpen(true)
+  }, [])
+
   if (showInstallGuide) return <InstallGuideModal onClose={() => setShowInstallGuide(false)} />
 
   const togglePanel = () => {
+    if (toast) {
+      clearTimeout(toastTimerRef.current)
+      setToast(null)
+      setToastPhase('hidden')
+    }
     if (!open && btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect()
       const panelWidth = 256
@@ -226,8 +354,6 @@ export default function NotificationsCenter({ size = 'md' }) {
       let left = rect.right - panelWidth
       left = Math.max(margin, Math.min(left, window.innerWidth - panelWidth - margin))
 
-      // Si no hay espacio suficiente debajo (ej. campana al final del sidebar,
-      // pegada al borde inferior), abrir el panel hacia arriba en su lugar.
       const espacioAbajo = window.innerHeight - rect.bottom
       const pos = espacioAbajo < panelMaxHeight + margin
         ? { bottom: window.innerHeight - rect.top + 8, left }
@@ -238,13 +364,17 @@ export default function NotificationsCenter({ size = 'md' }) {
     setOpen((v) => !v)
   }
 
+  const toastIcon = toast?.icon === 'download' ? <DownloadIcon className="w-4 h-4" />
+    : toast?.icon === 'user' ? <UserIcon className="w-4 h-4" />
+    : <BellIcon className="w-4 h-4" />
+
   return (
     <div className="relative" ref={ref}>
       <button
         ref={btnRef}
         onClick={togglePanel}
         aria-label="Notificaciones"
-        className={`relative flex items-center justify-center rounded-lg transition-colors hover:bg-[var(--color-bg-hover)] ${size === 'sm' ? 'w-7 h-7' : 'w-9 h-9'}`}
+        className={`relative flex items-center justify-center rounded-lg transition-colors hover:bg-[var(--color-bg-hover)] ${size === 'sm' ? 'w-7 h-7' : 'w-9 h-9'} ${bellPulse ? 'cf-bell-pulse' : ''}`}
         style={{ color: 'var(--color-text-muted)' }}
       >
         <BellIcon className={size === 'sm' ? 'w-3.5 h-3.5' : 'w-4.5 h-4.5'} />
@@ -254,6 +384,52 @@ export default function NotificationsCenter({ size = 'md' }) {
           </span>
         )}
       </button>
+
+      {/* ── Toast popup ── */}
+      {toast && (
+        <div
+          onClick={handleToastClick}
+          className={`cf-notif-toast cf-notif-toast--${toastPhase}`}
+          style={{
+            position: 'fixed',
+            top: 72,
+            right: 16,
+            left: 16,
+            maxWidth: 360,
+            marginLeft: 'auto',
+            marginRight: 'auto',
+            zIndex: 60,
+            cursor: 'pointer',
+          }}
+        >
+          <div
+            className="flex items-start gap-3 px-4 py-3 rounded-2xl shadow-2xl"
+            style={{
+              background: 'var(--color-bg-card)',
+              border: '1px solid var(--color-border)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+            }}
+          >
+            <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'var(--color-accent-soft)', color: 'var(--color-accent)' }}>
+              {toastIcon}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>{toast.title}</p>
+              <p className="text-[11px] mt-0.5 line-clamp-2" style={{ color: 'var(--color-text-muted)' }}>{toast.message}</p>
+            </div>
+            <button
+              onClick={(e) => { e.stopPropagation(); dismissToast() }}
+              className="shrink-0 w-6 h-6 flex items-center justify-center rounded-full mt-0.5"
+              style={{ color: 'var(--color-text-muted)' }}
+              aria-label="Cerrar"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
 
       {open && panelPos && (
         <div
@@ -270,7 +446,7 @@ export default function NotificationsCenter({ size = 'md' }) {
 
           {total === 0 && notifInApp.length === 0 && (
             <div className="px-4 py-6 text-center">
-              <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Todo al día. No hay avisos pendientes.</p>
+              <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Todo al dia. No hay avisos pendientes.</p>
             </div>
           )}
 
@@ -302,9 +478,7 @@ export default function NotificationsCenter({ size = 'md' }) {
                     style={{ borderBottom: '1px solid var(--color-border)', opacity: n.leida ? 0.6 : 1 }}
                   >
                     <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: n.leida ? 'var(--color-bg-hover)' : 'var(--color-accent-soft)' }}>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: n.leida ? 'var(--color-text-muted)' : 'var(--color-accent)' }}>
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                      </svg>
+                      <UserIcon className="w-4 h-4" style={{ color: n.leida ? 'var(--color-text-muted)' : 'var(--color-accent)' }} />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-[13px] font-medium" style={{ color: 'var(--color-text-primary)' }}>{n.titulo}</p>
@@ -367,9 +541,9 @@ export default function NotificationsCenter({ size = 'md' }) {
                 </div>
                 <div className="min-w-0">
                   <p className="text-[13px] font-medium" style={{ color: 'var(--color-text-primary)' }}>
-                    {!isOnline ? 'Sin conexión' : failedTotal > 0 ? `${failedTotal} elementos fallidos` : `${pendingCount} pendientes por sincronizar`}
+                    {!isOnline ? 'Sin conexion' : failedTotal > 0 ? `${failedTotal} elementos fallidos` : `${pendingCount} pendientes por sincronizar`}
                   </p>
-                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Toca para ver el detalle de sincronización</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Toca para ver el detalle de sincronizacion</p>
                 </div>
               </button>
             )}
@@ -377,13 +551,11 @@ export default function NotificationsCenter({ size = 'md' }) {
             {showInstallItem && (
               <div className="flex items-start gap-3 px-4 py-3">
                 <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'var(--color-accent-soft)' }}>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--color-accent)' }}>
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
+                  <DownloadIcon className="w-4 h-4" style={{ color: 'var(--color-accent)' }} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-medium" style={{ color: 'var(--color-text-primary)' }}>Instala la app</p>
-                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Accede mas rápido y úsala sin internet</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Accede mas rapido y usala sin internet</p>
                   <div className="flex gap-2 mt-2">
                     <button onClick={dismissInstall} className="text-[11px] px-2.5 py-1 rounded-full transition-colors" style={{ color: 'var(--color-text-muted)', background: 'var(--color-bg-hover)' }}>
                       Ahora no
@@ -405,7 +577,7 @@ export default function NotificationsCenter({ size = 'md' }) {
                   <p className="text-[13px] font-medium" style={{ color: 'var(--color-text-primary)' }}>Activar notificaciones</p>
                   <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Recibe alertas de pagos, mora y vencimientos</p>
                   <div className="flex gap-2 mt-2">
-                    <button onClick={() => setOpen(false)} className="text-[11px] px-2.5 py-1 rounded-full transition-colors" style={{ color: 'var(--color-text-muted)', background: 'var(--color-bg-hover)' }}>
+                    <button onClick={dismissPush} className="text-[11px] px-2.5 py-1 rounded-full transition-colors" style={{ color: 'var(--color-text-muted)', background: 'var(--color-bg-hover)' }}>
                       Ahora no
                     </button>
                     <button onClick={subscribePush} className="text-[11px] font-semibold px-2.5 py-1 rounded-full transition-colors" style={{ color: '#1a1a2e', background: 'var(--color-accent)' }}>
