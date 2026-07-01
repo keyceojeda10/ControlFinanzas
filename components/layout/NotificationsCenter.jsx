@@ -48,7 +48,8 @@ function UserIcon({ className }) {
 
 const TOAST_DURATION = 5000
 const TOAST_COOLDOWN_KEY = 'cf-toast-last-shown'
-const TOAST_COOLDOWN_MS = 5 * 60 * 1000
+const TOAST_COOLDOWN_MS = 48 * 60 * 60 * 1000
+const DISMISS_COOLDOWN_MS = 48 * 60 * 60 * 1000
 
 export default function NotificationsCenter({ size = 'md' }) {
   const { isOnline, pendingCount, failedDetails, openSyncDrawer } = useOffline()
@@ -86,7 +87,7 @@ export default function NotificationsCenter({ size = 'md' }) {
   useEffect(() => {
     if (isStandalone()) return
     const dismissedAt = localStorage.getItem('cf-install-dismissed')
-    const recentlyDismissed = dismissedAt && Date.now() - parseInt(dismissedAt) < 7 * 24 * 60 * 60 * 1000
+    const recentlyDismissed = dismissedAt && Date.now() - parseInt(dismissedAt) < DISMISS_COOLDOWN_MS
     setInstallDismissed(!!recentlyDismissed)
 
     const handler = (e) => { e.preventDefault(); setDeferredPrompt(e); setInstallable(true) }
@@ -100,7 +101,7 @@ export default function NotificationsCenter({ size = 'md' }) {
     if (typeof Notification === 'undefined') return
     setPushPermission(Notification.permission)
     const dismissedAt = localStorage.getItem('cf-push-dismissed')
-    const recentlyDismissed = dismissedAt && Date.now() - parseInt(dismissedAt) < 7 * 24 * 60 * 60 * 1000
+    const recentlyDismissed = dismissedAt && Date.now() - parseInt(dismissedAt) < DISMISS_COOLDOWN_MS
     setPushDismissed(!!recentlyDismissed)
   }, [open])
 
@@ -247,19 +248,21 @@ export default function NotificationsCenter({ size = 'md' }) {
     }
   }
 
-  const showInstallItem = installable && !installDismissed && !isStandalone()
-  const showPushItem = pushPermission === 'default' && !pushDismissed
+  const canInstall = installable && !isStandalone()
+  const canPush = pushPermission === 'default'
+  const showInstallToast = canInstall && !installDismissed
+  const showPushToast = canPush && !pushDismissed
   const showSyncItem = !isOnline || pendingCount > 0 || failedTotal > 0
   const showSolicitudesItem = esOwner && solicitudes.length > 0
 
-  const total = (showInstallItem ? 1 : 0) + (showPushItem ? 1 : 0) + (showSyncItem ? 1 : 0) + solicitudes.length + notifNoLeidas
+  const total = (canInstall ? 1 : 0) + (canPush ? 1 : 0) + (showSyncItem ? 1 : 0) + solicitudes.length + notifNoLeidas
 
   // ─── Toast logic ───
   const pickToast = useCallback(() => {
-    if (showInstallItem) {
+    if (showInstallToast) {
       return { icon: 'download', title: 'Instala la app', message: 'Accede mas rapido y usala sin internet' }
     }
-    if (showPushItem) {
+    if (showPushToast) {
       return { icon: 'bell', title: 'Activa notificaciones', message: 'Recibe alertas de pagos, mora y vencimientos' }
     }
     if (notifNoLeidas > 0) {
@@ -268,7 +271,7 @@ export default function NotificationsCenter({ size = 'md' }) {
       return { icon: 'bell', title: `${notifNoLeidas} notificaciones`, message: 'Tienes avisos sin leer' }
     }
     return null
-  }, [showInstallItem, showPushItem, notifNoLeidas, notifInApp])
+  }, [showInstallToast, showPushToast, notifNoLeidas, notifInApp])
 
   useEffect(() => {
     if (toastShownRef.current || open) return
@@ -548,7 +551,7 @@ export default function NotificationsCenter({ size = 'md' }) {
               </button>
             )}
 
-            {showInstallItem && (
+            {canInstall && (
               <div className="flex items-start gap-3 px-4 py-3">
                 <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'var(--color-accent-soft)' }}>
                   <DownloadIcon className="w-4 h-4" style={{ color: 'var(--color-accent)' }} />
@@ -568,7 +571,7 @@ export default function NotificationsCenter({ size = 'md' }) {
               </div>
             )}
 
-            {showPushItem && (
+            {canPush && (
               <div className="flex items-start gap-3 px-4 py-3">
                 <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'var(--color-accent-soft)', color: 'var(--color-accent)' }}>
                   <BellIcon className="w-4 h-4" />
