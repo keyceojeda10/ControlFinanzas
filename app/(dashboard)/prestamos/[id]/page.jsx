@@ -360,6 +360,7 @@ export default function PrestamoDetallePage({ params }) {
     seguro = false, montoSeguro,
     modoInteres, renovadoDeId, esClavo = false,
     cuotasAmortizacion = [],
+    creadoPor,
   } = prestamo
 
   const frecuenciaLabel = {
@@ -777,6 +778,7 @@ export default function PrestamoDetallePage({ params }) {
             items: [
               { label: 'Inicio', value: fmtFecha(fechaInicio) },
               { label: 'Vencimiento', value: fmtFecha(fechaFin) },
+              ...(creadoPor?.nombre ? [{ label: 'Creado por', value: creadoPor.nombre }] : []),
             ],
           },
           ...(seguro ? [{

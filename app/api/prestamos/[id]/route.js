@@ -38,6 +38,7 @@ async function obtenerPrestamo(id, session) {
         },
       },
       cuotasAmortizacion: { orderBy: { numeroPeriodo: 'asc' } },
+      creadoPor: { select: { id: true, nombre: true } },
     },
   })
   if (!p) return null
