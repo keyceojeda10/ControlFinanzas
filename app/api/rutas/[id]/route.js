@@ -416,6 +416,7 @@ export async function GET(request, { params }) {
     nombre:      ruta.nombre,
     diasSinCobro: ruta.diasSinCobro,
     saldoCapital: Math.round(ruta.saldoCapital || 0),
+    capitalHabilitado: !!ruta.capitalHabilitado,
     cobrador:    ruta.cobrador,
     gruposCobro,
     clientes:    clientesEnriquecidos,
@@ -457,7 +458,7 @@ export async function PATCH(request, { params }) {
   })
   if (!ruta) return Response.json({ error: 'Ruta no encontrada' }, { status: 404 })
 
-  const { nombre, cobradorId, diasSinCobro } = await request.json()
+  const { nombre, cobradorId, diasSinCobro, capitalHabilitado } = await request.json()
 
   // Validar cobrador si se envía (mismo tenant y rol correcto)
   if (cobradorId !== undefined && cobradorId !== null && cobradorId !== '') {
@@ -518,6 +519,7 @@ export async function PATCH(request, { params }) {
       ...(nombre      !== undefined && { nombre:      nombre.trim()   }),
       ...(cobradorId  !== undefined && { cobradorId:  cobradorId || null }),
       ...(diasSinCobroVal !== undefined && { diasSinCobro: diasSinCobroVal }),
+      ...(capitalHabilitado !== undefined && { capitalHabilitado: !!capitalHabilitado }),
     },
     include: { cobrador: { select: { id: true, nombre: true } } },
   })

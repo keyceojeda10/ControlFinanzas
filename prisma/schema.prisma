@@ -189,8 +189,9 @@ model Ruta {
   nombre         String
   activo         Boolean  @default(true)
   diasSinCobro   String?
-  saldoCapital   Float    @default(0) // capital de la sub-bolsa de esta ruta (denormalizado)
-  orden          Int      @default(0) // orden manual de la ruta (drag-and-drop en la lista)
+  saldoCapital      Float    @default(0) // capital de la sub-bolsa de esta ruta (denormalizado)
+  capitalHabilitado Boolean  @default(false)
+  orden             Int      @default(0) // orden manual de la ruta (drag-and-drop en la lista)
   createdAt      DateTime @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id])

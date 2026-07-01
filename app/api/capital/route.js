@@ -146,6 +146,10 @@ export async function POST(request) {
 
     // Ajuste de arranque: descuenta de la SUB-BOLSA de la ruta los prestamos
     // ya activos, sin mover el saldo global (ese ya es correcto historicamente).
+    if (rutaIdValida && (tipo === 'inyeccion' || tipo === 'capital_inicial')) {
+      await tx.ruta.update({ where: { id: rutaIdValida }, data: { capitalHabilitado: true } }).catch(() => {})
+    }
+
     if (saldoPendienteRuta > 0) {
       await registrarMovimientoCapital(tx, {
         organizationId,

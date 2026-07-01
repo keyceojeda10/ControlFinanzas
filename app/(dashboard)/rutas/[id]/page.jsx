@@ -1454,7 +1454,7 @@ export default function RutaDetallePage({ params }) {
             </div>
 
             {/* Capital de la ruta — sub-bolsa individual (solo owner) */}
-            {esOwner && ruta.saldoCapital != null && (
+            {esOwner && ruta.capitalHabilitado && (
               <div className="rounded-[16px] px-4 py-3.5"
                 style={{ background: `linear-gradient(135deg, color-mix(in srgb, #6366f1 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`, border: '1px solid color-mix(in srgb, #6366f1 25%, var(--color-border))' }}
               >
@@ -1478,6 +1478,23 @@ export default function RutaDetallePage({ params }) {
                   </button>
                 </div>
               </div>
+            )}
+            {esOwner && !ruta.capitalHabilitado && (
+              <button type="button"
+                onClick={() => { setModalCapital('inyeccion'); setCapitalMonto(''); setCapitalDesc(''); setErrorCapital('') }}
+                className="w-full rounded-[16px] px-4 py-3 text-left"
+                style={{ background: 'var(--color-bg-card)', border: '1px dashed var(--color-border)' }}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center justify-center w-8 h-8 rounded-full" style={{ background: 'color-mix(in srgb, #6366f1 15%, transparent)' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </span>
+                  <div>
+                    <p className="text-xs font-semibold" style={{ color: '#6366f1' }}>Habilitar capital de la ruta</p>
+                    <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Controla cuanto dinero tiene asignado esta ruta</p>
+                  </div>
+                </div>
+              </button>
             )}
 
             {/* Seguros de la ruta (solo owner) */}

@@ -173,11 +173,12 @@ export async function POST(request) {
       organizationId,
       nombre:    nombre.trim(),
       cobradorId: cobradorId || null,
+      capitalHabilitado: capitalInicialNum > 0,
     },
   })
 
   // Capital propio de la ruta al crearla (opcional). Si no se asigna, la ruta
-  // queda en modo global (saldoCapital 0) como hasta ahora.
+  // queda en modo global (saldoCapital 0, capitalHabilitado false) como hasta ahora.
   if (capitalInicialNum > 0) {
     await prisma.$transaction(async (tx) => {
       await registrarMovimientoCapital(tx, {

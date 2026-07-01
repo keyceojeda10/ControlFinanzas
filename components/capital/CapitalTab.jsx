@@ -491,12 +491,12 @@ export default function CapitalTab() {
         </div>
       )}
 
-      {/* Capital por ruta — sub-bolsas individuales */}
-      {porRuta.length > 0 && (
+      {/* Capital por ruta — sub-bolsas individuales (solo rutas con capital habilitado) */}
+      {porRuta.filter(r => r.capitalHabilitado).length > 0 && (
         <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] px-4 py-4">
           <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-3">Capital por ruta</p>
           <div className="space-y-2.5">
-            {porRuta.map((r) => (
+            {porRuta.filter(r => r.capitalHabilitado).map((r) => (
               <div key={r.rutaId} className="rounded-[12px] border border-[var(--color-border)] p-3" style={{ background: 'var(--color-bg-card)' }}>
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
@@ -623,13 +623,13 @@ export default function CapitalTab() {
                   <option value="ajuste">Ajuste manual</option>
                 </select>
               </div>
-              {porRuta.length > 0 && modalTipo !== 'capital_inicial' && (
+              {porRuta.filter(r => r.capitalHabilitado).length > 0 && modalTipo !== 'capital_inicial' && (
                 <div>
                   <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Ruta (opcional)</label>
                   <select value={modalRutaId} onChange={(e) => setModalRutaId(e.target.value)}
                     className="w-full bg-[var(--color-bg-base)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-[10px] px-3 py-2.5 text-sm">
                     <option value="">General (sin ruta)</option>
-                    {porRuta.map((r) => (
+                    {porRuta.filter(r => r.capitalHabilitado).map((r) => (
                       <option key={r.rutaId} value={r.rutaId}>{r.nombre}</option>
                     ))}
                   </select>

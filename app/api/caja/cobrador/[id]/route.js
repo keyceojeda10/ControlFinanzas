@@ -148,7 +148,7 @@ export async function GET(request, { params }) {
   // desembolsos hechos por el owner en rutas del cobrador (creadoPorId = owner).
   const rutas = await prisma.ruta.findMany({
     where: { cobradorId, organizationId, activo: true },
-    select: { id: true, nombre: true, saldoCapital: true },
+    select: { id: true, nombre: true, saldoCapital: true, capitalHabilitado: true },
     orderBy: { orden: 'asc' },
   })
   const rutaIds = rutas.map((r) => r.id)
@@ -247,7 +247,7 @@ export async function GET(request, { params }) {
     gastos.filter((g) => g.estado === 'pendiente').reduce((a, g) => a + (g.monto || 0), 0)
   )
   let efectivoDia = cobradoDia - prestadoDia - gastosDia
-  const capitalRutasTotal = Math.round(rutas.reduce((a, r) => a + (r.saldoCapital || 0), 0))
+  const capitalRutasTotal = Math.round(rutas.filter(r => r.capitalHabilitado).reduce((a, r) => a + (r.saldoCapital || 0), 0))
   const recargosMontoTotal = Math.round(recargos._sum?.montoPagado || 0)
   const recargosCantidad = recargos._count?.id || 0
 

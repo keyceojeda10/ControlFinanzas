@@ -698,13 +698,14 @@ export async function GET(request) {
         }),
         prisma.ruta.findMany({
           where: { cobradorId: c.id, organizationId, activo: true },
-          select: { id: true, nombre: true, saldoCapital: true },
+          select: { id: true, nombre: true, saldoCapital: true, capitalHabilitado: true },
           orderBy: { orden: 'asc' },
         }),
       ])
       const gastosDiaCobrador = Math.round(gastosAgg._sum?.monto || 0)
       const prestadoDiaR = Math.round(prestadoDia || 0)
-      const capitalRutasTotal = rutasCobrador.reduce((a, r) => a + (r.saldoCapital || 0), 0)
+      const rutasConCapital = rutasCobrador.filter(r => r.capitalHabilitado)
+      const capitalRutasTotal = rutasConCapital.reduce((a, r) => a + (r.saldoCapital || 0), 0)
 
       return {
         id: c.id,
@@ -719,10 +720,10 @@ export async function GET(request) {
         gastosDia: gastosDiaCobrador,
         // Efectivo en mano hoy = cobrado - prestado - gastos.
         efectivoDia: recaudadoDia - prestadoDiaR - gastosDiaCobrador,
-        capitalRutas: {
+        capitalRutas: rutasConCapital.length > 0 ? {
           total: Math.round(capitalRutasTotal),
-          rutas: rutasCobrador.map(r => ({ id: r.id, nombre: r.nombre, saldoCapital: Math.round(r.saldoCapital || 0) })),
-        },
+          rutas: rutasConCapital.map(r => ({ id: r.id, nombre: r.nombre, saldoCapital: Math.round(r.saldoCapital || 0) })),
+        } : null,
       }
     }))
   }
@@ -781,13 +782,16 @@ export async function GET(request) {
     if (rutaIds.length > 0) {
       const rutasCobrador = await prisma.ruta.findMany({
         where: { id: { in: rutaIds }, organizationId },
-        select: { id: true, nombre: true, saldoCapital: true },
+        select: { id: true, nombre: true, saldoCapital: true, capitalHabilitado: true },
         orderBy: { orden: 'asc' },
       })
-      const total = rutasCobrador.reduce((a, r) => a + (r.saldoCapital || 0), 0)
-      payload.stats.capitalRutas = {
-        total: Math.round(total),
-        rutas: rutasCobrador.map(r => ({ id: r.id, nombre: r.nombre, saldoCapital: Math.round(r.saldoCapital || 0) })),
+      const rutasConCapital = rutasCobrador.filter(r => r.capitalHabilitado)
+      if (rutasConCapital.length > 0) {
+        const total = rutasConCapital.reduce((a, r) => a + (r.saldoCapital || 0), 0)
+        payload.stats.capitalRutas = {
+          total: Math.round(total),
+          rutas: rutasConCapital.map(r => ({ id: r.id, nombre: r.nombre, saldoCapital: Math.round(r.saldoCapital || 0) })),
+        }
       }
     }
   }
