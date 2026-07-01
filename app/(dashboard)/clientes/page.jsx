@@ -506,48 +506,21 @@ export default function ClientesPage() {
             </Link>
           )}
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Toggle vista */}
-          <div className="flex rounded-[10px] border border-[var(--color-border)] overflow-hidden">
-            <button
-              onClick={() => cambiarVista('lista')}
-              className="p-1.5 transition-colors"
-              style={{
-                background: vista === 'lista' ? 'var(--color-accent)' : 'transparent',
-                color: vista === 'lista' ? '#000' : 'var(--color-text-muted)',
-              }}
-              aria-label="Vista lista"
+        {!authLoading && puedeCrearClientes && (
+          <Link href="/clientes/nuevo" className="shrink-0">
+            <Button
+              size="sm"
+              className="whitespace-nowrap"
+              icon={
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              }
             >
-              {IconLista}
-            </button>
-            <button
-              onClick={() => cambiarVista('compacta')}
-              className="p-1.5 transition-colors"
-              style={{
-                background: vista === 'compacta' ? 'var(--color-accent)' : 'transparent',
-                color: vista === 'compacta' ? '#000' : 'var(--color-text-muted)',
-              }}
-              aria-label="Vista compacta"
-            >
-              {IconGrid}
-            </button>
-          </div>
-          {!authLoading && puedeCrearClientes && (
-            <Link href="/clientes/nuevo">
-              <Button
-                size="sm"
-                className="whitespace-nowrap"
-                icon={
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                }
-              >
-                Nuevo cliente
-              </Button>
-            </Link>
-          )}
-        </div>
+              Nuevo cliente
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Barra compacta: buscador + filtro estado + botón grupos */}
@@ -698,6 +671,36 @@ export default function ClientesPage() {
         </div>
       )}
 
+      {/* Toggle vista: justo encima de la lista */}
+      {!loading && clientes.length > 0 && (
+        <div className="flex items-center justify-end mb-2">
+          <div className="flex rounded-[10px] border border-[var(--color-border)] overflow-hidden">
+            <button
+              onClick={() => cambiarVista('lista')}
+              className="p-1.5 transition-colors"
+              style={{
+                background: vista === 'lista' ? 'var(--color-accent)' : 'transparent',
+                color: vista === 'lista' ? '#000' : 'var(--color-text-muted)',
+              }}
+              aria-label="Vista lista"
+            >
+              {IconLista}
+            </button>
+            <button
+              onClick={() => cambiarVista('compacta')}
+              className="p-1.5 transition-colors"
+              style={{
+                background: vista === 'compacta' ? 'var(--color-accent)' : 'transparent',
+                color: vista === 'compacta' ? '#000' : 'var(--color-text-muted)',
+              }}
+              aria-label="Vista compacta"
+            >
+              {IconGrid}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Lista */}
       {!loading && clientes.length > 0 && (() => {
         const filtrados = estado ? clientes.filter((c) => c.estado === estado) : clientes
@@ -742,7 +745,9 @@ export default function ClientesPage() {
                   </div>
                 </label>
               ) : vista === 'compacta' ? (
-                <ClienteCardCompacto key={c.id} cliente={c} />
+                <BadgeNuevo key={c.id} fecha={c.createdAt}>
+                  <ClienteCardCompacto cliente={c} />
+                </BadgeNuevo>
               ) : (
                 <BadgeNuevo key={c.id} fecha={c.createdAt}>
                   <ClienteCard

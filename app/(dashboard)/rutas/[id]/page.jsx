@@ -2494,29 +2494,35 @@ export default function RutaDetallePage({ params }) {
 
           return (
             <div className="space-y-5">
-              {/* Toggle vista agrupada / todos */}
-              <div className="flex items-center justify-end px-1">
+              {/* Toggle vista: trabajo del dia vs lista completa */}
+              <div className="flex items-center rounded-[10px] border border-[var(--color-border)] overflow-hidden self-end ml-auto w-fit">
                 <button
                   type="button"
-                  onClick={() => setVistaPlana(v => { const next = !v; try { localStorage.setItem('cf-ruta-vistaPlana', next ? 'plana' : 'agrupada') } catch {} return next })}
-                  className="flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-[8px] transition-all active:scale-95"
-                  style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)' }}
+                  onClick={() => setVistaPlana(v => { if (v) return v; try { localStorage.setItem('cf-ruta-vistaPlana', 'plana') } catch {} return true })}
+                  className="flex items-center gap-1 text-[11px] font-medium px-2.5 py-1.5 transition-colors"
+                  style={{
+                    background: vistaPlana ? 'var(--color-accent)' : 'transparent',
+                    color: vistaPlana ? '#000' : 'var(--color-text-muted)',
+                  }}
                 >
-                  {vistaPlana ? (
-                    <>
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6z" />
-                      </svg>
-                      Agrupar
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
-                      </svg>
-                      Ver todos
-                    </>
-                  )}
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
+                  </svg>
+                  Todos
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setVistaPlana(v => { if (!v) return v; try { localStorage.setItem('cf-ruta-vistaPlana', 'agrupada') } catch {} return false })}
+                  className="flex items-center gap-1 text-[11px] font-medium px-2.5 py-1.5 transition-colors"
+                  style={{
+                    background: !vistaPlana ? 'var(--color-accent)' : 'transparent',
+                    color: !vistaPlana ? '#000' : 'var(--color-text-muted)',
+                  }}
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6z" />
+                  </svg>
+                  Trabajo del dia
                 </button>
               </div>
 

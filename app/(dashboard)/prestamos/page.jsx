@@ -347,45 +347,19 @@ export default function PrestamosPage() {
       <div className="mb-5">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Préstamos</h1>
-          <div className="flex items-center gap-2">
-            <div className="flex rounded-[10px] border border-[var(--color-border)] overflow-hidden">
-              <button
-                onClick={() => cambiarVistaP('lista')}
-                className="p-1.5 transition-colors"
-                style={{
-                  background: vistaP === 'lista' ? 'var(--color-accent)' : 'transparent',
-                  color: vistaP === 'lista' ? '#000' : 'var(--color-text-muted)',
-                }}
-                aria-label="Vista lista"
+          {!authLoading && puedeCrearPrestamos && (
+            <Link href="/prestamos/nuevo">
+              <Button
+                icon={
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                }
               >
-                {IconListaP}
-              </button>
-              <button
-                onClick={() => cambiarVistaP('compacta')}
-                className="p-1.5 transition-colors"
-                style={{
-                  background: vistaP === 'compacta' ? 'var(--color-accent)' : 'transparent',
-                  color: vistaP === 'compacta' ? '#000' : 'var(--color-text-muted)',
-                }}
-                aria-label="Vista compacta"
-              >
-                {IconGridP}
-              </button>
-            </div>
-            {!authLoading && puedeCrearPrestamos && (
-              <Link href="/prestamos/nuevo">
-                <Button
-                  icon={
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                  }
-                >
-                  Nuevo préstamo
-                </Button>
-              </Link>
-            )}
-          </div>
+                Nuevo préstamo
+              </Button>
+            </Link>
+          )}
         </div>
         <div className="flex items-center justify-between mt-1">
           <p className="text-sm text-[var(--color-text-muted)]">
@@ -572,12 +546,46 @@ export default function PrestamosPage() {
         </div>
       )}
 
+      {/* Toggle vista: justo encima de la lista */}
+      {!loading && prestamosVisibles.length > 0 && (
+        <div className="flex items-center justify-end mb-2">
+          <div className="flex rounded-[10px] border border-[var(--color-border)] overflow-hidden">
+            <button
+              onClick={() => cambiarVistaP('lista')}
+              className="p-1.5 transition-colors"
+              style={{
+                background: vistaP === 'lista' ? 'var(--color-accent)' : 'transparent',
+                color: vistaP === 'lista' ? '#000' : 'var(--color-text-muted)',
+              }}
+              aria-label="Vista lista"
+            >
+              {IconListaP}
+            </button>
+            <button
+              onClick={() => cambiarVistaP('compacta')}
+              className="p-1.5 transition-colors"
+              style={{
+                background: vistaP === 'compacta' ? 'var(--color-accent)' : 'transparent',
+                color: vistaP === 'compacta' ? '#000' : 'var(--color-text-muted)',
+              }}
+              aria-label="Vista compacta"
+            >
+              {IconGridP}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Lista plana: orden cronologico puro (default) */}
       {!loading && prestamosVisibles.length > 0 && !agrupar && (
         <StaggeredList className={vistaP === 'compacta' ? 'grid grid-cols-2 sm:grid-cols-3 gap-2' : 'space-y-2.5'}>
           {prestamosVisibles.map((p) => {
             if (vistaP === 'compacta') {
-              return <PrestamoCardCompacto key={p.id} prestamo={p} />
+              return (
+                <BadgeNuevo key={p.id} fecha={p.createdAt}>
+                  <PrestamoCardCompacto prestamo={p} />
+                </BadgeNuevo>
+              )
             }
             const cardActions = []
             if (p.cliente?.telefono) {
@@ -678,7 +686,11 @@ export default function PrestamosPage() {
                   >
                     {prestCliente.map((p) => {
                       if (vistaP === 'compacta') {
-                        return <PrestamoCardCompacto key={p.id} prestamo={p} />
+                        return (
+                          <BadgeNuevo key={p.id} fecha={p.createdAt}>
+                            <PrestamoCardCompacto prestamo={p} />
+                          </BadgeNuevo>
+                        )
                       }
                       const cardActions = []
                       if (p.cliente?.telefono) {
