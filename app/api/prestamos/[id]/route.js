@@ -38,12 +38,15 @@ async function obtenerPrestamo(id, session) {
         },
       },
       cuotasAmortizacion: { orderBy: { numeroPeriodo: 'asc' } },
-      creadoPor: { select: { id: true, nombre: true } },
     },
   })
   if (!p) return null
   // Cobrador solo puede ver préstamos de clientes de su ruta
   if (session.user.rol === 'cobrador' && !(session.user.rutaIds ?? []).includes(p.cliente.rutaId)) return null
+  if (p.creadoPorId) {
+    const u = await prisma.user.findUnique({ where: { id: p.creadoPorId }, select: { id: true, nombre: true } })
+    p.creadoPor = u || null
+  }
   return p
 }
 
