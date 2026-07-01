@@ -45,12 +45,17 @@ export default function RegistrarPago({
   const [exitoso,      setExitoso]      = useState(false)
   const [pagoGuardado, setPagoGuardado] = useState(null)
   const [prestamoAct,  setPrestamoAct]  = useState(null)
+  const prevOpenRef = useRef(false)
 
   useEffect(() => {
+    const wasOpen = prevOpenRef.current
+    prevOpenRef.current = open
     if (!open) return
+    // Solo resetear campos al ABRIR el modal (transicion false→true).
+    // Si ya estaba abierto y cambia saldoPendiente/cuotaDiaria por un
+    // rerender del padre, NO pisar el monto que el usuario escribio.
+    if (wasOpen) return
 
-    // Si la apertura es para un ajuste (recargo/descuento) o abono a capital,
-    // arrancar con campos limpios. Si es pago normal, pre-llenar con la cuota.
     if (tabInicial === 'recargo' || tabInicial === 'descuento') {
       setMonto('')
       setTipo(tabInicial)
