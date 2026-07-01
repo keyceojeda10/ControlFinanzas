@@ -96,7 +96,7 @@ function PrestamoCardCompacto({ prestamo: p }) {
           fontSize={10}
           style={p.cliente?.fotoUrl ? { border: `1px solid ${color}` } : undefined}
         />
-        <p className="text-[12px] font-semibold text-[var(--color-text-primary)] leading-tight truncate flex-1 min-w-0">
+        <p className="text-[12px] font-semibold text-[var(--color-text-primary)] leading-tight flex-1 min-w-0">
           {p.cliente?.nombre}
         </p>
         <span
@@ -479,7 +479,7 @@ export default function PrestamosPage() {
         </>
       )}
 
-      {/* Buscador + toggle agrupar */}
+      {/* Buscador + toggle agrupar + toggle vista */}
       <div className="flex items-center gap-2 mb-5">
         <div className="relative flex-1">
           <svg
@@ -522,6 +522,30 @@ export default function PrestamosPage() {
           </svg>
           Agrupar
         </button>
+        <div className="flex rounded-[10px] border border-[var(--color-border)] overflow-hidden shrink-0">
+          <button
+            onClick={() => cambiarVistaP('lista')}
+            className="p-1.5 transition-colors"
+            style={{
+              background: vistaP === 'lista' ? 'var(--color-accent)' : 'transparent',
+              color: vistaP === 'lista' ? '#000' : 'var(--color-text-muted)',
+            }}
+            aria-label="Vista lista"
+          >
+            {IconListaP}
+          </button>
+          <button
+            onClick={() => cambiarVistaP('compacta')}
+            className="p-1.5 transition-colors"
+            style={{
+              background: vistaP === 'compacta' ? 'var(--color-accent)' : 'transparent',
+              color: vistaP === 'compacta' ? '#000' : 'var(--color-text-muted)',
+            }}
+            aria-label="Vista compacta"
+          >
+            {IconGridP}
+          </button>
+        </div>
       </div>
 
       {/* Offline indicator */}
@@ -543,36 +567,6 @@ export default function PrestamosPage() {
       {loading && (
         <div className="space-y-3">
           {Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)}
-        </div>
-      )}
-
-      {/* Toggle vista: justo encima de la lista */}
-      {!loading && prestamosVisibles.length > 0 && (
-        <div className="flex items-center justify-end mb-2">
-          <div className="flex rounded-[10px] border border-[var(--color-border)] overflow-hidden">
-            <button
-              onClick={() => cambiarVistaP('lista')}
-              className="p-1.5 transition-colors"
-              style={{
-                background: vistaP === 'lista' ? 'var(--color-accent)' : 'transparent',
-                color: vistaP === 'lista' ? '#000' : 'var(--color-text-muted)',
-              }}
-              aria-label="Vista lista"
-            >
-              {IconListaP}
-            </button>
-            <button
-              onClick={() => cambiarVistaP('compacta')}
-              className="p-1.5 transition-colors"
-              style={{
-                background: vistaP === 'compacta' ? 'var(--color-accent)' : 'transparent',
-                color: vistaP === 'compacta' ? '#000' : 'var(--color-text-muted)',
-              }}
-              aria-label="Vista compacta"
-            >
-              {IconGridP}
-            </button>
-          </div>
         </div>
       )}
 

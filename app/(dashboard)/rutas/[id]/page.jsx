@@ -1690,24 +1690,58 @@ export default function RutaDetallePage({ params }) {
 
         {/* Toggle de vista: Trabajo del dia (3 secciones) vs Ordenar ruta (drag) vs Auditoria (admin) */}
         {ruta.clientes?.length > 0 && (
-          <div className="flex gap-1 p-1 mb-3 rounded-[12px]" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
-            {[
-              { key: 'trabajo', label: 'Trabajo del día' },
-              { key: 'ordenar', label: 'Ordenar ruta' },
-              ...(puedeGestionarRutas ? [{ key: 'auditoria', label: 'Auditoría' }] : []),
-            ].map(t => (
-              <button
-                key={t.key}
-                type="button"
-                onClick={() => setModoVista(t.key)}
-                className="flex-1 py-2 text-xs font-semibold rounded-[9px] transition-all"
-                style={modoVista === t.key
-                  ? { background: 'var(--color-bg-card)', color: 'var(--color-accent)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' }
-                  : { color: 'var(--color-text-muted)' }}
-              >
-                {t.label}
-              </button>
-            ))}
+          <div className="flex items-center gap-2 mb-3">
+            <div className="flex gap-1 p-1 rounded-[12px] flex-1 min-w-0" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
+              {[
+                { key: 'trabajo', label: 'Cobros' },
+                { key: 'ordenar', label: 'Ordenar' },
+                ...(puedeGestionarRutas ? [{ key: 'auditoria', label: 'Auditoría' }] : []),
+              ].map(t => (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => setModoVista(t.key)}
+                  className="flex-1 py-2 text-xs font-semibold rounded-[9px] transition-all"
+                  style={modoVista === t.key
+                    ? { background: 'var(--color-bg-card)', color: 'var(--color-accent)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' }
+                    : { color: 'var(--color-text-muted)' }}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            {modoVista === 'trabajo' && (
+              <div className="flex rounded-[10px] border border-[var(--color-border)] overflow-hidden shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setVistaPlana(v => { if (v) return v; try { localStorage.setItem('cf-ruta-vistaPlana', 'plana') } catch {} return true })}
+                  className="p-1.5 transition-colors"
+                  title="Lista completa"
+                  style={{
+                    background: vistaPlana ? 'var(--color-accent)' : 'transparent',
+                    color: vistaPlana ? '#000' : 'var(--color-text-muted)',
+                  }}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setVistaPlana(v => { if (!v) return v; try { localStorage.setItem('cf-ruta-vistaPlana', 'agrupada') } catch {} return false })}
+                  className="p-1.5 transition-colors"
+                  title="Agrupados por estado"
+                  style={{
+                    background: !vistaPlana ? 'var(--color-accent)' : 'transparent',
+                    color: !vistaPlana ? '#000' : 'var(--color-text-muted)',
+                  }}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6z" />
+                  </svg>
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -2494,38 +2528,6 @@ export default function RutaDetallePage({ params }) {
 
           return (
             <div className="space-y-5">
-              {/* Toggle vista: trabajo del dia vs lista completa */}
-              <div className="flex items-center rounded-[10px] border border-[var(--color-border)] overflow-hidden self-end ml-auto w-fit">
-                <button
-                  type="button"
-                  onClick={() => setVistaPlana(v => { if (v) return v; try { localStorage.setItem('cf-ruta-vistaPlana', 'plana') } catch {} return true })}
-                  className="flex items-center gap-1 text-[11px] font-medium px-2.5 py-1.5 transition-colors"
-                  style={{
-                    background: vistaPlana ? 'var(--color-accent)' : 'transparent',
-                    color: vistaPlana ? '#000' : 'var(--color-text-muted)',
-                  }}
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
-                  </svg>
-                  Todos
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setVistaPlana(v => { if (!v) return v; try { localStorage.setItem('cf-ruta-vistaPlana', 'agrupada') } catch {} return false })}
-                  className="flex items-center gap-1 text-[11px] font-medium px-2.5 py-1.5 transition-colors"
-                  style={{
-                    background: !vistaPlana ? 'var(--color-accent)' : 'transparent',
-                    color: !vistaPlana ? '#000' : 'var(--color-text-muted)',
-                  }}
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6z" />
-                  </svg>
-                  Trabajo del dia
-                </button>
-              </div>
-
               {vistaPlana ? (
                 <div className="space-y-1.5">
                   {clientesFiltrados.map((c, idx) => renderCard(c, idx, { conGrip: false }))}

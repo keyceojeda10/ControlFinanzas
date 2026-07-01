@@ -95,7 +95,7 @@ function ClienteCardCompacto({ cliente }) {
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[13px] font-semibold text-[var(--color-text-primary)] leading-tight truncate">
+          <p className="text-[13px] font-semibold text-[var(--color-text-primary)] leading-tight">
             {cliente.nombre}
           </p>
           <div className="flex items-center gap-1.5 mt-0.5">
@@ -572,34 +572,62 @@ export default function ClientesPage() {
           )}
         </div>
 
-        {/* Fila 2: chips de estado (siempre visibles) */}
-        <div className="flex gap-2 overflow-x-auto scrollbar-none pb-0.5">
-          {ESTADOS_CLIENTE.map(({ value, label, color }) => {
-            const isActive = estado === value
-            const accent = color ?? 'var(--color-accent)'
-            return (
+        {/* Fila 2: chips de estado + toggle vista */}
+        <div className="flex items-center gap-2">
+          <div className="flex gap-2 overflow-x-auto scrollbar-none pb-0.5 flex-1 min-w-0">
+            {ESTADOS_CLIENTE.map(({ value, label, color }) => {
+              const isActive = estado === value
+              const accent = color ?? 'var(--color-accent)'
+              return (
+                <button
+                  key={value}
+                  onClick={() => setEstado(value)}
+                  className={[
+                    'shrink-0 px-3 h-8 rounded-full text-[12px] font-medium border transition-all',
+                    isActive
+                      ? 'border-current'
+                      : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] hover:text-[var(--color-text-primary)]',
+                  ].join(' ')}
+                  style={isActive ? { color: accent, backgroundColor: `${accent}20` } : undefined}
+                >
+                  {label}
+                </button>
+              )
+            })}
+            {hayControlesActivos && (
               <button
-                key={value}
-                onClick={() => setEstado(value)}
-                className={[
-                  'shrink-0 px-3 h-8 rounded-full text-[12px] font-medium border transition-all',
-                  isActive
-                    ? 'border-current'
-                    : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] hover:text-[var(--color-text-primary)]',
-                ].join(' ')}
-                style={isActive ? { color: accent, backgroundColor: `${accent}20` } : undefined}
+                onClick={limpiarControles}
+                className="shrink-0 px-3 h-8 rounded-full text-[11px] font-medium border border-[#303030] text-[#b4b4b4] hover:text-[var(--color-text-primary)] hover:border-[#4a4a4a] transition-colors"
               >
-                {label}
+                Limpiar
               </button>
-            )
-          })}
-          {hayControlesActivos && (
-            <button
-              onClick={limpiarControles}
-              className="shrink-0 px-3 h-8 rounded-full text-[11px] font-medium border border-[#303030] text-[#b4b4b4] hover:text-[var(--color-text-primary)] hover:border-[#4a4a4a] transition-colors"
-            >
-              Limpiar
-            </button>
+            )}
+          </div>
+          {!loading && clientes.length > 0 && (
+            <div className="flex rounded-[10px] border border-[var(--color-border)] overflow-hidden shrink-0">
+              <button
+                onClick={() => cambiarVista('lista')}
+                className="p-1.5 transition-colors"
+                style={{
+                  background: vista === 'lista' ? 'var(--color-accent)' : 'transparent',
+                  color: vista === 'lista' ? '#000' : 'var(--color-text-muted)',
+                }}
+                aria-label="Vista lista"
+              >
+                {IconLista}
+              </button>
+              <button
+                onClick={() => cambiarVista('compacta')}
+                className="p-1.5 transition-colors"
+                style={{
+                  background: vista === 'compacta' ? 'var(--color-accent)' : 'transparent',
+                  color: vista === 'compacta' ? '#000' : 'var(--color-text-muted)',
+                }}
+                aria-label="Vista compacta"
+              >
+                {IconGrid}
+              </button>
+            </div>
           )}
         </div>
 
@@ -668,36 +696,6 @@ export default function ClientesPage() {
       {loading && (
         <div className="space-y-3">
           {Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)}
-        </div>
-      )}
-
-      {/* Toggle vista: justo encima de la lista */}
-      {!loading && clientes.length > 0 && (
-        <div className="flex items-center justify-end mb-2">
-          <div className="flex rounded-[10px] border border-[var(--color-border)] overflow-hidden">
-            <button
-              onClick={() => cambiarVista('lista')}
-              className="p-1.5 transition-colors"
-              style={{
-                background: vista === 'lista' ? 'var(--color-accent)' : 'transparent',
-                color: vista === 'lista' ? '#000' : 'var(--color-text-muted)',
-              }}
-              aria-label="Vista lista"
-            >
-              {IconLista}
-            </button>
-            <button
-              onClick={() => cambiarVista('compacta')}
-              className="p-1.5 transition-colors"
-              style={{
-                background: vista === 'compacta' ? 'var(--color-accent)' : 'transparent',
-                color: vista === 'compacta' ? '#000' : 'var(--color-text-muted)',
-              }}
-              aria-label="Vista compacta"
-            >
-              {IconGrid}
-            </button>
-          </div>
         </div>
       )}
 
