@@ -93,6 +93,11 @@ export default function ClienteDetallePage({ params }) {
   }, [id])
 
   const [isOffline, setIsOffline] = useState(false)
+  useEffect(() => {
+    const goOnline = () => { setIsOffline(false) }
+    window.addEventListener('online', goOnline)
+    return () => window.removeEventListener('online', goOnline)
+  }, [])
   const hasLoadedOnceRef = useRef(false)
 
   const fetchCliente = useCallback(async ({ soft = false } = {}) => {
@@ -113,7 +118,7 @@ export default function ClienteDetallePage({ params }) {
         const cached = await obtenerClienteOffline(id)
         if (cached) {
           setCliente(cached)
-          setIsOffline(true)
+          if (!navigator.onLine) setIsOffline(true)
           if (!shouldUseSoftRefresh) setLoading(false)
           hasLoadedOnceRef.current = true
           return
@@ -127,7 +132,7 @@ export default function ClienteDetallePage({ params }) {
         const cached = await obtenerClienteOffline(id)
         if (cached) {
           setCliente(cached)
-          setIsOffline(true)
+          if (!navigator.onLine) setIsOffline(true)
           if (!shouldUseSoftRefresh) setLoading(false)
           hasLoadedOnceRef.current = true
           return
@@ -146,7 +151,7 @@ export default function ClienteDetallePage({ params }) {
         const cached = await obtenerClienteOffline(id)
         if (cached) {
           setCliente(cached)
-          setIsOffline(true)
+          if (!navigator.onLine) setIsOffline(true)
           if (!shouldUseSoftRefresh) setLoading(false)
           hasLoadedOnceRef.current = true
           return

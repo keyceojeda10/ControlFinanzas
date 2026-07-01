@@ -98,6 +98,11 @@ export default function CajaPage() {
   const [reabriendoCierre, setReabriendoCierre] = useState(false)
   const [procesandoSolicitud, setProcesandoSolicitud] = useState(null)
   const [isOffline, setIsOffline] = useState(false)
+  useEffect(() => {
+    const goOnline = () => { setIsOffline(false) }
+    window.addEventListener('online', goOnline)
+    return () => window.removeEventListener('online', goOnline)
+  }, [])
   const [filtroCobrador, setFiltroCobrador] = useState('')
   // Filtro de periodo de la caja: { modo:'hoy'|'7d'|'30d'|'rango', fecha, desde, hasta }
   const [periodo, setPeriodo] = useState({ modo: 'hoy', fecha: null, desde: null, hasta: null })
@@ -146,7 +151,7 @@ export default function CajaPage() {
       try {
         let cached = await leerDeCache(cacheKey)
         if (!cached) cached = await leerDeCache('sync:caja')
-        if (cached) { setCajaData(cached); setIsOffline(true); setLoading(false); hasLoadedOnceRef.current = true; return }
+        if (cached) { setCajaData(cached); if (!navigator.onLine) setIsOffline(true); setLoading(false); hasLoadedOnceRef.current = true; return }
       } catch {}
     }
 
@@ -164,7 +169,7 @@ export default function CajaPage() {
       try {
         let cached = await leerDeCache(cacheKey)
         if (!cached) cached = await leerDeCache('sync:caja')
-        if (cached) { setCajaData(cached); setIsOffline(true); setLoading(false); hasLoadedOnceRef.current = true; return }
+        if (cached) { setCajaData(cached); if (!navigator.onLine) setIsOffline(true); setLoading(false); hasLoadedOnceRef.current = true; return }
       } catch {}
       setError('No se pudo cargar la información.')
     } finally {

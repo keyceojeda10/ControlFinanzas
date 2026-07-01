@@ -32,6 +32,11 @@ export default function RutasPage() {
   const [saving,   setSaving]   = useState(false)
   const [formError, setFormError] = useState('')
   const [isOffline, setIsOffline] = useState(false)
+  useEffect(() => {
+    const goOnline = () => { setIsOffline(false) }
+    window.addEventListener('online', goOnline)
+    return () => window.removeEventListener('online', goOnline)
+  }, [])
   const [backupLoading, setBackupLoading] = useState(false)
   const [restoreLoading, setRestoreLoading] = useState(false)
   // Recomendaciones de rutas (clientes sin ruta agrupados por similitud)
@@ -189,7 +194,7 @@ export default function RutasPage() {
         if (!cached || cached.length === 0) cached = await obtenerRutasOffline()
         if (cached && cached.length > 0) {
           setRutas(cached)
-          setIsOffline(true)
+          if (!navigator.onLine) setIsOffline(true)
           setLoading(false)
           hasLoadedOnceRef.current = true
           return
@@ -209,7 +214,7 @@ export default function RutasPage() {
       try {
         let cached = await leerDeCache('rutas')
         if (!cached || cached.length === 0) cached = await obtenerRutasOffline()
-        if (cached && cached.length > 0) { setRutas(cached); setIsOffline(true); setLoading(false); hasLoadedOnceRef.current = true; return }
+        if (cached && cached.length > 0) { setRutas(cached); if (!navigator.onLine) setIsOffline(true); setLoading(false); hasLoadedOnceRef.current = true; return }
       } catch {}
       setError('No se pudieron cargar las rutas.')
     } finally {

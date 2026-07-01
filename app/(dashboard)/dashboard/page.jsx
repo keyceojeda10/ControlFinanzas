@@ -1193,6 +1193,11 @@ export default function DashboardPage() {
   const [mounted, setMounted] = useState(false)
   const [error, setError] = useState('')
   const [isOffline, setIsOffline] = useState(false)
+  useEffect(() => {
+    const goOnline = () => { setIsOffline(false) }
+    window.addEventListener('online', goOnline)
+    return () => window.removeEventListener('online', goOnline)
+  }, [])
   const [actualizadoEn, setActualizadoEn] = useState(null)
   const [susInfo, setSusInfo] = useState(null)
   const [equipoData, setEquipoData] = useState(null)
@@ -1235,7 +1240,7 @@ export default function DashboardPage() {
       try {
         let cached = await leerDeCache('dashboard:resumen')
         if (!cached) cached = await obtenerDashboardOffline()
-        if (cached) { setData(cached); setIsOffline(true); setLoading(false); return }
+        if (cached) { setData(cached); if (!navigator.onLine) setIsOffline(true); setLoading(false); return }
       } catch {}
     }
     try {
@@ -1259,7 +1264,7 @@ export default function DashboardPage() {
       try {
         let cached = await leerDeCache('dashboard:resumen')
         if (!cached) cached = await obtenerDashboardOffline()
-        if (cached) { setData(cached); setIsOffline(true); return }
+        if (cached) { setData(cached); if (!navigator.onLine) setIsOffline(true); return }
       } catch {}
       setError('No se pudo cargar el resumen.')
     } finally {

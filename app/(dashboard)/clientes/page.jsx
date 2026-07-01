@@ -183,6 +183,12 @@ export default function ClientesPage() {
   const hasLoadedOnceRef = useRef(false)
 
   useEffect(() => {
+    const goOnline = () => { setIsOffline(false) }
+    window.addEventListener('online', goOnline)
+    return () => window.removeEventListener('online', goOnline)
+  }, [])
+
+  useEffect(() => {
     if (!esOwner) return
     fetch('/api/rutas').then(r => r.ok ? r.json() : []).then(data => {
       const list = Array.isArray(data) ? data : (data.rutas || [])
@@ -282,7 +288,7 @@ export default function ClientesPage() {
           setClientes(cached.clientes)
           setTotal(cached.total)
           setTotalPages(cached.totalPages)
-          setIsOffline(true)
+          if (!navigator.onLine) setIsOffline(true)
           setLoading(false)
           hasLoadedOnceRef.current = true
           return

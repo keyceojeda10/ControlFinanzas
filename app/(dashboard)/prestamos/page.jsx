@@ -170,6 +170,11 @@ export default function PrestamosPage() {
   }
 
   const [isOffline, setIsOffline] = useState(false)
+  useEffect(() => {
+    const goOnline = () => { setIsOffline(false) }
+    window.addEventListener('online', goOnline)
+    return () => window.removeEventListener('online', goOnline)
+  }, [])
   // Modal selector de plantillas WA (se abre desde swipe action)
   const [waContext, setWaContext] = useState(null)  // { cliente, prestamo }
   const hasLoadedOnceRef = useRef(false)
@@ -247,7 +252,8 @@ export default function PrestamosPage() {
         }
         if (cached) {
           setPrestamos(cached.prestamos); setTotal(cached.total); setTotalPages(cached.totalPages)
-          setIsOffline(true); setLoading(false); hasLoadedOnceRef.current = true; return
+          if (!navigator.onLine) setIsOffline(true)
+          setLoading(false); hasLoadedOnceRef.current = true; return
         }
       } catch {}
     }
@@ -297,7 +303,7 @@ export default function PrestamosPage() {
           setPrestamos(cached.prestamos)
           setTotal(cached.total)
           setTotalPages(cached.totalPages)
-          setIsOffline(true)
+          if (!navigator.onLine) setIsOffline(true)
           setLoading(false)
           hasLoadedOnceRef.current = true
           return
