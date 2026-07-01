@@ -655,7 +655,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                 Crear préstamo ahora
               </button>
               <button
-                onClick={() => { router.push(`/clientes/${clienteCreado.id}`); router.refresh() }}
+                onClick={() => router.push(`/clientes/${clienteCreado.id}`)}
                 className="w-full h-11 rounded-xl font-medium text-sm transition-all"
                 style={{ color: 'var(--color-text-secondary)', background: 'var(--color-bg-hover)' }}
               >

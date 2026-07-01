@@ -332,7 +332,10 @@ export default function ClienteDetallePage({ params }) {
       <div className="max-w-2xl mx-auto">
         <div className="bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] rounded-[16px] p-6 text-center">
           <p className="font-semibold mb-2">Cliente no encontrado</p>
-          <button onClick={() => router.back()} className="text-sm underline">Volver</button>
+          <div className="flex items-center justify-center gap-4 mt-3">
+            <button onClick={() => { setError(''); setLoading(true); fetchCliente() }} className="text-sm underline">Reintentar</button>
+            <button onClick={() => router.back()} className="text-sm underline opacity-70">Volver</button>
+          </div>
         </div>
       </div>
     )
