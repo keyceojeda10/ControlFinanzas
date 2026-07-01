@@ -3,7 +3,7 @@
 export function Skeleton({ className = '', ...props }) {
   return (
     <div
-      className={['skeleton-shimmer rounded-[6px]', className].join(' ')}
+      className={['skeleton-shimmer rounded-[10px]', className].join(' ')}
       {...props}
     />
   )

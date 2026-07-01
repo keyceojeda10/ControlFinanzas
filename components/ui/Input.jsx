@@ -48,7 +48,7 @@ export const Input = forwardRef(function Input(
           inputMode={actualInputMode}
           onChange={handleChange}
           className={[
-            'cf-input w-full h-11 rounded-[12px] border text-sm transition-all duration-200',
+            'cf-input w-full h-11 rounded-[14px] border text-sm transition-all duration-200',
             'focus:outline-none focus:border-[var(--color-accent)]',
             'disabled:opacity-50 disabled:cursor-not-allowed',
             prefix ? 'pl-8' : 'pl-3',
@@ -84,7 +84,7 @@ export const Select = forwardRef(function Select(
         ref={ref}
         id={fieldId}
         className={[
-          'cf-input w-full h-11 rounded-[12px] border text-sm px-3',
+          'cf-input w-full h-11 rounded-[14px] border text-sm px-3',
           'focus:outline-none focus:border-[var(--color-accent)]',
           'transition-all duration-200 cursor-pointer',
           error ? 'cf-input-error' : '',
@@ -114,7 +114,7 @@ export const Textarea = forwardRef(function Textarea(
         ref={ref}
         id={fieldId}
         className={[
-          'cf-input w-full rounded-[12px] border text-sm px-3 py-2.5',
+          'cf-input w-full rounded-[14px] border text-sm px-3 py-2.5',
           'focus:outline-none focus:border-[var(--color-accent)]',
           'transition-all duration-200 resize-none',
           error ? 'cf-input-error' : '',

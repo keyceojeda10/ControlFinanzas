@@ -52,15 +52,18 @@ export default function MoneyInput({
           type="text"
           inputMode="numeric"
           className={[
-            'w-full h-10 rounded-[12px] border text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)]',
-            'bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.08)]',
-            'focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[rgba(245,197,24,0.2)]',
-            'transition-all duration-200',
+            'cf-input w-full h-11 rounded-[14px] border text-sm',
+            'focus:outline-none',
             'disabled:opacity-50 disabled:cursor-not-allowed',
             'pl-8 pr-3',
-            error ? 'border-[#ef4444] focus:border-[#ef4444] focus:ring-[rgba(239,68,68,0.3)]' : '',
+            error ? 'cf-input-error' : '',
             className,
           ].join(' ')}
+          style={{
+            background: 'var(--color-bg-hover)',
+            borderColor: 'var(--color-border)',
+            color: 'var(--color-text-primary)',
+          }}
           value={display}
           onChange={handleChange}
           placeholder={placeholder || (abreviado ? 'Ej: 500 = 500.000' : 'Ej: 500.000')}

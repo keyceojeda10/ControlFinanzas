@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
 import { calcularPrestamo } from '@/lib/calculos'
 import { formatMoney } from '@/lib/i18n'
+import MoneyInput from '@/components/ui/MoneyInput'
 import ModoInteresSelector from '@/components/prestamos/ModoInteresSelector'
 import DiasSinCobroSelector from '@/components/ui/DiasSinCobroSelector'
 
@@ -245,10 +246,12 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
           <div>
             <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
               style={{ color: 'var(--color-text-muted)' }}>Cuanto le prestas?</label>
-            <input type="number" inputMode="numeric" placeholder="Monto prestado *"
-              value={ficha.monto} onChange={e => set('monto', e.target.value)}
-              className="w-full h-12 rounded-[10px] border px-3 text-base font-semibold"
-              style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
+            <MoneyInput
+              value={ficha.monto}
+              onChange={e => set('monto', e.target.value)}
+              placeholder="Monto prestado *"
+              className="!h-12 !text-base !font-semibold"
+            />
             <div className="flex gap-1.5 mt-1.5 flex-wrap">
               {CHIPS_MONTO.map(v => (
                 <button key={v} type="button" onClick={() => set('monto', String(v))}
@@ -299,12 +302,12 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
 
           {ficha.modoInteres === 'manual' && (
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
-                style={{ color: 'var(--color-text-muted)' }}>Cuota exacta por periodo</label>
-              <input type="number" inputMode="numeric" placeholder="Ej: 60000"
-                value={ficha.cuotaManual} onChange={e => set('cuotaManual', e.target.value)}
-                className="w-full h-10 rounded-[10px] border px-3 text-sm"
-                style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
+              <MoneyInput
+                label="Cuota exacta por periodo"
+                value={ficha.cuotaManual}
+                onChange={e => set('cuotaManual', e.target.value)}
+                placeholder="Ej: 60.000"
+              />
               <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>Tu defines la cuota. Total = cuota x numero de cobros.</p>
             </div>
           )}
@@ -338,12 +341,12 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
 
           {ficha.esEnCurso && (
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
-                style={{ color: 'var(--color-text-muted)' }}>Cuanto ha pagado hasta ahora?</label>
-              <input type="number" inputMode="numeric" placeholder="Monto total ya abonado"
-                value={ficha.yaAbonado} onChange={e => set('yaAbonado', e.target.value)}
-                className="w-full h-10 rounded-[10px] border px-3 text-sm"
-                style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
+              <MoneyInput
+                label="Cuanto ha pagado hasta ahora?"
+                value={ficha.yaAbonado}
+                onChange={e => set('yaAbonado', e.target.value)}
+                placeholder="Monto total ya abonado"
+              />
             </div>
           )}
 
@@ -376,9 +379,11 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
           <div className="px-3.5 py-2 space-y-0" style={{ background: 'var(--color-bg-base)' }}>
             {/* Editable: Monto */}
             <EditableResumenRow label="Monto" value={formatMoney(Number(ficha.monto))}>
-              <input type="number" inputMode="numeric" value={ficha.monto} onChange={e => set('monto', e.target.value)}
-                className="w-full h-8 rounded-lg border px-2 text-sm"
-                style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus />
+              <MoneyInput
+                value={ficha.monto}
+                onChange={e => set('monto', e.target.value)}
+                className="!h-8"
+              />
             </EditableResumenRow>
 
             {/* Editable: Tasa */}
@@ -426,9 +431,11 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
             {/* Editable: Cuota manual (si aplica) */}
             {ficha.modoInteres === 'manual' && (
               <EditableResumenRow label="Cuota exacta" value={formatMoney(Number(ficha.cuotaManual || 0))}>
-                <input type="number" inputMode="numeric" value={ficha.cuotaManual} onChange={e => set('cuotaManual', e.target.value)}
-                  className="w-full h-8 rounded-lg border px-2 text-sm"
-                  style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus />
+                <MoneyInput
+                  value={ficha.cuotaManual}
+                  onChange={e => set('cuotaManual', e.target.value)}
+                  className="!h-8"
+                />
               </EditableResumenRow>
             )}
 

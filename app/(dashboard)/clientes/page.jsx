@@ -13,9 +13,11 @@ import { SkeletonCard }  from '@/components/ui/Skeleton'
 import ClienteCard       from '@/components/clientes/ClienteCard'
 import BadgeNuevo        from '@/components/ui/BadgeNuevo'
 import { StaggeredList } from '@/components/ui/StaggeredList'
-// SwipeableCard reemplazado por CardActionMenu integrado en ClienteCard
 import ModalWhatsAppTemplates from '@/components/ui/ModalWhatsAppTemplates'
 import Mascota           from '@/components/ui/Mascota'
+import Avatar            from '@/components/ui/Avatar'
+import { Card }          from '@/components/ui/Card'
+import { formatMoney }   from '@/lib/i18n'
 
 // Iconos para acciones swipe
 const IconWA = (
@@ -37,6 +39,96 @@ const ESTADOS_CLIENTE = [
 ]
 
 const LIMIT = 50
+
+const VISTA_KEY = 'cf-clientes-vista'
+
+const COLOR_OK   = 'var(--color-accent)'
+const COLOR_HOT  = '#f97316'
+const COLOR_CRIT = 'var(--color-danger)'
+const COLOR_OFF  = '#64748b'
+
+function moodColorCompacto(c) {
+  if (c.estado === 'cancelado' || c.estado === 'inactivo') return COLOR_OFF
+  if (c.diasMoraMax > 7) return COLOR_CRIT
+  if (c.estado === 'mora' || c.diasMoraMax > 0) return COLOR_HOT
+  return COLOR_OK
+}
+
+function moodLabelCompacto(c) {
+  if (c.estado === 'cancelado') return 'Cancelado'
+  if (c.estado === 'inactivo')  return 'Inactivo'
+  if (c.diasMoraMax > 7)        return `${c.diasMoraMax}d`
+  if (c.estado === 'mora' || c.diasMoraMax > 0) return `${c.diasMoraMax || ''}d`.trim()
+  if (c.pagoHoy)                return 'Pagó'
+  return 'OK'
+}
+
+function ClienteCardCompacto({ cliente }) {
+  const color = moodColorCompacto(cliente)
+  const label = moodLabelCompacto(cliente)
+  const saldo = Number(cliente.saldoPendienteTotal ?? 0)
+  const tienePrestamo = (cliente.prestamosActivos ?? 0) > 0
+
+  return (
+    <Card
+      as={Link}
+      href={`/clientes/${cliente.id}`}
+      glowColor={color}
+      padding={false}
+      hoverable
+      className="block px-3 py-3 group"
+    >
+      <div className="flex items-center gap-2.5">
+        <div className="relative shrink-0">
+          <Avatar
+            nombre={cliente.nombre}
+            fotoUrl={cliente.fotoUrl}
+            size={32}
+            fontSize={12}
+            style={cliente.fotoUrl ? { border: `2px solid ${color}` } : undefined}
+          />
+          {cliente.pagoHoy && (
+            <span
+              className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full"
+              style={{ background: 'var(--color-success)', border: '2px solid var(--color-bg-card)' }}
+            />
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-semibold text-[var(--color-text-primary)] leading-tight truncate">
+            {cliente.nombre}
+          </p>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <span
+              className="inline-flex items-center gap-1 text-[8px] font-semibold px-1.5 py-px rounded-full"
+              style={{ background: `${color}20`, color, border: `1px solid ${color}35` }}
+            >
+              <span className="w-1 h-1 rounded-full" style={{ background: color }} />
+              {label}
+            </span>
+            {tienePrestamo && (
+              <span className="text-[11px] font-mono-display font-bold" style={{ color: cliente.diasMoraMax > 0 ? color : 'var(--color-text-secondary)' }}>
+                {formatMoney(saldo)}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    </Card>
+  )
+}
+
+const IconLista = (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+  </svg>
+)
+
+const IconGrid = (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5h4.5v-4.5h-4.5zm0 12v4.5h4.5v-4.5h-4.5zm12-12v4.5h4.5v-4.5h-4.5zm0 12v4.5h4.5v-4.5h-4.5z" />
+  </svg>
+)
 
 const COLORES_GRUPO = [
   '#3b82f6', 'var(--color-success)', 'var(--color-warning)', 'var(--color-danger)',
@@ -72,6 +164,15 @@ export default function ClientesPage() {
 
   const [rutaIdFiltro, setRutaIdFiltro] = useState('')
   const [rutas,        setRutas]       = useState([])
+  const [vista, setVista] = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem(VISTA_KEY) || 'lista'
+    return 'lista'
+  })
+
+  const cambiarVista = (v) => {
+    setVista(v)
+    localStorage.setItem(VISTA_KEY, v)
+  }
 
   const [isOffline, setIsOffline] = useState(false)
   const hasLoadedOnceRef = useRef(false)
@@ -405,21 +506,48 @@ export default function ClientesPage() {
             </Link>
           )}
         </div>
-        {!authLoading && puedeCrearClientes && (
-          <Link href="/clientes/nuevo" className="shrink-0">
-            <Button
-              size="sm"
-              className="whitespace-nowrap"
-              icon={
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-              }
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Toggle vista */}
+          <div className="flex rounded-[10px] border border-[var(--color-border)] overflow-hidden">
+            <button
+              onClick={() => cambiarVista('lista')}
+              className="p-1.5 transition-colors"
+              style={{
+                background: vista === 'lista' ? 'var(--color-accent)' : 'transparent',
+                color: vista === 'lista' ? '#000' : 'var(--color-text-muted)',
+              }}
+              aria-label="Vista lista"
             >
-              Nuevo cliente
-            </Button>
-          </Link>
-        )}
+              {IconLista}
+            </button>
+            <button
+              onClick={() => cambiarVista('compacta')}
+              className="p-1.5 transition-colors"
+              style={{
+                background: vista === 'compacta' ? 'var(--color-accent)' : 'transparent',
+                color: vista === 'compacta' ? '#000' : 'var(--color-text-muted)',
+              }}
+              aria-label="Vista compacta"
+            >
+              {IconGrid}
+            </button>
+          </div>
+          {!authLoading && puedeCrearClientes && (
+            <Link href="/clientes/nuevo">
+              <Button
+                size="sm"
+                className="whitespace-nowrap"
+                icon={
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                }
+              >
+                Nuevo cliente
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Barra compacta: buscador + filtro estado + botón grupos */}
@@ -574,7 +702,7 @@ export default function ClientesPage() {
       {!loading && clientes.length > 0 && (() => {
         const filtrados = estado ? clientes.filter((c) => c.estado === estado) : clientes
         return filtrados.length > 0 ? (
-          <StaggeredList className="space-y-2.5">
+          <StaggeredList className={vista === 'compacta' ? 'grid grid-cols-2 sm:grid-cols-3 gap-2' : 'space-y-2.5'}>
             {filtrados.map((c) => (
               modoAsignar ? (
                 <label
@@ -613,6 +741,8 @@ export default function ClientesPage() {
                     </div>
                   </div>
                 </label>
+              ) : vista === 'compacta' ? (
+                <ClienteCardCompacto key={c.id} cliente={c} />
               ) : (
                 <BadgeNuevo key={c.id} fecha={c.createdAt}>
                   <ClienteCard

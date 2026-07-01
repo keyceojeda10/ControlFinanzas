@@ -11,8 +11,9 @@ import { Button }                             from '@/components/ui/Button'
 import { SkeletonCard }                       from '@/components/ui/Skeleton'
 import PrestamoCard                           from '@/components/prestamos/PrestamoCard'
 import { StaggeredList }                      from '@/components/ui/StaggeredList'
-// SwipeableCard reemplazado por CardActionMenu integrado en PrestamoCard
 import ModalWhatsAppTemplates                 from '@/components/ui/ModalWhatsAppTemplates'
+import Avatar                                 from '@/components/ui/Avatar'
+import { Card }                               from '@/components/ui/Card'
 import Mascota                                from '@/components/ui/Mascota'
 import BadgeNuevo                             from '@/components/ui/BadgeNuevo'
 import { useCountry }                         from '@/hooks/useCountry'
@@ -48,6 +49,99 @@ const FRECUENCIAS = [
 
 const LIMIT = 50
 
+const VISTA_KEY_P = 'cf-prestamos-vista'
+
+const P_COLOR_OK   = 'var(--color-accent)'
+const P_COLOR_HOT  = '#f97316'
+const P_COLOR_CRIT = 'var(--color-danger)'
+const P_COLOR_DONE = 'var(--color-success)'
+const P_COLOR_OFF  = '#64748b'
+
+function pMoodColor(p) {
+  if (p.estado === 'completado') return P_COLOR_DONE
+  if (p.estado === 'cancelado')  return P_COLOR_OFF
+  if (p.diasMora > 7)            return P_COLOR_CRIT
+  if (p.diasMora > 0)            return P_COLOR_HOT
+  return P_COLOR_OK
+}
+
+function pMoodLabel(p) {
+  if (p.estado === 'completado') return 'OK'
+  if (p.estado === 'cancelado')  return 'Can'
+  if (p.diasMora > 7)            return `${p.diasMora}d`
+  if (p.diasMora > 0)            return `${p.diasMora}d`
+  if (p.pagoHoy)                 return 'Pagó'
+  return 'OK'
+}
+
+function PrestamoCardCompacto({ prestamo: p }) {
+  const color = pMoodColor(p)
+  const label = pMoodLabel(p)
+  const porcentaje = Math.max(0, Math.min(100, p.porcentajePagado ?? 0))
+
+  return (
+    <Card
+      as={Link}
+      href={`/prestamos/${p.id}`}
+      glowColor={color}
+      padding={false}
+      hoverable
+      className="block px-3 py-3 group"
+    >
+      <div className="flex items-center gap-2 mb-2">
+        <Avatar
+          nombre={p.cliente?.nombre}
+          fotoUrl={p.cliente?.fotoUrl}
+          size={28}
+          fontSize={10}
+          style={p.cliente?.fotoUrl ? { border: `1px solid ${color}` } : undefined}
+        />
+        <p className="text-[12px] font-semibold text-[var(--color-text-primary)] leading-tight truncate flex-1 min-w-0">
+          {p.cliente?.nombre}
+        </p>
+        <span
+          className="inline-flex items-center gap-0.5 text-[8px] font-semibold px-1.5 py-px rounded-full shrink-0"
+          style={{ background: `${color}20`, color, border: `1px solid ${color}35` }}
+        >
+          <span className="w-1 h-1 rounded-full" style={{ background: color }} />
+          {label}
+        </span>
+      </div>
+      <p className="text-[15px] font-mono-display font-bold leading-none" style={{ color: p.diasMora > 0 ? color : 'var(--color-text-primary)' }}>
+        {formatMoney(p.saldoPendiente)}
+      </p>
+      <div className="mt-1.5">
+        <div className="h-1 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
+          <div
+            className="h-full rounded-full"
+            style={{
+              width: `${Math.max(porcentaje, 2)}%`,
+              background: porcentaje === 100
+                ? P_COLOR_DONE
+                : `linear-gradient(90deg, color-mix(in srgb, ${color} 60%, transparent), ${color})`,
+            }}
+          />
+        </div>
+        <p className="text-[9px] text-[var(--color-text-muted)] mt-0.5">
+          <span className="font-mono-display font-semibold" style={{ color }}>{porcentaje}%</span> pagado
+        </p>
+      </div>
+    </Card>
+  )
+}
+
+const IconListaP = (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+  </svg>
+)
+
+const IconGridP = (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5h4.5v-4.5h-4.5zm0 12v4.5h4.5v-4.5h-4.5zm12-12v4.5h4.5v-4.5h-4.5zm0 12v4.5h4.5v-4.5h-4.5z" />
+  </svg>
+)
+
 export default function PrestamosPage() {
   const { esOwner, puedeCrearPrestamos, orgNombre, loading: authLoading } = useAuth()
   const { lastSyncedAt } = useOffline()
@@ -65,6 +159,15 @@ export default function PrestamosPage() {
   const [total,     setTotal]     = useState(0)
   const [rutas,     setRutas]     = useState([])
   const [showFiltros, setShowFiltros] = useState(false)
+  const [vistaP, setVistaP] = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem(VISTA_KEY_P) || 'lista'
+    return 'lista'
+  })
+
+  const cambiarVistaP = (v) => {
+    setVistaP(v)
+    localStorage.setItem(VISTA_KEY_P, v)
+  }
 
   const [isOffline, setIsOffline] = useState(false)
   // Modal selector de plantillas WA (se abre desde swipe action)
@@ -244,19 +347,45 @@ export default function PrestamosPage() {
       <div className="mb-5">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Préstamos</h1>
-          {!authLoading && puedeCrearPrestamos && (
-            <Link href="/prestamos/nuevo">
-              <Button
-                icon={
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                }
+          <div className="flex items-center gap-2">
+            <div className="flex rounded-[10px] border border-[var(--color-border)] overflow-hidden">
+              <button
+                onClick={() => cambiarVistaP('lista')}
+                className="p-1.5 transition-colors"
+                style={{
+                  background: vistaP === 'lista' ? 'var(--color-accent)' : 'transparent',
+                  color: vistaP === 'lista' ? '#000' : 'var(--color-text-muted)',
+                }}
+                aria-label="Vista lista"
               >
-                Nuevo préstamo
-              </Button>
-            </Link>
-          )}
+                {IconListaP}
+              </button>
+              <button
+                onClick={() => cambiarVistaP('compacta')}
+                className="p-1.5 transition-colors"
+                style={{
+                  background: vistaP === 'compacta' ? 'var(--color-accent)' : 'transparent',
+                  color: vistaP === 'compacta' ? '#000' : 'var(--color-text-muted)',
+                }}
+                aria-label="Vista compacta"
+              >
+                {IconGridP}
+              </button>
+            </div>
+            {!authLoading && puedeCrearPrestamos && (
+              <Link href="/prestamos/nuevo">
+                <Button
+                  icon={
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  }
+                >
+                  Nuevo préstamo
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
         <div className="flex items-center justify-between mt-1">
           <p className="text-sm text-[var(--color-text-muted)]">
@@ -445,8 +574,11 @@ export default function PrestamosPage() {
 
       {/* Lista plana: orden cronologico puro (default) */}
       {!loading && prestamosVisibles.length > 0 && !agrupar && (
-        <StaggeredList className="space-y-2.5">
+        <StaggeredList className={vistaP === 'compacta' ? 'grid grid-cols-2 sm:grid-cols-3 gap-2' : 'space-y-2.5'}>
           {prestamosVisibles.map((p) => {
+            if (vistaP === 'compacta') {
+              return <PrestamoCardCompacto key={p.id} prestamo={p} />
+            }
             const cardActions = []
             if (p.cliente?.telefono) {
               cardActions.push({
@@ -545,6 +677,9 @@ export default function PrestamosPage() {
                     style={tieneVarios ? { borderColor: 'color-mix(in srgb, var(--color-border) 60%, transparent)' } : undefined}
                   >
                     {prestCliente.map((p) => {
+                      if (vistaP === 'compacta') {
+                        return <PrestamoCardCompacto key={p.id} prestamo={p} />
+                      }
                       const cardActions = []
                       if (p.cliente?.telefono) {
                         cardActions.push({
