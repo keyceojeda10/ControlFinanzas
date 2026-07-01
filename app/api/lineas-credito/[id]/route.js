@@ -96,6 +96,13 @@ const CAMPOS_ACTUALIZABLES = [
 
 const ESTADOS_VALIDOS = ['activa', 'congelada', 'cerrada']
 
+// Transiciones de estado permitidas
+const TRANSICIONES_ESTADO = {
+  activa:    ['congelada', 'cerrada'],
+  congelada: ['activa', 'cerrada'],
+  cerrada:   [],
+}
+
 // ─── PATCH /api/lineas-credito/[id] ──────────────────────────────
 export async function PATCH(request, { params }) {
   try {
@@ -106,17 +113,15 @@ export async function PATCH(request, { params }) {
 
     const { organizationId, rol } = session.user
 
-    // Solo owner puede modificar lineas
     if (rol === 'cobrador') {
       return Response.json({ error: 'Sin permiso para modificar lineas de credito' }, { status: 403 })
     }
 
     const { id } = await params
 
-    // Verificar que la linea existe y pertenece a la org antes de parsear body
     const lineaExistente = await prisma.lineaCredito.findUnique({
       where: { id },
-      select: { id: true, organizationId: true },
+      select: { id: true, organizationId: true, estado: true },
     })
 
     if (!lineaExistente || lineaExistente.organizationId !== organizationId) {
@@ -130,7 +135,6 @@ export async function PATCH(request, { params }) {
       return Response.json({ error: 'Cuerpo de solicitud invalido' }, { status: 400 })
     }
 
-    // ── Construir objeto de actualizacion solo con campos permitidos ──
     const data = {}
 
     for (const campo of CAMPOS_ACTUALIZABLES) {
@@ -142,7 +146,6 @@ export async function PATCH(request, { params }) {
       return Response.json({ error: 'No se proporcionaron campos para actualizar' }, { status: 400 })
     }
 
-    // ── Validaciones individuales ──
     if ('cupoMaximo' in data && (typeof data.cupoMaximo !== 'number' || data.cupoMaximo <= 0)) {
       return Response.json({ error: 'cupoMaximo debe ser un numero mayor a 0' }, { status: 400 })
     }
@@ -156,6 +159,22 @@ export async function PATCH(request, { params }) {
       )
     }
 
+    // Validar transicion de estado
+    if ('estado' in data) {
+      const permitidas = TRANSICIONES_ESTADO[lineaExistente.estado] || []
+      if (!permitidas.includes(data.estado)) {
+        return Response.json(
+          { error: `No se puede cambiar de "${lineaExistente.estado}" a "${data.estado}"` },
+          { status: 400 }
+        )
+      }
+    }
+
+    // No permitir editar config si esta cerrada
+    if (lineaExistente.estado === 'cerrada' && !('estado' in data)) {
+      return Response.json({ error: 'No se puede modificar una linea cerrada' }, { status: 400 })
+    }
+
     const lineaActualizada = await prisma.lineaCredito.update({
       where: { id },
       data,
@@ -167,6 +186,53 @@ export async function PATCH(request, { params }) {
     return Response.json({ ...lineaActualizada, ...saldo })
   } catch (err) {
     console.error('[PATCH /api/lineas-credito/[id]]', err)
+    return Response.json({ error: 'Error interno del servidor' }, { status: 500 })
+  }
+}
+
+// ─── DELETE /api/lineas-credito/[id] ─────────────────────────────
+// Solo admin. Solo si no tiene movimientos (desembolsos, pagos, cortes).
+export async function DELETE(request, { params }) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.organizationId) {
+      return Response.json({ error: 'No autorizado' }, { status: 401 })
+    }
+
+    const { organizationId, rol } = session.user
+
+    if (rol === 'cobrador') {
+      return Response.json({ error: 'Sin permiso para eliminar lineas de credito' }, { status: 403 })
+    }
+
+    const { id } = await params
+
+    const linea = await prisma.lineaCredito.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        organizationId: true,
+        _count: { select: { desembolsos: true, pagosLinea: true, cortesLinea: true } },
+      },
+    })
+
+    if (!linea || linea.organizationId !== organizationId) {
+      return Response.json({ error: 'Linea de credito no encontrada' }, { status: 404 })
+    }
+
+    const totalMovimientos = linea._count.desembolsos + linea._count.pagosLinea + linea._count.cortesLinea
+    if (totalMovimientos > 0) {
+      return Response.json(
+        { error: 'No se puede eliminar una linea con movimientos. Puedes cerrarla en su lugar.' },
+        { status: 400 }
+      )
+    }
+
+    await prisma.lineaCredito.delete({ where: { id } })
+
+    return Response.json({ success: true })
+  } catch (err) {
+    console.error('[DELETE /api/lineas-credito/[id]]', err)
     return Response.json({ error: 'Error interno del servidor' }, { status: 500 })
   }
 }

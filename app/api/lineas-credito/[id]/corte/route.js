@@ -5,6 +5,58 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { generarCorte }     from '@/lib/linea-credito'
 
+// ─── DELETE /api/lineas-credito/[id]/corte?corteId=xxx ────────────────────
+// Solo admin. Solo el ultimo corte de la linea (para no descuadrar la cadena).
+export async function DELETE(request, { params }) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.organizationId) {
+    return Response.json({ error: 'No autorizado' }, { status: 401 })
+  }
+
+  const { organizationId, rol } = session.user
+  const { id: lineaId } = await params
+
+  if (rol !== 'owner') {
+    return Response.json({ error: 'Solo el administrador puede eliminar cortes' }, { status: 403 })
+  }
+
+  try {
+    const { searchParams } = new URL(request.url)
+    const corteId = searchParams.get('corteId')
+
+    if (!corteId) {
+      return Response.json({ error: 'corteId es requerido' }, { status: 400 })
+    }
+
+    const corte = await prisma.corteLinea.findUnique({
+      where: { id: corteId },
+      select: { id: true, lineaCreditoId: true, organizationId: true, fechaCorte: true },
+    })
+
+    if (!corte || corte.organizationId !== organizationId || corte.lineaCreditoId !== lineaId) {
+      return Response.json({ error: 'Corte no encontrado' }, { status: 404 })
+    }
+
+    // Solo permitir eliminar el ultimo corte
+    const ultimoCorte = await prisma.corteLinea.findFirst({
+      where: { lineaCreditoId: lineaId },
+      orderBy: { fechaCorte: 'desc' },
+      select: { id: true },
+    })
+
+    if (ultimoCorte.id !== corteId) {
+      return Response.json({ error: 'Solo se puede eliminar el ultimo corte generado' }, { status: 400 })
+    }
+
+    await prisma.corteLinea.delete({ where: { id: corteId } })
+
+    return Response.json({ success: true })
+  } catch (err) {
+    console.error('[DELETE /api/lineas-credito/[id]/corte]', err)
+    return Response.json({ error: 'Error interno del servidor' }, { status: 500 })
+  }
+}
+
 // ─── POST /api/lineas-credito/[id]/corte ──────────────────────────────────
 // Genera el corte mensual (estado de cuenta) de una linea de credito.
 // Solo el owner puede ejecutar esta accion.

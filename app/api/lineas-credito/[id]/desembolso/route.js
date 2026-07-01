@@ -5,6 +5,53 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { puedeDesembolsar } from '@/lib/linea-credito'
 
+// ─── DELETE /api/lineas-credito/[id]/desembolso?desembolsoId=xxx ──────────
+// Solo admin, solo desembolsos creados hoy.
+export async function DELETE(request, { params }) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.organizationId) {
+    return Response.json({ error: 'No autorizado' }, { status: 401 })
+  }
+
+  const { organizationId, rol } = session.user
+  const { id: lineaId } = await params
+
+  if (rol === 'cobrador') {
+    return Response.json({ error: 'Sin permiso para eliminar desembolsos' }, { status: 403 })
+  }
+
+  try {
+    const { searchParams } = new URL(request.url)
+    const desembolsoId = searchParams.get('desembolsoId')
+
+    if (!desembolsoId) {
+      return Response.json({ error: 'desembolsoId es requerido' }, { status: 400 })
+    }
+
+    const desembolso = await prisma.desembolsoLinea.findUnique({
+      where: { id: desembolsoId },
+      select: { id: true, lineaCreditoId: true, organizationId: true, createdAt: true },
+    })
+
+    if (!desembolso || desembolso.organizationId !== organizationId || desembolso.lineaCreditoId !== lineaId) {
+      return Response.json({ error: 'Desembolso no encontrado' }, { status: 404 })
+    }
+
+    const hoy = new Date()
+    const creado = new Date(desembolso.createdAt)
+    if (creado.toDateString() !== hoy.toDateString()) {
+      return Response.json({ error: 'Solo se pueden eliminar desembolsos del dia de hoy' }, { status: 400 })
+    }
+
+    await prisma.desembolsoLinea.delete({ where: { id: desembolsoId } })
+
+    return Response.json({ success: true })
+  } catch (err) {
+    console.error('[DELETE /api/lineas-credito/[id]/desembolso]', err)
+    return Response.json({ error: 'Error interno del servidor' }, { status: 500 })
+  }
+}
+
 // ─── POST /api/lineas-credito/[id]/desembolso ─────────────────────────────
 // Registra un desembolso sobre una linea de credito activa.
 // Owner: siempre puede.
