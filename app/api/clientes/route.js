@@ -178,6 +178,7 @@ export async function GET(request) {
       grupoCobro:       c.grupoCobro ?? null,
       prestamosActivos: c.prestamos.length,
       lineasCreditoActivas: c.lineasCredito?.length ?? 0,
+      creadoPor:        c.creadoPor ?? null,
       createdAt:        c.createdAt,
       // Actividad reciente del cliente: MAX(createdAt cliente, prestamos.createdAt).
       // Los pagos NO mueven la posicion — solo un prestamo nuevo (o cliente nuevo) sube.
