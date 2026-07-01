@@ -40,7 +40,7 @@ export async function POST(request, { params }) {
   const { id: prestamoId } = await params
 
   const body = await request.json()
-  const { montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, modoInteres, seguro, montoSeguro } = body
+  const { montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, modoInteres, seguro, montoSeguro, cuotaManual } = body
 
   const freq = frecuencia || 'diario'
   // Modo de interes para la renovacion. Default 'fijo' (el modelo nuevo);
@@ -105,8 +105,10 @@ export async function POST(request, { params }) {
   // IMPORTANTE: el seguro NO se suma a totalAPagar (igual que en crear normal);
   // se guarda en su campo `montoSeguro` aparte. Asi el saldo pendiente y el
   // cierre del prestamo se comportan identico a los prestamos normales.
+  const cuotaManualNum = cuotaManual ? Number(cuotaManual) : undefined
   const { totalAPagar, cuotaDiaria, fechaFin } = calcularPrestamo({
     montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia: freq, modoInteres: modoRenovacion,
+    ...(cuotaManualNum > 0 && { cuotaManual: cuotaManualNum }),
   })
 
   const diferencia = Number(montoPrestado) - saldoPendiente // lo que recibe en mano
@@ -173,7 +175,7 @@ export async function POST(request, { params }) {
         totalAPagar,
         cuotaDiaria,
         frecuencia:    freq,
-        modoInteres:   modoRenovacion,    // persistir el modo usado en el calculo
+        modoInteres:   cuotaManualNum > 0 ? 'manual' : modoRenovacion,
         diasPlazo:     Number(diasPlazo),
         fechaInicio:   new Date(fechaInicio),
         fechaFin,

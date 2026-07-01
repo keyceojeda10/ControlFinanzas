@@ -50,6 +50,8 @@ export default function RenovarPrestamo({
   const [loading,     setLoading]     = useState(false)
   const [error,       setError]       = useState('')
   const [masOpciones, setMasOpciones] = useState(false)
+  const [cuotaManual, setCuotaManual] = useState('')
+  const cuotaManualActiva = cuotaManual !== '' && Number(cuotaManual) > 0
 
   const montoNum = Number(monto) || 0
   const montoSeguroNum = seguro ? (Number(montoSeguro) || 0) : 0
@@ -68,10 +70,11 @@ export default function RenovarPrestamo({
         diasPlazo,
         fechaInicio,
         frecuencia,
-        modoInteres:   modoHeredado,
+        modoInteres:   cuotaManualActiva ? 'manual' : modoHeredado,
+        ...(cuotaManualActiva && { cuotaManual: Number(cuotaManual) }),
       })
     } catch { return null }
-  }, [montoNum, tasa, diasPlazo, fechaInicio, frecuencia, modoHeredado])
+  }, [montoNum, tasa, diasPlazo, fechaInicio, frecuencia, modoHeredado, cuotaManual, cuotaManualActiva])
 
   const handleSubmit = async () => {
     if (montoNum <= 0) { setError('Ingresa el total del nuevo prestamo'); return }
@@ -94,7 +97,8 @@ export default function RenovarPrestamo({
           diasPlazo,
           fechaInicio,
           frecuencia,
-          modoInteres:   modoHeredado,
+          modoInteres:   cuotaManualActiva ? 'manual' : modoHeredado,
+          ...(cuotaManualActiva && { cuotaManual: Number(cuotaManual) }),
           ...(seguro && montoSeguroNum > 0 && { seguro: true, montoSeguro: montoSeguroNum }),
         }),
       })
@@ -116,6 +120,7 @@ export default function RenovarPrestamo({
     setMonto('')
     setSeguro(false)
     setMontoSeguro('')
+    setCuotaManual('')
     setError('')
     setMasOpciones(false)
     setPlazoUnidades(DEFAULT_PLAZO[frecuencia] ?? '30')
@@ -327,10 +332,45 @@ export default function RenovarPrestamo({
         {calculo && montoNum >= saldo && (
           <div className="rounded-xl p-3 space-y-2" style={{ background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.2)' }}>
             <div className="flex items-center justify-between">
-              <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Nueva cuota {frecuencia}</span>
-              <span className="text-base font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
-                {formatMoney(calculo.cuotaDiaria)}
+              <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                Nueva cuota {frecuencia}
+                {!cuotaManualActiva && (
+                  <button
+                    type="button"
+                    onClick={() => setCuotaManual(String(calculo.cuotaDiaria))}
+                    className="ml-1.5 underline"
+                    style={{ color: 'var(--color-accent)' }}
+                  >
+                    editar
+                  </button>
+                )}
               </span>
+              {cuotaManualActiva ? (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm font-medium" style={{ color: 'var(--color-text-muted)' }}>$</span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    value={cuotaManual}
+                    onChange={(e) => setCuotaManual(e.target.value)}
+                    className="w-24 h-8 px-2 text-right text-base font-bold rounded-lg outline-none font-mono-display"
+                    style={{ background: 'var(--color-bg-surface)', border: '1.5px solid var(--color-accent)', color: 'var(--color-text-primary)' }}
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setCuotaManual('')}
+                    className="ml-0.5 text-xs underline"
+                    style={{ color: 'var(--color-text-muted)' }}
+                  >
+                    auto
+                  </button>
+                </div>
+              ) : (
+                <span className="text-base font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
+                  {formatMoney(calculo.cuotaDiaria)}
+                </span>
+              )}
             </div>
             {cuotaCambio !== null && cuotaCambio !== 0 && (
               <div className="flex items-center justify-between">
