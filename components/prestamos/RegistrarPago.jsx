@@ -600,8 +600,9 @@ export default function RegistrarPago({
                           ?.filter(f => new Date(f.fechaEsperada) <= new Date() && (f.pagado || 0) < f.cuotaTotal)
                           ?.reduce((acc, f) => acc + Math.max(0, f.interes - (f.interesPagado || 0)), 0) ?? 0
                         setMonto(String(Math.round(interesesPend)))
+                      } else {
+                        setMonto('')
                       }
-                      setMonto('')
                     }
                   }}
                   className={[

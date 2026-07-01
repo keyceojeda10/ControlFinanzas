@@ -1,7 +1,6 @@
 'use client'
-// components/ui/MoneyInput.jsx - Input con separadores de miles para montos en COP
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 
 function formatWithDots(val) {
@@ -16,16 +15,18 @@ export default function MoneyInput({
   const { modoAbreviado } = useAuth()
   const abreviado = modoAbreviado
 
-  const toDisplay = (v) => {
+  const toDisplay = useCallback((v) => {
     if (!abreviado || !v) return v
     const n = Number(String(v).replace(/\D/g, ''))
     return n ? String(Math.round(n / 1000)) : ''
-  }
+  }, [abreviado])
 
   const [display, setDisplay] = useState(() => formatWithDots(toDisplay(value)))
   const inputRef = useRef(null)
+  const isEditingRef = useRef(false)
 
   useEffect(() => {
+    if (isEditingRef.current) return
     const raw = String(toDisplay(value)).replace(/\D/g, '')
     const displayed = String(display).replace(/\D/g, '')
     if (raw !== displayed) {
@@ -34,10 +35,12 @@ export default function MoneyInput({
   }, [value, abreviado]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleChange = (e) => {
+    isEditingRef.current = true
     const raw = e.target.value.replace(/\D/g, '')
     setDisplay(formatWithDots(raw))
     const realValue = abreviado && raw ? String(Number(raw) * 1000) : raw
     onChange?.({ target: { value: realValue } })
+    requestAnimationFrame(() => { isEditingRef.current = false })
   }
 
   return (
@@ -66,13 +69,18 @@ export default function MoneyInput({
           }}
           value={display}
           onChange={handleChange}
-          placeholder={placeholder || (abreviado ? 'Ej: 500 = 500.000' : 'Ej: 500.000')}
+          placeholder={placeholder || (abreviado ? 'Ej: 100 = 100.000' : 'Ej: 500.000')}
           {...props}
         />
+        {abreviado && (
+          <span className="absolute right-3 text-[10px] font-medium pointer-events-none select-none" style={{ color: 'var(--color-text-muted)' }}>
+            x1.000
+          </span>
+        )}
       </div>
       {abreviado && display && (
-        <p className="text-[10px] text-[var(--color-text-muted)]">
-          Valor real: ${formatWithDots(String(Number(String(display).replace(/\D/g, '')) * 1000))}
+        <p className="text-[11px] font-semibold" style={{ color: 'var(--color-accent)' }}>
+          = {formatWithDots(String(Number(String(display).replace(/\D/g, '')) * 1000))}
         </p>
       )}
       {error && <p className="text-xs text-[var(--color-danger)]">{error}</p>}
