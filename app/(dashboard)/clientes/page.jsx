@@ -113,7 +113,7 @@ function ClienteCardCompacto({ cliente }) {
             )}
             {cliente.creadoPor && (
               <span className="text-[8px] font-medium px-1.5 py-px rounded-full" style={{ color: 'var(--color-text-muted)', background: 'var(--color-bg-hover)' }}>
-                {cliente.creadoPor.nombre || cliente.creadoPor.name || 'Cobrador'}
+                {cliente.creadoPor.nombre || 'Cobrador'}
               </span>
             )}
           </div>

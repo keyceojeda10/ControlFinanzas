@@ -110,7 +110,7 @@ export async function GET(request) {
         where: { estado: 'activa' },
         select: { id: true },
       },
-      ...(rol !== 'cobrador' && { creadoPor: { select: { id: true, nombre: true, name: true } } }),
+      ...(rol !== 'cobrador' && { creadoPor: { select: { id: true, nombre: true } } }),
     },
     orderBy: [{ ordenRuta: 'asc' }, { nombre: 'asc' }],
     ...(page != null && { take: limit, skip: (page - 1) * limit }),

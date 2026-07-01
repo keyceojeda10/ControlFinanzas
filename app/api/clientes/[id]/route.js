@@ -45,7 +45,7 @@ export async function GET(request, { params }) {
       where: { id },
       include: {
         ruta: { select: { id: true, nombre: true, diasSinCobro: true } },
-        creadoPor: { select: { id: true, nombre: true, name: true } },
+        creadoPor: { select: { id: true, nombre: true } },
         prestamos: {
           orderBy: { createdAt: 'desc' },
           include: {
