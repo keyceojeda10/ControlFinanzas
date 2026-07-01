@@ -696,8 +696,8 @@ export default function ClientesPage() {
         </div>
       )}
 
-      {/* Error */}
-      {error && (
+      {/* Error — solo mostrar si ya teniamos datos o si no es la primera carga */}
+      {error && total > 0 && (
         <div className="bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[12px] px-4 py-3 mb-4">
           {error}
         </div>
@@ -796,8 +796,8 @@ export default function ClientesPage() {
         )
       })()}
 
-      {/* Estado vacío */}
-      {!loading && clientes.length === 0 && !error && (
+      {/* Estado vacío — mostrar tambien si hay error pero nunca hubo datos (usuario nuevo) */}
+      {!loading && clientes.length === 0 && (!error || total === 0) && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="mb-4">
             <Mascota variant={buscar || grupoFiltro ? 'thinking' : 'empty'} size={100} />
