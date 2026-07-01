@@ -55,13 +55,15 @@ export async function GET(request) {
     ? (grupo === '_none' ? { grupoCobroId: null } : { grupoCobroId: grupo })
     : {}
 
-  const whereClause = {
-    organizationId,
-    estado: { notIn: ['eliminado'] },
-    ...filtroRuta,
-    ...filtroBuscar,
-    ...filtroGrupo,
-  }
+  const condiciones = [
+    { organizationId },
+    { estado: { notIn: ['eliminado'] } },
+  ]
+  if (Object.keys(filtroRuta).length) condiciones.push(filtroRuta)
+  if (Object.keys(filtroBuscar).length) condiciones.push(filtroBuscar)
+  if (Object.keys(filtroGrupo).length) condiciones.push(filtroGrupo)
+
+  const whereClause = { AND: condiciones }
 
   const clientes = await prisma.cliente.findMany({
     where: whereClause,

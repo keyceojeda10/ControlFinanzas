@@ -14,16 +14,19 @@ export async function GET(request, { params }) {
 
   const cliente = await prisma.cliente.findFirst({
     where: { id, organizationId: session.user.organizationId },
-    select: { id: true, rutaId: true },
+    select: { id: true, rutaId: true, creadoPorId: true },
   })
 
   if (!cliente) {
     return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 })
   }
 
-  // Cobrador solo puede ver historial de clientes de su ruta.
-  if (session.user.rol === 'cobrador' && !(session.user.rutaIds ?? []).includes(cliente.rutaId)) {
-    return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 })
+  if (session.user.rol === 'cobrador') {
+    const enSusRutas = (session.user.rutaIds ?? []).includes(cliente.rutaId)
+    const loCreoEl = cliente.creadoPorId === session.user.id
+    if (!enSusRutas && !loCreoEl) {
+      return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 })
+    }
   }
 
   const prestamos = await prisma.prestamo.findMany({
