@@ -17,8 +17,11 @@ async function obtenerCliente(id, session) {
     where: { id, organizationId: session.user.organizationId },
   })
   if (!cliente) return null
-  // Cobrador: solo puede ver clientes de sus rutas
-  if (session.user.rol === 'cobrador' && !(session.user.rutaIds ?? []).includes(cliente.rutaId)) return null
+  if (session.user.rol === 'cobrador') {
+    const enSusRutas = (session.user.rutaIds ?? []).includes(cliente.rutaId)
+    const loCreoEl = cliente.creadoPorId === session.user.id
+    if (!enSusRutas && !loCreoEl) return null
+  }
   return cliente
 }
 

@@ -33,9 +33,10 @@ export async function GET(request) {
     return Response.json(page != null ? { clientes: [], total: 0, page, totalPages: 0 } : [])
   }
 
-  // Cobrador → solo clientes de sus rutas. Owner puede filtrar por ruta específica.
+  // Cobrador → clientes de sus rutas + clientes sin ruta que el cobrador creó.
+  // Owner puede filtrar por ruta específica.
   const filtroRuta = rol === 'cobrador'
-    ? { rutaId: { in: rutaIds } }
+    ? { OR: [{ rutaId: { in: rutaIds } }, { rutaId: null, creadoPorId: session.user.id }] }
     : (rutaIdFiltro ? { rutaId: rutaIdFiltro } : {})
 
   // Filtro de búsqueda por nombre, cédula, teléfono o referencia

@@ -300,11 +300,25 @@ function NuevoPrestamo() {
         // Fallback: leer cache offline (incluye pendientes inyectados optimistamente)
         try { lista = await obtenerClientesOffline() } catch {}
       }
-      setClientes(lista)
       if (clienteIdParam) {
         const c = lista.find((x) => x.id === clienteIdParam)
-        if (c) setClienteNombre(c.nombre)
+        if (c) {
+          setClienteNombre(c.nombre)
+        } else if (navigator.onLine) {
+          try {
+            const r2 = await fetch(`/api/clientes/${clienteIdParam}`)
+            if (r2.ok) {
+              const cl = await r2.json()
+              if (cl?.id) {
+                const mini = { id: cl.id, nombre: cl.nombre, cedula: cl.cedula, telefono: cl.telefono, rutaId: cl.rutaId, montoMaximoPrestamo: cl.montoMaximoPrestamo ?? 0 }
+                lista = [mini, ...lista]
+                setClienteNombre(cl.nombre)
+              }
+            }
+          } catch {}
+        }
       }
+      setClientes(lista)
     }
     cargar()
   }, [clienteIdParam])
