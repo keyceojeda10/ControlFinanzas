@@ -360,26 +360,11 @@ export default function PrestamosPage() {
   return (
     <div className="max-w-3xl mx-auto">
       {/* Header */}
-      <div className="mb-5">
-        <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <div className="min-w-0">
           <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Préstamos</h1>
-          {!authLoading && puedeCrearPrestamos && (
-            <Link href="/prestamos/nuevo">
-              <Button
-                icon={
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                }
-              >
-                Nuevo préstamo
-              </Button>
-            </Link>
-          )}
-        </div>
-        <div className="flex items-center justify-between mt-1">
-          <p className="text-sm text-[var(--color-text-muted)]">
-            {loading ? '…' : `${total} préstamo${total !== 1 ? 's' : ''}${frecuencia ? ' ' + (FRECUENCIAS.find((f) => f.value === frecuencia)?.label.toLowerCase()) : ''}`}
+          <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
+            {loading ? '...' : `${total} préstamo${total !== 1 ? 's' : ''}${frecuencia ? ' ' + (FRECUENCIAS.find((f) => f.value === frecuencia)?.label.toLowerCase()) : ''}`}
             {!frecuencia && enMoraCount > 0 && (
               <span className="ml-2 text-[var(--color-danger)]">· {enMoraCount} en mora</span>
             )}
@@ -394,6 +379,21 @@ export default function PrestamosPage() {
             Simulador de préstamos
           </Link>
         </div>
+        {!authLoading && puedeCrearPrestamos && (
+          <Link href="/prestamos/nuevo" className="shrink-0">
+            <Button
+              size="sm"
+              className="whitespace-nowrap"
+              icon={
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              }
+            >
+              Nuevo préstamo
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Filtro de estado */}
