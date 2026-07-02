@@ -509,10 +509,9 @@ function TabOrganizacion() {
               Activa si entregas el capital de la ruta como plata física al cobrador. El sistema usará ese valor para calcular el dinero en mano y el cuadre de caja.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={async () => {
-              const nuevoValor = !org?.capitalEsEfectivo
+          <Toggle
+            checked={!!org?.capitalEsEfectivo}
+            onChange={async (nuevoValor) => {
               try {
                 const res = await fetch('/api/configuracion/organizacion', {
                   method: 'PATCH', headers: { 'Content-Type': 'application/json' },
@@ -521,14 +520,7 @@ function TabOrganizacion() {
                 if (res.ok) setData(prev => ({ ...prev, org: { ...prev.org, capitalEsEfectivo: nuevoValor } }))
               } catch {}
             }}
-            className="shrink-0 relative w-11 h-6 rounded-full transition-colors"
-            style={{ background: org?.capitalEsEfectivo ? 'var(--color-accent)' : 'var(--color-bg-hover)' }}
-          >
-            <span
-              className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform shadow-sm"
-              style={{ transform: org?.capitalEsEfectivo ? 'translateX(20px)' : 'translateX(0)' }}
-            />
-          </button>
+          />
         </div>
       </Card>
 
@@ -541,10 +533,9 @@ function TabOrganizacion() {
               Escribe montos sin los ultimos tres ceros. Por ejemplo, 100 se convierte en 100.000 y 1.500 en 1.500.000.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={async () => {
-              const nuevoValor = !org?.modoAbreviado
+          <Toggle
+            checked={!!org?.modoAbreviado}
+            onChange={async (nuevoValor) => {
               try {
                 const res = await fetch('/api/configuracion/organizacion', {
                   method: 'PATCH', headers: { 'Content-Type': 'application/json' },
@@ -556,14 +547,7 @@ function TabOrganizacion() {
                 }
               } catch {}
             }}
-            className="shrink-0 relative w-11 h-6 rounded-full transition-colors"
-            style={{ background: org?.modoAbreviado ? 'var(--color-accent)' : 'var(--color-bg-hover)' }}
-          >
-            <span
-              className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform shadow-sm"
-              style={{ transform: org?.modoAbreviado ? 'translateX(20px)' : 'translateX(0)' }}
-            />
-          </button>
+          />
         </div>
       </Card>
 

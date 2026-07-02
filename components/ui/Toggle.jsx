@@ -38,13 +38,14 @@ export function Toggle({
       }}
     >
       <span
-        className="absolute top-1/2 -translate-y-1/2 rounded-full transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] shadow-sm"
+        className="absolute rounded-full transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] shadow-sm"
         style={{
           width: dims.knob,
           height: dims.knob,
+          top: '50%',
           left: 2,
           background: checked ? '#1a1a2e' : 'var(--color-text-secondary)',
-          transform: `translate(${checked ? dims.travel : 0}px, -50%)`,
+          transform: `translateX(${checked ? dims.travel : 0}px) translateY(-50%)`,
         }}
       />
     </button>

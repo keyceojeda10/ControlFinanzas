@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { SkeletonCard } from '@/components/ui/Skeleton'
+import { Toggle } from '@/components/ui/Toggle'
 
 export default function WhatsAppBotConfig() {
   const [config, setConfig] = useState(null)
@@ -68,18 +69,7 @@ export default function WhatsAppBotConfig() {
               Cuando esta apagado, los mensajes se guardan pero no se responden
             </p>
           </div>
-          <button
-            onClick={() => set('botActivo', !config.botActivo)}
-            className={`relative w-12 h-6 rounded-full transition-all ${
-              config.botActivo ? 'bg-[var(--color-success)]' : 'bg-[#333]'
-            }`}
-          >
-            <span
-              className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all ${
-                config.botActivo ? 'left-[26px]' : 'left-0.5'
-              }`}
-            />
-          </button>
+          <Toggle checked={!!config.botActivo} onChange={(v) => set('botActivo', v)} />
         </div>
       </div>
 
@@ -92,18 +82,7 @@ export default function WhatsAppBotConfig() {
               Solo responde a tu WhatsApp personal
             </p>
           </div>
-          <button
-            onClick={() => set('modoPrueba', !config.modoPrueba)}
-            className={`relative w-12 h-6 rounded-full transition-all ${
-              config.modoPrueba ? 'bg-[#f5c518]' : 'bg-[#333]'
-            }`}
-          >
-            <span
-              className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all ${
-                config.modoPrueba ? 'left-[26px]' : 'left-0.5'
-              }`}
-            />
-          </button>
+          <Toggle checked={!!config.modoPrueba} onChange={(v) => set('modoPrueba', v)} />
         </div>
       </div>
 
