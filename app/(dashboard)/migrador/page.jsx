@@ -211,7 +211,7 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
         <h3 className="text-[11px] font-semibold uppercase tracking-wide mb-1"
           style={{ color: 'var(--color-accent)' }}>Datos del cliente</h3>
         <p className="text-[11px] mb-2.5" style={{ color: 'var(--color-text-muted)' }}>
-          Nombre y telefono son obligatorios. Cedula y direccion son opcionales.
+          Nombre y teléfono son obligatorios. Cédula y dirección son opcionales.
         </p>
         <div className="space-y-2.5">
           <input ref={nombreRef} type="text" placeholder="Nombre completo *" autoFocus
@@ -238,7 +238,7 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
               }}
               className="accent-[var(--color-accent)] w-4 h-4 rounded" />
             <span className="text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>
-              No tengo el numero de la cedula
+              No tengo el número de la cédula
             </span>
           </label>
           <input type="text" placeholder="Direccion (opcional)"
