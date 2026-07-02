@@ -298,6 +298,9 @@ export default function OfflineProvider({ children }) {
       if (e.data?.type === 'TRIGGER_SYNC' && navigator.onLine) {
         syncPendingThenFull({ silent: true })
       }
+      if (e.data?.type === 'SW_UPDATED') {
+        window.location.reload()
+      }
     }
     navigator.serviceWorker.addEventListener('message', onMessage)
     return () => navigator.serviceWorker.removeEventListener('message', onMessage)

@@ -1,5 +1,5 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME   = 'cf-v288'
+const CACHE_NAME   = 'cf-v290'
 const API_CACHE    = 'cf-api-v74'
 // Cache inmutable para _next/static — NO se borra entre versiones.
 // Los chunks llevan hash en el nombre, así que nunca hay stale content.
@@ -126,7 +126,9 @@ self.addEventListener('activate', (e) => {
           .filter((k) => k !== CACHE_NAME && k !== API_CACHE)
           .map((k) => caches.delete(k))
       )
-    )
+    ).then(() => self.clients.matchAll()).then((clients) => {
+      clients.forEach((c) => c.postMessage({ type: 'SW_UPDATED' }))
+    })
   )
   self.clients.claim()
 })
@@ -161,9 +163,12 @@ self.addEventListener('fetch', (e) => {
     return
   }
 
-  // Next.js static assets (_next/static): cache-first
+  // Next.js static assets (_next/static): network-first
+  // Los chunks llevan hash en el nombre — cada build genera URLs nuevas.
+  // cache-first causaba que chunks viejos de caches huérfanos se sirvieran
+  // porque caches.match() busca en TODOS los caches, no solo STATIC_CACHE.
   if (url.pathname.startsWith('/_next/static')) {
-    e.respondWith(cacheFirst(request))
+    e.respondWith(networkFirst(request))
     return
   }
 
