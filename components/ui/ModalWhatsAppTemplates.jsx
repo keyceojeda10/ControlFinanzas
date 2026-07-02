@@ -133,6 +133,42 @@ ${firma(orgNombre)}`
     generar: ({ cliente, orgNombre }) => generarTextoRenovacion(cliente, { orgNombre }),
   },
   {
+    id: 'gracias_corto',
+    label: 'Gracias por tu pago',
+    desc: 'Confirmacion corta sin saldo',
+    icon: '👍',
+    color: '#22c55e',
+    aplica: ({ prestamo }) => prestamo && prestamo.estado === 'activo',
+    generar: ({ cliente, prestamo, orgNombre }) => {
+      const ultimoPago = prestamo?.pagos?.length > 0
+        ? prestamo.pagos.reduce((a, b) => new Date(a.fechaPago) > new Date(b.fechaPago) ? a : b)
+        : null
+      const monto = ultimoPago?.montoPagado || prestamo?.cuotaDiaria || 0
+      return `Hola ${cliente.nombre} 👋
+
+✅ Tu pago de ${formatMoney(monto)} fue registrado correctamente.
+
+¡Gracias por tu puntualidad!
+
+${firma(orgNombre)} 💼`
+    },
+  },
+  {
+    id: 'oferta_credito',
+    label: 'Oferta de credito',
+    desc: 'Cliente sin prestamo activo',
+    icon: '💰',
+    color: '#10b981',
+    aplica: ({ prestamo }) => !prestamo || prestamo.estado === 'completado',
+    generar: ({ cliente, orgNombre }) => `Hola ${cliente.nombre} 👋
+
+Tenemos credito disponible para ti con aprobacion inmediata.
+
+Si necesitas financiamiento, escribenos por aqui y te explicamos las condiciones. Sin compromiso.
+
+${firma(orgNombre)} 💼`,
+  },
+  {
     id: 'visita',
     label: 'Confirmar visita',
     desc: 'Coordinar cobro hoy',
@@ -165,6 +201,7 @@ export default function ModalWhatsAppTemplates({ open, onClose, cliente, prestam
   const [selectedId, setSelectedId] = useState(null)
   const [textoEditable, setTextoEditable] = useState('')
   const [incluirCronograma, setIncluirCronograma] = useState(false)
+  const [copiado, setCopiado] = useState(false)
 
   const tel = formatearTelefono(cliente?.telefono)
 
@@ -202,6 +239,7 @@ export default function ModalWhatsAppTemplates({ open, onClose, cliente, prestam
       setSelectedId(null)
       setTextoEditable('')
       setIncluirCronograma(false)
+      setCopiado(false)
       return
     }
     const sugerido = aplicables.find(t => t.id !== 'libre') || aplicables[0]
@@ -338,9 +376,38 @@ export default function ModalWhatsAppTemplates({ open, onClose, cliente, prestam
             <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
               Mensaje (puedes editarlo)
             </p>
-            <p className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>
-              {textoEditable.length} caracteres
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>
+                {textoEditable.length} caracteres
+              </p>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(textoEditable)
+                    setCopiado(true)
+                    setTimeout(() => setCopiado(false), 2000)
+                  } catch {}
+                }}
+                className="flex items-center gap-1 px-2 py-0.5 rounded-[6px] text-[10px] font-medium transition-all"
+                style={{
+                  background: copiado ? 'color-mix(in srgb, var(--color-success) 15%, transparent)' : 'var(--color-bg-card)',
+                  color: copiado ? 'var(--color-success)' : 'var(--color-text-muted)',
+                  border: `1px solid ${copiado ? 'var(--color-success)' : 'var(--color-border)'}`,
+                }}
+              >
+                {copiado ? (
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : (
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+                  </svg>
+                )}
+                {copiado ? 'Copiado' : 'Copiar'}
+              </button>
+            </div>
           </div>
           <textarea
             value={textoEditable}
