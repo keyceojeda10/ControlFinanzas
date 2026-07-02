@@ -42,7 +42,7 @@ const TEMPLATES = [
     icon: '🔔',
     color: '#22c55e',
     aplica: ({ prestamo }) => prestamo && prestamo.estado === 'activo' && (prestamo.diasMora ?? 0) === 0,
-    generar: ({ cliente, prestamo, orgNombre }) => generarTextoRecordatorio(cliente, prestamo, { orgNombre }),
+    generar: ({ cliente, prestamo, orgNombre, ocultarSaldo }) => generarTextoRecordatorio(cliente, prestamo, { orgNombre, ocultarSaldo }),
   },
   {
     id: 'mora_suave',
@@ -51,16 +51,15 @@ const TEMPLATES = [
     icon: '⏰',
     color: '#f59e0b',
     aplica: ({ prestamo }) => prestamo && (prestamo.diasMora ?? 0) > 0 && (prestamo.diasMora ?? 0) <= 3,
-    generar: ({ cliente, prestamo, orgNombre }) => {
+    generar: ({ cliente, prestamo, orgNombre, ocultarSaldo }) => {
       const dias = prestamo.diasMora ?? 0
+      const saldoLine = ocultarSaldo ? '' : `\n💰 Saldo pendiente: ${formatMoney(prestamo.saldoPendiente || 0)}\n`
       return `Hola ${cliente.nombre} 👋
 
 Notamos que tu cuota de ${formatMoney(prestamo.cuotaDiaria || 0)} lleva ${dias} día${dias === 1 ? '' : 's'} pendiente.
 
 ¿Podemos pasar hoy a cobrar? También puedes ponerte al día por transferencia.
-
-💰 Saldo pendiente: ${formatMoney(prestamo.saldoPendiente || 0)}
-
+${saldoLine}
 ¡Gracias!
 
 ${firma(orgNombre)} 💼`
@@ -73,8 +72,11 @@ ${firma(orgNombre)} 💼`
     icon: '⚠️',
     color: '#f97316',
     aplica: ({ prestamo }) => prestamo && (prestamo.diasMora ?? 0) > 3 && (prestamo.diasMora ?? 0) <= 15,
-    generar: ({ cliente, prestamo, orgNombre }) => {
+    generar: ({ cliente, prestamo, orgNombre, ocultarSaldo }) => {
       const dias = prestamo.diasMora ?? 0
+      const estadoLines = []
+      if (!ocultarSaldo) estadoLines.push(`💰 Saldo pendiente: ${formatMoney(prestamo.saldoPendiente || 0)}`)
+      estadoLines.push(`📅 Cuota diaria: ${formatMoney(prestamo.cuotaDiaria || 0)}`)
       return `Hola ${cliente.nombre} 👋
 
 ⚠️ *Aviso de mora*
@@ -82,8 +84,7 @@ ${firma(orgNombre)} 💼`
 Llevamos ${dias} días sin recibir tu pago. Por favor comunícate con nosotros lo antes posible.
 
 📊 *Estado:*
-💰 Saldo pendiente: ${formatMoney(prestamo.saldoPendiente || 0)}
-📅 Cuota diaria: ${formatMoney(prestamo.cuotaDiaria || 0)}
+${estadoLines.join('\n')}
 
 Estamos disponibles para acordar una solución. No dejes que se acumule más.
 
@@ -97,16 +98,15 @@ ${firma(orgNombre)} 💼`
     icon: '🚨',
     color: '#ef4444',
     aplica: ({ prestamo }) => prestamo && (prestamo.diasMora ?? 0) > 15,
-    generar: ({ cliente, prestamo, orgNombre }) => {
+    generar: ({ cliente, prestamo, orgNombre, ocultarSaldo }) => {
       const dias = prestamo.diasMora ?? 0
+      const saldoLine = ocultarSaldo ? '' : `\n📊 Saldo total pendiente: ${formatMoney(prestamo.saldoPendiente || 0)}\n`
       return `${cliente.nombre},
 
 🚨 *Última oportunidad antes de cobro jurídico*
 
 Tu crédito tiene ${dias} días sin pago. Hemos intentado contactarte sin respuesta.
-
-📊 Saldo total pendiente: ${formatMoney(prestamo.saldoPendiente || 0)}
-
+${saldoLine}
 Para evitar acciones legales, comunícate HOY mismo. Aún puedes acordar un plan de pago.
 
 Es la última vez que te escribimos por este medio antes de proceder.
@@ -161,7 +161,7 @@ ${firma(orgNombre)}`
   },
 ]
 
-export default function ModalWhatsAppTemplates({ open, onClose, cliente, prestamo, orgNombre }) {
+export default function ModalWhatsAppTemplates({ open, onClose, cliente, prestamo, orgNombre, ocultarSaldo }) {
   const [selectedId, setSelectedId] = useState(null)
   const [textoEditable, setTextoEditable] = useState('')
   const [incluirCronograma, setIncluirCronograma] = useState(false)
@@ -185,6 +185,7 @@ export default function ModalWhatsAppTemplates({ open, onClose, cliente, prestam
         cliente,
         prestamo,
         orgNombre,
+        ocultarSaldo,
         cronograma: conCronograma,
       })
     } catch {

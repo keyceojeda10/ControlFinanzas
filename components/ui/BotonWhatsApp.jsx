@@ -30,10 +30,10 @@ const ESTILOS = {
   historial:'bg-[#25d366] hover:bg-[#1da855] text-[var(--color-text-primary)]',
 }
 
-export default function BotonWhatsApp({ tipo, cliente, prestamo, pago, orgNombre }) {
+export default function BotonWhatsApp({ tipo, cliente, prestamo, pago, orgNombre, ocultarSaldo }) {
   if (!cliente?.telefono) return null
 
-  const opts = { orgNombre }
+  const opts = { orgNombre, ocultarSaldo }
 
   const generarEnlace = () => {
     if (tipo === 'prestamo') return generarEnlacePrestamo(cliente, prestamo, opts)

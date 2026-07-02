@@ -21,6 +21,7 @@ export function useAuth() {
     timezone: session?.user?.timezone ?? null,
     orgNombre: session?.user?.orgNombre ?? null,
     modoAbreviado: session?.user?.modoAbreviado ?? false,
+    ocultarSaldoWA: session?.user?.ocultarSaldoWA ?? false,
     rutaId: session?.user?.rutaId ?? null,
     rutaIds: session?.user?.rutaIds ?? [],
     esOwner,

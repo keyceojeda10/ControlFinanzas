@@ -91,7 +91,7 @@ function GestionBtn({ label, desc, color, icon, onClick }) {
 export default function PrestamoDetallePage({ params }) {
   const { id }             = use(params)
   const router             = useRouter()
-  const { session, esOwner, esCobrador, puedeGestionarPrestamos, puedeAplicarDescuentos, orgNombre } = useAuth()
+  const { session, esOwner, esCobrador, puedeGestionarPrestamos, puedeAplicarDescuentos, orgNombre, ocultarSaldoWA } = useAuth()
 
   const { lastSyncedAt }   = useOffline()
 
@@ -606,11 +606,11 @@ export default function PrestamoDetallePage({ params }) {
             <p className="text-sm text-[var(--color-success)] font-medium">Pago registrado exitosamente</p>
           </div>
           {ultimoPago && cliente?.telefono && (
-            <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} />
+            <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} />
           )}
           {ultimoPago && (
             <div className="flex gap-2">
-              <BotonCompartir cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} />
+              <BotonCompartir cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} />
               <BotonImprimirRecibo cliente={cliente} prestamo={prestamo} pago={ultimoPago} />
             </div>
           )}
@@ -621,10 +621,10 @@ export default function PrestamoDetallePage({ params }) {
       {!exito && ultimoPago && !completado && (
         <>
           {cliente?.telefono && (
-            <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} />
+            <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} />
           )}
           <div className="flex gap-2">
-            <BotonCompartir cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} />
+            <BotonCompartir cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} />
             <BotonImprimirRecibo cliente={cliente} prestamo={prestamo} pago={ultimoPago} />
           </div>
         </>
@@ -634,10 +634,10 @@ export default function PrestamoDetallePage({ params }) {
       {completado && ultimoPago && (
         <>
           {cliente?.telefono && (
-            <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} />
+            <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} />
           )}
           <div className="flex gap-2">
-            <BotonCompartir cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} />
+            <BotonCompartir cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} />
             <BotonImprimirRecibo cliente={cliente} prestamo={prestamo} pago={ultimoPago} />
           </div>
         </>
@@ -885,7 +885,7 @@ export default function PrestamoDetallePage({ params }) {
 
       {/* ── BOTONES WHATSAPP ─────────────────────────────────────── */}
       {cliente?.telefono && estaActivo && enMora && !completado && (
-        <BotonWhatsApp tipo="mora" cliente={cliente} prestamo={prestamo} orgNombre={orgNombre} />
+        <BotonWhatsApp tipo="mora" cliente={cliente} prestamo={prestamo} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} />
       )}
       {cliente?.telefono && estaActivo && !enMora && !ultimoPago && (
         <button
@@ -970,6 +970,7 @@ export default function PrestamoDetallePage({ params }) {
               cliente={cliente}
               prestamo={prestamo}
               orgNombre={orgNombre}
+              ocultarSaldo={ocultarSaldoWA}
             />
           )}
           <div className="flex gap-2">
@@ -978,6 +979,7 @@ export default function PrestamoDetallePage({ params }) {
               cliente={cliente}
               prestamo={prestamo}
               orgNombre={orgNombre}
+              ocultarSaldo={ocultarSaldoWA}
             />
             <BotonImprimirRecibo
               tipo="historial"
@@ -1075,6 +1077,7 @@ export default function PrestamoDetallePage({ params }) {
                           prestamo={prestamo}
                           pago={{ montoPagado: pago.montoPagado, fechaPago: pago.fechaPago }}
                           orgNombre={orgNombre}
+                          ocultarSaldo={ocultarSaldoWA}
                         />
                       )}
                       <div className="flex gap-2">
@@ -1083,6 +1086,7 @@ export default function PrestamoDetallePage({ params }) {
                           prestamo={prestamo}
                           pago={{ montoPagado: pago.montoPagado, fechaPago: pago.fechaPago }}
                           orgNombre={orgNombre}
+                          ocultarSaldo={ocultarSaldoWA}
                         />
                         <BotonImprimirRecibo
                           cliente={cliente}
@@ -1711,6 +1715,7 @@ export default function PrestamoDetallePage({ params }) {
         cliente={cliente}
         prestamo={prestamo}
         orgNombre={orgNombre}
+        ocultarSaldo={ocultarSaldoWA}
       />
 
       {/* Modal: aplicar interes moratorio como recargo */}

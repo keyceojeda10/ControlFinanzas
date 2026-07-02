@@ -26,7 +26,7 @@ export default function RegistrarPago({
 }) {
   const router = useRouter()
   const { formatMoney } = useCountry()
-  const { puedeAplicarDescuentos, orgNombre } = useAuth()
+  const { puedeAplicarDescuentos, orgNombre, ocultarSaldoWA } = useAuth()
 
   // Pre-llena con la cuota, pero nunca más que el saldo pendiente (último pago de saldos pequeños)
   const montoInicial = Math.min(Math.round(cuotaDiaria ?? 0), Math.round(saldoPendiente ?? 0))
@@ -394,12 +394,12 @@ export default function RegistrarPago({
           )}
 
           {cliente?.telefono && prestamoWA && (
-            <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamoWA} pago={pagoGuardado} orgNombre={orgNombre} />
+            <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamoWA} pago={pagoGuardado} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} />
           )}
 
           {prestamoWA && (
             <div className="flex gap-2">
-              <BotonCompartir cliente={cliente} prestamo={prestamoWA} pago={pagoGuardado} orgNombre={orgNombre} />
+              <BotonCompartir cliente={cliente} prestamo={prestamoWA} pago={pagoGuardado} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} />
               <BotonImprimirRecibo cliente={cliente} prestamo={prestamoWA} pago={pagoGuardado} />
             </div>
           )}

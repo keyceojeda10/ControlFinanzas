@@ -150,7 +150,7 @@ const COLORES_GRUPO = [
 ]
 
 export default function ClientesPage() {
-  const { esOwner, puedeCrearClientes, puedeCrearPrestamos, orgNombre, loading: authLoading } = useAuth()
+  const { esOwner, puedeCrearClientes, puedeCrearPrestamos, orgNombre, ocultarSaldoWA, loading: authLoading } = useAuth()
   const { country } = useCountry()
   const { lastSyncedAt } = useOffline()
   const searchParams = useSearchParams()
@@ -1103,6 +1103,7 @@ export default function ClientesPage() {
         cliente={waCliente}
         prestamo={null}
         orgNombre={orgNombre}
+        ocultarSaldo={ocultarSaldoWA}
       />
     </div>
   )
