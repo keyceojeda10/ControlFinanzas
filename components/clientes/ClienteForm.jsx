@@ -461,7 +461,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                     className="accent-[var(--color-accent)] w-4 h-4 rounded"
                   />
                   <span className="text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>
-                    No tengo el {documentConfig.label.toLowerCase()}
+                    No tengo la {documentConfig.label.toLowerCase()}
                   </span>
                 </label>
               )}

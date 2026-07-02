@@ -238,7 +238,7 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
               }}
               className="accent-[var(--color-accent)] w-4 h-4 rounded" />
             <span className="text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>
-              No tengo el numero de cedula
+              No tengo el numero de la cedula
             </span>
           </label>
           <input type="text" placeholder="Direccion (opcional)"
