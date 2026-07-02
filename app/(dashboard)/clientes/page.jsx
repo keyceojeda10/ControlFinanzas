@@ -640,10 +640,10 @@ export default function ClientesPage() {
             )}
           </div>
           {!loading && clientes.length > 0 && (
-            <div className="flex rounded-full border border-[var(--color-border)] overflow-hidden shrink-0 h-8">
+            <div className="flex rounded-full overflow-hidden shrink-0 h-8 border" style={{ borderColor: 'var(--color-border)' }}>
               <button
                 onClick={() => cambiarVista('lista')}
-                className="px-2 h-full flex items-center justify-center transition-colors"
+                className="w-8 h-full flex items-center justify-center transition-colors"
                 style={{
                   background: vista === 'lista' ? 'var(--color-accent)' : 'transparent',
                   color: vista === 'lista' ? '#000' : 'var(--color-text-muted)',
@@ -654,7 +654,7 @@ export default function ClientesPage() {
               </button>
               <button
                 onClick={() => cambiarVista('compacta')}
-                className="px-2 h-full flex items-center justify-center transition-colors"
+                className="w-8 h-full flex items-center justify-center transition-colors"
                 style={{
                   background: vista === 'compacta' ? 'var(--color-accent)' : 'transparent',
                   color: vista === 'compacta' ? '#000' : 'var(--color-text-muted)',
