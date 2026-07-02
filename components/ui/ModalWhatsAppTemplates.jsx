@@ -192,7 +192,10 @@ export default function ModalWhatsAppTemplates({ open, onClose, cliente, prestam
     }
   }
 
-  // Reset al abrir/cerrar
+  // Reset solo al ABRIR el modal (open pasa de false a true).
+  // No incluir aplicables/cliente/prestamo/orgNombre como deps:
+  // eso regeneraba el texto en cada render del padre y pisaba
+  // las ediciones del usuario y el toggle de cronograma.
   useEffect(() => {
     if (!open) {
       setSelectedId(null)
@@ -205,12 +208,12 @@ export default function ModalWhatsAppTemplates({ open, onClose, cliente, prestam
       setSelectedId(sugerido.id)
       setTextoEditable(generarTexto(sugerido, false))
     }
-  }, [open, aplicables, cliente, prestamo, orgNombre])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
   const handleSelect = (template) => {
     setSelectedId(template.id)
     const usarCrono = template.id === 'credito_aprobado' && incluirCronograma
-    if (!usarCrono && incluirCronograma) setIncluirCronograma(false)
     setTextoEditable(generarTexto(template, usarCrono))
   }
 
