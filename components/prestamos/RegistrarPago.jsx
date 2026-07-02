@@ -322,7 +322,13 @@ export default function RegistrarPago({
       <Modal
         open={open}
         onClose={handleCerrar}
-        title="Pago registrado"
+        title={
+          tipo === 'recargo' ? 'Recargo aplicado' :
+          tipo === 'descuento' ? 'Descuento aplicado' :
+          tipo === 'capital' ? 'Abono a capital registrado' :
+          tipo === 'intereses' ? 'Pago de intereses registrado' :
+          'Pago registrado'
+        }
         footer={
           <div className="flex gap-2 w-full">
             <Button variant="secondary" onClick={handleCerrar} className={rutaInfo ? 'flex-shrink-0' : 'w-full'}>
@@ -361,7 +367,10 @@ export default function RegistrarPago({
             </div>
             <p className="text-[var(--color-text-primary)] font-bold text-lg font-mono-display">{formatMoney(pagoGuardado.montoPagado)}</p>
             <p className="text-[var(--color-text-muted)] text-sm">
-              {pagoGuardado.offline ? 'guardado offline — se sincronizará al conectar' : 'pagado correctamente'}
+              {pagoGuardado.offline ? 'guardado offline — se sincronizará al conectar'
+                : tipo === 'recargo' ? 'recargo aplicado correctamente'
+                : tipo === 'descuento' ? 'descuento aplicado correctamente'
+                : 'pagado correctamente'}
             </p>
           </div>
 

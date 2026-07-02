@@ -288,7 +288,7 @@ export async function POST(request) {
     return Response.json({ error: 'La cuota manual no puede ser negativa' }, { status: 400 })
   }
   // Validar modo de interes; si viene cuotaManual el calculo lo trata como manual.
-  const modoValido = ['fijo', 'unico', 'saldo', 'manual', 'lineal'].includes(modoInteres) ? modoInteres : 'fijo'
+  const modoValido = ['fijo', 'unico', 'saldo', 'manual', 'lineal', 'solo_interes'].includes(modoInteres) ? modoInteres : 'fijo'
   const calc = calcularPrestamo({
     montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia: freq, modoInteres: modoValido,
     ...(cuotaManualNum > 0 && { cuotaManual: cuotaManualNum }),

@@ -520,6 +520,7 @@ export function GrillaDatosSecciones({ secciones }) {
                 <p className="text-[12px] font-semibold mt-0.5 font-mono-display" style={{ color: it.color || 'var(--color-text-primary)' }}>
                   {it.value}
                 </p>
+                {it.sub && <p className="text-[9px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{it.sub}</p>}
               </div>
             ))}
           </div>

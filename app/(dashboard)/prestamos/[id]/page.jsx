@@ -67,6 +67,27 @@ const tipoPagoBadge = {
   liquidacion:{ variant: 'green',  label: 'Liquidacion' },
 }
 
+function GestionBtn({ label, desc, color, icon, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-start gap-2.5 p-2.5 rounded-[10px] text-left transition-all active:scale-[0.97]"
+      style={{ background: `rgba(${color},0.06)`, border: `1px solid rgba(${color},0.2)` }}
+    >
+      <div className="w-7 h-7 rounded-[7px] flex items-center justify-center shrink-0 mt-0.5"
+        style={{ background: `rgba(${color},0.12)`, color: `rgb(${color})` }}>
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d={icon} />
+        </svg>
+      </div>
+      <div className="min-w-0">
+        <p className="text-[12px] font-semibold" style={{ color: `rgb(${color})` }}>{label}</p>
+        <p className="text-[10px] leading-tight mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{desc}</p>
+      </div>
+    </button>
+  )
+}
+
 export default function PrestamoDetallePage({ params }) {
   const { id }             = use(params)
   const router             = useRouter()
@@ -746,6 +767,15 @@ export default function PrestamoDetallePage({ params }) {
               { label: 'Total a pagar', value: formatMoney(totalAPagar) },
               ...(nombreProducto ? [] : [{ label: 'Tasa', value: `${tasaInteres}%` }]),
               { label: 'Plazo', value: `${diasPlazo} días` },
+              { label: 'Tipo de interés', value: ({
+                fijo: 'Cuota fija (clásico)',
+                unico: 'Interés único',
+                saldo: 'Sobre saldo',
+                lineal: 'Decreciente (lineal)',
+                solo_interes: 'Solo interés (globo)',
+                manual: 'Cuota manual',
+                proporcional: 'Proporcional',
+              })[modoInteres] || modoInteres || 'Clásico' },
             ],
           },
           {
@@ -757,7 +787,10 @@ export default function PrestamoDetallePage({ params }) {
               </svg>
             ),
             items: [
-              { label: `Cuota ${frecuenciaLabel}`, value: formatMoney(cuotaDiaria) },
+              { label: `Cuota ${frecuenciaLabel}`, value: formatMoney(cuotaDiaria),
+                ...(modoInteres === 'solo_interes' && cuotasAmortizacion.length > 0
+                  ? { sub: `Última cuota: ${formatMoney(cuotasAmortizacion[cuotasAmortizacion.length - 1]?.cuotaTotal || 0)}` }
+                  : {}) },
               { label: 'Cuotas pendientes', value: `${cuotasPendientes}` },
               ...(cobroInfo ? [{ label: cobroInfo.label, value: cobroInfo.value, color: cobroInfo.color }] : []),
               {
@@ -1237,11 +1270,11 @@ export default function PrestamoDetallePage({ params }) {
         onClose={() => setModalGestionPrestamo(false)}
         title="Gestión del préstamo"
       >
-        <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-4">
           {(puedeGestionarPrestamos || esOwner) && puedeEditar && (
             <button
               onClick={() => { setModalGestionPrestamo(false); setModalEditar(true) }}
-              className="col-span-2 h-11 rounded-[12px] font-semibold text-sm text-[var(--color-text-primary)] bg-[var(--color-bg-hover)] border-2 border-[var(--color-accent)] hover:bg-[rgba(245,197,24,0.1)] transition-all flex items-center justify-center gap-2"
+              className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--color-text-primary)] bg-[var(--color-bg-hover)] border-2 border-[var(--color-accent)] hover:bg-[rgba(245,197,24,0.1)] transition-all flex items-center justify-center gap-2"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -1249,105 +1282,114 @@ export default function PrestamoDetallePage({ params }) {
               Editar préstamo
             </button>
           )}
-          {/* Acciones de gestión de préstamos (no reducen saldo) */}
-          {puedeGestionarPrestamos && <>
-          <button
-            onClick={() => {
-              setModalGestionPrestamo(false)
-              setModalRenovar(true)
-            }}
-            className="h-11 rounded-[12px] font-medium text-sm text-[var(--color-purple)] bg-[rgba(168,85,247,0.08)] border border-[rgba(168,85,247,0.25)] hover:bg-[rgba(168,85,247,0.15)] transition-all"
-          >
-            Renovar
-          </button>
-          <button
-            onClick={() => {
-              setModalGestionPrestamo(false)
-              setModalPlazo(true)
-            }}
-            className="h-11 rounded-[12px] font-medium text-sm text-[var(--color-info)] bg-[rgba(59,130,246,0.08)] border border-[rgba(59,130,246,0.25)] hover:bg-[rgba(59,130,246,0.15)] transition-all"
-          >
-            Modificar plazo
-          </button>
-          {prestamo?.frecuencia && prestamo.frecuencia !== 'diario' && (
-            <button
-              onClick={() => {
-                setModalGestionPrestamo(false)
-                setModalDiaCobro(true)
-              }}
-              className="h-11 rounded-[12px] font-medium text-sm text-[var(--color-accent)] bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.25)] hover:bg-[rgba(245,197,24,0.15)] transition-all"
-            >
-              Día de cobro
-            </button>
+
+          {puedeGestionarPrestamos && (
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--color-text-muted)' }}>
+                Plazo y calendario
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <GestionBtn
+                  label="Renovar"
+                  desc="Prestar más al cliente"
+                  color="168,85,247"
+                  icon="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  onClick={() => { setModalGestionPrestamo(false); setModalRenovar(true) }}
+                />
+                <GestionBtn
+                  label="Modificar plazo"
+                  desc="Cambiar duración o fecha"
+                  color="59,130,246"
+                  icon="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  onClick={() => { setModalGestionPrestamo(false); setModalPlazo(true) }}
+                />
+                {prestamo?.frecuencia && prestamo.frecuencia !== 'diario' && (
+                  <GestionBtn
+                    label="Día de cobro"
+                    desc="Fijar día de la semana"
+                    color="245,197,24"
+                    icon="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
+                    onClick={() => { setModalGestionPrestamo(false); setModalDiaCobro(true) }}
+                  />
+                )}
+                <GestionBtn
+                  label="Próximo cobro"
+                  desc="Cambiar fecha manual"
+                  color="139,92,246"
+                  icon="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                  onClick={() => { setModalGestionPrestamo(false); setModalProximoCobro(true) }}
+                />
+                <GestionBtn
+                  label="Días sin cobro"
+                  desc="Excluir días de la semana"
+                  color="160,160,160"
+                  onClick={() => {
+                    try { setDscDias(prestamo?.diasSinCobro ? JSON.parse(prestamo.diasSinCobro) : []) } catch { setDscDias([]) }
+                    setModalGestionPrestamo(false)
+                    setModalDscPrestamo(true)
+                  }}
+                  icon="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                />
+              </div>
+            </div>
           )}
-          <button
-            onClick={() => {
-              setModalGestionPrestamo(false)
-              setModalProximoCobro(true)
-            }}
-            className="h-11 rounded-[12px] font-medium text-sm text-[#8b5cf6] bg-[rgba(139,92,246,0.08)] border border-[rgba(139,92,246,0.25)] hover:bg-[rgba(139,92,246,0.15)] transition-all"
-          >
-            Próximo cobro
-          </button>
-          <button
-            onClick={() => {
-              setModalGestionPrestamo(false)
-              setModalRecargo(true)
-            }}
-            className="h-11 rounded-[12px] font-medium text-sm text-[#f97316] bg-[rgba(249,115,22,0.08)] border border-[rgba(249,115,22,0.2)] hover:bg-[rgba(249,115,22,0.15)] transition-all"
-          >
-            Recargo
-          </button>
-          </>}
-          {/* Descuento y liquidación reducen el saldo (riesgo): solo con permiso. */}
+
+          {puedeGestionarPrestamos && (
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--color-text-muted)' }}>
+                Ajustes de saldo
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <GestionBtn
+                  label="Recargo"
+                  desc="Agregar castigo o multa"
+                  color="249,115,22"
+                  icon="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
+                  onClick={() => { setModalGestionPrestamo(false); setModalRecargo(true) }}
+                />
+                {puedeAplicarDescuentos && (
+                  <GestionBtn
+                    label="Descuento"
+                    desc="Reducir saldo pendiente"
+                    color="34,197,94"
+                    icon="M9 14.25l3-3m0 0l3 3m-3-3v8.25M3 11.25a4.502 4.502 0 018.206-2.913 4.5 4.5 0 015.588 5.163"
+                    onClick={() => { setModalGestionPrestamo(false); setModalDescuento(true) }}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
           {puedeAplicarDescuentos && (
             <button
-              onClick={() => {
-                setModalGestionPrestamo(false)
-                setModalDescuento(true)
-              }}
-              className="h-11 rounded-[12px] font-medium text-sm text-[var(--color-success)] bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.2)] hover:bg-[rgba(34,197,94,0.15)] transition-all"
+              onClick={() => { setModalGestionPrestamo(false); abrirLiquidacion() }}
+              className="w-full h-11 rounded-[12px] font-medium text-sm transition-all flex items-center justify-center gap-2"
+              style={{ color: 'var(--color-accent)', background: 'rgba(245,197,24,0.08)', border: '1px solid rgba(245,197,24,0.25)' }}
             >
-              Descuento
-            </button>
-          )}
-          {puedeAplicarDescuentos && (
-            <button
-              onClick={() => {
-                setModalGestionPrestamo(false)
-                abrirLiquidacion()
-              }}
-              className="h-11 rounded-[12px] font-medium text-sm text-[#f5c518] bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.25)] hover:bg-[rgba(245,197,24,0.15)] transition-all col-span-2"
-            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
               Cerrar préstamo anticipado
             </button>
           )}
-          <button
-            onClick={() => {
-              try { setDscDias(prestamo?.diasSinCobro ? JSON.parse(prestamo.diasSinCobro) : []) } catch { setDscDias([]) }
-              setModalGestionPrestamo(false)
-              setModalDscPrestamo(true)
-            }}
-            className="h-11 rounded-[12px] font-medium text-sm text-[#a0a0a0] bg-[rgba(160,160,160,0.06)] border border-[rgba(160,160,160,0.2)] hover:bg-[rgba(160,160,160,0.12)] transition-all"
-          >
-            Días sin cobro
-          </button>
-          {/* Tarjeta clavo: marcar o quitar */}
-          {esClavo ? (
-            <button
-              onClick={() => { setModalGestionPrestamo(false); quitarClavo() }}
-              className="h-11 rounded-[12px] font-medium text-sm text-[#22c55e] bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.25)] hover:bg-[rgba(34,197,94,0.15)] transition-all col-span-2"
-            >
-              Quitar de préstamos perdidos
-            </button>
-          ) : (
-            <button
-              onClick={() => { setModalGestionPrestamo(false); setModalClavo(true) }}
-              className="h-11 rounded-[12px] font-medium text-sm text-[#ef4444] bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.25)] hover:bg-[rgba(239,68,68,0.15)] transition-all col-span-2"
-            >
-              Mover a préstamos perdidos
-            </button>
-          )}
+
+          <div className="pt-2 border-t" style={{ borderColor: 'var(--color-border)' }}>
+            {esClavo ? (
+              <button
+                onClick={() => { setModalGestionPrestamo(false); quitarClavo() }}
+                className="w-full h-10 rounded-[12px] font-medium text-sm text-[#22c55e] bg-[rgba(34,197,94,0.06)] hover:bg-[rgba(34,197,94,0.12)] transition-all"
+              >
+                Quitar de préstamos perdidos
+              </button>
+            ) : (
+              <button
+                onClick={() => { setModalGestionPrestamo(false); setModalClavo(true) }}
+                className="w-full h-10 rounded-[12px] font-medium text-sm text-[#ef4444] bg-[rgba(239,68,68,0.06)] hover:bg-[rgba(239,68,68,0.12)] transition-all"
+              >
+                Mover a préstamos perdidos
+              </button>
+            )}
+          </div>
         </div>
       </Modal>
 
