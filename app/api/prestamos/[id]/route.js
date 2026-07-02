@@ -14,6 +14,7 @@ import {
   calcularMontoParaPonerseAlDia,
   calcularInteresMoratorio,
   calcularPrestamo,
+  calcularCapitalRestante,
   pagoHoy,
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
@@ -83,6 +84,7 @@ export async function GET(request, { params }) {
     ...p,
     totalPagado:      p.pagos.filter(x => !['recargo', 'descuento'].includes(x.tipo)).reduce((a, x) => a + x.montoPagado, 0),
     saldoPendiente:   calcularSaldoPendiente(p),
+    capitalRestante:  calcularCapitalRestante(p),
     porcentajePagado: calcularPorcentajePagado(p),
     diasMora:         calcularDiasMora(p, diasExcluidos),
     cuotasPendientes: calcularCuotasPendientes(p),

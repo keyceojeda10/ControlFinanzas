@@ -172,6 +172,11 @@ export function PrestamoHeroCard({ prestamo, narrativa, sparklineData }) {
             <p className="text-[12px] mt-2" style={{ color: 'var(--color-text-secondary)' }}>
               de {formatMoney(totalAPagar)} totales
             </p>
+            {prestamo.capitalRestante != null && prestamo.capitalRestante !== saldo && (
+              <p className="text-[12px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                Capital adeudado: <span style={{ color: 'var(--color-text-primary)' }}>{formatMoney(prestamo.capitalRestante)}</span>
+              </p>
+            )}
             {narrativa && (
               <div
                 className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium"

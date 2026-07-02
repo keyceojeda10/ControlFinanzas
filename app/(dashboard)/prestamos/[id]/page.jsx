@@ -1611,7 +1611,7 @@ export default function PrestamoDetallePage({ params }) {
 
               {/* Desglose */}
               <div className="rounded-[12px] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-[13px] space-y-1">
-                <div className="flex justify-between"><span className="text-[var(--color-text-muted)]">Capital</span><span className="text-white">${(liqData.capital ?? 0).toLocaleString('es-CO')}</span></div>
+                <div className="flex justify-between"><span className="text-[var(--color-text-muted)]">Capital{liqData.capitalRestante != null ? ' restante' : ''}</span><span className="text-white">${(liqData.capitalRestante ?? liqData.capital ?? 0).toLocaleString('es-CO')}</span></div>
                 <div className="flex justify-between"><span className="text-[var(--color-text-muted)]">Interés devengado</span><span className="text-white">${(liqData[liqModalidad]?.interesDevengado ?? 0).toLocaleString('es-CO')}</span></div>
                 <div className="flex justify-between"><span className="text-[var(--color-text-muted)]">Ya pagó</span><span className="text-white">${(liqData.totalPagadoReal ?? 0).toLocaleString('es-CO')}</span></div>
                 <div className="flex justify-between border-t border-[var(--color-border)] pt-1 mt-1"><span className="text-[var(--color-text-muted)]">Saldo actual (pactado)</span><span className="text-white">${(liqData.saldoActual ?? 0).toLocaleString('es-CO')}</span></div>
