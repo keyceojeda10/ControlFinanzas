@@ -45,17 +45,26 @@ export async function GET(request) {
       id: p.id,
       cliente: p.cliente?.nombre || 'Sin nombre',
       clienteId: p.cliente?.id,
+      rutaId: p.cliente?.rutaId || null,
       ruta: p.cliente?.ruta?.nombre || 'Sin ruta',
       montoPrestado: p.montoPrestado,
       saldoPendiente: Math.round(saldo),
       recuperado: Math.round(pagado),
       clavoPerdida: p.clavoPerdida,
       clavoAt: p.clavoAt,
+      frecuencia: p.frecuencia || 'diario',
     }
   })
 
+  const rutasMap = new Map()
+  items.forEach(it => {
+    if (it.rutaId && !rutasMap.has(it.rutaId)) rutasMap.set(it.rutaId, it.ruta)
+  })
+  const rutas = Array.from(rutasMap, ([id, nombre]) => ({ id, nombre }))
+
   return Response.json({
     items,
+    rutas,
     total: items.length,
     capitalEnClavos: Math.round(capitalEnClavos),
     saldoEnClavos: Math.round(saldoEnClavos),
