@@ -1289,7 +1289,7 @@ function NuevoPrestamo() {
                               <select value={modoInteres} onChange={e => setModoInteres(e.target.value)}
                                 className="h-8 rounded-lg border px-2 text-sm"
                                 style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus>
-                                <option value="fijo">Clasico</option><option value="unico">De una vez</option><option value="saldo">Sobre saldo</option><option value="manual">Manual</option><option value="lineal">Decreciente</option>
+                                <option value="fijo">Clasico</option><option value="unico">De una vez</option><option value="solo_interes">Globo</option><option value="saldo">Sobre saldo</option><option value="manual">Manual</option><option value="lineal">Decreciente</option>
                               </select>
                             } />
                         )}
@@ -1423,6 +1423,7 @@ function NuevoPrestamo() {
                         style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus>
                         <option value="fijo">Clasico</option>
                         <option value="unico">De una vez</option>
+                        <option value="solo_interes">Globo</option>
                         <option value="saldo">Sobre saldo</option>
                         <option value="manual">Manual</option>
                         <option value="lineal">Decreciente</option>
