@@ -636,13 +636,16 @@ export function TimelinePrestamo({ fechaInicio, fechaFin, porcentajePagado, colo
 // ─── 8. Mini card de un pago en el historial ─────────────────────
 export function PagoMiniCard({ pago, onAnular, anulando, isOffline, children }) {
   const tipoColors = {
-    completo:  { bg: 'var(--color-success)', label: 'Completo' },
-    parcial:   { bg: '#f5c518',              label: 'Parcial' },
-    capital:   { bg: '#a855f7',              label: 'A Capital' },
-    recargo:   { bg: 'var(--color-danger)',  label: 'Recargo' },
-    descuento: { bg: '#3b82f6',              label: 'Descuento' },
+    completo:    { bg: 'var(--color-success)', label: 'Completo' },
+    parcial:     { bg: '#f5c518',              label: 'Parcial' },
+    capital:     { bg: '#a855f7',              label: 'A Capital' },
+    recargo:     { bg: 'var(--color-danger)',  label: 'Recargo' },
+    descuento:   { bg: '#3b82f6',              label: 'Descuento' },
+    intereses:   { bg: '#f97316',              label: 'Intereses' },
+    liquidacion: { bg: '#6366f1',              label: 'Liquidación' },
   }
   const tipoInfo = tipoColors[pago.tipo] || tipoColors.parcial
+  const tipoIntereses = pago.tipo === 'intereses'
 
   return (
     <div
@@ -688,6 +691,11 @@ export function PagoMiniCard({ pago, onAnular, anulando, isOffline, children }) 
             >
               {tipoInfo.label}
             </span>
+            {pago.cuotaNumero && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--color-text-secondary)' }}>
+                Cuota {pago.cuotaNumero}
+              </span>
+            )}
             {isOffline && (
               <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(245,197,24,0.15)', color: 'var(--color-warning)' }}>
                 offline

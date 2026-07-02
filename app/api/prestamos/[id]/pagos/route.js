@@ -21,6 +21,7 @@ import {
   recalcularTablaSoloInteresDesdeSaldo,
   obtenerDiasPorPeriodo,
   calcularInteresesPendientes,
+  obtenerProximaCuotaTabla,
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { registrarMovimientoCapital } from '@/lib/capital'
@@ -291,6 +292,9 @@ export async function POST(request, { params }) {
     // 1. Crear el pago. En liquidacion con monto 0 (el cliente ya pago lo justo
     // y solo se perdona el interes futuro) no se registra un pago de $0.
     const metodoValido = ['efectivo', 'transferencia'].includes(metodoPago) ? metodoPago : null
+    const cuotaNumero = tieneTablaAmortizacion(prestamo) && !['recargo', 'descuento', 'liquidacion'].includes(tipo)
+      ? obtenerProximaCuotaTabla(prestamo)?.numeroPeriodo ?? null
+      : null
     if (!(tipo === 'liquidacion' && montoFinal === 0)) {
       await tx.pago.create({
         data: {
@@ -302,6 +306,7 @@ export async function POST(request, { params }) {
           metodoPago: metodoValido,
           plataforma: metodoValido === 'transferencia' ? (plataforma?.trim() || null) : null,
           nota: nota?.trim() || null,
+          cuotaNumero,
           fechaPago: new Date(),
           latitud: coordsPago.latitud,
           longitud: coordsPago.longitud,

@@ -62,12 +62,12 @@ export default function CobrosHoyPage() {
     if (!cuota || cuota <= 0) return
     setModoParcial(false)
     setMontoParcial('')
-    setModalPago({ id: cliente.id, nombre: cliente.nombre, cuota, prestamoActivo: p.id, prestamosActivos: activos, abonoConPendiente: cliente.pagoHoy && cliente.cobroPendienteHoy })
+    setModalPago({ id: cliente.id, nombre: cliente.nombre, cuota, prestamoActivo: p.id, prestamosActivos: activos, abonoConPendiente: cliente.pagoHoy && cliente.cobroPendienteHoy, esBalloon: p.esBalloon || false, cuotaNumero: p.cuotaNumero ?? null, modoInteres: p.modoInteres })
   }
 
-  const elegirPrestamo = (prestamoId, cuota) => {
+  const elegirPrestamo = (prestamoId, cuota, extra = {}) => {
     if (!modalPago) return
-    setModalPago(prev => prev ? { ...prev, prestamoActivo: prestamoId, cuota } : prev)
+    setModalPago(prev => prev ? { ...prev, prestamoActivo: prestamoId, cuota, esBalloon: extra.esBalloon || false, cuotaNumero: extra.cuotaNumero ?? null, modoInteres: extra.modoInteres } : prev)
   }
 
   const ejecutarPago = async (metodoPago, { confirmarDuplicado = false, montoCustom = null } = {}) => {
@@ -456,7 +456,7 @@ export default function CobrosHoyPage() {
               {modalPago.prestamosActivos.map((p, i) => (
                 <button
                   key={p.id}
-                  onClick={() => elegirPrestamo(p.id, p.cuotaDiaria)}
+                  onClick={() => elegirPrestamo(p.id, p.cuotaDiaria, { esBalloon: p.esBalloon, cuotaNumero: p.cuotaNumero, modoInteres: p.modoInteres })}
                   disabled={!p.cuotaDiaria || p.cuotaDiaria <= 0}
                   className="w-full text-left px-4 py-3.5 rounded-[14px] border transition-all active:scale-[0.99] disabled:opacity-50"
                   style={{ background: 'var(--color-bg-card)', borderColor: 'var(--color-border)' }}
@@ -510,6 +510,15 @@ export default function CobrosHoyPage() {
             >
               {modoParcial ? 'Cobrar cuota completa' : 'Cobrar otro monto'}
             </button>
+            {modalPago.esBalloon && (
+              <div className="rounded-[12px] px-3 py-2.5 text-center" style={{ background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--color-danger) 25%, transparent)' }}>
+                <p className="text-xs font-semibold" style={{ color: 'var(--color-danger)' }}>Cuota de capital + interés (globo)</p>
+                <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Esta es la última cuota. Incluye la devolución del capital completo mas el interés del período.</p>
+              </div>
+            )}
+            {modalPago.cuotaNumero && ['lineal', 'solo_interes'].includes(modalPago.modoInteres) && (
+              <p className="text-[10px] text-center" style={{ color: 'var(--color-text-muted)' }}>Cuota #{modalPago.cuotaNumero}</p>
+            )}
             {modalPago.abonoConPendiente && (
               <div className="rounded-[12px] px-3 py-2.5 text-center" style={{ background: 'color-mix(in srgb, var(--color-warning) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--color-warning) 25%, transparent)' }}>
                 <p className="text-xs font-semibold" style={{ color: 'var(--color-warning)' }}>Tiene cuotas atrasadas</p>

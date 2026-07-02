@@ -11,6 +11,7 @@ import {
   calcularMontoParaPonerseAlDia,
   tieneCobroPendienteHoy,
   obtenerCuotaPeriodoActual,
+  obtenerProximaCuotaTabla,
   tieneTablaAmortizacion,
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
@@ -153,11 +154,15 @@ export async function GET() {
         mora = Math.max(mora, moraPrestamo)
         montoParaAlDia += alDia
 
+        const proximaCuota = tieneTablaAmortizacion(p) ? obtenerProximaCuotaTabla(p) : null
         prestamosActivos.push({
           id: p.id,
           cuotaDiaria: Math.round(cuotaReal),
           saldoPendiente: Math.round(saldo),
           diasMora: moraPrestamo,
+          modoInteres: p.modoInteres || 'fijo',
+          esBalloon: proximaCuota?.esBalloon || false,
+          cuotaNumero: proximaCuota?.numeroPeriodo ?? null,
         })
 
         if (!_hoySinCobro && tieneCobroPendienteHoy(p, diasExcluidosPrestamo, festivos)) {
