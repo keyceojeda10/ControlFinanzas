@@ -9,6 +9,7 @@ import { formatMoney } from '@/lib/i18n'
 import OfflineBadge from '@/components/offline/OfflineBadge'
 import Avatar from '@/components/ui/Avatar'
 import CardActionMenu from '@/components/ui/CardActionMenu'
+import { NuevoChip } from '@/components/ui/BadgeNuevo'
 
 const COLOR_OK     = 'var(--color-accent)'    // dorado — al dia
 const COLOR_HOT    = '#f97316'                // naranja — vencido pocos dias
@@ -33,7 +34,7 @@ function moodLabel(p) {
   return 'Al día'
 }
 
-export default function PrestamoCard({ prestamo: p, actions }) {
+export default function PrestamoCard({ prestamo: p, actions, esNuevo }) {
   const color           = moodColor(p)
   const label           = moodLabel(p)
   const porcentaje      = Math.max(0, Math.min(100, p.porcentajePagado ?? 0))
@@ -82,6 +83,7 @@ export default function PrestamoCard({ prestamo: p, actions }) {
               <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
               {label}
             </span>
+            {esNuevo && <NuevoChip />}
           </div>
           {actions?.length > 0 && <CardActionMenu actions={actions} />}
         </div>

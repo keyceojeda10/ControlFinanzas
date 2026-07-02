@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
 import Avatar from '@/components/ui/Avatar'
 import CardActionMenu from '@/components/ui/CardActionMenu'
+import { NuevoChip } from '@/components/ui/BadgeNuevo'
 
 const COLOR_OK     = 'var(--color-accent)'
 const COLOR_HOT    = '#f97316'
@@ -29,7 +30,7 @@ function moodLabel(c) {
   return 'Al día'
 }
 
-export default function ClienteCard({ cliente, actions }) {
+export default function ClienteCard({ cliente, actions, esNuevo }) {
   const color = moodColor(cliente)
   const label = moodLabel(cliente)
   const saldoTotal = Number(cliente.saldoPendienteTotal ?? 0)
@@ -113,6 +114,7 @@ export default function ClienteCard({ cliente, actions }) {
               {cliente.creadoPor.nombre || 'Cobrador'}
             </span>
           )}
+          {esNuevo && <NuevoChip />}
           {(cliente.lineasCreditoActivas ?? 0) > 0 && (
             <span
               className="inline-flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded-full"

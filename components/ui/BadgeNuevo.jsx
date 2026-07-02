@@ -1,8 +1,6 @@
 // components/ui/BadgeNuevo.jsx
-// Wrapper que envuelve una card y le agrega un borde verde brillante + un
-// chip "Nuevo" si la fecha es de hoy en la zona horaria del usuario.
-// No tapa ningun contenido — el efecto vive en el borde y un chip flotante
-// pegado a la esquina inferior derecha del borde.
+// Wrapper que envuelve una card y le agrega un glow verde sutil
+// + un chip "NUEVO" dentro de la card si la fecha es de hoy.
 'use client'
 
 import { useCountry } from '@/hooks/useCountry'
@@ -15,37 +13,39 @@ export default function BadgeNuevo({ fecha, children, className = '' }) {
   if (!esNuevo) return children ?? null
 
   return (
-    <div className={`relative ${className}`} style={{ marginBottom: '14px' }}>
-      {/* Aro animado pulsante alrededor del card */}
+    <div className={`relative ${className}`}>
       <div
         aria-hidden="true"
-        className="absolute -inset-0.5 rounded-[20px] pointer-events-none animate-pulse"
+        className="absolute -inset-px rounded-[17px] pointer-events-none animate-pulse"
         style={{
           background: 'transparent',
           boxShadow:
-            '0 0 12px color-mix(in srgb, var(--color-success) 45%, transparent),' +
-            ' inset 0 0 8px color-mix(in srgb, var(--color-success) 12%, transparent)',
+            '0 0 10px color-mix(in srgb, var(--color-success) 35%, transparent),' +
+            ' inset 0 0 6px color-mix(in srgb, var(--color-success) 10%, transparent)',
           animationDuration: '2.4s',
         }}
       />
       {children}
-      {/* Chip "Nuevo" en la esquina inferior izquierda, fuera del flujo */}
-      <span
-        className="absolute -bottom-2 left-3 z-10 inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full pointer-events-none"
-        style={{
-          background: 'var(--color-bg-base)',
-          color: 'var(--color-success)',
-          border: '1px solid color-mix(in srgb, var(--color-success) 60%, transparent)',
-          boxShadow: '0 0 8px color-mix(in srgb, var(--color-success) 40%, transparent)',
-        }}
-      >
-        <span
-          aria-hidden="true"
-          className="w-1.5 h-1.5 rounded-full"
-          style={{ background: 'var(--color-success)' }}
-        />
-        Nuevo
-      </span>
     </div>
+  )
+}
+
+export function NuevoChip() {
+  return (
+    <span
+      className="inline-flex items-center gap-1 text-[8px] font-bold uppercase tracking-wider px-1.5 py-px rounded-full shrink-0"
+      style={{
+        color: 'var(--color-success)',
+        background: 'color-mix(in srgb, var(--color-success) 12%, transparent)',
+        border: '1px solid color-mix(in srgb, var(--color-success) 30%, transparent)',
+      }}
+    >
+      <span
+        aria-hidden="true"
+        className="w-1 h-1 rounded-full"
+        style={{ background: 'var(--color-success)' }}
+      />
+      Nuevo
+    </span>
   )
 }

@@ -15,7 +15,7 @@ import ModalWhatsAppTemplates                 from '@/components/ui/ModalWhatsAp
 import Avatar                                 from '@/components/ui/Avatar'
 import { Card }                               from '@/components/ui/Card'
 import Mascota                                from '@/components/ui/Mascota'
-import BadgeNuevo                             from '@/components/ui/BadgeNuevo'
+import BadgeNuevo, { NuevoChip }               from '@/components/ui/BadgeNuevo'
 import { useCountry }                         from '@/hooks/useCountry'
 import { formatMoney, isHoy }                 from '@/lib/i18n'
 
@@ -74,7 +74,7 @@ function pMoodLabel(p) {
   return 'OK'
 }
 
-function PrestamoCardCompacto({ prestamo: p }) {
+function PrestamoCardCompacto({ prestamo: p, esNuevo }) {
   const color = pMoodColor(p)
   const label = pMoodLabel(p)
   const porcentaje = Math.max(0, Math.min(100, p.porcentajePagado ?? 0))
@@ -86,19 +86,24 @@ function PrestamoCardCompacto({ prestamo: p }) {
       glowColor={color}
       padding={false}
       hoverable
-      className="block px-3 py-3 group"
+      className="block px-2.5 py-2.5 group"
     >
-      <div className="flex items-center gap-2 mb-2">
+      {/* Row 1: Avatar + nombre */}
+      <div className="flex items-center gap-2 mb-1.5">
         <Avatar
           nombre={p.cliente?.nombre}
           fotoUrl={p.cliente?.fotoUrl}
           size={28}
           fontSize={10}
-          style={p.cliente?.fotoUrl ? { border: `1px solid ${color}` } : undefined}
+          style={p.cliente?.fotoUrl ? { border: `1.5px solid ${color}` } : undefined}
         />
-        <p className="text-[12px] font-semibold text-[var(--color-text-primary)] leading-tight flex-1 min-w-0">
+        <p className="text-[12px] font-semibold text-[var(--color-text-primary)] leading-tight flex-1 min-w-0 truncate">
           {p.cliente?.nombre}
         </p>
+      </div>
+
+      {/* Row 2: estado + monto */}
+      <div className="flex items-center justify-between gap-1 mb-1.5">
         <span
           className="inline-flex items-center gap-0.5 text-[8px] font-semibold px-1.5 py-px rounded-full shrink-0"
           style={{ background: `${color}20`, color, border: `1px solid ${color}35` }}
@@ -106,11 +111,13 @@ function PrestamoCardCompacto({ prestamo: p }) {
           <span className="w-1 h-1 rounded-full" style={{ background: color }} />
           {label}
         </span>
+        <span className="text-[13px] font-mono-display font-bold truncate" style={{ color: p.diasMora > 0 ? color : 'var(--color-text-primary)' }}>
+          {formatMoney(p.saldoPendiente)}
+        </span>
       </div>
-      <p className="text-[15px] font-mono-display font-bold leading-none" style={{ color: p.diasMora > 0 ? color : 'var(--color-text-primary)' }}>
-        {formatMoney(p.saldoPendiente)}
-      </p>
-      <div className="mt-1.5">
+
+      {/* Row 3: progress */}
+      <div>
         <div className="h-1 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
           <div
             className="h-full rounded-full"
@@ -122,9 +129,12 @@ function PrestamoCardCompacto({ prestamo: p }) {
             }}
           />
         </div>
-        <p className="text-[9px] text-[var(--color-text-muted)] mt-0.5">
-          <span className="font-mono-display font-semibold" style={{ color }}>{porcentaje}%</span> pagado
-        </p>
+        <div className="flex items-center justify-between mt-0.5">
+          <p className="text-[9px] text-[var(--color-text-muted)]">
+            <span className="font-mono-display font-semibold" style={{ color }}>{porcentaje}%</span> pagado
+          </p>
+          {esNuevo && <NuevoChip />}
+        </div>
       </div>
     </Card>
   )
@@ -583,7 +593,7 @@ export default function PrestamosPage() {
             if (vistaP === 'compacta') {
               return (
                 <BadgeNuevo key={p.id} fecha={p.createdAt}>
-                  <PrestamoCardCompacto prestamo={p} />
+                  <PrestamoCardCompacto prestamo={p} esNuevo={isHoy(p.createdAt, country)} />
                 </BadgeNuevo>
               )
             }
@@ -606,7 +616,7 @@ export default function PrestamosPage() {
             }
             return (
               <BadgeNuevo key={p.id} fecha={p.createdAt}>
-                <PrestamoCard prestamo={p} actions={cardActions} />
+                <PrestamoCard prestamo={p} actions={cardActions} esNuevo={isHoy(p.createdAt, country)} />
               </BadgeNuevo>
             )
           })}
@@ -688,7 +698,7 @@ export default function PrestamosPage() {
                       if (vistaP === 'compacta') {
                         return (
                           <BadgeNuevo key={p.id} fecha={p.createdAt}>
-                            <PrestamoCardCompacto prestamo={p} />
+                            <PrestamoCardCompacto prestamo={p} esNuevo={isHoy(p.createdAt, country)} />
                           </BadgeNuevo>
                         )
                       }
@@ -711,7 +721,7 @@ export default function PrestamosPage() {
                       }
                       return (
                         <BadgeNuevo key={p.id} fecha={p.createdAt}>
-                          <PrestamoCard prestamo={p} actions={cardActions} />
+                          <PrestamoCard prestamo={p} actions={cardActions} esNuevo={isHoy(p.createdAt, country)} />
                         </BadgeNuevo>
                       )
                     })}

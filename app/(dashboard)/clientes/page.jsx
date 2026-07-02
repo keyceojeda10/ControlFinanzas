@@ -11,13 +11,14 @@ import { Button }        from '@/components/ui/Button'
 import { Modal }         from '@/components/ui/Modal'
 import { SkeletonCard }  from '@/components/ui/Skeleton'
 import ClienteCard       from '@/components/clientes/ClienteCard'
-import BadgeNuevo        from '@/components/ui/BadgeNuevo'
+import BadgeNuevo, { NuevoChip } from '@/components/ui/BadgeNuevo'
 import { StaggeredList } from '@/components/ui/StaggeredList'
 import ModalWhatsAppTemplates from '@/components/ui/ModalWhatsAppTemplates'
 import Mascota           from '@/components/ui/Mascota'
 import Avatar            from '@/components/ui/Avatar'
 import { Card }          from '@/components/ui/Card'
-import { formatMoney }   from '@/lib/i18n'
+import { formatMoney, isHoy } from '@/lib/i18n'
+import { useCountry }    from '@/hooks/useCountry'
 
 // Iconos para acciones swipe
 const IconWA = (
@@ -63,7 +64,7 @@ function moodLabelCompacto(c) {
   return 'OK'
 }
 
-function ClienteCardCompacto({ cliente }) {
+function ClienteCardCompacto({ cliente, esNuevo }) {
   const color = moodColorCompacto(cliente)
   const label = moodLabelCompacto(cliente)
   const saldo = Number(cliente.saldoPendienteTotal ?? 0)
@@ -76,49 +77,57 @@ function ClienteCardCompacto({ cliente }) {
       glowColor={color}
       padding={false}
       hoverable
-      className="block px-3 py-3 group"
+      className="block px-2.5 py-2.5 group"
     >
-      <div className="flex items-center gap-2.5">
+      {/* Row 1: Avatar + nombre */}
+      <div className="flex items-center gap-2 mb-1.5">
         <div className="relative shrink-0">
           <Avatar
             nombre={cliente.nombre}
             fotoUrl={cliente.fotoUrl}
-            size={32}
-            fontSize={12}
-            style={cliente.fotoUrl ? { border: `2px solid ${color}` } : undefined}
+            size={28}
+            fontSize={10}
+            style={cliente.fotoUrl ? { border: `1.5px solid ${color}` } : undefined}
           />
           {cliente.pagoHoy && (
             <span
-              className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full"
-              style={{ background: 'var(--color-success)', border: '2px solid var(--color-bg-card)' }}
+              className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full"
+              style={{ background: 'var(--color-success)', border: '1.5px solid var(--color-bg-card)' }}
             />
           )}
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[13px] font-semibold text-[var(--color-text-primary)] leading-tight">
-            {cliente.nombre}
-          </p>
-          <div className="flex items-center gap-1.5 mt-0.5 overflow-hidden">
-            <span
-              className="inline-flex items-center gap-1 text-[8px] font-semibold px-1.5 py-px rounded-full shrink-0"
-              style={{ background: `${color}20`, color, border: `1px solid ${color}35` }}
-            >
-              <span className="w-1 h-1 rounded-full" style={{ background: color }} />
-              {label}
-            </span>
-            {tienePrestamo && (
-              <span className="text-[11px] font-mono-display font-bold shrink-0" style={{ color: cliente.diasMoraMax > 0 ? color : 'var(--color-text-secondary)' }}>
-                {formatMoney(saldo)}
-              </span>
-            )}
-            {cliente.creadoPor && (
-              <span className="text-[8px] font-medium px-1.5 py-px rounded-full truncate" style={{ color: 'var(--color-text-muted)', background: 'var(--color-bg-hover)' }}>
-                {cliente.creadoPor.nombre || 'Cobrador'}
-              </span>
-            )}
-          </div>
-        </div>
+        <p className="text-[12px] font-semibold text-[var(--color-text-primary)] leading-tight flex-1 min-w-0 truncate">
+          {cliente.nombre}
+        </p>
       </div>
+
+      {/* Row 2: estado + monto */}
+      <div className="flex items-center justify-between gap-1">
+        <span
+          className="inline-flex items-center gap-0.5 text-[8px] font-semibold px-1.5 py-px rounded-full shrink-0"
+          style={{ background: `${color}20`, color, border: `1px solid ${color}35` }}
+        >
+          <span className="w-1 h-1 rounded-full" style={{ background: color }} />
+          {label}
+        </span>
+        {tienePrestamo && (
+          <span className="text-[11px] font-mono-display font-bold truncate" style={{ color: cliente.diasMoraMax > 0 ? color : 'var(--color-text-secondary)' }}>
+            {formatMoney(saldo)}
+          </span>
+        )}
+      </div>
+
+      {/* Row 3: cobrador + nuevo (solo si aplica) */}
+      {(cliente.creadoPor || esNuevo) && (
+        <div className="flex items-center justify-between gap-1 mt-1.5">
+          {cliente.creadoPor ? (
+            <span className="text-[8px] font-medium px-1.5 py-px rounded-full truncate" style={{ color: 'var(--color-text-muted)', background: 'var(--color-bg-hover)' }}>
+              {cliente.creadoPor.nombre || 'Cobrador'}
+            </span>
+          ) : <span />}
+          {esNuevo && <NuevoChip />}
+        </div>
+      )}
     </Card>
   )
 }
@@ -142,6 +151,7 @@ const COLORES_GRUPO = [
 
 export default function ClientesPage() {
   const { esOwner, puedeCrearClientes, puedeCrearPrestamos, orgNombre, loading: authLoading } = useAuth()
+  const { country } = useCountry()
   const { lastSyncedAt } = useOffline()
   const searchParams = useSearchParams()
   const [clientes, setClientes]   = useState([])
@@ -770,12 +780,13 @@ export default function ClientesPage() {
                 </label>
               ) : vista === 'compacta' ? (
                 <BadgeNuevo key={c.id} fecha={c.createdAt}>
-                  <ClienteCardCompacto cliente={c} />
+                  <ClienteCardCompacto cliente={c} esNuevo={isHoy(c.createdAt, country)} />
                 </BadgeNuevo>
               ) : (
                 <BadgeNuevo key={c.id} fecha={c.createdAt}>
                   <ClienteCard
                     cliente={c}
+                    esNuevo={isHoy(c.createdAt, country)}
                     actions={[
                       ...(c.telefono ? [{
                         icon: IconWA,
