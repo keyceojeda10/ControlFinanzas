@@ -509,7 +509,7 @@ export default function PrestamosPage() {
             type="search"
             value={buscar}
             onChange={(e) => setBuscar(e.target.value)}
-            placeholder="Buscar por nombre o cédula del cliente…"
+            placeholder="Buscar cliente…"
             className="w-full h-10 pl-9 pr-4 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all"
           />
           {buscar && (
@@ -538,10 +538,10 @@ export default function PrestamosPage() {
           </svg>
           Agrupar
         </button>
-        <div className="flex rounded-[10px] border border-[var(--color-border)] overflow-hidden shrink-0">
+        <div className="flex rounded-[12px] border border-[var(--color-border)] overflow-hidden shrink-0 h-10">
           <button
             onClick={() => cambiarVistaP('lista')}
-            className="p-1.5 transition-colors"
+            className="px-2.5 h-full flex items-center justify-center transition-colors"
             style={{
               background: vistaP === 'lista' ? 'var(--color-accent)' : 'transparent',
               color: vistaP === 'lista' ? '#000' : 'var(--color-text-muted)',
@@ -552,7 +552,7 @@ export default function PrestamosPage() {
           </button>
           <button
             onClick={() => cambiarVistaP('compacta')}
-            className="p-1.5 transition-colors"
+            className="px-2.5 h-full flex items-center justify-center transition-colors"
             style={{
               background: vistaP === 'compacta' ? 'var(--color-accent)' : 'transparent',
               color: vistaP === 'compacta' ? '#000' : 'var(--color-text-muted)',

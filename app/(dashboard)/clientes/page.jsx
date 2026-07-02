@@ -575,7 +575,7 @@ export default function ClientesPage() {
               type="search"
               value={buscar}
               onChange={(e) => setBuscar(e.target.value)}
-              placeholder={modoAsignar ? 'Buscar cliente para asignar…' : 'Buscar por nombre, cédula o teléfono…'}
+              placeholder={modoAsignar ? 'Buscar cliente para asignar…' : 'Buscar cliente…'}
               className="w-full h-10 pl-9 pr-9 rounded-[12px] border border-[var(--color-border)] bg-[#161616] text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all"
             />
             {buscar && (
@@ -640,10 +640,10 @@ export default function ClientesPage() {
             )}
           </div>
           {!loading && clientes.length > 0 && (
-            <div className="flex rounded-[10px] border border-[var(--color-border)] overflow-hidden shrink-0">
+            <div className="flex rounded-full border border-[var(--color-border)] overflow-hidden shrink-0 h-8">
               <button
                 onClick={() => cambiarVista('lista')}
-                className="p-1.5 transition-colors"
+                className="px-2 h-full flex items-center justify-center transition-colors"
                 style={{
                   background: vista === 'lista' ? 'var(--color-accent)' : 'transparent',
                   color: vista === 'lista' ? '#000' : 'var(--color-text-muted)',
@@ -654,7 +654,7 @@ export default function ClientesPage() {
               </button>
               <button
                 onClick={() => cambiarVista('compacta')}
-                className="p-1.5 transition-colors"
+                className="px-2 h-full flex items-center justify-center transition-colors"
                 style={{
                   background: vista === 'compacta' ? 'var(--color-accent)' : 'transparent',
                   color: vista === 'compacta' ? '#000' : 'var(--color-text-muted)',
