@@ -98,21 +98,21 @@ function ClienteCardCompacto({ cliente }) {
           <p className="text-[13px] font-semibold text-[var(--color-text-primary)] leading-tight">
             {cliente.nombre}
           </p>
-          <div className="flex items-center gap-1.5 mt-0.5">
+          <div className="flex items-center gap-1.5 mt-0.5 overflow-hidden">
             <span
-              className="inline-flex items-center gap-1 text-[8px] font-semibold px-1.5 py-px rounded-full"
+              className="inline-flex items-center gap-1 text-[8px] font-semibold px-1.5 py-px rounded-full shrink-0"
               style={{ background: `${color}20`, color, border: `1px solid ${color}35` }}
             >
               <span className="w-1 h-1 rounded-full" style={{ background: color }} />
               {label}
             </span>
             {tienePrestamo && (
-              <span className="text-[11px] font-mono-display font-bold" style={{ color: cliente.diasMoraMax > 0 ? color : 'var(--color-text-secondary)' }}>
+              <span className="text-[11px] font-mono-display font-bold shrink-0" style={{ color: cliente.diasMoraMax > 0 ? color : 'var(--color-text-secondary)' }}>
                 {formatMoney(saldo)}
               </span>
             )}
             {cliente.creadoPor && (
-              <span className="text-[8px] font-medium px-1.5 py-px rounded-full" style={{ color: 'var(--color-text-muted)', background: 'var(--color-bg-hover)' }}>
+              <span className="text-[8px] font-medium px-1.5 py-px rounded-full truncate" style={{ color: 'var(--color-text-muted)', background: 'var(--color-bg-hover)' }}>
                 {cliente.creadoPor.nombre || 'Cobrador'}
               </span>
             )}

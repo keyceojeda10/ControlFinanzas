@@ -15,14 +15,13 @@ export default function BadgeNuevo({ fecha, children, className = '' }) {
   if (!esNuevo) return children ?? null
 
   return (
-    <div className={`relative ${className}`} style={{ marginBottom: '18px' }}>
+    <div className={`relative ${className}`} style={{ marginBottom: '14px' }}>
       {/* Aro animado pulsante alrededor del card */}
       <div
         aria-hidden="true"
         className="absolute -inset-0.5 rounded-[20px] pointer-events-none animate-pulse"
         style={{
           background: 'transparent',
-          border: '2px solid color-mix(in srgb, var(--color-success) 70%, transparent)',
           boxShadow:
             '0 0 12px color-mix(in srgb, var(--color-success) 45%, transparent),' +
             ' inset 0 0 8px color-mix(in srgb, var(--color-success) 12%, transparent)',
