@@ -1066,6 +1066,17 @@ function NuevoPrestamo() {
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Interes mensual</label>
                 <Input type="number" inputMode="decimal" step="0.5" min="0" value={tasa} onChange={(e) => setTasa(e.target.value)} placeholder="20" suffix="%" />
+                <div className="flex gap-1.5 mt-2 flex-wrap">
+                  {[5, 10, 15, 20, 25, 30].map(v => (
+                    <button key={v} type="button" onClick={() => setTasa(String(v))}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all"
+                      style={String(v) === tasa
+                        ? { background: 'var(--color-accent)', color: '#000' }
+                        : { background: 'var(--color-bg-surface)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)' }
+                      }
+                    >{v}%</button>
+                  ))}
+                </div>
                 {Number(monto) > 0 && Number(tasa) > 0 && (
                   <p className="text-[11px] mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
                     Al {tasa}% sobre {formatMoney(Number(monto))} = {formatMoney(Math.round(Number(monto) * Number(tasa) / 100))} de interes por mes
@@ -1078,6 +1089,21 @@ function NuevoPrestamo() {
                   En cuanto tiempo paga? ({frecuencia === 'diario' ? 'dias' : frecuencia === 'semanal' ? 'semanas' : frecuencia === 'quincenal' ? 'quincenas' : 'meses'})
                 </label>
                 <Input type="number" inputMode="numeric" value={plazoUnidades} onChange={(e) => setPlazoUnidades(e.target.value)} />
+                <div className="flex gap-1.5 mt-2 flex-wrap">
+                  {(frecuencia === 'diario' ? [15, 20, 25, 30, 45, 60]
+                    : frecuencia === 'semanal' ? [4, 6, 8, 10, 12, 16]
+                    : frecuencia === 'quincenal' ? [2, 3, 4, 6, 8, 12]
+                    : [1, 2, 3, 4, 6, 12]
+                  ).map(v => (
+                    <button key={v} type="button" onClick={() => setPlazoUnidades(String(v))}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all"
+                      style={String(v) === plazoUnidades
+                        ? { background: 'var(--color-accent)', color: '#000' }
+                        : { background: 'var(--color-bg-surface)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)' }
+                      }
+                    >{v}</button>
+                  ))}
+                </div>
                 {frecuencia !== 'diario' && plazoUnidades && (
                   <p className="text-[10px] mt-1 px-0.5" style={{ color: 'var(--color-text-muted)' }}>= {plazo} dias</p>
                 )}
