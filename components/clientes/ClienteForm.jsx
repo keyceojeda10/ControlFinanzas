@@ -24,9 +24,12 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
   const [fotoFile, setFotoFile] = useState(null)
   const [fotoPreview, setFotoPreview] = useState(clienteInicial?.fotoUrl || null)
 
+  const cedulaExistente = clienteInicial?.cedula ?? datosIniciales?.cedula ?? ''
+  const [sinCedula, setSinCedula] = useState(cedulaExistente.startsWith('SIN-'))
+
   const [form, setForm] = useState({
     nombre:     clienteInicial?.nombre     ?? datosIniciales?.nombre     ?? '',
-    cedula:     clienteInicial?.cedula     ?? datosIniciales?.cedula     ?? '',
+    cedula:     sinCedula ? '' : cedulaExistente,
     telefono:   clienteInicial?.telefono   ?? datosIniciales?.telefono   ?? '',
     direccion:  clienteInicial?.direccion  ?? datosIniciales?.direccion  ?? '',
     referencia: clienteInicial?.referencia ?? '',
@@ -148,7 +151,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
   //   falla el usuario vea el error en el campo y sepa por que no avanzo.
   const camposRequeridosLlenos = (idx) => {
     if (idx === 0) {
-      return !!form.nombre.trim() && !!form.cedula.trim() && !!form.telefono.trim()
+      return !!form.nombre.trim() && (sinCedula || !!form.cedula.trim()) && !!form.telefono.trim()
     }
     return true
   }
@@ -157,9 +160,11 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
     const errs = {}
     if (idx === 0) {
       if (!form.nombre.trim()) errs.nombre = 'El nombre es requerido'
-      if (!form.cedula.trim()) errs.cedula = 'La cédula es requerida'
-      else if (!validateDocument(form.cedula.trim())) {
-        errs.cedula = `${documentConfig.label} no válido (ej: ${documentConfig.placeholder})`
+      if (!sinCedula) {
+        if (!form.cedula.trim()) errs.cedula = 'La cédula es requerida'
+        else if (!validateDocument(form.cedula.trim())) {
+          errs.cedula = `${documentConfig.label} no válido (ej: ${documentConfig.placeholder})`
+        }
       }
       if (!form.telefono.trim()) errs.telefono = 'El teléfono es requerido'
       else if (!validatePhone(form.telefono.replace(/\s/g, ''))) {
@@ -196,9 +201,13 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
     setLoading(true)
     setError('')
 
+    const cedulaFinal = sinCedula
+      ? `SIN-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
+      : form.cedula.trim()
+
     const payload = {
       nombre:     form.nombre.trim(),
-      cedula:     form.cedula.trim(),
+      cedula:     cedulaFinal,
       telefono:   form.telefono.trim(),
       direccion:  form.direccion.trim() || undefined,
       referencia: form.referencia.trim() || undefined,
@@ -411,28 +420,51 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
               autoFocus
             />
             <div>
-              <Input
-                label={`${documentConfig.label}`}
-                placeholder={`Ej: ${documentConfig.placeholder}`}
-                value={form.cedula}
-                onChange={set('cedula')}
-                error={errores.cedula}
-                inputMode={/[a-zA-Z]/.test(documentConfig.placeholder) ? 'text' : 'numeric'}
-                disabled={esEdicion}
-              />
-              {scoreData?.encontrado && (() => {
-                const sColor = scoreData.score === 'rojo' ? 'var(--color-danger)' : scoreData.score === 'amarillo' ? 'var(--color-accent)' : 'var(--color-success)'
-                return (
-                  <div className="mt-2 text-xs px-3 py-2 rounded-[10px] flex items-center gap-2"
-                    style={{ background: `color-mix(in srgb, ${sColor} 10%, transparent)`, color: sColor, border: `1px solid color-mix(in srgb, ${sColor} 25%, transparent)` }}
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: sColor }} />
-                    {scoreData.score === 'rojo' && 'Cliente con mora activa en otras entidades'}
-                    {scoreData.score === 'amarillo' && 'Cliente con creditos activos en otras entidades'}
-                    {scoreData.score === 'verde' && 'Sin historial negativo en la plataforma'}
-                  </div>
-                )
-              })()}
+              {!sinCedula && (
+                <>
+                  <Input
+                    label={`${documentConfig.label}`}
+                    placeholder={`Ej: ${documentConfig.placeholder}`}
+                    value={form.cedula}
+                    onChange={set('cedula')}
+                    error={errores.cedula}
+                    inputMode={/[a-zA-Z]/.test(documentConfig.placeholder) ? 'text' : 'numeric'}
+                    disabled={esEdicion}
+                  />
+                  {scoreData?.encontrado && (() => {
+                    const sColor = scoreData.score === 'rojo' ? 'var(--color-danger)' : scoreData.score === 'amarillo' ? 'var(--color-accent)' : 'var(--color-success)'
+                    return (
+                      <div className="mt-2 text-xs px-3 py-2 rounded-[10px] flex items-center gap-2"
+                        style={{ background: `color-mix(in srgb, ${sColor} 10%, transparent)`, color: sColor, border: `1px solid color-mix(in srgb, ${sColor} 25%, transparent)` }}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: sColor }} />
+                        {scoreData.score === 'rojo' && 'Cliente con mora activa en otras entidades'}
+                        {scoreData.score === 'amarillo' && 'Cliente con creditos activos en otras entidades'}
+                        {scoreData.score === 'verde' && 'Sin historial negativo en la plataforma'}
+                      </div>
+                    )
+                  })()}
+                </>
+              )}
+              {!esEdicion && (
+                <label className="flex items-center gap-2 mt-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={sinCedula}
+                    onChange={(e) => {
+                      setSinCedula(e.target.checked)
+                      if (e.target.checked) {
+                        setForm(prev => ({ ...prev, cedula: '' }))
+                        setErrores(prev => ({ ...prev, cedula: '' }))
+                      }
+                    }}
+                    className="accent-[var(--color-accent)] w-4 h-4 rounded"
+                  />
+                  <span className="text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>
+                    No tengo el {documentConfig.label.toLowerCase()}
+                  </span>
+                </label>
+              )}
             </div>
             <Input
               label={phoneConfig.label}

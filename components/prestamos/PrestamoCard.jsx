@@ -66,7 +66,9 @@ export default function PrestamoCard({ prestamo: p, actions, esNuevo }) {
             <p className="text-sm font-semibold text-[var(--color-text-primary)] truncate leading-tight">
               {p.cliente?.nombre}
             </p>
-            <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">CC {p.cliente?.cedula}</p>
+            {p.cliente?.cedula && !p.cliente.cedula.startsWith('SIN-') && (
+              <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">CC {p.cliente.cedula}</p>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">

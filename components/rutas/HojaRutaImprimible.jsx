@@ -56,7 +56,7 @@ export default function HojaRutaImprimible({ ruta, clientes }) {
               <td className="hr-c-num">{i + 1}</td>
               <td className="hr-c-cli">
                 <span className="hr-nombre">{c.nombre}</span>
-                {c.cedula ? <span className="hr-ced">CC {c.cedula}</span> : null}
+                {c.cedula && !c.cedula.startsWith('SIN-') ? <span className="hr-ced">CC {c.cedula}</span> : null}
               </td>
               <td className="hr-c-dir">
                 {c.direccion ? <span className="hr-dir">{c.direccion}</span> : null}

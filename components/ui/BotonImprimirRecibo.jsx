@@ -81,7 +81,7 @@ function generarHTMLRecibo(cliente, prestamo, pago, orgNombre) {
   <div class="linea">${linea}</div>
 
   <div class="mt">Cliente: <strong>${cliente?.nombre ?? 'N/A'}</strong></div>
-  ${cliente?.cedula ? `<div>CC: ${cliente.cedula}</div>` : ''}
+  ${cliente?.cedula && !cliente.cedula.startsWith('SIN-') ? `<div>CC: ${cliente.cedula}</div>` : ''}
   <div>Fecha: ${fmtFecha(pago?.fechaPago)}</div>
 
   <div class="linea-fina">${lineaFina}</div>
@@ -176,7 +176,7 @@ function generarHTMLHistorialCompleto(cliente, prestamo, orgNombre) {
 
     <div class="grid">
       <div class="item"><b>Cliente:</b> ${cliente?.nombre || 'N/A'}</div>
-      <div class="item"><b>Cédula:</b> ${cliente?.cedula || 'N/A'}</div>
+      <div class="item"><b>Cédula:</b> ${cliente?.cedula && !cliente.cedula.startsWith('SIN-') ? cliente.cedula : 'N/A'}</div>
       <div class="item"><b>Monto prestado:</b> ${formatMoney(montoPrestado)}</div>
       <div class="item"><b>Total a pagar:</b> ${formatMoney(totalAPagar)}</div>
       <div class="item"><b>Total pagado:</b> ${formatMoney(totalPagadoReal)}</div>

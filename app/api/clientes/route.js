@@ -276,17 +276,18 @@ export async function POST(request) {
   if (!cedula?.trim())   return Response.json({ error: 'La cédula es requerida' },  { status: 400 })
   if (!telefono?.trim()) return Response.json({ error: 'El teléfono es requerido' }, { status: 400 })
 
+  const esSinCedula = cedula.trim().startsWith('SIN-')
   const country = session.user.country ?? 'co'
   const docConfig = getDocumentConfig(country)
-  if (!validateDocument(cedula.trim(), country)) {
+  if (!esSinCedula && !validateDocument(cedula.trim(), country)) {
     return Response.json({ error: `${docConfig.label} no válido (ej: ${docConfig.placeholder})` }, { status: 400 })
   }
 
-  // Verificar cédula única en la organización
-  const existe = await prisma.cliente.findUnique({
+  // Verificar cédula única en la organización (SIN- son siempre únicos, skip check)
+  const existe = !esSinCedula ? await prisma.cliente.findUnique({
     where: { organizationId_cedula: { organizationId, cedula: cedula.trim() } },
     select: { id: true, estado: true },
-  })
+  }) : null
   if (existe) {
     // Si el cliente fue eliminado (soft-delete), reactivarlo con los datos nuevos
     if (existe.estado === 'eliminado') {

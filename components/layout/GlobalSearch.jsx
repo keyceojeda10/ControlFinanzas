@@ -203,7 +203,8 @@ export default function GlobalSearch() {
             <div>
               <SectionLabel color="var(--color-accent)">Clientes</SectionLabel>
               {results.clientes.map((c, i) => {
-                const item = { id: `cli-${c.id}`, label: c.nombre, sub: `${c.cedula || ''}${c.telefono ? ` · ${c.telefono}` : ''}`, href: `/clientes/${c.id}`, icon: 'M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0' }
+                const cedSub = c.cedula && !c.cedula.startsWith('SIN-') ? c.cedula : ''
+                const item = { id: `cli-${c.id}`, label: c.nombre, sub: `${cedSub}${c.telefono ? `${cedSub ? ' · ' : ''}${c.telefono}` : ''}`, href: `/clientes/${c.id}`, icon: 'M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0' }
                 return <ResultRow key={item.id} item={item} idx={OFF_CLI + i} color={colorDe('cliente')} selected={selected} onSelect={setSelected} onNavigate={navigate} />
               })}
             </div>

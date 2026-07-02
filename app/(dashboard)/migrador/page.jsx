@@ -211,23 +211,36 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
         <h3 className="text-[11px] font-semibold uppercase tracking-wide mb-1"
           style={{ color: 'var(--color-accent)' }}>Datos del cliente</h3>
         <p className="text-[11px] mb-2.5" style={{ color: 'var(--color-text-muted)' }}>
-          Nombre, cedula y telefono son obligatorios. La direccion es opcional.
+          Nombre y telefono son obligatorios. Cedula y direccion son opcionales.
         </p>
         <div className="space-y-2.5">
           <input ref={nombreRef} type="text" placeholder="Nombre completo *" autoFocus
             value={ficha.nombre} onChange={e => set('nombre', e.target.value)}
             className="w-full h-11 rounded-[10px] border px-3 text-sm"
             style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
-          <div className="grid grid-cols-2 gap-2.5">
-            <input type="text" placeholder="Cedula *" inputMode="numeric"
-              value={ficha.cedula} onChange={e => set('cedula', e.target.value)}
-              className="w-full h-11 rounded-[10px] border px-3 text-sm"
-              style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
+          <div className={`grid gap-2.5 ${sinCedula ? '' : 'grid-cols-2'}`}>
+            {!sinCedula && (
+              <input type="text" placeholder="Cedula" inputMode="numeric"
+                value={ficha.cedula} onChange={e => set('cedula', e.target.value)}
+                className="w-full h-11 rounded-[10px] border px-3 text-sm"
+                style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
+            )}
             <input type="tel" placeholder="Telefono *"
               value={ficha.telefono} onChange={e => set('telefono', e.target.value)}
               className="w-full h-11 rounded-[10px] border px-3 text-sm"
               style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
           </div>
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" checked={sinCedula}
+              onChange={(e) => {
+                setSinCedula(e.target.checked)
+                if (e.target.checked) set('cedula', '')
+              }}
+              className="accent-[var(--color-accent)] w-4 h-4 rounded" />
+            <span className="text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>
+              No tengo el numero de cedula
+            </span>
+          </label>
           <input type="text" placeholder="Direccion (opcional)"
             value={ficha.direccion} onChange={e => set('direccion', e.target.value)}
             className="w-full h-11 rounded-[10px] border px-3 text-sm"
@@ -579,6 +592,7 @@ export default function MigradorPage() {
   const [successMsg, setSuccessMsg] = useState('')
   const [ocrLoading, setOcrLoading] = useState(false)
   const [ocrError, setOcrError] = useState('')
+  const [sinCedula, setSinCedula] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !esOwner) router.replace('/dashboard')
@@ -652,7 +666,7 @@ export default function MigradorPage() {
   // ── Guardar (crear o editar) ──
   const guardar = async () => {
     if (!ficha.nombre.trim()) { setError('El nombre es obligatorio'); return }
-    if (!ficha.cedula.trim()) { setError('La cedula es obligatoria'); return }
+    if (!sinCedula && !ficha.cedula.trim()) { setError('La cedula es obligatoria'); return }
     if (!ficha.telefono.trim()) { setError('El telefono es obligatorio'); return }
     if (!ficha.monto || Number(ficha.monto) <= 0) { setError('El monto es obligatorio'); return }
     if (!calculo) { setError('Revisa los datos del prestamo'); return }
@@ -664,13 +678,17 @@ export default function MigradorPage() {
       const esEdicion = editandoIdx !== null
       const item = esEdicion ? creados[editandoIdx] : null
 
+      const cedulaFinal = sinCedula
+        ? `SIN-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
+        : ficha.cedula.trim()
+
       if (esEdicion && item) {
         const clienteRes = await fetch(`/api/clientes/${item.clienteId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             nombre: ficha.nombre.trim(),
-            cedula: ficha.cedula.trim(),
+            cedula: cedulaFinal,
             telefono: ficha.telefono.trim(),
             ...(ficha.direccion.trim() ? { direccion: ficha.direccion.trim() } : {}),
             diasSinCobro: ficha.diasSinCobro,
@@ -707,7 +725,7 @@ export default function MigradorPage() {
         setCreados(prev => prev.map((c, i) => i === editandoIdx ? {
           ...c,
           nombre: ficha.nombre.trim(),
-          cedula: ficha.cedula.trim(),
+          cedula: cedulaFinal,
           telefono: ficha.telefono.trim(),
           direccion: ficha.direccion.trim(),
           monto: Number(ficha.monto),
@@ -725,7 +743,7 @@ export default function MigradorPage() {
       } else {
         const clientePayload = {
           nombre: ficha.nombre.trim(),
-          cedula: ficha.cedula.trim(),
+          cedula: cedulaFinal,
           telefono: ficha.telefono.trim(),
           ...(ficha.direccion.trim() && { direccion: ficha.direccion.trim() }),
           ...(ficha.rutaId && { rutaId: ficha.rutaId }),
@@ -759,7 +777,7 @@ export default function MigradorPage() {
 
         setCreados(prev => [...prev, {
           nombre: ficha.nombre.trim(),
-          cedula: ficha.cedula.trim(),
+          cedula: cedulaFinal,
           telefono: ficha.telefono.trim(),
           direccion: ficha.direccion.trim(),
           monto: Number(ficha.monto),
@@ -779,6 +797,7 @@ export default function MigradorPage() {
       }
 
       setFicha(fichaVacia(defaults))
+      setSinCedula(false)
       irA('selector')
       setTimeout(() => setSuccessMsg(''), 4000)
     } catch {
@@ -815,8 +834,10 @@ export default function MigradorPage() {
   // ── Abrir edición ──
   const abrirEdicion = (idx) => {
     const item = creados[idx]
+    const esSinCed = item.cedula?.startsWith('SIN-')
+    setSinCedula(!!esSinCed)
     setFicha({
-      nombre: item.nombre, cedula: item.cedula || '', telefono: item.telefono || '',
+      nombre: item.nombre, cedula: esSinCed ? '' : (item.cedula || ''), telefono: item.telefono || '',
       direccion: item.direccion || '', monto: String(item.monto), tasa: String(item.tasa),
       frecuencia: item.frecuencia, plazoUnidades: item.plazoUnidades || PLAZO_DEFAULT[item.frecuencia],
       modoInteres: item.modoInteres || defaults.modoInteres, fechaInicio: item.fechaInicio || hoyISO(),
@@ -958,7 +979,7 @@ export default function MigradorPage() {
           </div>
 
           {/* Boton agregar otro */}
-          <button type="button" onClick={() => { setFicha(fichaVacia(defaults)); setEditandoIdx(null); setError(''); setOcrError(''); irA('selector') }}
+          <button type="button" onClick={() => { setFicha(fichaVacia(defaults)); setSinCedula(false); setEditandoIdx(null); setError(''); setOcrError(''); irA('selector') }}
             className="w-full h-14 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
             style={{ background: 'var(--color-accent)', color: '#000' }}>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">

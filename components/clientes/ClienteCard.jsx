@@ -70,7 +70,9 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
           <p className="text-[14px] font-semibold text-[var(--color-text-primary)] leading-tight">
             {cliente.nombre}
           </p>
-          <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">CC {cliente.cedula}</p>
+          {cliente.cedula && !cliente.cedula.startsWith('SIN-') && (
+            <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">CC {cliente.cedula}</p>
+          )}
         </div>
 
         {/* Badges apilados a la derecha */}

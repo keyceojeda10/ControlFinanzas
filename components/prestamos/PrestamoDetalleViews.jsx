@@ -241,7 +241,7 @@ export function HeaderClienteContexto({ cliente, prestamo, statsCliente, onWhats
           >
             {cliente?.nombre || 'Cliente'}
           </Link>
-          {cliente?.cedula && (
+          {cliente?.cedula && !cliente.cedula.startsWith('SIN-') && (
             <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>CC {cliente.cedula}</p>
           )}
           {statsCliente && (

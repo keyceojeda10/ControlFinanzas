@@ -279,7 +279,7 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
               {cliente?.nombre}
             </h1>
             <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-              CC {cliente?.cedula}
+              {cliente?.cedula && !cliente.cedula.startsWith('SIN-') ? `CC ${cliente.cedula}` : 'Sin documento'}
               {cliente?.ruta && (
                 <> · <span style={{ color: 'var(--color-purple)' }}>{cliente.ruta.nombre}</span></>
               )}

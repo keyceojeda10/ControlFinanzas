@@ -118,7 +118,7 @@ export default function SyncDrawer({ open, onClose }) {
 
           <Section title="Clientes pendientes" items={pendingDetails?.clientes} render={(c) => ({
             main: c.payload?.nombre || 'Cliente',
-            sub: `Cedula ${c.payload?.cedula || ''} - ${fmtDate(c.createdAt)}`,
+            sub: c.payload?.cedula && !c.payload.cedula.startsWith('SIN-') ? `Cedula ${c.payload.cedula} - ${fmtDate(c.createdAt)}` : fmtDate(c.createdAt),
           })} onDiscard={(c) => descartarItem('cliente', c.tempId)} failed={false} />
 
           <Section title="Préstamos pendientes" items={pendingDetails?.prestamos} render={(p) => ({

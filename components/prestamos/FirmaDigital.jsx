@@ -76,7 +76,7 @@ async function generarComprobante(prestamo) {
   ctx.fillStyle = '#111111'
   ctx.font = '15px system-ui, sans-serif'
   y += 26; ctx.fillText(`Nombre: ${cliente.nombre || '—'}`, 40, y)
-  y += 24; ctx.fillText(`Cedula: ${cliente.cedula || '—'}`, 40, y)
+  y += 24; ctx.fillText(`Cedula: ${cliente.cedula && !cliente.cedula.startsWith('SIN-') ? cliente.cedula : '—'}`, 40, y)
   y += 24; ctx.fillText(`Telefono: ${cliente.telefono || '—'}`, 40, y)
 
   y += 20
