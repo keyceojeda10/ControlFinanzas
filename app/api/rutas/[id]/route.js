@@ -13,6 +13,9 @@ import {
   calcularCuotasEnMora,
   calcularMontoEnMora,
   calcularMontoParaPonerseAlDia,
+  obtenerCuotaPeriodoActual,
+  obtenerProximaCuotaTabla,
+  tieneTablaAmortizacion,
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo, validarDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { getUtcOffset, getLocalDayRange } from '@/lib/i18n'
@@ -250,13 +253,10 @@ export async function GET(request, { params }) {
       // Resolver diasSinCobro por préstamo individual (incluye campo propio del préstamo)
       const diasExcluidosPrestamo = obtenerDiasSinCobro(c, ruta, org, p)
 
-      cuotaCliente  += p.cuotaDiaria
-      // Meta del dia: solo suma cuotas de prestamos cuyo ciclo de cobro
-      // toca HOY (segun frecuencia + dia ancla + dias excluidos). Antes se
-      // sumaba todo prestamo activo, lo que inflaba la meta con cuotas que
-      // en realidad se cobraban dias despues (ej. cliente con cobro manana).
+      const cuotaDelPeriodo = tieneTablaAmortizacion(p) ? obtenerCuotaPeriodoActual(p) : p.cuotaDiaria
+      cuotaCliente  += cuotaDelPeriodo
       esperadoHoy   += tienePeriodoEsperadoHoy(p, _hoySinCobro, diasExcluidosPrestamo, festivos)
-        ? p.cuotaDiaria
+        ? cuotaDelPeriodo
         : 0
       const saldoPendientePrestamo = calcularSaldoPendiente(p)
       carteraTotal    += saldoPendientePrestamo
@@ -270,9 +270,12 @@ export async function GET(request, { params }) {
       cuotasEnMoraCliente += cuotasMoraPrestamo
       montoEnMoraCliente += montoMoraPrestamo
       montoParaAlDiaCliente += montoAlDiaPrestamo
+      const cuotaReal = tieneTablaAmortizacion(p) ? obtenerCuotaPeriodoActual(p) : p.cuotaDiaria
+      const proximaCuota = tieneTablaAmortizacion(p) ? obtenerProximaCuotaTabla(p) : null
       prestamosActivos.push({
         id: p.id,
-        cuotaDiaria: p.cuotaDiaria,
+        cuotaDiaria: Math.round(cuotaReal),
+        cuotaDiariaOriginal: p.cuotaDiaria,
         saldoPendiente: Math.round(saldoPendientePrestamo),
         totalAPagar: p.totalAPagar ?? p.montoPrestado,
         totalPagado: p.totalPagado ?? 0,
@@ -286,6 +289,8 @@ export async function GET(request, { params }) {
         seguro: !!p.seguro,
         montoSeguro: p.montoSeguro ?? null,
         modoInteres: p.modoInteres || 'fijo',
+        esBalloon: proximaCuota?.esBalloon || false,
+        cuotaNumero: proximaCuota?.numeroPeriodo ?? null,
       })
 
       // Último pago más reciente (pagos ya vienen ordenados por fechaPago desc)

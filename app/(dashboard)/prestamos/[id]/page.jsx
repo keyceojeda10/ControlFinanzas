@@ -829,10 +829,21 @@ export default function PrestamoDetallePage({ params }) {
         ]}
       />
 
-      {/* ── TABLA DE AMORTIZACION (solo modo lineal) ──────────────── */}
+      {/* ── TABLA DE AMORTIZACION (lineal / globo) ──────────────── */}
       {['lineal', 'solo_interes'].includes(modoInteres) && cuotasAmortizacion.length > 0 && (
         <Card>
-          <TablaAmortizacion tabla={cuotasAmortizacion} frecuencia={frecuencia} mostrarPagado />
+          <TablaAmortizacion
+            tabla={cuotasAmortizacion}
+            frecuencia={frecuencia}
+            modoInteres={modoInteres}
+            mostrarPagado
+            onPagarCuota={estaActivo && !completado ? (fila) => {
+              const faltante = Math.max(0, fila.cuotaTotal - (fila.pagado || 0))
+              if (faltante <= 0) return
+              setPresetPago({ monto: Math.round(faltante), tipo: 'completo' })
+              setModalPago(true)
+            } : undefined}
+          />
         </Card>
       )}
 

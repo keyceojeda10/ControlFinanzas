@@ -10,6 +10,8 @@ import {
   calcularSaldoPendiente,
   calcularMontoParaPonerseAlDia,
   tieneCobroPendienteHoy,
+  obtenerCuotaPeriodoActual,
+  tieneTablaAmortizacion,
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
@@ -141,8 +143,9 @@ export async function GET() {
         if (p.esClavo) continue
 
         const diasExcluidosPrestamo = obtenerDiasSinCobro(c, ruta, org, p)
-        cuotaCliente += p.cuotaDiaria
-        esperadoHoyTotal += p.cuotaDiaria
+        const cuotaReal = tieneTablaAmortizacion(p) ? obtenerCuotaPeriodoActual(p) : p.cuotaDiaria
+        cuotaCliente += cuotaReal
+        esperadoHoyTotal += cuotaReal
 
         const saldo = calcularSaldoPendiente(p)
         const moraPrestamo = calcularDiasMora(p, diasExcluidosPrestamo, festivos)
@@ -152,7 +155,7 @@ export async function GET() {
 
         prestamosActivos.push({
           id: p.id,
-          cuotaDiaria: p.cuotaDiaria,
+          cuotaDiaria: Math.round(cuotaReal),
           saldoPendiente: Math.round(saldo),
           diasMora: moraPrestamo,
         })

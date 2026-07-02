@@ -620,13 +620,15 @@ export default function RutaDetallePage({ params }) {
       prestamoActivo: p.id,
       abonoConPendiente,
       modoInteres: p.modoInteres,
+      esBalloon: p.esBalloon || false,
+      cuotaNumero: p.cuotaNumero ?? null,
     })
   }
 
-  const elegirPrestamoPagoRapido = (prestamoId, cuota, modoInteres) => {
+  const elegirPrestamoPagoRapido = (prestamoId, cuota, modoInteres, extra = {}) => {
     if (!modalPagoRapido) return
     if (!cuota || cuota <= 0) return
-    setModalPagoRapido(prev => prev ? { ...prev, prestamoActivo: prestamoId, cuota, cuotaOriginal: cuota, modoInteres } : prev)
+    setModalPagoRapido(prev => prev ? { ...prev, prestamoActivo: prestamoId, cuota, cuotaOriginal: cuota, modoInteres, esBalloon: extra.esBalloon || false, cuotaNumero: extra.cuotaNumero ?? null } : prev)
   }
 
   const ejecutarPagoRapido = async (metodoPago, { confirmarDuplicado = false } = {}) => {
@@ -2987,7 +2989,7 @@ export default function RutaDetallePage({ params }) {
                 return (
                   <button
                     key={p.id}
-                    onClick={() => elegirPrestamoPagoRapido(p.id, p.cuotaDiaria, p.modoInteres)}
+                    onClick={() => elegirPrestamoPagoRapido(p.id, p.cuotaDiaria, p.modoInteres, { esBalloon: p.esBalloon, cuotaNumero: p.cuotaNumero })}
                     disabled={!p.cuotaDiaria || p.cuotaDiaria <= 0}
                     className="w-full text-left px-3 py-3 rounded-[12px] border border-[var(--color-border)] bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(34,197,94,0.08)] hover:border-[rgba(34,197,94,0.3)] transition-all active:scale-[0.99] disabled:opacity-50"
                   >
@@ -3043,9 +3045,23 @@ export default function RutaDetallePage({ params }) {
                 />
                 <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
                   Cuota: {formatMoney(modalPagoRapido.cuotaOriginal ?? modalPagoRapido.cuota)}
-                  {esEspecial ? ' (interés del período)' : ''}
+                  {esEspecial && !modalPagoRapido.esBalloon ? ' (interés del período)' : ''}
+                  {modalPagoRapido.esBalloon ? ' (capital + interés)' : ''}
                 </p>
               </div>
+              {modalPagoRapido.esBalloon && (
+                <div className="rounded-[12px] border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.08)] p-3 text-center">
+                  <p className="text-xs text-[#ef4444] font-semibold">Cuota de capital + interés (globo)</p>
+                  <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
+                    Esta es la última cuota. Incluye la devolución del capital completo mas el interés del período.
+                  </p>
+                </div>
+              )}
+              {modalPagoRapido.cuotaNumero && esEspecial && (
+                <p className="text-[10px] text-[var(--color-text-muted)] text-center">
+                  Cuota #{modalPagoRapido.cuotaNumero}
+                </p>
+              )}
               {modalPagoRapido.abonoConPendiente && (
                 <div className="rounded-[12px] border border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.08)] p-3 text-center">
                   <p className="text-xs text-[var(--color-warning)] font-semibold">El cliente tiene cuotas atrasadas</p>

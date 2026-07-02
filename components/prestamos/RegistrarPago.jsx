@@ -450,6 +450,61 @@ export default function RegistrarPago({
           <span className="font-semibold text-[var(--color-text-primary)] font-mono-display">{formatMoney(saldoPendiente)}</span>
         </div>
 
+        {/* Desglose de cuotas pendientes para modos con tabla de amortización */}
+        {['lineal', 'solo_interes'].includes(prestamo?.modoInteres) && prestamo?.cuotasAmortizacion?.length > 0 && (() => {
+          const filas = [...prestamo.cuotasAmortizacion]
+            .sort((a, b) => a.numeroPeriodo - b.numeroPeriodo)
+            .filter(f => (f.pagado || 0) < f.cuotaTotal)
+            .slice(0, 3)
+          if (!filas.length) return null
+          const totalFilas = prestamo.cuotasAmortizacion.length
+          const LABEL_FREQ = { diario: 'Dia', semanal: 'Sem', quincenal: 'Qna', mensual: 'Mes' }
+          const labelP = LABEL_FREQ[prestamo.frecuencia] || 'Per'
+          return (
+            <div className="rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-2.5 space-y-1.5">
+              <p className="text-[10px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
+                Próximas cuotas pendientes
+              </p>
+              {filas.map(f => {
+                const faltante = Math.round(Math.max(0, f.cuotaTotal - (f.pagado || 0)))
+                const esBalloon = prestamo.modoInteres === 'solo_interes' && f.numeroPeriodo === totalFilas
+                const vencida = f.fechaEsperada && new Date(f.fechaEsperada) < new Date()
+                return (
+                  <button
+                    key={f.numeroPeriodo}
+                    type="button"
+                    onClick={() => {
+                      setMonto(String(faltante))
+                      setTipo(faltante >= (cuotaDiaria ?? 0) ? 'completo' : 'parcial')
+                      setDiasAbonados(null)
+                    }}
+                    className="w-full flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg hover:bg-[var(--color-bg-hover)] transition-colors text-left"
+                  >
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-[10px] font-medium" style={{ color: vencida ? 'var(--color-danger)' : 'var(--color-text-muted)' }}>
+                        {labelP} {f.numeroPeriodo}
+                      </span>
+                      {esBalloon && (
+                        <span className="text-[8px] font-bold px-1 py-px rounded-full" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
+                          Globo
+                        </span>
+                      )}
+                      {vencida && (
+                        <span className="text-[8px] font-bold px-1 py-px rounded-full" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
+                          Vencida
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[11px] font-semibold font-mono-display" style={{ color: 'var(--color-accent)' }}>
+                      {formatMoney(faltante)}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          )
+        })()}
+
         {/* Atajos para no recalcular mora / ponerse al dia manualmente.
             Al pulsar, calculamos cuantos dias equivale el monto y movemos
             tambien el slider de abono rapido para que el usuario vea visualmente
