@@ -373,7 +373,7 @@ export async function POST(request) {
 
     // Modo 'lineal': persistir la tabla de amortizacion (capital constante +
     // interes sobre saldo restante, cuota decreciente por periodo).
-    if (modoInteresFinal === 'lineal' && Array.isArray(calc.tablaAmortizacion) && calc.tablaAmortizacion.length > 0) {
+    if (['lineal', 'solo_interes'].includes(modoInteresFinal) && Array.isArray(calc.tablaAmortizacion) && calc.tablaAmortizacion.length > 0) {
       await tx.cuotaAmortizacion.createMany({
         data: calc.tablaAmortizacion.map((p) => ({
           prestamoId: nuevo.id,

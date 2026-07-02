@@ -1198,7 +1198,7 @@ function NuevoPrestamo() {
                 const pctGanancia = Number(monto) > 0 ? Math.round((ganancia / Number(monto)) * 100) : 0
                 const labelFreq = { diario: 'diaria', semanal: 'semanal', quincenal: 'quincenal', mensual: 'mensual' }[frecuencia]
                 const unidadPlazoL = { diario: 'dias', semanal: 'semanas', quincenal: 'quincenas', mensual: 'meses' }[frecuencia]
-                const modoLabel = { fijo: 'Clasico', unico: 'De una vez', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente' }[modoInteres] || 'Clasico'
+                const modoLabel = { fijo: 'Clasico', unico: 'De una vez', solo_interes: 'Globo', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente' }[modoInteres] || 'Clasico'
                 const pencil = <svg className="w-3 h-3 shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" /></svg>
 
                 return (
@@ -1304,7 +1304,7 @@ function NuevoPrestamo() {
                         )}
                       </div>
                     </div>
-                    {modoInteres === 'lineal' && calculo?.tablaAmortizacion?.length > 0 && (
+                    {['lineal', 'solo_interes'].includes(modoInteres) && calculo?.tablaAmortizacion?.length > 0 && (
                       <div className="px-4 py-3 border-t" style={{ borderColor: 'color-mix(in srgb, var(--color-border) 50%, transparent)', background: 'var(--color-bg-card)' }}>
                         <TablaAmortizacion tabla={calculo.tablaAmortizacion} frecuencia={frecuencia} />
                       </div>
@@ -1321,7 +1321,7 @@ function NuevoPrestamo() {
       {paso === 2 && calculo && (() => {
         const labelFrecuencia = { diario: 'Diario', semanal: 'Semanal', quincenal: 'Quincenal', mensual: 'Mensual' }[frecuencia]
         const unidadPlazoLabel = { diario: 'dias', semanal: 'semanas', quincenal: 'quincenas', mensual: 'meses' }[frecuencia]
-        const modoLabel = { fijo: 'Clasico', unico: 'De una vez', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente' }[modoInteres] || 'Clasico'
+        const modoLabel = { fijo: 'Clasico', unico: 'De una vez', solo_interes: 'Globo', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente' }[modoInteres] || 'Clasico'
         const pencilIcon = <svg className="w-3 h-3 shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" /></svg>
         return (
           <section className="space-y-4 pb-28">

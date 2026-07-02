@@ -23,6 +23,7 @@ export default function ResumenCalculo({ calculo, visible = true }) {
     saldo:  'Sobre saldo',
     manual: 'Manual',
     lineal: 'Cuota decreciente',
+    solo_interes: 'Solo interés (globo)',
     proporcional: 'Proporcional',
   }[modoInteres]
 
@@ -73,7 +74,7 @@ export default function ResumenCalculo({ calculo, visible = true }) {
           </div>
         ))}
       </div>
-      {modoInteres === 'lineal' && (
+      {['lineal', 'solo_interes'].includes(modoInteres) && (
         <TablaAmortizacion tabla={calculo?.tablaAmortizacion} frecuencia={frecuencia} />
       )}
     </div>

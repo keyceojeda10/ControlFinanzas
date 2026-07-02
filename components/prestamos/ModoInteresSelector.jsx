@@ -16,6 +16,12 @@ const MODOS = [
     desc: 'El cliente paga todo el interes al inicio (o al final). Las cuotas solo devuelven el capital. Ideal para prestamos cortos.',
   },
   {
+    key: 'solo_interes',
+    label: 'Solo interes, capital al final',
+    tag: 'Globo',
+    desc: 'El cliente paga solo el interes cada periodo. El capital completo se devuelve al final en una sola cuota grande. Ideal para clientes que manejan flujo de caja.',
+  },
+  {
     key: 'saldo',
     label: 'Interes sobre lo que falta',
     tag: 'Como los bancos',

@@ -797,7 +797,7 @@ export default function PrestamoDetallePage({ params }) {
       />
 
       {/* ── TABLA DE AMORTIZACION (solo modo lineal) ──────────────── */}
-      {modoInteres === 'lineal' && cuotasAmortizacion.length > 0 && (
+      {['lineal', 'solo_interes'].includes(modoInteres) && cuotasAmortizacion.length > 0 && (
         <Card>
           <TablaAmortizacion tabla={cuotasAmortizacion} frecuencia={frecuencia} mostrarPagado />
         </Card>
@@ -1202,7 +1202,7 @@ export default function PrestamoDetallePage({ params }) {
             </button>
           )}
 
-          {prestamo?.modoInteres === 'lineal' && (() => {
+          {['lineal', 'solo_interes'].includes(prestamo?.modoInteres) && (() => {
             const interesesPend = prestamo?.cuotasAmortizacion
               ?.filter(f => new Date(f.fechaEsperada) <= new Date() && (f.pagado || 0) < f.cuotaTotal)
               ?.reduce((acc, f) => acc + Math.max(0, f.interes - (f.interesPagado || 0)), 0) ?? 0

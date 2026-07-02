@@ -589,7 +589,7 @@ export default function RegistrarPago({
                 { key: 'parcial',  label: 'Parcial',   color: 'var(--color-accent)' },
                 { key: 'capital',  label: 'A capital',  color: 'var(--color-purple)' },
                 { key: 'recargo',  label: 'Recargo',   color: '#f97316' },
-                ...(prestamo?.modoInteres === 'lineal' ? [{ key: 'intereses', label: 'Intereses', color: 'var(--color-warning)' }] : []),
+                ...(['lineal', 'solo_interes'].includes(prestamo?.modoInteres) ? [{ key: 'intereses', label: 'Intereses', color: 'var(--color-warning)' }] : []),
                 // Descuento solo visible si el usuario tiene el permiso (riesgo: reduce saldo).
                 ...(puedeAplicarDescuentos ? [{ key: 'descuento', label: 'Descuento', color: 'var(--color-success)' }] : []),
               ].map(({ key, label, color }) => (

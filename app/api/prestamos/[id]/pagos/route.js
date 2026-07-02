@@ -18,6 +18,7 @@ import {
   tieneTablaAmortizacion,
   regenerarTablaAmortizacion,
   recalcularTablaDesdeSaldo,
+  recalcularTablaSoloInteresDesdeSaldo,
   obtenerDiasPorPeriodo,
   calcularInteresesPendientes,
 } from '@/lib/calculos'
@@ -137,8 +138,8 @@ export async function POST(request, { params }) {
   }
 
   if (tipo === 'intereses') {
-    if (prestamo.modoInteres !== 'lineal') {
-      return Response.json({ error: 'Pago a intereses solo aplica para préstamos con cuota decreciente' }, { status: 400 })
+    if (!['lineal', 'solo_interes'].includes(prestamo.modoInteres)) {
+      return Response.json({ error: 'Pago a intereses solo aplica para préstamos con tabla de amortización' }, { status: 400 })
     }
     const interesesPendientes = Math.round(calcularInteresesPendientes(prestamo))
     if (interesesPendientes <= 0) {
@@ -335,7 +336,10 @@ export async function POST(request, { params }) {
         const fechaBase = ultimaPagada ? new Date(ultimaPagada.fechaEsperada) : new Date(prestamo.fechaInicio)
         const diasPeriodo = obtenerDiasPorPeriodo(prestamoActualizado.frecuencia)
 
-        const tablaRecalculada = recalcularTablaDesdeSaldo({
+        const recalcFn = prestamoActualizado.modoInteres === 'solo_interes'
+          ? recalcularTablaSoloInteresDesdeSaldo
+          : recalcularTablaDesdeSaldo
+        const tablaRecalculada = recalcFn({
           saldoInicial: saldoCapitalRestante,
           tasaInteres: prestamoActualizado.tasaInteres,
           numPeriodosRestantes: filasFuturas.length,
