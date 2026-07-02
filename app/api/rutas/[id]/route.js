@@ -285,6 +285,7 @@ export async function GET(request, { params }) {
         fechaInicio: p.fechaInicio,
         seguro: !!p.seguro,
         montoSeguro: p.montoSeguro ?? null,
+        modoInteres: p.modoInteres || 'fijo',
       })
 
       // Último pago más reciente (pagos ya vienen ordenados por fechaPago desc)
