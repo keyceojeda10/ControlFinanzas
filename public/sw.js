@@ -1,5 +1,5 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME   = 'cf-v287'
+const CACHE_NAME   = 'cf-v288'
 const API_CACHE    = 'cf-api-v74'
 // Cache inmutable para _next/static — NO se borra entre versiones.
 // Los chunks llevan hash en el nombre, así que nunca hay stale content.
@@ -113,13 +113,17 @@ self.addEventListener('install', (e) => {
   self.skipWaiting()
 })
 
-// ─── Activate: clean old caches (incluyendo versiones viejas de API) ──────
+// ─── Activate: clean ALL old caches (including static chunks) ──────
+// STATIC_CACHE se borra en cada deploy porque los chunk IDs de Next.js
+// pueden repetirse entre builds con contenido diferente — el hash en el
+// filename cambia, pero el SW cacheFirst compara por URL completa y no
+// pide el chunk nuevo si ya tiene uno con el mismo chunk ID.
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((k) => k !== CACHE_NAME && k !== API_CACHE && k !== STATIC_CACHE)
+          .filter((k) => k !== CACHE_NAME && k !== API_CACHE)
           .map((k) => caches.delete(k))
       )
     )
