@@ -668,8 +668,8 @@ function TabOrganizacion() {
               }}
               className="sr-only peer"
             />
-            <div className="w-9 h-5 rounded-full transition-colors bg-[#333] peer-checked:bg-[#25d366]" />
-            <div className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-transform bg-white peer-checked:translate-x-4" />
+            <div className="w-10 h-[22px] rounded-full transition-colors border peer-checked:border-[#25d366]" style={{ background: ocultarSaldoWA ? '#25d366' : 'var(--color-bg-hover)', borderColor: ocultarSaldoWA ? '#25d366' : 'var(--color-border)' }} />
+            <div className="absolute top-[3px] left-[3px] w-4 h-4 rounded-full transition-transform shadow-sm" style={{ background: ocultarSaldoWA ? '#fff' : 'var(--color-text-muted)', transform: ocultarSaldoWA ? 'translateX(18px)' : 'translateX(0)' }} />
           </div>
           <div>
             <span className="text-sm text-white">Ocultar saldo pendiente</span>
