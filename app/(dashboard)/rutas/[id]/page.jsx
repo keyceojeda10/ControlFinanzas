@@ -2017,15 +2017,104 @@ export default function RutaDetallePage({ params }) {
                       </div>
                     </div>
 
-                    {/* Mora compacta (una linea) */}
-                    {tieneMora && !isCompleted && (
-                      <div className="flex items-center gap-1.5 mt-1.5 px-2 py-1 rounded-[6px] text-[10px] font-semibold"
-                        style={{ background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)', color: 'var(--color-danger)' }}
-                      >
-                        <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" />
-                        </svg>
-                        <span>{detalleMora}</span>
+                    {/* Sección inferior: saldo, barra progreso, mora, detalles */}
+                    {!isCompleted && c.prestamosActivos?.length > 0 && (
+                      <div className="mt-2 space-y-2">
+                        {c.prestamosActivos.map((p, i) => {
+                          const pct = p.totalAPagar > 0 ? Math.min(100, Math.round(((p.totalPagado ?? 0) / p.totalAPagar) * 100)) : 0
+                          const barColor = tieneMora ? 'var(--color-danger)' : pct >= 80 ? 'var(--color-success)' : 'var(--color-accent)'
+                          return (
+                            <div key={p.id}>
+                              {c.prestamosActivos.length > 1 && (
+                                <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-muted)' }}>
+                                  Prestamo {i + 1}
+                                </p>
+                              )}
+                              <div className="flex items-baseline justify-between">
+                                <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Saldo pendiente</p>
+                                <p className="text-[13px] font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(p.saldoPendiente)}</p>
+                              </div>
+                              <div className="mt-1 h-[4px] rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
+                                <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: barColor }} />
+                              </div>
+                              <div className="flex items-center justify-between mt-0.5">
+                                <span className="text-[9px] font-semibold" style={{ color: barColor }}>{pct}% pagado</span>
+                                <span className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>de {formatMoney(p.totalAPagar)}</span>
+                              </div>
+                            </div>
+                          )
+                        })}
+
+                        {/* Grid: pagado / cuota / prox cobro */}
+                        <div className="grid grid-cols-3 gap-px rounded-[8px] overflow-hidden" style={{ background: 'var(--color-border)' }}>
+                          <div className="px-2 py-1.5" style={{ background: 'var(--color-bg-base)' }}>
+                            <p className="text-[8px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Pagado</p>
+                            <p className="text-[11px] font-bold font-mono-display" style={{ color: 'var(--color-success)' }}>
+                              {formatMoney(c.prestamosActivos.reduce((s, p) => s + (p.totalPagado ?? 0), 0))}
+                            </p>
+                          </div>
+                          <div className="px-2 py-1.5" style={{ background: 'var(--color-bg-base)' }}>
+                            <p className="text-[8px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Cuota</p>
+                            <p className="text-[11px] font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
+                              {formatMoney(c.cuota)}
+                            </p>
+                          </div>
+                          <div className="px-2 py-1.5" style={{ background: 'var(--color-bg-base)' }}>
+                            <p className="text-[8px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Prox. cobro</p>
+                            <p className="text-[11px] font-bold capitalize" style={{ color: tieneMora ? 'var(--color-danger)' : 'var(--color-text-primary)' }}>
+                              {cobroLabelContextual || '—'}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Mora badge */}
+                        {tieneMora && (
+                          <div className="flex items-center gap-1.5 px-2 py-1 rounded-[6px] text-[10px] font-semibold"
+                            style={{ background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)', color: 'var(--color-danger)' }}
+                          >
+                            <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" />
+                            </svg>
+                            <span className="capitalize">{detalleMora}</span>
+                          </div>
+                        )}
+
+                        {/* Moratorio pendiente */}
+                        {tieneMora && ruta?.configMoratorio?.tasaMoratorio > 0 && c.diasMora > (ruta.configMoratorio.diasGracia || 5) && (
+                          <div className="flex items-center gap-1.5 text-[10px] px-2 py-1 rounded-[6px]"
+                            style={{ background: 'color-mix(in srgb, #f59e0b 8%, transparent)', color: '#f59e0b' }}
+                          >
+                            <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>Interes moratorio pendiente</span>
+                          </div>
+                        )}
+
+                        {/* Geo badge */}
+                        {c.pagoHoy && (() => {
+                          const geo = c.pagoHoyGeo
+                          if (!geo) return (
+                            <div className="flex items-center gap-1 text-[9px]" style={{ color: '#555' }}>
+                              <svg className="w-2.5 h-2.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
+                              sin geolocalizacion
+                            </div>
+                          )
+                          if (geo.clienteSinCoords || geo.distanciaMetros == null) return (
+                            <div className="flex items-center gap-1 text-[9px]" style={{ color: '#555' }}>
+                              <svg className="w-2.5 h-2.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
+                              cliente sin ubicacion fijada
+                            </div>
+                          )
+                          const d = geo.distanciaMetros
+                          const geoColor = d <= 50 ? 'var(--color-success)' : d <= 200 ? '#f97316' : 'var(--color-danger)'
+                          return (
+                            <div className="flex items-center gap-1 text-[9px] font-medium" style={{ color: geoColor }}>
+                              <svg className="w-2.5 h-2.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
+                              a {d < 1000 ? `${d}m` : `${(d / 1000).toFixed(1)}km`}
+                            </div>
+                          )
+                        })()}
                       </div>
                     )}
                   </div>
