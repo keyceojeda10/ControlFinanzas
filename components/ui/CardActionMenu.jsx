@@ -42,7 +42,7 @@ export default function CardActionMenu({ actions = [] }) {
 
       {open && (
         <div
-          className="absolute right-0 top-full mt-1 min-w-[170px] rounded-[14px] overflow-hidden shadow-2xl p-1.5 z-50 glass-strong"
+          className="absolute right-0 top-full mt-1 min-w-[170px] rounded-[12px] overflow-hidden shadow-2xl p-1.5 z-50 glass-strong"
           style={{ border: '1px solid var(--color-border)' }}
         >
           {actions.map((a, i) => (

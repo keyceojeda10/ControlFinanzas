@@ -252,7 +252,7 @@ export default function GastosPage() {
 
       {/* Tabs de página: Gastos del día | Capital */}
       <div
-        className="flex gap-1 p-1 rounded-[14px]"
+        className="flex gap-1 p-1 rounded-[12px]"
         style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}
       >
         {PAGE_TABS.map((t) => (
@@ -391,7 +391,7 @@ export default function GastosPage() {
                 return (
                   <div
                     key={g.id}
-                    className="rounded-[14px] px-3 py-3 transition-all kpi-lift"
+                    className="rounded-[12px] px-3 py-3 transition-all kpi-lift"
                     style={{
                       background: `linear-gradient(135deg, color-mix(in srgb, ${eInfo.color} 5%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
                       border: `1px solid color-mix(in srgb, ${eInfo.color} 18%, var(--color-border))`,

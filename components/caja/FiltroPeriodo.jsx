@@ -53,7 +53,7 @@ export default function FiltroPeriodo({ value, onChange }) {
             key={o.key}
             type="button"
             onClick={() => seleccionar(o.key)}
-            className="flex-1 min-w-[64px] py-1.5 text-[11px] font-semibold rounded-[9px] transition-all"
+            className="flex-1 min-w-[64px] py-1.5 text-[11px] font-semibold rounded-[8px] transition-all"
             style={modo === o.key ? {
               background: 'var(--color-bg-card)',
               color: 'var(--color-accent)',

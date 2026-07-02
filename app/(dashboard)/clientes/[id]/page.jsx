@@ -400,7 +400,7 @@ export default function ClienteDetallePage({ params }) {
 
       {/* Barra de navegación de ruta */}
       {rutaNav && (
-        <div className="bg-[rgba(245,197,24,0.06)] border border-[rgba(245,197,24,0.15)] rounded-[14px] px-3 py-2.5 flex items-center justify-between">
+        <div className="bg-[rgba(245,197,24,0.06)] border border-[rgba(245,197,24,0.15)] rounded-[12px] px-3 py-2.5 flex items-center justify-between">
           <button
             onClick={() => navegarEnRuta(-1)}
             disabled={esPrimeroEnRuta}
@@ -546,8 +546,8 @@ export default function ClienteDetallePage({ params }) {
           className={[
             'flex items-center gap-1.5 h-8 rounded-[10px] border text-xs px-2.5 transition-all disabled:opacity-50',
             festivoHoy
-              ? 'border-[#22c55e] text-[#22c55e] bg-[rgba(34,197,94,0.08)]'
-              : 'border-[#2a2a2a] text-[#a0a0a0] hover:border-[#22c55e] hover:text-[#22c55e]',
+              ? 'border-[var(--color-success)] text-[var(--color-success)] bg-[rgba(34,197,94,0.08)]'
+              : 'border-[#2a2a2a] text-[#a0a0a0] hover:border-[var(--color-success)] hover:text-[var(--color-success)]',
           ].join(' ')}
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -699,13 +699,13 @@ export default function ClienteDetallePage({ params }) {
             <>
               <button
                 onClick={noPagoSiguiente}
-                className="flex-1 py-3 rounded-[14px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] text-sm font-medium active:scale-[0.98] transition-all"
+                className="flex-1 py-3 rounded-[12px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] text-sm font-medium active:scale-[0.98] transition-all"
               >
                 No pagó · Siguiente
               </button>
               <button
                 onClick={irSiguienteEnRuta}
-                className="flex-1 py-3 rounded-[14px] bg-[var(--color-accent)] text-[#1a1a2e] text-sm font-semibold active:scale-[0.98] transition-all"
+                className="flex-1 py-3 rounded-[12px] bg-[var(--color-accent)] text-[#1a1a2e] text-sm font-semibold active:scale-[0.98] transition-all"
               >
                 Siguiente cliente →
               </button>
@@ -717,7 +717,7 @@ export default function ClienteDetallePage({ params }) {
                 const url = `/rutas/${rutaNav.rutaId}`
                 navigator.onLine ? router.push(url) : (window.location.href = url)
               }}
-              className="flex-1 py-3 rounded-[14px] bg-[var(--color-success)] text-[var(--color-text-primary)] text-sm font-semibold active:scale-[0.98] transition-all"
+              className="flex-1 py-3 rounded-[12px] bg-[var(--color-success)] text-[var(--color-text-primary)] text-sm font-semibold active:scale-[0.98] transition-all"
             >
               Ruta finalizada →
             </button>
@@ -998,7 +998,7 @@ function TopePrestamoCard({ tope, onSave }) {
 
   if (editando) {
     return (
-      <div className="rounded-[14px] border p-3.5 flex items-center gap-3" style={{ background: 'color-mix(in srgb, var(--color-warning) 5%, var(--color-bg-card))', borderColor: 'color-mix(in srgb, var(--color-warning) 20%, var(--color-border))' }}>
+      <div className="rounded-[12px] border p-3.5 flex items-center gap-3" style={{ background: 'color-mix(in srgb, var(--color-warning) 5%, var(--color-bg-card))', borderColor: 'color-mix(in srgb, var(--color-warning) 20%, var(--color-border))' }}>
         <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-warning) 15%, transparent)' }}>
           <svg className="w-4 h-4" style={{ color: 'var(--color-warning)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
@@ -1042,7 +1042,7 @@ function TopePrestamoCard({ tope, onSave }) {
   return (
     <Tag
       {...(editable ? { onClick: handleEditar } : {})}
-      className={`w-full rounded-[14px] border p-3.5 flex items-center gap-3 text-left transition-colors${editable ? ' hover:border-[color-mix(in_srgb,var(--color-warning)_40%,var(--color-border))] active:scale-[0.99] cursor-pointer' : ''}`}
+      className={`w-full rounded-[12px] border p-3.5 flex items-center gap-3 text-left transition-colors${editable ? ' hover:border-[color-mix(in_srgb,var(--color-warning)_40%,var(--color-border))] active:scale-[0.99] cursor-pointer' : ''}`}
       style={{
         background: tope > 0
           ? 'color-mix(in srgb, var(--color-warning) 5%, var(--color-bg-card))'

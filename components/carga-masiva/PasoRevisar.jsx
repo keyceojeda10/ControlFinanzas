@@ -58,7 +58,7 @@ export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolv
       </div>
 
       {/* Detalle */}
-      <div className="bg-[#161b27] border border-[var(--color-border)] rounded-[14px] p-4 space-y-2">
+      <div className="bg-[#161b27] border border-[var(--color-border)] rounded-[12px] p-4 space-y-2">
         <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
           <div className="flex justify-between">
             <span className="text-[var(--color-text-muted)]">Clientes únicos</span>
@@ -92,7 +92,7 @@ export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolv
       </div>
 
       {/* Asignar ruta */}
-      <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[14px] p-4 space-y-3">
+      <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[12px] p-4 space-y-3">
         <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Asignar a ruta (opcional)</p>
         <div className="flex flex-col gap-2">
           <select

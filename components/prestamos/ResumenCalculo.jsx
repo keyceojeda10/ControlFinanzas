@@ -45,7 +45,7 @@ export default function ResumenCalculo({ calculo, visible = true }) {
   ]
 
   return (
-    <div className="bg-[#161b27] border border-[var(--color-border)] rounded-[14px] p-4 space-y-3">
+    <div className="bg-[#161b27] border border-[var(--color-border)] rounded-[12px] p-4 space-y-3">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-semibold text-[#8b95a5] uppercase tracking-wide">
           Resumen del préstamo

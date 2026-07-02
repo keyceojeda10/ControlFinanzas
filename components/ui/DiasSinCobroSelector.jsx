@@ -33,7 +33,7 @@ export default function DiasSinCobroSelector({ value = [], onChange, heredados, 
                 'h-9 rounded-[10px] border text-xs font-semibold transition-all cursor-pointer',
                 compact ? 'px-2.5' : 'px-3.5',
                 activo
-                  ? 'bg-[rgba(245,158,11,0.15)] border-[#f59e0b] text-[var(--color-warning)]'
+                  ? 'bg-[rgba(245,158,11,0.15)] border-[var(--color-warning)] text-[var(--color-warning)]'
                   : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-surface)] hover:text-[var(--color-text-primary)]',
               ].join(' ')}
             >

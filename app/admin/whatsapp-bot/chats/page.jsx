@@ -64,7 +64,7 @@ export default function ChatsPage() {
           <h1 className="text-xl font-bold text-white">Chats</h1>
           <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Conversaciones del bot comercial</p>
         </div>
-        <Link href="/admin/whatsapp-bot" className="text-xs text-[#3b82f6] hover:underline">Ver panel</Link>
+        <Link href="/admin/whatsapp-bot" className="text-xs text-[var(--color-info)] hover:underline">Ver panel</Link>
       </div>
 
       <div className="flex gap-4 h-[calc(100vh-180px)] min-h-[500px]">
@@ -105,7 +105,7 @@ export default function ChatsPage() {
               >
                 <div className="relative shrink-0">
                   <Avatar nombre={c.nombre} size={42} />
-                  {c.botActivo && <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#10b981] border-2 border-[var(--color-bg-card)]" title="Bot activo" />}
+                  {c.botActivo && <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[var(--color-success)] border-2 border-[var(--color-bg-card)]" title="Bot activo" />}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
@@ -115,8 +115,8 @@ export default function ChatsPage() {
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[12px] text-[var(--color-text-muted)] truncate">{previewTexto(c.ultimoMensaje)}</span>
                     <span className="flex items-center gap-1 shrink-0">
-                      {c.registrado && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[rgba(16,185,129,0.15)] text-[#10b981] font-medium">Cliente</span>}
-                      {c.temperatura >= 60 && <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444]" title={`Temp ${c.temperatura}`} />}
+                      {c.registrado && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[rgba(16,185,129,0.15)] text-[var(--color-success)] font-medium">Cliente</span>}
+                      {c.temperatura >= 60 && <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-danger)]" title={`Temp ${c.temperatura}`} />}
                     </span>
                   </div>
                 </div>
@@ -296,7 +296,7 @@ function ChatPanel({ lead, onBack, onUpdate }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span className="text-sm text-white font-medium truncate">{lead.nombre}</span>
-            {lead.registrado && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[rgba(16,185,129,0.15)] text-[#10b981] font-medium">Cliente registrado</span>}
+            {lead.registrado && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[rgba(16,185,129,0.15)] text-[var(--color-success)] font-medium">Cliente registrado</span>}
           </div>
           <span className="text-[11px] text-[var(--color-text-muted)]">{lead.telefono} · temp {lead.temperatura}</span>
         </div>
@@ -304,11 +304,11 @@ function ChatPanel({ lead, onBack, onUpdate }) {
         <button
           onClick={toggleBot}
           className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all ${
-            botActivo ? 'bg-[rgba(16,185,129,0.15)] text-[#10b981]' : 'bg-[rgba(136,136,136,0.15)] text-[#888]'
+            botActivo ? 'bg-[rgba(16,185,129,0.15)] text-[var(--color-success)]' : 'bg-[rgba(136,136,136,0.15)] text-[#888]'
           }`}
           title="Prender/apagar el bot para este chat"
         >
-          <span className={`w-2 h-2 rounded-full ${botActivo ? 'bg-[#10b981]' : 'bg-[#888]'}`} />
+          <span className={`w-2 h-2 rounded-full ${botActivo ? 'bg-[var(--color-success)]' : 'bg-[#888]'}`} />
           Bot {botActivo ? 'ON' : 'OFF'}
         </button>
         <a href={`https://wa.me/${(lead.telefono || '').replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="text-[var(--color-text-muted)] hover:text-white" title="Abrir en WhatsApp">
@@ -330,12 +330,12 @@ function ChatPanel({ lead, onBack, onUpdate }) {
         <input ref={fileRef} type="file" accept="image/*,audio/*,application/pdf" onChange={enviarArchivo} className="hidden" />
         {grabando ? (
           <>
-            <button onClick={cancelarGrabacion} className="text-[#ef4444] hover:opacity-80 p-1.5" title="Cancelar nota de voz">
+            <button onClick={cancelarGrabacion} className="text-[var(--color-danger)] hover:opacity-80 p-1.5" title="Cancelar nota de voz">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
             </button>
             <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-[20px] bg-[rgba(239,68,68,0.12)]">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444] animate-pulse" />
-              <span className="text-sm text-[#ef4444] flex-1">Grabando...</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-[var(--color-danger)] animate-pulse" />
+              <span className="text-sm text-[var(--color-danger)] flex-1">Grabando...</span>
               <span className="text-[11px] text-[var(--color-text-muted)]">Cancelar o enviar</span>
             </div>
           </>
@@ -355,11 +355,11 @@ function ChatPanel({ lead, onBack, onUpdate }) {
         )}
         {/* Boton: si hay texto -> enviar; si no -> grabar/parar nota de voz */}
         {texto.trim() && !grabando ? (
-          <button onClick={enviar} disabled={enviando} className="bg-[#10b981] disabled:opacity-40 text-white rounded-full p-2" title="Enviar">
+          <button onClick={enviar} disabled={enviando} className="bg-[var(--color-success)] disabled:opacity-40 text-white rounded-full p-2" title="Enviar">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
           </button>
         ) : (
-          <button onClick={toggleGrabacion} disabled={enviando} className={`rounded-full p-2 text-white disabled:opacity-40 ${grabando ? 'bg-[#ef4444]' : 'bg-[#10b981]'}`} title={grabando ? 'Detener y enviar' : 'Grabar nota de voz'}>
+          <button onClick={toggleGrabacion} disabled={enviando} className={`rounded-full p-2 text-white disabled:opacity-40 ${grabando ? 'bg-[var(--color-danger)]' : 'bg-[var(--color-success)]'}`} title={grabando ? 'Detener y enviar' : 'Grabar nota de voz'}>
             {grabando ? (
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
             ) : (
@@ -377,7 +377,7 @@ function Burbuja({ m, leadId }) {
   const align = esLead ? 'items-start' : 'items-end'
   const color = esLead
     ? 'bg-[rgba(255,255,255,0.07)] text-white'
-    : (m.rol === 'admin' ? 'bg-[#f5c518] text-black' : 'bg-[#10b981] text-white')
+    : (m.rol === 'admin' ? 'bg-[#f5c518] text-black' : 'bg-[var(--color-success)] text-white')
   const mediaUrl = m.mediaPath ? `/api/admin/whatsapp-bot/media/${m.mediaPath}` : null
 
   return (
@@ -415,7 +415,7 @@ function Burbuja({ m, leadId }) {
 function EstadoEntrega({ m }) {
   if (m.estadoEntrega === 'fallido') {
     return (
-      <span className="text-[#ef4444] flex items-center gap-0.5" title={m.errorEntrega || 'No entregado'}>
+      <span className="text-[var(--color-danger)] flex items-center gap-0.5" title={m.errorEntrega || 'No entregado'}>
         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"/></svg>
         No entregado
       </span>

@@ -72,8 +72,8 @@ export default function AdminDashboard() {
             key={label}
             className="border border-[var(--color-border)] rounded-[12px] px-3 py-3 text-center"
             style={{
-              background: `linear-gradient(135deg, ${color}0A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, ${color}05 100%)`,
-              boxShadow: `0 0 30px ${color}08, 0 1px 2px rgba(0,0,0,0.3)`,
+              background: `linear-gradient(135deg, color-mix(in srgb, ${color} 4%, transparent) 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, color-mix(in srgb, ${color} 2%, transparent) 100%)`,
+              boxShadow: `0 0 30px color-mix(in srgb, ${color} 3%, transparent), 0 1px 2px rgba(0,0,0,0.3)`,
             }}
           >
             <p className="text-[10px] text-[var(--color-text-muted)]">{label}</p>

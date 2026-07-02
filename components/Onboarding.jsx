@@ -102,7 +102,7 @@ export default function Onboarding({ userId, initialStep = 0, totalClientes = 0,
   const progreso = Math.min(paso, 4)
 
   return (
-    <div className="w-full bg-gradient-to-r from-[rgba(245,197,24,0.12)] to-[rgba(245,197,24,0.04)] border border-[rgba(245,197,24,0.2)] rounded-[14px] px-4 py-3 mb-4">
+    <div className="w-full bg-gradient-to-r from-[rgba(245,197,24,0.12)] to-[rgba(245,197,24,0.04)] border border-[rgba(245,197,24,0.2)] rounded-[12px] px-4 py-3 mb-4">
       {/* Progress bar */}
       <div className="flex items-center gap-1.5 mb-2">
         {[1, 2, 3, 4].map(i => (

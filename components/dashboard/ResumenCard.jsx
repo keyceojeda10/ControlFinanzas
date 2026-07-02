@@ -21,7 +21,7 @@ export default function ResumenCard({
 
   if (loading) {
     return (
-      <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[14px] p-5 animate-pulse">
+      <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] p-5 animate-pulse">
         <div className="flex items-start justify-between mb-4">
           <div className="w-10 h-10 rounded-[10px] bg-[var(--color-bg-hover)]" />
           <div className="h-5 w-14 rounded-full bg-[var(--color-bg-hover)]" />
@@ -34,7 +34,7 @@ export default function ResumenCard({
 
   return (
     <div
-      className="border rounded-[14px] p-5 flex flex-col gap-3"
+      className="border rounded-[12px] p-5 flex flex-col gap-3"
       style={{
         borderColor: 'var(--color-border)',
         background: 'var(--color-bg-card)',

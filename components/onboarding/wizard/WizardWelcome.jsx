@@ -101,7 +101,7 @@ export default function WizardWelcome({ nombre, onNext, onDismiss, onNavigate })
         {/* Opcion 3: Crear un solo cliente */}
         <button
           onClick={() => go('/clientes/nuevo')}
-          className="group w-full rounded-[14px] p-3.5 text-left transition-all active:scale-[0.98] cursor-pointer"
+          className="group w-full rounded-[12px] p-3.5 text-left transition-all active:scale-[0.98] cursor-pointer"
           style={{ background: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.15)' }}
         >
           <div className="flex items-center gap-3">

@@ -169,13 +169,13 @@ function HistorialCobros({ rutaId }) {
                         <div className="flex border-b border-[rgba(255,255,255,0.05)]">
                           <button
                             onClick={() => setTab('pagaron')}
-                            className={`flex-1 text-[11px] font-semibold py-2 transition-colors ${tab === 'pagaron' ? 'text-[var(--color-success)] border-b-2 border-[#22c55e]' : 'text-[var(--color-text-muted)]'}`}
+                            className={`flex-1 text-[11px] font-semibold py-2 transition-colors ${tab === 'pagaron' ? 'text-[var(--color-success)] border-b-2 border-[var(--color-success)]' : 'text-[var(--color-text-muted)]'}`}
                           >
                             Pagaron ({cantPagaron})
                           </button>
                           <button
                             onClick={() => setTab('noPagaron')}
-                            className={`flex-1 text-[11px] font-semibold py-2 transition-colors ${tab === 'noPagaron' ? 'text-[var(--color-danger)] border-b-2 border-[#ef4444]' : 'text-[var(--color-text-muted)]'}`}
+                            className={`flex-1 text-[11px] font-semibold py-2 transition-colors ${tab === 'noPagaron' ? 'text-[var(--color-danger)] border-b-2 border-[var(--color-danger)]' : 'text-[var(--color-text-muted)]'}`}
                           >
                             No pagaron ({cantNoPagaron})
                           </button>
@@ -1352,7 +1352,7 @@ export default function RutaDetallePage({ params }) {
                     </select>
                     <button
                       onClick={abrirModalDSC}
-                      className="flex items-center justify-between h-9 rounded-[10px] border bg-transparent text-xs px-2.5 hover:border-[#f59e0b] transition-all cursor-pointer"
+                      className="flex items-center justify-between h-9 rounded-[10px] border bg-transparent text-xs px-2.5 hover:border-[var(--color-warning)] transition-all cursor-pointer"
                       style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
                     >
                       <span className="flex items-center gap-1.5">
@@ -1374,8 +1374,8 @@ export default function RutaDetallePage({ params }) {
                     className={[
                       'flex items-center justify-center gap-1.5 h-9 rounded-[10px] border text-xs px-2.5 transition-all disabled:opacity-50',
                       festivoHoy
-                        ? 'border-[#22c55e] text-[#22c55e] bg-[rgba(34,197,94,0.08)]'
-                        : 'bg-transparent hover:border-[#22c55e] hover:text-[#22c55e]',
+                        ? 'border-[var(--color-success)] text-[var(--color-success)] bg-[rgba(34,197,94,0.08)]'
+                        : 'bg-transparent hover:border-[var(--color-success)] hover:text-[var(--color-success)]',
                     ].join(' ')}
                     style={!festivoHoy ? { borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' } : {}}
                   >
@@ -1666,7 +1666,7 @@ export default function RutaDetallePage({ params }) {
 
       {/* Mini-mapa */}
       {showMap && ruta.clientes && (
-        <div className="rounded-[14px] overflow-hidden border border-[#222]">
+        <div className="rounded-[12px] overflow-hidden border border-[#222]">
           <RouteMap clientes={ruta.clientes} cobrosGeoHoy={ruta.cobrosGeoHoy ?? []} />
         </div>
       )}
@@ -1721,7 +1721,7 @@ export default function RutaDetallePage({ params }) {
                   key={t.key}
                   type="button"
                   onClick={() => setModoVista(t.key)}
-                  className="flex-1 py-2 text-xs font-semibold rounded-[9px] transition-all"
+                  className="flex-1 py-2 text-xs font-semibold rounded-[8px] transition-all"
                   style={modoVista === t.key
                     ? { background: 'var(--color-bg-card)', color: 'var(--color-accent)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' }
                     : { color: 'var(--color-text-muted)' }}
@@ -1834,7 +1834,7 @@ export default function RutaDetallePage({ params }) {
                   onTouchMove={dragActivo ? (e) => handleTouchMove(e, idx) : undefined}
                   onTouchEnd={dragActivo ? handleTouchEnd : undefined}
                   className={[
-                    'flex items-stretch gap-0 rounded-[14px] transition-all overflow-hidden',
+                    'flex items-stretch gap-0 rounded-[12px] transition-all overflow-hidden',
                     'border',
                     isCompleted ? 'opacity-50' : '',
                     dragIndex === idx ? 'opacity-30 scale-95' : '',
@@ -2750,7 +2750,7 @@ export default function RutaDetallePage({ params }) {
                         setPosicionesNuevos(prev => ({ ...prev, [c.id]: v }))
                       }}
                       onClick={(e) => e.stopPropagation()}
-                      className="w-14 h-7 text-center text-[11px] font-semibold tabular-nums rounded-[7px] border bg-[var(--color-bg-surface)] focus:border-[var(--color-accent)] focus:outline-none transition-colors"
+                      className="w-14 h-7 text-center text-[11px] font-semibold tabular-nums rounded-[8px] border bg-[var(--color-bg-surface)] focus:border-[var(--color-accent)] focus:outline-none transition-colors"
                       style={{ color: 'var(--color-text-primary)', borderColor: 'var(--color-border)' }}
                       min={1}
                     />
@@ -2784,7 +2784,7 @@ export default function RutaDetallePage({ params }) {
                   type="checkbox"
                   checked={seleccionados.includes(c.id)}
                   onChange={() => toggleSeleccion(c.id)}
-                  className="accent-[#f59e0b]"
+                  className="accent-[var(--color-warning)]"
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -2808,7 +2808,7 @@ export default function RutaDetallePage({ params }) {
                         setPosicionesNuevos(prev => ({ ...prev, [c.id]: v }))
                       }}
                       onClick={(e) => e.stopPropagation()}
-                      className="w-14 h-7 text-center text-[11px] font-semibold tabular-nums rounded-[7px] border bg-[var(--color-bg-surface)] focus:border-[var(--color-accent)] focus:outline-none transition-colors"
+                      className="w-14 h-7 text-center text-[11px] font-semibold tabular-nums rounded-[8px] border bg-[var(--color-bg-surface)] focus:border-[var(--color-accent)] focus:outline-none transition-colors"
                       style={{ color: 'var(--color-text-primary)', borderColor: 'var(--color-border)' }}
                       min={1}
                     />
@@ -2893,7 +2893,7 @@ export default function RutaDetallePage({ params }) {
           {modalCapital === 'inyeccion' && (ruta.carteraTotal || 0) > 0 && (
             <div className="rounded-[10px] border border-[var(--color-border)] p-3" style={{ background: 'var(--color-bg-card)' }}>
               <label className="flex items-start gap-2 cursor-pointer">
-                <input type="checkbox" checked={capitalAbsorber} onChange={(e) => setCapitalAbsorber(e.target.checked)} className="mt-0.5 accent-[#6366f1]" />
+                <input type="checkbox" checked={capitalAbsorber} onChange={(e) => setCapitalAbsorber(e.target.checked)} className="mt-0.5 accent-[var(--color-accent)]" />
                 <span className="text-xs text-[var(--color-text-secondary)]">
                   Esta ruta ya tiene {formatMoney(ruta.carteraTotal)} en préstamos por cobrar. Descontar lo pendiente de esta inyección.
                   {Number(capitalMonto) > 0 && (
@@ -3075,7 +3075,7 @@ export default function RutaDetallePage({ params }) {
               </div>
               {modalPagoRapido.esBalloon && (
                 <div className="rounded-[12px] border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.08)] p-3 text-center">
-                  <p className="text-xs text-[#ef4444] font-semibold">Cuota de capital + interés (globo)</p>
+                  <p className="text-xs text-[var(--color-danger)] font-semibold">Cuota de capital + interés (globo)</p>
                   <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
                     Esta es la última cuota. Incluye la devolución del capital completo mas el interés del período.
                   </p>
@@ -3098,7 +3098,7 @@ export default function RutaDetallePage({ params }) {
                 <button
                   onClick={() => ejecutarPagoRapido('efectivo')}
                   disabled={!modalPagoRapido.cuota || modalPagoRapido.cuota <= 0}
-                  className="flex flex-col items-center gap-2 py-4 rounded-[14px] border border-[var(--color-border)] bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(34,197,94,0.08)] hover:border-[rgba(34,197,94,0.3)] transition-all active:scale-95 disabled:opacity-40"
+                  className="flex flex-col items-center gap-2 py-4 rounded-[12px] border border-[var(--color-border)] bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(34,197,94,0.08)] hover:border-[rgba(34,197,94,0.3)] transition-all active:scale-95 disabled:opacity-40"
                 >
                   <svg className="w-6 h-6 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -3108,7 +3108,7 @@ export default function RutaDetallePage({ params }) {
                 <button
                   onClick={() => ejecutarPagoRapido('transferencia')}
                   disabled={!modalPagoRapido.cuota || modalPagoRapido.cuota <= 0}
-                  className="flex flex-col items-center gap-2 py-4 rounded-[14px] border border-[var(--color-border)] bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(59,130,246,0.08)] hover:border-[rgba(59,130,246,0.3)] transition-all active:scale-95 disabled:opacity-40"
+                  className="flex flex-col items-center gap-2 py-4 rounded-[12px] border border-[var(--color-border)] bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(59,130,246,0.08)] hover:border-[rgba(59,130,246,0.3)] transition-all active:scale-95 disabled:opacity-40"
                 >
                   <svg className="w-6 h-6 text-[var(--color-info)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
@@ -3136,7 +3136,7 @@ export default function RutaDetallePage({ params }) {
       {/* Toast: deshacer pago */}
       {undoPago && (
         <div className="fixed bottom-24 left-3 right-3 sm:left-auto sm:right-4 sm:bottom-6 sm:w-auto z-50 animate-slide-up">
-          <div className="flex items-center gap-3 px-4 py-3 rounded-[14px] border border-[var(--color-success-border)] bg-[var(--color-bg-card)] sm:min-w-[320px]"
+          <div className="flex items-center gap-3 px-4 py-3 rounded-[12px] border border-[var(--color-success-border)] bg-[var(--color-bg-card)] sm:min-w-[320px]"
             style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
           >
             <svg className="w-4 h-4 text-[var(--color-success)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

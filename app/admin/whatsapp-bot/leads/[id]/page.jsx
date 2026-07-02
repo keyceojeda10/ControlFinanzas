@@ -146,7 +146,7 @@ export default function BotLeadDetalle() {
           href={`https://wa.me/${tel}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="px-3 py-1.5 rounded-[8px] text-xs font-medium bg-[rgba(16,185,129,0.12)] text-[#10b981] hover:bg-[rgba(16,185,129,0.2)] transition-all"
+          className="px-3 py-1.5 rounded-[8px] text-xs font-medium bg-[rgba(16,185,129,0.12)] text-[var(--color-success)] hover:bg-[rgba(16,185,129,0.2)] transition-all"
         >
           WhatsApp
         </a>
@@ -185,7 +185,7 @@ export default function BotLeadDetalle() {
           </div>
           <div>
             <p className="text-[10px] text-[var(--color-text-muted)]">Bot</p>
-            <span className={`text-xs font-medium ${lead.botActivo ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
+            <span className={`text-xs font-medium ${lead.botActivo ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
               {lead.botActivo ? 'Activo' : 'Apagado'}
             </span>
           </div>
@@ -229,15 +229,15 @@ export default function BotLeadDetalle() {
           onClick={toggleBot}
           className={`px-3 py-1.5 rounded-[8px] text-xs font-medium transition-all ${
             lead.botActivo
-              ? 'bg-[rgba(239,68,68,0.12)] text-[#ef4444]'
-              : 'bg-[rgba(16,185,129,0.12)] text-[#10b981]'
+              ? 'bg-[rgba(239,68,68,0.12)] text-[var(--color-danger)]'
+              : 'bg-[rgba(16,185,129,0.12)] text-[var(--color-success)]'
           }`}
         >
           {lead.botActivo ? 'Apagar bot' : 'Encender bot'}
         </button>
         <button
           onClick={eliminar}
-          className="px-3 py-1.5 rounded-[8px] text-xs font-medium bg-[rgba(239,68,68,0.06)] text-[#ef4444] hover:bg-[rgba(239,68,68,0.15)] transition-all ml-auto"
+          className="px-3 py-1.5 rounded-[8px] text-xs font-medium bg-[rgba(239,68,68,0.06)] text-[var(--color-danger)] hover:bg-[rgba(239,68,68,0.15)] transition-all ml-auto"
         >
           Eliminar
         </button>

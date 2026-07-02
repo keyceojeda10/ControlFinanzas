@@ -55,7 +55,7 @@ export default function MoneyInput({
           type="text"
           inputMode="numeric"
           className={[
-            'cf-input w-full h-11 rounded-[14px] border text-sm',
+            'cf-input w-full h-11 rounded-[12px] border text-sm',
             'focus:outline-none',
             'disabled:opacity-50 disabled:cursor-not-allowed',
             'pl-8 pr-3',

@@ -130,7 +130,7 @@ export default function CuadreDia({ fecha }) {
       <div className="flex gap-1 p-1 rounded-[12px]" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
         {[{ k: 'todos', l: 'Todos' }, { k: 'pendientes', l: 'Pendientes' }, { k: 'diferencia', l: 'Con diferencia' }].map((t) => (
           <button key={t.k} type="button" onClick={() => setFiltro(t.k)}
-            className="flex-1 py-1.5 text-[11px] font-semibold rounded-[9px] transition-all"
+            className="flex-1 py-1.5 text-[11px] font-semibold rounded-[8px] transition-all"
             style={filtro === t.k ? { background: 'var(--color-bg-card)', color: 'var(--color-accent)' } : { color: 'var(--color-text-muted)' }}>
             {t.l}
           </button>

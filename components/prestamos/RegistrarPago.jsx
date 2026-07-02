@@ -680,7 +680,7 @@ export default function RegistrarPago({
                       ? `border-[${color}] text-[${color}]`
                       : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-surface)]',
                   ].join(' ')}
-                  style={tipo === key ? { backgroundColor: `${color}15`, borderColor: color, color } : undefined}
+                  style={tipo === key ? { backgroundColor: `color-mix(in srgb, ${color} 8%, transparent)`, borderColor: color, color } : undefined}
                 >
                   {label}
                 </button>
@@ -760,7 +760,7 @@ export default function RegistrarPago({
                   className={[
                     'flex-1 h-9 rounded-[10px] border text-sm font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5',
                     metodoPago === 'efectivo'
-                      ? 'bg-[rgba(34,197,94,0.12)] border-[#22c55e] text-[var(--color-success)]'
+                      ? 'bg-[rgba(34,197,94,0.12)] border-[var(--color-success)] text-[var(--color-success)]'
                       : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-surface)]',
                   ].join(' ')}
                 >
@@ -775,7 +775,7 @@ export default function RegistrarPago({
                   className={[
                     'flex-1 h-9 rounded-[10px] border text-sm font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5',
                     metodoPago === 'transferencia'
-                      ? 'bg-[rgba(59,130,246,0.12)] border-[#3b82f6] text-[var(--color-info)]'
+                      ? 'bg-[rgba(59,130,246,0.12)] border-[var(--color-info)] text-[var(--color-info)]'
                       : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-surface)]',
                   ].join(' ')}
                 >

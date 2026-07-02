@@ -29,7 +29,7 @@ export const Button = forwardRef(function Button(
   ref
 ) {
   const base = [
-    'inline-flex items-center justify-center font-medium rounded-[14px]',
+    'inline-flex items-center justify-center font-medium rounded-[12px]',
     'border cursor-pointer select-none',
     'transition-[background,color,border-color,box-shadow,transform,filter] duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)]',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-base)]',

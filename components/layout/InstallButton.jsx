@@ -289,7 +289,7 @@ export function InstallGuideModal({ onClose }) {
             {instructions.steps.map((step, i) => {
               const StepIconComponent = ICON_MAP[step.icon]
               return (
-                <div key={i} className="flex items-start gap-3 p-3 rounded-[14px] bg-[#151515] border border-[#222]">
+                <div key={i} className="flex items-start gap-3 p-3 rounded-[12px] bg-[#151515] border border-[#222]">
                   {/* Numero + Icono en fila */}
                   <div className="shrink-0 flex items-center gap-2">
                     <div className="w-7 h-7 rounded-full bg-[var(--color-accent)] flex items-center justify-center text-[#0a0a0a] text-xs font-bold">

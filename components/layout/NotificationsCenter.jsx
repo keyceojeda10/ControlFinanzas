@@ -436,7 +436,7 @@ export default function NotificationsCenter({ size = 'md' }) {
 
       {open && panelPos && (
         <div
-          className="fixed w-64 max-w-[calc(100vw-2rem)] max-h-[360px] overflow-y-auto rounded-[14px] shadow-2xl z-50 glass-strong"
+          className="fixed w-64 max-w-[calc(100vw-2rem)] max-h-[360px] overflow-y-auto rounded-[12px] shadow-2xl z-50 glass-strong"
           style={{
             border: '1px solid var(--color-border)',
             left: panelPos.left,

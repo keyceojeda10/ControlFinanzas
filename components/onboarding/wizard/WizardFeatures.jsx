@@ -100,7 +100,7 @@ export default function WizardFeatures({ modoDemo, onNext }) {
       <div className="flex-1 space-y-3 mb-6">
         {CAPS.map((c) => (
           <div key={c.id}
-            className="rounded-[14px] p-4"
+            className="rounded-[12px] p-4"
             style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
             <div className="flex items-start gap-3">
               <div className="w-11 h-11 rounded-[11px] flex items-center justify-center shrink-0"

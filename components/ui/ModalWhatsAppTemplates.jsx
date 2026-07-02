@@ -7,6 +7,7 @@ import { formatMoney } from '@/lib/i18n'
 import { useState, useEffect, useMemo } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
+import { Toggle } from '@/components/ui/Toggle'
 import {
   formatearTelefono,
   abrirWhatsApp,
@@ -341,32 +342,14 @@ export default function ModalWhatsAppTemplates({ open, onClose, cliente, prestam
 
         {/* Toggle: cronograma de cobros (solo para credito aprobado) */}
         {tieneCronograma && selectedId === 'credito_aprobado' && (
-          <div className="flex items-center gap-3 rounded-[10px] px-3 py-2.5" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={incluirCronograma}
-              onClick={handleToggleCronograma}
-              className="relative inline-flex h-5 w-9 flex-shrink-0 rounded-full transition-colors duration-200 ease-in-out"
-              style={{
-                background: incluirCronograma ? '#22c55e' : '#d1d5db',
-              }}
-            >
-              <span
-                className="inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform duration-200 ease-in-out"
-                style={{
-                  transform: incluirCronograma ? 'translate(17px, 2px)' : 'translate(2px, 2px)',
-                }}
-              />
-            </button>
-            <div className="flex-1 min-w-0">
-              <p className="text-[12px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-                Incluir calendario de cobros
-              </p>
-              <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
-                Muestra las fechas y montos de cada cuota
-              </p>
-            </div>
+          <div className="rounded-[10px] px-3 py-2.5" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+            <Toggle
+              size="sm"
+              checked={incluirCronograma}
+              onChange={handleToggleCronograma}
+              label="Incluir calendario de cobros"
+              description="Muestra las fechas y montos de cada cuota"
+            />
           </div>
         )}
 

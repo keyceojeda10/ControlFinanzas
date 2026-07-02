@@ -135,7 +135,7 @@ export default function OrganizacionesPage() {
             placeholder="Buscar por nombre, correo electrónico o teléfono…"
             className="flex-1 h-9 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[white] placeholder-[#555555] focus:outline-none focus:border-[var(--color-info)]"
           />
-          <button type="submit" className="h-9 px-4 rounded-[12px] bg-[#3b82f6] text-[var(--color-text-primary)] text-xs font-medium hover:bg-[#2563eb] transition-all shrink-0">
+          <button type="submit" className="h-9 px-4 rounded-[12px] bg-[var(--color-info)] text-[var(--color-text-primary)] text-xs font-medium hover:bg-[#2563eb] transition-all shrink-0">
             Buscar
           </button>
         </form>

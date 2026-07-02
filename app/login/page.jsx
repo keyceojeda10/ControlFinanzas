@@ -35,7 +35,7 @@ function ShowcasePanel() {
       <div className="relative flex-1 my-10 min-h-[420px]">
         {/* Card 1: Recaudo */}
         <div
-          className="absolute rounded-[14px] p-5"
+          className="absolute rounded-[12px] p-5"
           style={{
             top: '4%', left: '4%', width: '280px',
             background: '#141414', border: '1px solid rgba(255,255,255,0.08)',
@@ -59,7 +59,7 @@ function ShowcasePanel() {
 
         {/* Card 2: Pago */}
         <div
-          className="absolute rounded-[14px] p-5"
+          className="absolute rounded-[12px] p-5"
           style={{
             top: '46%', right: '2%', width: '300px',
             background: '#141414', border: '1px solid rgba(255,255,255,0.08)',
@@ -93,7 +93,7 @@ function ShowcasePanel() {
 
         {/* Card 3: Ruta */}
         <div
-          className="absolute rounded-[14px] p-5"
+          className="absolute rounded-[12px] p-5"
           style={{
             bottom: '2%', left: '10%', width: '260px',
             background: '#141414', border: '1px solid rgba(255,255,255,0.08)',

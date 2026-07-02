@@ -136,7 +136,7 @@ export default function EditarDiaCobro({ prestamoId, prestamo, open, onClose, on
             <button
               type="button"
               onClick={() => { setModo('semana'); setValor('') }}
-              className="flex-1 py-1.5 text-[11px] font-semibold rounded-[9px] transition-all"
+              className="flex-1 py-1.5 text-[11px] font-semibold rounded-[8px] transition-all"
               style={modo === 'semana' ? {
                 background: 'var(--color-bg-card)',
                 color: 'var(--color-accent)',
@@ -148,7 +148,7 @@ export default function EditarDiaCobro({ prestamoId, prestamo, open, onClose, on
             <button
               type="button"
               onClick={() => { setModo('mes'); setValor('') }}
-              className="flex-1 py-1.5 text-[11px] font-semibold rounded-[9px] transition-all"
+              className="flex-1 py-1.5 text-[11px] font-semibold rounded-[8px] transition-all"
               style={modo === 'mes' ? {
                 background: 'var(--color-bg-card)',
                 color: 'var(--color-accent)',

@@ -458,7 +458,7 @@ export default function CobrosHoyPage() {
                   key={p.id}
                   onClick={() => elegirPrestamo(p.id, p.cuotaDiaria, { esBalloon: p.esBalloon, cuotaNumero: p.cuotaNumero, modoInteres: p.modoInteres })}
                   disabled={!p.cuotaDiaria || p.cuotaDiaria <= 0}
-                  className="w-full text-left px-4 py-3.5 rounded-[14px] border transition-all active:scale-[0.99] disabled:opacity-50"
+                  className="w-full text-left px-4 py-3.5 rounded-[12px] border transition-all active:scale-[0.99] disabled:opacity-50"
                   style={{ background: 'var(--color-bg-card)', borderColor: 'var(--color-border)' }}
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -494,7 +494,7 @@ export default function CobrosHoyPage() {
                     onChange={e => setMontoParcial(e.target.value)}
                     placeholder="Monto"
                     autoFocus
-                    className="w-full text-center text-2xl font-extrabold font-mono-display py-3 pl-8 pr-3 rounded-[14px] border outline-none"
+                    className="w-full text-center text-2xl font-extrabold font-mono-display py-3 pl-8 pr-3 rounded-[12px] border outline-none"
                     style={{ background: 'var(--color-bg-elevated)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
                     min={1}
                     max={modalPago.cuota}
@@ -627,7 +627,7 @@ export default function CobrosHoyPage() {
       {undoPago && (
         <div className="fixed bottom-24 left-3 right-3 sm:left-auto sm:right-4 sm:bottom-6 sm:w-auto z-50 animate-slide-up">
           <div
-            className="flex items-center gap-3 px-4 py-3 rounded-[14px] border sm:min-w-[320px]"
+            className="flex items-center gap-3 px-4 py-3 rounded-[12px] border sm:min-w-[320px]"
             style={{ background: 'rgba(15,15,22,0.98)', border: '1px solid rgba(34,197,94,0.2)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
           >
             <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-success) 20%, transparent)' }}>

@@ -16,6 +16,7 @@ import { Modal }               from '@/components/ui/Modal'
 import DiasSinCobroSelector    from '@/components/ui/DiasSinCobroSelector'
 import FestivosManager         from '@/components/ui/FestivosManager'
 import ThemeToggle             from '@/components/ui/ThemeToggle'
+import { Toggle }              from '@/components/ui/Toggle'
 import { useTheme }             from '@/lib/theme/ThemeProvider'
 import { getCountryList, COUNTRIES } from '@/lib/countries'
 
@@ -28,19 +29,19 @@ const PLAN_NAMES = Object.fromEntries(Object.entries(PLANES_CONFIG).map(([k, v])
 
 function Alerta({ tipo = 'success', children }) {
   const styles = {
-    success: 'bg-[rgba(16,185,129,0.1)] border-[rgba(16,185,129,0.2)] text-[#22c55e]',
-    error:   'bg-[rgba(239,68,68,0.1)] border-[rgba(239,68,68,0.2)] text-[#ef4444]',
-    warning: 'bg-[rgba(245,158,11,0.1)] border-[rgba(245,158,11,0.2)] text-[#f59e0b]',
+    success: { background: 'var(--color-success-dim)', borderColor: 'var(--color-success-border)', color: 'var(--color-success)' },
+    error:   { background: 'var(--color-danger-dim)',  borderColor: 'var(--color-danger-border)',  color: 'var(--color-danger)' },
+    warning: { background: 'var(--color-warning-dim)', borderColor: 'var(--color-warning-border)', color: 'var(--color-warning)' },
   }
   return (
-    <div className={`border rounded-[12px] px-4 py-3 text-sm ${styles[tipo]}`}>
+    <div className="border rounded-[12px] px-4 py-3 text-sm" style={styles[tipo] ?? styles.success}>
       {children}
     </div>
   )
 }
 
 const inputClass =
-  'w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[var(--color-text-primary)] placeholder-[#777777] focus:outline-none focus:border-[#f5c518] transition-all disabled:opacity-50 disabled:cursor-not-allowed'
+  'cf-input w-full h-11 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-hover)] text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-all disabled:opacity-50 disabled:cursor-not-allowed'
 
 // ══════════════════════════════════════════════════════════════
 // TAB 1 — MI PERFIL
@@ -491,7 +492,7 @@ function TabOrganizacion() {
         </p>
         <DiasSinCobroSelector value={diasSinCobro} onChange={setDiasSinCobro} />
         {diasSinCobro.length > 0 && (
-          <p className="text-[10px] text-[#f59e0b] mt-2">
+          <p className="text-[10px] text-[var(--color-warning)] mt-2">
             {diasSinCobro.length === 1 ? '1 día' : `${diasSinCobro.length} días`} sin cobro configurados para toda la organización
           </p>
         )}
@@ -569,7 +570,7 @@ function TabOrganizacion() {
       {/* Intereses moratorios */}
       <Card>
         <div className="flex items-center gap-2 mb-1">
-          <svg className="w-4 h-4 text-[#f59e0b] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-[var(--color-warning)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <h3 className="font-medium text-white text-sm">Intereses moratorios</h3>
@@ -648,36 +649,24 @@ function TabOrganizacion() {
         <p className="text-xs text-[#666666] mb-4">
           Configura que informacion se incluye en los mensajes que se envian a los clientes por WhatsApp.
         </p>
-        <label className="flex items-center gap-3 cursor-pointer">
-          <div className="relative">
-            <input
-              type="checkbox"
-              checked={ocultarSaldoWA}
-              onChange={async () => {
-                const nuevo = !ocultarSaldoWA
-                setOcultarSaldoWA(nuevo)
-                setGuardandoSaldoWA(true)
-                try {
-                  await fetch('/api/configuracion/organizacion', {
-                    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ocultarSaldoWA: nuevo }),
-                  })
-                  setData(prev => ({ ...prev, org: { ...prev.org, ocultarSaldoWA: nuevo } }))
-                } catch {}
-                setGuardandoSaldoWA(false)
-              }}
-              className="sr-only peer"
-            />
-            <div className="w-10 h-[22px] rounded-full transition-colors border peer-checked:border-[#25d366]" style={{ background: ocultarSaldoWA ? '#25d366' : 'var(--color-bg-hover)', borderColor: ocultarSaldoWA ? '#25d366' : 'var(--color-border)' }} />
-            <div className="absolute top-[3px] left-[3px] w-4 h-4 rounded-full transition-transform shadow-sm" style={{ background: ocultarSaldoWA ? '#fff' : 'var(--color-text-muted)', transform: ocultarSaldoWA ? 'translateX(18px)' : 'translateX(0)' }} />
-          </div>
-          <div>
-            <span className="text-sm text-white">Ocultar saldo pendiente</span>
-            <p className="text-[10px] text-[#666666] leading-snug">
-              No mostrar el saldo pendiente, total a pagar ni porcentaje de progreso en los mensajes de WhatsApp (comprobantes, mora, recordatorios). Util si no quieres que el cliente vea el monto total con intereses.
-            </p>
-          </div>
-        </label>
+        <Toggle
+          checked={ocultarSaldoWA}
+          disabled={guardandoSaldoWA}
+          label="Ocultar saldo pendiente"
+          description="No mostrar el saldo pendiente, total a pagar ni porcentaje de progreso en los mensajes de WhatsApp (comprobantes, mora, recordatorios). Util si no quieres que el cliente vea el monto total con intereses."
+          onChange={async (nuevo) => {
+            setOcultarSaldoWA(nuevo)
+            setGuardandoSaldoWA(true)
+            try {
+              await fetch('/api/configuracion/organizacion', {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ocultarSaldoWA: nuevo }),
+              })
+              setData(prev => ({ ...prev, org: { ...prev.org, ocultarSaldoWA: nuevo } }))
+            } catch {}
+            setGuardandoSaldoWA(false)
+          }}
+        />
       </Card>
 
       {/* Festivos */}
@@ -954,7 +943,7 @@ function TabReferidos() {
           </div>
 
           <div className="bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.15)] rounded-[12px] px-4 py-3">
-            <p className="text-sm text-[#22c55e] font-medium">Por cada referido que pague su primer plan, ganas 1 mes gratis en tu suscripción.</p>
+            <p className="text-sm text-[var(--color-success)] font-medium">Por cada referido que pague su primer plan, ganas 1 mes gratis en tu suscripción.</p>
           </div>
         </div>
       </Card>
@@ -1060,13 +1049,13 @@ function TabNotificaciones() {
         </p>
 
         {status === 'unsupported' && (
-          <p className="text-xs text-[#f59e0b] bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.2)] rounded-lg px-3 py-2">
+          <p className="text-xs text-[var(--color-warning)] bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.2)] rounded-lg px-3 py-2">
             Tu navegador no soporta notificaciones push. Usa Chrome, Edge o Firefox.
           </p>
         )}
 
         {status === 'denied' && (
-          <p className="text-xs text-[#ef4444] bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] rounded-lg px-3 py-2">
+          <p className="text-xs text-[var(--color-danger)] bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] rounded-lg px-3 py-2">
             Las notificaciones fueron bloqueadas. Habilítalas desde la configuración de tu navegador.
           </p>
         )}
@@ -1077,13 +1066,7 @@ function TabNotificaciones() {
               <p className="text-sm text-white">{status === 'subscribed' ? 'Activadas' : 'Desactivadas'}</p>
               <p className="text-[10px] text-[#666]">{status === 'subscribed' ? 'Recibirás notificaciones push' : 'No recibirás notificaciones'}</p>
             </div>
-            <button
-              onClick={toggle}
-              disabled={working}
-              className={`relative w-12 h-6 rounded-full transition-colors ${status === 'subscribed' ? 'bg-[#f5c518]' : 'bg-[#2a2a2a]'}`}
-            >
-              <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${status === 'subscribed' ? 'left-[26px]' : 'left-0.5'}`} />
-            </button>
+            <Toggle checked={status === 'subscribed'} onChange={toggle} disabled={working} />
           </div>
         )}
 

@@ -237,7 +237,7 @@ export default function CalculadoraPage() {
         {/* ── Resultado tipo recibo ── */}
         {calculo ? (
           <section
-            className="rounded-[18px] overflow-hidden"
+            className="rounded-[16px] overflow-hidden"
             style={{ border: '1px solid color-mix(in srgb, var(--color-accent) 30%, var(--color-border))' }}
           >
             {/* Encabezado del recibo */}
@@ -327,8 +327,8 @@ export default function CalculadoraPage() {
             </div>
           </section>
         ) : (
-          <section className="rounded-[18px] border border-dashed border-[var(--color-border)] px-5 py-12 text-center bg-[var(--color-bg-card)]">
-            <div className="w-12 h-12 rounded-[14px] mx-auto flex items-center justify-center mb-3" style={{ background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', color: 'var(--color-accent)' }}>
+          <section className="rounded-[16px] border border-dashed border-[var(--color-border)] px-5 py-12 text-center bg-[var(--color-bg-card)]">
+            <div className="w-12 h-12 rounded-[12px] mx-auto flex items-center justify-center mb-3" style={{ background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', color: 'var(--color-accent)' }}>
               <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m-6 4h6m-2 5h2M5 3h14a1 1 0 011 1v16a1 1 0 01-1 1H5a1 1 0 01-1-1V4a1 1 0 011-1z" /></svg>
             </div>
             <p className="text-sm font-medium text-[var(--color-text-primary)]">Escribe el monto para ver la simulación</p>

@@ -196,7 +196,7 @@ export default function ReportesPage() {
           </div>
         </div>
         {/* Chips de período rápido + date inputs */}
-        <div className="rounded-[14px] p-2.5 flex flex-wrap items-center gap-2"
+        <div className="rounded-[12px] p-2.5 flex flex-wrap items-center gap-2"
           style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
         >
           {[

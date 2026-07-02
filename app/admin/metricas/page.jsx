@@ -245,8 +245,8 @@ export default function MetricasPage() {
               { label: 'MAU', value: uso.mau, color: 'var(--color-purple)' },
             ].map(({ label, value, color }) => (
               <Card key={label} style={{
-                background: `linear-gradient(135deg, ${color}0A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, ${color}05 100%)`,
-                boxShadow: `0 0 20px ${color}08`,
+                background: `linear-gradient(135deg, color-mix(in srgb, ${color} 4%, transparent) 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, color-mix(in srgb, ${color} 2%, transparent) 100%)`,
+                boxShadow: `0 0 20px color-mix(in srgb, ${color} 3%, transparent)`,
               }}>
                 <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">{label}</p>
                 <p className="text-2xl font-bold text-[var(--color-text-primary)] font-mono-display mt-1">{value}</p>

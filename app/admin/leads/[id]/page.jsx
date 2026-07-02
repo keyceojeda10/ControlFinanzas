@@ -670,7 +670,7 @@ export default function LeadDetallePage({ params }) {
 
           {/* Resumen mensajes enviados */}
           {mensajesEnviadosCount > 0 && (
-            <div className="bg-[rgba(34,197,94,0.05)] border border-[rgba(34,197,94,0.2)] rounded-[14px] px-4 py-3">
+            <div className="bg-[rgba(34,197,94,0.05)] border border-[rgba(34,197,94,0.2)] rounded-[12px] px-4 py-3">
               <p className="text-xs text-[var(--color-success)] font-medium">
                 {mensajesEnviadosCount} de {MENSAJES.length} mensajes enviados
               </p>

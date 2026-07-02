@@ -496,7 +496,7 @@ export function GrillaDatosSecciones({ secciones }) {
       {secciones.map((sec) => (
         <div
           key={sec.titulo}
-          className="rounded-[14px] p-3"
+          className="rounded-[12px] p-3"
           style={{
             background: `linear-gradient(135deg, color-mix(in srgb, ${sec.color} 6%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
             border: `1px solid color-mix(in srgb, ${sec.color} 18%, var(--color-border))`,
@@ -551,7 +551,7 @@ export function TimelinePrestamo({ fechaInicio, fechaFin, porcentajePagado, colo
   const atrasado = animPago < animTiempo - 5
 
   return (
-    <div className="rounded-[14px] p-4" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+    <div className="rounded-[12px] p-4" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
       <div className="flex items-center justify-between mb-3">
         <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
           Línea de tiempo
@@ -649,7 +649,7 @@ export function PagoMiniCard({ pago, onAnular, anulando, isOffline, children }) 
 
   return (
     <div
-      className="rounded-[14px] p-3 transition-all hover:scale-[1.005]"
+      className="rounded-[12px] p-3 transition-all hover:scale-[1.005]"
       style={{
         background: `linear-gradient(135deg, color-mix(in srgb, ${tipoInfo.bg} 5%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
         border: `1px solid color-mix(in srgb, ${tipoInfo.bg} 15%, var(--color-border))`,

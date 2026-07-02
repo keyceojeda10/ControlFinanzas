@@ -80,9 +80,9 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
           <span
             className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
             style={{
-              background: `${color}20`,
+              background: `color-mix(in srgb, ${color} 13%, transparent)`,
               color,
-              border: `1px solid ${color}35`,
+              border: `1px solid color-mix(in srgb, ${color} 21%, transparent)`,
             }}
           >
             <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />

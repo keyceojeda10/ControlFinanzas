@@ -997,10 +997,10 @@ function NuevoPrestamo() {
                   <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Que dia cobras?</label>
                   <div className="flex gap-1 p-1 rounded-[10px] mb-2 mt-1.5" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
                     <button type="button" onClick={() => { setModoDiaCobro('semana'); setDiaCobroMes('') }}
-                      className="flex-1 py-1.5 text-[10px] font-semibold rounded-[7px] transition-all"
+                      className="flex-1 py-1.5 text-[10px] font-semibold rounded-[8px] transition-all"
                       style={modoDiaCobro === 'semana' ? { background: 'var(--color-bg-card)', color: 'var(--color-accent)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' } : { color: 'var(--color-text-muted)' }}>Dia de la semana</button>
                     <button type="button" onClick={() => { setModoDiaCobro('mes'); setDiaCobroSemana('') }}
-                      className="flex-1 py-1.5 text-[10px] font-semibold rounded-[7px] transition-all"
+                      className="flex-1 py-1.5 text-[10px] font-semibold rounded-[8px] transition-all"
                       style={modoDiaCobro === 'mes' ? { background: 'var(--color-bg-card)', color: 'var(--color-accent)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' } : { color: 'var(--color-text-muted)' }}>Dia del mes</button>
                   </div>
                   {modoDiaCobro === 'semana' ? (
@@ -1028,10 +1028,10 @@ function NuevoPrestamo() {
                   <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Que dia cobras?</label>
                   <div className="flex gap-1 p-1 rounded-[10px] mb-2 mt-1.5" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
                     <button type="button" onClick={() => { setModoDiaCobro('semana'); setDiaCobroMes('') }}
-                      className="flex-1 py-1.5 text-[10px] font-semibold rounded-[7px] transition-all"
+                      className="flex-1 py-1.5 text-[10px] font-semibold rounded-[8px] transition-all"
                       style={modoDiaCobro === 'semana' ? { background: 'var(--color-bg-card)', color: 'var(--color-accent)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' } : { color: 'var(--color-text-muted)' }}>Dia de la semana</button>
                     <button type="button" onClick={() => { setModoDiaCobro('mes'); setDiaCobroSemana('') }}
-                      className="flex-1 py-1.5 text-[10px] font-semibold rounded-[7px] transition-all"
+                      className="flex-1 py-1.5 text-[10px] font-semibold rounded-[8px] transition-all"
                       style={modoDiaCobro === 'mes' ? { background: 'var(--color-bg-card)', color: 'var(--color-accent)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' } : { color: 'var(--color-text-muted)' }}>Dia del mes</button>
                   </div>
                   {modoDiaCobro === 'semana' ? (
@@ -1509,7 +1509,7 @@ function NuevoPrestamo() {
           style={{ bottom: 'calc(68px + env(safe-area-inset-bottom))' }}
         >
           <div
-            className="max-w-2xl mx-auto rounded-t-[14px] px-4 py-3 flex items-center justify-between gap-4"
+            className="max-w-2xl mx-auto rounded-t-[12px] px-4 py-3 flex items-center justify-between gap-4"
             style={{
               background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 12%, var(--color-bg-card)), var(--color-bg-card))',
               border: '1px solid color-mix(in srgb, var(--color-success) 30%, var(--color-border))',

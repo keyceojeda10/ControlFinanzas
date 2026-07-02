@@ -109,7 +109,7 @@ function EmailModal({ org, onClose }) {
               <button
                 onClick={send}
                 disabled={sending}
-                className="h-9 px-5 rounded-[10px] bg-[#3b82f6] text-[var(--color-text-primary)] text-xs font-medium hover:bg-[#2563eb] transition-colors disabled:opacity-50"
+                className="h-9 px-5 rounded-[10px] bg-[var(--color-info)] text-[var(--color-text-primary)] text-xs font-medium hover:bg-[#2563eb] transition-colors disabled:opacity-50"
               >
                 {sending ? 'Enviando...' : 'Enviar'}
               </button>
@@ -297,7 +297,7 @@ export default function CRMPage() {
             />
             <button
               type="submit"
-              className="h-9 px-4 rounded-[12px] bg-[#3b82f6] text-[var(--color-text-primary)] text-xs font-medium hover:bg-[#2563eb] transition-colors"
+              className="h-9 px-4 rounded-[12px] bg-[var(--color-info)] text-[var(--color-text-primary)] text-xs font-medium hover:bg-[#2563eb] transition-colors"
             >
               Buscar
             </button>

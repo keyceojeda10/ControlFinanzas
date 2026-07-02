@@ -276,7 +276,7 @@ function CobradoresPageInner() {
                 key={String(t.key)}
                 type="button"
                 onClick={() => setModoOrdenar(t.key)}
-                className="px-3 py-1.5 rounded-[9px] text-xs font-medium transition-all"
+                className="px-3 py-1.5 rounded-[8px] text-xs font-medium transition-all"
                 style={modoOrdenar === t.key
                   ? { background: 'var(--color-accent)', color: '#000' }
                   : { color: 'var(--color-text-muted)' }}

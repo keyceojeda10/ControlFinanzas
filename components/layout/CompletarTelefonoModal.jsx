@@ -83,7 +83,7 @@ export default function CompletarTelefonoModal() {
             <div className="absolute inset-0 rounded-full blur-xl opacity-50"
               style={{ background: 'radial-gradient(circle, var(--color-accent) 0%, transparent 70%)' }}
             />
-            <div className="relative w-12 h-12 rounded-[14px] flex items-center justify-center"
+            <div className="relative w-12 h-12 rounded-[12px] flex items-center justify-center"
               style={{
                 background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 30%, transparent), color-mix(in srgb, var(--color-accent) 10%, transparent))',
                 border: '1px solid color-mix(in srgb, var(--color-accent) 35%, transparent)',

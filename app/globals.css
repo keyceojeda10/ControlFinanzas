@@ -376,6 +376,9 @@ html[data-theme="light"] .cf-gradient-mesh::before {
 html[data-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(20,20,40,0.14); }
 html[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: rgba(245, 197, 24, 0.5); }
 
+/* ─── Checkbox / radio nativos: accent de marca por defecto ── */
+input[type="checkbox"], input[type="radio"] { accent-color: var(--color-accent); }
+
 /* ─── Select dropdown ────────────────────────────────── */
 select { color-scheme: dark; }
 select option { background: #141414; color: #f0f0f5; }
@@ -879,6 +882,14 @@ html[data-theme="light"] [class*="border-[rgba(255,255,255"] { border-color: var
 /* Hover states */
 html[data-theme="light"] [class*="hover:bg-[#"]:hover { background-color: var(--color-bg-hover) !important; }
 html[data-theme="light"] [class*="hover:bg-[rgba(255,255,255"]:hover { background-color: rgba(245, 197, 24, 0.08) !important; }
+
+/* Texto con tokens de estado: en light se oscurecen para contraste sobre blanco
+   (los tokens light son pastel, pensados para fills, no para texto pequeño) */
+html[data-theme="light"] .text-\[var\(--color-success\)\] { color: #10a880 !important; }
+html[data-theme="light"] .text-\[var\(--color-danger\)\]  { color: #e8537a !important; }
+html[data-theme="light"] .text-\[var\(--color-warning\)\] { color: #d98f1f !important; }
+html[data-theme="light"] .text-\[var\(--color-info\)\]    { color: #3298d4 !important; }
+html[data-theme="light"] .text-\[var\(--color-purple\)\]  { color: #8a6df0 !important; }
 
 /* Colores de estado oscuros → sus variantes pastel */
 html[data-theme="light"] .text-\[\#22c55e\],

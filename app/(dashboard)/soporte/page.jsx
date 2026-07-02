@@ -154,7 +154,7 @@ function SoportePageInner() {
             return (
               <Link key={t.id} href={`/soporte/${t.id}`}>
                 <div
-                  className="rounded-[14px] px-4 py-3 transition-all kpi-lift cursor-pointer"
+                  className="rounded-[12px] px-4 py-3 transition-all kpi-lift cursor-pointer"
                   style={{
                     background: `linear-gradient(135deg, color-mix(in srgb, ${eColor} 6%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
                     border: `1px solid color-mix(in srgb, ${eColor} 18%, var(--color-border))`,

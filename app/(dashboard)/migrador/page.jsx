@@ -520,7 +520,7 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
 function ClienteCard({ item, indice, onEditar, onEliminar, eliminando }) {
   const freqLabel = FRECUENCIAS.find(f => f.key === item.frecuencia)?.label || item.frecuencia
   return (
-    <div className="rounded-[14px] border overflow-hidden transition-all"
+    <div className="rounded-[12px] border overflow-hidden transition-all"
       style={{ background: 'var(--color-bg-card)', borderColor: 'var(--color-border)' }}>
       <div className="flex items-center gap-3 px-4 py-3">
         <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-[11px] font-bold"
@@ -946,7 +946,7 @@ export default function MigradorPage() {
       {vista === 'lista' && (
         <>
           {/* Resumen global */}
-          <div className="rounded-[14px] border p-4 mb-4"
+          <div className="rounded-[12px] border p-4 mb-4"
             style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 6%, var(--color-bg-card)), var(--color-bg-card))', borderColor: 'color-mix(in srgb, var(--color-accent) 25%, var(--color-border))' }}>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-accent)' }}>
@@ -1049,7 +1049,7 @@ export default function MigradorPage() {
 
       {/* ════════ VISTA: FORMULARIO ════════ */}
       {vista === 'formulario' && (
-        <div className="rounded-[14px] border overflow-hidden p-4"
+        <div className="rounded-[12px] border overflow-hidden p-4"
           style={{ background: 'var(--color-bg-card)', borderColor: 'var(--color-border)' }}>
           <FormularioFicha
             ficha={ficha} set={set} calculo={calculo} diasPlazo={diasPlazo}

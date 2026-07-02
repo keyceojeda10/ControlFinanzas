@@ -118,7 +118,7 @@ export default function PasoConfirmar({ datosImportar, onVolver, onReiniciar }) 
   // --- Vista de confirmación antes de importar ---
   return (
     <div className="space-y-4">
-      <div className="bg-[#161b27] border border-[var(--color-border)] rounded-[14px] p-5 text-center">
+      <div className="bg-[#161b27] border border-[var(--color-border)] rounded-[12px] p-5 text-center">
         <svg className="w-12 h-12 text-[var(--color-accent)] mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
         </svg>

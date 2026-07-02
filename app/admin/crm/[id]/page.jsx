@@ -107,7 +107,7 @@ function EmailModal({ email, orgId, onClose }) {
                 Cancelar
               </button>
               <button onClick={send} disabled={sending}
-                className="h-9 px-5 rounded-[10px] bg-[#3b82f6] text-[var(--color-text-primary)] text-xs font-medium hover:bg-[#2563eb] transition-colors disabled:opacity-50">
+                className="h-9 px-5 rounded-[10px] bg-[var(--color-info)] text-[var(--color-text-primary)] text-xs font-medium hover:bg-[#2563eb] transition-colors disabled:opacity-50">
                 {sending ? 'Enviando...' : 'Enviar'}
               </button>
             </div>
@@ -334,7 +334,7 @@ export default function CRMDetailPage({ params }) {
                 <button
                   onClick={saveOrg}
                   disabled={saving}
-                  className="flex-1 h-9 rounded-[10px] bg-[#3b82f6] text-[var(--color-text-primary)] text-xs font-medium hover:bg-[#2563eb] transition-colors disabled:opacity-50"
+                  className="flex-1 h-9 rounded-[10px] bg-[var(--color-info)] text-[var(--color-text-primary)] text-xs font-medium hover:bg-[#2563eb] transition-colors disabled:opacity-50"
                 >
                   {saving ? 'Guardando...' : 'Guardar cambios'}
                 </button>
@@ -503,7 +503,7 @@ export default function CRMDetailPage({ params }) {
                   <div key={n.id ?? i} className="flex gap-3">
                     {/* Timeline dot */}
                     <div className="flex flex-col items-center">
-                      <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-bg-hover)] border-2 border-[#3b82f6] mt-1 shrink-0" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-bg-hover)] border-2 border-[var(--color-info)] mt-1 shrink-0" />
                       {i < (data.notas ?? []).length - 1 && (
                         <div className="w-px flex-1 bg-[var(--color-bg-hover)] mt-1" />
                       )}

@@ -29,7 +29,7 @@ export default function AccionCard({ tool, input, displayData, onConfirm, onCanc
   // Escalate support renders directly without confirmation
   if (displayData?.tipo === 'escalation') {
     return (
-      <div className="rounded-[14px] overflow-hidden my-1"
+      <div className="rounded-[12px] overflow-hidden my-1"
         style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
         <div className="px-4 pt-3 pb-2">
           <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--color-text-muted)' }}>
@@ -85,7 +85,7 @@ export default function AccionCard({ tool, input, displayData, onConfirm, onCanc
   if (status === 'cancelled') return null
 
   return (
-    <div className="rounded-[14px] overflow-hidden my-1"
+    <div className="rounded-[12px] overflow-hidden my-1"
       style={{
         background: 'var(--color-bg-hover)',
         border: `1px solid color-mix(in srgb, ${accentColor} 25%, var(--color-border))`,

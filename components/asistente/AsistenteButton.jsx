@@ -39,7 +39,7 @@ const AsistenteButton = forwardRef(function AsistenteButton({ onOpenChange }, re
       <button
         onClick={() => setOpen(v => !v)}
         aria-label="Abrir asistente IA"
-        className="hidden lg:flex fixed bottom-6 right-6 z-40 px-4 py-2.5 rounded-[14px] transition-[background-color,color,transform] duration-200 active:scale-95"
+        className="hidden lg:flex fixed bottom-6 right-6 z-40 px-4 py-2.5 rounded-[12px] transition-[background-color,color,transform] duration-200 active:scale-95"
         style={{
           display: open ? 'none' : undefined,
           alignItems: 'center',

@@ -283,7 +283,7 @@ export default function FirmaDigital({ prestamo, onSave }) {
     <>
       {/* Card visible */}
       <div
-        className="w-full rounded-[14px] border overflow-hidden"
+        className="w-full rounded-[12px] border overflow-hidden"
         style={{
           background: firmaUrl
             ? 'color-mix(in srgb, var(--color-success) 5%, var(--color-bg-card))'

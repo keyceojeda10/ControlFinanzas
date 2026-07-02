@@ -47,7 +47,7 @@ export default function PasoMapear({ headers, filas, onConfirmar, onVolver }) {
   return (
     <div className="space-y-4">
       {/* Resumen de deteccion */}
-      <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[14px] p-4">
+      <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[12px] p-4">
         <div className="flex items-start gap-3">
           <div className={[
             'w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-0.5',

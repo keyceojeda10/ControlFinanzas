@@ -158,7 +158,7 @@ export default function SuscripcionBanner() {
 
         {/* Countdown */}
         <div className="px-5 py-4">
-          <div className="rounded-[14px] px-4 py-4"
+          <div className="rounded-[12px] px-4 py-4"
             style={{
               background: 'color-mix(in srgb, var(--color-warning) 6%, var(--color-bg-base))',
               border: '1px solid color-mix(in srgb, var(--color-warning) 20%, var(--color-border))',

@@ -130,7 +130,7 @@ export default function SuscripcionesPage() {
             onClick={() => setTab(t.key)}
             className={`px-3 py-1.5 rounded-[8px] text-xs font-medium whitespace-nowrap transition-all ${
               tab === t.key
-                ? 'bg-[#3b82f6] text-[var(--color-text-primary)]'
+                ? 'bg-[var(--color-info)] text-[var(--color-text-primary)]'
                 : 'bg-[var(--color-bg-hover)] text-[var(--color-text-muted)] hover:text-[white]'
             }`}
           >

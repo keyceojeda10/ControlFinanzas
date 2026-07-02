@@ -105,7 +105,7 @@ function ClienteCardCompacto({ cliente, esNuevo }) {
       <div className="flex items-center justify-between gap-1">
         <span
           className="inline-flex items-center gap-0.5 text-[8px] font-semibold px-1.5 py-px rounded-full shrink-0"
-          style={{ background: `${color}20`, color, border: `1px solid ${color}35` }}
+          style={{ background: `color-mix(in srgb, ${color} 13%, transparent)`, color, border: `1px solid color-mix(in srgb, ${color} 21%, transparent)` }}
         >
           <span className="w-1 h-1 rounded-full" style={{ background: color }} />
           {label}
@@ -745,7 +745,7 @@ export default function ClientesPage() {
                 <label
                   key={c.id}
                   className={[
-                    'flex items-center gap-3 border rounded-[14px] p-4 transition-all cursor-pointer',
+                    'flex items-center gap-3 border rounded-[12px] p-4 transition-all cursor-pointer',
                     selAsignar.includes(c.id)
                       ? 'border-[rgba(245,197,24,0.35)] bg-[rgba(245,197,24,0.08)]'
                       : 'border-[var(--color-border)] bg-[var(--color-bg-surface)] hover:border-[#f5c518]/40',

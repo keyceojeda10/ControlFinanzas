@@ -231,7 +231,7 @@ export default function ClavosPage() {
               <div className="flex items-center gap-1.5">
                 <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">{it.cliente}</p>
                 {it.clavoPerdida && (
-                  <span className="shrink-0 text-[8px] font-semibold px-1.5 py-px rounded-full bg-[rgba(239,68,68,0.15)] text-[#ef4444] border border-[rgba(239,68,68,0.25)]">
+                  <span className="shrink-0 text-[8px] font-semibold px-1.5 py-px rounded-full bg-[rgba(239,68,68,0.15)] text-[var(--color-danger)] border border-[rgba(239,68,68,0.25)]">
                     Pérdida
                   </span>
                 )}

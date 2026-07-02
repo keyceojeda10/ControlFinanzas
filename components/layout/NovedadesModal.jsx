@@ -90,7 +90,7 @@ export default function NovedadesModal() {
           {entrada.items.map((it, i) => (
             <div key={i} className="flex gap-3">
               <div
-                className="w-8 h-8 rounded-[9px] flex items-center justify-center shrink-0 mt-0.5"
+                className="w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0 mt-0.5"
                 style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', color: 'var(--color-accent)' }}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.7} viewBox="0 0 24 24">

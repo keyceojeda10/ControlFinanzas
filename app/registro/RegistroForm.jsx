@@ -99,7 +99,7 @@ function PlanCard({ plan, selected, onSelect, countryCode = 'co', theme }) {
     <button
       type="button"
       onClick={() => onSelect(plan.key)}
-      className="relative rounded-[14px] p-4 text-left transition-all w-full"
+      className="relative rounded-[12px] p-4 text-left transition-all w-full"
       style={{
         background: activo ? theme.bgAccent : theme.bgCard,
         border: activo ? `2px solid ${theme.bgAccentBorder}` : `1.5px solid ${theme.border}`,
@@ -151,7 +151,7 @@ function CanalSelector({ canal, onChange, theme }) {
       <button
         type="button"
         onClick={() => onChange('whatsapp')}
-        className="relative flex flex-col items-center gap-2 py-4 px-3 rounded-[14px] transition-all"
+        className="relative flex flex-col items-center gap-2 py-4 px-3 rounded-[12px] transition-all"
         style={{
           background: canal === 'whatsapp' ? 'rgba(37,211,102,0.1)' : 'transparent',
           border: canal === 'whatsapp' ? '2px solid rgba(37,211,102,0.5)' : '1.5px solid var(--color-border, rgba(255,255,255,0.1))',
@@ -177,7 +177,7 @@ function CanalSelector({ canal, onChange, theme }) {
       <button
         type="button"
         onClick={() => onChange('email')}
-        className="relative flex flex-col items-center gap-2 py-4 px-3 rounded-[14px] transition-all"
+        className="relative flex flex-col items-center gap-2 py-4 px-3 rounded-[12px] transition-all"
         style={{
           background: canal === 'email' ? 'rgba(245,197,24,0.08)' : 'transparent',
           border: canal === 'email' ? '2px solid rgba(245,197,24,0.5)' : '1.5px solid var(--color-border, rgba(255,255,255,0.1))',
@@ -478,7 +478,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
           </p>
 
           {/* Selector de pais con bandera */}
-          <div className="relative mb-6 rounded-[14px] cursor-pointer"
+          <div className="relative mb-6 rounded-[12px] cursor-pointer"
             style={{ background: t.bgCardHover, border: `1.5px solid ${t.border}` }}>
             <div className="flex items-center gap-3 px-4 py-3 pointer-events-none">
               <span className="text-[20px] leading-none shrink-0">{selectedFlag}</span>
@@ -583,7 +583,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
               <button
                 type="button"
                 onClick={() => setStep(2)}
-                className="w-full h-12 rounded-[13px] text-[15px] font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                className="w-full h-12 rounded-[12px] text-[15px] font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
                 style={{ background: '#f5c518', color: '#0a0a0a' }}
               >
                 Continuar con {infoPlan?.nombre}
@@ -911,7 +911,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
               <button
                 onClick={() => handleVerificarOtp()}
                 disabled={otpLoading || otpDigits.join('').length !== 6}
-                className="w-full h-12 rounded-[13px] text-[15px] font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50 mb-4"
+                className="w-full h-12 rounded-[12px] text-[15px] font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50 mb-4"
                 style={{ background: accentColor, color: '#0a0a0a' }}
               >
                 {otpLoading ? 'Verificando...' : 'Verificar'}

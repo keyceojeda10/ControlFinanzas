@@ -81,7 +81,7 @@ export default function WhatsAppBotDashboard() {
           <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Bot comercial (WhatsApp Cloud API · Meta) para leads de Facebook Ads</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className={`w-2.5 h-2.5 rounded-full ${cloudOk ? 'bg-[#10b981]' : 'bg-[#ef4444]'}`} />
+          <span className={`w-2.5 h-2.5 rounded-full ${cloudOk ? 'bg-[var(--color-success)]' : 'bg-[var(--color-danger)]'}`} />
           <span className="text-xs text-[var(--color-text-muted)]" title={cloud.tier ? `Tier: ${cloud.tier}${cloud.qualityRating ? ` · Calidad: ${cloud.qualityRating}` : ''}` : ''}>
             {cloudLabel}
           </span>
@@ -100,8 +100,8 @@ export default function WhatsAppBotDashboard() {
             key={label}
             className="border border-[var(--color-border)] rounded-[12px] px-3 py-3 text-center"
             style={{
-              background: `linear-gradient(135deg, ${color}0A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, ${color}05 100%)`,
-              boxShadow: `0 0 30px ${color}08, 0 1px 2px rgba(0,0,0,0.3)`,
+              background: `linear-gradient(135deg, color-mix(in srgb, ${color} 4%, transparent) 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, color-mix(in srgb, ${color} 2%, transparent) 100%)`,
+              boxShadow: `0 0 30px color-mix(in srgb, ${color} 3%, transparent), 0 1px 2px rgba(0,0,0,0.3)`,
             }}
           >
             <p className="text-[10px] text-[var(--color-text-muted)]">{label}</p>
@@ -139,7 +139,7 @@ export default function WhatsAppBotDashboard() {
       <div className="flex gap-3 flex-wrap">
         <Link
           href="/admin/whatsapp-bot/chats"
-          className="px-4 py-2 rounded-[10px] text-sm font-medium bg-[rgba(16,185,129,0.15)] text-[#10b981] hover:bg-[rgba(16,185,129,0.25)] transition-all"
+          className="px-4 py-2 rounded-[10px] text-sm font-medium bg-[rgba(16,185,129,0.15)] text-[var(--color-success)] hover:bg-[rgba(16,185,129,0.25)] transition-all"
         >
           Ver chats
         </Link>
@@ -148,8 +148,8 @@ export default function WhatsAppBotDashboard() {
           disabled={toggleando}
           className={`px-4 py-2 rounded-[10px] text-sm font-medium transition-all ${
             data.botActivo
-              ? 'bg-[rgba(239,68,68,0.12)] text-[#ef4444] hover:bg-[rgba(239,68,68,0.2)]'
-              : 'bg-[rgba(16,185,129,0.12)] text-[#10b981] hover:bg-[rgba(16,185,129,0.2)]'
+              ? 'bg-[rgba(239,68,68,0.12)] text-[var(--color-danger)] hover:bg-[rgba(239,68,68,0.2)]'
+              : 'bg-[rgba(16,185,129,0.12)] text-[var(--color-success)] hover:bg-[rgba(16,185,129,0.2)]'
           }`}
         >
           {toggleando ? '...' : data.botActivo ? 'Apagar bot' : 'Encender bot'}
@@ -157,7 +157,7 @@ export default function WhatsAppBotDashboard() {
         <button
           onClick={ejecutarFollowup}
           disabled={enviando}
-          className="px-4 py-2 rounded-[10px] text-sm font-medium bg-[rgba(59,130,246,0.12)] text-[#3b82f6] hover:bg-[rgba(59,130,246,0.2)] transition-all"
+          className="px-4 py-2 rounded-[10px] text-sm font-medium bg-[rgba(59,130,246,0.12)] text-[var(--color-info)] hover:bg-[rgba(59,130,246,0.2)] transition-all"
         >
           {enviando ? 'Enviando...' : 'Ejecutar seguimientos'}
         </button>
@@ -186,7 +186,7 @@ export default function WhatsAppBotDashboard() {
       <div className="border border-[var(--color-border)] rounded-[12px] bg-[var(--color-bg-card)]">
         <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
           <h2 className="text-sm font-semibold text-[white]">Últimos leads</h2>
-          <Link href="/admin/whatsapp-bot/leads" className="text-xs text-[#3b82f6] hover:underline">
+          <Link href="/admin/whatsapp-bot/leads" className="text-xs text-[var(--color-info)] hover:underline">
             Ver todos
           </Link>
         </div>
@@ -212,7 +212,7 @@ export default function WhatsAppBotDashboard() {
                   {lead.estado?.replace('_', ' ')}
                 </span>
                 {lead.botActivo && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]" title="Bot activo" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)]" title="Bot activo" />
                 )}
               </div>
             </Link>
@@ -228,7 +228,7 @@ export default function WhatsAppBotDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-[10px] text-[var(--color-text-muted)]">Gasto API total</p>
-            <p className="text-lg font-bold text-[#8b5cf6] font-mono-display">US${data.gastoTotal}</p>
+            <p className="text-lg font-bold text-[var(--color-purple)] font-mono-display">US${data.gastoTotal}</p>
           </div>
           <Link href="/admin/whatsapp-bot/config" className="text-xs text-[var(--color-text-muted)] hover:text-white transition-all">
             Límite: US${data.limiteGastoUsd || '5.00'}

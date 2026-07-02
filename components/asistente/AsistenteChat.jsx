@@ -361,7 +361,7 @@ export default function AsistenteChat({ onClose }) {
                 </div>
               )}
               <div
-                className={`max-w-[80%] px-3.5 py-2.5 rounded-[14px] text-sm ${msg.role === 'user' ? 'rounded-br-[4px] whitespace-pre-wrap' : 'rounded-bl-[4px]'}`}
+                className={`max-w-[80%] px-3.5 py-2.5 rounded-[12px] text-sm ${msg.role === 'user' ? 'rounded-br-[4px] whitespace-pre-wrap' : 'rounded-bl-[4px]'}`}
                 style={msg.role === 'user'
                   ? { background: 'var(--color-accent)', color: '#0a0a0a' }
                   : { background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }

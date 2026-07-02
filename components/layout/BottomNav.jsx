@@ -209,7 +209,7 @@ export default function BottomNav({ onOpenLucas, lucasOpen = false }) {
           aria-label="Cerrar menú"
         >
           <div
-            className="absolute bottom-0 left-0 right-0 rounded-t-[24px] overflow-hidden animate-slide-up cf-sheet"
+            className="absolute bottom-0 left-0 right-0 rounded-t-[20px] overflow-hidden animate-slide-up cf-sheet"
             onClick={(e) => e.stopPropagation()}
             style={{ maxHeight: '75vh' }}
           >

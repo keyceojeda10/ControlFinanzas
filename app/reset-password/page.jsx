@@ -17,7 +17,7 @@ function ResetForm() {
 
   if (!token) {
     return (
-      <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[24px] p-8 text-center">
+      <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[20px] p-8 text-center">
         <p className="text-[var(--color-danger)] text-sm mb-4">Enlace inválido. Solicita un nuevo enlace de recuperación.</p>
         <Link href="/forgot-password" className="text-sm text-[var(--color-accent)] hover:underline font-medium">
           Solicitar nuevo enlace
@@ -52,7 +52,7 @@ function ResetForm() {
 
   if (exito) {
     return (
-      <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[24px] p-8 text-center">
+      <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[20px] p-8 text-center">
         <div className="w-14 h-14 rounded-full bg-[rgba(16,185,129,0.12)] flex items-center justify-center mx-auto mb-4">
           <svg className="w-7 h-7 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -71,7 +71,7 @@ function ResetForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[24px] p-8 space-y-4">
+    <form onSubmit={handleSubmit} className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[20px] p-8 space-y-4">
       {error && (
         <div className="flex items-center gap-2.5 bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[10px] px-4 py-3">
           <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -134,7 +134,7 @@ export default function ResetPasswordPage() {
           <p className="text-sm text-[var(--color-text-muted)] mt-1">Ingresa tu nueva contraseña</p>
         </div>
 
-        <Suspense fallback={<div className="h-48 bg-[var(--color-bg-surface)] rounded-[24px] animate-pulse" />}>
+        <Suspense fallback={<div className="h-48 bg-[var(--color-bg-surface)] rounded-[20px] animate-pulse" />}>
           <ResetForm />
         </Suspense>
       </div>

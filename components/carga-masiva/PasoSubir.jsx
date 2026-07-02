@@ -89,7 +89,7 @@ export default function PasoSubir({ onDatos }) {
   return (
     <div className="space-y-4">
       {/* Explicacion */}
-      <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[14px] p-4">
+      <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[12px] p-4">
         <div className="flex items-start gap-3">
           <div className="w-9 h-9 rounded-full bg-[rgba(245,197,24,0.12)] flex items-center justify-center shrink-0 mt-0.5">
             <svg className="w-4 h-4 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">

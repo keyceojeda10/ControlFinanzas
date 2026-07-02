@@ -74,7 +74,7 @@ function GestionBtn({ label, desc, color, icon, onClick }) {
       className="flex items-start gap-2.5 p-2.5 rounded-[10px] text-left transition-all active:scale-[0.97]"
       style={{ background: `rgba(${color},0.06)`, border: `1px solid rgba(${color},0.2)` }}
     >
-      <div className="w-7 h-7 rounded-[7px] flex items-center justify-center shrink-0 mt-0.5"
+      <div className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0 mt-0.5"
         style={{ background: `rgba(${color},0.12)`, color: `rgb(${color})` }}>
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d={icon} />
@@ -521,8 +521,8 @@ export default function PrestamoDetallePage({ params }) {
 
       {/* ── BADGE TARJETA CLAVO ──────────────────────────────────── */}
       {esClavo && (
-        <div className="flex items-center gap-2 bg-[rgba(239,68,68,0.12)] border border-[rgba(239,68,68,0.3)] rounded-[12px] px-3 py-2 text-xs font-semibold text-[#ef4444]">
-          <span className="w-2 h-2 rounded-full bg-[#ef4444]" />
+        <div className="flex items-center gap-2 bg-[rgba(239,68,68,0.12)] border border-[rgba(239,68,68,0.3)] rounded-[12px] px-3 py-2 text-xs font-semibold text-[var(--color-danger)]">
+          <span className="w-2 h-2 rounded-full bg-[var(--color-danger)]" />
           Préstamo perdido — apartado de tus números normales
         </div>
       )}
@@ -570,11 +570,11 @@ export default function PrestamoDetallePage({ params }) {
       {moratorio?.aplicable && estaActivo && !completado && esOwner && (
         <div className="bg-[rgba(245,158,11,0.08)] border border-[rgba(245,158,11,0.25)] rounded-[16px] p-4 space-y-3">
           <div className="flex items-start gap-3">
-            <svg className="w-5 h-5 text-[#f59e0b] shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-[var(--color-warning)] shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-[#f59e0b]">
+              <p className="text-sm font-semibold text-[var(--color-warning)]">
                 Interes moratorio: {formatMoney(moratorio.montoMoratorio)}
               </p>
               <p className="text-xs text-[var(--color-text-muted)] mt-1">
@@ -589,7 +589,7 @@ export default function PrestamoDetallePage({ params }) {
               setMoratorioError('')
               setModalMoratorio(true)
             }}
-            className="w-full h-10 rounded-[10px] text-sm font-semibold text-[#f59e0b] bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.3)] hover:bg-[rgba(245,158,11,0.18)] transition-all"
+            className="w-full h-10 rounded-[10px] text-sm font-semibold text-[var(--color-warning)] bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.3)] hover:bg-[rgba(245,158,11,0.18)] transition-all"
           >
             Aplicar como recargo
           </button>
@@ -665,7 +665,7 @@ export default function PrestamoDetallePage({ params }) {
         if (isLast || !nextCliente) return (
           <button
             onClick={() => { sessionStorage.removeItem('cf-ruta-nav'); const u = `/rutas/${rutaNav.rutaId}`; navigator.onLine ? router.push(u) : (window.location.href = u) }}
-            className="w-full py-3.5 rounded-[14px] bg-[var(--color-success)] text-[var(--color-text-primary)] text-sm font-semibold active:scale-[0.98] transition-all"
+            className="w-full py-3.5 rounded-[12px] bg-[var(--color-success)] text-[var(--color-text-primary)] text-sm font-semibold active:scale-[0.98] transition-all"
           >
             Ruta finalizada · Volver a {rutaNav.rutaNombre}
           </button>
@@ -674,7 +674,7 @@ export default function PrestamoDetallePage({ params }) {
         return (
           <button
             onClick={navigateNext}
-            className="w-full py-3.5 rounded-[14px] text-sm font-semibold active:scale-[0.98] transition-all"
+            className="w-full py-3.5 rounded-[12px] text-sm font-semibold active:scale-[0.98] transition-all"
             style={{ background: 'linear-gradient(135deg, #f5c518, #f0b800)', color: '#0a0a0a' }}
           >
             Siguiente → {nextCliente.nombre}
@@ -935,7 +935,7 @@ export default function PrestamoDetallePage({ params }) {
           </p>
           <div className="flex items-center gap-1">
             <label
-              className="relative h-8 flex items-center gap-1.5 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-2 cursor-pointer hover:border-[#3b82f6] transition-colors"
+              className="relative h-8 flex items-center gap-1.5 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-2 cursor-pointer hover:border-[var(--color-info)] transition-colors"
               title="Filtrar por fecha"
             >
               <svg className="w-3.5 h-3.5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -1125,7 +1125,7 @@ export default function PrestamoDetallePage({ params }) {
                               setError('No se pudo cambiar la fecha.')
                             }
                           }}
-                          className="h-9 px-3 rounded-[10px] text-xs font-medium text-[var(--color-text-primary)] bg-[#3b82f6] hover:bg-[#2563eb] transition-colors active:scale-[0.97]"
+                          className="h-9 px-3 rounded-[10px] text-xs font-medium text-[var(--color-text-primary)] bg-[var(--color-info)] hover:bg-[#2563eb] transition-colors active:scale-[0.97]"
                         >
                           Guardar
                         </button>
@@ -1164,7 +1164,7 @@ export default function PrestamoDetallePage({ params }) {
               Cancelar préstamo
             </button>
           ) : (
-            <div className="bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.3)] rounded-[14px] p-4 space-y-3">
+            <div className="bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.3)] rounded-[12px] p-4 space-y-3">
               <p className="text-sm text-[var(--color-danger)] font-semibold">¿Cancelar este préstamo?</p>
               <p className="text-xs text-[var(--color-text-muted)]">
                 Se marcará como cancelado. El saldo pendiente de {formatMoney(saldoPendiente)} quedará sin cobrar.
@@ -1428,14 +1428,14 @@ export default function PrestamoDetallePage({ params }) {
             {esClavo ? (
               <button
                 onClick={() => { setModalGestionPrestamo(false); quitarClavo() }}
-                className="w-full h-10 rounded-[12px] font-medium text-sm text-[#22c55e] bg-[rgba(34,197,94,0.06)] hover:bg-[rgba(34,197,94,0.12)] transition-all"
+                className="w-full h-10 rounded-[12px] font-medium text-sm text-[var(--color-success)] bg-[rgba(34,197,94,0.06)] hover:bg-[rgba(34,197,94,0.12)] transition-all"
               >
                 Quitar de préstamos perdidos
               </button>
             ) : (
               <button
                 onClick={() => { setModalGestionPrestamo(false); setModalClavo(true) }}
-                className="w-full h-10 rounded-[12px] font-medium text-sm text-[#ef4444] bg-[rgba(239,68,68,0.06)] hover:bg-[rgba(239,68,68,0.12)] transition-all"
+                className="w-full h-10 rounded-[12px] font-medium text-sm text-[var(--color-danger)] bg-[rgba(239,68,68,0.06)] hover:bg-[rgba(239,68,68,0.12)] transition-all"
               >
                 Mover a préstamos perdidos
               </button>
@@ -1451,7 +1451,7 @@ export default function PrestamoDetallePage({ params }) {
             Este préstamo saldrá de tus números normales (cartera, saldos, dashboard) y pasará a la sección de préstamos perdidos. Podrás seguir registrando pagos si el cliente abona.
           </p>
           <label className="flex items-start gap-2 cursor-pointer rounded-[12px] border border-[var(--color-border)] p-3">
-            <input type="checkbox" checked={clavoPerdida} onChange={e => setClavoPerdida(e.target.checked)} className="w-4 h-4 mt-0.5 accent-[#ef4444]" />
+            <input type="checkbox" checked={clavoPerdida} onChange={e => setClavoPerdida(e.target.checked)} className="w-4 h-4 mt-0.5 accent-[var(--color-danger)]" />
             <span className="text-sm text-[var(--color-text-primary)]">
               Registrar el capital prestado como dinero en riesgo
               <span className="block text-[11px] text-[var(--color-text-muted)] mt-0.5">
@@ -1462,7 +1462,7 @@ export default function PrestamoDetallePage({ params }) {
           {clavoError && <p className="text-sm text-[var(--color-danger)]">{clavoError}</p>}
           <div className="flex gap-3">
             <button onClick={() => setModalClavo(false)} className="flex-1 h-11 rounded-[12px] text-sm font-medium text-[var(--color-text-muted)] bg-[rgba(255,255,255,0.05)]">Cancelar</button>
-            <button onClick={confirmarClavo} disabled={clavoEnviando} className="flex-1 h-11 rounded-[12px] text-sm font-bold text-white bg-[#ef4444] disabled:opacity-40">
+            <button onClick={confirmarClavo} disabled={clavoEnviando} className="flex-1 h-11 rounded-[12px] text-sm font-bold text-white bg-[var(--color-danger)] disabled:opacity-40">
               {clavoEnviando ? 'Moviendo...' : 'Mover a perdidos'}
             </button>
           </div>
@@ -1615,7 +1615,7 @@ export default function PrestamoDetallePage({ params }) {
                 <div className="flex justify-between"><span className="text-[var(--color-text-muted)]">Interés devengado</span><span className="text-white">${(liqData[liqModalidad]?.interesDevengado ?? 0).toLocaleString('es-CO')}</span></div>
                 <div className="flex justify-between"><span className="text-[var(--color-text-muted)]">Ya pagó</span><span className="text-white">${(liqData.totalPagadoReal ?? 0).toLocaleString('es-CO')}</span></div>
                 <div className="flex justify-between border-t border-[var(--color-border)] pt-1 mt-1"><span className="text-[var(--color-text-muted)]">Saldo actual (pactado)</span><span className="text-white">${(liqData.saldoActual ?? 0).toLocaleString('es-CO')}</span></div>
-                <div className="flex justify-between"><span className="text-[#10b981]">Interés que se perdona</span><span className="text-[#10b981] font-semibold">${(liqData[liqModalidad]?.interesPerdonado ?? 0).toLocaleString('es-CO')}</span></div>
+                <div className="flex justify-between"><span className="text-[var(--color-success)]">Interés que se perdona</span><span className="text-[var(--color-success)] font-semibold">${(liqData[liqModalidad]?.interesPerdonado ?? 0).toLocaleString('es-CO')}</span></div>
               </div>
 
               {/* Monto final editable */}
@@ -1782,7 +1782,7 @@ export default function PrestamoDetallePage({ params }) {
                 setMoratorioEnviando(false)
               }
             }}
-            className="w-full h-11 rounded-[12px] font-semibold text-sm text-white bg-[#f59e0b] hover:bg-[#d97706] disabled:opacity-50 transition-all"
+            className="w-full h-11 rounded-[12px] font-semibold text-sm text-white bg-[var(--color-warning)] hover:bg-[#d97706] disabled:opacity-50 transition-all"
           >
             {moratorioEnviando ? 'Aplicando...' : `Aplicar ${formatMoney(moratorioMonto)} como recargo`}
           </button>

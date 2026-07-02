@@ -223,7 +223,7 @@ export default function ModificarPlazo({
               className={[
                 'h-auto py-2.5 px-3 rounded-[10px] border text-left transition-all cursor-pointer',
                 modo === 'corregir'
-                  ? 'bg-[rgba(59,130,246,0.1)] border-[#3b82f6]'
+                  ? 'bg-[rgba(59,130,246,0.1)] border-[var(--color-info)]'
                   : 'bg-transparent border-[var(--color-border)] hover:bg-[var(--color-bg-surface)]',
               ].join(' ')}
             >
@@ -240,7 +240,7 @@ export default function ModificarPlazo({
               className={[
                 'h-auto py-2.5 px-3 rounded-[10px] border text-left transition-all cursor-pointer',
                 modo === 'corregirInicio'
-                  ? 'bg-[rgba(59,130,246,0.1)] border-[#3b82f6]'
+                  ? 'bg-[rgba(59,130,246,0.1)] border-[var(--color-info)]'
                   : 'bg-transparent border-[var(--color-border)] hover:bg-[var(--color-bg-surface)]',
               ].join(' ')}
             >

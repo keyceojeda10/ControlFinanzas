@@ -222,7 +222,7 @@ function StatsGrid({ stats, loading }) {
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[14px] px-4 py-3 animate-pulse"
+            className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-4 py-3 animate-pulse"
           >
             <div className="h-2.5 w-14 bg-[var(--color-bg-hover)] rounded mb-2" />
             <div className="h-7 w-10 bg-[var(--color-bg-hover)] rounded" />
@@ -260,7 +260,7 @@ function StatsGrid({ stats, loading }) {
       {items.map(({ label, value, color }) => (
         <div
           key={label}
-          className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[14px] px-4 py-3 text-center"
+          className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-4 py-3 text-center"
         >
           <p className="text-[11px] text-[var(--color-text-muted)] uppercase tracking-wide">{label}</p>
           <p className="text-2xl font-bold mt-1 leading-none" style={{ color }}>

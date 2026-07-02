@@ -71,7 +71,7 @@ export default function WhatsAppBotConfig() {
           <button
             onClick={() => set('botActivo', !config.botActivo)}
             className={`relative w-12 h-6 rounded-full transition-all ${
-              config.botActivo ? 'bg-[#10b981]' : 'bg-[#333]'
+              config.botActivo ? 'bg-[var(--color-success)]' : 'bg-[#333]'
             }`}
           >
             <span

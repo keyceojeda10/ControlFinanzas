@@ -115,7 +115,7 @@ export default function WhatsAppBotLeads() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <p className="text-sm text-[white] font-medium truncate">{lead.nombre}</p>
-                  {lead.botActivo && <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] shrink-0" />}
+                  {lead.botActivo && <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)] shrink-0" />}
                 </div>
                 <p className="text-[11px] text-[var(--color-text-muted)]">{lead.telefono}</p>
               </div>
@@ -241,7 +241,7 @@ function ModalCrearLead({ onClose, onCreado }) {
               />
             </div>
           ))}
-          {error && <p className="text-xs text-[#ef4444]">{error}</p>}
+          {error && <p className="text-xs text-[var(--color-danger)]">{error}</p>}
           <div className="flex gap-2 pt-1">
             <button type="button" onClick={onClose} className="flex-1 px-3 py-2 rounded-[8px] text-sm bg-[rgba(136,136,136,0.08)] text-[#888]">
               Cancelar

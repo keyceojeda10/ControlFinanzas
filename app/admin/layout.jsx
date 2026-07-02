@@ -168,7 +168,7 @@ export default function AdminLayout({ children }) {
         <div className="px-3 py-4 border-t border-[#2a2a2a]">
           <button
             onClick={() => signOut({ callbackUrl: '/login' })}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-[12px] text-sm font-medium text-[#888888] hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.08)] transition-all w-full"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-[12px] text-sm font-medium text-[#888888] hover:text-[var(--color-danger)] hover:bg-[rgba(239,68,68,0.08)] transition-all w-full"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -188,7 +188,7 @@ export default function AdminLayout({ children }) {
             <Badge variant="purple">SUPERADMIN</Badge>
             <button
               onClick={() => signOut({ callbackUrl: '/login' })}
-              className="p-1.5 rounded-[8px] text-[#888888] hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.08)] transition-all"
+              className="p-1.5 rounded-[8px] text-[#888888] hover:text-[var(--color-danger)] hover:bg-[rgba(239,68,68,0.08)] transition-all"
               title="Cerrar sesión"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

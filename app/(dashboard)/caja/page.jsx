@@ -1007,7 +1007,7 @@ export default function CajaPage() {
             key={t.key}
             type="button"
             onClick={() => setCajaTab(t.key)}
-            className="flex-1 py-1.5 text-[11px] font-semibold rounded-[9px] transition-all"
+            className="flex-1 py-1.5 text-[11px] font-semibold rounded-[8px] transition-all"
             style={cajaTab === t.key ? {
               background: 'var(--color-bg-card)',
               color: 'var(--color-accent)',

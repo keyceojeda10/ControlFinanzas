@@ -90,7 +90,7 @@ export default function HistorialPage() {
       {/* Filtro por fecha + export */}
       <div className="flex items-center gap-2">
         <label
-          className="relative flex-1 h-9 flex items-center gap-2 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 cursor-pointer hover:border-[#3b82f6] transition-colors"
+          className="relative flex-1 h-9 flex items-center gap-2 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 cursor-pointer hover:border-[var(--color-info)] transition-colors"
         >
           <svg className="w-4 h-4 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />

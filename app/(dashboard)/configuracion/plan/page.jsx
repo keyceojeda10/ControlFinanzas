@@ -297,7 +297,7 @@ function PlanPageInner() {
         {nextPlan && (
           <button
             onClick={() => setShowPlanes(v => !v)}
-            className="w-full h-12 rounded-[14px] text-[14px] font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+            className="w-full h-12 rounded-[12px] text-[14px] font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
             style={{ background: 'var(--color-accent)', color: '#0a0a0a' }}
           >
             {showPlanes ? 'Ocultar planes' : `Mejorar a ${nextPlan.nombre}`}
@@ -306,7 +306,7 @@ function PlanPageInner() {
         {!nextPlan && !showPlanes && (
           <button
             onClick={() => setShowPlanes(v => !v)}
-            className="w-full h-12 rounded-[14px] text-[14px] font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+            className="w-full h-12 rounded-[12px] text-[14px] font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
             style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
           >
             {showPlanes ? 'Ocultar planes' : 'Ver todos los planes'}
@@ -383,7 +383,7 @@ function PlanPageInner() {
               return (
                 <div
                   key={p.key}
-                  className="rounded-[14px] p-4 transition-all"
+                  className="rounded-[12px] p-4 transition-all"
                   style={{
                     background: esActual ? 'rgba(245,197,24,0.04)' : 'var(--color-bg-card)',
                     border: esActual
