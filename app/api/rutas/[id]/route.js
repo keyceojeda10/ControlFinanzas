@@ -56,7 +56,7 @@ export async function GET(request, { params }) {
   const [org, festivos] = await Promise.all([
     prisma.organization.findUnique({
       where: { id: organizationId },
-      select: { diasSinCobro: true },
+      select: { diasSinCobro: true, tasaMoratorio: true, diasGraciaMoratorio: true },
     }),
     prisma.festivo.findMany({
       where: { organizationId },
@@ -445,6 +445,10 @@ export async function GET(request, { params }) {
     cobrosGeoHoy,
     // Actividad del día (auditoria): pagos editados/anulados, prestamos editados/eliminados.
     actividadHoy,
+    configMoratorio: {
+      tasaMoratorio: org?.tasaMoratorio ?? 0,
+      diasGracia: org?.diasGraciaMoratorio ?? 5,
+    },
   })
 }
 

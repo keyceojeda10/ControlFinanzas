@@ -131,6 +131,11 @@ export default function PrestamoDetallePage({ params }) {
   const [clavoEnviando, setClavoEnviando] = useState(false)
   const [clavoError, setClavoError] = useState('')
   // Liquidacion anticipada (cierre por pago total antes del plazo)
+  const [modalMoratorio, setModalMoratorio] = useState(false)
+  const [moratorioMonto, setMoratorioMonto] = useState(0)
+  const [moratorioNota, setMoratorioNota] = useState('')
+  const [moratorioEnviando, setMoratorioEnviando] = useState(false)
+  const [moratorioError, setMoratorioError] = useState('')
   const [modalLiquidacion, setModalLiquidacion] = useState(false)
   const [liqData, setLiqData] = useState(null)        // calculo del backend
   const [liqModalidad, setLiqModalidad] = useState('mesCompleto') // mesCompleto | proporcional
@@ -382,6 +387,7 @@ export default function PrestamoDetallePage({ params }) {
     modoInteres, renovadoDeId, esClavo = false,
     cuotasAmortizacion = [],
     creadoPor,
+    moratorio = null,
   } = prestamo
 
   const frecuenciaLabel = {
@@ -557,6 +563,36 @@ export default function PrestamoDetallePage({ params }) {
             {cuotasEnMora > 0 ? ` · ${cuotasEnMora} cuota${cuotasEnMora === 1 ? '' : 's'} vencida${cuotasEnMora === 1 ? '' : 's'}` : ''}
             {montoEnMora > 0 ? ` · ${formatMoney(montoEnMora)}` : ''}
           </p>
+        </div>
+      )}
+
+      {/* ── AVISO INTERES MORATORIO ──────────────────────────────── */}
+      {moratorio?.aplicable && estaActivo && !completado && esOwner && (
+        <div className="bg-[rgba(245,158,11,0.08)] border border-[rgba(245,158,11,0.25)] rounded-[16px] p-4 space-y-3">
+          <div className="flex items-start gap-3">
+            <svg className="w-5 h-5 text-[#f59e0b] shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-[#f59e0b]">
+                Interes moratorio: {formatMoney(moratorio.montoMoratorio)}
+              </p>
+              <p className="text-xs text-[var(--color-text-muted)] mt-1">
+                {moratorio.diasMoraEfectivos} dias efectivos de mora sobre {formatMoney(moratorio.montoBase)} en mora
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              setMoratorioMonto(moratorio.montoMoratorio)
+              setMoratorioNota(`Interes moratorio: ${moratorio.diasMoraEfectivos} dias sobre ${formatMoney(moratorio.montoBase)}`)
+              setMoratorioError('')
+              setModalMoratorio(true)
+            }}
+            className="w-full h-10 rounded-[10px] text-sm font-semibold text-[#f59e0b] bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.3)] hover:bg-[rgba(245,158,11,0.18)] transition-all"
+          >
+            Aplicar como recargo
+          </button>
         </div>
       )}
 
@@ -1676,6 +1712,77 @@ export default function PrestamoDetallePage({ params }) {
         prestamo={prestamo}
         orgNombre={orgNombre}
       />
+
+      {/* Modal: aplicar interes moratorio como recargo */}
+      <Modal
+        open={modalMoratorio}
+        onClose={() => setModalMoratorio(false)}
+        title="Aplicar interes moratorio"
+      >
+        <div className="space-y-4">
+          <div className="bg-[rgba(245,158,11,0.06)] border border-[rgba(245,158,11,0.2)] rounded-[12px] p-3">
+            <p className="text-xs text-[var(--color-text-muted)]">
+              Calculado: {formatMoney(moratorio?.montoMoratorio ?? 0)} ({moratorio?.diasMoraEfectivos ?? 0} dias sobre {formatMoney(moratorio?.montoBase ?? 0)})
+            </p>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-[var(--color-text-muted)]">Monto a aplicar</label>
+            <input
+              type="number"
+              min="0"
+              value={moratorioMonto}
+              onChange={(e) => setMoratorioMonto(Number(e.target.value) || 0)}
+              className="w-full h-11 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-lg font-semibold text-[var(--color-text-primary)] focus:outline-none focus:border-[#f5c518] transition-all"
+            />
+            <p className="text-[10px] text-[var(--color-text-muted)]">
+              Puedes editar el monto. El sistema sugiere {formatMoney(moratorio?.montoMoratorio ?? 0)}.
+            </p>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-[var(--color-text-muted)]">Nota (opcional)</label>
+            <input
+              type="text"
+              value={moratorioNota}
+              onChange={(e) => setMoratorioNota(e.target.value)}
+              className="w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[#f5c518] transition-all"
+            />
+          </div>
+          {moratorioError && (
+            <p className="text-xs text-[var(--color-danger)]">{moratorioError}</p>
+          )}
+          <button
+            disabled={moratorioEnviando || moratorioMonto <= 0}
+            onClick={async () => {
+              setMoratorioEnviando(true)
+              setMoratorioError('')
+              try {
+                const nota = moratorioNota || `Interes moratorio: ${moratorio?.diasMoraEfectivos ?? 0} dias`
+                const notaFull = moratorioMonto !== (moratorio?.montoMoratorio ?? 0)
+                  ? `${nota} (calculado: ${formatMoney(moratorio?.montoMoratorio ?? 0)}, aplicado: ${formatMoney(moratorioMonto)})`
+                  : nota
+                const res = await fetch(`/api/prestamos/${id}/pagos`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ monto: moratorioMonto, tipo: 'recargo', nota: notaFull }),
+                })
+                if (!res.ok) {
+                  const d = await res.json()
+                  throw new Error(d.error || 'Error al aplicar recargo')
+                }
+                setModalMoratorio(false)
+                await fetchPrestamo()
+              } catch (e) {
+                setMoratorioError(e.message)
+              } finally {
+                setMoratorioEnviando(false)
+              }
+            }}
+            className="w-full h-11 rounded-[12px] font-semibold text-sm text-white bg-[#f59e0b] hover:bg-[#d97706] disabled:opacity-50 transition-all"
+          >
+            {moratorioEnviando ? 'Aplicando...' : `Aplicar ${formatMoney(moratorioMonto)} como recargo`}
+          </button>
+        </div>
+      </Modal>
 
       <ConfirmModal
         open={!!confirmAnularPago}

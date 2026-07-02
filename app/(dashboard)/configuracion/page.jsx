@@ -321,6 +321,10 @@ function TabOrganizacion() {
   const [msgDSC, setMsgDSC] = useState(null)
   const [festivos, setFestivos] = useState([])
   const [festivosLoading, setFestivosLoading] = useState(false)
+  const [tasaMoratorio, setTasaMoratorio] = useState(0)
+  const [diasGraciaMoratorio, setDiasGraciaMoratorio] = useState(5)
+  const [guardandoMora, setGuardandoMora] = useState(false)
+  const [msgMora, setMsgMora] = useState(null)
 
   useEffect(() => {
     fetch('/api/configuracion/organizacion')
@@ -331,6 +335,8 @@ function TabOrganizacion() {
         setTelefono(d.org?.telefono ?? '')
         setCiudad(d.org?.ciudad ?? '')
         setCountryState(d.org?.country ?? 'co')
+        setTasaMoratorio(d.org?.tasaMoratorio ?? 0)
+        setDiasGraciaMoratorio(d.org?.diasGraciaMoratorio ?? 5)
         try { setDiasSinCobro(JSON.parse(d.org?.diasSinCobro || '[]')) } catch { setDiasSinCobro([]) }
       })
       .finally(() => setLoading(false))
@@ -557,13 +563,84 @@ function TabOrganizacion() {
         </div>
       </Card>
 
+      {/* Intereses moratorios */}
+      <Card>
+        <div className="flex items-center gap-2 mb-1">
+          <svg className="w-4 h-4 text-[#f59e0b] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <h3 className="font-medium text-white text-sm">Intereses moratorios</h3>
+        </div>
+        <p className="text-xs text-[#666666] mb-4">
+          Cuando un cliente lleva varios dias sin pagar, el sistema calcula un interes adicional. Tu decides si aplicarlo o no desde cada prestamo.
+        </p>
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-[#888888]">Tasa moratorio mensual (%)</label>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              step="0.5"
+              value={tasaMoratorio}
+              onChange={(e) => setTasaMoratorio(e.target.value)}
+              placeholder="0 = desactivado"
+              className={inputClass}
+            />
+            <p className="text-[10px] text-[#666666] leading-snug px-0.5">
+              Porcentaje mensual sobre el monto en mora. Ej: 3 = 3% mensual. Dejalo en 0 para desactivar.
+            </p>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-[#888888]">Dias de gracia</label>
+            <input
+              type="number"
+              min="0"
+              max="90"
+              step="1"
+              value={diasGraciaMoratorio}
+              onChange={(e) => setDiasGraciaMoratorio(e.target.value)}
+              className={inputClass}
+            />
+            <p className="text-[10px] text-[#666666] leading-snug px-0.5">
+              Dias que deben pasar en mora antes de que se empiece a calcular el interes moratorio.
+            </p>
+          </div>
+          {msgMora && <Alerta tipo={msgMora.tipo}>{msgMora.texto}</Alerta>}
+          <Button
+            onClick={async () => {
+              setGuardandoMora(true); setMsgMora(null)
+              try {
+                const res = await fetch('/api/configuracion/organizacion', {
+                  method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ tasaMoratorio: Number(tasaMoratorio), diasGraciaMoratorio: Number(diasGraciaMoratorio) }),
+                })
+                const d = await res.json()
+                setMsgMora(res.ok
+                  ? { tipo: 'success', texto: 'Configuracion de moratorios guardada' }
+                  : { tipo: 'error', texto: d.error ?? 'Error al guardar' })
+                if (res.ok) {
+                  setData(prev => ({ ...prev, org: { ...prev.org, tasaMoratorio: Number(tasaMoratorio), diasGraciaMoratorio: Number(diasGraciaMoratorio) } }))
+                }
+              } catch {
+                setMsgMora({ tipo: 'error', texto: 'Error de conexion' })
+              } finally { setGuardandoMora(false) }
+            }}
+            loading={guardandoMora}
+            size="sm"
+          >
+            Guardar moratorios
+          </Button>
+        </div>
+      </Card>
+
       {/* Festivos */}
       <Card>
         <div className="flex items-center gap-2 mb-1">
           <svg className="w-4 h-4 text-[#f5c518] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <h3 className="font-medium text-white text-sm">Festivos y días sin cobro específicos</h3>
+          <h3 className="font-medium text-white text-sm">Festivos y dias sin cobro especificos</h3>
         </div>
         <p className="text-xs text-[#666666] mb-4">
           Fechas concretas en las que no se realiza cobro. No generan mora ese día.

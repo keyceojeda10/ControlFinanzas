@@ -2440,6 +2440,18 @@ export default function RutaDetallePage({ params }) {
                                 </div>
                               )}
 
+                              {/* Moratorio pendiente */}
+                              {c.diasMora > 0 && ruta?.configMoratorio?.tasaMoratorio > 0 && c.diasMora > (ruta.configMoratorio.diasGracia || 5) && (
+                                <div className="flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-[8px]"
+                                  style={{ background: 'color-mix(in srgb, #f59e0b 8%, transparent)', color: '#f59e0b' }}
+                                >
+                                  <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                  <span>Interes moratorio pendiente</span>
+                                </div>
+                              )}
+
                               {/* Pagos de hoy: metodo y hora */}
                               {c.pagosHoyDetalle?.length > 0 ? (
                                 <div>

@@ -89,6 +89,8 @@ model Organization {
   capitalEstricto   Boolean        @default(false)
   capitalEsEfectivo Boolean        @default(false)
   modoAbreviado     Boolean        @default(false)
+  tasaMoratorio     Float          @default(0)
+  diasGraciaMoratorio Int          @default(5)
   country           String         @default("co")
   timezone          String?
   cartulinasHoy     Int            @default(0)

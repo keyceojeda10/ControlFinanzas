@@ -12,6 +12,7 @@ import {
   calcularCuotasEnMora,
   calcularMontoEnMora,
   calcularMontoParaPonerseAlDia,
+  calcularInteresMoratorio,
   calcularPrestamo,
   pagoHoy,
 } from '@/lib/calculos'
@@ -72,9 +73,11 @@ export async function GET(request, { params }) {
   // Resolver días sin cobro
   const org = await prisma.organization.findUnique({
     where: { id: session.user.organizationId },
-    select: { diasSinCobro: true },
+    select: { diasSinCobro: true, tasaMoratorio: true, diasGraciaMoratorio: true },
   })
   const diasExcluidos = obtenerDiasSinCobro(p.cliente, p.cliente?.ruta, org)
+
+  const moratorio = calcularInteresMoratorio(p, diasExcluidos, [], org?.tasaMoratorio ?? 0, org?.diasGraciaMoratorio ?? 5)
 
   return Response.json({
     ...p,
@@ -88,6 +91,7 @@ export async function GET(request, { params }) {
     montoParaPonerseAlDia: calcularMontoParaPonerseAlDia(p, diasExcluidos),
     pagoHoy:          pagoHoy(p),
     proximoCobro:     calcularProximoCobro(p, diasExcluidos),
+    moratorio,
   })
 }
 
