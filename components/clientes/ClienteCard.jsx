@@ -41,6 +41,7 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
   const porcentaje = Math.max(0, Math.min(100, cliente.porcentajePagadoPromedio ?? 0))
 
   const P = tienePrestamo ? palettes[moodKeyCliente(cliente, esNuevo)] : null
+  const tintColor = P ? P.accent : color
 
   return (
     <Card
@@ -50,8 +51,8 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
       hoverable
       className="block px-4 py-3.5 group relative overflow-hidden"
       style={P ? {
-        background: `color-mix(in srgb, ${color} 8%, var(--color-bg-card))`,
-        border: `1px solid color-mix(in srgb, ${color} 22%, var(--color-border))`,
+        background: `color-mix(in srgb, ${tintColor} 8%, var(--color-bg-card))`,
+        border: `1px solid color-mix(in srgb, ${tintColor} 22%, var(--color-border))`,
       } : undefined}
     >
 
