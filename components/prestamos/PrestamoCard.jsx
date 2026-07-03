@@ -101,6 +101,12 @@ export default function PrestamoCard({ prestamo: p, actions, esNuevo }) {
           <div className="flex items-center gap-1.5 shrink-0">
             <div className="flex flex-col items-end gap-1">
               <OfflineBadge id={p.id} />
+              {p.esClavo && (
+                <span
+                  className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
+                  style={{ background: 'color-mix(in srgb, var(--color-danger) 15%, transparent)', color: 'var(--color-danger)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)' }}
+                >Perdido</span>
+              )}
               <span
                 className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
                 style={{

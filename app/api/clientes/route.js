@@ -97,6 +97,7 @@ export async function GET(request) {
           diaCobroMes: true,
           diaCobroMes2: true,
           diaCobroSemana: true,
+          esClavo: true,
           createdAt: true,
           // Denormalizados: evitan iterar todos los pagos.
           totalPagado: true,
@@ -199,6 +200,7 @@ export async function GET(request) {
       pagoHoy,
       porcentajePagadoPromedio,
       proximoCobroLabel: proximoCobroMin ? formatFechaCobroContextual(proximoCobroMin, diasMoraMax) : null,
+      tieneClavo: c.prestamos.some(pr => pr.esClavo && pr.estado === 'activo'),
     }
   })
 

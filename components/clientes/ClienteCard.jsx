@@ -88,6 +88,12 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
 
         {/* Badges apilados a la derecha */}
         <div className="flex flex-col items-end gap-1 shrink-0">
+          {cliente.tieneClavo && (
+            <span
+              className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap"
+              style={{ background: 'color-mix(in srgb, var(--color-danger) 15%, transparent)', color: 'var(--color-danger)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)' }}
+            >Perdido</span>
+          )}
           <span
             className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
             style={{

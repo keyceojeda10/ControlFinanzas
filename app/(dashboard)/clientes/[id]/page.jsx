@@ -1095,6 +1095,9 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, orgNombre, ocultarSaldo
             {new Date(p.fechaInicio).toLocaleDateString('es-CO')}
           </p>
         </div>
+        {p.esClavo && (
+          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--color-danger) 15%, transparent)', color: 'var(--color-danger)' }}>Perdido</span>
+        )}
         <Badge variant={badge.variant}>{badge.label}</Badge>
         <svg className="w-4 h-4 text-[#2a2a2a] group-hover:text-[var(--color-text-muted)] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -1123,7 +1126,12 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, orgNombre, ocultarSaldo
             </p>
           )}
         </div>
-        <Badge variant={badge.variant}>{badge.label}</Badge>
+        <div className="flex items-center gap-1.5">
+          {p.esClavo && (
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--color-danger) 15%, transparent)', color: 'var(--color-danger)' }}>Perdido</span>
+          )}
+          <Badge variant={badge.variant}>{badge.label}</Badge>
+        </div>
       </div>
 
       {/* Barra de progreso */}
