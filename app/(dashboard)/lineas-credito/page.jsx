@@ -143,40 +143,46 @@ function LineaCreditoCard({ linea }) {
 
   const P = isDark
     ? congelada ? {
-        grad: 'linear-gradient(135deg, #2a2410 0%, #352d14 55%, #3f3518 100%)',
-        ink: '#f0e4be', sub: 'rgba(240, 228, 190, 0.62)', accent: '#eab308',
-        track: 'rgba(240, 228, 190, 0.12)', border: 'rgba(234, 179, 8, 0.28)',
-        shadow: '0 8px 20px rgba(0,0,0,0.35)', waves: 'rgba(234,179,8,0.06)',
+        grad: 'linear-gradient(135deg, #2a2410 0%, #3d3518 40%, #4a3f1c 60%, #352d14 100%)',
+        ink: '#f0e4be', sub: 'rgba(240, 228, 190, 0.65)', accent: '#eab308',
+        track: 'rgba(240, 228, 190, 0.14)', border: 'rgba(234, 179, 8, 0.32)',
+        shadow: '0 8px 20px rgba(0,0,0,0.35)', waves: 'rgba(234,179,8,0.07)',
+        sheen: 'linear-gradient(105deg, transparent 35%, rgba(255,230,100,0.08) 48%, rgba(255,240,150,0.12) 52%, transparent 65%)',
       }
       : cerrada ? {
         grad: 'linear-gradient(135deg, #1a1d22 0%, #22262c 55%, #282d35 100%)',
         ink: '#c8cdd5', sub: 'rgba(200, 205, 213, 0.55)', accent: '#94a3b8',
         track: 'rgba(148, 163, 184, 0.12)', border: 'rgba(148, 163, 184, 0.22)',
         shadow: '0 8px 20px rgba(0,0,0,0.35)', waves: 'rgba(148,163,184,0.05)',
+        sheen: 'none',
       }
       : {
-        grad: 'linear-gradient(135deg, #0c1a2e 0%, #132845 55%, #1a3460 100%)',
-        ink: '#e0ecff', sub: 'rgba(180, 210, 255, 0.62)', accent: '#60a5fa',
-        track: 'rgba(96, 165, 250, 0.14)', border: 'rgba(96, 165, 250, 0.28)',
-        shadow: '0 8px 20px rgba(0,0,0,0.40)', waves: 'rgba(100,180,255,0.07)',
+        grad: 'linear-gradient(135deg, #0a1628 0%, #112244 25%, #1e3a6e 50%, #153060 75%, #0d1f3d 100%)',
+        ink: '#e0ecff', sub: 'rgba(180, 210, 255, 0.65)', accent: '#60a5fa',
+        track: 'rgba(96, 165, 250, 0.16)', border: 'rgba(96, 165, 250, 0.35)',
+        shadow: '0 8px 22px rgba(0,0,0,0.45)', waves: 'rgba(100,180,255,0.09)',
+        sheen: 'linear-gradient(105deg, transparent 30%, rgba(120,180,255,0.10) 45%, rgba(200,225,255,0.14) 50%, rgba(120,180,255,0.10) 55%, transparent 70%)',
       }
     : congelada ? {
-        grad: 'linear-gradient(135deg, #fef9e7 0%, #fdf0c8 55%, #fce9a8 100%)',
-        ink: '#78350f', sub: 'rgba(120, 53, 15, 0.55)', accent: '#d97706',
-        track: 'rgba(217, 119, 6, 0.10)', border: 'rgba(217, 119, 6, 0.22)',
-        shadow: '0 6px 18px rgba(217, 119, 6, 0.10)', waves: 'rgba(217,119,6,0.05)',
+        grad: 'linear-gradient(135deg, #b45309 0%, #d97706 25%, #f59e0b 50%, #d97706 75%, #b45309 100%)',
+        ink: '#ffffff', sub: 'rgba(255, 255, 255, 0.72)', accent: '#fef3c7',
+        track: 'rgba(255, 255, 255, 0.18)', border: 'rgba(255, 255, 255, 0.25)',
+        shadow: '0 6px 18px rgba(180, 83, 9, 0.25)', waves: 'rgba(255,255,255,0.07)',
+        sheen: 'linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.10) 48%, rgba(255,255,255,0.18) 52%, transparent 65%)',
       }
       : cerrada ? {
-        grad: 'linear-gradient(135deg, #f1f5f9 0%, #e8ecf1 55%, #e2e8f0 100%)',
-        ink: '#475569', sub: 'rgba(71, 85, 105, 0.55)', accent: '#94a3b8',
-        track: 'rgba(148, 163, 184, 0.12)', border: 'rgba(148, 163, 184, 0.22)',
-        shadow: '0 6px 18px rgba(0,0,0,0.06)', waves: 'rgba(148,163,184,0.04)',
+        grad: 'linear-gradient(135deg, #64748b 0%, #94a3b8 50%, #64748b 100%)',
+        ink: '#f8fafc', sub: 'rgba(248, 250, 252, 0.65)', accent: '#e2e8f0',
+        track: 'rgba(255, 255, 255, 0.14)', border: 'rgba(255, 255, 255, 0.20)',
+        shadow: '0 6px 18px rgba(0,0,0,0.12)', waves: 'rgba(255,255,255,0.05)',
+        sheen: 'none',
       }
       : {
-        grad: 'linear-gradient(135deg, #e8f0fe 0%, #d4e4fc 55%, #c2d9fb 100%)',
-        ink: '#1a365d', sub: 'rgba(26, 54, 93, 0.58)', accent: '#2563eb',
-        track: 'rgba(37, 99, 235, 0.10)', border: 'rgba(37, 99, 235, 0.22)',
-        shadow: '0 6px 18px rgba(37, 99, 235, 0.10)', waves: 'rgba(37,99,235,0.06)',
+        grad: 'linear-gradient(135deg, #1e40af 0%, #2563eb 25%, #3b82f6 50%, #2563eb 75%, #1e40af 100%)',
+        ink: '#ffffff', sub: 'rgba(255, 255, 255, 0.72)', accent: '#bfdbfe',
+        track: 'rgba(255, 255, 255, 0.18)', border: 'rgba(255, 255, 255, 0.25)',
+        shadow: '0 6px 20px rgba(30, 64, 175, 0.28)', waves: 'rgba(255,255,255,0.08)',
+        sheen: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.12) 45%, rgba(255,255,255,0.22) 50%, rgba(255,255,255,0.12) 55%, transparent 70%)',
       }
 
   const estadoLabel = linea.estado.charAt(0).toUpperCase() + linea.estado.slice(1)
@@ -194,6 +200,9 @@ function LineaCreditoCard({ linea }) {
       }}
     >
       <CardWaves tint={P.waves} />
+      {P.sheen && P.sheen !== 'none' && (
+        <div className="absolute inset-0 pointer-events-none" style={{ background: P.sheen }} />
+      )}
 
       <div className="relative">
         <div className="flex items-center justify-between gap-2 mb-3">

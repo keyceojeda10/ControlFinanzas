@@ -61,26 +61,28 @@ export default function DetalleLineaPage({ params }) {
 
   const METAL = isDark
     ? {
-        grad: 'linear-gradient(135deg, #0c1a2e 0%, #132845 40%, #1a3460 70%, #0f2240 100%)',
+        grad: 'linear-gradient(135deg, #0a1628 0%, #112244 25%, #1e3a6e 50%, #153060 75%, #0d1f3d 100%)',
         ink: '#e0ecff',
-        sub: 'rgba(180, 210, 255, 0.62)',
+        sub: 'rgba(180, 210, 255, 0.65)',
         accent: '#60a5fa',
-        track: 'rgba(96, 165, 250, 0.14)',
-        border: 'rgba(96, 165, 250, 0.28)',
-        shadow: '0 10px 28px rgba(0, 0, 0, 0.45)',
-        waves: 'rgba(100, 180, 255, 0.07)',
-        frost: 'rgba(140, 200, 255, 0.06)',
+        track: 'rgba(96, 165, 250, 0.16)',
+        border: 'rgba(96, 165, 250, 0.35)',
+        shadow: '0 10px 28px rgba(0, 0, 0, 0.50)',
+        waves: 'rgba(100, 180, 255, 0.09)',
+        frost: 'rgba(140, 200, 255, 0.08)',
+        sheen: 'linear-gradient(105deg, transparent 30%, rgba(120,180,255,0.10) 45%, rgba(200,225,255,0.14) 50%, rgba(120,180,255,0.10) 55%, transparent 70%)',
       }
     : {
-        grad: 'linear-gradient(135deg, #e8f0fe 0%, #d4e4fc 40%, #c2d9fb 70%, #dbe8fd 100%)',
-        ink: '#1a365d',
-        sub: 'rgba(26, 54, 93, 0.58)',
-        accent: '#2563eb',
-        track: 'rgba(37, 99, 235, 0.10)',
-        border: 'rgba(37, 99, 235, 0.22)',
-        shadow: '0 8px 24px rgba(37, 99, 235, 0.12)',
-        waves: 'rgba(37, 99, 235, 0.06)',
-        frost: 'rgba(37, 99, 235, 0.04)',
+        grad: 'linear-gradient(135deg, #1e40af 0%, #2563eb 25%, #3b82f6 50%, #2563eb 75%, #1e40af 100%)',
+        ink: '#ffffff',
+        sub: 'rgba(255, 255, 255, 0.72)',
+        accent: '#bfdbfe',
+        track: 'rgba(255, 255, 255, 0.18)',
+        border: 'rgba(255, 255, 255, 0.25)',
+        shadow: '0 8px 28px rgba(30, 64, 175, 0.30)',
+        waves: 'rgba(255, 255, 255, 0.08)',
+        frost: 'rgba(255, 255, 255, 0.06)',
+        sheen: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.12) 45%, rgba(255,255,255,0.22) 50%, rgba(255,255,255,0.12) 55%, transparent 70%)',
       }
 
   const movimientos = [
@@ -115,16 +117,24 @@ export default function DetalleLineaPage({ params }) {
         }}
       >
         <CardWaves tint={METAL.waves} />
-        {/* Escarcha decorativa */}
+        {/* Brillo metalizado diagonal */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: METAL.sheen }}
+        />
+        {/* Escarcha: puntos brillantes dispersos */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundImage: `radial-gradient(circle at 20% 80%, ${METAL.frost} 0%, transparent 50%), radial-gradient(circle at 85% 20%, ${METAL.frost} 0%, transparent 40%)`,
+            backgroundImage: isDark
+              ? 'radial-gradient(1px 1px at 15% 25%, rgba(180,220,255,0.5), transparent), radial-gradient(1px 1px at 45% 65%, rgba(180,220,255,0.35), transparent), radial-gradient(1.5px 1.5px at 75% 15%, rgba(200,230,255,0.55), transparent), radial-gradient(1px 1px at 85% 75%, rgba(180,220,255,0.3), transparent), radial-gradient(1px 1px at 55% 40%, rgba(180,220,255,0.4), transparent), radial-gradient(1.5px 1.5px at 25% 80%, rgba(200,230,255,0.45), transparent)'
+              : 'radial-gradient(1px 1px at 15% 25%, rgba(255,255,255,0.7), transparent), radial-gradient(1px 1px at 45% 65%, rgba(255,255,255,0.5), transparent), radial-gradient(1.5px 1.5px at 75% 15%, rgba(255,255,255,0.8), transparent), radial-gradient(1px 1px at 85% 75%, rgba(255,255,255,0.45), transparent), radial-gradient(1px 1px at 55% 40%, rgba(255,255,255,0.6), transparent), radial-gradient(1.5px 1.5px at 25% 80%, rgba(255,255,255,0.65), transparent)',
           }}
         />
+        {/* Orbe luminoso */}
         <div
-          className="absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none"
-          style={{ background: `radial-gradient(circle, ${METAL.accent}25, transparent 70%)`, filter: 'blur(25px)' }}
+          className="absolute -top-16 -right-16 w-52 h-52 rounded-full pointer-events-none"
+          style={{ background: `radial-gradient(circle, ${METAL.accent}30, transparent 65%)`, filter: 'blur(20px)' }}
         />
 
         <div className="relative px-5 py-5">
