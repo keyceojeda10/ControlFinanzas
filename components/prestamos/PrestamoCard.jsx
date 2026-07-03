@@ -64,9 +64,24 @@ export default function PrestamoCard({ prestamo: p, actions, esNuevo }) {
               <p className="text-sm font-bold truncate leading-tight" style={{ color: P.ink }}>
                 {p.cliente?.nombre}
               </p>
-              {p.cliente?.cedula && !p.cliente.cedula.startsWith('SIN-') && (
-                <p className="text-[10px] mt-0.5" style={{ color: P.sub }}>CC {p.cliente.cedula}</p>
-              )}
+              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                {p.cliente?.cedula && !p.cliente.cedula.startsWith('SIN-') && (
+                  <span className="text-[10px]" style={{ color: P.sub }}>CC {p.cliente.cedula}</span>
+                )}
+                {p.creadoPorNombre && (
+                  <>
+                    {p.cliente?.cedula && !p.cliente.cedula.startsWith('SIN-') && (
+                      <span className="text-[10px]" style={{ color: P.sub }}>·</span>
+                    )}
+                    <span className="text-[10px] flex items-center gap-0.5" style={{ color: P.sub }}>
+                      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                      </svg>
+                      {p.creadoPorNombre}
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">

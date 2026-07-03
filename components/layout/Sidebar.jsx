@@ -56,7 +56,7 @@ const NAV_PRIMARY_OWNER = [
     ),
   },
   {
-    label: 'Lineas de credito',
+    label: 'Líneas de crédito',
     href:  '/lineas-credito',
     icon: (
       <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -246,7 +246,7 @@ const NAV_COBRADOR = [
     ),
   },
   {
-    label: 'Lineas de credito',
+    label: 'Líneas de crédito',
     href:  '/lineas-credito',
     icon: (
       <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
