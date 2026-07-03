@@ -97,15 +97,19 @@ Todo control interactivo tiene: default, hover, focus-visible (ring dorado), act
 - Capi aparece en: estados vacíos, éxito de pago, onboarding, celebraciones. No en
   contextos negativos serios (mora crítica, errores de cobro) — ahí sobra simpatía.
 
-## Tarjetas color-block (clientes/préstamos/hero dashboard)
+## Tarjetas premium oscuras (clientes/préstamos) + hero dorado (dashboard)
 
-- Fuente de verdad: `components/ui/tarjetaCredito.js` (CARD_STYLES + moodKey helpers).
-- La tarjeta ES el color del estado — superficie saturada completa + tinta oscura encima
-  (blanca solo en mora seria): `ok` dorado marca, `hot` naranja, `crit` rojo profundo,
-  `done` verde, `off` grafito claro. Gloss diagonal sutil (blanco 16%) permitido.
-- **PROHIBIDO skeuomorfismo**: nada de chips EMV, bandas magnéticas, relieves ni
-  imitación literal de tarjetas físicas. Es un producto virtual (feedback del user, 2 jul).
-- Los cambios sutiles NO cuentan como rediseño: tintes <20% se leen como "no hiciste nada".
-  Comprometerse con el color (referencia: tarjeta amarilla con número negro grande).
-- Elementos sobre la tarjeta usan S.ink/S.sub/S.track — nunca tokens del tema (la tarjeta
-  es del mismo color en dark y light). Todos los datos se conservan siempre.
+- Fuente de verdad: `components/ui/tarjetaCredito.js` (CARD_SURFACE, CARD_ACCENTS,
+  cardBackground(), cardBorder(), moodKey helpers).
+- **Jerarquía de color**: UN solo momento dorado saturado por pantalla — el hero del
+  dashboard (tarjeta dorada, número en tinta oscura). Las tarjetas de listas son
+  carbon cálido premium (#26242e→#141318) y el ESTADO se expresa vía acento:
+  saldo, glow radial superior, borde, pill y barra de progreso en el mood color.
+- Acentos: `ok` dorado #f5c518, `hot` naranja #fb923c, `crit` rojo #f87171,
+  `done` verde #34d399, `off` grafito #9aa5b5.
+- **PROHIBIDO**: skeuomorfismo (chips EMV, bandas, relieves) y bañar listas completas
+  en color saturado (muro chillón sin jerarquía — feedback del user, 2 jul, dos veces).
+- Elementos sobre la tarjeta usan CARD_SURFACE.ink/sub/faint/track — nunca tokens del
+  tema (la tarjeta es igual en dark y light). Los hex del gradiente NO deben coincidir
+  con los que las heurísticas del tema claro blanquean (#1a1a1a, #141414, etc.).
+- Todos los datos se conservan siempre.
