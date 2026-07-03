@@ -93,10 +93,10 @@ export default function NuevaLineaPage() {
         {paso > 0 ? 'Atras' : 'Volver'}
       </button>
 
-      <h1 className="text-lg font-bold text-[var(--color-text-primary)] mb-1">Nueva linea de credito</h1>
-      <p className="text-xs text-[var(--color-text-muted)] mb-2">Crea un cupo rotativo para tu cliente, similar a una tarjeta de credito.</p>
+      <h1 className="text-lg font-bold text-[var(--color-text-primary)] mb-1">Nueva línea de crédito</h1>
+      <p className="text-xs text-[var(--color-text-muted)] mb-2">Crea un cupo rotativo para tu cliente, similar a una tarjeta de crédito.</p>
       <div className="mb-5 p-3 rounded-xl text-[11px] text-[var(--color-text-muted)] leading-relaxed" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
-        El cliente podra pedir plata del cupo varias veces sin crear un prestamo nuevo. Cada mes se genera un corte (estado de cuenta) con lo que debe, y puede pagar todo o una parte. Lo que no pague, rota al siguiente mes con intereses.
+        El cliente podrá pedir plata del cupo varias veces sin crear un préstamo nuevo. Cada mes se genera un corte (estado de cuenta) con lo que debe, y puede pagar todo o una parte. Lo que no pague, rota al siguiente mes con intereses.
       </div>
 
       {/* Paso 0: Seleccionar cliente */}
@@ -254,7 +254,7 @@ export default function NuevaLineaPage() {
           )}
 
           <Button onClick={guardar} loading={guardando} className="w-full mt-6" size="lg">
-            Crear linea de credito
+            Crear línea de crédito
           </Button>
         </>
       )}

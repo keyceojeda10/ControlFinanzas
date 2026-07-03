@@ -105,6 +105,14 @@ export function moodKeyPrestamo(p, esNuevo = false) {
   return 'ok'
 }
 
+// Estado de linea de credito → paleta
+export function moodKeyLinea(estado, porcentajeUsado) {
+  if (estado === 'cerrada') return 'off'
+  if (estado === 'congelada') return 'hot'
+  if (porcentajeUsado > 80) return 'crit'
+  return 'ok'
+}
+
 // % de cobro del dia (rutas) → paleta
 export function moodKeyRuta(progreso, esperadoHoy) {
   if (esperadoHoy === 0) return 'off'

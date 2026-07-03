@@ -174,7 +174,7 @@ function EditableResumenRow({ label, value, children, valueColor }) {
 }
 
 // ─── Vista: formulario de cliente + préstamo ──────────────────────
-function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId, nombreRef, error, onGuardar, saving, editando, numero }) {
+function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId, nombreRef, error, onGuardar, saving, editando, numero, sinCedula, setSinCedula }) {
   const freqLabel = FRECUENCIAS.find(f => f.key === ficha.frecuencia)?.label?.toLowerCase() || ficha.frecuencia
   const unidadPlazo = { diario: 'dias', semanal: 'semanas', quincenal: 'quincenas', mensual: 'meses' }[ficha.frecuencia] || 'dias'
   const [modoInteresTocado, setModoInteresTocado] = useState(editando)
@@ -1056,6 +1056,7 @@ export default function MigradorPage() {
             rutas={rutas} defaultRutaId={defaults.rutaId} nombreRef={nombreRef}
             error={error} onGuardar={guardar} saving={saving}
             editando={editandoIdx !== null} numero={proximoNumero}
+            sinCedula={sinCedula} setSinCedula={setSinCedula}
           />
         </div>
       )}

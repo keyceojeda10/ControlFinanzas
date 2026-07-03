@@ -8,6 +8,9 @@ import { Card } from '@/components/ui/Card'
 import { SkeletonCard } from '@/components/ui/Skeleton'
 import { StaggeredList } from '@/components/ui/StaggeredList'
 import { formatMoney } from '@/lib/i18n'
+import CardWaves from '@/components/ui/CardWaves'
+import Avatar from '@/components/ui/Avatar'
+import { CARD_PALETTES, moodKeyLinea } from '@/components/ui/tarjetaCredito'
 
 const ESTADOS = [
   { value: '',         label: 'Todas' },
@@ -52,21 +55,21 @@ export default function LineasCreditoPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-lg font-bold text-[var(--color-text-primary)]">Lineas de credito</h1>
+          <h1 className="text-lg font-bold text-[var(--color-text-primary)]">Lineas de crédito</h1>
           <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-            {lineas.length} linea{lineas.length !== 1 ? 's' : ''} · Saldo total {formatMoney(totalSaldo)}
+            {lineas.length} línea{lineas.length !== 1 ? 's' : ''} · Saldo total {formatMoney(totalSaldo)}
           </p>
         </div>
         {esOwner && (
           <Link href="/lineas-credito/nueva" className="cf-btn-primary inline-flex items-center justify-center font-medium rounded-[12px] border transition-all h-9 px-3 text-xs">
-            + Nueva linea
+            + Nueva línea
           </Link>
         )}
       </div>
 
       {/* Explicacion */}
       <div className="mb-4 p-3 rounded-xl text-[11px] text-[var(--color-text-muted)] leading-relaxed" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
-        Una linea de credito funciona como un cupo rotativo: le apruebas un monto maximo al cliente y el puede pedir plata varias veces sin crear un prestamo nuevo cada vez. Al final del mes se genera un corte con lo que debe (capital + intereses) y puede pagar todo o una parte. Lo que no pague, rota al siguiente mes.
+        Una línea de crédito funciona como un cupo rotativo: le apruebas un monto máximo al cliente y él puede pedir plata varias veces sin crear un préstamo nuevo cada vez. Al final del mes se genera un corte con lo que debe (capital + intereses) y puede pagar todo o una parte. Lo que no pague, rota al siguiente mes.
       </div>
 
       {/* Filtros */}
@@ -109,11 +112,11 @@ export default function LineasCreditoPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15A2.25 2.25 0 002.25 6.75v10.5A2.25 2.25 0 004.5 19.5z" />
           </svg>
           <p className="text-sm text-[var(--color-text-muted)]">
-            {buscar || estado ? 'No se encontraron lineas con esos filtros' : 'No hay lineas de credito creadas'}
+            {buscar || estado ? 'No se encontraron líneas con esos filtros' : 'No hay líneas de crédito creadas'}
           </p>
           {esOwner && !buscar && !estado && (
             <Link href="/lineas-credito/nueva" className="cf-btn-primary inline-flex items-center justify-center font-medium rounded-[12px] border transition-all h-9 px-3 text-xs mt-4">
-              Crear primera linea
+              Crear primera línea
             </Link>
           )}
         </div>
@@ -133,75 +136,96 @@ function LineaCreditoCard({ linea }) {
     ? Math.round((linea.capitalUsado || 0) / linea.cupoMaximo * 100)
     : 0
 
-  const estadoColor = {
-    activa: 'var(--color-accent)',
-    congelada: 'var(--color-warning)',
-    cerrada: '#64748b',
-  }[linea.estado] || 'var(--color-accent)'
+  const P = CARD_PALETTES[moodKeyLinea(linea.estado, porcentajeUsado)]
+  const estadoLabel = linea.estado.charAt(0).toUpperCase() + linea.estado.slice(1)
 
   return (
     <Card
       as={Link}
       href={`/lineas-credito/${linea.id}`}
-      hoverable
       padding={false}
-      glowColor={estadoColor}
-      className="block px-4 py-3.5"
+      className="block px-4 py-4 group relative overflow-hidden"
+      style={{
+        background: P.grad,
+        border: `1px solid ${P.border}`,
+        boxShadow: P.shadow,
+      }}
     >
-      <div className="flex items-start justify-between">
-        <div className="min-w-0 flex-1">
-          <p className="text-[14px] font-semibold text-[var(--color-text-primary)] leading-tight truncate">
-            {linea.cliente?.nombre}
-          </p>
-          <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
-            CC {linea.cliente?.cedula} · Cupo {formatMoney(linea.cupoMaximo)}
-          </p>
-        </div>
-        <span
-          className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ml-2"
-          style={{ background: `${estadoColor}20`, color: estadoColor, border: `1px solid ${estadoColor}35` }}
-        >
-          <span className="w-1.5 h-1.5 rounded-full" style={{ background: estadoColor }} />
-          {linea.estado.charAt(0).toUpperCase() + linea.estado.slice(1)}
-        </span>
-      </div>
+      <CardWaves tint={P.waves} />
 
-      <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--color-border)' }}>
-        <div className="flex items-end justify-between mb-2">
-          <div>
-            <p className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider">Saldo actual</p>
-            <p className="text-[18px] font-mono-display font-bold leading-none mt-1 text-[var(--color-text-primary)]">
-              {formatMoney(linea.saldoTotal || 0)}
-            </p>
+      <div className="relative">
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Avatar
+              nombre={linea.cliente?.nombre}
+              size={34}
+              fontSize={12}
+              style={{ border: `2px solid color-mix(in srgb, ${P.ink} 20%, transparent)` }}
+            />
+            <div className="min-w-0">
+              <p className="text-sm font-bold truncate leading-tight" style={{ color: P.ink }}>
+                {linea.cliente?.nombre}
+              </p>
+              <p className="text-[10px] mt-0.5" style={{ color: P.sub }}>
+                CC {linea.cliente?.cedula} · Cupo {formatMoney(linea.cupoMaximo)}
+              </p>
+            </div>
           </div>
-          <div className="text-right">
-            <p className="text-[10px] text-[var(--color-text-muted)]">
-              Disponible: {formatMoney(linea.cupoDisponible || 0)}
-            </p>
-            <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
-              Tasa: {linea.tasaInteres}% mensual
-            </p>
-          </div>
+          <span
+            className="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
+            style={{
+              background: `color-mix(in srgb, ${P.accent} 14%, transparent)`,
+              color: P.accent,
+              border: `1px solid color-mix(in srgb, ${P.accent} 26%, transparent)`,
+            }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: P.accent }} />
+            {estadoLabel}
+          </span>
         </div>
 
-        {/* Barra de uso */}
-        <div>
+        <div className="mb-3">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] mb-1" style={{ color: P.sub }}>
+            Saldo actual
+          </p>
+          <p
+            className="font-mono-display font-bold leading-none tracking-tight"
+            style={{ color: P.ink, fontSize: 'clamp(20px, 5vw, 24px)' }}
+          >
+            {formatMoney(linea.saldoTotal || 0)}
+          </p>
+        </div>
+
+        <div className="mb-3">
           <div className="flex items-center justify-between text-[10px] mb-1">
-            <span className="text-[var(--color-text-muted)]">Uso del cupo</span>
-            <span className="font-mono-display font-semibold" style={{ color: porcentajeUsado > 80 ? 'var(--color-danger)' : estadoColor }}>
+            <span style={{ color: P.sub }}>Uso del cupo</span>
+            <span className="font-mono-display font-bold" style={{ color: P.accent }}>
               {porcentajeUsado}%
             </span>
           </div>
-          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
+          <div className="h-[5px] rounded-full overflow-hidden" style={{ background: P.track }}>
             <div
-              className="h-full rounded-full transition-all"
-              style={{
-                width: `${Math.max(porcentajeUsado, 2)}%`,
-                background: porcentajeUsado > 80
-                  ? 'var(--color-danger)'
-                  : `linear-gradient(90deg, color-mix(in srgb, ${estadoColor} 80%, transparent), ${estadoColor})`,
-              }}
+              className="h-full rounded-full transition-[width] duration-500"
+              style={{ width: `${Math.max(porcentajeUsado, 2)}%`, background: P.accent }}
             />
+          </div>
+        </div>
+
+        <div
+          className="grid grid-cols-2 gap-2 pt-2.5"
+          style={{ borderTop: `1px solid ${P.track}` }}
+        >
+          <div>
+            <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>Disponible</p>
+            <p className="text-[12px] font-mono-display font-bold mt-0.5" style={{ color: P.ink }}>
+              {formatMoney(linea.cupoDisponible || 0)}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>Tasa mensual</p>
+            <p className="text-[12px] font-mono-display font-bold mt-0.5" style={{ color: P.ink }}>
+              {linea.tasaInteres}%
+            </p>
           </div>
         </div>
       </div>

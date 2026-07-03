@@ -695,9 +695,9 @@ function ModalEliminarLinea({ lineaId, nombre, onClose, onSuccess }) {
     <div className="fixed inset-0 z-[10001] flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full sm:max-w-md bg-[var(--color-bg-surface)] rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl">
-        <h3 className="text-sm font-bold text-[var(--color-text-primary)] mb-2">Eliminar linea de credito</h3>
+        <h3 className="text-sm font-bold text-[var(--color-text-primary)] mb-2">Eliminar línea de crédito</h3>
         <p className="text-xs text-[var(--color-text-muted)] mb-4">
-          Se eliminara la linea de credito de <strong className="text-[var(--color-text-primary)]">{nombre}</strong>. Esta accion no se puede deshacer.
+          Se eliminará la línea de crédito de <strong className="text-[var(--color-text-primary)]">{nombre}</strong>. Esta acción no se puede deshacer.
         </p>
 
         {error && <p className="text-xs text-[var(--color-danger)] mb-3">{error}</p>}
