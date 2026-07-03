@@ -83,7 +83,7 @@ export default function PrestamoCard({ prestamo: p, actions, esNuevo }) {
                 <span className="w-1.5 h-1.5 rounded-full" style={{ background: P.accent }} />
                 {label}
               </span>
-              {esNuevo && <NuevoChip />}
+              {esNuevo && label !== 'Nuevo' && <NuevoChip />}
             </div>
             {actions?.length > 0 && <CardActionMenu actions={actions} />}
           </div>
@@ -118,32 +118,35 @@ export default function PrestamoCard({ prestamo: p, actions, esNuevo }) {
           </div>
         </div>
 
-        {/* Footer: 3 columnas limpias, sin celdas — aire de tarjeta fisica */}
-        <div
-          className="grid grid-cols-3 gap-2 pt-2.5"
-          style={{ borderTop: `1px solid ${P.track}` }}
-        >
-          <div>
-            <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>Pagado</p>
-            <p className="text-[12px] font-mono-display font-bold mt-0.5" style={{ color: PALETTE_PAGADO }}>
-              {formatMoney(pagado)}
-            </p>
-          </div>
-          <div className="text-center">
-            <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>Cuota</p>
-            <p className="text-[12px] font-mono-display font-bold mt-0.5" style={{ color: P.ink }}>
-              {formatMoney(p.cuotaDiaria)}
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>Próx. cobro</p>
-            <p
-              className="text-[12px] font-bold mt-0.5 capitalize truncate"
-              style={{ color: enMora ? P.accent : P.ink }}
-              title={proximoLabel || '—'}
-            >
-              {proximoLabel || '—'}
-            </p>
+        {/* Footer */}
+        <div className="relative pt-3 mt-1">
+          <div
+            className="absolute top-0 left-[10%] right-[10%] h-px"
+            style={{ background: `linear-gradient(90deg, transparent, ${P.accent}33, transparent)` }}
+          />
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>Pagado</p>
+              <p className="text-[12px] font-mono-display font-bold mt-0.5" style={{ color: PALETTE_PAGADO }}>
+                {formatMoney(pagado)}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>Cuota</p>
+              <p className="text-[12px] font-mono-display font-bold mt-0.5" style={{ color: P.ink }}>
+                {formatMoney(p.cuotaDiaria)}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>Próx. cobro</p>
+              <p
+                className="text-[12px] font-bold mt-0.5 capitalize truncate"
+                style={{ color: enMora ? P.accent : P.ink }}
+                title={proximoLabel || '—'}
+              >
+                {proximoLabel || '—'}
+              </p>
+            </div>
           </div>
         </div>
       </div>
