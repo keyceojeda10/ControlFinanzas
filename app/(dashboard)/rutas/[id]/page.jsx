@@ -622,13 +622,24 @@ export default function RutaDetallePage({ params }) {
       modoInteres: p.modoInteres,
       esBalloon: p.esBalloon || false,
       cuotaNumero: p.cuotaNumero ?? null,
+      diasMora: p.diasMora || 0,
+      cuotasEnMora: p.cuotasEnMora || 0,
+      montoEnMora: p.montoEnMora || 0,
+      montoAlDia: p.montoParaPonerseAlDia || 0,
+      saldoPendiente: p.saldoPendiente || 0,
     })
   }
 
   const elegirPrestamoPagoRapido = (prestamoId, cuota, modoInteres, extra = {}) => {
     if (!modalPagoRapido) return
     if (!cuota || cuota <= 0) return
-    setModalPagoRapido(prev => prev ? { ...prev, prestamoActivo: prestamoId, cuota, cuotaOriginal: cuota, modoInteres, esBalloon: extra.esBalloon || false, cuotaNumero: extra.cuotaNumero ?? null } : prev)
+    setModalPagoRapido(prev => prev ? {
+      ...prev, prestamoActivo: prestamoId, cuota, cuotaOriginal: cuota, modoInteres,
+      esBalloon: extra.esBalloon || false, cuotaNumero: extra.cuotaNumero ?? null,
+      diasMora: extra.diasMora || 0, cuotasEnMora: extra.cuotasEnMora || 0,
+      montoEnMora: extra.montoEnMora || 0, montoAlDia: extra.montoAlDia || 0,
+      saldoPendiente: extra.saldoPendiente || 0,
+    } : prev)
   }
 
   const ejecutarPagoRapido = async (metodoPago, { confirmarDuplicado = false } = {}) => {
@@ -2395,19 +2406,33 @@ export default function RutaDetallePage({ params }) {
                                   <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-muted)' }}>
                                     Saldo restante
                                   </p>
-                                  <div className="space-y-1">
+                                  <div className="space-y-1.5">
                                     {c.prestamosActivos.map((p, i) => (
-                                      <div key={p.id} className="flex items-center justify-between text-[12px]">
-                                        <span style={{ color: 'var(--color-text-muted)' }}>
-                                          {c.prestamosActivos.length > 1 ? `Préstamo ${i + 1}` : 'Préstamo'}
-                                          {' · '}{formatMoney(p.cuotaDiaria)}/{frecuenciaPrestamoLabel(p.frecuencia)}
-                                          {p.seguro && (
-                                            <span style={{ color: 'var(--color-accent)' }}>
-                                              {' · seguro'}{p.montoSeguro ? ` ${formatMoney(p.montoSeguro)}` : ''}
+                                      <div key={p.id} className="flex items-center justify-between text-[12px] gap-2">
+                                        <div className="min-w-0">
+                                          <div className="flex items-center gap-1.5">
+                                            {p.pagadoHoy && (
+                                              <svg className="w-3 h-3 shrink-0 text-[var(--color-success)]" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
+                                              </svg>
+                                            )}
+                                            <span style={{ color: p.pagadoHoy ? 'var(--color-success)' : 'var(--color-text-muted)' }}>
+                                              {c.prestamosActivos.length > 1 ? `Préstamo ${i + 1}` : 'Préstamo'}
+                                              {' · '}{formatMoney(p.cuotaDiaria)}/{frecuenciaPrestamoLabel(p.frecuencia)}
+                                              {p.seguro && (
+                                                <span style={{ color: 'var(--color-accent)' }}>
+                                                  {' · seguro'}{p.montoSeguro ? ` ${formatMoney(p.montoSeguro)}` : ''}
+                                                </span>
+                                              )}
                                             </span>
+                                          </div>
+                                          {p.diasMora > 0 && (
+                                            <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-danger)' }}>
+                                              {p.diasMora}d mora · {p.cuotasEnMora} cuota{p.cuotasEnMora === 1 ? '' : 's'} · {formatMoney(p.montoEnMora)}
+                                            </p>
                                           )}
-                                        </span>
-                                        <span className="font-mono-display font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                                        </div>
+                                        <span className="font-mono-display font-semibold shrink-0" style={{ color: 'var(--color-text-primary)' }}>
                                           {formatMoney(p.saldoPendiente)}
                                         </span>
                                       </div>
@@ -3010,12 +3035,24 @@ export default function RutaDetallePage({ params }) {
             <div className="space-y-2">
               {modalPagoRapido.prestamosActivos.map((p, i) => {
                 const modoLabel = ({ fijo: 'Clásico', solo_interes: 'Globo', lineal: 'Lineal', saldo: 'Sobre saldo', unico: 'Int. único', manual: 'Manual' })[p.modoInteres] || ''
+                const yaPago = p.pagadoHoy
                 return (
                   <button
                     key={p.id}
-                    onClick={() => elegirPrestamoPagoRapido(p.id, p.cuotaDiaria, p.modoInteres, { esBalloon: p.esBalloon, cuotaNumero: p.cuotaNumero })}
+                    onClick={() => elegirPrestamoPagoRapido(p.id, p.cuotaDiaria, p.modoInteres, {
+                      esBalloon: p.esBalloon, cuotaNumero: p.cuotaNumero,
+                      diasMora: p.diasMora, cuotasEnMora: p.cuotasEnMora,
+                      montoEnMora: p.montoEnMora, montoAlDia: p.montoParaPonerseAlDia,
+                      saldoPendiente: p.saldoPendiente,
+                    })}
                     disabled={!p.cuotaDiaria || p.cuotaDiaria <= 0}
-                    className="w-full text-left px-3 py-3 rounded-[12px] border border-[var(--color-border)] bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(34,197,94,0.08)] hover:border-[rgba(34,197,94,0.3)] transition-all active:scale-[0.99] disabled:opacity-50"
+                    className={`w-full text-left px-3 py-3 rounded-[12px] border transition-all active:scale-[0.99] disabled:opacity-50 ${
+                      yaPago
+                        ? 'border-[rgba(34,197,94,0.25)] bg-[rgba(34,197,94,0.05)]'
+                        : p.diasMora > 0
+                          ? 'border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.04)] hover:bg-[rgba(239,68,68,0.08)] hover:border-[rgba(239,68,68,0.4)]'
+                          : 'border-[var(--color-border)] bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(34,197,94,0.08)] hover:border-[rgba(34,197,94,0.3)]'
+                    }`}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
@@ -3028,15 +3065,26 @@ export default function RutaDetallePage({ params }) {
                             {modoLabel}
                           </span>
                         )}
+                        {yaPago && (
+                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
+                            style={{ background: 'color-mix(in srgb, var(--color-success) 15%, transparent)', color: 'var(--color-success)' }}>
+                            Pagado hoy
+                          </span>
+                        )}
                       </div>
-                      <span className="text-sm font-bold text-[var(--color-success)] font-mono-display shrink-0">
+                      <span className={`text-sm font-bold font-mono-display shrink-0 ${p.diasMora > 0 ? 'text-[var(--color-danger)]' : 'text-[var(--color-success)]'}`}>
                         {formatMoney(p.cuotaDiaria ?? 0)}
                       </span>
                     </div>
                     <p className="text-[11px] text-[var(--color-text-muted)] mt-1">
                       {frecuenciaPrestamoLabel(p.frecuencia)} · Saldo {formatMoney(p.saldoPendiente ?? 0)}
-                      {p.diasMora > 0 ? ` · ${p.diasMora}d mora` : ''}
+                      {p.diasMora > 0 ? ` · ${p.diasMora}d mora · ${p.cuotasEnMora} cuota${p.cuotasEnMora === 1 ? '' : 's'}` : ''}
                     </p>
+                    {p.diasMora > 0 && p.montoParaPonerseAlDia > p.cuotaDiaria && (
+                      <p className="text-[10px] font-semibold mt-1" style={{ color: 'var(--color-warning)' }}>
+                        Al día: {formatMoney(p.montoParaPonerseAlDia)}
+                      </p>
+                    )}
                   </button>
                 )
               })}
@@ -3060,6 +3108,30 @@ export default function RutaDetallePage({ params }) {
                   </span>
                 )}
               </div>
+              {modalPagoRapido.diasMora > 0 && (
+                <div className="rounded-[12px] border border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.06)] px-3 py-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 text-[var(--color-danger)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                      </svg>
+                      <span className="text-[11px] font-semibold text-[var(--color-danger)]">
+                        {modalPagoRapido.diasMora}d mora · {modalPagoRapido.cuotasEnMora} cuota{modalPagoRapido.cuotasEnMora === 1 ? '' : 's'}
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-bold font-mono-display text-[var(--color-danger)]">
+                      {formatMoney(modalPagoRapido.montoEnMora)}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {modalPagoRapido.saldoPendiente > 0 && (
+                <p className="text-[10px] text-[var(--color-text-muted)] text-center">
+                  Saldo pendiente: <span className="font-semibold font-mono-display text-[var(--color-text-secondary)]">{formatMoney(modalPagoRapido.saldoPendiente)}</span>
+                </p>
+              )}
+
               <div>
                 <label className="text-[10px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-1 block">Monto a cobrar</label>
                 <MoneyInput
@@ -3067,6 +3139,48 @@ export default function RutaDetallePage({ params }) {
                   onChange={(e) => setModalPagoRapido(prev => prev ? { ...prev, cuota: Number(e.target.value) || 0 } : prev)}
                   placeholder="0"
                 />
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setModalPagoRapido(prev => prev ? { ...prev, cuota: prev.cuotaOriginal ?? prev.cuota } : prev)}
+                    className="text-[10px] font-semibold px-2.5 py-1 rounded-full border transition-all active:scale-95"
+                    style={{
+                      color: 'var(--color-success)',
+                      background: 'color-mix(in srgb, var(--color-success) 10%, transparent)',
+                      borderColor: 'color-mix(in srgb, var(--color-success) 25%, transparent)',
+                    }}
+                  >
+                    1 Cuota
+                  </button>
+                  {modalPagoRapido.montoEnMora > 0 && modalPagoRapido.montoEnMora !== (modalPagoRapido.cuotaOriginal ?? modalPagoRapido.cuota) && (
+                    <button
+                      type="button"
+                      onClick={() => setModalPagoRapido(prev => prev ? { ...prev, cuota: prev.montoEnMora } : prev)}
+                      className="text-[10px] font-semibold px-2.5 py-1 rounded-full border transition-all active:scale-95"
+                      style={{
+                        color: 'var(--color-danger)',
+                        background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)',
+                        borderColor: 'color-mix(in srgb, var(--color-danger) 25%, transparent)',
+                      }}
+                    >
+                      Pagar mora
+                    </button>
+                  )}
+                  {modalPagoRapido.montoAlDia > 0 && modalPagoRapido.montoAlDia !== (modalPagoRapido.cuotaOriginal ?? modalPagoRapido.cuota) && modalPagoRapido.montoAlDia !== modalPagoRapido.montoEnMora && (
+                    <button
+                      type="button"
+                      onClick={() => setModalPagoRapido(prev => prev ? { ...prev, cuota: prev.montoAlDia } : prev)}
+                      className="text-[10px] font-semibold px-2.5 py-1 rounded-full border transition-all active:scale-95"
+                      style={{
+                        color: 'var(--color-warning)',
+                        background: 'color-mix(in srgb, var(--color-warning) 10%, transparent)',
+                        borderColor: 'color-mix(in srgb, var(--color-warning) 25%, transparent)',
+                      }}
+                    >
+                      Al día
+                    </button>
+                  )}
+                </div>
                 <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
                   Cuota: {formatMoney(modalPagoRapido.cuotaOriginal ?? modalPagoRapido.cuota)}
                   {esEspecial && !modalPagoRapido.esBalloon ? ' (interés del período)' : ''}

@@ -279,6 +279,8 @@ export async function GET(request, { params }) {
         saldoPendiente: Math.round(saldoPendientePrestamo),
         totalAPagar: p.totalAPagar ?? p.montoPrestado,
         totalPagado: p.totalPagado ?? 0,
+        pagadoHoy: montoPagadoHoy > 0,
+        montoPagadoHoy: Math.round(montoPagadoHoy),
         diasMora: moraPrestamo,
         cuotasEnMora: cuotasMoraPrestamo,
         montoEnMora: Math.round(montoMoraPrestamo),
