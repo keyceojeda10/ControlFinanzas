@@ -52,6 +52,14 @@ export default function PrestamoCard({ prestamo: p, actions, esNuevo }) {
       {P.sheen && P.sheen !== 'none' && (
         <div className="absolute inset-0 pointer-events-none" style={{ background: P.sheen }} />
       )}
+      {P.sheen && P.sheen !== 'none' && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute w-1 h-1 rounded-full" style={{ background: `${P.accent}40`, top: '18%', left: '72%' }} />
+          <div className="absolute w-0.5 h-0.5 rounded-full" style={{ background: `${P.accent}30`, top: '55%', left: '88%' }} />
+          <div className="absolute w-[3px] h-[3px] rounded-full" style={{ background: `${P.accent}25`, top: '75%', left: '15%' }} />
+          <div className="absolute w-0.5 h-0.5 rounded-full" style={{ background: `${P.accent}35`, top: '30%', left: '40%' }} />
+        </div>
+      )}
 
       <div className="relative">
         {/* Top: cliente | estado */}
