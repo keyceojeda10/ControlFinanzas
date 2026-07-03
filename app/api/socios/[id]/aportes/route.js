@@ -27,15 +27,28 @@ export async function POST(request, { params }) {
       return Response.json({ error: 'El monto debe ser mayor a 0' }, { status: 400 })
     }
 
+    const organizationId = session.user.organizationId
+
     const socio = await prisma.socio.findFirst({
-      where: { id: socioId, organizationId: session.user.organizationId },
+      where: { id: socioId, organizationId },
+      include: { aportes: { select: { tipo: true, monto: true } } },
     })
     if (!socio) {
       return Response.json({ error: 'Socio no encontrado' }, { status: 404 })
     }
 
-    const organizationId = session.user.organizationId
     const montoNum = Number(monto)
+
+    if (tipo === 'retiro') {
+      const totalAportes = socio.aportes.filter(a => a.tipo !== 'retiro').reduce((a, b) => a + b.monto, 0)
+      const totalRetiros = socio.aportes.filter(a => a.tipo === 'retiro').reduce((a, b) => a + b.monto, 0)
+      const balanceNeto = totalAportes - totalRetiros
+      if (montoNum > balanceNeto) {
+        return Response.json({
+          error: `El retiro no puede superar el balance del socio: $${Math.round(balanceNeto).toLocaleString('es-CO')}`,
+        }, { status: 400 })
+      }
+    }
 
     const aporte = await prisma.$transaction(async (tx) => {
       const registro = await tx.aporteSocio.create({

@@ -26,9 +26,9 @@ export async function GET(request, { params }) {
           include: {
             cliente: { select: { nombre: true } },
             pagos: {
-              where: { tipo: { not: 'descuento' } },
-              select: { monto: true, tipo: true, createdAt: true },
-              orderBy: { createdAt: 'desc' },
+              where: { tipo: { notIn: ['descuento', 'recargo'] } },
+              select: { montoPagado: true, tipo: true, fechaPago: true },
+              orderBy: { fechaPago: 'desc' },
             },
           },
         },
@@ -45,9 +45,18 @@ export async function GET(request, { params }) {
     const totalRetiros = retirosArr.reduce((acc, a) => acc + a.monto, 0)
 
     const prestamosConInteres = socio.prestamos.map((p) => {
+      const pagosNormales = (p.pagos ?? []).filter(pg => !['recargo', 'descuento', 'capital'].includes(pg.tipo))
+      const totalPagadoNormal = pagosNormales.reduce((a, pg) => a + (pg.montoPagado ?? 0), 0)
       const fraccion = p.totalAPagar > 0 ? (p.totalAPagar - p.montoPrestado) / p.totalAPagar : 0
-      const interesesCobrados = Math.round((p.totalPagado || 0) * fraccion)
-      const capitalCobrado = Math.round((p.totalPagado || 0) - interesesCobrados)
+      const interesesCobrados = Math.round(totalPagadoNormal * fraccion)
+
+      const interesesPorAnio = {}
+      for (const pg of pagosNormales) {
+        const anio = new Date(pg.fechaPago).getFullYear()
+        const intPago = Math.round((pg.montoPagado ?? 0) * fraccion)
+        interesesPorAnio[anio] = (interesesPorAnio[anio] || 0) + intPago
+      }
+
       return {
         id: p.id,
         clienteNombre: p.cliente?.nombre,
@@ -60,7 +69,7 @@ export async function GET(request, { params }) {
         modoInteres: p.modoInteres,
         fechaInicio: p.fechaInicio,
         interesesCobrados,
-        capitalCobrado,
+        interesesPorAnio,
         saldoPendiente: Math.round(p.totalAPagar - (p.totalPagado || 0)),
       }
     })
@@ -182,6 +191,7 @@ export async function DELETE(request, { params }) {
     }
 
     await prisma.$transaction([
+      prisma.prestamo.updateMany({ where: { socioId: id }, data: { socioId: null } }),
       prisma.aporteSocio.deleteMany({ where: { socioId: id } }),
       prisma.socio.delete({ where: { id } }),
     ])

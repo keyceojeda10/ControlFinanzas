@@ -30,6 +30,7 @@ export default function SocioDetallePage() {
   const [tipoAporte, setTipoAporte] = useState('aporte')
   const [montoAporte, setMontoAporte] = useState('')
   const [notaAporte, setNotaAporte] = useState('')
+  const [fechaAporte, setFechaAporte] = useState('')
   const [loadingAporte, setLoadingAporte] = useState(false)
 
   const [editando, setEditando] = useState(false)
@@ -62,7 +63,7 @@ export default function SocioDetallePage() {
       const res = await fetch(`/api/socios/${id}/aportes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ monto: Number(montoAporte), nota: notaAporte, tipo: tipoAporte }),
+        body: JSON.stringify({ monto: Number(montoAporte), nota: notaAporte, tipo: tipoAporte, ...(fechaAporte && { fecha: fechaAporte }) }),
       })
       if (!res.ok) {
         const d = await res.json().catch(() => ({}))
@@ -71,6 +72,7 @@ export default function SocioDetallePage() {
       setModalAporte(false)
       setMontoAporte('')
       setNotaAporte('')
+      setFechaAporte('')
       setTipoAporte('aporte')
       cargar()
     } catch (e) {
@@ -153,11 +155,13 @@ export default function SocioDetallePage() {
     return <div className="p-4 text-center" style={{ color: 'var(--color-danger)' }}>{error || 'No encontrado'}</div>
   }
 
-  const prestamosAnio = socio.prestamos.filter((p) => {
-    const inicio = new Date(p.fechaInicio)
-    return inicio.getFullYear() === anioLiquidacion
-  })
-  const interesesAnio = prestamosAnio.reduce((acc, p) => acc + p.interesesCobrados, 0)
+  const prestamosConInteresAnio = socio.prestamos
+    .map((p) => ({ ...p, interesAnio: p.interesesPorAnio?.[anioLiquidacion] || 0 }))
+    .filter((p) => p.interesAnio > 0)
+  const interesesAnio = prestamosConInteresAnio.reduce((acc, p) => acc + p.interesAnio, 0)
+  const aportesAnio = (socio.aportes || []).filter(a => a.tipo !== 'retiro' && new Date(a.fecha).getFullYear() === anioLiquidacion).reduce((a, b) => a + b.monto, 0)
+  const retirosAnio = (socio.aportes || []).filter(a => a.tipo === 'retiro' && new Date(a.fecha).getFullYear() === anioLiquidacion).reduce((a, b) => a + b.monto, 0)
+  const roiAnio = aportesAnio > 0 ? Math.round((interesesAnio / aportesAnio) * 100) : (socio.totalAportes > 0 ? Math.round((interesesAnio / socio.totalAportes) * 100) : 0)
 
   return (
     <div className="pb-28 space-y-4">
@@ -234,11 +238,11 @@ export default function SocioDetallePage() {
           </div>
         </div>
 
-        {prestamosAnio.length === 0 ? (
-          <p className="text-[13px]" style={{ color: 'var(--color-text-muted)' }}>Sin prestamos en {anioLiquidacion}</p>
+        {prestamosConInteresAnio.length === 0 && !aportesAnio && !retirosAnio ? (
+          <p className="text-[13px]" style={{ color: 'var(--color-text-muted)' }}>Sin movimientos en {anioLiquidacion}</p>
         ) : (
           <>
-            {prestamosAnio.map((p) => (
+            {prestamosConInteresAnio.map((p) => (
               <div key={p.id} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid var(--color-border)' }}>
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-medium truncate" style={{ color: 'var(--color-text-primary)' }}>
@@ -250,7 +254,7 @@ export default function SocioDetallePage() {
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-[13px] font-semibold" style={{ color: 'var(--color-success)' }}>
-                    {fmt(p.interesesCobrados)}
+                    {fmt(p.interesAnio)}
                   </p>
                   <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
                     {p.estado === 'activo' ? 'Activo' : 'Completado'}
@@ -258,9 +262,33 @@ export default function SocioDetallePage() {
                 </div>
               </div>
             ))}
-            <div className="flex items-center justify-between pt-3 mt-1">
-              <p className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>Total intereses {anioLiquidacion}</p>
-              <p className="text-[16px] font-bold" style={{ color: 'var(--color-success)' }}>{fmt(interesesAnio)}</p>
+
+            {(aportesAnio > 0 || retirosAnio > 0) && (
+              <div className="pt-2 mt-1 space-y-1" style={{ borderTop: '1px dashed var(--color-border)' }}>
+                {aportesAnio > 0 && (
+                  <div className="flex justify-between text-[12px]">
+                    <span style={{ color: 'var(--color-text-muted)' }}>Aportes en {anioLiquidacion}</span>
+                    <span className="font-medium" style={{ color: 'var(--color-accent)' }}>+{fmt(aportesAnio)}</span>
+                  </div>
+                )}
+                {retirosAnio > 0 && (
+                  <div className="flex justify-between text-[12px]">
+                    <span style={{ color: 'var(--color-text-muted)' }}>Retiros en {anioLiquidacion}</span>
+                    <span className="font-medium" style={{ color: 'var(--color-danger)' }}>-{fmt(retirosAnio)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="pt-3 mt-1 space-y-1">
+              <div className="flex items-center justify-between">
+                <p className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>Intereses {anioLiquidacion}</p>
+                <p className="text-[16px] font-bold" style={{ color: 'var(--color-success)' }}>{fmt(interesesAnio)}</p>
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-[12px]" style={{ color: 'var(--color-text-muted)' }}>Rendimiento (ROI)</p>
+                <p className="text-[13px] font-semibold" style={{ color: roiAnio > 0 ? 'var(--color-success)' : 'var(--color-text-muted)' }}>{roiAnio}%</p>
+              </div>
             </div>
           </>
         )}
@@ -400,6 +428,12 @@ export default function SocioDetallePage() {
             label={tipoAporte === 'retiro' ? 'Monto del retiro' : 'Monto del aporte'}
             value={montoAporte}
             onChange={(e) => setMontoAporte(e.target.value)}
+          />
+          <Input
+            label="Fecha"
+            type="date"
+            value={fechaAporte}
+            onChange={(e) => setFechaAporte(e.target.value)}
           />
           <Input
             label="Nota (opcional)"

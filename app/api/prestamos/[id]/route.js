@@ -649,6 +649,7 @@ export async function PATCH(request, { params }) {
       montoSeguro,
       nombreProducto,
       diasSinCobro: nuevosDiasSinCobro,
+      socioId: nuevoSocioId,
     } = body
 
     const hayPagos = p.pagos.filter(pg => !['recargo', 'descuento'].includes(pg.tipo)).length > 0
@@ -712,6 +713,7 @@ export async function PATCH(request, { params }) {
       montoSeguro:    montoSeguro != null ? Number(montoSeguro) : p.montoSeguro,
       nombreProducto: nombreProducto !== undefined ? nombreProducto : p.nombreProducto,
       diasSinCobro:   nuevosDiasSinCobro !== undefined ? nuevosDiasSinCobro : p.diasSinCobro,
+      ...(nuevoSocioId !== undefined && { socioId: nuevoSocioId || null }),
     }
 
     // Si el monto cambió, reversar el desembolso anterior y registrar el nuevo.
