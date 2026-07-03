@@ -92,7 +92,7 @@ export default function NuevoPrestamoPage() {
 function NuevoPrestamo() {
   const router       = useRouter()
   const searchParams = useSearchParams()
-  const { puedeCrearPrestamos, loading: authLoading } = useAuth()
+  const { puedeCrearPrestamos, esOwner, loading: authLoading } = useAuth()
 
   const clienteIdParam = searchParams.get('clienteId') ?? ''
 
@@ -134,6 +134,8 @@ function NuevoPrestamo() {
   // Cobro de seguro (opcional)
   const [seguro, setSeguro] = useState(false)
   const [montoSeguro, setMontoSeguro] = useState('')
+  const [socioId, setSocioId] = useState('')
+  const [listaSocios, setListaSocios] = useState([])
   // Modo de interes: 'fijo' (clasico, default) | 'unico' | 'saldo' | 'manual'.
   const [modoInteres, setModoInteres] = useState('fijo')
   const [interesAdelantado, setInteresAdelantado] = useState(false)
@@ -244,6 +246,11 @@ function NuevoPrestamo() {
     } catch {}
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    if (!esOwner) return
+    fetch('/api/socios').then(r => r.ok ? r.json() : []).then(d => setListaSocios(d || [])).catch(() => {})
+  }, [esOwner])
 
   // Ultimo prestamo del cliente para "Repetir condiciones".
   const [ultimoPrestamo, setUltimoPrestamo] = useState(null)
@@ -423,6 +430,7 @@ function NuevoPrestamo() {
         ...(inyeccionPrevia && { inyeccionPrevia }),
         ...(seguro && Number(montoSeguro) > 0 && { seguro: true, montoSeguro: Number(montoSeguro) }),
         ...(modoInteres === 'solo_interes' && interesAdelantado && { interesAdelantado: true }),
+        ...(socioId && { socioId }),
       }),
     })
     const data = await res.json()
@@ -505,6 +513,7 @@ function NuevoPrestamo() {
       modoInteres: modo === 'mercancia' ? 'manual' : modoInteres,
       ...(modo === 'mercancia' && nombreProducto.trim() && { nombreProducto: nombreProducto.trim() }),
       ...(seguro && Number(montoSeguro) > 0 && { seguro: true, montoSeguro: Number(montoSeguro) }),
+      ...(socioId && { socioId }),
     }
 
     // Offline: encolar sin intentar fetch (evita esperar timeout)
@@ -1203,6 +1212,23 @@ function NuevoPrestamo() {
                 <div>
                   <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Monto del seguro</label>
                   <div className="mt-1.5"><MoneyInput value={montoSeguro} onChange={(e) => setMontoSeguro(e.target.value)} placeholder="0" /></div>
+                </div>
+              )}
+
+              {esOwner && listaSocios.length > 0 && (
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Socio responsable</label>
+                  <select
+                    value={socioId}
+                    onChange={(e) => setSocioId(e.target.value)}
+                    className="mt-1.5 w-full h-10 px-2 rounded-[10px] text-sm"
+                    style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+                  >
+                    <option value="">Sin socio</option>
+                    {listaSocios.filter(s => s.activo).map(s => (
+                      <option key={s.id} value={s.id}>{s.nombre}</option>
+                    ))}
+                  </select>
                 </div>
               )}
 

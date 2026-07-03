@@ -125,6 +125,8 @@ model Organization {
   pagosLinea         PagoLinea[]
   cortesLinea        CorteLinea[]
   notificaciones     Notificacion[]
+  socios             Socio[]
+  aportesSocios      AporteSocio[]
 
   @@index([createdAt])
 }
@@ -309,15 +311,18 @@ model Prestamo {
   esClavo        Boolean        @default(false)
   clavoAt        DateTime? // cuando se marco como clavo
   clavoPerdida   Boolean        @default(false) // si al marcarlo se registro el capital como perdida
+  socioId        String? // socio responsable del prestamo (natillera)
   createdAt      DateTime       @default(now())
 
   cliente      Cliente      @relation(fields: [clienteId], references: [id])
   organization Organization @relation(fields: [organizationId], references: [id])
+  socio        Socio?       @relation(fields: [socioId], references: [id])
   pagos        Pago[]
   cuotasAmortizacion CuotaAmortizacion[]
 
   @@index([organizationId])
   @@index([clienteId])
+  @@index([socioId])
   @@index([estado])
   @@index([organizationId, estado])
   @@index([organizationId, clienteId, estado])
@@ -957,4 +962,38 @@ model Notificacion {
 
   @@index([userId, leida])
   @@index([organizationId, createdAt])
+}
+
+model Socio {
+  id             String   @id @default(cuid())
+  organizationId String
+  nombre         String
+  cedula         String?
+  telefono       String?
+  notas          String?  @db.Text
+  activo         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  aportes      AporteSocio[]
+  prestamos    Prestamo[]
+
+  @@unique([organizationId, cedula])
+  @@index([organizationId])
+}
+
+model AporteSocio {
+  id             String   @id @default(cuid())
+  socioId        String
+  organizationId String
+  monto          Float
+  fecha          DateTime
+  nota           String?
+  createdAt      DateTime @default(now())
+
+  socio        Socio        @relation(fields: [socioId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([socioId])
+  @@index([organizationId])
 }
