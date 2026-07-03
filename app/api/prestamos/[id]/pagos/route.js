@@ -671,6 +671,7 @@ export async function POST(request, { params }) {
     ...prestamoFinal,
     totalPagado:      prestamoFinal.pagos.filter(p => !['recargo', 'descuento'].includes(p.tipo)).reduce((a, x) => a + x.montoPagado, 0),
     saldoPendiente:   calcularSaldoPendiente(prestamoFinal),
+    capitalRestante:  calcularCapitalRestante(prestamoFinal),
     porcentajePagado: calcularPorcentajePagado(prestamoFinal),
     diasMora:         calcularDiasMora(prestamoFinal, diasExcluidosFinal),
     cuotasPendientes: calcularCuotasPendientes(prestamoFinal),
