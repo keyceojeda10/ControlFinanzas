@@ -93,18 +93,20 @@ export default function TablaAmortizacion({
                     </span>
                   )}
                   <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <p className="text-[11px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                    {/* flex-wrap: en anchos angostos el chip baja de linea en vez
+                        de desbordarse encima de las columnas de montos */}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <p className="text-[11px] font-semibold whitespace-nowrap" style={{ color: 'var(--color-text-primary)' }}>
                         {labelPeriodo} {fila.numeroPeriodo}
                       </p>
                       {esProxima && (
-                        <span className="text-[8px] font-bold px-1.5 py-px rounded-full"
+                        <span className="text-[8px] font-bold px-1.5 py-px rounded-full whitespace-nowrap"
                           style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)', color: 'var(--color-accent)' }}>
                           Siguiente
                         </span>
                       )}
                       {esBalloon && !completado && (
-                        <span className="text-[8px] font-bold px-1.5 py-px rounded-full"
+                        <span className="text-[8px] font-bold px-1.5 py-px rounded-full whitespace-nowrap"
                           style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
                           Capital + interés
                         </span>
