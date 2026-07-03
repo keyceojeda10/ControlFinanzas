@@ -22,6 +22,7 @@ function diasAUnidades(dias, frecuencia) {
 export default function RenovarPrestamo({
   prestamoId,
   saldoPendiente,
+  capitalRestante,
   prestamoAnterior,
   clienteNombre,
   montoMaximoPrestamo,
@@ -31,7 +32,9 @@ export default function RenovarPrestamo({
   const router = useRouter()
   const { formatMoney } = useCountry()
 
-  const saldo = Math.max(0, Number(saldoPendiente) || 0)
+  const saldoTotal = Math.max(0, Number(saldoPendiente) || 0)
+  // Para globo/lineal, el minimo es el capital adeudado (sin intereses futuros)
+  const saldo = capitalRestante != null ? Math.max(0, Number(capitalRestante)) : saldoTotal
   const freqInicial = prestamoAnterior?.frecuencia ?? 'diario'
   const cuotaAnterior = prestamoAnterior?.cuotaDiaria ?? 0
   const montoAnterior = prestamoAnterior?.montoPrestado ?? 0
@@ -60,6 +63,7 @@ export default function RenovarPrestamo({
 
   const modoHeredado = ['fijo', 'unico', 'saldo', 'manual', 'solo_interes', 'lineal'].includes(prestamoAnterior?.modoInteres)
     ? prestamoAnterior.modoInteres : 'fijo'
+  const modoUsaTabla = ['solo_interes', 'lineal'].includes(modoHeredado)
 
   const calculo = useMemo(() => {
     if (!montoNum || !tasa || !diasPlazo) return null
@@ -70,12 +74,12 @@ export default function RenovarPrestamo({
         diasPlazo,
         fechaInicio,
         frecuencia,
-        modoInteres:   cuotaManualActiva ? 'manual' : modoHeredado,
-        ...(cuotaManualActiva && { cuotaManual: Number(cuotaManual) }),
+        modoInteres:   (cuotaManualActiva && !modoUsaTabla) ? 'manual' : modoHeredado,
+        ...((cuotaManualActiva && !modoUsaTabla) && { cuotaManual: Number(cuotaManual) }),
         ...(modoHeredado === 'solo_interes' && { interesAdelantado: !!prestamoAnterior?.interesAdelantado }),
       })
     } catch { return null }
-  }, [montoNum, tasa, diasPlazo, fechaInicio, frecuencia, modoHeredado, cuotaManual, cuotaManualActiva, prestamoAnterior?.interesAdelantado])
+  }, [montoNum, tasa, diasPlazo, fechaInicio, frecuencia, modoHeredado, modoUsaTabla, cuotaManual, cuotaManualActiva, prestamoAnterior?.interesAdelantado])
 
   const handleSubmit = async () => {
     if (montoNum <= 0) { setError('Ingresa el total del nuevo prestamo'); return }
@@ -98,8 +102,8 @@ export default function RenovarPrestamo({
           diasPlazo,
           fechaInicio,
           frecuencia,
-          modoInteres:   cuotaManualActiva ? 'manual' : modoHeredado,
-          ...(cuotaManualActiva && { cuotaManual: Number(cuotaManual) }),
+          modoInteres:   (cuotaManualActiva && !modoUsaTabla) ? 'manual' : modoHeredado,
+          ...((cuotaManualActiva && !modoUsaTabla) && { cuotaManual: Number(cuotaManual) }),
           ...(seguro && montoSeguroNum > 0 && { seguro: true, montoSeguro: montoSeguroNum }),
           ...(modoHeredado === 'solo_interes' && prestamoAnterior?.interesAdelantado && { interesAdelantado: true }),
         }),
@@ -169,7 +173,7 @@ export default function RenovarPrestamo({
               <span className="text-sm font-semibold font-mono-display" style={{ color: 'var(--color-text-secondary)' }}>{formatMoney(cuotaAnterior)}</span>
             </div>
             <div className="flex items-center justify-between col-span-2">
-              <span className="text-[11px] font-medium" style={{ color: 'var(--color-accent)' }}>Saldo pendiente</span>
+              <span className="text-[11px] font-medium" style={{ color: 'var(--color-accent)' }}>{modoUsaTabla ? 'Capital adeudado' : 'Saldo pendiente'}</span>
               <span className="text-lg font-bold font-mono-display" style={{ color: 'var(--color-accent)' }}>{formatMoney(saldo)}</span>
             </div>
           </div>
@@ -336,7 +340,7 @@ export default function RenovarPrestamo({
             <div className="flex items-center justify-between">
               <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
                 Nueva cuota {frecuencia}
-                {!cuotaManualActiva && (
+                {!cuotaManualActiva && !modoUsaTabla && (
                   <button
                     type="button"
                     onClick={() => setCuotaManual(String(calculo.cuotaDiaria))}

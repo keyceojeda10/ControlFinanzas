@@ -382,7 +382,7 @@ export default function PrestamoDetallePage({ params }) {
   const {
     cliente, estado, montoPrestado, totalAPagar, cuotaDiaria, frecuencia,
     tasaInteres, diasPlazo, fechaInicio, fechaFin, nombreProducto,
-    totalPagado, saldoPendiente, porcentajePagado, diasMora,
+    totalPagado, saldoPendiente, capitalRestante, porcentajePagado, diasMora,
     cuotasPendientes = 0,
     cuotasEnMora = 0,
     montoEnMora = 0,
@@ -1673,6 +1673,7 @@ export default function PrestamoDetallePage({ params }) {
       <RenovarPrestamo
         prestamoId={id}
         saldoPendiente={saldoPendiente}
+        capitalRestante={capitalRestante}
         prestamoAnterior={{ tasaInteres, diasPlazo, frecuencia, modoInteres, cuotaDiaria, montoPrestado, interesAdelantado }}
         clienteNombre={cliente?.nombre}
         montoMaximoPrestamo={cliente?.montoMaximoPrestamo}

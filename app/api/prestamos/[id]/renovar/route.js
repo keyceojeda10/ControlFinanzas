@@ -5,7 +5,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { calcularPrestamo, calcularSaldoPendiente } from '@/lib/calculos'
+import { calcularPrestamo, calcularSaldoPendiente, calcularCapitalRestante } from '@/lib/calculos'
 import { registrarMovimientoCapital } from '@/lib/capital'
 import { logActividad } from '@/lib/activity-log'
 import { trackEvent }   from '@/lib/analytics'
@@ -68,6 +68,7 @@ export async function POST(request, { params }) {
     include: {
       cliente: { select: { id: true, nombre: true, rutaId: true, montoMaximoPrestamo: true } },
       pagos:   { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
+      cuotasAmortizacion: { select: { numeroPeriodo: true, capital: true, interes: true, cuotaTotal: true, pagado: true, interesPagado: true }, orderBy: { numeroPeriodo: 'asc' } },
     },
   })
 
@@ -80,6 +81,11 @@ export async function POST(request, { params }) {
   }
 
   const saldoPendiente = calcularSaldoPendiente(original)
+  // Para prestamos con tabla (globo/lineal), el capital restante es la deuda
+  // real sin intereses futuros. Para la renovacion, el minimo es el capital
+  // adeudado (no el totalAPagar que incluye intereses no devengados).
+  const capitalRestante = calcularCapitalRestante(original)
+  const minimoRenovacion = capitalRestante != null ? capitalRestante : saldoPendiente
 
   if (original.cliente.montoMaximoPrestamo && Number(montoPrestado) > original.cliente.montoMaximoPrestamo) {
     return Response.json({
@@ -87,10 +93,10 @@ export async function POST(request, { params }) {
     }, { status: 400 })
   }
 
-  // El nuevo monto debe cubrir al menos el saldo pendiente
-  if (Number(montoPrestado) < saldoPendiente) {
+  // El nuevo monto debe cubrir al menos el capital adeudado
+  if (Number(montoPrestado) < minimoRenovacion) {
     return Response.json({
-      error: `El nuevo monto debe ser al menos $${Math.round(saldoPendiente).toLocaleString('es-CO')} (saldo pendiente)`,
+      error: `El nuevo monto debe ser al menos $${Math.round(minimoRenovacion).toLocaleString('es-CO')} (capital adeudado)`,
     }, { status: 400 })
   }
 
@@ -114,7 +120,7 @@ export async function POST(request, { params }) {
   const { totalAPagar, cuotaDiaria, fechaFin } = calc
   const modoInteresFinal = calc.modoInteres
 
-  const diferencia = Number(montoPrestado) - saldoPendiente // lo que recibe en mano
+  const diferencia = Number(montoPrestado) - minimoRenovacion // lo que recibe en mano
 
   const orgConfig = await prisma.organization.findUnique({
     where: { id: organizationId },
