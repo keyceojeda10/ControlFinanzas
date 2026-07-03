@@ -2394,7 +2394,7 @@ export default function RutaDetallePage({ params }) {
                             </div>
 
                             {/* Cobrado hoy / cuota */}
-                            {c._clase !== 'completado' && c._clase !== 'sin_cobro' && (
+                            {(c._clase !== 'completado' || c.tieneClavo) && c._clase !== 'sin_cobro' && (
                               <div className="shrink-0 text-right">
                                 <p className="text-[12px] font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
                                   {formatMoney(c.montoPagadoHoy || 0)}
@@ -2544,7 +2544,7 @@ export default function RutaDetallePage({ params }) {
                                   </div>
                                 </div>
                               ) : (
-                                c._clase !== 'completado' && c._clase !== 'sin_cobro' && (
+                                (c._clase !== 'completado' || c.tieneClavo) && c._clase !== 'sin_cobro' && (
                                   <p className="text-[12px]" style={{ color: 'var(--color-text-muted)' }}>
                                     Aun no se ha registrado un cobro hoy.
                                   </p>
@@ -2552,7 +2552,7 @@ export default function RutaDetallePage({ params }) {
                               )}
 
                               {/* Acciones rapidas */}
-                              {c._clase !== 'completado' && (
+                              {(c._clase !== 'completado' || c.tieneClavo) && (
                                 <div className="flex gap-2 pt-1">
                                   <button
                                     type="button"

@@ -248,8 +248,38 @@ export async function GET(request, { params }) {
 
       // Tarjeta clavo: su cobro de hoy SÍ entró arriba al recaudado (dinero real),
       // pero el lado negativo del clavo (cartera, mora, cuotas vencidas, esperado)
-      // NO debe descuadrar los números de la ruta. Se salta a partir de aquí.
-      if (p.esClavo) continue
+      // NO debe descuadrar los números de la ruta. Se agrega a prestamosActivos
+      // para que el UI muestre saldo/cuota, pero no suma a cartera ni mora.
+      if (p.esClavo) {
+        const saldoClavo = calcularSaldoPendiente(p)
+        const cuotaClavo = tieneTablaAmortizacion(p) ? obtenerCuotaPeriodoActual(p) : p.cuotaDiaria
+        const proximaCuotaClavo = tieneTablaAmortizacion(p) ? obtenerProximaCuotaTabla(p) : null
+        cuotaCliente += cuotaClavo
+        prestamosActivos.push({
+          id: p.id,
+          cuotaDiaria: Math.round(cuotaClavo),
+          cuotaDiariaOriginal: p.cuotaDiaria,
+          saldoPendiente: Math.round(saldoClavo),
+          totalAPagar: p.totalAPagar ?? p.montoPrestado,
+          totalPagado: p.totalPagado ?? 0,
+          pagadoHoy: montoPagadoHoy > 0,
+          montoPagadoHoy: Math.round(montoPagadoHoy),
+          diasMora: 0,
+          cuotasEnMora: 0,
+          montoEnMora: 0,
+          montoParaPonerseAlDia: 0,
+          frecuencia: p.frecuencia || 'diario',
+          montoPrestado: p.montoPrestado,
+          fechaInicio: p.fechaInicio,
+          seguro: !!p.seguro,
+          montoSeguro: p.montoSeguro ?? null,
+          modoInteres: p.modoInteres || 'fijo',
+          esBalloon: proximaCuotaClavo?.esBalloon || false,
+          cuotaNumero: proximaCuotaClavo?.numeroPeriodo ?? null,
+          esClavo: true,
+        })
+        continue
+      }
 
       // Resolver diasSinCobro por préstamo individual (incluye campo propio del préstamo)
       const diasExcluidosPrestamo = obtenerDiasSinCobro(c, ruta, org, p)

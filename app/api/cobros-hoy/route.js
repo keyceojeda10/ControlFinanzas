@@ -142,7 +142,22 @@ export async function GET() {
         recaudadoHoyTotal += montoPagadoHoy
 
         if (p.estado !== 'activo') continue
-        if (p.esClavo) continue
+        if (p.esClavo) {
+          const cuotaClavo = tieneTablaAmortizacion(p) ? obtenerCuotaPeriodoActual(p) : p.cuotaDiaria
+          const saldoClavo = calcularSaldoPendiente(p)
+          cuotaCliente += cuotaClavo
+          prestamosActivos.push({
+            id: p.id,
+            cuotaDiaria: Math.round(cuotaClavo),
+            saldoPendiente: Math.round(saldoClavo),
+            diasMora: 0,
+            modoInteres: p.modoInteres || 'fijo',
+            esBalloon: false,
+            cuotaNumero: null,
+            esClavo: true,
+          })
+          continue
+        }
 
         const diasExcluidosPrestamo = obtenerDiasSinCobro(c, ruta, org, p)
         const cuotaReal = tieneTablaAmortizacion(p) ? obtenerCuotaPeriodoActual(p) : p.cuotaDiaria
