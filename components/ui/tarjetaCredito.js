@@ -1,61 +1,115 @@
-// components/ui/tarjetaCredito.js — tarjetas premium oscuras (v3).
+// components/ui/tarjetaCredito.js — tarjetas pastel premium (v4).
 //
-// Leccion de diseño (2 jul): bañar todas las tarjetas en color saturado = muro
-// chillon sin jerarquia. El canon correcto:
-//   - UN solo momento dorado fuerte por pantalla (hero del dashboard).
-//   - Las tarjetas de listas son OSCURAS premium (carbon calido) y el ESTADO
-//     se expresa via acento: numero del saldo, glow superior, borde, pill y
-//     barra de progreso en el mood color. Elegante y escaneable.
-//   - Sin skeuomorfismo (nada de chips ni bandas).
+// Referencia del user (2 jul): tarjeta fintech de superficie SUAVE (pastel
+// gris-lavanda) con tinta oscura profunda y textura de olas sutiles. Cada
+// estado tiene su propia tarjeta pastel completa — reactividad real pero
+// moderada: colores bonitos, nunca chillones, nunca casi-negro.
 //
-// IMPORTANTE: los hex del gradiente NO deben coincidir con los que las
-// heuristicas del tema claro blanquean en globals.css (#1a1a1a, #141414,
-// #111111, #0a0a0a, #121212, #1f1f1f, #202020...). Tampoco usar "rgba(0,0,0"
-// en el mismo style attr que un linear-gradient.
+//   ok    → champan dorado (al dia — color de marca suavizado)
+//   nuevo → azul lavanda (cliente/prestamo nuevo, como la referencia)
+//   hot   → durazno (vencido pocos dias)
+//   crit  → rosa (mora seria)
+//   done  → menta (completado)
+//   off   → gris perla (cancelado/inactivo)
+//
+// ink   = texto principal (tinta profunda del mismo tono)
+// sub   = texto secundario
+// accent= color fuerte del estado (pills, barras, enfasis)
+// track = fondo de barras/divisores
+// Los textos sobre la tarjeta usan SIEMPRE estos valores, nunca tokens del
+// tema (la tarjeta es igual en dark y light).
+//
+// Nota: no usar "rgba(0,0,0" en el mismo style attr que un linear-gradient
+// (heuristica del tema claro en globals.css lo blanquea).
 
-// Superficie compartida: grafito calido con profundidad.
-// Ajuste 2 jul: se subio la luminosidad dos tonos (antes casi-negro #141318)
-// porque sobre el tema claro el contraste golpeaba demasiado. Grafito medio
-// mantiene el look premium sin efecto "hueco negro".
-export const CARD_SURFACE = {
-  grad: 'linear-gradient(150deg, #3b3843 0%, #2d2b34 52%, #24222a 100%)',
-  ink: '#f6f5f9',
-  sub: 'rgba(246, 245, 249, 0.58)',
-  faint: 'rgba(246, 245, 249, 0.42)',
-  track: 'rgba(255, 255, 255, 0.12)',
-  cell: 'rgba(255, 255, 255, 0.06)',
-  shadow: '0 8px 20px rgba(30, 27, 40, 0.16)',
+export const CARD_PALETTES = {
+  ok: {
+    grad: 'linear-gradient(135deg, #f7eed4 0%, #f0e0b0 55%, #e9d491 100%)',
+    ink: '#3f3306',
+    sub: 'rgba(63, 51, 6, 0.78)',
+    accent: '#7a6003',
+    track: 'rgba(63, 51, 6, 0.13)',
+    border: 'rgba(180, 140, 10, 0.30)',
+    shadow: '0 10px 24px rgba(190, 160, 60, 0.18)',
+    waves: 'rgba(255,255,255,0.55)',
+  },
+  nuevo: {
+    grad: 'linear-gradient(135deg, #e6eafa 0%, #cfd7f2 55%, #bec9ee 100%)',
+    ink: '#232f5e',
+    sub: 'rgba(35, 47, 94, 0.78)',
+    accent: '#364a9a',
+    track: 'rgba(35, 47, 94, 0.13)',
+    border: 'rgba(80, 100, 190, 0.28)',
+    shadow: '0 10px 24px rgba(90, 110, 200, 0.16)',
+    waves: 'rgba(255,255,255,0.6)',
+  },
+  hot: {
+    grad: 'linear-gradient(135deg, #fbe9d5 0%, #f6d5af 55%, #f2c795 100%)',
+    ink: '#5a3105',
+    sub: 'rgba(90, 49, 5, 0.78)',
+    accent: '#a3540a',
+    track: 'rgba(90, 49, 5, 0.13)',
+    border: 'rgba(200, 120, 30, 0.30)',
+    shadow: '0 10px 24px rgba(210, 140, 60, 0.16)',
+    waves: 'rgba(255,255,255,0.5)',
+  },
+  crit: {
+    grad: 'linear-gradient(135deg, #fbe0e3 0%, #f5c3c9 55%, #f0aeb7 100%)',
+    ink: '#5c1220',
+    sub: 'rgba(92, 18, 32, 0.78)',
+    accent: '#a82038',
+    track: 'rgba(92, 18, 32, 0.13)',
+    border: 'rgba(200, 60, 80, 0.30)',
+    shadow: '0 10px 24px rgba(210, 90, 110, 0.16)',
+    waves: 'rgba(255,255,255,0.5)',
+  },
+  done: {
+    grad: 'linear-gradient(135deg, #def3e8 0%, #c0e8d3 55%, #aadfc3 100%)',
+    ink: '#0c3a26',
+    sub: 'rgba(12, 58, 38, 0.78)',
+    accent: '#12724a',
+    track: 'rgba(12, 58, 38, 0.13)',
+    border: 'rgba(30, 140, 90, 0.30)',
+    shadow: '0 10px 24px rgba(60, 160, 110, 0.16)',
+    waves: 'rgba(255,255,255,0.55)',
+  },
+  off: {
+    grad: 'linear-gradient(135deg, #eff1f5 0%, #dce0e8 55%, #cdd3dd 100%)',
+    ink: '#39404e',
+    sub: 'rgba(57, 64, 78, 0.78)',
+    accent: '#4a5265',
+    track: 'rgba(57, 64, 78, 0.13)',
+    border: 'rgba(110, 120, 140, 0.30)',
+    shadow: '0 10px 24px rgba(120, 130, 150, 0.14)',
+    waves: 'rgba(255,255,255,0.6)',
+  },
 }
 
-// Acento por estado — colorea saldo, glow, borde, pill y progreso
-export const CARD_ACCENTS = {
-  ok:   { color: '#f5c518' },  // al dia — dorado marca
-  hot:  { color: '#fb923c' },  // vencido pocos dias — naranja
-  crit: { color: '#f87171' },  // mora seria — rojo
-  done: { color: '#34d399' },  // completado — verde
-  off:  { color: '#9aa5b5' },  // cancelado/inactivo — grafito
-}
+// Verde fijo para valores "pagado" — legible sobre las 6 superficies pastel
+export const PALETTE_PAGADO = '#0f6840'
 
-// Background completo de la tarjeta: glow del acento arriba-derecha + grafito
-export function cardBackground(accent) {
-  return `radial-gradient(ellipse 90% 75% at 100% -10%, color-mix(in srgb, ${accent} 14%, transparent) 0%, transparent 55%), ${CARD_SURFACE.grad}`
-}
-
-export function cardBorder(accent) {
-  return `1px solid color-mix(in srgb, ${accent} 24%, rgba(255,255,255,0.12))`
-}
-
-export function moodKeyCliente(c) {
+export function moodKeyCliente(c, esNuevo = false) {
   if (c.estado === 'cancelado' || c.estado === 'inactivo') return 'off'
   if (c.diasMoraMax > 7) return 'crit'
   if (c.estado === 'mora' || c.diasMoraMax > 0) return 'hot'
+  if (esNuevo) return 'nuevo'
   return 'ok'
 }
 
-export function moodKeyPrestamo(p) {
+export function moodKeyPrestamo(p, esNuevo = false) {
   if (p.estado === 'completado') return 'done'
   if (p.estado === 'cancelado') return 'off'
   if (p.diasMora > 7) return 'crit'
   if (p.diasMora > 0) return 'hot'
+  if (esNuevo) return 'nuevo'
   return 'ok'
+}
+
+// % de cobro del dia (rutas) → paleta
+export function moodKeyRuta(progreso, esperadoHoy) {
+  if (esperadoHoy === 0) return 'off'
+  if (progreso >= 100) return 'done'
+  if (progreso >= 60) return 'ok'
+  if (progreso >= 30) return 'hot'
+  return 'crit'
 }

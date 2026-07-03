@@ -8,7 +8,8 @@ import { Card } from '@/components/ui/Card'
 import Avatar from '@/components/ui/Avatar'
 import CardActionMenu from '@/components/ui/CardActionMenu'
 import { NuevoChip } from '@/components/ui/BadgeNuevo'
-import { CARD_SURFACE, CARD_ACCENTS, cardBackground, cardBorder, moodKeyCliente } from '@/components/ui/tarjetaCredito'
+import CardWaves from '@/components/ui/CardWaves'
+import { CARD_PALETTES, moodKeyCliente } from '@/components/ui/tarjetaCredito'
 
 const COLOR_OK     = 'var(--color-accent)'
 const COLOR_HOT    = '#f97316'
@@ -139,56 +140,55 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
         {actions?.length > 0 && <CardActionMenu actions={actions} />}
       </div>
 
-      {/* ── Seccion financiera: panel premium oscuro (solo si tiene prestamo) ──
-          Carbon calido; el estado del cliente se expresa via acento (saldo,
-          glow, borde y progreso en el mood color). */}
+      {/* ── Seccion financiera: tarjeta pastel del estado (solo si tiene prestamo) ──
+          Superficie suave + tinta profunda + olas sutiles. Reactiva: al dia
+          champan, nuevo azul lavanda, vencido durazno, mora rosa, off gris. */}
       {tienePrestamo && (() => {
-        const S = CARD_SURFACE
-        const accent = CARD_ACCENTS[moodKeyCliente(cliente)].color
+        const P = CARD_PALETTES[moodKeyCliente(cliente, esNuevo)]
         return (
           <div
-            className="mt-3 rounded-[14px] px-4 py-3.5"
+            className="mt-3 relative overflow-hidden rounded-[14px] px-4 py-3.5"
             style={{
-              background: cardBackground(accent),
-              border: cardBorder(accent),
-              boxShadow: S.shadow,
+              background: P.grad,
+              border: `1px solid ${P.border}`,
+              boxShadow: P.shadow,
             }}
           >
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-[9px] font-semibold uppercase tracking-[0.14em]" style={{ color: S.sub }}>
-                  Saldo pendiente
-                </p>
-                <p className="text-[22px] font-mono-display font-bold leading-none mt-1" style={{ color: accent }}>
-                  {formatMoney(saldoTotal)}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-[10px] font-medium" style={{ color: S.sub }}>
-                  {cliente.prestamosActivos} préstamo{cliente.prestamosActivos > 1 ? 's' : ''}
-                </p>
-                {cliente.proximoCobroLabel && (
-                  <p className="text-[10px] font-semibold mt-0.5 capitalize" style={{ color: cliente.diasMoraMax > 0 ? accent : S.ink }}>
-                    {cliente.diasMoraMax > 0 ? 'Vencido' : 'Cobro'}: {cliente.proximoCobroLabel}
+            <CardWaves tint={P.waves} />
+            <div className="relative">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.16em]" style={{ color: P.sub }}>
+                    Saldo pendiente
                   </p>
-                )}
+                  <p className="text-[22px] font-mono-display font-bold leading-none mt-1" style={{ color: P.ink }}>
+                    {formatMoney(saldoTotal)}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] font-medium" style={{ color: P.sub }}>
+                    {cliente.prestamosActivos} préstamo{cliente.prestamosActivos > 1 ? 's' : ''}
+                  </p>
+                  {cliente.proximoCobroLabel && (
+                    <p className="text-[10px] font-semibold mt-0.5 capitalize" style={{ color: cliente.diasMoraMax > 0 ? P.accent : P.ink }}>
+                      {cliente.diasMoraMax > 0 ? 'Vencido' : 'Cobro'}: {cliente.proximoCobroLabel}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
 
-            {/* Barra de progreso */}
-            <div className="mt-3 h-[6px] rounded-full overflow-hidden" style={{ background: S.track }}>
-              <div
-                className="h-full rounded-full transition-all"
-                style={{
-                  width: `${Math.max(porcentaje, 2)}%`,
-                  background: `linear-gradient(90deg, color-mix(in srgb, ${accent} 65%, transparent), ${accent})`,
-                }}
-              />
-            </div>
-            <div className="flex items-center justify-between mt-1.5 text-[10px]">
-              <span style={{ color: S.sub }}>
-                <span className="font-mono-display font-bold" style={{ color: accent }}>{porcentaje}%</span> pagado
-              </span>
+              {/* Barra de progreso */}
+              <div className="mt-3 h-[5px] rounded-full overflow-hidden" style={{ background: P.track }}>
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{ width: `${Math.max(porcentaje, 2)}%`, background: P.accent }}
+                />
+              </div>
+              <div className="flex items-center justify-between mt-1.5 text-[10px]">
+                <span style={{ color: P.sub }}>
+                  <span className="font-mono-display font-bold" style={{ color: P.accent }}>{porcentaje}%</span> pagado
+                </span>
+              </div>
             </div>
           </div>
         )
