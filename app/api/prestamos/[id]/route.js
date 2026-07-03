@@ -676,6 +676,9 @@ export async function PATCH(request, { params }) {
     // Si no hay pagos, calculamos desde el monto completo.
     const montoParaCalculo = hayPagos ? calcularSaldoPendiente(p) : montoNuevo
 
+    const diaCobroMesUsar = diaCobroMes !== undefined ? diaCobroMes : p.diaCobroMes
+    const diaCobroMes2Usar = diaCobroMes2 !== undefined ? diaCobroMes2 : p.diaCobroMes2
+
     const calc = calcularPrestamo({
       montoPrestado: montoParaCalculo,
       tasaInteres:   tasaInteres ?? p.tasaInteres,
@@ -684,6 +687,8 @@ export async function PATCH(request, { params }) {
       frecuencia:    frecuenciaUsar,
       modoInteres:   modoInteresUsar,
       cuotaManual:   cuotaManualUsar,
+      diaCobroMes:   diaCobroMesUsar,
+      diaCobroMes2:  diaCobroMes2Usar,
     })
 
     const dataUpdate = {
@@ -738,7 +743,26 @@ export async function PATCH(request, { params }) {
           creadoPorId: session.user.id,
         })
       }
-      return tx.prestamo.update({ where: { id }, data: dataUpdate })
+      const updated = await tx.prestamo.update({ where: { id }, data: dataUpdate })
+
+      // Regenerar tabla de amortizacion si el modo la usa y no hay pagos
+      if (!hayPagos && ['lineal', 'solo_interes'].includes(modoInteresUsar) && Array.isArray(calc.tablaAmortizacion) && calc.tablaAmortizacion.length > 0) {
+        await tx.cuotaAmortizacion.deleteMany({ where: { prestamoId: id } })
+        await tx.cuotaAmortizacion.createMany({
+          data: calc.tablaAmortizacion.map((row) => ({
+            prestamoId: id,
+            numeroPeriodo: row.numeroPeriodo,
+            capital: row.capital,
+            interes: row.interes,
+            cuotaTotal: row.cuotaTotal,
+            saldoRestante: row.saldoRestante,
+            fechaEsperada: row.fechaEsperada,
+            pagado: 0,
+          })),
+        })
+      }
+
+      return updated
     })
 
     const cambiosMonto = montoCambia ? ` monto ${Math.round(montoAnterior).toLocaleString('es-CO')}→${Math.round(montoNuevo).toLocaleString('es-CO')}` : ''
