@@ -635,38 +635,51 @@ export default function CajaPage() {
 
         {/* Saldo principal del cobrador: si tiene verSaldoCaja ve el mismo que el owner,
             si no ve su flujo operativo del día */}
-        <Card>
+        {/* Hero dorado de marca: saldo en caja */}
+        <Card
+          className="relative overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, #f9d64a 0%, #f5c518 55%, #eab308 100%)',
+            border: '1px solid rgba(180, 140, 10, 0.35)',
+            boxShadow: '0 14px 34px rgba(200, 160, 20, 0.30)',
+          }}
+        >
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: 'linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.16) 45%, transparent 58%)' }}
+          />
+          <div className="relative">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
+              <p className="text-xs font-semibold uppercase tracking-[0.15em]" style={{ color: 'rgba(35,26,4,0.62)' }}>
                 {puedeVerSaldoCaja ? 'Saldo en caja' : 'Flujo del día'}
               </p>
-              <p className="text-[11px] text-[var(--color-text-muted)]">
+              <p className="text-[11px]" style={{ color: 'rgba(35,26,4,0.55)' }}>
                 {puedeVerSaldoCaja ? 'Disponible para prestar ahora' : 'Neto operativo de hoy'}
               </p>
             </div>
             {tasaRecaudo > 0 && (
-              <span className="text-sm font-bold" style={{ color: colorRecaudo }}>
+              <span className="text-sm font-bold" style={{ color: '#231a04' }}>
                 {tasaRecaudo}% cobrado
               </span>
             )}
           </div>
-          <p className="text-3xl font-bold font-mono-display" style={{ color: disponibleHoy >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+          <p className="text-3xl font-bold font-mono-display" style={{ color: disponibleHoy >= 0 ? '#231a04' : '#b91c1c' }}>
             {formatMoney(disponibleHoy)}
           </p>
-          <p className="text-[11px] text-[var(--color-text-muted)] mt-1">
+          <p className="text-[11px] mt-1" style={{ color: 'rgba(35,26,4,0.55)' }}>
             {puedeVerSaldoCaja ? 'Saldo compartido con el administrador' : 'Cobrado - Prestado hoy - Gastos'}
           </p>
 
           {!esCobrador && (
             <div className="grid grid-cols-2 gap-2 mt-3">
               <div>
-                <p className="text-[10px] text-[var(--color-text-muted)] uppercase">Base inicial</p>
-                <p className="text-base font-bold font-mono-display text-[var(--color-info)]">{formatMoney(baseInicialDia)}</p>
+                <p className="text-[10px] uppercase" style={{ color: 'rgba(35,26,4,0.55)' }}>Base inicial</p>
+                <p className="text-base font-bold font-mono-display" style={{ color: '#231a04' }}>{formatMoney(baseInicialDia)}</p>
               </div>
               <div>
-                <p className="text-[10px] text-[var(--color-text-muted)] uppercase">Ajustes manuales</p>
-                <p className="text-base font-bold font-mono-display" style={{ color: ajustesDelDia >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                <p className="text-[10px] uppercase" style={{ color: 'rgba(35,26,4,0.55)' }}>Ajustes manuales</p>
+                <p className="text-base font-bold font-mono-display" style={{ color: ajustesDelDia >= 0 ? '#15803d' : '#b91c1c' }}>
                   {ajustesDelDia > 0 ? '+' : ''}{formatMoney(ajustesDelDia)}
                 </p>
               </div>
@@ -675,51 +688,52 @@ export default function CajaPage() {
 
           <div className="grid grid-cols-3 gap-2 mt-4">
             <div>
-              <p className="text-[10px] text-[var(--color-text-muted)] uppercase">Cobrado</p>
-              <p className="text-base font-bold font-mono-display text-[var(--color-success)]">{formatMoney(cobradoHoy)}</p>
+              <p className="text-[10px] uppercase" style={{ color: 'rgba(35,26,4,0.55)' }}>Cobrado</p>
+              <p className="text-base font-bold font-mono-display" style={{ color: '#15803d' }}>{formatMoney(cobradoHoy)}</p>
             </div>
             <div>
-              <p className="text-[10px] text-[var(--color-text-muted)] uppercase">Prestado hoy</p>
-              <p className="text-base font-bold font-mono-display text-[var(--color-warning)]">{prestadoHoy > 0 ? '-' : ''}{formatMoney(prestadoHoy)}</p>
+              <p className="text-[10px] uppercase" style={{ color: 'rgba(35,26,4,0.55)' }}>Prestado hoy</p>
+              <p className="text-base font-bold font-mono-display" style={{ color: '#92400e' }}>{prestadoHoy > 0 ? '-' : ''}{formatMoney(prestadoHoy)}</p>
             </div>
             <div>
-              <p className="text-[10px] text-[var(--color-text-muted)] uppercase">Gastos</p>
-              <p className="text-base font-bold font-mono-display text-[var(--color-danger)]">{gastosHoy > 0 ? '-' : ''}{formatMoney(gastosHoy)}</p>
+              <p className="text-[10px] uppercase" style={{ color: 'rgba(35,26,4,0.55)' }}>Gastos</p>
+              <p className="text-base font-bold font-mono-display" style={{ color: '#b91c1c' }}>{gastosHoy > 0 ? '-' : ''}{formatMoney(gastosHoy)}</p>
             </div>
           </div>
 
           {/* Seguros cobrados hoy — ganancia aparte por cobro de seguro */}
           {segurosDia.monto > 0 && (
             <div className="mt-3 rounded-[10px] px-3 py-2.5 flex items-center justify-between"
-              style={{ background: 'color-mix(in srgb, #6366f1 8%, transparent)', border: '1px solid color-mix(in srgb, #6366f1 25%, transparent)' }}
+              style={{ background: 'color-mix(in srgb, #231a04 8%, transparent)', border: '1px solid color-mix(in srgb, #231a04 16%, transparent)' }}
             >
               <div>
-                <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Seguros cobrados hoy</p>
-                <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{segurosDia.cantidad} {segurosDia.cantidad === 1 ? 'prestamo' : 'prestamos'}</p>
+                <p className="text-[10px] uppercase tracking-wide" style={{ color: 'rgba(35,26,4,0.55)' }}>Seguros cobrados hoy</p>
+                <p className="text-[10px]" style={{ color: 'rgba(35,26,4,0.55)' }}>{segurosDia.cantidad} {segurosDia.cantidad === 1 ? 'prestamo' : 'prestamos'}</p>
               </div>
-              <p className="text-base font-bold font-mono-display" style={{ color: '#6366f1' }}>{formatMoney(segurosDia.monto)}</p>
+              <p className="text-base font-bold font-mono-display" style={{ color: '#231a04' }}>{formatMoney(segurosDia.monto)}</p>
             </div>
           )}
 
-          <details className="mt-3 pt-3 border-t border-[var(--color-border)]">
-            <summary className="cursor-pointer text-[11px] text-[var(--color-text-muted)]">Ver detalle del cálculo</summary>
+          <details className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(35,26,4,0.16)' }}>
+            <summary className="cursor-pointer text-[11px]" style={{ color: 'rgba(35,26,4,0.62)' }}>Ver detalle del cálculo</summary>
             <div className="mt-2 space-y-1.5 text-[11px]">
               <div className="flex justify-between">
-                <span className="text-[var(--color-text-muted)]">Efectivo del día</span>
-                <span className="font-semibold" style={{ color: saldoRealCaja >= 0 ? 'var(--color-info)' : 'var(--color-danger)' }}>{formatMoney(saldoRealCaja)}</span>
+                <span style={{ color: 'rgba(35,26,4,0.55)' }}>Efectivo del día</span>
+                <span className="font-semibold" style={{ color: saldoRealCaja >= 0 ? '#231a04' : '#b91c1c' }}>{formatMoney(saldoRealCaja)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[var(--color-text-muted)]">Esperado</span>
-                <span className="font-semibold text-[var(--color-text-primary)]">{formatMoney(stats.esperado || 0)}</span>
+                <span style={{ color: 'rgba(35,26,4,0.55)' }}>Esperado</span>
+                <span className="font-semibold" style={{ color: '#231a04' }}>{formatMoney(stats.esperado || 0)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[var(--color-text-muted)]">Diferencia vs esperado</span>
-                <span className="font-semibold" style={{ color: diferenciaRecaudo >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                <span style={{ color: 'rgba(35,26,4,0.55)' }}>Diferencia vs esperado</span>
+                <span className="font-semibold" style={{ color: diferenciaRecaudo >= 0 ? '#15803d' : '#b91c1c' }}>
                   {diferenciaRecaudo >= 0 ? '+' : ''}{formatMoney(diferenciaRecaudo)}
                 </span>
               </div>
             </div>
           </details>
+          </div>
         </Card>
 
         {pagosDiaCard}

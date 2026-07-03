@@ -184,31 +184,32 @@ export default function CobrosHoyPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-4 px-1">
 
-      {/* ── Hero: Progreso del día ── */}
+      {/* ── Hero: Progreso del día — tarjeta dorada de marca ── */}
       {clientes.length > 0 && (
         <div
           className="rounded-[20px] p-4 sm:p-5 relative overflow-hidden"
           style={{
-            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 60%)',
-            border: '1px solid color-mix(in srgb, var(--color-accent) 15%, var(--color-border))',
+            background: 'linear-gradient(135deg, #f9d64a 0%, #f5c518 55%, #eab308 100%)',
+            border: '1px solid rgba(180, 140, 10, 0.35)',
+            boxShadow: '0 14px 34px rgba(200, 160, 20, 0.30)',
           }}
         >
-          {/* Orbe decorativo */}
+          {/* Gloss sutil */}
           <div
-            className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-[0.06] pointer-events-none"
-            style={{ background: 'radial-gradient(circle, var(--color-accent), transparent 70%)' }}
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: 'linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.16) 45%, transparent 58%)' }}
           />
 
           {/* Header */}
           <div className="flex items-start justify-between gap-3 relative z-10">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'rgba(35,26,4,0.62)' }}>
                 Recaudado hoy
               </p>
-              <p className="text-3xl font-extrabold font-mono-display mt-0.5" style={{ color: pct >= 100 ? 'var(--color-success)' : 'var(--color-text-primary)' }}>
+              <p className="text-3xl font-extrabold font-mono-display mt-0.5" style={{ color: '#231a04' }}>
                 {formatMoney(resumen.recaudadoHoy ?? 0)}
               </p>
-              <p className="text-xs mt-1" style={{ color: 'var(--color-text-secondary)' }}>
+              <p className="text-xs mt-1 font-medium" style={{ color: 'rgba(35,26,4,0.62)' }}>
                 de {formatMoney(resumen.esperadoHoy ?? 0)} esperados
               </p>
             </div>
@@ -216,19 +217,16 @@ export default function CobrosHoyPage() {
             {/* Porcentaje circular */}
             <div className="shrink-0 relative w-16 h-16 flex items-center justify-center">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                <circle cx="18" cy="18" r="15" fill="none" strokeWidth="3" stroke="var(--color-border)" />
+                <circle cx="18" cy="18" r="15" fill="none" strokeWidth="3" stroke="rgba(35,26,4,0.16)" />
                 <circle
                   cx="18" cy="18" r="15" fill="none" strokeWidth="3"
-                  stroke={pct >= 100 ? 'var(--color-success)' : 'var(--color-accent)'}
+                  stroke="#231a04"
                   strokeLinecap="round"
                   strokeDasharray={`${pct * 0.942} 100`}
                   style={{ transition: 'stroke-dasharray 0.8s cubic-bezier(0.22,1,0.36,1)' }}
                 />
               </svg>
-              <span
-                className="absolute text-xs font-bold"
-                style={{ color: pct >= 100 ? 'var(--color-success)' : 'var(--color-accent)' }}
-              >
+              <span className="absolute text-xs font-bold" style={{ color: '#231a04' }}>
                 {pct}%
               </span>
             </div>
@@ -236,18 +234,10 @@ export default function CobrosHoyPage() {
 
           {/* Barra de progreso */}
           <div className="mt-3 relative z-10">
-            <div
-              className="h-2 rounded-full overflow-hidden"
-              style={{ background: 'color-mix(in srgb, var(--color-accent) 12%, var(--color-bg-surface))' }}
-            >
+            <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(35,26,4,0.16)' }}>
               <div
                 className="h-full rounded-full transition-all duration-700 ease-out"
-                style={{
-                  width: `${pct}%`,
-                  background: pct >= 100
-                    ? 'linear-gradient(90deg, var(--color-success), color-mix(in srgb, var(--color-success) 80%, var(--color-accent)))'
-                    : 'linear-gradient(90deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 70%, var(--color-success)))',
-                }}
+                style={{ width: `${pct}%`, background: '#231a04' }}
               />
             </div>
           </div>
@@ -255,21 +245,21 @@ export default function CobrosHoyPage() {
           {/* Stats inline */}
           <div className="flex items-center gap-4 mt-3 relative z-10">
             <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full" style={{ background: 'var(--color-warning)' }} />
-              <span className="text-xs font-semibold" style={{ color: 'var(--color-text-secondary)' }}>
+              <div className="w-2 h-2 rounded-full" style={{ background: '#b45309' }} />
+              <span className="text-xs font-semibold" style={{ color: 'rgba(35,26,4,0.72)' }}>
                 {resumen.pendientes ?? 0} pendientes
               </span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full" style={{ background: 'var(--color-success)' }} />
-              <span className="text-xs font-semibold" style={{ color: 'var(--color-text-secondary)' }}>
+              <div className="w-2 h-2 rounded-full" style={{ background: '#15803d' }} />
+              <span className="text-xs font-semibold" style={{ color: 'rgba(35,26,4,0.72)' }}>
                 {resumen.pagados ?? 0} cobrados
               </span>
             </div>
             <button
               onClick={fetchCobros}
               className="ml-auto w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:scale-105 active:scale-95"
-              style={{ background: 'color-mix(in srgb, var(--color-accent) 10%, transparent)', color: 'var(--color-accent)' }}
+              style={{ background: 'color-mix(in srgb, #231a04 12%, transparent)', color: '#231a04' }}
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
@@ -280,13 +270,14 @@ export default function CobrosHoyPage() {
           {/* Celebración meta cumplida */}
           {metaCumplida && pct >= 100 && (
             <div
-              className="mt-3 rounded-[12px] px-3 py-2 text-center relative z-10"
+              className="mt-3 rounded-[12px] px-3 py-2 relative z-10 flex items-center justify-center gap-2"
               style={{
-                background: 'color-mix(in srgb, var(--color-success) 12%, transparent)',
-                border: '1px solid color-mix(in srgb, var(--color-success) 25%, transparent)',
+                background: 'color-mix(in srgb, #231a04 10%, transparent)',
+                border: '1px solid color-mix(in srgb, #231a04 18%, transparent)',
               }}
             >
-              <p className="text-xs font-bold" style={{ color: 'var(--color-success)' }}>
+              <Capi pose="celebra" size={34} />
+              <p className="text-xs font-bold" style={{ color: '#231a04' }}>
                 Meta del dia cumplida
               </p>
             </div>
