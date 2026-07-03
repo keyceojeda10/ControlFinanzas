@@ -14,6 +14,7 @@ export default function NuevoClientePage() {
   const [ocrError, setOcrError] = useState('')
   const [ocrAdvertencias, setOcrAdvertencias] = useState([])
   const fotoInputRef = useRef(null)
+  const fotoCameraRef = useRef(null)
 
   useEffect(() => {
     if (!loading && !puedeCrearClientes) router.replace('/clientes')
@@ -70,6 +71,7 @@ export default function NuevoClientePage() {
     return (
       <div className="max-w-lg mx-auto">
         <input ref={fotoInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFotoUpload} />
+        <input ref={fotoCameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFotoUpload} />
 
         <div className="mb-8">
           <button onClick={() => router.back()}
@@ -112,42 +114,58 @@ export default function NuevoClientePage() {
             </div>
           </button>
 
-          {/* Opcion secundaria: Foto */}
-          <button
-            type="button"
-            onClick={() => fotoInputRef.current?.click()}
-            disabled={ocrLoading}
-            className="w-full text-left rounded-2xl p-4 transition-all active:scale-[0.98] disabled:opacity-60"
-            style={{
-              background: 'var(--color-bg-card)',
-              border: '1.5px solid var(--color-border)',
-            }}
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: 'color-mix(in srgb, var(--color-info, #3b82f6) 12%, transparent)', color: 'var(--color-info, #3b82f6)' }}>
-                {ocrLoading ? (
+          {/* Opcion secundaria: Foto (galeria o camara) */}
+          {ocrLoading ? (
+            <div className="w-full text-left rounded-2xl p-4"
+              style={{ background: 'var(--color-bg-card)', border: '1.5px solid var(--color-border)' }}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: 'color-mix(in srgb, var(--color-info, #3b82f6) 12%, transparent)', color: 'var(--color-info, #3b82f6)' }}>
                   <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                ) : (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Leyendo foto...</h3>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Extrayendo datos...</p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-2xl overflow-hidden"
+              style={{ background: 'var(--color-bg-card)', border: '1.5px solid var(--color-border)' }}>
+              <div className="px-4 pt-3.5 pb-2">
+                <h3 className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Desde foto</h3>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>La IA lee la cartulina o libreta</p>
+              </div>
+              <div className="grid grid-cols-2 gap-0" style={{ borderTop: '1px solid var(--color-border)' }}>
+                <button
+                  type="button"
+                  onClick={() => fotoInputRef.current?.click()}
+                  className="flex items-center justify-center gap-2 py-3 text-sm font-medium transition-all active:scale-[0.97]"
+                  style={{ color: 'var(--color-info, #3b82f6)', borderRight: '1px solid var(--color-border)' }}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+                  </svg>
+                  Galería
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fotoCameraRef.current?.click()}
+                  className="flex items-center justify-center gap-2 py-3 text-sm font-medium transition-all active:scale-[0.97]"
+                  style={{ color: 'var(--color-info, #3b82f6)' }}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
                   </svg>
-                )}
-              </div>
-              <div className="flex-1">
-                <h3 className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-                  {ocrLoading ? 'Leyendo foto...' : 'Desde foto'}
-                </h3>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-                  {ocrLoading ? 'Extrayendo datos...' : 'La IA lee la cartulina o libreta'}
-                </p>
+                  Cámara
+                </button>
               </div>
             </div>
-          </button>
+          )}
         </div>
 
         {ocrError && (

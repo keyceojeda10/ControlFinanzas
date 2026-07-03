@@ -188,8 +188,10 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
   const label = moodLabel(cliente, prestamosActivos)
   const tieneFoto = !!cliente?.fotoUrl
   const fotoInputRef = useRef(null)
+  const fotoCameraRef = useRef(null)
   const [subiendoFoto, setSubiendoFoto] = useState(false)
   const [fotoAbierta, setFotoAbierta] = useState(false)
+  const [fotoMenuAbierto, setFotoMenuAbierto] = useState(false)
 
   const handleFotoChange = async (e) => {
     const file = e.target.files?.[0]
@@ -252,10 +254,11 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
             />
             {puedeSubirFoto && (
               <>
-                <input ref={fotoInputRef} type="file" accept="image/*" className="hidden" onChange={handleFotoChange} />
+                <input ref={fotoInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { handleFotoChange(e); setFotoMenuAbierto(false) }} />
+                <input ref={fotoCameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => { handleFotoChange(e); setFotoMenuAbierto(false) }} />
                 <button
                   type="button"
-                  onClick={() => fotoInputRef.current?.click()}
+                  onClick={() => setFotoMenuAbierto(v => !v)}
                   disabled={subiendoFoto}
                   className="absolute -bottom-0.5 -right-0.5 w-6 h-6 rounded-full flex items-center justify-center transition-all hover:scale-110"
                   style={{ background: 'var(--color-bg-card)', border: '2px solid var(--color-border)', color: 'var(--color-text-secondary)' }}
@@ -270,6 +273,36 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
                     </svg>
                   )}
                 </button>
+                {fotoMenuAbierto && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setFotoMenuAbierto(false)} />
+                    <div className="absolute top-full left-0 mt-1.5 z-50 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] shadow-lg overflow-hidden min-w-[130px]"
+                      style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.18)' }}>
+                      <button
+                        type="button"
+                        onClick={() => fotoInputRef.current?.click()}
+                        className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-bg-hover)] transition-colors"
+                      >
+                        <svg className="w-3.5 h-3.5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+                        </svg>
+                        Galería
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => fotoCameraRef.current?.click()}
+                        className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-bg-hover)] transition-colors"
+                        style={{ borderTop: '1px solid var(--color-border)' }}
+                      >
+                        <svg className="w-3.5 h-3.5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+                        </svg>
+                        Cámara
+                      </button>
+                    </div>
+                  </>
+                )}
               </>
             )}
           </div>

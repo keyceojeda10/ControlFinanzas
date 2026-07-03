@@ -21,6 +21,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
   const { validatePhone, validateDocument, documentConfig, phoneConfig } = useCountry()
   const esEdicion = !!clienteInicial
   const fotoInputRef = useRef(null)
+  const fotoCameraRef = useRef(null)
   const [fotoFile, setFotoFile] = useState(null)
   const [fotoPreview, setFotoPreview] = useState(clienteInicial?.fotoUrl || null)
 
@@ -367,6 +368,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
           {puedeSubirFoto && (
             <div className="flex items-center gap-4 mt-7">
               <input ref={fotoInputRef} type="file" accept="image/*" className="hidden" onChange={handleFotoSelect} />
+              <input ref={fotoCameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFotoSelect} />
               <button
                 type="button"
                 onClick={() => fotoInputRef.current?.click()}
@@ -395,16 +397,53 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                 <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
                   Opcional. JPG, PNG o WebP (max 5MB).
                 </p>
-                {fotoFile && (
+                <div className="flex items-center gap-3 mt-2">
                   <button
                     type="button"
-                    onClick={() => { setFotoFile(null); setFotoPreview(clienteInicial?.fotoUrl || null) }}
-                    className="text-xs mt-1.5 font-medium"
-                    style={{ color: 'var(--color-danger)' }}
+                    onClick={() => fotoInputRef.current?.click()}
+                    className="text-xs font-medium px-2.5 py-1 rounded-full border transition-all active:scale-95"
+                    style={{
+                      color: 'var(--color-accent)',
+                      background: 'color-mix(in srgb, var(--color-accent) 8%, transparent)',
+                      borderColor: 'color-mix(in srgb, var(--color-accent) 20%, transparent)',
+                    }}
                   >
-                    Quitar foto
+                    <span className="flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+                      </svg>
+                      Galería
+                    </span>
                   </button>
-                )}
+                  <button
+                    type="button"
+                    onClick={() => fotoCameraRef.current?.click()}
+                    className="text-xs font-medium px-2.5 py-1 rounded-full border transition-all active:scale-95"
+                    style={{
+                      color: 'var(--color-text-secondary)',
+                      background: 'var(--color-bg-hover)',
+                      borderColor: 'var(--color-border)',
+                    }}
+                  >
+                    <span className="flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+                      </svg>
+                      Cámara
+                    </span>
+                  </button>
+                  {fotoFile && (
+                    <button
+                      type="button"
+                      onClick={() => { setFotoFile(null); setFotoPreview(clienteInicial?.fotoUrl || null) }}
+                      className="text-xs font-medium"
+                      style={{ color: 'var(--color-danger)' }}
+                    >
+                      Quitar
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}

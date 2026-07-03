@@ -10,6 +10,7 @@ export default function ImportarCartulina({ onDatosExtraidos }) {
   const [advertencias, setAdvertencias] = useState([])
   const [previews, setPreviews] = useState([])
   const inputRef = useRef(null)
+  const cameraRef = useRef(null)
 
   const handleClick = () => inputRef.current?.click()
 
@@ -66,20 +67,40 @@ export default function ImportarCartulina({ onDatosExtraidos }) {
         className="hidden"
         onChange={handleArchivos}
       />
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handleArchivos}
+      />
 
-      {/* Estado idle — botón principal */}
+      {/* Estado idle — botones galería + cámara */}
       {estado === 'idle' && (
-        <button
-          type="button"
-          onClick={handleClick}
-          className="w-full flex items-center justify-center gap-2.5 h-11 rounded-[12px] border-2 border-dashed border-[var(--color-border)] text-sm font-medium text-[var(--color-text-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:bg-[rgba(245,197,24,0.04)] transition-all cursor-pointer"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          Importar desde foto
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={handleClick}
+            className="flex-1 flex items-center justify-center gap-2 h-11 rounded-[12px] border-2 border-dashed border-[var(--color-border)] text-sm font-medium text-[var(--color-text-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:bg-[rgba(245,197,24,0.04)] transition-all cursor-pointer"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+            </svg>
+            Galería
+          </button>
+          <button
+            type="button"
+            onClick={() => cameraRef.current?.click()}
+            className="flex-1 flex items-center justify-center gap-2 h-11 rounded-[12px] border-2 border-dashed border-[var(--color-border)] text-sm font-medium text-[var(--color-text-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:bg-[rgba(245,197,24,0.04)] transition-all cursor-pointer"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Cámara
+          </button>
+        </div>
       )}
 
       {/* Estado cargando */}
