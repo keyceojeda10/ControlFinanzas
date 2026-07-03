@@ -36,6 +36,7 @@ export default function OfflineProvider({ children }) {
   const syncingRef = useRef(false)
   const syncingStartedAtRef = useRef(0)
   const lastAutoSyncAtRef = useRef(0)
+  const swReloadPendienteRef = useRef(false)
 
   // Safety: liberar syncingRef si lleva demasiado tiempo (sincro colgada)
   const SYNCING_REF_TTL_MS = 75_000 // 75s — mas que timeout interno de sincronizarTodo
@@ -299,7 +300,25 @@ export default function OfflineProvider({ children }) {
         syncPendingThenFull({ silent: true })
       }
       if (e.data?.type === 'SW_UPDATED') {
-        window.location.reload()
+        // Hay version nueva activada. Recargar es necesario para tomar el
+        // codigo fresco, pero NUNCA interrumpiendo al usuario en plena vista
+        // (podria estar llenando un pago). Estrategia:
+        //   - pestana/app en segundo plano -> recargar ya (invisible)
+        //   - pestana visible -> diferir hasta que pase a segundo plano
+        if (!navigator.serviceWorker.controller) return // primera instalacion: la pagina ya vino fresca de red
+        if (document.visibilityState === 'hidden') {
+          window.location.reload()
+          return
+        }
+        if (swReloadPendienteRef.current) return
+        swReloadPendienteRef.current = true
+        const onHide = () => {
+          if (document.visibilityState === 'hidden') {
+            document.removeEventListener('visibilitychange', onHide)
+            window.location.reload()
+          }
+        }
+        document.addEventListener('visibilitychange', onHide)
       }
     }
     navigator.serviceWorker.addEventListener('message', onMessage)
