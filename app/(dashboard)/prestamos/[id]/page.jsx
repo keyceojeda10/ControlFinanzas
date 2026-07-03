@@ -122,6 +122,7 @@ export default function PrestamoDetallePage({ params }) {
   const [modalDiaCobro, setModalDiaCobro] = useState(false)
   const [modalProximoCobro, setModalProximoCobro] = useState(false)
   const [modalEditar,   setModalEditar]   = useState(false)
+  const [sociosLista,   setSociosLista]   = useState([])
   const [modalWA, setModalWA] = useState(false)
   const [modalDscPrestamo, setModalDscPrestamo] = useState(false)
   const [dscDias, setDscDias] = useState([])
@@ -216,6 +217,10 @@ export default function PrestamoDetallePage({ params }) {
   }, [id])
 
   useEffect(() => { fetchPrestamo() }, [fetchPrestamo])
+
+  useEffect(() => {
+    if (esOwner) fetch('/api/socios').then(r => r.ok ? r.json() : []).then(d => setSociosLista(Array.isArray(d) ? d.map(s => ({ id: s.id, nombre: s.nombre })) : []))
+  }, [esOwner])
 
   // Re-fetch silently when offline payments get synced
   useEffect(() => {
@@ -812,6 +817,7 @@ export default function PrestamoDetallePage({ params }) {
                 manual: 'Cuota manual',
                 proporcional: 'Proporcional',
               })[modoInteres] || modoInteres || 'Clásico') + (interesAdelantado ? ' (adelantado)' : '') },
+              ...(prestamo.socio ? [{ label: 'Socio', value: prestamo.socio.nombre }] : []),
             ],
           },
           {
@@ -1706,6 +1712,7 @@ export default function PrestamoDetallePage({ params }) {
         open={modalEditar}
         onClose={() => setModalEditar(false)}
         onSuccess={() => { setModalEditar(false); fetchPrestamo() }}
+        socios={sociosLista}
       />
 
       {/* Modal selector de plantillas WhatsApp (boton circular del header) */}

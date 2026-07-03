@@ -67,8 +67,6 @@ export async function GET(request) {
         prestamosActivos: prestamosActivos.length,
         capitalEnCalle: Math.round(capitalEnCalle),
         interesesCobrados: interesesTotales,
-        prestamos: s.prestamos,
-        aportes: s.aportes,
       }
     })
 

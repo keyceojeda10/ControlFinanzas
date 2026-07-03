@@ -40,6 +40,7 @@ async function obtenerPrestamo(id, session) {
         },
       },
       cuotasAmortizacion: { orderBy: { numeroPeriodo: 'asc' } },
+      socio: { select: { id: true, nombre: true } },
     },
   })
   if (!p) return null

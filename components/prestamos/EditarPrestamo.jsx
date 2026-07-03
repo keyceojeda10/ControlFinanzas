@@ -27,7 +27,7 @@ const diasAperiodos = (dias, freq) => {
 }
 const periodosADias = (periodos, freq) => periodos * (DIAS_POR_PERIODO[freq] || 1)
 
-export default function EditarPrestamo({ prestamo, open, onClose, onSuccess }) {
+export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, socios = [] }) {
   // Los hooks SIEMPRE se llaman (regla de React). Si no hay préstamo el modal no se abre.
   const p = prestamo || {}
   const hayPagos = (p.pagos || []).filter(
@@ -51,6 +51,7 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess }) {
   const [seguro,       setSeguro]       = useState(Boolean(p.seguro))
   const [montoSeguro,  setMontoSeguro]  = useState(String(p.montoSeguro || ''))
   const [nombreProd,   setNombreProd]   = useState(p.nombreProducto || '')
+  const [socioId,      setSocioId]      = useState(p.socioId || '')
   const [error,        setError]        = useState('')
   const [guardando,    setGuardando]    = useState(false)
 
@@ -99,6 +100,7 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess }) {
         seguro,
         montoSeguro: seguro ? Number(montoSeguro) : null,
         nombreProducto: nombreProd || null,
+        socioId: socioId || null,
       }
 
       const res = await fetch(`/api/prestamos/${p.id}`, {
@@ -257,6 +259,23 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess }) {
           <div>
             <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Nombre del producto</label>
             <Input value={nombreProd} onChange={(e) => setNombreProd(e.target.value)} placeholder="Ej: Televisor" />
+          </div>
+        )}
+
+        {/* Socio */}
+        {socios.length > 0 && (
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Socio (opcional)</label>
+            <select
+              value={socioId}
+              onChange={(e) => setSocioId(e.target.value)}
+              className="w-full h-10 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 text-sm text-[var(--color-text-primary)]"
+            >
+              <option value="">Sin socio</option>
+              {socios.map((s) => (
+                <option key={s.id} value={s.id}>{s.nombre}</option>
+              ))}
+            </select>
           </div>
         )}
 
