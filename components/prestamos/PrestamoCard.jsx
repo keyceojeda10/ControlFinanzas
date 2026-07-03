@@ -49,6 +49,9 @@ export default function PrestamoCard({ prestamo: p, actions, esNuevo }) {
       }}
     >
       <CardWaves tint={P.waves} />
+      {P.sheen && P.sheen !== 'none' && (
+        <div className="absolute inset-0 pointer-events-none" style={{ background: P.sheen }} />
+      )}
 
       <div className="relative">
         {/* Top: cliente | estado */}

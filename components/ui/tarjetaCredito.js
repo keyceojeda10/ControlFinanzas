@@ -16,6 +16,7 @@ const PALETTES_LIGHT = {
     border: 'rgba(180, 140, 10, 0.30)',
     shadow: '0 10px 24px rgba(190, 160, 60, 0.18)',
     waves: 'rgba(255,255,255,0.55)',
+    sheen: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.18) 45%, rgba(255,255,255,0.30) 50%, rgba(255,255,255,0.18) 55%, transparent 70%)',
   },
   nuevo: {
     grad: 'linear-gradient(135deg, #ddf4e4 0%, #c2eacd 55%, #ade2ba 100%)',
@@ -26,6 +27,7 @@ const PALETTES_LIGHT = {
     border: 'rgba(40, 160, 90, 0.28)',
     shadow: '0 10px 24px rgba(50, 170, 100, 0.16)',
     waves: 'rgba(255,255,255,0.6)',
+    sheen: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.20) 45%, rgba(255,255,255,0.32) 50%, rgba(255,255,255,0.20) 55%, transparent 70%)',
   },
   hot: {
     grad: 'linear-gradient(135deg, #fbe9d5 0%, #f6d5af 55%, #f2c795 100%)',
@@ -36,6 +38,7 @@ const PALETTES_LIGHT = {
     border: 'rgba(200, 120, 30, 0.30)',
     shadow: '0 10px 24px rgba(210, 140, 60, 0.16)',
     waves: 'rgba(255,255,255,0.5)',
+    sheen: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.16) 45%, rgba(255,255,255,0.26) 50%, rgba(255,255,255,0.16) 55%, transparent 70%)',
   },
   crit: {
     grad: 'linear-gradient(135deg, #fbe0e3 0%, #f5c3c9 55%, #f0aeb7 100%)',
@@ -46,6 +49,7 @@ const PALETTES_LIGHT = {
     border: 'rgba(200, 60, 80, 0.30)',
     shadow: '0 10px 24px rgba(210, 90, 110, 0.16)',
     waves: 'rgba(255,255,255,0.5)',
+    sheen: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.16) 45%, rgba(255,255,255,0.26) 50%, rgba(255,255,255,0.16) 55%, transparent 70%)',
   },
   done: {
     grad: 'linear-gradient(135deg, #def3e8 0%, #c0e8d3 55%, #aadfc3 100%)',
@@ -56,6 +60,7 @@ const PALETTES_LIGHT = {
     border: 'rgba(30, 140, 90, 0.30)',
     shadow: '0 10px 24px rgba(60, 160, 110, 0.16)',
     waves: 'rgba(255,255,255,0.55)',
+    sheen: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.18) 45%, rgba(255,255,255,0.28) 50%, rgba(255,255,255,0.18) 55%, transparent 70%)',
   },
   off: {
     grad: 'linear-gradient(135deg, #eff1f5 0%, #dce0e8 55%, #cdd3dd 100%)',
@@ -66,6 +71,7 @@ const PALETTES_LIGHT = {
     border: 'rgba(110, 120, 140, 0.30)',
     shadow: '0 10px 24px rgba(120, 130, 150, 0.14)',
     waves: 'rgba(255,255,255,0.6)',
+    sheen: 'none',
   },
 }
 
@@ -81,6 +87,7 @@ const PALETTES_DARK = {
     border: 'rgba(200, 160, 40, 0.30)',
     shadow: '0 10px 24px rgba(0, 0, 0, 0.35)',
     waves: 'rgba(255,255,255,0.06)',
+    sheen: 'linear-gradient(105deg, transparent 30%, rgba(255,230,150,0.06) 45%, rgba(255,240,180,0.10) 50%, rgba(255,230,150,0.06) 55%, transparent 70%)',
   },
   nuevo: {
     grad: 'linear-gradient(135deg, #0f2818 0%, #14321e 55%, #1a3c24 100%)',
@@ -91,6 +98,7 @@ const PALETTES_DARK = {
     border: 'rgba(50, 180, 100, 0.30)',
     shadow: '0 10px 24px rgba(0, 0, 0, 0.35)',
     waves: 'rgba(255,255,255,0.06)',
+    sheen: 'linear-gradient(105deg, transparent 30%, rgba(100,255,160,0.06) 45%, rgba(150,255,200,0.10) 50%, rgba(100,255,160,0.06) 55%, transparent 70%)',
   },
   hot: {
     grad: 'linear-gradient(135deg, #2c1a08 0%, #38210c 55%, #442910 100%)',
@@ -101,6 +109,7 @@ const PALETTES_DARK = {
     border: 'rgba(220, 140, 50, 0.30)',
     shadow: '0 10px 24px rgba(0, 0, 0, 0.35)',
     waves: 'rgba(255,255,255,0.06)',
+    sheen: 'linear-gradient(105deg, transparent 30%, rgba(255,180,100,0.06) 45%, rgba(255,200,140,0.10) 50%, rgba(255,180,100,0.06) 55%, transparent 70%)',
   },
   crit: {
     grad: 'linear-gradient(135deg, #2c0e14 0%, #381218 55%, #44161e 100%)',
@@ -111,6 +120,7 @@ const PALETTES_DARK = {
     border: 'rgba(220, 70, 90, 0.30)',
     shadow: '0 10px 24px rgba(0, 0, 0, 0.35)',
     waves: 'rgba(255,255,255,0.06)',
+    sheen: 'linear-gradient(105deg, transparent 30%, rgba(255,140,160,0.06) 45%, rgba(255,170,185,0.10) 50%, rgba(255,140,160,0.06) 55%, transparent 70%)',
   },
   done: {
     grad: 'linear-gradient(135deg, #0c2418 0%, #102e1e 55%, #143824 100%)',
@@ -121,6 +131,7 @@ const PALETTES_DARK = {
     border: 'rgba(50, 180, 100, 0.30)',
     shadow: '0 10px 24px rgba(0, 0, 0, 0.35)',
     waves: 'rgba(255,255,255,0.06)',
+    sheen: 'linear-gradient(105deg, transparent 30%, rgba(100,240,160,0.06) 45%, rgba(140,255,190,0.10) 50%, rgba(100,240,160,0.06) 55%, transparent 70%)',
   },
   off: {
     grad: 'linear-gradient(135deg, #1a1c22 0%, #222530 55%, #282c38 100%)',
@@ -131,6 +142,7 @@ const PALETTES_DARK = {
     border: 'rgba(120, 130, 150, 0.25)',
     shadow: '0 10px 24px rgba(0, 0, 0, 0.35)',
     waves: 'rgba(255,255,255,0.05)',
+    sheen: 'none',
   },
 }
 

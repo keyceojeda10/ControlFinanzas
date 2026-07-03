@@ -50,8 +50,8 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
       hoverable
       className="block px-4 py-3.5 group relative overflow-hidden"
       style={P ? {
-        background: `linear-gradient(135deg, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 0%, var(--color-bg-card) 60%)`,
-        border: `1px solid color-mix(in srgb, ${color} 20%, var(--color-border))`,
+        background: `linear-gradient(135deg, color-mix(in srgb, ${color} 12%, var(--color-bg-card)) 0%, var(--color-bg-card) 40%, color-mix(in srgb, ${color} 8%, var(--color-bg-card)) 100%)`,
+        border: `1px solid color-mix(in srgb, ${color} 24%, var(--color-border))`,
       } : undefined}
     >
       {P && <CardWaves tint={`color-mix(in srgb, ${color} 8%, transparent)`} />}
