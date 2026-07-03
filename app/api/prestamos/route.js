@@ -132,6 +132,7 @@ export async function GET(request) {
     frecuencia:       p.frecuencia,
     diaCobroSemana:   p.diaCobroSemana,
     diaCobroMes:      p.diaCobroMes,
+    diaCobroMes2:     p.diaCobroMes2,
     tasaInteres:      p.tasaInteres,
     diasPlazo:        p.diasPlazo,
     fechaInicio:      p.fechaInicio,
@@ -192,7 +193,7 @@ export async function POST(request) {
 
   const { organizationId, rol } = session.user
   const body = await request.json()
-  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado, cuotaManual, inyeccionPrevia, diaCobroSemana, diaCobroMes, seguro, montoSeguro, modoInteres, nombreProducto, interesAdelantado } = body
+  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado, cuotaManual, inyeccionPrevia, diaCobroSemana, diaCobroMes, diaCobroMes2, seguro, montoSeguro, modoInteres, nombreProducto, interesAdelantado } = body
 
   const freq = frecuencia || 'diario'
   const frecuenciasValidas = ['diario', 'semanal', 'quincenal', 'mensual']
@@ -204,6 +205,7 @@ export async function POST(request) {
   // Ambos son opcionales. Se ignoran para frecuencias que no aplican.
   let diaCobroSemanaDb = null
   let diaCobroMesDb = null
+  let diaCobroMes2Db = null
   if ((freq === 'semanal' || freq === 'quincenal') && diaCobroSemana != null && diaCobroSemana !== '') {
     const v = Number(diaCobroSemana)
     if (!Number.isInteger(v) || v < 0 || v > 6) {
@@ -211,12 +213,19 @@ export async function POST(request) {
     }
     diaCobroSemanaDb = v
   }
-  if (freq === 'mensual' && diaCobroMes != null && diaCobroMes !== '') {
+  if ((freq === 'mensual' || freq === 'quincenal') && diaCobroMes != null && diaCobroMes !== '') {
     const v = Number(diaCobroMes)
     if (!Number.isInteger(v) || v < 1 || v > 31) {
       return Response.json({ error: 'Día del mes inválido (1-31)' }, { status: 400 })
     }
     diaCobroMesDb = v
+  }
+  if (freq === 'quincenal' && diaCobroMes2 != null && diaCobroMes2 !== '') {
+    const v = Number(diaCobroMes2)
+    if (!Number.isInteger(v) || v < 1 || v > 31) {
+      return Response.json({ error: 'Segundo día del mes inválido (1-31)' }, { status: 400 })
+    }
+    diaCobroMes2Db = v
   }
 
   // Validaciones
@@ -365,6 +374,7 @@ export async function POST(request) {
         ...(typeof nombreProducto === 'string' && nombreProducto.trim() && { nombreProducto: nombreProducto.trim().slice(0, 100) }),
         diaCobroSemana: diaCobroSemanaDb,
         diaCobroMes:    diaCobroMesDb,
+        diaCobroMes2:   diaCobroMes2Db,
         diasPlazo:     Number(diasPlazo),
         fechaInicio:   new Date(`${fechaInicio}T05:00:00.000Z`), // medianoche Colombia
         fechaFin,

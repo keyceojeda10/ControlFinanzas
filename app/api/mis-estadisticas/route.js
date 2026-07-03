@@ -110,6 +110,7 @@ export async function GET() {
             diasPlazo: true,
             diaCobroSemana: true,
             diaCobroMes: true,
+            diaCobroMes2: true,
           },
         },
       },

@@ -109,6 +109,7 @@ function NuevoPrestamo() {
   // - mensual: 1..31 (string '' = sin ancla)
   const [diaCobroSemana, setDiaCobroSemana] = useState('')
   const [diaCobroMes, setDiaCobroMes]       = useState('')
+  const [diaCobroMes2, setDiaCobroMes2]     = useState('')
   const [modoDiaCobro, setModoDiaCobro]     = useState('semana') // 'semana' | 'mes'
   // Dias totales derivados de plazoUnidades × diasPorPeriodo
   const plazo = String((Number(plazoUnidades) || 0) * (DIAS_POR_PERIODO[frecuencia] || 1))
@@ -352,6 +353,7 @@ function NuevoPrestamo() {
     setFrecuencia(nuevaFreq)
     setDiaCobroSemana('')
     setDiaCobroMes('')
+    setDiaCobroMes2('')
     setModoDiaCobro(nuevaFreq === 'mensual' ? 'mes' : 'semana')
     if (modo === 'prestamo') {
       setPlazoUnidades(defaultPlazoPorFrecuencia(nuevaFreq))
@@ -413,6 +415,7 @@ function NuevoPrestamo() {
         frecuencia,
         ...((frecuencia === 'semanal' || ((frecuencia === 'quincenal' || frecuencia === 'mensual') && modoDiaCobro === 'semana')) && diaCobroSemana !== '' && { diaCobroSemana: Number(diaCobroSemana) }),
         ...((frecuencia !== 'diario' && frecuencia !== 'semanal' && modoDiaCobro === 'mes') && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
+        ...(frecuencia === 'quincenal' && modoDiaCobro === 'mes' && diaCobroMes2 !== '' && { diaCobroMes2: Number(diaCobroMes2) }),
         ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
         ...(calculo?.cuotaDiaria > 0 && (cuotaManualActiva || modo === 'mercancia') && { cuotaManual: calculo.cuotaDiaria }),
         modoInteres: modo === 'mercancia' ? 'manual' : modoInteres,
@@ -496,6 +499,7 @@ function NuevoPrestamo() {
       frecuencia,
       ...((frecuencia === 'semanal' || frecuencia === 'quincenal') && diaCobroSemana !== '' && { diaCobroSemana: Number(diaCobroSemana) }),
       ...(frecuencia === 'mensual' && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
+      ...(frecuencia === 'quincenal' && modoDiaCobro === 'mes' && diaCobroMes2 !== '' && { diaCobroMes2: Number(diaCobroMes2) }),
       ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
       ...(calculo?.cuotaDiaria > 0 && (cuotaManualActiva || modo === 'mercancia') && { cuotaManual: calculo.cuotaDiaria }),
       modoInteres: modo === 'mercancia' ? 'manual' : modoInteres,
@@ -1000,12 +1004,12 @@ function NuevoPrestamo() {
                 <div>
                   <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Que dia cobras?</label>
                   <div className="flex gap-1 p-1 rounded-[10px] mb-2 mt-1.5" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
-                    <button type="button" onClick={() => { setModoDiaCobro('semana'); setDiaCobroMes('') }}
+                    <button type="button" onClick={() => { setModoDiaCobro('semana'); setDiaCobroMes(''); setDiaCobroMes2('') }}
                       className="flex-1 py-1.5 text-[10px] font-semibold rounded-[8px] transition-all"
                       style={modoDiaCobro === 'semana' ? { background: 'var(--color-bg-card)', color: 'var(--color-accent)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' } : { color: 'var(--color-text-muted)' }}>Dia de la semana</button>
                     <button type="button" onClick={() => { setModoDiaCobro('mes'); setDiaCobroSemana('') }}
                       className="flex-1 py-1.5 text-[10px] font-semibold rounded-[8px] transition-all"
-                      style={modoDiaCobro === 'mes' ? { background: 'var(--color-bg-card)', color: 'var(--color-accent)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' } : { color: 'var(--color-text-muted)' }}>Dia del mes</button>
+                      style={modoDiaCobro === 'mes' ? { background: 'var(--color-bg-card)', color: 'var(--color-accent)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' } : { color: 'var(--color-text-muted)' }}>Dias del mes</button>
                   </div>
                   {modoDiaCobro === 'semana' ? (
                     <div className="grid grid-cols-7 gap-1">
@@ -1019,9 +1023,14 @@ function NuevoPrestamo() {
                       ))}
                     </div>
                   ) : (
-                    <Input type="number" inputMode="numeric" value={diaCobroMes}
-                      onChange={(e) => { const v = e.target.value; if (v === '' || (Number(v) >= 1 && Number(v) <= 31)) setDiaCobroMes(v) }}
-                      placeholder="Auto (segun fecha de inicio)" min={1} max={31} />
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input type="number" inputMode="numeric" value={diaCobroMes}
+                        onChange={(e) => { const v = e.target.value; if (v === '' || (Number(v) >= 1 && Number(v) <= 31)) setDiaCobroMes(v) }}
+                        label="Primer cobro" placeholder="Ej: 5" min={1} max={31} />
+                      <Input type="number" inputMode="numeric" value={diaCobroMes2}
+                        onChange={(e) => { const v = e.target.value; if (v === '' || (Number(v) >= 1 && Number(v) <= 31)) setDiaCobroMes2(v) }}
+                        label="Segundo cobro" placeholder="Ej: 20" min={1} max={31} />
+                    </div>
                   )}
                 </div>
               )}

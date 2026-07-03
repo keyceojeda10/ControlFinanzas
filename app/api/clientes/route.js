@@ -95,6 +95,7 @@ export async function GET(request) {
           montoPrestado: true,
           modoInteres: true,
           diaCobroMes: true,
+          diaCobroMes2: true,
           diaCobroSemana: true,
           createdAt: true,
           // Denormalizados: evitan iterar todos los pagos.

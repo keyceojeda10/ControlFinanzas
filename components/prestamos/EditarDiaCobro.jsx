@@ -20,10 +20,12 @@ export default function EditarDiaCobro({ prestamoId, prestamo, open, onClose, on
   const frecuencia = prestamo?.frecuencia || 'diario'
   const esSemana = frecuencia === 'semanal' || frecuencia === 'quincenal'
   const esMes = frecuencia === 'mensual'
+  const esQuincenal = frecuencia === 'quincenal'
 
   // modo: 'semana' = por dia de la semana, 'mes' = por numero de dia del mes
   const [modo, setModo] = useState('semana')
   const [valor, setValor] = useState('')
+  const [valor2, setValor2] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -34,18 +36,22 @@ export default function EditarDiaCobro({ prestamoId, prestamo, open, onClose, on
       if (prestamo?.diaCobroMes != null && prestamo?.diaCobroSemana == null) {
         setModo('mes')
         setValor(String(prestamo.diaCobroMes))
+        setValor2(prestamo?.diaCobroMes2 != null ? String(prestamo.diaCobroMes2) : '')
       } else {
         setModo('semana')
         setValor(prestamo?.diaCobroSemana != null ? String(prestamo.diaCobroSemana) : '')
+        setValor2('')
       }
     } else if (esMes) {
       setModo('mes')
       setValor(prestamo?.diaCobroMes != null ? String(prestamo.diaCobroMes) : '')
+      setValor2('')
     } else {
       setModo('semana')
       setValor('')
+      setValor2('')
     }
-  }, [open, esSemana, esMes, prestamo?.diaCobroSemana, prestamo?.diaCobroMes])
+  }, [open, esSemana, esMes, prestamo?.diaCobroSemana, prestamo?.diaCobroMes, prestamo?.diaCobroMes2])
 
   const handleClose = () => { setError(''); onClose?.() }
 
@@ -57,9 +63,11 @@ export default function EditarDiaCobro({ prestamoId, prestamo, open, onClose, on
     if (modo === 'semana' && esSemana) {
       payload.diaCobroSemana = valor === '' ? null : Number(valor)
       payload.diaCobroMes = null
+      payload.diaCobroMes2 = null
     } else {
       payload.diaCobroMes = valor === '' ? null : Number(valor)
       payload.diaCobroSemana = null
+      payload.diaCobroMes2 = (esQuincenal && modo === 'mes' && valor2 !== '') ? Number(valor2) : null
     }
 
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -155,28 +163,63 @@ export default function EditarDiaCobro({ prestamoId, prestamo, open, onClose, on
                 boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
               } : { color: 'var(--color-text-muted)' }}
             >
-              Día del mes
+              {esQuincenal ? 'Días del mes' : 'Día del mes'}
             </button>
           </div>
         )}
 
-        <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">
-            {modo === 'semana' ? 'Día de la semana' : 'Día del mes'}
-          </label>
-          <select
-            value={valor}
-            onChange={(e) => setValor(e.target.value)}
-            className="h-10 px-2 rounded-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)]"
-          >
-            <option value="">Sin día fijo (corre según inicio)</option>
-            {modo === 'semana'
-              ? DIAS_SEMANA.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)
-              : Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+        {modo === 'mes' && esQuincenal ? (
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">
+                Primer cobro
+              </label>
+              <select
+                value={valor}
+                onChange={(e) => setValor(e.target.value)}
+                className="h-10 px-2 rounded-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)]"
+              >
+                <option value="">—</option>
+                {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
                   <option key={d} value={d}>{d}</option>
                 ))}
-          </select>
-        </div>
+              </select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">
+                Segundo cobro
+              </label>
+              <select
+                value={valor2}
+                onChange={(e) => setValor2(e.target.value)}
+                className="h-10 px-2 rounded-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)]"
+              >
+                <option value="">—</option>
+                {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">
+              {modo === 'semana' ? 'Día de la semana' : 'Día del mes'}
+            </label>
+            <select
+              value={valor}
+              onChange={(e) => setValor(e.target.value)}
+              className="h-10 px-2 rounded-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)]"
+            >
+              <option value="">Sin día fijo (corre según inicio)</option>
+              {modo === 'semana'
+                ? DIAS_SEMANA.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)
+                : Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+            </select>
+          </div>
+        )}
 
         {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
 

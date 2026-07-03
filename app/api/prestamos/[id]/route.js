@@ -546,18 +546,31 @@ export async function PATCH(request, { params }) {
         const v = Number(body.diaCobroMes)
         if (body.diaCobroMes === '' || body.diaCobroMes === null) {
           dataUpdate.diaCobroMes = null
+          dataUpdate.diaCobroMes2 = null
           dataUpdate.diaCobroSemana = null
         } else if (!Number.isInteger(v) || v < 1 || v > 31) {
           return Response.json({ error: 'Día del mes inválido (1-31)' }, { status: 400 })
         } else {
           dataUpdate.diaCobroMes = v
           dataUpdate.diaCobroSemana = null
+          if (freq === 'quincenal' && body?.diaCobroMes2 !== undefined) {
+            if (body.diaCobroMes2 === null || body.diaCobroMes2 === '') {
+              dataUpdate.diaCobroMes2 = null
+            } else {
+              const v2 = Number(body.diaCobroMes2)
+              if (!Number.isInteger(v2) || v2 < 1 || v2 > 31) {
+                return Response.json({ error: 'Segundo día del mes inválido (1-31)' }, { status: 400 })
+              }
+              dataUpdate.diaCobroMes2 = v2
+            }
+          }
         }
       } else {
         const raw = body?.diaCobroSemana
         if (raw === null || raw === '' || raw === undefined) {
           dataUpdate.diaCobroSemana = null
           dataUpdate.diaCobroMes = null
+          dataUpdate.diaCobroMes2 = null
         } else {
           const v = Number(raw)
           if (!Number.isInteger(v) || v < 0 || v > 6) {
@@ -565,6 +578,7 @@ export async function PATCH(request, { params }) {
           }
           dataUpdate.diaCobroSemana = v
           dataUpdate.diaCobroMes = null
+          dataUpdate.diaCobroMes2 = null
         }
       }
     } else if (freq === 'mensual') {
@@ -630,6 +644,7 @@ export async function PATCH(request, { params }) {
       cuotaManual,
       diaCobroSemana,
       diaCobroMes,
+      diaCobroMes2,
       seguro,
       montoSeguro,
       nombreProducto,
@@ -686,6 +701,7 @@ export async function PATCH(request, { params }) {
         : calc.totalAPagar,
       diaCobroSemana: diaCobroSemana !== undefined ? diaCobroSemana : p.diaCobroSemana,
       diaCobroMes:    diaCobroMes    !== undefined ? diaCobroMes    : p.diaCobroMes,
+      diaCobroMes2:   diaCobroMes2   !== undefined ? diaCobroMes2   : p.diaCobroMes2,
       seguro:         seguro !== undefined ? Boolean(seguro) : p.seguro,
       montoSeguro:    montoSeguro != null ? Number(montoSeguro) : p.montoSeguro,
       nombreProducto: nombreProducto !== undefined ? nombreProducto : p.nombreProducto,

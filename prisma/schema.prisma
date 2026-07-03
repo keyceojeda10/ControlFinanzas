@@ -286,7 +286,8 @@ model Prestamo {
   modoInteres    String         @default("proporcional") // fijo | unico | saldo | manual | lineal | proporcional (legacy)
   nombreProducto String? // mercancia: nombre del articulo (gorra, reloj...). null en prestamos de dinero
   diaCobroSemana Int? // 0=dom..6=sab — ancla para frecuencia semanal/quincenal (opcional)
-  diaCobroMes    Int? // 1..31 — ancla para frecuencia mensual (opcional, clamp a ultimo dia)
+  diaCobroMes    Int? // 1..31 — ancla para frecuencia mensual/quincenal (opcional, clamp a ultimo dia)
+  diaCobroMes2   Int? // 1..31 — segundo dia ancla para quincenal (ej: cobra el 5 y el 20)
   diasSinCobro   String?
   fechaInicio    DateTime
   fechaFin       DateTime

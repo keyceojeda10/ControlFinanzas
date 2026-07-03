@@ -46,7 +46,7 @@ async function esperadoPorCobradorDia(organizationId, country) {
             diasSinCobro: true,
             prestamos: {
               where: { estado: 'activo', esClavo: false },
-              select: { cuotaDiaria: true, frecuencia: true, fechaInicio: true, diasPlazo: true, diaCobroSemana: true, diaCobroMes: true },
+              select: { cuotaDiaria: true, frecuencia: true, fechaInicio: true, diasPlazo: true, diaCobroSemana: true, diaCobroMes: true, diaCobroMes2: true },
             },
           },
         },
