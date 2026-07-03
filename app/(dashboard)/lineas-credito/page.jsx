@@ -10,7 +10,7 @@ import { StaggeredList } from '@/components/ui/StaggeredList'
 import { formatMoney } from '@/lib/i18n'
 import CardWaves from '@/components/ui/CardWaves'
 import Avatar from '@/components/ui/Avatar'
-import { useCardPalettes, moodKeyLinea } from '@/components/ui/tarjetaCredito'
+import { useTheme } from '@/lib/theme/ThemeProvider'
 
 const ESTADOS = [
   { value: '',         label: 'Todas' },
@@ -132,12 +132,53 @@ export default function LineasCreditoPage() {
 }
 
 function LineaCreditoCard({ linea }) {
-  const { palettes } = useCardPalettes()
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
   const porcentajeUsado = linea.cupoMaximo > 0
     ? Math.round((linea.capitalUsado || 0) / linea.cupoMaximo * 100)
     : 0
 
-  const P = palettes[moodKeyLinea(linea.estado, porcentajeUsado)]
+  const congelada = linea.estado === 'congelada'
+  const cerrada = linea.estado === 'cerrada'
+
+  const P = isDark
+    ? congelada ? {
+        grad: 'linear-gradient(135deg, #2a2410 0%, #352d14 55%, #3f3518 100%)',
+        ink: '#f0e4be', sub: 'rgba(240, 228, 190, 0.62)', accent: '#eab308',
+        track: 'rgba(240, 228, 190, 0.12)', border: 'rgba(234, 179, 8, 0.28)',
+        shadow: '0 8px 20px rgba(0,0,0,0.35)', waves: 'rgba(234,179,8,0.06)',
+      }
+      : cerrada ? {
+        grad: 'linear-gradient(135deg, #1a1d22 0%, #22262c 55%, #282d35 100%)',
+        ink: '#c8cdd5', sub: 'rgba(200, 205, 213, 0.55)', accent: '#94a3b8',
+        track: 'rgba(148, 163, 184, 0.12)', border: 'rgba(148, 163, 184, 0.22)',
+        shadow: '0 8px 20px rgba(0,0,0,0.35)', waves: 'rgba(148,163,184,0.05)',
+      }
+      : {
+        grad: 'linear-gradient(135deg, #0c1a2e 0%, #132845 55%, #1a3460 100%)',
+        ink: '#e0ecff', sub: 'rgba(180, 210, 255, 0.62)', accent: '#60a5fa',
+        track: 'rgba(96, 165, 250, 0.14)', border: 'rgba(96, 165, 250, 0.28)',
+        shadow: '0 8px 20px rgba(0,0,0,0.40)', waves: 'rgba(100,180,255,0.07)',
+      }
+    : congelada ? {
+        grad: 'linear-gradient(135deg, #fef9e7 0%, #fdf0c8 55%, #fce9a8 100%)',
+        ink: '#78350f', sub: 'rgba(120, 53, 15, 0.55)', accent: '#d97706',
+        track: 'rgba(217, 119, 6, 0.10)', border: 'rgba(217, 119, 6, 0.22)',
+        shadow: '0 6px 18px rgba(217, 119, 6, 0.10)', waves: 'rgba(217,119,6,0.05)',
+      }
+      : cerrada ? {
+        grad: 'linear-gradient(135deg, #f1f5f9 0%, #e8ecf1 55%, #e2e8f0 100%)',
+        ink: '#475569', sub: 'rgba(71, 85, 105, 0.55)', accent: '#94a3b8',
+        track: 'rgba(148, 163, 184, 0.12)', border: 'rgba(148, 163, 184, 0.22)',
+        shadow: '0 6px 18px rgba(0,0,0,0.06)', waves: 'rgba(148,163,184,0.04)',
+      }
+      : {
+        grad: 'linear-gradient(135deg, #e8f0fe 0%, #d4e4fc 55%, #c2d9fb 100%)',
+        ink: '#1a365d', sub: 'rgba(26, 54, 93, 0.58)', accent: '#2563eb',
+        track: 'rgba(37, 99, 235, 0.10)', border: 'rgba(37, 99, 235, 0.22)',
+        shadow: '0 6px 18px rgba(37, 99, 235, 0.10)', waves: 'rgba(37,99,235,0.06)',
+      }
+
   const estadoLabel = linea.estado.charAt(0).toUpperCase() + linea.estado.slice(1)
 
   return (

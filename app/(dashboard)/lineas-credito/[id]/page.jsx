@@ -10,6 +10,8 @@ import Avatar from '@/components/ui/Avatar'
 import { SkeletonCard } from '@/components/ui/Skeleton'
 import { formatMoney } from '@/lib/i18n'
 import { use } from 'react'
+import CardWaves from '@/components/ui/CardWaves'
+import { useTheme } from '@/lib/theme/ThemeProvider'
 
 export default function DetalleLineaPage({ params }) {
   const { id } = use(params)
@@ -44,15 +46,42 @@ export default function DetalleLineaPage({ params }) {
   if (!linea) {
     return (
       <div className="max-w-lg mx-auto px-4 py-16 text-center">
-        <p className="text-sm text-[var(--color-text-muted)]">Linea no encontrada</p>
+        <p className="text-sm text-[var(--color-text-muted)]">Línea no encontrada</p>
         <Button onClick={() => router.push('/lineas-credito')} size="sm" className="mt-4">Volver</Button>
       </div>
     )
   }
 
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
+
   const porcentajeUsado = linea.cupoMaximo > 0
     ? Math.round((linea.capitalUsado || 0) / linea.cupoMaximo * 100)
     : 0
+
+  const METAL = isDark
+    ? {
+        grad: 'linear-gradient(135deg, #0c1a2e 0%, #132845 40%, #1a3460 70%, #0f2240 100%)',
+        ink: '#e0ecff',
+        sub: 'rgba(180, 210, 255, 0.62)',
+        accent: '#60a5fa',
+        track: 'rgba(96, 165, 250, 0.14)',
+        border: 'rgba(96, 165, 250, 0.28)',
+        shadow: '0 10px 28px rgba(0, 0, 0, 0.45)',
+        waves: 'rgba(100, 180, 255, 0.07)',
+        frost: 'rgba(140, 200, 255, 0.06)',
+      }
+    : {
+        grad: 'linear-gradient(135deg, #e8f0fe 0%, #d4e4fc 40%, #c2d9fb 70%, #dbe8fd 100%)',
+        ink: '#1a365d',
+        sub: 'rgba(26, 54, 93, 0.58)',
+        accent: '#2563eb',
+        track: 'rgba(37, 99, 235, 0.10)',
+        border: 'rgba(37, 99, 235, 0.22)',
+        shadow: '0 8px 24px rgba(37, 99, 235, 0.12)',
+        waves: 'rgba(37, 99, 235, 0.06)',
+        frost: 'rgba(37, 99, 235, 0.04)',
+      }
 
   const movimientos = [
     ...(linea.desembolsos || []).map(d => ({ ...d, tipo: 'desembolso' })),
@@ -73,77 +102,117 @@ export default function DetalleLineaPage({ params }) {
     <div className="max-w-2xl mx-auto px-4 py-6 pb-28">
       <button onClick={() => router.push('/lineas-credito')} className="flex items-center gap-1 text-xs text-[var(--color-text-muted)] mb-4">
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-        Lineas de credito
+        Líneas de crédito
       </button>
 
-      {/* Header */}
-      <Card className="p-4 mb-4">
-        <div className="flex items-start gap-3 mb-4">
-          <Avatar nombre={linea.cliente?.nombre} fotoUrl={linea.cliente?.fotoUrl} size={44} fontSize={15} />
-          <div className="flex-1 min-w-0">
-            <p className="text-[15px] font-bold text-[var(--color-text-primary)] leading-tight">{linea.cliente?.nombre}</p>
-            <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">CC {linea.cliente?.cedula} · Corte dia {linea.diaCorte}</p>
-          </div>
-          <span
-            className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
-            style={{ background: `${estadoColor}20`, color: estadoColor, border: `1px solid ${estadoColor}35` }}
-          >
-            <span className="w-1.5 h-1.5 rounded-full" style={{ background: estadoColor }} />
-            {linea.estado.charAt(0).toUpperCase() + linea.estado.slice(1)}
-          </span>
-        </div>
+      {/* Hero card azul metalizado */}
+      <div
+        className="relative rounded-[20px] overflow-hidden mb-4"
+        style={{
+          background: METAL.grad,
+          border: `1px solid ${METAL.border}`,
+          boxShadow: METAL.shadow,
+        }}
+      >
+        <CardWaves tint={METAL.waves} />
+        {/* Escarcha decorativa */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: `radial-gradient(circle at 20% 80%, ${METAL.frost} 0%, transparent 50%), radial-gradient(circle at 85% 20%, ${METAL.frost} 0%, transparent 40%)`,
+          }}
+        />
+        <div
+          className="absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none"
+          style={{ background: `radial-gradient(circle, ${METAL.accent}25, transparent 70%)`, filter: 'blur(25px)' }}
+        />
 
-        {/* Cupo visual */}
-        <div className="grid grid-cols-3 gap-3 text-center mb-3">
-          <div>
-            <p className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider">Cupo</p>
-            <p className="text-sm font-mono-display font-bold text-[var(--color-text-primary)] mt-0.5">{formatMoney(linea.cupoMaximo)}</p>
-          </div>
-          <div>
-            <p className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider">Usado</p>
-            <p className="text-sm font-mono-display font-bold text-[var(--color-text-primary)] mt-0.5">{formatMoney(linea.capitalUsado || 0)}</p>
-          </div>
-          <div>
-            <p className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider">Disponible</p>
-            <p className="text-sm font-mono-display font-bold mt-0.5" style={{ color: estadoColor }}>{formatMoney(linea.cupoDisponible || 0)}</p>
-          </div>
-        </div>
-
-        <div className="mb-3">
-          <div className="flex items-center justify-between text-[10px] mb-1">
-            <span className="text-[var(--color-text-muted)]">Uso del cupo</span>
-            <span className="font-mono-display font-semibold" style={{ color: porcentajeUsado > 80 ? 'var(--color-danger)' : estadoColor }}>{porcentajeUsado}%</span>
-          </div>
-          <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
-            <div
-              className="h-full rounded-full transition-all"
-              style={{
-                width: `${Math.max(porcentajeUsado, 2)}%`,
-                background: porcentajeUsado > 80
-                  ? 'var(--color-danger)'
-                  : `linear-gradient(90deg, color-mix(in srgb, ${estadoColor} 80%, transparent), ${estadoColor})`,
-              }}
+        <div className="relative px-5 py-5">
+          <div className="flex items-start gap-3 mb-4">
+            <Avatar
+              nombre={linea.cliente?.nombre}
+              fotoUrl={linea.cliente?.fotoUrl}
+              size={44}
+              fontSize={15}
+              style={{ border: `2px solid color-mix(in srgb, ${METAL.ink} 25%, transparent)` }}
             />
+            <div className="flex-1 min-w-0">
+              <p className="text-[15px] font-bold leading-tight" style={{ color: METAL.ink }}>{linea.cliente?.nombre}</p>
+              <p className="text-[11px] mt-0.5" style={{ color: METAL.sub }}>CC {linea.cliente?.cedula} · Corte día {linea.diaCorte}</p>
+            </div>
+            <span
+              className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0"
+              style={{
+                background: `color-mix(in srgb, ${METAL.accent} 14%, transparent)`,
+                color: METAL.accent,
+                border: `1px solid color-mix(in srgb, ${METAL.accent} 26%, transparent)`,
+              }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: METAL.accent }} />
+              {linea.estado.charAt(0).toUpperCase() + linea.estado.slice(1)}
+            </span>
+          </div>
+
+          {/* Cupo visual */}
+          <div className="grid grid-cols-3 gap-3 text-center mb-3">
+            <div>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.14em]" style={{ color: METAL.sub }}>Cupo</p>
+              <p className="text-sm font-mono-display font-bold mt-0.5" style={{ color: METAL.ink }}>{formatMoney(linea.cupoMaximo)}</p>
+            </div>
+            <div>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.14em]" style={{ color: METAL.sub }}>Usado</p>
+              <p className="text-sm font-mono-display font-bold mt-0.5" style={{ color: METAL.ink }}>{formatMoney(linea.capitalUsado || 0)}</p>
+            </div>
+            <div>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.14em]" style={{ color: METAL.sub }}>Disponible</p>
+              <p className="text-sm font-mono-display font-bold mt-0.5" style={{ color: METAL.accent }}>{formatMoney(linea.cupoDisponible || 0)}</p>
+            </div>
+          </div>
+
+          <div className="mb-3">
+            <div className="flex items-center justify-between text-[10px] mb-1">
+              <span style={{ color: METAL.sub }}>Uso del cupo</span>
+              <span className="font-mono-display font-bold" style={{ color: porcentajeUsado > 80 ? 'var(--color-danger)' : METAL.accent }}>{porcentajeUsado}%</span>
+            </div>
+            <div className="h-[5px] rounded-full overflow-hidden" style={{ background: METAL.track }}>
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${Math.max(porcentajeUsado, 2)}%`,
+                  background: porcentajeUsado > 80
+                    ? 'var(--color-danger)'
+                    : METAL.accent,
+                }}
+              />
+            </div>
+          </div>
+
+          {(linea.interesesPendientes || 0) > 0 && (
+            <div
+              className="flex items-center justify-between text-[11px] px-2.5 py-1.5 rounded-[10px] mb-2"
+              style={{ background: `color-mix(in srgb, var(--color-warning) 12%, transparent)`, border: `1px solid color-mix(in srgb, var(--color-warning) 20%, transparent)` }}
+            >
+              <span style={{ color: METAL.sub }}>Intereses pendientes</span>
+              <span className="font-mono-display font-bold text-[var(--color-warning)]">{formatMoney(linea.interesesPendientes)}</span>
+            </div>
+          )}
+
+          <div
+            className="pt-2.5 mt-1"
+            style={{ borderTop: `1px solid ${METAL.track}` }}
+          >
+            <div className="flex items-center justify-between text-[11px] px-1">
+              <span style={{ color: METAL.sub }}>Tasa: {linea.tasaInteres}% mensual</span>
+              <span style={{ color: METAL.sub }}>
+                {linea.modoInteres === 'fijo_mensual' ? 'Interés fijo mensual' : linea.modoInteres === 'diario_saldo' ? 'Interés diario sobre saldo' : 'Interés al corte'}
+              </span>
+            </div>
+            <p className="text-[10px] px-1 mt-1.5 leading-relaxed" style={{ color: METAL.sub }}>
+              El cupo es el máximo que puede tener en uso. Cada vez que pide plata baja el disponible, y cada vez que paga sube de nuevo.
+            </p>
           </div>
         </div>
-
-        {(linea.interesesPendientes || 0) > 0 && (
-          <div className="flex items-center justify-between text-[11px] px-2 py-1.5 rounded-lg" style={{ background: 'var(--color-bg-hover)' }}>
-            <span className="text-[var(--color-text-muted)]">Intereses pendientes</span>
-            <span className="font-mono-display font-semibold text-[var(--color-warning)]">{formatMoney(linea.interesesPendientes)}</span>
-          </div>
-        )}
-
-        <div className="flex items-center justify-between text-[11px] px-2 py-1.5 mt-1">
-          <span className="text-[var(--color-text-muted)]">Tasa: {linea.tasaInteres}% mensual</span>
-          <span className="text-[var(--color-text-muted)]">
-            {linea.modoInteres === 'fijo_mensual' ? 'Interes fijo mensual' : linea.modoInteres === 'diario_saldo' ? 'Interes diario sobre saldo' : 'Interes al corte'}
-          </span>
-        </div>
-        <p className="text-[10px] text-[var(--color-text-muted)] px-2 mt-1 leading-relaxed">
-          El cupo es el maximo que puede tener en uso. Cada vez que pide plata baja el disponible, y cada vez que paga sube de nuevo.
-        </p>
-      </Card>
+      </div>
 
       {/* Acciones principales */}
       {linea.estado !== 'cerrada' && (
@@ -231,13 +300,13 @@ export default function DetalleLineaPage({ params }) {
       {linea.estado === 'congelada' && (
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl mb-4 text-[11px]" style={{ background: 'var(--color-warning)10', border: '1px solid var(--color-warning)25', color: 'var(--color-warning)' }}>
           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
-          Linea congelada: no se permiten nuevos desembolsos, pero si pagos.
+          Línea congelada: no se permiten nuevos desembolsos, pero sí pagos.
         </div>
       )}
       {linea.estado === 'cerrada' && (
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl mb-4 text-[11px]" style={{ background: 'rgba(100,116,139,0.08)', border: '1px solid rgba(100,116,139,0.15)', color: '#64748b' }}>
           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
-          Linea cerrada: no se permiten mas operaciones.
+          Línea cerrada: no se permiten más operaciones.
         </div>
       )}
 
@@ -248,7 +317,7 @@ export default function DetalleLineaPage({ params }) {
           <p className="text-[10px] text-[var(--color-text-muted)] mb-2 leading-relaxed">Resumen de cada mes: lo que debia + lo que pidio + intereses - lo que pago = saldo nuevo.</p>
           <div className="space-y-2">
             {linea.cortesLinea.map((corte, idx) => (
-              <Card key={corte.id} className="p-3">
+              <Card key={corte.id} className="p-3" style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${METAL.accent} 5%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`, border: `1px solid color-mix(in srgb, ${METAL.accent} 14%, var(--color-border))` }}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-semibold text-[var(--color-text-primary)]">
                     {corte.periodo}
@@ -299,12 +368,15 @@ export default function DetalleLineaPage({ params }) {
               <div
                 key={mov.id}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
-                style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+                style={{
+                  background: `linear-gradient(135deg, color-mix(in srgb, ${mov.tipo === 'desembolso' ? 'var(--color-warning)' : METAL.accent} 6%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
+                  border: `1px solid color-mix(in srgb, ${mov.tipo === 'desembolso' ? 'var(--color-warning)' : METAL.accent} 16%, var(--color-border))`,
+                }}
               >
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
                   style={{
-                    background: mov.tipo === 'desembolso' ? 'var(--color-warning)20' : 'var(--color-accent)20',
+                    background: mov.tipo === 'desembolso' ? 'color-mix(in srgb, var(--color-warning) 18%, transparent)' : `color-mix(in srgb, ${METAL.accent} 18%, transparent)`,
                   }}
                 >
                   {mov.tipo === 'desembolso' ? (
@@ -312,7 +384,7 @@ export default function DetalleLineaPage({ params }) {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19V5m0 14l-4-4m4 4l4-4" />
                     </svg>
                   ) : (
-                    <svg className="w-4 h-4" style={{ color: 'var(--color-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" style={{ color: METAL.accent }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v14m0-14l-4 4m4-4l4 4" />
                     </svg>
                   )}
