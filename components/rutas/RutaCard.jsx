@@ -8,7 +8,7 @@ import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
 import Avatar from '@/components/ui/Avatar'
 import CardWaves from '@/components/ui/CardWaves'
-import { CARD_PALETTES, moodKeyRuta } from '@/components/ui/tarjetaCredito'
+import { useCardPalettes, moodKeyRuta } from '@/components/ui/tarjetaCredito'
 
 function moodLabel(progreso, esperadoHoy) {
   if (esperadoHoy === 0) return 'Sin actividad'
@@ -19,10 +19,11 @@ function moodLabel(progreso, esperadoHoy) {
 }
 
 export default function RutaCard({ ruta }) {
+  const { palettes } = useCardPalettes()
   const progreso = ruta.esperadoHoy > 0
     ? Math.min(100, Math.round((ruta.recaudadoHoy / ruta.esperadoHoy) * 100))
     : 0
-  const P = CARD_PALETTES[moodKeyRuta(progreso, ruta.esperadoHoy)]
+  const P = palettes[moodKeyRuta(progreso, ruta.esperadoHoy)]
   const label = moodLabel(progreso, ruta.esperadoHoy)
 
   const tieneCobrador = !!ruta.cobrador

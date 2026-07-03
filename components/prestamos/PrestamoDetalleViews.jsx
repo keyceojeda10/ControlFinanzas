@@ -503,14 +503,14 @@ export function GrillaDatosSecciones({ secciones }) {
           key={sec.titulo}
           className="rounded-[12px] p-3"
           style={{
-            background: `linear-gradient(135deg, color-mix(in srgb, ${sec.color} 6%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
-            border: `1px solid color-mix(in srgb, ${sec.color} 18%, var(--color-border))`,
+            background: `linear-gradient(135deg, color-mix(in srgb, ${sec.color} 12%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
+            border: `1px solid color-mix(in srgb, ${sec.color} 24%, var(--color-border))`,
           }}
         >
           <div className="flex items-center gap-1.5 mb-2">
             <div
               className="w-5 h-5 rounded-[5px] flex items-center justify-center"
-              style={{ background: `color-mix(in srgb, ${sec.color} 18%, transparent)`, color: sec.color }}
+              style={{ background: `color-mix(in srgb, ${sec.color} 22%, transparent)`, color: sec.color }}
             >
               {sec.icon}
             </div>
@@ -520,7 +520,7 @@ export function GrillaDatosSecciones({ secciones }) {
           </div>
           <div className="grid grid-cols-2 gap-2">
             {sec.items.map((it) => (
-              <div key={it.label} className="rounded-[8px] px-2.5 py-1.5" style={{ background: 'var(--color-bg-base)' }}>
+              <div key={it.label} className="rounded-[8px] px-2.5 py-1.5" style={{ background: `color-mix(in srgb, ${sec.color} 5%, var(--color-bg-base))` }}>
                 <p className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>{it.label}</p>
                 <p className="text-[12px] font-semibold mt-0.5 font-mono-display" style={{ color: it.color || 'var(--color-text-primary)' }}>
                   {it.value}
@@ -556,7 +556,7 @@ export function TimelinePrestamo({ fechaInicio, fechaFin, porcentajePagado, colo
   const atrasado = animPago < animTiempo - 5
 
   return (
-    <div className="rounded-[12px] p-4" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+    <div className="rounded-[12px] p-4" style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${color} 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`, border: `1px solid color-mix(in srgb, ${color} 20%, var(--color-border))` }}>
       <div className="flex items-center justify-between mb-3">
         <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
           Línea de tiempo
@@ -656,8 +656,8 @@ export function PagoMiniCard({ pago, onAnular, anulando, isOffline, children }) 
     <div
       className="rounded-[12px] p-3 transition-all hover:scale-[1.005]"
       style={{
-        background: `linear-gradient(135deg, color-mix(in srgb, ${tipoInfo.bg} 5%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
-        border: `1px solid color-mix(in srgb, ${tipoInfo.bg} 15%, var(--color-border))`,
+        background: `linear-gradient(135deg, color-mix(in srgb, ${tipoInfo.bg} 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
+        border: `1px solid color-mix(in srgb, ${tipoInfo.bg} 22%, var(--color-border))`,
       }}
     >
       <div className="flex items-center gap-3">
@@ -753,7 +753,7 @@ export function ComparativoPrestamosCliente({ totalPrestamosCliente, prestamoNum
   return (
     <div
       className="rounded-[12px] px-3 py-2.5 flex items-start gap-2"
-      style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+      style={{ background: 'linear-gradient(135deg, color-mix(in srgb, #06b6d4 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)', border: '1px solid color-mix(in srgb, #06b6d4 18%, var(--color-border))' }}
     >
       <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, #06b6d4 15%, transparent)', color: '#06b6d4' }}>
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">

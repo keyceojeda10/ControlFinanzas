@@ -13,7 +13,7 @@ import Avatar from '@/components/ui/Avatar'
 import CardActionMenu from '@/components/ui/CardActionMenu'
 import { NuevoChip } from '@/components/ui/BadgeNuevo'
 import CardWaves from '@/components/ui/CardWaves'
-import { CARD_PALETTES, PALETTE_PAGADO, moodKeyPrestamo } from '@/components/ui/tarjetaCredito'
+import { useCardPalettes, moodKeyPrestamo } from '@/components/ui/tarjetaCredito'
 
 function moodLabel(p, esNuevo) {
   if (p.estado === 'completado') return 'Completado'
@@ -26,7 +26,8 @@ function moodLabel(p, esNuevo) {
 }
 
 export default function PrestamoCard({ prestamo: p, actions, esNuevo }) {
-  const P               = CARD_PALETTES[moodKeyPrestamo(p, esNuevo)]
+  const { palettes, pagado: pagadoColor } = useCardPalettes()
+  const P               = palettes[moodKeyPrestamo(p, esNuevo)]
   const label           = moodLabel(p, esNuevo)
   const porcentaje      = Math.max(0, Math.min(100, p.porcentajePagado ?? 0))
   const pagado          = (p.totalAPagar ?? 0) - (p.saldoPendiente ?? 0)
@@ -142,7 +143,7 @@ export default function PrestamoCard({ prestamo: p, actions, esNuevo }) {
           <div className="grid grid-cols-3 gap-2">
             <div>
               <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>Pagado</p>
-              <p className="text-[12px] font-mono-display font-bold mt-0.5" style={{ color: PALETTE_PAGADO }}>
+              <p className="text-[12px] font-mono-display font-bold mt-0.5" style={{ color: pagadoColor }}>
                 {formatMoney(pagado)}
               </p>
             </div>

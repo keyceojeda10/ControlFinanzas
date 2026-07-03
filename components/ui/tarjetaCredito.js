@@ -1,28 +1,12 @@
 // components/ui/tarjetaCredito.js — tarjetas pastel premium (v4).
 //
-// Referencia del user (2 jul): tarjeta fintech de superficie SUAVE (pastel
-// gris-lavanda) con tinta oscura profunda y textura de olas sutiles. Cada
-// estado tiene su propia tarjeta pastel completa — reactividad real pero
-// moderada: colores bonitos, nunca chillones, nunca casi-negro.
-//
-//   ok    → champan dorado (al dia — color de marca suavizado)
-//   nuevo → azul lavanda (cliente/prestamo nuevo, como la referencia)
-//   hot   → durazno (vencido pocos dias)
-//   crit  → rosa (mora seria)
-//   done  → menta (completado)
-//   off   → gris perla (cancelado/inactivo)
-//
-// ink   = texto principal (tinta profunda del mismo tono)
-// sub   = texto secundario
-// accent= color fuerte del estado (pills, barras, enfasis)
-// track = fondo de barras/divisores
-// Los textos sobre la tarjeta usan SIEMPRE estos valores, nunca tokens del
-// tema (la tarjeta es igual en dark y light).
-//
-// Nota: no usar "rgba(0,0,0" en el mismo style attr que un linear-gradient
-// (heuristica del tema claro en globals.css lo blanquea).
+// Dos sets de paletas: LIGHT (pastel suave + tinta oscura) y DARK
+// (superficie oscura-saturada + tinta clara). useCardPalettes() devuelve
+// el set correcto segun el tema activo.
 
-export const CARD_PALETTES = {
+// ── Paletas LIGHT (fondo claro) ──
+
+const PALETTES_LIGHT = {
   ok: {
     grad: 'linear-gradient(135deg, #f7eed4 0%, #f0e0b0 55%, #e9d491 100%)',
     ink: '#3f3306',
@@ -85,8 +69,91 @@ export const CARD_PALETTES = {
   },
 }
 
-// Verde fijo para valores "pagado" — legible sobre las 6 superficies pastel
-export const PALETTE_PAGADO = '#0f6840'
+// ── Paletas DARK (fondo oscuro) ──
+
+const PALETTES_DARK = {
+  ok: {
+    grad: 'linear-gradient(135deg, #2a2410 0%, #352d14 55%, #3f3518 100%)',
+    ink: '#f0e4be',
+    sub: 'rgba(240, 228, 190, 0.65)',
+    accent: '#d4a820',
+    track: 'rgba(240, 228, 190, 0.12)',
+    border: 'rgba(200, 160, 40, 0.30)',
+    shadow: '0 10px 24px rgba(0, 0, 0, 0.35)',
+    waves: 'rgba(255,255,255,0.06)',
+  },
+  nuevo: {
+    grad: 'linear-gradient(135deg, #0f2818 0%, #14321e 55%, #1a3c24 100%)',
+    ink: '#c0ecd0',
+    sub: 'rgba(192, 236, 208, 0.65)',
+    accent: '#34d878',
+    track: 'rgba(192, 236, 208, 0.12)',
+    border: 'rgba(50, 180, 100, 0.30)',
+    shadow: '0 10px 24px rgba(0, 0, 0, 0.35)',
+    waves: 'rgba(255,255,255,0.06)',
+  },
+  hot: {
+    grad: 'linear-gradient(135deg, #2c1a08 0%, #38210c 55%, #442910 100%)',
+    ink: '#f5d8b4',
+    sub: 'rgba(245, 216, 180, 0.65)',
+    accent: '#e88a30',
+    track: 'rgba(245, 216, 180, 0.12)',
+    border: 'rgba(220, 140, 50, 0.30)',
+    shadow: '0 10px 24px rgba(0, 0, 0, 0.35)',
+    waves: 'rgba(255,255,255,0.06)',
+  },
+  crit: {
+    grad: 'linear-gradient(135deg, #2c0e14 0%, #381218 55%, #44161e 100%)',
+    ink: '#f5c0c8',
+    sub: 'rgba(245, 192, 200, 0.65)',
+    accent: '#f04060',
+    track: 'rgba(245, 192, 200, 0.12)',
+    border: 'rgba(220, 70, 90, 0.30)',
+    shadow: '0 10px 24px rgba(0, 0, 0, 0.35)',
+    waves: 'rgba(255,255,255,0.06)',
+  },
+  done: {
+    grad: 'linear-gradient(135deg, #0c2418 0%, #102e1e 55%, #143824 100%)',
+    ink: '#b8e8ce',
+    sub: 'rgba(184, 232, 206, 0.65)',
+    accent: '#2cc874',
+    track: 'rgba(184, 232, 206, 0.12)',
+    border: 'rgba(50, 180, 100, 0.30)',
+    shadow: '0 10px 24px rgba(0, 0, 0, 0.35)',
+    waves: 'rgba(255,255,255,0.06)',
+  },
+  off: {
+    grad: 'linear-gradient(135deg, #1a1c22 0%, #222530 55%, #282c38 100%)',
+    ink: '#c0c4d0',
+    sub: 'rgba(192, 196, 208, 0.60)',
+    accent: '#7a8094',
+    track: 'rgba(192, 196, 208, 0.10)',
+    border: 'rgba(120, 130, 150, 0.25)',
+    shadow: '0 10px 24px rgba(0, 0, 0, 0.35)',
+    waves: 'rgba(255,255,255,0.05)',
+  },
+}
+
+// Compat: los componentes existentes importan CARD_PALETTES directamente.
+// Esto sigue funcionando para SSR y como fallback (light).
+export const CARD_PALETTES = PALETTES_LIGHT
+
+export const PALETTE_PAGADO_LIGHT = '#0f6840'
+export const PALETTE_PAGADO_DARK = '#34d878'
+export const PALETTE_PAGADO = PALETTE_PAGADO_LIGHT
+
+// ── Hook: paletas segun tema ──
+
+import { useTheme } from '@/lib/theme/ThemeProvider'
+
+export function useCardPalettes() {
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
+  return {
+    palettes: isDark ? PALETTES_DARK : PALETTES_LIGHT,
+    pagado: isDark ? PALETTE_PAGADO_DARK : PALETTE_PAGADO_LIGHT,
+  }
+}
 
 export function moodKeyCliente(c, esNuevo = false) {
   if (c.estado === 'cancelado' || c.estado === 'inactivo') return 'off'
@@ -105,7 +172,6 @@ export function moodKeyPrestamo(p, esNuevo = false) {
   return 'ok'
 }
 
-// Estado de linea de credito → paleta
 export function moodKeyLinea(estado, porcentajeUsado) {
   if (estado === 'cerrada') return 'off'
   if (estado === 'congelada') return 'hot'
@@ -113,7 +179,6 @@ export function moodKeyLinea(estado, porcentajeUsado) {
   return 'ok'
 }
 
-// % de cobro del dia (rutas) → paleta
 export function moodKeyRuta(progreso, esperadoHoy) {
   if (esperadoHoy === 0) return 'off'
   if (progreso >= 100) return 'done'

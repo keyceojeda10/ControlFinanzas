@@ -9,7 +9,7 @@ import Avatar from '@/components/ui/Avatar'
 import CardActionMenu from '@/components/ui/CardActionMenu'
 import { NuevoChip } from '@/components/ui/BadgeNuevo'
 import CardWaves from '@/components/ui/CardWaves'
-import { CARD_PALETTES, moodKeyCliente } from '@/components/ui/tarjetaCredito'
+import { useCardPalettes, moodKeyCliente } from '@/components/ui/tarjetaCredito'
 
 const COLOR_OK     = 'var(--color-accent)'
 const COLOR_HOT    = '#f97316'
@@ -33,6 +33,7 @@ function moodLabel(c) {
 }
 
 export default function ClienteCard({ cliente, actions, esNuevo }) {
+  const { palettes } = useCardPalettes()
   const color = moodColor(cliente)
   const label = moodLabel(cliente)
   const saldoTotal = Number(cliente.saldoPendienteTotal ?? 0)
@@ -144,7 +145,7 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
           Superficie suave + tinta profunda + olas sutiles. Reactiva: al dia
           champan, nuevo azul lavanda, vencido durazno, mora rosa, off gris. */}
       {tienePrestamo && (() => {
-        const P = CARD_PALETTES[moodKeyCliente(cliente, esNuevo)]
+        const P = palettes[moodKeyCliente(cliente, esNuevo)]
         return (
           <div
             className="mt-3 relative overflow-hidden rounded-[14px] px-4 py-3.5"

@@ -86,23 +86,23 @@ export default function CajaCobradorDetalle({ data }) {
         <Card>
           <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Gestion de la ruta</h2>
           <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
+            <div className="rounded-[10px] p-2.5" style={{ background: 'color-mix(in srgb, var(--color-accent) 10%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-accent) 18%, var(--color-border))' }}>
               <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Cobros hoy</p>
               <p className="text-lg font-bold font-mono-display text-[var(--color-accent)] mt-0.5">{g.clientesCobrados}</p>
             </div>
-            <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
+            <div className="rounded-[10px] p-2.5" style={{ background: 'color-mix(in srgb, var(--color-info) 8%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-info) 16%, var(--color-border))' }}>
               <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Clientes activos</p>
               <p className="text-lg font-bold font-mono-display text-[var(--color-text-primary)] mt-0.5">{g.clientesActivos}</p>
             </div>
-            <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
+            <div className="rounded-[10px] p-2.5" style={{ background: 'color-mix(in srgb, var(--color-info) 10%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-info) 18%, var(--color-border))' }}>
               <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Clientes nuevos</p>
               <p className="text-lg font-bold font-mono-display text-[var(--color-info)] mt-0.5">{g.clientesNuevos}</p>
             </div>
-            <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
+            <div className="rounded-[10px] p-2.5" style={{ background: 'color-mix(in srgb, var(--color-success) 10%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-success) 18%, var(--color-border))' }}>
               <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Prestamos nuevos</p>
               <p className="text-lg font-bold font-mono-display text-[var(--color-success)] mt-0.5">{g.prestamosNuevos}</p>
             </div>
-            <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
+            <div className="rounded-[10px] p-2.5" style={{ background: 'color-mix(in srgb, var(--color-warning) 10%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-warning) 18%, var(--color-border))' }}>
               <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Renovaciones</p>
               <p className="text-lg font-bold font-mono-display text-[var(--color-warning)] mt-0.5">{g.renovaciones}</p>
             </div>

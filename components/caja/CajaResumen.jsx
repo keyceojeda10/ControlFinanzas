@@ -1,6 +1,7 @@
 'use client'
 
 import { formatMoney } from '@/lib/i18n'
+import CardWaves from '@/components/ui/CardWaves'
 
 const COLOR_TASA = (t) => (t >= 80 ? 'var(--color-success)' : t >= 50 ? 'var(--color-accent)' : 'var(--color-danger)')
 
@@ -13,13 +14,14 @@ export default function CajaResumen({ hero, cards = [], detalle = [] }) {
     <div
       className="relative rounded-[20px] overflow-hidden"
       style={{
-        background: `linear-gradient(135deg, color-mix(in srgb, ${heroColor} 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 60%)`,
-        border: `1px solid color-mix(in srgb, ${heroColor} 20%, var(--color-border))`,
+        background: `linear-gradient(135deg, color-mix(in srgb, ${heroColor} 16%, var(--color-bg-card)) 0%, var(--color-bg-card) 65%)`,
+        border: `1px solid color-mix(in srgb, ${heroColor} 25%, var(--color-border))`,
       }}
     >
+      <CardWaves tint={`color-mix(in srgb, ${heroColor} 12%, transparent)`} />
       {/* Orbe decorativo */}
       <div
-        className="absolute -top-14 -right-14 w-44 h-44 rounded-full pointer-events-none opacity-[0.07]"
+        className="absolute -top-14 -right-14 w-44 h-44 rounded-full pointer-events-none opacity-[0.10]"
         style={{ background: `radial-gradient(circle, ${heroColor}, transparent 70%)` }}
       />
 
@@ -71,7 +73,7 @@ export default function CajaResumen({ hero, cards = [], detalle = [] }) {
               <div
                 key={i}
                 className="rounded-[12px] px-3 py-2.5"
-                style={{ background: `color-mix(in srgb, ${c.color || 'var(--color-info)'} 8%, transparent)` }}
+                style={{ background: `color-mix(in srgb, ${c.color || 'var(--color-info)'} 14%, transparent)` }}
               >
                 <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>{c.label}</p>
                 <p className="text-[15px] font-bold font-mono-display mt-0.5" style={{ color: c.color || 'var(--color-text-primary)' }}>

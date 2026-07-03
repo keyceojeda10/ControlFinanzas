@@ -432,14 +432,14 @@ export function InfoContactoCard({ cliente }) {
   return (
     <div
       className="rounded-[16px] p-3"
-      style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+      style={{ background: 'linear-gradient(135deg, color-mix(in srgb, #3b82f6 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)', border: '1px solid color-mix(in srgb, #3b82f6 16%, var(--color-border))' }}
     >
       <p className="text-[10px] font-bold uppercase tracking-wider mb-2 px-1" style={{ color: 'var(--color-text-muted)' }}>
         Información de contacto
       </p>
       <div className="space-y-1.5">
         {items.map((it, i) => (
-          <div key={i} className="flex items-center gap-2.5 px-2 py-1.5 rounded-[10px]" style={{ background: 'var(--color-bg-base)' }}>
+          <div key={i} className="flex items-center gap-2.5 px-2 py-1.5 rounded-[10px]" style={{ background: `color-mix(in srgb, ${it.color} 5%, var(--color-bg-base))` }}>
             <div
               className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0"
               style={{ background: `color-mix(in srgb, ${it.color} 15%, transparent)`, color: it.color }}

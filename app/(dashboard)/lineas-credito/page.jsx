@@ -10,7 +10,7 @@ import { StaggeredList } from '@/components/ui/StaggeredList'
 import { formatMoney } from '@/lib/i18n'
 import CardWaves from '@/components/ui/CardWaves'
 import Avatar from '@/components/ui/Avatar'
-import { CARD_PALETTES, moodKeyLinea } from '@/components/ui/tarjetaCredito'
+import { useCardPalettes, moodKeyLinea } from '@/components/ui/tarjetaCredito'
 
 const ESTADOS = [
   { value: '',         label: 'Todas' },
@@ -55,7 +55,7 @@ export default function LineasCreditoPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-lg font-bold text-[var(--color-text-primary)]">Lineas de crédito</h1>
+          <h1 className="text-lg font-bold text-[var(--color-text-primary)]">Líneas de crédito</h1>
           <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
             {lineas.length} línea{lineas.length !== 1 ? 's' : ''} · Saldo total {formatMoney(totalSaldo)}
           </p>
@@ -132,11 +132,12 @@ export default function LineasCreditoPage() {
 }
 
 function LineaCreditoCard({ linea }) {
+  const { palettes } = useCardPalettes()
   const porcentajeUsado = linea.cupoMaximo > 0
     ? Math.round((linea.capitalUsado || 0) / linea.cupoMaximo * 100)
     : 0
 
-  const P = CARD_PALETTES[moodKeyLinea(linea.estado, porcentajeUsado)]
+  const P = palettes[moodKeyLinea(linea.estado, porcentajeUsado)]
   const estadoLabel = linea.estado.charAt(0).toUpperCase() + linea.estado.slice(1)
 
   return (
