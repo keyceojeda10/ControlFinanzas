@@ -85,7 +85,7 @@ function SelectorMetodo({ onFoto, onManual, ocrLoading, ocrError, fotoInputRef, 
 
       <div className="space-y-3">
         <input ref={fotoInputRef} type="file" accept="image/*" multiple className="hidden" onChange={onFotoChange} />
-        <button type="button" onClick={onFoto} disabled={ocrLoading}
+        <button type="button" onClick={onManual} disabled={ocrLoading}
           className="w-full text-left rounded-2xl p-5 transition-all active:scale-[0.98] disabled:opacity-60"
           style={{
             background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card)), var(--color-bg-card))',
@@ -94,35 +94,6 @@ function SelectorMetodo({ onFoto, onManual, ocrLoading, ocrError, fotoInputRef, 
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
               style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)', color: 'var(--color-accent)' }}>
-              {ocrLoading ? (
-                <svg className="animate-spin w-6 h-6" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-              ) : (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
-                </svg>
-              )}
-            </div>
-            <div className="flex-1">
-              <h3 className="text-base font-bold" style={{ color: 'var(--color-text-primary)' }}>
-                {ocrLoading ? 'Leyendo foto...' : 'Desde foto'}
-              </h3>
-              <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-                {ocrLoading ? 'La IA esta extrayendo los datos' : 'Toma una foto y los campos se llenan solos. Puedes corregir lo que quieras antes de guardar.'}
-              </p>
-            </div>
-          </div>
-        </button>
-
-        <button type="button" onClick={onManual} disabled={ocrLoading}
-          className="w-full text-left rounded-2xl p-5 transition-all active:scale-[0.98] disabled:opacity-60"
-          style={{ background: 'var(--color-bg-card)', border: '1.5px solid var(--color-border)' }}>
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-              style={{ background: 'color-mix(in srgb, var(--color-info, #3b82f6) 12%, transparent)', color: 'var(--color-info, #3b82f6)' }}>
               <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" />
               </svg>
@@ -130,6 +101,35 @@ function SelectorMetodo({ onFoto, onManual, ocrLoading, ocrError, fotoInputRef, 
             <div className="flex-1">
               <h3 className="text-base font-bold" style={{ color: 'var(--color-text-primary)' }}>Escribir manual</h3>
               <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Escribe el nombre, cedula, monto y condiciones del prestamo.</p>
+            </div>
+          </div>
+        </button>
+
+        <button type="button" onClick={onFoto} disabled={ocrLoading}
+          className="w-full text-left rounded-2xl p-4 transition-all active:scale-[0.98] disabled:opacity-60"
+          style={{ background: 'var(--color-bg-card)', border: '1.5px solid var(--color-border)' }}>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+              style={{ background: 'color-mix(in srgb, var(--color-info, #3b82f6) 12%, transparent)', color: 'var(--color-info, #3b82f6)' }}>
+              {ocrLoading ? (
+                <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+                </svg>
+              )}
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                {ocrLoading ? 'Leyendo foto...' : 'Desde foto'}
+              </h3>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                {ocrLoading ? 'Extrayendo datos...' : 'La IA lee la cartulina o libreta'}
+              </p>
             </div>
           </div>
         </button>
