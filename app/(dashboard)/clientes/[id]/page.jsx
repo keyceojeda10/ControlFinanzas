@@ -1129,7 +1129,7 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, orgNombre, ocultarSaldo
       {/* Barra de progreso */}
       <div className="mb-3">
         <div className="flex justify-between text-xs text-[var(--color-text-muted)] mb-1.5">
-          <span>Pagado: {formatMoney(p.montoPrestado - (p.saldoPendiente ?? 0))}</span>
+          <span>Pagado: {formatMoney(Math.max(0, (p.totalAPagar ?? p.montoPrestado) - (p.saldoPendiente ?? 0)))}</span>
           <span>{porcentaje}%</span>
         </div>
         <div className="h-1.5 bg-[var(--color-bg-hover)] rounded-full overflow-hidden">

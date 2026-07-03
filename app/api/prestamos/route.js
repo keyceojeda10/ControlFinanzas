@@ -302,6 +302,8 @@ export async function POST(request) {
     montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia: freq, modoInteres: modoValido,
     ...(cuotaManualNum > 0 && { cuotaManual: cuotaManualNum }),
     interesAdelantado: modoValido === 'solo_interes' && !!interesAdelantado,
+    diaCobroMes: diaCobroMesDb,
+    diaCobroMes2: diaCobroMes2Db,
   })
   const { totalAPagar, cuotaDiaria, fechaFin } = calc
   const modoInteresFinal = calc.modoInteres  // 'manual' si hubo cuotaManual

@@ -401,8 +401,10 @@ function NuevoPrestamo() {
       modoInteres: modo === 'mercancia' ? 'manual' : modoInteres,
       ...(cm > 0 && { cuotaManual: cm }),
       interesAdelantado: modoInteres === 'solo_interes' && interesAdelantado,
+      ...(modoDiaCobro === 'mes' && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
+      ...(frecuencia === 'quincenal' && modoDiaCobro === 'mes' && diaCobroMes2 !== '' && { diaCobroMes2: Number(diaCobroMes2) }),
     })
-  }, [monto, tasa, plazo, fechaInicio, frecuencia, modo, modoInteres, cuotaManualActiva, cuotaManual, precioVenta, numCuotas, interesAdelantado])
+  }, [monto, tasa, plazo, fechaInicio, frecuencia, modo, modoInteres, cuotaManualActiva, cuotaManual, precioVenta, numCuotas, interesAdelantado, modoDiaCobro, diaCobroMes, diaCobroMes2])
 
   const clientesFiltrados = clientes.filter((c) =>
     c.nombre.toLowerCase().includes(buscadorCliente.toLowerCase()) ||
