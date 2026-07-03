@@ -58,7 +58,7 @@ export default function RenovarPrestamo({
   const enMano = Math.max(0, montoNum - saldo)
   const diasPlazo = (Number(plazoUnidades) || 0) * (DIAS_POR_PERIODO[frecuencia] || 1)
 
-  const modoHeredado = ['fijo', 'unico', 'saldo', 'manual'].includes(prestamoAnterior?.modoInteres)
+  const modoHeredado = ['fijo', 'unico', 'saldo', 'manual', 'solo_interes', 'lineal'].includes(prestamoAnterior?.modoInteres)
     ? prestamoAnterior.modoInteres : 'fijo'
 
   const calculo = useMemo(() => {
@@ -72,9 +72,10 @@ export default function RenovarPrestamo({
         frecuencia,
         modoInteres:   cuotaManualActiva ? 'manual' : modoHeredado,
         ...(cuotaManualActiva && { cuotaManual: Number(cuotaManual) }),
+        ...(modoHeredado === 'solo_interes' && { interesAdelantado: !!prestamoAnterior?.interesAdelantado }),
       })
     } catch { return null }
-  }, [montoNum, tasa, diasPlazo, fechaInicio, frecuencia, modoHeredado, cuotaManual, cuotaManualActiva])
+  }, [montoNum, tasa, diasPlazo, fechaInicio, frecuencia, modoHeredado, cuotaManual, cuotaManualActiva, prestamoAnterior?.interesAdelantado])
 
   const handleSubmit = async () => {
     if (montoNum <= 0) { setError('Ingresa el total del nuevo prestamo'); return }
@@ -100,6 +101,7 @@ export default function RenovarPrestamo({
           modoInteres:   cuotaManualActiva ? 'manual' : modoHeredado,
           ...(cuotaManualActiva && { cuotaManual: Number(cuotaManual) }),
           ...(seguro && montoSeguroNum > 0 && { seguro: true, montoSeguro: montoSeguroNum }),
+          ...(modoHeredado === 'solo_interes' && prestamoAnterior?.interesAdelantado && { interesAdelantado: true }),
         }),
       })
       if (!res.ok) {

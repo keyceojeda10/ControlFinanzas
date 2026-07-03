@@ -1673,7 +1673,7 @@ export default function PrestamoDetallePage({ params }) {
       <RenovarPrestamo
         prestamoId={id}
         saldoPendiente={saldoPendiente}
-        prestamoAnterior={{ tasaInteres, diasPlazo, frecuencia, modoInteres, cuotaDiaria, montoPrestado }}
+        prestamoAnterior={{ tasaInteres, diasPlazo, frecuencia, modoInteres, cuotaDiaria, montoPrestado, interesAdelantado }}
         clienteNombre={cliente?.nombre}
         montoMaximoPrestamo={cliente?.montoMaximoPrestamo}
         open={modalRenovar}

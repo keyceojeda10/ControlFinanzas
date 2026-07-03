@@ -45,7 +45,7 @@ export async function POST(request, { params }) {
   const freq = frecuencia || 'diario'
   // Modo de interes para la renovacion. Default 'fijo' (el modelo nuevo);
   // si el front lo manda explicito, se respeta.
-  const modoRenovacion = ['fijo', 'unico', 'saldo', 'manual'].includes(modoInteres) ? modoInteres : 'fijo'
+  const modoRenovacion = ['fijo', 'unico', 'saldo', 'manual', 'solo_interes', 'lineal'].includes(modoInteres) ? modoInteres : 'fijo'
   if (!['diario', 'semanal', 'quincenal', 'mensual'].includes(freq)) {
     return Response.json({ error: 'Frecuencia no válida' }, { status: 400 })
   }
@@ -106,10 +106,13 @@ export async function POST(request, { params }) {
   // se guarda en su campo `montoSeguro` aparte. Asi el saldo pendiente y el
   // cierre del prestamo se comportan identico a los prestamos normales.
   const cuotaManualNum = cuotaManual ? Number(cuotaManual) : undefined
-  const { totalAPagar, cuotaDiaria, fechaFin } = calcularPrestamo({
+  const calc = calcularPrestamo({
     montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia: freq, modoInteres: modoRenovacion,
     ...(cuotaManualNum > 0 && { cuotaManual: cuotaManualNum }),
+    ...(modoRenovacion === 'solo_interes' && { interesAdelantado: !!body.interesAdelantado }),
   })
+  const { totalAPagar, cuotaDiaria, fechaFin } = calc
+  const modoInteresFinal = calc.modoInteres
 
   const diferencia = Number(montoPrestado) - saldoPendiente // lo que recibe en mano
 
@@ -175,15 +178,31 @@ export async function POST(request, { params }) {
         totalAPagar,
         cuotaDiaria,
         frecuencia:    freq,
-        modoInteres:   cuotaManualNum > 0 ? 'manual' : modoRenovacion,
+        modoInteres:   modoInteresFinal,
+        interesAdelantado: modoInteresFinal === 'solo_interes' && !!body.interesAdelantado,
         diasPlazo:     Number(diasPlazo),
         fechaInicio:   new Date(fechaInicio),
         fechaFin,
         seguro:        conSeguro,
-        renovadoDeId:  prestamoId,         // vinculo de continuidad con el prestamo anterior
+        renovadoDeId:  prestamoId,
         ...(conSeguro && montoSeguroNum > 0 && { montoSeguro: montoSeguroNum }),
       },
     })
+
+    if (['lineal', 'solo_interes'].includes(modoInteresFinal) && Array.isArray(calc.tablaAmortizacion) && calc.tablaAmortizacion.length > 0) {
+      await tx.cuotaAmortizacion.createMany({
+        data: calc.tablaAmortizacion.map((p) => ({
+          prestamoId: nuevo.id,
+          numeroPeriodo: p.numeroPeriodo,
+          capital: p.capital,
+          interes: p.interes,
+          cuotaTotal: p.cuotaTotal,
+          saldoRestante: p.saldoRestante,
+          fechaEsperada: p.fechaEsperada,
+          pagado: 0,
+        })),
+      })
+    }
 
     // 5. Registrar en capital SOLO el efectivo real que sale: la diferencia
     // entregada en mano (monto nuevo - saldo viejo absorbido). El saldo viejo
