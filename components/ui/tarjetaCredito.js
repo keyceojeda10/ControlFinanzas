@@ -13,15 +13,18 @@
 // #111111, #0a0a0a, #121212, #1f1f1f, #202020...). Tampoco usar "rgba(0,0,0"
 // en el mismo style attr que un linear-gradient.
 
-// Superficie compartida: carbon calido con profundidad
+// Superficie compartida: grafito calido con profundidad.
+// Ajuste 2 jul: se subio la luminosidad dos tonos (antes casi-negro #141318)
+// porque sobre el tema claro el contraste golpeaba demasiado. Grafito medio
+// mantiene el look premium sin efecto "hueco negro".
 export const CARD_SURFACE = {
-  grad: 'linear-gradient(150deg, #26242e 0%, #1b1a21 52%, #141318 100%)',
+  grad: 'linear-gradient(150deg, #3b3843 0%, #2d2b34 52%, #24222a 100%)',
   ink: '#f6f5f9',
-  sub: 'rgba(246, 245, 249, 0.55)',
-  faint: 'rgba(246, 245, 249, 0.38)',
-  track: 'rgba(255, 255, 255, 0.10)',
-  cell: 'rgba(255, 255, 255, 0.05)',
-  shadow: '0 12px 28px rgba(18, 16, 26, 0.30)',
+  sub: 'rgba(246, 245, 249, 0.58)',
+  faint: 'rgba(246, 245, 249, 0.42)',
+  track: 'rgba(255, 255, 255, 0.12)',
+  cell: 'rgba(255, 255, 255, 0.06)',
+  shadow: '0 8px 20px rgba(30, 27, 40, 0.16)',
 }
 
 // Acento por estado — colorea saldo, glow, borde, pill y progreso
@@ -33,13 +36,13 @@ export const CARD_ACCENTS = {
   off:  { color: '#9aa5b5' },  // cancelado/inactivo — grafito
 }
 
-// Background completo de la tarjeta: glow del acento arriba-derecha + carbon
+// Background completo de la tarjeta: glow del acento arriba-derecha + grafito
 export function cardBackground(accent) {
-  return `radial-gradient(ellipse 90% 75% at 100% -10%, color-mix(in srgb, ${accent} 18%, transparent) 0%, transparent 55%), ${CARD_SURFACE.grad}`
+  return `radial-gradient(ellipse 90% 75% at 100% -10%, color-mix(in srgb, ${accent} 14%, transparent) 0%, transparent 55%), ${CARD_SURFACE.grad}`
 }
 
 export function cardBorder(accent) {
-  return `1px solid color-mix(in srgb, ${accent} 28%, rgba(255,255,255,0.10))`
+  return `1px solid color-mix(in srgb, ${accent} 24%, rgba(255,255,255,0.12))`
 }
 
 export function moodKeyCliente(c) {
