@@ -689,6 +689,7 @@ export async function PATCH(request, { params }) {
       cuotaManual:   cuotaManualUsar,
       diaCobroMes:   diaCobroMesUsar,
       diaCobroMes2:  diaCobroMes2Usar,
+      interesAdelantado: p.interesAdelantado,
     })
 
     const dataUpdate = {

@@ -20,6 +20,7 @@ export async function GET(request, { params }) {
     where: { id, organizationId: session.user.organizationId },
     include: {
       pagos: { select: { montoPagado: true, tipo: true, fechaPago: true } },
+      cuotasAmortizacion: { orderBy: { numeroPeriodo: 'asc' } },
       cliente: { select: { diasSinCobro: true, ruta: { select: { diasSinCobro: true } } } },
       organization: { select: { diasSinCobro: true } },
     },
