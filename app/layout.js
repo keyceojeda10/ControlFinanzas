@@ -10,7 +10,9 @@ import Script from "next/script";
 // "viejo", el primer paint use el tema correcto guardado en localStorage.
 // Tambien setea el background del <html> inline para evitar el flash a oscuro
 // cuando la hoja de estilos aun no cargo (offline / cache miss).
-const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('cf-theme')||'system';var r=t==='system'?(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'):t;var h=document.documentElement;h.setAttribute('data-theme',r);h.style.colorScheme=r;var bg=r==='light'?'#f5f7fb':'#060609';var fg=r==='light'?'#1a1a2e':'#f0f0f5';h.style.backgroundColor=bg;h.style.color=fg;if(document.body){document.body.style.backgroundColor=bg;document.body.style.color=fg;}}catch(e){document.documentElement.setAttribute('data-theme','dark');}})();`;
+// Default de marca: claro. Solo quien guardo una preferencia explicita
+// (dark/system) la conserva.
+const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('cf-theme')||'light';var r=t==='system'?(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'):t;var h=document.documentElement;h.setAttribute('data-theme',r);h.style.colorScheme=r;var bg=r==='light'?'#f5f7fb':'#060609';var fg=r==='light'?'#1a1a2e':'#f0f0f5';h.style.backgroundColor=bg;h.style.color=fg;if(document.body){document.body.style.backgroundColor=bg;document.body.style.color=fg;}}catch(e){document.documentElement.setAttribute('data-theme','light');}})();`;
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

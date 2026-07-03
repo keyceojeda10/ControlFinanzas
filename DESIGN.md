@@ -5,7 +5,8 @@ Fuente de verdad de tokens: `app/globals.css` (@theme + html[data-theme="light"]
 
 ## Theme
 
-Dos temas resueltos por `data-theme` en `<html>`: **dark** (default) y **light** (pastel).
+Dos temas resueltos por `data-theme` en `<html>`: **light** (default de marca) y **dark** (opcional).
+Solo quien guardó preferencia explícita (dark/system) la conserva.
 Regla de oro: **nunca hex hardcodeado en JSX** — siempre `var(--color-*)`. El layer de
 overrides light en globals.css existe solo como red de seguridad para código legado.
 
@@ -84,3 +85,24 @@ Todo control interactivo tiene: default, hover, focus-visible (ring dorado), act
 - Mobile-first. Sidebar desktop / BottomNav pill móvil.
 - Padding de card: 20px (p-5). Gaps de secciones: 16-24px.
 - Densidad alta permitida en tablas y listas de cobro (es producto, no marketing).
+
+## Mascota — Capi (capibara)
+
+- Componente canónico: `components/ui/Capi.jsx` (SVG puro, sin assets externos).
+- Poses: `feliz` (default), `celebra` (pago exitoso, metas, listas "todo al día"),
+  `duerme` (listas vacías), `busca` (búsquedas sin resultados).
+- `components/ui/Mascota.jsx` es wrapper retrocompatible (variant→pose). Código nuevo importa Capi.
+- `components/ui/EmptyState.jsx`: estado vacío canónico (Capi + título + hint + acción).
+- Entrada con `.capi-in` (rebote one-shot). NUNCA loops infinitos con la mascota.
+- Capi aparece en: estados vacíos, éxito de pago, onboarding, celebraciones. No en
+  contextos negativos serios (mora crítica, errores de cobro) — ahí sobra simpatía.
+
+## Tarjetas tipo tarjeta de crédito (clientes/préstamos)
+
+- Look "credit card": gradiente 135° que reacciona al estado (`color-mix` del mood color
+  con `--color-bg-card`), chip EMV (`components/ui/ChipTarjeta.jsx`) y brillo diagonal
+  (overlay `linear-gradient 115°` con blanco 5-6%).
+- Mood colors: dorado = al día, naranja #f97316 = vencido, danger = mora >7d,
+  success = completado, gris #64748b = cancelado/inactivo.
+- Regla: el gradiente NUNCA supera 14-16% de mezcla del mood color — la tarjeta insinúa
+  el estado, el badge lo declara. Todos los datos se conservan siempre.

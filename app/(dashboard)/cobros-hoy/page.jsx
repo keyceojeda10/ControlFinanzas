@@ -7,6 +7,7 @@ import { formatMoney } from '@/lib/i18n'
 import { Modal } from '@/components/ui/Modal'
 import { obtenerCoordsRapido } from '@/lib/geo'
 import { StaggeredList } from '@/components/ui/StaggeredList'
+import Capi from '@/components/ui/Capi'
 
 export default function CobrosHoyPage() {
   const { esCobrador, loading: authLoading } = useAuth()
@@ -430,14 +431,9 @@ export default function CobrosHoyPage() {
       )}
 
       {clientes.length === 0 && !loading && (
-        <div className="rounded-[20px] px-6 py-14 text-center" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
-          <div
-            className="w-14 h-14 rounded-[16px] mx-auto flex items-center justify-center mb-4"
-            style={{ background: 'color-mix(in srgb, var(--color-success) 12%, transparent)', color: 'var(--color-success)' }}
-          >
-            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+        <div className="rounded-[20px] px-6 py-10 text-center" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+          <div className="capi-in inline-block mb-2">
+            <Capi pose="celebra" size={100} />
           </div>
           <p className="text-base font-semibold" style={{ color: 'var(--color-text-primary)' }}>Sin cobros programados hoy</p>
           <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>No hay clientes con cuota pendiente para hoy.</p>

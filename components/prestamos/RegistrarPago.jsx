@@ -12,6 +12,7 @@ import BotonWhatsApp        from '@/components/ui/BotonWhatsApp'
 import BotonCompartir       from '@/components/ui/BotonCompartir'
 import BotonImprimirRecibo  from '@/components/ui/BotonImprimirRecibo'
 import MoneyInput           from '@/components/ui/MoneyInput'
+import Capi                 from '@/components/ui/Capi'
 import { guardarPagoPendiente, actualizarPrestamoOffline }  from '@/lib/offline'
 import { obtenerCoordsRapido }                              from '@/lib/geo'
 
@@ -354,17 +355,25 @@ export default function RegistrarPago({
       >
         <div className="space-y-4">
           <div className="flex flex-col items-center gap-2 py-3">
-            <div className={`w-14 h-14 rounded-full flex items-center justify-center ${pagoGuardado.offline ? 'bg-[rgba(245,197,24,0.15)]' : 'bg-[rgba(34,197,94,0.15)]'}`}>
-              {pagoGuardado.offline ? (
+            {pagoGuardado.offline ? (
+              <div className="w-14 h-14 rounded-full flex items-center justify-center bg-[rgba(245,197,24,0.15)]">
                 <svg className="w-7 h-7 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-              ) : (
-                <svg className="w-7 h-7 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                </svg>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="relative wizard-success-bounce">
+                <Capi pose="celebra" size={104} />
+                <div
+                  className="absolute -bottom-1 right-0 w-7 h-7 rounded-full flex items-center justify-center"
+                  style={{ background: 'var(--color-success)', border: '2px solid var(--color-bg-card)' }}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="#ffffff" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+            )}
             <p className="text-[var(--color-text-primary)] font-bold text-lg font-mono-display">{formatMoney(pagoGuardado.montoPagado)}</p>
             <p className="text-[var(--color-text-muted)] text-sm">
               {pagoGuardado.offline ? 'guardado offline — se sincronizará al conectar'

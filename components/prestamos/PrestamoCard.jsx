@@ -10,6 +10,7 @@ import OfflineBadge from '@/components/offline/OfflineBadge'
 import Avatar from '@/components/ui/Avatar'
 import CardActionMenu from '@/components/ui/CardActionMenu'
 import { NuevoChip } from '@/components/ui/BadgeNuevo'
+import ChipTarjeta from '@/components/ui/ChipTarjeta'
 
 const COLOR_OK     = 'var(--color-accent)'    // dorado — al dia
 const COLOR_HOT    = '#f97316'                // naranja — vencido pocos dias
@@ -50,8 +51,16 @@ export default function PrestamoCard({ prestamo: p, actions, esNuevo }) {
       glowColor={color}
       padding={false}
       hoverable
-      className="block px-4 py-4 group"
+      className="block px-4 py-4 group relative overflow-hidden"
+      style={{
+        background: `linear-gradient(135deg, color-mix(in srgb, ${color} 11%, var(--color-bg-card)) 0%, var(--color-bg-card) 48%, color-mix(in srgb, ${color} 5%, var(--color-bg-card)) 100%)`,
+      }}
     >
+      {/* Brillo diagonal de tarjeta */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: 'linear-gradient(115deg, transparent 34%, rgba(255,255,255,0.05) 47%, transparent 58%)' }}
+      />
       {/* Top: cliente + estado mood + offline */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2.5 min-w-0">
@@ -91,19 +100,22 @@ export default function PrestamoCard({ prestamo: p, actions, esNuevo }) {
         </div>
       </div>
 
-      {/* Saldo en grande tipo balance bancario */}
-      <div className="mb-3">
-        <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider mb-0.5">Saldo pendiente</p>
-        <p
-          className="font-mono-display font-bold leading-none tracking-tight"
-          style={{
-            color: enMora ? color : 'var(--color-text-primary)',
-            fontSize: 'clamp(22px, 6vw, 28px)',
-            textShadow: enMora ? `0 0 24px color-mix(in srgb, ${color} 25%, transparent)` : 'none',
-          }}
-        >
-          {formatMoney(p.saldoPendiente)}
-        </p>
+      {/* Saldo en grande tipo tarjeta de credito: chip + balance */}
+      <div className="mb-3 flex items-center gap-3">
+        <ChipTarjeta width={30} />
+        <div>
+          <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider mb-0.5">Saldo pendiente</p>
+          <p
+            className="font-mono-display font-bold leading-none tracking-tight"
+            style={{
+              color: enMora ? color : 'var(--color-text-primary)',
+              fontSize: 'clamp(22px, 6vw, 28px)',
+              textShadow: enMora ? `0 0 24px color-mix(in srgb, ${color} 25%, transparent)` : 'none',
+            }}
+          >
+            {formatMoney(p.saldoPendiente)}
+          </p>
+        </div>
       </div>
 
       {/* Progress bar */}

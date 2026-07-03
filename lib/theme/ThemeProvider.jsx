@@ -2,12 +2,12 @@
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 
-const ThemeContext = createContext({ theme: 'dark', resolvedTheme: 'dark', setTheme: () => {} })
+const ThemeContext = createContext({ theme: 'light', resolvedTheme: 'light', setTheme: () => {} })
 
 const STORAGE_KEY = 'cf-theme'
 
 function getSystemTheme() {
-  if (typeof window === 'undefined') return 'dark'
+  if (typeof window === 'undefined') return 'light'
   return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
 }
 
@@ -30,21 +30,22 @@ function applyTheme(resolved) {
 
 function readStoredTheme() {
   try {
-    const saved = localStorage.getItem('cf-theme') || 'system'
+    // Default de marca: claro. 'system'/'dark' solo si el usuario lo eligio.
+    const saved = localStorage.getItem('cf-theme') || 'light'
     return saved === 'system'
       ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
       : saved
   } catch {
-    return 'dark'
+    return 'light'
   }
 }
 
 export function ThemeProvider({ children, initialTheme }) {
-  const [theme, setThemeState] = useState(initialTheme || 'system')
-  const [resolvedTheme, setResolvedTheme] = useState('dark')
+  const [theme, setThemeState] = useState(initialTheme || 'light')
+  const [resolvedTheme, setResolvedTheme] = useState('light')
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY) || 'system'
+    const saved = localStorage.getItem(STORAGE_KEY) || 'light'
     setThemeState(saved)
   }, [])
 
