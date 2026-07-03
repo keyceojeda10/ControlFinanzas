@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/Input'
 
 export default function NuevoSocioPage() {
   const router = useRouter()
-  const { esOwner } = useAuth()
+  const { esOwner, loading: authLoading } = useAuth()
   const [form, setForm] = useState({ nombre: '', cedula: '', telefono: '', notas: '' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -36,6 +36,8 @@ export default function NuevoSocioPage() {
       setLoading(false)
     }
   }
+
+  if (authLoading) return null
 
   if (!esOwner) {
     return (

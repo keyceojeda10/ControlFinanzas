@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { Input } from '@/components/ui/Input'
-import { MoneyInput } from '@/components/ui/MoneyInput'
+import MoneyInput from '@/components/ui/MoneyInput'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { SkeletonCard } from '@/components/ui/Skeleton'
 import { formatMoney } from '@/lib/i18n'
@@ -15,13 +15,16 @@ import { useCountry } from '@/hooks/useCountry'
 export default function SocioDetallePage() {
   const { id } = useParams()
   const router = useRouter()
-  const { esOwner } = useAuth()
+  const { esOwner, loading: authLoading } = useAuth()
   const { country } = useCountry()
   const fmt = (v) => formatMoney(v, country)
 
   const [socio, setSocio] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  const [confirmEliminarSocio, setConfirmEliminarSocio] = useState(false)
+  const [loadingEliminar, setLoadingEliminar] = useState(false)
 
   const [modalAporte, setModalAporte] = useState(false)
   const [montoAporte, setMontoAporte] = useState('')
@@ -94,7 +97,8 @@ export default function SocioDetallePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formEdit),
       })
-      if (!res.ok) throw new Error('Error al guardar')
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'Error al guardar')
       setEditando(false)
       cargar()
     } catch (e) {
@@ -103,6 +107,37 @@ export default function SocioDetallePage() {
       setLoadingEdit(false)
     }
   }
+
+  const eliminarSocio = async () => {
+    setLoadingEliminar(true)
+    try {
+      const res = await fetch(`/api/socios/${id}`, { method: 'DELETE' })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'Error al eliminar')
+      router.push('/socios')
+    } catch (e) {
+      alert(e.message)
+      setConfirmEliminarSocio(false)
+    } finally {
+      setLoadingEliminar(false)
+    }
+  }
+
+  const toggleActivo = async () => {
+    try {
+      const res = await fetch(`/api/socios/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ activo: !socio.activo }),
+      })
+      if (!res.ok) throw new Error('Error')
+      cargar()
+    } catch (e) {
+      alert(e.message)
+    }
+  }
+
+  if (authLoading) return null
 
   if (!esOwner) {
     return <div className="p-4 text-center" style={{ color: 'var(--color-text-muted)' }}>No tienes acceso.</div>
@@ -137,12 +172,14 @@ export default function SocioDetallePage() {
             <p className="text-[13px]" style={{ color: 'var(--color-text-muted)' }}>{socio.telefono}</p>
           )}
         </div>
-        <Button
-          variant="secondary"
-          onClick={() => { setFormEdit({ nombre: socio.nombre, cedula: socio.cedula || '', telefono: socio.telefono || '', notas: socio.notas || '' }); setEditando(true) }}
-        >
-          Editar
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            onClick={() => { setFormEdit({ nombre: socio.nombre, cedula: socio.cedula || '', telefono: socio.telefono || '', notas: socio.notas || '' }); setEditando(true) }}
+          >
+            Editar
+          </Button>
+        </div>
       </div>
 
       {/* Resumen */}
@@ -334,7 +371,7 @@ export default function SocioDetallePage() {
           <MoneyInput
             label="Monto del aporte"
             value={montoAporte}
-            onChange={setMontoAporte}
+            onChange={(e) => setMontoAporte(e.target.value)}
           />
           <Input
             label="Nota (opcional)"
@@ -372,6 +409,36 @@ export default function SocioDetallePage() {
         </div>
       </Modal>
 
+      {/* Acciones */}
+      <div
+        className="rounded-[16px] p-4 space-y-3"
+        style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+      >
+        <h2 className="text-[14px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>Acciones</h2>
+        <div className="flex gap-3">
+          <button
+            onClick={toggleActivo}
+            className="flex-1 py-2.5 rounded-[10px] text-[13px] font-medium transition-colors"
+            style={{
+              background: socio.activo ? 'color-mix(in srgb, var(--color-warning) 10%, transparent)' : 'color-mix(in srgb, var(--color-success) 10%, transparent)',
+              color: socio.activo ? 'var(--color-warning)' : 'var(--color-success)',
+            }}
+          >
+            {socio.activo ? 'Desactivar socio' : 'Reactivar socio'}
+          </button>
+          <button
+            onClick={() => setConfirmEliminarSocio(true)}
+            className="flex-1 py-2.5 rounded-[10px] text-[13px] font-medium transition-colors"
+            style={{
+              background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)',
+              color: 'var(--color-danger)',
+            }}
+          >
+            Eliminar socio
+          </button>
+        </div>
+      </div>
+
       {/* Confirmar eliminar aporte */}
       <ConfirmModal
         open={!!confirmEliminar}
@@ -381,6 +448,18 @@ export default function SocioDetallePage() {
         confirmLabel="Eliminar"
         color="danger"
         onConfirm={() => eliminarAporte(confirmEliminar)}
+      />
+
+      {/* Confirmar eliminar socio */}
+      <ConfirmModal
+        open={confirmEliminarSocio}
+        onClose={() => setConfirmEliminarSocio(false)}
+        title="Eliminar socio"
+        message={`Se eliminara a ${socio.nombre} y todos sus aportes. Los prestamos asociados quedaran sin socio. Esta accion no se puede deshacer.`}
+        confirmLabel="Eliminar"
+        color="danger"
+        loading={loadingEliminar}
+        onConfirm={eliminarSocio}
       />
     </div>
   )

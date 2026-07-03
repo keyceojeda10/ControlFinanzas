@@ -10,7 +10,7 @@ import { formatMoney } from '@/lib/i18n'
 import { useCountry } from '@/hooks/useCountry'
 
 export default function SociosPage() {
-  const { esOwner } = useAuth()
+  const { esOwner, loading: authLoading } = useAuth()
   const { country } = useCountry()
   const [socios, setSocios] = useState([])
   const [loading, setLoading] = useState(true)
@@ -33,6 +33,8 @@ export default function SociosPage() {
   }, [])
 
   useEffect(() => { cargar() }, [cargar])
+
+  if (authLoading) return <div className="space-y-3 pb-28">{[1, 2, 3].map((i) => <SkeletonCard key={i} />)}</div>
 
   if (!esOwner) {
     return (

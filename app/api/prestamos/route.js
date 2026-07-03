@@ -324,6 +324,16 @@ export async function POST(request) {
     ? inyeccionPrevia.descripcion.trim()
     : ''
 
+  if (socioId) {
+    const socioValido = await prisma.socio.findFirst({
+      where: { id: socioId, organizationId },
+      select: { id: true },
+    })
+    if (!socioValido) {
+      return Response.json({ error: 'Socio no encontrado' }, { status: 400 })
+    }
+  }
+
   // Crear préstamo y actualizar estado del cliente en transacción
   const prestamo = await prisma.$transaction(async (tx) => {
     // Lock + lectura del capital actual
