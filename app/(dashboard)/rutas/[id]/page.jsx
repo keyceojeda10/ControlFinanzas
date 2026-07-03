@@ -3047,11 +3047,13 @@ export default function RutaDetallePage({ params }) {
                     })}
                     disabled={!p.cuotaDiaria || p.cuotaDiaria <= 0}
                     className={`w-full text-left px-3 py-3 rounded-[12px] border transition-all active:scale-[0.99] disabled:opacity-50 ${
-                      yaPago
+                      yaPago && p.diasMora <= 0
                         ? 'border-[rgba(34,197,94,0.25)] bg-[rgba(34,197,94,0.05)]'
-                        : p.diasMora > 0
-                          ? 'border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.04)] hover:bg-[rgba(239,68,68,0.08)] hover:border-[rgba(239,68,68,0.4)]'
-                          : 'border-[var(--color-border)] bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(34,197,94,0.08)] hover:border-[rgba(34,197,94,0.3)]'
+                        : yaPago && p.diasMora > 0
+                          ? 'border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.06)] hover:bg-[rgba(245,158,11,0.1)] hover:border-[rgba(245,158,11,0.45)]'
+                          : p.diasMora > 0
+                            ? 'border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.04)] hover:bg-[rgba(239,68,68,0.08)] hover:border-[rgba(239,68,68,0.4)]'
+                            : 'border-[var(--color-border)] bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(34,197,94,0.08)] hover:border-[rgba(34,197,94,0.3)]'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2">
@@ -3067,8 +3069,11 @@ export default function RutaDetallePage({ params }) {
                         )}
                         {yaPago && (
                           <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
-                            style={{ background: 'color-mix(in srgb, var(--color-success) 15%, transparent)', color: 'var(--color-success)' }}>
-                            Pagado hoy
+                            style={p.diasMora > 0
+                              ? { background: 'color-mix(in srgb, var(--color-warning) 15%, transparent)', color: 'var(--color-warning)' }
+                              : { background: 'color-mix(in srgb, var(--color-success) 15%, transparent)', color: 'var(--color-success)' }
+                            }>
+                            {p.diasMora > 0 ? 'Pagó · Debe más' : 'Pagado hoy'}
                           </span>
                         )}
                       </div>
