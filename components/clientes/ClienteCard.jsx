@@ -40,15 +40,23 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
   const tienePrestamo = (cliente.prestamosActivos ?? 0) > 0
   const porcentaje = Math.max(0, Math.min(100, cliente.porcentajePagadoPromedio ?? 0))
 
+  const P = tienePrestamo ? palettes[moodKeyCliente(cliente, esNuevo)] : null
+
   return (
     <Card
       as={Link}
       href={`/clientes/${cliente.id}`}
-      glowColor={color}
       padding={false}
       hoverable
-      className="block px-4 py-3.5 group"
+      className="block px-4 py-3.5 group relative overflow-hidden"
+      style={P ? {
+        background: `linear-gradient(135deg, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 0%, var(--color-bg-card) 60%)`,
+        border: `1px solid color-mix(in srgb, ${color} 20%, var(--color-border))`,
+      } : undefined}
     >
+      {P && <CardWaves tint={`color-mix(in srgb, ${color} 8%, transparent)`} />}
+
+      <div className="relative">
       {/* ── Seccion superior: identidad del cliente ── */}
       <div className="flex items-start gap-3">
         {/* Avatar */}
@@ -144,8 +152,7 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
       {/* ── Seccion financiera: tarjeta pastel del estado (solo si tiene prestamo) ──
           Superficie suave + tinta profunda + olas sutiles. Reactiva: al dia
           champan, nuevo azul lavanda, vencido durazno, mora rosa, off gris. */}
-      {tienePrestamo && (() => {
-        const P = palettes[moodKeyCliente(cliente, esNuevo)]
+      {tienePrestamo && P && (() => {
         return (
           <div
             className="mt-3 relative overflow-hidden rounded-[14px] px-4 py-3.5"
@@ -194,6 +201,7 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
           </div>
         )
       })()}
+      </div>
     </Card>
   )
 }
