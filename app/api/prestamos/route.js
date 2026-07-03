@@ -192,7 +192,7 @@ export async function POST(request) {
 
   const { organizationId, rol } = session.user
   const body = await request.json()
-  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado, cuotaManual, inyeccionPrevia, diaCobroSemana, diaCobroMes, seguro, montoSeguro, modoInteres, nombreProducto } = body
+  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado, cuotaManual, inyeccionPrevia, diaCobroSemana, diaCobroMes, seguro, montoSeguro, modoInteres, nombreProducto, interesAdelantado } = body
 
   const freq = frecuencia || 'diario'
   const frecuenciasValidas = ['diario', 'semanal', 'quincenal', 'mensual']
@@ -292,6 +292,7 @@ export async function POST(request) {
   const calc = calcularPrestamo({
     montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia: freq, modoInteres: modoValido,
     ...(cuotaManualNum > 0 && { cuotaManual: cuotaManualNum }),
+    interesAdelantado: modoValido === 'solo_interes' && !!interesAdelantado,
   })
   const { totalAPagar, cuotaDiaria, fechaFin } = calc
   const modoInteresFinal = calc.modoInteres  // 'manual' si hubo cuotaManual
@@ -360,6 +361,7 @@ export async function POST(request) {
         cuotaDiaria,
         frecuencia:    freq,
         modoInteres:   modoInteresFinal,
+        interesAdelantado: modoInteresFinal === 'solo_interes' && !!interesAdelantado,
         ...(typeof nombreProducto === 'string' && nombreProducto.trim() && { nombreProducto: nombreProducto.trim().slice(0, 100) }),
         diaCobroSemana: diaCobroSemanaDb,
         diaCobroMes:    diaCobroMesDb,

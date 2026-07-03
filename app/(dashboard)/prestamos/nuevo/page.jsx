@@ -14,6 +14,7 @@ import ModoInteresSelector                         from '@/components/prestamos/
 import TablaAmortizacion                           from '@/components/prestamos/TablaAmortizacion'
 import Stepper                                     from '@/components/ui/Stepper'
 import DiasSinCobroSelector                        from '@/components/ui/DiasSinCobroSelector'
+import { Toggle }                                  from '@/components/ui/Toggle'
 import { guardarPrestamoPendiente, obtenerClientesOffline } from '@/lib/offline'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
@@ -134,6 +135,7 @@ function NuevoPrestamo() {
   const [montoSeguro, setMontoSeguro] = useState('')
   // Modo de interes: 'fijo' (clasico, default) | 'unico' | 'saldo' | 'manual'.
   const [modoInteres, setModoInteres] = useState('fijo')
+  const [interesAdelantado, setInteresAdelantado] = useState(false)
   const cuotaManualActiva = modoInteres === 'manual'
   const [cuotaManual, setCuotaManual] = useState('')
   // Dias sin cobro especificos para este cliente (se actualizan en su ficha
@@ -389,8 +391,9 @@ function NuevoPrestamo() {
       frecuencia,
       modoInteres: modo === 'mercancia' ? 'manual' : modoInteres,
       ...(cm > 0 && { cuotaManual: cm }),
+      interesAdelantado: modoInteres === 'solo_interes' && interesAdelantado,
     })
-  }, [monto, tasa, plazo, fechaInicio, frecuencia, modo, modoInteres, cuotaManualActiva, cuotaManual, precioVenta, numCuotas])
+  }, [monto, tasa, plazo, fechaInicio, frecuencia, modo, modoInteres, cuotaManualActiva, cuotaManual, precioVenta, numCuotas, interesAdelantado])
 
   const clientesFiltrados = clientes.filter((c) =>
     c.nombre.toLowerCase().includes(buscadorCliente.toLowerCase()) ||
@@ -416,6 +419,7 @@ function NuevoPrestamo() {
         ...(modo === 'mercancia' && nombreProducto.trim() && { nombreProducto: nombreProducto.trim() }),
         ...(inyeccionPrevia && { inyeccionPrevia }),
         ...(seguro && Number(montoSeguro) > 0 && { seguro: true, montoSeguro: Number(montoSeguro) }),
+        ...(modoInteres === 'solo_interes' && interesAdelantado && { interesAdelantado: true }),
       }),
     })
     const data = await res.json()
@@ -1294,6 +1298,13 @@ function NuevoPrestamo() {
                             } />
                         )}
 
+                        {modoInteres === 'solo_interes' && (
+                          <div className="flex items-center justify-between py-1.5 px-1">
+                            <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Interes adelantado</span>
+                            <Toggle checked={interesAdelantado} onChange={setInteresAdelantado} />
+                          </div>
+                        )}
+
                         {cuotaManualActiva && (
                           <EditableRow label="Cuota exacta" value={formatMoney(Number(cuotaManual || 0))} pencil={pencil}
                             editor={<MoneyInput value={cuotaManual} onChange={e => setCuotaManual(e.target.value)} autoFocus />} />
@@ -1430,6 +1441,13 @@ function NuevoPrestamo() {
                       </select>
                     }
                   />
+                )}
+
+                {modoInteres === 'solo_interes' && (
+                  <div className="flex items-center justify-between py-1.5 px-1">
+                    <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Interes adelantado</span>
+                    <Toggle checked={interesAdelantado} onChange={setInteresAdelantado} />
+                  </div>
                 )}
 
                 {/* Cuota manual — editable si modo manual */}

@@ -384,7 +384,7 @@ export default function PrestamoDetallePage({ params }) {
     montoParaPonerseAlDia = 0,
     pagoHoy: yaPagoHoy, pagos = [], proximoCobro,
     seguro = false, montoSeguro,
-    modoInteres, renovadoDeId, esClavo = false,
+    modoInteres, interesAdelantado = false, renovadoDeId, esClavo = false,
     cuotasAmortizacion = [],
     creadoPor,
     moratorio = null,
@@ -803,7 +803,7 @@ export default function PrestamoDetallePage({ params }) {
               { label: 'Total a pagar', value: formatMoney(totalAPagar) },
               ...(nombreProducto ? [] : [{ label: 'Tasa', value: `${tasaInteres}%` }]),
               { label: 'Plazo', value: `${diasPlazo} días` },
-              { label: 'Tipo de interés', value: ({
+              { label: 'Tipo de interés', value: (({
                 fijo: 'Cuota fija (clásico)',
                 unico: 'Interés único',
                 saldo: 'Sobre saldo',
@@ -811,7 +811,7 @@ export default function PrestamoDetallePage({ params }) {
                 solo_interes: 'Solo interés (globo)',
                 manual: 'Cuota manual',
                 proporcional: 'Proporcional',
-              })[modoInteres] || modoInteres || 'Clásico' },
+              })[modoInteres] || modoInteres || 'Clásico') + (interesAdelantado ? ' (adelantado)' : '') },
             ],
           },
           {

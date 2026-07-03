@@ -351,6 +351,7 @@ export async function POST(request, { params }) {
           primerNumeroPeriodo: filasFuturas[0].numeroPeriodo,
           fechaBase,
           diasPeriodo,
+          interesAdelantado: !!prestamoActualizado.interesAdelantado,
         })
 
         for (const fila of tablaRecalculada) {

@@ -8,6 +8,7 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import MoneyInput from '@/components/ui/MoneyInput'
+import { Toggle } from '@/components/ui/Toggle'
 import ModoInteresSelector from '@/components/prestamos/ModoInteresSelector'
 import TablaAmortizacion from '@/components/prestamos/TablaAmortizacion'
 import { calcularPrestamo } from '@/lib/calculos'
@@ -33,6 +34,7 @@ export default function CalculadoraPage() {
   const [frecuencia, setFrecuencia] = useState('diario')
   const [plazoUnidades, setPlazoUnidades] = useState('30')
   const [modoInteres, setModoInteres] = useState('fijo')
+  const [interesAdelantado, setInteresAdelantado] = useState(false)
   const [cuotaManual, setCuotaManual] = useState('')
   const [copiado, setCopiado] = useState(false)
 
@@ -59,11 +61,12 @@ export default function CalculadoraPage() {
         frecuencia,
         modoInteres,
         ...(cm > 0 && { cuotaManual: cm }),
+        interesAdelantado: modoInteres === 'solo_interes' && interesAdelantado,
       })
     } catch {
       return null
     }
-  }, [monto, tasa, diasPlazo, frecuencia, modoInteres, cuotaManualActiva, cuotaManual])
+  }, [monto, tasa, diasPlazo, frecuencia, modoInteres, cuotaManualActiva, cuotaManual, interesAdelantado])
 
   const numCuotas = calculo?.numPeriodos || 0
   const cuotaDistinta =
@@ -220,6 +223,13 @@ export default function CalculadoraPage() {
               diasPlazo={diasPlazo}
             />
           </div>
+
+          {modoInteres === 'solo_interes' && (
+            <div className="flex items-center justify-between mt-3 px-1">
+              <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Interes adelantado</span>
+              <Toggle checked={interesAdelantado} onChange={setInteresAdelantado} />
+            </div>
+          )}
 
           {/* Cuota manual (solo modo manual) */}
           {cuotaManualActiva && (
