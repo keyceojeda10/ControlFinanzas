@@ -139,6 +139,7 @@ function NuevoPrestamo() {
   // Modo de interes: 'fijo' (clasico, default) | 'unico' | 'saldo' | 'manual'.
   const [modoInteres, setModoInteres] = useState('fijo')
   const [interesAdelantado, setInteresAdelantado] = useState(false)
+  const [capitalExtra, setCapitalExtra] = useState([])
   const cuotaManualActiva = modoInteres === 'manual'
   const [cuotaManual, setCuotaManual] = useState('')
   // Dias sin cobro especificos para este cliente (se actualizan en su ficha
@@ -401,10 +402,11 @@ function NuevoPrestamo() {
       modoInteres: modo === 'mercancia' ? 'manual' : modoInteres,
       ...(cm > 0 && { cuotaManual: cm }),
       interesAdelantado: modoInteres === 'solo_interes' && interesAdelantado,
+      ...(modoInteres === 'solo_interes' && capitalExtra.length > 0 && { capitalExtra }),
       ...(modoDiaCobro === 'mes' && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
       ...(frecuencia === 'quincenal' && modoDiaCobro === 'mes' && diaCobroMes2 !== '' && { diaCobroMes2: Number(diaCobroMes2) }),
     })
-  }, [monto, tasa, plazo, fechaInicio, frecuencia, modo, modoInteres, cuotaManualActiva, cuotaManual, precioVenta, numCuotas, interesAdelantado, modoDiaCobro, diaCobroMes, diaCobroMes2])
+  }, [monto, tasa, plazo, fechaInicio, frecuencia, modo, modoInteres, cuotaManualActiva, cuotaManual, precioVenta, numCuotas, interesAdelantado, capitalExtra, modoDiaCobro, diaCobroMes, diaCobroMes2])
 
   const clientesFiltrados = clientes.filter((c) =>
     c.nombre.toLowerCase().includes(buscadorCliente.toLowerCase()) ||
@@ -432,6 +434,7 @@ function NuevoPrestamo() {
         ...(inyeccionPrevia && { inyeccionPrevia }),
         ...(seguro && Number(montoSeguro) > 0 && { seguro: true, montoSeguro: Number(montoSeguro) }),
         ...(modoInteres === 'solo_interes' && interesAdelantado && { interesAdelantado: true }),
+        ...(modoInteres === 'solo_interes' && capitalExtra.length > 0 && { capitalExtra }),
         ...(socioId && { socioId }),
       }),
     })
@@ -1159,6 +1162,7 @@ function NuevoPrestamo() {
                 modoInteres={modoInteres}
                 onChange={(m) => {
                   setModoInteres(m)
+                  if (m !== 'solo_interes') setCapitalExtra([])
                   if (m !== 'manual') setCuotaManual('')
                   else if (calculo?.cuotaDiaria) setCuotaManual(String(calculo.cuotaDiaria))
                 }}
@@ -1380,7 +1384,13 @@ function NuevoPrestamo() {
                     </div>
                     {['lineal', 'solo_interes'].includes(modoInteres) && calculo?.tablaAmortizacion?.length > 0 && (
                       <div className="px-4 py-3 border-t" style={{ borderColor: 'color-mix(in srgb, var(--color-border) 50%, transparent)', background: 'var(--color-bg-card)' }}>
-                        <TablaAmortizacion tabla={calculo.tablaAmortizacion} frecuencia={frecuencia} />
+                        <TablaAmortizacion
+                          tabla={calculo.tablaAmortizacion}
+                          frecuencia={frecuencia}
+                          modoInteres={modoInteres}
+                          capitalExtra={modoInteres === 'solo_interes' ? capitalExtra : undefined}
+                          onCapitalExtraChange={modoInteres === 'solo_interes' ? setCapitalExtra : undefined}
+                        />
                       </div>
                     )}
                   </div>
