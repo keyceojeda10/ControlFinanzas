@@ -50,15 +50,17 @@ export default function PrestamoCard({ prestamo: p, actions, esNuevo }) {
     >
       <CardWaves tint={P.waves} />
       {P.sheen && P.sheen !== 'none' && (
-        <div className="absolute inset-0 pointer-events-none" style={{ background: P.sheen }} />
-      )}
-      {P.sheen && P.sheen !== 'none' && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute w-1 h-1 rounded-full" style={{ background: `${P.accent}40`, top: '18%', left: '72%' }} />
-          <div className="absolute w-0.5 h-0.5 rounded-full" style={{ background: `${P.accent}30`, top: '55%', left: '88%' }} />
-          <div className="absolute w-[3px] h-[3px] rounded-full" style={{ background: `${P.accent}25`, top: '75%', left: '15%' }} />
-          <div className="absolute w-0.5 h-0.5 rounded-full" style={{ background: `${P.accent}35`, top: '30%', left: '40%' }} />
-        </div>
+        <>
+          <div className="absolute inset-0 pointer-events-none" style={{ background: P.sheen }} />
+          <div className="absolute inset-0 pointer-events-none" style={{ background: P.sheen, transform: 'scaleX(-1)', opacity: 0.5 }} />
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            <div className="absolute w-[3px] h-[3px] rounded-full" style={{ background: `${P.accent}50`, top: '12%', right: '18%' }} />
+            <div className="absolute w-[2px] h-[2px] rounded-full" style={{ background: `${P.accent}40`, top: '35%', right: '8%' }} />
+            <div className="absolute w-[2px] h-[2px] rounded-full" style={{ background: `${P.accent}35`, bottom: '20%', right: '25%' }} />
+            <div className="absolute w-[3px] h-[3px] rounded-full" style={{ background: `${P.accent}30`, bottom: '35%', left: '12%' }} />
+            <div className="absolute w-[2px] h-[2px] rounded-full" style={{ background: `${P.accent}45`, top: '60%', right: '40%' }} />
+          </div>
+        </>
       )}
 
       <div className="relative">

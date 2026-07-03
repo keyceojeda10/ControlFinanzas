@@ -50,10 +50,30 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
       hoverable
       className="block px-4 py-3.5 group relative overflow-hidden"
       style={P ? {
-        background: `radial-gradient(ellipse at 50% 100%, color-mix(in srgb, ${color} 18%, var(--color-bg-card)) 0%, var(--color-bg-card) 70%)`,
+        background: `linear-gradient(180deg, var(--color-bg-card) 0%, color-mix(in srgb, ${color} 10%, var(--color-bg-card)) 50%, color-mix(in srgb, ${color} 20%, var(--color-bg-card)) 100%)`,
         border: `1px solid color-mix(in srgb, ${color} 22%, var(--color-border))`,
       } : undefined}
     >
+      {P && (
+        <svg
+          className="absolute inset-0 w-full h-full pointer-events-none"
+          viewBox="0 0 400 180"
+          preserveAspectRatio="xMidYMid slice"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M220 -20 C 280 20, 240 70, 300 110 C 340 135, 310 165, 420 180 L 420 -20 Z"
+            fill={P.waves}
+            opacity="0.25"
+          />
+          <path
+            d="M280 -20 C 330 25, 270 85, 340 130 C 375 150, 360 170, 420 185 L 420 -20 Z"
+            fill={P.waves}
+            opacity="0.15"
+          />
+        </svg>
+      )}
 
       <div className="relative">
       {/* ── Seccion superior: identidad del cliente ── */}
