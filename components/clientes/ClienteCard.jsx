@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/Card'
 import Avatar from '@/components/ui/Avatar'
 import CardActionMenu from '@/components/ui/CardActionMenu'
 import { NuevoChip } from '@/components/ui/BadgeNuevo'
-import ChipTarjeta from '@/components/ui/ChipTarjeta'
+import { CARD_STYLES, CARD_GLOSS, moodKeyCliente } from '@/components/ui/tarjetaCredito'
 
 const COLOR_OK     = 'var(--color-accent)'
 const COLOR_HOT    = '#f97316'
@@ -139,74 +139,60 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
         {actions?.length > 0 && <CardActionMenu actions={actions} />}
       </div>
 
-      {/* ── Seccion financiera estilo tarjeta de credito (solo si tiene prestamo) ──
-          El gradiente y el borde reaccionan al estado del cliente (al dia /
-          vencido / mora / inactivo) via `color`. */}
-      {tienePrestamo && (
-        <div
-          className="mt-3 relative overflow-hidden rounded-[12px] px-3.5 py-3"
-          style={{
-            background: `linear-gradient(135deg, color-mix(in srgb, ${color} 14%, var(--color-bg-card)) 0%, var(--color-bg-card) 52%, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 100%)`,
-            border: `1px solid color-mix(in srgb, ${color} 22%, var(--color-border))`,
-          }}
-        >
-          {/* Brillo diagonal de tarjeta */}
+      {/* ── Seccion financiera: tarjeta color-block (solo si tiene prestamo) ──
+          La tarjeta ES el color del estado: dorada al dia, naranja vencido,
+          roja en mora seria, grafito inactivo. Tinta oscura/blanca encima. */}
+      {tienePrestamo && (() => {
+        const S = CARD_STYLES[moodKeyCliente(cliente)]
+        return (
           <div
-            className="absolute inset-0 pointer-events-none"
-            style={{ background: 'linear-gradient(115deg, transparent 32%, rgba(255,255,255,0.06) 46%, transparent 58%)' }}
-          />
-          <div className="relative">
-            {/* Fila: chip + saldo | info prestamo */}
-            <div className="flex items-start justify-between mb-2.5">
-              <div className="flex items-center gap-2.5">
-                <ChipTarjeta width={26} />
+            className="mt-3 relative overflow-hidden rounded-[14px] px-4 py-3.5"
+            style={{
+              background: S.grad,
+              border: `1px solid ${S.edge}`,
+              boxShadow: `0 8px 20px ${S.glow}`,
+            }}
+          >
+            {/* Gloss sutil */}
+            <div className="absolute inset-0 pointer-events-none" style={{ background: CARD_GLOSS }} />
+            <div className="relative">
+              <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider">Saldo pendiente</p>
-                  <p
-                    className="text-[18px] font-mono-display font-bold leading-none mt-1"
-                    style={{ color: cliente.diasMoraMax > 0 ? color : 'var(--color-text-primary)' }}
-                  >
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.14em]" style={{ color: S.sub }}>
+                    Saldo pendiente
+                  </p>
+                  <p className="text-[22px] font-mono-display font-bold leading-none mt-1" style={{ color: S.ink }}>
                     {formatMoney(saldoTotal)}
                   </p>
                 </div>
-              </div>
-              <div className="text-right">
-                <p className="text-[10px] text-[var(--color-text-muted)]">
-                  {cliente.prestamosActivos} préstamo{cliente.prestamosActivos > 1 ? 's' : ''}
-                </p>
-                {cliente.proximoCobroLabel && (
-                  <p
-                    className="text-[10px] font-medium mt-0.5 capitalize"
-                    style={{ color: cliente.diasMoraMax > 0 ? color : 'var(--color-text-secondary)' }}
-                  >
-                    {cliente.diasMoraMax > 0 ? 'Vencido' : 'Cobro'}: {cliente.proximoCobroLabel}
+                <div className="text-right">
+                  <p className="text-[10px] font-semibold" style={{ color: S.sub }}>
+                    {cliente.prestamosActivos} préstamo{cliente.prestamosActivos > 1 ? 's' : ''}
                   </p>
-                )}
+                  {cliente.proximoCobroLabel && (
+                    <p className="text-[10px] font-bold mt-0.5 capitalize" style={{ color: S.ink }}>
+                      {cliente.diasMoraMax > 0 ? 'Vencido' : 'Cobro'}: {cliente.proximoCobroLabel}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
 
-            {/* Barra de progreso */}
-            <div>
-              <div className="flex items-center justify-between text-[10px] mb-1">
-                <span className="text-[var(--color-text-muted)]">Progreso</span>
-                <span className="font-mono-display font-semibold" style={{ color }}>{porcentaje}%</span>
-              </div>
-              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
+              {/* Barra de progreso */}
+              <div className="mt-3 h-[6px] rounded-full overflow-hidden" style={{ background: S.track }}>
                 <div
                   className="h-full rounded-full transition-all"
-                  style={{
-                    width: `${Math.max(porcentaje, 2)}%`,
-                    // No concatenar `${color}cc` porque `color` puede ser un var() CSS
-                    // (var(--color-accent)cc es invalido). Usamos color-mix para el degrade
-                    // y un fallback solido al color final.
-                    background: `linear-gradient(90deg, color-mix(in srgb, ${color} 80%, transparent), ${color})`,
-                  }}
+                  style={{ width: `${Math.max(porcentaje, 2)}%`, background: S.ink }}
                 />
+              </div>
+              <div className="flex items-center justify-between mt-1.5 text-[10px]">
+                <span style={{ color: S.sub }}>
+                  <span className="font-mono-display font-bold" style={{ color: S.ink }}>{porcentaje}%</span> pagado
+                </span>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
     </Card>
   )
 }

@@ -97,12 +97,15 @@ Todo control interactivo tiene: default, hover, focus-visible (ring dorado), act
 - Capi aparece en: estados vacíos, éxito de pago, onboarding, celebraciones. No en
   contextos negativos serios (mora crítica, errores de cobro) — ahí sobra simpatía.
 
-## Tarjetas tipo tarjeta de crédito (clientes/préstamos)
+## Tarjetas color-block (clientes/préstamos/hero dashboard)
 
-- Look "credit card": gradiente 135° que reacciona al estado (`color-mix` del mood color
-  con `--color-bg-card`), chip EMV (`components/ui/ChipTarjeta.jsx`) y brillo diagonal
-  (overlay `linear-gradient 115°` con blanco 5-6%).
-- Mood colors: dorado = al día, naranja #f97316 = vencido, danger = mora >7d,
-  success = completado, gris #64748b = cancelado/inactivo.
-- Regla: el gradiente NUNCA supera 14-16% de mezcla del mood color — la tarjeta insinúa
-  el estado, el badge lo declara. Todos los datos se conservan siempre.
+- Fuente de verdad: `components/ui/tarjetaCredito.js` (CARD_STYLES + moodKey helpers).
+- La tarjeta ES el color del estado — superficie saturada completa + tinta oscura encima
+  (blanca solo en mora seria): `ok` dorado marca, `hot` naranja, `crit` rojo profundo,
+  `done` verde, `off` grafito claro. Gloss diagonal sutil (blanco 16%) permitido.
+- **PROHIBIDO skeuomorfismo**: nada de chips EMV, bandas magnéticas, relieves ni
+  imitación literal de tarjetas físicas. Es un producto virtual (feedback del user, 2 jul).
+- Los cambios sutiles NO cuentan como rediseño: tintes <20% se leen como "no hiciste nada".
+  Comprometerse con el color (referencia: tarjeta amarilla con número negro grande).
+- Elementos sobre la tarjeta usan S.ink/S.sub/S.track — nunca tokens del tema (la tarjeta
+  es del mismo color en dark y light). Todos los datos se conservan siempre.

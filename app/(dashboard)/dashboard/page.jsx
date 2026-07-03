@@ -289,8 +289,14 @@ function Sparkline({ data, color = 'var(--color-success)', ariaLabel, etiquetasD
   )
 }
 
-// Hero card: KPI principal en grande con gradiente, glow pulsante, narrativa
-// y donut de meta integrado a la derecha. Inspirado en Mercury / Revolut.
+// Hero card: la tarjeta dorada de marca (color-block). Numero grande en tinta
+// oscura sobre dorado, donut de meta integrado. Sin skeuomorfismo.
+const HERO_GRAD  = 'linear-gradient(135deg, #f9d64a 0%, #f5c518 55%, #eab308 100%)'
+const HERO_INK   = '#231a04'
+const HERO_SUB   = 'rgba(35, 26, 4, 0.62)'
+const HERO_TRACK = 'rgba(35, 26, 4, 0.16)'
+const HERO_GLOSS = 'linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.16) 45%, transparent 58%)'
+
 function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#34d399', narrativa, sparklineData, metaDiaria, info }) {
   const animatedNum = useCountUp(typeof valueRaw === 'number' ? valueRaw : 0, 900)
   const [showInfo, setShowInfo] = useState(false)
@@ -299,28 +305,31 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
 
   return (
     <div
-      className="cf-hero-card cf-gradient-mesh relative rounded-[20px] overflow-hidden kpi-lift elevation-2"
+      className="cf-hero-card relative rounded-[20px] overflow-hidden kpi-lift elevation-2"
       style={{
-        background: 'var(--color-bg-card)',
-        border: '1px solid var(--color-border)',
+        background: HERO_GRAD,
+        border: '1px solid rgba(180, 140, 10, 0.35)',
+        boxShadow: '0 14px 34px rgba(200, 160, 20, 0.30)',
       }}
     >
+      {/* Gloss sutil */}
+      <div className="absolute inset-0 pointer-events-none" style={{ background: HERO_GLOSS }} />
       {/* Patron de puntos sutil */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-[0.03]"
-        style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '16px 16px', color }}
+        className="absolute inset-0 pointer-events-none opacity-[0.05]"
+        style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '16px 16px', color: HERO_INK }}
       />
 
       <div className="relative px-5 py-4 sm:px-6 sm:py-5">
         {/* Header con label + boton info */}
         <div className="flex items-center gap-2 mb-2">
-          <div className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
-          <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
+          <div className="w-1.5 h-1.5 rounded-full" style={{ background: HERO_INK }} />
+          <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: HERO_SUB }}>{label}</p>
           {hasInfo && (
             <button
               onClick={(e) => { e.stopPropagation(); if (!showInfo) setShowInfo(true) }}
               className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold ml-auto cursor-pointer transition-transform hover:scale-110"
-              style={{ background: `color-mix(in srgb, ${color} 13%, transparent)`, color }}
+              style={{ background: `color-mix(in srgb, ${HERO_INK} 12%, transparent)`, color: HERO_INK }}
               aria-label="Ver información"
             >
               i
@@ -334,17 +343,17 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
             <p
               className="font-mono-display font-bold leading-none tracking-tight truncate"
               style={{
-                color,
+                color: HERO_INK,
                 fontSize: 'clamp(32px, 9vw, 44px)',
               }}
             >
               {display}
             </p>
             {sub && (
-              <p className="text-[12px] mt-1.5" style={{ color: 'var(--color-text-secondary)' }}>{sub}</p>
+              <p className="text-[12px] mt-1.5 font-medium" style={{ color: HERO_SUB }}>{sub}</p>
             )}
             {narrativa && (
-              <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium" style={{ background: `color-mix(in srgb, ${color} 8%, transparent)`, color, border: `1px solid color-mix(in srgb, ${color} 15%, transparent)` }}>
+              <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold" style={{ background: `color-mix(in srgb, ${HERO_INK} 10%, transparent)`, color: HERO_INK, border: `1px solid color-mix(in srgb, ${HERO_INK} 18%, transparent)` }}>
                 <span>{narrativa}</span>
               </div>
             )}
@@ -356,7 +365,9 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
               <DonutProgress
                 value={typeof valueRaw === 'number' ? valueRaw : 0}
                 max={metaDiaria}
-                color={color}
+                color={HERO_INK}
+                trackColor={HERO_TRACK}
+                labelColor={HERO_SUB}
                 size={76}
                 strokeWidth={7}
                 label="Meta hoy"
@@ -367,24 +378,26 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
 
         {/* Donut version movil (debajo del numero) */}
         {metaDiaria && metaDiaria > 0 && (
-          <div className="sm:hidden mt-3 flex items-center gap-3 pt-3" style={{ borderTop: `1px solid color-mix(in srgb, ${color} 15%, transparent)` }}>
+          <div className="sm:hidden mt-3 flex items-center gap-3 pt-3" style={{ borderTop: `1px solid ${HERO_TRACK}` }}>
             <DonutProgress
               value={typeof valueRaw === 'number' ? valueRaw : 0}
               max={metaDiaria}
-              color={color}
+              color={HERO_INK}
+              trackColor={HERO_TRACK}
+              labelColor={HERO_SUB}
               size={56}
               strokeWidth={5}
             />
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Meta diaria</p>
-              <p className="text-[14px] font-mono-display font-bold mt-0.5" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(metaDiaria)}</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: HERO_SUB }}>Meta diaria</p>
+              <p className="text-[14px] font-mono-display font-bold mt-0.5" style={{ color: HERO_INK }}>{formatMoney(metaDiaria)}</p>
             </div>
           </div>
         )}
 
         {sparklineData && sparklineData.length > 0 && (
           <div className="mt-3">
-            <Sparkline data={sparklineData} color={color} ariaLabel="Tendencia ultimos 7 dias" />
+            <Sparkline data={sparklineData} color={HERO_INK} ariaLabel="Tendencia ultimos 7 dias" />
           </div>
         )}
 
@@ -397,7 +410,7 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
 }
 
 // Donut de progreso animado: anillo SVG con porcentaje en el centro.
-function DonutProgress({ value = 0, max = 100, color = 'var(--color-success)', size = 90, strokeWidth = 9, label, sublabel }) {
+function DonutProgress({ value = 0, max = 100, color = 'var(--color-success)', size = 90, strokeWidth = 9, label, sublabel, trackColor = 'var(--color-bg-hover)', labelColor = 'var(--color-text-secondary)' }) {
   const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0
   const animatedPct = useCountUp(pct, 1000)
   const r = (size - strokeWidth) / 2
@@ -416,7 +429,7 @@ function DonutProgress({ value = 0, max = 100, color = 'var(--color-success)', s
               cy={size / 2}
               r={r}
               fill="none"
-              stroke="var(--color-bg-hover)"
+              stroke={trackColor}
               strokeWidth={strokeWidth}
             />
             {/* Anillo de progreso */}
@@ -442,7 +455,7 @@ function DonutProgress({ value = 0, max = 100, color = 'var(--color-success)', s
         </div>
       </div>
       {label && (
-        <p className="text-[11px] mt-2 font-semibold uppercase tracking-wider text-center" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
+        <p className="text-[11px] mt-2 font-semibold uppercase tracking-wider text-center" style={{ color: labelColor }}>{label}</p>
       )}
       {sublabel && (
         <p className="text-[10px] mt-0.5 text-center" style={{ color: 'var(--color-text-muted)' }}>{sublabel}</p>

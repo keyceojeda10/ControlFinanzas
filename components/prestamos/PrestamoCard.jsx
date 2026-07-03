@@ -1,6 +1,7 @@
-// components/prestamos/PrestamoCard.jsx - Card tipo "cuenta bancaria"
-// Inspirado en Mercury / Revolut: saldo en grande arriba, micro-stats abajo,
-// progress bar central con marca del % real, sparkline opcional de pagos.
+// components/prestamos/PrestamoCard.jsx - Tarjeta color-block tipo fintech.
+// La tarjeta COMPLETA toma el color del estado del prestamo (dorado al dia,
+// naranja vencido, rojo mora, verde completado, grafito cancelado) con tinta
+// oscura/blanca encima. Sin skeuomorfismo. Todos los datos se conservan.
 
 import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
@@ -10,21 +11,7 @@ import OfflineBadge from '@/components/offline/OfflineBadge'
 import Avatar from '@/components/ui/Avatar'
 import CardActionMenu from '@/components/ui/CardActionMenu'
 import { NuevoChip } from '@/components/ui/BadgeNuevo'
-import ChipTarjeta from '@/components/ui/ChipTarjeta'
-
-const COLOR_OK     = 'var(--color-accent)'    // dorado — al dia
-const COLOR_HOT    = '#f97316'                // naranja — vencido pocos dias
-const COLOR_CRIT   = 'var(--color-danger)'    // rojo — mora seria
-const COLOR_DONE   = 'var(--color-success)'   // verde — completado
-const COLOR_OFF    = '#64748b'                // gris — cancelado
-
-function moodColor(p) {
-  if (p.estado === 'completado') return COLOR_DONE
-  if (p.estado === 'cancelado')  return COLOR_OFF
-  if (p.diasMora > 7)            return COLOR_CRIT
-  if (p.diasMora > 0)            return COLOR_HOT
-  return COLOR_OK
-}
+import { CARD_STYLES, CARD_GLOSS, moodKeyPrestamo } from '@/components/ui/tarjetaCredito'
 
 function moodLabel(p) {
   if (p.estado === 'completado') return 'Completado'
@@ -36,11 +23,10 @@ function moodLabel(p) {
 }
 
 export default function PrestamoCard({ prestamo: p, actions, esNuevo }) {
-  const color           = moodColor(p)
+  const S               = CARD_STYLES[moodKeyPrestamo(p)]
   const label           = moodLabel(p)
   const porcentaje      = Math.max(0, Math.min(100, p.porcentajePagado ?? 0))
   const pagado          = (p.totalAPagar ?? 0) - (p.saldoPendiente ?? 0)
-  const enMora          = p.diasMora > 0
   const tieneProximo    = p.estado === 'activo' && p.proximoCobro
   const proximoLabel    = tieneProximo ? formatFechaCobroRelativa(p.proximoCobro) : null
 
@@ -48,118 +34,111 @@ export default function PrestamoCard({ prestamo: p, actions, esNuevo }) {
     <Card
       as={Link}
       href={`/prestamos/${p.id}`}
-      glowColor={color}
       padding={false}
       hoverable
       className="block px-4 py-4 group relative overflow-hidden"
       style={{
-        background: `linear-gradient(135deg, color-mix(in srgb, ${color} 11%, var(--color-bg-card)) 0%, var(--color-bg-card) 48%, color-mix(in srgb, ${color} 5%, var(--color-bg-card)) 100%)`,
+        background: S.grad,
+        border: `1px solid ${S.edge}`,
+        boxShadow: `0 10px 26px ${S.glow}`,
       }}
     >
-      {/* Brillo diagonal de tarjeta */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{ background: 'linear-gradient(115deg, transparent 34%, rgba(255,255,255,0.05) 47%, transparent 58%)' }}
-      />
-      {/* Top: cliente + estado mood + offline */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <Avatar
-            nombre={p.cliente?.nombre}
-            fotoUrl={p.cliente?.fotoUrl}
-            size={32}
-            fontSize={12}
-            style={p.cliente?.fotoUrl ? { border: `1px solid ${color}` } : undefined}
-          />
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-[var(--color-text-primary)] truncate leading-tight">
-              {p.cliente?.nombre}
-            </p>
-            {p.cliente?.cedula && !p.cliente.cedula.startsWith('SIN-') && (
-              <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">CC {p.cliente.cedula}</p>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <div className="flex flex-col items-end gap-1">
-            <OfflineBadge id={p.id} />
-            <span
-              className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
-              style={{
-                background: `color-mix(in srgb, ${color} 15%, transparent)`,
-                color,
-                border: `1px solid color-mix(in srgb, ${color} 25%, transparent)`,
-              }}
-            >
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
-              {label}
-            </span>
-            {esNuevo && <NuevoChip />}
-          </div>
-          {actions?.length > 0 && <CardActionMenu actions={actions} />}
-        </div>
-      </div>
+      {/* Gloss sutil */}
+      <div className="absolute inset-0 pointer-events-none" style={{ background: CARD_GLOSS }} />
 
-      {/* Saldo en grande tipo tarjeta de credito: chip + balance */}
-      <div className="mb-3 flex items-center gap-3">
-        <ChipTarjeta width={30} />
-        <div>
-          <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider mb-0.5">Saldo pendiente</p>
+      <div className="relative">
+        {/* Top: cliente + estado + offline */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Avatar
+              nombre={p.cliente?.nombre}
+              fotoUrl={p.cliente?.fotoUrl}
+              size={34}
+              fontSize={12}
+              style={{ border: `2px solid ${S.track}` }}
+            />
+            <div className="min-w-0">
+              <p className="text-sm font-bold truncate leading-tight" style={{ color: S.ink }}>
+                {p.cliente?.nombre}
+              </p>
+              {p.cliente?.cedula && !p.cliente.cedula.startsWith('SIN-') && (
+                <p className="text-[10px] mt-0.5" style={{ color: S.sub }}>CC {p.cliente.cedula}</p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex flex-col items-end gap-1">
+              <OfflineBadge id={p.id} />
+              <span
+                className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                style={{
+                  background: `color-mix(in srgb, ${S.ink} 12%, transparent)`,
+                  color: S.ink,
+                  border: `1px solid color-mix(in srgb, ${S.ink} 20%, transparent)`,
+                }}
+              >
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: S.ink }} />
+                {label}
+              </span>
+              {esNuevo && <NuevoChip />}
+            </div>
+            {actions?.length > 0 && <CardActionMenu actions={actions} />}
+          </div>
+        </div>
+
+        {/* Saldo en grande */}
+        <div className="mb-3">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] mb-1" style={{ color: S.sub }}>
+            Saldo pendiente
+          </p>
           <p
             className="font-mono-display font-bold leading-none tracking-tight"
-            style={{
-              color: enMora ? color : 'var(--color-text-primary)',
-              fontSize: 'clamp(22px, 6vw, 28px)',
-              textShadow: enMora ? `0 0 24px color-mix(in srgb, ${color} 25%, transparent)` : 'none',
-            }}
+            style={{ color: S.ink, fontSize: 'clamp(24px, 6.5vw, 30px)' }}
           >
             {formatMoney(p.saldoPendiente)}
           </p>
         </div>
-      </div>
 
-      {/* Progress bar */}
-      <div className="mb-3">
-        <div className="h-2.5 rounded-full overflow-hidden relative" style={{ background: 'var(--color-bg-hover)' }}>
-          <div
-            className="h-full rounded-full transition-[width] duration-500"
-            style={{
-              width: `${porcentaje}%`,
-              background: porcentaje === 100
-                ? COLOR_DONE
-                : `linear-gradient(90deg, color-mix(in srgb, ${color} 60%, transparent), ${color})`,
-            }}
-          />
+        {/* Progress bar */}
+        <div className="mb-3">
+          <div className="h-[6px] rounded-full overflow-hidden" style={{ background: S.track }}>
+            <div
+              className="h-full rounded-full transition-[width] duration-500"
+              style={{ width: `${porcentaje}%`, background: S.ink }}
+            />
+          </div>
+          <div className="flex items-center justify-between text-[10px] mt-1.5">
+            <span style={{ color: S.sub }}>
+              <span className="font-mono-display font-bold" style={{ color: S.ink }}>{porcentaje}%</span> pagado
+            </span>
+            <span style={{ color: S.sub }}>de {formatMoney(p.totalAPagar)}</span>
+          </div>
         </div>
-        <div className="flex items-center justify-between text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
-          <span><span className="font-mono-display font-semibold" style={{ color }}>{porcentaje}%</span> pagado</span>
-          <span>de {formatMoney(p.totalAPagar)}</span>
-        </div>
-      </div>
 
-      {/* Footer: micro-stats */}
-      <div className="grid grid-cols-3 gap-1.5 pt-3" style={{ borderTop: '1px solid var(--color-border)' }}>
-        <div className="rounded-[8px] px-2 py-1.5" style={{ background: 'color-mix(in srgb, var(--color-success) 8%, transparent)' }}>
-          <p className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider">Pagado</p>
-          <p className="text-[12px] font-mono-display font-semibold mt-0.5" style={{ color: 'var(--color-success)' }}>
-            {formatMoney(pagado)}
-          </p>
-        </div>
-        <div className="rounded-[8px] px-2 py-1.5" style={{ background: 'color-mix(in srgb, var(--color-text-primary) 5%, transparent)' }}>
-          <p className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider">Cuota</p>
-          <p className="text-[12px] font-mono-display font-semibold mt-0.5" style={{ color: 'var(--color-text-primary)' }}>
-            {formatMoney(p.cuotaDiaria)}
-          </p>
-        </div>
-        <div className="rounded-[8px] px-2 py-1.5 text-right" style={{ background: enMora ? `color-mix(in srgb, ${color} 8%, transparent)` : 'color-mix(in srgb, var(--color-info) 8%, transparent)' }}>
-          <p className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider">Próx. cobro</p>
-          <p
-            className="text-[12px] font-semibold mt-0.5 capitalize truncate"
-            style={{ color: enMora ? color : 'var(--color-text-primary)' }}
-            title={proximoLabel || '—'}
-          >
-            {proximoLabel || '—'}
-          </p>
+        {/* Footer: micro-stats */}
+        <div className="grid grid-cols-3 gap-1.5 pt-3" style={{ borderTop: `1px solid ${S.track}` }}>
+          <div className="rounded-[8px] px-2 py-1.5" style={{ background: `color-mix(in srgb, ${S.ink} 8%, transparent)` }}>
+            <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: S.sub }}>Pagado</p>
+            <p className="text-[12px] font-mono-display font-bold mt-0.5" style={{ color: S.ink }}>
+              {formatMoney(pagado)}
+            </p>
+          </div>
+          <div className="rounded-[8px] px-2 py-1.5" style={{ background: `color-mix(in srgb, ${S.ink} 8%, transparent)` }}>
+            <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: S.sub }}>Cuota</p>
+            <p className="text-[12px] font-mono-display font-bold mt-0.5" style={{ color: S.ink }}>
+              {formatMoney(p.cuotaDiaria)}
+            </p>
+          </div>
+          <div className="rounded-[8px] px-2 py-1.5 text-right" style={{ background: `color-mix(in srgb, ${S.ink} 8%, transparent)` }}>
+            <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: S.sub }}>Próx. cobro</p>
+            <p
+              className="text-[12px] font-bold mt-0.5 capitalize truncate"
+              style={{ color: S.ink }}
+              title={proximoLabel || '—'}
+            >
+              {proximoLabel || '—'}
+            </p>
+          </div>
         </div>
       </div>
     </Card>
