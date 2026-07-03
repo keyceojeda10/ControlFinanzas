@@ -350,6 +350,7 @@ export async function GET(request, { params }) {
       // El estado del cliente se basa en sus préstamos NO clavo (los clavos no
       // cuentan en la cartera/estado de la ruta; solo aportan su cobro al recaudado).
       estado:    c.prestamos.filter((pr) => !pr.esClavo).length === 0 ? 'completado' : (mora > 0 ? 'mora' : 'activo'),
+      tieneClavo: c.prestamos.some((pr) => pr.esClavo && pr.estado === 'activo'),
       pagoHoy:   yaPageHoy,
       montoPagadoHoy: Math.round(pagadoHoy),
       diasMora:  mora,

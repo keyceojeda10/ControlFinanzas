@@ -1797,7 +1797,7 @@ export default function RutaDetallePage({ params }) {
               const tieneMora = c.diasMora > 0
               const abonoConPendiente = c.pagoHoy && pendienteHoy
               const statusColor = isCompleted
-                ? '#666'
+                ? (c.tieneClavo ? 'var(--color-danger)' : '#666')
                 : abonoConPendiente
                   ? 'var(--color-warning)'
                   : c.pagoHoy
@@ -1808,7 +1808,7 @@ export default function RutaDetallePage({ params }) {
                       ? 'var(--color-warning)'
                       : 'var(--color-success)'
               const statusText = isCompleted
-                ? 'Sin deuda — se puede retirar'
+                ? (c.tieneClavo ? 'Préstamo perdido' : 'Sin deuda — se puede retirar')
                 : abonoConPendiente
                   ? 'Abonó hoy · sigue pendiente'
                   : c.pagoHoy
@@ -1929,6 +1929,12 @@ export default function RutaDetallePage({ params }) {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 min-w-0">
                           <p className="text-[13px] font-semibold text-[var(--color-text-primary)] truncate">{c.nombre}</p>
+                          {c.tieneClavo && (
+                            <span
+                              className="shrink-0 text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md"
+                              style={{ background: 'color-mix(in srgb, var(--color-danger) 15%, transparent)', color: 'var(--color-danger)' }}
+                            >Clavo</span>
+                          )}
                           {c.grupoCobro && !grupoFiltro && (
                             <span className="shrink-0 w-2 h-2 rounded-full" style={{ background: c.grupoCobro.color || '#666' }} title={c.grupoCobro.nombre} />
                           )}
@@ -2371,11 +2377,18 @@ export default function RutaDetallePage({ params }) {
 
                             {/* Nombre + estado */}
                             <div className="flex-1 min-w-0">
-                              <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>
-                                {c.nombre}
-                              </p>
-                              <p className="text-[10px]" style={{ color: cfg.color }}>
-                                {cfg.label}
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>
+                                  {c.nombre}
+                                </p>
+                                {c.tieneClavo && (
+                                  <span className="shrink-0 text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md"
+                                    style={{ background: 'color-mix(in srgb, var(--color-danger) 15%, transparent)', color: 'var(--color-danger)' }}
+                                  >Clavo</span>
+                                )}
+                              </div>
+                              <p className="text-[10px]" style={{ color: c.tieneClavo && c._clase === 'completado' ? 'var(--color-danger)' : cfg.color }}>
+                                {c.tieneClavo && c._clase === 'completado' ? 'Préstamo perdido' : cfg.label}
                                 {c.diasMora > 0 ? ` · ${c.diasMora}d mora` : ''}
                               </p>
                             </div>
