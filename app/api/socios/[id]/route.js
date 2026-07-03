@@ -39,7 +39,10 @@ export async function GET(request, { params }) {
       return Response.json({ error: 'Socio no encontrado' }, { status: 404 })
     }
 
-    const totalAportes = socio.aportes.reduce((acc, a) => acc + a.monto, 0)
+    const aportesArr = socio.aportes.filter((a) => a.tipo !== 'retiro')
+    const retirosArr = socio.aportes.filter((a) => a.tipo === 'retiro')
+    const totalAportes = aportesArr.reduce((acc, a) => acc + a.monto, 0)
+    const totalRetiros = retirosArr.reduce((acc, a) => acc + a.monto, 0)
 
     const prestamosConInteres = socio.prestamos.map((p) => {
       const fraccion = p.totalAPagar > 0 ? (p.totalAPagar - p.montoPrestado) / p.totalAPagar : 0
@@ -73,6 +76,8 @@ export async function GET(request, { params }) {
       activo: socio.activo,
       createdAt: socio.createdAt,
       totalAportes: Math.round(totalAportes),
+      totalRetiros: Math.round(totalRetiros),
+      balanceNeto: Math.round(totalAportes - totalRetiros),
       interesesCobrados: interesesTotales,
       aportes: socio.aportes,
       prestamos: prestamosConInteres,

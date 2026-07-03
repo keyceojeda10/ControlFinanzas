@@ -986,6 +986,7 @@ model AporteSocio {
   id             String   @id @default(cuid())
   socioId        String
   organizationId String
+  tipo           String   @default("aporte") // aporte | retiro
   monto          Float
   fecha          DateTime
   nota           String?

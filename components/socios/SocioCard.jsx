@@ -45,10 +45,10 @@ export default function SocioCard({ socio }) {
         <div className="grid grid-cols-3 gap-2 mt-3">
           <div>
             <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-              Aportes
+              Balance
             </p>
             <p className="text-[14px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-              {fmt(socio.totalAportes)}
+              {fmt(socio.balanceNeto ?? socio.totalAportes)}
             </p>
           </div>
           <div>

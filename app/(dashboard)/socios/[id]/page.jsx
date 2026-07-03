@@ -27,6 +27,7 @@ export default function SocioDetallePage() {
   const [loadingEliminar, setLoadingEliminar] = useState(false)
 
   const [modalAporte, setModalAporte] = useState(false)
+  const [tipoAporte, setTipoAporte] = useState('aporte')
   const [montoAporte, setMontoAporte] = useState('')
   const [notaAporte, setNotaAporte] = useState('')
   const [loadingAporte, setLoadingAporte] = useState(false)
@@ -61,7 +62,7 @@ export default function SocioDetallePage() {
       const res = await fetch(`/api/socios/${id}/aportes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ monto: Number(montoAporte), nota: notaAporte }),
+        body: JSON.stringify({ monto: Number(montoAporte), nota: notaAporte, tipo: tipoAporte }),
       })
       if (!res.ok) {
         const d = await res.json().catch(() => ({}))
@@ -70,6 +71,7 @@ export default function SocioDetallePage() {
       setModalAporte(false)
       setMontoAporte('')
       setNotaAporte('')
+      setTipoAporte('aporte')
       cargar()
     } catch (e) {
       alert(e.message)
@@ -184,19 +186,23 @@ export default function SocioDetallePage() {
 
       {/* Resumen */}
       <div
-        className="rounded-[16px] p-4 grid grid-cols-3 gap-3"
+        className="rounded-[16px] p-4 grid grid-cols-2 gap-3"
         style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
       >
         <div>
           <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Aportes</p>
-          <p className="text-[16px] font-bold" style={{ color: 'var(--color-text-primary)' }}>{fmt(socio.totalAportes)}</p>
+          <p className="text-[16px] font-bold" style={{ color: 'var(--color-accent)' }}>{fmt(socio.totalAportes)}</p>
         </div>
         <div>
-          <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Prestamos</p>
-          <p className="text-[16px] font-bold" style={{ color: 'var(--color-accent)' }}>{socio.prestamos.length}</p>
+          <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Retiros</p>
+          <p className="text-[16px] font-bold" style={{ color: 'var(--color-danger)' }}>{fmt(socio.totalRetiros || 0)}</p>
         </div>
         <div>
-          <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Intereses</p>
+          <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Balance neto</p>
+          <p className="text-[16px] font-bold" style={{ color: 'var(--color-text-primary)' }}>{fmt(socio.balanceNeto ?? socio.totalAportes)}</p>
+        </div>
+        <div>
+          <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Intereses cobrados</p>
           <p className="text-[16px] font-bold" style={{ color: 'var(--color-success)' }}>{fmt(socio.interesesCobrados)}</p>
         </div>
       </div>
@@ -316,41 +322,58 @@ export default function SocioDetallePage() {
         )}
       </div>
 
-      {/* Aportes */}
+      {/* Movimientos (aportes y retiros) */}
       <div
         className="rounded-[16px] p-4"
         style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
       >
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-[14px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-            Aportes ({socio.aportes.length})
+            Movimientos ({socio.aportes.length})
           </h2>
-          <Button onClick={() => setModalAporte(true)}>Registrar aporte</Button>
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => { setTipoAporte('retiro'); setModalAporte(true) }}>Retiro</Button>
+            <Button onClick={() => { setTipoAporte('aporte'); setModalAporte(true) }}>Aporte</Button>
+          </div>
         </div>
         {socio.aportes.length === 0 ? (
-          <p className="text-[13px]" style={{ color: 'var(--color-text-muted)' }}>Sin aportes registrados.</p>
+          <p className="text-[13px]" style={{ color: 'var(--color-text-muted)' }}>Sin movimientos registrados.</p>
         ) : (
           <div className="space-y-2">
-            {socio.aportes.map((a) => (
-              <div key={a.id} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid var(--color-border)' }}>
-                <div>
-                  <p className="text-[13px] font-medium" style={{ color: 'var(--color-text-primary)' }}>
-                    {fmt(a.monto)}
-                  </p>
-                  <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
-                    {new Date(a.fecha).toLocaleDateString('es-CO')}
-                    {a.nota && ` — ${a.nota}`}
-                  </p>
+            {socio.aportes.map((a) => {
+              const esRetiro = a.tipo === 'retiro'
+              return (
+                <div key={a.id} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid var(--color-border)' }}>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md shrink-0"
+                      style={{
+                        background: esRetiro ? 'color-mix(in srgb, var(--color-danger) 12%, transparent)' : 'color-mix(in srgb, var(--color-success) 12%, transparent)',
+                        color: esRetiro ? 'var(--color-danger)' : 'var(--color-success)',
+                      }}
+                    >
+                      {esRetiro ? 'Retiro' : 'Aporte'}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-[13px] font-medium" style={{ color: esRetiro ? 'var(--color-danger)' : 'var(--color-text-primary)' }}>
+                        {esRetiro ? '-' : '+'}{fmt(a.monto)}
+                      </p>
+                      <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                        {new Date(a.fecha).toLocaleDateString('es-CO')}
+                        {a.nota && ` — ${a.nota}`}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setConfirmEliminar(a.id)}
+                    className="text-[11px] px-2 py-1 rounded-[8px] shrink-0"
+                    style={{ color: 'var(--color-danger)', background: 'color-mix(in srgb, var(--color-danger) 8%, transparent)' }}
+                  >
+                    Eliminar
+                  </button>
                 </div>
-                <button
-                  onClick={() => setConfirmEliminar(a.id)}
-                  className="text-[11px] px-2 py-1 rounded-[8px]"
-                  style={{ color: 'var(--color-danger)', background: 'color-mix(in srgb, var(--color-danger) 8%, transparent)' }}
-                >
-                  Eliminar
-                </button>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
@@ -365,11 +388,16 @@ export default function SocioDetallePage() {
         </div>
       )}
 
-      {/* Modal registrar aporte */}
-      <Modal open={modalAporte} onClose={() => setModalAporte(false)} title="Registrar aporte">
+      {/* Modal registrar aporte/retiro */}
+      <Modal open={modalAporte} onClose={() => setModalAporte(false)} title={tipoAporte === 'retiro' ? 'Registrar retiro' : 'Registrar aporte'}>
         <div className="space-y-4">
+          {tipoAporte === 'retiro' && (
+            <p className="text-[12px] px-3 py-2 rounded-[10px]" style={{ background: 'color-mix(in srgb, var(--color-warning) 10%, transparent)', color: 'var(--color-warning)' }}>
+              El retiro se restara del capital disponible del negocio.
+            </p>
+          )}
           <MoneyInput
-            label="Monto del aporte"
+            label={tipoAporte === 'retiro' ? 'Monto del retiro' : 'Monto del aporte'}
             value={montoAporte}
             onChange={(e) => setMontoAporte(e.target.value)}
           />
@@ -377,11 +405,13 @@ export default function SocioDetallePage() {
             label="Nota (opcional)"
             value={notaAporte}
             onChange={(e) => setNotaAporte(e.target.value)}
-            placeholder="Ej: Aporte de julio"
+            placeholder={tipoAporte === 'retiro' ? 'Ej: Retiro de utilidades julio' : 'Ej: Aporte de julio'}
           />
           <div className="flex gap-3 pt-2">
             <Button variant="secondary" onClick={() => setModalAporte(false)} className="flex-1">Cancelar</Button>
-            <Button onClick={registrarAporte} loading={loadingAporte} className="flex-1">Guardar</Button>
+            <Button onClick={registrarAporte} loading={loadingAporte} className="flex-1">
+              {tipoAporte === 'retiro' ? 'Registrar retiro' : 'Registrar aporte'}
+            </Button>
           </div>
         </div>
       </Modal>

@@ -45,6 +45,7 @@ export default function SociosPage() {
   }
 
   const totalAportes = socios.reduce((acc, s) => acc + s.totalAportes, 0)
+  const totalRetiros = socios.reduce((acc, s) => acc + (s.totalRetiros || 0), 0)
   const totalEnCalle = socios.reduce((acc, s) => acc + s.capitalEnCalle, 0)
   const totalIntereses = socios.reduce((acc, s) => acc + s.interesesCobrados, 0)
 
@@ -61,7 +62,7 @@ export default function SociosPage() {
 
       {!loading && socios.length > 0 && (
         <div
-          className="rounded-[16px] p-4 mb-4 grid grid-cols-3 gap-3"
+          className="rounded-[16px] p-4 mb-4 grid grid-cols-2 gap-3"
           style={{
             background: 'var(--color-bg-card)',
             border: '1px solid var(--color-border)',
@@ -71,15 +72,23 @@ export default function SociosPage() {
             <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
               Total aportes
             </p>
-            <p className="text-[16px] font-bold" style={{ color: 'var(--color-text-primary)' }}>
+            <p className="text-[16px] font-bold" style={{ color: 'var(--color-accent)' }}>
               {fmt(totalAportes)}
+            </p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+              Total retiros
+            </p>
+            <p className="text-[16px] font-bold" style={{ color: 'var(--color-danger)' }}>
+              {fmt(totalRetiros)}
             </p>
           </div>
           <div>
             <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
               Capital en calle
             </p>
-            <p className="text-[16px] font-bold" style={{ color: 'var(--color-accent)' }}>
+            <p className="text-[16px] font-bold" style={{ color: 'var(--color-text-primary)' }}>
               {fmt(totalEnCalle)}
             </p>
           </div>
