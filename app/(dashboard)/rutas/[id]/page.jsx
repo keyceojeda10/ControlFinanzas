@@ -1847,7 +1847,7 @@ export default function RutaDetallePage({ params }) {
                   className={[
                     'flex items-stretch gap-0 rounded-[12px] transition-all overflow-hidden',
                     'border',
-                    isCompleted ? 'opacity-50' : '',
+                    isCompleted && !c.tieneClavo ? 'opacity-50' : '',
                     dragIndex === idx ? 'opacity-30 scale-95' : '',
                     dragOverIdx === idx && dragIndex !== idx ? 'border-[#f5c518] bg-[rgba(245,197,24,0.05)]' : 'border-[#1f1f1f] bg-[rgba(255,255,255,0.02)]',
                     highlightId === c.id ? 'border-[#f5c518] bg-[rgba(245,197,24,0.08)]' : '',
@@ -1993,7 +1993,7 @@ export default function RutaDetallePage({ params }) {
                         </div>
 
                         {/* Quick pay button */}
-                        {!isCompleted && c.cuota > 0 && c.prestamoActivo && (!c.pagoHoy || pendienteHoy) && (
+                        {(!isCompleted || c.tieneClavo) && c.cuota > 0 && c.prestamoActivo && (!c.pagoHoy || pendienteHoy) && (
                           <button
                             onClick={(e) => { e.stopPropagation(); abrirPagoRapido(c) }}
                             disabled={pagandoRapido === c.id}
@@ -2035,7 +2035,7 @@ export default function RutaDetallePage({ params }) {
                     </div>
 
                     {/* Sección inferior: saldo, barra progreso, mora, detalles */}
-                    {!isCompleted && c.prestamosActivos?.length > 0 && (
+                    {(!isCompleted || c.tieneClavo) && c.prestamosActivos?.length > 0 && (
                       <div className="mt-2 space-y-2">
                         {c.prestamosActivos.map((p, i) => {
                           const pct = p.totalAPagar > 0 ? Math.min(100, Math.round(((p.totalPagado ?? 0) / p.totalAPagar) * 100)) : 0
