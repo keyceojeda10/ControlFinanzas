@@ -8,9 +8,10 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
   const videoRef = useRef(null)
   const streamRef = useRef(null)
   const scannerRef = useRef(null)
-  const canvasRef = useRef(null)
+  const fileInputRef = useRef(null)
   const [error, setError] = useState(null)
   const [scanning, setScanning] = useState(false)
+  const [cameraSupported, setCameraSupported] = useState(true)
 
   const stopCamera = useCallback(() => {
     if (scannerRef.current) {
@@ -36,6 +37,14 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
     onClientDetected?.(clientId)
   }, [onClose, stopCamera, onClientDetected, extractClientId])
 
+  const decodeFromImageData = useCallback((imageData, width, height) => {
+    const code = jsQR(imageData, width, height, { inversionAttempts: 'attemptBoth' })
+    if (code?.data && code.data.includes('/qr/')) {
+      return code.data
+    }
+    return null
+  }, [])
+
   useEffect(() => {
     if (!open) {
       stopCamera()
@@ -47,13 +56,14 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
     let cancelled = false
 
     async function startCamera() {
-      try {
-        if (!navigator.mediaDevices?.getUserMedia) {
-          throw new Error('no-media-devices')
-        }
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setCameraSupported(false)
+        return
+      }
 
+      try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } }
+          video: { facingMode: { ideal: 'environment' }, width: { ideal: 640 }, height: { ideal: 480 } }
         })
         if (cancelled) { stream.getTracks().forEach(t => t.stop()); return }
 
@@ -68,7 +78,6 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
         setScanning(true)
 
         const canvas = document.createElement('canvas')
-        canvasRef.current = canvas
         const ctx = canvas.getContext('2d', { willReadFrequently: true })
 
         const hasBarcodeDetector = typeof globalThis.BarcodeDetector !== 'undefined'
@@ -104,28 +113,23 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
             }
 
             const imageData = ctx.getImageData(0, 0, vw, vh)
-            const code = jsQR(imageData.data, vw, vh, { inversionAttempts: 'dontInvert' })
-            if (code?.data && code.data.includes('/qr/')) {
-              handleDetected(code.data)
+            const result = decodeFromImageData(imageData.data, vw, vh)
+            if (result) {
+              handleDetected(result)
             }
           } catch {}
         }, 250)
-      } catch (err) {
+      } catch {
         if (cancelled) return
-        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-          setError('Permiso de camara denegado. Activa el permiso en la configuracion del navegador.')
-        } else {
-          setError('No se pudo acceder a la camara. Verifica los permisos.')
-        }
+        setCameraSupported(false)
       }
     }
 
     startCamera()
     return () => { cancelled = true; stopCamera() }
-  }, [open, stopCamera, handleDetected])
+  }, [open, stopCamera, handleDetected, decodeFromImageData])
 
-  const handleFileInput = async (e) => {
-    const file = e.target.files?.[0]
+  const processImage = useCallback(async (file) => {
     if (!file) return
     setError(null)
 
@@ -153,9 +157,21 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
       }
 
       if (!found) {
-        const code = jsQR(imageData.data, img.width, img.height, { inversionAttempts: 'attemptBoth' })
-        if (code?.data && code.data.includes('/qr/')) {
-          handleDetected(code.data)
+        let result = decodeFromImageData(imageData.data, img.width, img.height)
+
+        if (!result && (img.width > 1000 || img.height > 1000)) {
+          const scale = 800 / Math.max(img.width, img.height)
+          const sw = Math.round(img.width * scale)
+          const sh = Math.round(img.height * scale)
+          canvas.width = sw
+          canvas.height = sh
+          ctx.drawImage(img, 0, 0, sw, sh)
+          const smallData = ctx.getImageData(0, 0, sw, sh)
+          result = decodeFromImageData(smallData.data, sw, sh)
+        }
+
+        if (result) {
+          handleDetected(result)
         } else {
           setError('No se encontro un QR valido en la imagen')
           setTimeout(() => setError(null), 3000)
@@ -165,34 +181,23 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
       setError('No se pudo leer la imagen')
       setTimeout(() => setError(null), 3000)
     }
+  }, [handleDetected, decodeFromImageData])
 
+  const handleFileInput = useCallback(async (e) => {
+    await processImage(e.target.files?.[0])
     e.target.value = ''
-  }
+  }, [processImage])
 
   return (
     <Modal open={open} onClose={() => { stopCamera(); onClose() }} title="Escanear QR" size="sm">
       <div className="flex flex-col items-center gap-4">
-        {error ? (
-          <div className="flex flex-col items-center gap-4 py-6">
-            <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'rgba(245,158,11,0.1)' }}>
-              <svg className="w-8 h-8" style={{ color: '#f59e0b' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
-              </svg>
-            </div>
-            <p className="text-sm text-center" style={{ color: 'var(--color-text-secondary)' }}>{error}</p>
-            <label
-              className="h-10 px-5 rounded-xl text-sm font-medium flex items-center gap-2 cursor-pointer"
-              style={{ background: 'var(--color-accent)', color: '#18181b' }}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
-              </svg>
-              Subir foto del QR
-              <input type="file" accept="image/*" capture="environment" onChange={handleFileInput} className="hidden" />
-            </label>
+        {error && (
+          <div className="w-full px-4 py-3 rounded-xl text-sm text-center" style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
+            {error}
           </div>
-        ) : (
+        )}
+
+        {scanning && cameraSupported ? (
           <>
             <div className="relative w-full aspect-square max-w-[320px] rounded-2xl overflow-hidden" style={{ background: '#000' }}>
               <video
@@ -202,29 +207,77 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
                 autoPlay
                 muted
               />
-              {scanning && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="w-48 h-48 border-2 rounded-2xl" style={{ borderColor: 'var(--color-accent)' }}>
-                    <div className="w-full h-0.5 animate-scan-line" style={{ background: 'var(--color-accent)', opacity: 0.7 }} />
-                  </div>
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-48 h-48 border-2 rounded-2xl" style={{ borderColor: 'var(--color-accent)' }}>
+                  <div className="w-full h-0.5 animate-scan-line" style={{ background: 'var(--color-accent)', opacity: 0.7 }} />
                 </div>
-              )}
+              </div>
             </div>
             <p className="text-sm text-center" style={{ color: 'var(--color-text-secondary)' }}>
               Apunta la camara al QR del cliente
             </p>
-            <label
-              className="h-9 px-4 rounded-xl text-xs font-medium flex items-center gap-2 cursor-pointer"
-              style={{ background: 'var(--color-surface-alt)', color: 'var(--color-text-secondary)' }}
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
-              </svg>
-              O subir foto del QR
-              <input type="file" accept="image/*" onChange={handleFileInput} className="hidden" />
-            </label>
           </>
+        ) : !scanning && cameraSupported ? (
+          <div className="flex flex-col items-center gap-3 py-4">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center animate-pulse" style={{ background: 'var(--color-surface-alt)' }}>
+              <svg className="w-6 h-6" style={{ color: 'var(--color-text-secondary)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+              </svg>
+            </div>
+            <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>Iniciando camara...</p>
+          </div>
+        ) : null}
+
+        {!cameraSupported && !error && (
+          <div className="flex flex-col items-center gap-3 py-4">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'rgba(245,158,11,0.1)' }}>
+              <svg className="w-8 h-8" style={{ color: '#f59e0b' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+              </svg>
+            </div>
+            <p className="text-sm text-center" style={{ color: 'var(--color-text-secondary)' }}>
+              No se pudo acceder a la camara en vivo
+            </p>
+          </div>
         )}
+
+        <div className="flex flex-col gap-2 w-full">
+          <label
+            className="h-12 px-5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer w-full"
+            style={{ background: 'var(--color-accent)', color: '#18181b' }}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+            </svg>
+            Tomar foto del QR
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleFileInput}
+              className="hidden"
+            />
+          </label>
+          <label
+            className="h-10 px-4 rounded-xl text-xs font-medium flex items-center justify-center gap-2 cursor-pointer w-full"
+            style={{ background: 'var(--color-surface-alt)', color: 'var(--color-text-secondary)' }}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+            </svg>
+            Elegir imagen de galeria
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileInput}
+              className="hidden"
+            />
+          </label>
+        </div>
       </div>
 
       <style jsx>{`

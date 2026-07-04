@@ -106,9 +106,10 @@ export default function QrClienteModal({ open, onClose, cliente }) {
           <QRCodeSVG
             value={qrUrl}
             size={240}
-            level="M"
+            level="H"
             bgColor="#ffffff"
-            fgColor="#18181b"
+            fgColor="#000000"
+            marginSize={4}
           />
         </div>
 
