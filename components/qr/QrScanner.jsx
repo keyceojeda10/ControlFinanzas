@@ -1,11 +1,9 @@
 'use client'
 
 import { useRef, useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import { Modal } from '@/components/ui/Modal'
 
-export default function QrScanner({ open, onClose }) {
-  const router = useRouter()
+export default function QrScanner({ open, onClose, onClientDetected }) {
   const videoRef = useRef(null)
   const streamRef = useRef(null)
   const scannerRef = useRef(null)
@@ -25,15 +23,12 @@ export default function QrScanner({ open, onClose }) {
 
   const handleDetected = useCallback((url) => {
     stopCamera()
-    onClose()
     const match = url.match(/\/qr\/([a-zA-Z0-9_-]+)/)
     if (match) {
-      router.push(`/qr/${match[1]}`)
-    } else if (url.startsWith('/') || url.includes(window.location.origin)) {
-      const path = url.replace(window.location.origin, '')
-      router.push(path)
+      onClose()
+      onClientDetected?.(match[1])
     }
-  }, [router, onClose, stopCamera])
+  }, [onClose, stopCamera, onClientDetected])
 
   useEffect(() => {
     if (!open) {

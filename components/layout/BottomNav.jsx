@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react'
 
 import { formatMoney as formatMoneyFn } from '@/lib/i18n'
 import QrScanner from '@/components/qr/QrScanner'
+import QrCobroModal from '@/components/qr/QrCobroModal'
 const formatCOPCompact = (monto = 0) => formatMoneyFn(monto)
 
 const FAB_ITEMS_OWNER = [
@@ -81,6 +82,7 @@ export default function BottomNav({ onOpenLucas, lucasOpen = false }) {
   const [moreOpen, setMoreOpen] = useState(false)
   const [fabOpen, setFabOpen] = useState(false)
   const [qrScanOpen, setQrScanOpen] = useState(false)
+  const [qrClienteId, setQrClienteId] = useState(null)
 
   const moreItems = esCobrador ? MORE_ITEMS_COBRADOR : MORE_ITEMS_OWNER
   const fabItems = esCobrador ? FAB_ITEMS_COBRADOR : FAB_ITEMS_OWNER
@@ -365,7 +367,16 @@ export default function BottomNav({ onOpenLucas, lucasOpen = false }) {
         </svg>
       </button>
 
-      <QrScanner open={qrScanOpen} onClose={() => setQrScanOpen(false)} />
+      <QrScanner
+        open={qrScanOpen}
+        onClose={() => setQrScanOpen(false)}
+        onClientDetected={(id) => setQrClienteId(id)}
+      />
+      <QrCobroModal
+        open={!!qrClienteId}
+        onClose={() => setQrClienteId(null)}
+        clienteId={qrClienteId}
+      />
     </>
   )
 }
