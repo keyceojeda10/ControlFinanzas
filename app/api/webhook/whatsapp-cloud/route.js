@@ -405,6 +405,8 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
   }
 
   // Actualizar estado
+  const mandoLinkRegistro = decision.mensaje && /app\.control-finanzas\.com\/registro/i.test(decision.mensaje)
+
   if (decision.escalar) {
     if (lead.estado !== 'cerrado') {
       await prisma.botLead.update({
@@ -413,6 +415,18 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
       })
       if (lead.estado !== 'interesado') notificarEstadoLead(lead.id, 'qualified').catch(() => {})
     }
+  } else if (mandoLinkRegistro) {
+    // Seguimiento rapido post-link: 2 horas para preguntar si pudo registrarse
+    await prisma.botLead.update({
+      where: { id: lead.id },
+      data: {
+        estado: 'interesado',
+        proximoSeguimiento: new Date(Date.now() + 2 * 3600000),
+        intentosSeguimiento: 0,
+      },
+    })
+    notificarEstadoLead(lead.id, 'qualified').catch(() => {})
+    console.log(`[WA Cloud] Seguimiento rapido (2h) programado para ${lead.nombre}`)
   } else {
     if (lead.estado === 'contactado' || lead.estado === 'pendiente') {
       const dias = 1 + Math.floor(Math.random() * 2)
