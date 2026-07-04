@@ -6,11 +6,13 @@ import { useAuth } from '@/hooks/useAuth'
 import { useState, useEffect } from 'react'
 
 import { formatMoney as formatMoneyFn } from '@/lib/i18n'
+import QrScanner from '@/components/qr/QrScanner'
 const formatCOPCompact = (monto = 0) => formatMoneyFn(monto)
 
 const FAB_ITEMS_OWNER = [
   { label: 'Nuevo', bold: 'préstamo', href: '/prestamos/nuevo' },
   { label: 'Nuevo', bold: 'cliente', href: '/clientes/nuevo' },
+  { label: 'Escanear', bold: 'QR', href: '__qr_scan__' },
   { label: 'Migrar', bold: 'cartera', href: '/migrador' },
   { label: 'Registrar', bold: 'gasto', href: '/gastos?nuevo=1' },
   { label: 'Ver', bold: 'caja', href: '/caja' },
@@ -20,6 +22,7 @@ const FAB_ITEMS_OWNER = [
 
 const FAB_ITEMS_COBRADOR = [
   { label: 'Mis', bold: 'cobros', href: '/cobros-hoy' },
+  { label: 'Escanear', bold: 'QR', href: '__qr_scan__' },
   { label: 'Registrar', bold: 'gasto', href: '/gastos?nuevo=1' },
   { label: 'Ver', bold: 'caja', href: '/caja' },
   { label: 'Lucas', bold: 'IA', href: '__lucas__' },
@@ -77,6 +80,7 @@ export default function BottomNav({ onOpenLucas, lucasOpen = false }) {
   const [cierreWarning, setCierreWarning] = useState(null)
   const [moreOpen, setMoreOpen] = useState(false)
   const [fabOpen, setFabOpen] = useState(false)
+  const [qrScanOpen, setQrScanOpen] = useState(false)
 
   const moreItems = esCobrador ? MORE_ITEMS_COBRADOR : MORE_ITEMS_OWNER
   const fabItems = esCobrador ? FAB_ITEMS_COBRADOR : FAB_ITEMS_OWNER
@@ -127,6 +131,8 @@ export default function BottomNav({ onOpenLucas, lucasOpen = false }) {
     setFabOpen(false)
     if (item.href === '__lucas__') {
       onOpenLucas?.()
+    } else if (item.href === '__qr_scan__') {
+      setQrScanOpen(true)
     } else {
       router.push(item.href)
     }
@@ -358,6 +364,8 @@ export default function BottomNav({ onOpenLucas, lucasOpen = false }) {
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
         </svg>
       </button>
+
+      <QrScanner open={qrScanOpen} onClose={() => setQrScanOpen(false)} />
     </>
   )
 }

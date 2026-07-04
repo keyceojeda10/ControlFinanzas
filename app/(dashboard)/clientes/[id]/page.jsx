@@ -23,6 +23,7 @@ import AiTipBanner from '@/components/ui/AiTipBanner'
 import { generarTipCliente } from '@/lib/tips/clienteTips'
 import ReagendarVisitaModal from '@/components/visitas/ReagendarVisitaModal'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import QrClienteModal from '@/components/clientes/QrClienteModal'
 
 const estadoBadge = {
   activo:    { variant: 'green',  label: 'Al día'    },
@@ -53,6 +54,7 @@ export default function ClienteDetallePage({ params }) {
   const [actionLoading, setActionLoading] = useState(false)
   const [modalWA, setModalWA] = useState(false)
   const [modalReagendar, setModalReagendar] = useState(false)
+  const [modalQR, setModalQR] = useState(false)
   const [rutaNav, setRutaNav]   = useState(null)
   const [festivoHoy, setFestivoHoy] = useState(null)
   const [guardandoFestivo, setGuardandoFestivo] = useState(false)
@@ -514,6 +516,12 @@ export default function ClienteDetallePage({ params }) {
               icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
               onClick: () => router.push(`/clientes/${id}/historial`),
             },
+            {
+              label: 'QR',
+              color: '#8b5cf6',
+              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" /><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z" /></svg>,
+              onClick: () => setModalQR(true),
+            },
             ...(puedeEditarClientes ? [{
               label: 'Editar',
               color: '#a855f7',
@@ -795,6 +803,12 @@ export default function ClienteDetallePage({ params }) {
         clienteNombre={cliente.nombre}
         prestamoId={prestamosActivos[0]?.id || null}
         rutaId={cliente.rutaId || null}
+      />
+
+      <QrClienteModal
+        open={modalQR}
+        onClose={() => setModalQR(false)}
+        cliente={cliente}
       />
 
       <ConfirmModal
