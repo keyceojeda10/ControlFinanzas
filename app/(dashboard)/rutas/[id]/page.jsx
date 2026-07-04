@@ -2055,7 +2055,14 @@ export default function RutaDetallePage({ params }) {
                                 <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: barColor }} />
                               </div>
                               <div className="flex items-center justify-between mt-0.5">
-                                <span className="text-[9px] font-semibold" style={{ color: barColor }}>{pct}% pagado</span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[9px] font-semibold" style={{ color: barColor }}>{pct}% pagado</span>
+                                  {pct >= 80 && pct < 100 && !tieneMora && (
+                                    <span className="text-[8px] font-bold uppercase px-1 py-px rounded" style={{ background: 'color-mix(in srgb, var(--color-success) 15%, transparent)', color: 'var(--color-success)' }}>
+                                      Renovar
+                                    </span>
+                                  )}
+                                </div>
                                 <span className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>de {formatMoney(p.totalAPagar)}</span>
                               </div>
                             </div>

@@ -84,6 +84,7 @@ export async function GET() {
         },
       },
       select: {
+        id: true,
         clienteId: true,
         montoPrestado: true,
         totalAPagar: true,
@@ -92,7 +93,6 @@ export async function GET() {
         diasPlazo: true,
         frecuencia: true,
         estado: true,
-        // Denormalizados: evitan traer todos los pagos por cada prestamo activo.
         totalPagado: true,
         ultimoPagoAt: true,
         modoInteres: true,
@@ -103,8 +103,10 @@ export async function GET() {
         cliente: {
           select: {
             id: true,
+            nombre: true,
+            telefono: true,
             diasSinCobro: true,
-            ruta: { select: { diasSinCobro: true } },
+            ruta: { select: { id: true, nombre: true, diasSinCobro: true } },
           },
         },
       },
@@ -307,6 +309,7 @@ export async function GET() {
   let saldoPorCobrar = 0
   let capitalPrestado = 0
   let cuotaDiariaTotal = 0
+  const proximosACompletar = []
 
   // Cachear diasExcluidos por cliente: los prestamos del mismo cliente
   // comparten el calculo. Evita repetirlo cientos de veces en orgs grandes.
@@ -332,6 +335,24 @@ export async function GET() {
     const diasExcluidos = getDiasExcluidos(p.cliente)
     if (calcularDiasMora(p, diasExcluidos) > 0) {
       clientesMora.add(p.clienteId)
+    }
+
+    const saldoP = calcularSaldoPendiente(p)
+    const pctPagado = p.totalAPagar > 0 ? Math.round(((p.totalPagado || 0) / p.totalAPagar) * 100) : 0
+    if (pctPagado >= 80 && pctPagado < 100 && saldoP > 0) {
+      const cuotasRest = p.cuotaDiaria > 0 ? Math.ceil(saldoP / p.cuotaDiaria) : 0
+      proximosACompletar.push({
+        prestamoId: p.id,
+        clienteId: p.clienteId,
+        clienteNombre: p.cliente?.nombre ?? '—',
+        clienteTelefono: p.cliente?.telefono ?? null,
+        rutaNombre: p.cliente?.ruta?.nombre ?? null,
+        montoPrestado: p.montoPrestado,
+        saldoPendiente: Math.round(saldoP),
+        porcentaje: pctPagado,
+        cuotaDiaria: p.cuotaDiaria,
+        cuotasRestantes: cuotasRest,
+      })
     }
   }
 
@@ -473,11 +494,13 @@ export async function GET() {
       },
       desgloseCobradores: esCobrador ? null : desgloseCobradores,
     },
-    // Nuevo: alertas que necesitan atencion del owner
     alertas: esCobrador ? null : {
       clientesSinRuta: clientesSinRutaCount ?? 0,
       prestamosSinPagosLargo: clientesSinPagosLargo ?? 0,
-      mora30plus: 0, // Se completa en el cliente con moraData
+      mora30plus: 0,
+      proximosACompletar: proximosACompletar
+        .sort((a, b) => b.porcentaje - a.porcentaje)
+        .slice(0, 20),
     },
   }, {
     headers: {
