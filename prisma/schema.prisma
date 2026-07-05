@@ -185,9 +185,22 @@ model User {
   asistenteMemorias AsistenteMemoria[]
   clientesCreadosPor Cliente[]         @relation("ClientesCreadosPor")
   notificaciones    Notificacion[]     @relation("NotificacionesUsuario")
+  ubicacionLogs     UbicacionLog[]
 
   @@index([organizationId])
   @@index([organizationId, rol, activo])
+}
+
+model UbicacionLog {
+  id        String   @id @default(cuid())
+  userId    String
+  latitud   Float
+  longitud  Float
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
 
 model Ruta {

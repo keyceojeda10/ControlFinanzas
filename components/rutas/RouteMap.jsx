@@ -1,5 +1,4 @@
 'use client'
-// components/rutas/RouteMap.jsx — Mini-mapa de la ruta con pins y línea de recorrido
 
 import { useEffect, useRef } from 'react'
 
@@ -9,7 +8,6 @@ if (typeof window !== 'undefined') {
   require('leaflet/dist/leaflet.css')
 }
 
-// Pin numerado
 function createNumberedIcon(number) {
   if (!L) return null
   return L.divIcon({
@@ -30,7 +28,6 @@ function createNumberedIcon(number) {
 
 function createCobradorIcon(nombre, estaActivo, esReciente) {
   if (!L) return null
-  const inicial = nombre?.charAt(0)?.toUpperCase() ?? 'C'
   const bgColor = estaActivo || esReciente ? '#f5c518' : '#777777'
   const borderColor = estaActivo || esReciente ? '#0a0a0a' : '#555555'
   const pulseRing = estaActivo
@@ -80,10 +77,11 @@ function tiempoDesde(fecha) {
   return `Hace ${hrs}h ${mins % 60}m`
 }
 
-export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador }) {
+export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador, trail = [] }) {
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
   const cobradorMarkerRef = useRef(null)
+  const trailLayerRef = useRef(null)
 
   const conCoords = (clientes ?? []).filter((c) => c.latitud != null && c.longitud != null)
   const cobradorConCoords = cobrador?.latitud != null && cobrador?.longitud != null
@@ -96,6 +94,7 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador }) {
       mapInstanceRef.current.remove()
       mapInstanceRef.current = null
       cobradorMarkerRef.current = null
+      trailLayerRef.current = null
     }
 
     const map = L.map(mapRef.current, {
@@ -164,15 +163,26 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador }) {
       bounds.push([cobrador.latitud, cobrador.longitud])
     }
 
+    if (trail.length >= 2) {
+      const trailLine = L.polyline(
+        trail.map((p) => [p.latitud, p.longitud]),
+        { color: '#f5c518', weight: 3, opacity: 0.6, lineJoin: 'round', lineCap: 'round' }
+      )
+      trailLine.addTo(map)
+      trailLayerRef.current = trailLine
+
+      if (trail.length >= 1) {
+        const start = trail[0]
+        L.circleMarker([start.latitud, start.longitud], {
+          radius: 5, fillColor: '#22c55e', color: '#0a0a0a', weight: 2, fillOpacity: 0.9,
+        }).bindPopup(`<span style="color:#0a0a0a;font-size:11px">Inicio del recorrido</span>`).addTo(map)
+      }
+    }
+
     if (conCoords.length >= 2) {
       L.polyline(
         conCoords.map((c) => [c.latitud, c.longitud]),
-        {
-          color: 'var(--color-accent)',
-          weight: 3,
-          opacity: 0.7,
-          dashArray: '8, 6',
-        }
+        { color: '#555', weight: 2, opacity: 0.4, dashArray: '6, 8' }
       ).addTo(map)
     }
 
@@ -186,8 +196,26 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador }) {
       map.remove()
       mapInstanceRef.current = null
       cobradorMarkerRef.current = null
+      trailLayerRef.current = null
     }
   }, [clientes, cobrosGeoHoy]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!mapInstanceRef.current) return
+
+    if (trailLayerRef.current) {
+      mapInstanceRef.current.removeLayer(trailLayerRef.current)
+      trailLayerRef.current = null
+    }
+    if (trail.length >= 2) {
+      const trailLine = L.polyline(
+        trail.map((p) => [p.latitud, p.longitud]),
+        { color: '#f5c518', weight: 3, opacity: 0.6, lineJoin: 'round', lineCap: 'round' }
+      )
+      trailLine.addTo(mapInstanceRef.current)
+      trailLayerRef.current = trailLine
+    }
+  }, [trail])
 
   useEffect(() => {
     if (!cobradorMarkerRef.current || !cobrador?.latitud || !cobrador?.longitud) return
@@ -214,7 +242,7 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador }) {
   if (conCoords.length === 0 && (cobrosGeoHoy?.length ?? 0) === 0 && !cobradorConCoords) {
     return (
       <div className="h-[200px] rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] flex items-center justify-center">
-        <p className="text-xs text-[var(--color-text-muted)]">Sin clientes con ubicación para mostrar</p>
+        <p className="text-xs text-[var(--color-text-muted)]">Sin clientes con ubicacion para mostrar</p>
       </div>
     )
   }
@@ -223,18 +251,20 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador }) {
     <div>
       <div
         ref={mapRef}
-        className="w-full h-[250px] rounded-xl overflow-hidden border border-[var(--color-border)]"
+        className="w-full h-[300px] rounded-xl overflow-hidden border border-[var(--color-border)]"
         style={{ background: '#111111' }}
       />
       <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
-        {conCoords.length} clientes con ubicación
+        {conCoords.length} clientes con ubicacion
         {cobrosGeoHoy?.length > 0 && (
-          <> • <span style={{ color: '#22c55e' }}>● </span>{cobrosGeoHoy.length} cobro{cobrosGeoHoy.length === 1 ? '' : 's'} de hoy</>
+          <> · <span style={{ color: '#22c55e' }}>●</span> {cobrosGeoHoy.length} cobro{cobrosGeoHoy.length === 1 ? '' : 's'} de hoy</>
         )}
         {cobradorConCoords && (
-          <> • <span style={{ color: '#f5c518' }}>● </span>Cobrador en vivo</>
+          <> · <span style={{ color: '#f5c518' }}>●</span> Cobrador en vivo</>
         )}
-        {' • '}La línea muestra el orden de visita
+        {trail.length >= 2 && (
+          <> · <span style={{ color: '#f5c518' }}>―</span> Recorrido del dia</>
+        )}
       </p>
 
       <style jsx global>{`

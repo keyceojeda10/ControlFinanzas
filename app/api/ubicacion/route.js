@@ -17,14 +17,23 @@ export async function POST(req) {
     return Response.json({ error: 'Coordenadas invalidas' }, { status: 400 })
   }
 
-  await prisma.user.update({
-    where: { id: session.user.id },
-    data: {
-      latitud: coords.latitud,
-      longitud: coords.longitud,
-      ubicacionUpdatedAt: new Date(),
-    },
-  })
+  await Promise.all([
+    prisma.user.update({
+      where: { id: session.user.id },
+      data: {
+        latitud: coords.latitud,
+        longitud: coords.longitud,
+        ubicacionUpdatedAt: new Date(),
+      },
+    }),
+    prisma.ubicacionLog.create({
+      data: {
+        userId: session.user.id,
+        latitud: coords.latitud,
+        longitud: coords.longitud,
+      },
+    }),
+  ])
 
   return Response.json({ ok: true })
 }

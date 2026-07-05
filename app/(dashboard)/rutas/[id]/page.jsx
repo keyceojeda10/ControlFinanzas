@@ -275,6 +275,7 @@ export default function RutaDetallePage({ params }) {
   const [optimResult,    setOptimResult]    = useState(null)
   const [showMap,        setShowMap]        = useState(false)
   const [cobradorUbi,    setCobradorUbi]    = useState(null)
+  const [cobradorTrail,  setCobradorTrail]  = useState([])
   const [highlightId,    setHighlightId]    = useState(null)
   const [banner,         setBanner]         = useState(null)
   const [pagandoRapido,  setPagandoRapido]  = useState(null) // clienteId while paying
@@ -577,17 +578,28 @@ export default function RutaDetallePage({ params }) {
   }, [ruta, id])
 
   useEffect(() => {
+    if (!ruta?.cobrador?.id || !esOwner) return
+    const minsDesde = ruta.cobrador.ubicacionUpdatedAt
+      ? (Date.now() - new Date(ruta.cobrador.ubicacionUpdatedAt).getTime()) / 60000
+      : Infinity
+    if (minsDesde < 10 && !showMap) setShowMap(true)
+  }, [ruta?.cobrador?.id, ruta?.cobrador?.ubicacionUpdatedAt]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
     if (!showMap || !ruta?.cobrador?.id) return
     setCobradorUbi({ latitud: ruta.cobrador.latitud, longitud: ruta.cobrador.longitud, ubicacionUpdatedAt: ruta.cobrador.ubicacionUpdatedAt, nombre: ruta.cobrador.nombre })
-    const interval = setInterval(async () => {
+    async function fetchUbi() {
       try {
         const res = await fetch(`/api/ubicacion/${ruta.cobrador.id}`)
         if (res.ok) {
           const data = await res.json()
           setCobradorUbi(prev => ({ ...prev, ...data }))
+          if (data.trail) setCobradorTrail(data.trail)
         }
       } catch {}
-    }, 20_000)
+    }
+    fetchUbi()
+    const interval = setInterval(fetchUbi, 20_000)
     return () => clearInterval(interval)
   }, [showMap, ruta?.cobrador?.id])
 
@@ -1694,7 +1706,7 @@ export default function RutaDetallePage({ params }) {
       {/* Mini-mapa */}
       {showMap && ruta.clientes && (
         <div className="rounded-[12px] overflow-hidden border border-[#222]">
-          <RouteMap clientes={ruta.clientes} cobrosGeoHoy={ruta.cobrosGeoHoy ?? []} cobrador={cobradorUbi} />
+          <RouteMap clientes={ruta.clientes} cobrosGeoHoy={ruta.cobrosGeoHoy ?? []} cobrador={cobradorUbi} trail={cobradorTrail} />
         </div>
       )}
 
