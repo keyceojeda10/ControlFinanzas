@@ -103,9 +103,99 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
     if (file) await processImageFile(file)
   }, [processImageFile])
 
-  const isStandalone = typeof window !== 'undefined' && (
-    window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone
-  )
+  const startCamera = useCallback(async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraError('api')
+      setMode('photo')
+      return
+    }
+
+    setMode('loading')
+    setCameraError(null)
+
+    let permState = null
+    try {
+      const ps = await navigator.permissions.query({ name: 'camera' })
+      permState = ps.state
+    } catch {}
+
+    const constraintSets = [
+      { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } },
+      { video: { facingMode: 'environment' } },
+      { video: true },
+    ]
+
+    let stream = null
+    let lastError = null
+    for (const constraints of constraintSets) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(constraints)
+        break
+      } catch (err) {
+        lastError = err
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') break
+        continue
+      }
+    }
+
+    if (!stream) {
+      const errorName = lastError?.name || 'unknown'
+      setCameraError(permState === 'prompt' && (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError')
+        ? 'pwa-prompt-blocked'
+        : errorName)
+      setMode('photo')
+      return
+    }
+
+    streamRef.current = stream
+    const video = videoRef.current
+    if (!video) { stream.getTracks().forEach(t => t.stop()); return }
+
+    video.srcObject = stream
+
+    try {
+      await video.play()
+    } catch {
+      stream.getTracks().forEach(t => t.stop())
+      setCameraError('play')
+      setMode('photo')
+      return
+    }
+
+    setMode('live')
+
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })
+
+    let detector = null
+    if (typeof globalThis.BarcodeDetector !== 'undefined') {
+      try { detector = new BarcodeDetector({ formats: ['qr_code'] }) } catch {}
+    }
+
+    scannerRef.current = setInterval(async () => {
+      if (!video || video.readyState < 2) return
+      const vw = video.videoWidth
+      const vh = video.videoHeight
+      if (!vw || !vh) return
+
+      canvas.width = vw
+      canvas.height = vh
+      ctx.drawImage(video, 0, 0, vw, vh)
+
+      try {
+        if (detector) {
+          const barcodes = await detector.detect(video)
+          if (barcodes.length > 0 && barcodes[0].rawValue?.includes('/qr/')) {
+            handleDetected(barcodes[0].rawValue)
+            return
+          }
+        }
+        const imgData = ctx.getImageData(0, 0, vw, vh)
+        const result = decodeImageData(imgData.data, vw, vh)
+        if (result) handleDetected(result)
+      } catch {}
+    }, 250)
+  }, [stopCamera, handleDetected, decodeImageData])
 
   useEffect(() => {
     if (!open) {
@@ -116,114 +206,9 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
       setProcessing(false)
       return
     }
-
-    let cancelled = false
-
-    async function tryLiveCamera() {
-      if (!navigator.mediaDevices?.getUserMedia) {
-        setCameraError('api')
-        setMode('photo')
-        return
-      }
-
-      // On Android standalone PWA, check permission state first.
-      // If 'prompt', the PWA might not show the permission dialog (Samsung bug).
-      // We try getUserMedia anyway — if it throws NotAllowedError without showing
-      // a dialog, we tell the user to open in Chrome browser to grant it once.
-      let permState = null
-      try {
-        const ps = await navigator.permissions.query({ name: 'camera' })
-        permState = ps.state
-      } catch {}
-
-      const constraintSets = [
-        { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } },
-        { video: { facingMode: 'environment' } },
-        { video: true },
-      ]
-
-      let stream = null
-      let lastError = null
-      for (const constraints of constraintSets) {
-        try {
-          stream = await navigator.mediaDevices.getUserMedia(constraints)
-          break
-        } catch (err) {
-          lastError = err
-          if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') break
-          continue
-        }
-      }
-
-      if (!stream) {
-        if (!cancelled) {
-          const errorName = lastError?.name || 'unknown'
-          setCameraError(permState === 'prompt' && (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError')
-            ? 'pwa-prompt-blocked'
-            : errorName)
-          setMode('photo')
-        }
-        return
-      }
-
-      if (cancelled) { stream.getTracks().forEach(t => t.stop()); return }
-
-      streamRef.current = stream
-      const video = videoRef.current
-      if (!video) { stream.getTracks().forEach(t => t.stop()); return }
-
-      video.srcObject = stream
-
-      try {
-        await video.play()
-      } catch {
-        stream.getTracks().forEach(t => t.stop())
-        if (!cancelled) {
-          setCameraError('play')
-          setMode('photo')
-        }
-        return
-      }
-
-      if (cancelled) { stream.getTracks().forEach(t => t.stop()); return }
-      setMode('live')
-
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d', { willReadFrequently: true })
-
-      let detector = null
-      if (typeof globalThis.BarcodeDetector !== 'undefined') {
-        try { detector = new BarcodeDetector({ formats: ['qr_code'] }) } catch {}
-      }
-
-      scannerRef.current = setInterval(async () => {
-        if (!video || video.readyState < 2) return
-        const vw = video.videoWidth
-        const vh = video.videoHeight
-        if (!vw || !vh) return
-
-        canvas.width = vw
-        canvas.height = vh
-        ctx.drawImage(video, 0, 0, vw, vh)
-
-        try {
-          if (detector) {
-            const barcodes = await detector.detect(video)
-            if (barcodes.length > 0 && barcodes[0].rawValue?.includes('/qr/')) {
-              handleDetected(barcodes[0].rawValue)
-              return
-            }
-          }
-          const imgData = ctx.getImageData(0, 0, vw, vh)
-          const result = decodeImageData(imgData.data, vw, vh)
-          if (result) handleDetected(result)
-        } catch {}
-      }, 250)
-    }
-
-    tryLiveCamera()
-    return () => { cancelled = true; stopCamera() }
-  }, [open, stopCamera, handleDetected, decodeImageData])
+    startCamera()
+    return () => stopCamera()
+  }, [open, stopCamera, startCamera])
 
   const showVideo = mode === 'loading' || mode === 'live'
 
@@ -248,8 +233,8 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
   }
 
   function handleRetry() {
-    setCameraError(null)
-    setMode('loading')
+    stopCamera()
+    startCamera()
   }
 
   return (
@@ -326,12 +311,12 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
                   <div className="w-full flex flex-col gap-3">
                     <div className="w-full rounded-xl p-3" style={{ background: 'rgba(245,158,11,0.08)' }}>
                       <p className="text-xs font-semibold mb-2" style={{ color: 'var(--color-text-primary)' }}>
-                        Permite la camara en 3 pasos:
+                        Revisa estos pasos:
                       </p>
-                      <ol className="text-xs leading-relaxed space-y-1.5 pl-4" style={{ color: 'var(--color-text-secondary)', listStyle: 'decimal' }}>
-                        <li>Abre <strong>Chrome</strong> (no la app instalada)</li>
-                        <li>Ve a <strong>app.control-finanzas.com</strong></li>
-                        <li>Toca el <strong>candado</strong> (o icono de ajustes) en la barra de direcciones &gt; <strong>Permisos</strong> &gt; <strong>Camara</strong> &gt; <strong>Permitir</strong></li>
+                      <ol className="text-xs leading-relaxed space-y-2 pl-4" style={{ color: 'var(--color-text-secondary)', listStyle: 'decimal' }}>
+                        <li>Baja la <strong>cortina de notificaciones</strong> (desliza desde arriba) y verifica que el icono de <strong>Camara</strong> NO este tachado. Si esta tachado, tocalo para activarlo.</li>
+                        <li>Ve a <strong>Ajustes &gt; Aplicaciones &gt; Chrome &gt; Permisos &gt; Camara</strong> y ponlo en <strong>Permitir</strong> (no "Preguntar").</li>
+                        <li>En Chrome, toca el <strong>candado</strong> en la barra de direcciones &gt; <strong>Permisos</strong> &gt; <strong>Camara</strong> &gt; <strong>Permitir</strong>.</li>
                       </ol>
                       <p className="text-[10px] mt-2" style={{ color: 'var(--color-text-tertiary, rgba(0,0,0,0.35))' }}>
                         Solo necesitas hacerlo una vez. Despues funciona siempre.
