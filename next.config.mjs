@@ -4,6 +4,7 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   reactStrictMode: true,
+  serverExternalPackages: ['pdfkit'],
   experimental: {
     optimizePackageImports: ['@/components/ui', '@/lib'],
   },

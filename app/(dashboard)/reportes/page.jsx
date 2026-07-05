@@ -98,6 +98,7 @@ export default function ReportesPage() {
   const [error,      setError]      = useState('')
   const [periodoIngresos, setPeriodoIngresos] = useState('diario')
   const [descargando, setDescargando] = useState('')
+  const [descargandoPDF, setDescargandoPDF] = useState(false)
   // Seguros por ruta (carga independiente, con su propio periodo)
   const [seguros, setSeguros] = useState(null)
   const [periodoSeguros, setPeriodoSeguros] = useState('mes')
@@ -152,6 +153,24 @@ export default function ReportesPage() {
       .catch(() => {})
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, periodoSeguros, nivel])
+
+  const exportarPDF = async () => {
+    setDescargandoPDF(true)
+    try {
+      const res = await fetch(`/api/reportes/resumen-pdf?desde=${desde}&hasta=${hasta}`)
+      if (!res.ok) { alert('Error al generar PDF'); return }
+      const blob = await res.blob()
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = `resumen-${desde}-a-${hasta}.pdf`
+      a.click()
+      URL.revokeObjectURL(a.href)
+    } catch {
+      alert('Error de conexion.')
+    } finally {
+      setDescargandoPDF(false)
+    }
+  }
 
   const exportar = async (tipo) => {
     setDescargando(tipo)
@@ -636,7 +655,48 @@ export default function ReportesPage() {
         </div>
       )}
 
-      {/* ── 5. Exportar a Excel como chips ──────────────────────── */}
+      {/* ── 5. Descargar Resumen PDF ────────────────────────────── */}
+      {nivel < 2 && <UpgradeNudge titulo="Resumen PDF" planRequerido="standard" />}
+      {nivel >= 2 && <div className="rounded-[16px] px-4 py-4"
+        style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+      >
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-6 h-6 rounded-[8px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--color-danger) 18%, transparent)', color: 'var(--color-danger)' }}>
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+            </svg>
+          </div>
+          <p className="text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Resumen PDF</p>
+        </div>
+        <button
+          onClick={exportarPDF}
+          disabled={descargandoPDF}
+          className="group w-full h-14 px-3 rounded-[12px] flex items-center gap-3 transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+          style={{
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-danger) 8%, var(--color-bg-base)) 0%, var(--color-bg-base) 100%)',
+            border: '1px solid color-mix(in srgb, var(--color-danger) 22%, var(--color-border))',
+          }}
+        >
+          <div
+            className="w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0 transition-transform group-hover:scale-110"
+            style={{ background: 'color-mix(in srgb, var(--color-danger) 18%, transparent)', color: 'var(--color-danger)' }}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+          </div>
+          <div className="flex flex-col items-start text-left min-w-0 flex-1">
+            <span className="text-[13px] font-semibold truncate w-full" style={{ color: 'var(--color-danger)' }}>
+              {descargandoPDF ? 'Generando PDF...' : 'Descargar Resumen'}
+            </span>
+            <span className="text-[10px] truncate w-full" style={{ color: 'var(--color-text-muted)' }}>
+              KPIs, capital, cobradores del periodo
+            </span>
+          </div>
+        </button>
+      </div>}
+
+      {/* ── 6. Exportar a Excel como chips ──────────────────────── */}
       {nivel < 3 && <UpgradeNudge titulo="Exportar a Excel" planRequerido="professional" />}
       {nivel >= 3 && <div className="rounded-[16px] px-4 py-4"
         style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
