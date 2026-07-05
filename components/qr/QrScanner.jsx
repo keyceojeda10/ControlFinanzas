@@ -4,20 +4,14 @@ import { useRef, useState, useEffect, useCallback } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import jsQR from 'jsqr'
 
-function isAndroid() {
-  if (typeof navigator === 'undefined') return false
-  return /android/i.test(navigator.userAgent)
-}
-
 export default function QrScanner({ open, onClose, onClientDetected }) {
   const videoRef = useRef(null)
   const streamRef = useRef(null)
   const scannerRef = useRef(null)
   const [mode, setMode] = useState('loading')
+  const [cameraError, setCameraError] = useState(null)
   const [error, setError] = useState(null)
   const [processing, setProcessing] = useState(false)
-
-  const android = typeof navigator !== 'undefined' && isAndroid()
 
   const stopCamera = useCallback(() => {
     if (scannerRef.current) {
@@ -109,15 +103,14 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
     if (file) await processImageFile(file)
   }, [processImageFile])
 
-  // iPhone/desktop: live camera via getUserMedia
+  // Live camera - works on ALL devices (iPhone, Android, desktop)
   useEffect(() => {
-    if (!open || android) {
-      if (!android) {
-        stopCamera()
-        setMode('loading')
-        setError(null)
-        setProcessing(false)
-      }
+    if (!open) {
+      stopCamera()
+      setMode('loading')
+      setError(null)
+      setCameraError(null)
+      setProcessing(false)
       return
     }
 
@@ -125,28 +118,35 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
 
     async function tryLiveCamera() {
       if (!navigator.mediaDevices?.getUserMedia) {
+        setCameraError('api')
         setMode('photo')
         return
       }
 
       const constraintSets = [
-        { video: { facingMode: { ideal: 'environment' } } },
+        { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } },
         { video: { facingMode: 'environment' } },
         { video: true },
       ]
 
       let stream = null
+      let lastError = null
       for (const constraints of constraintSets) {
         try {
           stream = await navigator.mediaDevices.getUserMedia(constraints)
           break
-        } catch {
+        } catch (err) {
+          lastError = err
           continue
         }
       }
 
       if (!stream) {
-        if (!cancelled) setMode('photo')
+        if (!cancelled) {
+          const errorName = lastError?.name || 'unknown'
+          setCameraError(errorName)
+          setMode('photo')
+        }
         return
       }
 
@@ -162,7 +162,10 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
         await video.play()
       } catch {
         stream.getTracks().forEach(t => t.stop())
-        if (!cancelled) setMode('photo')
+        if (!cancelled) {
+          setCameraError('play')
+          setMode('photo')
+        }
         return
       }
 
@@ -204,15 +207,36 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
 
     tryLiveCamera()
     return () => { cancelled = true; stopCamera() }
-  }, [open, android, stopCamera, handleDetected, decodeImageData])
+  }, [open, stopCamera, handleDetected, decodeImageData])
 
-  const showVideo = !android && (mode === 'loading' || mode === 'live')
+  const showVideo = mode === 'loading' || mode === 'live'
+
+  const permissionHelp = cameraError === 'NotAllowedError' || cameraError === 'PermissionDeniedError'
+  const cameraInUse = cameraError === 'NotReadableError'
+  const isAndroid = typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent)
+
+  function getErrorMessage() {
+    if (permissionHelp) {
+      return isAndroid
+        ? 'La camara esta bloqueada. Ve a Ajustes de Chrome > Configuracion del sitio > Camara y permite el acceso para esta pagina.'
+        : 'La camara esta bloqueada. Permite el acceso en los ajustes del navegador.'
+    }
+    if (cameraInUse) {
+      return 'La camara esta siendo usada por otra app. Cierra la otra app e intenta de nuevo.'
+    }
+    return 'No se pudo acceder a la camara. Intenta desde el navegador Chrome (no desde la app instalada).'
+  }
+
+  function handleRetry() {
+    setCameraError(null)
+    setMode('loading')
+  }
 
   return (
     <Modal open={open} onClose={() => { stopCamera(); onClose() }} title="Escanear QR" size="sm">
       <div className="flex flex-col items-center gap-4">
 
-        {/* iPhone/desktop: live video scanner */}
+        {/* Live video scanner - same for ALL devices */}
         {showVideo && (
           <div className="relative w-full aspect-square max-w-[320px] rounded-2xl overflow-hidden" style={{ background: '#000' }}>
             <video
@@ -242,7 +266,7 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
           </div>
         )}
 
-        {!android && mode === 'live' && (
+        {mode === 'live' && (
           <>
             <p className="text-sm text-center" style={{ color: 'var(--color-text-secondary)' }}>
               Apunta la camara al QR del cliente
@@ -260,52 +284,8 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
           </>
         )}
 
-        {/* Android: guide user to native camera scanner */}
-        {android && (
-          <div className="flex flex-col items-center gap-4 py-4 w-full">
-            <div className="w-20 h-20 rounded-2xl flex items-center justify-center" style={{ background: 'var(--color-surface-alt)' }}>
-              <svg className="w-10 h-10" style={{ color: 'var(--color-accent)' }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
-              </svg>
-            </div>
-
-            <div className="text-center space-y-2 px-2">
-              <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-                Usa la camara de tu telefono
-              </p>
-              <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-                Abre la app de Camara de tu celular y apunta al QR del cliente. El telefono lo detecta automaticamente y te lleva directo al cobro.
-              </p>
-            </div>
-
-            <div className="w-full rounded-xl p-3 space-y-2" style={{ background: 'var(--color-surface-alt)' }}>
-              <div className="flex items-start gap-3">
-                <span className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: 'var(--color-accent)', color: '#18181b' }}>1</span>
-                <p className="text-xs pt-0.5" style={{ color: 'var(--color-text-secondary)' }}>Cierra este modal</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: 'var(--color-accent)', color: '#18181b' }}>2</span>
-                <p className="text-xs pt-0.5" style={{ color: 'var(--color-text-secondary)' }}>Abre la app de Camara</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: 'var(--color-accent)', color: '#18181b' }}>3</span>
-                <p className="text-xs pt-0.5" style={{ color: 'var(--color-text-secondary)' }}>Apunta al QR y toca el enlace que aparece</p>
-              </div>
-            </div>
-
-            <button
-              onClick={onClose}
-              className="h-12 px-5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 w-full"
-              style={{ background: 'var(--color-accent)', color: '#18181b' }}
-            >
-              Entendido
-            </button>
-          </div>
-        )}
-
-        {/* iPhone/desktop: photo fallback when getUserMedia fails */}
-        {!android && mode === 'photo' && (
+        {/* Camera failed - show specific error + fallback */}
+        {mode === 'photo' && (
           <>
             {processing ? (
               <div className="flex flex-col items-center gap-3 py-8">
@@ -320,27 +300,61 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
                 {error && (
                   <p className="text-sm text-center mb-1" style={{ color: 'var(--color-danger)' }}>{error}</p>
                 )}
-                <label
-                  className="h-12 px-5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer w-full"
+
+                {/* Error info */}
+                <div className="w-full rounded-xl p-3" style={{ background: 'rgba(245,158,11,0.08)' }}>
+                  <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+                    {getErrorMessage()}
+                  </p>
+                  {cameraError && (
+                    <p className="text-[10px] mt-1.5 font-mono" style={{ color: 'var(--color-text-tertiary, rgba(0,0,0,0.35))' }}>
+                      Error: {cameraError}
+                    </p>
+                  )}
+                </div>
+
+                {/* Retry button */}
+                <button
+                  onClick={handleRetry}
+                  className="h-11 px-5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 w-full"
                   style={{ background: 'var(--color-accent)', color: '#18181b' }}
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+                  <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
                   </svg>
-                  Tomar foto del QR
-                  <input type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="hidden" />
-                </label>
-                <label
-                  className="h-10 px-4 rounded-xl text-xs font-medium flex items-center justify-center gap-2 cursor-pointer w-full"
-                  style={{ background: 'var(--color-surface-alt)', color: 'var(--color-text-secondary)' }}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
-                  </svg>
-                  Elegir de galeria
-                  <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
-                </label>
+                  Intentar de nuevo
+                </button>
+
+                {/* Photo fallback */}
+                <div className="flex items-center gap-3 w-full">
+                  <div className="h-px flex-1" style={{ background: 'var(--color-border)' }} />
+                  <span className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--color-text-tertiary, rgba(0,0,0,0.35))' }}>o usa una foto</span>
+                  <div className="h-px flex-1" style={{ background: 'var(--color-border)' }} />
+                </div>
+
+                <div className="flex gap-2 w-full">
+                  <label
+                    className="flex-1 h-10 rounded-xl text-xs font-medium flex items-center justify-center gap-2 cursor-pointer"
+                    style={{ background: 'var(--color-surface-alt)', color: 'var(--color-text-secondary)' }}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+                    </svg>
+                    Camara
+                    <input type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="hidden" />
+                  </label>
+                  <label
+                    className="flex-1 h-10 rounded-xl text-xs font-medium flex items-center justify-center gap-2 cursor-pointer"
+                    style={{ background: 'var(--color-surface-alt)', color: 'var(--color-text-secondary)' }}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+                    </svg>
+                    Galeria
+                    <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+                  </label>
+                </div>
               </div>
             )}
           </>
