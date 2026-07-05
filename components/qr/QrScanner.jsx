@@ -103,7 +103,10 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
     if (file) await processImageFile(file)
   }, [processImageFile])
 
-  // Live camera - works on ALL devices (iPhone, Android, desktop)
+  const isStandalone = typeof window !== 'undefined' && (
+    window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone
+  )
+
   useEffect(() => {
     if (!open) {
       stopCamera()
@@ -123,6 +126,16 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
         return
       }
 
+      // On Android standalone PWA, check permission state first.
+      // If 'prompt', the PWA might not show the permission dialog (Samsung bug).
+      // We try getUserMedia anyway — if it throws NotAllowedError without showing
+      // a dialog, we tell the user to open in Chrome browser to grant it once.
+      let permState = null
+      try {
+        const ps = await navigator.permissions.query({ name: 'camera' })
+        permState = ps.state
+      } catch {}
+
       const constraintSets = [
         { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } },
         { video: { facingMode: 'environment' } },
@@ -137,6 +150,7 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
           break
         } catch (err) {
           lastError = err
+          if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') break
           continue
         }
       }
@@ -144,7 +158,9 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
       if (!stream) {
         if (!cancelled) {
           const errorName = lastError?.name || 'unknown'
-          setCameraError(errorName)
+          setCameraError(permState === 'prompt' && (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError')
+            ? 'pwa-prompt-blocked'
+            : errorName)
           setMode('photo')
         }
         return
@@ -211,20 +227,24 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
 
   const showVideo = mode === 'loading' || mode === 'live'
 
+  const pwaBlocked = cameraError === 'pwa-prompt-blocked'
   const permissionHelp = cameraError === 'NotAllowedError' || cameraError === 'PermissionDeniedError'
   const cameraInUse = cameraError === 'NotReadableError'
   const isAndroid = typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent)
 
   function getErrorMessage() {
-    if (permissionHelp) {
-      return isAndroid
-        ? 'La camara esta bloqueada. Ve a Ajustes de Chrome > Configuracion del sitio > Camara y permite el acceso para esta pagina.'
-        : 'La camara esta bloqueada. Permite el acceso en los ajustes del navegador.'
+    if (pwaBlocked || permissionHelp) {
+      return null
     }
     if (cameraInUse) {
       return 'La camara esta siendo usada por otra app. Cierra la otra app e intenta de nuevo.'
     }
-    return 'No se pudo acceder a la camara. Intenta desde el navegador Chrome (no desde la app instalada).'
+    return 'No se pudo acceder a la camara. Intenta cerrar otras apps que usen la camara.'
+  }
+
+  function openInChrome() {
+    const url = window.location.href
+    window.open(url, '_blank')
   }
 
   function handleRetry() {
@@ -301,29 +321,70 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
                   <p className="text-sm text-center mb-1" style={{ color: 'var(--color-danger)' }}>{error}</p>
                 )}
 
-                {/* Error info */}
-                <div className="w-full rounded-xl p-3" style={{ background: 'rgba(245,158,11,0.08)' }}>
-                  <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-                    {getErrorMessage()}
-                  </p>
-                  {cameraError && (
-                    <p className="text-[10px] mt-1.5 font-mono" style={{ color: 'var(--color-text-tertiary, rgba(0,0,0,0.35))' }}>
-                      Error: {cameraError}
-                    </p>
-                  )}
-                </div>
+                {/* Permission tutorial for Android */}
+                {(pwaBlocked || permissionHelp) && isAndroid ? (
+                  <div className="w-full flex flex-col gap-3">
+                    <div className="w-full rounded-xl p-3" style={{ background: 'rgba(245,158,11,0.08)' }}>
+                      <p className="text-xs font-semibold mb-2" style={{ color: 'var(--color-text-primary)' }}>
+                        Permite la camara en 3 pasos:
+                      </p>
+                      <ol className="text-xs leading-relaxed space-y-1.5 pl-4" style={{ color: 'var(--color-text-secondary)', listStyle: 'decimal' }}>
+                        <li>Abre <strong>Chrome</strong> (no la app instalada)</li>
+                        <li>Ve a <strong>app.control-finanzas.com</strong></li>
+                        <li>Toca el <strong>candado</strong> (o icono de ajustes) en la barra de direcciones &gt; <strong>Permisos</strong> &gt; <strong>Camara</strong> &gt; <strong>Permitir</strong></li>
+                      </ol>
+                      <p className="text-[10px] mt-2" style={{ color: 'var(--color-text-tertiary, rgba(0,0,0,0.35))' }}>
+                        Solo necesitas hacerlo una vez. Despues funciona siempre.
+                      </p>
+                    </div>
 
-                {/* Retry button */}
-                <button
-                  onClick={handleRetry}
-                  className="h-11 px-5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 w-full"
-                  style={{ background: 'var(--color-accent)', color: '#18181b' }}
-                >
-                  <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
-                  </svg>
-                  Intentar de nuevo
-                </button>
+                    <button
+                      onClick={openInChrome}
+                      className="h-11 px-5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 w-full"
+                      style={{ background: 'var(--color-accent)', color: '#18181b' }}
+                    >
+                      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                      </svg>
+                      Abrir en Chrome
+                    </button>
+
+                    <button
+                      onClick={handleRetry}
+                      className="h-10 px-5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 w-full"
+                      style={{ background: 'var(--color-surface-alt)', color: 'var(--color-text-secondary)' }}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
+                      </svg>
+                      Ya di permiso, intentar de nuevo
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="w-full rounded-xl p-3" style={{ background: 'rgba(245,158,11,0.08)' }}>
+                      <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+                        {getErrorMessage()}
+                      </p>
+                      {cameraError && (
+                        <p className="text-[10px] mt-1.5 font-mono" style={{ color: 'var(--color-text-tertiary, rgba(0,0,0,0.35))' }}>
+                          Error: {cameraError}
+                        </p>
+                      )}
+                    </div>
+
+                    <button
+                      onClick={handleRetry}
+                      className="h-11 px-5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 w-full"
+                      style={{ background: 'var(--color-accent)', color: '#18181b' }}
+                    >
+                      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
+                      </svg>
+                      Intentar de nuevo
+                    </button>
+                  </>
+                )}
 
                 {/* Photo fallback */}
                 <div className="flex items-center gap-3 w-full">
