@@ -102,7 +102,7 @@ function useCountUp(target, duration = 800) {
 // que muestra el monto y la fecha. El ultimo dia (hoy) se destaca con un
 // anillo brillante. La linea NO usa preserveAspectRatio=none para no
 // deformar el grosor del trazo.
-function Sparkline({ data, color = 'var(--color-success)', ariaLabel, etiquetasDias }) {
+function Sparkline({ data, color = 'var(--color-success)', ariaLabel, etiquetasDias, mutedColor, tooltipBg, tooltipText }) {
   const reactId = useId()
   // hovered = mouse desktop (se va al salir). pinned = touch movil (queda fijo).
   const [hovered, setHovered] = useState(null)
@@ -220,7 +220,7 @@ function Sparkline({ data, color = 'var(--color-success)', ariaLabel, etiquetasD
                 cx={x}
                 cy={y}
                 r={esActive ? 4 : (esHoy ? 3.2 : 2)}
-                fill={esHoy || esActive ? color : 'var(--color-bg-card)'}
+                fill={esHoy || esActive ? color : (tooltipBg || 'var(--color-bg-card)')}
                 stroke={color}
                 strokeWidth={esHoy || esActive ? 1.5 : 1.2}
                 style={{ transition: 'r 0.15s ease' }}
@@ -258,7 +258,7 @@ function Sparkline({ data, color = 'var(--color-success)', ariaLabel, etiquetasD
               y={h - 2}
               fontSize="9"
               textAnchor={i === 0 ? 'start' : 'end'}
-              fill={esHoy ? color : 'var(--color-text-muted)'}
+              fill={esHoy ? color : (mutedColor || 'var(--color-text-muted)')}
               style={{ fontWeight: esHoy ? 600 : 400 }}
             >
               {esHoy ? 'Hoy' : 'Hace 6d'}
@@ -275,14 +275,14 @@ function Sparkline({ data, color = 'var(--color-success)', ariaLabel, etiquetasD
             left: `${activePoint[0]}px`,
             top: `${activePoint[1] - 8}px`,
             transform: 'translate(-50%, -100%)',
-            background: 'var(--color-bg-base)',
-            border: `1px solid color-mix(in srgb, ${color} 35%, var(--color-border))`,
+            background: tooltipBg || 'var(--color-bg-base)',
+            border: `1px solid color-mix(in srgb, ${color} 35%, ${tooltipBg ? 'rgba(0,0,0,0.2)' : 'var(--color-border)'})`,
             boxShadow: '0 8px 20px rgba(0,0,0,0.35)',
             zIndex: 10,
           }}
         >
-          <p className="text-[9px] uppercase tracking-wider mb-0.5" style={{ color: 'var(--color-text-muted)' }}>{dias[activeIdx]}</p>
-          <p className="font-mono-display font-bold" style={{ color }}>{formatMoney(activePoint[2])}</p>
+          <p className="text-[9px] uppercase tracking-wider mb-0.5" style={{ color: tooltipBg ? 'rgba(245, 197, 24, 0.6)' : (mutedColor || 'var(--color-text-muted)') }}>{dias[activeIdx]}</p>
+          <p className="font-mono-display font-bold" style={{ color: tooltipText || color }}>{formatMoney(activePoint[2])}</p>
         </div>
       )}
     </div>
@@ -397,7 +397,7 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
 
         {sparklineData && sparklineData.length > 0 && (
           <div className="mt-3">
-            <Sparkline data={sparklineData} color={HERO_INK} ariaLabel="Tendencia ultimos 7 dias" />
+            <Sparkline data={sparklineData} color={HERO_INK} mutedColor={HERO_SUB} tooltipBg="rgba(50, 40, 10, 0.92)" tooltipText="#f5c518" ariaLabel="Tendencia ultimos 7 dias" />
           </div>
         )}
 
