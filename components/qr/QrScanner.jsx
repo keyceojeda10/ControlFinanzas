@@ -60,7 +60,6 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
         return
       }
 
-      // Try multiple constraint sets from most specific to most permissive
       const constraintSets = [
         { video: { facingMode: { ideal: 'environment' } } },
         { video: { facingMode: 'environment' } },
@@ -89,9 +88,6 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
       if (!video) { stream.getTracks().forEach(t => t.stop()); return }
 
       video.srcObject = stream
-      video.setAttribute('playsinline', 'true')
-      video.setAttribute('autoplay', 'true')
-      video.setAttribute('muted', 'true')
 
       try {
         await video.play()
@@ -200,38 +196,44 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
     if (file) await processImageFile(file)
   }, [processImageFile])
 
+  const showVideo = mode === 'loading' || mode === 'live'
+
   return (
     <Modal open={open} onClose={() => { stopCamera(); onClose() }} title="Escanear QR" size="sm">
       <div className="flex flex-col items-center gap-4">
 
-        {/* Loading state */}
-        {mode === 'loading' && (
-          <div className="flex flex-col items-center gap-3 py-8">
-            <svg className="animate-spin w-8 h-8" style={{ color: 'var(--color-accent)' }} fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>Iniciando camara...</p>
-          </div>
-        )}
-
-        {/* Live camera scanning */}
-        {mode === 'live' && (
-          <>
-            <div className="relative w-full aspect-square max-w-[320px] rounded-2xl overflow-hidden" style={{ background: '#000' }}>
-              <video
-                ref={videoRef}
-                className="w-full h-full object-cover"
-                playsInline
-                autoPlay
-                muted
-              />
+        {/* Video element - always in DOM when camera might work, just hidden/shown */}
+        {showVideo && (
+          <div className="relative w-full aspect-square max-w-[320px] rounded-2xl overflow-hidden" style={{ background: '#000' }}>
+            <video
+              ref={videoRef}
+              className="w-full h-full object-cover"
+              playsInline
+              autoPlay
+              muted
+              style={{ opacity: mode === 'live' ? 1 : 0 }}
+            />
+            {mode === 'loading' && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                <svg className="animate-spin w-8 h-8" style={{ color: 'var(--color-accent)' }} fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>Iniciando camara...</p>
+              </div>
+            )}
+            {mode === 'live' && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="w-48 h-48 border-2 rounded-2xl" style={{ borderColor: 'var(--color-accent)' }}>
                   <div className="w-full h-0.5 animate-scan-line" style={{ background: 'var(--color-accent)', opacity: 0.7 }} />
                 </div>
               </div>
-            </div>
+            )}
+          </div>
+        )}
+
+        {mode === 'live' && (
+          <>
             <p className="text-sm text-center" style={{ color: 'var(--color-text-secondary)' }}>
               Apunta la camara al QR del cliente
             </p>
@@ -246,11 +248,6 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
               <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
             </label>
           </>
-        )}
-
-        {/* Hidden video element for loading state (needs to be in DOM before play) */}
-        {mode === 'loading' && (
-          <video ref={videoRef} className="hidden" playsInline autoPlay muted />
         )}
 
         {/* Photo fallback mode */}
