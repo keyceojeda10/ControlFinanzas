@@ -7,6 +7,10 @@ generator client {
   moduleFormat = "cjs"
 }
 
+generator clientLegacy {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "mysql"
 }
