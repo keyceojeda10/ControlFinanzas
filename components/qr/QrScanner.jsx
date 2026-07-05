@@ -13,8 +13,6 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
   const videoRef = useRef(null)
   const streamRef = useRef(null)
   const scannerRef = useRef(null)
-  const cameraInputRef = useRef(null)
-  const galleryInputRef = useRef(null)
   const [mode, setMode] = useState('loading')
   const [error, setError] = useState(null)
   const [processing, setProcessing] = useState(false)
@@ -108,22 +106,8 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
   const handleFileChange = useCallback(async (e) => {
     const file = e.target.files?.[0]
     e.target.value = ''
-    if (file) {
-      await processImageFile(file)
-    } else if (android) {
-      onClose()
-    }
-  }, [processImageFile, android, onClose])
-
-  // Android: auto-open native camera immediately
-  useEffect(() => {
-    if (!open || !android) return
-    setMode('android-waiting')
-    const timer = setTimeout(() => {
-      cameraInputRef.current?.click()
-    }, 150)
-    return () => clearTimeout(timer)
-  }, [open, android])
+    if (file) await processImageFile(file)
+  }, [processImageFile])
 
   // iPhone/desktop: live camera via getUserMedia
   useEffect(() => {
@@ -228,11 +212,7 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
     <Modal open={open} onClose={() => { stopCamera(); onClose() }} title="Escanear QR" size="sm">
       <div className="flex flex-col items-center gap-4">
 
-        {/* Hidden inputs for Android native camera */}
-        <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="hidden" />
-        <input ref={galleryInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
-
-        {/* iPhone/desktop: live video */}
+        {/* iPhone/desktop: live video scanner */}
         {showVideo && (
           <div className="relative w-full aspect-square max-w-[320px] rounded-2xl overflow-hidden" style={{ background: '#000' }}>
             <video
@@ -280,55 +260,48 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
           </>
         )}
 
-        {/* Android: processing / buttons fallback */}
+        {/* Android: guide user to native camera scanner */}
         {android && (
-          <>
-            {processing ? (
-              <div className="flex flex-col items-center gap-3 py-8">
-                <svg className="animate-spin w-10 h-10" style={{ color: 'var(--color-accent)' }} fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                <p className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>Leyendo QR...</p>
+          <div className="flex flex-col items-center gap-4 py-4 w-full">
+            <div className="w-20 h-20 rounded-2xl flex items-center justify-center" style={{ background: 'var(--color-surface-alt)' }}>
+              <svg className="w-10 h-10" style={{ color: 'var(--color-accent)' }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+              </svg>
+            </div>
+
+            <div className="text-center space-y-2 px-2">
+              <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                Usa la camara de tu telefono
+              </p>
+              <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+                Abre la app de Camara de tu celular y apunta al QR del cliente. El telefono lo detecta automaticamente y te lleva directo al cobro.
+              </p>
+            </div>
+
+            <div className="w-full rounded-xl p-3 space-y-2" style={{ background: 'var(--color-surface-alt)' }}>
+              <div className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: 'var(--color-accent)', color: '#18181b' }}>1</span>
+                <p className="text-xs pt-0.5" style={{ color: 'var(--color-text-secondary)' }}>Cierra este modal</p>
               </div>
-            ) : (
-              <div className="flex flex-col items-center gap-3 py-4 w-full">
-                {error && (
-                  <p className="text-sm text-center mb-1" style={{ color: 'var(--color-danger)' }}>{error}</p>
-                )}
-                {mode === 'android-waiting' && !error && (
-                  <div className="flex flex-col items-center gap-3">
-                    <svg className="animate-spin w-8 h-8" style={{ color: 'var(--color-accent)' }} fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>Abriendo camara...</p>
-                  </div>
-                )}
-                <button
-                  onClick={() => cameraInputRef.current?.click()}
-                  className="h-12 px-5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 w-full"
-                  style={{ background: 'var(--color-accent)', color: '#18181b' }}
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
-                  </svg>
-                  Tomar foto del QR
-                </button>
-                <button
-                  onClick={() => galleryInputRef.current?.click()}
-                  className="h-10 px-4 rounded-xl text-xs font-medium flex items-center justify-center gap-2 w-full"
-                  style={{ background: 'var(--color-surface-alt)', color: 'var(--color-text-secondary)' }}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
-                  </svg>
-                  Elegir de galeria
-                </button>
+              <div className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: 'var(--color-accent)', color: '#18181b' }}>2</span>
+                <p className="text-xs pt-0.5" style={{ color: 'var(--color-text-secondary)' }}>Abre la app de Camara</p>
               </div>
-            )}
-          </>
+              <div className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: 'var(--color-accent)', color: '#18181b' }}>3</span>
+                <p className="text-xs pt-0.5" style={{ color: 'var(--color-text-secondary)' }}>Apunta al QR y toca el enlace que aparece</p>
+              </div>
+            </div>
+
+            <button
+              onClick={onClose}
+              className="h-12 px-5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 w-full"
+              style={{ background: 'var(--color-accent)', color: '#18181b' }}
+            >
+              Entendido
+            </button>
+          </div>
         )}
 
         {/* iPhone/desktop: photo fallback when getUserMedia fails */}
