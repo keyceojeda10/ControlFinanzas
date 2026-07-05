@@ -2,12 +2,13 @@
 // SaaS multi-tenant para gestión de cartera de crédito informal
 
 generator client {
-  provider = "prisma-client-js"
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
 }
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
 }
 
 // ─── ENUMS ───────────────────────────────────────────────

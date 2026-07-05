@@ -18,8 +18,8 @@
 require('dotenv').config({ path: '.env.local' })
 require('dotenv').config()
 
-const { PrismaClient } = require('@prisma/client')
-const prisma = new PrismaClient()
+const { crearPrisma } = require('../lib/prisma-cjs.cjs')
+const prisma = crearPrisma()
 
 function parseArgs(argv) {
   const opts = { fix: false, org: null, json: false }

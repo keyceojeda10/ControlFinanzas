@@ -12,8 +12,8 @@
 //
 // Requiere: MERCADOPAGO_ACCESS_TOKEN en .env
 
-const { PrismaClient } = require('@prisma/client')
-const prisma = new PrismaClient()
+const { crearPrisma } = require('../lib/prisma-cjs.cjs')
+const prisma = crearPrisma()
 
 const TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN
 if (!TOKEN) {

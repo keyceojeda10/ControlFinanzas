@@ -3,9 +3,9 @@
 require('dotenv').config({ path: '.env.local' })
 require('dotenv').config()
 
-const { PrismaClient } = require('@prisma/client')
+const { crearPrisma } = require('../lib/prisma-cjs.cjs')
 
-const prisma = new PrismaClient()
+const prisma = crearPrisma()
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const TIPOS_AJUSTE = ['recargo', 'descuento']
