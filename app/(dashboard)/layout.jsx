@@ -17,6 +17,7 @@ import Analytics          from '@/components/Analytics'
 import CompletarTelefonoModal from '@/components/layout/CompletarTelefonoModal'
 import NovedadesModal from '@/components/layout/NovedadesModal'
 import NovedadQrModal from '@/components/layout/NovedadQrModal'
+import UbicacionProvider from '@/components/providers/UbicacionProvider'
 
 // Bloqueo definitivo de suscripcion vencida: lee DB en cada request.
 // El middleware no puede hacerlo (Edge runtime sin Prisma) y el JWT puede
@@ -87,6 +88,9 @@ export default async function DashboardLayout({ children }) {
       {/* Modal de novedades (una vez por versión) */}
       <NovedadesModal />
       <NovedadQrModal />
+
+      {/* GPS silencioso: cobrador envia ubicacion mientras la app esta abierta */}
+      <UbicacionProvider />
 
       {/* Analytics: page view tracking */}
       <Analytics />

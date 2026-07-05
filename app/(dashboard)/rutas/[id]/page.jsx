@@ -274,6 +274,7 @@ export default function RutaDetallePage({ params }) {
   const [optimizando,    setOptimizando]    = useState(false)
   const [optimResult,    setOptimResult]    = useState(null)
   const [showMap,        setShowMap]        = useState(false)
+  const [cobradorUbi,    setCobradorUbi]    = useState(null)
   const [highlightId,    setHighlightId]    = useState(null)
   const [banner,         setBanner]         = useState(null)
   const [pagandoRapido,  setPagandoRapido]  = useState(null) // clienteId while paying
@@ -574,6 +575,21 @@ export default function RutaDetallePage({ params }) {
       localStorage.removeItem(`cf-ruta-progress-${id}`)
     }
   }, [ruta, id])
+
+  useEffect(() => {
+    if (!showMap || !ruta?.cobrador?.id) return
+    setCobradorUbi({ latitud: ruta.cobrador.latitud, longitud: ruta.cobrador.longitud, ubicacionUpdatedAt: ruta.cobrador.ubicacionUpdatedAt, nombre: ruta.cobrador.nombre })
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/ubicacion/${ruta.cobrador.id}`)
+        if (res.ok) {
+          const data = await res.json()
+          setCobradorUbi(prev => ({ ...prev, ...data }))
+        }
+      } catch {}
+    }, 20_000)
+    return () => clearInterval(interval)
+  }, [showMap, ruta?.cobrador?.id])
 
   const cambiarCobrador = async (cobradorId) => {
     await fetch(`/api/rutas/${id}`, {
@@ -1678,7 +1694,7 @@ export default function RutaDetallePage({ params }) {
       {/* Mini-mapa */}
       {showMap && ruta.clientes && (
         <div className="rounded-[12px] overflow-hidden border border-[#222]">
-          <RouteMap clientes={ruta.clientes} cobrosGeoHoy={ruta.cobrosGeoHoy ?? []} />
+          <RouteMap clientes={ruta.clientes} cobrosGeoHoy={ruta.cobrosGeoHoy ?? []} cobrador={cobradorUbi} />
         </div>
       )}
 

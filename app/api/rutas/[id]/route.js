@@ -67,7 +67,7 @@ export async function GET(request, { params }) {
   const ruta = await prisma.ruta.findFirst({
     where: { id, organizationId },
     include: {
-      cobrador: { select: { id: true, nombre: true, email: true } },
+      cobrador: { select: { id: true, nombre: true, email: true, latitud: true, longitud: true, ubicacionUpdatedAt: true } },
       clientes: {
         include: {
           grupoCobro: { select: { id: true, nombre: true, color: true } },

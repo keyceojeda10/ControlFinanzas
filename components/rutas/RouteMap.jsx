@@ -28,20 +28,74 @@ function createNumberedIcon(number) {
   })
 }
 
-export default function RouteMap({ clientes, cobrosGeoHoy = [] }) {
+function createCobradorIcon(nombre, estaActivo, esReciente) {
+  if (!L) return null
+  const inicial = nombre?.charAt(0)?.toUpperCase() ?? 'C'
+  const bgColor = estaActivo || esReciente ? '#f5c518' : '#777777'
+  const borderColor = estaActivo || esReciente ? '#0a0a0a' : '#555555'
+  const pulseRing = estaActivo
+    ? `<div style="
+        position:absolute;inset:-6px;
+        border:2px solid ${bgColor};
+        border-radius:50%;
+        animation:cf-pulse 2s ease-out infinite;
+        pointer-events:none;
+      "></div>`
+    : ''
+
+  return L.divIcon({
+    className: '',
+    html: `<div style="
+      position:relative;
+      width:38px;height:38px;
+    ">
+      ${pulseRing}
+      <div style="
+        position:absolute;inset:0;
+        width:38px;height:38px;
+        background:${bgColor};
+        border:3px solid ${borderColor};
+        border-radius:50%;
+        display:flex;align-items:center;justify-content:center;
+        font-size:15px;font-weight:900;color:#0a0a0a;
+        box-shadow:0 3px 10px rgba(0,0,0,0.5);
+      ">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 0 1 15 0z"/>
+        </svg>
+      </div>
+    </div>`,
+    iconSize: [38, 38],
+    iconAnchor: [19, 19],
+  })
+}
+
+function tiempoDesde(fecha) {
+  if (!fecha) return null
+  const mins = Math.round((Date.now() - new Date(fecha).getTime()) / 60000)
+  if (mins < 1) return 'Ahora'
+  if (mins < 60) return `Hace ${mins} min`
+  const hrs = Math.floor(mins / 60)
+  return `Hace ${hrs}h ${mins % 60}m`
+}
+
+export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador }) {
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
+  const cobradorMarkerRef = useRef(null)
 
   const conCoords = (clientes ?? []).filter((c) => c.latitud != null && c.longitud != null)
+  const cobradorConCoords = cobrador?.latitud != null && cobrador?.longitud != null
 
   useEffect(() => {
     if (!L || !mapRef.current) return
-    if (conCoords.length === 0 && (cobrosGeoHoy?.length ?? 0) === 0) return
+    if (conCoords.length === 0 && (cobrosGeoHoy?.length ?? 0) === 0 && !cobradorConCoords) return
 
-    // Limpiar mapa anterior
     if (mapInstanceRef.current) {
       mapInstanceRef.current.remove()
       mapInstanceRef.current = null
+      cobradorMarkerRef.current = null
     }
 
     const map = L.map(mapRef.current, {
@@ -57,7 +111,6 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [] }) {
 
     const bounds = []
 
-    // Agregar markers numerados
     conCoords.forEach((c, i) => {
       const marker = L.marker([c.latitud, c.longitud], { icon: createNumberedIcon(i + 1) })
       marker.bindPopup(`<b style="color:#0a0a0a">${i + 1}. ${c.nombre}</b>${c.direccion ? `<br><span style="color:#666;font-size:11px">${c.direccion}</span>` : ''}`)
@@ -65,7 +118,6 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [] }) {
       bounds.push([c.latitud, c.longitud])
     })
 
-    // Pines de cobros del dia (MVP geo). Verde <=50m, naranja 50-200m, rojo >200m.
     ;(cobrosGeoHoy ?? []).forEach((p) => {
       if (p.latitud == null || p.longitud == null) return
       const d = p.distanciaMetros
@@ -86,7 +138,32 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [] }) {
       bounds.push([p.latitud, p.longitud])
     })
 
-    // Dibujar línea de recorrido
+    if (cobradorConCoords) {
+      const minsDesde = cobrador.ubicacionUpdatedAt
+        ? (Date.now() - new Date(cobrador.ubicacionUpdatedAt).getTime()) / 60000
+        : Infinity
+      const activo = minsDesde < 5
+      const reciente = minsDesde >= 5 && minsDesde < 10
+
+      const marker = L.marker([cobrador.latitud, cobrador.longitud], {
+        icon: createCobradorIcon(cobrador.nombre, activo, reciente),
+        zIndexOffset: 1000,
+      })
+
+      const estadoLabel = activo ? 'En linea' : reciente ? 'Reciente' : 'Desconectado'
+      const estadoColor = activo ? '#22c55e' : reciente ? '#f5c518' : '#999'
+      marker.bindPopup(`
+        <div style="min-width:120px">
+          <b style="color:#0a0a0a;font-size:13px">${cobrador.nombre}</b>
+          <br><span style="color:${estadoColor};font-size:11px;font-weight:600">${estadoLabel}</span>
+          ${cobrador.ubicacionUpdatedAt ? `<br><span style="color:#888;font-size:10px">${tiempoDesde(cobrador.ubicacionUpdatedAt)}</span>` : ''}
+        </div>
+      `)
+      marker.addTo(map)
+      cobradorMarkerRef.current = marker
+      bounds.push([cobrador.latitud, cobrador.longitud])
+    }
+
     if (conCoords.length >= 2) {
       L.polyline(
         conCoords.map((c) => [c.latitud, c.longitud]),
@@ -99,7 +176,6 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [] }) {
       ).addTo(map)
     }
 
-    // Ajustar vista a los bounds
     if (bounds.length > 0) {
       map.fitBounds(bounds, { padding: [30, 30], maxZoom: 16 })
     }
@@ -109,10 +185,33 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [] }) {
     return () => {
       map.remove()
       mapInstanceRef.current = null
+      cobradorMarkerRef.current = null
     }
   }, [clientes, cobrosGeoHoy]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (conCoords.length === 0 && (cobrosGeoHoy?.length ?? 0) === 0) {
+  useEffect(() => {
+    if (!cobradorMarkerRef.current || !cobrador?.latitud || !cobrador?.longitud) return
+    cobradorMarkerRef.current.setLatLng([cobrador.latitud, cobrador.longitud])
+
+    const minsDesde = cobrador.ubicacionUpdatedAt
+      ? (Date.now() - new Date(cobrador.ubicacionUpdatedAt).getTime()) / 60000
+      : Infinity
+    const activo = minsDesde < 5
+    const reciente = minsDesde >= 5 && minsDesde < 10
+    cobradorMarkerRef.current.setIcon(createCobradorIcon(cobrador.nombre, activo, reciente))
+
+    const estadoLabel = activo ? 'En linea' : reciente ? 'Reciente' : 'Desconectado'
+    const estadoColor = activo ? '#22c55e' : reciente ? '#f5c518' : '#999'
+    cobradorMarkerRef.current.setPopupContent(`
+      <div style="min-width:120px">
+        <b style="color:#0a0a0a;font-size:13px">${cobrador.nombre}</b>
+        <br><span style="color:${estadoColor};font-size:11px;font-weight:600">${estadoLabel}</span>
+        ${cobrador.ubicacionUpdatedAt ? `<br><span style="color:#888;font-size:10px">${tiempoDesde(cobrador.ubicacionUpdatedAt)}</span>` : ''}
+      </div>
+    `)
+  }, [cobrador?.latitud, cobrador?.longitud, cobrador?.ubicacionUpdatedAt])
+
+  if (conCoords.length === 0 && (cobrosGeoHoy?.length ?? 0) === 0 && !cobradorConCoords) {
     return (
       <div className="h-[200px] rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] flex items-center justify-center">
         <p className="text-xs text-[var(--color-text-muted)]">Sin clientes con ubicación para mostrar</p>
@@ -132,8 +231,18 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [] }) {
         {cobrosGeoHoy?.length > 0 && (
           <> • <span style={{ color: '#22c55e' }}>● </span>{cobrosGeoHoy.length} cobro{cobrosGeoHoy.length === 1 ? '' : 's'} de hoy</>
         )}
+        {cobradorConCoords && (
+          <> • <span style={{ color: '#f5c518' }}>● </span>Cobrador en vivo</>
+        )}
         {' • '}La línea muestra el orden de visita
       </p>
+
+      <style jsx global>{`
+        @keyframes cf-pulse {
+          0% { transform: scale(1); opacity: 0.7; }
+          100% { transform: scale(2.2); opacity: 0; }
+        }
+      `}</style>
     </div>
   )
 }
