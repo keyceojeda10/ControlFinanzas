@@ -1,16 +1,21 @@
 'use client'
 
 import { useState } from 'react'
+import { useCountry } from '@/hooks/useCountry'
 
 export default function WizardCobrador({ onComplete, onSkip }) {
+  const { formatMoney, currencySymbol } = useCountry()
   const [nombre, setNombre] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rutaNombre, setRutaNombre] = useState('')
+  const [rutaCapital, setRutaCapital] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [step, setStep] = useState('cobrador') // 'cobrador' | 'ruta'
   const [cobradorCreado, setCobradorCreado] = useState(null)
+
+  const capitalNum = Number(rutaCapital.replace(/\D/g, '')) || 0
 
   const handleCrearCobrador = async (e) => {
     e.preventDefault()
@@ -66,13 +71,18 @@ export default function WizardCobrador({ onComplete, onSkip }) {
     setLoading(true)
     setError('')
     try {
+      const body = {
+        nombre: rutaNombre.trim(),
+        cobradorId: cobradorCreado?.id ?? cobradorCreado?.cobrador?.id,
+      }
+      if (capitalNum > 0) {
+        body.capitalInicial = capitalNum
+        body.origenCapital = 'nuevo'
+      }
       const res = await fetch('/api/rutas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nombre: rutaNombre.trim(),
-          cobradorId: cobradorCreado?.id ?? cobradorCreado?.cobrador?.id,
-        }),
+        body: JSON.stringify(body),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -105,7 +115,7 @@ export default function WizardCobrador({ onComplete, onSkip }) {
             Crea una ruta para {cobradorCreado?.nombre ?? nombre}
           </h2>
           <p className="text-[13px] max-w-[300px] mx-auto leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-            La ruta agrupa los clientes que este cobrador va a visitar. Después puedes agregar clientes a esta ruta.
+            La ruta organiza los clientes por zona. Asígnale los clientes que este cobrador va a visitar.
           </p>
         </div>
 
@@ -130,27 +140,58 @@ export default function WizardCobrador({ onComplete, onSkip }) {
             </div>
           )}
 
-          <div className="rounded-[16px] p-5"
+          <div className="rounded-[16px] p-5 space-y-4"
             style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
-            <label className="block text-[12px] font-semibold mb-2" style={{ color: 'var(--color-text-secondary)' }}>
-              Nombre de la ruta
-            </label>
-            <input
-              type="text"
-              value={rutaNombre}
-              onChange={(e) => { setRutaNombre(e.target.value); setError('') }}
-              placeholder="Ej: Ruta Centro, Ruta Norte..."
-              autoFocus
-              className="w-full h-12 rounded-[12px] px-4 text-[15px] transition-all outline-none"
-              style={{
-                background: 'var(--color-bg-surface)',
-                border: '1.5px solid var(--color-border)',
-                color: 'var(--color-text-primary)',
-              }}
-            />
-            <p className="text-[11px] mt-2" style={{ color: 'var(--color-text-muted)' }}>
-              Ponle un nombre que identifique la zona. Después puedes agregar más rutas.
-            </p>
+            <div>
+              <label className="block text-[12px] font-semibold mb-2" style={{ color: 'var(--color-text-secondary)' }}>
+                Nombre de la ruta
+              </label>
+              <input
+                type="text"
+                value={rutaNombre}
+                onChange={(e) => { setRutaNombre(e.target.value); setError('') }}
+                placeholder="Ej: Ruta Centro, Ruta Norte..."
+                autoFocus
+                className="w-full h-12 rounded-[12px] px-4 text-[15px] transition-all outline-none"
+                style={{
+                  background: 'var(--color-bg-surface)',
+                  border: '1.5px solid var(--color-border)',
+                  color: 'var(--color-text-primary)',
+                }}
+              />
+            </div>
+
+            <div>
+              <label className="block text-[12px] font-semibold mb-2" style={{ color: 'var(--color-text-secondary)' }}>
+                Capital de la ruta <span className="font-normal" style={{ color: 'var(--color-text-muted)' }}>(opcional)</span>
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[15px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                  {currencySymbol || '$'}
+                </span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={capitalNum > 0 ? capitalNum.toLocaleString('es-CO') : ''}
+                  onChange={(e) => setRutaCapital(e.target.value.replace(/\D/g, ''))}
+                  placeholder="0"
+                  className="w-full h-12 rounded-[12px] pl-9 pr-4 text-[18px] font-bold font-mono-display transition-all outline-none"
+                  style={{
+                    background: 'var(--color-bg-surface)',
+                    border: '1.5px solid var(--color-border)',
+                    color: 'var(--color-text-primary)',
+                  }}
+                />
+              </div>
+              {capitalNum > 0 && (
+                <p className="text-[11px] mt-1.5 font-medium" style={{ color: '#22c55e' }}>
+                  {formatMoney(capitalNum)} asignados a esta ruta
+                </p>
+              )}
+              <p className="text-[10px] mt-1.5 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+                Si cada cobrador maneja su propio capital, ponlo aquí. Si todo sale de una sola caja, déjalo en 0.
+              </p>
+            </div>
           </div>
 
           <button
@@ -164,6 +205,14 @@ export default function WizardCobrador({ onComplete, onSkip }) {
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
             ) : 'Crear ruta y asignar cobrador'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onComplete({ cobrador: cobradorCreado, ruta: null })}
+            className="w-full text-[11px] text-center transition-colors cursor-pointer py-1"
+            style={{ color: 'var(--color-text-muted)' }}>
+            Omitir por ahora
           </button>
         </form>
       </div>
