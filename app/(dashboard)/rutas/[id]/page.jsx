@@ -292,6 +292,7 @@ export default function RutaDetallePage({ params }) {
   const [guardandoFestivo, setGuardandoFestivo] = useState(false)
   const [grupoFiltro,    setGrupoFiltro]    = useState(null)
   const [estadoFiltro,   setEstadoFiltro]   = useState(null) // 'pendientes' | 'mora' | 'pagados' | null
+  const [busquedaRuta,   setBusquedaRuta]   = useState('')
   // Vista de la lista: 'trabajo' = 3 secciones (por cobrar/pagados/proximos) sin drag.
   // 'ordenar' = lista plana con drag-and-drop para reordenar la ruta.
   const [modoVista, setModoVista] = useState('trabajo')
@@ -1145,6 +1146,10 @@ export default function RutaDetallePage({ params }) {
     if (estadoFiltro === 'pendientes') list = list.filter(c => c.cobroPendienteHoy)
     else if (estadoFiltro === 'mora') list = list.filter(c => c.diasMora > 0)
     else if (estadoFiltro === 'pagados') list = list.filter(c => c.pagoHoy)
+    if (busquedaRuta.trim()) {
+      const q = busquedaRuta.trim().toLowerCase()
+      list = list.filter(c => c.nombre?.toLowerCase().includes(q) || c.cedula?.toLowerCase().includes(q))
+    }
     return list
   })()
 
@@ -1724,6 +1729,32 @@ export default function RutaDetallePage({ params }) {
           </span>
         </div>
 
+        {/* Buscador de clientes */}
+        {(ruta.clientes?.length ?? 0) > 5 && (
+          <div className="relative mb-2">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--color-text-muted)] pointer-events-none" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            </svg>
+            <input
+              type="text"
+              value={busquedaRuta}
+              onChange={(e) => setBusquedaRuta(e.target.value)}
+              placeholder="Buscar cliente por nombre o cedula..."
+              className="w-full h-9 pl-9 pr-8 rounded-[10px] text-[12px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] transition-colors"
+            />
+            {busquedaRuta && (
+              <button
+                onClick={() => setBusquedaRuta('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center rounded-full text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Chips de filtro por grupo */}
         {ruta.gruposCobro?.length > 0 && (
           <div className="flex gap-1.5 overflow-x-auto pb-2 -mx-1 px-1 mb-2">
@@ -2019,6 +2050,19 @@ export default function RutaDetallePage({ params }) {
                             </button>
                           )}
                         </div>
+
+                        {/* New loan button — shown for clients without active loans */}
+                        {isCompleted && !c.tieneClavo && puedeGestionarRutas && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); router.push(`/prestamos/nuevo?clienteId=${c.id}`) }}
+                            className="h-8 rounded-[10px] flex items-center justify-center shrink-0 transition-all active:scale-95 px-3 gap-1.5 bg-[rgba(245,197,24,0.10)] border border-[rgba(245,197,24,0.25)] hover:bg-[rgba(245,197,24,0.20)]"
+                          >
+                            <svg className="w-3 h-3 shrink-0 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                            </svg>
+                            <span className="text-[11px] font-bold whitespace-nowrap text-[var(--color-accent)]">Prestar</span>
+                          </button>
+                        )}
 
                         {/* Quick pay button */}
                         {(!isCompleted || c.tieneClavo) && c.cuota > 0 && c.prestamoActivo && (!c.pagoHoy || pendienteHoy) && (
