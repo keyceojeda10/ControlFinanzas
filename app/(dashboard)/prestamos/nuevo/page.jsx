@@ -12,6 +12,7 @@ import { formatMoney } from '@/lib/i18n'
 import ResumenCalculo                              from '@/components/prestamos/ResumenCalculo'
 import ModoInteresSelector                         from '@/components/prestamos/ModoInteresSelector'
 import TablaAmortizacion                           from '@/components/prestamos/TablaAmortizacion'
+import CuotasExtraEditor                           from '@/components/prestamos/CuotasExtraEditor'
 import Stepper                                     from '@/components/ui/Stepper'
 import DiasSinCobroSelector                        from '@/components/ui/DiasSinCobroSelector'
 import { Toggle }                                  from '@/components/ui/Toggle'
@@ -402,7 +403,7 @@ function NuevoPrestamo() {
       modoInteres: modo === 'mercancia' ? 'manual' : modoInteres,
       ...(cm > 0 && { cuotaManual: cm }),
       interesAdelantado: modoInteres === 'solo_interes' && interesAdelantado,
-      ...(modoInteres === 'solo_interes' && capitalExtra.length > 0 && { capitalExtra }),
+      ...(capitalExtra.length > 0 && { capitalExtra }),
       ...(modoDiaCobro === 'mes' && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
       ...(frecuencia === 'quincenal' && modoDiaCobro === 'mes' && diaCobroMes2 !== '' && { diaCobroMes2: Number(diaCobroMes2) }),
     })
@@ -434,7 +435,7 @@ function NuevoPrestamo() {
         ...(inyeccionPrevia && { inyeccionPrevia }),
         ...(seguro && Number(montoSeguro) > 0 && { seguro: true, montoSeguro: Number(montoSeguro) }),
         ...(modoInteres === 'solo_interes' && interesAdelantado && { interesAdelantado: true }),
-        ...(modoInteres === 'solo_interes' && capitalExtra.length > 0 && { capitalExtra }),
+        ...(capitalExtra.length > 0 && { capitalExtra }),
         ...(socioId && { socioId }),
       }),
     })
@@ -1162,7 +1163,7 @@ function NuevoPrestamo() {
                 modoInteres={modoInteres}
                 onChange={(m) => {
                   setModoInteres(m)
-                  if (m !== 'solo_interes') setCapitalExtra([])
+                  setCapitalExtra([])
                   if (m !== 'manual') setCuotaManual('')
                   else if (calculo?.cuotaDiaria) setCuotaManual(String(calculo.cuotaDiaria))
                 }}
@@ -1219,6 +1220,16 @@ function NuevoPrestamo() {
                   <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Monto del seguro</label>
                   <div className="mt-1.5"><MoneyInput value={montoSeguro} onChange={(e) => setMontoSeguro(e.target.value)} placeholder="0" /></div>
                 </div>
+              )}
+
+              {modoInteres !== 'manual' && calculo?.numPeriodos > 1 && (
+                <CuotasExtraEditor
+                  extras={capitalExtra}
+                  onChange={setCapitalExtra}
+                  numPeriodos={calculo.numPeriodos}
+                  frecuencia={frecuencia}
+                  fechaInicio={fechaInicio}
+                />
               )}
 
               {esOwner && listaSocios.length > 0 && (
@@ -1382,14 +1393,12 @@ function NuevoPrestamo() {
                         )}
                       </div>
                     </div>
-                    {['lineal', 'solo_interes'].includes(modoInteres) && calculo?.tablaAmortizacion?.length > 0 && (
+                    {calculo?.tablaAmortizacion?.length > 0 && (
                       <div className="px-4 py-3 border-t" style={{ borderColor: 'color-mix(in srgb, var(--color-border) 50%, transparent)', background: 'var(--color-bg-card)' }}>
                         <TablaAmortizacion
                           tabla={calculo.tablaAmortizacion}
                           frecuencia={frecuencia}
                           modoInteres={modoInteres}
-                          capitalExtra={modoInteres === 'solo_interes' ? capitalExtra : undefined}
-                          onCapitalExtraChange={modoInteres === 'solo_interes' ? setCapitalExtra : undefined}
                         />
                       </div>
                     )}

@@ -10,6 +10,7 @@ import { Input }   from '@/components/ui/Input'
 import MoneyInput  from '@/components/ui/MoneyInput'
 import ResumenCalculo    from '@/components/prestamos/ResumenCalculo'
 import ModoInteresSelector from '@/components/prestamos/ModoInteresSelector'
+import CuotasExtraEditor   from '@/components/prestamos/CuotasExtraEditor'
 import { calcularPrestamo } from '@/lib/calculos'
 import { formatMoney }      from '@/lib/i18n'
 
@@ -52,6 +53,9 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
   const [montoSeguro,  setMontoSeguro]  = useState(String(p.montoSeguro || ''))
   const [nombreProd,   setNombreProd]   = useState(p.nombreProducto || '')
   const [socioId,      setSocioId]      = useState(p.socioId || '')
+  const [capitalExtraState, setCapitalExtraState] = useState(
+    Array.isArray(p.capitalExtra) ? p.capitalExtra : []
+  )
   const [error,        setError]        = useState('')
   const [guardando,    setGuardando]    = useState(false)
 
@@ -72,9 +76,10 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
         frecuencia,
         modoInteres,
         cuotaManual: modoInteres === 'manual' ? Number(cuotaManual) : undefined,
+        ...(capitalExtraState.length > 0 && { capitalExtra: capitalExtraState }),
       })
     } catch { return null }
-  }, [monto, tasa, periodos, fechaInicio, frecuencia, modoInteres, cuotaManual])
+  }, [monto, tasa, periodos, fechaInicio, frecuencia, modoInteres, cuotaManual, capitalExtraState])
 
   const handleGuardar = async () => {
     setError('')
@@ -101,6 +106,7 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
         montoSeguro: seguro ? Number(montoSeguro) : null,
         nombreProducto: nombreProd || null,
         socioId: socioId || null,
+        capitalExtra: capitalExtraState.length > 0 ? capitalExtraState : undefined,
       }
 
       const res = await fetch(`/api/prestamos/${p.id}`, {
@@ -174,12 +180,30 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
         </div>
 
         {/* Modo de interés */}
-        <ModoInteresSelector value={modoInteres} onChange={setModoInteres} />
+        <ModoInteresSelector
+          modoInteres={modoInteres}
+          onChange={(m) => { setModoInteres(m); setCapitalExtraState([]) }}
+          monto={monto}
+          tasa={tasa}
+          frecuencia={frecuencia}
+          diasPlazo={diasPlazo}
+        />
         {modoInteres === 'manual' && (
           <div>
             <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Cuota fija</label>
             <MoneyInput value={cuotaManual} onChange={(e) => setCuotaManual(e.target.value)} placeholder="Cuota por período" />
           </div>
+        )}
+
+        {/* Cuotas extra */}
+        {modoInteres !== 'manual' && (Number(periodos) || 0) > 1 && (
+          <CuotasExtraEditor
+            extras={capitalExtraState}
+            onChange={setCapitalExtraState}
+            numPeriodos={Number(periodos) || 1}
+            frecuencia={frecuencia}
+            fechaInicio={fechaInicio}
+          />
         )}
 
         {/* Plazo y frecuencia */}

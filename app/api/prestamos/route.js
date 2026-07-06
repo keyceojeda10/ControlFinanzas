@@ -302,7 +302,7 @@ export async function POST(request) {
     montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia: freq, modoInteres: modoValido,
     ...(cuotaManualNum > 0 && { cuotaManual: cuotaManualNum }),
     interesAdelantado: modoValido === 'solo_interes' && !!interesAdelantado,
-    ...(modoValido === 'solo_interes' && Array.isArray(capitalExtra) && capitalExtra.length > 0 && { capitalExtra }),
+    ...(Array.isArray(capitalExtra) && capitalExtra.length > 0 && { capitalExtra }),
     diaCobroMes: diaCobroMesDb,
     diaCobroMes2: diaCobroMes2Db,
   })
@@ -389,6 +389,7 @@ export async function POST(request) {
         diaCobroMes:    diaCobroMesDb,
         diaCobroMes2:   diaCobroMes2Db,
         ...(socioId && { socioId }),
+        ...(Array.isArray(calc.capitalExtra) && calc.capitalExtra.length > 0 && { capitalExtra: calc.capitalExtra }),
         diasPlazo:     Number(diasPlazo),
         fechaInicio:   new Date(`${fechaInicio}T05:00:00.000Z`), // medianoche Colombia
         fechaFin,
@@ -399,7 +400,7 @@ export async function POST(request) {
 
     // Modo 'lineal': persistir la tabla de amortizacion (capital constante +
     // interes sobre saldo restante, cuota decreciente por periodo).
-    if (['lineal', 'solo_interes'].includes(modoInteresFinal) && Array.isArray(calc.tablaAmortizacion) && calc.tablaAmortizacion.length > 0) {
+    if (Array.isArray(calc.tablaAmortizacion) && calc.tablaAmortizacion.length > 0) {
       await tx.cuotaAmortizacion.createMany({
         data: calc.tablaAmortizacion.map((p) => ({
           prestamoId: nuevo.id,

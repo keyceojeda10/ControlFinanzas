@@ -330,6 +330,7 @@ model Prestamo {
   proximoCobroManual DateTime? // override manual de la fecha de proximo cobro (null = automatico)
   firmaUrl       String? // ruta a la imagen PNG de la firma del cliente
   interesAdelantado Boolean     @default(false) // globo: interes se cobra adelantado, ultima cuota solo capital
+  capitalExtra   Json? // [{numeroPeriodo, monto}] cuotas extra programadas
   esClavo        Boolean        @default(false)
   clavoAt        DateTime? // cuando se marco como clavo
   clavoPerdida   Boolean        @default(false) // si al marcarlo se registro el capital como perdida

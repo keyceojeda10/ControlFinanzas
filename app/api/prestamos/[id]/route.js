@@ -651,6 +651,7 @@ export async function PATCH(request, { params }) {
       nombreProducto,
       diasSinCobro: nuevosDiasSinCobro,
       socioId: nuevoSocioId,
+      capitalExtra: nuevoCapitalExtra,
     } = body
 
     const hayPagos = p.pagos.filter(pg => !['recargo', 'descuento'].includes(pg.tipo)).length > 0
@@ -692,6 +693,7 @@ export async function PATCH(request, { params }) {
       diaCobroMes:   diaCobroMesUsar,
       diaCobroMes2:  diaCobroMes2Usar,
       interesAdelantado: p.interesAdelantado,
+      ...(Array.isArray(nuevoCapitalExtra) && nuevoCapitalExtra.length > 0 && { capitalExtra: nuevoCapitalExtra }),
     })
 
     const dataUpdate = {
@@ -715,6 +717,9 @@ export async function PATCH(request, { params }) {
       nombreProducto: nombreProducto !== undefined ? nombreProducto : p.nombreProducto,
       diasSinCobro:   nuevosDiasSinCobro !== undefined ? nuevosDiasSinCobro : p.diasSinCobro,
       ...(nuevoSocioId !== undefined && { socioId: nuevoSocioId || null }),
+      ...(Array.isArray(calc.capitalExtra) && calc.capitalExtra.length > 0
+        ? { capitalExtra: calc.capitalExtra }
+        : nuevoCapitalExtra !== undefined ? { capitalExtra: null } : {}),
     }
 
     // Si el monto cambió, reversar el desembolso anterior y registrar el nuevo.
@@ -750,7 +755,7 @@ export async function PATCH(request, { params }) {
       const updated = await tx.prestamo.update({ where: { id }, data: dataUpdate })
 
       // Regenerar tabla de amortizacion si el modo la usa y no hay pagos
-      if (!hayPagos && ['lineal', 'solo_interes'].includes(modoInteresUsar) && Array.isArray(calc.tablaAmortizacion) && calc.tablaAmortizacion.length > 0) {
+      if (!hayPagos && Array.isArray(calc.tablaAmortizacion) && calc.tablaAmortizacion.length > 0) {
         await tx.cuotaAmortizacion.deleteMany({ where: { prestamoId: id } })
         await tx.cuotaAmortizacion.createMany({
           data: calc.tablaAmortizacion.map((row) => ({
