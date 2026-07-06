@@ -12,95 +12,87 @@ const LABEL_FREQ = {
   mensual:   'Cuota mensual',
 }
 
-const NEXT_STEPS_DEMO = [
-  {
-    href: '/clientes/nuevo',
-    color: '#f5c518',
-    bg: 'rgba(245,197,24,0.1)',
-    titulo: 'Registra tu primer cliente real',
-    desc: 'Ya viste cómo funciona. Ahora hazlo con tu cartera real.',
-    icon: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-      </svg>
-    ),
-  },
-  {
-    href: '/rutas',
-    color: '#3b82f6',
-    bg: 'rgba(59,130,246,0.1)',
-    titulo: 'Crea tu primera ruta de cobro',
-    desc: 'Agrupa clientes por zona. Tu cobrador ve el recorrido del día.',
-    icon: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-      </svg>
-    ),
-  },
-  {
-    href: '/cobradores/nuevo',
-    color: '#a78bfa',
-    bg: 'rgba(167,139,250,0.1)',
-    titulo: 'Agrega un cobrador',
-    desc: 'Crea su cuenta. Cobra desde el celular. Tú ves el reporte al instante.',
-    icon: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-      </svg>
-    ),
-  },
-]
+const STEP_REGISTRAR_COBRO = {
+  href: '/prestamos',
+  color: '#22c55e',
+  bg: 'rgba(34,197,94,0.1)',
+  titulo: 'Registra el primer cobro',
+  desc: 'Abre el prestamo y toca "Registrar pago". Funciona sin internet.',
+  icon: (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+}
 
-const NEXT_STEPS_REAL = [
-  {
-    href: '/prestamos',
-    color: '#22c55e',
-    bg: 'rgba(34,197,94,0.1)',
-    titulo: 'Registra el primer cobro',
-    desc: 'Abre el préstamo y toca "Registrar pago". Funciona sin internet.',
-    icon: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-  },
-  {
-    href: '/rutas',
-    color: '#3b82f6',
-    bg: 'rgba(59,130,246,0.1)',
-    titulo: 'Crea tu primera ruta de cobro',
-    desc: 'Agrupa clientes por zona. Tu cobrador ve el recorrido del día.',
-    icon: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-      </svg>
-    ),
-  },
-  {
-    href: '/cobradores/nuevo',
-    color: '#a78bfa',
-    bg: 'rgba(167,139,250,0.1)',
-    titulo: 'Agrega un cobrador',
-    desc: 'Dale acceso a tu equipo desde su propio celular.',
-    icon: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-      </svg>
-    ),
-  },
-]
+const STEP_CREAR_RUTA = {
+  href: '/rutas',
+  color: '#3b82f6',
+  bg: 'rgba(59,130,246,0.1)',
+  titulo: 'Crea tu primera ruta de cobro',
+  desc: 'Agrupa clientes por zona. Organiza mejor tus cobros diarios.',
+  icon: (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+    </svg>
+  ),
+}
 
-export default function WizardExito({ cliente, prestamo, modoDemo, onFinish }) {
+const STEP_CREAR_COBRADOR = {
+  href: '/cobradores/nuevo',
+  color: '#a78bfa',
+  bg: 'rgba(167,139,250,0.1)',
+  titulo: 'Agrega un cobrador',
+  desc: 'Dale acceso a tu equipo desde su propio celular.',
+  icon: (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  ),
+}
+
+const STEP_REGISTRAR_CLIENTE_REAL = {
+  href: '/clientes/nuevo',
+  color: '#f5c518',
+  bg: 'rgba(245,197,24,0.1)',
+  titulo: 'Registra tu primer cliente real',
+  desc: 'Ya viste como funciona. Ahora hazlo con tu cartera real.',
+  icon: (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+  ),
+}
+
+function getNextSteps(modoDemo, flujo) {
+  if (modoDemo) {
+    const steps = [STEP_REGISTRAR_CLIENTE_REAL]
+    if (flujo === 'equipo') {
+      steps.push(STEP_CREAR_COBRADOR)
+    } else {
+      steps.push(STEP_CREAR_RUTA)
+    }
+    return steps
+  }
+
+  // Real mode
+  const steps = [STEP_REGISTRAR_COBRO]
+  if (flujo === 'equipo') {
+    steps.push(STEP_CREAR_COBRADOR)
+  } else {
+    steps.push(STEP_CREAR_RUTA)
+  }
+  return steps
+}
+
+export default function WizardExito({ cliente, prestamo, modoDemo, flujo, onFinish }) {
   const { formatMoney } = useCountry()
   const [limpiando, setLimpiando] = useState(false)
   const [limpiezaLista, setLimpiezaLista] = useState(false)
   const labelCuota = LABEL_FREQ[prestamo?.frecuencia] ?? 'Cuota'
-  const nextSteps = modoDemo ? NEXT_STEPS_DEMO : NEXT_STEPS_REAL
+  const nextSteps = getNextSteps(modoDemo, flujo)
 
-  // Al montar la pantalla de éxito: marcar onboarding completado (siempre)
-  // y en modo demo también borrar los datos de prueba
   useEffect(() => {
-    // Siempre marcar como completado para que no vuelva a aparecer el wizard
     fetch('/api/onboarding/progreso', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -135,12 +127,12 @@ export default function WizardExito({ cliente, prestamo, modoDemo, onFinish }) {
         </div>
 
         <h1 className="text-[22px] font-bold mb-2 leading-tight" style={{ color: 'var(--color-text-primary)' }}>
-          {modoDemo ? '¡Ya viste cómo funciona!' : '¡Tu primer préstamo está listo!'}
+          {modoDemo ? '¡Ya viste como funciona!' : '¡Tu primer prestamo esta listo!'}
         </h1>
         <p className="text-[13px] mb-6 max-w-[260px] mx-auto leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
           {modoDemo
-            ? 'Ahora sabes cómo crear clientes y préstamos. Los datos demo ya fueron borrados — tu cuenta está limpia.'
-            : 'Tu cartera está activa. Estos son los próximos pasos para sacarle el máximo provecho.'}
+            ? 'Ahora sabes como crear clientes y prestamos. Los datos demo ya fueron borrados — tu cuenta esta limpia.'
+            : 'Tu cartera esta activa. Estos son los proximos pasos para sacarle el maximo provecho.'}
         </p>
 
         {/* KPI preview — modo real */}
@@ -188,7 +180,7 @@ export default function WizardExito({ cliente, prestamo, modoDemo, onFinish }) {
           </div>
         )}
 
-        {/* Próximos pasos */}
+        {/* Proximos pasos */}
         <div className="w-full max-w-xs space-y-2 mb-7">
           {nextSteps.map((s) => (
             <Link key={s.href} href={s.href}
@@ -217,7 +209,7 @@ export default function WizardExito({ cliente, prestamo, modoDemo, onFinish }) {
           Ir al dashboard
         </button>
         <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
-          Estas opciones también están en el menú lateral
+          Estas opciones tambien estan en el menu lateral
         </p>
       </div>
     </>

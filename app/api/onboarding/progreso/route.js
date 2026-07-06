@@ -15,7 +15,7 @@ export async function GET() {
   // Check if onboarding was dismissed
   const org = await prisma.organization.findUnique({
     where: { id: orgId },
-    select: { onboardingStep: true, createdAt: true },
+    select: { onboardingStep: true, createdAt: true, plan: true },
   })
 
   if ((org?.onboardingStep ?? 0) >= 99) {
@@ -140,6 +140,7 @@ export async function GET() {
     misiones,
     showWizard,
     wizardInitialStep,
+    plan: org?.plan ?? 'basic',
   })
 }
 

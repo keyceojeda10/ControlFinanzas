@@ -1444,6 +1444,7 @@ export default function DashboardPage() {
         <OnboardingWizard
           nombre={session?.user?.nombre || session?.user?.name}
           initialStep={onboarding.wizardInitialStep}
+          plan={onboarding.plan}
           onComplete={() => {
             onboarding.dismiss()
             window.location.reload()

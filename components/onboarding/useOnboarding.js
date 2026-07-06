@@ -51,6 +51,7 @@ export function useOnboarding(esOwner) {
   const [spotlight, setSpotlight] = useState(null)
   const [showWizard, setShowWizard] = useState(false)
   const [wizardInitialStep, setWizardInitialStep] = useState(0)
+  const [plan, setPlan] = useState('basic')
 
   // Fetch progress
   const fetchProgreso = useCallback(async () => {
@@ -95,6 +96,7 @@ export function useOnboarding(esOwner) {
       setCompletado(completadasCount === totalCount && totalCount > 0)
       setShowWizard(data.showWizard || false)
       setWizardInitialStep(data.wizardInitialStep || 0)
+      setPlan(data.plan || 'basic')
       if (completadasCount === totalCount && totalCount > 0) setDismissed(true)
     } catch {
       setCompletado(true)
@@ -168,6 +170,7 @@ export function useOnboarding(esOwner) {
     visible,
     showWizard: showWizard && !dismissed && !loading,
     wizardInitialStep,
+    plan,
     spotlight,
     dismiss,
     showSpotlight,
