@@ -9,6 +9,7 @@ import WizardCliente   from './wizard/WizardCliente'
 import WizardPrestamo  from './wizard/WizardPrestamo'
 import WizardFeatures  from './wizard/WizardFeatures'
 import WizardExito     from './wizard/WizardExito'
+import WizardAyuda     from './wizard/WizardAyuda'
 
 /*
   Onboarding v2 — persistent, no demo mode.
@@ -274,6 +275,8 @@ export default function OnboardingWizard({
           onFinish={handleFinish}
         />
       )}
+
+      {step < (steps?.exito ?? 99) && <WizardAyuda />}
     </div>
   )
 }
