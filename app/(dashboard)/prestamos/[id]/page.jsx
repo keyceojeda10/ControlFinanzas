@@ -503,11 +503,12 @@ export default function PrestamoDetallePage({ params }) {
     }
     return `/clientes/${clienteRuta.id}`
   }
+  const cobroVencido = estaActivo && proximoCobro && new Date(proximoCobro) < new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }).split(',')[0])
   const cobroInfo = estaActivo && proximoCobro
     ? {
-        label: diasMora > 0 ? 'Debió cobrarse' : 'Próximo cobro',
+        label: cobroVencido ? 'Debió cobrarse' : 'Próximo cobro',
         value: formatFechaCobroRelativa(proximoCobro),
-        color: diasMora > 0 ? 'var(--color-danger)' : 'var(--color-accent)',
+        color: cobroVencido ? 'var(--color-danger)' : 'var(--color-accent)',
       }
     : null
 

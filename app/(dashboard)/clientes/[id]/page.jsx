@@ -1093,7 +1093,7 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, orgNombre, ocultarSaldo
   const enMora = (p.diasMora ?? 0) > 0
   const tieneProximoCobro = p.estado === 'activo' && p.proximoCobro
   const proximoCobroLabel = tieneProximoCobro ? formatFechaCobroRelativa(p.proximoCobro) : null
-  const cobroVencido = enMora && tieneProximoCobro
+  const cobroVencido = tieneProximoCobro && new Date(p.proximoCobro) < new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }).split(',')[0])
   const prefijoCobro = cobroVencido ? 'Debió cobrarse' : 'Próx. cobro'
   const valorCobro = proximoCobroLabel
 
