@@ -102,6 +102,13 @@ export default function ReportesPage() {
   // Seguros por ruta (carga independiente, con su propio periodo)
   const [seguros, setSeguros] = useState(null)
   const [periodoSeguros, setPeriodoSeguros] = useState('mes')
+  // Cobros del mes (reporte mensual)
+  const [cobrosMes, setCobrosMes] = useState(null)
+  const [cobrosMesLoading, setCobrosMesLoading] = useState(false)
+  const [mesCobros, setMesCobros] = useState(() => {
+    const d = getColombiaDate()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  })
 
   const [desde, setDesde] = useState(inicioMes())
   const [hasta, setHasta]  = useState(hoy())
@@ -153,6 +160,19 @@ export default function ReportesPage() {
       .catch(() => {})
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, periodoSeguros, nivel])
+
+  // Cobros del mes: carga independiente con su propio selector de mes
+  useEffect(() => {
+    if (authLoading || !esOwner || nivel < 2) return
+    setCobrosMesLoading(true)
+    const [y, m] = mesCobros.split('-').map(Number)
+    fetch(`/api/reportes/cobros-mes?year=${y}&month=${m}`)
+      .then(r => r.json())
+      .then(d => setCobrosMes(d?.rutas ? d : null))
+      .catch(() => {})
+      .finally(() => setCobrosMesLoading(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, mesCobros, nivel])
 
   const exportarPDF = async () => {
     setDescargandoPDF(true)
@@ -554,6 +574,128 @@ export default function ReportesPage() {
               <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: '1px solid var(--color-border)' }}>
                 <span className="text-[12px] font-bold" style={{ color: 'var(--color-text-secondary)' }}>Total seguros</span>
                 <span className="text-[15px] font-bold font-mono-display" style={{ color: '#8b5cf6' }}>{formatMoney(seguros.totalGeneral)}</span>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── Cobros del mes (reporte mensual imprimible) ── */}
+      {nivel < 2 && <UpgradeNudge titulo="Cobros del mes" planRequerido="standard" />}
+      {nivel >= 2 && (
+        <div className="rounded-[16px] px-4 py-4"
+          style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+        >
+          <div className="flex items-center justify-between mb-3 gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-6 h-6 rounded-[8px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, #f59e0b 18%, transparent)', color: '#f59e0b' }}>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                </svg>
+              </div>
+              <p className="text-[12px] font-bold uppercase tracking-wider truncate" style={{ color: 'var(--color-text-secondary)' }}>Cobros del mes</p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <input
+                type="month"
+                value={mesCobros}
+                onChange={e => setMesCobros(e.target.value)}
+                className="h-7 px-2 rounded-[8px] border bg-transparent text-[11px] focus:outline-none"
+                style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
+              />
+              {cobrosMes && cobrosMes.rutas?.length > 0 && (
+                <button
+                  onClick={() => {
+                    const printW = window.open('', '_blank')
+                    if (!printW) return
+                    const rows = cobrosMes.rutas.flatMap(r =>
+                      r.clientes.map(c => `<tr>
+                        <td style="padding:4px 8px;border-bottom:1px solid #e5e7eb">${r.ruta}</td>
+                        <td style="padding:4px 8px;border-bottom:1px solid #e5e7eb">${c.nombre}</td>
+                        <td style="padding:4px 8px;border-bottom:1px solid #e5e7eb">${c.telefono || ''}</td>
+                        <td style="padding:4px 8px;border-bottom:1px solid #e5e7eb;text-align:right">${c.cuotasMes}</td>
+                        <td style="padding:4px 8px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600">$${c.totalMes.toLocaleString('es-CO')}</td>
+                        <td style="padding:4px 8px;border-bottom:1px solid #e5e7eb;text-align:right;color:#666">$${c.saldoPendiente.toLocaleString('es-CO')}</td>
+                      </tr>`)
+                    )
+                    printW.document.write(`<!DOCTYPE html><html><head><title>Cobros ${cobrosMes.monthLabel}</title>
+                      <style>body{font-family:system-ui,sans-serif;padding:20px;color:#111}
+                      table{width:100%;border-collapse:collapse;font-size:13px}
+                      th{text-align:left;padding:6px 8px;border-bottom:2px solid #111;font-size:11px;text-transform:uppercase}
+                      .total-row td{font-weight:700;border-top:2px solid #111;padding-top:8px}
+                      @media print{body{padding:10px}}</style></head>
+                      <body><h2 style="margin-bottom:4px">Cobros programados</h2>
+                      <p style="color:#666;margin-bottom:16px;font-size:14px">${cobrosMes.monthLabel} — ${cobrosMes.totalClientes} clientes</p>
+                      <table><thead><tr><th>Ruta</th><th>Cliente</th><th>Tel</th><th style="text-align:right">Cuotas</th><th style="text-align:right">Total mes</th><th style="text-align:right">Saldo</th></tr></thead>
+                      <tbody>${rows.join('')}
+                      <tr class="total-row"><td colspan="4">TOTAL</td><td style="text-align:right">$${cobrosMes.granTotal.toLocaleString('es-CO')}</td><td></td></tr>
+                      </tbody></table></body></html>`)
+                    printW.document.close()
+                    printW.focus()
+                    printW.print()
+                  }}
+                  className="h-7 px-2.5 rounded-[8px] text-[11px] font-semibold transition-all cursor-pointer"
+                  style={{ color: '#f59e0b', background: 'color-mix(in srgb, #f59e0b 10%, transparent)', border: '1px solid color-mix(in srgb, #f59e0b 30%, transparent)' }}
+                >
+                  Imprimir
+                </button>
+              )}
+            </div>
+          </div>
+
+          {cobrosMesLoading ? (
+            <div className="py-8 text-center">
+              <div className="w-6 h-6 mx-auto border-2 border-[var(--color-border)] border-t-[var(--color-accent)] rounded-full animate-spin" />
+            </div>
+          ) : !cobrosMes || cobrosMes.rutas?.length === 0 ? (
+            <p className="text-[12px] text-center py-6" style={{ color: 'var(--color-text-muted)' }}>Sin cobros programados para este mes</p>
+          ) : (
+            <>
+              <div className="rounded-[12px] px-3 py-2.5 mb-3 flex items-center justify-between"
+                style={{ background: 'color-mix(in srgb, #f59e0b 8%, transparent)', border: '1px solid color-mix(in srgb, #f59e0b 20%, transparent)' }}
+              >
+                <span className="text-[12px] font-semibold" style={{ color: 'var(--color-text-secondary)' }}>
+                  {cobrosMes.totalClientes} clientes
+                </span>
+                <span className="text-[16px] font-bold font-mono-display" style={{ color: '#f59e0b' }}>
+                  {formatMoney(cobrosMes.granTotal)}
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {cobrosMes.rutas.map((ruta) => (
+                  <div key={ruta.rutaId}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[12px] font-bold" style={{ color: 'var(--color-text-primary)' }}>{ruta.ruta}</span>
+                        <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>({ruta.cobrador})</span>
+                      </div>
+                      <span className="text-[12px] font-bold font-mono-display" style={{ color: '#f59e0b' }}>{formatMoney(ruta.totalRuta)}</span>
+                    </div>
+                    <div className="rounded-[10px] overflow-hidden" style={{ border: '1px solid var(--color-border)' }}>
+                      {ruta.clientes.map((c, i) => (
+                        <div
+                          key={c.id}
+                          className="flex items-center justify-between px-3 py-2 gap-2"
+                          style={{
+                            background: i % 2 === 0 ? 'var(--color-bg-base)' : 'var(--color-bg-card)',
+                            borderBottom: i < ruta.clientes.length - 1 ? '1px solid var(--color-border)' : 'none',
+                          }}
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[12px] font-medium truncate" style={{ color: 'var(--color-text-primary)' }}>{c.nombre}</p>
+                            <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
+                              {c.cuotasMes} {c.cuotasMes === 1 ? 'cuota' : 'cuotas'} · Saldo {formatMoney(c.saldoPendiente)}
+                            </p>
+                          </div>
+                          <span className="text-[13px] font-bold font-mono-display shrink-0" style={{ color: 'var(--color-text-primary)' }}>
+                            {formatMoney(c.totalMes)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             </>
           )}
