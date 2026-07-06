@@ -1,11 +1,9 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import WizardProgress  from './wizard/WizardProgress'
 import WizardWelcome   from './wizard/WizardWelcome'
 import WizardCapital   from './wizard/WizardCapital'
-import WizardPerfil    from './wizard/WizardPerfil'
 import WizardCobrador  from './wizard/WizardCobrador'
 import WizardCliente   from './wizard/WizardCliente'
 import WizardPrestamo  from './wizard/WizardPrestamo'
@@ -13,132 +11,150 @@ import WizardFeatures  from './wizard/WizardFeatures'
 import WizardExito     from './wizard/WizardExito'
 
 /*
-  Dual flow orchestrator:
+  Onboarding v2 — persistent, no demo mode.
 
-  SOLO flow (maxUsuarios=1):
-  0 → Welcome (elige demo o real)
-  1 → Capital (registrar capital inicial)
-  2 → Perfil  (solo vs equipo — elige solo)
-  3 → Cliente (crear)
-  4 → Prestamo (crear)
-  5 → Features
-  6 → Exito
+  Step 0: Welcome + solo/equipo choice
+  Step 1: Capital (registrar capital inicial)
+  Step 2: Cobrador + Ruta (equipo only — solo skips to 3)
+  Step 3: Cliente
+  Step 4: Prestamo
+  Step 5: Features
+  Step 6: Exito
 
-  EQUIPO flow (maxUsuarios>1):
-  0 → Welcome
-  1 → Capital
-  2 → Perfil  (elige equipo)
-  3 → Cobrador (crear cobrador + ruta)
-  4 → Cliente
-  5 → Prestamo
-  6 → Features
-  7 → Exito
+  Every step completion persists to server via POST /api/onboarding/progreso.
+  The wizard survives navigation, refresh, and browser close.
 */
 
-export default function OnboardingWizard({ nombre, onComplete, onDismiss, initialStep = 0, plan = 'basic' }) {
-  const router = useRouter()
+const persistStep = (step, flujo) => {
+  fetch('/api/onboarding/progreso', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'progress', step, flujo }),
+  }).catch(() => {})
+}
+
+export default function OnboardingWizard({
+  nombre,
+  onComplete,
+  onMinimize,
+  initialStep = 0,
+  initialFlujo = null,
+  plan = 'basic',
+}) {
   const [step,           setStep]           = useState(initialStep)
-  const [modoDemo,       setModoDemo]       = useState(null)
-  const [flujo,          setFlujo]          = useState(null) // 'solo' | 'equipo'
+  const [flujo,          setFlujo]          = useState(initialFlujo) // 'solo' | 'equipo'
   const [currentPlan,    setCurrentPlan]    = useState(plan)
-  const [capitalData,    setCapitalData]    = useState(null)
-  const [cobradorData,   setCobradorData]   = useState(null)
   const [clienteCreado,  setClienteCreado]  = useState(null)
   const [prestamoCreado, setPrestamoCreado] = useState(null)
   const [showBounce,     setShowBounce]     = useState(false)
-
-  const goTo = useCallback((nextStep) => setStep(nextStep), [])
 
   const bounce = (cb) => {
     setShowBounce(true)
     setTimeout(() => { setShowBounce(false); cb() }, 700)
   }
 
-  // Step helpers based on flow
-  const getStepConfig = () => {
+  // Step mapping based on flujo
+  const getStepNumbers = useCallback(() => {
     if (flujo === 'equipo') {
-      return { clienteStep: 4, prestamoStep: 5, featuresStep: 6, exitoStep: 7, totalSteps: 5 }
+      return { capital: 1, cobrador: 2, cliente: 3, prestamo: 4, features: 5, exito: 6, actionSteps: 5 }
     }
-    return { clienteStep: 3, prestamoStep: 4, featuresStep: 5, exitoStep: 6, totalSteps: 4 }
-  }
+    // solo: skip cobrador
+    return { capital: 1, cliente: 2, prestamo: 3, features: 4, exito: 5, actionSteps: 4 }
+  }, [flujo])
 
-  // Progress bar: shows for action steps (after perfil, before exito)
+  // Progress bar info (only for action steps: capital through features)
   const getProgressInfo = () => {
-    const config = getStepConfig()
-    if (flujo === 'equipo') {
-      // Steps 3-6 map to progress 1-4 of 5
-      if (step === 3) return { current: 1, total: config.totalSteps }
-      if (step === 4) return { current: 2, total: config.totalSteps }
-      if (step === 5) return { current: 3, total: config.totalSteps }
-      if (step === 6) return { current: 4, total: config.totalSteps }
-    } else {
-      // Steps 3-5 map to progress 1-3 of 4
-      if (step === 3) return { current: 1, total: config.totalSteps }
-      if (step === 4) return { current: 2, total: config.totalSteps }
-      if (step === 5) return { current: 3, total: config.totalSteps }
-    }
-    return null
+    if (!flujo || step === 0) return null
+    const steps = getStepNumbers()
+    const exitoStep = steps.exito
+    if (step >= exitoStep) return null
+
+    // Map current step to progress position
+    const firstAction = steps.capital
+    const lastAction = steps.features
+    const current = step - firstAction + 1
+    const total = lastAction - firstAction + 1
+    if (current < 1) return null
+    return { current, total }
   }
 
-  // Step 0: Welcome — pick demo or real
-  const handleWelcomeDone = useCallback((demo) => {
-    setModoDemo(demo)
-    goTo(1)
-  }, [goTo])
-
-  // Step 1: Capital
-  const handleCapitalDone = useCallback((data) => {
-    setCapitalData(data)
-    goTo(2)
-  }, [goTo])
-
-  // Step 2: Perfil — solo vs equipo
-  const handlePerfilDone = useCallback((tipo, nuevoPlan) => {
-    setFlujo(tipo)
+  // Step 0: Welcome — solo/equipo choice
+  const handleWelcomeDone = useCallback((tipo, nuevoPlan) => {
+    const f = tipo
+    setFlujo(f)
     if (nuevoPlan) setCurrentPlan(nuevoPlan)
-    goTo(3)
-  }, [goTo])
+    persistStep(1, f)
+    setStep(1)
+  }, [])
 
-  // Step 3 (equipo): Cobrador + Ruta done → go to cliente
-  const handleCobradorDone = useCallback((data) => {
-    setCobradorData(data)
-    bounce(() => goTo(4))
-  }, [goTo])
+  // Step 1: Capital done
+  const handleCapitalDone = useCallback(() => {
+    const steps = flujo === 'equipo'
+      ? { next: 2 }
+      : { next: 2 }
+    persistStep(steps.next, flujo)
+    setStep(steps.next)
+  }, [flujo])
 
-  // Cliente done → go to prestamo
+  // Step 2 (equipo): Cobrador + Ruta done
+  const handleCobradorDone = useCallback(() => {
+    persistStep(3, flujo)
+    bounce(() => setStep(3))
+  }, [flujo])
+
+  // Cliente done
   const handleClienteDone = useCallback((cliente) => {
     setClienteCreado(cliente)
-    const config = getStepConfig()
-    bounce(() => goTo(config.prestamoStep))
-  }, [goTo, flujo])
+    const steps = getStepNumbers()
+    persistStep(steps.prestamo, flujo)
+    bounce(() => setStep(steps.prestamo))
+  }, [flujo, getStepNumbers])
 
-  // Prestamo done → go to features
+  // Prestamo done
   const handlePrestamoDone = useCallback((prestamo) => {
     setPrestamoCreado(prestamo)
-    const config = getStepConfig()
-    bounce(() => goTo(config.featuresStep))
-  }, [goTo, flujo])
+    const steps = getStepNumbers()
+    persistStep(steps.features, flujo)
+    bounce(() => setStep(steps.features))
+  }, [flujo, getStepNumbers])
 
-  // Features done → go to exito
+  // Features done
   const handleFeaturesDone = useCallback(() => {
-    const config = getStepConfig()
-    goTo(config.exitoStep)
-  }, [goTo, flujo])
+    const steps = getStepNumbers()
+    persistStep(steps.exito, flujo)
+    setStep(steps.exito)
+  }, [flujo, getStepNumbers])
 
-  // Exito: finish
-  const handleFinish = useCallback(() => onComplete?.(), [onComplete])
+  // Exito: finish — this is the ONLY place that sets step=99
+  const handleFinish = useCallback(() => {
+    persistStep(99, flujo)
+    onComplete?.()
+  }, [flujo, onComplete])
 
-  const config = getStepConfig()
+  // Back navigation
+  const handleBack = useCallback(() => {
+    if (step <= 0) return
+    const steps = getStepNumbers()
+
+    // From cobrador (equipo step 2) go back to capital (1)
+    // From cliente go back to cobrador (equipo) or capital (solo)
+    // From prestamo go back to cliente
+    // From features go back to prestamo
+    let prev = step - 1
+    if (flujo === 'solo' && step === steps.cliente) prev = 1 // back to capital
+    setStep(prev)
+  }, [step, flujo, getStepNumbers])
+
+  const steps = getStepNumbers()
   const progressInfo = getProgressInfo()
 
-  // Bounce animation between steps
   if (showBounce) {
     return (
       <div className="flex items-center justify-center" style={{ minHeight: '60vh' }}>
         <div style={{ animation: 'wizardBounce 0.6s ease' }}>
           <div className="w-20 h-20 rounded-full flex items-center justify-center"
-            style={{ background: modoDemo ? 'rgba(167,139,250,0.15)' : 'rgba(245,197,24,0.15)' }}>
-            <svg className="w-10 h-10" fill="none" stroke={modoDemo ? '#a78bfa' : '#f5c518'} viewBox="0 0 24 24">
+            style={{ background: 'rgba(245,197,24,0.15)' }}>
+            <svg className="w-10 h-10" fill="none" stroke="#f5c518" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
             </svg>
           </div>
@@ -154,74 +170,78 @@ export default function OnboardingWizard({ nombre, onComplete, onDismiss, initia
     )
   }
 
+  // Back button component
+  const BackButton = step > 1 && step < (steps?.exito ?? 99) ? (
+    <button
+      onClick={handleBack}
+      className="flex items-center gap-1 text-[12px] mb-4 transition-colors cursor-pointer"
+      style={{ color: 'var(--color-text-muted)' }}>
+      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+      </svg>
+      Volver
+    </button>
+  ) : null
+
   return (
     <div className="max-w-lg mx-auto wizard-step-enter">
-      {/* Progress bar — action steps only */}
       {progressInfo && (
         <WizardProgress step={progressInfo.current} totalSteps={progressInfo.total} />
       )}
 
-      {/* Step 0: Welcome */}
+      {BackButton}
+
+      {/* Step 0: Welcome + solo/equipo */}
       {step === 0 && (
         <WizardWelcome
           nombre={nombre}
-          onNext={handleWelcomeDone}
-          onDismiss={onDismiss}
-          onNavigate={(href) => { onDismiss?.(); router.push(href) }}
+          plan={currentPlan}
+          onSelect={handleWelcomeDone}
+          onMinimize={onMinimize}
         />
       )}
 
       {/* Step 1: Capital */}
-      {step === 1 && (
+      {step === 1 && flujo && (
         <WizardCapital
           onComplete={handleCapitalDone}
-          modoDemo={!!modoDemo}
         />
       )}
 
-      {/* Step 2: Perfil (solo vs equipo) */}
-      {step === 2 && (
-        <WizardPerfil
-          plan={currentPlan}
-          onSelect={handlePerfilDone}
-        />
-      )}
-
-      {/* Step 3: Cobrador (equipo only) OR Cliente (solo) */}
-      {step === 3 && flujo === 'equipo' && (
+      {/* Step 2: Cobrador (equipo only) */}
+      {step === 2 && flujo === 'equipo' && (
         <WizardCobrador
           onComplete={handleCobradorDone}
-          modoDemo={!!modoDemo}
         />
       )}
 
-      {step === config.clienteStep && flujo && (
+      {/* Cliente */}
+      {flujo && step === (flujo === 'equipo' ? 3 : 2) && (
         <WizardCliente
           onComplete={handleClienteDone}
-          modoDemo={!!modoDemo}
         />
       )}
 
-      {step === config.prestamoStep && clienteCreado && (
+      {/* Prestamo */}
+      {flujo && step === steps.prestamo && clienteCreado && (
         <WizardPrestamo
           cliente={clienteCreado}
           onComplete={handlePrestamoDone}
-          modoDemo={!!modoDemo}
         />
       )}
 
-      {step === config.featuresStep && (
+      {/* Features */}
+      {flujo && step === steps.features && (
         <WizardFeatures
-          modoDemo={!!modoDemo}
           onNext={handleFeaturesDone}
         />
       )}
 
-      {step === config.exitoStep && (
+      {/* Exito */}
+      {flujo && step === steps.exito && (
         <WizardExito
           cliente={clienteCreado}
           prestamo={prestamoCreado}
-          modoDemo={!!modoDemo}
           flujo={flujo}
           onFinish={handleFinish}
         />

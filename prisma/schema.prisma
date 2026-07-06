@@ -87,6 +87,7 @@ model Organization {
   planOriginal      Plan?
   planDemoHasta     DateTime?
   onboardingStep    Int            @default(0)
+  onboardingFlujo   String?
   trialReminderSent Boolean        @default(false)
   recoveryEmailStep Int            @default(0)
   waRecoverySent    Boolean        @default(false)

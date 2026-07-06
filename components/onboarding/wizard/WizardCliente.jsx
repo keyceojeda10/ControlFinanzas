@@ -4,17 +4,9 @@ import { useState } from 'react'
 import { Input } from '@/components/ui/Input'
 import { useCountry } from '@/hooks/useCountry'
 
-const DEMO_DATA = {
-  nombre: 'Carlos Ramírez',
-  cedula: '1020304050',
-  telefono: '3001234567',
-}
-
-export default function WizardCliente({ onComplete, modoDemo = false }) {
+export default function WizardCliente({ onComplete }) {
   const { validatePhone, validateDocument, documentConfig, phoneConfig } = useCountry()
-  const [form, setForm] = useState(
-    modoDemo ? { ...DEMO_DATA } : { nombre: '', cedula: '', telefono: '' }
-  )
+  const [form, setForm] = useState({ nombre: '', cedula: '', telefono: '' })
   const [errores, setErrores] = useState({})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -52,7 +44,6 @@ export default function WizardCliente({ onComplete, modoDemo = false }) {
           nombre: form.nombre.trim(),
           cedula: form.cedula.trim(),
           telefono: form.telefono.trim(),
-          esDemo: modoDemo,
         }),
       })
       const data = await res.json()
@@ -62,7 +53,6 @@ export default function WizardCliente({ onComplete, modoDemo = false }) {
         nombre: form.nombre.trim(),
         cedula: form.cedula.trim(),
         telefono: form.telefono.trim(),
-        esDemo: modoDemo,
       })
     } catch {
       setError('Error de conexión. Intenta de nuevo.')
@@ -75,26 +65,22 @@ export default function WizardCliente({ onComplete, modoDemo = false }) {
     <div className="max-w-md mx-auto">
       <div className="text-center mb-6">
         <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--color-text-primary)' }}>
-          {modoDemo ? 'Cliente de ejemplo' : 'Tu primer cliente'}
+          Tu primer cliente
         </h2>
         <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-          {modoDemo
-            ? 'Datos pre-llenados. Puedes editarlos o dejarlos así.'
-            : 'Piensa en el cliente que mejor conoces.'}
+          Piensa en el cliente que mejor conoces. Puedes editarlo despues.
         </p>
       </div>
 
-      {modoDemo && (
-        <div className="flex items-center gap-2 px-3 py-2.5 rounded-[10px] mb-4"
-          style={{ background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.2)' }}>
-          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="#a78bfa" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <p className="text-[11px]" style={{ color: '#a78bfa' }}>
-            Modo demo — este cliente se borrará automáticamente al finalizar.
-          </p>
-        </div>
-      )}
+      <div className="flex items-center gap-2 px-3 py-2.5 rounded-[10px] mb-4"
+        style={{ background: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.12)' }}>
+        <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+          Despues puedes subir toda tu cartera con foto de cartulinas o Excel.
+        </p>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
@@ -139,13 +125,13 @@ export default function WizardCliente({ onComplete, modoDemo = false }) {
           type="submit"
           disabled={loading}
           className="w-full h-12 rounded-[12px] text-base font-bold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
-          style={{ background: modoDemo ? '#a78bfa' : '#f5c518', color: modoDemo ? '#fff' : '#111' }}>
+          style={{ background: '#f5c518', color: '#111' }}>
           {loading ? (
             <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-          ) : (modoDemo ? 'Continuar con este cliente' : 'Crear cliente')}
+          ) : 'Crear cliente'}
         </button>
       </form>
     </div>

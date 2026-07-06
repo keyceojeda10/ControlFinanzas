@@ -3,7 +3,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-// Auto-detect onboarding progress based on actual data
 export async function GET() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.organizationId) {
@@ -12,18 +11,16 @@ export async function GET() {
 
   const orgId = session.user.organizationId
 
-  // Check if onboarding was dismissed
   const org = await prisma.organization.findUnique({
     where: { id: orgId },
-    select: { onboardingStep: true, createdAt: true, plan: true },
+    select: { onboardingStep: true, onboardingFlujo: true, createdAt: true, plan: true },
   })
 
   if ((org?.onboardingStep ?? 0) >= 99) {
     return NextResponse.json({ completado: true, misiones: [] })
   }
 
-  // Cuentas antiguas (mas de 14 dias) nunca vieron el onboarding nuevo.
-  // Si ya crearon datos, dar por finalizado automaticamente.
+  // Cuentas antiguas (>14 dias) con datos: auto-completar
   const diasDesdeCreacion = org?.createdAt
     ? (Date.now() - new Date(org.createdAt).getTime()) / (1000 * 60 * 60 * 24)
     : 0
@@ -40,7 +37,6 @@ export async function GET() {
     }
   }
 
-  // Count actual data to auto-detect progress
   const [clientes, prestamos, pagos, rutas, cierres, cobradores] = await Promise.all([
     prisma.cliente.count({ where: { organizationId: orgId, estado: { notIn: ['eliminado'] } } }),
     prisma.prestamo.count({ where: { organizationId: orgId } }),
@@ -95,7 +91,7 @@ export async function GET() {
       id: 'instalar-app',
       titulo: 'Instala la app en tu celular',
       descripcion: 'Accede mas rápido y cobra sin internet. Instala desde el navegador.',
-      completada: false, // se verifica en el cliente (PWA standalone)
+      completada: false,
       href: '#',
       icono: 'instalar',
       clientCheck: 'pwa-installed',
@@ -114,9 +110,7 @@ export async function GET() {
   const total = misiones.length
   const completado = completadas === total
 
-  // Auto-complete onboarding cuando las 3 misiones core estan listas
-  // (cliente + prestamo + pago). Ruta, cobrador, instalar-app y cierre de caja
-  // son opcionales y no deben bloquear el cierre automatico del checklist.
+  // Auto-complete: core completo (cliente + prestamo + pago) => step 99
   const coreCompleto = clientes > 0 && prestamos > 0 && pagos > 0
   if (coreCompleto && (org?.onboardingStep ?? 0) < 99) {
     await prisma.organization.update({
@@ -126,11 +120,23 @@ export async function GET() {
     return NextResponse.json({ completado: true, misiones: [] })
   }
 
-  // Wizard shows only for brand-new orgs with zero clients
-  const showWizard = org?.onboardingStep === 0 && clientes === 0
+  // Wizard: se muestra para cualquier step entre 0 y 98
+  const currentStep = org?.onboardingStep ?? 0
+  const showWizard = currentStep >= 0 && currentStep < 99
 
-  // If user created a client in the wizard but left before creating a loan
-  const wizardInitialStep = (org?.onboardingStep === 0 && clientes > 0 && prestamos === 0) ? 2 : 0
+  // Calcular paso efectivo del wizard cruzando con datos reales
+  const flujo = org?.onboardingFlujo ?? null
+  let wizardInitialStep = currentStep
+
+  // Si ya hay datos creados, avanzar el paso efectivo
+  if (flujo === 'solo') {
+    if (wizardInitialStep < 3 && clientes > 0) wizardInitialStep = 3
+    if (wizardInitialStep < 4 && prestamos > 0) wizardInitialStep = 4
+  } else if (flujo === 'equipo') {
+    if (wizardInitialStep < 4 && cobradores > 0 && rutas > 0) wizardInitialStep = 4
+    if (wizardInitialStep < 4 && clientes > 0) wizardInitialStep = 4
+    if (wizardInitialStep < 5 && prestamos > 0) wizardInitialStep = 5
+  }
 
   return NextResponse.json({
     completado,
@@ -140,24 +146,43 @@ export async function GET() {
     misiones,
     showWizard,
     wizardInitialStep,
+    flujo,
     plan: org?.plan ?? 'basic',
   })
 }
 
-// Dismiss onboarding
+// Persist onboarding step + flujo, or dismiss
 export async function POST(request) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.organizationId) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
-  const { action } = await request.json().catch(() => ({}))
+  const body = await request.json().catch(() => ({}))
+  const { action, step, flujo } = body
 
   if (action === 'dismiss') {
     await prisma.organization.update({
       where: { id: session.user.organizationId },
       data: { onboardingStep: 99 },
     })
+    return NextResponse.json({ ok: true })
+  }
+
+  if (action === 'progress') {
+    const data = {}
+    if (typeof step === 'number' && step >= 0 && step <= 99) {
+      data.onboardingStep = step
+    }
+    if (flujo === 'solo' || flujo === 'equipo') {
+      data.onboardingFlujo = flujo
+    }
+    if (Object.keys(data).length > 0) {
+      await prisma.organization.update({
+        where: { id: session.user.organizationId },
+        data,
+      })
+    }
     return NextResponse.json({ ok: true })
   }
 

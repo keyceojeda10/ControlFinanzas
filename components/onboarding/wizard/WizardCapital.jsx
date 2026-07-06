@@ -3,9 +3,9 @@
 import { useState } from 'react'
 import { useCountry } from '@/hooks/useCountry'
 
-export default function WizardCapital({ onComplete, modoDemo = false }) {
+export default function WizardCapital({ onComplete }) {
   const { formatMoney, currencySymbol } = useCountry()
-  const [monto, setMonto] = useState(modoDemo ? '2000000' : '')
+  const [monto, setMonto] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -64,24 +64,12 @@ export default function WizardCapital({ onComplete, modoDemo = false }) {
           </svg>
         </div>
         <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--color-text-primary)' }}>
-          {modoDemo ? 'Capital inicial (ejemplo)' : '¿Con cuanto dinero arrancas?'}
+          ¿Con cuanto dinero arrancas?
         </h2>
         <p className="text-[13px] max-w-[300px] mx-auto leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
           Registra el dinero que tienes disponible para prestar. Asi la caja siempre te va a cuadrar.
         </p>
       </div>
-
-      {modoDemo && (
-        <div className="flex items-center gap-2 px-3 py-2.5 rounded-[10px] mb-4"
-          style={{ background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.2)' }}>
-          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="#a78bfa" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <p className="text-[11px]" style={{ color: '#a78bfa' }}>
-            Modo demo — este monto se borrara al finalizar.
-          </p>
-        </div>
-      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
@@ -139,7 +127,7 @@ export default function WizardCapital({ onComplete, modoDemo = false }) {
           type="submit"
           disabled={loading || montoNum <= 0}
           className="w-full h-12 rounded-[12px] text-base font-bold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
-          style={{ background: modoDemo ? '#a78bfa' : '#f5c518', color: modoDemo ? '#fff' : '#111' }}>
+          style={{ background: '#f5c518', color: '#111' }}>
           {loading ? (
             <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -148,15 +136,13 @@ export default function WizardCapital({ onComplete, modoDemo = false }) {
           ) : 'Registrar capital'}
         </button>
 
-        {!modoDemo && (
-          <button
-            type="button"
-            onClick={handleSkip}
-            className="w-full text-[11px] text-center transition-colors cursor-pointer py-1"
-            style={{ color: 'var(--color-text-muted)' }}>
-            Omitir por ahora
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={handleSkip}
+          className="w-full text-[11px] text-center transition-colors cursor-pointer py-1"
+          style={{ color: 'var(--color-text-muted)' }}>
+          Omitir por ahora
+        </button>
       </form>
     </div>
   )

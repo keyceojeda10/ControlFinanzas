@@ -51,16 +51,15 @@ export function useOnboarding(esOwner) {
   const [spotlight, setSpotlight] = useState(null)
   const [showWizard, setShowWizard] = useState(false)
   const [wizardInitialStep, setWizardInitialStep] = useState(0)
+  const [wizardFlujo, setWizardFlujo] = useState(null)
   const [plan, setPlan] = useState('basic')
+  const [minimized, setMinimized] = useState(false)
 
-  // Fetch progress
   const fetchProgreso = useCallback(async () => {
     try {
       const res = await fetch('/api/onboarding/progreso')
       const data = await res.json()
 
-      // Si el backend dice que el onboarding está completo/dismissed (onboardingStep >= 99),
-      // ocultar todo inmediatamente sin importar que misiones venga vacío.
       if (data.completado) {
         setMisiones([])
         setCompletadas(0)
@@ -70,12 +69,12 @@ export function useOnboarding(esOwner) {
         setDismissed(true)
         setShowWizard(false)
         setWizardInitialStep(0)
+        setWizardFlujo(null)
         return
       }
 
       let misionesList = data.misiones || []
 
-      // Client-side check: marcar 'instalar-app' si la PWA ya está instalada
       if (typeof window !== 'undefined') {
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches
           || window.navigator.standalone === true
@@ -96,8 +95,16 @@ export function useOnboarding(esOwner) {
       setCompletado(completadasCount === totalCount && totalCount > 0)
       setShowWizard(data.showWizard || false)
       setWizardInitialStep(data.wizardInitialStep || 0)
+      setWizardFlujo(data.flujo || null)
       setPlan(data.plan || 'basic')
       if (completadasCount === totalCount && totalCount > 0) setDismissed(true)
+
+      // Restore minimized state from sessionStorage
+      try {
+        if (typeof window !== 'undefined' && sessionStorage.getItem('cf-wizard-minimized') === '1') {
+          setMinimized(true)
+        }
+      } catch {}
     } catch {
       setCompletado(true)
       setDismissed(true)
@@ -107,19 +114,15 @@ export function useOnboarding(esOwner) {
   }, [])
 
   useEffect(() => {
-    // null = auth aún cargando, no hacer nada todavía
     if (esOwner === null || esOwner === undefined) return
-    // false = explícitamente no es owner (cobrador), ocultar onboarding
     if (esOwner === false) {
       setDismissed(true)
       setLoading(false)
       return
     }
-    // true = es owner, cargar progreso
     fetchProgreso()
   }, [esOwner, fetchProgreso])
 
-  // Re-fetch when returning to dashboard (user might have completed a mission)
   useEffect(() => {
     if (!esOwner || dismissed) return
     const handleFocus = () => fetchProgreso()
@@ -127,7 +130,6 @@ export function useOnboarding(esOwner) {
     return () => window.removeEventListener('focus', handleFocus)
   }, [esOwner, dismissed, fetchProgreso])
 
-  // Listen for custom event from other pages
   useEffect(() => {
     if (!esOwner || dismissed) return
     const handler = () => fetchProgreso()
@@ -135,8 +137,10 @@ export function useOnboarding(esOwner) {
     return () => window.removeEventListener('onboarding-refresh', handler)
   }, [esOwner, dismissed, fetchProgreso])
 
+  // Permanent dismiss (step=99) — only from WizardExito "Ir al dashboard"
   const dismiss = useCallback(async () => {
     setDismissed(true)
+    setShowWizard(false)
     setSpotlight(null)
     try {
       await fetch('/api/onboarding/progreso', {
@@ -145,6 +149,17 @@ export function useOnboarding(esOwner) {
         body: JSON.stringify({ action: 'dismiss' }),
       })
     } catch {}
+  }, [])
+
+  // Session-only minimize — wizard comes back on next visit
+  const minimize = useCallback(() => {
+    setMinimized(true)
+    try { sessionStorage.setItem('cf-wizard-minimized', '1') } catch {}
+  }, [])
+
+  const unminimize = useCallback(() => {
+    setMinimized(false)
+    try { sessionStorage.removeItem('cf-wizard-minimized') } catch {}
   }, [])
 
   const showSpotlight = useCallback((missionId) => {
@@ -157,7 +172,7 @@ export function useOnboarding(esOwner) {
     setSpotlight(null)
   }, [])
 
-  const visible = esOwner && !dismissed && !completado && !loading
+  const visible = esOwner && !dismissed && !completado && !loading && !showWizard
 
   return {
     misiones,
@@ -169,10 +184,14 @@ export function useOnboarding(esOwner) {
     loading,
     visible,
     showWizard: showWizard && !dismissed && !loading,
+    wizardMinimized: minimized,
     wizardInitialStep,
+    wizardFlujo,
     plan,
     spotlight,
     dismiss,
+    minimize,
+    unminimize,
     showSpotlight,
     hideSpotlight,
     refresh: fetchProgreso,

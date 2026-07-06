@@ -1437,20 +1437,22 @@ export default function DashboardPage() {
 
   const moraPct = data ? (data.clientes.total > 0 ? Math.round((data.clientes.enMora / data.clientes.total) * 100) : 0) : 0
 
-  // Wizard: full-screen takeover for brand-new users
-  if (onboarding.showWizard && esOwner) {
+  // Wizard: full-screen takeover for users in onboarding (step 0-98)
+  // If minimized this session, show a banner instead
+  if (onboarding.showWizard && esOwner && !onboarding.wizardMinimized) {
     return (
       <div className="max-w-3xl mx-auto">
         <OnboardingWizard
           nombre={session?.user?.nombre || session?.user?.name}
           initialStep={onboarding.wizardInitialStep}
+          initialFlujo={onboarding.wizardFlujo}
           plan={onboarding.plan}
           onComplete={() => {
             onboarding.dismiss()
             window.location.reload()
           }}
-          onDismiss={() => {
-            onboarding.dismiss()
+          onMinimize={() => {
+            onboarding.minimize()
           }}
         />
       </div>
@@ -1459,6 +1461,27 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-5">
+      {/* Banner: wizard minimizado — click to resume */}
+      {onboarding.showWizard && onboarding.wizardMinimized && esOwner && (
+        <button
+          onClick={() => onboarding.unminimize()}
+          className="w-full flex items-center gap-3 rounded-[12px] px-4 py-3 text-left transition-all active:scale-[0.99] cursor-pointer"
+          style={{ background: 'rgba(245,197,24,0.08)', border: '1px solid rgba(245,197,24,0.25)' }}>
+          <div className="w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0"
+            style={{ background: 'rgba(245,197,24,0.15)' }}>
+            <svg className="w-4 h-4" fill="none" stroke="#f5c518" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-semibold" style={{ color: '#f5c518' }}>Continuar configuracion</p>
+            <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Retoma el asistente donde lo dejaste</p>
+          </div>
+          <svg className="w-4 h-4 shrink-0" fill="none" stroke="var(--color-text-muted)" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      )}
       {onboarding.visible && (
         <OnboardingChecklist
           misiones={onboarding.misiones}

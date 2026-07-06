@@ -1,13 +1,10 @@
 'use client'
 
-import Link from 'next/link'
-
 const CAPS = [
   {
     id: 'cartulina',
     color: '#a78bfa',
     bg: 'rgba(167,139,250,0.1)',
-    borderActive: 'rgba(167,139,250,0.35)',
     tag: 'Exclusivo CF',
     titulo: 'Importa cartulinas con foto',
     detalle: 'Toma una foto de tu cartulina física. La IA extrae nombre, monto, tasa, plazo y cuotas pagadas. En segundos queda registrado.',
@@ -23,7 +20,6 @@ const CAPS = [
     id: 'whatsapp',
     color: '#22c55e',
     bg: 'rgba(34,197,94,0.1)',
-    borderActive: 'rgba(34,197,94,0.35)',
     tag: 'Automatizado',
     titulo: 'Alertas automáticas por WhatsApp',
     detalle: 'El sistema envía recordatorios a tus clientes cuando se acerca el cobro. Sin llamadas, sin perseguir.',
@@ -39,7 +35,6 @@ const CAPS = [
     id: 'rutas',
     color: '#3b82f6',
     bg: 'rgba(59,130,246,0.1)',
-    borderActive: 'rgba(59,130,246,0.35)',
     tag: 'Tiempo real',
     titulo: 'Rutas de cobro con GPS',
     detalle: 'Asigna clientes a cobradores por zona. Ellos ven su ruta en el celular. Tú ves en tiempo real quién pagó, quién no y cuánto se recaudó.',
@@ -54,7 +49,6 @@ const CAPS = [
     id: 'metodos',
     color: '#f5c518',
     bg: 'rgba(245,197,24,0.1)',
-    borderActive: 'rgba(245,197,24,0.35)',
     tag: 'Flexible',
     titulo: 'Múltiples métodos de interés',
     detalle: 'Interés fijo por período, sobre saldo decreciente, o cuota única al inicio. Configura el sistema como tú trabajas — no al revés.',
@@ -69,7 +63,6 @@ const CAPS = [
     id: 'reportes',
     color: '#f97316',
     bg: 'rgba(249,115,22,0.1)',
-    borderActive: 'rgba(249,115,22,0.35)',
     tag: 'Sin Excel',
     titulo: 'Reportes y cierre de caja',
     detalle: 'Saldo en cartera, clientes en mora, recaudo del día por cobrador, utilidad mensual. Todo actualizado al instante.',
@@ -82,11 +75,10 @@ const CAPS = [
   },
 ]
 
-export default function WizardFeatures({ modoDemo, onNext }) {
+export default function WizardFeatures({ onNext }) {
   return (
     <div className="max-w-md mx-auto flex flex-col" style={{ minHeight: '80vh' }}>
 
-      {/* Header */}
       <div className="text-center mb-6">
         <h2 className="text-[22px] font-bold mb-2" style={{ color: 'var(--color-text-primary)', fontFamily: "Georgia, serif" }}>
           Esto es lo que <em style={{ color: '#f5c518', fontStyle: 'italic' }}>también</em> puedes hacer
@@ -96,7 +88,6 @@ export default function WizardFeatures({ modoDemo, onNext }) {
         </p>
       </div>
 
-      {/* Feature list */}
       <div className="flex-1 space-y-3 mb-6">
         {CAPS.map((c) => (
           <div key={c.id}
@@ -126,19 +117,7 @@ export default function WizardFeatures({ modoDemo, onNext }) {
         ))}
       </div>
 
-      {/* CTA */}
-      <div className="pb-2 space-y-3">
-        {modoDemo && (
-          <div className="flex items-center gap-2 px-3 py-2.5 rounded-[10px]"
-            style={{ background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.2)' }}>
-            <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="#a78bfa" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p className="text-[11px]" style={{ color: '#a78bfa' }}>
-              Recuerda: los datos demo se borrarán al terminar. Tu cuenta quedará limpia.
-            </p>
-          </div>
-        )}
+      <div className="pb-2">
         <button
           onClick={onNext}
           className="w-full h-12 rounded-[12px] text-base font-bold transition-all active:scale-[0.98] cursor-pointer"
