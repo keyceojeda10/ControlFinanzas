@@ -191,6 +191,15 @@ export async function GET() {
   const saldoPersistido = capital?.saldo ?? 0
   const diferenciaVsPersistido = saldoPersistido - saldoSugerido
 
+  const carteraAgregada = await prisma.prestamo.aggregate({
+    where: { organizationId, estado: 'activo', esClavo: false },
+    _sum: { totalAPagar: true, totalPagado: true, montoPrestado: true },
+    _count: true,
+  })
+  const carteraTotal = Math.max(0, (carteraAgregada._sum.totalAPagar ?? 0) - (carteraAgregada._sum.totalPagado ?? 0))
+  const capitalEnCalle = carteraAgregada._sum.montoPrestado ?? 0
+  const prestamosActivosTotal = carteraAgregada._count ?? 0
+
   return Response.json({
     configurado: Boolean(capital),
     saldo: saldoPersistido,
@@ -213,6 +222,11 @@ export async function GET() {
         cobradoHistorico: Math.round(cobradoHistorico),
         gastoHistorico: Math.round(gastoHistorico),
       },
+    },
+    cartera: {
+      total: Math.round(carteraTotal),
+      capitalEnCalle: Math.round(capitalEnCalle),
+      prestamosActivos: prestamosActivosTotal,
     },
     mes: {
       desembolsado,

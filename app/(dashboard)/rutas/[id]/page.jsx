@@ -230,7 +230,7 @@ function HistorialCobros({ rutaId }) {
 export default function RutaDetallePage({ params }) {
   const { id }    = use(params)
   const router    = useRouter()
-  const { esOwner, puedeGestionarRutas, orgNombre, ocultarSaldoWA } = useAuth()
+  const { esOwner, puedeGestionarRutas, puedeVerCapitalRuta, orgNombre, ocultarSaldoWA } = useAuth()
 
     const { lastSyncedAt } = useOffline()
 
@@ -1471,8 +1471,8 @@ export default function RutaDetallePage({ params }) {
           : 0
         return (
           <>
-            {/* Cartera total — solo owner */}
-            {esOwner && (
+            {/* Cartera total — owner o cobrador con permiso */}
+            {(esOwner || puedeVerCapitalRuta) && (
             <div
               className="cf-hero-card rounded-[16px] px-4 py-3"
               style={{
