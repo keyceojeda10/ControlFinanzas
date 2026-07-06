@@ -12,7 +12,7 @@ import Script from "next/script";
 // cuando la hoja de estilos aun no cargo (offline / cache miss).
 // Default de marca: claro. Solo quien guardo una preferencia explicita
 // (dark/system) la conserva.
-const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('cf-theme')||'light';var r=t==='system'?(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'):t;var h=document.documentElement;h.setAttribute('data-theme',r);h.style.colorScheme=r;var bg=r==='light'?'#f5f7fb':'#060609';var fg=r==='light'?'#1a1a2e':'#f0f0f5';h.style.backgroundColor=bg;h.style.color=fg;if(document.body){document.body.style.backgroundColor=bg;document.body.style.color=fg;}}catch(e){document.documentElement.setAttribute('data-theme','light');}})();`;
+const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('cf-theme')||'light';var r=t==='system'?(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'):t;var h=document.documentElement;h.setAttribute('data-theme',r);h.style.colorScheme=r;var bg=r==='light'?'#f5f7fb':'#060609';var fg=r==='light'?'#1a1a2e':'#f0f0f5';h.style.backgroundColor=bg;h.style.color=fg;if(document.body){document.body.style.backgroundColor=bg;document.body.style.color=fg;}var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',bg);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();`;
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,7 +41,7 @@ export const metadata = {
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'black-translucent',
+    statusBarStyle: 'default',
     title: 'Control Finanzas',
   },
   icons: {
@@ -81,7 +81,10 @@ export const metadata = {
 };
 
 export const viewport = {
-  themeColor: '#1e3a5f',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f5f7fb' },
+    { media: '(prefers-color-scheme: dark)', color: '#060609' },
+  ],
   // Fija el zoom para evitar el auto-zoom del navegador movil:
   // - iOS Safari hace zoom al enfocar inputs con font-size < 16px.
   // - Android amplia la pantalla al abrir modales.
