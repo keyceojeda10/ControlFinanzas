@@ -49,6 +49,10 @@ export async function GET(request, { params }) {
         prestamos: {
           orderBy: { createdAt: 'desc' },
           include: {
+            cuotasAmortizacion: {
+              orderBy: { numeroPeriodo: 'asc' },
+              select: { numeroPeriodo: true, capital: true, interes: true, cuotaTotal: true, saldoRestante: true, pagado: true, interesPagado: true, fechaEsperada: true },
+            },
             pagos: {
               orderBy: { fechaPago: 'desc' },
               select: { id: true, montoPagado: true, fechaPago: true, tipo: true, nota: true },
