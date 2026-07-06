@@ -33,26 +33,61 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 // ── Gate de plan ───────────────────────────────────────────────
 function PlanGate() {
+  const features = [
+    { label: 'Ingresos diario / semanal / mensual', color: '#22c55e' },
+    { label: 'Cobros programados por mes', color: '#f59e0b' },
+    { label: 'Rendimiento por cobrador', color: '#a855f7' },
+    { label: 'Cartera y analisis por ruta', color: '#06b6d4' },
+    { label: 'Exportar a PDF y Excel', color: 'var(--color-danger)' },
+  ]
   return (
     <div className="max-w-xl mx-auto mt-8">
-      <h1 className="text-xl font-bold text-[var(--color-text-primary)] mb-6">Reportes</h1>
-      <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] p-8 text-center">
-        <div className="w-14 h-14 rounded-full bg-[rgba(245,158,11,0.12)] flex items-center justify-center mx-auto mb-4">
-          <svg className="w-7 h-7 text-[var(--color-warning)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <h1 className="text-xl font-bold mb-6" style={{ color: 'var(--color-text-primary)' }}>Reportes</h1>
+      <div className="rounded-[16px] p-6 text-center"
+        style={{
+          background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)',
+          border: '1px solid color-mix(in srgb, var(--color-accent) 22%, var(--color-border))',
+        }}
+      >
+        <div className="w-14 h-14 rounded-[16px] flex items-center justify-center mx-auto mb-4"
+          style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)' }}
+        >
+          <svg className="w-7 h-7" style={{ color: 'var(--color-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
           </svg>
         </div>
-        <p className="text-base font-bold text-[var(--color-text-primary)] mb-2">Reportes avanzados</p>
-        <p className="text-sm text-[var(--color-text-muted)] mb-5">
-          Accede a gráficas de ingresos, métricas de cobradores, análisis de cartera y exportación a Excel.
+        <p className="text-base font-bold mb-1" style={{ color: 'var(--color-text-primary)' }}>Reportes y analisis</p>
+        <p className="text-[13px] mb-5" style={{ color: 'var(--color-text-muted)' }}>
+          Visualiza el rendimiento de tu negocio con datos en tiempo real.
         </p>
-        <div className="inline-flex flex-col gap-2 text-xs text-[var(--color-text-muted)] text-left">
-          <span>✓ Gráficas de ingresos diario / semanal / mensual</span>
-          <span>✓ Rendimiento por cobrador</span>
-          <span>✓ Análisis de cartera por ruta</span>
-          <span>✓ Exportar a Excel (4 reportes)</span>
+        <div className="inline-flex flex-col gap-2.5 text-left mb-5">
+          {features.map((f) => (
+            <div key={f.label} className="flex items-center gap-2.5">
+              <div className="w-4 h-4 rounded-[6px] flex items-center justify-center shrink-0"
+                style={{ background: `color-mix(in srgb, ${f.color} 18%, transparent)` }}
+              >
+                <svg className="w-2.5 h-2.5" style={{ color: f.color }} fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+              </div>
+              <span className="text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>{f.label}</span>
+            </div>
+          ))}
         </div>
+        <a
+          href="/configuracion/plan"
+          className="inline-flex items-center gap-2 text-[13px] font-bold px-5 py-2.5 rounded-[12px] transition-all"
+          style={{
+            background: 'var(--color-accent)',
+            color: '#111',
+          }}
+        >
+          Ver planes
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+          </svg>
+        </a>
       </div>
     </div>
   )
@@ -62,23 +97,35 @@ function PlanGate() {
 function UpgradeNudge({ titulo, planRequerido }) {
   const labelPlan = planRequerido === 'standard' ? 'Profesional' : 'Empresarial'
   return (
-    <div className="rounded-[16px] px-4 py-6 text-center"
-      style={{ background: 'var(--color-bg-card)', border: '1px dashed var(--color-border)' }}
+    <div className="rounded-[16px] px-4 py-4 flex items-center gap-3"
+      style={{
+        background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 5%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)',
+        border: '1px solid color-mix(in srgb, var(--color-accent) 12%, var(--color-border))',
+      }}
     >
-      <p className="text-sm font-semibold mb-1" style={{ color: 'var(--color-text-secondary)' }}>{titulo}</p>
-      <p className="text-xs mb-3" style={{ color: 'var(--color-text-muted)' }}>
-        Disponible en plan <span style={{ color: 'var(--color-accent)' }}>{labelPlan}</span>
-      </p>
+      <div className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
+        style={{ background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)' }}
+      >
+        <svg className="w-4 h-4" style={{ color: 'var(--color-accent)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+        </svg>
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>{titulo}</p>
+        <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+          Disponible en plan <span className="font-semibold" style={{ color: 'var(--color-accent)' }}>{labelPlan}</span>
+        </p>
+      </div>
       <a
         href="/configuracion/plan"
-        className="inline-block text-xs font-semibold px-4 py-1.5 rounded-full transition-all"
+        className="text-[11px] font-semibold px-3 py-1.5 rounded-[8px] transition-all shrink-0"
         style={{
-          background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)',
+          background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
           color: 'var(--color-accent)',
-          border: '1px solid color-mix(in srgb, var(--color-accent) 35%, transparent)',
+          border: '1px solid color-mix(in srgb, var(--color-accent) 25%, transparent)',
         }}
       >
-        Ver planes
+        Mejorar
       </a>
     </div>
   )
@@ -161,9 +208,9 @@ export default function ReportesPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, periodoSeguros, nivel])
 
-  // Cobros del mes: carga independiente con su propio selector de mes
+  // Cobros del mes: carga independiente con su propio selector de mes (nivel 1+)
   useEffect(() => {
-    if (authLoading || !esOwner || nivel < 2) return
+    if (authLoading || !esOwner || nivel < 1) return
     setCobrosMesLoading(true)
     const [y, m] = mesCobros.split('-').map(Number)
     fetch(`/api/reportes/cobros-mes?year=${y}&month=${m}`)
@@ -580,9 +627,8 @@ export default function ReportesPage() {
         </div>
       )}
 
-      {/* ── Cobros del mes (reporte mensual imprimible) ── */}
-      {nivel < 2 && <UpgradeNudge titulo="Cobros del mes" planRequerido="standard" />}
-      {nivel >= 2 && (
+      {/* ── Cobros del mes (reporte mensual imprimible, nivel 1+) ── */}
+      {nivel >= 1 && (
         <div className="rounded-[16px] px-4 py-4"
           style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
         >
