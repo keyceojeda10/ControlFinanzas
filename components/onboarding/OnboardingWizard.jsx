@@ -46,6 +46,7 @@ export default function OnboardingWizard({
   const [flujo,          setFlujo]          = useState(initialFlujo) // 'solo' | 'equipo'
   const [currentPlan,    setCurrentPlan]    = useState(plan)
   const [capitalDone,    setCapitalDone]    = useState(false)
+  const [capitalMonto,   setCapitalMonto]   = useState(0)
   const [clienteCreado,  setClienteCreado]  = useState(null)
   const [prestamoCreado, setPrestamoCreado] = useState(null)
   const [showBounce,     setShowBounce]     = useState(false)
@@ -90,8 +91,9 @@ export default function OnboardingWizard({
   }, [])
 
   // Step 1: Capital done
-  const handleCapitalDone = useCallback(() => {
+  const handleCapitalDone = useCallback((data) => {
     setCapitalDone(true)
+    if (data?.monto) setCapitalMonto(data.monto)
     persistStep(2, flujo)
     setStep(2)
   }, [flujo])
@@ -236,6 +238,7 @@ export default function OnboardingWizard({
         <WizardCapital
           onComplete={handleCapitalDone}
           alreadyDone={capitalDone}
+          savedMonto={capitalMonto}
         />
       )}
 

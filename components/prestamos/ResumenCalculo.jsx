@@ -18,8 +18,8 @@ export default function ResumenCalculo({ calculo, visible = true }) {
   const { totalAPagar, cuotaDiaria, ultimaCuota, totalInteres, fechaFin, frecuencia, numPeriodos, modoInteres } = calculo ?? {}
 
   const labelModo = {
-    fijo:   'Fijo (clasico)',
-    unico:  'Interés unico',
+    fijo:   'Fijo (clásico)',
+    unico:  'Interés único',
     saldo:  'Sobre saldo',
     manual: 'Manual',
     lineal: 'Cuota decreciente',
@@ -45,9 +45,9 @@ export default function ResumenCalculo({ calculo, visible = true }) {
   ]
 
   return (
-    <div className="bg-[#161b27] border border-[var(--color-border)] rounded-[12px] p-4 space-y-3">
+    <div className="border border-[var(--color-border)] rounded-[12px] p-4 space-y-3" style={{ background: 'var(--color-bg-card)' }}>
       <div className="flex items-center justify-between gap-2">
-        <p className="text-xs font-semibold text-[#8b95a5] uppercase tracking-wide">
+        <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
           Resumen del préstamo
         </p>
         {labelModo && (
@@ -63,14 +63,14 @@ export default function ResumenCalculo({ calculo, visible = true }) {
             key={label}
             className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[10px] px-3 py-2.5"
           >
-            <p className="text-[10px] text-[#8b95a5] mb-0.5">{label}</p>
+            <p className="text-[10px] mb-0.5" style={{ color: 'var(--color-text-muted)' }}>{label}</p>
             <p
               className="text-base font-bold leading-tight font-mono-display"
               style={{ color: value === '$0' || value === '—' ? '#64748b' : accent }}
             >
               {value ?? '—'}
             </p>
-            {sub && <p className="text-[10px] text-[#8b95a5] mt-0.5">{sub}</p>}
+            {sub && <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{sub}</p>}
           </div>
         ))}
       </div>

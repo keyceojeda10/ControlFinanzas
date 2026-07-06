@@ -51,7 +51,11 @@ export default function WizardCobrador({ onComplete, onSkip }) {
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error ?? 'Error al crear cobrador')
+        if (res.status === 409 && data.error?.includes('correo ya está en uso')) {
+          setError('Ya creaste un cobrador con ese correo. Usa otro correo o continúa al siguiente paso.')
+        } else {
+          setError(data.error ?? 'Error al crear cobrador')
+        }
         return
       }
       setCobradorCreado(data)

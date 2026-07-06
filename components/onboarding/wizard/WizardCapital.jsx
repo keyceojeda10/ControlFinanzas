@@ -3,9 +3,9 @@
 import { useState } from 'react'
 import { useCountry } from '@/hooks/useCountry'
 
-export default function WizardCapital({ onComplete, alreadyDone }) {
+export default function WizardCapital({ onComplete, alreadyDone, savedMonto = 0 }) {
   const { formatMoney, currencySymbol } = useCountry()
-  const [monto, setMonto] = useState('')
+  const [monto, setMonto] = useState(savedMonto > 0 ? String(savedMonto) : '')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 

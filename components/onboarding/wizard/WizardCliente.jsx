@@ -22,9 +22,9 @@ export default function WizardCliente({ onComplete, onSkip }) {
     const errs = {}
     if (!form.nombre.trim()) errs.nombre = 'El nombre es requerido'
     if (!sinCedula) {
-      if (!form.cedula.trim()) errs.cedula = `${documentConfig.label} es requerido`
+      if (!form.cedula.trim()) errs.cedula = `La ${documentConfig.label.toLowerCase()} es requerida`
       else if (!validateDocument(form.cedula.trim()))
-        errs.cedula = `${documentConfig.label} no válido (ej: ${documentConfig.placeholder})`
+        errs.cedula = `${documentConfig.label} no válida (ej: ${documentConfig.placeholder})`
     }
     if (form.telefono.trim() && !validatePhone(form.telefono.replace(/\s/g, '')))
       errs.telefono = `Ingresa un ${phoneConfig.label.toLowerCase()} válido (ej: ${phoneConfig.placeholder})`
