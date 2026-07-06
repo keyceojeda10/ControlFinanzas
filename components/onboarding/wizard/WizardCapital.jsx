@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useCountry } from '@/hooks/useCountry'
 
-export default function WizardCapital({ onComplete }) {
+export default function WizardCapital({ onComplete, alreadyDone }) {
   const { formatMoney, currencySymbol } = useCountry()
   const [monto, setMonto] = useState('')
   const [loading, setLoading] = useState(false)
@@ -21,6 +21,12 @@ export default function WizardCapital({ onComplete }) {
     e.preventDefault()
     if (montoNum <= 0) {
       setError('Ingresa un monto mayor a 0')
+      return
+    }
+
+    // Si ya se registró capital antes (volvió atrás), solo avanzar
+    if (alreadyDone) {
+      onComplete({ monto: montoNum })
       return
     }
 
@@ -113,15 +119,27 @@ export default function WizardCapital({ onComplete }) {
           )}
         </div>
 
-        <div className="flex items-center gap-2 px-3 py-2.5 rounded-[10px]"
-          style={{ background: 'rgba(245,197,24,0.06)', border: '1px solid rgba(245,197,24,0.15)' }}>
-          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="#f5c518" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" />
-          </svg>
-          <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-            Si no registras el capital, cada préstamo que crees se va a restar de $0 y la caja te va a salir en negativo.
-          </p>
-        </div>
+        {alreadyDone ? (
+          <div className="flex items-center gap-2 px-3 py-2.5 rounded-[10px]"
+            style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
+            <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="#22c55e" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+            </svg>
+            <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+              Ya registraste tu capital. Si quieres cambiarlo, puedes hacerlo después desde la sección Capital.
+            </p>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 px-3 py-2.5 rounded-[10px]"
+            style={{ background: 'rgba(245,197,24,0.06)', border: '1px solid rgba(245,197,24,0.15)' }}>
+            <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="#f5c518" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" />
+            </svg>
+            <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+              Si no registras el capital, cada préstamo que crees se va a restar de $0 y la caja te va a salir en negativo.
+            </p>
+          </div>
+        )}
 
         <button
           type="submit"
@@ -133,7 +151,7 @@ export default function WizardCapital({ onComplete }) {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-          ) : 'Registrar capital'}
+          ) : alreadyDone ? 'Continuar' : 'Registrar capital'}
         </button>
 
         <button
