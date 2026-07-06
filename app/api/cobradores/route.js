@@ -177,9 +177,12 @@ export async function POST(request) {
   const totalUsuarios = await prisma.user.count({ where: { organizationId } })
   if (totalUsuarios >= limite) {
     const precioExtra = PLANES_CONFIG[plan]?.cobradorExtra
-    const msgExtra = precioExtra > 0 ? ` Puedes comprar un cobrador adicional por $${(precioExtra).toLocaleString('es-CO')}/mes.` : ''
+    const opciones = []
+    if (precioExtra > 0) opciones.push(`comprar un cobrador adicional por $${precioExtra.toLocaleString('es-CO')}/mes`)
+    opciones.push('actualizar tu plan para tener más usuarios')
+    const msgOpciones = ` Puedes ${opciones.join(' o ')}.`
     return Response.json(
-      { error: `Has alcanzado el límite de ${limite} usuarios.${msgExtra}`, limitReached: true, plan },
+      { error: `Has alcanzado el límite de ${limite} usuarios.${msgOpciones}`, limitReached: true, plan },
       { status: 403 }
     )
   }
