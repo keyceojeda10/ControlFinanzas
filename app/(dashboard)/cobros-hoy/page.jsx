@@ -63,12 +63,12 @@ export default function CobrosHoyPage() {
     if (!cuota || cuota <= 0) return
     setModoParcial(false)
     setMontoParcial('')
-    setModalPago({ id: cliente.id, nombre: cliente.nombre, cuota, prestamoActivo: p.id, prestamosActivos: activos, abonoConPendiente: cliente.pagoHoy && cliente.cobroPendienteHoy, esBalloon: p.esBalloon || false, cuotaNumero: p.cuotaNumero ?? null, modoInteres: p.modoInteres })
+    setModalPago({ id: cliente.id, nombre: cliente.nombre, cuota, prestamoActivo: p.id, prestamosActivos: activos, abonoConPendiente: cliente.pagoHoy && cliente.cobroPendienteHoy, esBalloon: p.esBalloon || false, cuotaNumero: p.cuotaNumero ?? null, modoInteres: p.modoInteres, cuotaExtraHoy: p.cuotaExtraHoy || false, montoCuotaExtra: p.montoCuotaExtra || 0 })
   }
 
   const elegirPrestamo = (prestamoId, cuota, extra = {}) => {
     if (!modalPago) return
-    setModalPago(prev => prev ? { ...prev, prestamoActivo: prestamoId, cuota, esBalloon: extra.esBalloon || false, cuotaNumero: extra.cuotaNumero ?? null, modoInteres: extra.modoInteres } : prev)
+    setModalPago(prev => prev ? { ...prev, prestamoActivo: prestamoId, cuota, esBalloon: extra.esBalloon || false, cuotaNumero: extra.cuotaNumero ?? null, modoInteres: extra.modoInteres, cuotaExtraHoy: extra.cuotaExtraHoy || false, montoCuotaExtra: extra.montoCuotaExtra || 0 } : prev)
   }
 
   const ejecutarPago = async (metodoPago, { confirmarDuplicado = false, montoCustom = null } = {}) => {
@@ -443,7 +443,7 @@ export default function CobrosHoyPage() {
               {modalPago.prestamosActivos.map((p, i) => (
                 <button
                   key={p.id}
-                  onClick={() => elegirPrestamo(p.id, p.cuotaDiaria, { esBalloon: p.esBalloon, cuotaNumero: p.cuotaNumero, modoInteres: p.modoInteres })}
+                  onClick={() => elegirPrestamo(p.id, p.cuotaDiaria, { esBalloon: p.esBalloon, cuotaNumero: p.cuotaNumero, modoInteres: p.modoInteres, cuotaExtraHoy: p.cuotaExtraHoy, montoCuotaExtra: p.montoCuotaExtra })}
                   disabled={!p.cuotaDiaria || p.cuotaDiaria <= 0}
                   className="w-full text-left px-4 py-3.5 rounded-[12px] border transition-all active:scale-[0.99] disabled:opacity-50"
                   style={{ background: 'var(--color-bg-card)', borderColor: 'var(--color-border)' }}
@@ -501,6 +501,12 @@ export default function CobrosHoyPage() {
               <div className="rounded-[12px] px-3 py-2.5 text-center" style={{ background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--color-danger) 25%, transparent)' }}>
                 <p className="text-xs font-semibold" style={{ color: 'var(--color-danger)' }}>Cuota de capital + interés (globo)</p>
                 <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Esta es la última cuota. Incluye la devolución del capital completo mas el interés del período.</p>
+              </div>
+            )}
+            {modalPago.cuotaExtraHoy && (
+              <div className="rounded-[12px] px-3 py-2.5 text-center" style={{ background: 'color-mix(in srgb, #8b5cf6 10%, transparent)', border: '1px solid color-mix(in srgb, #8b5cf6 25%, transparent)' }}>
+                <p className="text-xs font-semibold" style={{ color: '#8b5cf6' }}>Cuota extra programada: {formatMoney(modalPago.montoCuotaExtra)}</p>
+                <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Esta cuota incluye un abono extra a capital. Ya está incluido en el monto total.</p>
               </div>
             )}
             {modalPago.cuotaNumero && ['lineal', 'solo_interes'].includes(modalPago.modoInteres) && (
@@ -700,6 +706,14 @@ function ClienteCard({ cliente, pagando, pagoOk, onCobrar, showRuta = true }) {
                 </span>
               )}
             </>
+          )}
+          {cliente.cuotaExtraHoy && (
+            <span
+              className="text-[10px] font-bold px-2 py-0.5 rounded-md"
+              style={{ background: 'color-mix(in srgb, #8b5cf6 15%, transparent)', color: '#8b5cf6' }}
+            >
+              +Extra {formatMoney(cliente.montoCuotaExtra)}
+            </span>
           )}
           {showRuta && cliente.rutaNombre && (
             <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{cliente.rutaNombre}</span>

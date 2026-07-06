@@ -17,6 +17,16 @@ import {
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
 
+function detectarCuotaExtra(prestamo, proximaCuota) {
+  if (!proximaCuota || !Array.isArray(prestamo.capitalExtra) || !prestamo.capitalExtra.length) {
+    return { cuotaExtraHoy: false, montoCuotaExtra: 0 }
+  }
+  const periodo = proximaCuota.numeroPeriodo
+  const extra = prestamo.capitalExtra.find(e => e.numeroPeriodo === periodo)
+  if (!extra || !extra.monto) return { cuotaExtraHoy: false, montoCuotaExtra: 0 }
+  return { cuotaExtraHoy: true, montoCuotaExtra: Math.round(extra.monto) }
+}
+
 const hoy = (country = 'co') => {
   const now = new Date()
   const absOffset = Math.abs(getUtcOffset(country))
@@ -95,6 +105,7 @@ export async function GET() {
               diaCobroMes2: true,
               diasSinCobro: true,
               modoInteres: true,
+              capitalExtra: true,
               cuotasAmortizacion: {
                 select: { numeroPeriodo: true, cuotaTotal: true, interes: true, capital: true, pagado: true, interesPagado: true, fechaEsperada: true },
                 orderBy: { numeroPeriodo: 'asc' },
@@ -145,6 +156,8 @@ export async function GET() {
         if (p.esClavo) {
           const cuotaClavo = tieneTablaAmortizacion(p) ? obtenerCuotaPeriodoActual(p) : p.cuotaDiaria
           const saldoClavo = calcularSaldoPendiente(p)
+          const proximaCuotaClavo = tieneTablaAmortizacion(p) ? obtenerProximaCuotaTabla(p) : null
+          const extraClavo = detectarCuotaExtra(p, proximaCuotaClavo)
           cuotaCliente += cuotaClavo
           prestamosActivos.push({
             id: p.id,
@@ -153,8 +166,9 @@ export async function GET() {
             diasMora: 0,
             modoInteres: p.modoInteres || 'fijo',
             esBalloon: false,
-            cuotaNumero: null,
+            cuotaNumero: proximaCuotaClavo?.numeroPeriodo ?? null,
             esClavo: true,
+            ...extraClavo,
           })
           continue
         }
@@ -171,6 +185,7 @@ export async function GET() {
         montoParaAlDia += alDia
 
         const proximaCuota = tieneTablaAmortizacion(p) ? obtenerProximaCuotaTabla(p) : null
+        const extraInfo = detectarCuotaExtra(p, proximaCuota)
         prestamosActivos.push({
           id: p.id,
           cuotaDiaria: Math.round(cuotaReal),
@@ -179,6 +194,7 @@ export async function GET() {
           modoInteres: p.modoInteres || 'fijo',
           esBalloon: proximaCuota?.esBalloon || false,
           cuotaNumero: proximaCuota?.numeroPeriodo ?? null,
+          ...extraInfo,
         })
 
         if (!_hoySinCobro && tieneCobroPendienteHoy(p, diasExcluidosPrestamo, festivos)) {
@@ -210,6 +226,8 @@ export async function GET() {
         hoySinCobro: _hoySinCobro,
         prestamoActivo: prestamosActivos[0]?.id ?? null,
         prestamosActivos,
+        cuotaExtraHoy: prestamosActivos.some(p => p.cuotaExtraHoy),
+        montoCuotaExtra: prestamosActivos.reduce((s, p) => s + (p.montoCuotaExtra || 0), 0),
       })
     }
   }

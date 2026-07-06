@@ -656,6 +656,8 @@ export default function RutaDetallePage({ params }) {
       montoEnMora: p.montoEnMora || 0,
       montoAlDia: p.montoParaPonerseAlDia || 0,
       saldoPendiente: p.saldoPendiente || 0,
+      cuotaExtraHoy: p.cuotaExtraHoy || false,
+      montoCuotaExtra: p.montoCuotaExtra || 0,
     })
   }
 
@@ -668,6 +670,8 @@ export default function RutaDetallePage({ params }) {
       diasMora: extra.diasMora || 0, cuotasEnMora: extra.cuotasEnMora || 0,
       montoEnMora: extra.montoEnMora || 0, montoAlDia: extra.montoAlDia || 0,
       saldoPendiente: extra.saldoPendiente || 0,
+      cuotaExtraHoy: extra.cuotaExtraHoy || false,
+      montoCuotaExtra: extra.montoCuotaExtra || 0,
     } : prev)
   }
 
@@ -2187,6 +2191,18 @@ export default function RutaDetallePage({ params }) {
                           </div>
                         )}
 
+                        {/* Cuota extra programada */}
+                        {c.cuotaExtraHoy && (
+                          <div className="flex items-center gap-1.5 text-[10px] font-semibold px-2 py-1 rounded-[6px]"
+                            style={{ background: 'color-mix(in srgb, #8b5cf6 12%, transparent)', color: '#8b5cf6' }}
+                          >
+                            <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                            </svg>
+                            <span>Cuota extra: {formatMoney(c.montoCuotaExtra)}</span>
+                          </div>
+                        )}
+
                         {/* Geo badge */}
                         {c.pagoHoy && (() => {
                           const geo = c.pagoHoyGeo
@@ -3136,6 +3152,7 @@ export default function RutaDetallePage({ params }) {
                       diasMora: p.diasMora, cuotasEnMora: p.cuotasEnMora,
                       montoEnMora: p.montoEnMora, montoAlDia: p.montoParaPonerseAlDia,
                       saldoPendiente: p.saldoPendiente,
+                      cuotaExtraHoy: p.cuotaExtraHoy, montoCuotaExtra: p.montoCuotaExtra,
                     })}
                     disabled={!p.cuotaDiaria || p.cuotaDiaria <= 0}
                     className={`w-full text-left px-3 py-3 rounded-[12px] border transition-all active:scale-[0.99] disabled:opacity-50 ${
@@ -3289,6 +3306,14 @@ export default function RutaDetallePage({ params }) {
                   <p className="text-xs text-[var(--color-danger)] font-semibold">Cuota de capital + interés (globo)</p>
                   <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
                     Esta es la última cuota. Incluye la devolución del capital completo mas el interés del período.
+                  </p>
+                </div>
+              )}
+              {modalPagoRapido.cuotaExtraHoy && (
+                <div className="rounded-[12px] border border-[rgba(139,92,246,0.3)] bg-[rgba(139,92,246,0.08)] p-3 text-center">
+                  <p className="text-xs font-semibold" style={{ color: '#8b5cf6' }}>Cuota extra programada: {formatMoney(modalPagoRapido.montoCuotaExtra)}</p>
+                  <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
+                    Esta cuota incluye un abono extra a capital. Ya está incluido en el monto total.
                   </p>
                 </div>
               )}

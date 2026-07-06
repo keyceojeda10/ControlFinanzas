@@ -33,6 +33,16 @@ const manana = (country = 'co') => {
   return new Date(h.getTime() + 24 * 60 * 60 * 1000)
 }
 
+function detectarCuotaExtra(prestamo, proximaCuota) {
+  if (!proximaCuota || !Array.isArray(prestamo.capitalExtra) || !prestamo.capitalExtra.length) {
+    return { cuotaExtraHoy: false, montoCuotaExtra: 0 }
+  }
+  const periodo = proximaCuota.numeroPeriodo
+  const extra = prestamo.capitalExtra.find(e => e.numeroPeriodo === periodo)
+  if (!extra || !extra.monto) return { cuotaExtraHoy: false, montoCuotaExtra: 0 }
+  return { cuotaExtraHoy: true, montoCuotaExtra: Math.round(extra.monto) }
+}
+
 // ─── GET /api/rutas/[id] ────────────────────────────────────────
 export async function GET(request, { params }) {
   const session = await getServerSession(authOptions)
@@ -96,6 +106,7 @@ export async function GET(request, { params }) {
               seguro: true,
               montoSeguro: true,
               modoInteres: true,
+              capitalExtra: true,
               cuotasAmortizacion: {
                 orderBy: { numeroPeriodo: 'asc' },
                 select: { numeroPeriodo: true, capital: true, interes: true, cuotaTotal: true, saldoRestante: true, pagado: true, interesPagado: true, fechaEsperada: true },
@@ -255,6 +266,7 @@ export async function GET(request, { params }) {
         const cuotaClavo = tieneTablaAmortizacion(p) ? obtenerCuotaPeriodoActual(p) : p.cuotaDiaria
         const proximaCuotaClavo = tieneTablaAmortizacion(p) ? obtenerProximaCuotaTabla(p) : null
         cuotaCliente += cuotaClavo
+        const extraClavo = detectarCuotaExtra(p, proximaCuotaClavo)
         prestamosActivos.push({
           id: p.id,
           cuotaDiaria: Math.round(cuotaClavo),
@@ -277,6 +289,7 @@ export async function GET(request, { params }) {
           esBalloon: proximaCuotaClavo?.esBalloon || false,
           cuotaNumero: proximaCuotaClavo?.numeroPeriodo ?? null,
           esClavo: true,
+          ...extraClavo,
         })
         continue
       }
@@ -303,6 +316,7 @@ export async function GET(request, { params }) {
       montoParaAlDiaCliente += montoAlDiaPrestamo
       const cuotaReal = tieneTablaAmortizacion(p) ? obtenerCuotaPeriodoActual(p) : p.cuotaDiaria
       const proximaCuota = tieneTablaAmortizacion(p) ? obtenerProximaCuotaTabla(p) : null
+      const extraInfo = detectarCuotaExtra(p, proximaCuota)
       prestamosActivos.push({
         id: p.id,
         cuotaDiaria: Math.round(cuotaReal),
@@ -324,6 +338,7 @@ export async function GET(request, { params }) {
         modoInteres: p.modoInteres || 'fijo',
         esBalloon: proximaCuota?.esBalloon || false,
         cuotaNumero: proximaCuota?.numeroPeriodo ?? null,
+        ...extraInfo,
       })
 
       // Último pago más reciente (pagos ya vienen ordenados por fechaPago desc)
@@ -393,6 +408,8 @@ export async function GET(request, { params }) {
       cobroPendienteHoy: pendienteHoyCliente,
       prestamoActivo: prestamosActivos[0]?.id ?? null,
       prestamosActivos,
+      cuotaExtraHoy: prestamosActivos.some(p => p.cuotaExtraHoy),
+      montoCuotaExtra: prestamosActivos.reduce((s, p) => s + (p.montoCuotaExtra || 0), 0),
       frecuencia,
       diasParaCobro,
       proximoCobroLabel: proximoCobro ? formatFechaCobro(proximoCobro) : null,
