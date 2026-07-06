@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-export default function WizardCobrador({ onComplete }) {
+export default function WizardCobrador({ onComplete, onSkip }) {
   const [nombre, setNombre] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -273,6 +273,16 @@ export default function WizardCobrador({ onComplete }) {
             </svg>
           ) : 'Crear cobrador'}
         </button>
+
+        {onSkip && (
+          <button
+            type="button"
+            onClick={onSkip}
+            className="w-full text-[11px] text-center transition-colors cursor-pointer py-1"
+            style={{ color: 'var(--color-text-muted)' }}>
+            Omitir por ahora
+          </button>
+        )}
       </form>
     </div>
   )

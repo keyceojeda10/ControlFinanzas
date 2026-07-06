@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import WizardProgress  from './wizard/WizardProgress'
 import WizardWelcome   from './wizard/WizardWelcome'
 import WizardCapital   from './wizard/WizardCapital'
@@ -102,6 +102,11 @@ export default function OnboardingWizard({
     bounce(() => setStep(3))
   }, [flujo])
 
+  const handleCobradorSkip = useCallback(() => {
+    persistStep(3, flujo)
+    setStep(3)
+  }, [flujo])
+
   // Cliente done
   const handleClienteDone = useCallback((cliente) => {
     setClienteCreado(cliente)
@@ -110,12 +115,24 @@ export default function OnboardingWizard({
     bounce(() => setStep(steps.prestamo))
   }, [flujo, getStepNumbers])
 
+  const handleClienteSkip = useCallback(() => {
+    const steps = getStepNumbers()
+    persistStep(steps.features, flujo)
+    setStep(steps.features)
+  }, [flujo, getStepNumbers])
+
   // Prestamo done
   const handlePrestamoDone = useCallback((prestamo) => {
     setPrestamoCreado(prestamo)
     const steps = getStepNumbers()
     persistStep(steps.features, flujo)
     bounce(() => setStep(steps.features))
+  }, [flujo, getStepNumbers])
+
+  const handlePrestamoSkip = useCallback(() => {
+    const steps = getStepNumbers()
+    persistStep(steps.features, flujo)
+    setStep(steps.features)
   }, [flujo, getStepNumbers])
 
   // Features done
@@ -148,6 +165,13 @@ export default function OnboardingWizard({
 
   const steps = getStepNumbers()
   const progressInfo = getProgressInfo()
+
+  // Si llega al paso de préstamo sin cliente (omitió cliente), salta a features
+  useEffect(() => {
+    if (flujo && step === steps.prestamo && !clienteCreado) {
+      handlePrestamoSkip()
+    }
+  }, [step, flujo, steps.prestamo, clienteCreado, handlePrestamoSkip])
 
   if (showBounce) {
     return (
@@ -213,6 +237,7 @@ export default function OnboardingWizard({
       {step === 2 && flujo === 'equipo' && (
         <WizardCobrador
           onComplete={handleCobradorDone}
+          onSkip={handleCobradorSkip}
         />
       )}
 
@@ -220,6 +245,7 @@ export default function OnboardingWizard({
       {flujo && step === (flujo === 'equipo' ? 3 : 2) && (
         <WizardCliente
           onComplete={handleClienteDone}
+          onSkip={handleClienteSkip}
         />
       )}
 
@@ -228,6 +254,7 @@ export default function OnboardingWizard({
         <WizardPrestamo
           cliente={clienteCreado}
           onComplete={handlePrestamoDone}
+          onSkip={handlePrestamoSkip}
         />
       )}
 

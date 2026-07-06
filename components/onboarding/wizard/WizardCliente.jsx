@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Input } from '@/components/ui/Input'
 import { useCountry } from '@/hooks/useCountry'
 
-export default function WizardCliente({ onComplete }) {
+export default function WizardCliente({ onComplete, onSkip }) {
   const { validatePhone, validateDocument, documentConfig, phoneConfig } = useCountry()
   const [form, setForm] = useState({ nombre: '', cedula: '', telefono: '' })
   const [errores, setErrores] = useState({})
@@ -133,6 +133,16 @@ export default function WizardCliente({ onComplete }) {
             </svg>
           ) : 'Crear cliente'}
         </button>
+
+        {onSkip && (
+          <button
+            type="button"
+            onClick={onSkip}
+            className="w-full text-[11px] text-center transition-colors cursor-pointer py-1"
+            style={{ color: 'var(--color-text-muted)' }}>
+            Omitir por ahora
+          </button>
+        )}
       </form>
     </div>
   )

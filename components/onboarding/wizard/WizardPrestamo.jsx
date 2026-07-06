@@ -50,7 +50,7 @@ const METODOS = [
   },
 ]
 
-export default function WizardPrestamo({ cliente, onComplete }) {
+export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
   const { formatMoney } = useCountry()
   const [monto,        setMonto]        = useState('')
   const [tasa,         setTasa]         = useState('20')
@@ -293,6 +293,16 @@ export default function WizardPrestamo({ cliente, onComplete }) {
             </svg>
           ) : 'Crear préstamo'}
         </button>
+
+        {onSkip && (
+          <button
+            type="button"
+            onClick={onSkip}
+            className="w-full text-[11px] text-center transition-colors cursor-pointer py-1"
+            style={{ color: 'var(--color-text-muted)' }}>
+            Omitir por ahora
+          </button>
+        )}
       </form>
     </div>
   )
