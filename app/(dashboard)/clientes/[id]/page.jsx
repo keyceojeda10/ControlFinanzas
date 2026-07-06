@@ -23,7 +23,11 @@ import AiTipBanner from '@/components/ui/AiTipBanner'
 import { generarTipCliente } from '@/lib/tips/clienteTips'
 import ReagendarVisitaModal from '@/components/visitas/ReagendarVisitaModal'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import { Modal } from '@/components/ui/Modal'
 import QrClienteModal from '@/components/clientes/QrClienteModal'
+import dynamic from 'next/dynamic'
+
+const LocationPicker = dynamic(() => import('@/components/clientes/LocationPicker'), { ssr: false })
 
 const estadoBadge = {
   activo:    { variant: 'green',  label: 'Al día'    },
@@ -257,13 +261,14 @@ export default function ClienteDetallePage({ params }) {
   // en campo: el cobrador toca el chip al estar frente al cliente y queda
   // marcado en el mapa para futuros cobros geolocalizados.
   const [fijandoGPS, setFijandoGPS] = useState(false)
-  const handleFijarUbicacion = async () => {
+  const [ubicacionModal, setUbicacionModal] = useState({ lat: null, lng: null })
+  const handleFijarUbicacion = () => {
     if (fijandoGPS) return
-    const yaTiene = cliente?.latitud != null && cliente?.longitud != null
-    setConfirmGPS({ yaTiene })
+    setUbicacionModal({ lat: cliente?.latitud ?? null, lng: cliente?.longitud ?? null })
+    setConfirmGPS({ modo: 'elegir' })
   }
 
-  const _doFijarUbicacion = async () => {
+  const _doFijarGPS = async () => {
     setConfirmGPS(null)
     setFijandoGPS(true)
     try {
@@ -279,6 +284,25 @@ export default function ClienteDetallePage({ params }) {
       })
       if (!res.ok) { const d = await res.json().catch(() => ({})); alert(d.error || 'Error al guardar'); return }
       setCliente(prev => ({ ...prev, latitud: coords.latitud, longitud: coords.longitud }))
+    } catch {
+      alert('Error de conexión')
+    } finally {
+      setFijandoGPS(false)
+    }
+  }
+
+  const _doGuardarUbicacionMapa = async () => {
+    if (ubicacionModal.lat == null || ubicacionModal.lng == null) return
+    setConfirmGPS(null)
+    setFijandoGPS(true)
+    try {
+      const res = await fetch(`/api/clientes/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ latitud: ubicacionModal.lat, longitud: ubicacionModal.lng }),
+      })
+      if (!res.ok) { const d = await res.json().catch(() => ({})); alert(d.error || 'Error al guardar'); return }
+      setCliente(prev => ({ ...prev, latitud: ubicacionModal.lat, longitud: ubicacionModal.lng }))
     } catch {
       alert('Error de conexión')
     } finally {
@@ -811,17 +835,71 @@ export default function ClienteDetallePage({ params }) {
         cliente={cliente}
       />
 
-      <ConfirmModal
+      <Modal
         open={!!confirmGPS}
+        onClose={() => setConfirmGPS(null)}
         title="Fijar ubicación"
-        message={confirmGPS?.yaTiene
-          ? 'Vas a reemplazar la ubicación guardada del cliente por tu posición actual. ¿Continuar?'
-          : 'Vas a fijar la ubicación de este cliente con tu posición actual. Asegúrate de estar frente al cliente.'}
-        confirmLabel="Fijar ubicación"
-        confirmColor="blue"
-        onConfirm={_doFijarUbicacion}
-        onCancel={() => setConfirmGPS(null)}
-      />
+      >
+        {confirmGPS?.modo === 'elegir' && (
+          <div className="space-y-3">
+            <p className="text-sm text-[var(--color-text-secondary)]">Elige cómo fijar la ubicación del cliente:</p>
+            <button
+              onClick={_doFijarGPS}
+              className="w-full flex items-center gap-3 px-4 py-3.5 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] hover:border-[var(--color-accent)] transition-colors text-left"
+            >
+              <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, #14b8a6 12%, transparent)' }}>
+                <svg className="w-5 h-5 text-[#14b8a6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-[var(--color-text-primary)]">Mi ubicación actual</p>
+                <p className="text-xs text-[var(--color-text-muted)]">Usa el GPS de tu teléfono</p>
+              </div>
+            </button>
+            <button
+              onClick={() => setConfirmGPS({ modo: 'mapa' })}
+              className="w-full flex items-center gap-3 px-4 py-3.5 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] hover:border-[var(--color-accent)] transition-colors text-left"
+            >
+              <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)' }}>
+                <svg className="w-5 h-5 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-[var(--color-text-primary)]">Seleccionar en el mapa</p>
+                <p className="text-xs text-[var(--color-text-muted)]">Toca el mapa para poner el pin</p>
+              </div>
+            </button>
+          </div>
+        )}
+        {confirmGPS?.modo === 'mapa' && (
+          <div className="space-y-3">
+            <button
+              onClick={() => setConfirmGPS({ modo: 'elegir' })}
+              className="flex items-center gap-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Volver
+            </button>
+            <LocationPicker
+              latitud={ubicacionModal.lat}
+              longitud={ubicacionModal.lng}
+              onLocationChange={(lat, lng) => setUbicacionModal({ lat, lng })}
+            />
+            <Button
+              onClick={_doGuardarUbicacionMapa}
+              disabled={ubicacionModal.lat == null}
+              className="w-full"
+            >
+              Guardar ubicación
+            </Button>
+          </div>
+        )}
+      </Modal>
 
       <ConfirmModal
         open={!!confirmDeletePrestamo}
