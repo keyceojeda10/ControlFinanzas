@@ -1471,7 +1471,8 @@ export default function RutaDetallePage({ params }) {
           : 0
         return (
           <>
-            {/* Cartera total */}
+            {/* Cartera total — solo owner */}
+            {esOwner && (
             <div
               className="cf-hero-card rounded-[16px] px-4 py-3"
               style={{
@@ -1503,6 +1504,7 @@ export default function RutaDetallePage({ params }) {
                 />
               </div>
             </div>
+            )}
 
             {/* Capital de la ruta — sub-bolsa individual (solo owner) */}
             {esOwner && ruta.capitalHabilitado && (
