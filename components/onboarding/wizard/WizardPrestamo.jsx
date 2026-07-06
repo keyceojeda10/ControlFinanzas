@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import MoneyInput from '@/components/ui/MoneyInput'
 import { Input } from '@/components/ui/Input'
 import { calcularPrestamo } from '@/lib/calculos'
 import ResumenCalculo from '@/components/prestamos/ResumenCalculo'
@@ -48,6 +49,30 @@ const METODOS = [
     color: '#22c55e',
     bg: 'rgba(34,197,94,0.1)',
   },
+  {
+    value: 'solo_interes',
+    label: 'Solo interés (globo)',
+    desc: 'El cliente paga solo intereses en cada cuota y devuelve todo el capital al final.',
+    ejemplo: 'Prestas $500k al 20% mensual → cuotas de $100k de interés, al final paga los $500k.',
+    color: '#a855f7',
+    bg: 'rgba(168,85,247,0.1)',
+  },
+  {
+    value: 'lineal',
+    label: 'Cuota decreciente (lineal)',
+    desc: 'Capital fijo en cada cuota más interés sobre el saldo. La cuota baja período a período.',
+    ejemplo: 'Similar a créditos de vehículo. Las primeras cuotas son las más altas.',
+    color: '#f97316',
+    bg: 'rgba(249,115,22,0.1)',
+  },
+  {
+    value: 'manual',
+    label: 'Cuota manual (personalizada)',
+    desc: 'Tú fijas el valor de la cuota. El sistema calcula el total automáticamente.',
+    ejemplo: 'Útil cuando negociaste una cuota específica con el cliente.',
+    color: '#ec4899',
+    bg: 'rgba(236,72,153,0.1)',
+  },
 ]
 
 export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
@@ -57,6 +82,7 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
   const [plazoUnidades,setPlazoUnidades]= useState('30')
   const [frecuencia,   setFrecuencia]   = useState('diario')
   const [metodo,       setMetodo]       = useState('fijo')
+  const [cuotaManual,  setCuotaManual]  = useState('')
   const [loading,      setLoading]      = useState(false)
   const [error,        setError]        = useState('')
   const [showMetodos,  setShowMetodos]  = useState(false)
@@ -74,31 +100,44 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
     const t = Number(tasa)
     const p = Number(plazo)
     if (!m || tasa === '' || !p) return null
+    if (metodo === 'manual' && !Number(cuotaManual)) return null
     try {
-      return calcularPrestamo({ montoPrestado: m, tasaInteres: t, diasPlazo: p, fechaInicio, frecuencia, modoInteres: metodo })
+      return calcularPrestamo({
+        montoPrestado: m,
+        tasaInteres: t,
+        diasPlazo: p,
+        fechaInicio,
+        frecuencia,
+        modoInteres: metodo,
+        cuotaManual: metodo === 'manual' ? Number(cuotaManual) : undefined,
+      })
     } catch { return null }
-  }, [monto, tasa, plazo, fechaInicio, frecuencia, metodo])
+  }, [monto, tasa, plazo, fechaInicio, frecuencia, metodo, cuotaManual])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!monto || Number(monto) <= 0) { setError('Ingresa el monto del préstamo'); return }
+    if (metodo === 'manual' && (!cuotaManual || Number(cuotaManual) <= 0)) { setError('Ingresa el valor de la cuota'); return }
     if (!calculo) { setError('Verifica los datos del préstamo'); return }
 
     setLoading(true)
     setError('')
     try {
+      const body = {
+        clienteId: cliente.id,
+        montoPrestado: Number(monto),
+        tasaInteres: Number(tasa),
+        diasPlazo: Number(plazo),
+        fechaInicio,
+        frecuencia,
+        modoInteres: metodo,
+      }
+      if (metodo === 'manual') body.cuotaManual = Number(cuotaManual)
+
       const res = await fetch('/api/prestamos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          clienteId: cliente.id,
-          montoPrestado: Number(monto),
-          tasaInteres: Number(tasa),
-          diasPlazo: Number(plazo),
-          fechaInicio,
-          frecuencia,
-          modoInteres: metodo,
-        }),
+        body: JSON.stringify(body),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Error al crear el préstamo'); return }
@@ -145,55 +184,83 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
         <div className="rounded-[16px] p-5 space-y-4"
           style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
 
-          <Input
+          <MoneyInput
             label="Monto a prestar"
-            type="number"
-            inputMode="numeric"
-            placeholder="Ej: 500000"
             value={monto}
             onChange={(e) => { setMonto(e.target.value); setError('') }}
-            prefix="$"
           />
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Input
-                label="Tasa de interés (%)"
-                type="number"
-                inputMode="decimal"
-                step="0.5"
-                min="0"
-                placeholder="20"
-                value={tasa}
-                onChange={(e) => setTasa(e.target.value)}
-                suffix="%"
-              />
-              <p className="text-[10px] mt-1 px-0.5" style={{ color: 'var(--color-text-muted)' }}>20% mensual es lo más común</p>
+          {metodo !== 'manual' && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Input
+                  label="Tasa de interés (%)"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.5"
+                  min="0"
+                  placeholder="20"
+                  value={tasa}
+                  onChange={(e) => setTasa(e.target.value)}
+                  suffix="%"
+                />
+                <p className="text-[10px] mt-1 px-0.5" style={{ color: 'var(--color-text-muted)' }}>20% mensual es lo más común</p>
+              </div>
+              <div>
+                <Input
+                  label={
+                    frecuencia === 'diario'    ? 'Plazo (días)' :
+                    frecuencia === 'semanal'   ? 'Plazo (semanas)' :
+                    frecuencia === 'quincenal' ? 'Plazo (quincenas)' :
+                    'Plazo (meses)'
+                  }
+                  type="number"
+                  inputMode="numeric"
+                  placeholder={DEFAULT_PLAZO[frecuencia]}
+                  value={plazoUnidades}
+                  onChange={(e) => setPlazoUnidades(e.target.value)}
+                  suffix={
+                    frecuencia === 'diario' ? 'días' :
+                    frecuencia === 'semanal' ? 'sem.' :
+                    frecuencia === 'quincenal' ? 'quinc.' : 'meses'
+                  }
+                />
+                {frecuencia !== 'diario' && plazoUnidades && (
+                  <p className="text-[10px] mt-1 px-0.5" style={{ color: 'var(--color-text-muted)' }}>= {plazo} días</p>
+                )}
+              </div>
             </div>
-            <div>
-              <Input
-                label={
-                  frecuencia === 'diario'    ? 'Plazo (días)' :
-                  frecuencia === 'semanal'   ? 'Plazo (semanas)' :
-                  frecuencia === 'quincenal' ? 'Plazo (quincenas)' :
-                  'Plazo (meses)'
-                }
-                type="number"
-                inputMode="numeric"
-                placeholder={DEFAULT_PLAZO[frecuencia]}
-                value={plazoUnidades}
-                onChange={(e) => setPlazoUnidades(e.target.value)}
-                suffix={
-                  frecuencia === 'diario' ? 'días' :
-                  frecuencia === 'semanal' ? 'sem.' :
-                  frecuencia === 'quincenal' ? 'quinc.' : 'meses'
-                }
+          )}
+
+          {metodo === 'manual' && (
+            <>
+              <MoneyInput
+                label="Valor de la cuota"
+                value={cuotaManual}
+                onChange={(e) => setCuotaManual(e.target.value)}
               />
-              {frecuencia !== 'diario' && plazoUnidades && (
-                <p className="text-[10px] mt-1 px-0.5" style={{ color: 'var(--color-text-muted)' }}>= {plazo} días</p>
-              )}
-            </div>
-          </div>
+              <div className="grid grid-cols-1 gap-3">
+                <Input
+                  label={
+                    frecuencia === 'diario'    ? 'Plazo (días)' :
+                    frecuencia === 'semanal'   ? 'Plazo (semanas)' :
+                    frecuencia === 'quincenal' ? 'Plazo (quincenas)' :
+                    'Plazo (meses)'
+                  }
+                  type="number"
+                  inputMode="numeric"
+                  placeholder={DEFAULT_PLAZO[frecuencia]}
+                  value={plazoUnidades}
+                  onChange={(e) => setPlazoUnidades(e.target.value)}
+                  suffix={
+                    frecuencia === 'diario' ? 'días' :
+                    frecuencia === 'semanal' ? 'sem.' :
+                    frecuencia === 'quincenal' ? 'quinc.' : 'meses'
+                  }
+                />
+              </div>
+            </>
+          )}
 
           <div>
             <p className="text-[11px] font-medium uppercase tracking-[0.05em] mb-1.5" style={{ color: 'var(--color-text-muted)' }}>¿Cada cuánto cobras?</p>
@@ -276,7 +343,10 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <p className="text-[10px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-              Ingresa el monto para ver el resumen del préstamo en tiempo real.
+              {metodo === 'manual'
+                ? 'Ingresa el monto y la cuota para ver el resumen.'
+                : 'Ingresa el monto para ver el resumen del préstamo en tiempo real.'
+              }
             </p>
           </div>
         )}

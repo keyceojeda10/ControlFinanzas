@@ -7,6 +7,7 @@ import { useCountry } from '@/hooks/useCountry'
 export default function WizardCliente({ onComplete, onSkip }) {
   const { validatePhone, validateDocument, documentConfig, phoneConfig } = useCountry()
   const [form, setForm] = useState({ nombre: '', cedula: '', telefono: '' })
+  const [sinCedula, setSinCedula] = useState(false)
   const [errores, setErrores] = useState({})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -20,11 +21,12 @@ export default function WizardCliente({ onComplete, onSkip }) {
   const validar = () => {
     const errs = {}
     if (!form.nombre.trim()) errs.nombre = 'El nombre es requerido'
-    if (!form.cedula.trim()) errs.cedula = `${documentConfig.label} es requerido`
-    else if (!validateDocument(form.cedula.trim()))
-      errs.cedula = `${documentConfig.label} no válido (ej: ${documentConfig.placeholder})`
-    if (!form.telefono.trim()) errs.telefono = `El ${phoneConfig.label.toLowerCase()} es requerido`
-    else if (!validatePhone(form.telefono.replace(/\s/g, '')))
+    if (!sinCedula) {
+      if (!form.cedula.trim()) errs.cedula = `${documentConfig.label} es requerido`
+      else if (!validateDocument(form.cedula.trim()))
+        errs.cedula = `${documentConfig.label} no válido (ej: ${documentConfig.placeholder})`
+    }
+    if (form.telefono.trim() && !validatePhone(form.telefono.replace(/\s/g, '')))
       errs.telefono = `Ingresa un ${phoneConfig.label.toLowerCase()} válido (ej: ${phoneConfig.placeholder})`
     return errs
   }
@@ -34,6 +36,10 @@ export default function WizardCliente({ onComplete, onSkip }) {
     const errs = validar()
     if (Object.keys(errs).length) { setErrores(errs); return }
 
+    const cedulaFinal = sinCedula
+      ? `SIN-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
+      : form.cedula.trim()
+
     setLoading(true)
     setError('')
     try {
@@ -42,8 +48,8 @@ export default function WizardCliente({ onComplete, onSkip }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nombre: form.nombre.trim(),
-          cedula: form.cedula.trim(),
-          telefono: form.telefono.trim(),
+          cedula: cedulaFinal,
+          telefono: form.telefono.trim() || undefined,
         }),
       })
       const data = await res.json()
@@ -51,7 +57,7 @@ export default function WizardCliente({ onComplete, onSkip }) {
       onComplete({
         id: data.id,
         nombre: form.nombre.trim(),
-        cedula: form.cedula.trim(),
+        cedula: cedulaFinal,
         telefono: form.telefono.trim(),
       })
     } catch {
@@ -103,14 +109,36 @@ export default function WizardCliente({ onComplete, onSkip }) {
             error={errores.nombre}
             autoComplete="off"
           />
-          <Input
-            label={documentConfig.label}
-            placeholder={`Ej: ${documentConfig.placeholder}`}
-            value={form.cedula}
-            onChange={set('cedula')}
-            error={errores.cedula}
-            inputMode="numeric"
-          />
+
+          {!sinCedula && (
+            <Input
+              label={documentConfig.label}
+              placeholder={`Ej: ${documentConfig.placeholder}`}
+              value={form.cedula}
+              onChange={set('cedula')}
+              error={errores.cedula}
+              inputMode="numeric"
+            />
+          )}
+
+          <label className="flex items-center gap-2 cursor-pointer select-none -mt-1">
+            <input
+              type="checkbox"
+              checked={sinCedula}
+              onChange={(e) => {
+                setSinCedula(e.target.checked)
+                if (e.target.checked) {
+                  setForm(prev => ({ ...prev, cedula: '' }))
+                  setErrores(prev => ({ ...prev, cedula: '' }))
+                }
+              }}
+              className="accent-[#f5c518] w-3.5 h-3.5 cursor-pointer"
+            />
+            <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+              No tengo la {documentConfig.label.toLowerCase()}
+            </span>
+          </label>
+
           <Input
             label={phoneConfig.label}
             placeholder={`Ej: ${phoneConfig.placeholder}`}
@@ -119,6 +147,9 @@ export default function WizardCliente({ onComplete, onSkip }) {
             error={errores.telefono}
             inputMode="tel"
           />
+          <p className="text-[10px] -mt-2 px-0.5" style={{ color: 'var(--color-text-muted)' }}>
+            Opcional. Puedes agregarlo después.
+          </p>
         </div>
 
         <button
