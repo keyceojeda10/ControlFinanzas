@@ -39,7 +39,7 @@ export default function WizardWelcome({ nombre, plan = 'basic', onSelect, onMini
       }
       onSelect('equipo', nuevoPlan)
     } catch {
-      setError('Error de conexion. Intenta de nuevo.')
+      setError('Error de conexión. Intenta de nuevo.')
     } finally {
       setUpgrading(false)
     }
@@ -61,7 +61,7 @@ export default function WizardWelcome({ nombre, plan = 'basic', onSelect, onMini
             Tu plan actual no incluye cobradores
           </h2>
           <p className="text-[13px] max-w-[300px] mx-auto leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-            Estas en el plan <strong style={{ color: 'var(--color-text-primary)' }}>{config?.nombre ?? plan}</strong> que
+            Estás en el plan <strong style={{ color: 'var(--color-text-primary)' }}>{config?.nombre ?? plan}</strong> que
             es para uso individual. Para trabajar con cobradores necesitas un plan de equipo.
           </p>
         </div>
@@ -82,7 +82,7 @@ export default function WizardWelcome({ nombre, plan = 'basic', onSelect, onMini
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-            Estas en periodo de prueba. El cambio de plan es inmediato y no se cobra hasta que termine tu trial.
+            Estás en período de prueba. El cambio de plan es inmediato y no se cobra hasta que termine tu trial.
           </p>
         </div>
 
@@ -150,7 +150,7 @@ export default function WizardWelcome({ nombre, plan = 'basic', onSelect, onMini
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-widest mb-5"
           style={{ background: 'rgba(245,197,24,0.1)', color: '#f5c518', border: '1px solid rgba(245,197,24,0.18)' }}>
           <span className="w-1.5 h-1.5 rounded-full bg-[#f5c518] animate-pulse inline-block" />
-          Tu periodo de prueba esta activo
+          Tu período de prueba está activo
         </div>
 
         <h1 className="text-[28px] font-bold leading-[1.15] mb-3"
@@ -170,7 +170,7 @@ export default function WizardWelcome({ nombre, plan = 'basic', onSelect, onMini
       <div className="flex-1 flex flex-col justify-start gap-3 pb-2">
 
         <p className="text-[13px] font-bold text-center mb-1" style={{ color: 'var(--color-text-secondary)' }}>
-          ¿Como trabajas?
+          ¿Cómo trabajas?
         </p>
 
         {/* Solo */}
@@ -220,7 +220,7 @@ export default function WizardWelcome({ nombre, plan = 'basic', onSelect, onMini
                 Tengo cobradores
               </p>
               <p className="text-[12px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-                Tengo personas que cobran por mi. Necesito crear sus cuentas y asignarles rutas.
+                Tengo personas que cobran por mí. Necesito crear sus cuentas y asignarles rutas.
               </p>
             </div>
             <svg className="w-5 h-5 shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke="#8b5cf6" viewBox="0 0 24 24">
@@ -236,7 +236,7 @@ export default function WizardWelcome({ nombre, plan = 'basic', onSelect, onMini
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-            Todo lo que crees aqui puedes editarlo o borrarlo despues.
+            Todo lo que crees aquí puedes editarlo o borrarlo después.
           </p>
         </div>
 

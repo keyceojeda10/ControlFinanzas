@@ -134,14 +134,15 @@ export default function OnboardingWizard({
   // Back navigation
   const handleBack = useCallback(() => {
     if (step <= 0) return
+    if (step === 1) {
+      setStep(0)
+      setFlujo(null)
+      persistStep(0, null)
+      return
+    }
     const steps = getStepNumbers()
-
-    // From cobrador (equipo step 2) go back to capital (1)
-    // From cliente go back to cobrador (equipo) or capital (solo)
-    // From prestamo go back to cliente
-    // From features go back to prestamo
     let prev = step - 1
-    if (flujo === 'solo' && step === steps.cliente) prev = 1 // back to capital
+    if (flujo === 'solo' && step === steps.cliente) prev = 1
     setStep(prev)
   }, [step, flujo, getStepNumbers])
 
@@ -171,7 +172,7 @@ export default function OnboardingWizard({
   }
 
   // Back button component
-  const BackButton = step > 1 && step < (steps?.exito ?? 99) ? (
+  const BackButton = step >= 1 && step < (steps?.exito ?? 99) ? (
     <button
       onClick={handleBack}
       className="flex items-center gap-1 text-[12px] mb-4 transition-colors cursor-pointer"

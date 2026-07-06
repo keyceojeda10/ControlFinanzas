@@ -53,7 +53,7 @@ export default function WizardCobrador({ onComplete }) {
       setStep('ruta')
       setError('')
     } catch {
-      setError('Error de conexion. Intenta de nuevo.')
+      setError('Error de conexión. Intenta de nuevo.')
     } finally {
       setLoading(false)
     }
@@ -84,7 +84,7 @@ export default function WizardCobrador({ onComplete }) {
         ruta: data,
       })
     } catch {
-      setError('Error de conexion. Intenta de nuevo.')
+      setError('Error de conexión. Intenta de nuevo.')
     } finally {
       setLoading(false)
     }
@@ -105,7 +105,7 @@ export default function WizardCobrador({ onComplete }) {
             Crea una ruta para {cobradorCreado?.nombre ?? nombre}
           </h2>
           <p className="text-[13px] max-w-[300px] mx-auto leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-            La ruta agrupa los clientes que este cobrador va a visitar. Despues puedes agregar clientes a esta ruta.
+            La ruta agrupa los clientes que este cobrador va a visitar. Después puedes agregar clientes a esta ruta.
           </p>
         </div>
 
@@ -149,7 +149,7 @@ export default function WizardCobrador({ onComplete }) {
               }}
             />
             <p className="text-[11px] mt-2" style={{ color: 'var(--color-text-muted)' }}>
-              Ponle un nombre que identifique la zona. Despues puedes agregar mas rutas.
+              Ponle un nombre que identifique la zona. Después puedes agregar más rutas.
             </p>
           </div>
 
@@ -184,7 +184,7 @@ export default function WizardCobrador({ onComplete }) {
           Crea tu primer cobrador
         </h2>
         <p className="text-[13px] max-w-[300px] mx-auto leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-          El cobrador cobra desde su celular con su propia cuenta. Tu ves todo en tiempo real.
+          El cobrador cobra desde su celular con su propia cuenta. Tú ves todo en tiempo real.
         </p>
       </div>
 
@@ -247,7 +247,7 @@ export default function WizardCobrador({ onComplete }) {
               type="text"
               value={password}
               onChange={(e) => { setPassword(e.target.value); setError('') }}
-              placeholder="Minimo 6 caracteres"
+              placeholder="Mínimo 6 caracteres"
               className="w-full h-11 rounded-[10px] px-4 text-[14px] transition-all outline-none"
               style={{
                 background: 'var(--color-bg-surface)',

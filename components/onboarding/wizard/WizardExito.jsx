@@ -18,7 +18,7 @@ function getNextSteps(flujo) {
       color: '#22c55e',
       bg: 'rgba(34,197,94,0.1)',
       titulo: 'Registra el primer cobro',
-      desc: 'Abre el prestamo y toca "Registrar pago". Funciona sin internet.',
+      desc: 'Abre el préstamo y toca "Registrar pago". Funciona sin internet.',
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -32,7 +32,7 @@ function getNextSteps(flujo) {
       href: '/cobradores/nuevo',
       color: '#a78bfa',
       bg: 'rgba(167,139,250,0.1)',
-      titulo: 'Agrega mas cobradores',
+      titulo: 'Agrega más cobradores',
       desc: 'Dale acceso a todo tu equipo desde su propio celular.',
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -92,10 +92,10 @@ export default function WizardExito({ cliente, prestamo, flujo, onFinish }) {
         </div>
 
         <h1 className="text-[22px] font-bold mb-2 leading-tight" style={{ color: 'var(--color-text-primary)' }}>
-          ¡Tu primer prestamo esta listo!
+          ¡Tu primer préstamo está listo!
         </h1>
         <p className="text-[13px] mb-6 max-w-[260px] mx-auto leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-          Tu cartera esta activa. Estos son los proximos pasos para sacarle el maximo provecho.
+          Tu cartera está activa. Estos son los próximos pasos para sacarle el máximo provecho.
         </p>
 
         {/* KPI preview */}
@@ -146,7 +146,7 @@ export default function WizardExito({ cliente, prestamo, flujo, onFinish }) {
           Ir al dashboard
         </button>
         <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
-          Estas opciones tambien estan en el menu lateral
+          Estas opciones también están en el menú lateral
         </p>
       </div>
     </>

@@ -43,7 +43,7 @@ export default function WizardCapital({ onComplete }) {
       }
       onComplete({ monto: montoNum })
     } catch {
-      setError('Error de conexion. Intenta de nuevo.')
+      setError('Error de conexión. Intenta de nuevo.')
     } finally {
       setLoading(false)
     }
@@ -64,10 +64,10 @@ export default function WizardCapital({ onComplete }) {
           </svg>
         </div>
         <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--color-text-primary)' }}>
-          ¿Con cuanto dinero arrancas?
+          ¿Con cuánto dinero arrancas?
         </h2>
         <p className="text-[13px] max-w-[300px] mx-auto leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-          Registra el dinero que tienes disponible para prestar. Asi la caja siempre te va a cuadrar.
+          Registra el dinero que tienes disponible para prestar. Así la caja siempre te va a cuadrar.
         </p>
       </div>
 
@@ -119,7 +119,7 @@ export default function WizardCapital({ onComplete }) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" />
           </svg>
           <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-            Si no registras el capital, cada prestamo que crees se va a restar de $0 y la caja te va a salir en negativo.
+            Si no registras el capital, cada préstamo que crees se va a restar de $0 y la caja te va a salir en negativo.
           </p>
         </div>
 

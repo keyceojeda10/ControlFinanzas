@@ -13,7 +13,7 @@ const LS_KEY = 'cf_cobrador_onboarding_dismissed'
 const PASOS = [
   {
     titulo: 'Abre tu ruta asignada',
-    descripcion: 'En el menu "Rutas" encuentras tu ruta con los clientes ordenados para cobrar.',
+    descripcion: 'En el menú "Rutas" encuentras tu ruta con los clientes ordenados para cobrar.',
     href: '/rutas',
     icono: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -43,7 +43,7 @@ const PASOS = [
   },
   {
     titulo: 'Instala la app en tu celular',
-    descripcion: 'Accede mas rápido y cobra sin internet aunque no tengas señal.',
+    descripcion: 'Accede más rápido y cobra sin internet aunque no tengas señal.',
     isInstall: true,
     icono: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
