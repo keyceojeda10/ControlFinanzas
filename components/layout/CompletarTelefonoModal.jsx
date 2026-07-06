@@ -99,12 +99,12 @@ export default function CompletarTelefonoModal() {
         </div>
 
         <h2 className="text-lg font-bold text-center mb-1.5"
-          style={{ color: 'var(--color-text-primary)' }}
+          style={{ color: '#f0f0f0' }}
         >
           Agrega tu número de celular
         </h2>
         <p className="text-sm text-center mb-5"
-          style={{ color: 'var(--color-text-secondary)' }}
+          style={{ color: 'rgba(255,255,255,0.65)' }}
         >
           Solo lo usamos para contactarte por <strong style={{ color: '#22c55e' }}>WhatsApp</strong> con avisos de pago, soporte rápido y novedades importantes de tu cuenta.
         </p>
@@ -127,7 +127,7 @@ export default function CompletarTelefonoModal() {
 
           <div className="relative" style={{ position: 'relative', zIndex: 1 }}>
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none font-medium"
-              style={{ color: 'var(--color-text-secondary)', zIndex: 2 }}
+              style={{ color: 'rgba(255,255,255,0.6)', zIndex: 2 }}
             >
               +57
             </span>
@@ -144,7 +144,7 @@ export default function CompletarTelefonoModal() {
                 paddingLeft: '46px',
                 background: 'rgba(255,255,255,0.05)',
                 border: '1px solid rgba(255,255,255,0.15)',
-                color: 'var(--color-text-primary)',
+                color: '#f0f0f0',
                 outline: 'none',
                 position: 'relative',
                 zIndex: 1,
@@ -186,7 +186,7 @@ export default function CompletarTelefonoModal() {
             type="button"
             onClick={handleSkip}
             className="w-full h-9 text-xs hover:underline transition-colors"
-            style={{ color: 'var(--color-text-secondary)' }}
+            style={{ color: 'rgba(255,255,255,0.45)' }}
           >
             Recordar mas tarde
           </button>
