@@ -161,10 +161,13 @@ export default function OnboardingWizard({
     const steps = getStepNumbers()
     let prev = step - 1
     if (flujo === 'solo' && step === steps.cliente) prev = 1
-    // From exito, go back to features
     if (step === steps.exito) prev = steps.features
+    // Si vuelve a features y no hay cliente, saltar prestamo directo a cliente
+    if (step === steps.features && !clienteCreado) prev = steps.cliente
+    // Si vuelve a prestamo y no hay cliente, ir a cliente
+    if (step === steps.prestamo && !clienteCreado) prev = steps.cliente
     setStep(prev)
-  }, [step, flujo, getStepNumbers])
+  }, [step, flujo, getStepNumbers, clienteCreado])
 
   const steps = getStepNumbers()
   const progressInfo = getProgressInfo()
