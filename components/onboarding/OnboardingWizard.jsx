@@ -161,6 +161,8 @@ export default function OnboardingWizard({
     const steps = getStepNumbers()
     let prev = step - 1
     if (flujo === 'solo' && step === steps.cliente) prev = 1
+    // From exito, go back to features
+    if (step === steps.exito) prev = steps.features
     setStep(prev)
   }, [step, flujo, getStepNumbers])
 
@@ -196,8 +198,8 @@ export default function OnboardingWizard({
     )
   }
 
-  // Back button component
-  const BackButton = step >= 1 && step < (steps?.exito ?? 99) ? (
+  // Back button component (visible on all steps except welcome)
+  const BackButton = step >= 1 ? (
     <button
       onClick={handleBack}
       className="flex items-center gap-1 text-[12px] mb-4 transition-colors cursor-pointer"
