@@ -869,10 +869,10 @@ function NuevoPrestamo() {
             <div className="space-y-6">
               <div>
                 <h2 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>
-                  {modo === 'mercancia' ? 'Cuanto vale el articulo?' : 'Cuanto le prestas?'}
+                  {modo === 'mercancia' ? '¿Cuánto vale el artículo?' : 'Cuanto le prestas?'}
                 </h2>
                 <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>
-                  {modo === 'mercancia' ? 'El valor real de la mercancia.' : 'El dinero que le entregas al cliente.'}
+                  {modo === 'mercancia' ? 'El valor real de la mercancía.' : 'El dinero que le entregas al cliente.'}
                 </p>
               </div>
 
@@ -883,13 +883,13 @@ function NuevoPrestamo() {
                   style={modo === 'prestamo'
                     ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }
                     : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}
-                >Prestamo</button>
+                >Préstamo</button>
                 <button type="button" onClick={() => handleModoChange('mercancia')}
                   className="h-11 rounded-xl border text-sm font-semibold transition-all"
                   style={modo === 'mercancia'
                     ? { background: 'color-mix(in srgb, var(--color-info) 12%, transparent)', borderColor: 'var(--color-info)', color: 'var(--color-info)' }
                     : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}
-                >Mercancia</button>
+                >Mercancía</button>
               </div>
 
               {modo === 'mercancia' && (
@@ -905,7 +905,7 @@ function NuevoPrestamo() {
 
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                  {modo === 'mercancia' ? 'Valor del articulo' : 'Monto del prestamo'}
+                  {modo === 'mercancia' ? 'Valor del artículo' : 'Monto del préstamo'}
                 </label>
                 <div className="mt-1.5">
                   <MoneyInput value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="0" />
@@ -930,13 +930,13 @@ function NuevoPrestamo() {
               {modo === 'mercancia' && (
                 <>
                   <div>
-                    <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Numero de cuotas</label>
+                    <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Número de cuotas</label>
                     <Input type="number" inputMode="numeric" value={numCuotas} onChange={(e) => setNumCuotas(e.target.value)} placeholder="10" suffix="cuotas" />
                   </div>
                   <div>
                     <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Precio de venta</label>
                     <div className="mt-1.5"><MoneyInput value={precioVenta} onChange={(e) => setPrecioVenta(e.target.value)} placeholder="Ej: 120.000" /></div>
-                    <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>Tu ganancia = precio de venta - valor del articulo.</p>
+                    <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>Tu ganancia = precio de venta - valor del artículo.</p>
                     {Number(precioVenta) > 0 && Number(numCuotas) > 0 && Number(monto) > 0 && (
                       <div className="mt-2 rounded-xl border px-3 py-2 flex items-center justify-between gap-3"
                         style={{ background: 'color-mix(in srgb, var(--color-success) 8%, transparent)', borderColor: 'color-mix(in srgb, var(--color-success) 30%, transparent)' }}>
@@ -954,7 +954,7 @@ function NuevoPrestamo() {
                       </div>
                     )}
                     {Number(precioVenta) > 0 && Number(precioVenta) <= Number(monto) && (
-                      <p className="text-[10px] mt-1.5 font-semibold" style={{ color: 'var(--color-danger)' }}>El precio de venta debe ser mayor al valor del articulo.</p>
+                      <p className="text-[10px] mt-1.5 font-semibold" style={{ color: 'var(--color-danger)' }}>El precio de venta debe ser mayor al valor del artículo.</p>
                     )}
                   </div>
                 </>
@@ -973,7 +973,7 @@ function NuevoPrestamo() {
               <div className="space-y-2">
                 {FRECUENCIAS.map(f => {
                   const activo = frecuencia === f.key
-                  const descs = { diario: 'Cobra todos los dias habiles', semanal: 'Cobra una vez por semana', quincenal: 'Cobra cada dos semanas', mensual: 'Cobra una vez al mes' }
+                  const descs = { diario: 'Cobra todos los días hábiles', semanal: 'Cobra una vez por semana', quincenal: 'Cobra cada dos semanas', mensual: 'Cobra una vez al mes' }
                   return (
                     <button key={f.key} type="button" onClick={() => handleFrecuenciaChange(f.key)}
                       className="w-full text-left rounded-xl p-4 transition-all"
@@ -1087,12 +1087,12 @@ function NuevoPrestamo() {
           {subPaso === 2 && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Cuanto de interes?</h2>
+                <h2 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>¿Cuánto de interés?</h2>
                 <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>Define la tasa y en cuanto tiempo paga.</p>
               </div>
 
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Interes mensual</label>
+                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Interés mensual</label>
                 <Input type="number" inputMode="decimal" step="0.5" min="0" value={tasa} onChange={(e) => setTasa(e.target.value)} placeholder="20" suffix="%" />
                 <div className="flex gap-1.5 mt-2 flex-wrap">
                   {[5, 10, 15, 20, 25, 30].map(v => (
@@ -1107,14 +1107,14 @@ function NuevoPrestamo() {
                 </div>
                 {Number(monto) > 0 && Number(tasa) > 0 && (
                   <p className="text-[11px] mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
-                    Al {tasa}% sobre {formatMoney(Number(monto))} = {formatMoney(Math.round(Number(monto) * Number(tasa) / 100))} de interes por mes
+                    Al {tasa}% sobre {formatMoney(Number(monto))} = {formatMoney(Math.round(Number(monto) * Number(tasa) / 100))} de interés por mes
                   </p>
                 )}
               </div>
 
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                  En cuanto tiempo paga? ({frecuencia === 'diario' ? 'dias' : frecuencia === 'semanal' ? 'semanas' : frecuencia === 'quincenal' ? 'quincenas' : 'meses'})
+                  ¿En cuánto tiempo paga? ({frecuencia === 'diario' ? 'días' : frecuencia === 'semanal' ? 'semanas' : frecuencia === 'quincenal' ? 'quincenas' : 'meses'})
                 </label>
                 <Input type="number" inputMode="numeric" value={plazoUnidades} onChange={(e) => setPlazoUnidades(e.target.value)} />
                 <div className="flex gap-1.5 mt-2 flex-wrap">
@@ -1133,7 +1133,7 @@ function NuevoPrestamo() {
                   ))}
                 </div>
                 {frecuencia !== 'diario' && plazoUnidades && (
-                  <p className="text-[10px] mt-1 px-0.5" style={{ color: 'var(--color-text-muted)' }}>= {plazo} dias</p>
+                  <p className="text-[10px] mt-1 px-0.5" style={{ color: 'var(--color-text-muted)' }}>= {plazo} días</p>
                 )}
               </div>
 
@@ -1141,10 +1141,10 @@ function NuevoPrestamo() {
               {Number(monto) > 0 && Number(tasa) > 0 && Number(plazoUnidades) > 0 && (
                 <div className="rounded-xl px-3 py-2.5" style={{ background: 'color-mix(in srgb, var(--color-accent) 6%, transparent)', border: '1px solid color-mix(in srgb, var(--color-accent) 15%, transparent)' }}>
                   <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
-                    {formatMoney(Number(monto))} al {tasa}% por {plazoUnidades} {frecuencia === 'diario' ? 'dias' : frecuencia === 'semanal' ? 'semanas' : frecuencia === 'quincenal' ? 'quincenas' : 'meses'}
+                    {formatMoney(Number(monto))} al {tasa}% por {plazoUnidades} {frecuencia === 'diario' ? 'días' : frecuencia === 'semanal' ? 'semanas' : frecuencia === 'quincenal' ? 'quincenas' : 'meses'}
                   </p>
                   <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-                    La cuota exacta depende del modo de interes que elijas en el siguiente paso.
+                    La cuota exacta depende del modo de interés que elijas en el siguiente paso.
                   </p>
                 </div>
               )}
@@ -1155,8 +1155,8 @@ function NuevoPrestamo() {
           {subPaso === 3 && modo === 'prestamo' && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Como cobra el interes?</h2>
-                <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>La mayoria usa el clasico. Si no estas seguro, dejalo asi.</p>
+                <h2 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>¿Cómo cobra el interés?</h2>
+                <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>La mayoria usa el clásico. Si no estas seguro, dejalo asi.</p>
               </div>
 
               <ModoInteresSelector
@@ -1180,7 +1180,7 @@ function NuevoPrestamo() {
                   <div className="mt-1.5">
                     <MoneyInput value={cuotaManual} onChange={(e) => setCuotaManual(e.target.value)} placeholder="Ej: 60.000" />
                   </div>
-                  <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>Tu defines la cuota. Total = cuota x numero de cobros.</p>
+                  <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>Tu defines la cuota. Total = cuota x número de cobros.</p>
                 </div>
               )}
             </div>
@@ -1211,7 +1211,7 @@ function NuevoPrestamo() {
                 style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)' }}>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Cobrar seguro</p>
-                  <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Suma un cargo fijo al prestamo</p>
+                  <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Suma un cargo fijo al préstamo</p>
                 </div>
                 <input type="checkbox" checked={seguro} onChange={(e) => setSeguro(e.target.checked)} className="w-5 h-5 accent-[var(--color-accent)]" />
               </label>
@@ -1253,7 +1253,7 @@ function NuevoPrestamo() {
                 style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)' }}>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Ya habia pagado algo antes</p>
-                  <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Migrar un prestamo con abonos previos</p>
+                  <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Migrar un préstamo con abonos previos</p>
                 </div>
                 <input type="checkbox" checked={esEnCurso} onChange={(e) => setEsEnCurso(e.target.checked)} className="w-5 h-5 accent-[var(--color-accent)]" />
               </label>
@@ -1266,7 +1266,7 @@ function NuevoPrestamo() {
 
               {/* Resumen completo antes de confirmar — editable */}
               {calculo && (() => {
-                const DIAS_FULL_SINGULAR = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado']
+                const DIAS_FULL_SINGULAR = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
                 const diasPlazoNum = Number(plazo)
                 const diasPorPeriodo = DIAS_POR_PERIODO[frecuencia] || 1
                 const periodos = Math.max(1, Math.round(diasPlazoNum / diasPorPeriodo))
@@ -1279,15 +1279,15 @@ function NuevoPrestamo() {
                 const ganancia = calculo.totalAPagar - Number(monto || 0)
                 const pctGanancia = Number(monto) > 0 ? Math.round((ganancia / Number(monto)) * 100) : 0
                 const labelFreq = { diario: 'diaria', semanal: 'semanal', quincenal: 'quincenal', mensual: 'mensual' }[frecuencia]
-                const unidadPlazoL = { diario: 'dias', semanal: 'semanas', quincenal: 'quincenas', mensual: 'meses' }[frecuencia]
-                const modoLabel = { fijo: 'Clasico', unico: 'De una vez', solo_interes: 'Globo', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente' }[modoInteres] || 'Clasico'
+                const unidadPlazoL = { diario: 'días', semanal: 'semanas', quincenal: 'quincenas', mensual: 'meses' }[frecuencia]
+                const modoLabel = { fijo: 'Clásico', unico: 'De una vez', solo_interes: 'Globo', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente' }[modoInteres] || 'Clásico'
                 const pencil = <svg className="w-3 h-3 shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" /></svg>
 
                 return (
                   <div className="rounded-2xl overflow-hidden"
                     style={{ border: '1px solid color-mix(in srgb, var(--color-success) 25%, var(--color-border))' }}>
                     <div className="px-4 py-2.5 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 8%, var(--color-bg-card)), var(--color-bg-card))' }}>
-                      <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-success)' }}>Resumen del prestamo</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-success)' }}>Resumen del préstamo</p>
                       <span className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>Toca para editar</span>
                     </div>
                     <div className="px-4 py-2" style={{ background: 'var(--color-bg-card)' }}>
@@ -1309,7 +1309,7 @@ function NuevoPrestamo() {
                           editor={<MoneyInput value={monto} onChange={e => setMonto(e.target.value)} autoFocus />} />
 
                         {modo === 'prestamo' && (
-                          <EditableRow label="Interes" value={`${tasa || 0}% mensual`} valueColor="var(--color-accent)" pencil={pencil}
+                          <EditableRow label="Interés" value={`${tasa || 0}% mensual`} valueColor="var(--color-accent)" pencil={pencil}
                             editor={
                               <div className="flex items-center gap-1.5">
                                 <input type="number" inputMode="decimal" value={tasa} onChange={e => setTasa(e.target.value)}
@@ -1345,14 +1345,14 @@ function NuevoPrestamo() {
                               <select value={modoInteres} onChange={e => setModoInteres(e.target.value)}
                                 className="h-8 rounded-lg border px-2 text-sm"
                                 style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus>
-                                <option value="fijo">Clasico</option><option value="unico">De una vez</option><option value="solo_interes">Globo</option><option value="saldo">Sobre saldo</option><option value="manual">Manual</option><option value="lineal">Decreciente</option>
+                                <option value="fijo">Clásico</option><option value="unico">De una vez</option><option value="solo_interes">Globo</option><option value="saldo">Sobre saldo</option><option value="manual">Manual</option><option value="lineal">Decreciente</option>
                               </select>
                             } />
                         )}
 
                         {modoInteres === 'solo_interes' && (
                           <div className="flex items-center justify-between py-1.5 px-1">
-                            <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Interes adelantado</span>
+                            <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Interés adelantado</span>
                             <Toggle checked={interesAdelantado} onChange={setInteresAdelantado} />
                           </div>
                         )}
@@ -1413,14 +1413,14 @@ function NuevoPrestamo() {
       {/* ═══ PASO 2: CONFIRMAR + FIRMA ═══ */}
       {paso === 2 && calculo && (() => {
         const labelFrecuencia = { diario: 'Diario', semanal: 'Semanal', quincenal: 'Quincenal', mensual: 'Mensual' }[frecuencia]
-        const unidadPlazoLabel = { diario: 'dias', semanal: 'semanas', quincenal: 'quincenas', mensual: 'meses' }[frecuencia]
-        const modoLabel = { fijo: 'Clasico', unico: 'De una vez', solo_interes: 'Globo', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente' }[modoInteres] || 'Clasico'
+        const unidadPlazoLabel = { diario: 'días', semanal: 'semanas', quincenal: 'quincenas', mensual: 'meses' }[frecuencia]
+        const modoLabel = { fijo: 'Clásico', unico: 'De una vez', solo_interes: 'Globo', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente' }[modoInteres] || 'Clásico'
         const pencilIcon = <svg className="w-3 h-3 shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" /></svg>
         return (
           <section className="space-y-4 pb-28">
             <SectionCard
               icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-              title="Resumen del prestamo"
+              title="Resumen del préstamo"
               color="var(--color-success)"
               accent={<span className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>Toca un campo para editar</span>}
             >
@@ -1439,7 +1439,7 @@ function NuevoPrestamo() {
 
                 {/* Tasa — editable (solo prestamo, no mercancia) */}
                 {modo === 'prestamo' && (
-                  <EditableRow label="Interes" value={`${tasa}% mensual`}
+                  <EditableRow label="Interés" value={`${tasa}% mensual`}
                     pencil={pencilIcon}
                     editor={
                       <div className="flex items-center gap-1.5">
@@ -1488,7 +1488,7 @@ function NuevoPrestamo() {
                       <select value={modoInteres} onChange={e => setModoInteres(e.target.value)}
                         className="h-8 rounded-lg border px-2 text-sm"
                         style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus>
-                        <option value="fijo">Clasico</option>
+                        <option value="fijo">Clásico</option>
                         <option value="unico">De una vez</option>
                         <option value="solo_interes">Globo</option>
                         <option value="saldo">Sobre saldo</option>
@@ -1501,7 +1501,7 @@ function NuevoPrestamo() {
 
                 {modoInteres === 'solo_interes' && (
                   <div className="flex items-center justify-between py-1.5 px-1">
-                    <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Interes adelantado</span>
+                    <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Interés adelantado</span>
                     <Toggle checked={interesAdelantado} onChange={setInteresAdelantado} />
                   </div>
                 )}
@@ -1635,7 +1635,7 @@ function NuevoPrestamo() {
               disabled={paso === 0 ? !puedeAvanzarPaso() : paso === 1 ? !puedeAvanzarSubPaso() : false}
               className="flex-[2]"
             >
-              {paso === 1 && subPaso === TOTAL_SUB_PASOS - 1 ? 'Revisar prestamo' : 'Continuar'}
+              {paso === 1 && subPaso === TOTAL_SUB_PASOS - 1 ? 'Revisar préstamo' : 'Continuar'}
             </Button>
           ) : (
             <Button

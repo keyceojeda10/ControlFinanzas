@@ -63,7 +63,7 @@ function UsageBar({ label, usado, limite }) {
 // ── Main ───────────────────────────────────────────────────
 export default function PlanPage() {
   const online = useOnline()
-  if (!online) return <OfflineFallback titulo="La gestion de plan requiere conexion" descripcion="Los pagos y cambios de plan necesitan red." volverHref="/configuracion" volverLabel="Volver a Configuracion" />
+  if (!online) return <OfflineFallback titulo="La gestión de plan requiere conexión" descripcion="Los pagos y cambios de plan necesitan red." volverHref="/configuracion" volverLabel="Volver a Configuración" />
   return <PlanPageInner />
 }
 

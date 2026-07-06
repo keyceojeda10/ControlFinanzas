@@ -38,7 +38,7 @@ export default function WizardPerfil({ onSelect, plan = 'basic' }) {
       }
       onSelect('equipo', nuevoPlan)
     } catch {
-      setError('Error de conexion. Intenta de nuevo.')
+      setError('Error de conexión. Intenta de nuevo.')
     } finally {
       setUpgrading(false)
     }

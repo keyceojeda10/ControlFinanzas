@@ -454,8 +454,8 @@ export default function SocioDetallePage() {
       <Modal open={editando} onClose={() => setEditando(false)} title="Editar socio">
         <div className="space-y-4">
           <Input label="Nombre" value={formEdit.nombre || ''} onChange={(e) => setFormEdit((f) => ({ ...f, nombre: e.target.value }))} />
-          <Input label="Cedula" value={formEdit.cedula || ''} onChange={(e) => setFormEdit((f) => ({ ...f, cedula: e.target.value }))} />
-          <Input label="Telefono" value={formEdit.telefono || ''} onChange={(e) => setFormEdit((f) => ({ ...f, telefono: e.target.value }))} />
+          <Input label="Cédula" value={formEdit.cedula || ''} onChange={(e) => setFormEdit((f) => ({ ...f, cedula: e.target.value }))} />
+          <Input label="Teléfono" value={formEdit.telefono || ''} onChange={(e) => setFormEdit((f) => ({ ...f, telefono: e.target.value }))} />
           <div className="flex flex-col gap-1.5">
             <label className="text-[11px] font-medium uppercase tracking-[0.05em]" style={{ color: 'var(--color-text-muted)' }}>Notas</label>
             <textarea

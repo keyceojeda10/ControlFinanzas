@@ -276,7 +276,7 @@ export default function OrgDetallePage() {
                   size="sm"
                   loading={accionando === 'cancelar'}
                   onClick={() => {
-                    if (confirm('Cancelar esta suscripcion?')) accionSuscripcion(sub.id, 'cancelar')
+                    if (confirm('¿Cancelar esta suscripción?')) accionSuscripcion(sub.id, 'cancelar')
                   }}
                 >
                   Cancelar

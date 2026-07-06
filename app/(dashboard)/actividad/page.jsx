@@ -94,22 +94,22 @@ function agruparPorDia(items) {
 const FILTROS_RAPIDOS = [
   { value: '', label: 'Todo' },
   { value: 'registrar_pago', label: 'Pagos' },
-  { value: 'crear_prestamo', label: 'Prestamos' },
+  { value: 'crear_prestamo', label: 'Préstamos' },
   { value: 'cierre_caja', label: 'Cierres' },
   { value: 'crear_cliente', label: 'Clientes' },
 ]
 
 const FILTROS_COMPLETOS = [
   { value: '', label: 'Todas las acciones' },
-  { value: 'crear_prestamo', label: 'Prestamos creados' },
+  { value: 'crear_prestamo', label: 'Préstamos creados' },
   { value: 'registrar_pago', label: 'Pagos registrados' },
   { value: 'editar_pago', label: 'Pagos editados' },
   { value: 'anular_pago', label: 'Pagos anulados' },
   { value: 'crear_cliente', label: 'Clientes creados' },
   { value: 'editar_cliente', label: 'Clientes editados' },
   { value: 'eliminar_cliente', label: 'Clientes eliminados' },
-  { value: 'editar_prestamo', label: 'Prestamos editados' },
-  { value: 'eliminar_prestamo', label: 'Prestamos eliminados' },
+  { value: 'editar_prestamo', label: 'Préstamos editados' },
+  { value: 'eliminar_prestamo', label: 'Préstamos eliminados' },
   { value: 'crear_ruta', label: 'Rutas creadas' },
   { value: 'crear_cobrador', label: 'Cobradores creados' },
   { value: 'cierre_caja', label: 'Cierres de caja' },
@@ -119,7 +119,7 @@ const FILTROS_COMPLETOS = [
 
 export default function ActividadPage() {
   const online = useOnline()
-  if (!online) return <OfflineFallback titulo="El registro de actividad no esta disponible sin conexion" />
+  if (!online) return <OfflineFallback titulo="El registro de actividad no esta disponible sin conexión" />
   return <ActividadPageInner />
 }
 

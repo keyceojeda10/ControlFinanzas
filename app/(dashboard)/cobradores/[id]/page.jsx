@@ -16,7 +16,7 @@ import { ConfirmModal }             from '@/components/ui/ConfirmModal'
 
 export default function CobradorDetallePage({ params }) {
   const online = useOnline()
-  if (!online) return <OfflineFallback titulo="El detalle del cobrador no esta disponible sin conexion" volverHref="/cobradores" volverLabel="Volver a Cobradores" />
+  if (!online) return <OfflineFallback titulo="El detalle del cobrador no esta disponible sin conexión" volverHref="/cobradores" volverLabel="Volver a Cobradores" />
   return <CobradorDetalleInner params={params} />
 }
 

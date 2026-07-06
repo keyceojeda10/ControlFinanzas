@@ -84,7 +84,7 @@ export default function CajaCobradorDetalle({ data }) {
       {/* KPIs de gestion */}
       {g && (
         <Card>
-          <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Gestion de la ruta</h2>
+          <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Gestión de la ruta</h2>
           <div className="grid grid-cols-2 gap-2">
             <div className="rounded-[10px] p-2.5" style={{ background: 'color-mix(in srgb, var(--color-accent) 10%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-accent) 18%, var(--color-border))' }}>
               <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Cobros hoy</p>

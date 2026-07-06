@@ -397,7 +397,7 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
 
         {sparklineData && sparklineData.length > 0 && (
           <div className="mt-3">
-            <Sparkline data={sparklineData} color={HERO_INK} mutedColor={HERO_SUB} tooltipBg="rgba(50, 40, 10, 0.92)" tooltipText="#f5c518" ariaLabel="Tendencia ultimos 7 dias" />
+            <Sparkline data={sparklineData} color={HERO_INK} mutedColor={HERO_SUB} tooltipBg="rgba(50, 40, 10, 0.92)" tooltipText="#f5c518" ariaLabel="Tendencia últimos 7 días" />
           </div>
         )}
 
@@ -773,7 +773,7 @@ function RecaudoCard({ label, color, colorHex, monto, cantidad, cuotaDiaria, ext
       </div>
       {sparklineData && sparklineData.length > 0 && (
         <div className="mt-2.5">
-          <Sparkline data={sparklineData} color={colorHex} ariaLabel="Tendencia ultimos 7 dias" />
+          <Sparkline data={sparklineData} color={colorHex} ariaLabel="Tendencia últimos 7 días" />
         </div>
       )}
       {pct !== null && !sparklineData && (
@@ -1474,7 +1474,7 @@ export default function DashboardPage() {
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-semibold" style={{ color: '#f5c518' }}>Continuar configuracion</p>
+            <p className="text-[13px] font-semibold" style={{ color: '#f5c518' }}>Continuar configuración</p>
             <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Retoma el asistente donde lo dejaste</p>
           </div>
           <svg className="w-4 h-4 shrink-0" fill="none" stroke="var(--color-text-muted)" viewBox="0 0 24 24">

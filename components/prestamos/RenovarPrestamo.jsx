@@ -82,13 +82,13 @@ export default function RenovarPrestamo({
   }, [montoNum, tasa, diasPlazo, fechaInicio, frecuencia, modoHeredado, modoUsaTabla, cuotaManual, cuotaManualActiva, prestamoAnterior?.interesAdelantado])
 
   const handleSubmit = async () => {
-    if (montoNum <= 0) { setError('Ingresa el total del nuevo prestamo'); return }
+    if (montoNum <= 0) { setError('Ingresa el total del nuevo préstamo'); return }
     if (montoNum < saldo) {
       setError(`El total debe cubrir al menos el saldo actual (${formatMoney(saldo)})`)
       return
     }
-    if (!tasa || Number(tasa) < 0) { setError('Tasa invalida'); return }
-    if (!plazoUnidades || diasPlazo <= 0) { setError('Plazo invalido'); return }
+    if (!tasa || Number(tasa) < 0) { setError('Tasa inválida'); return }
+    if (!plazoUnidades || diasPlazo <= 0) { setError('Plazo inválido'); return }
 
     setLoading(true)
     setError('')
@@ -138,7 +138,7 @@ export default function RenovarPrestamo({
     : null
 
   return (
-    <Modal open={open} onClose={handleClose} title="Renovar prestamo">
+    <Modal open={open} onClose={handleClose} title="Renovar préstamo">
       <div className="space-y-4">
 
         {/* Warning: el prestamo actual se cerrara */}
@@ -147,9 +147,9 @@ export default function RenovarPrestamo({
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
           </svg>
           <div>
-            <p className="text-xs font-semibold" style={{ color: '#fb923c' }}>El prestamo actual se cerrara</p>
+            <p className="text-xs font-semibold" style={{ color: '#fb923c' }}>El préstamo actual se cerrará</p>
             <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-              El saldo pendiente se absorbe en el nuevo prestamo. El anterior queda como completado.
+              El saldo pendiente se absorbe en el nuevo préstamo. El anterior queda como completado.
             </p>
           </div>
         </div>
@@ -160,7 +160,7 @@ export default function RenovarPrestamo({
             <svg className="w-4 h-4 text-[var(--color-accent)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
             </svg>
-            <span className="text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>Prestamo actual</span>
+            <span className="text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>Préstamo actual</span>
           </div>
           {clienteNombre && <p className="text-[11px] mb-1.5" style={{ color: 'var(--color-text-muted)' }}>{clienteNombre}</p>}
           <div className="grid grid-cols-2 gap-x-4 gap-y-1">
@@ -258,7 +258,7 @@ export default function RenovarPrestamo({
               onChange={(e) => setPlazoUnidades(e.target.value)}
             />
             {frecuencia !== 'diario' && plazoUnidades && (
-              <p className="text-[10px] mt-1 px-0.5" style={{ color: 'var(--color-text-muted)' }}>= {diasPlazo} dias</p>
+              <p className="text-[10px] mt-1 px-0.5" style={{ color: 'var(--color-text-muted)' }}>= {diasPlazo} días</p>
             )}
           </div>
         </div>

@@ -156,8 +156,8 @@ ${firma(orgNombre)} 💼`
   },
   {
     id: 'oferta_credito',
-    label: 'Oferta de credito',
-    desc: 'Cliente sin prestamo activo',
+    label: 'Oferta de crédito',
+    desc: 'Cliente sin préstamo activo',
     icon: '💰',
     color: '#10b981',
     aplica: ({ prestamo }) => !prestamo || prestamo.estado === 'completado',

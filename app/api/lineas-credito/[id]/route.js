@@ -132,7 +132,7 @@ export async function PATCH(request, { params }) {
     try {
       body = await request.json()
     } catch {
-      return Response.json({ error: 'Cuerpo de solicitud invalido' }, { status: 400 })
+      return Response.json({ error: 'Cuerpo de solicitud inválido' }, { status: 400 })
     }
 
     const data = {}
@@ -147,10 +147,10 @@ export async function PATCH(request, { params }) {
     }
 
     if ('cupoMaximo' in data && (typeof data.cupoMaximo !== 'number' || data.cupoMaximo <= 0)) {
-      return Response.json({ error: 'cupoMaximo debe ser un numero mayor a 0' }, { status: 400 })
+      return Response.json({ error: 'cupoMaximo debe ser un número mayor a 0' }, { status: 400 })
     }
     if ('tasaInteres' in data && (typeof data.tasaInteres !== 'number' || data.tasaInteres <= 0)) {
-      return Response.json({ error: 'tasaInteres debe ser un numero mayor a 0' }, { status: 400 })
+      return Response.json({ error: 'tasaInteres debe ser un número mayor a 0' }, { status: 400 })
     }
     if ('estado' in data && !ESTADOS_VALIDOS.includes(data.estado)) {
       return Response.json(

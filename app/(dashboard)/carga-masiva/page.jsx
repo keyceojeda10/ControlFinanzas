@@ -20,7 +20,7 @@ const PASOS = [
 
 export default function CargaMasivaPage() {
   const online = useOnline()
-  if (!online) return <OfflineFallback titulo="La carga masiva no esta disponible sin conexion" descripcion="Necesitas red para subir el archivo al servidor." />
+  if (!online) return <OfflineFallback titulo="La carga masiva no esta disponible sin conexión" descripcion="Necesitas red para subir el archivo al servidor." />
   return <CargaMasivaPageInner />
 }
 
@@ -59,7 +59,7 @@ function CargaMasivaPageInner() {
       const filasNormalizadas = aplicarMapeo(filasCrudas, mapeo)
 
       if (filasNormalizadas.length === 0) {
-        setError('No se encontraron filas con datos de nombre o cedula despues de aplicar el mapeo')
+        setError('No se encontraron filas con datos de nombre o cédula después de aplicar el mapeo')
         setValidando(false)
         return
       }
@@ -80,7 +80,7 @@ function CargaMasivaPageInner() {
       setRutas(data.rutas)
       setPaso(3)
     } catch {
-      setError('Error de conexion. Intenta de nuevo.')
+      setError('Error de conexión. Intenta de nuevo.')
     } finally {
       setValidando(false)
     }

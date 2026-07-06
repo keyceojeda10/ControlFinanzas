@@ -51,7 +51,7 @@ export async function GET() {
   const instrucciones = [
     ['INSTRUCCIONES DE LLENADO - Control Finanzas'],
     [''],
-    ['Columna', 'Requerido', 'Descripcion'],
+    ['Columna', 'Requerido', 'Descripción'],
     ['nombre', 'Si', 'Nombre completo del cliente'],
     ['cedula', 'Si', 'Número de cédula o documento de identidad (sin puntos)'],
     ['telefono', 'No', 'Número de celular (sin prefijo de país)'],

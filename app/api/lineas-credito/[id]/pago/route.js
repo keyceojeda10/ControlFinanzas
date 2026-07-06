@@ -74,7 +74,7 @@ export async function POST(request, { params }) {
 
     if (!monto || monto <= 0 || !Number.isFinite(monto)) {
       return Response.json(
-        { error: 'El monto debe ser un numero positivo' },
+        { error: 'El monto debe ser un número positivo' },
         { status: 400 }
       )
     }

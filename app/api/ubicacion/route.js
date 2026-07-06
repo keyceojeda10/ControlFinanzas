@@ -9,7 +9,7 @@ export async function POST(req) {
   if (session.user.rol !== 'cobrador') return Response.json({ error: 'Solo cobradores' }, { status: 403 })
 
   let body
-  try { body = await req.json() } catch { return Response.json({ error: 'Body invalido' }, { status: 400 }) }
+  try { body = await req.json() } catch { return Response.json({ error: 'Body inválido' }, { status: 400 }) }
 
   const { lat, lng } = body
   const coords = sanitizarCoords(lat, lng)

@@ -57,7 +57,7 @@ export default function PasoConfirmar({ datosImportar, onVolver, onReiniciar }) 
             )}
           </div>
           <h2 className="text-xl font-bold text-[var(--color-text-primary)]">
-            {exitoso ? 'Importacion exitosa' : 'Importacion parcial'}
+            {exitoso ? 'Importación exitosa' : 'Importación parcial'}
           </h2>
         </div>
 

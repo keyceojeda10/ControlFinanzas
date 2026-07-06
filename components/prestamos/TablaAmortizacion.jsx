@@ -233,7 +233,7 @@ function CuotaFila({
           <p className="text-[11px] font-mono-display" style={{ color: tieneExtra ? 'var(--color-info, #3b82f6)' : 'var(--color-text-primary)' }}>{formatMoney(fila.capital)}</p>
         </div>
         <div className="text-center">
-          <p className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>Interes</p>
+          <p className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>Interés</p>
           <p className="text-[11px] font-mono-display" style={{ color: 'var(--color-warning)' }}>{formatMoney(fila.interes)}</p>
         </div>
         <div className="text-right">

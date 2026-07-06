@@ -103,7 +103,7 @@ export async function POST(request) {
         where: { organizationId: orgId, cedula: cedula.trim() },
       })
       if (existe) {
-        return Response.json({ error: 'Ya existe un socio con esa cedula' }, { status: 400 })
+        return Response.json({ error: 'Ya existe un socio con esa cédula' }, { status: 400 })
       }
     }
 

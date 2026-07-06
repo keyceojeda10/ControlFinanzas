@@ -82,7 +82,7 @@ export default function SuscripcionesPage() {
     if (!tel) return null
     const numero = tel.startsWith('57') ? tel : `57${tel}`
     const msg = encodeURIComponent(
-      `Hola! Soy del equipo de Control Finanzas. Vi que tu prueba gratis del plan ${s.plan} vence en ${s.diasRestantes} dia${s.diasRestantes !== 1 ? 's' : ''}. Ya tienes ${s.clientes} cliente${s.clientes !== 1 ? 's' : ''} y ${s.prestamos} prestamo${s.prestamos !== 1 ? 's' : ''} en la app. Quieres que te ayudemos a activar tu plan para no perder el acceso?`
+      `Hola! Soy del equipo de Control Finanzas. Vi que tu prueba gratis del plan ${s.plan} vence en ${s.diasRestantes} dia${s.diasRestantes !== 1 ? 's' : ''}. Ya tienes ${s.clientes} cliente${s.clientes !== 1 ? 's' : ''} y ${s.prestamos} préstamo${s.prestamos !== 1 ? 's' : ''} en la app. Quieres que te ayudemos a activar tu plan para no perder el acceso?`
     )
     return `https://wa.me/${numero}?text=${msg}`
   }

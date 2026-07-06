@@ -20,7 +20,7 @@ const TIPOS = [
 
 export default function NuevoTicketPage() {
   const online = useOnline()
-  if (!online) return <OfflineFallback titulo="No puedes crear tickets sin conexion" volverHref="/soporte" volverLabel="Volver a Soporte" />
+  if (!online) return <OfflineFallback titulo="No puedes crear tickets sin conexión" volverHref="/soporte" volverLabel="Volver a Soporte" />
   return <NuevoTicketPageInner />
 }
 

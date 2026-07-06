@@ -605,13 +605,13 @@ function TabOrganizacion() {
                 })
                 const d = await res.json()
                 setMsgMora(res.ok
-                  ? { tipo: 'success', texto: 'Configuracion de moratorios guardada' }
+                  ? { tipo: 'success', texto: 'Configuración de moratorios guardada' }
                   : { tipo: 'error', texto: d.error ?? 'Error al guardar' })
                 if (res.ok) {
                   setData(prev => ({ ...prev, org: { ...prev.org, tasaMoratorio: Number(tasaMoratorio), diasGraciaMoratorio: Number(diasGraciaMoratorio) } }))
                 }
               } catch {
-                setMsgMora({ tipo: 'error', texto: 'Error de conexion' })
+                setMsgMora({ tipo: 'error', texto: 'Error de conexión' })
               } finally { setGuardandoMora(false) }
             }}
             loading={guardandoMora}
@@ -637,7 +637,7 @@ function TabOrganizacion() {
           checked={ocultarSaldoWA}
           disabled={guardandoSaldoWA}
           label="Ocultar saldo pendiente"
-          description="No mostrar el saldo pendiente, total a pagar ni porcentaje de progreso en los mensajes de WhatsApp (comprobantes, mora, recordatorios). Util si no quieres que el cliente vea el monto total con intereses."
+          description="No mostrar el saldo pendiente, total a pagar ni porcentaje de progreso en los mensajes de WhatsApp (comprobantes, mora, recordatorios). Útil si no quieres que el cliente vea el monto total con intereses."
           onChange={async (nuevo) => {
             setOcultarSaldoWA(nuevo)
             setGuardandoSaldoWA(true)
@@ -659,7 +659,7 @@ function TabOrganizacion() {
           <svg className="w-4 h-4 text-[#f5c518] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <h3 className="font-medium text-white text-sm">Festivos y dias sin cobro especificos</h3>
+          <h3 className="font-medium text-white text-sm">Festivos y días sin cobro específicos</h3>
         </div>
         <p className="text-xs text-[#666666] mb-4">
           Fechas concretas en las que no se realiza cobro. No generan mora ese día.

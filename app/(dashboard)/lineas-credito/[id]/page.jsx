@@ -502,7 +502,7 @@ function ModalDesembolso({ lineaId, cupoDisponible, onClose, onSuccess }) {
   async function guardar() {
     setError('')
     const val = Number(monto)
-    if (!val || val <= 0) { setError('Ingresa un monto valido'); return }
+    if (!val || val <= 0) { setError('Ingresa un monto válido'); return }
     if (val > cupoDisponible) { setError(`El monto excede el cupo disponible (${formatMoney(cupoDisponible)})`); return }
 
     setGuardando(true)
@@ -563,7 +563,7 @@ function ModalPago({ lineaId, saldoTotal, onClose, onSuccess }) {
   async function guardar() {
     setError('')
     const val = Number(monto)
-    if (!val || val <= 0) { setError('Ingresa un monto valido'); return }
+    if (!val || val <= 0) { setError('Ingresa un monto válido'); return }
 
     setGuardando(true)
     try {

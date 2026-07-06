@@ -40,7 +40,7 @@ export default function PasoSubir({ onDatos }) {
 
       onDatos({ headers, filas: rows })
     } catch {
-      setError('Error al leer el archivo. Asegurate de que sea un .xlsx, .xls o .csv valido.')
+      setError('Error al leer el archivo. Asegurate de que sea un .xlsx, .xls o .csv válido.')
     } finally {
       setCargando(false)
     }

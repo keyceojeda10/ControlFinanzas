@@ -27,7 +27,7 @@ const TIPO_LABEL = {
 
 export default function TicketDetallePage() {
   const online = useOnline()
-  if (!online) return <OfflineFallback titulo="El ticket no esta disponible sin conexion" volverHref="/soporte" volverLabel="Volver a Soporte" />
+  if (!online) return <OfflineFallback titulo="El ticket no esta disponible sin conexión" volverHref="/soporte" volverLabel="Volver a Soporte" />
   return <TicketDetallePageInner />
 }
 

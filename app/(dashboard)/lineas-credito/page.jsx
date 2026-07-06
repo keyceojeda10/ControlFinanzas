@@ -96,7 +96,7 @@ export default function LineasCreditoPage() {
         </svg>
         <input
           type="text"
-          placeholder="Buscar por nombre o cedula..."
+          placeholder="Buscar por nombre o cédula..."
           value={buscar}
           onChange={e => setBuscar(e.target.value)}
           className="w-full h-10 pl-9 pr-3 rounded-xl bg-[var(--color-bg-card)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)]"

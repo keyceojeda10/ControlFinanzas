@@ -226,7 +226,7 @@ export default function CalculadoraPage() {
 
           {modoInteres === 'solo_interes' && (
             <div className="flex items-center justify-between mt-3 px-1">
-              <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Interes adelantado</span>
+              <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Interés adelantado</span>
               <Toggle checked={interesAdelantado} onChange={setInteresAdelantado} />
             </div>
           )}

@@ -81,7 +81,7 @@ export default function NuevaLineaPage() {
   if (!esOwner) {
     return (
       <div className="max-w-lg mx-auto px-4 py-16 text-center">
-        <p className="text-sm text-[var(--color-text-muted)]">Solo el administrador puede crear lineas de credito</p>
+        <p className="text-sm text-[var(--color-text-muted)]">Solo el administrador puede crear líneas de crédito</p>
       </div>
     )
   }
@@ -165,7 +165,7 @@ export default function NuevaLineaPage() {
 
             {/* Tasa */}
             <div>
-              <label className="text-xs font-medium text-[var(--color-text-secondary)] mb-1.5 block">Tasa de interes mensual (%)</label>
+              <label className="text-xs font-medium text-[var(--color-text-secondary)] mb-1.5 block">Tasa de interés mensual (%)</label>
               <input
                 type="number"
                 inputMode="decimal"
@@ -183,7 +183,7 @@ export default function NuevaLineaPage() {
 
             {/* Modo interes */}
             <div>
-              <label className="text-xs font-medium text-[var(--color-text-secondary)] mb-1.5 block">Como se calcula el interes</label>
+              <label className="text-xs font-medium text-[var(--color-text-secondary)] mb-1.5 block">Cómo se calcula el interés</label>
               <div className="space-y-2">
                 {MODOS_INTERES.map(m => (
                   <button
@@ -216,7 +216,7 @@ export default function NuevaLineaPage() {
                 className="w-full h-10 px-3 rounded-xl bg-[var(--color-bg-card)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)]"
               >
                 {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
-                  <option key={d} value={d}>{d === 30 ? '30 (ultimo del mes)' : d}</option>
+                  <option key={d} value={d}>{d === 30 ? '30 (último del mes)' : d}</option>
                 ))}
               </select>
               <p className="text-[11px] text-[var(--color-text-muted)] mt-1">Ese dia se genera el estado de cuenta del mes: cuanto debe en total (capital + intereses) y cuanto ha pagado.</p>

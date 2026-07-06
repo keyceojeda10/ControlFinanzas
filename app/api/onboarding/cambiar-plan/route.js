@@ -15,7 +15,7 @@ export async function POST(request) {
 
   const { plan } = await request.json().catch(() => ({}))
   if (!plan || !PLANES_VALIDOS.includes(plan)) {
-    return NextResponse.json({ error: 'Plan invalido' }, { status: 400 })
+    return NextResponse.json({ error: 'Plan inválido' }, { status: 400 })
   }
 
   const org = await prisma.organization.findUnique({
@@ -29,7 +29,7 @@ export async function POST(request) {
 
   // Solo permitir cambio durante onboarding (step < 99)
   if ((org.onboardingStep ?? 0) >= 99) {
-    return NextResponse.json({ error: 'El onboarding ya fue completado. Cambia de plan desde la pagina de planes.' }, { status: 400 })
+    return NextResponse.json({ error: 'El onboarding ya fue completado. Cambia de plan desde la página de planes.' }, { status: 400 })
   }
 
   await prisma.organization.update({

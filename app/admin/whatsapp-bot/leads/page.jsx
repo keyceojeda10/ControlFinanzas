@@ -226,7 +226,7 @@ function ModalCrearLead({ onClose, onCreado }) {
         <form onSubmit={guardar} className="space-y-3">
           {[
             { key: 'nombre', label: 'Nombre', placeholder: 'Juan Pérez' },
-            { key: 'telefono', label: 'Telefono', placeholder: '573001234567' },
+            { key: 'telefono', label: 'Teléfono', placeholder: '573001234567' },
             { key: 'cantClientes', label: 'Cant. clientes', placeholder: '50' },
             { key: 'metodoActual', label: 'Método actual', placeholder: 'Libreta / Excel / Sistema' },
           ].map(f => (

@@ -88,7 +88,7 @@ function VerificarEmailContent() {
           </svg>
         </div>
         <h1 className="text-xl font-bold text-[var(--color-text-primary)] mb-2">Link inválido</h1>
-        <p className="text-sm text-[var(--color-text-muted)] mb-6">Ahora usamos codigos de verificación. Ingresa tu email para recibir uno nuevo.</p>
+        <p className="text-sm text-[var(--color-text-muted)] mb-6">Ahora usamos códigos de verificación. Ingresa tu email para recibir uno nuevo.</p>
         <input
           type="email"
           value={email}

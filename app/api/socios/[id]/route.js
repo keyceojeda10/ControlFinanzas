@@ -129,7 +129,7 @@ export async function PATCH(request, { params }) {
           where: { organizationId: orgId, cedula: nuevaCedula, id: { not: id } },
         })
         if (existe) {
-          return Response.json({ error: 'Ya existe un socio con esa cedula' }, { status: 400 })
+          return Response.json({ error: 'Ya existe un socio con esa cédula' }, { status: 400 })
         }
       }
       data.cedula = nuevaCedula || null

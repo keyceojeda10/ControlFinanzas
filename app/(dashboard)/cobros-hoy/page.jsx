@@ -433,11 +433,11 @@ export default function CobrosHoyPage() {
       )}
 
       {/* ── Modal: elegir método de pago ── */}
-      <Modal open={!!modalPago} onClose={() => setModalPago(null)} title="Cobro rapido">
+      <Modal open={!!modalPago} onClose={() => setModalPago(null)} title="Cobro rápido">
         {modalPago && !modalPago.prestamoActivo && (modalPago.prestamosActivos?.length ?? 0) > 1 && (
           <div className="space-y-3">
             <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-              <span className="font-medium" style={{ color: 'var(--color-text-primary)' }}>{modalPago.nombre}</span> tiene varios prestamos. Elige cual cobrar.
+              <span className="font-medium" style={{ color: 'var(--color-text-primary)' }}>{modalPago.nombre}</span> tiene varios préstamos. Elige cual cobrar.
             </p>
             <div className="space-y-2">
               {modalPago.prestamosActivos.map((p, i) => (
@@ -449,7 +449,7 @@ export default function CobrosHoyPage() {
                   style={{ background: 'var(--color-bg-card)', borderColor: 'var(--color-border)' }}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Prestamo {i + 1}</p>
+                    <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Préstamo {i + 1}</p>
                     <span className="text-sm font-bold font-mono-display" style={{ color: 'var(--color-success)' }}>{formatMoney(p.cuotaDiaria ?? 0)}</span>
                   </div>
                   {p.diasMora > 0 && (
@@ -530,7 +530,7 @@ export default function CobrosHoyPage() {
                 }}
               >
                 {ultimoMetodo === 'efectivo' && (
-                  <span className="absolute top-2 right-2 text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--color-success) 15%, transparent)', color: 'var(--color-success)' }}>Ultimo</span>
+                  <span className="absolute top-2 right-2 text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--color-success) 15%, transparent)', color: 'var(--color-success)' }}>Último</span>
                 )}
                 <div
                   className="w-11 h-11 rounded-[12px] flex items-center justify-center"
@@ -559,7 +559,7 @@ export default function CobrosHoyPage() {
                 }}
               >
                 {ultimoMetodo === 'transferencia' && (
-                  <span className="absolute top-2 right-2 text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--color-info) 15%, transparent)', color: 'var(--color-info)' }}>Ultimo</span>
+                  <span className="absolute top-2 right-2 text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--color-info) 15%, transparent)', color: 'var(--color-info)' }}>Último</span>
                 )}
                 <div
                   className="w-11 h-11 rounded-[12px] flex items-center justify-center"

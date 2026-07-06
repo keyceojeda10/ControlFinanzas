@@ -64,7 +64,7 @@ const tipoPagoBadge = {
   recargo:   { variant: 'red',    label: 'Recargo'   },
   descuento:  { variant: 'blue',   label: 'Descuento' },
   intereses:  { variant: 'yellow', label: 'Intereses' },
-  liquidacion:{ variant: 'green',  label: 'Liquidacion' },
+  liquidacion:{ variant: 'green',  label: 'Liquidación' },
 }
 
 function GestionBtn({ label, desc, color, icon, onClick }) {
@@ -554,8 +554,8 @@ export default function PrestamoDetallePage({ params }) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <p className="text-[var(--color-success)] font-bold">Prestamo completado</p>
-          <p className="text-xs text-[var(--color-text-muted)] mt-0.5">El cliente termino de pagar</p>
+          <p className="text-[var(--color-success)] font-bold">Préstamo completado</p>
+          <p className="text-xs text-[var(--color-text-muted)] mt-0.5">El cliente terminó de pagar</p>
         </div>
       )}
 
@@ -580,7 +580,7 @@ export default function PrestamoDetallePage({ params }) {
             </svg>
             <div className="min-w-0">
               <p className="text-sm font-semibold text-[var(--color-warning)]">
-                Interes moratorio: {formatMoney(moratorio.montoMoratorio)}
+                Interés moratorio: {formatMoney(moratorio.montoMoratorio)}
               </p>
               <p className="text-xs text-[var(--color-text-muted)] mt-1">
                 {moratorio.diasMoraEfectivos} dias efectivos de mora sobre {formatMoney(moratorio.montoBase)} en mora
@@ -590,7 +590,7 @@ export default function PrestamoDetallePage({ params }) {
           <button
             onClick={() => {
               setMoratorioMonto(moratorio.montoMoratorio)
-              setMoratorioNota(`Interes moratorio: ${moratorio.diasMoraEfectivos} dias sobre ${formatMoney(moratorio.montoBase)}`)
+              setMoratorioNota(`Interés moratorio: ${moratorio.diasMoraEfectivos} días sobre ${formatMoney(moratorio.montoBase)}`)
               setMoratorioError('')
               setModalMoratorio(true)
             }}
@@ -1730,7 +1730,7 @@ export default function PrestamoDetallePage({ params }) {
       <Modal
         open={modalMoratorio}
         onClose={() => setModalMoratorio(false)}
-        title="Aplicar interes moratorio"
+        title="Aplicar interés moratorio"
       >
         <div className="space-y-4">
           <div className="bg-[rgba(245,158,11,0.06)] border border-[rgba(245,158,11,0.2)] rounded-[12px] p-3">
@@ -1769,7 +1769,7 @@ export default function PrestamoDetallePage({ params }) {
               setMoratorioEnviando(true)
               setMoratorioError('')
               try {
-                const nota = moratorioNota || `Interes moratorio: ${moratorio?.diasMoraEfectivos ?? 0} dias`
+                const nota = moratorioNota || `Interés moratorio: ${moratorio?.diasMoraEfectivos ?? 0} días`
                 const notaFull = moratorioMonto !== (moratorio?.montoMoratorio ?? 0)
                   ? `${nota} (calculado: ${formatMoney(moratorio?.montoMoratorio ?? 0)}, aplicado: ${formatMoney(moratorioMonto)})`
                   : nota

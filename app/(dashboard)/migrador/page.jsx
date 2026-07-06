@@ -100,7 +100,7 @@ function SelectorMetodo({ onFoto, onManual, ocrLoading, ocrError, fotoInputRef, 
             </div>
             <div className="flex-1">
               <h3 className="text-base font-bold" style={{ color: 'var(--color-text-primary)' }}>Escribir manual</h3>
-              <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Escribe el nombre, cedula, monto y condiciones del prestamo.</p>
+              <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Escribe el nombre, cédula, monto y condiciones del préstamo.</p>
             </div>
           </div>
         </button>
@@ -176,7 +176,7 @@ function EditableResumenRow({ label, value, children, valueColor }) {
 // ─── Vista: formulario de cliente + préstamo ──────────────────────
 function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId, nombreRef, error, onGuardar, saving, editando, numero, sinCedula, setSinCedula }) {
   const freqLabel = FRECUENCIAS.find(f => f.key === ficha.frecuencia)?.label?.toLowerCase() || ficha.frecuencia
-  const unidadPlazo = { diario: 'dias', semanal: 'semanas', quincenal: 'quincenas', mensual: 'meses' }[ficha.frecuencia] || 'dias'
+  const unidadPlazo = { diario: 'días', semanal: 'semanas', quincenal: 'quincenas', mensual: 'meses' }[ficha.frecuencia] || 'días'
   const [modoInteresTocado, setModoInteresTocado] = useState(editando)
 
   const handleFrecuenciaChange = (freq) => {
@@ -201,7 +201,7 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
           </div>
           <div>
             <h2 className="text-base font-bold" style={{ color: 'var(--color-text-primary)' }}>Cliente #{numero}</h2>
-            <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Completa los datos y configura su prestamo</p>
+            <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Completa los datos y configura su préstamo</p>
           </div>
         </div>
       )}
@@ -220,12 +220,12 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
             style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
           <div className={`grid gap-2.5 ${sinCedula ? '' : 'grid-cols-2'}`}>
             {!sinCedula && (
-              <input type="text" placeholder="Cedula" inputMode="numeric"
+              <input type="text" placeholder="Cédula" inputMode="numeric"
                 value={ficha.cedula} onChange={e => set('cedula', e.target.value)}
                 className="w-full h-11 rounded-[10px] border px-3 text-sm"
                 style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
             )}
-            <input type="tel" placeholder="Telefono *"
+            <input type="tel" placeholder="Teléfono *"
               value={ficha.telefono} onChange={e => set('telefono', e.target.value)}
               className="w-full h-11 rounded-[10px] border px-3 text-sm"
               style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
@@ -241,7 +241,7 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
               No tengo el número de la cédula
             </span>
           </label>
-          <input type="text" placeholder="Direccion (opcional)"
+          <input type="text" placeholder="Dirección (opcional)"
             value={ficha.direccion} onChange={e => set('direccion', e.target.value)}
             className="w-full h-11 rounded-[10px] border px-3 text-sm"
             style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
@@ -251,7 +251,7 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
       {/* ── PRÉSTAMO ── */}
       <div>
         <h3 className="text-[11px] font-semibold uppercase tracking-wide mb-1"
-          style={{ color: 'var(--color-accent)' }}>Condiciones del prestamo</h3>
+          style={{ color: 'var(--color-accent)' }}>Condiciones del préstamo</h3>
         <p className="text-[11px] mb-2.5" style={{ color: 'var(--color-text-muted)' }}>
           Configura el monto, la tasa, la frecuencia de cobro y el plazo. Si este cliente tiene condiciones diferentes a los demas, puedes cambiarlo aqui.
         </p>
@@ -322,14 +322,14 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
                 onChange={e => set('cuotaManual', e.target.value)}
                 placeholder="Ej: 60.000"
               />
-              <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>Tu defines la cuota. Total = cuota x numero de cobros.</p>
+              <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>Tu defines la cuota. Total = cuota x número de cobros.</p>
             </div>
           )}
 
           {/* Fecha inicio */}
           <div>
             <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
-              style={{ color: 'var(--color-text-muted)' }}>Fecha de inicio del prestamo</label>
+              style={{ color: 'var(--color-text-muted)' }}>Fecha de inicio del préstamo</label>
             <input type="date" value={ficha.fechaInicio} onChange={e => set('fechaInicio', e.target.value)}
               max={hoyISO()} className="w-full h-10 rounded-[10px] border px-3 text-sm"
               style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
@@ -348,8 +348,8 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
             <input type="checkbox" checked={ficha.esEnCurso} onChange={e => set('esEnCurso', e.target.checked)}
               className="w-4 h-4 rounded accent-[var(--color-accent)]" />
             <div>
-              <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>Este prestamo ya tiene abonos</span>
-              <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Activalo si el cliente ya venia pagando y estas migrando un prestamo en curso</p>
+              <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>Este préstamo ya tiene abonos</span>
+              <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Activalo si el cliente ya venia pagando y estás migrando un préstamo en curso</p>
             </div>
           </label>
 
@@ -401,7 +401,7 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
             </EditableResumenRow>
 
             {/* Editable: Tasa */}
-            <EditableResumenRow label="Interes" value={`${ficha.tasa}% mensual`}>
+            <EditableResumenRow label="Interés" value={`${ficha.tasa}% mensual`}>
               <div className="flex items-center gap-1.5">
                 <input type="number" inputMode="decimal" value={ficha.tasa} onChange={e => set('tasa', e.target.value)}
                   className="w-20 h-8 rounded-lg border px-2 text-sm text-right"
@@ -430,11 +430,11 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
             </EditableResumenRow>
 
             {/* Editable: Modo interés */}
-            <EditableResumenRow label="Modo" value={{ fijo: 'Clasico', unico: 'De una vez', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente' }[ficha.modoInteres] || 'Clasico'}>
+            <EditableResumenRow label="Modo" value={{ fijo: 'Clásico', unico: 'De una vez', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente' }[ficha.modoInteres] || 'Clásico'}>
               <select value={ficha.modoInteres} onChange={e => { set('modoInteres', e.target.value); setModoInteresTocado(true); if (e.target.value !== 'manual') set('cuotaManual', '') }}
                 className="w-full h-8 rounded-lg border px-2 text-sm"
                 style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus>
-                <option value="fijo">Clasico</option>
+                <option value="fijo">Clásico</option>
                 <option value="unico">De una vez</option>
                 <option value="saldo">Sobre saldo</option>
                 <option value="manual">Manual</option>
@@ -471,7 +471,7 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
               )}
               {calculo.numeroCuotas && (
                 <div className="flex justify-between items-center">
-                  <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Numero de cuotas</span>
+                  <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Número de cuotas</span>
                   <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{calculo.numeroCuotas}</span>
                 </div>
               )}
@@ -657,7 +657,7 @@ export default function MigradorPage() {
       setFicha(nueva)
       irA('formulario')
     } catch {
-      setOcrError('Error de conexion al leer la foto')
+      setOcrError('Error de conexión al leer la foto')
     } finally {
       setOcrLoading(false)
     }
@@ -666,10 +666,10 @@ export default function MigradorPage() {
   // ── Guardar (crear o editar) ──
   const guardar = async () => {
     if (!ficha.nombre.trim()) { setError('El nombre es obligatorio'); return }
-    if (!sinCedula && !ficha.cedula.trim()) { setError('La cedula es obligatoria'); return }
-    if (!ficha.telefono.trim()) { setError('El telefono es obligatorio'); return }
+    if (!sinCedula && !ficha.cedula.trim()) { setError('La cédula es obligatoria'); return }
+    if (!ficha.telefono.trim()) { setError('El teléfono es obligatorio'); return }
     if (!ficha.monto || Number(ficha.monto) <= 0) { setError('El monto es obligatorio'); return }
-    if (!calculo) { setError('Revisa los datos del prestamo'); return }
+    if (!calculo) { setError('Revisa los datos del préstamo'); return }
 
     setSaving(true)
     setError('')
@@ -801,7 +801,7 @@ export default function MigradorPage() {
       irA('selector')
       setTimeout(() => setSuccessMsg(''), 4000)
     } catch {
-      setError('Error de conexion')
+      setError('Error de conexión')
     } finally {
       setSaving(false)
     }

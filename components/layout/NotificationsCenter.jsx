@@ -260,7 +260,7 @@ export default function NotificationsCenter({ size = 'md' }) {
   // ─── Toast logic ───
   const pickToast = useCallback(() => {
     if (showInstallToast) {
-      return { icon: 'download', title: 'Instala la app', message: 'Accede mas rapido y usala sin internet' }
+      return { icon: 'download', title: 'Instala la app', message: 'Accede más rápido y úsala sin internet' }
     }
     if (showPushToast) {
       return { icon: 'bell', title: 'Activa notificaciones', message: 'Recibe alertas de pagos, mora y vencimientos' }
@@ -544,7 +544,7 @@ export default function NotificationsCenter({ size = 'md' }) {
                 </div>
                 <div className="min-w-0">
                   <p className="text-[13px] font-medium" style={{ color: 'var(--color-text-primary)' }}>
-                    {!isOnline ? 'Sin conexion' : failedTotal > 0 ? `${failedTotal} elementos fallidos` : `${pendingCount} pendientes por sincronizar`}
+                    {!isOnline ? 'Sin conexión' : failedTotal > 0 ? `${failedTotal} elementos fallidos` : `${pendingCount} pendientes por sincronizar`}
                   </p>
                   <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Toca para ver el detalle de sincronizacion</p>
                 </div>
@@ -558,7 +558,7 @@ export default function NotificationsCenter({ size = 'md' }) {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-medium" style={{ color: 'var(--color-text-primary)' }}>Instala la app</p>
-                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Accede mas rapido y usala sin internet</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Accede más rápido y úsala sin internet</p>
                   <div className="flex gap-2 mt-2">
                     <button onClick={dismissInstall} className="text-[11px] px-2.5 py-1 rounded-full transition-colors" style={{ color: 'var(--color-text-muted)', background: 'var(--color-bg-hover)' }}>
                       Ahora no

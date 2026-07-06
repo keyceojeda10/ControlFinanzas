@@ -15,7 +15,7 @@ import { useCountry } from '@/hooks/useCountry'
 
 export default function CobradoresPage() {
   const online = useOnline()
-  if (!online) return <OfflineFallback titulo="La gestion de cobradores requiere conexion" />
+  if (!online) return <OfflineFallback titulo="La gestión de cobradores requiere conexión" />
   return <CobradoresPageInner />
 }
 

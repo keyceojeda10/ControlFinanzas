@@ -133,14 +133,14 @@ export async function POST(request) {
 
     // Solo owner o superadmin pueden crear lineas
     if (rol === 'cobrador') {
-      return Response.json({ error: 'Sin permiso para crear lineas de credito' }, { status: 403 })
+      return Response.json({ error: 'Sin permiso para crear líneas de crédito' }, { status: 403 })
     }
 
     let body
     try {
       body = await request.json()
     } catch {
-      return Response.json({ error: 'Cuerpo de solicitud invalido' }, { status: 400 })
+      return Response.json({ error: 'Cuerpo de solicitud inválido' }, { status: 400 })
     }
 
     const {
@@ -158,10 +158,10 @@ export async function POST(request) {
       return Response.json({ error: 'clienteId es requerido' }, { status: 400 })
     }
     if (typeof cupoMaximo !== 'number' || cupoMaximo <= 0) {
-      return Response.json({ error: 'cupoMaximo debe ser un numero mayor a 0' }, { status: 400 })
+      return Response.json({ error: 'cupoMaximo debe ser un número mayor a 0' }, { status: 400 })
     }
     if (typeof tasaInteres !== 'number' || tasaInteres <= 0) {
-      return Response.json({ error: 'tasaInteres debe ser un numero mayor a 0' }, { status: 400 })
+      return Response.json({ error: 'tasaInteres debe ser un número mayor a 0' }, { status: 400 })
     }
 
     // ── Verificar que el cliente pertenece a la organizacion ──

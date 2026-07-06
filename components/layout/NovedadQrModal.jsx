@@ -31,7 +31,7 @@ const STEPS = [
   },
   {
     tag: 'Beneficios',
-    titulo: 'Cobra mas rapido',
+    titulo: 'Cobra más rápido',
     texto: 'El cobrador no tiene que buscar al cliente en la app. Escanea, cobra y sigue. Reduce errores, ahorra tiempo en cada parada y profesionaliza el negocio.',
     icon: 'bolt',
   },

@@ -55,7 +55,7 @@ async function generarComprobante(prestamo) {
   // Title
   ctx.fillStyle = '#111111'
   ctx.font = 'bold 22px system-ui, sans-serif'
-  ctx.fillText('Comprobante de prestamo', 40, y += 30)
+  ctx.fillText('Comprobante de préstamo', 40, y += 30)
 
   if (completado) {
     ctx.fillStyle = '#16a34a'
@@ -76,8 +76,8 @@ async function generarComprobante(prestamo) {
   ctx.fillStyle = '#111111'
   ctx.font = '15px system-ui, sans-serif'
   y += 26; ctx.fillText(`Nombre: ${cliente.nombre || '—'}`, 40, y)
-  y += 24; ctx.fillText(`Cedula: ${cliente.cedula && !cliente.cedula.startsWith('SIN-') ? cliente.cedula : '—'}`, 40, y)
-  y += 24; ctx.fillText(`Telefono: ${cliente.telefono || '—'}`, 40, y)
+  y += 24; ctx.fillText(`Cédula: ${cliente.cedula && !cliente.cedula.startsWith('SIN-') ? cliente.cedula : '—'}`, 40, y)
+  y += 24; ctx.fillText(`Teléfono: ${cliente.telefono || '—'}`, 40, y)
 
   y += 20
   ctx.strokeStyle = '#e5e5e5'

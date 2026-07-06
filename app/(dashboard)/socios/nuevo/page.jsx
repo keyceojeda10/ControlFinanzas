@@ -66,16 +66,16 @@ export default function NuevoSocioPage() {
             required
           />
           <Input
-            label="Cedula"
+            label="Cédula"
             value={form.cedula}
             onChange={handleChange('cedula')}
-            placeholder="Numero de cedula (opcional)"
+            placeholder="Número de cédula (opcional)"
           />
           <Input
-            label="Telefono"
+            label="Teléfono"
             value={form.telefono}
             onChange={handleChange('telefono')}
-            placeholder="Telefono (opcional)"
+            placeholder="Teléfono (opcional)"
           />
           <div className="flex flex-col gap-1.5">
             <label className="text-[11px] font-medium uppercase tracking-[0.05em]" style={{ color: 'var(--color-text-muted)' }}>

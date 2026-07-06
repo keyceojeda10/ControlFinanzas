@@ -233,7 +233,7 @@ export default function ReportesPage() {
       a.click()
       URL.revokeObjectURL(a.href)
     } catch {
-      alert('Error de conexion.')
+      alert('Error de conexión.')
     } finally {
       setDescargandoPDF(false)
     }

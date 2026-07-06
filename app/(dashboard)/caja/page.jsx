@@ -708,7 +708,7 @@ export default function CajaPage() {
             >
               <div>
                 <p className="text-[10px] uppercase tracking-wide" style={{ color: 'rgba(35,26,4,0.55)' }}>Seguros cobrados hoy</p>
-                <p className="text-[10px]" style={{ color: 'rgba(35,26,4,0.55)' }}>{segurosDia.cantidad} {segurosDia.cantidad === 1 ? 'prestamo' : 'prestamos'}</p>
+                <p className="text-[10px]" style={{ color: 'rgba(35,26,4,0.55)' }}>{segurosDia.cantidad} {segurosDia.cantidad === 1 ? 'préstamo' : 'préstamos'}</p>
               </div>
               <p className="text-base font-bold font-mono-display" style={{ color: '#231a04' }}>{formatMoney(segurosDia.monto)}</p>
             </div>

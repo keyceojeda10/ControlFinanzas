@@ -47,7 +47,7 @@ export default function NuevoClientePage() {
       setMetodo('foto')
       window.scrollTo({ top: 0, behavior: 'instant' })
     } catch {
-      setOcrError('Error de conexion. Intenta de nuevo.')
+      setOcrError('Error de conexión. Intenta de nuevo.')
     } finally {
       setOcrLoading(false)
     }

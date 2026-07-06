@@ -37,7 +37,7 @@ const ESTADO_COLOR = {
 
 export default function SoportePage() {
   const online = useOnline()
-  if (!online) return <OfflineFallback titulo="Soporte no esta disponible sin conexion" />
+  if (!online) return <OfflineFallback titulo="Soporte no esta disponible sin conexión" />
   return <SoportePageInner />
 }
 

@@ -84,7 +84,7 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
         if (result) {
           handleDetected(result)
         } else {
-          setError('No se encontro un QR valido. Intenta de nuevo.')
+          setError('No se encontró un QR válido. Intenta de nuevo.')
           setTimeout(() => setError(null), 4000)
         }
       }

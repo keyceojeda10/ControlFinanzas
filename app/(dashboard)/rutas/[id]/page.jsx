@@ -1739,7 +1739,7 @@ export default function RutaDetallePage({ params }) {
               type="text"
               value={busquedaRuta}
               onChange={(e) => setBusquedaRuta(e.target.value)}
-              placeholder="Buscar cliente por nombre o cedula..."
+              placeholder="Buscar cliente por nombre o cédula..."
               className="w-full h-9 pl-9 pr-8 rounded-[10px] text-[12px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] transition-colors"
             />
             {busquedaRuta && (
@@ -2183,7 +2183,7 @@ export default function RutaDetallePage({ params }) {
                             <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            <span>Interes moratorio pendiente</span>
+                            <span>Interés moratorio pendiente</span>
                           </div>
                         )}
 
@@ -2193,13 +2193,13 @@ export default function RutaDetallePage({ params }) {
                           if (!geo) return (
                             <div className="flex items-center gap-1 text-[9px]" style={{ color: '#555' }}>
                               <svg className="w-2.5 h-2.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
-                              sin geolocalizacion
+                              sin geolocalización
                             </div>
                           )
                           if (geo.clienteSinCoords || geo.distanciaMetros == null) return (
                             <div className="flex items-center gap-1 text-[9px]" style={{ color: '#555' }}>
                               <svg className="w-2.5 h-2.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
-                              cliente sin ubicacion fijada
+                              cliente sin ubicación fijada
                             </div>
                           )
                           const d = geo.distanciaMetros
@@ -2577,7 +2577,7 @@ export default function RutaDetallePage({ params }) {
                                   <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                   </svg>
-                                  <span>Interes moratorio pendiente</span>
+                                  <span>Interés moratorio pendiente</span>
                                 </div>
                               )}
 

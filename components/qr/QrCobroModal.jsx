@@ -162,7 +162,7 @@ export default function QrCobroModal({ open, onClose, clienteId }) {
           ) : (
             <div className="flex flex-col gap-2.5">
               <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--color-text-tertiary)' }}>
-                {activos.length === 1 ? '1 prestamo activo' : `${activos.length} prestamos activos`}
+                {activos.length === 1 ? '1 préstamo activo' : `${activos.length} préstamos activos`}
               </p>
               {activos.map(p => {
                 const saldo = p.saldoPendiente ?? (p.totalAPagar - (p.totalPagado || 0))

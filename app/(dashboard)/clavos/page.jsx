@@ -7,7 +7,7 @@ import { useCountry } from '@/hooks/useCountry'
 import { SkeletonCard } from '@/components/ui/Skeleton'
 
 const ORDEN_OPTS = [
-  { value: 'fecha', label: 'Mas reciente' },
+  { value: 'fecha', label: 'Más reciente' },
   { value: 'saldo', label: 'Mayor saldo' },
   { value: 'monto', label: 'Mayor monto' },
 ]
