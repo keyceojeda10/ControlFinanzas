@@ -398,8 +398,7 @@ export async function POST(req) {
     ? buildSystemPrompt(ctx)
     : buildSystemPromptCobrador(ctx)
 
-  // DeepSeek: deepseek-chat para todo (mucho más barato que Claude)
-  const model = 'deepseek-chat'
+  const model = 'deepseek-v4-pro'
 
   const messages = [
     { role: 'system', content: systemPrompt },
@@ -414,6 +413,7 @@ export async function POST(req) {
     max_tokens: isOwner ? 1024 : 600,
     messages,
     ...(tools ? { tools, tool_choice: 'auto' } : {}),
+    thinking: { type: 'disabled' },
   }
 
   const readable = new ReadableStream({
