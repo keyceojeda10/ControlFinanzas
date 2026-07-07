@@ -44,10 +44,15 @@ export async function GET(req) {
     fechaHasta = new Date(rangeFin.fin.getTime() + 1)
   }
 
-  const [org, prestamosActivosDetalle, prestamosCompletados, pagos, pagosPeriodo] = await Promise.all([
+  const [org, festivos, prestamosActivosDetalle, prestamosCompletados, pagos, pagosPeriodo] = await Promise.all([
     prisma.organization.findUnique({
       where: { id: orgId },
       select: { diasSinCobro: true },
+    }),
+
+    prisma.festivo.findMany({
+      where: { organizationId: orgId },
+      select: { fecha: true },
     }),
 
     prisma.prestamo.findMany({
@@ -139,7 +144,7 @@ export async function GET(req) {
     capitalPrestado += p.montoPrestado ?? 0
 
     const diasExcluidos = obtenerDiasSinCobro(p.cliente, p.cliente?.ruta, org)
-    if (calcularDiasMora(p, diasExcluidos) > 0) {
+    if (calcularDiasMora(p, diasExcluidos, festivos) > 0) {
       clientesMora.add(p.clienteId)
     }
   }

@@ -88,11 +88,17 @@ export async function GET(request) {
     ...(page != null && { take: limit, skip: (page - 1) * limit }),
   })
 
-  // Config org para días sin cobro
-  const org = await prisma.organization.findUnique({
-    where: { id: organizationId },
-    select: { diasSinCobro: true },
-  })
+  // Config org para días sin cobro + festivos
+  const [org, festivos] = await Promise.all([
+    prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { diasSinCobro: true },
+    }),
+    prisma.festivo.findMany({
+      where: { organizationId },
+      select: { fecha: true },
+    }),
+  ])
 
   // Lookup de nombres de creadores para auditoría
   const creadorIds = [...new Set(prestamos.map(p => p.creadoPorId).filter(Boolean))]
@@ -144,9 +150,9 @@ export async function GET(request) {
     totalPagado:      p.totalPagado ?? 0,
     saldoPendiente:   calcularSaldoPendiente(p),
     porcentajePagado: calcularPorcentajePagado(p),
-    diasMora:         calcularDiasMora(p, diasExcluidos),
+    diasMora:         calcularDiasMora(p, diasExcluidos, festivos),
     pagoHoy:          pagoHoy(p),
-    proximoCobro:     calcularProximoCobro(p, diasExcluidos),
+    proximoCobro:     calcularProximoCobro(p, diasExcluidos, festivos),
   }})
 
   // Orden cronologico puro: prestamo mas nuevo arriba (ya viene del Prisma orderBy).

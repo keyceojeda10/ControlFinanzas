@@ -72,11 +72,22 @@ export async function GET(req) {
 
     // Agregar datos de todas las orgs
     const orgsUnicas = new Set(clientesOtrasOrgs.map(c => c.organizationId))
-    const orgs = await prisma.organization.findMany({
-      where: { id: { in: [...orgsUnicas] } },
-      select: { id: true, diasSinCobro: true },
-    })
+    const [orgs, festivos] = await Promise.all([
+      prisma.organization.findMany({
+        where: { id: { in: [...orgsUnicas] } },
+        select: { id: true, diasSinCobro: true },
+      }),
+      prisma.festivo.findMany({
+        where: { organizationId: { in: [...orgsUnicas] } },
+        select: { organizationId: true, fecha: true },
+      }),
+    ])
     const orgMap = new Map(orgs.map(o => [o.id, o]))
+    const festivosPorOrg = new Map()
+    for (const f of festivos) {
+      if (!festivosPorOrg.has(f.organizationId)) festivosPorOrg.set(f.organizationId, [])
+      festivosPorOrg.get(f.organizationId).push(f)
+    }
 
     let creditosActivos     = 0
     let creditosCompletados = 0
@@ -86,13 +97,14 @@ export async function GET(req) {
     for (const cliente of clientesOtrasOrgs) {
       const org = orgMap.get(cliente.organizationId)
       const diasExcluidos = obtenerDiasSinCobro(cliente, cliente.ruta, org)
+      const festivosOrg = festivosPorOrg.get(cliente.organizationId) || []
       for (const prestamo of cliente.prestamos) {
         if (prestamo.estado === 'completado') {
           creditosCompletados++
         } else if (prestamo.estado === 'cancelado') {
           creditosCancelados++
         } else if (prestamo.estado === 'activo') {
-          const diasMora = calcularDiasMora(prestamo, diasExcluidos)
+          const diasMora = calcularDiasMora(prestamo, diasExcluidos, festivosOrg)
           if (diasMora > 0) {
             creditosEnMora++
           } else {

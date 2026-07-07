@@ -50,6 +50,7 @@ export async function GET() {
 
   const [
     org,
+    festivos,
     prestamosActivosDetalle,
     prestamosCompletados,
     pagosHoy,
@@ -71,6 +72,11 @@ export async function GET() {
     prisma.organization.findUnique({
       where: { id: orgId },
       select: { diasSinCobro: true },
+    }),
+
+    prisma.festivo.findMany({
+      where: { organizationId: orgId },
+      select: { fecha: true },
     }),
 
     prisma.prestamo.findMany({
@@ -334,7 +340,7 @@ export async function GET() {
     cuotaDiariaTotal += p.cuotaDiaria ?? 0
 
     const diasExcluidos = getDiasExcluidos(p.cliente)
-    if (calcularDiasMora(p, diasExcluidos) > 0) {
+    if (calcularDiasMora(p, diasExcluidos, festivos) > 0) {
       clientesMora.add(p.clienteId)
     }
 

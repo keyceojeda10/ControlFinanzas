@@ -49,7 +49,7 @@ export async function GET() {
   const hoy     = inicioHoyUTC(country)
   const hace7   = inicio7DiasUTC(country)
 
-  const [pagosSemana, pagosHoy, ruta, clientesRuta] = await Promise.all([
+  const [pagosSemana, pagosHoy, ruta, clientesRuta, festivos] = await Promise.all([
     prisma.pago.findMany({
       where: {
         organizationId: orgId,
@@ -116,13 +116,17 @@ export async function GET() {
         },
       },
     }),
+    prisma.festivo.findMany({
+      where: { organizationId: orgId },
+      select: { fecha: true },
+    }),
   ])
 
   // Calcular días de mora por cliente (máximo entre sus préstamos activos) y quedarnos
   // con los que tienen mora > 0, ordenados desc, top 10.
   const clientesMora = clientesRuta
     .map((c) => {
-      const diasMora = c.prestamos.reduce((max, p) => Math.max(max, calcularDiasMora(p)), 0)
+      const diasMora = c.prestamos.reduce((max, p) => Math.max(max, calcularDiasMora(p, [], festivos)), 0)
       return { nombre: c.nombre, diasMora }
     })
     .filter((c) => c.diasMora > 0)

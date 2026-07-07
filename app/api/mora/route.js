@@ -35,39 +35,43 @@ export async function GET(request) {
     },
   }
 
-  // Obtener préstamos activos vencidos
-  const prestamos = await prisma.prestamo.findMany({
-    where: wherePrestamo,
-    include: {
-      cliente: {
-        select: {
-          id: true,
-          nombre: true,
-          cedula: true,
-          telefono: true,
-          fotoUrl: true,
-          rutaId: true,
-          diasSinCobro: true,
-          ruta: { select: { nombre: true, diasSinCobro: true } },
+  // Obtener préstamos activos vencidos + config de org (días sin cobro) + festivos
+  const [prestamos, org, festivos] = await Promise.all([
+    prisma.prestamo.findMany({
+      where: wherePrestamo,
+      include: {
+        cliente: {
+          select: {
+            id: true,
+            nombre: true,
+            cedula: true,
+            telefono: true,
+            fotoUrl: true,
+            rutaId: true,
+            diasSinCobro: true,
+            ruta: { select: { nombre: true, diasSinCobro: true } },
+          },
+        },
+        pagos: {
+          select: { id: true, montoPagado: true, fechaPago: true, tipo: true },
         },
       },
-      pagos: {
-        select: { id: true, montoPagado: true, fechaPago: true, tipo: true },
-      },
-    },
-  })
-
-  // Obtener config de org (días sin cobro)
-  const org = await prisma.organization.findUnique({
-    where: { id: organizationId },
-    select: { diasSinCobro: true },
-  })
+    }),
+    prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { diasSinCobro: true },
+    }),
+    prisma.festivo.findMany({
+      where: { organizationId },
+      select: { fecha: true },
+    }),
+  ])
 
   // Calcular mora para cada préstamo
   const clientesEnMora = prestamos
     .map((p) => {
       const diasExcluidos = obtenerDiasSinCobro(p.cliente, p.cliente?.ruta, org)
-      const diasMora = calcularDiasMora(p, diasExcluidos)
+      const diasMora = calcularDiasMora(p, diasExcluidos, festivos)
       if (diasMora <= 0) return null
       return {
         prestamoId: p.id,

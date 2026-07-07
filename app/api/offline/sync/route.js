@@ -47,10 +47,16 @@ export async function GET() {
     }
   }
 
-  const org = await prisma.organization.findUnique({
-    where: { id: orgId },
-    select: { diasSinCobro: true },
-  })
+  const [org, festivos] = await Promise.all([
+    prisma.organization.findUnique({
+      where: { id: orgId },
+      select: { diasSinCobro: true },
+    }),
+    prisma.festivo.findMany({
+      where: { organizationId: orgId },
+      select: { fecha: true },
+    }),
+  ])
 
   // ── Filtro base: cobrador solo ve su ruta ──
   const clienteWhere = {
@@ -95,11 +101,11 @@ export async function GET() {
         prestamos: c.prestamos.map((p) => ({
           ...p,
           totalPagado: p.pagos.filter(x => !['recargo', 'descuento'].includes(x.tipo)).reduce((a, x) => a + x.montoPagado, 0),
-          diasMora: calcularDiasMora(p, diasExcluidos),
+          diasMora: calcularDiasMora(p, diasExcluidos, festivos),
           saldoPendiente: calcularSaldoPendiente(p),
           porcentajePagado: calcularPorcentajePagado(p),
           pagoHoy: pagoHoy(p),
-          proximoCobro: calcularProximoCobro(p, diasExcluidos),
+          proximoCobro: calcularProximoCobro(p, diasExcluidos, festivos),
         })),
       }
     })(),
@@ -159,10 +165,10 @@ export async function GET() {
         const pc = p.proximoCobro ? new Date(p.proximoCobro) : null
         if (pc && (!proximoCobro || pc < proximoCobro)) proximoCobro = pc
         frecuencia = p.frecuencia || frecuencia
-        if (!hoySinCobro && tieneCobroPendienteHoy(p, diasExcluidosCliente)) {
+        if (!hoySinCobro && tieneCobroPendienteHoy(p, diasExcluidosCliente, festivos)) {
           cobroPendienteHoy = true
         }
-        if (tienePeriodoEsperadoHoy(p, hoySinCobro, diasExcluidosCliente, [])) {
+        if (tienePeriodoEsperadoHoy(p, hoySinCobro, diasExcluidosCliente, festivos)) {
           cuotaEsperadaHoy += (p.cuotaDiaria || 0)
         }
       }

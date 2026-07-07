@@ -43,6 +43,7 @@ export async function GET(req) {
   // ── Data fetching (parallel) ─────────────────────────────
   const [
     org,
+    festivos,
     prestamosActivos,
     prestamosCompletados,
     pagosAgg,
@@ -56,6 +57,10 @@ export async function GET(req) {
     prisma.organization.findUnique({
       where: { id: orgId },
       select: { nombre: true, country: true, diasSinCobro: true },
+    }),
+    prisma.festivo.findMany({
+      where: { organizationId: orgId },
+      select: { fecha: true },
     }),
     prisma.prestamo.findMany({
       where: {
@@ -156,7 +161,7 @@ export async function GET(req) {
     carteraActiva += p.totalAPagar ?? 0
     capitalPrestado += p.montoPrestado ?? 0
     const diasExcluidos = obtenerDiasSinCobro(p.cliente, p.cliente?.ruta, org)
-    if (calcularDiasMora(p, diasExcluidos) > 0) clientesMora.add(p.clienteId)
+    if (calcularDiasMora(p, diasExcluidos, festivos) > 0) clientesMora.add(p.clienteId)
   }
 
   const totalPeriodo = pagosAgg._sum.montoPagado ?? 0

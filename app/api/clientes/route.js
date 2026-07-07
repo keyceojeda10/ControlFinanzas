@@ -119,10 +119,16 @@ export async function GET(request) {
     ...(page != null && { take: limit, skip: (page - 1) * limit }),
   })
 
-  const org = await prisma.organization.findUnique({
-    where: { id: organizationId },
-    select: { diasSinCobro: true },
-  })
+  const [org, festivos] = await Promise.all([
+    prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { diasSinCobro: true },
+    }),
+    prisma.festivo.findMany({
+      where: { organizationId },
+      select: { fecha: true },
+    }),
+  ])
 
   // Inicio del dia hoy en hora Colombia para detectar pagoHoy
   const country = session.user.country ?? 'co'
@@ -152,7 +158,7 @@ export async function GET(request) {
       try { saldoTotal += calcularSaldoPendiente(p) } catch {}
       totalAPagarSum += (p.totalAPagar ?? 0)
       try {
-        const dm = calcularDiasMora(p, diasExcluidos)
+        const dm = calcularDiasMora(p, diasExcluidos, festivos)
         if (dm > diasMoraMax) diasMoraMax = dm
       } catch {}
       // Pago hoy: ultimoPagoAt denormalizado evita iterar todos los pagos.
@@ -161,7 +167,7 @@ export async function GET(request) {
       }
       // Proximo cobro: tomar el mas cercano de todos los prestamos activos
       try {
-        const prox = calcularProximoCobro(p, diasExcluidos)
+        const prox = calcularProximoCobro(p, diasExcluidos, festivos)
         if (prox && (!proximoCobroMin || prox < proximoCobroMin)) proximoCobroMin = prox
       } catch {}
     }
@@ -177,7 +183,7 @@ export async function GET(request) {
       telefono:         c.telefono,
       referencia:       c.referencia,
       fotoUrl:          c.fotoUrl ?? null,
-      estado:           calcularEstadoCliente(c.prestamos, diasExcluidos),
+      estado:           calcularEstadoCliente(c.prestamos, diasExcluidos, festivos),
       rutaId:           c.rutaId,
       rutaNombre:       c.ruta?.nombre ?? null,
       grupoCobro:       c.grupoCobro ?? null,

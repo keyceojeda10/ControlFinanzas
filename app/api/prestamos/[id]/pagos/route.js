@@ -106,10 +106,16 @@ export async function POST(request, { params }) {
     }
   }
 
-  const org = await prisma.organization.findUnique({
-    where: { id: organizationId },
-    select: { diasSinCobro: true },
-  })
+  const [org, festivos] = await Promise.all([
+    prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { diasSinCobro: true },
+    }),
+    prisma.festivo.findMany({
+      where: { organizationId },
+      select: { fecha: true },
+    }),
+  ])
 
   const body = await request.json()
   const { montoPagado, tipo, nota, diasAbonados, metodoPago, plataforma, latitud, longitud } = body
@@ -547,7 +553,7 @@ export async function POST(request, { params }) {
     )
 
     const diasExcluidosCliente = obtenerDiasSinCobro(prestamo.cliente, prestamo.cliente?.ruta, org)
-    const nuevoEstadoCliente = calcularEstadoCliente(prestamosAjustados, diasExcluidosCliente)
+    const nuevoEstadoCliente = calcularEstadoCliente(prestamosAjustados, diasExcluidosCliente, festivos)
     await tx.cliente.update({
       where: { id: prestamo.cliente.id },
       data:  { estado: nuevoEstadoCliente },
@@ -673,12 +679,12 @@ export async function POST(request, { params }) {
     saldoPendiente:   calcularSaldoPendiente(prestamoFinal),
     capitalRestante:  calcularCapitalRestante(prestamoFinal),
     porcentajePagado: calcularPorcentajePagado(prestamoFinal),
-    diasMora:         calcularDiasMora(prestamoFinal, diasExcluidosFinal),
+    diasMora:         calcularDiasMora(prestamoFinal, diasExcluidosFinal, festivos),
     cuotasPendientes: calcularCuotasPendientes(prestamoFinal),
-    cuotasEnMora:     calcularCuotasEnMora(prestamoFinal, diasExcluidosFinal),
-    montoEnMora:      calcularMontoEnMora(prestamoFinal, diasExcluidosFinal),
-    montoParaPonerseAlDia: calcularMontoParaPonerseAlDia(prestamoFinal, diasExcluidosFinal),
-    proximoCobro:     calcularProximoCobro(prestamoFinal, diasExcluidosFinal),
+    cuotasEnMora:     calcularCuotasEnMora(prestamoFinal, diasExcluidosFinal, festivos),
+    montoEnMora:      calcularMontoEnMora(prestamoFinal, diasExcluidosFinal, festivos),
+    montoParaPonerseAlDia: calcularMontoParaPonerseAlDia(prestamoFinal, diasExcluidosFinal, festivos),
+    proximoCobro:     calcularProximoCobro(prestamoFinal, diasExcluidosFinal, festivos),
     pagoHoy:          pagoHoy(prestamoFinal),
   }, { status: 201 })
 }

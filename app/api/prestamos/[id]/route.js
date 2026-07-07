@@ -72,14 +72,20 @@ export async function GET(request, { params }) {
   const p = await obtenerPrestamo(id, session)
   if (!p) return Response.json({ error: 'Préstamo no encontrado' }, { status: 404 })
 
-  // Resolver días sin cobro
-  const org = await prisma.organization.findUnique({
-    where: { id: session.user.organizationId },
-    select: { diasSinCobro: true, tasaMoratorio: true, diasGraciaMoratorio: true },
-  })
+  // Resolver días sin cobro + festivos
+  const [org, festivos] = await Promise.all([
+    prisma.organization.findUnique({
+      where: { id: session.user.organizationId },
+      select: { diasSinCobro: true, tasaMoratorio: true, diasGraciaMoratorio: true },
+    }),
+    prisma.festivo.findMany({
+      where: { organizationId: session.user.organizationId },
+      select: { fecha: true },
+    }),
+  ])
   const diasExcluidos = obtenerDiasSinCobro(p.cliente, p.cliente?.ruta, org)
 
-  const moratorio = calcularInteresMoratorio(p, diasExcluidos, [], org?.tasaMoratorio ?? 0, org?.diasGraciaMoratorio ?? 5)
+  const moratorio = calcularInteresMoratorio(p, diasExcluidos, festivos, org?.tasaMoratorio ?? 0, org?.diasGraciaMoratorio ?? 5)
 
   return Response.json({
     ...p,
@@ -87,13 +93,13 @@ export async function GET(request, { params }) {
     saldoPendiente:   calcularSaldoPendiente(p),
     capitalRestante:  calcularCapitalRestante(p),
     porcentajePagado: calcularPorcentajePagado(p),
-    diasMora:         calcularDiasMora(p, diasExcluidos),
+    diasMora:         calcularDiasMora(p, diasExcluidos, festivos),
     cuotasPendientes: calcularCuotasPendientes(p),
-    cuotasEnMora:     calcularCuotasEnMora(p, diasExcluidos),
-    montoEnMora:      calcularMontoEnMora(p, diasExcluidos),
-    montoParaPonerseAlDia: calcularMontoParaPonerseAlDia(p, diasExcluidos),
+    cuotasEnMora:     calcularCuotasEnMora(p, diasExcluidos, festivos),
+    montoEnMora:      calcularMontoEnMora(p, diasExcluidos, festivos),
+    montoParaPonerseAlDia: calcularMontoParaPonerseAlDia(p, diasExcluidos, festivos),
     pagoHoy:          pagoHoy(p),
-    proximoCobro:     calcularProximoCobro(p, diasExcluidos),
+    proximoCobro:     calcularProximoCobro(p, diasExcluidos, festivos),
     moratorio,
   })
 }
