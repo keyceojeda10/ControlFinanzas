@@ -1227,43 +1227,31 @@ function ProximosARenovar({ alertas }) {
 function BandaSuscripcion({ dias }) {
   if (dias === null || dias === undefined || dias > 30) return null
   const urgente = dias <= 7
-  const color = urgente ? 'var(--color-danger)' : 'var(--color-warning)'
-  const pct = Math.round((dias / 30) * 100)
+  const pct = Math.max(4, Math.round((dias / 30) * 100))
+  const barColor = urgente ? '#ef4444' : dias <= 14 ? '#f59e0b' : 'var(--color-accent)'
+  const bgColor = urgente ? 'color-mix(in srgb, #ef4444 6%, var(--color-bg-card))' : 'var(--color-bg-card)'
   return (
-    <div className="rounded-[12px] px-4 py-3 flex items-center justify-between gap-3"
-      style={{
-        background: `color-mix(in srgb, ${color} 8%, var(--color-bg-card))`,
-        border: `1px solid color-mix(in srgb, ${color} 25%, var(--color-border))`,
-      }}
+    <a href="/configuracion/plan"
+      className="block rounded-[14px] px-4 py-3 transition-all hover:scale-[1.005] active:scale-[0.995]"
+      style={{ background: bgColor, border: '1px solid var(--color-border)' }}
     >
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1.5">
-          <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
-            <div className="h-full rounded-full transition-all duration-700"
-              style={{
-                width: `${pct}%`,
-                background: color,
-                boxShadow: urgente ? `0 0 6px ${color}` : 'none',
-              }}
-            />
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <div className="w-full h-[6px] rounded-full overflow-hidden flex-1" style={{ background: 'var(--color-bg-hover)', minWidth: 120 }}>
+            <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: barColor }} />
           </div>
-          <span className="text-[11px] font-bold font-mono-display shrink-0" style={{ color }}>{dias}d</span>
+          <span className="text-[12px] font-bold font-mono-display shrink-0" style={{ color: barColor }}>{dias}d</span>
         </div>
-        <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
-          {urgente ? 'Tu suscripción vence pronto' : `${dias} días restantes de tu plan`}
-        </p>
+        <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full shrink-0"
+          style={{ background: `color-mix(in srgb, var(--color-accent) 12%, transparent)`, color: 'var(--color-accent)' }}
+        >
+          Renovar
+        </span>
       </div>
-      <a href="/configuracion/plan"
-        className="shrink-0 text-[11px] font-semibold px-3 py-1.5 rounded-full transition-all"
-        style={{
-          background: `color-mix(in srgb, ${color} 15%, transparent)`,
-          color,
-          border: `1px solid color-mix(in srgb, ${color} 35%, transparent)`,
-        }}
-      >
-        Renovar
-      </a>
-    </div>
+      <p className="text-[11px] text-[var(--color-text-muted)]">
+        {dias} dias restantes de tu plan
+      </p>
+    </a>
   )
 }
 
