@@ -1228,29 +1228,49 @@ function BandaSuscripcion({ dias }) {
   if (dias === null || dias === undefined || dias > 30) return null
   const urgente = dias <= 7
   const pct = Math.max(4, Math.round((dias / 30) * 100))
-  const barColor = urgente ? '#ef4444' : dias <= 14 ? '#f59e0b' : 'var(--color-accent)'
-  const bgColor = urgente ? 'color-mix(in srgb, #ef4444 6%, var(--color-bg-card))' : 'var(--color-bg-card)'
+
+  const mensaje = urgente
+    ? 'Renueva para seguir creciendo'
+    : dias <= 14
+      ? 'Tu negocio va bien, asegura la continuidad'
+      : 'Aprovecha al maximo tu plan'
+
+  const accentColor = urgente ? '#ef4444' : 'var(--color-accent)'
+  const gradientBg = urgente
+    ? 'linear-gradient(135deg, color-mix(in srgb, #ef4444 8%, var(--color-bg-card)), color-mix(in srgb, #f59e0b 5%, var(--color-bg-card)))'
+    : 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 6%, var(--color-bg-card)), var(--color-bg-card))'
+
   return (
     <a href="/configuracion/plan"
-      className="block rounded-[14px] px-4 py-3 transition-all hover:scale-[1.005] active:scale-[0.995]"
-      style={{ background: bgColor, border: '1px solid var(--color-border)' }}
+      className="block rounded-[14px] px-4 py-3.5 transition-all hover:scale-[1.005] active:scale-[0.995] relative overflow-hidden"
+      style={{ background: gradientBg, border: '1px solid var(--color-border)' }}
     >
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <div className="w-full h-[6px] rounded-full overflow-hidden flex-1" style={{ background: 'var(--color-bg-hover)', minWidth: 120 }}>
-            <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: barColor }} />
-          </div>
-          <span className="text-[12px] font-bold font-mono-display shrink-0" style={{ color: barColor }}>{dias}d</span>
+      <div className="flex items-center gap-3">
+        <div className="relative w-11 h-11 shrink-0">
+          <svg className="w-11 h-11 -rotate-90" viewBox="0 0 44 44">
+            <circle cx="22" cy="22" r="18" fill="none" stroke="var(--color-bg-hover)" strokeWidth="3.5" />
+            <circle cx="22" cy="22" r="18" fill="none" stroke={accentColor} strokeWidth="3.5"
+              strokeLinecap="round"
+              strokeDasharray={`${pct * 1.13} 113`}
+              style={{ transition: 'stroke-dasharray 1s ease' }}
+            />
+          </svg>
+          <span className="absolute inset-0 flex items-center justify-center text-[11px] font-bold font-mono-display" style={{ color: accentColor }}>
+            {dias}
+          </span>
         </div>
-        <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full shrink-0"
-          style={{ background: `color-mix(in srgb, var(--color-accent) 12%, transparent)`, color: 'var(--color-accent)' }}
+        <div className="flex-1 min-w-0">
+          <p className="text-[12px] font-semibold text-[var(--color-text-primary)]">
+            {dias} dias restantes
+          </p>
+          <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">{mensaje}</p>
+        </div>
+        <span className="text-[11px] font-semibold px-3 py-1.5 rounded-full shrink-0 transition-all"
+          style={{ background: `color-mix(in srgb, ${accentColor} 12%, transparent)`, color: accentColor }}
         >
           Renovar
         </span>
       </div>
-      <p className="text-[11px] text-[var(--color-text-muted)]">
-        {dias} dias restantes de tu plan
-      </p>
     </a>
   )
 }
