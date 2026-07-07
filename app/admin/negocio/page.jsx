@@ -63,6 +63,7 @@ export default function NegocioPage() {
   const [loading, setLoading] = useState(true)
   const [tab,     setTab]     = useState('pagantes')
   const [q,       setQ]       = useState('')
+  const [ordenPagantes, setOrdenPagantes] = useState('vencimiento') // vencimiento | precio | actividad | antiguedad
   const timerRef = useRef(null)
 
   const cargar = (silencioso = false) => {
@@ -94,11 +95,26 @@ export default function NegocioPage() {
   )
 
   const { resumen } = data
-  const lista = (data[tab] ?? []).filter(u => {
+  const listaRaw = (data[tab] ?? []).filter(u => {
     if (!q) return true
     const hay = (s) => (s ?? '').toLowerCase().includes(q.toLowerCase())
     return hay(u.nombre) || hay(u.ownerNombre) || hay(u.ownerEmail)
   })
+
+  const lista = tab === 'pagantes' ? [...listaRaw].sort((a, b) => {
+    if (ordenPagantes === 'vencimiento') {
+      return new Date(a.fechaVencimiento) - new Date(b.fechaVencimiento)
+    }
+    if (ordenPagantes === 'precio') return b.precio - a.precio
+    if (ordenPagantes === 'actividad') return (a.diasSinActividad ?? 999) - (b.diasSinActividad ?? 999)
+    if (ordenPagantes === 'antiguedad') return (b.mesesPagando ?? 0) - (a.mesesPagando ?? 0)
+    return 0
+  }) : listaRaw
+
+  const diasRestantes = (fv) => {
+    if (!fv) return null
+    return Math.ceil((new Date(fv) - new Date()) / 86400000)
+  }
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -131,6 +147,17 @@ export default function NegocioPage() {
           <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
             {resumen.pagantes} pagando · ticket {resumen.pagantes > 0 ? formatMoney(Math.round(resumen.mrrActual / resumen.pagantes), 'co') : '—'}
           </p>
+          {(() => {
+            const porVencer = (data.pagantes ?? []).filter(p => {
+              const dr = diasRestantes(p.fechaVencimiento)
+              return dr != null && dr <= 7
+            }).length
+            return porVencer > 0 ? (
+              <p className="text-[10px] font-semibold text-[#f59e0b] mt-1">
+                {porVencer} vence{porVencer > 1 ? 'n' : ''} en 7 dias
+              </p>
+            ) : null
+          })()}
         </Card>
         <Card>
           <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide mb-1">Potencial adicional</p>
@@ -216,8 +243,8 @@ export default function NegocioPage() {
 
       {/* Tabs de tabla — solo cuando NO es vencimientos */}
       {tab !== 'vencimientos' && <>
-      {/* Buscador */}
-      <div className="mb-3">
+      {/* Buscador + Ordenamiento */}
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         <input
           type="text"
           value={q}
@@ -225,6 +252,18 @@ export default function NegocioPage() {
           placeholder="Buscar por nombre, email..."
           className="w-full max-w-xs px-3 py-1.5 text-xs rounded-[8px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)]"
         />
+        {tab === 'pagantes' && (
+          <select
+            value={ordenPagantes}
+            onChange={e => setOrdenPagantes(e.target.value)}
+            className="px-2 py-1.5 text-[11px] rounded-[8px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)]"
+          >
+            <option value="vencimiento">Vence primero</option>
+            <option value="precio">Mayor ingreso</option>
+            <option value="actividad">Menos activo</option>
+            <option value="antiguedad">Mas antiguo</option>
+          </select>
+        )}
       </div>
 
       {/* Tabla */}
@@ -239,7 +278,9 @@ export default function NegocioPage() {
                 {tab === 'pagantes' && <>
                   <th className="text-center px-3 py-3 font-medium">Plan</th>
                   <th className="text-right px-3 py-3 font-medium">$/mes</th>
-                  <th className="text-center px-3 py-3 font-medium hidden sm:table-cell">Cliente desde</th>
+                  <th className="text-center px-3 py-3 font-medium">Vence en</th>
+                  <th className="text-center px-3 py-3 font-medium hidden sm:table-cell">Actividad</th>
+                  <th className="text-center px-3 py-3 font-medium hidden sm:table-cell">Antigüedad</th>
                 </>}
                 {tab === 'trials' && <>
                   <th className="text-center px-3 py-3 font-medium">Score</th>
@@ -307,7 +348,10 @@ export default function NegocioPage() {
                     </td>
 
                     {/* Columnas específicas por tab */}
-                    {tab === 'pagantes' && <>
+                    {tab === 'pagantes' && (() => {
+                      const dr = diasRestantes(u.fechaVencimiento)
+                      const venceColor = dr != null && dr <= 3 ? 'var(--color-danger)' : dr != null && dr <= 7 ? '#f59e0b' : dr != null && dr <= 14 ? 'var(--color-accent)' : 'var(--color-success)'
+                      return <>
                       <td className="px-3 py-3 text-center">
                         <Badge variant={u.plan === 'professional' ? 'green' : u.plan === 'standard' ? 'purple' : u.plan === 'growth' ? 'yellow' : 'blue'}>
                           {u.planNombre}
@@ -316,13 +360,34 @@ export default function NegocioPage() {
                       <td className="px-3 py-3 text-right font-bold text-[var(--color-success)]">
                         {formatMoney(u.precio, u.country ?? 'co')}
                       </td>
-                      <td className="px-3 py-3 text-center hidden sm:table-cell">
-                        <p className="text-[var(--color-text-primary)] font-medium">{hace(u.fechaInicioPago)}</p>
-                        <p className="text-[10px] text-[var(--color-text-muted)]">
-                          {u.fechaInicioPago ? new Date(u.fechaInicioPago).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: '2-digit' }) : '—'}
-                        </p>
+                      <td className="px-3 py-3 text-center">
+                        {dr != null ? (
+                          <div className="flex flex-col items-center gap-0.5">
+                            <span className="font-bold text-[11px]" style={{ color: venceColor }}>
+                              {dr <= 0 ? 'Vencido' : `${dr}d`}
+                            </span>
+                            <span className="text-[9px] text-[var(--color-text-muted)]">
+                              {new Date(u.fechaVencimiento).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}
+                            </span>
+                          </div>
+                        ) : '—'}
                       </td>
-                    </>}
+                      <td className="px-3 py-3 text-center hidden sm:table-cell">
+                        <span className={`font-medium text-[11px] ${
+                          (u.diasSinActividad ?? 0) <= 1 ? 'text-[var(--color-success)]'
+                          : (u.diasSinActividad ?? 0) <= 3 ? 'text-[var(--color-text-primary)]'
+                          : (u.diasSinActividad ?? 0) <= 7 ? 'text-[var(--color-accent)]'
+                          : 'text-[var(--color-danger)]'
+                        }`}>
+                          {hace(u.ultimaActividad)}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 text-center hidden sm:table-cell">
+                        <span className="text-[var(--color-text-muted)]">
+                          {u.mesesPagando ?? 0} {(u.mesesPagando ?? 0) === 1 ? 'mes' : 'meses'}
+                        </span>
+                      </td>
+                    </>})()}
 
                     {tab === 'trials' && <>
                       <td className="px-3 py-3 text-center">
