@@ -424,11 +424,8 @@ export async function POST(req) {
       const safeClose = () => { if (!closed) { closed = true; try { controller.close() } catch {} } }
 
       try {
-        // emitTokens=false: no streamear en vivo. Si el modelo decide llamar
-        // una herramienta, el texto que haya escrito ("Voy a buscar a
-        // Carlitos...") suele ser una promesa de accion que NUNCA se ejecuta
-        // visualmente (el tool_call la reemplaza), asi que se descarta y se
-        // muestra el status message correspondiente en su lugar.
+        safeEnqueue(enc.encode(`data: ${JSON.stringify({ type: 'status', text: 'Pensando...' })}\n\n`))
+
         const { textContent, toolCalls } = await runDeepSeekStream(streamParams, controller, enc, false)
 
         if (toolCalls.length > 0) {
@@ -667,7 +664,7 @@ export async function POST(req) {
           setImmediate(() => extraerYGuardarMemoria(orgId, session.user.id, conversacionCompleta))
         }
       } catch (err) {
-        console.error('[asistente] Error DeepSeek:', err)
+        console.error('[asistente] Error DeepSeek:', err?.message || err, err?.status, err?.code)
         safeEnqueue(enc.encode(`data: ${JSON.stringify({ error: 'Error al procesar tu consulta.' })}\n\n`))
       } finally {
         safeEnqueue(enc.encode('data: [DONE]\n\n'))
