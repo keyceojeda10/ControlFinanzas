@@ -327,7 +327,7 @@ async function runDeepSeekStream(params, controller, enc, emitTokens = true) {
     if (delta.content) {
       textContent += delta.content
       if (emitTokens) {
-        controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: delta.content })}\n\n`))
+        try { controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: delta.content })}\n\n`)) } catch {}
       }
     }
 
@@ -419,6 +419,9 @@ export async function POST(req) {
   const readable = new ReadableStream({
     async start(controller) {
       const enc = new TextEncoder()
+      let closed = false
+      const safeEnqueue = (data) => { if (!closed) try { controller.enqueue(data) } catch {} }
+      const safeClose = () => { if (!closed) { closed = true; try { controller.close() } catch {} } }
 
       try {
         // emitTokens=false: no streamear en vivo. Si el modelo decide llamar
@@ -447,7 +450,7 @@ export async function POST(req) {
             escalate_support: 'Conectando con soporte...',
           }
           const msg = statusMsgs[toolCall.name]
-          if (msg) controller.enqueue(enc.encode(`data: ${JSON.stringify({ type: 'status', text: msg })}\n\n`))
+          if (msg) safeEnqueue(enc.encode(`data: ${JSON.stringify({ type: 'status', text: msg })}\n\n`))
 
           if (toolCall.name === 'lookup_client') {
             // Búsqueda fuzzy
@@ -502,7 +505,7 @@ export async function POST(req) {
               lookupResult = `No encontré a nadie con "${buscar}". Clientes activos recientes: ${sugeridosTexto || 'ninguno'}.`
             }
 
-            controller.enqueue(enc.encode(`data: ${JSON.stringify({ type: 'lookup_result', result: lookupResult, clientes })}\n\n`))
+            safeEnqueue(enc.encode(`data: ${JSON.stringify({ type: 'lookup_result', result: lookupResult, clientes })}\n\n`))
 
             // Segunda llamada con tool result
             const messagesConToolResult = [
@@ -578,7 +581,7 @@ export async function POST(req) {
             if (toolCalls2.length > 0 && toolCalls2[0].name !== 'lookup_client') {
               const tc2 = toolCalls2[0]
               const displayData2 = await buildDisplayData(tc2.name, tc2.input, orgId)
-              controller.enqueue(enc.encode(`data: ${JSON.stringify({
+              safeEnqueue(enc.encode(`data: ${JSON.stringify({
                 type: 'action_proposal',
                 tool: tc2.name,
                 input: tc2.input,
@@ -593,16 +596,16 @@ export async function POST(req) {
               const mensaje = sonaAConfirmacion
                 ? 'Para registrar esto necesito que confirmes los datos en la tarjeta. ¿Puedes repetirme el monto y a quién es el cobro?'
                 : textContent2
-              controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: mensaje })}\n\n`))
+              safeEnqueue(enc.encode(`data: ${JSON.stringify({ token: mensaje })}\n\n`))
             } else {
               // El modelo no devolvio ni accion ni texto (respuesta vacia o
               // repitio lookup_client) — sin esto el bubble queda atascado en
               // "Buscando..." para siempre.
-              controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: '¿Puedes darme más detalles? No logré identificar bien al cliente o la acción.' })}\n\n`))
+              safeEnqueue(enc.encode(`data: ${JSON.stringify({ token: '¿Puedes darme más detalles? No logré identificar bien al cliente o la acción.' })}\n\n`))
             }
           } else {
             const displayData = await buildDisplayData(toolCall.name, toolCall.input, orgId)
-            controller.enqueue(
+            safeEnqueue(
               enc.encode(`data: ${JSON.stringify({
                 type: 'action_proposal',
                 tool: toolCall.name,
@@ -614,7 +617,7 @@ export async function POST(req) {
         } else if (textContent.trim()) {
           // Sin tool_call: es una respuesta normal (pregunta, dato, aclaracion).
           // Se emite ahora porque runDeepSeekStream no la streameo en vivo.
-          controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: textContent })}\n\n`))
+          safeEnqueue(enc.encode(`data: ${JSON.stringify({ token: textContent })}\n\n`))
         } else {
           // Respuesta totalmente vacia (sin tool_call ni texto) en el primer
           // turno — reintentar con tool_choice:'none' (fuerza texto), y si
@@ -624,7 +627,7 @@ export async function POST(req) {
           try {
             const retry = await runDeepSeekStream({ ...streamParams, tool_choice: 'none' }, controller, enc, false)
             if (retry.textContent.trim()) {
-              controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: retry.textContent })}\n\n`))
+              safeEnqueue(enc.encode(`data: ${JSON.stringify({ token: retry.textContent })}\n\n`))
               manejado = true
             }
           } catch (retryErr) {
@@ -637,13 +640,13 @@ export async function POST(req) {
                 const tc = claudeResult.toolCalls[0]
                 if (tc.name !== 'lookup_client') {
                   const displayData = await buildDisplayData(tc.name, tc.input, orgId)
-                  controller.enqueue(enc.encode(`data: ${JSON.stringify({
+                  safeEnqueue(enc.encode(`data: ${JSON.stringify({
                     type: 'action_proposal', tool: tc.name, input: tc.input, displayData,
                   })}\n\n`))
                   manejado = true
                 }
               } else if (claudeResult?.textContent?.trim()) {
-                controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: claudeResult.textContent })}\n\n`))
+                safeEnqueue(enc.encode(`data: ${JSON.stringify({ token: claudeResult.textContent })}\n\n`))
                 manejado = true
               }
             } catch (claudeErr) {
@@ -651,7 +654,7 @@ export async function POST(req) {
             }
           }
           if (!manejado) {
-            controller.enqueue(enc.encode(`data: ${JSON.stringify({ token: 'No entendí bien, ¿puedes repetirlo de otra forma?' })}\n\n`))
+            safeEnqueue(enc.encode(`data: ${JSON.stringify({ token: 'No entendí bien, ¿puedes repetirlo de otra forma?' })}\n\n`))
           }
         }
 
@@ -665,10 +668,10 @@ export async function POST(req) {
         }
       } catch (err) {
         console.error('[asistente] Error DeepSeek:', err)
-        try { controller.enqueue(enc.encode(`data: ${JSON.stringify({ error: 'Error al procesar tu consulta.' })}\n\n`)) } catch {}
+        safeEnqueue(enc.encode(`data: ${JSON.stringify({ error: 'Error al procesar tu consulta.' })}\n\n`))
       } finally {
-        try { controller.enqueue(enc.encode('data: [DONE]\n\n')) } catch {}
-        controller.close()
+        safeEnqueue(enc.encode('data: [DONE]\n\n'))
+        safeClose()
       }
     },
   })
