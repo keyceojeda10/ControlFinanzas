@@ -96,6 +96,7 @@ export async function GET() {
         totalPagado: true,
         ultimoPagoAt: true,
         modoInteres: true,
+        proximoCobroManual: true,
         cuotasAmortizacion: {
           orderBy: { numeroPeriodo: 'asc' },
           select: { numeroPeriodo: true, cuotaTotal: true, interes: true, pagado: true, interesPagado: true, fechaEsperada: true },

@@ -99,6 +99,7 @@ export async function GET(request) {
           diaCobroSemana: true,
           esClavo: true,
           createdAt: true,
+          proximoCobroManual: true,
           // Denormalizados: evitan iterar todos los pagos.
           totalPagado: true,
           ultimoPagoAt: true,

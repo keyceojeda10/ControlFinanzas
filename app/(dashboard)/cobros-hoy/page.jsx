@@ -41,6 +41,23 @@ export default function CobrosHoyPage() {
 
   useEffect(() => { fetchCobros() }, [fetchCobros])
 
+  // Refrescar cuando el usuario vuelve a la app despues de tenerla en
+  // segundo plano (ej. revisar WhatsApp). Sin esto, los cobradores ven
+  // estados de pago desactualizados en campo.
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchCobros() }
+    const onFocus = () => fetchCobros()
+    const onOnline = () => fetchCobros()
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onFocus)
+    window.addEventListener('online', onOnline)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onFocus)
+      window.removeEventListener('online', onOnline)
+    }
+  }, [fetchCobros])
+
   // Detectar meta cumplida
   useEffect(() => {
     if (!data?.resumen) return

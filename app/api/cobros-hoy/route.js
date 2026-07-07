@@ -106,6 +106,7 @@ export async function GET() {
               diasSinCobro: true,
               modoInteres: true,
               capitalExtra: true,
+              proximoCobroManual: true,
               cuotasAmortizacion: {
                 select: { numeroPeriodo: true, cuotaTotal: true, interes: true, capital: true, pagado: true, interesPagado: true, fechaEsperada: true },
                 orderBy: { numeroPeriodo: 'asc' },

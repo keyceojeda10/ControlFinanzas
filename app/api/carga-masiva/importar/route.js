@@ -32,6 +32,12 @@ export async function POST(request) {
       return Response.json({ error: 'Máximo 500 filas por importación' }, { status: 400 })
     }
 
+    // Validar que la ruta pertenezca a la organización del usuario
+    if (rutaId) {
+      const rutaValida = await prisma.ruta.findFirst({ where: { id: rutaId, organizationId }, select: { id: true } })
+      if (!rutaValida) return Response.json({ error: 'Ruta no válida' }, { status: 400 })
+    }
+
     // Agrupar por cédula (múltiples préstamos por cliente)
     // filas ya viene como array de { datos, calculado, ... } del frontend (post-validación)
     // Pero también soportamos filas planas si vienen directas
@@ -123,6 +129,10 @@ export async function POST(request) {
 
           // Crear cada préstamo del cliente
           for (const p of grupo.prestamos) {
+            if (!p.montoPrestado || p.montoPrestado <= 0 || !p.diasPlazo || p.diasPlazo <= 0) {
+              errores.push(`${grupo.cliente.nombre}: monto o plazo inválido`)
+              continue
+            }
             const { totalAPagar, cuotaDiaria, fechaFin } = calcularPrestamo({
               montoPrestado: p.montoPrestado,
               tasaInteres: p.tasaInteres ?? 0,

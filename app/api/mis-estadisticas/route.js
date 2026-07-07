@@ -111,6 +111,7 @@ export async function GET() {
             diaCobroSemana: true,
             diaCobroMes: true,
             diaCobroMes2: true,
+            proximoCobroManual: true,
           },
         },
       },
