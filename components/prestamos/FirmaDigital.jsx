@@ -178,6 +178,7 @@ export default function FirmaDigital({ prestamo, onSave }) {
   const [saving, setSaving] = useState(false)
   const [hasStrokes, setHasStrokes] = useState(false)
   const [descargando, setDescargando] = useState(false)
+  const [descargandoPagare, setDescargandoPagare] = useState(false)
   const canvasRef = useRef(null)
   const isDrawing = useRef(false)
   const lastPoint = useRef(null)
@@ -263,6 +264,26 @@ export default function FirmaDigital({ prestamo, onSave }) {
     }
   }
 
+  const descargarPagare = async () => {
+    if (!prestamoId) return
+    setDescargandoPagare(true)
+    try {
+      const res = await fetch(`/api/prestamos/${prestamoId}/pagare`)
+      if (!res.ok) throw new Error()
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.download = `pagare-${prestamo.cliente?.nombre?.replace(/\s+/g, '-') || prestamoId}.pdf`
+      link.href = url
+      link.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      alert('Error al generar el pagare')
+    } finally {
+      setDescargandoPagare(false)
+    }
+  }
+
   const descargarComprobante = async () => {
     if (!prestamo) return
     setDescargando(true)
@@ -341,12 +362,27 @@ export default function FirmaDigital({ prestamo, onSave }) {
           </button>
           <button
             type="button"
-            onClick={descargarComprobante}
-            disabled={descargando}
+            onClick={descargarPagare}
+            disabled={descargandoPagare}
             className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-[8px] text-[11px] font-medium transition-colors"
             style={{
               background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
               color: 'var(--color-accent)',
+            }}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+            </svg>
+            {descargandoPagare ? 'Generando...' : 'Pagare'}
+          </button>
+          <button
+            type="button"
+            onClick={descargarComprobante}
+            disabled={descargando}
+            className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-[8px] text-[11px] font-medium transition-colors"
+            style={{
+              background: 'rgba(255,255,255,0.06)',
+              color: 'var(--color-text-secondary)',
             }}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
