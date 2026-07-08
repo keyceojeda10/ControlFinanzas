@@ -750,9 +750,11 @@ export async function GET(request) {
     payload.stats.cajaGeneral = cajaGeneral
   }
 
+  const ocultarCapital = session.user.ocultarCapitalCobradores ?? false
+
   // Cobrador con permiso verCapital: expone el capital TOTAL de la organización
   // (saldo en caja + cartera activa). Es el patrimonio completo, más sensible que el saldo.
-  if (rol === 'cobrador' && permisos?.verCapital) {
+  if (rol === 'cobrador' && permisos?.verCapital && !ocultarCapital) {
     const [cap, prestamosActivos] = await Promise.all([
       prisma.capital.findUnique({
         where: { organizationId },
@@ -779,7 +781,7 @@ export async function GET(request) {
 
   // Cobrador con permiso verCapitalRuta: ve SOLO el capital de SU(S) ruta(s).
   // Muestra la suma total + el desglose por ruta. No ve el capital global.
-  if (rol === 'cobrador' && permisos?.verCapitalRuta) {
+  if (rol === 'cobrador' && permisos?.verCapitalRuta && !ocultarCapital) {
     const rutaIds = session.user.rutaIds ?? []
     if (rutaIds.length > 0) {
       const rutasCobrador = await prisma.ruta.findMany({

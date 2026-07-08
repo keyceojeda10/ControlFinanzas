@@ -9,6 +9,7 @@ export function useAuth() {
 
   const esOwner    = session?.user?.rol === 'owner'
   const permisos   = session?.user?.permisos ?? {}
+  const ocultarCapital = session?.user?.ocultarCapitalCobradores ?? false
 
   return {
     session,
@@ -33,8 +34,8 @@ export function useAuth() {
     puedeCrearClientes:  esOwner || Boolean(permisos.crearClientes),
     puedeEditarClientes: esOwner || Boolean(permisos.editarClientes),
     puedeReportarGastos: esOwner || Boolean(permisos.reportarGastos ?? true),
-    puedeVerCapital:     esOwner || Boolean(permisos.verCapital),
-    puedeVerCapitalRuta: Boolean(permisos.verCapitalRuta),
+    puedeVerCapital:     esOwner || (!ocultarCapital && Boolean(permisos.verCapital)),
+    puedeVerCapitalRuta: !ocultarCapital && Boolean(permisos.verCapitalRuta),
     puedeVerSaldoCaja:   esOwner || Boolean(permisos.verSaldoCaja),
     puedeGestionarRutas: esOwner || Boolean(permisos.gestionarRutas),
     puedeAplicarDescuentos: esOwner || Boolean(permisos.aplicarDescuentos),
