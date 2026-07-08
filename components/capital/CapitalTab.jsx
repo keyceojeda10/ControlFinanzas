@@ -384,7 +384,12 @@ export default function CapitalTab() {
             </div>
           </div>
           <p className="text-[10px] mt-2" style={{ color: 'var(--color-text-muted)' }}>
-            {resumen.cartera.prestamosActivos} prestamos activos en todas las rutas
+            {resumen.cartera.prestamosActivos} préstamos activos en todas las rutas
+            {resumen.cartera.sinRuta > 0 && (
+              <span className="block mt-1" style={{ color: 'var(--color-warning)' }}>
+                {formatMoney(resumen.cartera.sinRuta)} en {resumen.cartera.prestamosSinRuta} préstamo{resumen.cartera.prestamosSinRuta !== 1 ? 's' : ''} de clientes sin ruta asignada
+              </span>
+            )}
           </p>
         </div>
       )}

@@ -191,14 +191,23 @@ export async function GET() {
   const saldoPersistido = capital?.saldo ?? 0
   const diferenciaVsPersistido = saldoPersistido - saldoSugerido
 
-  const carteraAgregada = await prisma.prestamo.aggregate({
-    where: { organizationId, estado: 'activo', esClavo: false },
-    _sum: { totalAPagar: true, totalPagado: true, montoPrestado: true },
-    _count: true,
-  })
+  const [carteraAgregada, carteraSinRuta] = await Promise.all([
+    prisma.prestamo.aggregate({
+      where: { organizationId, estado: 'activo', esClavo: false },
+      _sum: { totalAPagar: true, totalPagado: true, montoPrestado: true },
+      _count: true,
+    }),
+    prisma.prestamo.aggregate({
+      where: { organizationId, estado: 'activo', esClavo: false, cliente: { rutaId: null } },
+      _sum: { totalAPagar: true, totalPagado: true },
+      _count: true,
+    }),
+  ])
   const carteraTotal = Math.max(0, (carteraAgregada._sum.totalAPagar ?? 0) - (carteraAgregada._sum.totalPagado ?? 0))
   const capitalEnCalle = carteraAgregada._sum.montoPrestado ?? 0
   const prestamosActivosTotal = carteraAgregada._count ?? 0
+  const carteraSinRutaTotal = Math.max(0, (carteraSinRuta._sum.totalAPagar ?? 0) - (carteraSinRuta._sum.totalPagado ?? 0))
+  const prestamosSinRuta = carteraSinRuta._count ?? 0
 
   return Response.json({
     configurado: Boolean(capital),
@@ -227,6 +236,8 @@ export async function GET() {
       total: Math.round(carteraTotal),
       capitalEnCalle: Math.round(capitalEnCalle),
       prestamosActivos: prestamosActivosTotal,
+      sinRuta: Math.round(carteraSinRutaTotal),
+      prestamosSinRuta,
     },
     mes: {
       desembolsado,
