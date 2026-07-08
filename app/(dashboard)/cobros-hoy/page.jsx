@@ -25,6 +25,9 @@ export default function CobrosHoyPage() {
   const [rutasColapsadas, setRutasColapsadas] = useState({})
   const [montoParcial, setMontoParcial] = useState('')
   const [modoParcial, setModoParcial] = useState(false)
+  const [subiendoFoto, setSubiendoFoto] = useState(false)
+  const [fotoSubida, setFotoSubida] = useState(false)
+  const fotoInputRef = useRef(null)
 
   const fetchCobros = useCallback(async () => {
     try {
@@ -130,6 +133,7 @@ export default function CobrosHoyPage() {
         if (pagoId) {
           if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
           setUndoPago({ pagoId, prestamoId: prestamoActivo, clienteNombre: nombre })
+          setFotoSubida(false)
           undoTimerRef.current = setTimeout(() => setUndoPago(null), 10000)
         }
       } else if (res.status === 409) {
@@ -151,6 +155,19 @@ export default function CobrosHoyPage() {
       fetchCobros()
     } finally {
       setPagando(null)
+    }
+  }
+
+  const subirFotoQuick = async (file) => {
+    if (!undoPago?.pagoId || subiendoFoto) return
+    setSubiendoFoto(true)
+    try {
+      const fd = new FormData()
+      fd.append('foto', file)
+      const res = await fetch(`/api/pagos/${undoPago.pagoId}/foto`, { method: 'POST', body: fd })
+      if (res.ok) setFotoSubida(true)
+    } catch {} finally {
+      setSubiendoFoto(false)
     }
   }
 
@@ -634,6 +651,18 @@ export default function CobrosHoyPage() {
       </Modal>
 
       {/* ── Toast: deshacer pago ── */}
+      <input
+        ref={fotoInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0]
+          if (f) subirFotoQuick(f)
+          e.target.value = ''
+        }}
+      />
       {undoPago && (
         <div className="fixed bottom-24 left-3 right-3 sm:left-auto sm:right-4 sm:bottom-6 sm:w-auto z-50 animate-slide-up">
           <div
@@ -646,6 +675,29 @@ export default function CobrosHoyPage() {
               </svg>
             </div>
             <span className="text-sm flex-1 truncate" style={{ color: 'var(--color-text-primary)' }}>Pago registrado — {undoPago.clienteNombre}</span>
+            <button
+              onClick={() => fotoInputRef.current?.click()}
+              disabled={subiendoFoto || fotoSubida}
+              className="shrink-0 transition-colors disabled:opacity-50"
+              style={{ color: fotoSubida ? 'var(--color-success)' : 'var(--color-text-muted)' }}
+              title={fotoSubida ? 'Foto guardada' : 'Adjuntar foto'}
+            >
+              {subiendoFoto ? (
+                <svg className="w-4 h-4 animate-spin" fill="currentColor" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" fill="none" strokeWidth={3} />
+                  <path className="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              ) : fotoSubida ? (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              )}
+            </button>
             <button onClick={deshacerPago} className="text-sm font-bold shrink-0 transition-colors" style={{ color: 'var(--color-accent)' }}>
               Deshacer
             </button>

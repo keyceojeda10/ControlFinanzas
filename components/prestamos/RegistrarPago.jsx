@@ -46,6 +46,9 @@ export default function RegistrarPago({
   const [exitoso,      setExitoso]      = useState(false)
   const [pagoGuardado, setPagoGuardado] = useState(null)
   const [prestamoAct,  setPrestamoAct]  = useState(null)
+  const [fotoEvidencia, setFotoEvidencia] = useState(null)
+  const [subiendoFoto, setSubiendoFoto] = useState(false)
+  const fotoInputRef = useRef(null)
   const prevOpenRef = useRef(false)
 
   useEffect(() => {
@@ -237,7 +240,8 @@ export default function RegistrarPago({
       }
       if (!res.ok) { setError(data.error ?? 'Error al registrar el pago'); return }
 
-      const pagoParaWA = { montoPagado: m, fechaPago: new Date().toISOString() }
+      const pagoId = data.pagos?.[0]?.id ?? null
+      const pagoParaWA = { id: pagoId, montoPagado: m, fechaPago: new Date().toISOString() }
       setPagoGuardado(pagoParaWA)
       setPrestamoAct(data)
       setExitoso(true)
@@ -253,10 +257,27 @@ export default function RegistrarPago({
     }
   }
 
+  const subirFotoEvidencia = async (file) => {
+    if (!pagoGuardado?.id || subiendoFoto) return
+    setSubiendoFoto(true)
+    try {
+      const fd = new FormData()
+      fd.append('foto', file)
+      const res = await fetch(`/api/pagos/${pagoGuardado.id}/foto`, { method: 'POST', body: fd })
+      if (res.ok) {
+        const { fotoUrl } = await res.json()
+        setFotoEvidencia(fotoUrl)
+      }
+    } catch {} finally {
+      setSubiendoFoto(false)
+    }
+  }
+
   const handleCerrar = () => {
     setExitoso(false)
     setPagoGuardado(null)
     setPrestamoAct(null)
+    setFotoEvidencia(null)
     setMonto(String(Math.min(Math.round(cuotaDiaria ?? 0), Math.round(saldoPendiente ?? 0))))
     setTipo('completo')
     setMetodoPago('efectivo')
@@ -399,6 +420,63 @@ export default function RegistrarPago({
                 <span className="text-[var(--color-text-muted)]">Progreso</span>
                 <span className="text-[var(--color-success)] font-medium font-mono-display">{prestamoWA.porcentajePagado}%</span>
               </div>
+            </div>
+          )}
+
+          {pagoGuardado?.id && !pagoGuardado.offline && (
+            <div className="space-y-2">
+              <input
+                ref={fotoInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) subirFotoEvidencia(f)
+                  e.target.value = ''
+                }}
+              />
+              {fotoEvidencia ? (
+                <div className="relative rounded-[12px] overflow-hidden border" style={{ borderColor: 'var(--color-border)' }}>
+                  <img src={fotoEvidencia} alt="Evidencia" className="w-full h-32 object-cover" />
+                  <div className="absolute bottom-2 right-2 flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium" style={{ background: 'rgba(0,0,0,0.7)', color: '#22c55e' }}>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Foto guardada
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => fotoInputRef.current?.click()}
+                  disabled={subiendoFoto}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-[12px] border text-sm font-medium transition-all active:scale-[0.98] disabled:opacity-60"
+                  style={{
+                    borderColor: 'color-mix(in srgb, var(--color-border) 80%, transparent)',
+                    background: 'color-mix(in srgb, var(--color-bg-elevated) 60%, transparent)',
+                    color: 'var(--color-text-secondary)',
+                  }}
+                >
+                  {subiendoFoto ? (
+                    <>
+                      <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" />
+                        <path className="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor" stroke="none" />
+                      </svg>
+                      Subiendo...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      Adjuntar foto de evidencia
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           )}
 

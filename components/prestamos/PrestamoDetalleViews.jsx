@@ -736,6 +736,14 @@ export function PagoMiniCard({ pago, onAnular, anulando, isOffline, children }) 
         </div>
       </div>
 
+      {pago.fotoUrl && (
+        <div className="mt-2 rounded-[8px] overflow-hidden border" style={{ borderColor: 'var(--color-border)' }}>
+          <a href={pago.fotoUrl} target="_blank" rel="noopener noreferrer">
+            <img src={pago.fotoUrl} alt="Evidencia de cobro" className="w-full h-24 object-cover" loading="lazy" />
+          </a>
+        </div>
+      )}
+
       {children}
     </div>
   )
