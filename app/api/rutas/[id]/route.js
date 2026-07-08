@@ -469,14 +469,12 @@ export async function GET(request, { params }) {
     orderBy: { createdAt: 'desc' },
   })
 
-  const ocultarCapCobr = rol === 'cobrador' && (session.user.ocultarCapitalCobradores ?? false)
-
   return Response.json({
     id:          ruta.id,
     nombre:      ruta.nombre,
     diasSinCobro: ruta.diasSinCobro,
-    saldoCapital: ocultarCapCobr ? 0 : Math.round(ruta.saldoCapital || 0),
-    capitalHabilitado: ocultarCapCobr ? false : !!ruta.capitalHabilitado,
+    saldoCapital: Math.round(ruta.saldoCapital || 0),
+    capitalHabilitado: !!ruta.capitalHabilitado,
     cobrador:    ruta.cobrador,
     gruposCobro,
     clientes:    clientesEnriquecidos,
@@ -486,9 +484,9 @@ export async function GET(request, { params }) {
     clientesConCobroHoy,
     clientesPagaronHoy,
     enMora,
-    carteraTotal: ocultarCapCobr ? 0 : Math.round(carteraTotal),
-    capitalTotal: ocultarCapCobr ? 0 : Math.round(capitalTotal),
-    totalAPagarRuta: ocultarCapCobr ? 0 : Math.round(totalAPagarRuta),
+    carteraTotal: Math.round(carteraTotal),
+    capitalTotal: Math.round(capitalTotal),
+    totalAPagarRuta: Math.round(totalAPagarRuta),
     segurosVigentes: Math.round(segVigente._sum.montoSeguro || 0),
     segurosVigentesCount: segVigente._count,
     segurosHoy: Math.round(segHoy._sum.montoSeguro || 0),

@@ -575,30 +575,6 @@ function TabOrganizacion() {
         </div>
       </Card>
 
-      {/* Toggle ocultar capital a cobradores */}
-      <Card>
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Ocultar capital a cobradores</p>
-            <p className="text-[11px] text-[#666666] leading-snug mt-1">
-              Los cobradores no podrán ver el capital ni la cartera de ninguna ruta, ni el capital total de la organización. Anula los permisos individuales de cada cobrador.
-            </p>
-          </div>
-          <Toggle
-            checked={!!org?.ocultarCapitalCobradores}
-            onChange={async (nuevoValor) => {
-              try {
-                const res = await fetch('/api/configuracion/organizacion', {
-                  method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ ocultarCapitalCobradores: nuevoValor }),
-                })
-                if (res.ok) setData(prev => ({ ...prev, org: { ...prev.org, ocultarCapitalCobradores: nuevoValor } }))
-              } catch {}
-            }}
-          />
-        </div>
-      </Card>
-
       {/* Intereses moratorios */}
       <Card>
         <div className="flex items-center gap-2 mb-1">
