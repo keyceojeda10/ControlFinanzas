@@ -222,17 +222,31 @@ function CobradoresPageInner() {
           </p>
         </div>
         {!authLoading && esOwner && (
-          <Link href="/cobradores/nuevo">
-            <Button
-              icon={
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-              }
-            >
-              Nuevo cobrador
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href="/cobradores/ranking">
+              <Button
+                variant="secondary"
+                icon={
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h4v11H3zM10 3h4v18h-4zM17 7h4v14h-4z" />
+                  </svg>
+                }
+              >
+                Ranking
+              </Button>
+            </Link>
+            <Link href="/cobradores/nuevo">
+              <Button
+                icon={
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                }
+              >
+                Nuevo cobrador
+              </Button>
+            </Link>
+          </div>
         )}
       </div>
 
