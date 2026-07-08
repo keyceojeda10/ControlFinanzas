@@ -18,6 +18,7 @@ import { trackEvent } from '@/lib/analytics'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 import { getLocalDateStr } from '@/lib/i18n'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
+import { enviarPushOrg } from '@/lib/push'
 
 // ─── GET /api/prestamos ─────────────────────────────────────────
 export async function GET(request) {
@@ -58,7 +59,7 @@ export async function GET(request) {
   const where = {
     organizationId,
     ...(clienteId && { clienteId }),
-    ...(estado    && { estado }),
+    ...(estado    ? { estado } : rol === 'cobrador' ? { estado: { not: 'pendiente_aprobacion' } } : {}),
     ...(frecuencia && { frecuencia }),
     ...(creadoPorId && { creadoPorId }),
     ...(renovacion === 'si' && { renovadoDeId: { not: null } }),
@@ -323,9 +324,10 @@ export async function POST(request) {
   // Leer config de modo estricto de la organización
   const orgConfig = await prisma.organization.findUnique({
     where: { id: organizationId },
-    select: { capitalEstricto: true },
+    select: { capitalEstricto: true, requiereAprobacionPrestamos: true },
   })
   const modoEstricto = !!orgConfig?.capitalEstricto
+  const esPendiente = rol === 'cobrador' && !!orgConfig?.requiereAprobacionPrestamos
 
   // Normalizar inyección previa (si viene del frontend al elegir "inyectar y continuar")
   const inyeccionMonto = Number(inyeccionPrevia?.monto) || 0
@@ -345,36 +347,34 @@ export async function POST(request) {
 
   // Crear préstamo y actualizar estado del cliente en transacción
   const prestamo = await prisma.$transaction(async (tx) => {
-    // Lock + lectura del capital actual
-    const capRow = await tx.$queryRaw`
-      SELECT id, saldo FROM Capital WHERE organizationId = ${organizationId} FOR UPDATE
-    `
-    const tieneCapital = Array.isArray(capRow) && capRow.length > 0
-    let saldoCap = tieneCapital ? Number(capRow[0].saldo || 0) : 0
+    if (!esPendiente) {
+      // Lock + lectura del capital actual
+      const capRow = await tx.$queryRaw`
+        SELECT id, saldo FROM Capital WHERE organizationId = ${organizationId} FOR UPDATE
+      `
+      const tieneCapital = Array.isArray(capRow) && capRow.length > 0
+      let saldoCap = tieneCapital ? Number(capRow[0].saldo || 0) : 0
 
-    // Si el owner decidió inyectar capital al crear el préstamo, registrar la inyección
-    // ANTES de validar saldo (la inyección suma al capital disponible).
-    if (inyeccionMonto > 0 && tieneCapital) {
-      await registrarMovimientoCapital(tx, {
-        organizationId,
-        tipo: 'inyeccion',
-        monto: inyeccionMonto,
-        descripcion: inyeccionDescripcion || `Inyección al crear préstamo - ${cliente.nombre}`,
-        referenciaTipo: 'caja_capital_manual',
-        rutaId: rutaIdCapital,
-        creadoPorId: session.user.id,
-      })
-      saldoCap += inyeccionMonto
-    }
+      if (inyeccionMonto > 0 && tieneCapital) {
+        await registrarMovimientoCapital(tx, {
+          organizationId,
+          tipo: 'inyeccion',
+          monto: inyeccionMonto,
+          descripcion: inyeccionDescripcion || `Inyección al crear préstamo - ${cliente.nombre}`,
+          referenciaTipo: 'caja_capital_manual',
+          rutaId: rutaIdCapital,
+          creadoPorId: session.user.id,
+        })
+        saldoCap += inyeccionMonto
+      }
 
-    // Validación de saldo: SOLO se aplica si la org tiene modo estricto.
-    // Si no está en estricto, se permite saldo negativo (flujo legacy permisivo).
-    if (modoEstricto && tieneCapital) {
-      const neto = Number(montoPrestado) - abono
-      if (saldoCap < neto) {
-        faltanteCapital = neto - saldoCap
-        saldoCapitalActual = saldoCap
-        throw new Error('CAPITAL_INSUFICIENTE')
+      if (modoEstricto && tieneCapital) {
+        const neto = Number(montoPrestado) - abono
+        if (saldoCap < neto) {
+          faltanteCapital = neto - saldoCap
+          saldoCapitalActual = saldoCap
+          throw new Error('CAPITAL_INSUFICIENTE')
+        }
       }
     }
 
@@ -397,15 +397,14 @@ export async function POST(request) {
         ...(socioId && { socioId }),
         ...(Array.isArray(calc.capitalExtra) && calc.capitalExtra.length > 0 && { capitalExtra: calc.capitalExtra }),
         diasPlazo:     Number(diasPlazo),
-        fechaInicio:   new Date(`${fechaInicio}T05:00:00.000Z`), // medianoche Colombia
+        fechaInicio:   new Date(`${fechaInicio}T05:00:00.000Z`),
         fechaFin,
         seguro:        !!seguro,
         ...(seguro && montoSeguro > 0 && { montoSeguro: Number(montoSeguro) }),
+        ...(esPendiente && { estado: 'pendiente_aprobacion' }),
       },
     })
 
-    // Modo 'lineal': persistir la tabla de amortizacion (capital constante +
-    // interes sobre saldo restante, cuota decreciente por periodo).
     if (Array.isArray(calc.tablaAmortizacion) && calc.tablaAmortizacion.length > 0) {
       await tx.cuotaAmortizacion.createMany({
         data: calc.tablaAmortizacion.map((p) => ({
@@ -421,26 +420,48 @@ export async function POST(request) {
       })
     }
 
-    // Actualizar estado del cliente a activo
-    await tx.cliente.update({
-      where: { id: clienteId },
-      data:  { estado: 'activo' },
-    })
+    if (!esPendiente) {
+      await tx.cliente.update({
+        where: { id: clienteId },
+        data:  { estado: 'activo' },
+      })
 
-    // Registrar desembolso en capital (si está configurado)
-    await registrarMovimientoCapital(tx, {
-      organizationId,
-      tipo: 'desembolso',
-      monto: Number(montoPrestado),
-      descripcion: `Desembolso préstamo a ${cliente.nombre}`,
-      referenciaId: nuevo.id,
-      referenciaTipo: 'prestamo',
-      rutaId: rutaIdCapital,
-      creadoPorId: session.user.id,
-    })
+      await registrarMovimientoCapital(tx, {
+        organizationId,
+        tipo: 'desembolso',
+        monto: Number(montoPrestado),
+        descripcion: `Desembolso préstamo a ${cliente.nombre}`,
+        referenciaId: nuevo.id,
+        referenciaTipo: 'prestamo',
+        rutaId: rutaIdCapital,
+        creadoPorId: session.user.id,
+      })
 
-    // Si es préstamo en curso con abono previo, registrar pago inicial
-    if (abono > 0) {
+      if (abono > 0) {
+        await tx.pago.create({
+          data: {
+            prestamoId:     nuevo.id,
+            organizationId,
+            cobradorId:     session.user.id,
+            montoPagado:    abono,
+            tipo:           'completo',
+            fechaPago:      new Date(`${fechaInicio}T05:00:00.000Z`),
+            nota:           'Abono previo (préstamo en curso)',
+          },
+        })
+        await refrescarTotalesPrestamo(tx, nuevo.id)
+        await registrarMovimientoCapital(tx, {
+          organizationId,
+          tipo: 'recaudo',
+          monto: abono,
+          descripcion: `Abono previo préstamo en curso - ${cliente.nombre}`,
+          referenciaId: nuevo.id,
+          referenciaTipo: 'prestamo',
+          creadoPorId: session.user.id,
+        })
+      }
+    } else if (abono > 0) {
+      // Guardar el abono previo pero sin movimiento de capital (se registra al aprobar)
       await tx.pago.create({
         data: {
           prestamoId:     nuevo.id,
@@ -452,28 +473,40 @@ export async function POST(request) {
           nota:           'Abono previo (préstamo en curso)',
         },
       })
-
-      // Refrescar denormalizados del prestamo recien creado con su pago inicial.
       await refrescarTotalesPrestamo(tx, nuevo.id)
-
-      // Registrar recaudo en capital
-      await registrarMovimientoCapital(tx, {
-        organizationId,
-        tipo: 'recaudo',
-        monto: abono,
-        descripcion: `Abono previo préstamo en curso - ${cliente.nombre}`,
-        referenciaId: nuevo.id,
-        referenciaTipo: 'prestamo',
-        creadoPorId: session.user.id,
-      })
     }
 
     return nuevo
   })
 
-  logActividad({ session, accion: 'crear_prestamo', entidadTipo: 'prestamo', entidadId: prestamo.id, detalle: `Préstamo $${Number(montoPrestado).toLocaleString('es-CO')} a ${cliente.nombre}${abono > 0 ? ` (en curso, abono previo $${abono.toLocaleString('es-CO')})` : ''}`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
-  trackEvent({ organizationId, userId: session.user.id, evento: 'crear_prestamo', metadata: { monto: Number(montoPrestado) } })
-  return Response.json(prestamo, { status: 201 })
+  logActividad({ session, accion: esPendiente ? 'solicitar_prestamo' : 'crear_prestamo', entidadTipo: 'prestamo', entidadId: prestamo.id, detalle: `${esPendiente ? 'Solicitud de préstamo' : 'Préstamo'} $${Number(montoPrestado).toLocaleString('es-CO')} a ${cliente.nombre}${abono > 0 ? ` (en curso, abono previo $${abono.toLocaleString('es-CO')})` : ''}`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
+  trackEvent({ organizationId, userId: session.user.id, evento: esPendiente ? 'solicitar_prestamo' : 'crear_prestamo', metadata: { monto: Number(montoPrestado) } })
+
+  if (esPendiente) {
+    const owners = await prisma.user.findMany({
+      where: { organizationId, rol: 'owner' },
+      select: { id: true },
+    })
+    if (owners.length > 0) {
+      await prisma.notificacion.createMany({
+        data: owners.map(o => ({
+          organizationId,
+          userId: o.id,
+          tipo: 'solicitud_prestamo',
+          titulo: 'Solicitud de prestamo',
+          mensaje: `${session.user.nombre} solicita crear un prestamo de $${Number(montoPrestado).toLocaleString('es-CO')} para ${cliente.nombre}.`,
+          datos: JSON.stringify({ prestamoId: prestamo.id, clienteId, monto: Number(montoPrestado), cobrador: session.user.nombre }),
+        })),
+      })
+    }
+    enviarPushOrg(organizationId, {
+      title: 'Solicitud de prestamo',
+      body: `${session.user.nombre} solicita $${Number(montoPrestado).toLocaleString('es-CO')} para ${cliente.nombre}`,
+      url: `/prestamos/${prestamo.id}`,
+    }).catch(() => {})
+  }
+
+  return Response.json({ ...prestamo, pendienteAprobacion: esPendiente }, { status: 201 })
   } catch (err) {
     if (err?.message === 'CAPITAL_INSUFICIENTE') {
       return Response.json({

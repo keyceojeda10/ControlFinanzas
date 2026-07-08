@@ -52,6 +52,7 @@ const fmtFecha = (d) => d
   : '—'
 
 const estadoBadge = {
+  pendiente_aprobacion: { variant: 'yellow', label: 'Pendiente aprobacion' },
   activo:     { variant: 'blue',  label: 'Activo'     },
   completado: { variant: 'green', label: 'Completado' },
   cancelado:  { variant: 'gray',  label: 'Cancelado'  },
@@ -105,6 +106,8 @@ export default function PrestamoDetallePage({ params }) {
   const [exito,        setExito]        = useState(false)   // animación de éxito
   const [completado,   setCompletado]   = useState(false)   // celebración
   const [ultimoPago,   setUltimoPago]   = useState(null)    // para botón WA pago
+  const [aprobando,    setAprobando]    = useState(false)
+  const [rechazando,   setRechazando]   = useState(false)
   const [cancelando,   setCancelando]   = useState(false)
   const [confirmCancel, setConfirmCancel] = useState(false)
   const [modoReversionCapital, setModoReversionCapital] = useState('devolver_todo')
@@ -766,6 +769,84 @@ export default function PrestamoDetallePage({ params }) {
         narrativa={narrativaSaldo}
         sparklineData={esOwner && sparkline14d.some(v => v > 0) ? sparkline14d : null}
       />
+
+      {/* Banner aprobación — solo owner y préstamos pendientes */}
+      {esOwner && estado === 'pendiente_aprobacion' && (
+        <Card>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 shrink-0" style={{ color: 'var(--color-warning)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+              </svg>
+              <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                Pendiente de tu aprobacion
+              </p>
+            </div>
+            <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+              {creadoPor?.nombre ?? 'Un cobrador'} solicita crear este prestamo de {formatMoney(montoPrestado)} para {cliente?.nombre ?? 'el cliente'}. El dinero no se ha desembolsado todavia.
+            </p>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                loading={aprobando}
+                disabled={rechazando}
+                onClick={async () => {
+                  setAprobando(true)
+                  try {
+                    const res = await fetch(`/api/prestamos/${id}/aprobar`, { method: 'POST' })
+                    if (!res.ok) { const d = await res.json().catch(() => ({})); alert(d.error || 'Error al aprobar'); return }
+                    fetchPrestamo()
+                  } catch { alert('Error de conexion') }
+                  finally { setAprobando(false) }
+                }}
+              >
+                <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                Aprobar
+              </Button>
+              <Button
+                size="sm"
+                variant="danger"
+                loading={rechazando}
+                disabled={aprobando}
+                onClick={async () => {
+                  setRechazando(true)
+                  try {
+                    const res = await fetch(`/api/prestamos/${id}/rechazar`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({}),
+                    })
+                    if (!res.ok) { const d = await res.json().catch(() => ({})); alert(d.error || 'Error al rechazar'); return }
+                    router.push('/prestamos')
+                  } catch { alert('Error de conexion') }
+                  finally { setRechazando(false) }
+                }}
+              >
+                <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Rechazar
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Cobrador: aviso de que su préstamo está pendiente */}
+      {esCobrador && estado === 'pendiente_aprobacion' && (
+        <Card>
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 shrink-0" style={{ color: 'var(--color-warning)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+              Este prestamo esta pendiente de aprobacion por el administrador.
+            </p>
+          </div>
+        </Card>
+      )}
 
       {/* Tip IA contextual */}
       <AiTipBanner tip={generarTipPrestamo(prestamo, pagos)} pageKey={`prestamo-${prestamo.id}`} />

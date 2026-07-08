@@ -41,6 +41,7 @@ enum EstadoCliente {
 }
 
 enum EstadoPrestamo {
+  pendiente_aprobacion
   activo
   completado
   cancelado
@@ -96,6 +97,7 @@ model Organization {
   capitalEsEfectivo Boolean        @default(false)
   modoAbreviado     Boolean        @default(false)
   ocultarSaldoWA    Boolean        @default(false)
+  requiereAprobacionPrestamos Boolean @default(false)
   tasaMoratorio     Float          @default(0)
   diasGraciaMoratorio Int          @default(5)
   country           String         @default("co")

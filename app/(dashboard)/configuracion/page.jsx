@@ -551,6 +551,30 @@ function TabOrganizacion() {
         </div>
       </Card>
 
+      {/* Toggle aprobación de préstamos */}
+      <Card>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Aprobar prestamos del cobrador</p>
+            <p className="text-[11px] text-[#666666] leading-snug mt-1">
+              Cuando un cobrador crea un prestamo, queda pendiente hasta que lo apruebes. Sin esta opcion, los prestamos se activan de inmediato.
+            </p>
+          </div>
+          <Toggle
+            checked={!!org?.requiereAprobacionPrestamos}
+            onChange={async (nuevoValor) => {
+              try {
+                const res = await fetch('/api/configuracion/organizacion', {
+                  method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ requiereAprobacionPrestamos: nuevoValor }),
+                })
+                if (res.ok) setData(prev => ({ ...prev, org: { ...prev.org, requiereAprobacionPrestamos: nuevoValor } }))
+              } catch {}
+            }}
+          />
+        </div>
+      </Card>
+
       {/* Intereses moratorios */}
       <Card>
         <div className="flex items-center gap-2 mb-1">

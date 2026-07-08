@@ -32,6 +32,7 @@ const IconPagar = (
 
 const ESTADOS = [
   { value: '',           label: 'Todos'     },
+  { value: 'pendiente_aprobacion', label: 'Pendientes', color: 'var(--color-warning)', ownerOnly: true },
   { value: 'activo',     label: 'Activos'   },
   { value: 'mora',       label: 'En mora',  color: 'var(--color-danger)' },
   { value: 'completado', label: 'Completados' },
@@ -398,7 +399,7 @@ export default function PrestamosPage() {
 
       {/* Filtro de estado */}
       <div className="flex gap-1.5 mb-3 overflow-x-auto scrollbar-none pb-0.5">
-        {ESTADOS.map(({ value, label, color }) => {
+        {ESTADOS.filter(e => !e.ownerOnly || esOwner).map(({ value, label, color }) => {
           const isActive = estado === value
           const accent = color ?? 'var(--color-accent)'
           return (

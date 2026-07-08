@@ -575,6 +575,9 @@ function NuevoPrestamo() {
           })
         } catch {}
       }
+      if (data.pendienteAprobacion) {
+        try { sessionStorage.setItem('cf-toast', 'Solicitud enviada. El administrador debe aprobar el prestamo.') } catch {}
+      }
       router.push(`/prestamos/${data.id}`)
     } catch {
       if (!navigator.onLine) {
