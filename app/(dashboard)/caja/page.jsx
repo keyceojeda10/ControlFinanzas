@@ -647,17 +647,13 @@ export default function CajaPage() {
             style={{ background: 'linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.16) 45%, transparent 58%)' }}
           />
           <div className="relative">
-
-          {/* Monto principal: oculto si cobrador sin permiso */}
-          {(!esCobrador || puedeVerSaldoCaja) && (
-          <>
           <div className="flex items-center justify-between mb-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.15em]" style={{ color: 'rgba(35,26,4,0.62)' }}>
-                Saldo en caja
+                {puedeVerSaldoCaja ? 'Saldo en caja' : 'Flujo del día'}
               </p>
               <p className="text-[11px]" style={{ color: 'rgba(35,26,4,0.55)' }}>
-                Disponible para prestar ahora
+                {puedeVerSaldoCaja ? 'Disponible para prestar ahora' : 'Neto operativo de hoy'}
               </p>
             </div>
             {tasaRecaudo > 0 && (
@@ -670,24 +666,8 @@ export default function CajaPage() {
             {formatMoney(disponibleHoy)}
           </p>
           <p className="text-[11px] mt-1" style={{ color: 'rgba(35,26,4,0.55)' }}>
-            Saldo compartido con el administrador
+            {puedeVerSaldoCaja ? 'Saldo compartido con el administrador' : 'Cobrado - Prestado hoy - Gastos'}
           </p>
-          </>
-          )}
-
-          {/* Titulo alternativo cuando no ve saldo */}
-          {esCobrador && !puedeVerSaldoCaja && (
-            <div className="mb-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.15em]" style={{ color: 'rgba(35,26,4,0.62)' }}>
-                Resumen del día
-              </p>
-              {tasaRecaudo > 0 && (
-                <p className="text-sm font-bold mt-1" style={{ color: '#231a04' }}>
-                  {tasaRecaudo}% cobrado
-                </p>
-              )}
-            </div>
-          )}
 
           {!esCobrador && (
             <div className="grid grid-cols-2 gap-2 mt-3">
@@ -704,7 +684,7 @@ export default function CajaPage() {
             </div>
           )}
 
-          <div className={`grid grid-cols-3 gap-2 ${(!esCobrador || puedeVerSaldoCaja) ? 'mt-4' : ''}`}>
+          <div className="grid grid-cols-3 gap-2 mt-4">
             <div>
               <p className="text-[10px] uppercase" style={{ color: 'rgba(35,26,4,0.55)' }}>Cobrado</p>
               <p className="text-base font-bold font-mono-display" style={{ color: '#15803d' }}>{formatMoney(cobradoHoy)}</p>
@@ -732,7 +712,6 @@ export default function CajaPage() {
             </div>
           )}
 
-          {(!esCobrador || puedeVerSaldoCaja) && (
           <details className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(35,26,4,0.16)' }}>
             <summary className="cursor-pointer text-[11px]" style={{ color: 'rgba(35,26,4,0.62)' }}>Ver detalle del cálculo</summary>
             <div className="mt-2 space-y-1.5 text-[11px]">
@@ -752,7 +731,6 @@ export default function CajaPage() {
               </div>
             </div>
           </details>
-          )}
           </div>
         </Card>
 
