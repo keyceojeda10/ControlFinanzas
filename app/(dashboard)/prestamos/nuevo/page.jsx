@@ -141,9 +141,9 @@ function NuevoPrestamo() {
   const [modoInteres, setModoInteres] = useState('fijo')
   const [interesAdelantado, setInteresAdelantado] = useState(false)
   const [capitalExtra, setCapitalExtra] = useState([])
+  const [cuotaManual, setCuotaManual] = useState('')
   const cuotaManualActiva = modoInteres === 'manual'
   const saldoCuotaPersonalizada = modoInteres === 'saldo' && cuotaManual !== '' && Number(cuotaManual) > 0
-  const [cuotaManual, setCuotaManual] = useState('')
   // Dias sin cobro especificos para este cliente (se actualizan en su ficha
   // al crear el prestamo). Permite que en frecuencia diaria se elijan dias
   // de la semana en que NO se cobra (ej. domingo).
