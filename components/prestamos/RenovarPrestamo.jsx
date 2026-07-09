@@ -68,14 +68,16 @@ export default function RenovarPrestamo({
   const calculo = useMemo(() => {
     if (!montoNum || !tasa || !diasPlazo) return null
     try {
+      const usarManual = cuotaManualActiva && !modoUsaTabla && modoHeredado !== 'saldo'
       return calcularPrestamo({
         montoPrestado: montoNum,
         tasaInteres:   Number(tasa),
         diasPlazo,
         fechaInicio,
         frecuencia,
-        modoInteres:   (cuotaManualActiva && !modoUsaTabla) ? 'manual' : modoHeredado,
-        ...((cuotaManualActiva && !modoUsaTabla) && { cuotaManual: Number(cuotaManual) }),
+        modoInteres:   usarManual ? 'manual' : modoHeredado,
+        ...(usarManual && { cuotaManual: Number(cuotaManual) }),
+        ...(modoHeredado === 'saldo' && cuotaManualActiva && { cuotaManual: Number(cuotaManual) }),
         ...(modoHeredado === 'solo_interes' && { interesAdelantado: !!prestamoAnterior?.interesAdelantado }),
       })
     } catch { return null }
@@ -102,8 +104,9 @@ export default function RenovarPrestamo({
           diasPlazo,
           fechaInicio,
           frecuencia,
-          modoInteres:   (cuotaManualActiva && !modoUsaTabla) ? 'manual' : modoHeredado,
-          ...((cuotaManualActiva && !modoUsaTabla) && { cuotaManual: Number(cuotaManual) }),
+          modoInteres:   (cuotaManualActiva && !modoUsaTabla && modoHeredado !== 'saldo') ? 'manual' : modoHeredado,
+          ...((cuotaManualActiva && !modoUsaTabla && modoHeredado !== 'saldo') && { cuotaManual: Number(cuotaManual) }),
+          ...(modoHeredado === 'saldo' && cuotaManualActiva && { cuotaManual: Number(cuotaManual) }),
           ...(seguro && montoSeguroNum > 0 && { seguro: true, montoSeguro: montoSeguroNum }),
           ...(modoHeredado === 'solo_interes' && prestamoAnterior?.interesAdelantado && { interesAdelantado: true }),
         }),

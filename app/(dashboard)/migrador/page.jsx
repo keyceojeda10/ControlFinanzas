@@ -53,7 +53,8 @@ function calcularFicha(ficha) {
   const t = Number(ficha.tasa)
   const d = Number(calcularDiasPlazo(ficha.plazoUnidades, ficha.frecuencia))
   if (m <= 0 || t < 0 || d <= 0) return null
-  const cm = ficha.modoInteres === 'manual' ? Number(ficha.cuotaManual) : 0
+  const cmNum = Number(ficha.cuotaManual) || 0
+  const cm = (ficha.modoInteres === 'manual' || (ficha.modoInteres === 'saldo' && cmNum > 0)) ? cmNum : 0
   try {
     return calcularPrestamo({
       montoPrestado: m, tasaInteres: t, diasPlazo: d,
@@ -311,7 +312,7 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
           </div>
 
           {/* Modo interés */}
-          <ModoInteresSelector modoInteres={ficha.modoInteres} onChange={v => { set('modoInteres', v); setModoInteresTocado(true); if (v !== 'manual') set('cuotaManual', '') }}
+          <ModoInteresSelector modoInteres={ficha.modoInteres} onChange={v => { set('modoInteres', v); setModoInteresTocado(true); if (v !== 'manual' && v !== 'saldo') set('cuotaManual', '') }}
             monto={ficha.monto} tasa={ficha.tasa} frecuencia={ficha.frecuencia} diasPlazo={diasPlazo} />
 
           {ficha.modoInteres === 'manual' && (
@@ -323,6 +324,17 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
                 placeholder="Ej: 60.000"
               />
               <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>Tu defines la cuota. Total = cuota x número de cobros.</p>
+            </div>
+          )}
+          {ficha.modoInteres === 'saldo' && (
+            <div>
+              <MoneyInput
+                label="Cuota fija personalizada (opcional)"
+                value={ficha.cuotaManual}
+                onChange={e => set('cuotaManual', e.target.value)}
+                placeholder="Dejar vacío para calcular automático"
+              />
+              <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>Opcional: define la cuota en vez de calcularla con la fórmula francesa.</p>
             </div>
           )}
 
@@ -431,7 +443,7 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
 
             {/* Editable: Modo interés */}
             <EditableResumenRow label="Modo" value={{ fijo: 'Clásico', unico: 'De una vez', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente', lineal_dinamico: 'Decr. dinámico' }[ficha.modoInteres] || 'Clásico'}>
-              <select value={ficha.modoInteres} onChange={e => { set('modoInteres', e.target.value); setModoInteresTocado(true); if (e.target.value !== 'manual') set('cuotaManual', '') }}
+              <select value={ficha.modoInteres} onChange={e => { set('modoInteres', e.target.value); setModoInteresTocado(true); if (e.target.value !== 'manual' && e.target.value !== 'saldo') set('cuotaManual', '') }}
                 className="w-full h-8 rounded-lg border px-2 text-sm"
                 style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus>
                 <option value="fijo">Clásico</option>
@@ -714,6 +726,7 @@ export default function MigradorPage() {
             frecuencia: ficha.frecuencia,
             modoInteres: ficha.modoInteres,
             ...(ficha.modoInteres === 'manual' && calculo?.cuotaDiaria > 0 && { cuotaManual: calculo.cuotaDiaria }),
+            ...(ficha.modoInteres === 'saldo' && Number(ficha.cuotaManual) > 0 && { cuotaManual: Number(ficha.cuotaManual) }),
           }),
         })
         if (!prestamoRes.ok) {
@@ -767,6 +780,7 @@ export default function MigradorPage() {
           frecuencia: ficha.frecuencia,
           modoInteres: ficha.modoInteres,
           ...(ficha.modoInteres === 'manual' && calculo?.cuotaDiaria > 0 && { cuotaManual: calculo.cuotaDiaria }),
+          ...(ficha.modoInteres === 'saldo' && Number(ficha.cuotaManual) > 0 && { cuotaManual: Number(ficha.cuotaManual) }),
           ...(ficha.esEnCurso && Number(ficha.yaAbonado) > 0 && { yaAbonado: Number(ficha.yaAbonado) }),
         }
         const resPrestamo = await fetch('/api/prestamos', {

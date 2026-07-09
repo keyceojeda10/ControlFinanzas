@@ -40,6 +40,7 @@ export default function CalculadoraPage() {
 
   const freqInfo = FRECUENCIAS.find((f) => f.value === frecuencia) || FRECUENCIAS[0]
   const cuotaManualActiva = modoInteres === 'manual'
+  const saldoCuotaPersonalizada = modoInteres === 'saldo' && cuotaManual !== '' && Number(cuotaManual) > 0
   const diasPlazo = (Number(plazoUnidades) || 0) * (DIAS_POR_PERIODO[frecuencia] || 1)
 
   const cambiarFrecuencia = (nueva) => {
@@ -51,7 +52,7 @@ export default function CalculadoraPage() {
     const m = Number(monto)
     const t = Number(tasa)
     if (!m || tasa === '' || tasa == null || !diasPlazo) return null
-    const cm = cuotaManualActiva ? Number(cuotaManual) : 0
+    const cm = cuotaManualActiva ? Number(cuotaManual) : (saldoCuotaPersonalizada ? Number(cuotaManual) : 0)
     try {
       return calcularPrestamo({
         montoPrestado: m,
@@ -240,6 +241,20 @@ export default function CalculadoraPage() {
                 onChange={(e) => setCuotaManual(e.target.value)}
                 placeholder="Ej: 20.000"
               />
+            </div>
+          )}
+
+          {modoInteres === 'saldo' && (
+            <div className="mt-4">
+              <MoneyInput
+                label="Cuota fija personalizada (opcional)"
+                value={cuotaManual}
+                onChange={(e) => setCuotaManual(e.target.value)}
+                placeholder="Dejar vacío para calcular automático"
+              />
+              <p className="text-[10px] mt-1 px-1" style={{ color: 'var(--color-text-muted)' }}>
+                {saldoCuotaPersonalizada ? 'Cuota definida por ti. La última cuota ajusta para cerrar el saldo.' : 'Opcional: define la cuota en vez de calcularla.'}
+              </p>
             </div>
           )}
         </section>

@@ -142,6 +142,7 @@ function NuevoPrestamo() {
   const [interesAdelantado, setInteresAdelantado] = useState(false)
   const [capitalExtra, setCapitalExtra] = useState([])
   const cuotaManualActiva = modoInteres === 'manual'
+  const saldoCuotaPersonalizada = modoInteres === 'saldo' && cuotaManual !== '' && Number(cuotaManual) > 0
   const [cuotaManual, setCuotaManual] = useState('')
   // Dias sin cobro especificos para este cliente (se actualizan en su ficha
   // al crear el prestamo). Permite que en frecuencia diaria se elijan dias
@@ -393,6 +394,8 @@ function NuevoPrestamo() {
       cm = pv > 0 && nc > 0 ? Math.round(pv / nc) : 0
     } else if (cuotaManualActiva) {
       cm = Number(cuotaManual)
+    } else if (modoInteres === 'saldo' && Number(cuotaManual) > 0) {
+      cm = Number(cuotaManual)
     }
     return calcularPrestamo({
       montoPrestado: m,
@@ -407,7 +410,7 @@ function NuevoPrestamo() {
       ...(modoDiaCobro === 'mes' && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
       ...(frecuencia === 'quincenal' && modoDiaCobro === 'mes' && diaCobroMes2 !== '' && { diaCobroMes2: Number(diaCobroMes2) }),
     })
-  }, [monto, tasa, plazo, fechaInicio, frecuencia, modo, modoInteres, cuotaManualActiva, cuotaManual, precioVenta, numCuotas, interesAdelantado, capitalExtra, modoDiaCobro, diaCobroMes, diaCobroMes2])
+  }, [monto, tasa, plazo, fechaInicio, frecuencia, modo, modoInteres, cuotaManualActiva, cuotaManual, saldoCuotaPersonalizada, precioVenta, numCuotas, interesAdelantado, capitalExtra, modoDiaCobro, diaCobroMes, diaCobroMes2])
 
   const clientesFiltrados = clientes.filter((c) =>
     c.nombre.toLowerCase().includes(buscadorCliente.toLowerCase()) ||
@@ -430,6 +433,7 @@ function NuevoPrestamo() {
         ...(frecuencia === 'quincenal' && modoDiaCobro === 'mes' && diaCobroMes2 !== '' && { diaCobroMes2: Number(diaCobroMes2) }),
         ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
         ...(calculo?.cuotaDiaria > 0 && (cuotaManualActiva || modo === 'mercancia') && { cuotaManual: calculo.cuotaDiaria }),
+        ...(modoInteres === 'saldo' && Number(cuotaManual) > 0 && { cuotaManual: Number(cuotaManual) }),
         modoInteres: modo === 'mercancia' ? 'manual' : modoInteres,
         ...(modo === 'mercancia' && nombreProducto.trim() && { nombreProducto: nombreProducto.trim() }),
         ...(inyeccionPrevia && { inyeccionPrevia }),
@@ -516,6 +520,7 @@ function NuevoPrestamo() {
       ...(frecuencia === 'quincenal' && modoDiaCobro === 'mes' && diaCobroMes2 !== '' && { diaCobroMes2: Number(diaCobroMes2) }),
       ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
       ...(calculo?.cuotaDiaria > 0 && (cuotaManualActiva || modo === 'mercancia') && { cuotaManual: calculo.cuotaDiaria }),
+      ...(modoInteres === 'saldo' && Number(cuotaManual) > 0 && { cuotaManual: Number(cuotaManual) }),
       modoInteres: modo === 'mercancia' ? 'manual' : modoInteres,
       ...(modo === 'mercancia' && nombreProducto.trim() && { nombreProducto: nombreProducto.trim() }),
       ...(seguro && Number(montoSeguro) > 0 && { seguro: true, montoSeguro: Number(montoSeguro) }),
@@ -1167,7 +1172,7 @@ function NuevoPrestamo() {
                 onChange={(m) => {
                   setModoInteres(m)
                   setCapitalExtra([])
-                  if (m !== 'manual') setCuotaManual('')
+                  if (m !== 'manual' && m !== 'saldo') setCuotaManual('')
                   else if (calculo?.cuotaDiaria) setCuotaManual(String(calculo.cuotaDiaria))
                 }}
                 calculo={calculo}
@@ -1184,6 +1189,20 @@ function NuevoPrestamo() {
                     <MoneyInput value={cuotaManual} onChange={(e) => setCuotaManual(e.target.value)} placeholder="Ej: 60.000" />
                   </div>
                   <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>Tu defines la cuota. Total = cuota x número de cobros.</p>
+                </div>
+              )}
+
+              {modoInteres === 'saldo' && (
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Cuota fija personalizada (opcional)</label>
+                  <div className="mt-1.5">
+                    <MoneyInput value={cuotaManual} onChange={(e) => setCuotaManual(e.target.value)} placeholder="Dejar vacío para calcular automático" />
+                  </div>
+                  <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                    {saldoCuotaPersonalizada
+                      ? 'Cuota fija definida por ti. La última cuota ajusta para cerrar el saldo.'
+                      : 'Si defines una cuota, se usa en vez de la calculada. El interés se descuenta del saldo cada período.'}
+                  </p>
                 </div>
               )}
             </div>
