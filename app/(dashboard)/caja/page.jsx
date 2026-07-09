@@ -633,10 +633,8 @@ export default function CajaPage() {
           </Card>
         )}
 
-        {/* Saldo principal del cobrador: si tiene verSaldoCaja ve el mismo que el owner,
-            si no ve su flujo operativo del día */}
-        {/* Hero dorado de marca: saldo en caja */}
-        <Card
+        {/* Hero dorado de marca: saldo en caja (oculto si cobrador sin permiso) */}
+        {(!esCobrador || puedeVerSaldoCaja) && <Card
           className="relative overflow-hidden"
           style={{
             background: 'linear-gradient(135deg, #f9d64a 0%, #f5c518 55%, #eab308 100%)',
@@ -734,7 +732,7 @@ export default function CajaPage() {
             </div>
           </details>
           </div>
-        </Card>
+        </Card>}
 
         {pagosDiaCard}
 
