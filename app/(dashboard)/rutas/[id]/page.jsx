@@ -1992,8 +1992,8 @@ export default function RutaDetallePage({ params }) {
                     <div className="flex items-start gap-3 min-w-0">
                       {/* Info */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <p className="text-[13px] font-semibold text-[var(--color-text-primary)] truncate">{c.nombre}</p>
+                        <p className="text-[13px] font-semibold text-[var(--color-text-primary)] truncate">{c.nombre}</p>
+                        <div className="flex items-center gap-1 mt-0.5">
                           {c.tieneClavo && (
                             <span
                               className="shrink-0 text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md"
@@ -2003,8 +2003,6 @@ export default function RutaDetallePage({ params }) {
                           {c.grupoCobro && !grupoFiltro && (
                             <span className="shrink-0 w-2 h-2 rounded-full" style={{ background: c.grupoCobro.color || '#666' }} title={c.grupoCobro.nombre} />
                           )}
-                        </div>
-                        <div className="flex items-center gap-1 mt-0.5">
                           <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: statusColor, boxShadow: `0 0 5px ${statusColor}50` }} />
                           <span className="text-[10px]" style={{ color: statusColor }}>{statusText}</span>
                           {c.frecuencia && c.frecuencia !== 'diario' && !isCompleted && (
