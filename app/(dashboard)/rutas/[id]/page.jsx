@@ -2487,20 +2487,20 @@ export default function RutaDetallePage({ params }) {
 
                             {/* Nombre + estado */}
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5 min-w-0">
-                                <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>
-                                  {c.nombre}
-                                </p>
+                              <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>
+                                {c.nombre}
+                              </p>
+                              <div className="flex items-center gap-1.5">
                                 {c.tieneClavo && (
                                   <span className="shrink-0 text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md"
                                     style={{ background: 'color-mix(in srgb, var(--color-danger) 15%, transparent)', color: 'var(--color-danger)' }}
                                   >Clavo</span>
                                 )}
+                                <p className="text-[10px] truncate" style={{ color: c.tieneClavo && c._clase === 'completado' ? 'var(--color-danger)' : cfg.color }}>
+                                  {c.tieneClavo && c._clase === 'completado' ? 'Préstamo perdido' : cfg.label}
+                                  {c.diasMora > 0 ? ` · ${c.diasMora}d mora` : ''}
+                                </p>
                               </div>
-                              <p className="text-[10px]" style={{ color: c.tieneClavo && c._clase === 'completado' ? 'var(--color-danger)' : cfg.color }}>
-                                {c.tieneClavo && c._clase === 'completado' ? 'Préstamo perdido' : cfg.label}
-                                {c.diasMora > 0 ? ` · ${c.diasMora}d mora` : ''}
-                              </p>
                             </div>
 
                             {/* Cobrado hoy / cuota */}
