@@ -39,6 +39,12 @@ const MODOS = [
     tag: 'Decreciente',
     desc: 'Capital e interes se cobran por separado. El capital se divide en partes iguales y el interes baja cada periodo porque se calcula sobre lo que falta.',
   },
+  {
+    key: 'lineal_dinamico',
+    label: 'Cuota que se ajusta al pago real',
+    tag: 'Dinámico',
+    desc: 'Igual que decreciente, pero las cuotas futuras se recalculan según lo que realmente pague el cliente',
+  },
 ]
 
 function calcularEjemplo(modo, { monto, tasa, frecuencia, diasPlazo }) {

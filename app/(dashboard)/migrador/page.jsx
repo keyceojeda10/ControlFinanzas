@@ -430,7 +430,7 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
             </EditableResumenRow>
 
             {/* Editable: Modo interés */}
-            <EditableResumenRow label="Modo" value={{ fijo: 'Clásico', unico: 'De una vez', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente' }[ficha.modoInteres] || 'Clásico'}>
+            <EditableResumenRow label="Modo" value={{ fijo: 'Clásico', unico: 'De una vez', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente', lineal_dinamico: 'Decr. dinámico' }[ficha.modoInteres] || 'Clásico'}>
               <select value={ficha.modoInteres} onChange={e => { set('modoInteres', e.target.value); setModoInteresTocado(true); if (e.target.value !== 'manual') set('cuotaManual', '') }}
                 className="w-full h-8 rounded-lg border px-2 text-sm"
                 style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus>
@@ -439,6 +439,7 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
                 <option value="saldo">Sobre saldo</option>
                 <option value="manual">Manual</option>
                 <option value="lineal">Decreciente</option>
+                <option value="lineal_dinamico">Decr. dinámico</option>
               </select>
             </EditableResumenRow>
 

@@ -538,7 +538,7 @@ export default function RegistrarPago({
         </div>
 
         {/* Desglose de cuotas pendientes para modos con tabla de amortización */}
-        {['lineal', 'solo_interes'].includes(prestamo?.modoInteres) && prestamo?.cuotasAmortizacion?.length > 0 && (() => {
+        {['lineal', 'lineal_dinamico', 'solo_interes'].includes(prestamo?.modoInteres) && prestamo?.cuotasAmortizacion?.length > 0 && (() => {
           const filas = [...prestamo.cuotasAmortizacion]
             .sort((a, b) => a.numeroPeriodo - b.numeroPeriodo)
             .filter(f => (f.pagado || 0) < f.cuotaTotal)
@@ -740,7 +740,7 @@ export default function RegistrarPago({
                 { key: 'parcial',  label: 'Parcial',   color: 'var(--color-accent)' },
                 { key: 'capital',  label: 'A capital',  color: 'var(--color-purple)' },
                 { key: 'recargo',  label: 'Recargo',   color: '#f97316' },
-                ...(['lineal', 'solo_interes'].includes(prestamo?.modoInteres) ? [{ key: 'intereses', label: 'Intereses', color: 'var(--color-warning)' }] : []),
+                ...(['lineal', 'lineal_dinamico', 'solo_interes'].includes(prestamo?.modoInteres) ? [{ key: 'intereses', label: 'Intereses', color: 'var(--color-warning)' }] : []),
                 // Descuento solo visible si el usuario tiene el permiso (riesgo: reduce saldo).
                 ...(puedeAplicarDescuentos ? [{ key: 'descuento', label: 'Descuento', color: 'var(--color-success)' }] : []),
               ].map(({ key, label, color }) => (

@@ -61,9 +61,9 @@ export default function RenovarPrestamo({
   const enMano = Math.max(0, montoNum - saldo)
   const diasPlazo = (Number(plazoUnidades) || 0) * (DIAS_POR_PERIODO[frecuencia] || 1)
 
-  const modoHeredado = ['fijo', 'unico', 'saldo', 'manual', 'solo_interes', 'lineal'].includes(prestamoAnterior?.modoInteres)
+  const modoHeredado = ['fijo', 'unico', 'saldo', 'manual', 'solo_interes', 'lineal', 'lineal_dinamico'].includes(prestamoAnterior?.modoInteres)
     ? prestamoAnterior.modoInteres : 'fijo'
-  const modoUsaTabla = ['solo_interes', 'lineal'].includes(modoHeredado)
+  const modoUsaTabla = ['solo_interes', 'lineal', 'lineal_dinamico'].includes(modoHeredado)
 
   const calculo = useMemo(() => {
     if (!montoNum || !tasa || !diasPlazo) return null

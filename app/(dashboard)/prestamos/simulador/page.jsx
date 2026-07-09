@@ -79,7 +79,7 @@ export default function CalculadoraPage() {
     L.push('*Simulación de crédito*')
     L.push('')
     L.push(`Monto del crédito: ${formatMoney(Number(monto))}`)
-    if (['lineal', 'solo_interes'].includes(modoInteres) && cuotaDistinta) {
+    if (['lineal', 'lineal_dinamico', 'solo_interes'].includes(modoInteres) && cuotaDistinta) {
       L.push(`${freqInfo.cuotaLabel}: de ${formatMoney(calculo.cuotaDiaria)} a ${formatMoney(calculo.ultimaCuota)}`)
     } else {
       L.push(`${freqInfo.cuotaLabel}: ${formatMoney(calculo.cuotaDiaria)}`)
@@ -298,7 +298,7 @@ export default function CalculadoraPage() {
                 <Row k="Termina el" v={fmtFecha(calculo.fechaFin)} />
               </dl>
 
-              {['lineal', 'solo_interes'].includes(modoInteres) && calculo.tablaAmortizacion?.length > 0 && (
+              {['lineal', 'lineal_dinamico', 'solo_interes'].includes(modoInteres) && calculo.tablaAmortizacion?.length > 0 && (
                 <div className="mt-4">
                   <TablaAmortizacion tabla={calculo.tablaAmortizacion} frecuencia={frecuencia} />
                 </div>

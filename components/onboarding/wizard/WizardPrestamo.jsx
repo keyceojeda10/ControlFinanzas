@@ -66,6 +66,14 @@ const METODOS = [
     bg: 'rgba(249,115,22,0.1)',
   },
   {
+    value: 'lineal_dinamico',
+    label: 'Decreciente dinámico',
+    desc: 'Cuota que se ajusta al pago real del cliente',
+    ejemplo: '10% mensual → $700K → $650K → ...',
+    color: '#06b6d4',
+    bg: 'rgba(6,182,212,0.1)',
+  },
+  {
     value: 'manual',
     label: 'Cuota manual (personalizada)',
     desc: 'Tú fijas el valor de la cuota. El sistema calcula el total automáticamente.',

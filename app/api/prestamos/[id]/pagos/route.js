@@ -17,6 +17,7 @@ import {
   pagoHoy,
   tieneTablaAmortizacion,
   regenerarTablaAmortizacion,
+  regenerarTablaAmortizacionDinamica,
   recalcularTablaDesdeSaldo,
   recalcularTablaSoloInteresDesdeSaldo,
   obtenerDiasPorPeriodo,
@@ -145,7 +146,7 @@ export async function POST(request, { params }) {
   }
 
   if (tipo === 'intereses') {
-    if (!['lineal', 'solo_interes'].includes(prestamo.modoInteres)) {
+    if (!['lineal', 'solo_interes', 'lineal_dinamico'].includes(prestamo.modoInteres)) {
       return Response.json({ error: 'Pago a intereses solo aplica para préstamos con tabla de amortización' }, { status: 400 })
     }
     const interesesPendientes = Math.round(calcularInteresesPendientes(prestamo))
@@ -515,13 +516,46 @@ export async function POST(request, { params }) {
     // tabla de amortizacion (cuota mas antigua primero). La liquidacion ya
     // marca todas las filas como pagadas arriba, no hace falta repetir aqui.
     // Pagos tipo intereses ya se distribuyeron a interesPagado, no a pagado.
-    if (tipo !== 'liquidacion' && tipo !== 'intereses' && tieneTablaAmortizacion(prestamoActualizado)) {
+    if (tipo !== 'liquidacion' && tipo !== 'intereses' && tieneTablaAmortizacion(prestamoActualizado) && prestamoActualizado.modoInteres !== 'lineal_dinamico') {
       const actualizaciones = regenerarTablaAmortizacion(prestamoActualizado)
       for (const fila of actualizaciones) {
         await tx.cuotaAmortizacion.update({
           where: { prestamoId_numeroPeriodo: { prestamoId, numeroPeriodo: fila.numeroPeriodo } },
           data: { pagado: fila.pagado },
         })
+      }
+      prestamoActualizado = await tx.prestamo.findUnique({
+        where: { id: prestamoId },
+        include: {
+          pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
+          cuotasAmortizacion: { orderBy: { numeroPeriodo: 'asc' } },
+        },
+      })
+    }
+
+    // 2h. Modo lineal_dinamico: tras cada pago normal (completo/parcial), la
+    // cuota en curso se llena (interes primero, luego capital) y las cuotas
+    // futuras se RECALCULAN sobre el capital real restante (a diferencia de
+    // 'lineal', donde la tabla queda fija). Liquidacion e intereses ya se
+    // manejaron arriba y no deben re-procesarse aqui.
+    if (['completo', 'parcial'].includes(tipo) && tieneTablaAmortizacion(prestamoActualizado) && prestamoActualizado.modoInteres === 'lineal_dinamico') {
+      const { actualizaciones, totalAPagar: nuevoTotalAPagar } = regenerarTablaAmortizacionDinamica(prestamoActualizado)
+      for (const fila of actualizaciones) {
+        await tx.cuotaAmortizacion.update({
+          where: { prestamoId_numeroPeriodo: { prestamoId, numeroPeriodo: fila.numeroPeriodo } },
+          data: {
+            pagado: fila.pagado,
+            ...(fila.capital !== undefined ? {
+              capital: fila.capital,
+              interes: fila.interes,
+              cuotaTotal: fila.cuotaTotal,
+              saldoRestante: fila.saldoRestante,
+            } : {}),
+          },
+        })
+      }
+      if (nuevoTotalAPagar != null) {
+        await tx.prestamo.update({ where: { id: prestamoId }, data: { totalAPagar: nuevoTotalAPagar } })
       }
       prestamoActualizado = await tx.prestamo.findUnique({
         where: { id: prestamoId },

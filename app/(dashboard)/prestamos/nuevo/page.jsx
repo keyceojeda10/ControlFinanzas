@@ -1283,7 +1283,7 @@ function NuevoPrestamo() {
                 const pctGanancia = Number(monto) > 0 ? Math.round((ganancia / Number(monto)) * 100) : 0
                 const labelFreq = { diario: 'diaria', semanal: 'semanal', quincenal: 'quincenal', mensual: 'mensual' }[frecuencia]
                 const unidadPlazoL = { diario: 'días', semanal: 'semanas', quincenal: 'quincenas', mensual: 'meses' }[frecuencia]
-                const modoLabel = { fijo: 'Clásico', unico: 'De una vez', solo_interes: 'Globo', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente' }[modoInteres] || 'Clásico'
+                const modoLabel = { fijo: 'Clásico', unico: 'De una vez', solo_interes: 'Globo', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente', lineal_dinamico: 'Dinámico' }[modoInteres] || 'Clásico'
                 const pencil = <svg className="w-3 h-3 shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" /></svg>
 
                 return (
@@ -1348,7 +1348,7 @@ function NuevoPrestamo() {
                               <select value={modoInteres} onChange={e => setModoInteres(e.target.value)}
                                 className="h-8 rounded-lg border px-2 text-sm"
                                 style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus>
-                                <option value="fijo">Clásico</option><option value="unico">De una vez</option><option value="solo_interes">Globo</option><option value="saldo">Sobre saldo</option><option value="manual">Manual</option><option value="lineal">Decreciente</option>
+                                <option value="fijo">Clásico</option><option value="unico">De una vez</option><option value="solo_interes">Globo</option><option value="saldo">Sobre saldo</option><option value="manual">Manual</option><option value="lineal">Decreciente</option><option value="lineal_dinamico">Decr. dinámico</option>
                               </select>
                             } />
                         )}
@@ -1417,7 +1417,7 @@ function NuevoPrestamo() {
       {paso === 2 && calculo && (() => {
         const labelFrecuencia = { diario: 'Diario', semanal: 'Semanal', quincenal: 'Quincenal', mensual: 'Mensual' }[frecuencia]
         const unidadPlazoLabel = { diario: 'días', semanal: 'semanas', quincenal: 'quincenas', mensual: 'meses' }[frecuencia]
-        const modoLabel = { fijo: 'Clásico', unico: 'De una vez', solo_interes: 'Globo', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente' }[modoInteres] || 'Clásico'
+        const modoLabel = { fijo: 'Clásico', unico: 'De una vez', solo_interes: 'Globo', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente', lineal_dinamico: 'Dinámico' }[modoInteres] || 'Clásico'
         const pencilIcon = <svg className="w-3 h-3 shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" /></svg>
         return (
           <section className="space-y-4 pb-28">
@@ -1497,6 +1497,7 @@ function NuevoPrestamo() {
                         <option value="saldo">Sobre saldo</option>
                         <option value="manual">Manual</option>
                         <option value="lineal">Decreciente</option>
+                        <option value="lineal_dinamico">Decr. dinámico</option>
                       </select>
                     }
                   />

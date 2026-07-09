@@ -895,6 +895,7 @@ export default function PrestamoDetallePage({ params }) {
                 unico: 'Interés único',
                 saldo: 'Sobre saldo',
                 lineal: 'Decreciente (lineal)',
+                lineal_dinamico: 'Decreciente dinámico',
                 solo_interes: 'Solo interés (globo)',
                 manual: 'Cuota manual',
                 proporcional: 'Proporcional',
@@ -954,7 +955,7 @@ export default function PrestamoDetallePage({ params }) {
       />
 
       {/* ── TABLA DE AMORTIZACION (lineal / globo) ──────────────── */}
-      {['lineal', 'solo_interes'].includes(modoInteres) && cuotasAmortizacion.length > 0 && (
+      {['lineal', 'lineal_dinamico', 'solo_interes'].includes(modoInteres) && cuotasAmortizacion.length > 0 && (
         <Card>
           <TablaAmortizacion
             tabla={cuotasAmortizacion}
@@ -1374,7 +1375,7 @@ export default function PrestamoDetallePage({ params }) {
             </button>
           )}
 
-          {['lineal', 'solo_interes'].includes(prestamo?.modoInteres) && (() => {
+          {['lineal', 'lineal_dinamico', 'solo_interes'].includes(prestamo?.modoInteres) && (() => {
             const interesesPend = prestamo?.cuotasAmortizacion
               ?.filter(f => new Date(f.fechaEsperada) <= new Date() && (f.pagado || 0) < f.cuotaTotal)
               ?.reduce((acc, f) => acc + Math.max(0, f.interes - (f.interesPagado || 0)), 0) ?? 0

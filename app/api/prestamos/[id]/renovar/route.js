@@ -45,7 +45,7 @@ export async function POST(request, { params }) {
   const freq = frecuencia || 'diario'
   // Modo de interes para la renovacion. Default 'fijo' (el modelo nuevo);
   // si el front lo manda explicito, se respeta.
-  const modoRenovacion = ['fijo', 'unico', 'saldo', 'manual', 'solo_interes', 'lineal'].includes(modoInteres) ? modoInteres : 'fijo'
+  const modoRenovacion = ['fijo', 'unico', 'saldo', 'manual', 'solo_interes', 'lineal', 'lineal_dinamico'].includes(modoInteres) ? modoInteres : 'fijo'
   if (!['diario', 'semanal', 'quincenal', 'mensual'].includes(freq)) {
     return Response.json({ error: 'Frecuencia no válida' }, { status: 400 })
   }
@@ -195,7 +195,7 @@ export async function POST(request, { params }) {
       },
     })
 
-    if (['lineal', 'solo_interes'].includes(modoInteresFinal) && Array.isArray(calc.tablaAmortizacion) && calc.tablaAmortizacion.length > 0) {
+    if (['lineal', 'solo_interes', 'lineal_dinamico'].includes(modoInteresFinal) && Array.isArray(calc.tablaAmortizacion) && calc.tablaAmortizacion.length > 0) {
       await tx.cuotaAmortizacion.createMany({
         data: calc.tablaAmortizacion.map((p) => ({
           prestamoId: nuevo.id,

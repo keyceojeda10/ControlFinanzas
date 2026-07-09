@@ -3155,7 +3155,7 @@ export default function RutaDetallePage({ params }) {
             </p>
             <div className="space-y-2">
               {modalPagoRapido.prestamosActivos.map((p, i) => {
-                const modoLabel = ({ fijo: 'Clásico', solo_interes: 'Globo', lineal: 'Lineal', saldo: 'Sobre saldo', unico: 'Int. único', manual: 'Manual' })[p.modoInteres] || ''
+                const modoLabel = ({ fijo: 'Clásico', solo_interes: 'Globo', lineal: 'Lineal', lineal_dinamico: 'Dinámico', saldo: 'Sobre saldo', unico: 'Int. único', manual: 'Manual' })[p.modoInteres] || ''
                 const yaPago = p.pagadoHoy
                 return (
                   <button
@@ -3221,8 +3221,8 @@ export default function RutaDetallePage({ params }) {
 
         {modalPagoRapido && modalPagoRapido.prestamoActivo && (() => {
           const modo = modalPagoRapido.modoInteres
-          const esEspecial = ['solo_interes', 'lineal'].includes(modo)
-          const modoTag = ({ solo_interes: 'Globo', lineal: 'Lineal', saldo: 'Sobre saldo', unico: 'Int. único' })[modo]
+          const esEspecial = ['solo_interes', 'lineal', 'lineal_dinamico'].includes(modo)
+          const modoTag = ({ solo_interes: 'Globo', lineal: 'Lineal', lineal_dinamico: 'Dinámico', saldo: 'Sobre saldo', unico: 'Int. único' })[modo]
           return (
             <div className="space-y-4">
               <div className="text-center">
