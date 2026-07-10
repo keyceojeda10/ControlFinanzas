@@ -12,8 +12,12 @@ import * as wa from '@/lib/bot/whatsapp-cloud'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
 
 const CRON_SECRET = process.env.CRON_SECRET
-const TEMPLATE = 'contacto_v2'
 const TEMPLATE_LANG = process.env.WHATSAPP_TEMPLATE_LANG || 'es'
+const AB_TEMPLATES = { A: 'contacto_v3a', B: 'contacto_v3b' }
+const AB_TEXTOS = {
+  A: nombre => `Hola ${nombre}, vimos su interes en Control Finanzas. Una pregunta rapida: usted lleva el control de sus cobros en libreta, en Excel o en alguna app?`,
+  B: nombre => `Hola ${nombre}, le escribimos de Control Finanzas. Usted sabe exactamente cuanto le deben sus clientes hoy, o le toca sumar a mano?`,
+}
 
 function primerNombre(nombre) {
   if (!nombre || nombre === 'Sin nombre') return 'que tal'
@@ -47,9 +51,10 @@ export async function POST(req) {
       orderBy: { createdAt: 'asc' },
     })
 
-    const resultado = { total: leads.length, enviados: 0, errores: 0, ya_respondieron: 0 }
+    const resultado = { total: leads.length, enviados: 0, errores: 0, ya_respondieron: 0, varianteA: 0, varianteB: 0 }
 
-    for (const lead of leads) {
+    for (let i = 0; i < leads.length; i++) {
+      const lead = leads[i]
       const respuestas = await prisma.botConversacion.count({
         where: { botLeadId: lead.id, rol: 'lead' },
       })
@@ -58,21 +63,22 @@ export async function POST(req) {
         continue
       }
 
+      const variante = i % 2 === 0 ? 'A' : 'B'
+      const templateName = AB_TEMPLATES[variante]
+
       try {
         const nombre = primerNombre(lead.nombre)
-        const envio = await wa.sendTemplate(lead.telefono, TEMPLATE, { nombre }, TEMPLATE_LANG)
+        const envio = await wa.sendTemplate(lead.telefono, templateName, { nombre }, TEMPLATE_LANG)
 
         await prisma.botConversacion.deleteMany({
           where: { botLeadId: lead.id, rol: 'bot' },
         })
 
-        const textoPlantilla = `Hola ${nombre}, vimos tu interes en Control Finanzas. Es un sistema donde usted registra el prestamo y el sistema le calcula todo: cuotas, intereses, ganancias del dia, mora. Si tiene cobradores, cada uno entra con su usuario y usted ve en tiempo real cuanto cobro cada uno. Lo puede probar gratis 14 dias.`
-
         await prisma.botConversacion.create({
           data: {
             botLeadId: lead.id,
             rol: 'bot',
-            texto: textoPlantilla,
+            texto: AB_TEXTOS[variante](nombre),
             wamid: wa.wamidDe(envio),
           },
         })
@@ -84,10 +90,12 @@ export async function POST(req) {
             botActivo: true,
             intentosSeguimiento: 0,
             proximoSeguimiento: new Date(Date.now() + 24 * 3600000),
+            abVariante: variante,
           },
         })
 
         resultado.enviados++
+        resultado[`variante${variante}`]++
       } catch (e) {
         resultado.errores++
         console.error(`[Leads Recovery] Error ${lead.nombre}: ${e.message}`)

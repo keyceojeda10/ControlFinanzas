@@ -761,6 +761,7 @@ model BotLead {
   metodoActual        String?
   planInteres         String?
   anuncioId           String?
+  abVariante          String?
   estado              BotLeadEstado @default(pendiente)
   temperatura         Int           @default(0)
   botActivo           Boolean       @default(true)

@@ -42,7 +42,30 @@ export async function POST(req) {
     ])
     const tasaEntrega = entregaTotal > 0 ? +((1 - entregaFallidos / entregaTotal) * 100).toFixed(1) : 100
 
-    const metricas = { total, porEstado: estados, contactados, tasaRespuesta, tasaEntrega, entregaFallidos, entregaTotal }
+    const abStats = await prisma.$queryRaw`
+      SELECT
+        l.abVariante AS variante,
+        COUNT(*) AS total,
+        SUM(CASE WHEN l.estado IN ('interesado','cerrado') THEN 1 ELSE 0 END) AS respondieron,
+        SUM(CASE WHEN l.estado = 'cerrado' THEN 1 ELSE 0 END) AS registrados
+      FROM BotLead l
+      WHERE l.abVariante IS NOT NULL
+      GROUP BY l.abVariante`
+    const ab = {}
+    for (const row of abStats) {
+      const t = Number(row.total)
+      const r = Number(row.respondieron)
+      const reg = Number(row.registrados)
+      ab[row.variante] = {
+        total: t,
+        respondieron: r,
+        registrados: reg,
+        tasaResp: t > 0 ? +(r / t * 100).toFixed(1) : 0,
+        tasaReg: t > 0 ? +(reg / t * 100).toFixed(1) : 0,
+      }
+    }
+
+    const metricas = { total, porEstado: estados, contactados, tasaRespuesta, tasaEntrega, entregaFallidos, entregaTotal, ab }
     const gasto = {
       hoyUsd: +(gastoHoy._sum.costoUsd || 0).toFixed(4),
       totalUsd: +(gastoTotal._sum.costoUsd || 0).toFixed(4),
