@@ -31,7 +31,18 @@ export async function POST(req) {
     })
     const gastoTotal = await prisma.botGastoApi.aggregate({ _sum: { costoUsd: true } })
 
-    const metricas = { total, porEstado: estados, contactados, tasaRespuesta }
+    const hace24h = new Date(Date.now() - 24 * 3600000)
+    const [entregaTotal, entregaFallidos] = await Promise.all([
+      prisma.botConversacion.count({
+        where: { rol: 'bot', createdAt: { gte: hace24h }, estadoEntrega: { not: null } },
+      }),
+      prisma.botConversacion.count({
+        where: { rol: 'bot', createdAt: { gte: hace24h }, estadoEntrega: 'fallido' },
+      }),
+    ])
+    const tasaEntrega = entregaTotal > 0 ? +((1 - entregaFallidos / entregaTotal) * 100).toFixed(1) : 100
+
+    const metricas = { total, porEstado: estados, contactados, tasaRespuesta, tasaEntrega, entregaFallidos, entregaTotal }
     const gasto = {
       hoyUsd: +(gastoHoy._sum.costoUsd || 0).toFixed(4),
       totalUsd: +(gastoTotal._sum.costoUsd || 0).toFixed(4),

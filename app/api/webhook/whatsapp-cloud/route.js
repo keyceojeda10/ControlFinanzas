@@ -165,7 +165,35 @@ async function procesarStatus(status) {
     console.log(`[WA Cloud] Status '${estado}' para wamid desconocido: ${wamid}`)
   } else if (estado === 'fallido') {
     console.error(`[WA Cloud] Mensaje fallido (wamid ${wamid}): ${errorEntrega}`)
+    await verificarTasaFallos(errorEntrega).catch(e =>
+      console.error('[WA Cloud] Error verificando tasa fallos:', e.message)
+    )
   }
+}
+
+let ultimaAlertaFallos = 0
+
+async function verificarTasaFallos(errorEntrega) {
+  if (Date.now() - ultimaAlertaFallos < 6 * 3600000) return
+
+  const hace24h = new Date(Date.now() - 24 * 3600000)
+  const [fallidos, total] = await Promise.all([
+    prisma.botConversacion.count({
+      where: { rol: 'bot', createdAt: { gte: hace24h }, estadoEntrega: 'fallido' },
+    }),
+    prisma.botConversacion.count({
+      where: { rol: 'bot', createdAt: { gte: hace24h }, estadoEntrega: { not: null } },
+    }),
+  ])
+
+  if (total < 5) return
+  const tasaFallo = fallidos / total
+  if (tasaFallo < 0.3) return
+
+  ultimaAlertaFallos = Date.now()
+  const pct = Math.round(tasaFallo * 100)
+  const { alertarFallosEntrega } = await import('@/lib/bot/alertas')
+  await alertarFallosEntrega(fallidos, total, pct, errorEntrega)
 }
 
 async function procesarMensaje(msg) {
