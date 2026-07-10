@@ -37,7 +37,7 @@ export async function GET(request) {
     take: limite,
     orderBy: { updatedAt: 'desc' },
     include: {
-      conversaciones: { orderBy: { createdAt: 'desc' }, take: 1 },
+      conversaciones: { orderBy: { createdAt: 'desc' }, take: 3 },
     },
   })
 
@@ -45,6 +45,11 @@ export async function GET(request) {
 
   let items = leads.map(l => {
     const ultimo = l.conversaciones[0] || null
+    const ultimoLead = l.conversaciones.find(m => m.rol === 'lead')
+    let ventanaMs = 0
+    if (ultimoLead) {
+      ventanaMs = Math.max(0, 24 * 3600000 - (Date.now() - new Date(ultimoLead.createdAt).getTime()))
+    }
     return {
       id: l.id,
       nombre: l.nombre,
@@ -54,6 +59,7 @@ export async function GET(request) {
       botActivo: l.botActivo,
       alertado: l.alertado,
       registrado: estaRegistrado(l.telefono, registrados),
+      ventanaMs,
       ultimoMensaje: ultimo ? {
         rol: ultimo.rol,
         texto: ultimo.texto?.slice(0, 80) || '',

@@ -25,6 +25,14 @@ function horaCorta(d) {
   return date.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' })
 }
 
+function textoVentana(ms) {
+  if (!ms || ms <= 0) return null
+  const h = Math.floor(ms / 3600000)
+  const m = Math.floor((ms % 3600000) / 60000)
+  if (h > 0) return `${h}h ${m}m`
+  return `${m}m`
+}
+
 function previewTexto(um) {
   if (!um) return 'Sin mensajes'
   const pref = um.rol === 'lead' ? '' : (um.rol === 'admin' ? 'Tú: ' : 'Bot: ')
@@ -115,6 +123,15 @@ export default function ChatsPage() {
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[12px] text-[var(--color-text-muted)] truncate">{previewTexto(c.ultimoMensaje)}</span>
                     <span className="flex items-center gap-1 shrink-0">
+                      {textoVentana(c.ventanaMs) && (
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
+                          c.ventanaMs > 6 * 3600000 ? 'bg-[rgba(16,185,129,0.15)] text-[var(--color-success)]'
+                          : c.ventanaMs > 2 * 3600000 ? 'bg-[rgba(245,197,24,0.15)] text-[#f5c518]'
+                          : 'bg-[rgba(239,68,68,0.15)] text-[var(--color-danger)]'
+                        }`} title="Ventana WhatsApp restante">
+                          {textoVentana(c.ventanaMs)}
+                        </span>
+                      )}
                       {c.registrado && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[rgba(16,185,129,0.15)] text-[var(--color-success)] font-medium">Cliente</span>}
                       {c.temperatura >= 60 && <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-danger)]" title={`Temp ${c.temperatura}`} />}
                     </span>
@@ -136,6 +153,17 @@ export default function ChatsPage() {
   )
 }
 
+function useVentanaCountdown(ventanaMsInicial) {
+  const [ms, setMs] = useState(ventanaMsInicial || 0)
+  useEffect(() => { setMs(ventanaMsInicial || 0) }, [ventanaMsInicial])
+  useEffect(() => {
+    if (ms <= 0) return
+    const t = setInterval(() => setMs(p => Math.max(0, p - 60000)), 60000)
+    return () => clearInterval(t)
+  }, [ms > 0])
+  return ms
+}
+
 function ChatPanel({ lead, onBack, onUpdate }) {
   const [mensajes, setMensajes] = useState([])
   const [texto, setTexto] = useState('')
@@ -143,6 +171,7 @@ function ChatPanel({ lead, onBack, onUpdate }) {
   const [botActivo, setBotActivo] = useState(lead.botActivo)
   const [aviso, setAviso] = useState('')
   const [grabando, setGrabando] = useState(false)
+  const ventanaMs = useVentanaCountdown(lead.ventanaMs)
   const chatRef = useRef(null)
   const fileRef = useRef(null)
   const mediaRecRef = useRef(null)
@@ -298,7 +327,24 @@ function ChatPanel({ lead, onBack, onUpdate }) {
             <span className="text-sm text-white font-medium truncate">{lead.nombre}</span>
             {lead.registrado && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[rgba(16,185,129,0.15)] text-[var(--color-success)] font-medium">Cliente registrado</span>}
           </div>
-          <span className="text-[11px] text-[var(--color-text-muted)]">{lead.telefono} · temp {lead.temperatura}</span>
+          <span className="text-[11px] text-[var(--color-text-muted)] flex items-center gap-1.5">
+            {lead.telefono} · temp {lead.temperatura}
+            {ventanaMs > 0 && (
+              <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
+                ventanaMs > 6 * 3600000 ? 'bg-[rgba(16,185,129,0.15)] text-[var(--color-success)]'
+                : ventanaMs > 2 * 3600000 ? 'bg-[rgba(245,197,24,0.15)] text-[#f5c518]'
+                : 'bg-[rgba(239,68,68,0.15)] text-[var(--color-danger)]'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${
+                  ventanaMs > 6 * 3600000 ? 'bg-[var(--color-success)]'
+                  : ventanaMs > 2 * 3600000 ? 'bg-[#f5c518]'
+                  : 'bg-[var(--color-danger)]'
+                }`} />
+                Ventana {textoVentana(ventanaMs)}
+              </span>
+            )}
+            {!ventanaMs && <span className="text-[10px] text-[var(--color-text-muted)] opacity-50">Sin ventana</span>}
+          </span>
         </div>
         {/* Toggle bot */}
         <button
