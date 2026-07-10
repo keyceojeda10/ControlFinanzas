@@ -15,7 +15,7 @@ import crypto from 'crypto'
 import { prisma } from '@/lib/prisma'
 import * as wa from '@/lib/bot/whatsapp-cloud'
 import { transcribirAudio } from '@/lib/bot/transcribe'
-import { responder } from '@/lib/bot/sales-agent'
+import { responder } from '@/lib/bot-v2/agente'
 import { alertarLeadCaliente } from '@/lib/bot/alertas'
 import { guardarMedia } from '@/lib/bot/media-store'
 import { notificarEstadoLead } from '@/lib/bot/notificar-meta'
@@ -383,6 +383,11 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
     decision = await responder(lead, historial, { texto, tipoMensaje, imagenBase64, imagenMime })
   } catch (e) {
     console.error('[WA Cloud] Error del agente:', e.message)
+    return
+  }
+
+  if (!decision) {
+    console.log(`[WA Cloud] Ignorado: ${lead.nombre} (mensaje automatico o vacio)`)
     return
   }
 

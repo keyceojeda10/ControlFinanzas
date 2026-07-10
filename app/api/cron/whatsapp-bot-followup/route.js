@@ -1,7 +1,7 @@
 // app/api/cron/whatsapp-bot-followup/route.js — Cron cada 30 min
 import { NextResponse } from 'next/server'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
-import { enviarSeguimientos } from '@/lib/bot/sender'
+import { enviarSeguimientos } from '@/lib/bot-v2/sender'
 
 export async function POST(req) {
   const cronSecret = req.headers.get('x-cron-secret')
