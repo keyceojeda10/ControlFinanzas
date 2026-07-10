@@ -23,6 +23,9 @@ export async function POST(req) {
   const rl = cronLimiter(getClientIp(req))
   if (!rl.ok) return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
 
+  // Desactivado: auditoría mostró 2/130 conversión. WhatsApp cron lo reemplaza.
+  return NextResponse.json({ ok: true, desactivado: true, motivo: 'Reemplazado por secuencia WhatsApp' })
+
   const ahora = new Date()
   const results = { dia1: 0, dia3: 0, dia7: 0, dia12: 0, dia14: 0 }
 

@@ -209,7 +209,7 @@ export async function POST(req) {
       }).catch(e => console.error('[Registro] Fallo vincular lead FB:', e.message))
     }
 
-    // Vincular BotLead (WhatsApp) por teléfono → marcar como convertido
+    // Vincular BotLead (WhatsApp) por teléfono → marcar como convertido + detectar fuente
     prisma.botLead.findMany({
       where: { telefono: telefonoLimpio, organizationId: null },
       select: { id: true },
@@ -219,6 +219,23 @@ export async function POST(req) {
         data: { organizationId: resultado.org.id, estado: 'registrado' },
       })
       for (const bl of botLeads) notificarEstadoLead(bl.id, 'converted').catch(() => {})
+
+      let fuente = null
+      if (leadAsociado) {
+        fuente = 'facebook_ads'
+      } else if (botLeads.length > 0) {
+        fuente = 'whatsapp_bot'
+      } else if (orgReferidora) {
+        fuente = 'referido'
+      } else {
+        fuente = 'organico'
+      }
+      if (fuente) {
+        await prisma.organization.update({
+          where: { id: resultado.org.id },
+          data: { fuenteRegistro: fuente },
+        })
+      }
     }).catch(e => console.error('[Registro] Fallo vincular BotLead:', e.message))
 
     // Facebook CAPI: reportar conversión real con email + teléfono ingresado
