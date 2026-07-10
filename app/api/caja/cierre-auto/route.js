@@ -53,6 +53,7 @@ async function calcularRecogido(organizationId, cobradorId, fechaInicio, fechaFi
       cobradorId,
       fechaPago: { gte: fechaInicio, lte: fechaFin },
       tipo: { notIn: ['recargo', 'descuento'] },
+      prestamo: { estado: { not: 'cancelado' } },
     },
     _sum: { montoPagado: true },
   })

@@ -100,6 +100,7 @@ export async function GET(req) {
           cobradorId: { in: cobradores.map((c) => c.id) },
           fechaPago: { gte: desde, lte: hasta },
           tipo: { notIn: TIPOS_AJUSTE },
+          prestamo: { estado: { not: 'cancelado' } },
         },
         select: {
           cobradorId: true,

@@ -81,7 +81,7 @@ export async function GET(req) {
     prisma.prestamo.count({ where: { organizationId: orgId, estado: 'completado' } }),
     prisma.pago.aggregate({
       where: {
-        prestamo: { organizationId: orgId },
+        prestamo: { organizationId: orgId, estado: { not: 'cancelado' } },
         fechaPago: { gte: fechaDesde, lt: fechaHasta },
         tipo: { notIn: ['recargo', 'descuento'] },
       },
@@ -90,7 +90,7 @@ export async function GET(req) {
     }),
     prisma.pago.findMany({
       where: {
-        prestamo: { organizationId: orgId },
+        prestamo: { organizationId: orgId, estado: { not: 'cancelado' } },
         fechaPago: { gte: fechaDesde, lt: fechaHasta },
         tipo: { notIn: ['recargo', 'descuento'] },
       },
@@ -126,7 +126,7 @@ export async function GET(req) {
     }),
     prisma.pago.findMany({
       where: {
-        prestamo: { organizationId: orgId },
+        prestamo: { organizationId: orgId, estado: { not: 'cancelado' } },
         fechaPago: { gte: fechaDesde, lt: fechaHasta },
         tipo: { notIn: ['recargo', 'descuento'] },
       },

@@ -26,8 +26,8 @@ export async function GET() {
   const rutaIdsCobrador = session.user.rutaIds ?? []
   const filtroRutaCliente = esCobrador ? { rutaId: { in: rutaIdsCobrador } } : {}
   const filtroRutaPagos = esCobrador
-    ? { prestamo: { cliente: { rutaId: { in: rutaIdsCobrador } } } }
-    : {}
+    ? { prestamo: { estado: { not: 'cancelado' }, cliente: { rutaId: { in: rutaIdsCobrador } } } }
+    : { prestamo: { estado: { not: 'cancelado' } } }
 
   // Rangos UTC que representan "hoy" y "este mes" en hora Colombia (UTC-5)
   // Colombia midnight = UTC 05:00. Fin del día Colombia = UTC 04:59:59 del día siguiente.
@@ -214,6 +214,7 @@ export async function GET() {
         organizationId: orgId,
         fechaPago: { gte: inicioDiaUTC, lte: finDiaUTC },
         tipo: { notIn: ['recargo', 'descuento'] },
+        prestamo: { estado: { not: 'cancelado' } },
       },
       _sum: { montoPagado: true },
       _count: true,
@@ -302,6 +303,7 @@ export async function GET() {
         organizationId: orgId,
         fechaPago: { gte: inicioMes, lte: finMes },
         tipo: { notIn: ['recargo', 'descuento'] },
+        prestamo: { estado: { not: 'cancelado' } },
       },
       select: {
         montoPagado: true,

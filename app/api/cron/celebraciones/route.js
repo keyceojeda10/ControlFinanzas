@@ -84,6 +84,7 @@ export async function POST(req) {
       where: {
         organizationId: org.id,
         fechaPago: { gte: inicio, lte: fin },
+        prestamo: { estado: { not: 'cancelado' } },
       },
       _sum: { montoPagado: true },
       _count: { id: true },
@@ -97,6 +98,7 @@ export async function POST(req) {
         where: {
           organizationId: org.id,
           fechaPago: { gte: sieteDiasAtras, lt: inicio },
+          prestamo: { estado: { not: 'cancelado' } },
           },
         _sum: { montoPagado: true },
       })

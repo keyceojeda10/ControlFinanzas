@@ -25,6 +25,7 @@ async function recaudadoPorCobradorDia(organizationId, inicio, fin) {
       fechaPago: { gte: inicio, lt: fin },
       tipo: { notIn: ['recargo', 'descuento'] },
       cobradorId: { not: null },
+      prestamo: { estado: { not: 'cancelado' } },
     },
     _sum: { montoPagado: true },
   })
@@ -204,7 +205,7 @@ export async function POST(request) {
       recaudadoSistema = capitalCobrador - gastosCobrador
     } else {
       const recaudadoAgg = await prisma.pago.aggregate({
-        where: { organizationId, cobradorId, fechaPago: { gte: inicio, lt: fin }, tipo: { notIn: ['recargo', 'descuento'] } },
+        where: { organizationId, cobradorId, fechaPago: { gte: inicio, lt: fin }, tipo: { notIn: ['recargo', 'descuento'] }, prestamo: { estado: { not: 'cancelado' } } },
         _sum: { montoPagado: true },
       })
       recaudadoSistema = Math.round(recaudadoAgg._sum?.montoPagado || 0)

@@ -54,7 +54,7 @@ export async function GET(req) {
 
   const pagos = await prisma.pago.findMany({
     where: {
-      prestamo: { organizationId: orgId },
+      prestamo: { organizationId: orgId, estado: { not: 'cancelado' } },
       fechaPago: { gte: fechaDesde, lt: fechaHasta },
       tipo: { notIn: ['recargo', 'descuento'] },
     },
