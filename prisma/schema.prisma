@@ -92,6 +92,7 @@ model Organization {
   trialReminderSent Boolean        @default(false)
   recoveryEmailStep Int            @default(0)
   waRecoverySent    Boolean        @default(false)
+  waOnboardingStep  Int            @default(0)
   diasSinCobro      String?
   capitalEstricto   Boolean        @default(false)
   capitalEsEfectivo Boolean        @default(false)
