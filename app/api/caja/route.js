@@ -359,7 +359,7 @@ async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaj
   // real que entró y el cobrador debe cuadrarlo. Lo unico que se aisla del clavo
   // es el lado negativo (mora, cuotas vencidas, cartera/esperado) — no los cobros.
   const wherePagos = {
-    prestamo: { organizationId },
+    prestamo: { organizationId, estado: { not: 'cancelado' } },
     fechaPago: { gte: inicio, lt: fin },
   }
   if (cobradorId) {
@@ -562,6 +562,7 @@ export async function GET(request) {
     organizationId,
     fechaPago: { gte: inicio, lt: fin },
     tipo: { notIn: ['recargo', 'descuento'] },
+    prestamo: { estado: { not: 'cancelado' } },
   }
   if (rol === 'cobrador') {
     wherePagosDia.cobradorId = userId
@@ -627,6 +628,7 @@ export async function GET(request) {
           fechaPago: { gte: inicio, lt: fin },
           tipo: { notIn: ['recargo', 'descuento'] },
           cobradorId: { not: null },
+          prestamo: { estado: { not: 'cancelado' } },
         },
         _sum: { montoPagado: true },
       }),
@@ -810,6 +812,7 @@ export async function GET(request) {
       organizationId,
       fechaPago: { gte: inicioRango, lt: finRango },
       tipo: { notIn: ['recargo', 'descuento'] },
+      prestamo: { estado: { not: 'cancelado' } },
     }
     if (cobradorRango) wherePagosRango.cobradorId = cobradorRango
 
