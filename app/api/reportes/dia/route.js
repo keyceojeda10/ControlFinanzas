@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { getUtcOffset, getLocalDayRange } from '@/lib/i18n'
+import { getLocalDayRange } from '@/lib/i18n'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,7 +28,7 @@ export async function GET(request) {
     rutaIds = rutasParam.split(',').filter(Boolean)
   }
 
-  const rutaWhere = { organizationId }
+  const rutaWhere = { organizationId, activo: true }
   if (rol === 'cobrador') {
     rutaWhere.cobradorId = userId
   }
@@ -48,11 +48,12 @@ export async function GET(request) {
 
   const rutaIdsReal = rutas.map(r => r.id)
 
-  const prestamosDeRutas = await prisma.prestamo.findMany({
+  const clientesDeRutas = await prisma.cliente.findMany({
     where: { organizationId, rutaId: { in: rutaIdsReal } },
-    select: { id: true },
+    select: { id: true, nombre: true, cedula: true, telefono: true, direccion: true, rutaId: true },
   })
-  const prestamoIdsDeRutas = prestamosDeRutas.map(p => p.id)
+  const clienteIds = clientesDeRutas.map(c => c.id)
+  const clienteMap = new Map(clientesDeRutas.map(c => [c.id, c]))
 
   const [pagosRaw, prestamosActivos, gastos] = await Promise.all([
     prisma.pago.findMany({
@@ -60,7 +61,7 @@ export async function GET(request) {
         organizationId,
         fechaPago: { gte: inicio, lt: fin },
         tipo: { notIn: ['recargo', 'descuento'] },
-        prestamoId: { in: prestamoIdsDeRutas },
+        prestamo: { clienteId: { in: clienteIds } },
       },
       select: {
         id: true,
@@ -72,8 +73,8 @@ export async function GET(request) {
         cobrador: { select: { nombre: true } },
         prestamo: {
           select: {
-            rutaId: true,
-            cliente: { select: { id: true, nombre: true, cedula: true, telefono: true, direccion: true } },
+            clienteId: true,
+            cliente: { select: { id: true, nombre: true, cedula: true, rutaId: true } },
           },
         },
       },
@@ -83,17 +84,15 @@ export async function GET(request) {
       where: {
         organizationId,
         estado: 'activo',
-        rutaId: { in: rutaIdsReal },
+        clienteId: { in: clienteIds },
       },
       select: {
         id: true,
-        rutaId: true,
+        clienteId: true,
         cuotaDiaria: true,
-        frecuencia: true,
-        fechaInicio: true,
         totalAPagar: true,
         saldoPendiente: true,
-        cliente: { select: { id: true, nombre: true, cedula: true, telefono: true, direccion: true } },
+        cliente: { select: { id: true, nombre: true, cedula: true, telefono: true, direccion: true, rutaId: true } },
       },
     }),
     prisma.gastoMenor.findMany({
@@ -117,15 +116,15 @@ export async function GET(request) {
     metodoPago: p.metodoPago || 'efectivo',
     plataforma: p.plataforma || null,
     cobradorNombre: p.cobrador?.nombre || null,
-    rutaId: p.prestamo?.rutaId || null,
+    rutaId: p.prestamo?.cliente?.rutaId || null,
     clienteNombre: p.prestamo?.cliente?.nombre || 'Cliente',
     clienteCedula: p.prestamo?.cliente?.cedula || null,
   }))
 
-  const clientesPagaron = new Set(pagosRaw.map(p => p.prestamo?.cliente?.id).filter(Boolean))
+  const clientesPagaron = new Set(pagosRaw.map(p => p.prestamo?.clienteId).filter(Boolean))
 
   const pendientes = prestamosActivos
-    .filter(p => !clientesPagaron.has(p.cliente?.id))
+    .filter(p => !clientesPagaron.has(p.clienteId))
     .map(p => ({
       clienteNombre: p.cliente?.nombre || 'Cliente',
       clienteCedula: p.cliente?.cedula || null,
@@ -133,7 +132,7 @@ export async function GET(request) {
       clienteDireccion: p.cliente?.direccion || null,
       cuota: Math.round(p.cuotaDiaria || 0),
       saldoPendiente: Math.round(p.saldoPendiente || 0),
-      rutaId: p.rutaId,
+      rutaId: p.cliente?.rutaId || null,
     }))
 
   const clientesUnicos = new Map()
@@ -152,7 +151,7 @@ export async function GET(request) {
 
   const porRuta = rutas.map(r => {
     const pagosRuta = pagos.filter(p => p.rutaId === r.id)
-    const prestamosRuta = prestamosActivos.filter(p => p.rutaId === r.id)
+    const prestamosRuta = prestamosActivos.filter(p => p.cliente?.rutaId === r.id)
     const pendientesRuta = [...clientesUnicos.values()].filter(p => p.rutaId === r.id)
     return {
       id: r.id,

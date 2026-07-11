@@ -236,6 +236,7 @@ export default function ReporteDia({ open, onClose, rutasDisponibles = [], fecha
           <input
             type="date"
             value={fecha}
+            max={getColombiaDateStr()}
             onChange={(e) => setFecha(e.target.value)}
             className="flex-1 h-9 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-info)]"
           />
