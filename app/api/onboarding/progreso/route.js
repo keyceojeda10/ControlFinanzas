@@ -124,19 +124,9 @@ export async function GET() {
   const currentStep = org?.onboardingStep ?? 0
   const showWizard = currentStep >= 0 && currentStep < 99
 
-  // Calcular paso efectivo del wizard cruzando con datos reales
+  // Wizard v4: steps 0 (welcome), 1 (capital), 2 (cartulina), 3 (éxito), 99 (done)
   const flujo = org?.onboardingFlujo ?? null
-  let wizardInitialStep = currentStep
-
-  // Si ya hay datos creados, avanzar el paso efectivo
-  if (flujo === 'solo') {
-    if (wizardInitialStep < 3 && clientes > 0) wizardInitialStep = 3
-    if (wizardInitialStep < 4 && prestamos > 0) wizardInitialStep = 4
-  } else if (flujo === 'equipo') {
-    if (wizardInitialStep < 4 && cobradores > 0 && rutas > 0) wizardInitialStep = 4
-    if (wizardInitialStep < 4 && clientes > 0) wizardInitialStep = 4
-    if (wizardInitialStep < 5 && prestamos > 0) wizardInitialStep = 5
-  }
+  let wizardInitialStep = Math.min(currentStep, 3)
 
   return NextResponse.json({
     completado,

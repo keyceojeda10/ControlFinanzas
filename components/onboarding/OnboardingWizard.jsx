@@ -3,20 +3,21 @@
 import { useState, useCallback } from 'react'
 import WizardProgress   from './wizard/WizardProgress'
 import WizardWelcome    from './wizard/WizardWelcome'
+import WizardCapital    from './wizard/WizardCapital'
 import WizardCartulina  from './wizard/WizardCartulina'
 import WizardExito      from './wizard/WizardExito'
 import WizardAyuda      from './wizard/WizardAyuda'
 
 /*
-  Onboarding v3 — simplificado.
+  Onboarding v4
 
   Step 0: Welcome + solo/equipo
-  Step 1: Importar cartulina (foto → IA → cliente+préstamo automático)
-  Step 2: Exito
+  Step 1: Capital inicial (cuánto dinero disponible para prestar)
+  Step 2: Importar cartulina (foto → IA → cliente+préstamo automático)
+  Step 3: Éxito
 
-  Se eliminaron: Capital, Cobrador, Cliente manual, Préstamo manual, Features.
-  El 95% de usuarios saltaba el wizard anterior. Este tiene 1 acción real
-  (subir foto) que da valor inmediato: ver sus datos en el sistema.
+  Capital se agrega porque sin él el dashboard arranca en negativo
+  desde el primer préstamo. Skipeable, pero con advertencia clara.
 */
 
 const persistStep = (step, flujo) => {
@@ -35,10 +36,12 @@ export default function OnboardingWizard({
   initialFlujo = null,
   plan = 'basic',
 }) {
-  const [step,          setStep]          = useState(initialStep > 2 ? 0 : initialStep)
+  const [step,          setStep]          = useState(initialStep > 3 ? 0 : initialStep)
   const [flujo,         setFlujo]         = useState(initialFlujo)
   const [currentPlan,   setCurrentPlan]   = useState(plan)
   const [importResult,  setImportResult]  = useState(null)
+  const [capitalDone,   setCapitalDone]   = useState(false)
+  const [capitalMonto,  setCapitalMonto]  = useState(0)
   const [showBounce,    setShowBounce]    = useState(false)
 
   const bounce = (cb) => {
@@ -54,20 +57,28 @@ export default function OnboardingWizard({
     setStep(1)
   }, [])
 
-  // Step 1: Cartulina importada
-  const handleCartullinaDone = useCallback((result) => {
-    setImportResult(result)
+  // Step 1: Capital
+  const handleCapitalDone = useCallback(({ monto, skipped }) => {
+    setCapitalDone(!skipped)
+    setCapitalMonto(monto || 0)
     persistStep(2, flujo)
     bounce(() => setStep(2))
   }, [flujo])
 
-  // Step 1: Cartulina saltada
-  const handleCartulinaSkip = useCallback(() => {
-    persistStep(2, flujo)
-    setStep(2)
+  // Step 2: Cartulina importada
+  const handleCartullinaDone = useCallback((result) => {
+    setImportResult(result)
+    persistStep(3, flujo)
+    bounce(() => setStep(3))
   }, [flujo])
 
-  // Step 2: Finish
+  // Step 2: Cartulina saltada
+  const handleCartulinaSkip = useCallback(() => {
+    persistStep(3, flujo)
+    setStep(3)
+  }, [flujo])
+
+  // Step 3: Finish
   const handleFinish = useCallback(() => {
     persistStep(99, flujo)
     onComplete?.()
@@ -79,10 +90,14 @@ export default function OnboardingWizard({
       setStep(0)
       setFlujo(null)
       persistStep(0, null)
+    } else if (step === 2) {
+      setStep(1)
+      persistStep(1, flujo)
     }
-  }, [step])
+  }, [step, flujo])
 
-  const progressInfo = step === 1 ? { current: 1, total: 1 } : null
+  // Progress: steps 1 y 2 muestran circles (capital + cartulina). Welcome y Éxito no.
+  const progressInfo = (step === 1 || step === 2) ? { current: step, total: 2 } : null
 
   if (showBounce) {
     return (
@@ -106,7 +121,7 @@ export default function OnboardingWizard({
     )
   }
 
-  const BackButton = step === 1 ? (
+  const BackButton = (step === 1 || step === 2) ? (
     <button
       onClick={handleBack}
       className="flex items-center gap-1 text-[12px] mb-4 transition-colors cursor-pointer"
@@ -136,13 +151,21 @@ export default function OnboardingWizard({
       )}
 
       {step === 1 && flujo && (
+        <WizardCapital
+          onComplete={handleCapitalDone}
+          alreadyDone={capitalDone}
+          savedMonto={capitalMonto}
+        />
+      )}
+
+      {step === 2 && flujo && (
         <WizardCartulina
           onComplete={handleCartullinaDone}
           onSkip={handleCartulinaSkip}
         />
       )}
 
-      {step === 2 && flujo && (
+      {step === 3 && flujo && (
         <WizardExito
           cliente={importResult?.clientesCreados > 0 ? { nombre: `${importResult.clientesCreados} importados` } : null}
           prestamo={importResult?.prestamosCreados > 0 ? { montoPrestado: 0, totalAPagar: 0, cuotaDiaria: 0, frecuencia: 'diario' } : null}
@@ -151,7 +174,7 @@ export default function OnboardingWizard({
         />
       )}
 
-      {step < 2 && <WizardAyuda />}
+      {step < 3 && <WizardAyuda />}
     </div>
   )
 }
