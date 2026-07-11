@@ -173,6 +173,31 @@ function PlanPageInner() {
         </div>
       </div>
 
+      {/* ── Banner trial ── */}
+      {estado?.enTrial && (
+        <div
+          className="rounded-[16px] px-5 py-4 flex items-start gap-3"
+          style={{
+            background: 'linear-gradient(135deg, rgba(245,197,24,0.12) 0%, rgba(245,197,24,0.04) 100%)',
+            border: '1px solid rgba(245,197,24,0.25)',
+          }}
+        >
+          <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: 'rgba(245,197,24,0.15)' }}>
+            <svg className="w-4 h-4" style={{ color: 'var(--color-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-[14px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+              Prueba gratuita · {estado.diasTrial} {estado.diasTrial === 1 ? 'dia' : 'dias'} restantes
+            </p>
+            <p className="text-[12px] mt-0.5 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+              Tienes acceso completo al plan Empresarial. Al terminar la prueba, tu cuenta pasara al plan {PLANES_CONFIG[estado.planAlTerminar]?.nombre || 'Inicial'}.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ── Plan Actual card ── */}
       <div
         className="rounded-[16px] p-5 relative overflow-hidden"

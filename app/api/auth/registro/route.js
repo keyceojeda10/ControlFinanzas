@@ -122,7 +122,8 @@ export async function POST(req) {
       const org = await tx.organization.create({
         data: {
           nombre:        nombreOrganizacion.trim(),
-          plan:          planFinal,
+          plan:          'professional',
+          planOriginal:  planFinal,
           activo:        true,
           telefono:      telefonoLimpio,
           country,
@@ -160,7 +161,7 @@ export async function POST(req) {
       await tx.suscripcion.create({
         data: {
           organizationId:   org.id,
-          plan:             planFinal,
+          plan:             'professional',
           estado:           'activa',
           fechaInicio:      ahora,
           fechaVencimiento: vencimiento,

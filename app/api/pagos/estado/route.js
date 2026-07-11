@@ -23,7 +23,7 @@ export async function GET() {
     }),
     prisma.organization.findUnique({
       where: { id: orgId },
-      select: { descuento: true, cobradoresExtra: true },
+      select: { descuento: true, cobradoresExtra: true, plan: true, planOriginal: true, planDemoHasta: true },
     }),
     prisma.suscripcion.findFirst({
       where: {
@@ -38,11 +38,13 @@ export async function GET() {
 
   const descuento = org?.descuento ?? 0
   const cobradoresExtra = org?.cobradoresExtra ?? 0
+  const enTrial = !!(org?.planOriginal && org?.planDemoHasta && new Date(org.planDemoHasta) > new Date())
+  const diasTrial = enTrial ? Math.ceil((new Date(org.planDemoHasta) - new Date()) / (1000 * 60 * 60 * 24)) : 0
 
   if (!sub) {
     const plan = session.user.plan ?? 'starter'
     return NextResponse.json({
-      plan,
+      plan: enTrial ? org.plan : plan,
       estado:           'pendiente',
       fechaVencimiento: null,
       diasRestantes:    0,
@@ -55,7 +57,10 @@ export async function GET() {
       canceladaAt:      null,
       tieneRecurrenteActiva: false,
       cobradoresExtra,
-      limiteUsuarios: (LIMITES_USUARIOS[plan] ?? 1) + cobradoresExtra,
+      limiteUsuarios: (LIMITES_USUARIOS[enTrial ? org.plan : plan] ?? 1) + cobradoresExtra,
+      enTrial,
+      diasTrial,
+      planAlTerminar: enTrial ? org.planOriginal : null,
     })
   }
 
@@ -67,7 +72,7 @@ export async function GET() {
   )
 
   return NextResponse.json({
-    plan:             subPrincipal.plan,
+    plan:             enTrial ? org.plan : subPrincipal.plan,
     estado:           subPrincipal.estado,
     fechaVencimiento: subPrincipal.fechaVencimiento,
     diasRestantes,
@@ -80,6 +85,9 @@ export async function GET() {
     canceladaAt:      subPrincipal.canceladaAt,
     tieneRecurrenteActiva: !!subRecurrente && !subRecurrente.canceladaAt,
     cobradoresExtra,
-    limiteUsuarios: (LIMITES_USUARIOS[subPrincipal.plan] ?? 1) + cobradoresExtra,
+    limiteUsuarios: (LIMITES_USUARIOS[enTrial ? org.plan : subPrincipal.plan] ?? 1) + cobradoresExtra,
+    enTrial,
+    diasTrial,
+    planAlTerminar: enTrial ? org.planOriginal : null,
   })
 }

@@ -37,6 +37,10 @@ export async function POST(req) {
         planDemoHasta: null,
       },
     })
+    await prisma.suscripcion.updateMany({
+      where: { organizationId: org.id, plan: org.plan },
+      data: { plan: org.planOriginal },
+    }).catch(() => {})
     await registrarAdminLog({
       organizacionId: org.id,
       accion: 'revertir_demo',
