@@ -24,7 +24,7 @@ function construirMensaje(nombre, prestamos, clientes, diasVencido) {
   const n = nombre || 'amigo'
 
   if (prestamos >= 20) {
-    return `${n}, le escribimos de Control Finanzas. Tenía ${prestamos} préstamos registrados en el sistema y vimos que se le venció la prueba.\n\nCon ese volumen, llevar la cartera a mano se vuelve un problema. Sus datos siguen guardados — si quiere reactivar, el plan básico son $39.000/mes.\n\nEscríbanos al ${SOPORTE} si tiene alguna duda.`
+    return `${n}, le escribimos de Control Finanzas. Tenía ${prestamos} préstamos registrados en el sistema y vimos que se le venció la prueba.\n\nCon ese volumen, llevar la cartera a mano se vuelve un problema. Sus datos siguen guardados — si quiere reactivar, el plan Inicial son $39.000/mes.\n\nEscríbanos al ${SOPORTE} si tiene alguna duda.`
   }
 
   if (prestamos >= 5) {
