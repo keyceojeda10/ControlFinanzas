@@ -37,16 +37,28 @@ export async function GET() {
     }
   }
 
-  const [clientes, prestamos, pagos, rutas, cierres, cobradores] = await Promise.all([
+  const [clientes, prestamos, pagos, rutas, cierres, cobradores, capital] = await Promise.all([
     prisma.cliente.count({ where: { organizationId: orgId, estado: { notIn: ['eliminado'] } } }),
     prisma.prestamo.count({ where: { organizationId: orgId } }),
     prisma.pago.count({ where: { organizationId: orgId } }),
     prisma.ruta.count({ where: { organizationId: orgId } }),
     prisma.cierreCaja.count({ where: { organizationId: orgId } }),
     prisma.user.count({ where: { organizationId: orgId, rol: 'cobrador' } }),
+    prisma.capital.count({ where: { organizationId: orgId } }),
   ])
 
+  const flujo = org?.onboardingFlujo ?? null
+  const esSolo = flujo === 'solo'
+
   const misiones = [
+    {
+      id: 'registrar-capital',
+      titulo: 'Registra tu capital inicial',
+      descripcion: 'Asi la caja siempre te va a cuadrar desde el primer prestamo.',
+      completada: capital > 0,
+      href: '/caja',
+      icono: 'capital',
+    },
     {
       id: 'crear-cliente',
       titulo: 'Sube tu cartera de clientes',
@@ -106,8 +118,12 @@ export async function GET() {
     },
   ]
 
-  const completadas = misiones.filter(m => m.completada).length
-  const total = misiones.length
+  const misionesFiltradas = esSolo
+    ? misiones.filter(m => m.id !== 'crear-cobrador' && m.id !== 'crear-ruta')
+    : misiones
+
+  const completadas = misionesFiltradas.filter(m => m.completada).length
+  const total = misionesFiltradas.length
   const completado = completadas === total
 
   // Auto-complete: core completo (cliente + prestamo + pago) => step 99
@@ -124,8 +140,6 @@ export async function GET() {
   const currentStep = org?.onboardingStep ?? 0
   const showWizard = currentStep >= 0 && currentStep < 99
 
-  // Wizard v4: steps 0 (welcome), 1 (capital), 2 (cartulina), 3 (éxito), 99 (done)
-  const flujo = org?.onboardingFlujo ?? null
   let wizardInitialStep = Math.min(currentStep, 3)
 
   return NextResponse.json({
@@ -133,7 +147,7 @@ export async function GET() {
     completadas,
     total,
     progreso: Math.round((completadas / total) * 100),
-    misiones,
+    misiones: misionesFiltradas,
     showWizard,
     wizardInitialStep,
     flujo,
