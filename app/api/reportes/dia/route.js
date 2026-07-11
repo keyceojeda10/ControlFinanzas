@@ -91,7 +91,7 @@ export async function GET(request) {
         clienteId: true,
         cuotaDiaria: true,
         totalAPagar: true,
-        saldoPendiente: true,
+        totalPagado: true,
         cliente: { select: { id: true, nombre: true, cedula: true, telefono: true, direccion: true, rutaId: true } },
       },
     }),
@@ -131,7 +131,7 @@ export async function GET(request) {
       clienteTelefono: p.cliente?.telefono || null,
       clienteDireccion: p.cliente?.direccion || null,
       cuota: Math.round(p.cuotaDiaria || 0),
-      saldoPendiente: Math.round(p.saldoPendiente || 0),
+      saldoPendiente: Math.round((p.totalAPagar || 0) - (p.totalPagado || 0)),
       rutaId: p.cliente?.rutaId || null,
     }))
 
