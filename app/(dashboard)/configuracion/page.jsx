@@ -13,6 +13,7 @@ import { PLANES_CONFIG }       from '@/lib/planes'
 import { AVATARS }             from '@/lib/avatars'
 import Avatar                  from '@/components/ui/Avatar'
 import { Modal }               from '@/components/ui/Modal'
+import { ConfirmModal }        from '@/components/ui/ConfirmModal'
 import DiasSinCobroSelector    from '@/components/ui/DiasSinCobroSelector'
 import FestivosManager         from '@/components/ui/FestivosManager'
 import ThemeToggle             from '@/components/ui/ThemeToggle'
@@ -328,6 +329,11 @@ function TabOrganizacion() {
   const [msgMora, setMsgMora] = useState(null)
   const [ocultarSaldoWA, setOcultarSaldoWA] = useState(false)
   const [guardandoSaldoWA, setGuardandoSaldoWA] = useState(false)
+
+  const [descargandoBackup, setDescargandoBackup] = useState(false)
+  const [confirmReinicio, setConfirmReinicio] = useState(false)
+  const [reiniciando, setReiniciando] = useState(false)
+  const [msgReinicio, setMsgReinicio] = useState(null)
 
   useEffect(() => {
     fetch('/api/configuracion/organizacion')
@@ -743,6 +749,112 @@ function TabOrganizacion() {
           )}
         </div>
       </Card>
+
+      {/* Zona de peligro */}
+      <Card style={{ border: '1px solid color-mix(in srgb, var(--color-danger) 30%, var(--color-border))' }}>
+        <div className="flex items-center gap-2 mb-1">
+          <svg className="w-4 h-4 shrink-0" style={{ color: 'var(--color-danger)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
+          <h3 className="font-medium text-sm" style={{ color: 'var(--color-danger)' }}>Zona de peligro</h3>
+        </div>
+        <p className="text-xs mb-4" style={{ color: 'var(--color-text-muted)' }}>
+          Descarga un respaldo completo de tu cuenta o reinicia todos los datos para empezar de cero.
+        </p>
+
+        <div className="space-y-3">
+          <div
+            className="flex items-center justify-between gap-3 p-3 rounded-[12px]"
+            style={{ background: 'color-mix(in srgb, var(--color-accent) 6%, transparent)', border: '1px solid color-mix(in srgb, var(--color-accent) 15%, transparent)' }}
+          >
+            <div className="min-w-0">
+              <p className="text-[13px] font-medium" style={{ color: 'var(--color-text-primary)' }}>Descargar respaldo</p>
+              <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                Descarga toda la informacion de tu cuenta en un archivo JSON.
+              </p>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              loading={descargandoBackup}
+              onClick={async () => {
+                setDescargandoBackup(true)
+                try {
+                  const res = await fetch('/api/cuenta/backup')
+                  if (!res.ok) throw new Error('Error al generar respaldo')
+                  const blob = await res.blob()
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = res.headers.get('Content-Disposition')?.split('filename="')?.[1]?.replace('"', '') || 'backup.json'
+                  document.body.appendChild(a)
+                  a.click()
+                  a.remove()
+                  URL.revokeObjectURL(url)
+                } catch {
+                  alert('No se pudo generar el respaldo. Intenta de nuevo.')
+                } finally {
+                  setDescargandoBackup(false)
+                }
+              }}
+            >
+              Descargar
+            </Button>
+          </div>
+
+          <div
+            className="flex items-center justify-between gap-3 p-3 rounded-[12px]"
+            style={{ background: 'color-mix(in srgb, var(--color-danger) 6%, transparent)', border: '1px solid color-mix(in srgb, var(--color-danger) 15%, transparent)' }}
+          >
+            <div className="min-w-0">
+              <p className="text-[13px] font-medium" style={{ color: 'var(--color-danger)' }}>Reiniciar mi cuenta</p>
+              <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                Elimina todos los clientes, prestamos, pagos, rutas, socios y cobradores. Tu cuenta y suscripcion se mantienen.
+              </p>
+            </div>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => setConfirmReinicio(true)}
+            >
+              Reiniciar
+            </Button>
+          </div>
+
+          {msgReinicio && <Alerta tipo={msgReinicio.tipo}>{msgReinicio.texto}</Alerta>}
+        </div>
+      </Card>
+
+      <ConfirmModal
+        open={confirmReinicio}
+        onClose={() => setConfirmReinicio(false)}
+        title="Reiniciar toda la cuenta"
+        message="Se eliminaran TODOS los datos: clientes, prestamos, pagos, rutas, socios, cobradores, capital y configuraciones de cobro. Solo se conserva tu cuenta de usuario y la suscripcion. Esta accion NO se puede deshacer. Te recomendamos descargar un respaldo antes de continuar."
+        confirmLabel="Reiniciar todo"
+        color="danger"
+        loading={reiniciando}
+        onConfirm={async () => {
+          setReiniciando(true)
+          setMsgReinicio(null)
+          try {
+            const res = await fetch('/api/cuenta/reiniciar', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ confirmacion: 'REINICIAR' }),
+            })
+            const d = await res.json().catch(() => ({}))
+            if (!res.ok) throw new Error(d.error || 'Error al reiniciar')
+            setConfirmReinicio(false)
+            setMsgReinicio({ tipo: 'success', texto: 'Cuenta reiniciada. La pagina se recargara en unos segundos.' })
+            setTimeout(() => window.location.href = '/dashboard', 3000)
+          } catch (e) {
+            setMsgReinicio({ tipo: 'error', texto: e.message })
+            setConfirmReinicio(false)
+          } finally {
+            setReiniciando(false)
+          }
+        }}
+      />
     </div>
   )
 }
