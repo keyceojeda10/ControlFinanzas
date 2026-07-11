@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import { useAuth }             from '@/hooks/useAuth'
 import { Card }                from '@/components/ui/Card'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
+import EmptyState              from '@/components/ui/EmptyState'
 import { nivelReportes }       from '@/lib/planes'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -508,7 +509,7 @@ export default function ReportesPage() {
         </div>
 
         {ingresos.length === 0 ? (
-          <p className="text-sm text-center py-8" style={{ color: 'var(--color-text-muted)' }}>Sin pagos en el período</p>
+          <EmptyState pose="busca" titulo="Sin pagos en el periodo" hint="Ajusta las fechas o espera a que se registren cobros." size={64} />
         ) : (
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={ingresos} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
@@ -694,7 +695,7 @@ export default function ReportesPage() {
               <div className="w-6 h-6 mx-auto border-2 border-[var(--color-border)] border-t-[var(--color-accent)] rounded-full animate-spin" />
             </div>
           ) : !cobrosMes || cobrosMes.rutas?.length === 0 ? (
-            <p className="text-[12px] text-center py-6" style={{ color: 'var(--color-text-muted)' }}>Sin cobros programados para este mes</p>
+            <EmptyState pose="vacia" titulo="Sin cobros programados" hint="No hay cobros pendientes en el periodo seleccionado." size={64} />
           ) : (
             <>
               <div className="rounded-[12px] px-3 py-2.5 mb-3 flex items-center justify-between"

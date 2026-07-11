@@ -14,6 +14,7 @@ import { Badge }              from '@/components/ui/Badge'
 import { Modal }               from '@/components/ui/Modal'
 import MoneyInput              from '@/components/ui/MoneyInput'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
+import EmptyState              from '@/components/ui/EmptyState'
 import ReportarGasto          from '@/components/gastos/ReportarGasto'
 import ListaGastos            from '@/components/gastos/ListaGastos'
 import ListadoPagos           from '@/components/pagos/ListadoPagos'
@@ -1089,7 +1090,12 @@ export default function CajaPage() {
             </>
           )}
           {!cajaRutaLoading && !cajaRutaError && !cajaRutaData && cajaRutaCobradorId === '' && (
-            <p className="text-sm text-[var(--color-text-muted)] text-center py-6">Elige un cobrador para ver su caja detallada.</p>
+            <EmptyState
+              pose="guia"
+              titulo="Selecciona un cobrador"
+              hint="Elige un cobrador de la lista para ver su caja detallada."
+              size={64}
+            />
           )}
         </div>
       )}
@@ -1435,9 +1441,12 @@ export default function CajaPage() {
         )}
 
         {cobradoresTotal === 0 ? (
-          <p className="text-sm text-[var(--color-text-muted)] text-center py-4">
-            No hay cobradores activos
-          </p>
+          <EmptyState
+            pose="busca"
+            titulo="No hay cobradores activos"
+            hint="Agrega cobradores a tu equipo para ver su actividad."
+            size={64}
+          />
         ) : (
           <div className="space-y-2">
             {cobradores.map((c) => {
@@ -1627,7 +1636,12 @@ export default function CajaPage() {
                           </button>
                         </>
                       ) : (
-                        <p className="text-sm text-[var(--color-text-muted)]">Sin pagos registrados y sin cierre reportado hoy.</p>
+                        <EmptyState
+                          pose="vacia"
+                          titulo="Sin pagos registrados"
+                          hint="Los pagos aparecerán aquí cuando tus cobradores cobren."
+                          size={64}
+                        />
                       )}
                     </div>
                   )}
