@@ -197,206 +197,278 @@ export async function GET(req) {
   const fmt = (v) => formatMoney(v, country)
 
   // ── Generate PDF ─────────────────────────────────────────
-  const doc = new PDFDocument({ size: 'letter', margin: 40 })
+  const doc = new PDFDocument({ size: 'letter', margin: 40, bufferPages: true })
   const stream = new PassThrough()
   const chunks = []
   stream.on('data', chunk => chunks.push(chunk))
   const done = new Promise(resolve => stream.on('end', resolve))
   doc.pipe(stream)
 
+  // ── Design tokens ─────────────────────────────────────────
+  const COLOR_INK      = '#111111'
+  const COLOR_TEXT     = '#333333'
+  const COLOR_MUTED    = '#666666'
+  const COLOR_FAINT    = '#999999'
+  const COLOR_BORDER   = '#dddddd'
+  const COLOR_BORDER_L = '#eeeeee'
+  const COLOR_HEAD_BG  = '#f0f0f0'
+  const COLOR_ROW_BG   = '#f8f8f8'
+  const COLOR_GREEN    = '#16a34a'
+  const COLOR_GREEN_BG = '#dcfce7'
+  const COLOR_RED      = '#dc2626'
+  const COLOR_RED_BG   = '#fee2e2'
+  const COLOR_AMBER    = '#d97706'
+  const COLOR_AMBER_BG = '#fef3c7'
+  const COLOR_BLUE     = '#2563eb'
+
   const W = 612 - 80 // usable width
   const LEFT = 40
   const RIGHT = 572
-
-  // ── A. Header ────────────────────────────────────────────
-  doc.fontSize(18).font('Helvetica-Bold').fillColor('#111111')
-     .text(nombreNegocio, LEFT, 40, { width: W * 0.7 })
-
-  doc.fontSize(11).font('Helvetica').fillColor('#555555')
-     .text('Resumen del Periodo', LEFT, 62)
+  const PAGE_BOTTOM = 760 // safe content limit before footer zone
 
   const fechaDesdeFmt = formatFechaCorta(new Date(desdeStr + 'T12:00:00Z'), country)
   const fechaHastaFmt = formatFechaCorta(new Date(hastaStr + 'T12:00:00Z'), country)
+  const generadoFmt = new Date().toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+
+  // ── Helpers ───────────────────────────────────────────────
+
+  // Section title: uppercase label + thin bottom rule, like ReporteDia's h2.
+  function sectionTitle(y, label) {
+    doc.fontSize(10).font('Helvetica-Bold').fillColor(COLOR_INK)
+       .text(label.toUpperCase(), LEFT, y, { width: W, characterSpacing: 0.3 })
+    const lineY = y + 13
+    doc.moveTo(LEFT, lineY).lineTo(RIGHT, lineY).strokeColor(COLOR_INK).lineWidth(1).stroke()
+    return lineY + 12
+  }
+
+  // Ensures there is room for `needed` px before the footer; adds a page otherwise.
+  function ensureSpace(y, needed) {
+    if (y + needed > PAGE_BOTTOM) {
+      doc.addPage()
+      return 40
+    }
+    return y
+  }
+
+  // A single stat block: uppercase muted label + bold colored value.
+  function drawStat(x, y, width, label, value, color = COLOR_INK, valueSize = 13) {
+    doc.fontSize(8).font('Helvetica').fillColor(COLOR_MUTED)
+       .text(label.toUpperCase(), x, y, { width, characterSpacing: 0.2 })
+    doc.fontSize(valueSize).font('Helvetica-Bold').fillColor(color)
+       .text(value, x, y + 11, { width })
+  }
+
+  // Efficiency badge: colored pill background + bold colored text (mirrors .badge in ReporteDia).
+  function drawBadge(x, y, width, text, bg, color) {
+    const padX = 6
+    const textWidth = doc.font('Helvetica-Bold').fontSize(8).widthOfString(text)
+    const boxW = Math.min(width, textWidth + padX * 2)
+    const boxX = x + (width - boxW) // right-align within column
+    doc.save()
+    doc.roundedRect(boxX, y - 2, boxW, 13, 6).fill(bg)
+    doc.restore()
+    doc.fontSize(8).font('Helvetica-Bold').fillColor(color)
+       .text(text, boxX, y + 1, { width: boxW, align: 'center' })
+  }
+
+  // ── A. Header ────────────────────────────────────────────
+  // Force single line (ellipsis on overflow): long org names would otherwise
+  // wrap to a 2nd line and collide with the subtitle/date below it.
+  doc.fontSize(20).font('Helvetica-Bold').fillColor(COLOR_INK)
+     .text(nombreNegocio, LEFT, 40, { width: W * 0.68, height: 24, ellipsis: true, lineBreak: false })
+
+  doc.fontSize(11).font('Helvetica').fillColor(COLOR_MUTED)
+     .text('Resumen del periodo', LEFT, 64)
+
   doc.fontSize(10).fillColor('#777777')
-     .text(`${fechaDesdeFmt} — ${fechaHastaFmt}`, LEFT, 76)
+     .text(`${fechaDesdeFmt}  —  ${fechaHastaFmt}`, LEFT, 79)
 
-  doc.fontSize(8).fillColor('#999999')
-     .text(`Generado: ${new Date().toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`, LEFT, 40, { width: W, align: 'right' })
+  doc.fontSize(8).fillColor(COLOR_FAINT)
+     .text(`Generado: ${generadoFmt}`, LEFT, 42, { width: W, align: 'right' })
 
-  doc.moveTo(LEFT, 95).lineTo(RIGHT, 95).strokeColor('#dddddd').lineWidth(0.5).stroke()
+  // Colored accent line (green) instead of gray — matches design canon accent usage.
+  doc.rect(LEFT, 98, W, 2).fill(COLOR_GREEN)
 
-  // ── B. KPIs (2x2 grid) ──────────────────────────────────
+  // ── B. KPI cards (2x2 grid, bordered with left accent) ───
   const kpis = [
-    { label: 'Ingresos del periodo', value: fmt(totalPeriodo), sub: `${cantidadPagos} pagos` },
-    { label: 'Interes ganado', value: fmt(interesGanado) },
-    { label: 'Capital recuperado', value: fmt(capitalRecuperado) },
-    { label: 'Cartera activa', value: fmt(carteraActiva) },
+    { label: 'Ingresos del periodo', value: fmt(totalPeriodo), sub: `${cantidadPagos} pagos`, accent: COLOR_GREEN },
+    { label: 'Interes ganado', value: fmt(interesGanado), accent: COLOR_GREEN },
+    { label: 'Capital recuperado', value: fmt(capitalRecuperado), accent: COLOR_BLUE },
+    { label: 'Cartera activa', value: fmt(carteraActiva), accent: COLOR_BLUE },
   ]
 
-  const kpiW = (W - 10) / 2
-  const kpiH = 48
-  let kpiY = 105
+  const kpiGap = 10
+  const kpiW = (W - kpiGap) / 2
+  const kpiH = 54
+  let kpiY = 118
 
   kpis.forEach((kpi, i) => {
     const col = i % 2
     const row = Math.floor(i / 2)
-    const x = LEFT + col * (kpiW + 10)
-    const y = kpiY + row * (kpiH + 8)
+    const x = LEFT + col * (kpiW + kpiGap)
+    const y = kpiY + row * (kpiH + kpiGap)
 
+    // Card: white fill, thin border, rounded corners (matches .stat in ReporteDia).
     doc.save()
-    doc.roundedRect(x, y, kpiW, kpiH, 4).fill('#f5f5f5')
+    doc.roundedRect(x, y, kpiW, kpiH, 8).lineWidth(0.75).strokeColor(COLOR_BORDER).stroke()
     doc.restore()
 
-    doc.fontSize(8).font('Helvetica').fillColor('#888888')
-       .text(kpi.label, x + 10, y + 8, { width: kpiW - 20 })
-    doc.fontSize(14).font('Helvetica-Bold').fillColor('#111111')
-       .text(kpi.value, x + 10, y + 20, { width: kpiW - 20 })
+    // Left accent bar (3px, rounded to match card corners).
+    doc.save()
+    doc.roundedRect(x, y, 3, kpiH, 1.5).fill(kpi.accent)
+    doc.restore()
+
+    doc.fontSize(8).font('Helvetica').fillColor(COLOR_MUTED)
+       .text(kpi.label.toUpperCase(), x + 14, y + 10, { width: kpiW - 24, characterSpacing: 0.2 })
+    doc.fontSize(16).font('Helvetica-Bold').fillColor(COLOR_INK)
+       .text(kpi.value, x + 14, y + 23, { width: kpiW - 24 })
     if (kpi.sub) {
-      doc.fontSize(7).font('Helvetica').fillColor('#aaaaaa')
-         .text(kpi.sub, x + 10, y + 36, { width: kpiW - 20 })
+      doc.fontSize(7.5).font('Helvetica').fillColor(COLOR_FAINT)
+         .text(kpi.sub, x + 14, y + 40, { width: kpiW - 24 })
     }
   })
 
-  // ── C. Clientes & Prestamos ──────────────────────────────
-  let yC = kpiY + 2 * (kpiH + 8) + 10
-  doc.fontSize(10).font('Helvetica-Bold').fillColor('#333333')
-     .text('Clientes y Prestamos', LEFT, yC)
-  yC += 16
+  // ── C. Clientes y Prestamos ──────────────────────────────
+  let yC = kpiY + 2 * (kpiH + kpiGap) + 14
+  yC = sectionTitle(yC, 'Clientes y Prestamos')
 
   const statsGrid = [
     { label: 'Clientes activos', value: String(clientesActivos.size) },
-    { label: 'En mora', value: String(clientesMora.size) },
+    { label: 'En mora', value: String(clientesMora.size), color: clientesMora.size > 0 ? COLOR_RED : COLOR_INK },
     { label: 'Prestamos activos', value: String(prestamosActivos.length) },
     { label: 'Completados', value: String(prestamosCompletados) },
   ]
-  const statW = (W - 30) / 4
+  const statGap = 12
+  const statW = (W - statGap * 3) / 4
   statsGrid.forEach((s, i) => {
-    const x = LEFT + i * (statW + 10)
-    doc.fontSize(8).font('Helvetica').fillColor('#888888')
-       .text(s.label, x, yC, { width: statW })
-    doc.fontSize(13).font('Helvetica-Bold').fillColor('#111111')
-       .text(s.value, x, yC + 12, { width: statW })
+    const x = LEFT + i * (statW + statGap)
+    drawStat(x, yC, statW, s.label, s.value, s.color || COLOR_INK, 14)
   })
 
   // ── D. Flujo de Capital ──────────────────────────────────
-  let yD = yC + 38
-  doc.moveTo(LEFT, yD).lineTo(RIGHT, yD).strokeColor('#eeeeee').lineWidth(0.5).stroke()
-  yD += 10
-
-  doc.fontSize(10).font('Helvetica-Bold').fillColor('#333333')
-     .text('Flujo de Capital', LEFT, yD)
-  yD += 16
+  let yD = yC + 40
+  yD = sectionTitle(yD, 'Flujo de Capital')
 
   const capitalStats = [
-    { label: 'Desembolsado', value: fmt(desembolsadoMes), color: '#ef4444' },
-    { label: 'Recaudado', value: fmt(recaudadoMes), color: '#22c55e' },
-    { label: 'Gastos', value: fmt(gastosMes), color: '#f59e0b' },
-    { label: 'Flujo neto', value: fmt(flujoNeto), color: flujoNeto >= 0 ? '#22c55e' : '#ef4444' },
+    { label: 'Desembolsado', value: fmt(desembolsadoMes), color: COLOR_RED },
+    { label: 'Recaudado', value: fmt(recaudadoMes), color: COLOR_GREEN },
+    { label: 'Gastos', value: fmt(gastosMes), color: COLOR_AMBER },
+    { label: 'Flujo neto', value: fmt(flujoNeto), color: flujoNeto >= 0 ? COLOR_GREEN : COLOR_RED },
   ]
-  const capW = (W - 30) / 4
+  const capW = (W - statGap * 3) / 4
   capitalStats.forEach((s, i) => {
-    const x = LEFT + i * (capW + 10)
-    doc.fontSize(8).font('Helvetica').fillColor('#888888')
-       .text(s.label, x, yD, { width: capW })
-    doc.fontSize(12).font('Helvetica-Bold').fillColor(s.color)
-       .text(s.value, x, yD + 12, { width: capW })
+    const x = LEFT + i * (capW + statGap)
+    drawStat(x, yD, capW, s.label, s.value, s.color, 13)
   })
 
   // ── E. Tabla Cobradores ──────────────────────────────────
-  let yE = yD + 38
-  doc.moveTo(LEFT, yE).lineTo(RIGHT, yE).strokeColor('#eeeeee').lineWidth(0.5).stroke()
-  yE += 10
-
-  doc.fontSize(10).font('Helvetica-Bold').fillColor('#333333')
-     .text('Rendimiento de Cobradores', LEFT, yE)
-  yE += 18
+  let yE = yD + 40
+  yE = sectionTitle(yE, 'Rendimiento de Cobradores')
 
   if (cobradoresData.length === 0) {
-    doc.fontSize(9).font('Helvetica').fillColor('#999999')
+    doc.fontSize(9).font('Helvetica').fillColor(COLOR_FAINT)
        .text('Sin datos de cobradores en el periodo', LEFT, yE)
-    yE += 16
+    yE += 20
   } else {
     const cols = [
-      { label: 'Cobrador', w: 120, align: 'left' },
-      { label: 'Ruta', w: 100, align: 'left' },
-      { label: 'Esperado', w: 95, align: 'right' },
-      { label: 'Recogido', w: 95, align: 'right' },
-      { label: 'Eficiencia', w: 60, align: 'right' },
+      { label: 'Cobrador', w: 150, align: 'left' },
+      { label: 'Ruta', w: 110, align: 'left' },
+      { label: 'Esperado', w: 100, align: 'right' },
+      { label: 'Recogido', w: 100, align: 'right' },
+      { label: 'Eficiencia', w: 72, align: 'right' },
     ]
+    const rowH = 20
 
-    // Header
-    doc.save()
-    doc.roundedRect(LEFT, yE, W, 16, 2).fill('#f0f0f0')
-    doc.restore()
-    let xCol = LEFT + 6
-    cols.forEach(col => {
-      doc.fontSize(7).font('Helvetica-Bold').fillColor('#555555')
-         .text(col.label, xCol, yE + 4, { width: col.w - 12, align: col.align })
-      xCol += col.w
-    })
-    yE += 18
+    // Header row: light gray background, uppercase bold labels.
+    function drawTableHeader(y) {
+      doc.save()
+      doc.rect(LEFT, y, W, 18).fill(COLOR_HEAD_BG)
+      doc.restore()
+      let xCol = LEFT + 8
+      cols.forEach(col => {
+        doc.fontSize(7.5).font('Helvetica-Bold').fillColor(COLOR_MUTED)
+           .text(col.label.toUpperCase(), xCol, y + 5, { width: col.w - 12, align: col.align, characterSpacing: 0.2 })
+        xCol += col.w
+      })
+      return y + 18
+    }
+
+    yE = drawTableHeader(yE)
 
     cobradoresData.forEach((c, idx) => {
-      if (yE > 700) {
+      if (yE + rowH > PAGE_BOTTOM) {
         doc.addPage()
         yE = 40
+        yE = drawTableHeader(yE)
       }
 
       if (idx % 2 === 1) {
         doc.save()
-        doc.rect(LEFT, yE - 1, W, 16).fill('#fafafa')
+        doc.rect(LEFT, yE, W, rowH).fill(COLOR_ROW_BG)
         doc.restore()
       }
 
-      xCol = LEFT + 6
+      // Thin bottom border on every row (matches ReporteDia's td border-bottom).
+      doc.moveTo(LEFT, yE + rowH).lineTo(RIGHT, yE + rowH).strokeColor(COLOR_BORDER_L).lineWidth(0.5).stroke()
+
+      let xCol = LEFT + 8
       const vals = [
-        { v: c.nombre, w: 120, align: 'left' },
-        { v: c.ruta, w: 100, align: 'left' },
-        { v: fmt(c.esperado), w: 95, align: 'right' },
-        { v: fmt(c.recogido), w: 95, align: 'right' },
-        { v: `${c.eficiencia}%`, w: 60, align: 'right' },
+        { v: c.nombre, w: 150, align: 'left' },
+        { v: c.ruta, w: 110, align: 'left' },
+        { v: fmt(c.esperado), w: 100, align: 'right' },
+        { v: fmt(c.recogido), w: 100, align: 'right' },
       ]
 
-      const efColor = c.eficiencia >= 90 ? '#16a34a' : c.eficiencia >= 80 ? '#ca8a04' : '#dc2626'
-
-      vals.forEach((v, vi) => {
-        const isEf = vi === vals.length - 1
-        doc.fontSize(8).font(isEf ? 'Helvetica-Bold' : 'Helvetica')
-           .fillColor(isEf ? efColor : '#333333')
-           .text(v.v, xCol, yE + 2, { width: v.w - 12, align: v.align })
+      vals.forEach(v => {
+        doc.fontSize(8.5).font('Helvetica').fillColor(COLOR_TEXT)
+           .text(v.v, xCol, yE + 6, { width: v.w - 12, align: v.align })
         xCol += v.w
       })
-      yE += 17
+
+      // Eficiencia: colored badge (green >=90, amber >=80, red below).
+      const efBg = c.eficiencia >= 90 ? COLOR_GREEN_BG : c.eficiencia >= 80 ? COLOR_AMBER_BG : COLOR_RED_BG
+      const efColor = c.eficiencia >= 90 ? COLOR_GREEN : c.eficiencia >= 80 ? COLOR_AMBER : COLOR_RED
+      drawBadge(xCol, yE + 4, cols[4].w - 12, `${c.eficiencia}%`, efBg, efColor)
+
+      yE += rowH
     })
   }
 
-  // ── F. Mini chart ingresos diarios ───────────────────────
+  // ── F. Ingresos Diarios (bar chart) ──────────────────────
   if (ingresosArr.length > 1) {
-    yE += 6
-    if (yE > 620) { doc.addPage(); yE = 40 }
-
-    doc.moveTo(LEFT, yE).lineTo(RIGHT, yE).strokeColor('#eeeeee').lineWidth(0.5).stroke()
-    yE += 10
-
-    doc.fontSize(10).font('Helvetica-Bold').fillColor('#333333')
-       .text('Ingresos Diarios', LEFT, yE)
     yE += 18
+    yE = ensureSpace(yE, 130)
+    yE = sectionTitle(yE, 'Ingresos Diarios')
 
     const chartW = W
-    const chartH = 80
+    const chartH = 90
     const maxVal = Math.max(...ingresosArr.map(d => d.total), 1)
-    const barW = Math.max(2, Math.min(16, (chartW - ingresosArr.length) / ingresosArr.length))
+    const barW = Math.max(3, Math.min(18, (chartW - ingresosArr.length) / ingresosArr.length))
     const gap = (chartW - barW * ingresosArr.length) / (ingresosArr.length + 1)
 
+    // Only label the top day(s) to avoid clutter — matches "value labels on top for the highest ones".
+    const sorted = [...ingresosArr].map((d, i) => ({ ...d, i })).sort((a, b) => b.total - a.total)
+    const topCount = Math.min(3, sorted.length)
+    const topIndexes = new Set(sorted.slice(0, topCount).filter(d => d.total > 0).map(d => d.i))
+
     ingresosArr.forEach((d, i) => {
-      const barH = (d.total / maxVal) * chartH
+      const barH = Math.max(1, (d.total / maxVal) * chartH)
       const x = LEFT + gap + i * (barW + gap)
       const y = yE + chartH - barH
 
+      // Rounded-top bar: only the top two corners rounded (bottom stays flush with axis).
       doc.save()
-      doc.roundedRect(x, y, barW, barH, 1).fill('#22c55e')
+      doc.roundedRect(x, y, barW, barH, Math.min(3, barW / 2)).fill(COLOR_GREEN)
       doc.restore()
+
+      if (topIndexes.has(i)) {
+        doc.fontSize(6).font('Helvetica-Bold').fillColor(COLOR_INK)
+           .text(fmt(d.total), x - 10, Math.max(yE - 2, y - 9), { width: barW + 20, align: 'center' })
+      }
     })
+
+    // Baseline under the bars.
+    doc.moveTo(LEFT, yE + chartH).lineTo(RIGHT, yE + chartH).strokeColor(COLOR_BORDER_L).lineWidth(0.5).stroke()
 
     // X axis labels (show ~8 labels max)
     const labelStep = Math.max(1, Math.floor(ingresosArr.length / 8))
@@ -404,17 +476,24 @@ export async function GET(req) {
       if (i % labelStep !== 0) return
       const x = LEFT + gap + i * (barW + gap)
       const dayLabel = d.fecha.slice(8)
-      doc.fontSize(6).font('Helvetica').fillColor('#aaaaaa')
-         .text(dayLabel, x - 4, yE + chartH + 3, { width: 20, align: 'center' })
+      doc.fontSize(6).font('Helvetica').fillColor(COLOR_FAINT)
+         .text(dayLabel, x - 4, yE + chartH + 4, { width: barW + 8, align: 'center' })
     })
 
-    yE += chartH + 16
+    yE += chartH + 20
   }
 
-  // ── G. Footer ────────────────────────────────────────────
-  const pageH = doc.page.height
-  doc.fontSize(7).font('Helvetica').fillColor('#bbbbbb')
-     .text('Control Finanzas', LEFT, pageH - 30, { width: W, align: 'center' })
+  // ── G. Footer (every page: thin top border + centered brand + page number) ─
+  const range = doc.bufferedPageRange()
+  for (let i = range.start; i < range.start + range.count; i++) {
+    doc.switchToPage(i)
+    const pageH = doc.page.height
+    doc.moveTo(LEFT, pageH - 42).lineTo(RIGHT, pageH - 42).strokeColor(COLOR_BORDER_L).lineWidth(0.5).stroke()
+    doc.fontSize(7.5).font('Helvetica').fillColor(COLOR_FAINT)
+       .text('Control Finanzas', LEFT, pageH - 32, { width: W, align: 'center' })
+    doc.fontSize(7.5).font('Helvetica').fillColor(COLOR_FAINT)
+       .text(`Pagina ${i - range.start + 1} de ${range.count}`, LEFT, pageH - 32, { width: W, align: 'right' })
+  }
 
   // ── Finalize ─────────────────────────────────────────────
   doc.end()
