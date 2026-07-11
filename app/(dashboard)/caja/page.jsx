@@ -22,6 +22,7 @@ import CajaCobradorDetalle    from '@/components/caja/CajaCobradorDetalle'
 import FiltroPeriodo          from '@/components/caja/FiltroPeriodo'
 import CajaResumen            from '@/components/caja/CajaResumen'
 import CuadreDia              from '@/components/caja/CuadreDia'
+import ReporteDia             from '@/components/reportes/ReporteDia'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -119,6 +120,8 @@ export default function CajaPage() {
   const [historial, setHistorial] = useState(null)
   const [historialCargando, setHistorialCargando] = useState(false)
   const hasLoadedOnceRef = useRef(false)
+  const [showReporte, setShowReporte] = useState(false)
+  const [rutasDisponibles, setRutasDisponibles] = useState([])
   const [bannerCajaVisible, setBannerCajaVisible] = useState(() => {
     try { return localStorage.getItem('cf-banner-caja') !== 'hidden' } catch { return true }
   })
@@ -126,6 +129,19 @@ export default function CajaPage() {
   const cerrarBannerCaja = () => {
     setBannerCajaVisible(false)
     try { localStorage.setItem('cf-banner-caja', 'hidden') } catch {}
+  }
+
+  const abrirReporte = async () => {
+    setShowReporte(true)
+    if (rutasDisponibles.length === 0) {
+      try {
+        const res = await fetch('/api/rutas')
+        if (res.ok) {
+          const rutas = await res.json()
+          setRutasDisponibles((rutas || []).map(r => ({ id: r.id, nombre: r.nombre, cobrador: r.cobrador?.nombre })))
+        }
+      } catch {}
+    }
   }
 
   // Solo al montar: si llega ?fecha= en la URL (deep-link), úsala como fecha inicial.
@@ -982,11 +998,24 @@ export default function CajaPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-4">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Caja</h1>
-        <p className="text-[12px] text-[var(--color-text-secondary)] mt-0.5">
-          {periodo.modo === 'hoy' ? (cajaData?.fechaDisplay || '—') : `${periodo.desde} a ${periodo.hasta}`}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Caja</h1>
+          <p className="text-[12px] text-[var(--color-text-secondary)] mt-0.5">
+            {periodo.modo === 'hoy' ? (cajaData?.fechaDisplay || '—') : `${periodo.desde} a ${periodo.hasta}`}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={abrirReporte}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] text-xs font-semibold transition-colors"
+          style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)' }}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+          </svg>
+          Reporte
+        </button>
       </div>
 
       {/* Banner explicativo (colapsable) */}
@@ -1789,6 +1818,13 @@ export default function CajaPage() {
           </div>
         </form>
       </Modal>
+
+      <ReporteDia
+        open={showReporte}
+        onClose={() => setShowReporte(false)}
+        rutasDisponibles={rutasDisponibles}
+        fechaInicial={fechaSeleccionada}
+      />
     </div>
   )
 }
