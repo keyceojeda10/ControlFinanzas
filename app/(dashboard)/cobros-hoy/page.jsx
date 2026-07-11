@@ -7,7 +7,7 @@ import { formatMoney } from '@/lib/i18n'
 import { Modal } from '@/components/ui/Modal'
 import { obtenerCoordsRapido } from '@/lib/geo'
 import { StaggeredList } from '@/components/ui/StaggeredList'
-import Capi from '@/components/ui/Capi'
+import MonedaCF from '@/components/ui/MonedaCF'
 
 export default function CobrosHoyPage() {
   const { esCobrador, loading: authLoading } = useAuth()
@@ -310,7 +310,7 @@ export default function CobrosHoyPage() {
                 border: '1px solid color-mix(in srgb, #231a04 18%, transparent)',
               }}
             >
-              <Capi pose="celebra" size={34} />
+              <MonedaCF pose="celebra" size={34} />
               <p className="text-xs font-bold" style={{ color: '#231a04' }}>
                 Meta del dia cumplida
               </p>
@@ -457,8 +457,8 @@ export default function CobrosHoyPage() {
 
       {clientes.length === 0 && !loading && (
         <div className="rounded-[20px] px-6 py-10 text-center" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
-          <div className="capi-in inline-block mb-2">
-            <Capi pose="celebra" size={100} />
+          <div className="inline-block mb-2">
+            <MonedaCF pose="vacia" size={100} />
           </div>
           <p className="text-base font-semibold" style={{ color: 'var(--color-text-primary)' }}>Sin cobros programados hoy</p>
           <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>No hay clientes con cuota pendiente para hoy.</p>

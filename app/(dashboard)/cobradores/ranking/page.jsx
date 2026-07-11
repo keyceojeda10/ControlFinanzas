@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
 import { formatMoney } from '@/lib/i18n'
-import Capi from '@/components/ui/Capi'
+import MonedaCF from '@/components/ui/MonedaCF'
 import Avatar from '@/components/ui/Avatar'
 
 const MEDALS = {
@@ -230,7 +230,7 @@ export default function RankingCobradoresPage() {
     return (
       <div className="max-w-xl mx-auto">
         <div className="flex flex-col items-center justify-center text-center py-16 px-6">
-          <Capi pose="duerme" size={92} />
+          <MonedaCF pose="vacia" size={92} />
           <p className="text-sm font-semibold mt-3" style={{ color: 'var(--color-text-primary)' }}>
             Acceso restringido
           </p>
@@ -293,7 +293,7 @@ export default function RankingCobradoresPage() {
 
       {!loading && !error && cobradores.length === 0 && (
         <div className="flex flex-col items-center justify-center text-center py-16 px-6">
-          <Capi pose="duerme" size={92} />
+          <MonedaCF pose="vacia" size={92} />
           <p className="text-sm font-semibold mt-3" style={{ color: 'var(--color-text-primary)' }}>
             No hay cobradores registrados
           </p>

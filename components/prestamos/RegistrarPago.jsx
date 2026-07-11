@@ -12,7 +12,7 @@ import BotonWhatsApp        from '@/components/ui/BotonWhatsApp'
 import BotonCompartir       from '@/components/ui/BotonCompartir'
 import BotonImprimirRecibo  from '@/components/ui/BotonImprimirRecibo'
 import MoneyInput           from '@/components/ui/MoneyInput'
-import Capi                 from '@/components/ui/Capi'
+import MonedaCF             from '@/components/ui/MonedaCF'
 import { guardarPagoPendiente, actualizarPrestamoOffline }  from '@/lib/offline'
 import { obtenerCoordsRapido }                              from '@/lib/geo'
 
@@ -384,7 +384,7 @@ export default function RegistrarPago({
               </div>
             ) : (
               <div className="relative wizard-success-bounce">
-                <Capi pose="celebra" size={104} />
+                <MonedaCF pose="celebra" size={104} />
                 <div
                   className="absolute -bottom-1 right-0 w-7 h-7 rounded-full flex items-center justify-center"
                   style={{ background: 'var(--color-success)', border: '2px solid var(--color-bg-card)' }}

@@ -16,6 +16,7 @@ const OnboardingWizard    = dynamic(() => import('@/components/onboarding/Onboar
 const SpotlightOverlay    = dynamic(() => import('@/components/onboarding/SpotlightOverlay'),    { ssr: false })
 const CobradorOnboarding  = dynamic(() => import('@/components/onboarding/CobradorOnboarding'),  { ssr: false })
 const DashboardAiTip      = dynamic(() => import('@/components/dashboard/DashboardAiTip'),       { ssr: false })
+const MonedaCF            = dynamic(() => import('@/components/ui/MonedaCF'),                    { ssr: false })
 
 function Skeleton({ className = '' }) {
   return <div className={`animate-pulse rounded-[12px] ${className}`} style={{ background: 'var(--color-bg-hover)' }} />
@@ -1556,6 +1557,67 @@ export default function DashboardPage() {
           <KpiGroupSkeleton kpis={2} />
           <KpiGroupSkeleton kpis={2} />
           <KpiGroupSkeleton kpis={2} />
+        </div>
+      ) : data && data.clientes?.total === 0 && data.prestamos?.activos === 0 && esOwner ? (
+        <div className="flex flex-col items-center text-center py-8">
+          <MonedaCF pose="guia" size={100} />
+          <h2 className="text-lg font-bold mt-4 mb-1" style={{ color: 'var(--color-text-primary)' }}>
+            Tu cartera está lista
+          </h2>
+          <p className="text-[13px] max-w-[280px] mx-auto mb-6 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+            Ya configuraste el sistema. Ahora sube tus clientes para que el dashboard cobre vida.
+          </p>
+          <div className="w-full max-w-sm space-y-2.5">
+            <Link href="/migrador" className="group flex items-center gap-3 w-full rounded-[14px] p-4 text-left transition-all active:scale-[0.98]"
+              style={{ background: 'rgba(245,197,24,0.08)', border: '1px solid rgba(245,197,24,0.25)' }}>
+              <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
+                style={{ background: 'rgba(245,197,24,0.15)', color: '#f5c518' }}>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7} d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7} d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[14px] font-bold" style={{ color: 'var(--color-text-primary)' }}>Sube tu cartera</p>
+                <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Foto de cartulina, Excel o manual</p>
+              </div>
+              <svg className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke="var(--color-text-muted)" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+            <Link href="/clientes/nuevo" className="group flex items-center gap-3 w-full rounded-[14px] p-4 text-left transition-all active:scale-[0.98]"
+              style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+              <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
+                style={{ background: 'rgba(139,92,246,0.1)', color: '#8b5cf6' }}>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7} d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[14px] font-bold" style={{ color: 'var(--color-text-primary)' }}>Crear cliente manual</p>
+                <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Agrega uno a uno desde el formulario</p>
+              </div>
+              <svg className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke="var(--color-text-muted)" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+            <Link href="/prestamos/nuevo" className="group flex items-center gap-3 w-full rounded-[14px] p-4 text-left transition-all active:scale-[0.98]"
+              style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+              <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
+                style={{ background: 'rgba(34,197,94,0.1)', color: '#22c55e' }}>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7} d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[14px] font-bold" style={{ color: 'var(--color-text-primary)' }}>Crear un prestamo</p>
+                <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>El sistema calcula cuota y saldo</p>
+              </div>
+              <svg className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke="var(--color-text-muted)" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          </div>
         </div>
       ) : data && (
         <>

@@ -14,7 +14,7 @@ import ClienteCard       from '@/components/clientes/ClienteCard'
 import BadgeNuevo, { NuevoChip } from '@/components/ui/BadgeNuevo'
 import { StaggeredList } from '@/components/ui/StaggeredList'
 import ModalWhatsAppTemplates from '@/components/ui/ModalWhatsAppTemplates'
-import Mascota           from '@/components/ui/Mascota'
+import MonedaCF          from '@/components/ui/MonedaCF'
 import Avatar            from '@/components/ui/Avatar'
 import { Card }          from '@/components/ui/Card'
 import { formatMoney, isHoy } from '@/lib/i18n'
@@ -826,7 +826,7 @@ export default function ClientesPage() {
       {!loading && clientes.length === 0 && (!error || total === 0) && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="mb-4">
-            <Mascota variant={buscar || grupoFiltro ? 'thinking' : 'empty'} size={100} />
+            <MonedaCF pose={buscar || grupoFiltro ? 'busca' : 'vacia'} size={100} />
           </div>
           {buscar ? (
             <>

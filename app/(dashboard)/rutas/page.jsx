@@ -12,6 +12,7 @@ import { Input }               from '@/components/ui/Input'
 import MoneyInput              from '@/components/ui/MoneyInput'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
 import { Card }                from '@/components/ui/Card'
+import MonedaCF                from '@/components/ui/MonedaCF'
 import RutaCard                from '@/components/rutas/RutaCard'
 import ModalSugerenciasRutas   from '@/components/rutas/ModalSugerenciasRutas'
 import { useCountry } from '@/hooks/useCountry'
@@ -500,14 +501,11 @@ export default function RutasPage() {
 
       {!loading && rutas.length === 0 && !error && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-14 h-14 rounded-full bg-[rgba(245,197,24,0.1)] flex items-center justify-center mb-4">
-            <svg className="w-7 h-7 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-            </svg>
+          <div className="mb-4">
+            <MonedaCF pose="vacia" size={100} />
           </div>
-          <p className="text-sm font-medium text-[var(--color-text-primary)]">Sin rutas aún</p>
-          <p className="text-xs text-[var(--color-text-muted)] mt-1">Crea una ruta y asígnale un cobrador</p>
+          <p className="text-sm font-medium text-[var(--color-text-primary)]">Sin rutas aun</p>
+          <p className="text-xs text-[var(--color-text-muted)] mt-1">Crea una ruta y asignale un cobrador</p>
           <button onClick={() => setShowForm(true)} className="mt-4 text-sm text-[var(--color-accent)] hover:underline">
             Crear primera ruta
           </button>

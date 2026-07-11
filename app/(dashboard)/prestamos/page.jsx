@@ -14,7 +14,7 @@ import { StaggeredList }                      from '@/components/ui/StaggeredLis
 import ModalWhatsAppTemplates                 from '@/components/ui/ModalWhatsAppTemplates'
 import Avatar                                 from '@/components/ui/Avatar'
 import { Card }                               from '@/components/ui/Card'
-import Mascota                                from '@/components/ui/Mascota'
+import MonedaCF                               from '@/components/ui/MonedaCF'
 import BadgeNuevo, { NuevoChip }               from '@/components/ui/BadgeNuevo'
 import { useCountry }                         from '@/hooks/useCountry'
 import { formatMoney, isHoy }                 from '@/lib/i18n'
@@ -738,7 +738,7 @@ export default function PrestamosPage() {
       {!loading && !error && frecuencia && prestamosVisibles.length === 0 && !buscar && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="mb-4">
-            <Mascota variant="empty" size={100} />
+            <MonedaCF pose="vacia" size={100} />
           </div>
           <p className="text-sm font-medium text-[var(--color-text-primary)]">
             No hay préstamos {FRECUENCIAS.find((f) => f.value === frecuencia)?.label.toLowerCase()}
@@ -755,7 +755,7 @@ export default function PrestamosPage() {
       {!loading && !error && prestamosVisibles.length === 0 && !(frecuencia && !buscar) && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="mb-4">
-            <Mascota variant={buscar ? 'thinking' : 'empty'} size={100} />
+            <MonedaCF pose={buscar ? 'busca' : 'vacia'} size={100} />
           </div>
           {buscar ? (
             <>
