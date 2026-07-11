@@ -23,6 +23,7 @@ import FiltroPeriodo          from '@/components/caja/FiltroPeriodo'
 import CajaResumen            from '@/components/caja/CajaResumen'
 import CuadreDia              from '@/components/caja/CuadreDia'
 import ReporteDia             from '@/components/reportes/ReporteDia'
+import { nivelReportes }      from '@/lib/planes'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -68,7 +69,7 @@ export default function CajaPage() {
   const searchParams = useSearchParams()
   const fechaParam = searchParams.get('fecha')
   const tabParam = searchParams.get('tab')
-  const { esCobrador, esOwner, session, puedeReportarGastos, puedeVerSaldoCaja, puedeVerCapital, puedeVerCapitalRuta, puedeReabrirCajaSinAprobacion, loading: authLoading } = useAuth()
+  const { esCobrador, esOwner, session, plan, puedeReportarGastos, puedeVerSaldoCaja, puedeVerCapital, puedeVerCapitalRuta, puedeReabrirCajaSinAprobacion, loading: authLoading } = useAuth()
   const ownerId = session?.user?.id ?? null
 
   const { lastSyncedAt } = useOffline()
@@ -121,6 +122,7 @@ export default function CajaPage() {
   const [historialCargando, setHistorialCargando] = useState(false)
   const hasLoadedOnceRef = useRef(false)
   const [showReporte, setShowReporte] = useState(false)
+  const [showUpgradeReporte, setShowUpgradeReporte] = useState(false)
   const [rutasDisponibles, setRutasDisponibles] = useState([])
   const [bannerCajaVisible, setBannerCajaVisible] = useState(() => {
     try { return localStorage.getItem('cf-banner-caja') !== 'hidden' } catch { return true }
@@ -132,6 +134,10 @@ export default function CajaPage() {
   }
 
   const abrirReporte = async () => {
+    if (nivelReportes(plan) < 1) {
+      setShowUpgradeReporte(true)
+      return
+    }
     setShowReporte(true)
     if (rutasDisponibles.length === 0) {
       try {
@@ -1825,6 +1831,28 @@ export default function CajaPage() {
         rutasDisponibles={rutasDisponibles}
         fechaInicial={fechaSeleccionada}
       />
+
+      <Modal open={showUpgradeReporte} onClose={() => setShowUpgradeReporte(false)} title="Reporte del dia">
+        <div className="text-center py-4">
+          <div className="w-12 h-12 rounded-[12px] mx-auto mb-3 flex items-center justify-center"
+            style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)' }}>
+            <svg className="w-6 h-6" style={{ color: 'var(--color-accent)' }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+            </svg>
+          </div>
+          <p className="text-sm mb-1" style={{ color: 'var(--color-text-primary)' }}>
+            Esta funcion esta disponible desde el plan <strong>Crecimiento</strong>
+          </p>
+          <p className="text-xs mb-4" style={{ color: 'var(--color-text-secondary)' }}>
+            Genera reportes diarios con pagos, pendientes y gastos para imprimir o compartir por WhatsApp.
+          </p>
+          <a href="/configuracion/plan"
+            className="inline-block px-4 py-2 rounded-[10px] text-sm font-semibold transition-colors"
+            style={{ background: 'var(--color-accent)', color: '#fff' }}>
+            Ver planes
+          </a>
+        </div>
+      </Modal>
     </div>
   )
 }

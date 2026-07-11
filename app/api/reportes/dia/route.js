@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getLocalDayRange } from '@/lib/i18n'
+import { nivelReportes } from '@/lib/planes'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,11 @@ export async function GET(request) {
   }
 
   const { organizationId, rol, id: userId } = session.user
+
+  const orgData = await prisma.organization.findUnique({ where: { id: organizationId }, select: { plan: true } })
+  if (nivelReportes(orgData?.plan) < 1) {
+    return Response.json({ error: 'Disponible desde el plan Crecimiento' }, { status: 403 })
+  }
   const url = new URL(request.url)
   const fechaParam = url.searchParams.get('fecha')
   const rutasParam = url.searchParams.get('rutas')
