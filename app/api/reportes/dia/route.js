@@ -21,7 +21,7 @@ export async function GET(request) {
     select: { nombre: true, country: true },
   })
   const country = org?.country || 'co'
-  const { start: inicio, end: fin } = getLocalDayRange(fechaParam || undefined, country)
+  const { inicio, fin } = getLocalDayRange(fechaParam || undefined, country)
 
   let rutaIds = []
   if (rutasParam) {
