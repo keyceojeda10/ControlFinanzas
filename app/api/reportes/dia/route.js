@@ -55,13 +55,22 @@ export async function GET(request) {
   const clienteIds = clientesDeRutas.map(c => c.id)
   const clienteMap = new Map(clientesDeRutas.map(c => [c.id, c]))
 
-  const [pagosRaw, prestamosActivos, gastos] = await Promise.all([
+  const prestamosDeClientes = await prisma.prestamo.findMany({
+    where: { organizationId, clienteId: { in: clienteIds } },
+    select: { id: true, clienteId: true, cuotaDiaria: true, totalAPagar: true, totalPagado: true, estado: true,
+      cliente: { select: { id: true, nombre: true, cedula: true, telefono: true, direccion: true, rutaId: true } },
+    },
+  })
+  const prestamoIds = prestamosDeClientes.map(p => p.id)
+  const prestamosActivos = prestamosDeClientes.filter(p => p.estado === 'activo')
+
+  const [pagosRaw, gastos] = await Promise.all([
     prisma.pago.findMany({
       where: {
         organizationId,
+        prestamoId: { in: prestamoIds },
         fechaPago: { gte: inicio, lt: fin },
         tipo: { notIn: ['recargo', 'descuento'] },
-        prestamo: { clienteId: { in: clienteIds } },
       },
       select: {
         id: true,
@@ -70,30 +79,10 @@ export async function GET(request) {
         tipo: true,
         metodoPago: true,
         plataforma: true,
+        prestamoId: true,
         cobrador: { select: { nombre: true } },
-        prestamo: {
-          select: {
-            clienteId: true,
-            cliente: { select: { id: true, nombre: true, cedula: true, rutaId: true } },
-          },
-        },
       },
       orderBy: { fechaPago: 'asc' },
-    }),
-    prisma.prestamo.findMany({
-      where: {
-        organizationId,
-        estado: 'activo',
-        clienteId: { in: clienteIds },
-      },
-      select: {
-        id: true,
-        clienteId: true,
-        cuotaDiaria: true,
-        totalAPagar: true,
-        totalPagado: true,
-        cliente: { select: { id: true, nombre: true, cedula: true, telefono: true, direccion: true, rutaId: true } },
-      },
     }),
     prisma.gastoMenor.findMany({
       where: {
@@ -101,27 +90,33 @@ export async function GET(request) {
         fecha: { gte: inicio, lt: fin },
       },
       select: {
-        id: true, descripcion: true, monto: true, fecha: true, estado: true,
+        id: true, description: true, monto: true, fecha: true, estado: true,
         cobrador: { select: { nombre: true } },
       },
       orderBy: { fecha: 'asc' },
     }),
   ])
 
-  const pagos = pagosRaw.map(p => ({
-    id: p.id,
-    monto: Math.round(p.montoPagado || 0),
-    hora: p.fechaPago,
-    tipo: p.tipo,
-    metodoPago: p.metodoPago || 'efectivo',
-    plataforma: p.plataforma || null,
-    cobradorNombre: p.cobrador?.nombre || null,
-    rutaId: p.prestamo?.cliente?.rutaId || null,
-    clienteNombre: p.prestamo?.cliente?.nombre || 'Cliente',
-    clienteCedula: p.prestamo?.cliente?.cedula || null,
-  }))
+  const prestamoMap = new Map(prestamosDeClientes.map(p => [p.id, p]))
 
-  const clientesPagaron = new Set(pagosRaw.map(p => p.prestamo?.clienteId).filter(Boolean))
+  const pagos = pagosRaw.map(p => {
+    const prest = prestamoMap.get(p.prestamoId)
+    const cli = prest?.cliente
+    return {
+      id: p.id,
+      monto: Math.round(p.montoPagado || 0),
+      hora: p.fechaPago,
+      tipo: p.tipo,
+      metodoPago: p.metodoPago || 'efectivo',
+      plataforma: p.plataforma || null,
+      cobradorNombre: p.cobrador?.nombre || null,
+      rutaId: cli?.rutaId || null,
+      clienteNombre: cli?.nombre || 'Cliente',
+      clienteCedula: cli?.cedula || null,
+    }
+  })
+
+  const clientesPagaron = new Set(pagosRaw.map(p => prestamoMap.get(p.prestamoId)?.clienteId).filter(Boolean))
 
   const pendientes = prestamosActivos
     .filter(p => !clientesPagaron.has(p.clienteId))
@@ -181,7 +176,7 @@ export async function GET(request) {
     pagos,
     pendientes: [...clientesUnicos.values()],
     gastos: gastos.map(g => ({
-      descripcion: g.descripcion,
+      descripcion: g.description,
       monto: Math.round(g.monto || 0),
       estado: g.estado,
       cobradorNombre: g.cobrador?.nombre || null,
