@@ -48,13 +48,19 @@ export async function GET(request) {
 
   const rutaIdsReal = rutas.map(r => r.id)
 
+  const prestamosDeRutas = await prisma.prestamo.findMany({
+    where: { organizationId, rutaId: { in: rutaIdsReal } },
+    select: { id: true },
+  })
+  const prestamoIdsDeRutas = prestamosDeRutas.map(p => p.id)
+
   const [pagosRaw, prestamosActivos, gastos] = await Promise.all([
     prisma.pago.findMany({
       where: {
         organizationId,
         fechaPago: { gte: inicio, lt: fin },
         tipo: { notIn: ['recargo', 'descuento'] },
-        prestamo: { rutaId: { in: rutaIdsReal } },
+        prestamoId: { in: prestamoIdsDeRutas },
       },
       select: {
         id: true,
@@ -94,7 +100,6 @@ export async function GET(request) {
       where: {
         organizationId,
         fecha: { gte: inicio, lt: fin },
-        ...(rutaIdsReal.length > 0 ? { cobrador: { rutas: { some: { id: { in: rutaIdsReal } } } } } : {}),
       },
       select: {
         id: true, descripcion: true, monto: true, fecha: true, estado: true,
