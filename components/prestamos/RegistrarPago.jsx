@@ -13,6 +13,7 @@ import BotonCompartir       from '@/components/ui/BotonCompartir'
 import BotonImprimirRecibo  from '@/components/ui/BotonImprimirRecibo'
 import MoneyInput           from '@/components/ui/MoneyInput'
 import MonedaCF             from '@/components/ui/MonedaCF'
+import MetodoPagoSelector   from '@/components/pagos/MetodoPagoSelector'
 import { guardarPagoPendiente, actualizarPrestamoOffline }  from '@/lib/offline'
 import { obtenerCoordsRapido }                              from '@/lib/geo'
 
@@ -35,6 +36,8 @@ export default function RegistrarPago({
   const [tipo,         setTipo]         = useState('completo')
   const [metodoPago,   setMetodoPago]   = useState('efectivo')
   const [plataforma,   setPlataforma]   = useState('')
+  const [metodoPagoId, setMetodoPagoId] = useState(null)
+  const [metodosPago,  setMetodosPago]  = useState([])
   const [nota,         setNota]         = useState('')
   const [diasAbonados, setDiasAbonados] = useState(null)
   // Valor visual del slider — se anima entre cambios para que las transiciones
@@ -136,6 +139,10 @@ export default function RegistrarPago({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [diasAbonados])
 
+  useEffect(() => {
+    fetch('/api/metodos-pago').then(r => r.ok ? r.json() : []).then(setMetodosPago).catch(() => {})
+  }, [])
+
   const handleSubmit = async ({ confirmarDuplicado = false } = {}) => {
     let m = Number(monto)
     if (!m || m <= 0) { setError('Ingresa un monto válido'); return }
@@ -218,7 +225,7 @@ export default function RegistrarPago({
       const res  = await fetch(`/api/prestamos/${prestamoId}/pagos${qs}`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ montoPagado: m, tipo, nota, diasAbonados, metodoPago, plataforma, ...(coords ?? {}) }),
+        body:    JSON.stringify({ montoPagado: m, tipo, nota, diasAbonados, metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), plataforma, ...(coords ?? {}) }),
       })
       // Fix #6: el Service Worker puede responder 503 cuando no hay red en vez
       // de dejar fallar el fetch. Tratarlo igual que offline.
@@ -839,46 +846,17 @@ export default function RegistrarPago({
           {/* Método de pago — solo para pagos reales, no ajustes */}
           {!['recargo', 'descuento'].includes(tipo) && (
             <div className="flex flex-col gap-1.5">
-              <span className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">Método de pago</span>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => { setMetodoPago('efectivo'); setPlataforma('') }}
-                  className={[
-                    'flex-1 h-9 rounded-[10px] border text-sm font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5',
-                    metodoPago === 'efectivo'
-                      ? 'bg-[rgba(34,197,94,0.12)] border-[var(--color-success)] text-[var(--color-success)]'
-                      : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-surface)]',
-                  ].join(' ')}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
-                  </svg>
-                  Efectivo
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMetodoPago('transferencia')}
-                  className={[
-                    'flex-1 h-9 rounded-[10px] border text-sm font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5',
-                    metodoPago === 'transferencia'
-                      ? 'bg-[rgba(59,130,246,0.12)] border-[var(--color-info)] text-[var(--color-info)]'
-                      : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-surface)]',
-                  ].join(' ')}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
-                  </svg>
-                  Transferencia
-                </button>
-              </div>
-              {metodoPago === 'transferencia' && (
-                <Input
-                  placeholder="Ej: Nequi, Daviplata, Bancolombia…"
-                  value={plataforma}
-                  onChange={(e) => setPlataforma(e.target.value)}
-                />
-              )}
+              <span className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">Metodo de pago</span>
+              <MetodoPagoSelector
+                metodosPago={metodosPago}
+                compact
+                value={{ metodoPago, metodoPagoId }}
+                onSelect={({ metodoPago: mp, metodoPagoId: mpId, plataforma: pl }) => {
+                  setMetodoPago(mp)
+                  setMetodoPagoId(mpId)
+                  setPlataforma(pl || '')
+                }}
+              />
             </div>
           )}
 

@@ -8,6 +8,7 @@ import { Modal } from '@/components/ui/Modal'
 import { obtenerCoordsRapido } from '@/lib/geo'
 import { StaggeredList } from '@/components/ui/StaggeredList'
 import MonedaCF from '@/components/ui/MonedaCF'
+import MetodoPagoSelector from '@/components/pagos/MetodoPagoSelector'
 
 export default function CobrosHoyPage() {
   const { esCobrador, loading: authLoading } = useAuth()
@@ -28,6 +29,7 @@ export default function CobrosHoyPage() {
   const [subiendoFoto, setSubiendoFoto] = useState(false)
   const [fotoSubida, setFotoSubida] = useState(false)
   const fotoInputRef = useRef(null)
+  const [metodosPago, setMetodosPago] = useState([])
 
   const fetchCobros = useCallback(async () => {
     try {
@@ -43,6 +45,10 @@ export default function CobrosHoyPage() {
   }, [])
 
   useEffect(() => { fetchCobros() }, [fetchCobros])
+
+  useEffect(() => {
+    fetch('/api/metodos-pago').then(r => r.ok ? r.json() : []).then(setMetodosPago).catch(() => {})
+  }, [])
 
   // Refrescar cuando el usuario vuelve a la app despues de tenerla en
   // segundo plano (ej. revisar WhatsApp). Sin esto, los cobradores ven
@@ -91,7 +97,7 @@ export default function CobrosHoyPage() {
     setModalPago(prev => prev ? { ...prev, prestamoActivo: prestamoId, cuota, esBalloon: extra.esBalloon || false, cuotaNumero: extra.cuotaNumero ?? null, modoInteres: extra.modoInteres, cuotaExtraHoy: extra.cuotaExtraHoy || false, montoCuotaExtra: extra.montoCuotaExtra || 0 } : prev)
   }
 
-  const ejecutarPago = async (metodoPago, { confirmarDuplicado = false, montoCustom = null } = {}) => {
+  const ejecutarPago = async (metodoPago, { confirmarDuplicado = false, montoCustom = null, metodoPagoId = null, plataforma = null } = {}) => {
     try { sessionStorage.setItem('cf-ultimo-metodo-pago', metodoPago) } catch {}
     if (!modalPago || pagando) return
     const { id: clienteId, nombre, cuota, prestamoActivo } = modalPago
@@ -121,7 +127,7 @@ export default function CobrosHoyPage() {
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ montoPagado: montoFinal, tipo: tipoPago, diasAbonados: tipoPago === 'completo' ? 1 : 0, metodoPago, ...(coords ?? {}) }),
+        body: JSON.stringify({ montoPagado: montoFinal, tipo: tipoPago, diasAbonados: tipoPago === 'completo' ? 1 : 0, metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), ...(coords ?? {}) }),
       })
 
       if (res.ok) {
@@ -140,7 +146,7 @@ export default function CobrosHoyPage() {
         const d = await res.json().catch(() => ({}))
         if (d?.duplicado && !confirmarDuplicado) {
           fetchCobros()
-          setConfirmDuplicado({ clienteId, nombre, cuota, prestamoActivo, metodoPago })
+          setConfirmDuplicado({ clienteId, nombre, cuota, prestamoActivo, metodoPago, metodoPagoId })
         } else {
           alert(d?.error || 'No se pudo registrar el pago')
           fetchCobros()
@@ -496,8 +502,6 @@ export default function CobrosHoyPage() {
         )}
 
         {modalPago && modalPago.prestamoActivo && (() => {
-          let ultimoMetodo = null
-          try { ultimoMetodo = sessionStorage.getItem('cf-ultimo-metodo-pago') } catch {}
           return (
           <div className="space-y-4">
             <div className="text-center">
@@ -552,66 +556,15 @@ export default function CobrosHoyPage() {
                 <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Ya pagó hoy pero aún debe mas. Cada registro cubre 1 cuota.</p>
               </div>
             )}
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => {
-                  const monto = modoParcial ? parseFloat(montoParcial) : null
-                  if (modoParcial && (!monto || monto <= 0 || monto > modalPago.cuota)) return
-                  ejecutarPago('efectivo', { montoCustom: monto })
-                }}
-                className="flex flex-col items-center gap-2.5 py-5 rounded-[16px] border transition-all active:scale-95 hover:border-[color-mix(in_srgb,var(--color-success)_40%,var(--color-border))] relative"
-                style={{
-                  background: ultimoMetodo === 'efectivo'
-                    ? 'color-mix(in srgb, var(--color-success) 10%, var(--color-bg-card))'
-                    : 'color-mix(in srgb, var(--color-success) 5%, var(--color-bg-card))',
-                  borderColor: ultimoMetodo === 'efectivo'
-                    ? 'color-mix(in srgb, var(--color-success) 35%, var(--color-border))'
-                    : 'var(--color-border)',
-                }}
-              >
-                {ultimoMetodo === 'efectivo' && (
-                  <span className="absolute top-2 right-2 text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--color-success) 15%, transparent)', color: 'var(--color-success)' }}>Último</span>
-                )}
-                <div
-                  className="w-11 h-11 rounded-[12px] flex items-center justify-center"
-                  style={{ background: 'color-mix(in srgb, var(--color-success) 15%, transparent)', color: 'var(--color-success)' }}
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </div>
-                <span className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Efectivo</span>
-              </button>
-              <button
-                onClick={() => {
-                  const monto = modoParcial ? parseFloat(montoParcial) : null
-                  if (modoParcial && (!monto || monto <= 0 || monto > modalPago.cuota)) return
-                  ejecutarPago('transferencia', { montoCustom: monto })
-                }}
-                className="flex flex-col items-center gap-2.5 py-5 rounded-[16px] border transition-all active:scale-95 hover:border-[color-mix(in_srgb,var(--color-info)_40%,var(--color-border))] relative"
-                style={{
-                  background: ultimoMetodo === 'transferencia'
-                    ? 'color-mix(in srgb, var(--color-info) 10%, var(--color-bg-card))'
-                    : 'color-mix(in srgb, var(--color-info) 5%, var(--color-bg-card))',
-                  borderColor: ultimoMetodo === 'transferencia'
-                    ? 'color-mix(in srgb, var(--color-info) 35%, var(--color-border))'
-                    : 'var(--color-border)',
-                }}
-              >
-                {ultimoMetodo === 'transferencia' && (
-                  <span className="absolute top-2 right-2 text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--color-info) 15%, transparent)', color: 'var(--color-info)' }}>Último</span>
-                )}
-                <div
-                  className="w-11 h-11 rounded-[12px] flex items-center justify-center"
-                  style={{ background: 'color-mix(in srgb, var(--color-info) 15%, transparent)', color: 'var(--color-info)' }}
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
-                  </svg>
-                </div>
-                <span className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Transferencia</span>
-              </button>
-            </div>
+            <MetodoPagoSelector
+              metodosPago={metodosPago}
+              disabled={!!pagando}
+              onSelect={({ metodoPago: mp, metodoPagoId: mpId }) => {
+                const monto = modoParcial ? parseFloat(montoParcial) : null
+                if (modoParcial && (!monto || monto <= 0 || monto > modalPago.cuota)) return
+                ejecutarPago(mp, { montoCustom: monto, metodoPagoId: mpId })
+              }}
+            />
           </div>
           )
         })()}
@@ -632,7 +585,7 @@ export default function CobrosHoyPage() {
             <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Registrar este pago de todos modos?</p>
             <div className="flex gap-3">
               <button
-                onClick={() => { const d = confirmDuplicado; setConfirmDuplicado(null); setModalPago({ id: d.clienteId, nombre: d.nombre, cuota: d.cuota, prestamoActivo: d.prestamoActivo, prestamosActivos: [], abonoConPendiente: false }); ejecutarPago(d.metodoPago, { confirmarDuplicado: true }) }}
+                onClick={() => { const d = confirmDuplicado; setConfirmDuplicado(null); setModalPago({ id: d.clienteId, nombre: d.nombre, cuota: d.cuota, prestamoActivo: d.prestamoActivo, prestamosActivos: [], abonoConPendiente: false }); ejecutarPago(d.metodoPago, { confirmarDuplicado: true, metodoPagoId: d.metodoPagoId }) }}
                 className="flex-1 py-2.5 rounded-[12px] text-sm font-semibold transition-all"
                 style={{ background: 'var(--color-warning)', color: '#000' }}
               >

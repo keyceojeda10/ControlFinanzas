@@ -558,6 +558,47 @@ export default function CajaPage() {
         </div>
       )}
 
+      {pagosDelDiaFiltrados.length > 0 && (() => {
+        const desglose = {}
+        pagosDelDiaFiltrados.forEach(p => {
+          if (!['completo', 'parcial'].includes(p.tipo)) return
+          const mp = p.metodoPago || 'otro'
+          if (mp === 'transferencia') {
+            const pl = p.plataforma || 'Transferencia'
+            desglose[pl] = (desglose[pl] || 0) + Number(p.montoPagado || 0)
+          } else if (mp === 'efectivo') {
+            desglose['Efectivo'] = (desglose['Efectivo'] || 0) + Number(p.montoPagado || 0)
+          } else {
+            desglose['Otro'] = (desglose['Otro'] || 0) + Number(p.montoPagado || 0)
+          }
+        })
+        const items = Object.entries(desglose).sort((a, b) => b[1] - a[1])
+        if (items.length <= 1) return null
+        return (
+          <div className="mb-3 rounded-[10px] overflow-hidden border" style={{ borderColor: 'var(--color-border)' }}>
+            {items.map(([label, monto], i) => (
+              <div
+                key={label}
+                className="flex items-center justify-between px-3 py-2"
+                style={{
+                  background: i % 2 === 0 ? 'var(--color-bg-hover)' : 'transparent',
+                  borderTop: i > 0 ? '1px solid var(--color-border)' : 'none',
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <div
+                    className="w-2 h-2 rounded-full shrink-0"
+                    style={{ background: label === 'Efectivo' ? 'var(--color-success)' : 'var(--color-info)' }}
+                  />
+                  <span className="text-xs font-medium" style={{ color: 'var(--color-text-secondary)' }}>{label}</span>
+                </div>
+                <span className="text-xs font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(Math.round(monto))}</span>
+              </div>
+            ))}
+          </div>
+        )
+      })()}
+
       <ListadoPagos
         pagos={pagosDelDiaFiltrados}
         mostrarCliente

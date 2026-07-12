@@ -16,6 +16,7 @@ import { Modal }               from '@/components/ui/Modal'
 import { ConfirmModal }        from '@/components/ui/ConfirmModal'
 import DiasSinCobroSelector    from '@/components/ui/DiasSinCobroSelector'
 import FestivosManager         from '@/components/ui/FestivosManager'
+import MetodoPagoAdmin         from '@/components/pagos/MetodoPagoAdmin'
 import ThemeToggle             from '@/components/ui/ThemeToggle'
 import { Toggle }              from '@/components/ui/Toggle'
 import { useTheme }             from '@/lib/theme/ThemeProvider'
@@ -749,6 +750,9 @@ function TabOrganizacion() {
           )}
         </div>
       </Card>
+
+      {/* Medios de transferencia */}
+      <MetodoPagoAdmin />
 
       {/* Zona de peligro */}
       <Card style={{ border: '1px solid color-mix(in srgb, var(--color-danger) 30%, var(--color-border))' }}>

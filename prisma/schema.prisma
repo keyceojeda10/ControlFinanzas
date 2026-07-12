@@ -137,6 +137,7 @@ model Organization {
   notificaciones     Notificacion[]
   socios             Socio[]
   aportesSocios      AporteSocio[]
+  metodosPago        MetodoPago[]
 
   @@index([createdAt])
 }
@@ -390,8 +391,9 @@ model Pago {
   montoPagado    Float
   fechaPago      DateTime @default(now())
   tipo           TipoPago
-  metodoPago     String? // 'efectivo' | 'transferencia'
-  plataforma     String? // Nequi, Daviplata, Bancolombia, etc. (texto libre)
+  metodoPago     String?  // 'efectivo' | 'transferencia'
+  plataforma     String?  // legacy: texto libre
+  metodoPagoId   String?  // FK a MetodoPago (solo cuando metodoPago = 'transferencia')
   nota           String?
   cuotaNumero    Int?
   latitud        Float?
@@ -399,15 +401,32 @@ model Pago {
   fotoUrl        String?
   createdAt      DateTime @default(now())
 
-  prestamo     Prestamo     @relation(fields: [prestamoId], references: [id])
-  organization Organization @relation(fields: [organizationId], references: [id])
-  cobrador     User?        @relation(fields: [cobradorId], references: [id])
+  prestamo       Prestamo      @relation(fields: [prestamoId], references: [id])
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  cobrador       User?         @relation(fields: [cobradorId], references: [id])
+  metodoPagoRef  MetodoPago?   @relation(fields: [metodoPagoId], references: [id])
 
   @@index([organizationId])
   @@index([prestamoId])
   @@index([organizationId, fechaPago])
   @@index([prestamoId, fechaPago])
   @@index([organizationId, cobradorId, fechaPago])
+}
+
+model MetodoPago {
+  id               String   @id @default(cuid())
+  organizationId   String
+  nombre           String
+  orden            Int      @default(0)
+  activo           Boolean  @default(true)
+  esPredeterminado Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  pagos        Pago[]
+
+  @@unique([organizationId, nombre])
+  @@index([organizationId, activo])
 }
 
 model CierreCaja {

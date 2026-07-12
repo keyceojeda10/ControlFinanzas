@@ -20,6 +20,7 @@ import DiasSinCobroSelector          from '@/components/ui/DiasSinCobroSelector'
 import { ConfirmModal }              from '@/components/ui/ConfirmModal'
 import HojaRutaImprimible            from '@/components/rutas/HojaRutaImprimible'
 import ModalWhatsAppTemplates        from '@/components/ui/ModalWhatsAppTemplates'
+import MetodoPagoSelector            from '@/components/pagos/MetodoPagoSelector'
 
 // Cargar mapa dinámicamente (evitar SSR con Leaflet)
 const RouteMap = dynamic(() => import('@/components/rutas/RouteMap'), { ssr: false })
@@ -284,6 +285,7 @@ export default function RutaDetallePage({ params }) {
   const [modalSeleccionPrestamo, setModalSeleccionPrestamo] = useState(null) // { clienteId, clienteNombre, idxRuta, prestamos }
   const [undoPago,       setUndoPago]       = useState(null)  // { pagoId, prestamoId, clienteNombre, timer }
   const undoTimerRef = useRef(null)
+  const [metodosPago,   setMetodosPago]   = useState([])
   const [modalWA,        setModalWA]        = useState(null) // { cliente, prestamo }
   const [modalDiasSC,    setModalDiasSC]    = useState(false)
   const [diasSCRuta,     setDiasSCRuta]     = useState([])
@@ -467,6 +469,7 @@ export default function RutaDetallePage({ params }) {
 
   useEffect(() => {
     fetchRuta()
+    fetch('/api/metodos-pago').then(r => r.ok ? r.json() : []).then(setMetodosPago).catch(() => {})
     if (esOwner) {
       fetch('/api/cobradores').then((r) => r.json()).then(setCobradores).catch(() => {})
       fetch('/api/festivos')
@@ -675,7 +678,7 @@ export default function RutaDetallePage({ params }) {
     } : prev)
   }
 
-  const ejecutarPagoRapido = async (metodoPago, { confirmarDuplicado = false } = {}) => {
+  const ejecutarPagoRapido = async (metodoPago, { confirmarDuplicado = false, metodoPagoId = null } = {}) => {
     if (!modalPagoRapido || pagandoRapido) return
     const { id: clienteId, nombre, cuota, cuotaOriginal, prestamoActivo } = modalPagoRapido
     if (!cuota || cuota <= 0) return
@@ -690,8 +693,8 @@ export default function RutaDetallePage({ params }) {
     try {
       const url = `/api/prestamos/${prestamoActivo}/pagos${confirmarDuplicado ? '?confirmarDuplicado=1' : ''}`
       const payload = esCuotaExacta
-        ? { montoPagado: cuota, tipo: 'completo', diasAbonados: 1, metodoPago, ...(coords ?? {}) }
-        : { montoPagado: cuota, tipo: 'parcial', metodoPago, ...(coords ?? {}) }
+        ? { montoPagado: cuota, tipo: 'completo', diasAbonados: 1, metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), ...(coords ?? {}) }
+        : { montoPagado: cuota, tipo: 'parcial', metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), ...(coords ?? {}) }
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -717,7 +720,7 @@ export default function RutaDetallePage({ params }) {
           await fetchRuta()
           if (confirm(`${nombre} ya recibió un pago por ${formatMoney(cuota)} hace menos de 1 minuto.\n\n¿Registrar este pago de todos modos?`)) {
             setModalPagoRapido({ id: clienteId, nombre, cuota, prestamoActivo, abonoConPendiente: false })
-            return ejecutarPagoRapido(metodoPago, { confirmarDuplicado: true })
+            return ejecutarPagoRapido(metodoPago, { confirmarDuplicado: true, metodoPagoId })
           }
         } else {
           alert(data?.error || 'No se pudo registrar el pago')
@@ -3343,28 +3346,13 @@ export default function RutaDetallePage({ params }) {
                   </p>
                 </div>
               )}
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => ejecutarPagoRapido('efectivo')}
-                  disabled={!modalPagoRapido.cuota || modalPagoRapido.cuota <= 0}
-                  className="flex flex-col items-center gap-2 py-4 rounded-[12px] border border-[var(--color-border)] bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(34,197,94,0.08)] hover:border-[rgba(34,197,94,0.3)] transition-all active:scale-95 disabled:opacity-40"
-                >
-                  <svg className="w-6 h-6 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  <span className="text-sm font-medium text-[var(--color-text-primary)]">Efectivo</span>
-                </button>
-                <button
-                  onClick={() => ejecutarPagoRapido('transferencia')}
-                  disabled={!modalPagoRapido.cuota || modalPagoRapido.cuota <= 0}
-                  className="flex flex-col items-center gap-2 py-4 rounded-[12px] border border-[var(--color-border)] bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(59,130,246,0.08)] hover:border-[rgba(59,130,246,0.3)] transition-all active:scale-95 disabled:opacity-40"
-                >
-                  <svg className="w-6 h-6 text-[var(--color-info)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
-                  </svg>
-                  <span className="text-sm font-medium text-[var(--color-text-primary)]">Transferencia</span>
-                </button>
-              </div>
+              <MetodoPagoSelector
+                metodosPago={metodosPago}
+                disabled={!modalPagoRapido.cuota || modalPagoRapido.cuota <= 0}
+                onSelect={({ metodoPago: mp, metodoPagoId: mpId }) => {
+                  ejecutarPagoRapido(mp, { metodoPagoId: mpId })
+                }}
+              />
               {esEspecial && (
                 <button
                   onClick={() => {

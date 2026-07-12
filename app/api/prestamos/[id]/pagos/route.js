@@ -119,7 +119,7 @@ export async function POST(request, { params }) {
   ])
 
   const body = await request.json()
-  const { montoPagado, tipo, nota, diasAbonados, metodoPago, plataforma, latitud, longitud } = body
+  const { montoPagado, tipo, nota, diasAbonados, metodoPago, plataforma, metodoPagoId, latitud, longitud } = body
   // Sanitizar coords del pago: si vienen fuera de rango, se guardan como null
   // (no rechazar el pago, MVP de geo es no-bloqueante).
   const coordsPago = sanitizarCoords(latitud, longitud)
@@ -312,6 +312,7 @@ export async function POST(request, { params }) {
           tipo,
           metodoPago: metodoValido,
           plataforma: metodoValido === 'transferencia' ? (plataforma?.trim() || null) : null,
+          metodoPagoId: metodoValido === 'transferencia' && metodoPagoId ? metodoPagoId : null,
           nota: nota?.trim() || null,
           cuotaNumero,
           fechaPago: new Date(),
