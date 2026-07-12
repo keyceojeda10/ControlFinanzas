@@ -58,17 +58,16 @@ export async function GET(request) {
       return Response.json({ error: 'No autorizado' }, { status: 401 })
     }
 
-    const { organizationId, rol, rutaIds = [] } = session.user
+    const { organizationId, rol } = session.user
     const { searchParams } = new URL(request.url)
+
+    if (rol === 'cobrador') {
+      return Response.json({ error: 'No autorizado' }, { status: 403 })
+    }
 
     const clienteId = searchParams.get('clienteId')?.trim() || undefined
     const estado    = searchParams.get('estado')?.trim()    || undefined
     const buscar    = searchParams.get('buscar')?.trim()    || undefined
-
-    // Cobrador: solo lineas de clientes en sus rutas asignadas
-    const filtroRuta = rol === 'cobrador'
-      ? { cliente: { rutaId: { in: rutaIds } } }
-      : {}
 
     const filtroBuscar = buscar
       ? {
@@ -86,24 +85,9 @@ export async function GET(request) {
 
     const where = {
       organizationId,
-      ...filtroRuta,
       ...filtroEstado,
       ...filtroCliente,
-      // buscar y filtroRuta pueden ambos apuntar a `cliente`; Prisma los combina
-      // solo si no colisionan. Si hay buscar Y cobrador necesitamos combinarlos:
-      ...(buscar && rol === 'cobrador'
-        ? {
-            cliente: {
-              rutaId: { in: rutaIds },
-              OR: [
-                { nombre: { contains: buscar } },
-                { cedula: { contains: buscar } },
-              ],
-            },
-          }
-        : buscar
-          ? filtroBuscar
-          : {}),
+      ...filtroBuscar,
     }
 
     const lineas = await prisma.lineaCredito.findMany({

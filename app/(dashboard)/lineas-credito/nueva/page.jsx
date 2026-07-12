@@ -12,7 +12,7 @@ import { MODOS_INTERES } from '@/lib/linea-credito'
 
 export default function NuevaLineaPage() {
   const router = useRouter()
-  const { esOwner, loading: authLoading } = useAuth()
+  const { esOwner, esCobrador, loading: authLoading } = useAuth()
   const [clientes, setClientes] = useState([])
   const [buscar, setBuscar] = useState('')
   const [clienteId, setClienteId] = useState('')
@@ -25,6 +25,10 @@ export default function NuevaLineaPage() {
   const [error, setError] = useState('')
   const [guardando, setGuardando] = useState(false)
   const [paso, setPaso] = useState(0)
+
+  useEffect(() => {
+    if (!authLoading && esCobrador) router.replace('/dashboard')
+  }, [authLoading, esCobrador, router])
 
   useEffect(() => {
     fetch('/api/clientes?estado=activo')

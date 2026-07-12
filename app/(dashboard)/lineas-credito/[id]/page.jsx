@@ -16,7 +16,7 @@ import { useTheme } from '@/lib/theme/ThemeProvider'
 export default function DetalleLineaPage({ params }) {
   const { id } = use(params)
   const router = useRouter()
-  const { esOwner, loading: authLoading } = useAuth()
+  const { esOwner, esCobrador, loading: authLoading } = useAuth()
   const [linea, setLinea] = useState(null)
   const [loading, setLoading] = useState(true)
   const [modalDesembolso, setModalDesembolso] = useState(false)
@@ -26,6 +26,10 @@ export default function DetalleLineaPage({ params }) {
   const [modalEliminarLinea, setModalEliminarLinea] = useState(false)
   const [eliminarMov, setEliminarMov] = useState(null)
   const [eliminarCorte, setEliminarCorte] = useState(null)
+
+  useEffect(() => {
+    if (!authLoading && esCobrador) router.replace('/dashboard')
+  }, [authLoading, esCobrador, router])
 
   const cargar = useCallback(async () => {
     try {

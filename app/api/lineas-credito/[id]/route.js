@@ -63,7 +63,11 @@ export async function GET(request, { params }) {
     }
 
     const { id } = await params
-    const { organizationId } = session.user
+    const { organizationId, rol } = session.user
+
+    if (rol === 'cobrador') {
+      return Response.json({ error: 'No autorizado' }, { status: 403 })
+    }
 
     const linea = await prisma.lineaCredito.findUnique({
       where: { id },

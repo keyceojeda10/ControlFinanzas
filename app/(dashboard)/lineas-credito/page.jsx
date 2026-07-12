@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
@@ -20,11 +21,16 @@ const ESTADOS = [
 ]
 
 export default function LineasCreditoPage() {
-  const { esOwner, loading: authLoading } = useAuth()
+  const { esOwner, esCobrador, loading: authLoading } = useAuth()
+  const router = useRouter()
   const [lineas, setLineas] = useState([])
   const [buscar, setBuscar] = useState('')
   const [estado, setEstado] = useState('activa')
   const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!authLoading && esCobrador) router.replace('/dashboard')
+  }, [authLoading, esCobrador, router])
 
   const cargar = useCallback(async () => {
     setLoading(true)
