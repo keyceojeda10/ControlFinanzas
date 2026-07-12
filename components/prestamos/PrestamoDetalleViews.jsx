@@ -715,7 +715,7 @@ export function PagoMiniCard({ pago, onAnular, anulando, isOffline, children }) 
             {pago.metodoPago && (
               <>
                 <span>·</span>
-                <span className="capitalize">{pago.metodoPago}</span>
+                <span>{pago.metodoPago === 'transferencia' ? (pago.plataforma ? `Transf. · ${pago.plataforma}` : 'Transferencia') : 'Efectivo'}</span>
               </>
             )}
           </div>

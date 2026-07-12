@@ -248,7 +248,7 @@ export default function RegistrarPago({
       if (!res.ok) { setError(data.error ?? 'Error al registrar el pago'); return }
 
       const pagoId = data.pagos?.[0]?.id ?? null
-      const pagoParaWA = { id: pagoId, montoPagado: m, fechaPago: new Date().toISOString() }
+      const pagoParaWA = { id: pagoId, montoPagado: m, fechaPago: new Date().toISOString(), metodoPago, plataforma }
       setPagoGuardado(pagoParaWA)
       setPrestamoAct(data)
       setExitoso(true)
@@ -409,6 +409,13 @@ export default function RegistrarPago({
                 : tipo === 'descuento' ? 'descuento aplicado correctamente'
                 : 'pagado correctamente'}
             </p>
+            {!pagoGuardado.offline && !['recargo', 'descuento'].includes(tipo) && pagoGuardado.metodoPago && (
+              <p className="text-[11px] mt-0.5" style={{ color: pagoGuardado.metodoPago === 'transferencia' ? 'var(--color-info)' : 'var(--color-success)' }}>
+                {pagoGuardado.metodoPago === 'transferencia'
+                  ? (pagoGuardado.plataforma ? `Transferencia · ${pagoGuardado.plataforma}` : 'Transferencia')
+                  : 'Efectivo'}
+              </p>
+            )}
           </div>
 
           {prestamoWA && (
@@ -419,6 +426,18 @@ export default function RegistrarPago({
                 boxShadow: `0 0 30px #22c55e08, 0 1px 2px rgba(0,0,0,0.3)`,
               }}
             >
+              {(() => {
+                const cuotasPagadas = prestamoWA.pagos
+                  ? prestamoWA.pagos.filter(p => !['recargo', 'descuento'].includes(p.tipo)).length
+                  : null
+                const totalCuotas = prestamoWA.diasPlazo || null
+                return cuotasPagadas != null && totalCuotas ? (
+                  <div className="flex justify-between">
+                    <span className="text-[var(--color-text-muted)]">Cuota</span>
+                    <span className="text-[var(--color-text-primary)] font-medium font-mono-display">{cuotasPagadas} de {totalCuotas}</span>
+                  </div>
+                ) : null
+              })()}
               <div className="flex justify-between">
                 <span className="text-[var(--color-text-muted)]">Saldo pendiente</span>
                 <span className="text-[var(--color-text-primary)] font-medium font-mono-display">{formatMoney(prestamoWA.saldoPendiente)}</span>
