@@ -138,6 +138,7 @@ model Organization {
   socios             Socio[]
   aportesSocios      AporteSocio[]
   metodosPago        MetodoPago[]
+  sesionesActivas    SesionActiva[]
 
   @@index([createdAt])
 }
@@ -197,6 +198,7 @@ model User {
   clientesCreadosPor Cliente[]         @relation("ClientesCreadosPor")
   notificaciones    Notificacion[]     @relation("NotificacionesUsuario")
   ubicacionLogs     UbicacionLog[]
+  sesionesActivas   SesionActiva[]
 
   @@index([organizationId])
   @@index([organizationId, rol, activo])
@@ -1044,4 +1046,22 @@ model AporteSocio {
 
   @@index([socioId])
   @@index([organizationId])
+}
+
+model SesionActiva {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String?
+  ip             String?
+  userAgent      String?  @db.Text
+  dispositivo    String?
+  lastActivityAt DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id])
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([lastActivityAt])
 }

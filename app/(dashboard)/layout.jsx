@@ -17,6 +17,7 @@ import Analytics          from '@/components/Analytics'
 import CompletarTelefonoModal from '@/components/layout/CompletarTelefonoModal'
 import NovedadesModal from '@/components/layout/NovedadesModal'
 import UbicacionProvider from '@/components/providers/UbicacionProvider'
+import SesionTracker from '@/components/providers/SesionTracker'
 
 // Bloqueo definitivo de suscripcion vencida: lee DB en cada request.
 // El middleware no puede hacerlo (Edge runtime sin Prisma) y el JWT puede
@@ -89,6 +90,9 @@ export default async function DashboardLayout({ children }) {
 
       {/* GPS silencioso: cobrador envia ubicacion mientras la app esta abierta */}
       <UbicacionProvider />
+
+      {/* Tracking silencioso de sesiones multi-dispositivo */}
+      <SesionTracker />
 
       {/* Analytics: page view tracking */}
       <Analytics />
