@@ -165,6 +165,8 @@ export async function GET(request, { params }) {
       select: {
         montoPagado: true,
         fechaPago: true,
+        metodoPago: true,
+        plataforma: true,
         prestamo: {
           select: {
             esClavo: true,
@@ -383,6 +385,23 @@ export async function GET(request, { params }) {
     }),
   ])
 
+  // Desglose por método de pago
+  const desgloseMetodo = {}
+  for (const p of cobros) {
+    const mp = p.metodoPago || 'otro'
+    if (mp === 'transferencia') {
+      const pl = p.plataforma || 'Transferencia'
+      desgloseMetodo[pl] = (desgloseMetodo[pl] || { monto: 0, tipo: 'transferencia' })
+      desgloseMetodo[pl].monto += Number(p.montoPagado || 0)
+    } else if (mp === 'efectivo') {
+      desgloseMetodo['Efectivo'] = (desgloseMetodo['Efectivo'] || { monto: 0, tipo: 'efectivo' })
+      desgloseMetodo['Efectivo'].monto += Number(p.montoPagado || 0)
+    }
+  }
+  const desgloseMetodoPago = Object.entries(desgloseMetodo)
+    .map(([label, v]) => ({ label, monto: Math.round(v.monto), tipo: v.tipo }))
+    .sort((a, b) => b.monto - a.monto)
+
   return Response.json({
     cobrador: { id: cobrador.id, nombre: cobrador.nombre },
     fecha: esRango ? null : fechaBase,
@@ -412,6 +431,7 @@ export async function GET(request, { params }) {
       clientesActivos,
       clientesCobrados: new Set(cobrosDia.map(p => p.prestamo?.clienteId)).size,
     },
+    desgloseMetodoPago,
     porRuta,
     movimientos,
     gastos: gastos.map((g) => ({

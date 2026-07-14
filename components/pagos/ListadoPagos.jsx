@@ -31,11 +31,21 @@ const fmtHora = (d) => {
   })
 }
 
-const metodoLabel = (pago) => {
+const metodoInfo = (pago) => {
   if (pago?.metodoPago === 'transferencia') {
-    return pago?.plataforma ? `Transferencia · ${pago.plataforma}` : 'Transferencia'
+    return {
+      label: pago?.plataforma || 'Transferencia',
+      color: 'var(--color-info)',
+      bg: 'color-mix(in srgb, var(--color-info) 12%, transparent)',
+    }
   }
-  if (pago?.metodoPago === 'efectivo') return 'Efectivo'
+  if (pago?.metodoPago === 'efectivo') {
+    return {
+      label: 'Efectivo',
+      color: 'var(--color-success)',
+      bg: 'color-mix(in srgb, var(--color-success) 12%, transparent)',
+    }
+  }
   return null
 }
 
@@ -103,7 +113,7 @@ export default function ListadoPagos({
         const cliente = getCliente(pago)
         const cobrador = getCobrador(pago)
         const prestamoId = getPrestamoId(pago)
-        const metodo = metodoLabel(pago)
+        const metodo = metodoInfo(pago)
 
         return (
           <div
@@ -119,8 +129,16 @@ export default function ListadoPagos({
                   {fmtFecha(pago.fechaPago)}
                   {fmtHora(pago.fechaPago) ? ` · ${fmtHora(pago.fechaPago)}` : ''}
                   {mostrarCob && cobrador ? ` · ${cobrador}` : ''}
-                  {metodo && !esAjuste ? ` · ${metodo}` : ''}
                 </p>
+                {metodo && !esAjuste && (
+                  <span
+                    className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded-[6px] text-[10px] font-semibold"
+                    style={{ background: metodo.bg, color: metodo.color }}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: metodo.color }} />
+                    {metodo.label}
+                  </span>
+                )}
                 {pago.nota && (
                   <p className="text-[11px] mt-0.5 text-[#aaaaaa]">{pago.nota}</p>
                 )}

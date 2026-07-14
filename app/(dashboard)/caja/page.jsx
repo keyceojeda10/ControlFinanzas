@@ -21,6 +21,7 @@ import ListadoPagos           from '@/components/pagos/ListadoPagos'
 import CajaCobradorDetalle    from '@/components/caja/CajaCobradorDetalle'
 import FiltroPeriodo          from '@/components/caja/FiltroPeriodo'
 import CajaResumen            from '@/components/caja/CajaResumen'
+import DesgloseMetodoPago     from '@/components/caja/DesgloseMetodoPago'
 import CuadreDia              from '@/components/caja/CuadreDia'
 import ReporteDia             from '@/components/reportes/ReporteDia'
 import { nivelReportes }      from '@/lib/planes'
@@ -565,38 +566,17 @@ export default function CajaPage() {
           const mp = p.metodoPago || 'otro'
           if (mp === 'transferencia') {
             const pl = p.plataforma || 'Transferencia'
-            desglose[pl] = (desglose[pl] || 0) + Number(p.montoPagado || 0)
+            if (!desglose[pl]) desglose[pl] = { monto: 0, tipo: 'transferencia' }
+            desglose[pl].monto += Number(p.montoPagado || 0)
           } else if (mp === 'efectivo') {
-            desglose['Efectivo'] = (desglose['Efectivo'] || 0) + Number(p.montoPagado || 0)
-          } else {
-            desglose['Otro'] = (desglose['Otro'] || 0) + Number(p.montoPagado || 0)
+            if (!desglose['Efectivo']) desglose['Efectivo'] = { monto: 0, tipo: 'efectivo' }
+            desglose['Efectivo'].monto += Number(p.montoPagado || 0)
           }
         })
-        const items = Object.entries(desglose).sort((a, b) => b[1] - a[1])
-        if (items.length <= 1) return null
-        return (
-          <div className="mb-3 rounded-[10px] overflow-hidden border" style={{ borderColor: 'var(--color-border)' }}>
-            {items.map(([label, monto], i) => (
-              <div
-                key={label}
-                className="flex items-center justify-between px-3 py-2"
-                style={{
-                  background: i % 2 === 0 ? 'var(--color-bg-hover)' : 'transparent',
-                  borderTop: i > 0 ? '1px solid var(--color-border)' : 'none',
-                }}
-              >
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-2 h-2 rounded-full shrink-0"
-                    style={{ background: label === 'Efectivo' ? 'var(--color-success)' : 'var(--color-info)' }}
-                  />
-                  <span className="text-xs font-medium" style={{ color: 'var(--color-text-secondary)' }}>{label}</span>
-                </div>
-                <span className="text-xs font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(Math.round(monto))}</span>
-              </div>
-            ))}
-          </div>
-        )
+        const items = Object.entries(desglose)
+          .map(([label, v]) => ({ label, monto: Math.round(v.monto), tipo: v.tipo }))
+          .sort((a, b) => b.monto - a.monto)
+        return <DesgloseMetodoPago items={items} />
       })()}
 
       <ListadoPagos

@@ -8,6 +8,7 @@
 import { formatMoney } from '@/lib/i18n'
 import { Card } from '@/components/ui/Card'
 import CajaResumen from '@/components/caja/CajaResumen'
+import DesgloseMetodoPago from '@/components/caja/DesgloseMetodoPago'
 
 const fmtHora = (d) => {
   if (!d) return '—'
@@ -32,6 +33,7 @@ export default function CajaCobradorDetalle({ data }) {
   const porRuta = data?.porRuta || []
   const gastos = data?.gastos || []
   const g = data?.gestion || null
+  const desgloseMetodo = data?.desgloseMetodoPago || []
 
   const esCapitalEfectivo = r.capitalEsEfectivo
 
@@ -55,6 +57,9 @@ export default function CajaCobradorDetalle({ data }) {
           ...(!esCapitalEfectivo && (r.capitalRutasTotal || 0) > 0 ? [{ label: 'Capital en ruta', valor: r.capitalRutasTotal, color: 'var(--color-info)' }] : []),
         ]}
       />
+
+      {/* Desglose por método de pago */}
+      <DesgloseMetodoPago items={desgloseMetodo} />
 
       {/* Alerta gastos pendientes */}
       {(r.gastosPendientesCantidad || 0) > 0 && (

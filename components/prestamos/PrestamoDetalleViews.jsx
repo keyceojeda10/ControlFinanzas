@@ -713,10 +713,21 @@ export function PagoMiniCard({ pago, onAnular, anulando, isOffline, children }) 
             </svg>
             <span>{fmtFecha(pago.fechaPago)}</span>
             {pago.metodoPago && (
-              <>
-                <span>·</span>
-                <span>{pago.metodoPago === 'transferencia' ? (pago.plataforma ? `Transf. · ${pago.plataforma}` : 'Transferencia') : 'Efectivo'}</span>
-              </>
+              <span
+                className="inline-flex items-center gap-1 ml-1 px-1.5 py-0.5 rounded-[5px] text-[9px] font-semibold"
+                style={{
+                  background: pago.metodoPago === 'transferencia'
+                    ? 'color-mix(in srgb, var(--color-info) 12%, transparent)'
+                    : 'color-mix(in srgb, var(--color-success) 12%, transparent)',
+                  color: pago.metodoPago === 'transferencia' ? 'var(--color-info)' : 'var(--color-success)',
+                }}
+              >
+                <span
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{ background: pago.metodoPago === 'transferencia' ? 'var(--color-info)' : 'var(--color-success)' }}
+                />
+                {pago.metodoPago === 'transferencia' ? (pago.plataforma || 'Transferencia') : 'Efectivo'}
+              </span>
             )}
           </div>
           {pago.nota && (
