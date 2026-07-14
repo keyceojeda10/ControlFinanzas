@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { getPlataformaInfo, PlataformaIcon } from '@/components/ui/LogoPlataforma'
 
 const ICON_EFECTIVO = (
   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
@@ -96,6 +97,8 @@ export default function MetodoPagoSelector({ metodosPago = [], onSelect, disable
         <div className={`grid gap-2 ${metodosPago.length <= 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
           {metodosPago.map(m => {
             const selected = medioActivo === m.id
+            const platInfo = getPlataformaInfo(m.nombre)
+            const brandColor = platInfo?.color || 'var(--color-info)'
             return (
               <button
                 key={m.id}
@@ -104,24 +107,28 @@ export default function MetodoPagoSelector({ metodosPago = [], onSelect, disable
                 className={`flex flex-col items-center gap-2 ${compact ? 'py-3' : 'py-4'} rounded-[12px] border transition-all active:scale-95 relative`}
                 style={{
                   background: selected
-                    ? 'color-mix(in srgb, var(--color-info) 12%, var(--color-bg-card))'
-                    : 'color-mix(in srgb, var(--color-info) 5%, var(--color-bg-card))',
+                    ? `color-mix(in srgb, ${brandColor} 12%, var(--color-bg-card))`
+                    : `color-mix(in srgb, ${brandColor} 5%, var(--color-bg-card))`,
                   borderColor: selected
-                    ? 'var(--color-info)'
+                    ? brandColor
                     : 'var(--color-border)',
                 }}
               >
                 {selected && (
-                  <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: 'var(--color-info)', color: '#fff' }}>
+                  <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: brandColor, color: '#fff' }}>
                     {ICON_CHECK}
                   </span>
                 )}
-                <div
-                  className="w-9 h-9 rounded-[10px] flex items-center justify-center"
-                  style={{ background: 'color-mix(in srgb, var(--color-info) 15%, transparent)', color: 'var(--color-info)' }}
-                >
-                  {ICON_TRANSFER}
-                </div>
+                {platInfo ? (
+                  <PlataformaIcon plataforma={m.nombre} size={36} />
+                ) : (
+                  <div
+                    className="w-9 h-9 rounded-[10px] flex items-center justify-center"
+                    style={{ background: 'color-mix(in srgb, var(--color-info) 15%, transparent)', color: 'var(--color-info)' }}
+                  >
+                    {ICON_TRANSFER}
+                  </div>
+                )}
                 <span className="text-xs font-semibold leading-tight text-center" style={{ color: 'var(--color-text-primary)' }}>{m.nombre}</span>
               </button>
             )
