@@ -105,7 +105,7 @@ export default function DetalleLineaPage({ params }) {
   const tieneMovimientos = (linea.desembolsos?.length || 0) + (linea.pagosLinea?.length || 0) + (linea.cortesLinea?.length || 0) > 0
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 pb-28">
+    <div className="max-w-2xl lg:max-w-5xl mx-auto px-4 py-6 pb-28">
       <button onClick={() => router.push('/lineas-credito')} className="flex items-center gap-1 text-xs text-[var(--color-text-muted)] mb-4">
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
         Líneas de crédito

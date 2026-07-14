@@ -63,7 +63,7 @@ export default function MisEstadisticasPage() {
   const maxSemana = Math.max(...(data.semana?.map((d) => d.total) ?? [1]), 1)
 
   return (
-    <div className="max-w-xl mx-auto space-y-5">
+    <div className="max-w-xl lg:max-w-4xl mx-auto space-y-5">
       <div>
         <h1 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Mi resumen</h1>
         {data.rutaNombre && (

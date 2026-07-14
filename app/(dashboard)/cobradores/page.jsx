@@ -214,7 +214,7 @@ function CobradoresPageInner() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-3xl lg:max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Cobradores</h1>
@@ -306,7 +306,7 @@ function CobradoresPageInner() {
       )}
 
       {!loading && cobradores.length > 0 && !modoOrdenar && (
-        <div className="space-y-3">
+        <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
           {cobradores.map((c) => (
             <CobradorCard
               key={c.id}

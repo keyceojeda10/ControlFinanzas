@@ -388,7 +388,7 @@ export default function PrestamosPage() {
     : prestamos
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-3xl lg:max-w-6xl mx-auto">
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-4">
         <div className="min-w-0">
@@ -640,7 +640,7 @@ export default function PrestamosPage() {
 
       {/* Lista plana: orden cronologico puro (default) */}
       {!loading && prestamosVisibles.length > 0 && !agrupar && (
-        <StaggeredList className={vistaP === 'compacta' ? 'grid grid-cols-2 sm:grid-cols-3 gap-2' : 'space-y-2.5'}>
+        <StaggeredList className={vistaP === 'compacta' ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2' : 'space-y-2.5 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0'}>
           {prestamosVisibles.map((p) => {
             if (vistaP === 'compacta') {
               return (

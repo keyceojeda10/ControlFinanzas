@@ -84,7 +84,7 @@ export default function CajaCobradorPage() {
   }
 
   return (
-    <div className="p-4 space-y-4 max-w-2xl mx-auto">
+    <div className="p-4 space-y-4 max-w-2xl lg:max-w-5xl mx-auto">
       {/* Header */}
       <div className="space-y-2">
         <Link href={`/caja?fecha=${data?.fecha || ''}`} className="text-sm text-[var(--color-accent)] flex items-center gap-1 w-fit">

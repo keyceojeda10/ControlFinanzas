@@ -54,7 +54,7 @@ function SoportePageInner() {
   }, [])
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-3xl lg:max-w-6xl mx-auto">
       {/* Header con icono + boton accion */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">

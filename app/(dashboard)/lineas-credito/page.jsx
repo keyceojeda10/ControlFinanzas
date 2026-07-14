@@ -57,7 +57,7 @@ export default function LineasCreditoPage() {
   const totalCupo = lineas.reduce((s, l) => s + l.cupoMaximo, 0)
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 pb-28">
+    <div className="max-w-2xl lg:max-w-5xl mx-auto px-4 py-6 pb-28">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>

@@ -151,7 +151,7 @@ function TicketDetallePageInner() {
   const cerrado = ticket.estado === 'cerrado' || ticket.estado === 'resuelto'
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl lg:max-w-4xl mx-auto">
       {/* Header */}
       <button onClick={() => router.push('/soporte')} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors mb-3 flex items-center gap-1">
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

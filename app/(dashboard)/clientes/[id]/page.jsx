@@ -412,7 +412,7 @@ export default function ClienteDetallePage({ params }) {
   const esPrimeroEnRuta = rutaNav && rutaNav.currentIndex <= 0
 
   return (
-    <div className="max-w-2xl mx-auto space-y-5">
+    <div className="max-w-2xl lg:max-w-4xl mx-auto space-y-5">
       {/* Back */}
       <button
         onClick={() => router.back()}

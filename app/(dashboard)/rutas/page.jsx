@@ -335,7 +335,7 @@ export default function RutasPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-3xl lg:max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Rutas</h1>
@@ -543,7 +543,7 @@ export default function RutasPage() {
       )}
 
       {!loading && rutas.length > 0 && !modoOrdenar && (
-        <div className="space-y-3">
+        <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
           {rutas.map((r) => <RutaCard key={r.id} ruta={r} />)}
         </div>
       )}

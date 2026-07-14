@@ -516,7 +516,7 @@ export default function PrestamoDetallePage({ params }) {
     : null
 
   return (
-    <div className="max-w-xl mx-auto space-y-4 pb-4">
+    <div className="max-w-xl lg:max-w-4xl mx-auto space-y-4 pb-4">
       {/* Back */}
       <button
         onClick={() => router.back()}

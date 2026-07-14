@@ -192,7 +192,7 @@ function ActividadPageInner() {
   const grupos = agruparPorDia(items)
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6">
+    <div className="max-w-2xl lg:max-w-5xl mx-auto px-4 py-6">
       {/* Header */}
       <div className="mb-5">
         <h1 className="text-lg font-bold" style={{ color: 'var(--color-text-primary)' }}>Actividad</h1>

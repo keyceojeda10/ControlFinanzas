@@ -222,7 +222,7 @@ export default function CobrosHoyPage() {
     : 0
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4 px-1">
+    <div className="max-w-2xl lg:max-w-5xl mx-auto space-y-4 px-1">
 
       {/* ── Hero: Progreso del día — tarjeta dorada de marca ── */}
       {clientes.length > 0 && (

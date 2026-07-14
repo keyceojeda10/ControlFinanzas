@@ -1450,7 +1450,7 @@ export default function DashboardPage() {
   // If minimized this session, show a banner instead
   if (onboarding.showWizard && esOwner && !onboarding.wizardMinimized) {
     return (
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-3xl lg:max-w-6xl mx-auto">
         <OnboardingWizard
           nombre={session?.user?.nombre || session?.user?.name}
           initialStep={onboarding.wizardInitialStep}
@@ -1469,7 +1469,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-5">
+    <div className="max-w-3xl lg:max-w-6xl mx-auto space-y-5">
       {/* Banner: wizard minimizado — click to resume */}
       {onboarding.showWizard && onboarding.wizardMinimized && esOwner && (
         <button
@@ -1621,6 +1621,9 @@ export default function DashboardPage() {
         </div>
       ) : data && (
         <>
+          {/* Desktop: grid de 2 columnas para hero + strip lateral */}
+          <div className="lg:grid lg:grid-cols-5 lg:gap-5">
+          <div className="lg:col-span-3">
           {/* HERO: Recaudado hoy en grande con narrativa + donut de meta integrado */}
           <HeroCard
             label="Recaudado hoy"
@@ -1647,9 +1650,12 @@ export default function DashboardPage() {
             }}
           />
 
+          </div>
+          {/* Columna derecha desktop: KPIs rapidos */}
+          <div className="lg:col-span-2 space-y-3 mt-5 lg:mt-0">
           {/* Strip de 4 KPIs clave — siempre visibles para owner */}
           {esOwner && (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-1 gap-3">
               <Link href="/clientes?filtro=mora" className="rounded-[12px] px-3 py-3 transition-all hover:scale-[1.01]" style={{ background: data.clientes.enMora > 0 ? 'color-mix(in srgb, var(--color-danger) 10%, var(--color-bg-card))' : 'var(--color-bg-card)', border: `1px solid ${data.clientes.enMora > 0 ? 'color-mix(in srgb, var(--color-danger) 25%, var(--color-border))' : 'var(--color-border)'}` }}>
                 <p className="text-[10px] mb-0.5" style={{ color: 'var(--color-text-muted)' }}>Clientes en mora</p>
                 <p className="text-2xl font-bold font-mono-display" style={{ color: data.clientes.enMora > 0 ? 'var(--color-danger)' : 'var(--color-success)' }}>{data.clientes.enMora}</p>
@@ -1672,9 +1678,12 @@ export default function DashboardPage() {
 
           {/* Tip IA sutil */}
           <DashboardAiTip data={data} />
+          </div>
+          </div>
 
-          {/* Recaudado del mes — solo visible en vista completa */}
+          {/* Recaudado del mes + interes — en desktop side by side */}
           {!vistaSimple && (
+          <div className="lg:grid lg:grid-cols-2 lg:gap-5 space-y-5 lg:space-y-0">
           <RecaudoCard
             label="Recaudado este mes"
             color="var(--color-accent)"
@@ -1691,10 +1700,7 @@ export default function DashboardPage() {
               tip: 'Compara este número con el mes pasado para ver si tu cobro está creciendo.',
             }}
           />
-          )}
-
-          {/* Interés ganado este mes — solo visible en vista completa */}
-          {!vistaSimple && esOwner && data.cobros.interesGanadoMes != null && (
+          {esOwner && data.cobros.interesGanadoMes != null && (
             <RecaudoCard
               label="Interés ganado este mes"
               color="#10b981"
@@ -1710,6 +1716,8 @@ export default function DashboardPage() {
                 tip: 'Esta es tu utilidad bruta del mes, antes de gastos. Para ver cualquier mes anterior usa Reportes con el filtro de fechas.',
               }}
             />
+          )}
+          </div>
           )}
 
           {/* Tu dinero — Saldo y Patrimonio (solo owner, vista completa) */}
@@ -1773,8 +1781,10 @@ export default function DashboardPage() {
             <span className="text-[11px] font-medium">{vistaSimple ? 'Ver más métricas' : 'Mostrar solo lo esencial'}</span>
           </button>
 
-          {/* Tu cartera — Cartera activa, Por cobrar */}
+          {/* Desktop: KPI groups side by side */}
           {!vistaSimple && (
+          <div className="lg:grid lg:grid-cols-2 lg:gap-5 space-y-5 lg:space-y-0">
+          {/* Tu cartera — Cartera activa, Por cobrar */}
           <KpiGroup title="Tu cartera" icon={Icons.cartera}>
             <div className="grid grid-cols-2 gap-3">
               <KpiCard
@@ -1813,10 +1823,8 @@ export default function DashboardPage() {
               )}
             </div>
           </KpiGroup>
-          )}
 
           {/* Tus clientes — Clientes activos, Préstamos activos */}
-          {!vistaSimple && (
           <KpiGroup title="Tus clientes" icon={Icons.clientes}>
             <div className="grid grid-cols-2 gap-3">
               <KpiCard
@@ -1853,6 +1861,7 @@ export default function DashboardPage() {
               />
             </div>
           </KpiGroup>
+          </div>
           )}
 
           {/* Operación — Cuota diaria, Rutas (colapsado por defecto) */}
@@ -1883,6 +1892,9 @@ export default function DashboardPage() {
           </KpiGroup>
           )}
 
+          {/* Desktop: bottom sections in 2-col grid */}
+          <div className="lg:grid lg:grid-cols-2 lg:gap-5 space-y-5 lg:space-y-0">
+          <div className="space-y-5">
           {/* Movimientos de hoy: resumen narrativo + desglose por cobrador */}
           {data.actividadHoy && (
             <ResumenDelDia actividad={data.actividadHoy} esOwner={esOwner} />
@@ -1997,6 +2009,8 @@ export default function DashboardPage() {
             </div>
           )}
 
+          </div>
+          <div className="space-y-5">
           {/* Necesita tu atencion: alertas accionables al final (solo owner) */}
           {esOwner && data.alertas && (
             <NecesitaAtencion alertas={data.alertas} moraData={moraData} />
@@ -2006,6 +2020,8 @@ export default function DashboardPage() {
           {esOwner && data.alertas?.proximosACompletar?.length > 0 && (
             <ProximosARenovar alertas={data.alertas} />
           )}
+          </div>
+          </div>
         </>
       )}
       {!loading && mounted && moraData !== undefined && moraData.total > 0 && (
@@ -2147,7 +2163,7 @@ export default function DashboardPage() {
       {!esOwner && (
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--color-text-secondary)' }}>Accesos rápidos</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {puedeCrearClientes && <QuickLink href="/clientes/nuevo" label="Nuevo cliente" desc="Registrar cliente" color="#f5c518" dataTour="nuevo-cliente" />}
             {puedeCrearPrestamos && <QuickLink href="/prestamos/nuevo" label="Nuevo préstamo" desc="Crear préstamo" color="#22c55e" dataTour="nuevo-prestamo" />}
             <QuickLink href="/caja" label="Cierre de caja" desc="Registrar cierre del día" color="#f59e0b" dataTour="caja" />

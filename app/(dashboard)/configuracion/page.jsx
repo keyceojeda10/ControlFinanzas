@@ -1230,7 +1230,7 @@ function ConfiguracionContent() {
   ].filter((t) => t.visible)
 
   return (
-    <div className="max-w-2xl mx-auto space-y-5">
+    <div className="max-w-2xl lg:max-w-5xl mx-auto space-y-5">
       <div>
         <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Configuración</h1>
         <p className="text-sm text-[#888888] mt-0.5">Gestiona tu perfil y tu organización</p>

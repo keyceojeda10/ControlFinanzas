@@ -52,14 +52,14 @@ export default function ClavosPage() {
   const numFiltrosActivos = [rutaFiltro, tipoFiltro, orden !== 'fecha'].filter(Boolean).length
 
   if (loading) {
-    return <div className="max-w-3xl mx-auto space-y-3"><SkeletonCard /><SkeletonCard /></div>
+    return <div className="max-w-3xl lg:max-w-6xl mx-auto space-y-3"><SkeletonCard /><SkeletonCard /></div>
   }
   if (!data || data.error) {
     return <p className="text-sm text-[var(--color-danger)]">No se pudieron cargar los préstamos perdidos</p>
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-5">
+    <div className="max-w-3xl lg:max-w-6xl mx-auto space-y-5">
       <div>
         <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Préstamos perdidos</h1>
         <p className="text-sm text-[var(--color-text-muted)] mt-0.5">

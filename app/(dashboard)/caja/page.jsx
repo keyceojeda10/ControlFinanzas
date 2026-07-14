@@ -1023,7 +1023,7 @@ export default function CajaPage() {
   const pendientesSinMovimiento = cobradores.filter(c => !c.cerrado && (c.recaudadoDia || 0) <= 0).length
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4">
+    <div className="max-w-2xl lg:max-w-5xl mx-auto space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

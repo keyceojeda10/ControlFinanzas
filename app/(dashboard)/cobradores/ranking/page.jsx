@@ -251,7 +251,7 @@ export default function RankingCobradoresPage() {
   const podiumOrder = { 1: 2, 2: 1, 3: 3 }
 
   return (
-    <div className="max-w-3xl mx-auto pb-6">
+    <div className="max-w-3xl lg:max-w-6xl mx-auto pb-6">
       <div className="mb-6">
         <Link
           href="/cobradores"

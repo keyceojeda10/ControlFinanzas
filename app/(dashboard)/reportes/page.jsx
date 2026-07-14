@@ -261,7 +261,7 @@ export default function ReportesPage() {
 
   if (authLoading || (loading && nivel >= 1 && esOwner)) {
     return (
-      <div className="max-w-3xl mx-auto space-y-4">
+      <div className="max-w-3xl lg:max-w-6xl mx-auto space-y-4">
         <SkeletonCard /><SkeletonCard /><SkeletonCard />
       </div>
     )
@@ -273,7 +273,7 @@ export default function ReportesPage() {
   const topCobradores = nivel >= 2 ? [...cobsData].sort((a, b) => (b.totalRecogido || 0) - (a.totalRecogido || 0)).slice(0, 3) : []
 
   return (
-    <div className="max-w-3xl mx-auto space-y-5">
+    <div className="max-w-3xl lg:max-w-6xl mx-auto space-y-5">
       {/* Header + filtro fechas como chips de periodo + date pickers */}
       <div>
         <div className="flex items-center justify-between gap-3 mb-3">

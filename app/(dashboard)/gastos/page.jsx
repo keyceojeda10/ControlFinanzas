@@ -183,7 +183,7 @@ export default function GastosPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-4 space-y-4">
+    <div className="max-w-3xl lg:max-w-6xl mx-auto p-4 space-y-4">
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -385,7 +385,7 @@ export default function GastosPage() {
               </p>
             </div>
           ) : (
-            <div className="space-y-2.5">
+            <div className="space-y-2.5 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
               {gastos.map((g) => {
                 const eInfo = TAB_COLORS[g.estado] || TAB_COLORS.pendiente
                 return (
