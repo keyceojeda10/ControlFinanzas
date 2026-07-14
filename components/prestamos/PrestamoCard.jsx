@@ -109,7 +109,7 @@ export default function PrestamoCard({ prestamo: p, actions, esNuevo }) {
               <OfflineBadge id={p.id} />
               {p.esClavo && (
                 <span
-                  className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
+                  className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
                   style={{ background: 'color-mix(in srgb, var(--color-danger) 15%, transparent)', color: 'var(--color-danger)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)' }}
                 >Perdido</span>
               )}
@@ -126,7 +126,7 @@ export default function PrestamoCard({ prestamo: p, actions, esNuevo }) {
               </span>
               {p.modoInteres && MODO_TAG[p.modoInteres] && (
                 <span
-                  className="text-[9px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
+                  className="text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
                   style={{ background: `color-mix(in srgb, ${P.ink} 8%, transparent)`, color: P.sub, border: `1px solid color-mix(in srgb, ${P.ink} 14%, transparent)` }}
                 >
                   {MODO_TAG[p.modoInteres]}
@@ -175,21 +175,21 @@ export default function PrestamoCard({ prestamo: p, actions, esNuevo }) {
           />
           <div className="grid grid-cols-3 gap-2">
             <div>
-              <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>Pagado</p>
-              <p className="text-[12px] font-mono-display font-bold mt-0.5" style={{ color: pagadoColor }}>
+              <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>Pagado</p>
+              <p className="text-[13px] font-mono-display font-bold mt-0.5" style={{ color: pagadoColor }}>
                 {formatMoney(pagado)}
               </p>
             </div>
             <div className="text-center">
-              <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>Cuota</p>
-              <p className="text-[12px] font-mono-display font-bold mt-0.5" style={{ color: P.ink }}>
+              <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>Cuota</p>
+              <p className="text-[13px] font-mono-display font-bold mt-0.5" style={{ color: P.ink }}>
                 {formatMoney(p.cuotaDiaria)}
               </p>
             </div>
             <div className="text-right">
-              <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>Próx. cobro</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>Próx. cobro</p>
               <p
-                className="text-[12px] font-bold mt-0.5 capitalize truncate"
+                className="text-[13px] font-bold mt-0.5 capitalize truncate"
                 style={{ color: enMora ? P.accent : P.ink }}
                 title={proximoLabel || '—'}
               >

@@ -1,7 +1,5 @@
 // components/rutas/RutaCard.jsx
-// Tarjeta pastel premium de ruta (v4). La superficie completa toma el color
-// suave del estado del dia (% de cobro): menta meta cumplida, champan buen
-// ritmo, durazno atrasada, rosa critica, gris sin actividad. Olas sutiles.
+// Tarjeta pastel premium de ruta — superficie reactiva al progreso del dia.
 
 import { formatMoney } from '@/lib/i18n'
 import Link from 'next/link'
@@ -15,7 +13,7 @@ function moodLabel(progreso, esperadoHoy) {
   if (progreso >= 100) return 'Meta cumplida'
   if (progreso >= 60) return 'Buen ritmo'
   if (progreso >= 30) return 'Atrasada'
-  return 'Crítica'
+  return 'Critica'
 }
 
 export default function RutaCard({ ruta }) {
@@ -25,7 +23,6 @@ export default function RutaCard({ ruta }) {
     : 0
   const P = palettes[moodKeyRuta(progreso, ruta.esperadoHoy)]
   const label = moodLabel(progreso, ruta.esperadoHoy)
-
   const tieneCobrador = !!ruta.cobrador
 
   return (
@@ -33,7 +30,8 @@ export default function RutaCard({ ruta }) {
       as={Link}
       href={`/rutas/${ruta.id}`}
       padding={false}
-      className="block px-4 py-4 transition-all duration-200 group kpi-lift relative overflow-hidden"
+      className="block px-4 py-4 group relative overflow-hidden"
+      hoverable
       style={{
         background: P.grad,
         border: `1px solid ${P.border}`,
@@ -41,12 +39,17 @@ export default function RutaCard({ ruta }) {
       }}
     >
       <CardWaves tint={P.waves} />
+      {P.sheen && P.sheen !== 'none' && (
+        <>
+          <div className="absolute inset-0 pointer-events-none" style={{ background: P.sheen }} />
+          <div className="absolute inset-0 pointer-events-none" style={{ background: P.sheen, transform: 'scaleX(-1)', opacity: 0.5 }} />
+        </>
+      )}
 
       <div className="relative">
-        {/* Top: nombre + chip estado */}
-        <div className="flex items-center justify-between gap-3 mb-3">
+        {/* Top: icon + nombre + badge */}
+        <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-2.5 min-w-0">
-            {/* Icono ruta con color del estado */}
             <div
               className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
               style={{
@@ -62,17 +65,17 @@ export default function RutaCard({ ruta }) {
 
             <div className="min-w-0">
               <p className="text-sm font-bold truncate leading-tight" style={{ color: P.ink }}>{ruta.nombre}</p>
-              <div className="flex items-center gap-1.5 mt-0.5">
+              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                 {tieneCobrador ? (
                   <>
                     <Avatar nombre={ruta.cobrador.nombre} size={16} fontSize={7} />
-                    <span className="text-[10px] truncate" style={{ color: P.sub }}>{ruta.cobrador.nombre}</span>
+                    <span className="text-[11px] truncate" style={{ color: P.sub }}>{ruta.cobrador.nombre}</span>
                   </>
                 ) : (
-                  <span className="text-[10px]" style={{ color: P.sub }}>Sin cobrador</span>
+                  <span className="text-[11px]" style={{ color: P.sub }}>Sin cobrador</span>
                 )}
-                <span className="text-[10px]" style={{ color: P.sub }}>·</span>
-                <span className="text-[10px]" style={{ color: P.sub }}>
+                <span className="text-[11px]" style={{ color: P.sub }}>·</span>
+                <span className="text-[11px]" style={{ color: P.sub }}>
                   {ruta.cantidadClientes} cliente{ruta.cantidadClientes !== 1 ? 's' : ''}
                 </span>
               </div>
@@ -80,7 +83,7 @@ export default function RutaCard({ ruta }) {
           </div>
 
           <span
-            className="shrink-0 inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
+            className="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
             style={{
               background: `color-mix(in srgb, ${P.accent} 14%, transparent)`,
               color: P.accent,
@@ -96,15 +99,15 @@ export default function RutaCard({ ruta }) {
         <div className="mb-3">
           <div className="flex items-baseline justify-between gap-2 mb-1">
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: P.sub }}>Recaudado hoy</p>
-            <p className="text-[10px] font-mono-display font-bold" style={{ color: P.accent }}>{progreso}%</p>
+            <p className="text-[11px] font-mono-display font-bold" style={{ color: P.accent }}>{progreso}%</p>
           </div>
           <p
             className="font-mono-display font-bold leading-none tracking-tight"
-            style={{ color: P.ink, fontSize: 'clamp(20px, 5vw, 24px)' }}
+            style={{ color: P.ink, fontSize: 'clamp(22px, 5.5vw, 26px)' }}
           >
             {formatMoney(ruta.recaudadoHoy ?? 0)}
           </p>
-          <p className="text-[10px] mt-1" style={{ color: P.sub }}>
+          <p className="text-[11px] mt-1" style={{ color: P.sub }}>
             de {formatMoney(ruta.esperadoHoy ?? 0)} esperados
           </p>
         </div>

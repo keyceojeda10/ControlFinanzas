@@ -1,6 +1,5 @@
 // components/clientes/ClienteCard.jsx
-// Card de cliente con jerarquia visual clara.
-// Nombre completo siempre visible, datos financieros etiquetados y separados.
+// Tarjeta pastel premium del cliente — superficie completa reactiva al estado.
 
 import { formatMoney } from '@/lib/i18n'
 import Link from 'next/link'
@@ -11,37 +10,22 @@ import { NuevoChip } from '@/components/ui/BadgeNuevo'
 import CardWaves from '@/components/ui/CardWaves'
 import { useCardPalettes, moodKeyCliente } from '@/components/ui/tarjetaCredito'
 
-const COLOR_OK     = 'var(--color-accent)'
-const COLOR_HOT    = '#f97316'
-const COLOR_CRIT   = 'var(--color-danger)'
-const COLOR_OFF    = '#64748b'
-
-function moodColor(c) {
-  if (c.estado === 'cancelado' || c.estado === 'inactivo') return COLOR_OFF
-  if (c.diasMoraMax > 7) return COLOR_CRIT
-  if (c.estado === 'mora' || c.diasMoraMax > 0) return COLOR_HOT
-  return COLOR_OK
-}
-
 function moodLabel(c) {
   if (c.estado === 'cancelado') return 'Cancelado'
   if (c.estado === 'inactivo')  return 'Inactivo'
   if (c.diasMoraMax > 7)        return `${c.diasMoraMax}d en mora`
   if (c.estado === 'mora' || c.diasMoraMax > 0) return `${c.diasMoraMax || ''}d vencido`.trim()
-  if (c.pagoHoy)                return 'Pagó hoy'
-  return 'Al día'
+  if (c.pagoHoy)                return 'Pago hoy'
+  return 'Al dia'
 }
 
 export default function ClienteCard({ cliente, actions, esNuevo }) {
-  const { palettes } = useCardPalettes()
-  const color = moodColor(cliente)
+  const { palettes, pagado: pagadoColor } = useCardPalettes()
+  const P = palettes[moodKeyCliente(cliente, esNuevo)]
   const label = moodLabel(cliente)
   const saldoTotal = Number(cliente.saldoPendienteTotal ?? 0)
   const tienePrestamo = (cliente.prestamosActivos ?? 0) > 0
   const porcentaje = Math.max(0, Math.min(100, cliente.porcentajePagadoPromedio ?? 0))
-
-  const P = tienePrestamo ? palettes[moodKeyCliente(cliente, esNuevo)] : null
-  const tintColor = P ? P.accent : color
 
   return (
     <Card
@@ -49,164 +33,178 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
       href={`/clientes/${cliente.id}`}
       padding={false}
       hoverable
-      className="block px-4 py-3.5 group relative overflow-hidden"
-      style={P ? {
-        background: `color-mix(in srgb, ${tintColor} 8%, var(--color-bg-card))`,
-        border: `1px solid color-mix(in srgb, ${tintColor} 22%, var(--color-border))`,
-      } : undefined}
+      className="block px-4 py-4 group relative overflow-hidden"
+      style={{
+        background: P.grad,
+        border: `1px solid ${P.border}`,
+        boxShadow: P.shadow,
+      }}
     >
+      <CardWaves tint={P.waves} />
+      {P.sheen && P.sheen !== 'none' && (
+        <>
+          <div className="absolute inset-0 pointer-events-none" style={{ background: P.sheen }} />
+          <div className="absolute inset-0 pointer-events-none" style={{ background: P.sheen, transform: 'scaleX(-1)', opacity: 0.5 }} />
+        </>
+      )}
 
       <div className="relative">
-      {/* ── Seccion superior: identidad del cliente ── */}
-      <div className="flex items-start gap-3">
-        {/* Avatar */}
-        <div className="relative shrink-0 mt-0.5">
-          <Avatar
-            nombre={cliente.nombre}
-            fotoUrl={cliente.fotoUrl}
-            size={40}
-            fontSize={14}
-            style={cliente.fotoUrl ? { border: `2px solid ${color}` } : undefined}
-          />
-          {cliente.pagoHoy && (
-            <span
-              className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full"
-              style={{ background: 'var(--color-success)', border: '2px solid var(--color-bg-card)' }}
-            />
-          )}
+        {/* Top: avatar + nombre + badges */}
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="relative shrink-0">
+              <Avatar
+                nombre={cliente.nombre}
+                fotoUrl={cliente.fotoUrl}
+                size={36}
+                fontSize={13}
+                style={{ border: `2px solid color-mix(in srgb, ${P.ink} 20%, transparent)` }}
+              />
+              {cliente.pagoHoy && (
+                <span
+                  className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full"
+                  style={{ background: P.accent, border: '2px solid rgba(0,0,0,0.2)' }}
+                />
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold truncate leading-tight" style={{ color: P.ink }}>
+                {cliente.nombre}
+              </p>
+              {cliente.cedula && !cliente.cedula.startsWith('SIN-') && (
+                <p className="text-[11px] mt-0.5" style={{ color: P.sub }}>CC {cliente.cedula}</p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex flex-col items-end gap-1">
+              {cliente.tieneClavo && (
+                <span
+                  className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
+                  style={{ background: 'color-mix(in srgb, var(--color-danger) 15%, transparent)', color: 'var(--color-danger)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)' }}
+                >Perdido</span>
+              )}
+              <span
+                className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
+                style={{
+                  background: `color-mix(in srgb, ${P.accent} 14%, transparent)`,
+                  color: P.accent,
+                  border: `1px solid color-mix(in srgb, ${P.accent} 26%, transparent)`,
+                }}
+              >
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: P.accent }} />
+                {label}
+              </span>
+              {cliente.grupoCobro && (
+                <span
+                  className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full"
+                  style={{
+                    color: P.sub,
+                    background: `color-mix(in srgb, ${P.ink} 8%, transparent)`,
+                    border: `1px solid color-mix(in srgb, ${P.ink} 14%, transparent)`,
+                  }}
+                >
+                  <span className="w-1 h-1 rounded-full" style={{ background: cliente.grupoCobro.color || P.accent }} />
+                  {cliente.grupoCobro.nombre}
+                </span>
+              )}
+              {esNuevo && label !== 'Nuevo' && <NuevoChip />}
+            </div>
+            {actions?.length > 0 && <CardActionMenu actions={actions} />}
+          </div>
         </div>
 
-        {/* Nombre + Cedula */}
-        <div className="flex-1 min-w-0">
-          <p className="text-[14px] font-semibold text-[var(--color-text-primary)] leading-tight">
-            {cliente.nombre}
-          </p>
-          {cliente.cedula && !cliente.cedula.startsWith('SIN-') && (
-            <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">CC {cliente.cedula}</p>
-          )}
-        </div>
+        {/* Cobrador + lineas credito (inline) */}
+        {(cliente.creadoPor || (cliente.lineasCreditoActivas ?? 0) > 0) && (
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
+            {cliente.creadoPor && (
+              <span
+                className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full"
+                style={{ color: P.sub, background: `color-mix(in srgb, ${P.ink} 6%, transparent)`, border: `1px solid color-mix(in srgb, ${P.ink} 12%, transparent)` }}
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                </svg>
+                {cliente.creadoPor.nombre || 'Cobrador'}
+              </span>
+            )}
+            {(cliente.lineasCreditoActivas ?? 0) > 0 && (
+              <span
+                className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full"
+                style={{ color: P.sub, background: `color-mix(in srgb, ${P.ink} 6%, transparent)`, border: `1px solid color-mix(in srgb, ${P.ink} 12%, transparent)` }}
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+                {cliente.lineasCreditoActivas > 1 ? `${cliente.lineasCreditoActivas} lineas` : 'Linea credito'}
+              </span>
+            )}
+          </div>
+        )}
 
-        {/* Badges apilados a la derecha */}
-        <div className="flex flex-col items-end gap-1 shrink-0">
-          {cliente.tieneClavo && (
-            <span
-              className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap"
-              style={{ background: 'color-mix(in srgb, var(--color-danger) 15%, transparent)', color: 'var(--color-danger)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)' }}
-            >Perdido</span>
-          )}
-          <span
-            className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
-            style={{
-              background: `color-mix(in srgb, ${color} 13%, transparent)`,
-              color,
-              border: `1px solid color-mix(in srgb, ${color} 21%, transparent)`,
-            }}
-          >
-            <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
-            {label}
-          </span>
-          {cliente.grupoCobro && (
-            <span
-              className="inline-flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded-full"
-              style={{
-                color: cliente.grupoCobro.color || 'var(--color-accent)',
-                background: `${cliente.grupoCobro.color || 'var(--color-accent)'}14`,
-                border: `1px solid ${cliente.grupoCobro.color || 'var(--color-accent)'}30`,
-              }}
-            >
-              <span className="w-1 h-1 rounded-full" style={{ background: cliente.grupoCobro.color || 'var(--color-accent)' }} />
-              {cliente.grupoCobro.nombre}
-            </span>
-          )}
-          {cliente.creadoPor && (
-            <span
-              className="inline-flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded-full"
-              style={{
-                color: 'var(--color-text-secondary)',
-                background: 'var(--color-bg-hover)',
-                border: '1px solid var(--color-border)',
-              }}
-            >
-              <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-              </svg>
-              {cliente.creadoPor.nombre || 'Cobrador'}
-            </span>
-          )}
-          {esNuevo && <NuevoChip />}
-          {(cliente.lineasCreditoActivas ?? 0) > 0 && (
-            <span
-              className="inline-flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded-full"
-              style={{
-                color: '#8b5cf6',
-                background: '#8b5cf614',
-                border: '1px solid #8b5cf630',
-              }}
-            >
-              <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-              </svg>
-              {cliente.lineasCreditoActivas > 1 ? `${cliente.lineasCreditoActivas} líneas` : 'Línea crédito'}
-            </span>
-          )}
-        </div>
+        {/* Saldo pendiente (hero) */}
+        {tienePrestamo && (
+          <>
+            <div className="mb-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] mb-1" style={{ color: P.sub }}>
+                Saldo pendiente
+              </p>
+              <p
+                className="font-mono-display font-bold leading-none tracking-tight"
+                style={{ color: P.ink, fontSize: 'clamp(22px, 6vw, 28px)' }}
+              >
+                {formatMoney(saldoTotal)}
+              </p>
+            </div>
 
-        {/* Kebab menu */}
-        {actions?.length > 0 && <CardActionMenu actions={actions} />}
-      </div>
-
-      {/* ── Seccion financiera: tarjeta pastel del estado (solo si tiene prestamo) ──
-          Superficie suave + tinta profunda + olas sutiles. Reactiva: al dia
-          champan, nuevo azul lavanda, vencido durazno, mora rosa, off gris. */}
-      {tienePrestamo && P && (() => {
-        return (
-          <div
-            className="mt-3 relative overflow-hidden rounded-[14px] px-4 py-3.5"
-            style={{
-              background: P.grad,
-              border: `1px solid ${P.border}`,
-              boxShadow: P.shadow,
-            }}
-          >
-            <CardWaves tint={P.waves} />
-            <div className="relative">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-[9px] font-semibold uppercase tracking-[0.16em]" style={{ color: P.sub }}>
-                    Saldo pendiente
-                  </p>
-                  <p className="text-[22px] font-mono-display font-bold leading-none mt-1" style={{ color: P.ink }}>
-                    {formatMoney(saldoTotal)}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] font-medium" style={{ color: P.sub }}>
-                    {cliente.prestamosActivos} préstamo{cliente.prestamosActivos > 1 ? 's' : ''}
-                  </p>
-                  {cliente.proximoCobroLabel && (
-                    <p className="text-[10px] font-semibold mt-0.5 capitalize" style={{ color: cliente.diasMoraMax > 0 ? P.accent : P.ink }}>
-                      {cliente.diasMoraMax > 0 ? 'Vencido' : 'Cobro'}: {cliente.proximoCobroLabel}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Barra de progreso */}
-              <div className="mt-3 h-[5px] rounded-full overflow-hidden" style={{ background: P.track }}>
+            {/* Progress bar */}
+            <div className="mb-3">
+              <div className="h-[5px] rounded-full overflow-hidden" style={{ background: P.track }}>
                 <div
-                  className="h-full rounded-full transition-all"
+                  className="h-full rounded-full transition-[width] duration-500"
                   style={{ width: `${Math.max(porcentaje, 2)}%`, background: P.accent }}
                 />
               </div>
-              <div className="flex items-center justify-between mt-1.5 text-[10px]">
+              <div className="flex items-center justify-between text-[11px] mt-1.5">
                 <span style={{ color: P.sub }}>
                   <span className="font-mono-display font-bold" style={{ color: P.accent }}>{porcentaje}%</span> pagado
                 </span>
               </div>
             </div>
+
+            {/* Footer stats */}
+            <div className="relative pt-3 mt-1">
+              <div
+                className="absolute top-0 left-[10%] right-[10%] h-px"
+                style={{ background: `linear-gradient(90deg, transparent, ${P.accent}33, transparent)` }}
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>Prestamos</p>
+                  <p className="text-[13px] font-mono-display font-bold mt-0.5" style={{ color: P.ink }}>
+                    {cliente.prestamosActivos}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>Prox. cobro</p>
+                  <p
+                    className="text-[13px] font-bold mt-0.5 capitalize truncate"
+                    style={{ color: cliente.diasMoraMax > 0 ? P.accent : P.ink }}
+                  >
+                    {cliente.proximoCobroLabel || '--'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Sin prestamo activo */}
+        {!tienePrestamo && (
+          <div className="mt-1 px-3 py-2 rounded-[10px]" style={{ background: `color-mix(in srgb, ${P.ink} 5%, transparent)` }}>
+            <p className="text-[11px]" style={{ color: P.sub }}>Sin prestamos activos</p>
           </div>
-        )
-      })()}
+        )}
       </div>
     </Card>
   )

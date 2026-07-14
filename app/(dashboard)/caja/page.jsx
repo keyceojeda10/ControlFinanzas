@@ -1312,15 +1312,15 @@ export default function CajaPage() {
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-[11px]">
                   <div className="rounded-[8px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2">
-                    <p className="text-[var(--color-text-muted)] uppercase tracking-wide text-[9px]">Esperado</p>
+                    <p className="text-[var(--color-text-muted)] uppercase tracking-wide text-[10px]">Esperado</p>
                     <p className="font-semibold font-mono-display text-[var(--color-text-primary)]">{formatMoney(cierreOwner.totalEsperado)}</p>
                   </div>
                   <div className="rounded-[8px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2">
-                    <p className="text-[var(--color-text-muted)] uppercase tracking-wide text-[9px]">Gastos</p>
+                    <p className="text-[var(--color-text-muted)] uppercase tracking-wide text-[10px]">Gastos</p>
                     <p className="font-semibold font-mono-display text-[var(--color-danger)]">{formatMoney(cierreOwner.totalGastos || 0)}</p>
                   </div>
                   <div className="rounded-[8px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2">
-                    <p className="text-[var(--color-text-muted)] uppercase tracking-wide text-[9px]">Prestado</p>
+                    <p className="text-[var(--color-text-muted)] uppercase tracking-wide text-[10px]">Prestado</p>
                     <p className="font-semibold font-mono-display text-[var(--color-warning)]">{formatMoney(cierreOwner.totalDesembolsado || 0)}</p>
                   </div>
                 </div>

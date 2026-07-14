@@ -224,7 +224,7 @@ export function PrestamoHeroCard({ prestamo, narrativa, sparklineData }) {
 
         {sparklineData && sparklineData.length > 0 && (
           <div className="mt-4">
-            <p className="text-[9px] uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-muted)' }}>Pagos últimos 14 días</p>
+            <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-muted)' }}>Pagos últimos 14 días</p>
             <MiniSparkline data={sparklineData} color={color} height={36} />
           </div>
         )}
@@ -538,11 +538,11 @@ export function GrillaDatosSecciones({ secciones }) {
           <div className="grid grid-cols-2 gap-2">
             {sec.items.map((it) => (
               <div key={it.label} className="rounded-[8px] px-2.5 py-1.5" style={{ background: `color-mix(in srgb, ${sec.color} 5%, var(--color-bg-base))` }}>
-                <p className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>{it.label}</p>
-                <p className="text-[12px] font-semibold mt-0.5 font-mono-display" style={{ color: it.color || 'var(--color-text-primary)' }}>
+                <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{it.label}</p>
+                <p className="text-[13px] font-semibold mt-0.5 font-mono-display" style={{ color: it.color || 'var(--color-text-primary)' }}>
                   {it.value}
                 </p>
-                {it.sub && <p className="text-[9px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{it.sub}</p>}
+                {it.sub && <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{it.sub}</p>}
               </div>
             ))}
           </div>
@@ -615,7 +615,7 @@ export function TimelinePrestamo({ fechaInicio, fechaFin, porcentajePagado, colo
         />
         {/* Etiqueta "Hoy" */}
         <div
-          className="absolute top-full mt-0.5 -translate-x-1/2 text-[8px] font-semibold whitespace-nowrap"
+          className="absolute top-full mt-0.5 -translate-x-1/2 text-[10px] font-semibold whitespace-nowrap"
           style={{ left: `${animTiempo}%`, color }}
         >
           Hoy
@@ -625,11 +625,11 @@ export function TimelinePrestamo({ fechaInicio, fechaFin, porcentajePagado, colo
       {/* Etiquetas de inicio/fin */}
       <div className="flex items-center justify-between text-[10px] mt-3" style={{ color: 'var(--color-text-muted)' }}>
         <div>
-          <p className="text-[9px] uppercase tracking-wider">Inicio</p>
+          <p className="text-[10px] uppercase tracking-wider">Inicio</p>
           <p className="font-medium" style={{ color: 'var(--color-text-secondary)' }}>{fmtFechaCorta(fechaInicio)}</p>
         </div>
         <div className="text-right">
-          <p className="text-[9px] uppercase tracking-wider">Vencimiento</p>
+          <p className="text-[10px] uppercase tracking-wider">Vencimiento</p>
           <p className="font-medium" style={{ color: 'var(--color-text-secondary)' }}>{fmtFechaCorta(fechaFin)}</p>
         </div>
       </div>
@@ -737,7 +737,7 @@ export function PagoMiniCard({ pago, onAnular, anulando, isOffline, children }) 
                 : 'color-mix(in srgb, var(--color-success) 12%, transparent)')
               return (
                 <span
-                  className="inline-flex items-center gap-1 ml-1 px-1.5 py-0.5 rounded-[5px] text-[9px] font-semibold"
+                  className="inline-flex items-center gap-1 ml-1 px-1.5 py-0.5 rounded-[6px] text-[10px] font-semibold"
                   style={{ background: badgeBg, color: badgeColor }}
                 >
                   {platInfo

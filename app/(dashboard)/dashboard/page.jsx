@@ -282,7 +282,7 @@ function Sparkline({ data, color = 'var(--color-success)', ariaLabel, etiquetasD
             zIndex: 10,
           }}
         >
-          <p className="text-[9px] uppercase tracking-wider mb-0.5" style={{ color: tooltipBg ? 'rgba(245, 197, 24, 0.6)' : (mutedColor || 'var(--color-text-muted)') }}>{dias[activeIdx]}</p>
+          <p className="text-[10px] uppercase tracking-wider mb-0.5" style={{ color: tooltipBg ? 'rgba(245, 197, 24, 0.6)' : (mutedColor || 'var(--color-text-muted)') }}>{dias[activeIdx]}</p>
           <p className="font-mono-display font-bold" style={{ color: tooltipText || color }}>{formatMoney(activePoint[2])}</p>
         </div>
       )}
@@ -329,7 +329,7 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
           {hasInfo && (
             <button
               onClick={(e) => { e.stopPropagation(); if (!showInfo) setShowInfo(true) }}
-              className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold ml-auto cursor-pointer transition-transform hover:scale-110"
+              className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ml-auto cursor-pointer transition-transform hover:scale-110"
               style={{ background: `color-mix(in srgb, ${HERO_INK} 12%, transparent)`, color: HERO_INK }}
               aria-label="Ver información"
             >
@@ -505,7 +505,7 @@ function Heatmap30d({ data, color = '#34d399', label = 'Cobros últimos 30 días
           />
         ))}
       </div>
-      <div className="flex items-center justify-between gap-2 mt-3 text-[9px]" style={{ color: 'var(--color-text-muted)' }}>
+      <div className="flex items-center justify-between gap-2 mt-3 text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
         <span>Hace 30 días</span>
         <div className="flex items-center gap-1">
           <span>menos</span>
@@ -589,7 +589,7 @@ function KpiCard({ label, value, valueRaw, format = 'cop', sub, color = 'var(--c
           {hasInfo && (
             <span
               aria-hidden
-              className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold pointer-events-none"
+              className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold pointer-events-none"
               style={{ background: `color-mix(in srgb, ${color} 25%, transparent)`, color }}
             >
               i
@@ -758,7 +758,7 @@ function RecaudoCard({ label, color, colorHex, monto, cantidad, cuotaDiaria, ext
         {hasInfo && (
           <span
             aria-hidden
-            className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold pointer-events-none"
+            className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold pointer-events-none"
             style={{ background: `color-mix(in srgb, ${colorHex} 25%, transparent)`, color: colorHex }}
           >
             i
@@ -790,7 +790,7 @@ function RecaudoCard({ label, color, colorHex, monto, cantidad, cuotaDiaria, ext
           <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
             <div className="h-full rounded-full progress-shimmer transition-all" style={{ width: `${pct}%` }} />
           </div>
-          <p className="text-[9px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{pct}% de la cuota diaria</p>
+          <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{pct}% de la cuota diaria</p>
         </>
       )}
       {extraSub && (
@@ -869,7 +869,7 @@ function ComparativoChip({ actual, anterior }) {
   if (anterior === undefined || anterior === null) return null
   const diff = actual - anterior
   if (Math.abs(diff) < 1) return (
-    <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium" style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)' }}>
+    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)' }}>
       = vs ayer
     </span>
   )
@@ -877,7 +877,7 @@ function ComparativoChip({ actual, anterior }) {
   const color = positivo ? 'var(--color-success)' : 'var(--color-danger)'
   const arrow = positivo ? '↑' : '↓'
   return (
-    <span className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold inline-flex items-center gap-0.5" style={{ background: `color-mix(in srgb, ${color} 15%, transparent)`, color }}>
+    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold inline-flex items-center gap-0.5" style={{ background: `color-mix(in srgb, ${color} 15%, transparent)`, color }}>
       <span>{arrow}</span>
       <span>{formatMoney(Math.abs(diff))}</span>
       <span style={{ opacity: 0.7 }}>vs ayer</span>
@@ -1656,20 +1656,34 @@ export default function DashboardPage() {
           {/* Strip de 4 KPIs clave — siempre visibles para owner */}
           {esOwner && (
             <div className="grid grid-cols-2 lg:grid-cols-1 gap-3">
-              <Link href="/clientes?filtro=mora" className="rounded-[12px] px-3 py-3 transition-all hover:scale-[1.01]" style={{ background: data.clientes.enMora > 0 ? 'color-mix(in srgb, var(--color-danger) 10%, var(--color-bg-card))' : 'var(--color-bg-card)', border: `1px solid ${data.clientes.enMora > 0 ? 'color-mix(in srgb, var(--color-danger) 25%, var(--color-border))' : 'var(--color-border)'}` }}>
-                <p className="text-[10px] mb-0.5" style={{ color: 'var(--color-text-muted)' }}>Clientes en mora</p>
-                <p className="text-2xl font-bold font-mono-display" style={{ color: data.clientes.enMora > 0 ? 'var(--color-danger)' : 'var(--color-success)' }}>{data.clientes.enMora}</p>
-                <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{data.clientes.enMora === 0 ? 'Todo al día' : `de ${data.clientes.total} activos`}</p>
+              <Link href="/clientes?filtro=mora" className="rounded-[16px] px-4 py-4 transition-all hover:scale-[1.01] relative overflow-hidden group/stat" style={{ background: data.clientes.enMora > 0 ? 'color-mix(in srgb, var(--color-danger) 10%, var(--color-bg-card))' : 'color-mix(in srgb, var(--color-success) 6%, var(--color-bg-card))', border: `1px solid ${data.clientes.enMora > 0 ? 'color-mix(in srgb, var(--color-danger) 25%, var(--color-border))' : 'color-mix(in srgb, var(--color-success) 20%, var(--color-border))'}`, boxShadow: data.clientes.enMora > 0 ? '0 4px 16px color-mix(in srgb, var(--color-danger) 12%, transparent)' : '0 4px 16px rgba(0,0,0,0.08)' }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: data.clientes.enMora > 0 ? 'color-mix(in srgb, var(--color-danger) 15%, transparent)' : 'color-mix(in srgb, var(--color-success) 12%, transparent)' }}>
+                    <svg className="w-4 h-4" fill="none" stroke={data.clientes.enMora > 0 ? 'var(--color-danger)' : 'var(--color-success)'} strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                    </svg>
+                  </div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Clientes en mora</p>
+                </div>
+                <p className="text-3xl font-bold font-mono-display leading-none" style={{ color: data.clientes.enMora > 0 ? 'var(--color-danger)' : 'var(--color-success)' }}>{data.clientes.enMora}</p>
+                <p className="text-[11px] mt-1.5" style={{ color: 'var(--color-text-muted)' }}>{data.clientes.enMora === 0 ? 'Todo al dia' : `de ${data.clientes.total} activos`}</p>
               </Link>
               {capitalData ? (
-                <Link href="/caja" className="rounded-[12px] px-3 py-3 transition-all hover:scale-[1.01]" style={{ background: 'color-mix(in srgb, #06b6d4 8%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, #06b6d4 20%, var(--color-border))' }}>
-                  <p className="text-[10px] mb-0.5" style={{ color: 'var(--color-text-muted)' }}>Saldo en caja</p>
-                  <p className="text-xl font-bold font-mono-display truncate" style={{ color: capitalData.saldo < 0 ? 'var(--color-danger)' : '#06b6d4' }}>{formatMoney(capitalData.saldo)}</p>
-                  <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Para prestar ahora</p>
+                <Link href="/caja" className="rounded-[16px] px-4 py-4 transition-all hover:scale-[1.01] relative overflow-hidden" style={{ background: 'color-mix(in srgb, #06b6d4 8%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, #06b6d4 20%, var(--color-border))', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, #06b6d4 12%, transparent)' }}>
+                      <svg className="w-4 h-4" fill="none" stroke="#06b6d4" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Saldo en caja</p>
+                  </div>
+                  <p className="text-2xl font-bold font-mono-display leading-none truncate" style={{ color: capitalData.saldo < 0 ? 'var(--color-danger)' : '#06b6d4' }}>{formatMoney(capitalData.saldo)}</p>
+                  <p className="text-[11px] mt-1.5" style={{ color: 'var(--color-text-muted)' }}>Para prestar ahora</p>
                 </Link>
               ) : (
-                <Link href="/caja" className="rounded-[12px] px-3 py-3 transition-all hover:scale-[1.01]" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
-                  <p className="text-[10px] mb-0.5" style={{ color: 'var(--color-text-muted)' }}>Saldo en caja</p>
+                <Link href="/caja" className="rounded-[16px] px-4 py-4 transition-all hover:scale-[1.01]" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--color-text-muted)' }}>Saldo en caja</p>
                   <p className="text-sm font-medium" style={{ color: 'var(--color-text-muted)' }}>Ver caja →</p>
                 </Link>
               )}
@@ -1969,7 +1983,7 @@ export default function DashboardPage() {
                           <div className="flex items-center gap-2">
                             <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{c.nombre}</p>
                             {inactivo && (
-                              <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-md shrink-0" style={{ background: 'color-mix(in srgb, var(--color-danger) 15%, transparent)', color: 'var(--color-danger)' }}>
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md shrink-0" style={{ background: 'color-mix(in srgb, var(--color-danger) 15%, transparent)', color: 'var(--color-danger)' }}>
                                 Inactivo
                               </span>
                             )}
@@ -1990,7 +2004,7 @@ export default function DashboardPage() {
                           <div className="flex items-center justify-end gap-1 mt-0.5">
                             <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{c.pagosHoy} cobros</span>
                             {c.cajaCerrada && (
-                              <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-md" style={{
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md" style={{
                                 background: c.cajaDiferencia === 0
                                   ? 'color-mix(in srgb, var(--color-success) 15%, transparent)'
                                   : 'color-mix(in srgb, var(--color-warning) 15%, transparent)',
