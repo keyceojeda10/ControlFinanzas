@@ -306,7 +306,7 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
 
   return (
     <div
-      className="cf-hero-card relative rounded-[20px] overflow-hidden kpi-lift elevation-2"
+      className="cf-hero-card relative rounded-[20px] overflow-hidden kpi-lift elevation-2 h-full"
       style={{
         background: HERO_GRAD,
         border: '1px solid rgba(180, 140, 10, 0.35)',
