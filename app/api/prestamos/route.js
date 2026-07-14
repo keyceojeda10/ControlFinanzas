@@ -8,6 +8,7 @@ import {
   calcularDiasMora,
   calcularSaldoPendiente,
   calcularPorcentajePagado,
+  calcularCapitalRestante,
   calcularProximoCobro,
   pagoHoy,
 } from '@/lib/calculos'
@@ -38,6 +39,7 @@ export async function GET(request) {
   const rutaId    = searchParams.get('rutaId')
   const creadoPorId = searchParams.get('creadoPorId')
   const renovacion = searchParams.get('renovacion') // 'si' | 'no' | null
+  const modoInteres = searchParams.get('modoInteres')
   const page      = searchParams.get('page') ? Number(searchParams.get('page')) : null
   const limit     = Math.min(Number(searchParams.get('limit')) || 50, 100)
 
@@ -64,6 +66,7 @@ export async function GET(request) {
     ...(creadoPorId && { creadoPorId }),
     ...(renovacion === 'si' && { renovadoDeId: { not: null } }),
     ...(renovacion === 'no' && { renovadoDeId: null }),
+    ...(modoInteres && { modoInteres }),
     ...(Object.keys(clienteWhere).length > 0 && { cliente: clienteWhere }),
   }
 
@@ -80,7 +83,7 @@ export async function GET(request) {
       },
       cuotasAmortizacion: {
         orderBy: { numeroPeriodo: 'asc' },
-        select: { numeroPeriodo: true, cuotaTotal: true, interes: true, pagado: true, interesPagado: true, fechaEsperada: true },
+        select: { numeroPeriodo: true, cuotaTotal: true, interes: true, capital: true, pagado: true, interesPagado: true, fechaEsperada: true },
       },
     },
     orderBy: [
@@ -145,12 +148,14 @@ export async function GET(request) {
     fechaInicio:      p.fechaInicio,
     fechaFin:         p.fechaFin,
     estado:           p.estado,
+    modoInteres:      p.modoInteres,
     createdAt:        p.createdAt,
     ultimoPagoAt:     p.ultimoPagoAt,
     // Usa el campo denormalizado (mantenido por refrescarTotalesPrestamo).
     totalPagado:      p.totalPagado ?? 0,
     saldoPendiente:   calcularSaldoPendiente(p),
     porcentajePagado: calcularPorcentajePagado(p),
+    capitalRestante:  calcularCapitalRestante(p),
     diasMora:         calcularDiasMora(p, diasExcluidos, festivos),
     pagoHoy:          pagoHoy(p),
     proximoCobro:     calcularProximoCobro(p, diasExcluidos, festivos),

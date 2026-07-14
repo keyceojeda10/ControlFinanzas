@@ -25,6 +25,12 @@ function moodLabel(p, esNuevo) {
   return 'Al día'
 }
 
+const MODO_TAG = {
+  fijo: 'Cuota fija', unico: 'De una vez', solo_interes: 'Globo',
+  saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente',
+  lineal_dinamico: 'Dinamico', proporcional: 'Proporcional',
+}
+
 export default function PrestamoCard({ prestamo: p, actions, esNuevo }) {
   const { palettes, pagado: pagadoColor } = useCardPalettes()
   const P               = palettes[moodKeyPrestamo(p, esNuevo)]
@@ -118,6 +124,14 @@ export default function PrestamoCard({ prestamo: p, actions, esNuevo }) {
                 <span className="w-1.5 h-1.5 rounded-full" style={{ background: P.accent }} />
                 {label}
               </span>
+              {p.modoInteres && MODO_TAG[p.modoInteres] && (
+                <span
+                  className="text-[9px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
+                  style={{ background: `color-mix(in srgb, ${P.ink} 8%, transparent)`, color: P.sub, border: `1px solid color-mix(in srgb, ${P.ink} 14%, transparent)` }}
+                >
+                  {MODO_TAG[p.modoInteres]}
+                </span>
+              )}
               {esNuevo && label !== 'Nuevo' && <NuevoChip />}
             </div>
             {actions?.length > 0 && <CardActionMenu actions={actions} />}

@@ -48,6 +48,17 @@ const FRECUENCIAS = [
   { value: 'mensual',   label: 'Mensuales'  },
 ]
 
+const MODOS_INTERES = [
+  { value: '',                label: 'Todo modo' },
+  { value: 'fijo',            label: 'Cuota fija' },
+  { value: 'unico',           label: 'De una vez' },
+  { value: 'solo_interes',    label: 'Globo' },
+  { value: 'saldo',           label: 'Sobre saldo' },
+  { value: 'manual',          label: 'Manual' },
+  { value: 'lineal',          label: 'Decreciente' },
+  { value: 'lineal_dinamico', label: 'Dinamico' },
+]
+
 const LIMIT = 50
 
 const VISTA_KEY_P = 'cf-prestamos-vista'
@@ -57,6 +68,12 @@ const P_COLOR_HOT  = '#f97316'
 const P_COLOR_CRIT = 'var(--color-danger)'
 const P_COLOR_DONE = 'var(--color-success)'
 const P_COLOR_OFF  = '#64748b'
+
+const MODO_TAG = {
+  fijo: 'Cuota fija', unico: 'De una vez', solo_interes: 'Globo',
+  saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente',
+  lineal_dinamico: 'Dinamico', proporcional: 'Proporcional',
+}
 
 function pMoodColor(p) {
   if (p.estado === 'completado') return P_COLOR_DONE
@@ -103,15 +120,25 @@ function PrestamoCardCompacto({ prestamo: p, esNuevo }) {
         </p>
       </div>
 
-      {/* Row 2: estado + monto */}
+      {/* Row 2: estado + modo + monto */}
       <div className="flex items-center justify-between gap-1 mb-1.5">
-        <span
-          className="inline-flex items-center gap-0.5 text-[8px] font-semibold px-1.5 py-px rounded-full shrink-0"
-          style={{ background: `color-mix(in srgb, ${color} 13%, transparent)`, color, border: `1px solid color-mix(in srgb, ${color} 21%, transparent)` }}
-        >
-          <span className="w-1 h-1 rounded-full" style={{ background: color }} />
-          {label}
-        </span>
+        <div className="flex items-center gap-1 min-w-0">
+          <span
+            className="inline-flex items-center gap-0.5 text-[8px] font-semibold px-1.5 py-px rounded-full shrink-0"
+            style={{ background: `color-mix(in srgb, ${color} 13%, transparent)`, color, border: `1px solid color-mix(in srgb, ${color} 21%, transparent)` }}
+          >
+            <span className="w-1 h-1 rounded-full" style={{ background: color }} />
+            {label}
+          </span>
+          {p.modoInteres && MODO_TAG[p.modoInteres] && (
+            <span
+              className="text-[7px] font-semibold px-1.5 py-px rounded-full shrink-0"
+              style={{ background: 'color-mix(in srgb, #a855f7 10%, transparent)', color: '#a855f7', border: '1px solid color-mix(in srgb, #a855f7 20%, transparent)' }}
+            >
+              {MODO_TAG[p.modoInteres]}
+            </span>
+          )}
+        </div>
         <span className="text-[13px] font-mono-display font-bold truncate" style={{ color: p.diasMora > 0 ? color : 'var(--color-text-primary)' }}>
           {formatMoney(p.saldoPendiente)}
         </span>
@@ -161,6 +188,7 @@ export default function PrestamosPage() {
   const [buscar,    setBuscar]    = useState('')
   const [estado,    setEstado]    = useState(() => searchParams?.get('estado') || 'activo')
   const [frecuencia, setFrecuencia] = useState(() => searchParams?.get('frecuencia') || '')
+  const [modoInteres, setModoInteres] = useState('')
   const [rutaId,    setRutaId]    = useState('')
   const [renovacion, setRenovacion] = useState('')
   const [loading,   setLoading]   = useState(true)
@@ -219,11 +247,11 @@ export default function PrestamosPage() {
     })
   }, [])
 
-  const fetchPrestamos = useCallback(async (q, est, p, { soft = false, frec = '', ruta = '', creador = '', renov = '' } = {}) => {
+  const fetchPrestamos = useCallback(async (q, est, p, { soft = false, frec = '', ruta = '', creador = '', renov = '', modo = '' } = {}) => {
     const shouldUseSoftRefresh = soft && hasLoadedOnceRef.current
     setError('')
     setIsOffline(false)
-    const cacheKey = `prestamos:${q || ''}:${est || ''}:${frec || ''}:${ruta || ''}:${creador || ''}:${renov || ''}:${p}`
+    const cacheKey = `prestamos:${q || ''}:${est || ''}:${frec || ''}:${ruta || ''}:${creador || ''}:${renov || ''}:${modo || ''}:${p}`
 
     // Cache-first: pintar al instante desde IndexedDB si hay datos de este
     // filtro, y revalidar en segundo plano. Sin cache → skeleton.
@@ -279,6 +307,7 @@ export default function PrestamosPage() {
       if (ruta) params.set('rutaId', ruta)
       if (creador) params.set('creadoPorId', creador)
       if (renov) params.set('renovacion', renov)
+      if (modo) params.set('modoInteres', modo)
       params.set('page', String(p))
       params.set('limit', String(LIMIT))
       const res = await fetch(`/api/prestamos?${params}`)
@@ -328,15 +357,15 @@ export default function PrestamosPage() {
   }, [])
 
   const rutaSeleccionada = rutas.find(r => r.id === rutaId)
-  const filtrosExtra = { frec: frecuencia, ruta: rutaId, creador: rutaSeleccionada?.cobradorId || '', renov: renovacion }
+  const filtrosExtra = { frec: frecuencia, ruta: rutaId, creador: rutaSeleccionada?.cobradorId || '', renov: renovacion, modo: modoInteres }
 
-  useEffect(() => { setPage(1); fetchPrestamos('', estado, 1, filtrosExtra) }, [fetchPrestamos, estado, frecuencia, rutaId, renovacion]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setPage(1); fetchPrestamos('', estado, 1, filtrosExtra) }, [fetchPrestamos, estado, frecuencia, rutaId, renovacion, modoInteres]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     setPage(1)
     const t = setTimeout(() => fetchPrestamos(buscar, estado, 1, filtrosExtra), 300)
     return () => clearTimeout(t)
-  }, [buscar, estado, frecuencia, rutaId, renovacion, fetchPrestamos]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [buscar, estado, frecuencia, rutaId, renovacion, modoInteres, fetchPrestamos]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cambio de página
   useEffect(() => {
@@ -347,7 +376,7 @@ export default function PrestamosPage() {
   useEffect(() => {
     if (!lastSyncedAt) return
     fetchPrestamos(buscar, estado, page, { soft: true, ...filtrosExtra })
-  }, [lastSyncedAt, fetchPrestamos, buscar, estado, frecuencia, rutaId, renovacion, page]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [lastSyncedAt, fetchPrestamos, buscar, estado, frecuencia, rutaId, renovacion, modoInteres, page]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const enMoraCount = prestamos.filter((p) => p.diasMora > 0).length
 
@@ -428,6 +457,28 @@ export default function PrestamosPage() {
             <button
               key={value || 'todas'}
               onClick={() => setFrecuencia(value)}
+              className="shrink-0 px-3.5 py-1.5 text-[11px] font-semibold rounded-full transition-all"
+              style={isActive ? {
+                background: `color-mix(in srgb, ${accent} 14%, transparent)`,
+                color: accent,
+                border: `1px solid color-mix(in srgb, ${accent} 30%, transparent)`,
+              } : { color: 'var(--color-text-muted)', background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+            >
+              {label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Filtro por modo de interes */}
+      <div className="flex gap-1.5 mb-4 overflow-x-auto scrollbar-none pb-0.5">
+        {MODOS_INTERES.map(({ value, label }) => {
+          const isActive = modoInteres === value
+          const accent = '#a855f7'
+          return (
+            <button
+              key={value || 'todos-modo'}
+              onClick={() => setModoInteres(value)}
               className="shrink-0 px-3.5 py-1.5 text-[11px] font-semibold rounded-full transition-all"
               style={isActive ? {
                 background: `color-mix(in srgb, ${accent} 14%, transparent)`,
