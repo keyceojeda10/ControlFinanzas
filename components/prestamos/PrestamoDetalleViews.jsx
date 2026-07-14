@@ -9,6 +9,7 @@ import { formatFechaCobroRelativa } from '@/lib/calculos'
 import { formatMoney } from '@/lib/i18n'
 import OfflineBadge from '@/components/offline/OfflineBadge'
 import Avatar from '@/components/ui/Avatar'
+import { getPlataformaInfo, PlataformaIcon } from '@/components/ui/LogoPlataforma'
 
 // ─── Helpers de fecha ────────────────────────────────────────────
 const fmtFecha = (d) => d
@@ -712,23 +713,25 @@ export function PagoMiniCard({ pago, onAnular, anulando, isOffline, children }) 
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             <span>{fmtFecha(pago.fechaPago)}</span>
-            {pago.metodoPago && (
-              <span
-                className="inline-flex items-center gap-1 ml-1 px-1.5 py-0.5 rounded-[5px] text-[9px] font-semibold"
-                style={{
-                  background: pago.metodoPago === 'transferencia'
-                    ? 'color-mix(in srgb, var(--color-info) 12%, transparent)'
-                    : 'color-mix(in srgb, var(--color-success) 12%, transparent)',
-                  color: pago.metodoPago === 'transferencia' ? 'var(--color-info)' : 'var(--color-success)',
-                }}
-              >
+            {pago.metodoPago && (() => {
+              const platInfo = pago.metodoPago === 'transferencia' ? getPlataformaInfo(pago.plataforma) : null
+              const badgeColor = platInfo?.color || (pago.metodoPago === 'transferencia' ? 'var(--color-info)' : 'var(--color-success)')
+              const badgeBg = platInfo?.bg || (pago.metodoPago === 'transferencia'
+                ? 'color-mix(in srgb, var(--color-info) 12%, transparent)'
+                : 'color-mix(in srgb, var(--color-success) 12%, transparent)')
+              return (
                 <span
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{ background: pago.metodoPago === 'transferencia' ? 'var(--color-info)' : 'var(--color-success)' }}
-                />
-                {pago.metodoPago === 'transferencia' ? (pago.plataforma || 'Transferencia') : 'Efectivo'}
-              </span>
-            )}
+                  className="inline-flex items-center gap-1 ml-1 px-1.5 py-0.5 rounded-[5px] text-[9px] font-semibold"
+                  style={{ background: badgeBg, color: badgeColor }}
+                >
+                  {platInfo
+                    ? <PlataformaIcon plataforma={pago.plataforma} size={10} />
+                    : <span className="w-1.5 h-1.5 rounded-full" style={{ background: badgeColor }} />
+                  }
+                  {pago.metodoPago === 'transferencia' ? (pago.plataforma || 'Transferencia') : 'Efectivo'}
+                </span>
+              )
+            })()}
           </div>
           {pago.nota && (
             <p className="text-[10px] mt-1 italic truncate" style={{ color: 'var(--color-text-secondary)' }} title={pago.nota}>

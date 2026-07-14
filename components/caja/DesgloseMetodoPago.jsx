@@ -1,6 +1,7 @@
 'use client'
 
 import { formatMoney } from '@/lib/i18n'
+import { getPlataformaInfo, PlataformaIcon } from '@/components/ui/LogoPlataforma'
 
 const COLORES = {
   efectivo: 'var(--color-success)',
@@ -26,12 +27,14 @@ export default function DesgloseMetodoPago({ items }) {
         {items.map((item) => {
           const pct = total > 0 ? (item.monto / total) * 100 : 0
           if (pct <= 0) return null
+          const platInfo = getPlataformaInfo(item.label)
+          const barColor = platInfo?.color || (item.tipo === 'efectivo' ? COLORES.efectivo : COLORES.transferencia)
           return (
             <div
               key={item.label}
               style={{
                 width: `${pct}%`,
-                background: item.tipo === 'efectivo' ? COLORES.efectivo : COLORES.transferencia,
+                background: barColor,
                 minWidth: pct > 0 ? 4 : 0,
               }}
             />
@@ -44,17 +47,22 @@ export default function DesgloseMetodoPago({ items }) {
         {items.map((item) => {
           const pct = total > 0 ? Math.round((item.monto / total) * 100) : 0
           const color = item.tipo === 'efectivo' ? COLORES.efectivo : COLORES.transferencia
+          const platInfo = getPlataformaInfo(item.label)
+          const rowColor = platInfo?.color || color
           return (
             <div key={item.label} className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
-                <div
-                  className="w-2.5 h-2.5 rounded-full shrink-0"
-                  style={{ background: color }}
-                />
+                {platInfo
+                  ? <PlataformaIcon plataforma={item.label} size={14} />
+                  : <div
+                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ background: color }}
+                    />
+                }
                 <span className="text-[12px] font-medium truncate" style={{ color: 'var(--color-text-secondary)' }}>
                   {item.label}
                 </span>
-                <span className="text-[10px] font-semibold shrink-0" style={{ color }}>
+                <span className="text-[10px] font-semibold shrink-0" style={{ color: rowColor }}>
                   {pct}%
                 </span>
               </div>

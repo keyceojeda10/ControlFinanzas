@@ -6,6 +6,7 @@
 import { formatMoney } from '@/lib/i18n'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/Badge'
+import { metodoInfo as getMetodoInfo, PlataformaIcon } from '@/components/ui/LogoPlataforma'
 
 const TIPO_BADGE = {
   completo:  { label: 'Completo',  variant: 'success' },
@@ -31,23 +32,7 @@ const fmtHora = (d) => {
   })
 }
 
-const metodoInfo = (pago) => {
-  if (pago?.metodoPago === 'transferencia') {
-    return {
-      label: pago?.plataforma || 'Transferencia',
-      color: 'var(--color-info)',
-      bg: 'color-mix(in srgb, var(--color-info) 12%, transparent)',
-    }
-  }
-  if (pago?.metodoPago === 'efectivo') {
-    return {
-      label: 'Efectivo',
-      color: 'var(--color-success)',
-      bg: 'color-mix(in srgb, var(--color-success) 12%, transparent)',
-    }
-  }
-  return null
-}
+const metodoInfo = getMetodoInfo
 
 const getCliente = (pago) =>
   pago?.clienteNombre
@@ -135,7 +120,10 @@ export default function ListadoPagos({
                     className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded-[6px] text-[10px] font-semibold"
                     style={{ background: metodo.bg, color: metodo.color }}
                   >
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: metodo.color }} />
+                    {metodo.plataforma
+                      ? <PlataformaIcon plataforma={metodo.plataforma} size={12} />
+                      : <span className="w-1.5 h-1.5 rounded-full" style={{ background: metodo.color }} />
+                    }
                     {metodo.label}
                   </span>
                 )}
