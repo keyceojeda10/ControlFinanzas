@@ -1183,6 +1183,9 @@ export default function CajaPage() {
                 ]}
               />
 
+              {/* Desglose por método de pago del período */}
+              <DesgloseMetodoPago items={rangoData.desgloseMetodoPago} />
+
               {/* Lista inteligente: resumen por día */}
               {rangoData.porDia?.length > 0 && (
                 <Card>

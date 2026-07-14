@@ -828,6 +828,7 @@ export async function GET(request) {
         where: wherePagosRango,
         select: {
           id: true, montoPagado: true, fechaPago: true, tipo: true,
+          metodoPago: true, plataforma: true,
           cobrador: { select: { id: true, nombre: true } },
           prestamo: { select: { cliente: { select: { nombre: true } } } },
         },
@@ -859,6 +860,23 @@ export async function GET(request) {
     const porDia = Object.entries(porDiaMap)
       .map(([fecha, cobrado]) => ({ fecha, cobrado: Math.round(cobrado) }))
 
+    // Desglose por método de pago del período
+    const desgloseMetodoRango = {}
+    for (const p of pagosRangoRaw) {
+      const mp = p.metodoPago || 'otro'
+      if (mp === 'transferencia') {
+        const pl = p.plataforma || 'Transferencia'
+        if (!desgloseMetodoRango[pl]) desgloseMetodoRango[pl] = { monto: 0, tipo: 'transferencia' }
+        desgloseMetodoRango[pl].monto += Number(p.montoPagado || 0)
+      } else if (mp === 'efectivo') {
+        if (!desgloseMetodoRango['Efectivo']) desgloseMetodoRango['Efectivo'] = { monto: 0, tipo: 'efectivo' }
+        desgloseMetodoRango['Efectivo'].monto += Number(p.montoPagado || 0)
+      }
+    }
+    const desgloseMetodoPago = Object.entries(desgloseMetodoRango)
+      .map(([label, v]) => ({ label, monto: Math.round(v.monto), tipo: v.tipo }))
+      .sort((a, b) => b.monto - a.monto)
+
     payload.rango = {
       desde: desdeParam,
       hasta: hastaParam,
@@ -866,11 +884,11 @@ export async function GET(request) {
       prestado: prestadoRangoR,
       gastos: gastosRangoR,
       seguros: { monto: Math.round(segurosRango?.monto || 0), cantidad: segurosRango?.cantidad || 0 },
-      // Efectivo neto del periodo (lo que debería quedar en caja por el flujo del rango).
       efectivoNeto: cobradoRango - prestadoRangoR - gastosRangoR,
       cantidadPagos: pagosRango.length,
       pagos: pagosRango,
       porDia,
+      desgloseMetodoPago,
     }
   }
 
