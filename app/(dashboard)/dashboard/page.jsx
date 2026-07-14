@@ -1622,7 +1622,7 @@ export default function DashboardPage() {
       ) : data && (
         <>
           {/* Desktop: grid de 2 columnas para hero + strip lateral */}
-          <div className="lg:grid lg:grid-cols-5 lg:gap-5">
+          <div className="lg:grid lg:grid-cols-5 lg:gap-5 lg:items-stretch">
           <div className="lg:col-span-3">
           {/* HERO: Recaudado hoy en grande con narrativa + donut de meta integrado */}
           <HeroCard
@@ -1652,11 +1652,11 @@ export default function DashboardPage() {
 
           </div>
           {/* Columna derecha desktop: KPIs rapidos */}
-          <div className="lg:col-span-2 space-y-3 mt-5 lg:mt-0">
+          <div className="lg:col-span-2 flex flex-col gap-3 mt-5 lg:mt-0 lg:min-h-0">
           {/* Strip de 4 KPIs clave — siempre visibles para owner */}
           {esOwner && (
-            <div className="grid grid-cols-2 lg:grid-cols-1 gap-3">
-              <Link href="/clientes?filtro=mora" className="rounded-[16px] px-4 py-4 transition-all hover:scale-[1.01] relative overflow-hidden group/stat" style={{ background: data.clientes.enMora > 0 ? 'color-mix(in srgb, var(--color-danger) 10%, var(--color-bg-card))' : 'color-mix(in srgb, var(--color-success) 6%, var(--color-bg-card))', border: `1px solid ${data.clientes.enMora > 0 ? 'color-mix(in srgb, var(--color-danger) 25%, var(--color-border))' : 'color-mix(in srgb, var(--color-success) 20%, var(--color-border))'}`, boxShadow: data.clientes.enMora > 0 ? '0 4px 16px color-mix(in srgb, var(--color-danger) 12%, transparent)' : '0 4px 16px rgba(0,0,0,0.08)' }}>
+            <div className="grid grid-cols-2 lg:grid-cols-1 gap-3 lg:flex-1">
+              <Link href="/clientes?filtro=mora" className="rounded-[16px] px-4 py-4 transition-all hover:scale-[1.01] relative overflow-hidden group/stat lg:flex lg:flex-col lg:justify-center" style={{ background: data.clientes.enMora > 0 ? 'color-mix(in srgb, var(--color-danger) 10%, var(--color-bg-card))' : 'color-mix(in srgb, var(--color-success) 6%, var(--color-bg-card))', border: `1px solid ${data.clientes.enMora > 0 ? 'color-mix(in srgb, var(--color-danger) 25%, var(--color-border))' : 'color-mix(in srgb, var(--color-success) 20%, var(--color-border))'}`, boxShadow: data.clientes.enMora > 0 ? '0 4px 16px color-mix(in srgb, var(--color-danger) 12%, transparent)' : '0 4px 16px rgba(0,0,0,0.08)' }}>
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: data.clientes.enMora > 0 ? 'color-mix(in srgb, var(--color-danger) 15%, transparent)' : 'color-mix(in srgb, var(--color-success) 12%, transparent)' }}>
                     <svg className="w-4 h-4" fill="none" stroke={data.clientes.enMora > 0 ? 'var(--color-danger)' : 'var(--color-success)'} strokeWidth={2} viewBox="0 0 24 24">
@@ -1669,7 +1669,7 @@ export default function DashboardPage() {
                 <p className="text-[11px] mt-1.5" style={{ color: 'var(--color-text-muted)' }}>{data.clientes.enMora === 0 ? 'Todo al dia' : `de ${data.clientes.total} activos`}</p>
               </Link>
               {capitalData ? (
-                <Link href="/caja" className="rounded-[16px] px-4 py-4 transition-all hover:scale-[1.01] relative overflow-hidden" style={{ background: 'color-mix(in srgb, #06b6d4 8%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, #06b6d4 20%, var(--color-border))', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}>
+                <Link href="/caja" className="rounded-[16px] px-4 py-4 transition-all hover:scale-[1.01] relative overflow-hidden lg:flex lg:flex-col lg:justify-center" style={{ background: 'color-mix(in srgb, #06b6d4 8%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, #06b6d4 20%, var(--color-border))', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}>
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, #06b6d4 12%, transparent)' }}>
                       <svg className="w-4 h-4" fill="none" stroke="#06b6d4" strokeWidth={2} viewBox="0 0 24 24">
