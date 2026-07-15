@@ -98,30 +98,35 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
             </div>
           </div>
 
-          <div className="flex flex-col items-end gap-1 shrink-0">
-            <span
-              className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
-              style={{
-                background: `color-mix(in srgb, ${statusColor} 12%, transparent)`,
-                color: statusColor,
-              }}
-            >
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: statusColor }} />
-              {label}
-            </span>
-            {cliente.tieneClavo && (
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                style={{ background: 'color-mix(in srgb, var(--color-danger) 12%, transparent)', color: 'var(--color-danger)' }}>
-                Perdido
+          <div className="flex items-start gap-1.5 shrink-0">
+            <div className="flex flex-col items-end gap-1">
+              <span
+                className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                style={{
+                  background: `color-mix(in srgb, ${statusColor} 12%, transparent)`,
+                  color: statusColor,
+                }}
+              >
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: statusColor }} />
+                {label}
               </span>
+              {cliente.tieneClavo && (
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                  style={{ background: 'color-mix(in srgb, var(--color-danger) 12%, transparent)', color: 'var(--color-danger)' }}>
+                  Perdido
+                </span>
+              )}
+              {cliente.grupoCobro && (
+                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full"
+                  style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-secondary)' }}>
+                  {cliente.grupoCobro.nombre}
+                </span>
+              )}
+              {esNuevo && <NuevoChip />}
+            </div>
+            {actions?.length > 0 && (
+              <CardActionMenu actions={actions} />
             )}
-            {cliente.grupoCobro && (
-              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full"
-                style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-secondary)' }}>
-                {cliente.grupoCobro.nombre}
-              </span>
-            )}
-            {esNuevo && <NuevoChip />}
           </div>
         </div>
 
@@ -155,26 +160,18 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
               </div>
             </div>
 
-            {/* Info row */}
+            {/* Footer info */}
             {(cliente.proximoCobroLabel || cliente.diasMoraMax > 0) && (
               <div className="flex items-center justify-between pt-3" style={{ borderTop: '1px solid var(--color-border)' }}>
                 {cliente.proximoCobroLabel && (
-                  <div>
-                    <p className="text-[10px] font-medium" style={{ color: 'var(--color-text-muted)' }}>
-                      {cliente.diasMoraMax > 0 ? 'Vencido' : 'Proximo cobro'}
-                    </p>
-                    <p className="text-[13px] font-semibold capitalize" style={{ color: cliente.diasMoraMax > 0 ? statusColor : 'var(--color-text-primary)' }}>
-                      {cliente.proximoCobroLabel}
-                    </p>
-                  </div>
+                  <span className="text-[12px] font-medium capitalize" style={{ color: cliente.diasMoraMax > 0 ? statusColor : 'var(--color-text-secondary)' }}>
+                    {cliente.proximoCobroLabel}
+                  </span>
                 )}
                 {cliente.diasMoraMax > 0 && (
-                  <div className="text-right">
-                    <p className="text-[10px] font-medium" style={{ color: 'var(--color-text-muted)' }}>Mora</p>
-                    <p className="text-[13px] font-mono-display font-semibold" style={{ color: statusColor }}>
-                      {cliente.diasMoraMax} dias
-                    </p>
-                  </div>
+                  <span className="text-[12px] font-mono-display font-semibold" style={{ color: statusColor }}>
+                    {cliente.diasMoraMax}d mora
+                  </span>
                 )}
               </div>
             )}
@@ -195,11 +192,6 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
         )}
       </div>
 
-      {actions?.length > 0 && (
-        <div className="absolute top-4 right-3">
-          <CardActionMenu actions={actions} />
-        </div>
-      )}
     </Link>
   )
 }
