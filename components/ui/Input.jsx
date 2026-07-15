@@ -2,7 +2,7 @@
 
 import { forwardRef, useId } from 'react'
 
-const labelCls = 'text-xs font-medium tracking-[0.01em]'
+const labelCls = 'text-[12.5px] font-bold tracking-[0.01em]'
 const labelStyle = { color: 'var(--color-text-secondary)' }
 const fieldStyle = {
   background: 'var(--color-bg-hover)',

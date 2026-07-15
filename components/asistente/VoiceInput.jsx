@@ -537,7 +537,7 @@ const VoiceInput = forwardRef(function VoiceInput(
           </button>
           <button type="button" onClick={() => { const t = transcript; setState('idle'); setTranscript(''); if (cbRef.current.onSend) cbRef.current.onSend(t); else cbRef.current.onConfirm?.(t) }}
             className="w-8 h-8 rounded-[10px] flex items-center justify-center"
-            style={{ background: 'var(--color-accent)', color: '#0a0a0a', border: 'none' }}>
+            style={{ background: 'var(--color-accent)', color: '#3a2900', border: 'none' }}>
             <svg style={{ width: '13px', height: '13px' }} fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.269 20.876L5.999 12zm0 0h7.5" />
             </svg>
@@ -561,7 +561,7 @@ const VoiceInput = forwardRef(function VoiceInput(
       >
         <span
           className="shrink-0 w-2 h-2 rounded-full"
-          style={{ background: '#ef4444', animation: 'voice-pulse 1.4s ease-in-out infinite' }}
+          style={{ background: 'var(--color-danger)', animation: 'voice-pulse 1.4s ease-in-out infinite' }}
         />
 
         <span
@@ -598,7 +598,7 @@ const VoiceInput = forwardRef(function VoiceInput(
             <button type="button" onClick={stopWhisperRecording}
               aria-label="Detener y transcribir"
               className="w-8 h-8 rounded-[10px] flex items-center justify-center transition-all"
-              style={{ background: 'var(--color-accent)', color: '#0a0a0a', border: 'none' }}>
+              style={{ background: 'var(--color-accent)', color: '#3a2900', border: 'none' }}>
               <svg style={{ width: '13px', height: '13px' }} fill="currentColor" viewBox="0 0 24 24">
                 <rect x="6" y="6" width="12" height="12" rx="2" />
               </svg>
@@ -618,7 +618,7 @@ const VoiceInput = forwardRef(function VoiceInput(
                 onClick={() => { const final = accRef.current.trim() || transcript.trim(); stopAll('confirm'); if (final) { if (cbRef.current.onSend) cbRef.current.onSend(final); else cbRef.current.onConfirm?.(final) } }}
                 disabled={!hasText} aria-label="Enviar"
                 className="w-8 h-8 rounded-[10px] flex items-center justify-center transition-all disabled:opacity-30"
-                style={{ background: hasText ? 'var(--color-accent)' : 'transparent', color: hasText ? '#0a0a0a' : 'var(--color-accent)', border: '1px solid rgba(245,197,24,0.35)' }}>
+                style={{ background: hasText ? 'var(--color-accent)' : 'transparent', color: hasText ? '#3a2900' : 'var(--color-accent)', border: '1px solid rgba(245,197,24,0.35)' }}>
                 <svg style={{ width: '13px', height: '13px' }} fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.269 20.876L5.999 12zm0 0h7.5" />
                 </svg>

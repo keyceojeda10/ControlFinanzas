@@ -155,7 +155,7 @@ function PlanPageInner() {
       <div className="pt-2 flex items-start gap-3">
         <button
           onClick={() => router.back()}
-          className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 mt-1 transition-colors"
+          className="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0 mt-1 transition-colors"
           style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}
           aria-label="Volver"
         >
@@ -164,7 +164,7 @@ function PlanPageInner() {
           </svg>
         </button>
         <div>
-          <h1 className="text-[28px] font-normal leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+          <h1 className="text-[25px] font-semibold leading-tight" style={{ color: 'var(--color-text-primary)' }}>
             Mi <em style={{ fontStyle: 'italic', color: 'var(--color-accent)' }}>plan</em>
           </h1>
           <p className="text-[13px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
@@ -176,13 +176,13 @@ function PlanPageInner() {
       {/* ── Banner trial ── */}
       {estado?.enTrial && (
         <div
-          className="rounded-[16px] px-5 py-4 flex items-start gap-3"
+          className="rounded-[20px] cf-card-shadow px-5 py-4 flex items-start gap-3"
           style={{
-            background: 'linear-gradient(135deg, rgba(245,197,24,0.12) 0%, rgba(245,197,24,0.04) 100%)',
-            border: '1px solid rgba(245,197,24,0.25)',
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 12%, transparent) 0%, color-mix(in srgb, var(--color-accent) 4%, transparent) 100%)',
+            border: '1px solid color-mix(in srgb, var(--color-accent) 25%, transparent)',
           }}
         >
-          <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: 'rgba(245,197,24,0.15)' }}>
+          <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)' }}>
             <svg className="w-4 h-4" style={{ color: 'var(--color-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -200,7 +200,7 @@ function PlanPageInner() {
 
       {/* ── Plan Actual card ── */}
       <div
-        className="rounded-[16px] p-5 relative overflow-hidden"
+        className="rounded-[20px] cf-card-shadow p-5 relative overflow-hidden"
         style={{
           background: 'var(--color-bg-card)',
           border: '1px solid var(--color-border)',
@@ -208,7 +208,7 @@ function PlanPageInner() {
       >
         {/* Decorative gradient blob */}
         <div className="absolute top-0 right-0 w-32 h-32 rounded-full" style={{
-          background: 'radial-gradient(circle, rgba(245,197,24,0.08) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, color-mix(in srgb, var(--color-accent) 8%, transparent) 0%, transparent 70%)',
           transform: 'translate(30%, -30%)',
         }} />
 
@@ -249,7 +249,7 @@ function PlanPageInner() {
 
         return (
           <div
-            className="rounded-[16px] p-5"
+            className="rounded-[20px] cf-card-shadow p-5"
             style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
           >
             <div className="flex items-center justify-between mb-3">
@@ -303,7 +303,7 @@ function PlanPageInner() {
           lucasMensajes: { usado: 0, limite: cfg.aiMensajesDia },
         }
         return (
-          <div className="rounded-[16px] overflow-hidden" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+          <div className="rounded-[20px] cf-card-shadow overflow-hidden" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
             <p className="text-[10px] font-semibold uppercase tracking-[0.1em] px-4 pt-4 pb-2 font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
               Uso actual
             </p>
@@ -323,7 +323,7 @@ function PlanPageInner() {
           <button
             onClick={() => setShowPlanes(v => !v)}
             className="w-full h-12 rounded-[12px] text-[14px] font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-            style={{ background: 'var(--color-accent)', color: '#0a0a0a' }}
+            style={{ background: 'var(--color-accent)', color: 'var(--color-accent-text)' }}
           >
             {showPlanes ? 'Ocultar planes' : `Mejorar a ${nextPlan.nombre}`}
           </button>
@@ -374,7 +374,7 @@ function PlanPageInner() {
                   onClick={() => setPeriodo(p.key)}
                   className="px-3 py-2 rounded-[8px] text-[12px] font-semibold transition-all flex items-center gap-1 whitespace-nowrap"
                   style={periodo === p.key
-                    ? { background: 'var(--color-accent)', color: '#0a0a0a' }
+                    ? { background: 'var(--color-accent)', color: 'var(--color-accent-text)' }
                     : { color: 'var(--color-text-muted)' }
                   }
                 >
@@ -382,7 +382,7 @@ function PlanPageInner() {
                   {p.badge && (
                     <span className="text-[9px] font-bold px-1 py-0.5 rounded-full font-mono-display" style={{
                       background: periodo === p.key ? 'rgba(0,0,0,0.15)' : 'var(--color-success)',
-                      color: periodo === p.key ? '#0a0a0a' : '#fff',
+                      color: periodo === p.key ? 'var(--color-accent-text)' : '#fff',
                     }}>{p.badge}</span>
                   )}
                 </button>
@@ -410,9 +410,9 @@ function PlanPageInner() {
                   key={p.key}
                   className="rounded-[12px] p-4 transition-all"
                   style={{
-                    background: esActual ? 'rgba(245,197,24,0.04)' : 'var(--color-bg-card)',
+                    background: esActual ? 'color-mix(in srgb, var(--color-accent) 4%, transparent)' : 'var(--color-bg-card)',
                     border: esActual
-                      ? '1.5px solid rgba(245,197,24,0.4)'
+                      ? '1.5px solid color-mix(in srgb, var(--color-accent) 40%, transparent)'
                       : esTest
                       ? '1px dashed var(--color-border-hover)'
                       : '1px solid var(--color-border)',
@@ -424,7 +424,7 @@ function PlanPageInner() {
                         {p.nombre}
                       </span>
                       {p.badge && (
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--color-accent)', color: '#0a0a0a' }}>
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--color-accent)', color: 'var(--color-accent-text)' }}>
                           {p.badge}
                         </span>
                       )}
@@ -469,13 +469,13 @@ function PlanPageInner() {
                   </div>
 
                   {esRecurrActiva ? (
-                    <div className="h-9 rounded-[10px] flex items-center justify-center text-[12px] font-semibold" style={{
+                    <div className="h-9 rounded-[12px] flex items-center justify-center text-[12px] font-semibold" style={{
                       background: 'var(--color-bg-hover)', color: 'var(--color-success)',
                     }}>
                       Plan actual
                     </div>
                   ) : esActual && periodo === 'mensual' && !subCancelada ? (
-                    <div className="h-9 rounded-[10px] flex items-center justify-center text-[12px] font-semibold" style={{
+                    <div className="h-9 rounded-[12px] flex items-center justify-center text-[12px] font-semibold" style={{
                       background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)',
                     }}>
                       Plan actual
@@ -483,8 +483,8 @@ function PlanPageInner() {
                   ) : (
                     <button
                       onClick={() => activarPlanWA(p.key)}
-                      className="w-full h-9 rounded-[10px] text-[12px] font-semibold transition-all active:scale-[0.98] flex items-center justify-center gap-1.5"
-                      style={{ background: 'var(--color-accent)', color: '#0a0a0a' }}
+                      className="w-full h-9 rounded-[12px] text-[12px] font-semibold transition-all active:scale-[0.98] flex items-center justify-center gap-1.5"
+                      style={{ background: 'var(--color-accent)', color: 'var(--color-accent-text)' }}
                     >
                       <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
@@ -500,7 +500,7 @@ function PlanPageInner() {
       )}
 
       {/* ── Support ── */}
-      <div className="rounded-[16px] p-4 flex items-center gap-3" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+      <div className="rounded-[20px] cf-card-shadow p-4 flex items-center gap-3" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
         <div className="flex-1">
           <p className="text-[12px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>Necesitas ayuda?</p>
           <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Te ayudamos por WhatsApp con pagos y planes.</p>
@@ -508,7 +508,7 @@ function PlanPageInner() {
         <a
           href={whatsappLink('Hola, necesito ayuda con el pago de mi plan en Control Finanzas.')}
           target="_blank" rel="noopener noreferrer"
-          className="shrink-0 h-9 px-3 rounded-[10px] flex items-center gap-1.5 text-[12px] font-semibold transition-all"
+          className="shrink-0 h-9 px-3 rounded-[12px] flex items-center gap-1.5 text-[12px] font-semibold transition-all"
           style={{ background: '#25D366', color: '#fff' }}
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">

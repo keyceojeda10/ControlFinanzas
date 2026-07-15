@@ -52,7 +52,7 @@ export default function OnboardingChecklist({ misiones, completadas, total, prog
           <div className="mx-2 mt-3 mb-2">
             <div className="h-1.5 bg-[var(--color-bg-hover)] rounded-full overflow-hidden">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-[#f5c518] to-[#f0b800] transition-all duration-700 ease-out"
+                className="h-full rounded-full bg-gradient-to-r from-[var(--color-accent)] to-[#f0b800] transition-all duration-700 ease-out"
                 style={{ width: `${progreso}%` }}
               />
             </div>

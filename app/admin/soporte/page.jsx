@@ -41,7 +41,7 @@ export default function AdminSoportePage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-lg font-bold text-[var(--color-text-primary)]">Soporte</h1>
+          <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Soporte</h1>
           <p className="text-xs text-[var(--color-text-muted)]">{tickets.length} tickets</p>
         </div>
         {contactosPendientes.length > 0 && (

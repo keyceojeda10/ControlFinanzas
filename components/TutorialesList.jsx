@@ -100,7 +100,7 @@ function TutorialCard({ tutorial, showCopyButton, onImageClick, defaultOpen = fa
               {tutorial.images.map((img) => (
                 <div
                   key={img.src}
-                  className="rounded-xl overflow-hidden border border-[var(--color-border)] cursor-pointer hover:border-[#f5c518] transition-colors shrink-0 w-[160px] sm:w-[200px]"
+                  className="rounded-xl overflow-hidden border border-[var(--color-border)] cursor-pointer hover:border-[var(--color-accent)] transition-colors shrink-0 w-[160px] sm:w-[200px]"
                   onClick={() => onImageClick(img.src, img.caption)}
                 >
                   <Image

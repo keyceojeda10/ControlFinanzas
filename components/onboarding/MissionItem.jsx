@@ -76,7 +76,7 @@ export default function MissionItem({ mision, onSpotlight }) {
           onClick={() => setShowInstallGuide(true)}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] hover:bg-[var(--color-bg-hover)] transition-all group text-left"
         >
-          <div className="w-7 h-7 rounded-full border-2 border-[var(--color-border-hover)] flex items-center justify-center shrink-0 text-[var(--color-text-muted)] group-hover:border-[#f5c518] group-hover:text-[var(--color-accent)] transition-colors">
+          <div className="w-7 h-7 rounded-full border-2 border-[var(--color-border-hover)] flex items-center justify-center shrink-0 text-[var(--color-text-muted)] group-hover:border-[var(--color-accent)] group-hover:text-[var(--color-accent)] transition-colors">
             {icono}
           </div>
           <div className="flex-1 min-w-0">
@@ -99,7 +99,7 @@ export default function MissionItem({ mision, onSpotlight }) {
       className="flex items-center gap-3 px-3 py-2.5 rounded-[10px] hover:bg-[var(--color-bg-hover)] transition-all group"
     >
       {/* Icon circle */}
-      <div className="w-7 h-7 rounded-full border-2 border-[var(--color-border-hover)] flex items-center justify-center shrink-0 text-[var(--color-text-muted)] group-hover:border-[#f5c518] group-hover:text-[var(--color-accent)] transition-colors">
+      <div className="w-7 h-7 rounded-full border-2 border-[var(--color-border-hover)] flex items-center justify-center shrink-0 text-[var(--color-text-muted)] group-hover:border-[var(--color-accent)] group-hover:text-[var(--color-accent)] transition-colors">
         {icono}
       </div>
       <div className="flex-1 min-w-0">

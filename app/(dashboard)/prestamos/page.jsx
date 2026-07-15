@@ -67,7 +67,7 @@ const P_COLOR_OK   = 'var(--color-accent)'
 const P_COLOR_HOT  = '#f97316'
 const P_COLOR_CRIT = 'var(--color-danger)'
 const P_COLOR_DONE = 'var(--color-success)'
-const P_COLOR_OFF  = '#64748b'
+const P_COLOR_OFF  = 'var(--color-text-muted)'
 
 const MODO_TAG = {
   fijo: 'Cuota fija', unico: 'De una vez', solo_interes: 'Globo',
@@ -133,7 +133,7 @@ function PrestamoCardCompacto({ prestamo: p, esNuevo }) {
           {p.modoInteres && MODO_TAG[p.modoInteres] && (
             <span
               className="text-[7px] font-semibold px-1.5 py-px rounded-full shrink-0"
-              style={{ background: 'color-mix(in srgb, #a855f7 10%, transparent)', color: '#a855f7', border: '1px solid color-mix(in srgb, #a855f7 20%, transparent)' }}
+              style={{ background: 'color-mix(in srgb, var(--color-purple) 10%, transparent)', color: 'var(--color-purple)', border: '1px solid color-mix(in srgb, var(--color-purple) 20%, transparent)' }}
             >
               {MODO_TAG[p.modoInteres]}
             </span>
@@ -392,21 +392,21 @@ export default function PrestamosPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-4">
         <div className="min-w-0">
-          <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Préstamos</h1>
+          <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Préstamos</h1>
           <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
-            {loading ? '...' : `${total} préstamo${total !== 1 ? 's' : ''}${frecuencia ? ' ' + (FRECUENCIAS.find((f) => f.value === frecuencia)?.label.toLowerCase()) : ''}`}
+            <span className="font-mono-display">{loading ? '...' : `${total} préstamo${total !== 1 ? 's' : ''}${frecuencia ? ' ' + (FRECUENCIAS.find((f) => f.value === frecuencia)?.label.toLowerCase()) : ''}`}</span>
             {!frecuencia && enMoraCount > 0 && (
-              <span className="ml-2 text-[var(--color-danger)]">· {enMoraCount} en mora</span>
+              <span className="ml-2 text-[var(--color-danger)]">· <span className="font-mono-display">{enMoraCount}</span> en mora</span>
             )}
           </p>
           <Link
             href="/prestamos/simulador"
-            className="h-7 px-2.5 inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[10px] font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:border-[var(--color-accent)] transition-all shrink-0"
+            className="h-7 px-2.5 mt-1.5 inline-flex items-center gap-1 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[10px] font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:border-[var(--color-accent)] transition-all shrink-0"
           >
             <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m-6 4h6m-2 5h2M5 3h14a1 1 0 011 1v16a1 1 0 01-1 1H5a1 1 0 01-1-1V4a1 1 0 011-1z" />
             </svg>
-            Simulador de préstamos
+            Simulador
           </Link>
         </div>
         {!authLoading && puedeCrearPrestamos && (
@@ -474,7 +474,7 @@ export default function PrestamosPage() {
       <div className="flex gap-1.5 mb-4 overflow-x-auto scrollbar-none pb-0.5">
         {MODOS_INTERES.map(({ value, label }) => {
           const isActive = modoInteres === value
-          const accent = '#a855f7'
+          const accent = 'var(--color-purple)'
           return (
             <button
               key={value || 'todos-modo'}
@@ -519,7 +519,7 @@ export default function PrestamosPage() {
               <select
                 value={rutaId}
                 onChange={e => setRutaId(e.target.value)}
-                className="h-9 px-2 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[11px] text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-all truncate"
+                className="h-9 px-2 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[11px] text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-all truncate"
               >
                 <option value="">Todas las rutas</option>
                 {rutas.map(r => <option key={r.id} value={r.id}>{r.nombre}{r.cobrador ? ` — ${r.cobrador}` : ''}</option>)}
@@ -527,7 +527,7 @@ export default function PrestamosPage() {
               <select
                 value={renovacion}
                 onChange={e => setRenovacion(e.target.value)}
-                className="h-9 px-2 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[11px] text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-all truncate"
+                className="h-9 px-2 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[11px] text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-all truncate"
               >
                 <option value="">Nuevos y renovados</option>
                 <option value="si">Renovados</option>
@@ -662,7 +662,7 @@ export default function PrestamosPage() {
               cardActions.push({
                 icon: IconPagar,
                 label: 'Registrar pago',
-                color: '#22c55e',
+                color: 'var(--color-success)',
                 onClick: () => { window.location.href = `/prestamos/${p.id}?openPago=1` },
               })
             }
@@ -707,13 +707,13 @@ export default function PrestamosPage() {
                       style={{ background: 'color-mix(in srgb, var(--color-text-primary) 4%, transparent)' }}
                     >
                       <span
-                        className="text-[11px] font-bold uppercase tracking-wider truncate"
+                        className="text-[11px] font-extrabold uppercase tracking-[.07em] truncate"
                         style={{ color: 'var(--color-text-primary)' }}
                       >
                         {cliente.nombre}
                       </span>
                       <span
-                        className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap"
+                        className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap font-mono-display"
                         style={{
                           background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
                           color: 'var(--color-accent)',
@@ -723,7 +723,7 @@ export default function PrestamosPage() {
                       </span>
                       {tieneNuevo && (
                         <span
-                          className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full whitespace-nowrap"
+                          className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-[.07em] px-1.5 py-0.5 rounded-full whitespace-nowrap"
                           style={{
                             background: 'color-mix(in srgb, var(--color-success) 14%, transparent)',
                             color: 'var(--color-success)',
@@ -735,7 +735,7 @@ export default function PrestamosPage() {
                         </span>
                       )}
                       <span
-                        className="ml-auto text-[10px] tabular-nums whitespace-nowrap"
+                        className="ml-auto text-[10px] font-mono-display whitespace-nowrap"
                         style={{ color: 'var(--color-text-muted)' }}
                       >
                         {formatMoney(Math.round(saldoTotal), country)}
@@ -767,7 +767,7 @@ export default function PrestamosPage() {
                         cardActions.push({
                           icon: IconPagar,
                           label: 'Registrar pago',
-                          color: '#22c55e',
+                          color: 'var(--color-success)',
                           onClick: () => { window.location.href = `/prestamos/${p.id}?openPago=1` },
                         })
                       }
@@ -844,17 +844,17 @@ export default function PrestamosPage() {
           <button
             onClick={() => setPage(p => Math.max(1, p - 1))}
             disabled={page <= 1}
-            className="px-3 py-1.5 text-xs rounded-lg border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[#222] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="px-3 py-1.5 text-xs rounded-lg border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             Anterior
           </button>
           <span className="text-xs text-[var(--color-text-muted)]">
-            Página {page} de {totalPages}
+            Página <span className="font-mono-display">{page}</span> de <span className="font-mono-display">{totalPages}</span>
           </span>
           <button
             onClick={() => setPage(p => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages}
-            className="px-3 py-1.5 text-xs rounded-lg border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[#222] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="px-3 py-1.5 text-xs rounded-lg border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             Siguiente
           </button>

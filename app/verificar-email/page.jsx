@@ -62,12 +62,12 @@ function VerificarEmailContent() {
     return (
       <div className="text-center">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-5"
-          style={{ background: 'rgba(34,197,94,0.15)', border: '2px solid rgba(34,197,94,0.3)' }}>
+          style={{ background: 'color-mix(in srgb, var(--color-success) 14%, var(--color-bg-card))', border: '2px solid color-mix(in srgb, var(--color-success) 30%, transparent)' }}>
           <svg className="w-8 h-8 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h1 className="text-xl font-bold text-[var(--color-text-primary)] mb-2">Correo verificado</h1>
+        <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)] mb-2">Correo verificado</h1>
         <p className="text-sm text-[var(--color-text-muted)] mb-6">Tu cuenta esta activa. Ya puedes ingresar.</p>
         <Link href="/login"
           className="inline-flex items-center justify-center h-11 px-8 rounded-[12px] bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-text-primary)] font-semibold text-sm transition-all">
@@ -82,12 +82,12 @@ function VerificarEmailContent() {
     return (
       <div className="text-center">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-5"
-          style={{ background: 'rgba(239,68,68,0.12)', border: '2px solid rgba(239,68,68,0.2)' }}>
+          style={{ background: 'color-mix(in srgb, var(--color-danger) 12%, var(--color-bg-card))', border: '2px solid color-mix(in srgb, var(--color-danger) 20%, transparent)' }}>
           <svg className="w-8 h-8 text-[var(--color-danger)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
           </svg>
         </div>
-        <h1 className="text-xl font-bold text-[var(--color-text-primary)] mb-2">Link inválido</h1>
+        <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)] mb-2">Link inválido</h1>
         <p className="text-sm text-[var(--color-text-muted)] mb-6">Ahora usamos códigos de verificación. Ingresa tu email para recibir uno nuevo.</p>
         <input
           type="email"
@@ -109,12 +109,12 @@ function VerificarEmailContent() {
   return (
     <div className="text-center">
       <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-5"
-        style={{ background: 'rgba(245,197,24,0.1)', border: '2px solid rgba(245,197,24,0.2)' }}>
+        style={{ background: 'color-mix(in srgb, var(--color-accent) 10%, var(--color-bg-card))', border: '2px solid color-mix(in srgb, var(--color-accent) 20%, transparent)' }}>
         <svg className="w-8 h-8 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
         </svg>
       </div>
-      <h1 className="text-xl font-bold text-[var(--color-text-primary)] mb-2">Verifica tu correo</h1>
+      <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)] mb-2">Verifica tu correo</h1>
       <p className="text-sm text-[var(--color-text-muted)] mb-5">
         {email
           ? <>Ingresa el código que enviamos a <span className="text-[var(--color-text-primary)] font-semibold">{email}</span></>
@@ -123,7 +123,7 @@ function VerificarEmailContent() {
 
       {errorMsg && (
         <div className="flex items-center justify-center gap-2 text-sm rounded-[10px] px-4 py-2.5 mb-4"
-          style={{ background: 'rgba(248,113,113,0.10)', border: '1px solid rgba(248,113,113,0.30)', color: '#f87171' }}>
+          style={{ background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)', color: 'var(--color-danger)' }}>
           {errorMsg}
         </div>
       )}

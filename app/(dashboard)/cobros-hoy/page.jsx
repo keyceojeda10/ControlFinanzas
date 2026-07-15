@@ -343,7 +343,7 @@ export default function CobrosHoyPage() {
         <div className="space-y-2">
           <div className="flex items-center gap-2 px-1">
             <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--color-warning)' }} />
-            <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-muted)' }}>
               Por cobrar ({pendientes.length})
             </p>
           </div>
@@ -420,7 +420,7 @@ export default function CobrosHoyPage() {
       {/* ── Todos cobrados ── */}
       {pendientes.length === 0 && pagados.length > 0 && (
         <div
-          className="rounded-[16px] px-4 py-3 flex items-center gap-3"
+          className="rounded-[20px] px-4 py-3 flex items-center gap-3 cf-card-shadow"
           style={{
             background: 'color-mix(in srgb, var(--color-success) 10%, var(--color-bg-card))',
             border: '1px solid color-mix(in srgb, var(--color-success) 25%, var(--color-border))',
@@ -443,7 +443,7 @@ export default function CobrosHoyPage() {
         <div className="space-y-2">
           <div className="flex items-center gap-2 px-1">
             <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--color-success)' }} />
-            <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-muted)' }}>
               Cobrados hoy ({pagados.length})
             </p>
           </div>
@@ -542,8 +542,8 @@ export default function CobrosHoyPage() {
               </div>
             )}
             {modalPago.cuotaExtraHoy && (
-              <div className="rounded-[12px] px-3 py-2.5 text-center" style={{ background: 'color-mix(in srgb, #8b5cf6 10%, transparent)', border: '1px solid color-mix(in srgb, #8b5cf6 25%, transparent)' }}>
-                <p className="text-xs font-semibold" style={{ color: '#8b5cf6' }}>Cuota extra programada: {formatMoney(modalPago.montoCuotaExtra)}</p>
+              <div className="rounded-[12px] px-3 py-2.5 text-center" style={{ background: 'color-mix(in srgb, var(--color-purple) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--color-purple) 25%, transparent)' }}>
+                <p className="text-xs font-semibold" style={{ color: 'var(--color-purple)' }}>Cuota extra programada: {formatMoney(modalPago.montoCuotaExtra)}</p>
                 <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Esta cuota incluye un abono extra a capital. Ya está incluido en el monto total.</p>
               </div>
             )}
@@ -587,7 +587,7 @@ export default function CobrosHoyPage() {
               <button
                 onClick={() => { const d = confirmDuplicado; setConfirmDuplicado(null); setModalPago({ id: d.clienteId, nombre: d.nombre, cuota: d.cuota, prestamoActivo: d.prestamoActivo, prestamosActivos: [], abonoConPendiente: false }); ejecutarPago(d.metodoPago, { confirmarDuplicado: true, metodoPagoId: d.metodoPagoId }) }}
                 className="flex-1 py-2.5 rounded-[12px] text-sm font-semibold transition-all"
-                style={{ background: 'var(--color-warning)', color: '#000' }}
+                style={{ background: 'var(--color-warning)', color: 'var(--color-accent-text)' }}
               >
                 Si, registrar igual
               </button>
@@ -654,7 +654,7 @@ export default function CobrosHoyPage() {
             <button onClick={deshacerPago} className="text-sm font-bold shrink-0 transition-colors" style={{ color: 'var(--color-accent)' }}>
               Deshacer
             </button>
-            <button onClick={() => { if (undoTimerRef.current) clearTimeout(undoTimerRef.current); setUndoPago(null) }} className="shrink-0 transition-colors" style={{ color: '#666' }}>
+            <button onClick={() => { if (undoTimerRef.current) clearTimeout(undoTimerRef.current); setUndoPago(null) }} className="shrink-0 transition-colors" style={{ color: 'var(--color-text-muted)' }}>
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -732,7 +732,7 @@ function ClienteCard({ cliente, pagando, pagoOk, onCobrar, showRuta = true }) {
           {cliente.cuotaExtraHoy && (
             <span
               className="text-[10px] font-bold px-2 py-0.5 rounded-md"
-              style={{ background: 'color-mix(in srgb, #8b5cf6 15%, transparent)', color: '#8b5cf6' }}
+              style={{ background: 'color-mix(in srgb, var(--color-purple) 15%, transparent)', color: 'var(--color-purple)' }}
             >
               +Extra {formatMoney(cliente.montoCuotaExtra)}
             </span>
@@ -756,7 +756,7 @@ function ClienteCard({ cliente, pagando, pagoOk, onCobrar, showRuta = true }) {
         <button
           onClick={onCobrar}
           disabled={pagando}
-          className="shrink-0 px-4 h-11 rounded-[12px] font-bold text-sm transition-all active:scale-95 disabled:opacity-60"
+          className="shrink-0 px-4 h-11 rounded-[12px] font-bold text-sm font-mono-display transition-all active:scale-95 disabled:opacity-60"
           style={{
             background: pagando ? 'var(--color-bg-hover)' : enMora ? 'var(--color-danger)' : 'var(--color-success)',
             color: '#fff',

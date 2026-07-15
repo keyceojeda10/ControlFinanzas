@@ -56,7 +56,7 @@ export default function AdminDashboard() {
   return (
     <div className="max-w-4xl mx-auto space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-[white]">Dashboard</h1>
+        <h1 className="text-[25px] font-semibold text-[white]">Dashboard</h1>
         <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Vista general de la plataforma</p>
       </div>
 
@@ -66,11 +66,11 @@ export default function AdminDashboard() {
           { label: 'MRR',               value: formatMoney(stats.mrr),       color: 'var(--color-success)', mono: true  },
           { label: 'Orgs activas',       value: stats.totalOrgs,            color: 'var(--color-info)', mono: false },
           { label: 'Por vencer (7d)',    value: stats.suscPorVencer,        color: 'var(--color-warning)', mono: false },
-          { label: 'Vencidas',           value: stats.suscVencidas,         color: stats.suscVencidas > 0 ? 'var(--color-danger)' : '#888888', mono: false },
+          { label: 'Vencidas',           value: stats.suscVencidas,         color: stats.suscVencidas > 0 ? 'var(--color-danger)' : 'var(--color-text-muted)', mono: false },
         ].map(({ label, value, color, mono }) => (
           <div
             key={label}
-            className="border border-[var(--color-border)] rounded-[12px] px-3 py-3 text-center"
+            className="border border-[var(--color-border)] rounded-[20px] px-3 py-3 text-center"
             style={{
               background: `linear-gradient(135deg, color-mix(in srgb, ${color} 4%, transparent) 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, color-mix(in srgb, ${color} 2%, transparent) 100%)`,
               boxShadow: `0 0 30px color-mix(in srgb, ${color} 3%, transparent), 0 1px 2px rgba(0,0,0,0.3)`,
@@ -85,13 +85,13 @@ export default function AdminDashboard() {
       {/* Fila 2 — Distribución de planes */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { plan: 'Inicial',      ...stats.planes.starter,      color: '#888888' },
-          { plan: 'Basico',       ...stats.planes.basic,        color: '#3b82f6' },
+          { plan: 'Inicial',      ...stats.planes.starter,      color: 'var(--color-text-muted)' },
+          { plan: 'Basico',       ...stats.planes.basic,        color: 'var(--color-info)' },
           { plan: 'Crecimiento',  ...stats.planes.growth,       color: 'var(--color-accent)' },
           { plan: 'Profesional',  ...stats.planes.standard,     color: 'var(--color-purple)' },
           { plan: 'Empresarial',  ...stats.planes.professional, color: 'var(--color-success)' },
         ].map(({ plan, cantidad, mrr, color }) => (
-          <div key={plan} className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-4 py-3">
+          <div key={plan} className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[20px] px-4 py-3">
             <div className="flex items-center gap-2 mb-1">
               <span className="w-2 h-2 rounded-full" style={{ background: color }} />
               <span className="text-xs text-[var(--color-text-muted)]">{plan}</span>
@@ -117,7 +117,7 @@ export default function AdminDashboard() {
                 tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
               />
               <Tooltip content={<MrrTooltip />} />
-              <Line type="monotone" dataKey="mrr" stroke="#22c55e" strokeWidth={2} dot={{ fill: 'var(--color-success)', r: 4 }} />
+              <Line type="monotone" dataKey="mrr" stroke="var(--color-success)" strokeWidth={2} dot={{ fill: 'var(--color-success)', r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
         ) : (
@@ -127,19 +127,19 @@ export default function AdminDashboard() {
 
       {/* Fila 4 — Métricas globales */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-4 py-3 text-center">
+        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[20px] px-4 py-3 text-center">
           <p className="text-[10px] text-[var(--color-text-muted)]">Total clientes</p>
           <p className="text-lg font-bold text-[white]">{stats.totalClientes}</p>
         </div>
-        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-4 py-3 text-center">
+        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[20px] px-4 py-3 text-center">
           <p className="text-[10px] text-[var(--color-text-muted)]">Préstamos activos</p>
           <p className="text-lg font-bold text-[var(--color-info)]">{stats.prestamosActivos}</p>
         </div>
         <div
-          className="border border-[var(--color-border)] rounded-[12px] px-4 py-3 text-center"
+          className="border border-[var(--color-border)] rounded-[20px] px-4 py-3 text-center"
           style={{
-            background: 'linear-gradient(135deg, #f5c5180A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #f5c51805 100%)',
-            boxShadow: '0 0 30px #f5c51808, 0 1px 2px rgba(0,0,0,0.3)',
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 4%, transparent) 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, color-mix(in srgb, var(--color-accent) 2%, transparent) 100%)',
+            boxShadow: '0 0 30px color-mix(in srgb, var(--color-accent) 3%, transparent), 0 1px 2px rgba(0,0,0,0.3)',
           }}
         >
           <p className="text-[10px] text-[var(--color-text-muted)]">Cartera total</p>
@@ -175,7 +175,7 @@ export default function AdminDashboard() {
       )}
 
       {/* Nuevas orgs este mes */}
-      <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-4 py-3 flex items-center justify-between">
+      <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[20px] px-4 py-3 flex items-center justify-between">
         <div>
           <p className="text-[10px] text-[var(--color-text-muted)]">Nuevas organizaciones este mes</p>
           <p className="text-lg font-bold text-[var(--color-purple)]">{stats.orgsNuevas}</p>

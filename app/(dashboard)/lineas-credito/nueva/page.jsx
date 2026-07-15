@@ -97,7 +97,7 @@ export default function NuevaLineaPage() {
         {paso > 0 ? 'Atras' : 'Volver'}
       </button>
 
-      <h1 className="text-lg font-bold text-[var(--color-text-primary)] mb-1">Nueva línea de crédito</h1>
+      <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)] mb-1">Nueva línea de crédito</h1>
       <p className="text-xs text-[var(--color-text-muted)] mb-2">Crea un cupo rotativo para tu cliente, similar a una tarjeta de crédito.</p>
       <div className="mb-5 p-3 rounded-xl text-[11px] text-[var(--color-text-muted)] leading-relaxed" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
         El cliente podrá pedir plata del cupo varias veces sin crear un préstamo nuevo. Cada mes se genera un corte (estado de cuenta) con lo que debe, y puede pagar todo o una parte. Lo que no pague, rota al siguiente mes con intereses.
@@ -126,7 +126,7 @@ export default function NuevaLineaPage() {
                 onClick={() => { setClienteId(c.id); setPaso(1) }}
                 className="w-full flex items-center gap-3 p-3 rounded-xl text-left transition-colors"
                 style={{
-                  background: c.id === clienteId ? 'var(--color-accent-light, var(--color-bg-hover))' : 'var(--color-bg-card)',
+                  background: c.id === clienteId ? 'var(--color-accent-soft)' : 'var(--color-bg-card)',
                   border: `1px solid ${c.id === clienteId ? 'var(--color-accent)' : 'var(--color-border)'}`,
                 }}
               >

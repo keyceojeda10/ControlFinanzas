@@ -31,7 +31,7 @@ const TEMPLATES = [
     label: 'Crédito aprobado',
     desc: 'Datos del nuevo crédito',
     icon: '✅',
-    color: '#10b981',
+    color: 'var(--color-success)',
     aplica: ({ prestamo }) => !!prestamo,
     generar: ({ cliente, prestamo, orgNombre, cronograma }) =>
       generarTextoPrestamo(cliente, prestamo, { orgNombre, cronograma }),
@@ -41,7 +41,7 @@ const TEMPLATES = [
     label: 'Recordatorio amable',
     desc: 'Para clientes al día',
     icon: '🔔',
-    color: '#22c55e',
+    color: 'var(--color-success)',
     aplica: ({ prestamo }) => prestamo && prestamo.estado === 'activo' && (prestamo.diasMora ?? 0) === 0,
     generar: ({ cliente, prestamo, orgNombre, ocultarSaldo }) => generarTextoRecordatorio(cliente, prestamo, { orgNombre, ocultarSaldo }),
   },
@@ -97,7 +97,7 @@ ${firma(orgNombre)} 💼`
     label: 'Mora crítica',
     desc: 'Más de 15 días',
     icon: '🚨',
-    color: '#ef4444',
+    color: 'var(--color-danger)',
     aplica: ({ prestamo }) => prestamo && (prestamo.diasMora ?? 0) > 15,
     generar: ({ cliente, prestamo, orgNombre, ocultarSaldo }) => {
       const dias = prestamo.diasMora ?? 0
@@ -120,7 +120,7 @@ ${firma(orgNombre)}`
     label: 'Felicitación',
     desc: 'Cliente cumplido',
     icon: '🎉',
-    color: '#a855f7',
+    color: 'var(--color-purple)',
     aplica: ({ prestamo }) => prestamo && prestamo.estado === 'activo' && (prestamo.porcentajePagado ?? 0) >= 50 && (prestamo.diasMora ?? 0) === 0,
     generar: ({ cliente, prestamo, orgNombre }) => generarTextoFelicitacion(cliente, prestamo, { orgNombre }),
   },
@@ -129,7 +129,7 @@ ${firma(orgNombre)}`
     label: 'Ofrecer renovación',
     desc: 'Cerca de terminar',
     icon: '🔄',
-    color: '#06b6d4',
+    color: 'var(--color-teal)',
     aplica: ({ prestamo }) => prestamo && (prestamo.estado === 'completado' || (prestamo.porcentajePagado ?? 0) >= 80),
     generar: ({ cliente, orgNombre }) => generarTextoRenovacion(cliente, { orgNombre }),
   },
@@ -138,7 +138,7 @@ ${firma(orgNombre)}`
     label: 'Gracias por tu pago',
     desc: 'Confirmacion corta sin saldo',
     icon: '👍',
-    color: '#22c55e',
+    color: 'var(--color-success)',
     aplica: ({ prestamo }) => prestamo && prestamo.estado === 'activo',
     generar: ({ cliente, prestamo, orgNombre }) => {
       const ultimoPago = prestamo?.pagos?.length > 0
@@ -159,7 +159,7 @@ ${firma(orgNombre)} 💼`
     label: 'Oferta de crédito',
     desc: 'Cliente sin préstamo activo',
     icon: '💰',
-    color: '#10b981',
+    color: 'var(--color-success)',
     aplica: ({ prestamo }) => !prestamo || prestamo.estado === 'completado',
     generar: ({ cliente, orgNombre }) => `Hola ${cliente.nombre} 👋
 
@@ -174,7 +174,7 @@ ${firma(orgNombre)} 💼`,
     label: 'Confirmar visita',
     desc: 'Coordinar cobro hoy',
     icon: '🚶',
-    color: '#3b82f6',
+    color: 'var(--color-info)',
     aplica: () => true,
     generar: ({ cliente, orgNombre }) => generarTextoVisita(cliente, { orgNombre }),
   },
@@ -183,7 +183,7 @@ ${firma(orgNombre)} 💼`,
     label: 'Pedir comprobante',
     desc: 'Solicitar foto de pago',
     icon: '📸',
-    color: '#8b5cf6',
+    color: 'var(--color-purple)',
     aplica: () => true,
     generar: ({ cliente, orgNombre }) => generarTextoComprobantePedido(cliente, { orgNombre }),
   },
@@ -311,7 +311,7 @@ export default function ModalWhatsAppTemplates({ open, onClose, cliente, prestam
 
         {/* Selector de plantillas */}
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-2" style={{ color: 'var(--color-text-muted)' }}>
             Elige una plantilla
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -356,7 +356,7 @@ export default function ModalWhatsAppTemplates({ open, onClose, cliente, prestam
         {/* Preview editable */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-muted)' }}>
               Mensaje (puedes editarlo)
             </p>
             <div className="flex items-center gap-2">

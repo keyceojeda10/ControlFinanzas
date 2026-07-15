@@ -49,13 +49,13 @@ export default function NuevoSocioPage() {
 
   return (
     <div className="pb-28">
-      <h1 className="text-xl font-bold mb-4" style={{ color: 'var(--color-text-primary)' }}>
+      <h1 className="text-[25px] font-semibold mb-4" style={{ color: 'var(--color-text-primary)' }}>
         Nuevo socio
       </h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div
-          className="rounded-[16px] p-4 space-y-4"
+          className="rounded-[20px] p-4 space-y-4"
           style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
         >
           <Input
@@ -86,7 +86,7 @@ export default function NuevoSocioPage() {
               onChange={handleChange('notas')}
               placeholder="Notas adicionales (opcional)"
               rows={3}
-              className="px-3 py-2 rounded-[10px] text-sm resize-none"
+              className="px-3 py-2 rounded-[12px] text-sm resize-none"
               style={{
                 background: 'var(--color-bg-surface)',
                 border: '1px solid var(--color-border)',

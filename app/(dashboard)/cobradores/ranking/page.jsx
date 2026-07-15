@@ -9,7 +9,7 @@ import MonedaCF from '@/components/ui/MonedaCF'
 import Avatar from '@/components/ui/Avatar'
 
 const MEDALS = {
-  1: { color: '#f5c518', label: '1°' },
+  1: { color: 'var(--color-accent)', label: '1°' },
   2: { color: '#94a3b8', label: '2°' },
   3: { color: '#cd7f32', label: '3°' },
 }
@@ -22,7 +22,7 @@ function scoreColor(score) {
 
 function ProgressBar({ value, color }) {
   return (
-    <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: 'var(--color-bg-elevated)' }}>
+    <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
       <div
         className="h-full rounded-full transition-all"
         style={{ width: `${Math.min(100, Math.max(0, value))}%`, background: color }}
@@ -41,7 +41,7 @@ function PodiumCard({ cobrador, order }) {
       style={{ order }}
     >
       <div
-        className="rounded-[16px] w-full flex flex-col items-center text-center px-3 py-4"
+        className="rounded-[20px] w-full flex flex-col items-center text-center px-3 py-4"
         style={{
           background: `linear-gradient(180deg, color-mix(in srgb, ${medal.color} 14%, var(--color-bg-card)) 0%, var(--color-bg-card) 60%)`,
           border: `1px solid color-mix(in srgb, ${medal.color} 30%, var(--color-border))`,
@@ -82,7 +82,7 @@ function PodiumCard({ cobrador, order }) {
 
 function MetricItem({ label, value, sub }) {
   return (
-    <div className="rounded-[10px] px-3 py-2" style={{ background: 'var(--color-bg-elevated)' }}>
+    <div className="rounded-[12px] px-3 py-2" style={{ background: 'var(--color-bg-hover)' }}>
       <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>{label}</p>
       <p className="text-sm font-semibold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{value}</p>
       {sub && <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{sub}</p>}
@@ -97,7 +97,7 @@ function RankingCard({ cobrador }) {
 
   return (
     <div
-      className="rounded-[16px] overflow-hidden"
+      className="cf-card-shadow rounded-[20px] overflow-hidden"
       style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
     >
       <div className="flex items-center gap-3 p-4">
@@ -124,7 +124,7 @@ function RankingCard({ cobrador }) {
             aria-expanded={open}
             aria-label={open ? 'Ocultar detalle' : 'Ver detalle'}
             className="w-8 h-8 rounded-full flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-            style={{ background: 'var(--color-bg-elevated)', color: 'var(--color-text-secondary)' }}
+            style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-secondary)' }}
           >
             <svg
               className="w-4 h-4 transition-transform"
@@ -173,7 +173,7 @@ function RankingSkeleton() {
     <div className="space-y-6">
       <div className="grid grid-cols-3 gap-3 items-end">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="rounded-[16px] p-4" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', minHeight: i === 1 ? '190px' : '160px' }}>
+          <div key={i} className="rounded-[20px] p-4" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', minHeight: i === 1 ? '190px' : '160px' }}>
             <div className="skeleton-shimmer w-8 h-8 rounded-full mx-auto mb-3" />
             <div className="skeleton-shimmer w-12 h-12 rounded-full mx-auto mb-3" />
             <div className="skeleton-shimmer h-3 w-16 mx-auto mb-2 rounded-[6px]" />
@@ -183,7 +183,7 @@ function RankingSkeleton() {
       </div>
       <div className="space-y-3">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="rounded-[16px] p-4 flex items-center gap-3" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+          <div key={i} className="rounded-[20px] p-4 flex items-center gap-3" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
             <div className="skeleton-shimmer w-6 h-6 rounded-[6px]" />
             <div className="skeleton-shimmer w-10 h-10 rounded-full" />
             <div className="flex-1 space-y-2">
@@ -263,7 +263,7 @@ export default function RankingCobradoresPage() {
           </svg>
           Cobradores
         </Link>
-        <h1 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Ranking de cobradores</h1>
+        <h1 className="text-[25px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>Ranking de cobradores</h1>
         {periodoLabel && (
           <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{periodoLabel}</p>
         )}
@@ -273,15 +273,15 @@ export default function RankingCobradoresPage() {
 
       {!loading && error && (
         <div
-          className="rounded-[16px] p-6 text-center"
+          className="cf-card-shadow rounded-[20px] p-6 text-center"
           style={{ background: 'var(--color-danger-dim)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)' }}
         >
           <p className="text-sm font-semibold mb-3" style={{ color: 'var(--color-danger)' }}>{error}</p>
           <button
             type="button"
             onClick={cargar}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-sm font-semibold transition-colors"
-            style={{ background: 'var(--color-accent)', color: '#000' }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-[12px] text-sm font-semibold transition-colors"
+            style={{ background: 'var(--color-accent)', color: 'var(--color-accent-text)' }}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -302,8 +302,8 @@ export default function RankingCobradoresPage() {
           </p>
           <Link
             href="/cobradores/nuevo"
-            className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-[10px] text-sm font-semibold transition-colors"
-            style={{ background: 'var(--color-accent)', color: '#000' }}
+            className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-[12px] text-sm font-semibold transition-colors"
+            style={{ background: 'var(--color-accent)', color: 'var(--color-accent-text)' }}
           >
             Crear cobrador
           </Link>

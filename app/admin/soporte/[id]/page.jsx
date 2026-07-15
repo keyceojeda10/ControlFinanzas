@@ -206,7 +206,7 @@ export default function AdminTicketDetallePage() {
       <Card className="mb-4">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div>
-            <h1 className="text-base font-bold text-[var(--color-text-primary)] mb-1.5">{ticket.asunto}</h1>
+            <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)] mb-1.5">{ticket.asunto}</h1>
             <div className="flex items-center gap-2 flex-wrap">
               <Badge variant="gray">{TIPO_LABEL[ticket.tipo] || ticket.tipo}</Badge>
               <Badge variant={estado.variant}>{estado.label}</Badge>

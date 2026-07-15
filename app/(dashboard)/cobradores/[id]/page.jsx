@@ -78,7 +78,7 @@ function CobradorDetalleInner({ params }) {
   if (error || !data) {
     return (
       <div className="max-w-xl mx-auto">
-        <div className="bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] rounded-[16px] p-6 text-center">
+        <div className="cf-card-shadow bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] rounded-[20px] p-6 text-center">
           <p className="font-semibold mb-2">{error || 'Cobrador no encontrado'}</p>
           <button onClick={() => router.back()} className="text-sm underline">Volver</button>
         </div>
@@ -104,7 +104,7 @@ function CobradorDetalleInner({ params }) {
 
       {/* HERO CARD: cobrador + stats + acciones */}
       {(() => {
-        const heroColor = data.activo ? '#a855f7' : '#64748b'
+        const heroColor = data.activo ? 'var(--color-purple)' : '#64748b'
         return (
           <div
             className="cf-hero-card relative rounded-[20px] overflow-hidden"
@@ -165,7 +165,7 @@ function CobradorDetalleInner({ params }) {
                     onClick={() => setConfirmEliminar(true)}
                     disabled={eliminando}
                     className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
-                    style={{ background: 'rgba(239, 68, 68, 0.12)', color: 'var(--color-danger)', border: '1px solid rgba(239, 68, 68, 0.25)' }}
+                    style={{ background: 'color-mix(in srgb, var(--color-danger) 12%, transparent)', color: 'var(--color-danger)', border: '1px solid color-mix(in srgb, var(--color-danger) 25%, transparent)' }}
                     title="Eliminar"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -193,11 +193,11 @@ function CobradorDetalleInner({ params }) {
                   </p>
                 </div>
                 <div className="flex flex-col gap-1.5 shrink-0">
-                  <div className="rounded-[10px] px-2.5 py-1.5 text-right" style={{ background: 'color-mix(in srgb, var(--color-text-muted) 10%, transparent)' }}>
+                  <div className="rounded-[12px] px-2.5 py-1.5 text-right" style={{ background: 'color-mix(in srgb, var(--color-text-muted) 10%, transparent)' }}>
                     <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Cobros</p>
                     <p className="text-[14px] font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{data.pagosMes ?? 0}</p>
                   </div>
-                  <div className="rounded-[10px] px-2.5 py-1.5 text-right" style={{ background: 'color-mix(in srgb, var(--color-text-muted) 10%, transparent)' }}>
+                  <div className="rounded-[12px] px-2.5 py-1.5 text-right" style={{ background: 'color-mix(in srgb, var(--color-text-muted) 10%, transparent)' }}>
                     <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Clientes</p>
                     <p className="text-[14px] font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{clientes.length}</p>
                   </div>
@@ -215,7 +215,7 @@ function CobradorDetalleInner({ params }) {
             onClick={() => setShowReenviar(true)}
             className="w-full flex items-center gap-3 text-left"
           >
-            <div className="w-9 h-9 rounded-full bg-[rgba(59,130,246,0.12)] flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-full bg-[color-mix(in_srgb,var(--color-info)_12%,transparent)] flex items-center justify-center shrink-0">
               <svg className="w-4 h-4 text-[var(--color-info)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
               </svg>
@@ -230,14 +230,14 @@ function CobradorDetalleInner({ params }) {
           </button>
         ) : !nuevaPass ? (
           <div className="space-y-3">
-            <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Resetear contraseña</p>
+            <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-muted)' }}>Resetear contraseña</p>
             <p className="text-xs text-[var(--color-text-muted)]">
               Se generará una contraseña temporal que podrás enviarle al cobrador.
             </p>
             <div className="flex gap-2">
               <button
                 onClick={() => setShowReenviar(false)}
-                className="flex-1 h-10 rounded-[12px] bg-[#1f1f1f] border border-[var(--color-border)] text-[var(--color-text-primary)] text-sm font-medium transition-colors hover:bg-[var(--color-bg-hover)]"
+                className="flex-1 h-10 rounded-[12px] bg-[var(--color-bg-hover)] border border-[var(--color-border)] text-[var(--color-text-primary)] text-sm font-medium transition-colors hover:bg-[var(--color-bg-hover)]"
               >
                 Cancelar
               </button>
@@ -283,7 +283,7 @@ function CobradorDetalleInner({ params }) {
               </svg>
               <p className="text-sm font-semibold text-[var(--color-text-primary)]">Contraseña reseteada</p>
             </div>
-            <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[10px] px-3 py-2">
+            <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[12px] px-3 py-2">
               <p className="text-[10px] text-[var(--color-text-muted)]">Nueva contraseña temporal</p>
               <p className="text-sm font-bold text-[var(--color-accent)] font-mono">{nuevaPass}</p>
             </div>
@@ -306,9 +306,9 @@ function CobradorDetalleInner({ params }) {
 
       {/* Ruta */}
       <Card>
-        <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-3">Ruta asignada</p>
+        <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-3" style={{ color: 'var(--color-text-muted)' }}>Ruta asignada</p>
         {ruta ? (
-          <Link href={`/rutas/${ruta.id}`} className="flex items-center gap-3 hover:bg-[var(--color-bg-card)] -mx-1 px-1 py-2 rounded-[10px] transition-colors">
+          <Link href={`/rutas/${ruta.id}`} className="flex items-center gap-3 hover:bg-[var(--color-bg-card)] -mx-1 px-1 py-2 rounded-[12px] transition-colors">
             <div className="w-9 h-9 rounded-full bg-[rgba(245,197,24,0.15)] flex items-center justify-center shrink-0">
               <svg className="w-4 h-4 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
@@ -327,7 +327,7 @@ function CobradorDetalleInner({ params }) {
       {/* Clientes de la ruta */}
       {clientes.length > 0 && (
         <Card>
-          <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-3">
+          <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-3" style={{ color: 'var(--color-text-muted)' }}>
             Clientes ({clientes.length})
           </p>
           <div className="space-y-2">

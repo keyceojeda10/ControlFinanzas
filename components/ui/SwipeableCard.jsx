@@ -8,7 +8,7 @@
 //   <SwipeableCard
 //     actions={[
 //       { icon: <IconWA/>, label: 'WhatsApp', color: '#25D366', onClick: () => ... },
-//       { icon: <IconPagar/>, label: 'Pagar',  color: '#22c55e', onClick: () => ... },
+//       { icon: <IconPagar/>, label: 'Pagar',  color: 'var(--color-success)', onClick: () => ... },
 //     ]}
 //   >
 //     <ClienteCard ... />

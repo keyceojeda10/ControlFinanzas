@@ -6,7 +6,7 @@ import CardWaves from '@/components/ui/CardWaves'
 const COLOR_TASA = (t) => (t >= 80 ? 'var(--color-success)' : t >= 50 ? 'var(--color-accent)' : 'var(--color-danger)')
 
 export default function CajaResumen({ hero, cards = [], detalle = [] }) {
-  const heroColor = hero?.color || (hero?.valor >= 0 ? '#22c55e' : '#ef4444')
+  const heroColor = hero?.color || (hero?.valor >= 0 ? 'var(--color-success)' : 'var(--color-danger)')
   const tasa = hero?.tasa || 0
   const pct = Math.min(100, Math.max(0, tasa))
 

@@ -76,7 +76,7 @@ export default function SpotlightOverlay({ spotlight, onClose }) {
 
       {/* Glow border around cutout */}
       <div
-        className="absolute border-2 border-[#f5c518] rounded-[12px] spotlight-pulse pointer-events-none"
+        className="absolute border-2 border-[var(--color-accent)] rounded-[12px] spotlight-pulse pointer-events-none"
         style={{
           top: rect.top,
           left: rect.left,
@@ -87,7 +87,7 @@ export default function SpotlightOverlay({ spotlight, onClose }) {
 
       {/* Tooltip */}
       <div
-        className="absolute z-[91] bg-[var(--color-bg-surface)] border border-[#f5c518] rounded-[12px] px-4 py-3 max-w-[260px] shadow-lg shadow-[rgba(245,197,24,0.1)] onboarding-fadein"
+        className="absolute z-[91] bg-[var(--color-bg-surface)] border border-[var(--color-accent)] rounded-[12px] px-4 py-3 max-w-[260px] shadow-lg shadow-[rgba(245,197,24,0.1)] onboarding-fadein"
         style={tooltipStyle}
         onClick={(e) => e.stopPropagation()}
       >
@@ -100,7 +100,7 @@ export default function SpotlightOverlay({ spotlight, onClose }) {
         </button>
         {/* Arrow */}
         <div
-          className="absolute -top-1.5 left-6 w-3 h-3 bg-[var(--color-bg-surface)] border-l border-t border-[#f5c518] rotate-45"
+          className="absolute -top-1.5 left-6 w-3 h-3 bg-[var(--color-bg-surface)] border-l border-t border-[var(--color-accent)] rotate-45"
           style={spotlight.posicion === 'top' ? { top: 'auto', bottom: -6, transform: 'rotate(225deg)' } : {}}
         />
       </div>

@@ -30,7 +30,7 @@ const METODOS = [
     label: 'Interés fijo por período',
     desc: 'El interés se calcula sobre el capital inicial por cada período (semana, mes...). El más usado en Colombia.',
     ejemplo: 'Prestas $500k al 20% mensual → cobras $100k de interés fijo cada mes.',
-    color: '#f5c518',
+    color: 'var(--color-accent)',
     bg: 'rgba(245,197,24,0.1)',
   },
   {
@@ -38,7 +38,7 @@ const METODOS = [
     label: 'Interés sobre saldo',
     desc: 'El interés se recalcula sobre lo que queda por pagar. La cuota inicial es mayor pero va bajando.',
     ejemplo: 'Amortización tipo banco. Ideal para montos altos o clientes grandes.',
-    color: '#3b82f6',
+    color: 'var(--color-info)',
     bg: 'rgba(59,130,246,0.1)',
   },
   {
@@ -46,7 +46,7 @@ const METODOS = [
     label: 'Interés único al inicio',
     desc: 'El interés se cobra una sola vez al entregar el dinero. El cliente devuelve el capital en cuotas.',
     ejemplo: 'Prestas $500k al 20% → se cobran $100k al inicio, quedan $400k netos.',
-    color: '#22c55e',
+    color: 'var(--color-success)',
     bg: 'rgba(34,197,94,0.1)',
   },
   {
@@ -54,7 +54,7 @@ const METODOS = [
     label: 'Solo interés (globo)',
     desc: 'El cliente paga solo intereses en cada cuota y devuelve todo el capital al final.',
     ejemplo: 'Prestas $500k al 20% mensual → cuotas de $100k de interés, al final paga los $500k.',
-    color: '#a855f7',
+    color: 'var(--color-purple)',
     bg: 'rgba(168,85,247,0.1)',
   },
   {
@@ -70,7 +70,7 @@ const METODOS = [
     label: 'Decreciente dinámico',
     desc: 'Cuota que se ajusta al pago real del cliente',
     ejemplo: '10% mensual → $700K → $650K → ...',
-    color: '#06b6d4',
+    color: 'var(--color-teal)',
     bg: 'rgba(6,182,212,0.1)',
   },
   {
@@ -174,14 +174,14 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
         </h2>
         <div className="flex items-center justify-center gap-2">
           <Avatar nombre={cliente.nombre} size={22} fontSize={8} />
-          <span className="text-sm font-medium" style={{ color: '#f5c518' }}>{cliente.nombre}</span>
+          <span className="text-sm font-medium" style={{ color: 'var(--color-accent)' }}>{cliente.nombre}</span>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
           <div className="flex items-center gap-2 text-sm rounded-[12px] px-4 py-3"
-            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#ef4444' }}>
+            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: 'var(--color-danger)' }}>
             <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
             </svg>
@@ -280,7 +280,7 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
                   onClick={() => handleFrecuenciaChange(f.value)}
                   className="h-9 rounded-[10px] border text-[12px] font-medium transition-all cursor-pointer"
                   style={frecuencia === f.value
-                    ? { background: 'rgba(245,197,24,0.15)', border: '1px solid #f5c518', color: '#f5c518' }
+                    ? { background: 'rgba(245,197,24,0.15)', border: '1px solid var(--color-accent)', color: 'var(--color-accent)' }
                     : { background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }
                   }>
                   {f.label}
@@ -347,7 +347,7 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
         {!calculo && (
           <div className="flex items-start gap-2 px-3 py-2.5 rounded-[10px]"
             style={{ background: 'rgba(245,197,24,0.05)', border: '1px solid rgba(245,197,24,0.12)' }}>
-            <svg className="w-3.5 h-3.5 mt-0.5 shrink-0" fill="none" stroke="#f5c518" viewBox="0 0 24 24">
+            <svg className="w-3.5 h-3.5 mt-0.5 shrink-0" fill="none" stroke="var(--color-accent)" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <p className="text-[10px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
@@ -363,7 +363,7 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
           type="submit"
           disabled={loading}
           className="w-full h-12 rounded-[12px] text-base font-bold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
-          style={{ background: '#f5c518', color: '#111' }}>
+          style={{ background: 'var(--color-accent)', color: '#111' }}>
           {loading ? (
             <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />

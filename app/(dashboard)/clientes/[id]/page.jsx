@@ -356,7 +356,7 @@ export default function ClienteDetallePage({ params }) {
   if (error || !cliente) {
     return (
       <div className="max-w-2xl mx-auto">
-        <div className="bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] rounded-[16px] p-6 text-center">
+        <div className="bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] rounded-[20px] cf-card-shadow p-6 text-center">
           <p className="font-semibold mb-2">Cliente no encontrado</p>
           <div className="flex items-center justify-center gap-4 mt-3">
             <button onClick={() => { setError(''); setLoading(true); fetchCliente() }} className="text-sm underline">Reintentar</button>
@@ -426,7 +426,10 @@ export default function ClienteDetallePage({ params }) {
 
       {/* Barra de navegación de ruta */}
       {rutaNav && (
-        <div className="bg-[rgba(245,197,24,0.06)] border border-[rgba(245,197,24,0.15)] rounded-[12px] px-3 py-2.5 flex items-center justify-between">
+        <div
+          className="rounded-[12px] px-3 py-2.5 flex items-center justify-between"
+          style={{ background: 'color-mix(in srgb, var(--color-accent) 6%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-accent) 15%, var(--color-border))' }}
+        >
           <button
             onClick={() => navegarEnRuta(-1)}
             disabled={esPrimeroEnRuta}
@@ -470,7 +473,7 @@ export default function ClienteDetallePage({ params }) {
             <Link
               href={`/prestamos/nuevo?clienteId=${id}&fromCartulina=1`}
               onClick={() => {}}
-              className="text-[11px] font-semibold px-3 py-1.5 rounded-[8px] bg-[var(--color-accent)] text-[#111] hover:bg-[var(--color-accent-hover)] transition-colors"
+              className="text-[11px] font-semibold px-3 py-1.5 rounded-[8px] bg-[var(--color-accent)] text-[var(--color-accent-text)] hover:bg-[var(--color-accent-hover)] transition-colors"
             >
               Crear préstamo
             </Link>
@@ -509,13 +512,13 @@ export default function ClienteDetallePage({ params }) {
           acciones={[
             ...(puedeCrearPrestamos ? [{
               label: 'Nuevo préstamo',
-              color: '#22c55e',
+              color: 'var(--color-success)',
               icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>,
               onClick: () => router.push(`/prestamos/nuevo?clienteId=${cliente.id}`),
             }] : []),
             {
               label: 'Reagendar visita',
-              color: '#f59e0b',
+              color: 'var(--color-warning)',
               icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>,
               onClick: () => setModalReagendar(true),
             },
@@ -524,7 +527,7 @@ export default function ClienteDetallePage({ params }) {
               label: fijandoGPS
                 ? 'Capturando GPS...'
                 : (cliente.latitud != null && cliente.longitud != null ? 'Actualizar ubicación' : 'Fijar ubicación (GPS)'),
-              color: '#14b8a6',
+              color: 'var(--color-teal)',
               icon: (
                 <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -536,32 +539,32 @@ export default function ClienteDetallePage({ params }) {
             }] : []),
             {
               label: 'Historial',
-              color: '#3b82f6',
+              color: 'var(--color-info)',
               icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
               onClick: () => router.push(`/clientes/${id}/historial`),
             },
             {
               label: 'QR',
-              color: '#8b5cf6',
+              color: 'var(--color-purple)',
               icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" /><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z" /></svg>,
               onClick: () => setModalQR(true),
             },
             ...(puedeEditarClientes ? [{
               label: 'Editar',
-              color: '#a855f7',
+              color: 'var(--color-purple)',
               icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" /></svg>,
               onClick: () => router.push(`/clientes/${id}/editar`),
             }] : []),
             ...(esOwner ? [{
               label: cliente.estado === 'inactivo' ? 'Activar' : 'Inactivar',
-              color: cliente.estado === 'inactivo' ? '#22c55e' : '#f59e0b',
+              color: cliente.estado === 'inactivo' ? 'var(--color-success)' : 'var(--color-warning)',
               icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>,
               onClick: handleToggleInactivo,
               disabled: actionLoading,
             }] : []),
             ...(esOwner ? [{
               label: 'Eliminar',
-              color: '#ef4444',
+              color: 'var(--color-danger)',
               icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>,
               onClick: () => setShowConfirmDelete(true),
               disabled: actionLoading,
@@ -576,10 +579,10 @@ export default function ClienteDetallePage({ params }) {
           onClick={festivoHoy ? quitarFestivoHoy : marcarFestivoHoy}
           disabled={guardandoFestivo}
           className={[
-            'flex items-center gap-1.5 h-8 rounded-[10px] border text-xs px-2.5 transition-all disabled:opacity-50',
+            'flex items-center gap-1.5 h-8 rounded-[12px] border text-xs px-2.5 transition-all disabled:opacity-50',
             festivoHoy
               ? 'border-[var(--color-success)] text-[var(--color-success)] bg-[rgba(34,197,94,0.08)]'
-              : 'border-[#2a2a2a] text-[#a0a0a0] hover:border-[var(--color-success)] hover:text-[var(--color-success)]',
+              : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-success)] hover:text-[var(--color-success)]',
           ].join(' ')}
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -611,7 +614,7 @@ export default function ClienteDetallePage({ params }) {
       {/* Préstamos activos */}
       {prestamosActivos.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-[var(--color-text-muted)] mb-3 uppercase tracking-wide">
+          <h2 className="text-[11px] font-extrabold text-[var(--color-text-muted)] mb-3 uppercase tracking-[.07em]">
             Préstamos activos
           </h2>
           <div className="space-y-3">
@@ -625,7 +628,7 @@ export default function ClienteDetallePage({ params }) {
       {/* Líneas de crédito */}
       {cliente.lineasCredito?.filter(lc => lc.estado === 'activa').length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-[var(--color-text-muted)] mb-3 uppercase tracking-wide">
+          <h2 className="text-[11px] font-extrabold text-[var(--color-text-muted)] mb-3 uppercase tracking-[.07em]">
             Lineas de credito
           </h2>
           <div className="space-y-3">
@@ -638,21 +641,21 @@ export default function ClienteDetallePage({ params }) {
                   href={`/lineas-credito/${lc.id}`}
                   hoverable
                   padding={false}
-                  glowColor="#8b5cf6"
+                  glowColor="var(--color-purple)"
                   className="block px-4 py-3.5"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <svg className="w-4 h-4" style={{ color: '#8b5cf6' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4" style={{ color: 'var(--color-purple)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                       </svg>
                       <span className="text-xs font-semibold text-[var(--color-text-primary)]">Línea de crédito</span>
                     </div>
                     <span
                       className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
-                      style={{ background: '#8b5cf620', color: '#8b5cf6', border: '1px solid #8b5cf635' }}
+                      style={{ background: 'color-mix(in srgb, var(--color-purple) 12%, transparent)', color: 'var(--color-purple)', border: '1px solid color-mix(in srgb, var(--color-purple) 20%, transparent)' }}
                     >
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#8b5cf6' }} />
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--color-purple)' }} />
                       Activa
                     </span>
                   </div>
@@ -667,20 +670,20 @@ export default function ClienteDetallePage({ params }) {
                     </div>
                     <div>
                       <p className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider">Disponible</p>
-                      <p className="text-xs font-mono-display font-bold mt-0.5" style={{ color: '#8b5cf6' }}>{formatMoney(lc.cupoDisponible || 0)}</p>
+                      <p className="text-xs font-mono-display font-bold mt-0.5" style={{ color: 'var(--color-purple)' }}>{formatMoney(lc.cupoDisponible || 0)}</p>
                     </div>
                   </div>
                   <div>
                     <div className="flex items-center justify-between text-[10px] mb-1">
                       <span className="text-[var(--color-text-muted)]">Uso del cupo</span>
-                      <span className="font-mono-display font-semibold" style={{ color: porcentaje > 80 ? 'var(--color-danger)' : '#8b5cf6' }}>{porcentaje}%</span>
+                      <span className="font-mono-display font-semibold" style={{ color: porcentaje > 80 ? 'var(--color-danger)' : 'var(--color-purple)' }}>{porcentaje}%</span>
                     </div>
                     <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
                       <div
                         className="h-full rounded-full transition-all"
                         style={{
                           width: `${Math.max(porcentaje, 2)}%`,
-                          background: porcentaje > 80 ? 'var(--color-danger)' : 'linear-gradient(90deg, #8b5cf6cc, #8b5cf6)',
+                          background: porcentaje > 80 ? 'var(--color-danger)' : 'linear-gradient(90deg, color-mix(in srgb, var(--color-purple) 80%, transparent), var(--color-purple))',
                         }}
                       />
                     </div>
@@ -713,7 +716,7 @@ export default function ClienteDetallePage({ params }) {
       {/* Historial */}
       {historial.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-[var(--color-text-muted)] mb-3 uppercase tracking-wide">
+          <h2 className="text-[11px] font-extrabold text-[var(--color-text-muted)] mb-3 uppercase tracking-[.07em]">
             Historial
           </h2>
           <div className="space-y-2.5">
@@ -737,7 +740,7 @@ export default function ClienteDetallePage({ params }) {
               </button>
               <button
                 onClick={irSiguienteEnRuta}
-                className="flex-1 py-3 rounded-[12px] bg-[var(--color-accent)] text-[#1a1a2e] text-sm font-semibold active:scale-[0.98] transition-all"
+                className="flex-1 py-3 rounded-[12px] bg-[var(--color-accent)] text-[var(--color-accent-text)] text-sm font-semibold active:scale-[0.98] transition-all"
               >
                 Siguiente cliente →
               </button>
@@ -847,8 +850,8 @@ export default function ClienteDetallePage({ params }) {
               onClick={_doFijarGPS}
               className="w-full flex items-center gap-3 px-4 py-3.5 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] hover:border-[var(--color-accent)] transition-colors text-left"
             >
-              <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, #14b8a6 12%, transparent)' }}>
-                <svg className="w-5 h-5 text-[#14b8a6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-teal) 12%, transparent)' }}>
+                <svg className="w-5 h-5 text-[var(--color-teal)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
@@ -862,7 +865,7 @@ export default function ClienteDetallePage({ params }) {
               onClick={() => setConfirmGPS({ modo: 'mapa' })}
               className="w-full flex items-center gap-3 px-4 py-3.5 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] hover:border-[var(--color-accent)] transition-colors text-left"
             >
-              <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)' }}>
+              <div className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)' }}>
                 <svg className="w-5 h-5 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                 </svg>
@@ -980,7 +983,7 @@ function DeleteClienteModal({ cliente, prestamos, onClose, onDeletePrestamo, onT
                 value={buscar}
                 onChange={e => setBuscar(e.target.value)}
                 placeholder="Buscar cliente por nombre o cédula..."
-                className="w-full mb-2 px-3 py-2 bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[10px] text-sm text-[var(--color-text-primary)] placeholder-[#555] focus:outline-none focus:border-[var(--color-accent)]"
+                className="w-full mb-2 px-3 py-2 bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[12px] text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)]"
               />
               {loadingClientes ? (
                 <p className="text-xs text-[var(--color-text-muted)] text-center py-3">Buscando...</p>
@@ -1013,12 +1016,12 @@ function DeleteClienteModal({ cliente, prestamos, onClose, onDeletePrestamo, onT
           {!trasladarId && (
             <div className="space-y-3">
               {prestamos.map(p => (
-                <div key={p.id} className="p-3 rounded-[12px] bg-[#151515] border border-[#222]">
+                <div key={p.id} className="p-3 rounded-[12px] bg-[var(--color-bg-card)] border border-[var(--color-border)]">
                   <div className="flex items-center justify-between mb-2">
                     <div>
-                      <p className="text-sm font-medium text-[var(--color-text-primary)]">{formatMoney(p.montoPrestado)}</p>
+                      <p className="text-sm font-medium font-mono-display text-[var(--color-text-primary)]">{formatMoney(p.montoPrestado)}</p>
                       <p className="text-[10px] text-[var(--color-text-muted)]">
-                        Saldo: {formatMoney(p.saldoPendiente)} - {p.estado}
+                        Saldo: <span className="font-mono-display">{formatMoney(p.saldoPendiente)}</span> - {p.estado}
                       </p>
                     </div>
                   </div>
@@ -1090,8 +1093,8 @@ function TopePrestamoCard({ tope, onSave }) {
 
   if (editando) {
     return (
-      <div className="rounded-[12px] border p-3.5 flex items-center gap-3" style={{ background: 'color-mix(in srgb, var(--color-warning) 5%, var(--color-bg-card))', borderColor: 'color-mix(in srgb, var(--color-warning) 20%, var(--color-border))' }}>
-        <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-warning) 15%, transparent)' }}>
+      <div className="rounded-[20px] cf-card-shadow border p-3.5 flex items-center gap-3" style={{ background: 'color-mix(in srgb, var(--color-warning) 5%, var(--color-bg-card))', borderColor: 'color-mix(in srgb, var(--color-warning) 20%, var(--color-border))' }}>
+        <div className="w-8 h-8 rounded-[12px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-warning) 15%, transparent)' }}>
           <svg className="w-4 h-4" style={{ color: 'var(--color-warning)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
           </svg>
@@ -1106,7 +1109,7 @@ function TopePrestamoCard({ tope, onSave }) {
               onChange={handleChange}
               placeholder="Sin limite"
               autoFocus
-              className="w-full h-9 rounded-[10px] border text-sm pl-7 pr-3 bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.08)] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[rgba(245,197,24,0.2)] transition-all"
+              className="w-full h-9 rounded-[12px] border text-sm pl-7 pr-3 bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.08)] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[rgba(245,197,24,0.2)] transition-all"
             />
           </div>
         </div>
@@ -1134,7 +1137,7 @@ function TopePrestamoCard({ tope, onSave }) {
   return (
     <Tag
       {...(editable ? { onClick: handleEditar } : {})}
-      className={`w-full rounded-[12px] border p-3.5 flex items-center gap-3 text-left transition-colors${editable ? ' hover:border-[color-mix(in_srgb,var(--color-warning)_40%,var(--color-border))] active:scale-[0.99] cursor-pointer' : ''}`}
+      className={`w-full rounded-[20px] cf-card-shadow border p-3.5 flex items-center gap-3 text-left transition-colors${editable ? ' hover:border-[color-mix(in_srgb,var(--color-warning)_40%,var(--color-border))] active:scale-[0.99] cursor-pointer' : ''}`}
       style={{
         background: tope > 0
           ? 'color-mix(in srgb, var(--color-warning) 5%, var(--color-bg-card))'
@@ -1144,14 +1147,14 @@ function TopePrestamoCard({ tope, onSave }) {
           : 'var(--color-border)',
       }}
     >
-      <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: tope > 0 ? 'color-mix(in srgb, var(--color-warning) 15%, transparent)' : 'color-mix(in srgb, var(--color-text-muted) 10%, transparent)' }}>
+      <div className="w-8 h-8 rounded-[12px] flex items-center justify-center shrink-0" style={{ background: tope > 0 ? 'color-mix(in srgb, var(--color-warning) 15%, transparent)' : 'color-mix(in srgb, var(--color-text-muted) 10%, transparent)' }}>
         <svg className="w-4 h-4" style={{ color: tope > 0 ? 'var(--color-warning)' : 'var(--color-text-muted)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
         </svg>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[11px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Tope de préstamo</p>
-        <p className="text-sm font-semibold mt-0.5" style={{ color: tope > 0 ? 'var(--color-warning)' : 'var(--color-text-muted)' }}>
+        <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-muted)' }}>Tope de préstamo</p>
+        <p className="text-sm font-semibold font-mono-display mt-0.5" style={{ color: tope > 0 ? 'var(--color-warning)' : 'var(--color-text-muted)' }}>
           {tope > 0 ? `$${formatDisplay(tope)}` : 'Sin limite'}
         </p>
       </div>
@@ -1182,7 +1185,7 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, orgNombre, ocultarSaldo
         className="flex items-center gap-3 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-4 py-3 hover:border-[var(--color-border)]/70 transition-colors group"
       >
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-[var(--color-text-primary)]">{formatMoney(p.montoPrestado)}</p>
+          <p className="text-sm font-mono-display text-[var(--color-text-primary)]">{formatMoney(p.montoPrestado)}</p>
           <p className="text-xs text-[var(--color-text-muted)]">
             {new Date(p.fechaInicio).toLocaleDateString('es-CO')}
           </p>
@@ -1191,7 +1194,7 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, orgNombre, ocultarSaldo
           <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--color-danger) 15%, transparent)', color: 'var(--color-danger)' }}>Perdido</span>
         )}
         <Badge variant={badge.variant}>{badge.label}</Badge>
-        <svg className="w-4 h-4 text-[#2a2a2a] group-hover:text-[var(--color-text-muted)] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-4 h-4 text-[var(--color-border)] group-hover:text-[var(--color-text-muted)] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
       </Link>
@@ -1202,7 +1205,7 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, orgNombre, ocultarSaldo
     <Card>
       <div className="flex items-start justify-between mb-3">
         <div>
-          <p className="text-base font-bold text-[var(--color-text-primary)]">{formatMoney(p.montoPrestado)}</p>
+          <p className="text-base font-bold font-mono-display text-[var(--color-text-primary)]">{formatMoney(p.montoPrestado)}</p>
           <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
             Prestado el {new Date(p.fechaInicio).toLocaleDateString('es-CO')}
           </p>
@@ -1229,8 +1232,8 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, orgNombre, ocultarSaldo
       {/* Barra de progreso */}
       <div className="mb-3">
         <div className="flex justify-between text-xs text-[var(--color-text-muted)] mb-1.5">
-          <span>Pagado: {formatMoney(Math.max(0, (p.totalAPagar ?? p.montoPrestado) - (p.saldoPendiente ?? 0)))}</span>
-          <span>{porcentaje}%</span>
+          <span>Pagado: <span className="font-mono-display">{formatMoney(Math.max(0, (p.totalAPagar ?? p.montoPrestado) - (p.saldoPendiente ?? 0)))}</span></span>
+          <span className="font-mono-display">{porcentaje}%</span>
         </div>
         <div className="h-1.5 bg-[var(--color-bg-hover)] rounded-full overflow-hidden">
           <div
@@ -1242,7 +1245,7 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, orgNombre, ocultarSaldo
           />
         </div>
         <div className="flex justify-between text-xs mt-1.5">
-          <span className="text-[var(--color-text-muted)]">Saldo: <span className="text-[var(--color-text-primary)] font-medium">{formatMoney(p.saldoPendiente)}</span></span>
+          <span className="text-[var(--color-text-muted)]">Saldo: <span className="text-[var(--color-text-primary)] font-medium font-mono-display">{formatMoney(p.saldoPendiente)}</span></span>
           {p.diasMora > 0 && (
             <span className="text-[var(--color-danger)] font-medium">{p.diasMora} días en mora</span>
           )}

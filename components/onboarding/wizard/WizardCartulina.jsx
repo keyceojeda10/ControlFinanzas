@@ -150,7 +150,7 @@ export default function WizardCartulina({ onComplete, onSkip }) {
 
             <div className="flex items-center gap-2 px-3 py-2.5 rounded-[10px] mt-2"
               style={{ background: 'rgba(245,197,24,0.05)', border: '1px solid rgba(245,197,24,0.12)' }}>
-              <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="#f5c518" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="var(--color-accent)" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
@@ -200,7 +200,7 @@ export default function WizardCartulina({ onComplete, onSkip }) {
               {resultados.map((r, i) => (
                 <div key={i} className="flex items-center gap-3 py-2" style={{ borderTop: i > 0 ? '1px solid var(--color-border)' : 'none' }}>
                   <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-[12px] font-bold"
-                    style={{ background: 'rgba(245,197,24,0.15)', color: '#f5c518' }}>
+                    style={{ background: 'rgba(245,197,24,0.15)', color: 'var(--color-accent)' }}>
                     {(r.nombre || '?')[0].toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -221,7 +221,7 @@ export default function WizardCartulina({ onComplete, onSkip }) {
               onClick={crearDesdeResultados}
               disabled={enviando}
               className="w-full h-12 rounded-[12px] text-base font-bold transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50"
-              style={{ background: '#f5c518', color: '#111' }}>
+              style={{ background: 'var(--color-accent)', color: '#111' }}>
               {enviando ? 'Creando...' : `Importar ${resultados.length === 1 ? 'este cliente' : `${resultados.length} clientes`}`}
             </button>
 

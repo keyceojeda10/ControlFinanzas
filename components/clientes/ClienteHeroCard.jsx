@@ -11,7 +11,7 @@ import Avatar from '@/components/ui/Avatar'
 const COLOR_OK   = 'var(--color-accent)'
 const COLOR_HOT  = '#f97316'
 const COLOR_CRIT = 'var(--color-danger)'
-const COLOR_OFF  = '#64748b'
+const COLOR_OFF  = 'var(--color-text-muted)'
 
 function moodColorFromCliente(c, prestamosActivos) {
   if (c?.estado === 'cancelado' || c?.estado === 'inactivo') return COLOR_OFF
@@ -341,7 +341,7 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
               <a
                 href={`tel:${cliente.telefono}`}
                 className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95"
-                style={{ background: 'rgba(59, 130, 246, 0.18)', color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.35)' }}
+                style={{ background: 'rgba(59, 130, 246, 0.18)', color: 'var(--color-info)', border: '1px solid rgba(59, 130, 246, 0.35)' }}
                 title="Llamar"
                 aria-label="Llamar"
               >
@@ -436,7 +436,7 @@ export function InfoContactoCard({ cliente }) {
         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
       </svg>
     ),
-    color: '#22c55e',
+    color: 'var(--color-success)',
   })
   if (cliente?.direccion) items.push({
     label: 'Dirección',
@@ -447,7 +447,7 @@ export function InfoContactoCard({ cliente }) {
         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
       </svg>
     ),
-    color: '#3b82f6',
+    color: 'var(--color-info)',
   })
   if (cliente?.referencia) items.push({
     label: 'Referencia',
@@ -457,7 +457,7 @@ export function InfoContactoCard({ cliente }) {
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
       </svg>
     ),
-    color: '#a855f7',
+    color: 'var(--color-purple)',
   })
 
   if (items.length === 0 && !cliente?.notas) return null
@@ -465,9 +465,9 @@ export function InfoContactoCard({ cliente }) {
   return (
     <div
       className="rounded-[16px] p-3"
-      style={{ background: 'linear-gradient(135deg, color-mix(in srgb, #3b82f6 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)', border: '1px solid color-mix(in srgb, #3b82f6 16%, var(--color-border))' }}
+      style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-info) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)', border: '1px solid color-mix(in srgb, var(--color-info) 16%, var(--color-border))' }}
     >
-      <p className="text-[10px] font-bold uppercase tracking-wider mb-2 px-1" style={{ color: 'var(--color-text-muted)' }}>
+      <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-2 px-1" style={{ color: 'var(--color-text-muted)' }}>
         Información de contacto
       </p>
       <div className="space-y-1.5">

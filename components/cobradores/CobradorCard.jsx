@@ -6,11 +6,11 @@ import { formatMoney } from '@/lib/i18n'
 import Link from 'next/link'
 import Avatar from '@/components/ui/Avatar'
 
-const COLOR_OK   = '#22c55e'
-const COLOR_HOT  = '#f5c518'
+const COLOR_OK   = 'var(--color-success)'
+const COLOR_HOT  = 'var(--color-accent)'
 const COLOR_WARN = '#f97316'
-const COLOR_CRIT = '#ef4444'
-const COLOR_OFF  = '#64748b'
+const COLOR_CRIT = 'var(--color-danger)'
+const COLOR_OFF  = 'var(--color-text-muted)'
 
 function moodColor(progreso, esperadoHoy, activo) {
   if (!activo) return COLOR_OFF

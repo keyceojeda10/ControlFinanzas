@@ -56,10 +56,10 @@ export default function ScoreCrediticio({ cedula, plan }) {
         ) : (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <StatCard label="Créditos activos" value={data.datos.creditosActivos} color="#f5c518" />
-              <StatCard label="Completados" value={data.datos.creditosCompletados} color="#22c55e" />
-              <StatCard label="En mora" value={data.datos.creditosEnMora} color="#ef4444" />
-              <StatCard label="Cancelados" value={data.datos.creditosCancelados} color="#888888" />
+              <StatCard label="Créditos activos" value={data.datos.creditosActivos} color="var(--color-accent)" />
+              <StatCard label="Completados" value={data.datos.creditosCompletados} color="var(--color-success)" />
+              <StatCard label="En mora" value={data.datos.creditosEnMora} color="var(--color-danger)" />
+              <StatCard label="Cancelados" value={data.datos.creditosCancelados} color="var(--color-text-muted)" />
             </div>
 
             <div className="text-xs text-[var(--color-text-muted)] border-t border-[var(--color-border)] pt-3">

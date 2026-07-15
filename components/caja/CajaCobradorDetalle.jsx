@@ -44,7 +44,7 @@ export default function CajaCobradorDetalle({ data }) {
           label: data?.esRango ? 'Efectivo del período' : (esCapitalEfectivo ? 'Dinero en mano' : 'Efectivo del día'),
           valor: r.dineroEnMano ?? 0,
           subtitulo: esCapitalEfectivo ? 'Capital en ruta − Gastos' : 'Cobrado + Seguros + Recargos − Prestado − Gastos',
-          color: (r.dineroEnMano ?? 0) >= 0 ? '#22c55e' : '#ef4444',
+          color: (r.dineroEnMano ?? 0) >= 0 ? 'var(--color-success)' : 'var(--color-danger)',
         }}
         cards={[
           ...(r.saldoApertura != null ? [{ label: 'Inicio del dia', valor: r.saldoApertura, color: 'var(--color-text-muted)' }] : []),

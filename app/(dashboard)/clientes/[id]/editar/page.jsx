@@ -47,7 +47,7 @@ export default function EditarClientePage({ params }) {
   if (error || !cliente) {
     return (
       <div className="max-w-2xl mx-auto">
-        <div className="bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] rounded-[16px] p-6 text-center">
+        <div className="bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] rounded-[20px] p-6 text-center">
           <p className="font-semibold mb-2">{error || 'Cliente no encontrado'}</p>
           <button onClick={() => router.back()} className="text-sm underline">Volver</button>
         </div>
@@ -81,7 +81,7 @@ export default function EditarClientePage({ params }) {
             </svg>
           </div>
           <div>
-            <h1 className="text-xl font-bold leading-tight" style={{ color: 'var(--color-text-primary)' }}>Editar cliente</h1>
+            <h1 className="text-[25px] font-semibold leading-tight" style={{ color: 'var(--color-text-primary)' }}>Editar cliente</h1>
             <p className="text-[12px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Modifica los datos del cliente</p>
           </div>
         </div>

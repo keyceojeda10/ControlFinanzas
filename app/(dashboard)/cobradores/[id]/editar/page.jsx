@@ -12,7 +12,7 @@ import OfflineFallback              from '@/components/offline/OfflineFallback'
 
 const SectionCard = ({ icon, title, color = 'var(--color-accent)', children, accent }) => (
   <div
-    className="rounded-[16px] p-4"
+    className="cf-card-shadow rounded-[20px] p-4"
     style={{
       background: `linear-gradient(135deg, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
       border: '1px solid var(--color-border)',
@@ -25,7 +25,7 @@ const SectionCard = ({ icon, title, color = 'var(--color-accent)', children, acc
         >
           <span className="w-3.5 h-3.5">{icon}</span>
         </div>
-        <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color }}>
+        <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color }}>
           {title}
         </p>
       </div>
@@ -143,7 +143,7 @@ function EditarCobradorInner({ params }) {
       <div className="max-w-md mx-auto">
         <div className="animate-pulse space-y-4">
           <div className="h-6 bg-[var(--color-bg-surface)] rounded w-40" />
-          <div className="h-48 bg-[var(--color-bg-surface)] rounded-[16px]" />
+          <div className="h-48 bg-[var(--color-bg-surface)] rounded-[20px]" />
         </div>
       </div>
     )
@@ -165,16 +165,16 @@ function EditarCobradorInner({ params }) {
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
             style={{
-              background: 'linear-gradient(135deg, color-mix(in srgb, #a855f7 22%, transparent), color-mix(in srgb, #a855f7 12%, transparent))',
-              border: '1px solid color-mix(in srgb, #a855f7 30%, transparent)',
-              color: '#a855f7',
+              background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-purple) 22%, transparent), color-mix(in srgb, var(--color-purple) 12%, transparent))',
+              border: '1px solid color-mix(in srgb, var(--color-purple) 30%, transparent)',
+              color: 'var(--color-purple)',
             }}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
             </svg>
           </div>
-          <h1 className="text-xl font-bold leading-tight" style={{ color: 'var(--color-text-primary)' }}>Editar cobrador</h1>
+          <h1 className="text-[25px] font-semibold leading-tight" style={{ color: 'var(--color-text-primary)' }}>Editar cobrador</h1>
         </div>
       </div>
 
@@ -193,7 +193,7 @@ function EditarCobradorInner({ params }) {
         {/* Datos personales */}
         <SectionCard
           title="Datos personales"
-          color="#a855f7"
+          color="var(--color-purple)"
           icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>}
         >
           <div className="space-y-3">
@@ -223,7 +223,7 @@ function EditarCobradorInner({ params }) {
         {/* Acceso al sistema */}
         <SectionCard
           title="Acceso al sistema"
-          color="#22c55e"
+          color="var(--color-success)"
           icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>}
         >
           <div className="space-y-3">
@@ -250,8 +250,8 @@ function EditarCobradorInner({ params }) {
 
         {/* Compartir credenciales después de cambiar contraseña */}
         {credencialesGuardadas && (
-          <div className="border border-[rgba(16,185,129,0.3)] rounded-[12px] p-4"
-            style={{ background: 'linear-gradient(135deg, #22c55e0A 0%, var(--color-bg-card) 50%, #22c55e05 100%)' }}
+          <div className="border border-[color-mix(in_srgb,var(--color-success)_30%,transparent)] rounded-[12px] p-4"
+            style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 6%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, var(--color-success) 3%, var(--color-bg-card)) 100%)' }}
           >
             <div className="flex items-center gap-2 mb-3">
               <svg className="w-4 h-4 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -195,7 +195,7 @@ function ActividadPageInner() {
     <div className="max-w-2xl lg:max-w-5xl mx-auto px-4 py-6">
       {/* Header */}
       <div className="mb-5">
-        <h1 className="text-lg font-bold" style={{ color: 'var(--color-text-primary)' }}>Actividad</h1>
+        <h1 className="text-[25px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>Actividad</h1>
         <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
           Todo lo que pasa en tu negocio, en orden
         </p>
@@ -209,7 +209,7 @@ function ActividadPageInner() {
             onClick={() => setFiltroTipo(filtroTipo === f.value ? '' : f.value)}
             className="shrink-0 px-3 py-1.5 text-[11px] font-semibold rounded-full transition-all"
             style={filtroTipo === f.value
-              ? { background: 'var(--color-accent)', color: '#000' }
+              ? { background: 'var(--color-accent)', color: 'var(--color-accent-text)' }
               : { background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)' }}
           >
             {f.label}
@@ -239,7 +239,7 @@ function ActividadPageInner() {
         <div className="mb-4 p-3 rounded-[12px] space-y-2.5" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
           {!filtroActivoEnChips && (
             <div>
-              <label className="text-[10px] font-bold uppercase tracking-wider block mb-1" style={{ color: 'var(--color-text-muted)' }}>Tipo de accion</label>
+              <label className="text-[10px] font-extrabold uppercase tracking-[.07em] block mb-1" style={{ color: 'var(--color-text-muted)' }}>Tipo de accion</label>
               <select
                 value={filtroTipo}
                 onChange={(e) => setFiltroTipo(e.target.value)}
@@ -254,7 +254,7 @@ function ActividadPageInner() {
           )}
           {usuarios.length > 0 && (
             <div>
-              <label className="text-[10px] font-bold uppercase tracking-wider block mb-1" style={{ color: 'var(--color-text-muted)' }}>Usuario</label>
+              <label className="text-[10px] font-extrabold uppercase tracking-[.07em] block mb-1" style={{ color: 'var(--color-text-muted)' }}>Usuario</label>
               <select
                 value={filtroUsuario}
                 onChange={(e) => setFiltroUsuario(e.target.value)}
@@ -270,7 +270,7 @@ function ActividadPageInner() {
           )}
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-[10px] font-bold uppercase tracking-wider block mb-1" style={{ color: 'var(--color-text-muted)' }}>Desde</label>
+              <label className="text-[10px] font-extrabold uppercase tracking-[.07em] block mb-1" style={{ color: 'var(--color-text-muted)' }}>Desde</label>
               <input
                 type="date"
                 value={desde}
@@ -280,7 +280,7 @@ function ActividadPageInner() {
               />
             </div>
             <div>
-              <label className="text-[10px] font-bold uppercase tracking-wider block mb-1" style={{ color: 'var(--color-text-muted)' }}>Hasta</label>
+              <label className="text-[10px] font-extrabold uppercase tracking-[.07em] block mb-1" style={{ color: 'var(--color-text-muted)' }}>Hasta</label>
               <input
                 type="date"
                 value={hasta}
@@ -307,7 +307,7 @@ function ActividadPageInner() {
         <div className="space-y-3">
           {[...Array(8)].map((_, i) => (
             <div key={i} className="flex items-center gap-3 animate-pulse">
-              <div className="w-8 h-8 rounded-[10px] shrink-0" style={{ background: 'var(--color-bg-hover)' }} />
+              <div className="w-8 h-8 rounded-[12px] shrink-0" style={{ background: 'var(--color-bg-hover)' }} />
               <div className="flex-1 space-y-1.5">
                 <div className="h-3 rounded" style={{ width: '60%', background: 'var(--color-bg-hover)' }} />
                 <div className="h-2 rounded" style={{ width: '35%', background: 'var(--color-bg-hover)' }} />
@@ -334,7 +334,7 @@ function ActividadPageInner() {
             <div key={grupo.key}>
               {/* Separador de dia */}
               <div className="flex items-center gap-2.5 mb-2.5">
-                <span className="text-[10px] font-bold uppercase tracking-wider shrink-0" style={{ color: 'var(--color-text-muted)' }}>
+                <span className="text-[10px] font-extrabold uppercase tracking-[.07em] shrink-0" style={{ color: 'var(--color-text-muted)' }}>
                   {grupo.label}
                 </span>
                 <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
@@ -347,7 +347,7 @@ function ActividadPageInner() {
 
                 <div className="space-y-0.5">
                   {grupo.items.map((item) => {
-                    const config = ACCIONES[item.accion] || { label: item.accion, color: '#888' }
+                    const config = ACCIONES[item.accion] || { label: item.accion, color: 'var(--color-text-muted)' }
                     const icon = getIcon(item.accion)
                     const esDestructiva = item.accion?.startsWith('eliminar') || item.accion === 'anular_pago'
 
@@ -364,7 +364,7 @@ function ActividadPageInner() {
 
                         {/* Icono */}
                         <div
-                          className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0"
+                          className="w-8 h-8 rounded-[12px] flex items-center justify-center shrink-0"
                           style={{ background: `color-mix(in srgb, ${config.color} 12%, transparent)` }}
                         >
                           {icon}

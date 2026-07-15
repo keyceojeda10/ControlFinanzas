@@ -17,7 +17,7 @@ const createIcon = () => {
     className: '',
     html: `<div style="
       width:32px;height:32px;
-      background:#f5c518;
+      background:var(--color-accent);
       border:3px solid #0a0a0a;
       border-radius:50% 50% 50% 0;
       transform:rotate(-45deg);

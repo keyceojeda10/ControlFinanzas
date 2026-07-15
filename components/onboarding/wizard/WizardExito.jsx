@@ -17,7 +17,7 @@ function getNextSteps(flujo, cliente, prestamo) {
   if (!cliente) {
     steps.push({
       href: '/clientes/nuevo',
-      color: '#f5c518',
+      color: 'var(--color-accent)',
       bg: 'rgba(245,197,24,0.1)',
       titulo: 'Registra tu primer cliente',
       desc: 'Agrega un cliente para empezar a prestar.',
@@ -30,7 +30,7 @@ function getNextSteps(flujo, cliente, prestamo) {
   } else if (prestamo) {
     steps.push({
       href: '/prestamos',
-      color: '#22c55e',
+      color: 'var(--color-success)',
       bg: 'rgba(34,197,94,0.1)',
       titulo: 'Registra el primer cobro',
       desc: 'Abre el préstamo y toca "Registrar pago". Funciona sin internet.',
@@ -43,7 +43,7 @@ function getNextSteps(flujo, cliente, prestamo) {
   } else {
     steps.push({
       href: '/prestamos/nuevo',
-      color: '#22c55e',
+      color: 'var(--color-success)',
       bg: 'rgba(34,197,94,0.1)',
       titulo: 'Crea tu primer préstamo',
       desc: `Préstale a ${cliente.nombre} y empieza a cobrar.`,
@@ -71,7 +71,7 @@ function getNextSteps(flujo, cliente, prestamo) {
   } else {
     steps.push({
       href: '/rutas',
-      color: '#3b82f6',
+      color: 'var(--color-info)',
       bg: 'rgba(59,130,246,0.1)',
       titulo: 'Crea tu primera ruta de cobro',
       desc: 'Agrupa clientes por zona. Organiza mejor tus cobros diarios.',
@@ -85,7 +85,7 @@ function getNextSteps(flujo, cliente, prestamo) {
 
   steps.push({
     href: '/migrador',
-    color: '#f5c518',
+    color: 'var(--color-accent)',
     bg: 'rgba(245,197,24,0.1)',
     titulo: 'Sube toda tu cartera',
     desc: 'Toma foto de tus cartulinas o sube un Excel con todos tus clientes.',
@@ -113,7 +113,7 @@ export default function WizardExito({ cliente, prestamo, flujo, onFinish }) {
         <div className="mb-5 mt-2">
           <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto"
             style={{ background: 'rgba(245,197,24,0.15)' }}>
-            <svg className="w-10 h-10" fill="none" stroke="#f5c518" viewBox="0 0 24 24">
+            <svg className="w-10 h-10" fill="none" stroke="var(--color-accent)" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
             </svg>
           </div>
@@ -132,15 +132,15 @@ export default function WizardExito({ cliente, prestamo, flujo, onFinish }) {
         {prestamo && (
           <div className="w-full max-w-xs grid grid-cols-2 gap-2.5 mb-7">
             {[
-              { label: 'Cliente',       value: cliente?.nombre ?? '—',               color: '#f5c518' },
-              { label: 'Prestado',      value: formatMoney(prestamo.montoPrestado),   color: '#22c55e' },
+              { label: 'Cliente',       value: cliente?.nombre ?? '—',               color: 'var(--color-accent)' },
+              { label: 'Prestado',      value: formatMoney(prestamo.montoPrestado),   color: 'var(--color-success)' },
               { label: 'Total a cobrar',value: formatMoney(prestamo.totalAPagar),     color: '#f97316' },
               { label: labelCuota,      value: formatMoney(prestamo.cuotaDiaria),     color: '#a78bfa' },
             ].map((k) => (
               <div key={k.label} className="rounded-[12px] px-3 py-3 text-left"
                 style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
                 <p className="text-[10px] mb-0.5" style={{ color: 'var(--color-text-muted)' }}>{k.label}</p>
-                <p className="text-[13px] font-bold truncate" style={{ color: k.color }}>{k.value}</p>
+                <p className="text-[13px] font-bold truncate font-mono-display" style={{ color: k.color }}>{k.value}</p>
               </div>
             ))}
           </div>
@@ -172,7 +172,7 @@ export default function WizardExito({ cliente, prestamo, flujo, onFinish }) {
         <button
           onClick={onFinish}
           className="w-full max-w-xs h-12 rounded-[12px] text-base font-bold transition-all active:scale-[0.98] cursor-pointer mb-1"
-          style={{ background: '#f5c518', color: '#111' }}>
+          style={{ background: 'var(--color-accent)', color: '#111' }}>
           Ir al dashboard
         </button>
         <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>

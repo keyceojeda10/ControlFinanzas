@@ -5,8 +5,8 @@ import Link from 'next/link'
 import Avatar from '@/components/ui/Avatar'
 
 const ESTADO_COLORS = {
-  pendiente: '#f5c518', contactado: '#3b82f6', interesado: '#10b981',
-  no_interesado: '#888888', cerrado: '#8b5cf6', bloqueado: '#ef4444',
+  pendiente: 'var(--color-accent)', contactado: 'var(--color-info)', interesado: 'var(--color-success)',
+  no_interesado: 'var(--color-text-muted)', cerrado: 'var(--color-purple)', bloqueado: 'var(--color-danger)',
 }
 
 const FILTROS = [
@@ -69,7 +69,7 @@ export default function ChatsPage() {
     <div className="max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-xl font-bold text-white">Chats</h1>
+          <h1 className="text-[25px] font-semibold text-white">Chats</h1>
           <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Conversaciones del bot comercial</p>
         </div>
         <Link href="/admin/whatsapp-bot" className="text-xs text-[var(--color-info)] hover:underline">Ver panel</Link>
@@ -77,7 +77,7 @@ export default function ChatsPage() {
 
       <div className="flex gap-4 h-[calc(100vh-180px)] min-h-[500px]">
         {/* LISTA DE CHATS */}
-        <div className={`${activo ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[340px] shrink-0 border border-[var(--color-border)] rounded-[12px] bg-[var(--color-bg-card)] overflow-hidden`}>
+        <div className={`${activo ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[340px] shrink-0 border border-[var(--color-border)] rounded-[20px] bg-[var(--color-bg-card)] overflow-hidden`}>
           {/* Buscador */}
           <div className="p-2 border-b border-[var(--color-border)]">
             <input
@@ -94,7 +94,7 @@ export default function ChatsPage() {
                 key={f.id}
                 onClick={() => setFiltro(f.id)}
                 className={`px-2.5 py-1 rounded-full text-[11px] whitespace-nowrap transition-all ${
-                  filtro === f.id ? 'bg-[#f5c518] text-black font-medium' : 'bg-[rgba(255,255,255,0.06)] text-[var(--color-text-muted)]'
+                  filtro === f.id ? 'bg-[var(--color-accent)] text-black font-medium' : 'bg-[rgba(255,255,255,0.06)] text-[var(--color-text-muted)]'
                 }`}
               >
                 {f.label}
@@ -126,7 +126,7 @@ export default function ChatsPage() {
                       {textoVentana(c.ventanaMs) && (
                         <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
                           c.ventanaMs > 6 * 3600000 ? 'bg-[rgba(16,185,129,0.15)] text-[var(--color-success)]'
-                          : c.ventanaMs > 2 * 3600000 ? 'bg-[rgba(245,197,24,0.15)] text-[#f5c518]'
+                          : c.ventanaMs > 2 * 3600000 ? 'bg-[rgba(245,197,24,0.15)] text-[var(--color-accent)]'
                           : 'bg-[rgba(239,68,68,0.15)] text-[var(--color-danger)]'
                         }`} title="Ventana WhatsApp restante">
                           {textoVentana(c.ventanaMs)}
@@ -143,7 +143,7 @@ export default function ChatsPage() {
         </div>
 
         {/* PANEL DE CHAT */}
-        <div className={`${activo ? 'flex' : 'hidden md:flex'} flex-col flex-1 border border-[var(--color-border)] rounded-[12px] bg-[var(--color-bg-card)] overflow-hidden`}>
+        <div className={`${activo ? 'flex' : 'hidden md:flex'} flex-col flex-1 border border-[var(--color-border)] rounded-[20px] bg-[var(--color-bg-card)] overflow-hidden`}>
           {activo
             ? <ChatPanel lead={activo} onBack={() => setActivo(null)} onUpdate={cargarChats} />
             : <div className="flex-1 flex items-center justify-center text-sm text-[var(--color-text-muted)]">Selecciona un chat</div>}
@@ -332,12 +332,12 @@ function ChatPanel({ lead, onBack, onUpdate }) {
             {ventanaMs > 0 && (
               <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
                 ventanaMs > 6 * 3600000 ? 'bg-[rgba(16,185,129,0.15)] text-[var(--color-success)]'
-                : ventanaMs > 2 * 3600000 ? 'bg-[rgba(245,197,24,0.15)] text-[#f5c518]'
+                : ventanaMs > 2 * 3600000 ? 'bg-[rgba(245,197,24,0.15)] text-[var(--color-accent)]'
                 : 'bg-[rgba(239,68,68,0.15)] text-[var(--color-danger)]'
               }`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${
                   ventanaMs > 6 * 3600000 ? 'bg-[var(--color-success)]'
-                  : ventanaMs > 2 * 3600000 ? 'bg-[#f5c518]'
+                  : ventanaMs > 2 * 3600000 ? 'bg-[var(--color-accent)]'
                   : 'bg-[var(--color-danger)]'
                 }`} />
                 Ventana {textoVentana(ventanaMs)}
@@ -350,11 +350,11 @@ function ChatPanel({ lead, onBack, onUpdate }) {
         <button
           onClick={toggleBot}
           className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all ${
-            botActivo ? 'bg-[rgba(16,185,129,0.15)] text-[var(--color-success)]' : 'bg-[rgba(136,136,136,0.15)] text-[#888]'
+            botActivo ? 'bg-[rgba(16,185,129,0.15)] text-[var(--color-success)]' : 'bg-[rgba(136,136,136,0.15)] text-[var(--color-text-muted)]'
           }`}
           title="Prender/apagar el bot para este chat"
         >
-          <span className={`w-2 h-2 rounded-full ${botActivo ? 'bg-[var(--color-success)]' : 'bg-[#888]'}`} />
+          <span className={`w-2 h-2 rounded-full ${botActivo ? 'bg-[var(--color-success)]' : 'bg-[var(--color-text-muted)]'}`} />
           Bot {botActivo ? 'ON' : 'OFF'}
         </button>
         <a href={`https://wa.me/${(lead.telefono || '').replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="text-[var(--color-text-muted)] hover:text-white" title="Abrir en WhatsApp">
@@ -369,7 +369,7 @@ function ChatPanel({ lead, onBack, onUpdate }) {
       </div>
 
       {/* Aviso ventana cerrada */}
-      {aviso && <div className="px-3 py-2 text-[11px] text-[#f5c518] bg-[rgba(245,197,24,0.08)] border-t border-[var(--color-border)]">{aviso}</div>}
+      {aviso && <div className="px-3 py-2 text-[11px] text-[var(--color-accent)] bg-[rgba(245,197,24,0.08)] border-t border-[var(--color-border)]">{aviso}</div>}
 
       {/* Input */}
       <div className="flex items-center gap-2 p-2 border-t border-[var(--color-border)]">
@@ -423,7 +423,7 @@ function Burbuja({ m, leadId }) {
   const align = esLead ? 'items-start' : 'items-end'
   const color = esLead
     ? 'bg-[rgba(255,255,255,0.07)] text-white'
-    : (m.rol === 'admin' ? 'bg-[#f5c518] text-black' : 'bg-[var(--color-success)] text-white')
+    : (m.rol === 'admin' ? 'bg-[var(--color-accent)] text-black' : 'bg-[var(--color-success)] text-white')
   const mediaUrl = m.mediaPath ? `/api/admin/whatsapp-bot/media/${m.mediaPath}` : null
 
   return (

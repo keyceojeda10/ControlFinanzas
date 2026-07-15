@@ -160,7 +160,7 @@ export default function SocioDetallePage() {
     return (
       <div className="pb-28">
         <div
-          className="rounded-[16px] p-6 text-center"
+          className="cf-card-shadow rounded-[20px] p-6 text-center"
           style={{ background: 'color-mix(in srgb, var(--color-danger) 8%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)' }}
         >
           <p className="font-semibold mb-2" style={{ color: 'var(--color-danger)' }}>{error || 'Socio no encontrado'}</p>
@@ -191,7 +191,7 @@ export default function SocioDetallePage() {
     <div className="pb-28 space-y-4">
       {/* Hero card */}
       <div
-        className="relative rounded-[16px] overflow-hidden"
+        className="relative rounded-[20px] overflow-hidden"
         style={{ background: P.grad, border: `1px solid ${P.border}`, boxShadow: P.shadow }}
       >
         <CardWaves tint={P.waves} />
@@ -285,7 +285,7 @@ export default function SocioDetallePage() {
 
       {/* Liquidacion anual */}
       <div
-        className="rounded-[16px] p-4"
+        className="cf-card-shadow rounded-[20px] p-4"
         style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
       >
         <div className="flex items-center justify-between mb-3">
@@ -368,7 +368,7 @@ export default function SocioDetallePage() {
 
       {/* Prestamos del socio */}
       <div
-        className="rounded-[16px] p-4"
+        className="cf-card-shadow rounded-[20px] p-4"
         style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
       >
         <h2 className="text-[14px] font-semibold mb-3" style={{ color: 'var(--color-text-primary)' }}>
@@ -427,7 +427,7 @@ export default function SocioDetallePage() {
 
       {/* Movimientos (aportes y retiros) */}
       <div
-        className="rounded-[16px] p-4"
+        className="cf-card-shadow rounded-[20px] p-4"
         style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
       >
         <div className="flex items-center justify-between mb-3">
@@ -491,7 +491,7 @@ export default function SocioDetallePage() {
 
       {socio.notas && (
         <div
-          className="rounded-[16px] p-4"
+          className="cf-card-shadow rounded-[20px] p-4"
           style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
         >
           <h2 className="text-[14px] font-semibold mb-2" style={{ color: 'var(--color-text-primary)' }}>Notas</h2>
@@ -503,7 +503,7 @@ export default function SocioDetallePage() {
       <Modal open={modalAporte} onClose={() => setModalAporte(false)} title={tipoAporte === 'retiro' ? 'Registrar retiro' : 'Registrar aporte'}>
         <div className="space-y-4">
           {tipoAporte === 'retiro' && (
-            <p className="text-[12px] px-3 py-2 rounded-[10px]" style={{ background: 'color-mix(in srgb, var(--color-warning) 10%, transparent)', color: 'var(--color-warning)' }}>
+            <p className="text-[12px] px-3 py-2 rounded-[12px]" style={{ background: 'color-mix(in srgb, var(--color-warning) 10%, transparent)', color: 'var(--color-warning)' }}>
               El retiro se restara del capital disponible del negocio.
             </p>
           )}
@@ -545,7 +545,7 @@ export default function SocioDetallePage() {
               value={formEdit.notas || ''}
               onChange={(e) => setFormEdit((f) => ({ ...f, notas: e.target.value }))}
               rows={3}
-              className="px-3 py-2 rounded-[10px] text-sm resize-none"
+              className="px-3 py-2 rounded-[12px] text-sm resize-none"
               style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
             />
           </div>
@@ -558,14 +558,14 @@ export default function SocioDetallePage() {
 
       {/* Acciones */}
       <div
-        className="rounded-[16px] p-4 space-y-3"
+        className="cf-card-shadow rounded-[20px] p-4 space-y-3"
         style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
       >
         <h2 className="text-[14px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>Acciones</h2>
         <div className="flex gap-3">
           <button
             onClick={toggleActivo}
-            className="flex-1 py-2.5 rounded-[10px] text-[13px] font-medium transition-colors"
+            className="flex-1 py-2.5 rounded-[12px] text-[13px] font-medium transition-colors"
             style={{
               background: socio.activo ? 'color-mix(in srgb, var(--color-warning) 10%, transparent)' : 'color-mix(in srgb, var(--color-success) 10%, transparent)',
               color: socio.activo ? 'var(--color-warning)' : 'var(--color-success)',
@@ -575,7 +575,7 @@ export default function SocioDetallePage() {
           </button>
           <button
             onClick={() => setConfirmEliminarSocio(true)}
-            className="flex-1 py-2.5 rounded-[10px] text-[13px] font-medium transition-colors"
+            className="flex-1 py-2.5 rounded-[12px] text-[13px] font-medium transition-colors"
             style={{
               background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)',
               color: 'var(--color-danger)',

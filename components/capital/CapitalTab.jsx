@@ -318,18 +318,18 @@ export default function CapitalTab() {
       )}
 
       {resumen?.configurado && (() => {
-        const heroColor = resumen.saldo >= 0 ? '#06b6d4' : '#ef4444'
+        const heroColor = resumen.saldo >= 0 ? 'var(--color-teal)' : 'var(--color-danger)'
         return (
           <div
             className="cf-hero-card relative rounded-[20px] overflow-hidden"
             style={{
               background: `var(--color-bg-card)`,
-              border: `1px solid ${heroColor}40`,
+              border: `1px solid color-mix(in srgb, ${heroColor} 25%, transparent)`,
               boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
             }}
           >
             <div className="hero-glow absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none"
-              style={{ background: `radial-gradient(circle, ${heroColor}59, transparent 70%)`, filter: 'blur(20px)' }} />
+              style={{ background: `radial-gradient(circle, color-mix(in srgb, ${heroColor} 35%, transparent), transparent 70%)`, filter: 'blur(20px)' }} />
             <div className="absolute inset-0 pointer-events-none opacity-[0.04]"
               style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '16px 16px', color: heroColor }} />
             <div className="relative px-5 py-5 sm:px-6 sm:py-6">
@@ -361,17 +361,17 @@ export default function CapitalTab() {
       {resumen?.configurado && resumen.cartera && (
         <div className="rounded-[16px] px-4 py-4"
           style={{
-            background: 'linear-gradient(135deg, color-mix(in srgb, #06b6d4 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)',
-            border: '1px solid color-mix(in srgb, #06b6d4 22%, var(--color-border))',
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-teal) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)',
+            border: '1px solid color-mix(in srgb, var(--color-teal) 22%, var(--color-border))',
           }}
         >
           <div className="flex items-center gap-1.5 mb-3">
-            <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, #06b6d4 18%, transparent)', color: '#06b6d4' }}>
+            <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--color-teal) 18%, transparent)', color: 'var(--color-teal)' }}>
               <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
-            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#06b6d4' }}>Dinero en la calle</span>
+            <span className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-teal)' }}>Dinero en la calle</span>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -380,7 +380,7 @@ export default function CapitalTab() {
             </div>
             <div>
               <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Por cobrar (cartera)</p>
-              <p className="text-lg font-bold font-mono-display" style={{ color: '#06b6d4' }}>{formatMoney(resumen.cartera.total)}</p>
+              <p className="text-lg font-bold font-mono-display" style={{ color: 'var(--color-teal)' }}>{formatMoney(resumen.cartera.total)}</p>
             </div>
           </div>
           <p className="text-[10px] mt-2" style={{ color: 'var(--color-text-muted)' }}>
@@ -467,7 +467,7 @@ export default function CapitalTab() {
         <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] px-5 py-4">
           <div className="flex items-center justify-between gap-3 mb-2">
             <p className="text-[11px] text-[var(--color-text-muted)] uppercase tracking-wide">Capital sugerido</p>
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: `${colorCalidad}22`, color: colorCalidad }}>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: `color-mix(in srgb, ${colorCalidad} 13%, transparent)`, color: colorCalidad }}>
               Calidad {calidadSugerida}
             </span>
           </div>
@@ -486,18 +486,18 @@ export default function CapitalTab() {
           {[
             { label: 'Prestado', value: formatMoney(resumen.mes.desembolsado), sub: `${resumen.mes.prestamosOtorgados} préstamos`, color: '#f97316',
               icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15M9 12l3 3m0 0l3-3m-3 3V2.25" /></svg> },
-            { label: 'Cobrado', value: formatMoney(resumen.mes.recaudado), sub: `${resumen.mes.pagosRecibidos} pagos`, color: '#22c55e',
+            { label: 'Cobrado', value: formatMoney(resumen.mes.recaudado), sub: `${resumen.mes.pagosRecibidos} pagos`, color: 'var(--color-success)',
               icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m-6 6l3-3m0 0l3 3m-3-3v6.75" /></svg> },
-            { label: 'Gastos', value: formatMoney(resumen.mes.gastos), sub: 'del mes', color: '#ef4444',
+            { label: 'Gastos', value: formatMoney(resumen.mes.gastos), sub: 'del mes', color: 'var(--color-danger)',
               icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25M6.75 12h.008v.008H6.75V12z" /></svg> },
           ].map((s, i) => (
             <div key={i} className="rounded-[16px] px-4 py-3 kpi-lift"
-              style={{ background: `var(--color-bg-card)`, border: `1px solid ${s.color}38` }}>
+              style={{ background: `var(--color-bg-card)`, border: `1px solid color-mix(in srgb, ${s.color} 22%, transparent)` }}>
               <div className="flex items-center gap-1.5 mb-1">
-                <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: `${s.color}2e`, color: s.color }}>
+                <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: `color-mix(in srgb, ${s.color} 18%, transparent)`, color: s.color }}>
                   <span className="w-3 h-3">{s.icon}</span>
                 </div>
-                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: s.color }}>{s.label}</p>
+                <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: s.color }}>{s.label}</p>
               </div>
               <p className="text-[16px] font-bold font-mono-display leading-tight" style={{ color: 'var(--color-text-primary)' }}>{s.value}</p>
               <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{s.sub}</p>
@@ -505,17 +505,17 @@ export default function CapitalTab() {
           ))}
           {(() => {
             const flujo = resumen.mes.flujoNeto ?? 0
-            const balanceColor = flujo >= 0 ? '#22c55e' : '#ef4444'
+            const balanceColor = flujo >= 0 ? 'var(--color-success)' : 'var(--color-danger)'
             return (
               <div className="rounded-[16px] px-4 py-3 kpi-lift"
-                style={{ background: `var(--color-bg-card)`, border: `1px solid ${balanceColor}38` }}>
+                style={{ background: `var(--color-bg-card)`, border: `1px solid color-mix(in srgb, ${balanceColor} 22%, transparent)` }}>
                 <div className="flex items-center gap-1.5 mb-1">
-                  <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: `${balanceColor}2e`, color: balanceColor }}>
+                  <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: `color-mix(in srgb, ${balanceColor} 18%, transparent)`, color: balanceColor }}>
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.281m5.94 2.28l-2.28 5.941" />
                     </svg>
                   </div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: balanceColor }}>Balance neto</p>
+                  <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: balanceColor }}>Balance neto</p>
                 </div>
                 <p className="text-[16px] font-bold font-mono-display leading-tight" style={{ color: balanceColor }}>
                   {flujo >= 0 ? '+' : ''}{formatMoney(flujo)}
@@ -593,7 +593,7 @@ export default function CapitalTab() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-medium px-1.5 py-0.5 rounded"
-                      style={{ background: `${TIPO_COLORS[m.tipo]}20`, color: TIPO_COLORS[m.tipo] }}>
+                      style={{ background: `color-mix(in srgb, ${TIPO_COLORS[m.tipo]} 12%, transparent)`, color: TIPO_COLORS[m.tipo] }}>
                       {TIPO_LABELS[m.tipo] || m.tipo}
                     </span>
                   </div>

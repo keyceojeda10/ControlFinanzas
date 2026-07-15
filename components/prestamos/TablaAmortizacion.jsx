@@ -125,7 +125,7 @@ function CuotaFila({
         borderColor: esProxima
           ? 'var(--color-accent)'
           : tieneExtra
-            ? 'var(--color-info, #3b82f6)'
+            ? 'var(--color-info)'
             : vencida
               ? 'var(--color-danger)'
               : 'var(--color-border)',
@@ -178,13 +178,13 @@ function CuotaFila({
             )}
             {esBalloon && !completado && (
               <span className="text-[8px] font-bold px-1.5 py-px rounded-full whitespace-nowrap"
-                style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
+                style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--color-danger)' }}>
                 Capital + interes
               </span>
             )}
             {tieneExtra && (
               <span className="text-[8px] font-bold px-1.5 py-px rounded-full whitespace-nowrap"
-                style={{ background: 'color-mix(in srgb, var(--color-info, #3b82f6) 12%, transparent)', color: 'var(--color-info, #3b82f6)' }}>
+                style={{ background: 'color-mix(in srgb, var(--color-info) 12%, transparent)', color: 'var(--color-info)' }}>
                 + Capital extra
               </span>
             )}
@@ -230,7 +230,7 @@ function CuotaFila({
       >
         <div>
           <p className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>Capital</p>
-          <p className="text-[11px] font-mono-display" style={{ color: tieneExtra ? 'var(--color-info, #3b82f6)' : 'var(--color-text-primary)' }}>{formatMoney(fila.capital)}</p>
+          <p className="text-[11px] font-mono-display" style={{ color: tieneExtra ? 'var(--color-info)' : 'var(--color-text-primary)' }}>{formatMoney(fila.capital)}</p>
         </div>
         <div className="text-center">
           <p className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>Interés</p>
@@ -253,10 +253,10 @@ function CapitalExtraEditor({ montoActual, onGuardar, onQuitar, onCancelar }) {
   return (
     <div
       className="mt-2 p-2 rounded-lg"
-      style={{ background: 'color-mix(in srgb, var(--color-info, #3b82f6) 8%, var(--color-bg-base))' }}
+      style={{ background: 'color-mix(in srgb, var(--color-info) 8%, var(--color-bg-base))' }}
       onClick={e => e.stopPropagation()}
     >
-      <p className="text-[10px] font-semibold mb-1.5" style={{ color: 'var(--color-info, #3b82f6)' }}>
+      <p className="text-[10px] font-semibold mb-1.5" style={{ color: 'var(--color-info)' }}>
         Abono extra a capital
       </p>
       <div className="flex items-center gap-2">
@@ -278,7 +278,7 @@ function CapitalExtraEditor({ montoActual, onGuardar, onQuitar, onCancelar }) {
           type="button"
           onClick={() => onGuardar(valor)}
           className="h-7 px-2.5 rounded-md text-[10px] font-bold"
-          style={{ background: 'var(--color-info, #3b82f6)', color: '#fff' }}
+          style={{ background: 'var(--color-info)', color: '#fff' }}
         >
           OK
         </button>

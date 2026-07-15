@@ -24,7 +24,7 @@ export default function AuthInput({
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <label htmlFor={id} className="text-[12px] font-medium uppercase tracking-[0.05em]"
+        <label htmlFor={id} className="text-[12.5px] font-bold uppercase tracking-[0.06em]"
           style={{ color: 'var(--color-text-muted)' }}
         >
           {label}

@@ -40,7 +40,7 @@ export default function ForgotPasswordPage() {
         title="Revisa tu correo"
         subtitle="Te enviamos un enlace para recuperar tu contraseña"
         footer={
-          <Link href="/login" className="font-medium hover:underline" style={{ color: '#f5c518' }}>
+          <Link href="/login" className="font-medium hover:underline" style={{ color: 'var(--color-accent)' }}>
             Volver al login
           </Link>
         }
@@ -49,21 +49,21 @@ export default function ForgotPasswordPage() {
           <div className="relative inline-block mb-4">
             <div className="relative w-14 h-14 rounded-full flex items-center justify-center"
               style={{
-                background: 'linear-gradient(135deg, rgba(34,197,94,0.3), rgba(34,197,94,0.1))',
-                border: '1px solid rgba(34,197,94,0.35)',
+                background: 'color-mix(in srgb, var(--color-success) 14%, var(--color-bg-card))',
+                border: '1px solid color-mix(in srgb, var(--color-success) 30%, transparent)',
               }}
             >
               <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"
-                style={{ color: '#22c55e' }}
+                style={{ color: 'var(--color-success)' }}
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             </div>
           </div>
-          <p className="text-sm mb-3" style={{ color: '#f0f0f5' }}>
-            Si existe una cuenta con <strong style={{ color: '#f5c518' }}>{email}</strong>, recibirás un enlace para restablecer tu contraseña.
+          <p className="text-[13px] mb-3" style={{ color: 'var(--color-text-primary)' }}>
+            Si existe una cuenta con <strong style={{ color: 'var(--color-accent)' }}>{email}</strong>, recibirás un enlace para restablecer tu contraseña.
           </p>
-          <p className="text-xs" style={{ color: '#666' }}>
+          <p className="text-[12px]" style={{ color: 'var(--color-text-muted)' }}>
             El enlace expira en 1 hora. Revisa también tu carpeta de spam.
           </p>
         </div>
@@ -76,7 +76,7 @@ export default function ForgotPasswordPage() {
       title="Recuperar contraseña"
       subtitle="Te enviaremos un enlace a tu correo"
       footer={
-        <Link href="/login" className="font-medium hover:underline" style={{ color: '#f5c518' }}>
+        <Link href="/login" className="font-medium hover:underline" style={{ color: 'var(--color-accent)' }}>
           Volver al login
         </Link>
       }
@@ -85,9 +85,9 @@ export default function ForgotPasswordPage() {
         {error && (
           <div className="flex items-center gap-2.5 text-sm rounded-[10px] px-4 py-3"
             style={{
-              background: 'rgba(248,113,113,0.10)',
-              border: '1px solid rgba(248,113,113,0.30)',
-              color: '#f87171',
+              background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)',
+              color: 'var(--color-danger)',
             }}
           >
             <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">

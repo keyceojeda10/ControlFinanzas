@@ -57,11 +57,11 @@ export default function WhatsAppBotConfig() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
           </svg>
         </Link>
-        <h1 className="text-xl font-bold text-[white]">Configuración del Bot</h1>
+        <h1 className="text-[25px] font-semibold text-[white]">Configuración del Bot</h1>
       </div>
 
       {/* Bot activo toggle */}
-      <div className="border border-[var(--color-border)] rounded-[12px] p-4 bg-[var(--color-bg-card)]">
+      <div className="border border-[var(--color-border)] rounded-[20px] p-4 bg-[var(--color-bg-card)]">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-sm font-semibold text-white">Bot activo</h2>
@@ -74,7 +74,7 @@ export default function WhatsAppBotConfig() {
       </div>
 
       {/* Modo prueba */}
-      <div className="border border-[var(--color-border)] rounded-[12px] p-4 bg-[var(--color-bg-card)]">
+      <div className="border border-[var(--color-border)] rounded-[20px] p-4 bg-[var(--color-bg-card)]">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-sm font-semibold text-white">Modo prueba</h2>
@@ -87,7 +87,7 @@ export default function WhatsAppBotConfig() {
       </div>
 
       {/* Modelo */}
-      <div className="border border-[var(--color-border)] rounded-[12px] p-4 bg-[var(--color-bg-card)]">
+      <div className="border border-[var(--color-border)] rounded-[20px] p-4 bg-[var(--color-bg-card)]">
         <h2 className="text-sm font-semibold text-white mb-2">Modelo Claude</h2>
         <select
           value={config.modelo || 'claude-sonnet-4-6'}
@@ -101,7 +101,7 @@ export default function WhatsAppBotConfig() {
       </div>
 
       {/* System prompt */}
-      <div className="border border-[var(--color-border)] rounded-[12px] p-4 bg-[var(--color-bg-card)]">
+      <div className="border border-[var(--color-border)] rounded-[20px] p-4 bg-[var(--color-bg-card)]">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-sm font-semibold text-white">System prompt</h2>
           <span className="text-[10px] text-[var(--color-text-muted)]">
@@ -112,12 +112,12 @@ export default function WhatsAppBotConfig() {
           value={config.systemPrompt || ''}
           onChange={e => set('systemPrompt', e.target.value)}
           rows={12}
-          className="w-full px-3 py-2 rounded-[8px] bg-[#0a0a0a] border border-[var(--color-border)] text-xs text-white font-mono placeholder-[#555] focus:outline-none focus:border-[#f5c518] resize-y"
+          className="w-full px-3 py-2 rounded-[8px] bg-[#0a0a0a] border border-[var(--color-border)] text-xs text-white font-mono placeholder-[#555] focus:outline-none focus:border-[var(--color-accent)] resize-y"
         />
       </div>
 
       {/* Delays y limites */}
-      <div className="border border-[var(--color-border)] rounded-[12px] p-4 bg-[var(--color-bg-card)]">
+      <div className="border border-[var(--color-border)] rounded-[20px] p-4 bg-[var(--color-bg-card)]">
         <h2 className="text-sm font-semibold text-white mb-3">Seguimientos y límites</h2>
         <div className="grid grid-cols-2 gap-3">
           {[
@@ -141,7 +141,7 @@ export default function WhatsAppBotConfig() {
       </div>
 
       {/* WhatsApp personal */}
-      <div className="border border-[var(--color-border)] rounded-[12px] p-4 bg-[var(--color-bg-card)]">
+      <div className="border border-[var(--color-border)] rounded-[20px] p-4 bg-[var(--color-bg-card)]">
         <h2 className="text-sm font-semibold text-white mb-2">WhatsApp personal (alertas)</h2>
         <input
           type="text"
@@ -160,7 +160,7 @@ export default function WhatsAppBotConfig() {
         <button
           onClick={guardar}
           disabled={saving}
-          className="px-6 py-2.5 rounded-[10px] text-sm font-medium bg-[rgba(245,197,24,0.15)] text-[#f5c518] hover:bg-[rgba(245,197,24,0.25)] transition-all"
+          className="px-6 py-2.5 rounded-[10px] text-sm font-medium bg-[rgba(245,197,24,0.15)] text-[var(--color-accent)] hover:bg-[rgba(245,197,24,0.25)] transition-all"
         >
           {saving ? 'Guardando...' : saved ? 'Guardado' : 'Guardar cambios'}
         </button>

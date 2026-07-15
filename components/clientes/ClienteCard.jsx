@@ -5,10 +5,10 @@ import CardActionMenu from '@/components/ui/CardActionMenu'
 import { NuevoChip } from '@/components/ui/BadgeNuevo'
 
 const STATUS = {
-  ok:    { color: '#22c55e', bg: 'rgba(34,197,94,0.06)',  border: 'rgba(34,197,94,0.18)' },
-  nuevo: { color: '#3b82f6', bg: 'rgba(59,130,246,0.06)', border: 'rgba(59,130,246,0.18)' },
+  ok:    { color: 'var(--color-success)', bg: 'rgba(34,197,94,0.06)',  border: 'rgba(34,197,94,0.18)' },
+  nuevo: { color: 'var(--color-info)', bg: 'rgba(59,130,246,0.06)', border: 'rgba(59,130,246,0.18)' },
   hot:   { color: '#f59e0b', bg: 'rgba(245,158,11,0.06)', border: 'rgba(245,158,11,0.18)' },
-  crit:  { color: '#ef4444', bg: 'rgba(239,68,68,0.07)',  border: 'rgba(239,68,68,0.22)' },
+  crit:  { color: 'var(--color-danger)', bg: 'rgba(239,68,68,0.07)',  border: 'rgba(239,68,68,0.22)' },
   off:   { color: '#94a3b8', bg: 'rgba(148,163,184,0.06)',border: 'rgba(148,163,184,0.18)' },
 }
 
@@ -64,7 +64,7 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
             {cliente.pagoHoy && (
               <span
                 className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center"
-                style={{ background: '#22c55e', border: '2px solid var(--color-bg-card)' }}
+                style={{ background: 'var(--color-success)', border: '2px solid var(--color-bg-card)' }}
               >
                 <svg className="w-2 h-2" fill="white" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />

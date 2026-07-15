@@ -106,7 +106,7 @@ export default function CompletarTelefonoModal() {
         <p className="text-sm text-center mb-5"
           style={{ color: 'rgba(255,255,255,0.65)' }}
         >
-          Solo lo usamos para contactarte por <strong style={{ color: '#22c55e' }}>WhatsApp</strong> con avisos de pago, soporte rápido y novedades importantes de tu cuenta.
+          Solo lo usamos para contactarte por <strong style={{ color: 'var(--color-success)' }}>WhatsApp</strong> con avisos de pago, soporte rápido y novedades importantes de tu cuenta.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-3">
@@ -159,7 +159,7 @@ export default function CompletarTelefonoModal() {
             className="group relative w-full h-11 rounded-[12px] overflow-hidden font-bold text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             style={{
               background: 'linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 75%, #f59e0b))',
-              color: '#0a0a0a',
+              color: '#3a2900',
               boxShadow: '0 4px 14px rgba(245,197,24,0.3), inset 0 1px 0 rgba(255,255,255,0.25)',
             }}
           >

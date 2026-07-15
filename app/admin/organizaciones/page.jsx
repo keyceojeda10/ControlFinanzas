@@ -101,7 +101,7 @@ export default function OrganizacionesPage() {
   const colorActividad = (date) => {
     if (!date) return 'var(--color-text-muted)'
     const horas = (ahora - new Date(date)) / (1000 * 60 * 60)
-    if (horas <= 24) return '#22c55e'
+    if (horas <= 24) return 'var(--color-success)'
     if (horas <= 168) return '#f59e0b'
     return 'var(--color-danger)'
   }
@@ -110,7 +110,7 @@ export default function OrganizacionesPage() {
     <div className="max-w-4xl mx-auto space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-[white]">Organizaciones</h1>
+          <h1 className="text-[25px] font-semibold text-[white]">Organizaciones</h1>
           <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
             {!loading && `${orgsFiltradas.length} de ${orgs.length} resultado${orgs.length !== 1 ? 's' : ''}`}
           </p>
@@ -135,7 +135,7 @@ export default function OrganizacionesPage() {
             placeholder="Buscar por nombre, correo electrónico o teléfono…"
             className="flex-1 h-9 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[white] placeholder-[#555555] focus:outline-none focus:border-[var(--color-info)]"
           />
-          <button type="submit" className="h-9 px-4 rounded-[12px] bg-[var(--color-info)] text-[var(--color-text-primary)] text-xs font-medium hover:bg-[#2563eb] transition-all shrink-0">
+          <button type="submit" className="h-9 px-4 rounded-[12px] bg-[var(--color-info)] text-[var(--color-text-primary)] text-xs font-medium hover:bg-[var(--color-info)] transition-all shrink-0">
             Buscar
           </button>
         </form>

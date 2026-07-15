@@ -51,7 +51,7 @@ export default function MisEstadisticasPage() {
 
   if (error) {
     return (
-      <div className="max-w-xl mx-auto mt-6 rounded-[12px] px-4 py-3 text-sm"
+      <div className="cf-card-shadow max-w-xl mx-auto mt-6 rounded-[20px] px-4 py-3 text-sm"
         style={{ background: 'var(--color-danger-dim)', color: 'var(--color-danger)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)' }}
       >
         {error}
@@ -65,7 +65,7 @@ export default function MisEstadisticasPage() {
   return (
     <div className="max-w-xl lg:max-w-4xl mx-auto space-y-5">
       <div>
-        <h1 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Mi resumen</h1>
+        <h1 className="text-[25px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>Mi resumen</h1>
         {data.rutaNombre && (
           <p className="text-[12px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
             Ruta: {data.rutaNombre} · {data.totalClientesActivos} clientes activos
@@ -74,13 +74,13 @@ export default function MisEstadisticasPage() {
       </div>
 
       {/* ── Hoy: recaudado vs meta ── */}
-      <div className="rounded-[20px] px-5 py-5"
+      <div className="cf-card-shadow rounded-[20px] px-5 py-5"
         style={{
           background: `linear-gradient(135deg, color-mix(in srgb, ${pctColor} 12%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
           border: `1px solid color-mix(in srgb, ${pctColor} 22%, var(--color-border))`,
         }}
       >
-        <p className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--color-text-muted)' }}>Hoy</p>
+        <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-3" style={{ color: 'var(--color-text-muted)' }}>Hoy</p>
         <div className="flex items-end justify-between mb-3">
           <div>
             <p className="text-[13px]" style={{ color: 'var(--color-text-muted)' }}>Recaudado</p>
@@ -109,10 +109,10 @@ export default function MisEstadisticasPage() {
       </div>
 
       {/* ── Últimos 7 días ── */}
-      <div className="rounded-[16px] px-4 py-4"
+      <div className="cf-card-shadow rounded-[20px] px-4 py-4"
         style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
       >
-        <p className="text-[11px] font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--color-text-muted)' }}>Últimos 7 días</p>
+        <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-4" style={{ color: 'var(--color-text-muted)' }}>Últimos 7 días</p>
         <div className="flex items-end gap-1.5 h-28">
           {data.semana?.map((d, i) => {
             const pct = maxSemana > 0 ? Math.max(4, Math.round((d.total / maxSemana) * 100)) : 4
@@ -148,17 +148,17 @@ export default function MisEstadisticasPage() {
 
       {/* ── Clientes en mora en mi ruta ── */}
       {data.clientesMora?.length > 0 && (
-        <div className="rounded-[16px] px-4 py-4"
+        <div className="cf-card-shadow rounded-[20px] px-4 py-4"
           style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
         >
-          <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-3" style={{ color: 'var(--color-text-muted)' }}>
             Mi cartera en mora ({data.clientesMora.length})
           </p>
           <div className="space-y-2">
             {data.clientesMora.map((c, i) => {
               const moraColor = c.diasMora > 30 ? 'var(--color-danger)' : c.diasMora > 14 ? 'var(--color-warning)' : 'var(--color-text-muted)'
               return (
-                <div key={i} className="flex items-center justify-between px-3 py-2 rounded-[10px]"
+                <div key={i} className="flex items-center justify-between px-3 py-2 rounded-[12px]"
                   style={{ background: 'var(--color-bg-base)', border: '1px solid var(--color-border)' }}
                 >
                   <p className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>{c.nombre}</p>
@@ -179,7 +179,7 @@ export default function MisEstadisticasPage() {
       )}
 
       {data.clientesMora?.length === 0 && (
-        <div className="rounded-[16px] px-4 py-5 text-center"
+        <div className="cf-card-shadow rounded-[20px] px-4 py-5 text-center"
           style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
         >
           <p className="text-sm font-semibold" style={{ color: 'var(--color-success)' }}>Sin clientes en mora</p>

@@ -18,7 +18,7 @@ const CAPS = [
   },
   {
     id: 'whatsapp',
-    color: '#22c55e',
+    color: 'var(--color-success)',
     bg: 'rgba(34,197,94,0.1)',
     tag: 'Automatizado',
     titulo: 'Alertas automáticas por WhatsApp',
@@ -33,7 +33,7 @@ const CAPS = [
   },
   {
     id: 'rutas',
-    color: '#3b82f6',
+    color: 'var(--color-info)',
     bg: 'rgba(59,130,246,0.1)',
     tag: 'Tiempo real',
     titulo: 'Rutas de cobro con GPS',
@@ -47,7 +47,7 @@ const CAPS = [
   },
   {
     id: 'metodos',
-    color: '#f5c518',
+    color: 'var(--color-accent)',
     bg: 'rgba(245,197,24,0.1)',
     tag: 'Flexible',
     titulo: 'Múltiples métodos de interés',
@@ -81,7 +81,7 @@ export default function WizardFeatures({ onNext }) {
 
       <div className="text-center mb-6">
         <h2 className="text-[22px] font-bold mb-2" style={{ color: 'var(--color-text-primary)', fontFamily: "Georgia, serif" }}>
-          Esto es lo que <em style={{ color: '#f5c518', fontStyle: 'italic' }}>también</em> puedes hacer
+          Esto es lo que <em style={{ color: 'var(--color-accent)', fontStyle: 'italic' }}>también</em> puedes hacer
         </h2>
         <p className="text-[13px]" style={{ color: 'var(--color-text-muted)' }}>
           Control Finanzas va mucho más allá de llevar clientes y préstamos.
@@ -121,7 +121,7 @@ export default function WizardFeatures({ onNext }) {
         <button
           onClick={onNext}
           className="w-full h-12 rounded-[12px] text-base font-bold transition-all active:scale-[0.98] cursor-pointer"
-          style={{ background: '#f5c518', color: '#111' }}>
+          style={{ background: 'var(--color-accent)', color: '#111' }}>
           Continuar al resumen
         </button>
       </div>

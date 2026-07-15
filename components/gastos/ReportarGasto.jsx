@@ -133,7 +133,7 @@ export default function ReportarGasto({ open, onClose, onSuccess, fecha, cobrado
                 className={[
                   'h-10 rounded-[10px] border text-sm font-medium transition-all cursor-pointer',
                   tipo === t.value
-                    ? 'bg-[rgba(245,197,24,0.15)] border-[#f5c518] text-[var(--color-accent)]'
+                    ? 'bg-[rgba(245,197,24,0.15)] border-[var(--color-accent)] text-[var(--color-accent)]'
                     : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-surface)]',
                 ].join(' ')}
               >

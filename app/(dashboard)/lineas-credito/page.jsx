@@ -61,7 +61,7 @@ export default function LineasCreditoPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-lg font-bold text-[var(--color-text-primary)]">Líneas de crédito</h1>
+          <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Líneas de crédito</h1>
           <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
             {lineas.length} línea{lineas.length !== 1 ? 's' : ''} · Saldo total {formatMoney(totalSaldo)}
           </p>

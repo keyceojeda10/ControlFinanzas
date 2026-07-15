@@ -113,7 +113,7 @@ export default function PasoSubir({ onDatos }) {
           className={[
             'py-2.5 rounded-[12px] border text-sm font-medium transition-all',
             modo === 'archivo'
-              ? 'bg-[rgba(245,197,24,0.12)] border-[#f5c518] text-[var(--color-accent)]'
+              ? 'bg-[rgba(245,197,24,0.12)] border-[var(--color-accent)] text-[var(--color-accent)]'
               : 'bg-[var(--color-bg-surface)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-hover)]',
           ].join(' ')}
         >
@@ -125,7 +125,7 @@ export default function PasoSubir({ onDatos }) {
           className={[
             'py-2.5 rounded-[12px] border text-sm font-medium transition-all',
             modo === 'pegar'
-              ? 'bg-[rgba(245,197,24,0.12)] border-[#f5c518] text-[var(--color-accent)]'
+              ? 'bg-[rgba(245,197,24,0.12)] border-[var(--color-accent)] text-[var(--color-accent)]'
               : 'bg-[var(--color-bg-surface)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-hover)]',
           ].join(' ')}
         >
@@ -142,7 +142,7 @@ export default function PasoSubir({ onDatos }) {
       {modo === 'archivo' ? (
         <div
           onClick={() => fileRef.current?.click()}
-          className="border-2 border-dashed border-[var(--color-border)] hover:border-[#f5c518] rounded-[16px] p-8 text-center cursor-pointer transition-colors"
+          className="border-2 border-dashed border-[var(--color-border)] hover:border-[var(--color-accent)] rounded-[16px] p-8 text-center cursor-pointer transition-colors"
         >
           <input
             ref={fileRef}

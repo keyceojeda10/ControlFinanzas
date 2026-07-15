@@ -1,21 +1,30 @@
-// components/ui/EmptyState.jsx — estado vacio con MonedaCF.
+// components/ui/EmptyState.jsx
 // Uso:
-//   <EmptyState pose="vacia" titulo="No hay clientes aún" hint="Crea el primero" action={<Button/>} />
-// Poses: vacia (lista vacia), busca (sin resultados), celebra (todo listo), guia (CTA/onboarding).
+//   <EmptyState icon={<SvgIcon />} titulo="No hay clientes" hint="Crea el primero" action={<Button/>} />
+//   <EmptyState pose="vacia" titulo="Sin resultados" />  (fallback con MonedaCF)
 
 import MonedaCF from './MonedaCF'
 
-export default function EmptyState({ pose = 'vacia', titulo, hint, action, size = 92, className = '' }) {
+export default function EmptyState({ icon, pose = 'vacia', titulo, hint, action, size = 92, className = '' }) {
   return (
     <div className={`flex flex-col items-center justify-center text-center py-10 px-6 ${className}`}>
-      <MonedaCF pose={pose} size={size} />
+      {icon ? (
+        <div
+          className="w-16 h-16 rounded-[18px] flex items-center justify-center mb-1"
+          style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)' }}
+        >
+          {icon}
+        </div>
+      ) : (
+        <MonedaCF pose={pose} size={size} />
+      )}
       {titulo && (
-        <p className="text-[14px] font-semibold mt-3" style={{ color: 'var(--color-text-primary)' }}>
+        <p className="text-[15px] font-bold mt-3" style={{ color: 'var(--color-text-primary)' }}>
           {titulo}
         </p>
       )}
       {hint && (
-        <p className="text-[12px] mt-1 max-w-[280px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+        <p className="text-[12.5px] mt-1.5 max-w-[280px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
           {hint}
         </p>
       )}

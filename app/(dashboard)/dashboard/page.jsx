@@ -292,13 +292,13 @@ function Sparkline({ data, color = 'var(--color-success)', ariaLabel, etiquetasD
 
 // Hero card: la tarjeta dorada de marca (color-block). Numero grande en tinta
 // oscura sobre dorado, donut de meta integrado. Sin skeuomorfismo.
-const HERO_GRAD  = 'linear-gradient(135deg, #f9d64a 0%, #f5c518 55%, #eab308 100%)'
-const HERO_INK   = '#231a04'
-const HERO_SUB   = 'rgba(35, 26, 4, 0.62)'
-const HERO_TRACK = 'rgba(35, 26, 4, 0.16)'
+const HERO_GRAD  = 'linear-gradient(135deg, #f9d64a 0%, #f5b824 55%, #e7a400 100%)'
+const HERO_INK   = '#3a2900'
+const HERO_SUB   = 'rgba(58, 41, 0, 0.62)'
+const HERO_TRACK = 'rgba(58, 41, 0, 0.16)'
 const HERO_GLOSS = 'linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.16) 45%, transparent 58%)'
 
-function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#34d399', narrativa, sparklineData, metaDiaria, info }) {
+function HeroCard({ label, value, valueRaw, sub, color = 'var(--color-success)', accent = 'var(--color-success)', narrativa, sparklineData, metaDiaria, info }) {
   const animatedNum = useCountUp(typeof valueRaw === 'number' ? valueRaw : 0, 900)
   const [showInfo, setShowInfo] = useState(false)
   const hasInfo = Boolean(info)
@@ -398,7 +398,7 @@ function HeroCard({ label, value, valueRaw, sub, color = '#10b981', accent = '#3
 
         {sparklineData && sparklineData.length > 0 && (
           <div className="mt-3">
-            <Sparkline data={sparklineData} color={HERO_INK} mutedColor={HERO_SUB} tooltipBg="rgba(50, 40, 10, 0.92)" tooltipText="#f5c518" ariaLabel="Tendencia últimos 7 días" />
+            <Sparkline data={sparklineData} color={HERO_INK} mutedColor={HERO_SUB} tooltipBg="rgba(50, 40, 10, 0.92)" tooltipText="var(--color-accent)" ariaLabel="Tendencia últimos 7 días" />
           </div>
         )}
 
@@ -466,7 +466,7 @@ function DonutProgress({ value = 0, max = 100, color = 'var(--color-success)', s
 }
 
 // Heatmap calendario tipo GitHub para los ultimos 30 dias.
-function Heatmap30d({ data, color = '#34d399', label = 'Cobros últimos 30 días' }) {
+function Heatmap30d({ data, color = 'var(--color-success)', label = 'Cobros últimos 30 días' }) {
   if (!data || data.length === 0) return null
   const max = Math.max(...data, 1)
   const cols = 10  // 10 columnas x 3 filas = 30 dias
@@ -484,7 +484,7 @@ function Heatmap30d({ data, color = '#34d399', label = 'Cobros últimos 30 días
   return (
     <div className="rounded-[16px] px-4 py-4" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
       <div className="flex items-baseline justify-between mb-3">
-        <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
+        <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
         <p className="text-[10px] font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
           Promedio diario · <span style={{ color: 'var(--color-text-primary)' }}>{formatMoney(Math.round(promedio))}</span>
         </p>
@@ -576,16 +576,15 @@ function KpiCard({ label, value, valueRaw, format = 'cop', sub, color = 'var(--c
       role={hasInfo ? 'button' : undefined}
       tabIndex={hasInfo ? 0 : undefined}
       onKeyDown={hasInfo ? (e) => { if (e.key === 'Enter' || e.key === ' ') openInfo(e) } : undefined}
-      className={`rounded-[16px] px-4 py-4 relative group kpi-lift ${hasInfo ? 'cursor-pointer' : ''}`}
+      className={`rounded-[18px] px-4 py-4 relative group kpi-lift cf-card-shadow ${hasInfo ? 'cursor-pointer' : ''}`}
       style={{
         background: `linear-gradient(135deg, color-mix(in srgb, ${color} 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 45%, var(--color-bg-card) 75%, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 100%)`,
         border: '1px solid var(--color-border)',
-        boxShadow: '0 4px 12px rgba(20,20,40,0.08)',
       }}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex items-center gap-1.5 min-w-0">
-          <p className="text-[11px] leading-tight" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
+          <p className="text-[11px] font-extrabold uppercase tracking-[.07em] leading-tight" style={{ color: color }}>{label}</p>
           {hasInfo && (
             <span
               aria-hidden
@@ -602,7 +601,7 @@ function KpiCard({ label, value, valueRaw, format = 'cop', sub, color = 'var(--c
           </div>
         )}
       </div>
-      <p className="text-xl font-bold leading-tight font-mono-display truncate" style={{ color }}>{displayValue}</p>
+      <p className="text-[24px] font-bold leading-tight font-mono-display truncate" style={{ color }}>{displayValue}</p>
       {sub && <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>{sub}</p>}
       {hasInfo && showInfo && (
         <KpiInfoPopover info={infoObj} color={color} onClose={() => setShowInfo(false)} />
@@ -663,7 +662,7 @@ function KpiInfoPopover({ info, color, onClose }) {
         >
           <div className="flex items-center gap-2 min-w-0">
             <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color, boxShadow: `0 0 5px ${color}` }} />
-            <p className="text-[12px] font-bold uppercase tracking-wider truncate" style={{ color }}>{info.titulo || '¿Qué es?'}</p>
+            <p className="text-[12px] font-extrabold uppercase tracking-[.07em] truncate" style={{ color }}>{info.titulo || '¿Qué es?'}</p>
           </div>
           <button
             onClick={onClose}
@@ -679,21 +678,21 @@ function KpiInfoPopover({ info, color, onClose }) {
         <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-[12px] leading-relaxed">
           {info.que && (
             <div className="sm:col-span-2 rounded-[10px] px-3 py-2.5" style={{ background: `color-mix(in srgb, ${color} 6%, transparent)` }}>
-              <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color }}>¿Qué es?</p>
+              <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-1" style={{ color }}>¿Qué es?</p>
               <p style={{ color: 'var(--color-text-primary)' }}>{info.que}</p>
             </div>
           )}
 
           {info.comoSeCalcula && (
             <div className="rounded-[10px] px-3 py-2.5" style={{ background: 'var(--color-bg-hover)' }}>
-              <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-muted)' }}>Cómo se calcula</p>
+              <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-1" style={{ color: 'var(--color-text-muted)' }}>Cómo se calcula</p>
               <p style={{ color: 'var(--color-text-secondary)' }}>{info.comoSeCalcula}</p>
             </div>
           )}
 
           {info.ejemplo && (
             <div className="rounded-[10px] px-3 py-2.5" style={{ background: `color-mix(in srgb, ${color} 10%, transparent)`, border: `1px solid color-mix(in srgb, ${color} 25%, transparent)` }}>
-              <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color }}>Tu número ahora</p>
+              <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-1" style={{ color }}>Tu número ahora</p>
               <p style={{ color: 'var(--color-text-primary)' }}>{info.ejemplo}</p>
             </div>
           )}
@@ -704,7 +703,7 @@ function KpiInfoPopover({ info, color, onClose }) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
               </svg>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-muted)' }}>Cuándo cambia</p>
+                <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-1" style={{ color: 'var(--color-text-muted)' }}>Cuándo cambia</p>
                 <p style={{ color: 'var(--color-text-secondary)' }}>{info.cuandoCambia}</p>
               </div>
             </div>
@@ -716,7 +715,7 @@ function KpiInfoPopover({ info, color, onClose }) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
               </svg>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--color-warning)' }}>Tip</p>
+                <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-1" style={{ color: 'var(--color-warning)' }}>Tip</p>
                 <p style={{ color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>{info.tip}</p>
               </div>
             </div>
@@ -814,7 +813,7 @@ function RoutesCard({ value, sub }) {
       valueRaw={value}
       format="int"
       sub={sub}
-      color="#8b5cf6"
+      color="var(--color-purple)"
       info={{
         titulo: 'Rutas activas',
         que: 'Zonas o sectores de cobro que tienes habilitados. Cada ruta puede tener un cobrador asignado y sus propios clientes.',
@@ -930,7 +929,7 @@ function KpiGroup({ title, icon, children, defaultOpen = true, storageKey }) {
           <div className="w-6 h-6 rounded-[6px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-text-muted) 12%, transparent)', color: 'var(--color-text-secondary)' }}>
             {icon}
           </div>
-          <h2 className="text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>{title}</h2>
+          <h2 className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-secondary)' }}>{title}</h2>
         </div>
         <svg className={`w-4 h-4 transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--color-text-muted)' }}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -1017,7 +1016,7 @@ function ResumenDelDia({ actividad, esOwner }) {
   })
   if (prestamos.cantidad > 0) items.push({
     icon: Icons.prestamoOut,
-    color: '#f59e0b',
+    color: 'var(--color-warning)',
     text: `${prestamos.cantidad} ${prestamos.cantidad === 1 ? 'préstamo entregado' : 'préstamos entregados'}`,
     monto: formatMoney(prestamos.monto),
   })
@@ -1054,7 +1053,7 @@ function ResumenDelDia({ actividad, esOwner }) {
         <div className="w-6 h-6 rounded-[6px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)', color: 'var(--color-accent)' }}>
           {Icons.actividad}
         </div>
-        <h2 className="text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Movimientos de hoy</h2>
+        <h2 className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-secondary)' }}>Movimientos de hoy</h2>
       </div>
       <div className="px-4 py-3">
         {sinMovimientos && (
@@ -1144,7 +1143,7 @@ function NecesitaAtencion({ alertas, moraData }) {
         <div className="w-6 h-6 rounded-[6px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-warning) 18%, transparent)', color: 'var(--color-warning)' }}>
           {Icons.alerta}
         </div>
-        <h2 className="text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-warning)' }}>Necesita tu atención</h2>
+        <h2 className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-warning)' }}>Necesita tu atención</h2>
       </div>
       <div className="px-2 py-1">
         {items.map((it, i) => (
@@ -1181,7 +1180,7 @@ function ProximosARenovar({ alertas }) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182M2.985 19.644l3.181-3.183" />
             </svg>
           </div>
-          <h2 className="text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-success)' }}>Listos para renovar</h2>
+          <h2 className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-success)' }}>Listos para renovar</h2>
         </div>
         <span className="text-[11px] px-2 py-0.5 rounded-full font-medium" style={{ background: 'color-mix(in srgb, var(--color-success) 15%, transparent)', color: 'var(--color-success)' }}>
           {lista.length}
@@ -1236,9 +1235,9 @@ function BandaSuscripcion({ dias }) {
       ? 'Tu negocio va bien, asegura la continuidad'
       : 'Aprovecha al maximo tu plan'
 
-  const accentColor = urgente ? '#ef4444' : 'var(--color-accent)'
+  const accentColor = urgente ? 'var(--color-danger)' : 'var(--color-accent)'
   const gradientBg = urgente
-    ? 'linear-gradient(135deg, color-mix(in srgb, #ef4444 8%, var(--color-bg-card)), color-mix(in srgb, #f59e0b 5%, var(--color-bg-card)))'
+    ? 'linear-gradient(135deg, color-mix(in srgb, var(--color-danger) 8%, var(--color-bg-card)), color-mix(in srgb, var(--color-warning) 5%, var(--color-bg-card)))'
     : 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 6%, var(--color-bg-card)), var(--color-bg-card))'
 
   return (
@@ -1478,12 +1477,12 @@ export default function DashboardPage() {
           style={{ background: 'rgba(245,197,24,0.08)', border: '1px solid rgba(245,197,24,0.25)' }}>
           <div className="w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0"
             style={{ background: 'rgba(245,197,24,0.15)' }}>
-            <svg className="w-4 h-4" fill="none" stroke="#f5c518" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="var(--color-accent)" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-semibold" style={{ color: '#f5c518' }}>Continuar configuración</p>
+            <p className="text-[13px] font-semibold" style={{ color: 'var(--color-accent)' }}>Continuar configuración</p>
             <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Retoma el asistente donde lo dejaste</p>
           </div>
           <svg className="w-4 h-4 shrink-0" fill="none" stroke="var(--color-text-muted)" viewBox="0 0 24 24">
@@ -1511,10 +1510,10 @@ export default function DashboardPage() {
       <div>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl font-bold leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+            <h1 className="text-[25px] font-semibold leading-tight" style={{ color: 'var(--color-text-primary)' }}>
               {saludoPorHora()}{session?.user?.nombre ? `, ${session.user.nombre.split(' ')[0]}` : ''}
             </h1>
-            <p className="text-[12px] mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+            <p className="text-[12.5px] mt-1 font-medium" style={{ color: 'var(--color-text-secondary)' }}>
               Resumen de tu cartera hoy
             </p>
           </div>
@@ -1571,7 +1570,7 @@ export default function DashboardPage() {
             <Link href="/migrador" className="group flex items-center gap-3 w-full rounded-[14px] p-4 text-left transition-all active:scale-[0.98]"
               style={{ background: 'rgba(245,197,24,0.08)', border: '1px solid rgba(245,197,24,0.25)' }}>
               <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
-                style={{ background: 'rgba(245,197,24,0.15)', color: '#f5c518' }}>
+                style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)', color: 'var(--color-accent)' }}>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7} d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7} d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
@@ -1588,7 +1587,7 @@ export default function DashboardPage() {
             <Link href="/clientes/nuevo" className="group flex items-center gap-3 w-full rounded-[14px] p-4 text-left transition-all active:scale-[0.98]"
               style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
               <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
-                style={{ background: 'rgba(139,92,246,0.1)', color: '#8b5cf6' }}>
+                style={{ background: 'rgba(139,92,246,0.1)', color: 'var(--color-purple)' }}>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7} d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
                 </svg>
@@ -1604,7 +1603,7 @@ export default function DashboardPage() {
             <Link href="/prestamos/nuevo" className="group flex items-center gap-3 w-full rounded-[14px] p-4 text-left transition-all active:scale-[0.98]"
               style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
               <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
-                style={{ background: 'rgba(34,197,94,0.1)', color: '#22c55e' }}>
+                style={{ background: 'color-mix(in srgb, var(--color-success) 10%, transparent)', color: 'var(--color-success)' }}>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7} d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -1630,8 +1629,8 @@ export default function DashboardPage() {
             valueRaw={data.cobros.hoy}
             value={formatMoney(data.cobros.hoy)}
             sub={`${data.cobros.cantidadHoy} ${data.cobros.cantidadHoy === 1 ? 'pago registrado' : 'pagos registrados'}${data.cobros.ayer ? ` · ayer ${formatMoney(data.cobros.ayer)}` : ''}`}
-            color="#22c55e"
-            accent="#10b981"
+            color="var(--color-success)"
+            accent="var(--color-success)"
             narrativa={generarNarrativa({
               recaudadoHoy: data.cobros.hoy,
               recaudadoAyer: data.cobros.ayer,
@@ -1669,16 +1668,16 @@ export default function DashboardPage() {
                 <p className="text-[11px] mt-1.5" style={{ color: 'var(--color-text-muted)' }}>{data.clientes.enMora === 0 ? 'Todo al dia' : `de ${data.clientes.total} activos`}</p>
               </Link>
               {capitalData ? (
-                <Link href="/caja" className="rounded-[16px] px-4 py-4 transition-all hover:scale-[1.01] relative overflow-hidden lg:flex-1 lg:flex lg:flex-col lg:justify-center" style={{ background: 'color-mix(in srgb, #06b6d4 8%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, #06b6d4 20%, var(--color-border))', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}>
+                <Link href="/caja" className="rounded-[16px] px-4 py-4 transition-all hover:scale-[1.01] relative overflow-hidden lg:flex-1 lg:flex lg:flex-col lg:justify-center" style={{ background: 'color-mix(in srgb, var(--color-teal) 8%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-teal) 20%, var(--color-border))', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}>
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, #06b6d4 12%, transparent)' }}>
-                      <svg className="w-4 h-4" fill="none" stroke="#06b6d4" strokeWidth={2} viewBox="0 0 24 24">
+                    <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-teal) 12%, transparent)' }}>
+                      <svg className="w-4 h-4" fill="none" stroke="var(--color-teal)" strokeWidth={2} viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
                     </div>
                     <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Saldo en caja</p>
                   </div>
-                  <p className="text-2xl font-bold font-mono-display leading-none truncate" style={{ color: capitalData.saldo < 0 ? 'var(--color-danger)' : '#06b6d4' }}>{formatMoney(capitalData.saldo)}</p>
+                  <p className="text-2xl font-bold font-mono-display leading-none truncate" style={{ color: capitalData.saldo < 0 ? 'var(--color-danger)' : 'var(--color-teal)' }}>{formatMoney(capitalData.saldo)}</p>
                   <p className="text-[11px] mt-1.5" style={{ color: 'var(--color-text-muted)' }}>Para prestar ahora</p>
                 </Link>
               ) : (
@@ -1701,7 +1700,7 @@ export default function DashboardPage() {
           <RecaudoCard
             label="Recaudado este mes"
             color="var(--color-accent)"
-            colorHex="#f5c518"
+            colorHex="var(--color-accent)"
             monto={data.cobros.mes}
             cantidad={data.cobros.cantidadMes}
             extraSub={data.clientes.enMora > 0 ? `${moraPct}% de clientes en mora` : null}
@@ -1717,8 +1716,8 @@ export default function DashboardPage() {
           {esOwner && data.cobros.interesGanadoMes != null && (
             <RecaudoCard
               label="Interés ganado este mes"
-              color="#10b981"
-              colorHex="#10b981"
+              color="var(--color-success)"
+              colorHex="var(--color-success)"
               monto={data.cobros.interesGanadoMes}
               cantidad={data.cobros.cantidadMes}
               info={{
@@ -1744,7 +1743,7 @@ export default function DashboardPage() {
                     value={formatMoney(capitalData.saldo)}
                     valueRaw={capitalData.saldo}
                     sub={capitalData.saldo < 0 ? 'Capital insuficiente' : 'Capital en caja'}
-                    color={capitalData.saldo < 0 ? '#ef4444' : '#06b6d4'}
+                    color={capitalData.saldo < 0 ? 'var(--color-danger)' : 'var(--color-teal)'}
                     info={{
                       titulo: 'Saldo disponible',
                       que: 'El EFECTIVO que tienes en caja en este momento. Plata real disponible para prestar, retirar o cubrir gastos.',
@@ -1762,7 +1761,7 @@ export default function DashboardPage() {
                     value={formatMoney(data.finanzas.patrimonio)}
                     valueRaw={data.finanzas.patrimonio}
                     sub={`Caja + por cobrar - gastos`}
-                    color="#10b981"
+                    color="var(--color-success)"
                     info={{
                       titulo: 'Patrimonio',
                       que: 'Tu foto financiera completa hoy. Cuánto vale tu negocio sumando todo lo que tienes y te deben, menos lo gastado este mes.',
@@ -1806,7 +1805,7 @@ export default function DashboardPage() {
                 value={formatMoney(data.prestamos.carteraActiva)}
                 valueRaw={data.prestamos.carteraActiva}
                 sub={`Capital: ${formatMoney(data.prestamos.capitalPrestado)}`}
-                color="#f59e0b"
+                color="var(--color-warning)"
                 info={{
                   titulo: 'Cartera activa',
                   que: 'Todo el dinero que tus clientes te van a pagar EN TOTAL (capital + intereses) cuando terminen sus préstamos. Es como una "promesa de cobro" futura.',
@@ -1823,7 +1822,7 @@ export default function DashboardPage() {
                   value={formatMoney(data.prestamos.saldoPorCobrar)}
                   valueRaw={data.prestamos.saldoPorCobrar}
                   sub="Saldo pendiente real"
-                  color="#0ea5e9"
+                  color="var(--color-info)"
                   info={{
                     titulo: 'Por cobrar',
                     que: 'Lo que REALMENTE te falta cobrar HOY de todos tus préstamos activos.',
@@ -1847,7 +1846,7 @@ export default function DashboardPage() {
                 valueRaw={data.clientes.total}
                 format="int"
                 sub={data.clientes.enMora > 0 ? `${data.clientes.enMora} en mora` : 'Sin mora'}
-                color="#f5c518"
+                color="var(--color-accent)"
                 info={{
                   titulo: 'Clientes activos',
                   que: 'Personas que tienen al menos un préstamo vigente (sin terminar de pagar) en este momento.',
@@ -1863,7 +1862,7 @@ export default function DashboardPage() {
                 valueRaw={data.prestamos.activos}
                 format="int"
                 sub={`${data.prestamos.completados} completados`}
-                color="#22c55e"
+                color="var(--color-success)"
                 info={{
                   titulo: 'Préstamos activos',
                   que: 'Préstamos vigentes que aún no se han pagado completamente.',
@@ -1887,7 +1886,7 @@ export default function DashboardPage() {
                 value={formatMoney(data.prestamos.cuotaDiariaTotal)}
                 valueRaw={data.prestamos.cuotaDiariaTotal}
                 sub="Esperado por día"
-                color="#a855f7"
+                color="var(--color-purple)"
                 info={{
                   titulo: 'Cuota diaria total',
                   que: 'Lo que DEBERÍAS cobrar en un día normal si todos tus clientes pagaran su cuota del día sin atrasos.',
@@ -1925,13 +1924,13 @@ export default function DashboardPage() {
                 onClick={() => setEquipoOpen(v => !v)}
                 className="w-full px-4 py-3 flex items-center gap-2 cursor-pointer"
               >
-                <div className="w-6 h-6 rounded-[8px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, #8b5cf6 15%, transparent)', color: '#8b5cf6' }}>
+                <div className="w-6 h-6 rounded-[8px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-purple) 15%, transparent)', color: 'var(--color-purple)' }}>
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
                   </svg>
                 </div>
-                <span className="text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Mi equipo</span>
-                <span className="text-[10px] font-mono-display px-2 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, #8b5cf6 12%, transparent)', color: '#8b5cf6' }}>
+                <span className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-secondary)' }}>Mi equipo</span>
+                <span className="text-[10px] font-mono-display px-2 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--color-purple) 12%, transparent)', color: 'var(--color-purple)' }}>
                   {equipoData.cobradores.length}
                 </span>
                 <svg
@@ -1962,8 +1961,8 @@ export default function DashboardPage() {
                           style={{
                             background: inactivo
                               ? 'color-mix(in srgb, var(--color-danger) 12%, transparent)'
-                              : 'color-mix(in srgb, #8b5cf6 12%, transparent)',
-                            color: inactivo ? 'var(--color-danger)' : '#8b5cf6',
+                              : 'color-mix(in srgb, var(--color-purple) 12%, transparent)',
+                            color: inactivo ? 'var(--color-danger)' : 'var(--color-purple)',
                           }}
                         >
                           {c.nombre.charAt(0).toUpperCase()}
@@ -2178,10 +2177,10 @@ export default function DashboardPage() {
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--color-text-secondary)' }}>Accesos rápidos</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {puedeCrearClientes && <QuickLink href="/clientes/nuevo" label="Nuevo cliente" desc="Registrar cliente" color="#f5c518" dataTour="nuevo-cliente" />}
-            {puedeCrearPrestamos && <QuickLink href="/prestamos/nuevo" label="Nuevo préstamo" desc="Crear préstamo" color="#22c55e" dataTour="nuevo-prestamo" />}
-            <QuickLink href="/caja" label="Cierre de caja" desc="Registrar cierre del día" color="#f59e0b" dataTour="caja" />
-            <QuickLink href="/clientes" label="Clientes" desc="Ver cartera completa" color="#a855f7" dataTour="prestamos" />
+            {puedeCrearClientes && <QuickLink href="/clientes/nuevo" label="Nuevo cliente" desc="Registrar cliente" color="var(--color-accent)" dataTour="nuevo-cliente" />}
+            {puedeCrearPrestamos && <QuickLink href="/prestamos/nuevo" label="Nuevo préstamo" desc="Crear préstamo" color="var(--color-success)" dataTour="nuevo-prestamo" />}
+            <QuickLink href="/caja" label="Cierre de caja" desc="Registrar cierre del día" color="var(--color-warning)" dataTour="caja" />
+            <QuickLink href="/clientes" label="Clientes" desc="Ver cartera completa" color="var(--color-purple)" dataTour="prestamos" />
           </div>
         </div>
       )}

@@ -26,7 +26,7 @@ const DIAS_POR_PERIODO = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }
 // Card de seccion premium (definida fuera para evitar perdida de focus)
 const SectionCard = ({ icon, title, color = 'var(--color-accent)', children, accent }) => (
   <div
-    className="rounded-[16px] p-4"
+    className="rounded-[20px] p-4"
     style={{
       background: `linear-gradient(135deg, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
       border: '1px solid var(--color-border)',
@@ -39,7 +39,7 @@ const SectionCard = ({ icon, title, color = 'var(--color-accent)', children, acc
         >
           <span className="w-3.5 h-3.5">{icon}</span>
         </div>
-        <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color }}>
+        <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color }}>
           {title}
         </p>
       </div>
@@ -723,7 +723,7 @@ function NuevoPrestamo() {
             {/* Cliente ya seleccionado: card grande en lugar de fila pequena */}
             {clienteSeleccionado && !buscando && (
               <div
-                className="mt-7 rounded-[16px] p-4 flex items-center gap-3"
+                className="mt-7 rounded-[20px] p-4 flex items-center gap-3"
                 style={{
                   background: 'color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card))',
                   border: '1.5px solid var(--color-accent)',
@@ -815,7 +815,7 @@ function NuevoPrestamo() {
             {/* RECIENTES: solo si NO esta buscando y no hay cliente seleccionado (o hay uno pero queremos mostrar opciones rapidas) */}
             {!buscando && !clienteSeleccionado && recientes.length > 0 && (
               <div className="mt-5">
-                <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--color-text-muted)' }}>
+                <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-2" style={{ color: 'var(--color-text-muted)' }}>
                   Recientes
                 </p>
                 <div className="space-y-1.5">
@@ -950,11 +950,11 @@ function NuevoPrestamo() {
                         style={{ background: 'color-mix(in srgb, var(--color-success) 8%, transparent)', borderColor: 'color-mix(in srgb, var(--color-success) 30%, transparent)' }}>
                         <div>
                           <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Cuota</p>
-                          <p className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(Math.round(Number(precioVenta) / Number(numCuotas)))}</p>
+                          <p className="text-sm font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(Math.round(Number(precioVenta) / Number(numCuotas)))}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Ganancia</p>
-                          <p className="text-sm font-bold" style={{ color: 'var(--color-success)' }}>
+                          <p className="text-sm font-bold font-mono-display" style={{ color: 'var(--color-success)' }}>
                             {formatMoney(Number(precioVenta) - Number(monto))}
                             {Number(monto) > 0 ? ` (${Math.round(((Number(precioVenta) - Number(monto)) / Number(monto)) * 100)}%)` : ''}
                           </p>
@@ -1026,7 +1026,7 @@ function NuevoPrestamo() {
               {frecuencia === 'quincenal' && (
                 <div>
                   <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Que dia cobras?</label>
-                  <div className="flex gap-1 p-1 rounded-[10px] mb-2 mt-1.5" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
+                  <div className="flex gap-1 p-1 rounded-[12px] mb-2 mt-1.5" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
                     <button type="button" onClick={() => { setModoDiaCobro('semana'); setDiaCobroMes(''); setDiaCobroMes2('') }}
                       className="flex-1 py-1.5 text-[10px] font-semibold rounded-[8px] transition-all"
                       style={modoDiaCobro === 'semana' ? { background: 'var(--color-bg-card)', color: 'var(--color-accent)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' } : { color: 'var(--color-text-muted)' }}>Dia de la semana</button>
@@ -1062,7 +1062,7 @@ function NuevoPrestamo() {
               {frecuencia === 'mensual' && (
                 <div>
                   <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Que dia cobras?</label>
-                  <div className="flex gap-1 p-1 rounded-[10px] mb-2 mt-1.5" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
+                  <div className="flex gap-1 p-1 rounded-[12px] mb-2 mt-1.5" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
                     <button type="button" onClick={() => { setModoDiaCobro('semana'); setDiaCobroMes('') }}
                       className="flex-1 py-1.5 text-[10px] font-semibold rounded-[8px] transition-all"
                       style={modoDiaCobro === 'semana' ? { background: 'var(--color-bg-card)', color: 'var(--color-accent)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' } : { color: 'var(--color-text-muted)' }}>Dia de la semana</button>
@@ -1260,7 +1260,7 @@ function NuevoPrestamo() {
                   <select
                     value={socioId}
                     onChange={(e) => setSocioId(e.target.value)}
-                    className="mt-1.5 w-full h-10 px-2 rounded-[10px] text-sm"
+                    className="mt-1.5 w-full h-10 px-2 rounded-[12px] text-sm"
                     style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
                   >
                     <option value="">Sin socio</option>
@@ -1309,7 +1309,7 @@ function NuevoPrestamo() {
                   <div className="rounded-2xl overflow-hidden"
                     style={{ border: '1px solid color-mix(in srgb, var(--color-success) 25%, var(--color-border))' }}>
                     <div className="px-4 py-2.5 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 8%, var(--color-bg-card)), var(--color-bg-card))' }}>
-                      <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-success)' }}>Resumen del préstamo</p>
+                      <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-success)' }}>Resumen del préstamo</p>
                       <span className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>Toca para editar</span>
                     </div>
                     <div className="px-4 py-2" style={{ background: 'var(--color-bg-card)' }}>
@@ -1327,7 +1327,7 @@ function NuevoPrestamo() {
 
                       {/* Editables */}
                       <div className="space-y-0 text-sm">
-                        <EditableRow label="Monto prestado" value={formatMoney(Number(monto || 0))} pencil={pencil}
+                        <EditableRow label="Monto prestado" value={<span className="font-mono-display">{formatMoney(Number(monto || 0))}</span>} pencil={pencil}
                           editor={<MoneyInput value={monto} onChange={e => setMonto(e.target.value)} autoFocus />} />
 
                         {modo === 'prestamo' && (
@@ -1380,7 +1380,7 @@ function NuevoPrestamo() {
                         )}
 
                         {cuotaManualActiva && (
-                          <EditableRow label="Cuota exacta" value={formatMoney(Number(cuotaManual || 0))} pencil={pencil}
+                          <EditableRow label="Cuota exacta" value={<span className="font-mono-display">{formatMoney(Number(cuotaManual || 0))}</span>} pencil={pencil}
                             editor={<MoneyInput value={cuotaManual} onChange={e => setCuotaManual(e.target.value)} autoFocus />} />
                         )}
                       </div>
@@ -1393,7 +1393,7 @@ function NuevoPrestamo() {
                         </div>
                         <div className="flex items-center justify-between py-1.5">
                           <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Ganancia</span>
-                          <span className="text-xs font-semibold" style={{ color: 'var(--color-success)' }}>{formatMoney(ganancia)} ({pctGanancia}%)</span>
+                          <span className="text-xs font-semibold font-mono-display" style={{ color: 'var(--color-success)' }}>{formatMoney(ganancia)} ({pctGanancia}%)</span>
                         </div>
                         {diasSinCobroCliente.length > 0 && (
                           <div className="flex items-center justify-between py-1.5">
@@ -1404,13 +1404,13 @@ function NuevoPrestamo() {
                         {seguro && Number(montoSeguro) > 0 && (
                           <div className="flex items-center justify-between py-1.5">
                             <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Seguro</span>
-                            <span className="text-xs font-semibold" style={{ color: '#6366f1' }}>{formatMoney(Number(montoSeguro))}</span>
+                            <span className="text-xs font-semibold font-mono-display" style={{ color: 'var(--color-purple)' }}>{formatMoney(Number(montoSeguro))}</span>
                           </div>
                         )}
                         {esEnCurso && Number(yaAbonado) > 0 && (
                           <div className="flex items-center justify-between py-1.5">
                             <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Abono previo</span>
-                            <span className="text-xs font-semibold" style={{ color: 'var(--color-success)' }}>{formatMoney(Number(yaAbonado))}</span>
+                            <span className="text-xs font-semibold font-mono-display" style={{ color: 'var(--color-success)' }}>{formatMoney(Number(yaAbonado))}</span>
                           </div>
                         )}
                       </div>
@@ -1454,7 +1454,7 @@ function NuevoPrestamo() {
                 </div>
 
                 {/* Monto — editable */}
-                <EditableRow label="Monto" value={formatMoney(Number(monto))}
+                <EditableRow label="Monto" value={<span className="font-mono-display">{formatMoney(Number(monto))}</span>}
                   pencil={pencilIcon}
                   editor={<MoneyInput value={monto} onChange={e => setMonto(e.target.value)} autoFocus />}
                 />
@@ -1531,7 +1531,7 @@ function NuevoPrestamo() {
 
                 {/* Cuota manual — editable si modo manual */}
                 {cuotaManualActiva && (
-                  <EditableRow label="Cuota exacta" value={formatMoney(Number(cuotaManual || 0))}
+                  <EditableRow label="Cuota exacta" value={<span className="font-mono-display">{formatMoney(Number(cuotaManual || 0))}</span>}
                     pencil={pencilIcon}
                     editor={<MoneyInput value={cuotaManual} onChange={e => setCuotaManual(e.target.value)} autoFocus />}
                   />
@@ -1560,7 +1560,7 @@ function NuevoPrestamo() {
             <SectionCard
               icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" /></svg>}
               title="Firma del cliente"
-              color="#6366f1"
+              color="var(--color-purple)"
             >
               <p className="text-[11px] mb-2" style={{ color: 'var(--color-text-muted)' }}>
                 El cliente firma con el dedo sobre el recuadro. Opcional.
@@ -1677,7 +1677,7 @@ function NuevoPrestamo() {
       {/* Modal de inyeccion de capital (sin cambios) */}
       {modalInyeccion && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-          <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] w-full max-w-md p-5">
+          <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[20px] w-full max-w-md p-5">
             <h3 className="text-base font-semibold text-[var(--color-text-primary)] mb-1">Capital insuficiente</h3>
             <p className="text-sm text-[var(--color-text-primary)] mb-3">
               Tu saldo actual de capital es <span className="font-mono-display text-[var(--color-accent)]">{formatMoney(modalInyeccion.saldoActual)}</span>. Te faltan <span className="font-mono-display text-[var(--color-danger)]">{formatMoney(modalInyeccion.faltante)}</span> para este préstamo.
@@ -1715,7 +1715,7 @@ function NuevoPrestamo() {
                 type="button"
                 onClick={() => { setModalInyeccion(null); setError('') }}
                 disabled={inyectando}
-                className="flex-1 px-4 py-2 bg-[var(--color-bg-hover)] text-[var(--color-text-primary)] text-sm font-semibold rounded-[10px]"
+                className="flex-1 px-4 py-2 bg-[var(--color-bg-hover)] text-[var(--color-text-primary)] text-sm font-semibold rounded-[12px]"
               >
                 Cancelar
               </button>
@@ -1723,7 +1723,7 @@ function NuevoPrestamo() {
                 type="button"
                 onClick={confirmarInyeccionYCrear}
                 disabled={inyectando}
-                className="flex-1 px-4 py-2 bg-[var(--color-success)] text-[#0a1f14] text-sm font-semibold rounded-[10px] disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-[var(--color-success)] text-[#0a1f14] text-sm font-semibold rounded-[12px] disabled:opacity-50"
               >
                 {inyectando ? 'Procesando...' : 'Inyectar y crear'}
               </button>

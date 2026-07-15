@@ -61,7 +61,7 @@ export default function ClavosPage() {
   return (
     <div className="max-w-3xl lg:max-w-6xl mx-auto space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Préstamos perdidos</h1>
+        <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Préstamos perdidos</h1>
         <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
           Préstamos que separaste de tu cartera. Si el cliente paga algo, se registra aquí.
         </p>
@@ -70,14 +70,14 @@ export default function ClavosPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Clavos', value: stats.total, color: '#ef4444' },
+          { label: 'Clavos', value: stats.total, color: 'var(--color-danger)' },
           { label: 'Capital prestado', value: formatMoney(stats.capitalEnClavos), color: '#f97316' },
-          { label: 'Saldo pendiente', value: formatMoney(stats.saldoEnClavos), color: '#f5c518' },
-          { label: 'Recuperado', value: formatMoney(stats.recuperado), color: '#22c55e' },
+          { label: 'Saldo pendiente', value: formatMoney(stats.saldoEnClavos), color: 'var(--color-accent)' },
+          { label: 'Recuperado', value: formatMoney(stats.recuperado), color: 'var(--color-success)' },
         ].map(({ label, value, color }) => (
           <div key={label} className="border border-[var(--color-border)] rounded-[12px] px-3 py-3 text-center bg-[var(--color-bg-card)]">
             <p className="text-[10px] text-[var(--color-text-muted)]">{label}</p>
-            <p className="text-base font-bold mt-0.5" style={{ color }}>{value}</p>
+            <p className="font-mono-display text-base font-bold mt-0.5" style={{ color }}>{value}</p>
           </div>
         ))}
       </div>
@@ -95,7 +95,7 @@ export default function ClavosPage() {
           </svg>
           Filtros avanzados
           {numFiltrosActivos > 0 && (
-            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold" style={{ background: 'var(--color-accent)', color: '#000' }}>
+            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold" style={{ background: 'var(--color-accent)', color: 'var(--color-accent-text)' }}>
               {numFiltrosActivos}
             </span>
           )}
@@ -139,7 +139,7 @@ export default function ClavosPage() {
                     onClick={() => setTipoFiltro(opt.value)}
                     className="px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
                     style={tipoFiltro === opt.value
-                      ? { background: 'var(--color-accent)', color: '#000' }
+                      ? { background: 'var(--color-accent)', color: 'var(--color-accent-text)' }
                       : { background: 'var(--color-bg-surface)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)' }
                     }
                   >{opt.label}</button>
@@ -158,7 +158,7 @@ export default function ClavosPage() {
                     onClick={() => setOrden(opt.value)}
                     className="px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
                     style={orden === opt.value
-                      ? { background: 'var(--color-accent)', color: '#000' }
+                      ? { background: 'var(--color-accent)', color: 'var(--color-accent-text)' }
                       : { background: 'var(--color-bg-surface)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)' }
                     }
                   >{opt.label}</button>
@@ -183,7 +183,7 @@ export default function ClavosPage() {
       {/* Resumen por ruta (cuando no hay filtro de ruta) */}
       {!rutaFiltro && data.rutas && data.rutas.length > 1 && (
         <div className="border border-[var(--color-border)] rounded-[12px] bg-[var(--color-bg-card)] divide-y divide-[var(--color-border)]">
-          <p className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Por ruta</p>
+          <p className="px-4 py-2.5 text-[11px] font-extrabold uppercase tracking-[.07em] text-[var(--color-text-muted)]">Por ruta</p>
           {data.rutas.map(r => {
             const rutaItems = data.items.filter(it => it.rutaId === r.id)
             const saldo = rutaItems.reduce((a, it) => a + it.saldoPendiente, 0)
@@ -199,7 +199,7 @@ export default function ClavosPage() {
                   <p className="text-[10px] text-[var(--color-text-muted)]">{rutaItems.length} clavo{rutaItems.length !== 1 ? 's' : ''} · capital {formatMoney(capital)}</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-sm font-semibold text-[#f5c518]">{formatMoney(saldo)}</p>
+                  <p className="font-mono-display text-sm font-semibold text-[var(--color-accent)]">{formatMoney(saldo)}</p>
                   <p className="text-[10px] text-[var(--color-text-muted)]">pendiente</p>
                 </div>
               </button>
@@ -231,7 +231,7 @@ export default function ClavosPage() {
               <div className="flex items-center gap-1.5">
                 <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">{it.cliente}</p>
                 {it.clavoPerdida && (
-                  <span className="shrink-0 text-[8px] font-semibold px-1.5 py-px rounded-full bg-[rgba(239,68,68,0.15)] text-[var(--color-danger)] border border-[rgba(239,68,68,0.25)]">
+                  <span className="shrink-0 text-[8px] font-semibold px-1.5 py-px rounded-full bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)] border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)]">
                     Pérdida
                   </span>
                 )}
@@ -242,7 +242,7 @@ export default function ClavosPage() {
               </p>
             </div>
             <div className="text-right shrink-0">
-              <p className="text-sm font-semibold text-[#f5c518]">{formatMoney(it.saldoPendiente)}</p>
+              <p className="font-mono-display text-sm font-semibold text-[var(--color-accent)]">{formatMoney(it.saldoPendiente)}</p>
               <p className="text-[10px] text-[var(--color-text-muted)]">debe</p>
             </div>
           </Link>

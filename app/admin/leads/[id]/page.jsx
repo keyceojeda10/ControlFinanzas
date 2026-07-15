@@ -137,7 +137,7 @@ function MensajeCard({ msg, lead, enviados, onToggleEnviado, onWhatsAppClick }) 
     cantClientes: lead.cantClientes ?? 0,
   })
 
-  const catConfig = CATEGORIAS[msg.category] ?? { label: msg.category, color: '#888888' }
+  const catConfig = CATEGORIAS[msg.category] ?? { label: msg.category, color: 'var(--color-text-muted)' }
   const badgeVariant = CATEGORIA_BADGE_VARIANT[msg.category] ?? 'gray'
 
   const waLink = lead.telefono
@@ -546,7 +546,7 @@ export default function LeadDetallePage({ params }) {
             {/* Nombre + estado */}
             <div className="flex items-start justify-between gap-3 mb-4">
               <div className="min-w-0 flex-1">
-                <h1 className="text-xl font-bold text-[var(--color-text-primary)] leading-tight break-words">
+                <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)] leading-tight break-words">
                   {lead.nombre}
                 </h1>
               </div>

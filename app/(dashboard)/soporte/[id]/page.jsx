@@ -164,7 +164,7 @@ function TicketDetallePageInner() {
       <Card className="mb-4">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div>
-            <h1 className="text-base font-bold text-[var(--color-text-primary)]">{ticket.asunto}</h1>
+            <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">{ticket.asunto}</h1>
             <div className="flex items-center gap-2 mt-1.5">
               <Badge variant="gray">{TIPO_LABEL[ticket.tipo] || ticket.tipo}</Badge>
               <Badge variant={estado.variant}>{estado.label}</Badge>
@@ -285,7 +285,7 @@ function TicketDetallePageInner() {
               value={mensaje}
               onChange={e => setMensaje(e.target.value)}
               placeholder="Escribe un mensaje..."
-              className="flex-1 h-9 rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] px-3 text-xs text-[var(--color-text-primary)] placeholder-[#555555] focus:outline-none focus:border-[var(--color-accent)]"
+              className="flex-1 h-9 rounded-[12px] bg-[var(--color-bg-card)] border border-[var(--color-border)] px-3 text-xs text-[var(--color-text-primary)] placeholder-[#555555] focus:outline-none focus:border-[var(--color-accent)]"
             />
             <Button type="submit" size="sm" loading={sending} disabled={!mensaje.trim() && !imagenFile}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

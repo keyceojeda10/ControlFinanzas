@@ -96,7 +96,7 @@ export default function QrCobroModal({ open, onClose, clienteId }) {
       <Modal open={open} onClose={handleClose} title="Error" size="sm">
         <div className="flex flex-col items-center gap-4 py-6">
           <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.1)' }}>
-            <svg className="w-7 h-7" style={{ color: '#ef4444' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <svg className="w-7 h-7" style={{ color: 'var(--color-danger)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
             </svg>
           </div>
@@ -183,7 +183,7 @@ export default function QrCobroModal({ open, onClose, clienteId }) {
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-base font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                        <span className="text-base font-semibold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
                           {formatMoney(cuota)}
                         </span>
                         <span className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>/ cuota</span>
@@ -191,7 +191,7 @@ export default function QrCobroModal({ open, onClose, clienteId }) {
                       {mora > 0 && (
                         <span
                           className="text-xs font-medium px-2 py-0.5 rounded-full"
-                          style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}
+                          style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--color-danger)' }}
                         >
                           {mora}d mora
                         </span>
@@ -209,7 +209,7 @@ export default function QrCobroModal({ open, onClose, clienteId }) {
                         className="h-full rounded-full transition-all"
                         style={{
                           width: `${Math.min(100, pct)}%`,
-                          background: mora > 0 ? '#ef4444' : 'var(--color-accent)',
+                          background: mora > 0 ? 'var(--color-danger)' : 'var(--color-accent)',
                         }}
                       />
                     </div>

@@ -107,7 +107,7 @@ function EmailModal({ email, orgId, onClose }) {
                 Cancelar
               </button>
               <button onClick={send} disabled={sending}
-                className="h-9 px-5 rounded-[10px] bg-[var(--color-info)] text-[var(--color-text-primary)] text-xs font-medium hover:bg-[#2563eb] transition-colors disabled:opacity-50">
+                className="h-9 px-5 rounded-[10px] bg-[var(--color-info)] text-[var(--color-text-primary)] text-xs font-medium hover:bg-[var(--color-info)] transition-colors disabled:opacity-50">
                 {sending ? 'Enviando...' : 'Enviar'}
               </button>
             </div>
@@ -334,7 +334,7 @@ export default function CRMDetailPage({ params }) {
                 <button
                   onClick={saveOrg}
                   disabled={saving}
-                  className="flex-1 h-9 rounded-[10px] bg-[var(--color-info)] text-[var(--color-text-primary)] text-xs font-medium hover:bg-[#2563eb] transition-colors disabled:opacity-50"
+                  className="flex-1 h-9 rounded-[10px] bg-[var(--color-info)] text-[var(--color-text-primary)] text-xs font-medium hover:bg-[var(--color-info)] transition-colors disabled:opacity-50"
                 >
                   {saving ? 'Guardando...' : 'Guardar cambios'}
                 </button>
@@ -415,7 +415,7 @@ export default function CRMDetailPage({ params }) {
               <div className="grid grid-cols-3 gap-2">
                 {[
                   { label: 'Clientes',  value: data.actividad.clientes  ?? 0, color: 'var(--color-text-primary)' },
-                  { label: 'Préstamos', value: data.actividad.prestamos ?? 0, color: '#3b82f6' },
+                  { label: 'Préstamos', value: data.actividad.prestamos ?? 0, color: 'var(--color-info)' },
                   { label: 'Rutas',     value: data.actividad.rutas     ?? 0, color: 'var(--color-purple)' },
                 ].map(({ label, value, color }) => (
                   <div key={label} className="text-center">

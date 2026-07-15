@@ -174,19 +174,19 @@ function TabPerfil() {
   return (
     <div className="space-y-5">
       <Card>
-        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">Información personal</p>
+        <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em] mb-4">Información personal</p>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[#888888]">Nombre</label>
+            <label className="text-xs font-medium text-[var(--color-text-muted)]">Nombre</label>
             <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} className={inputClass} />
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[#888888]">Email</label>
+            <label className="text-xs font-medium text-[var(--color-text-muted)]">Email</label>
             <input type="email" value={perfil?.email ?? ''} readOnly disabled className={inputClass} />
-            <p className="text-[10px] text-[#888888]">El email no se puede cambiar</p>
+            <p className="text-[10px] text-[var(--color-text-muted)]">El email no se puede cambiar</p>
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[#888888]">Número de WhatsApp</label>
+            <label className="text-xs font-medium text-[var(--color-text-muted)]">Número de WhatsApp</label>
             <input
               type="tel"
               value={telefono}
@@ -194,13 +194,13 @@ function TabPerfil() {
               placeholder="Ej: 3001234567"
               className={inputClass}
             />
-            <p className="text-[10px] text-[#888888]">Lo usamos para enviarte códigos de verificación. Si lo cambias, usa el nuevo número para iniciar sesión.</p>
+            <p className="text-[10px] text-[var(--color-text-muted)]">Lo usamos para enviarte códigos de verificación. Si lo cambias, usa el nuevo número para iniciar sesión.</p>
           </div>
           {msgTel && <Alerta tipo={msgTel.tipo}>{msgTel.texto}</Alerta>}
           <Button onClick={guardarTelefono} loading={guardandoTel} size="sm">Guardar WhatsApp</Button>
-          <div className="pt-2" style={{ borderTop: '1px solid #1e1e1e' }} />
+          <div className="pt-2" style={{ borderTop: '1px solid var(--color-border)' }} />
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[#888888]">Rol</label>
+            <label className="text-xs font-medium text-[var(--color-text-muted)]">Rol</label>
             <div className="flex items-center gap-2">
               <Badge variant={session?.user?.rol === 'owner' ? 'blue' : 'gray'}>
                 {{ owner: 'Administrador', cobrador: 'Cobrador', superadmin: 'Super Admin' }[session?.user?.rol] ?? 'Usuario'}
@@ -213,7 +213,7 @@ function TabPerfil() {
       </Card>
 
       <Card>
-        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-3">Avatar de perfil</p>
+        <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em] mb-3">Avatar de perfil</p>
         <p className="text-[11px] text-[var(--color-text-muted)] mb-4">
           Se mostrará en el menú y en el sidebar.
         </p>
@@ -271,7 +271,7 @@ function TabPerfil() {
                 {selected && (
                   <div className="absolute inset-0 flex items-end justify-center pb-1">
                     <div className="w-4 h-4 rounded-full flex items-center justify-center" style={{ background: 'var(--color-accent)' }}>
-                      <svg className="w-2.5 h-2.5" fill="none" stroke="#000" strokeWidth={2.5} viewBox="0 0 24 24">
+                      <svg className="w-2.5 h-2.5" fill="none" stroke="var(--color-accent-text)" strokeWidth={2.5} viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
@@ -284,18 +284,18 @@ function TabPerfil() {
       </Modal>
 
       <Card>
-        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">Cambiar contraseña</p>
+        <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em] mb-4">Cambiar contraseña</p>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[#888888]">Contraseña actual</label>
+            <label className="text-xs font-medium text-[var(--color-text-muted)]">Contraseña actual</label>
             <input type="password" value={pwActual} onChange={(e) => setPwActual(e.target.value)} placeholder="Tu contraseña actual" className={inputClass} />
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[#888888]">Nueva contraseña</label>
+            <label className="text-xs font-medium text-[var(--color-text-muted)]">Nueva contraseña</label>
             <input type="password" value={pwNuevo} onChange={(e) => setPwNuevo(e.target.value)} placeholder="Mínimo 6 caracteres" className={inputClass} />
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[#888888]">Confirmar nueva contraseña</label>
+            <label className="text-xs font-medium text-[var(--color-text-muted)]">Confirmar nueva contraseña</label>
             <input type="password" value={pwConfirmar} onChange={(e) => setPwConfirmar(e.target.value)} placeholder="Repite la nueva contraseña" className={inputClass} />
           </div>
           {msgPw && <Alerta tipo={msgPw.tipo}>{msgPw.texto}</Alerta>}
@@ -441,18 +441,18 @@ function TabOrganizacion() {
   return (
     <div className="space-y-5">
       <Card>
-        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">Datos del negocio</p>
+        <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em] mb-4">Datos del negocio</p>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[#888888]">Nombre del negocio</label>
+            <label className="text-xs font-medium text-[var(--color-text-muted)]">Nombre del negocio</label>
             <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} className={inputClass} />
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[#888888]">Teléfono</label>
+            <label className="text-xs font-medium text-[var(--color-text-muted)]">Teléfono</label>
             <input type="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="Ej: 3001234567" className={inputClass} />
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[#888888]">País</label>
+            <label className="text-xs font-medium text-[var(--color-text-muted)]">País</label>
             <div
               className="flex items-center justify-between rounded-[12px] px-3 py-2.5"
               style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
@@ -479,12 +479,12 @@ function TabOrganizacion() {
                 Cambiar país
               </a>
             </div>
-            <p className="text-[10px] text-[#666666] leading-snug px-0.5">
+            <p className="text-[10px] text-[var(--color-text-muted)] leading-snug px-0.5">
               Para cambiar el país asociado a tu cuenta debes contactar a soporte.
             </p>
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[#888888]">Ciudad</label>
+            <label className="text-xs font-medium text-[var(--color-text-muted)]">Ciudad</label>
             <input type="text" value={ciudad} onChange={(e) => setCiudad(e.target.value)} placeholder="Ej: Bogotá" className={inputClass} />
           </div>
           {msg && <Alerta tipo={msg.tipo}>{msg.texto}</Alerta>}
@@ -493,8 +493,8 @@ function TabOrganizacion() {
       </Card>
 
       <Card>
-        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-3">Días sin cobro</p>
-        <p className="text-[11px] text-[#666666] leading-snug mb-3">
+        <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em] mb-3">Días sin cobro</p>
+        <p className="text-[11px] text-[var(--color-text-muted)] leading-snug mb-3">
           Los días que marques no generarán mora para ningún cliente. Puedes configurar días diferentes por ruta o por cliente.
         </p>
         <DiasSinCobroSelector value={diasSinCobro} onChange={setDiasSinCobro} />
@@ -511,8 +511,8 @@ function TabOrganizacion() {
       <Card>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Capital en ruta = efectivo en mano</p>
-            <p className="text-[11px] text-[#666666] leading-snug mt-1">
+            <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em]">Capital en ruta = efectivo en mano</p>
+            <p className="text-[11px] text-[var(--color-text-muted)] leading-snug mt-1">
               Activa si entregas el capital de la ruta como plata física al cobrador. El sistema usará ese valor para calcular el dinero en mano y el cuadre de caja.
             </p>
           </div>
@@ -535,8 +535,8 @@ function TabOrganizacion() {
       <Card>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Modo abreviado de montos</p>
-            <p className="text-[11px] text-[#666666] leading-snug mt-1">
+            <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em]">Modo abreviado de montos</p>
+            <p className="text-[11px] text-[var(--color-text-muted)] leading-snug mt-1">
               Escribe montos sin los ultimos tres ceros. Por ejemplo, 100 se convierte en 100.000 y 1.500 en 1.500.000.
             </p>
           </div>
@@ -562,8 +562,8 @@ function TabOrganizacion() {
       <Card>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Aprobar prestamos del cobrador</p>
-            <p className="text-[11px] text-[#666666] leading-snug mt-1">
+            <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em]">Aprobar prestamos del cobrador</p>
+            <p className="text-[11px] text-[var(--color-text-muted)] leading-snug mt-1">
               Cuando un cobrador crea un prestamo, queda pendiente hasta que lo apruebes. Sin esta opcion, los prestamos se activan de inmediato.
             </p>
           </div>
@@ -590,12 +590,12 @@ function TabOrganizacion() {
           </svg>
           <h3 className="font-medium text-white text-sm">Intereses moratorios</h3>
         </div>
-        <p className="text-xs text-[#666666] mb-4">
+        <p className="text-xs text-[var(--color-text-muted)] mb-4">
           Cuando un cliente lleva varios dias sin pagar, el sistema calcula un interes adicional. Tu decides si aplicarlo o no desde cada prestamo.
         </p>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[#888888]">Tasa moratorio mensual (%)</label>
+            <label className="text-xs font-medium text-[var(--color-text-muted)]">Tasa moratorio mensual (%)</label>
             <input
               type="number"
               min="0"
@@ -606,12 +606,12 @@ function TabOrganizacion() {
               placeholder="0 = desactivado"
               className={inputClass}
             />
-            <p className="text-[10px] text-[#666666] leading-snug px-0.5">
+            <p className="text-[10px] text-[var(--color-text-muted)] leading-snug px-0.5">
               Porcentaje mensual sobre el monto en mora. Ej: 3 = 3% mensual. Dejalo en 0 para desactivar.
             </p>
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[#888888]">Dias de gracia</label>
+            <label className="text-xs font-medium text-[var(--color-text-muted)]">Dias de gracia</label>
             <input
               type="number"
               min="0"
@@ -621,7 +621,7 @@ function TabOrganizacion() {
               onChange={(e) => setDiasGraciaMoratorio(e.target.value)}
               className={inputClass}
             />
-            <p className="text-[10px] text-[#666666] leading-snug px-0.5">
+            <p className="text-[10px] text-[var(--color-text-muted)] leading-snug px-0.5">
               Dias que deben pasar en mora antes de que se empiece a calcular el interes moratorio.
             </p>
           </div>
@@ -661,7 +661,7 @@ function TabOrganizacion() {
           </svg>
           <h3 className="font-medium text-white text-sm">Mensajes de WhatsApp</h3>
         </div>
-        <p className="text-xs text-[#666666] mb-4">
+        <p className="text-xs text-[var(--color-text-muted)] mb-4">
           Configura que informacion se incluye en los mensajes que se envian a los clientes por WhatsApp.
         </p>
         <Toggle
@@ -687,12 +687,12 @@ function TabOrganizacion() {
       {/* Festivos */}
       <Card>
         <div className="flex items-center gap-2 mb-1">
-          <svg className="w-4 h-4 text-[#f5c518] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-[var(--color-accent)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
           <h3 className="font-medium text-white text-sm">Festivos y días sin cobro específicos</h3>
         </div>
-        <p className="text-xs text-[#666666] mb-4">
+        <p className="text-xs text-[var(--color-text-muted)] mb-4">
           Fechas concretas en las que no se realiza cobro. No generan mora ese día.
         </p>
         <FestivosManager
@@ -704,31 +704,31 @@ function TabOrganizacion() {
       </Card>
 
       <Card>
-        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">Plan y suscripción</p>
+        <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em] mb-4">Plan y suscripción</p>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-[#888888]">Plan actual</p>
+              <p className="text-xs text-[var(--color-text-muted)]">Plan actual</p>
               <div className="flex items-center gap-2 mt-1">
                 <Badge variant={planBadge[org?.plan ?? 'starter']}>
                   {PLAN_NAMES[org?.plan ?? 'starter']}
                 </Badge>
-                <span className="text-xs text-[#888888]"><span className="font-mono-display">{formatMoney(PRECIOS[org?.plan ?? 'starter'])}</span>/mes</span>
+                <span className="text-xs text-[var(--color-text-muted)]"><span className="font-mono-display">{formatMoney(PRECIOS[org?.plan ?? 'starter'])}</span>/mes</span>
               </div>
             </div>
             <Link
               href="/configuracion/plan"
-              className="px-3 py-1.5 rounded-[8px] text-xs font-medium bg-[#2a2a2a] text-[#888888] hover:text-[var(--color-text-primary)] hover:bg-[#333333] transition-all"
+              className="px-3 py-1.5 rounded-[8px] text-xs font-medium bg-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-hover)] transition-all"
             >
               Cambiar plan
             </Link>
           </div>
 
           {suscripcion && (
-            <div className="pt-3 border-t border-[#2a2a2a] space-y-2">
+            <div className="pt-3 border-t border-[var(--color-border)] space-y-2">
               <div className="flex justify-between text-xs">
-                <span className="text-[#888888]">Vencimiento</span>
-                <span className="text-[#888888]">
+                <span className="text-[var(--color-text-muted)]">Vencimiento</span>
+                <span className="text-[var(--color-text-muted)]">
                   {new Date(suscripcion.fechaVencimiento).toLocaleDateString('es-CO', {
                     day: 'numeric', month: 'long', year: 'numeric',
                   })}
@@ -885,10 +885,10 @@ function TabSuscripcion() {
 
   const { org, suscripcion, diasRestantes, historial } = data ?? {}
 
-  const barColor = diasRestantes === null || diasRestantes === undefined ? '#555555'
-    : diasRestantes > 15 ? '#22c55e'
-    : diasRestantes > 7  ? '#f59e0b'
-    : '#ef4444'
+  const barColor = diasRestantes === null || diasRestantes === undefined ? 'var(--color-text-muted)'
+    : diasRestantes > 15 ? 'var(--color-success)'
+    : diasRestantes > 7  ? 'var(--color-warning)'
+    : 'var(--color-danger)'
 
   const barPct = (diasRestantes == null) ? 0 : Math.max(0, Math.min(100, (diasRestantes / 30) * 100))
 
@@ -896,23 +896,23 @@ function TabSuscripcion() {
     <div className="space-y-5">
       <Card
         style={{
-          background: `linear-gradient(135deg, #f5c5180A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #f5c51805 100%)`,
-          boxShadow: `0 0 30px #f5c51808, 0 1px 2px rgba(0,0,0,0.3)`,
+          background: `linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 4%, transparent) 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, color-mix(in srgb, var(--color-accent) 2%, transparent) 100%)`,
+          boxShadow: `0 0 30px color-mix(in srgb, var(--color-accent) 3%, transparent), 0 1px 2px rgba(0,0,0,0.3)`,
         }}
       >
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5">
           <div>
-            <p className="text-xs text-[#888888] mb-1">Plan actual</p>
+            <p className="text-xs text-[var(--color-text-muted)] mb-1">Plan actual</p>
             <div className="flex items-center gap-2">
               <Badge variant={planBadge[org?.plan ?? 'starter']}>
                 {PLAN_NAMES[org?.plan ?? 'starter']}
               </Badge>
-              <span className="text-xs text-[#888888]"><span className="font-mono-display">{formatMoney(PRECIOS[org?.plan ?? 'starter'])}</span>/mes</span>
+              <span className="text-xs text-[var(--color-text-muted)]"><span className="font-mono-display">{formatMoney(PRECIOS[org?.plan ?? 'starter'])}</span>/mes</span>
             </div>
           </div>
           <Link
             href="/configuracion/plan"
-            className="inline-flex items-center justify-center h-10 px-5 rounded-[12px] text-sm font-semibold bg-[#f5c518] text-white hover:bg-[#f0b800] transition-all shrink-0"
+            className="inline-flex items-center justify-center h-10 px-5 rounded-[12px] text-sm font-semibold bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] transition-all shrink-0"
           >
             Renovar / Cambiar
           </Link>
@@ -922,18 +922,18 @@ function TabSuscripcion() {
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div>
-                <p className="text-[#888888]">Inicio</p>
-                <p className="text-[#888888] mt-0.5">{new Date(suscripcion.fechaInicio).toLocaleDateString('es-CO')}</p>
+                <p className="text-[var(--color-text-muted)]">Inicio</p>
+                <p className="text-[var(--color-text-muted)] mt-0.5">{new Date(suscripcion.fechaInicio).toLocaleDateString('es-CO')}</p>
               </div>
               <div>
-                <p className="text-[#888888]">Vencimiento</p>
-                <p className="text-[#888888] mt-0.5">{new Date(suscripcion.fechaVencimiento).toLocaleDateString('es-CO')}</p>
+                <p className="text-[var(--color-text-muted)]">Vencimiento</p>
+                <p className="text-[var(--color-text-muted)] mt-0.5">{new Date(suscripcion.fechaVencimiento).toLocaleDateString('es-CO')}</p>
               </div>
             </div>
 
             <div className="space-y-1.5">
               <div className="flex justify-between text-xs">
-                <span className="text-[#888888]">Tiempo restante</span>
+                <span className="text-[var(--color-text-muted)]">Tiempo restante</span>
                 <span className="font-medium" style={{ color: barColor }}>
                   {diasRestantes != null
                     ? diasRestantes > 0
@@ -942,7 +942,7 @@ function TabSuscripcion() {
                     : '—'}
                 </span>
               </div>
-              <div className="h-2 bg-[#2a2a2a] rounded-full overflow-hidden">
+              <div className="h-2 bg-[var(--color-border)] rounded-full overflow-hidden">
                 <div className="h-full rounded-full transition-all" style={{ width: `${barPct}%`, background: barColor }} />
               </div>
             </div>
@@ -961,23 +961,23 @@ function TabSuscripcion() {
             )}
           </div>
         ) : (
-          <p className="text-sm text-[#888888]">No hay información de suscripción disponible.</p>
+          <p className="text-sm text-[var(--color-text-muted)]">No hay información de suscripción disponible.</p>
         )}
       </Card>
 
       {historial?.length > 0 && (
         <Card>
-          <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">Historial de suscripciones</p>
+          <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em] mb-4">Historial de suscripciones</p>
           <div className="space-y-0">
-            <div className="hidden sm:grid grid-cols-4 gap-2 text-[10px] text-[#888888] font-medium uppercase pb-2 border-b border-[#2a2a2a]">
+            <div className="hidden sm:grid grid-cols-4 gap-2 text-[10px] text-[var(--color-text-muted)] font-medium uppercase pb-2 border-b border-[var(--color-border)]">
               <span>Período</span>
               <span className="text-center">Plan</span>
               <span className="text-center">Estado</span>
               <span className="text-right">Monto</span>
             </div>
             {historial.map((h) => (
-              <div key={h.id} className="grid grid-cols-2 sm:grid-cols-4 gap-2 py-2.5 border-b border-[#2a2a2a] last:border-0 items-center">
-                <p className="text-xs text-[#888888]">
+              <div key={h.id} className="grid grid-cols-2 sm:grid-cols-4 gap-2 py-2.5 border-b border-[var(--color-border)] last:border-0 items-center">
+                <p className="text-xs text-[var(--color-text-muted)]">
                   {new Date(h.fechaInicio).toLocaleDateString('es-CO', { month: 'short', year: '2-digit' })}
                   {' → '}
                   {new Date(h.fechaVencimiento).toLocaleDateString('es-CO', { month: 'short', year: '2-digit' })}
@@ -988,7 +988,7 @@ function TabSuscripcion() {
                     {h.estado}
                   </Badge>
                 </div>
-                <p className="text-xs text-[#888888] text-right">
+                <p className="text-xs text-[var(--color-text-muted)] text-right">
                   {h.montoCOP > 0 ? <span className="font-mono-display">{formatMoney(h.montoCOP)}</span> : 'Gratis'}
                 </p>
               </div>
@@ -1043,17 +1043,17 @@ function TabReferidos() {
   return (
     <div className="space-y-5">
       <Card>
-        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">Tu link de referido</p>
+        <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em] mb-4">Tu link de referido</p>
         <div className="space-y-4">
-          <div className="bg-[#111111] border border-[#2a2a2a] rounded-[12px] px-4 py-3">
-            <p className="text-xs text-[#888888] mb-1">Código</p>
-            <p className="text-lg font-bold font-mono text-[#f5c518]">{codigo ?? 'Sin código'}</p>
+          <div className="bg-[var(--color-bg-hover)] border border-[var(--color-border)] rounded-[12px] px-4 py-3">
+            <p className="text-xs text-[var(--color-text-muted)] mb-1">Código</p>
+            <p className="text-lg font-bold font-mono text-[var(--color-accent)]">{codigo ?? 'Sin código'}</p>
           </div>
 
           {link && (
-            <div className="bg-[#111111] border border-[#2a2a2a] rounded-[12px] px-4 py-3">
-              <p className="text-xs text-[#888888] mb-1">Link de registro</p>
-              <p className="text-xs text-[#888888] break-all">{link}</p>
+            <div className="bg-[var(--color-bg-hover)] border border-[var(--color-border)] rounded-[12px] px-4 py-3">
+              <p className="text-xs text-[var(--color-text-muted)] mb-1">Link de registro</p>
+              <p className="text-xs text-[var(--color-text-muted)] break-all">{link}</p>
             </div>
           )}
 
@@ -1074,18 +1074,18 @@ function TabReferidos() {
 
       <Card>
         <div className="flex items-center justify-between mb-4">
-          <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Referidos</p>
+          <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em]">Referidos</p>
           <Badge variant="green">{referidos.length}</Badge>
         </div>
         {referidos.length === 0 ? (
-          <p className="text-sm text-[#555555]">Aún no tienes referidos. Comparte tu link para empezar a ganar meses gratis.</p>
+          <p className="text-sm text-[var(--color-text-muted)]">Aún no tienes referidos. Comparte tu link para empezar a ganar meses gratis.</p>
         ) : (
           <div className="space-y-0">
             {referidos.map((r) => (
-              <div key={r.id} className="flex items-center justify-between py-2.5 border-b border-[#2a2a2a] last:border-0">
+              <div key={r.id} className="flex items-center justify-between py-2.5 border-b border-[var(--color-border)] last:border-0">
                 <div>
                   <p className="text-sm font-medium text-white">{r.nombre}</p>
-                  <p className="text-[10px] text-[#555555]">{new Date(r.createdAt).toLocaleDateString('es-CO')}</p>
+                  <p className="text-[10px] text-[var(--color-text-muted)]">{new Date(r.createdAt).toLocaleDateString('es-CO')}</p>
                 </div>
                 <Badge variant={r.pagado ? 'green' : 'gray'}>{r.pagado ? '+30 días' : 'Pendiente'}</Badge>
               </div>
@@ -1168,7 +1168,7 @@ function TabNotificaciones() {
     <Card>
       <div className="p-5 space-y-4">
         <h2 className="text-sm font-semibold text-white">Notificaciones push</h2>
-        <p className="text-xs text-[#888]">
+        <p className="text-xs text-[var(--color-text-muted)]">
           Recibe alertas cuando un cobrador registra pagos, clientes entran en mora o tu suscripción está por vencer.
         </p>
 
@@ -1188,7 +1188,7 @@ function TabNotificaciones() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-white">{status === 'subscribed' ? 'Activadas' : 'Desactivadas'}</p>
-              <p className="text-[10px] text-[#666]">{status === 'subscribed' ? 'Recibirás notificaciones push' : 'No recibirás notificaciones'}</p>
+              <p className="text-[10px] text-[var(--color-text-muted)]">{status === 'subscribed' ? 'Recibirás notificaciones push' : 'No recibirás notificaciones'}</p>
             </div>
             <Toggle checked={status === 'subscribed'} onChange={toggle} disabled={working} />
           </div>
@@ -1196,8 +1196,8 @@ function TabNotificaciones() {
 
         {status === 'loading' && (
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-[#333] border-t-[#f5c518] rounded-full animate-spin" />
-            <span className="text-xs text-[#666]">Verificando...</span>
+            <div className="w-4 h-4 border-2 border-[var(--color-border)] border-t-[var(--color-accent)] rounded-full animate-spin" />
+            <span className="text-xs text-[var(--color-text-muted)]">Verificando...</span>
           </div>
         )}
       </div>
@@ -1232,12 +1232,12 @@ function ConfiguracionContent() {
   return (
     <div className="max-w-2xl lg:max-w-5xl mx-auto space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Configuración</h1>
-        <p className="text-sm text-[#888888] mt-0.5">Gestiona tu perfil y tu organización</p>
+        <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Configuración</h1>
+        <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Gestiona tu perfil y tu organización</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-0 border-b border-[#2a2a2a] overflow-x-auto">
+      <div className="flex gap-0 border-b border-[var(--color-border)] overflow-x-auto">
         {tabs.map((t) => (
           <button
             key={t.key}
@@ -1245,8 +1245,8 @@ function ConfiguracionContent() {
             className={[
               'px-4 py-2.5 text-sm font-medium transition-all border-b-2 -mb-px whitespace-nowrap',
               tab === t.key
-                ? 'text-[#f5c518] border-[#f5c518]'
-                : 'text-[#888888] border-transparent hover:text-[#888888]',
+                ? 'text-[var(--color-accent)] border-[var(--color-accent)]'
+                : 'text-[var(--color-text-muted)] border-transparent hover:text-[var(--color-text-muted)]',
             ].join(' ')}
           >
             {t.label}

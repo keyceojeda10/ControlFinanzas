@@ -23,7 +23,7 @@ export default function ProgressRing({ progreso = 0, size = 56, stroke = 4 }) {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#f5c518"
+          stroke="var(--color-accent)"
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circumference}

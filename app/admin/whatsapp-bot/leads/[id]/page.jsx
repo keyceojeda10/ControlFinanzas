@@ -6,12 +6,12 @@ import Link from 'next/link'
 import { SkeletonCard } from '@/components/ui/Skeleton'
 
 const ESTADO_COLORS = {
-  pendiente: '#f5c518',
-  contactado: '#3b82f6',
-  interesado: '#10b981',
-  no_interesado: '#888888',
-  cerrado: '#8b5cf6',
-  bloqueado: '#ef4444',
+  pendiente: 'var(--color-accent)',
+  contactado: 'var(--color-info)',
+  interesado: 'var(--color-success)',
+  no_interesado: 'var(--color-text-muted)',
+  cerrado: 'var(--color-purple)',
+  bloqueado: 'var(--color-danger)',
 }
 
 const ESTADOS = ['pendiente', 'contactado', 'interesado', 'no_interesado', 'cerrado', 'bloqueado']
@@ -141,7 +141,7 @@ export default function BotLeadDetalle() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
           </svg>
         </Link>
-        <h1 className="text-lg font-bold text-[white] flex-1 truncate">{lead.nombre}</h1>
+        <h1 className="text-[25px] font-semibold text-[white] flex-1 truncate">{lead.nombre}</h1>
         <a
           href={`https://wa.me/${tel}`}
           target="_blank"
@@ -153,7 +153,7 @@ export default function BotLeadDetalle() {
       </div>
 
       {/* Info card */}
-      <div className="border border-[var(--color-border)] rounded-[12px] p-4 bg-[var(--color-bg-card)]">
+      <div className="border border-[var(--color-border)] rounded-[20px] p-4 bg-[var(--color-bg-card)]">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
           <div>
             <p className="text-[10px] text-[var(--color-text-muted)]">Teléfono</p>
@@ -163,7 +163,7 @@ export default function BotLeadDetalle() {
             <p className="text-[10px] text-[var(--color-text-muted)]">Estado</p>
             <span
               className="text-xs font-medium capitalize"
-              style={{ color: ESTADO_COLORS[lead.estado] || '#888' }}
+              style={{ color: ESTADO_COLORS[lead.estado] || 'var(--color-text-muted)' }}
             >
               {lead.estado?.replace('_', ' ')}
             </span>
@@ -176,7 +176,7 @@ export default function BotLeadDetalle() {
                   className="h-full rounded-full"
                   style={{
                     width: `${lead.temperatura}%`,
-                    background: lead.temperatura > 70 ? '#ef4444' : lead.temperatura > 40 ? '#f5c518' : '#3b82f6',
+                    background: lead.temperatura > 70 ? 'var(--color-danger)' : lead.temperatura > 40 ? 'var(--color-accent)' : 'var(--color-info)',
                   }}
                 />
               </div>
@@ -244,7 +244,7 @@ export default function BotLeadDetalle() {
       </div>
 
       {/* Chat */}
-      <div className="border border-[var(--color-border)] rounded-[12px] bg-[var(--color-bg-card)] overflow-hidden">
+      <div className="border border-[var(--color-border)] rounded-[20px] bg-[var(--color-bg-card)] overflow-hidden">
         <div className="px-4 py-2.5 border-b border-[var(--color-border)]">
           <h2 className="text-sm font-semibold text-[white]">Conversación ({mensajes.length})</h2>
         </div>

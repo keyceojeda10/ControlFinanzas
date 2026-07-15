@@ -127,7 +127,7 @@ function CargaMasivaPageInner() {
           </svg>
           {paso === 1 ? 'Volver' : 'Paso anterior'}
         </button>
-        <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Importar clientes desde archivo</h1>
+        <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Importar clientes desde archivo</h1>
         <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
           Sube tu Excel o CSV y el sistema detecta las columnas
         </p>

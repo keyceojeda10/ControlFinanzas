@@ -24,7 +24,7 @@ const fmtFechaCorta = (d) => d
 export function moodColorFromPrestamo(p) {
   if (!p) return 'var(--color-accent)'
   if (p.estado === 'completado') return 'var(--color-success)'
-  if (p.estado === 'cancelado') return '#64748b'
+  if (p.estado === 'cancelado') return 'var(--color-text-muted)'
   if ((p.diasMora ?? 0) > 7) return 'var(--color-danger)'
   if ((p.diasMora ?? 0) > 0) return '#f97316'
   return 'var(--color-accent)'
@@ -332,8 +332,8 @@ export function BotonPagoPersonalidad({ enMora, frecuenciaLabel, monto, onClick 
       style={{
         color: '#ffffff',
         background: isUrgente
-          ? 'linear-gradient(135deg, #ef4444, #dc2626)'
-          : 'linear-gradient(135deg, #22c55e, #16a34a)',
+          ? 'linear-gradient(135deg, var(--color-danger), color-mix(in srgb, var(--color-danger) 82%, black))'
+          : 'linear-gradient(135deg, var(--color-success), color-mix(in srgb, var(--color-success) 82%, black))',
         boxShadow: isUrgente
           ? '0 2px 8px rgba(239, 68, 68, 0.2)'
           : '0 2px 8px rgba(16, 185, 129, 0.2)',
@@ -445,7 +445,7 @@ export function generarStatsContextuales({ prestamo, totalPagado, cuotasPagadas,
   // Casi terminado
   if (porcentajePagado >= 90 && porcentajePagado < 100) {
     stats.push({
-      color: '#a855f7',
+      color: 'var(--color-purple)',
       icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>,
       text: '¡Casi terminado!',
     })
@@ -454,7 +454,7 @@ export function generarStatsContextuales({ prestamo, totalPagado, cuotasPagadas,
   // Cliente recurrente
   if (prestamoNumeroCliente && prestamoNumeroCliente > 1) {
     stats.push({
-      color: '#06b6d4',
+      color: 'var(--color-teal)',
       icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>,
       text: `Préstamo #${prestamoNumeroCliente} con este cliente`,
     })
@@ -518,7 +518,7 @@ export function GrillaDatosSecciones({ secciones }) {
       {secciones.map((sec) => (
         <div
           key={sec.titulo}
-          className="rounded-[12px] p-3"
+          className="rounded-[20px] p-3"
           style={{
             background: `linear-gradient(135deg, color-mix(in srgb, ${sec.color} 12%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
             border: `1px solid color-mix(in srgb, ${sec.color} 24%, var(--color-border))`,
@@ -531,7 +531,7 @@ export function GrillaDatosSecciones({ secciones }) {
             >
               {sec.icon}
             </div>
-            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: sec.color }}>
+            <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: sec.color }}>
               {sec.titulo}
             </p>
           </div>
@@ -573,9 +573,9 @@ export function TimelinePrestamo({ fechaInicio, fechaFin, porcentajePagado, colo
   const atrasado = animPago < animTiempo - 5
 
   return (
-    <div className="rounded-[12px] p-4" style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${color} 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`, border: `1px solid color-mix(in srgb, ${color} 20%, var(--color-border))` }}>
+    <div className="rounded-[20px] p-4" style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${color} 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`, border: `1px solid color-mix(in srgb, ${color} 20%, var(--color-border))` }}>
       <div className="flex items-center justify-between mb-3">
-        <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+        <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-muted)' }}>
           Línea de tiempo
         </p>
         {diasRestantes > 0 && (
@@ -659,10 +659,10 @@ export function TimelinePrestamo({ fechaInicio, fechaFin, porcentajePagado, colo
 export function PagoMiniCard({ pago, onAnular, anulando, isOffline, children }) {
   const tipoColors = {
     completo:    { bg: 'var(--color-success)', label: 'Completo' },
-    parcial:     { bg: '#f5c518',              label: 'Parcial' },
-    capital:     { bg: '#a855f7',              label: 'A Capital' },
+    parcial:     { bg: 'var(--color-accent)',  label: 'Parcial' },
+    capital:     { bg: 'var(--color-purple)',  label: 'A Capital' },
     recargo:     { bg: 'var(--color-danger)',  label: 'Recargo' },
-    descuento:   { bg: '#3b82f6',              label: 'Descuento' },
+    descuento:   { bg: 'var(--color-info)',    label: 'Descuento' },
     intereses:   { bg: '#f97316',              label: 'Intereses' },
     liquidacion: { bg: '#6366f1',              label: 'Liquidación' },
   }
@@ -759,7 +759,7 @@ export function PagoMiniCard({ pago, onAnular, anulando, isOffline, children }) 
         <div className="text-right shrink-0">
           <p
             className="text-[15px] font-bold font-mono-display leading-none"
-            style={{ color: pago.tipo === 'descuento' ? '#3b82f6' : tipoInfo.bg }}
+            style={{ color: pago.tipo === 'descuento' ? 'var(--color-info)' : tipoInfo.bg }}
           >
             {pago.tipo === 'descuento' ? '-' : pago.tipo === 'recargo' ? '+' : ''}{formatMoney(pago.montoPagado)}
           </p>
@@ -790,10 +790,10 @@ export function ComparativoPrestamosCliente({ totalPrestamosCliente, prestamoNum
   }
   return (
     <div
-      className="rounded-[12px] px-3 py-2.5 flex items-start gap-2"
-      style={{ background: 'linear-gradient(135deg, color-mix(in srgb, #06b6d4 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)', border: '1px solid color-mix(in srgb, #06b6d4 18%, var(--color-border))' }}
+      className="rounded-[20px] px-3 py-2.5 flex items-start gap-2"
+      style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-teal) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)', border: '1px solid color-mix(in srgb, var(--color-teal) 18%, var(--color-border))' }}
     >
-      <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, #06b6d4 15%, transparent)', color: '#06b6d4' }}>
+      <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-teal) 15%, transparent)', color: 'var(--color-teal)' }}>
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
         </svg>

@@ -338,7 +338,7 @@ export default function RutasPage() {
     <div className="max-w-3xl lg:max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Rutas</h1>
+          <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Rutas</h1>
           <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
             {loading ? '…' : `${rutas.length} ruta${rutas.length !== 1 ? 's' : ''}`}
           </p>
@@ -362,7 +362,7 @@ export default function RutasPage() {
           <button
             onClick={descargarBackup}
             disabled={backupLoading}
-            className="h-8 px-3 rounded-[10px] border border-[var(--color-border)] bg-[#141414] text-[11px] text-[#666] hover:text-[var(--color-text-secondary)] hover:border-[var(--color-border)] transition-all disabled:opacity-50 flex items-center gap-1.5"
+            className="h-8 px-3 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-hover)] text-[11px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:border-[var(--color-border-hover)] transition-all disabled:opacity-50 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
             title="Guardar copia de seguridad"
           >
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" /></svg>
@@ -371,7 +371,7 @@ export default function RutasPage() {
           <button
             onClick={restaurarBackup}
             disabled={restoreLoading}
-            className="h-8 px-3 rounded-[10px] border border-[var(--color-border)] bg-[#141414] text-[11px] text-[#666] hover:text-[var(--color-text-secondary)] hover:border-[var(--color-border)] transition-all disabled:opacity-50 flex items-center gap-1.5"
+            className="h-8 px-3 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-hover)] text-[11px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:border-[var(--color-border-hover)] transition-all disabled:opacity-50 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
             title="Restaurar copia de seguridad"
           >
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M16 6l-4-4-4 4M12 3v12" /></svg>
@@ -405,7 +405,7 @@ export default function RutasPage() {
           {/* Origen del capital: solo relevante si se ingresó un monto */}
           {Number(capitalRuta) > 0 && (
             <div>
-              <p className="text-[11px] font-medium uppercase tracking-wide mb-1.5" style={{ color: 'var(--color-text-muted)' }}>¿De dónde sale este capital?</p>
+              <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-1.5" style={{ color: 'var(--color-text-muted)' }}>¿De dónde sale este capital?</p>
               <div className="grid grid-cols-1 gap-2">
                 <button
                   type="button"
@@ -463,7 +463,7 @@ export default function RutasPage() {
           <button
             onClick={() => setShowSugerencias(true)}
             className="shrink-0 px-3 py-1.5 rounded-[8px] text-[11px] font-semibold transition-colors"
-            style={{ background: 'var(--color-accent)', color: 'var(--color-bg-base)' }}
+            style={{ background: 'var(--color-accent)', color: 'var(--color-accent-text)' }}
           >
             Ver sugerencias
           </button>
@@ -527,7 +527,7 @@ export default function RutasPage() {
                 onClick={() => setModoOrdenar(t.key)}
                 className="px-3 py-1.5 rounded-[8px] text-xs font-medium transition-all"
                 style={modoOrdenar === t.key
-                  ? { background: 'var(--color-accent)', color: '#000' }
+                  ? { background: 'var(--color-accent)', color: 'var(--color-accent-text)' }
                   : { color: 'var(--color-text-muted)' }}
               >
                 {t.label}

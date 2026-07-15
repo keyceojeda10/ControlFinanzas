@@ -35,16 +35,16 @@ const CustomTooltip = ({ active, payload, label }) => {
 // ── Gate de plan ───────────────────────────────────────────────
 function PlanGate() {
   const features = [
-    { label: 'Ingresos diario / semanal / mensual', color: '#22c55e' },
-    { label: 'Cobros programados por mes', color: '#f59e0b' },
-    { label: 'Rendimiento por cobrador', color: '#a855f7' },
-    { label: 'Cartera y analisis por ruta', color: '#06b6d4' },
+    { label: 'Ingresos diario / semanal / mensual', color: 'var(--color-success)' },
+    { label: 'Cobros programados por mes', color: 'var(--color-warning)' },
+    { label: 'Rendimiento por cobrador', color: 'var(--color-purple)' },
+    { label: 'Cartera y analisis por ruta', color: 'var(--color-teal)' },
     { label: 'Exportar a PDF y Excel', color: 'var(--color-danger)' },
   ]
   return (
     <div className="max-w-xl mx-auto mt-8">
-      <h1 className="text-xl font-bold mb-6" style={{ color: 'var(--color-text-primary)' }}>Reportes</h1>
-      <div className="rounded-[16px] p-6 text-center"
+      <h1 className="text-[25px] font-semibold mb-6" style={{ color: 'var(--color-text-primary)' }}>Reportes</h1>
+      <div className="rounded-[20px] p-6 text-center cf-card-shadow"
         style={{
           background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)',
           border: '1px solid color-mix(in srgb, var(--color-accent) 22%, var(--color-border))',
@@ -81,7 +81,7 @@ function PlanGate() {
           className="inline-flex items-center gap-2 text-[13px] font-bold px-5 py-2.5 rounded-[12px] transition-all"
           style={{
             background: 'var(--color-accent)',
-            color: '#111',
+            color: 'var(--color-accent-text)',
           }}
         >
           Ver planes
@@ -278,7 +278,7 @@ export default function ReportesPage() {
       <div>
         <div className="flex items-center justify-between gap-3 mb-3">
           <div>
-            <h1 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Reportes</h1>
+            <h1 className="text-[25px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>Reportes</h1>
             <p className="text-[12px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Análisis de tu cartera y cobradores</p>
           </div>
         </div>
@@ -338,7 +338,7 @@ export default function ReportesPage() {
 
       {/* HERO: Ingresos del período (lo más mirado) */}
       {resumen && (() => {
-        const heroColor = '#22c55e'
+        const heroColor = 'var(--color-success)'
         return (
           <div
             className="cf-hero-card relative rounded-[20px] overflow-hidden"
@@ -385,25 +385,25 @@ export default function ReportesPage() {
             {
               label: 'Clientes activos',
               value: resumen.clientes.total,
-              color: '#f5c518',
+              color: 'var(--color-accent)',
               icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>,
             },
             {
               label: 'En mora',
               value: resumen.clientes.enMora,
-              color: '#ef4444',
+              color: 'var(--color-danger)',
               icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>,
             },
             {
               label: 'Préstamos activos',
               value: resumen.prestamos.activos,
-              color: '#22c55e',
+              color: 'var(--color-success)',
               icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>,
             },
             {
               label: 'Cartera activa',
               value: formatMoney(resumen.prestamos.carteraActiva),
-              color: '#06b6d4',
+              color: 'var(--color-teal)',
               icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
             },
           ].map((s) => (
@@ -419,7 +419,7 @@ export default function ReportesPage() {
                 <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: `color-mix(in srgb, ${s.color} 18%, transparent)`, color: s.color }}>
                   <span className="w-3 h-3">{s.icon}</span>
                 </div>
-                <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: s.color }}>{s.label}</p>
+                <p className="text-[9px] font-extrabold uppercase tracking-[.07em]" style={{ color: s.color }}>{s.label}</p>
               </div>
               <p className="text-[16px] font-bold font-mono-display leading-tight" style={{ color: 'var(--color-text-primary)' }}>{s.value}</p>
             </div>
@@ -431,17 +431,17 @@ export default function ReportesPage() {
       {resumen && resumen.pagos?.interesGanado != null && (
         <div className="rounded-[16px] px-4 py-4 transition-all kpi-lift"
           style={{
-            background: `linear-gradient(135deg, color-mix(in srgb, #10b981 12%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
-            border: '1px solid color-mix(in srgb, #10b981 28%, var(--color-border))',
+            background: `linear-gradient(135deg, color-mix(in srgb, var(--color-success) 12%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
+            border: '1px solid color-mix(in srgb, var(--color-success) 28%, var(--color-border))',
           }}
         >
           <div className="flex items-center gap-1.5 mb-1">
-            <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, #10b981 18%, transparent)', color: '#10b981' }}>
+            <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--color-success) 18%, transparent)', color: 'var(--color-success)' }}>
               <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.281m5.94 2.28l-2.28 5.941" /></svg>
             </div>
-            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#10b981' }}>Interés ganado</p>
+            <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-success)' }}>Interés ganado</p>
           </div>
-          <p className="text-[24px] font-bold font-mono-display leading-tight" style={{ color: '#10b981' }}>{formatMoney(resumen.pagos.interesGanado)}</p>
+          <p className="text-[24px] font-bold font-mono-display leading-tight" style={{ color: 'var(--color-success)' }}>{formatMoney(resumen.pagos.interesGanado)}</p>
           <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
             tu ganancia del período · capital recuperado {formatMoney(resumen.pagos.capitalRecuperado ?? 0)}
           </p>
@@ -457,17 +457,17 @@ export default function ReportesPage() {
               border: '1px solid color-mix(in srgb, var(--color-accent) 22%, var(--color-border))',
             }}
           >
-            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-accent)' }}>Capital prestado activo</p>
+            <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-accent)' }}>Capital prestado activo</p>
             <p className="text-[18px] font-bold font-mono-display mt-1" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(resumen.prestamos.capitalPrestado)}</p>
             <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>en la calle</p>
           </div>
           <div className="rounded-[16px] px-4 py-3 transition-all kpi-lift"
             style={{
-              background: `linear-gradient(135deg, color-mix(in srgb, #a855f7 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
-              border: '1px solid color-mix(in srgb, #a855f7 22%, var(--color-border))',
+              background: `linear-gradient(135deg, color-mix(in srgb, var(--color-purple) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
+              border: '1px solid color-mix(in srgb, var(--color-purple) 22%, var(--color-border))',
             }}
           >
-            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#a855f7' }}>Completados</p>
+            <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-purple)' }}>Completados</p>
             <p className="text-[18px] font-bold font-mono-display mt-1" style={{ color: 'var(--color-text-primary)' }}>{resumen.prestamos.completados}</p>
             <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>préstamos finalizados</p>
           </div>
@@ -475,7 +475,7 @@ export default function ReportesPage() {
       )}
 
       {/* ── 2. Gráfica de ingresos ───────────────────────────── */}
-      <div className="rounded-[16px] px-4 py-4"
+      <div className="rounded-[20px] px-4 py-4 cf-card-shadow"
         style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
       >
         <div className="flex items-center justify-between mb-4">
@@ -485,7 +485,7 @@ export default function ReportesPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
               </svg>
             </div>
-            <p className="text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Ingresos</p>
+            <p className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-secondary)' }}>Ingresos</p>
           </div>
           <div className="flex gap-1">
             {['diario', 'semanal', 'mensual'].map((p) => {
@@ -527,10 +527,10 @@ export default function ReportesPage() {
                 tickLine={false}
                 tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
               />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(34,197,94,0.08)' }} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'color-mix(in srgb, var(--color-success) 8%, transparent)' }} />
               <Bar dataKey="total" radius={[6, 6, 0, 0]}>
                 {ingresos.map((_, i) => (
-                  <Cell key={i} fill={i === ingresos.length - 1 ? '#22c55e' : 'color-mix(in srgb, #22c55e 60%, transparent)'} />
+                  <Cell key={i} fill={i === ingresos.length - 1 ? 'var(--color-success)' : 'color-mix(in srgb, var(--color-success) 60%, transparent)'} />
                 ))}
               </Bar>
             </BarChart>
@@ -541,16 +541,16 @@ export default function ReportesPage() {
       {/* ── 3. Cartera por ruta ──────────────────────────────── */}
       {nivel < 2 && <UpgradeNudge titulo="Cartera por ruta" planRequerido="standard" />}
       {nivel >= 2 && cartera.length > 0 && (
-        <div className="rounded-[16px] px-4 py-4"
+        <div className="rounded-[20px] px-4 py-4 cf-card-shadow"
           style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
         >
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-6 h-6 rounded-[8px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, #06b6d4 18%, transparent)', color: '#06b6d4' }}>
+            <div className="w-6 h-6 rounded-[8px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--color-teal) 18%, transparent)', color: 'var(--color-teal)' }}>
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75v11.25m6-9v11.25m5.25-14.25L15 8.25l-6-2.25L3.75 8.25v12l5.25-2.25 6 2.25 5.25-2.25v-12z" />
               </svg>
             </div>
-            <p className="text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Cartera por ruta</p>
+            <p className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-secondary)' }}>Cartera por ruta</p>
           </div>
           <div className="space-y-2">
             {cartera.map((r) => (
@@ -577,17 +577,17 @@ export default function ReportesPage() {
 
       {/* ── Seguros por ruta ── */}
       {nivel >= 2 && seguros && (
-        <div className="rounded-[16px] px-4 py-4"
+        <div className="rounded-[20px] px-4 py-4 cf-card-shadow"
           style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
         >
           <div className="flex items-center justify-between mb-3 gap-2">
             <div className="flex items-center gap-2 min-w-0">
-              <div className="w-6 h-6 rounded-[8px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, #8b5cf6 18%, transparent)', color: '#8b5cf6' }}>
+              <div className="w-6 h-6 rounded-[8px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--color-purple) 18%, transparent)', color: 'var(--color-purple)' }}>
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <p className="text-[12px] font-bold uppercase tracking-wider truncate" style={{ color: 'var(--color-text-secondary)' }}>Seguros por ruta</p>
+              <p className="text-[12px] font-extrabold uppercase tracking-[.07em] truncate" style={{ color: 'var(--color-text-secondary)' }}>Seguros por ruta</p>
             </div>
             <select
               value={periodoSeguros}
@@ -615,13 +615,13 @@ export default function ReportesPage() {
                         {r.cobrador} · {r.cantPrestamosConSeguro} {r.cantPrestamosConSeguro === 1 ? 'préstamo' : 'préstamos'}
                       </p>
                     </div>
-                    <p className="text-[14px] font-bold font-mono-display shrink-0" style={{ color: '#8b5cf6' }}>{formatMoney(r.totalSeguro)}</p>
+                    <p className="text-[14px] font-bold font-mono-display shrink-0" style={{ color: 'var(--color-purple)' }}>{formatMoney(r.totalSeguro)}</p>
                   </div>
                 ))}
               </div>
               <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: '1px solid var(--color-border)' }}>
                 <span className="text-[12px] font-bold" style={{ color: 'var(--color-text-secondary)' }}>Total seguros</span>
-                <span className="text-[15px] font-bold font-mono-display" style={{ color: '#8b5cf6' }}>{formatMoney(seguros.totalGeneral)}</span>
+                <span className="text-[15px] font-bold font-mono-display" style={{ color: 'var(--color-purple)' }}>{formatMoney(seguros.totalGeneral)}</span>
               </div>
             </>
           )}
@@ -630,17 +630,17 @@ export default function ReportesPage() {
 
       {/* ── Cobros del mes (reporte mensual imprimible, nivel 1+) ── */}
       {nivel >= 1 && (
-        <div className="rounded-[16px] px-4 py-4"
+        <div className="rounded-[20px] px-4 py-4 cf-card-shadow"
           style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
         >
           <div className="flex items-center justify-between mb-3 gap-2">
             <div className="flex items-center gap-2 min-w-0">
-              <div className="w-6 h-6 rounded-[8px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, #f59e0b 18%, transparent)', color: '#f59e0b' }}>
+              <div className="w-6 h-6 rounded-[8px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--color-warning) 18%, transparent)', color: 'var(--color-warning)' }}>
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
                 </svg>
               </div>
-              <p className="text-[12px] font-bold uppercase tracking-wider truncate" style={{ color: 'var(--color-text-secondary)' }}>Cobros del mes</p>
+              <p className="text-[12px] font-extrabold uppercase tracking-[.07em] truncate" style={{ color: 'var(--color-text-secondary)' }}>Cobros del mes</p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <input
@@ -682,7 +682,7 @@ export default function ReportesPage() {
                     printW.print()
                   }}
                   className="h-7 px-2.5 rounded-[8px] text-[11px] font-semibold transition-all cursor-pointer"
-                  style={{ color: '#f59e0b', background: 'color-mix(in srgb, #f59e0b 10%, transparent)', border: '1px solid color-mix(in srgb, #f59e0b 30%, transparent)' }}
+                  style={{ color: 'var(--color-warning)', background: 'color-mix(in srgb, var(--color-warning) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--color-warning) 30%, transparent)' }}
                 >
                   Imprimir
                 </button>
@@ -699,12 +699,12 @@ export default function ReportesPage() {
           ) : (
             <>
               <div className="rounded-[12px] px-3 py-2.5 mb-3 flex items-center justify-between"
-                style={{ background: 'color-mix(in srgb, #f59e0b 8%, transparent)', border: '1px solid color-mix(in srgb, #f59e0b 20%, transparent)' }}
+                style={{ background: 'color-mix(in srgb, var(--color-warning) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--color-warning) 20%, transparent)' }}
               >
                 <span className="text-[12px] font-semibold" style={{ color: 'var(--color-text-secondary)' }}>
                   {cobrosMes.totalClientes} clientes
                 </span>
-                <span className="text-[16px] font-bold font-mono-display" style={{ color: '#f59e0b' }}>
+                <span className="text-[16px] font-bold font-mono-display" style={{ color: 'var(--color-warning)' }}>
                   {formatMoney(cobrosMes.granTotal)}
                 </span>
               </div>
@@ -717,9 +717,9 @@ export default function ReportesPage() {
                         <span className="text-[12px] font-bold" style={{ color: 'var(--color-text-primary)' }}>{ruta.ruta}</span>
                         <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>({ruta.cobrador})</span>
                       </div>
-                      <span className="text-[12px] font-bold font-mono-display" style={{ color: '#f59e0b' }}>{formatMoney(ruta.totalRuta)}</span>
+                      <span className="text-[12px] font-bold font-mono-display" style={{ color: 'var(--color-warning)' }}>{formatMoney(ruta.totalRuta)}</span>
                     </div>
-                    <div className="rounded-[10px] overflow-hidden" style={{ border: '1px solid var(--color-border)' }}>
+                    <div className="rounded-[12px] overflow-hidden" style={{ border: '1px solid var(--color-border)' }}>
                       {ruta.clientes.map((c, i) => (
                         <div
                           key={c.id}
@@ -752,16 +752,16 @@ export default function ReportesPage() {
       {/* ── 4. Top cobradores (podio visual) + lista completa ── */}
       {nivel < 2 && <UpgradeNudge titulo="Rendimiento de cobradores" planRequerido="standard" />}
       {nivel >= 2 && cobsData.length > 0 && (
-        <div className="rounded-[16px] px-4 py-4"
+        <div className="rounded-[20px] px-4 py-4 cf-card-shadow"
           style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
         >
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-6 h-6 rounded-[8px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, #a855f7 18%, transparent)', color: '#a855f7' }}>
+            <div className="w-6 h-6 rounded-[8px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--color-purple) 18%, transparent)', color: 'var(--color-purple)' }}>
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 002.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 012.916.52 6.003 6.003 0 01-5.395 4.972m0 0a6.726 6.726 0 01-2.749 1.35m0 0a6.772 6.772 0 01-3.044 0" />
               </svg>
             </div>
-            <p className="text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Rendimiento de cobradores</p>
+            <p className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-secondary)' }}>Rendimiento de cobradores</p>
           </div>
 
           {/* Top 3 podio si hay >= 2 */}
@@ -770,7 +770,7 @@ export default function ReportesPage() {
               {[1, 0, 2].map((idx) => {
                 const c = topCobradores[idx]
                 if (!c) return <div key={idx} />
-                const medalColor = idx === 0 ? '#f5c518' : idx === 1 ? '#94a3b8' : '#cd7f32'
+                const medalColor = idx === 0 ? 'var(--color-accent)' : idx === 1 ? '#94a3b8' : '#cd7f32'
                 const medalLabel = idx === 0 ? '#1' : idx === 1 ? '#2' : '#3'
                 return (
                   <div
@@ -802,7 +802,7 @@ export default function ReportesPage() {
               const totalGastos = c.totalGastos || 0
               const totalDesembolsado = c.totalDesembolsado || 0
               const saldoRealCaja = c.saldoRealCaja ?? ((c.totalRecogido || 0) - totalGastos - totalDesembolsado)
-              const eficColor = c.eficiencia >= 95 ? '#22c55e' : c.eficiencia >= 80 ? '#f5c518' : '#ef4444'
+              const eficColor = c.eficiencia >= 95 ? 'var(--color-success)' : c.eficiencia >= 80 ? 'var(--color-warning)' : 'var(--color-danger)'
               return (
                 <div
                   key={c.id}
@@ -846,7 +846,7 @@ export default function ReportesPage() {
 
       {/* ── 5. Descargar Resumen PDF ────────────────────────────── */}
       {nivel < 2 && <UpgradeNudge titulo="Resumen PDF" planRequerido="standard" />}
-      {nivel >= 2 && <div className="rounded-[16px] px-4 py-4"
+      {nivel >= 2 && <div className="rounded-[20px] px-4 py-4 cf-card-shadow"
         style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
       >
         <div className="flex items-center gap-2 mb-3">
@@ -855,7 +855,7 @@ export default function ReportesPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
             </svg>
           </div>
-          <p className="text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Resumen PDF</p>
+          <p className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-secondary)' }}>Resumen PDF</p>
         </div>
         <button
           onClick={exportarPDF}
@@ -887,7 +887,7 @@ export default function ReportesPage() {
 
       {/* ── 6. Exportar a Excel como chips ──────────────────────── */}
       {nivel < 3 && <UpgradeNudge titulo="Exportar a Excel" planRequerido="professional" />}
-      {nivel >= 3 && <div className="rounded-[16px] px-4 py-4"
+      {nivel >= 3 && <div className="rounded-[20px] px-4 py-4 cf-card-shadow"
         style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
       >
         <div className="flex items-center gap-2 mb-3">
@@ -896,14 +896,14 @@ export default function ReportesPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
             </svg>
           </div>
-          <p className="text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Exportar a Excel</p>
+          <p className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-secondary)' }}>Exportar a Excel</p>
         </div>
         <div className="grid grid-cols-2 gap-2">
           {[
-            { tipo: 'clientes',   label: 'Clientes',   desc: 'Lista completa',           color: '#f5c518' },
-            { tipo: 'prestamos',  label: 'Préstamos',  desc: 'Cartera con saldos',       color: '#22c55e' },
-            { tipo: 'pagos',      label: 'Pagos',      desc: 'Historial del período',    color: '#06b6d4' },
-            { tipo: 'cobradores', label: 'Cobradores', desc: 'Rendimiento del período',  color: '#a855f7' },
+            { tipo: 'clientes',   label: 'Clientes',   desc: 'Lista completa',           color: 'var(--color-accent)' },
+            { tipo: 'prestamos',  label: 'Préstamos',  desc: 'Cartera con saldos',       color: 'var(--color-success)' },
+            { tipo: 'pagos',      label: 'Pagos',      desc: 'Historial del período',    color: 'var(--color-teal)' },
+            { tipo: 'cobradores', label: 'Cobradores', desc: 'Rendimiento del período',  color: 'var(--color-purple)' },
           ].map(({ tipo, label, desc, color }) => (
             <button
               key={tipo}

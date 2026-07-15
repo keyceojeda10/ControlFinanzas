@@ -93,7 +93,7 @@ export default function CajaCobradorPage() {
         </Link>
         <div className="flex items-center justify-between gap-2">
           <div>
-            <h1 className="text-lg font-bold text-[var(--color-text-primary)]">Caja de {data?.cobrador?.nombre}</h1>
+            <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Caja de {data?.cobrador?.nombre}</h1>
             <p className="text-xs text-[var(--color-text-muted)]">
               {data?.esRango ? `${data.desde} a ${data.hasta}` : fmtFecha(data?.fecha)}
             </p>

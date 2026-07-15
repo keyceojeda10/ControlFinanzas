@@ -63,7 +63,7 @@ export default function SociosPage() {
   return (
     <div className="pb-28">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>
+        <h1 className="text-[25px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>
           Socios
         </h1>
         {hayDatos && (
@@ -81,7 +81,7 @@ export default function SociosPage() {
 
       {!loading && error && (
         <div
-          className="rounded-[16px] p-6 text-center"
+          className="cf-card-shadow rounded-[20px] p-6 text-center"
           style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
         >
           <p className="text-[13px] mb-3" style={{ color: 'var(--color-danger)' }}>
@@ -95,7 +95,7 @@ export default function SociosPage() {
         <>
           {hayDatos && (
             <div
-              className="relative rounded-[16px] overflow-hidden mb-4"
+              className="relative rounded-[20px] overflow-hidden mb-4"
               style={{
                 background: P.grad,
                 border: `1px solid ${P.border}`,

@@ -126,7 +126,7 @@ export default function ReagendarVisitaModal({ open, onClose, clienteId, cliente
         )}
 
         {error && (
-          <div className="text-xs rounded-[8px] px-3 py-2" style={{ background: 'rgba(248,113,113,0.1)', color: '#f87171', border: '1px solid rgba(248,113,113,0.25)' }}>
+          <div className="text-xs rounded-[8px] px-3 py-2" style={{ background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)', color: 'var(--color-danger)', border: '1px solid color-mix(in srgb, var(--color-danger) 25%, transparent)' }}>
             {error}
           </div>
         )}

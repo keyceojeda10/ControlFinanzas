@@ -108,21 +108,21 @@ function PlanCard({ plan, selected, onSelect, countryCode = 'co', theme }) {
     >
       {plan.popular && (
         <span className="absolute -top-2.5 right-3 text-[11px] font-bold px-2.5 py-0.5 rounded-full"
-          style={{ background: '#f5c518', color: '#0a0a0a' }}>
+          style={{ background: 'var(--color-accent)', color: '#3a2900' }}>
           Popular
         </span>
       )}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2.5">
           <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
-            style={{ border: `2px solid ${activo ? '#f5c518' : theme.border}` }}>
-            {activo && <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#f5c518' }} />}
+            style={{ border: `2px solid ${activo ? 'var(--color-accent)' : theme.border}` }}>
+            {activo && <div className="w-2.5 h-2.5 rounded-full" style={{ background: 'var(--color-accent)' }} />}
           </div>
-          <span className="text-[15px] font-bold" style={{ color: activo ? '#f5c518' : theme.text }}>
+          <span className="text-[15px] font-bold" style={{ color: activo ? 'var(--color-accent)' : theme.text }}>
             {plan.nombre}
           </span>
         </div>
-        <span className="font-mono-display text-[17px] font-bold" style={{ color: activo ? '#f5c518' : theme.text }}>
+        <span className="font-mono-display text-[17px] font-bold" style={{ color: activo ? 'var(--color-accent)' : theme.text }}>
           {formatMoney(precioLocal, countryCode)}
           <span className="text-[11px] font-normal" style={{ color: theme.textSecondary }}>/mes</span>
         </span>
@@ -133,7 +133,7 @@ function PlanCard({ plan, selected, onSelect, countryCode = 'co', theme }) {
       <ul className="space-y-1.5 pl-7">
         {plan.features.map((f, i) => (
           <li key={i} className="flex items-center gap-2 text-[13px]" style={{ color: activo ? theme.text : theme.textSecondary }}>
-            <svg className="w-3.5 h-3.5 shrink-0" style={{ color: activo ? '#f5c518' : theme.textMuted }} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+            <svg className="w-3.5 h-3.5 shrink-0" style={{ color: activo ? 'var(--color-accent)' : theme.textMuted }} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
             {f}
@@ -165,12 +165,12 @@ function CanalSelector({ canal, onChange, theme }) {
             </svg>
           </div>
         )}
-        <svg className="w-7 h-7" style={{ color: canal === 'whatsapp' ? '#25d366' : '#666677' }} fill="currentColor" viewBox="0 0 24 24">
+        <svg className="w-7 h-7" style={{ color: canal === 'whatsapp' ? '#25d366' : t.textMuted }} fill="currentColor" viewBox="0 0 24 24">
           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
         </svg>
         <div className="text-center">
           <p className="text-[14px] font-bold" style={{ color: canal === 'whatsapp' ? '#25d366' : theme.text }}>WhatsApp</p>
-          <p className="text-[11px]" style={{ color: '#9a9ab0' }}>Recomendado</p>
+          <p className="text-[11px]" style={{ color: t.textSecondary }}>Recomendado</p>
         </div>
       </button>
 
@@ -185,18 +185,18 @@ function CanalSelector({ canal, onChange, theme }) {
       >
         {canal === 'email' && (
           <div className="absolute top-2 right-2 w-4 h-4 rounded-full flex items-center justify-center"
-            style={{ background: '#f5c518' }}>
+            style={{ background: 'var(--color-accent)' }}>
             <svg className="w-2.5 h-2.5" fill="#0a0a0a" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
             </svg>
           </div>
         )}
-        <svg className="w-7 h-7" style={{ color: canal === 'email' ? '#f5c518' : '#666677' }} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <svg className="w-7 h-7" style={{ color: canal === 'email' ? 'var(--color-accent)' : t.textMuted }} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
         </svg>
         <div className="text-center">
-          <p className="text-[14px] font-bold" style={{ color: canal === 'email' ? '#f5c518' : theme.text }}>Correo</p>
-          <p className="text-[11px]" style={{ color: '#9a9ab0' }}>Alternativo</p>
+          <p className="text-[14px] font-bold" style={{ color: canal === 'email' ? 'var(--color-accent)' : theme.text }}>Correo</p>
+          <p className="text-[11px]" style={{ color: t.textSecondary }}>Alternativo</p>
         </div>
       </button>
     </div>
@@ -205,30 +205,37 @@ function CanalSelector({ canal, onChange, theme }) {
 
 // ── Main form ───────────────────────────────────────────────
 const LIGHT = {
-  bg: '#f5f5f7', bgCard: '#ffffff', bgCardHover: 'rgba(0,0,0,0.02)',
-  bgAccent: 'rgba(245,197,24,0.10)', bgAccentBorder: 'rgba(245,197,24,0.5)',
-  border: 'rgba(0,0,0,0.10)', borderLight: 'rgba(0,0,0,0.06)',
-  text: '#1a1a2e', textSecondary: '#555566', textMuted: '#8888a0',
-  gradient: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(245,197,24,0.12) 0%, transparent 70%)',
+  bg: '#f4f4f1', bgCard: '#ffffff', bgCardHover: 'rgba(20,20,28,0.03)',
+  bgAccent: 'rgba(231,164,0,0.10)', bgAccentBorder: 'rgba(231,164,0,0.45)',
+  border: 'rgba(20,20,28,0.08)', borderLight: 'rgba(20,20,28,0.06)',
+  text: '#15161a', textSecondary: '#676b73', textMuted: '#9a9da5',
+  gradient: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(231,164,0,0.10) 0%, transparent 70%)',
   optionBg: '#ffffff',
 }
 const DARK = {
-  bg: '#0d0d14', bgCard: 'rgba(255,255,255,0.03)', bgCardHover: 'rgba(255,255,255,0.05)',
-  bgAccent: 'rgba(245,197,24,0.08)', bgAccentBorder: 'rgba(245,197,24,0.6)',
-  border: 'rgba(255,255,255,0.1)', borderLight: 'rgba(255,255,255,0.07)',
-  text: '#e8e8f0', textSecondary: '#9a9ab0', textMuted: '#666677',
-  gradient: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(245,197,24,0.08) 0%, transparent 70%)',
-  optionBg: '#1a1a2e',
+  bg: '#0c0d11', bgCard: '#16171c', bgCardHover: '#1e2027',
+  bgAccent: 'rgba(245,184,36,0.08)', bgAccentBorder: 'rgba(245,184,36,0.5)',
+  border: 'rgba(255,255,255,0.08)', borderLight: 'rgba(255,255,255,0.06)',
+  text: '#f3f3f6', textSecondary: '#9ea1ab', textMuted: '#666973',
+  gradient: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(245,184,36,0.07) 0%, transparent 70%)',
+  optionBg: '#16171c',
 }
 
 function useTheme() {
   const [light, setLight] = useState(false)
   useEffect(() => {
+    const resolve = () => {
+      const dt = document.documentElement.getAttribute('data-theme')
+      if (dt) return dt === 'light'
+      return window.matchMedia('(prefers-color-scheme: light)').matches
+    }
+    setLight(resolve())
     const mq = window.matchMedia('(prefers-color-scheme: light)')
-    setLight(mq.matches)
-    const handler = (e) => setLight(e.matches)
+    const handler = () => setLight(resolve())
     mq.addEventListener('change', handler)
-    return () => mq.removeEventListener('change', handler)
+    const obs = new MutationObserver(handler)
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+    return () => { mq.removeEventListener('change', handler); obs.disconnect() }
   }, [])
   return light ? LIGHT : DARK
 }
@@ -443,7 +450,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
     if (pasted.length === 6) handleVerificarOtp(pasted)
   }
 
-  const accentColor = verificarPor === 'whatsapp' ? '#25d366' : '#f5c518'
+  const accentColor = verificarPor === 'whatsapp' ? '#25d366' : 'var(--color-accent)'
   const selectedFlag = FLAGS[country] || '🌐'
   const selectedPaisNombre = PAISES.find(p => p.code === country)?.name || 'Colombia'
 
@@ -461,7 +468,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
           <div className="mb-8">
             <Link href="/login" className="inline-flex items-center gap-3">
               <div className="w-9 h-9 rounded-[10px] flex items-center justify-center"
-                style={{ background: 'linear-gradient(135deg, #f5c518, #f2b211)' }}>
+                style={{ background: 'linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 85%, #000))' }}>
                 <img src="/logo-icon.svg" alt="" width={22} height={22} />
               </div>
               <span className="text-[15px] font-bold" style={{ color: t.text }}>Control Finanzas</span>
@@ -469,9 +476,9 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
           </div>
 
           {/* Heading */}
-          <h1 className="text-[30px] lg:text-[36px] leading-[1.1] font-normal mb-1"
-            style={{ color: t.text, fontFamily: "var(--font-serif-display), Georgia, serif" }}>
-            Crea tu <em style={{ color: '#f5c518', fontStyle: 'italic' }}>cuenta</em>
+          <h1 className="text-[28px] lg:text-[32px] leading-[1.1] font-semibold mb-1"
+            style={{ color: t.text, fontFamily: 'var(--font-space-grotesk)' }}>
+            Crea tu <span style={{ color: 'var(--color-accent)' }}>cuenta</span>
           </h1>
           <p className="text-[15px] mb-6" style={{ color: t.textSecondary }}>
             14 días gratis · Sin tarjeta de crédito
@@ -508,7 +515,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                 <div className="flex items-center gap-1.5">
                   <div className="w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0 transition-all"
                     style={{
-                      background: step >= n ? '#f5c518' : t.borderLight,
+                      background: step >= n ? 'var(--color-accent)' : t.borderLight,
                       color: step >= n ? '#0a0a0a' : t.textMuted,
                     }}>
                     {step > n ? (
@@ -532,7 +539,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
             <div>
               <div className="mb-5">
                 <div className="flex items-center gap-2 mb-3">
-                  <svg className="w-4 h-4" style={{ color: '#f5c518' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <svg className="w-4 h-4" style={{ color: 'var(--color-accent)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
                   </svg>
                   <span className="text-[14px] font-bold" style={{ color: t.text }}>Cobras solo</span>
@@ -547,7 +554,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
 
               <div className="mb-5">
                 <div className="flex items-center gap-2 mb-3">
-                  <svg className="w-4 h-4" style={{ color: '#f5c518' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <svg className="w-4 h-4" style={{ color: 'var(--color-accent)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
                   </svg>
                   <span className="text-[14px] font-bold" style={{ color: t.text }}>Con equipo</span>
@@ -562,7 +569,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
 
               <div className="flex items-start gap-2 text-[12px] leading-relaxed mb-5 px-1"
                 style={{ color: t.textMuted }}>
-                <svg className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: '#f5c518' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: 'var(--color-accent)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
                 </svg>
                 <span>
@@ -572,7 +579,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
 
               {referrer && (
                 <div className="flex items-center gap-2.5 rounded-[12px] px-4 py-3 mb-4"
-                  style={{ background: 'rgba(245,197,24,0.07)', border: '1px solid rgba(245,197,24,0.2)', color: '#f5c518' }}>
+                  style={{ background: 'color-mix(in srgb, var(--color-accent) 7%, transparent)', border: '1px solid color-mix(in srgb, var(--color-accent) 20%, transparent)', color: 'var(--color-accent)' }}>
                   <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
@@ -584,7 +591,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                 type="button"
                 onClick={() => setStep(2)}
                 className="w-full h-12 rounded-[12px] text-[15px] font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-                style={{ background: '#f5c518', color: '#0a0a0a' }}
+                style={{ background: 'var(--color-accent)', color: '#3a2900' }}
               >
                 Continuar con {infoPlan?.nombre}
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -601,14 +608,14 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
               <div className="rounded-[12px] px-4 py-3 mb-5 flex items-center justify-between"
                 style={{ background: 'rgba(245,197,24,0.06)', border: '1px solid rgba(245,197,24,0.2)' }}>
                 <div>
-                  <p className="text-[13px] font-bold" style={{ color: '#f5c518' }}>Plan {infoPlan?.nombre}</p>
+                  <p className="text-[13px] font-bold" style={{ color: 'var(--color-accent)' }}>Plan {infoPlan?.nombre}</p>
                   <p className="text-[12px]" style={{ color: t.textSecondary }}>
                     14 días gratis · luego {formatMoney(getPrecioPlan(infoPlan?.key, country), country)}/mes
                   </p>
                 </div>
                 <button type="button" onClick={() => setStep(1)}
                   className="text-[11px] font-semibold px-2.5 py-1 rounded-[8px]"
-                  style={{ color: '#f5c518', background: 'rgba(245,197,24,0.08)' }}>
+                  style={{ color: 'var(--color-accent)', background: 'color-mix(in srgb, var(--color-accent) 8%, transparent)' }}>
                   Cambiar
                 </button>
               </div>
@@ -624,7 +631,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
               <form onSubmit={handleSubmit} className="space-y-3">
                 {error && (
                   <div className="flex items-center gap-2.5 text-[13px] rounded-[10px] px-4 py-3"
-                    style={{ background: 'rgba(248,113,113,0.10)', border: '1px solid rgba(248,113,113,0.30)', color: '#f87171' }}>
+                    style={{ background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)', color: 'var(--color-danger)' }}>
                     <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                     </svg>
@@ -710,7 +717,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                       }
                     />
                   </div>
-                  <p className="text-[11px] mt-1 px-0.5" style={{ color: '#666677' }}>
+                  <p className="text-[11px] mt-1 px-0.5" style={{ color: t.textMuted }}>
                     {verificarPor === 'whatsapp'
                       ? 'Para alertas de cobro y recuperar tu cuenta.'
                       : 'Recibes el código de verificación aquí.'}
@@ -773,16 +780,16 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                     type="checkbox"
                     checked={form.terminosAceptados}
                     onChange={(e) => setForm({ ...form, terminosAceptados: e.target.checked })}
-                    className="mt-0.5 w-4 h-4 rounded cursor-pointer accent-[#f5c518]"
+                    className="mt-0.5 w-4 h-4 rounded cursor-pointer accent-[var(--color-accent)]"
                   />
                   <span className="text-[12px] leading-relaxed" style={{ color: t.textSecondary }}>
                     Acepto los{' '}
                     <a href="https://control-finanzas.com/terminos-uso" target="_blank" rel="noopener noreferrer"
-                      className="hover:underline" style={{ color: '#f5c518' }}>
+                      className="hover:underline" style={{ color: 'var(--color-accent)' }}>
                       Términos de uso
                     </a>{' '}y la{' '}
                     <a href="https://control-finanzas.com/privacidad" target="_blank" rel="noopener noreferrer"
-                      className="hover:underline" style={{ color: '#f5c518' }}>
+                      className="hover:underline" style={{ color: 'var(--color-accent)' }}>
                       Política de privacidad
                     </a>
                   </span>
@@ -821,7 +828,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                   </svg>
                 ) : (
-                  <svg style={{ width: 34, height: 34, color: '#f5c518' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg style={{ width: 34, height: 34, color: 'var(--color-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
                 )}
@@ -878,7 +885,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
 
               {otpError && (
                 <div className="flex items-center justify-center gap-2 text-[13px] rounded-[10px] px-4 py-2.5 mb-4"
-                  style={{ background: 'rgba(248,113,113,0.10)', border: '1px solid rgba(248,113,113,0.30)', color: '#f87171' }}>
+                  style={{ background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)', color: 'var(--color-danger)' }}>
                   {otpError}
                 </div>
               )}
@@ -912,7 +919,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                 onClick={() => handleVerificarOtp()}
                 disabled={otpLoading || otpDigits.join('').length !== 6}
                 className="w-full h-12 rounded-[12px] text-[15px] font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50 mb-4"
-                style={{ background: accentColor, color: '#0a0a0a' }}
+                style={{ background: accentColor, color: '#3a2900' }}
               >
                 {otpLoading ? 'Verificando...' : 'Verificar'}
               </button>
@@ -922,7 +929,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                   onClick={handleReenviarOtp}
                   disabled={otpReenviando || otpReenviado}
                   className="text-[13px] font-semibold transition-colors disabled:opacity-50"
-                  style={{ color: otpReenviado ? '#22c55e' : accentColor }}
+                  style={{ color: otpReenviado ? 'var(--color-success)' : accentColor }}
                 >
                   {otpReenviado ? 'Código reenviado' : otpReenviando ? 'Reenviando...' : 'Reenviar código'}
                 </button>
@@ -948,7 +955,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
           <p className="text-[14px] mt-8 text-center" style={{ color: t.textMuted }}>
             {step !== 3 && (
               <>Ya tienes cuenta?{' '}
-              <Link href="/login" className="font-semibold hover:underline" style={{ color: '#f5c518' }}>
+              <Link href="/login" className="font-semibold hover:underline" style={{ color: 'var(--color-accent)' }}>
                 Inicia sesión
               </Link></>
             )}

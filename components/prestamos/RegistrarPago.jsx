@@ -369,7 +369,7 @@ export default function RegistrarPago({
                 className="flex-1 py-2.5 rounded-[12px] text-sm font-semibold active:scale-[0.98] transition-all"
                 style={rutaInfo.isLast
                   ? { background: 'var(--color-success)', color: 'var(--color-text-primary)' }
-                  : { background: 'linear-gradient(135deg, #f5c518, #f0b800)', color: '#0a0a0a' }
+                  : { background: 'linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 85%, black))', color: '#3a2900' }
                 }
               >
                 {rutaInfo.isLast
@@ -420,10 +420,10 @@ export default function RegistrarPago({
 
           {prestamoWA && (
             <div
-              className="rounded-[12px] px-4 py-3 space-y-1.5 text-sm"
+              className="rounded-[20px] px-4 py-3 space-y-1.5 text-sm"
               style={{
-                background: `linear-gradient(135deg, #22c55e0A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #22c55e05 100%)`,
-                boxShadow: `0 0 30px #22c55e08, 0 1px 2px rgba(0,0,0,0.3)`,
+                background: `linear-gradient(135deg, color-mix(in srgb, var(--color-success) 4%, transparent) 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, color-mix(in srgb, var(--color-success) 2%, transparent) 100%)`,
+                boxShadow: `0 0 30px color-mix(in srgb, var(--color-success) 3%, transparent), 0 1px 2px rgba(0,0,0,0.3)`,
               }}
             >
               {(() => {
@@ -466,7 +466,7 @@ export default function RegistrarPago({
               {fotoEvidencia ? (
                 <div className="relative rounded-[12px] overflow-hidden border" style={{ borderColor: 'var(--color-border)' }}>
                   <img src={fotoEvidencia} alt="Evidencia" className="w-full h-32 object-cover" />
-                  <div className="absolute bottom-2 right-2 flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium" style={{ background: 'rgba(0,0,0,0.7)', color: '#22c55e' }}>
+                  <div className="absolute bottom-2 right-2 flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium" style={{ background: 'rgba(0,0,0,0.7)', color: 'var(--color-success)' }}>
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
@@ -598,12 +598,12 @@ export default function RegistrarPago({
                         {labelP} {f.numeroPeriodo}
                       </span>
                       {esBalloon && (
-                        <span className="text-[8px] font-bold px-1 py-px rounded-full" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
+                        <span className="text-[8px] font-bold px-1 py-px rounded-full" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--color-danger)' }}>
                           Globo
                         </span>
                       )}
                       {vencida && (
-                        <span className="text-[8px] font-bold px-1 py-px rounded-full" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
+                        <span className="text-[8px] font-bold px-1 py-px rounded-full" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--color-danger)' }}>
                           Vencida
                         </span>
                       )}
@@ -697,7 +697,7 @@ export default function RegistrarPago({
                 className="absolute h-2 rounded-full"
                 style={{
                   width: `${pctVisual}%`,
-                  background: 'linear-gradient(to right, #16a34a, #22c55e)',
+                  background: 'linear-gradient(to right, color-mix(in srgb, var(--color-success) 85%, black), var(--color-success))',
                   boxShadow: pctVisual > 5 ? '0 0 6px rgba(34, 197, 94, 0.25)' : 'none',
                 }}
               />
@@ -706,7 +706,7 @@ export default function RegistrarPago({
                 className="absolute w-5 h-5 rounded-full pointer-events-none"
                 style={{
                   left: `calc(${pctVisual}% - 10px)`,
-                  background: '#22c55e',
+                  background: 'var(--color-success)',
                   border: '3px solid var(--color-bg-base)',
                   boxShadow: '0 1px 4px rgba(0,0,0,0.3), 0 0 0 1px rgba(34, 197, 94, 0.3)',
                 }}
@@ -733,7 +733,7 @@ export default function RegistrarPago({
                     key={s}
                     type="button"
                     onClick={() => handleAbonoDias(s)}
-                    className={`absolute -translate-x-1/2 text-[10px] font-medium transition-all cursor-pointer ${active ? 'text-[var(--color-accent)] scale-110' : 'text-[var(--color-text-muted)] hover:text-[#999999]'}`}
+                    className={`absolute -translate-x-1/2 text-[10px] font-medium transition-all cursor-pointer ${active ? 'text-[var(--color-accent)] scale-110' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'}`}
                     style={{ left: `${pct}%` }}
                   >
                     {s}

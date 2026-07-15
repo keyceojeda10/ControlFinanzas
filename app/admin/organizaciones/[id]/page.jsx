@@ -100,7 +100,7 @@ export default function OrgDetallePage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-xl font-bold text-[white]">{org.nombre}</h1>
+            <h1 className="text-[25px] font-semibold text-[white]">{org.nombre}</h1>
             <Badge variant={planBadge[org.plan]}>{org.plan}</Badge>
             <Badge variant={org.activo ? 'green' : 'red'}>
               {org.activo ? 'Activa' : 'Suspendida'}
@@ -166,27 +166,27 @@ export default function OrgDetallePage() {
 
       {/* Métricas de uso */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-3 py-3 text-center">
+        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[20px] px-3 py-3 text-center">
           <p className="text-[10px] text-[var(--color-text-muted)]">Usuarios</p>
           <p className="text-base font-bold text-[white]">
             {org.users?.length ?? 0}
             <span className="text-[10px] text-[var(--color-text-muted)] font-normal"> / {limite.usuarios === 999 ? '∞' : limite.usuarios}</span>
           </p>
         </div>
-        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-3 py-3 text-center">
+        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[20px] px-3 py-3 text-center">
           <p className="text-[10px] text-[var(--color-text-muted)]">Clientes</p>
           <p className="text-base font-bold text-[white]">
             {org._count?.clientes ?? 0}
             <span className="text-[10px] text-[var(--color-text-muted)] font-normal"> / {limite.clientes > 9999 ? '∞' : limite.clientes}</span>
           </p>
         </div>
-        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-3 py-3 text-center">
+        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[20px] px-3 py-3 text-center">
           <p className="text-[10px] text-[var(--color-text-muted)]">Préstamos activos</p>
           <p className="text-base font-bold text-[var(--color-accent)]">{org.prestamosActivos}</p>
         </div>
-        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-3 py-3 text-center">
+        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[20px] px-3 py-3 text-center">
           <p className="text-[10px] text-[var(--color-text-muted)]">Cartera activa</p>
-          <p className="text-base font-bold text-[var(--color-success)]">{formatMoney(org.carteraActiva)}</p>
+          <p className="text-base font-bold text-[var(--color-success)] font-mono-display">{formatMoney(org.carteraActiva)}</p>
         </div>
       </div>
 
@@ -368,7 +368,7 @@ export default function OrgDetallePage() {
               type="checkbox"
               checked={pagoDirecto.extender}
               onChange={(e) => setPagoDirecto(p => ({ ...p, extender: e.target.checked }))}
-              className="w-4 h-4 rounded border-[var(--color-border)] bg-[var(--color-bg-card)] accent-[#f5c518]"
+              className="w-4 h-4 rounded border-[var(--color-border)] bg-[var(--color-bg-card)] accent-[var(--color-accent)]"
             />
             <span className="text-xs text-[var(--color-text-muted)]">
               Extender desde vencimiento actual ({new Date(sub.fechaVencimiento).toLocaleDateString('es-CO')}) en vez de empezar desde hoy

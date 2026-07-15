@@ -549,7 +549,7 @@ export default function CajaPage() {
           <select
             value={filtroCobrador}
             onChange={(e) => setFiltroCobrador(e.target.value)}
-            className="w-full h-9 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-2 text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-info)]"
+            className="w-full h-9 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-2 text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-info)]"
           >
             <option value="">Todos los cobradores</option>
             {cobradoresParaFiltro.map((c) => (
@@ -604,14 +604,14 @@ export default function CajaPage() {
         {/* Header */}
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Caja del dia</h1>
+            <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Caja del dia</h1>
             <p className="text-[12px] text-[var(--color-text-secondary)] mt-0.5">{cajaData?.fechaDisplay || '—'}</p>
           </div>
           <input
             type="date"
             value={fechaSeleccionada}
             onChange={handleFechaChange}
-            className="px-3 py-2 rounded-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)]"
+            className="px-3 py-2 rounded-[12px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)]"
           />
         </div>
 
@@ -681,7 +681,7 @@ export default function CajaPage() {
         <Card
           className="relative overflow-hidden"
           style={{
-            background: 'linear-gradient(135deg, #f9d64a 0%, #f5c518 55%, #eab308 100%)',
+            background: 'linear-gradient(135deg, #f9d64a 0%, var(--color-accent) 55%, #eab308 100%)',
             border: '1px solid rgba(180, 140, 10, 0.35)',
             boxShadow: '0 14px 34px rgba(200, 160, 20, 0.30)',
           }}
@@ -745,7 +745,7 @@ export default function CajaPage() {
 
           {/* Seguros cobrados hoy */}
           {segurosDia.monto > 0 && (
-            <div className="mt-3 rounded-[10px] px-3 py-2.5 flex items-center justify-between"
+            <div className="mt-3 rounded-[12px] px-3 py-2.5 flex items-center justify-between"
               style={{ background: 'color-mix(in srgb, #231a04 8%, transparent)', border: '1px solid color-mix(in srgb, #231a04 16%, transparent)' }}
             >
               <div>
@@ -761,15 +761,15 @@ export default function CajaPage() {
             <div className="mt-2 space-y-1.5 text-[11px]">
               <div className="flex justify-between">
                 <span style={{ color: 'rgba(35,26,4,0.55)' }}>Efectivo del día</span>
-                <span className="font-semibold" style={{ color: saldoRealCaja >= 0 ? '#231a04' : '#b91c1c' }}>{formatMoney(saldoRealCaja)}</span>
+                <span className="font-semibold font-mono-display" style={{ color: saldoRealCaja >= 0 ? '#231a04' : '#b91c1c' }}>{formatMoney(saldoRealCaja)}</span>
               </div>
               <div className="flex justify-between">
                 <span style={{ color: 'rgba(35,26,4,0.55)' }}>Esperado</span>
-                <span className="font-semibold" style={{ color: '#231a04' }}>{formatMoney(stats.esperado || 0)}</span>
+                <span className="font-semibold font-mono-display" style={{ color: '#231a04' }}>{formatMoney(stats.esperado || 0)}</span>
               </div>
               <div className="flex justify-between">
                 <span style={{ color: 'rgba(35,26,4,0.55)' }}>Diferencia vs esperado</span>
-                <span className="font-semibold" style={{ color: diferenciaRecaudo >= 0 ? '#15803d' : '#b91c1c' }}>
+                <span className="font-semibold font-mono-display" style={{ color: diferenciaRecaudo >= 0 ? '#15803d' : '#b91c1c' }}>
                   {diferenciaRecaudo >= 0 ? '+' : ''}{formatMoney(diferenciaRecaudo)}
                 </span>
               </div>
@@ -796,7 +796,7 @@ export default function CajaPage() {
             </div>
             {cierreHoy.reabiertoEn && (
               <div
-                className="rounded-[10px] px-3 py-2.5 mb-2 flex items-start gap-2"
+                className="rounded-[12px] px-3 py-2.5 mb-2 flex items-start gap-2"
                 style={{
                   background: 'color-mix(in srgb, var(--color-success) 10%, transparent)',
                   border: '1px solid color-mix(in srgb, var(--color-success) 20%, transparent)',
@@ -817,7 +817,7 @@ export default function CajaPage() {
             )}
             {!cierreHoy.reabiertoEn && cierreHoy.solicitudReaperturaEn && (
               <div
-                className="rounded-[10px] px-3 py-2.5 mb-2 flex items-start gap-2"
+                className="rounded-[12px] px-3 py-2.5 mb-2 flex items-start gap-2"
                 style={{
                   background: 'color-mix(in srgb, var(--color-warning) 10%, transparent)',
                   border: '1px solid color-mix(in srgb, var(--color-warning) 20%, transparent)',
@@ -845,18 +845,18 @@ export default function CajaPage() {
               ].map(({ label, value, color }) => (
                 <div key={label} className="flex justify-between text-sm">
                   <span className="text-[var(--color-text-muted)]">{label}</span>
-                  <span className={`font-medium ${color}`}>{value}</span>
+                  <span className={`font-medium font-mono-display ${color}`}>{value}</span>
                 </div>
               ))}
               <div className="flex justify-between text-sm font-bold border-t border-[var(--color-border)] pt-2 mt-2">
                 <span className="text-[var(--color-text-muted)]">Diferencia</span>
-                <span style={{ color: diferencia >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                <span className="font-mono-display" style={{ color: diferencia >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
                   {diferencia >= 0 ? '+' : ''}{formatMoney(diferencia)}
                 </span>
               </div>
               <div className="flex justify-between text-sm font-bold">
                 <span className="text-[var(--color-text-muted)]">Saldo del día</span>
-                <span style={{ color: cierreSaldoReal >= 0 ? 'var(--color-info)' : 'var(--color-danger)' }}>
+                <span className="font-mono-display" style={{ color: cierreSaldoReal >= 0 ? 'var(--color-info)' : 'var(--color-danger)' }}>
                   {formatMoney(cierreSaldoReal)}
                 </span>
               </div>
@@ -926,7 +926,7 @@ export default function CajaPage() {
             <form onSubmit={registrarCierre} className="space-y-4">
               <div className="flex justify-between text-sm">
                 <span className="text-[var(--color-text-muted)]">{esAyer ? 'Deberias tener (ayer)' : 'Deberias tener en caja'}</span>
-                <span className="font-semibold text-[var(--color-text-primary)]">{formatMoney(stats.esperado || 0)}</span>
+                <span className="font-semibold font-mono-display text-[var(--color-text-primary)]">{formatMoney(stats.esperado || 0)}</span>
               </div>
               <div className="rounded-[12px] px-3 py-2.5 space-y-2" style={{ background: 'var(--color-warning-dim)', border: '1px solid color-mix(in srgb, var(--color-warning) 25%, transparent)' }}>
                 <p className="text-[11px] text-[var(--color-accent)] leading-snug">
@@ -959,7 +959,7 @@ export default function CajaPage() {
               {totalRecogido && (
                 <div className="text-sm">
                   <span className="text-[var(--color-text-muted)]">Diferencia: </span>
-                  <span style={{ color: Number(totalRecogido) >= (stats.esperado || 0) ? 'var(--color-success)' : 'var(--color-danger)', fontWeight: 700 }}>
+                  <span className="font-mono-display" style={{ color: Number(totalRecogido) >= (stats.esperado || 0) ? 'var(--color-success)' : 'var(--color-danger)', fontWeight: 700 }}>
                     {Number(totalRecogido) >= (stats.esperado || 0) ? '+' : ''}{formatMoney(Number(totalRecogido) - (stats.esperado || 0))}
                   </span>
                 </div>
@@ -1027,7 +1027,7 @@ export default function CajaPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Caja</h1>
+          <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Caja</h1>
           <p className="text-[12px] text-[var(--color-text-secondary)] mt-0.5">
             {periodo.modo === 'hoy' ? (cajaData?.fechaDisplay || '—') : `${periodo.desde} a ${periodo.hasta}`}
           </p>
@@ -1035,7 +1035,7 @@ export default function CajaPage() {
         <button
           type="button"
           onClick={abrirReporte}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] text-xs font-semibold transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] text-xs font-semibold transition-colors"
           style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)' }}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
@@ -1115,7 +1115,7 @@ export default function CajaPage() {
             <select
               value={cajaRutaCobradorId}
               onChange={(e) => setCajaRutaCobradorId(e.target.value)}
-              className="w-full h-10 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-2 text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-info)]"
+              className="w-full h-10 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-2 text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-info)]"
             >
               <option value="">— Elige un cobrador —</option>
               {cobradoresParaFiltro.map((c) => (
@@ -1139,7 +1139,7 @@ export default function CajaPage() {
               <CajaCobradorDetalle data={cajaRutaData} />
               <Link
                 href={`/caja/cobrador/${cajaRutaCobradorId}?${periodo.modo === 'hoy' ? `fecha=${periodo.fecha || fechaSeleccionada}` : `desde=${periodo.desde}&hasta=${periodo.hasta}`}`}
-                className="block text-center text-xs font-semibold text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] py-2 rounded-[10px] border border-[var(--color-border)]"
+                className="block text-center text-xs font-semibold text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] py-2 rounded-[12px] border border-[var(--color-border)]"
               >
                 Abrir en pantalla completa
               </Link>
@@ -1173,7 +1173,7 @@ export default function CajaPage() {
                   label: 'Efectivo del período',
                   valor: rangoData.efectivoNeto,
                   subtitulo: 'Cobrado − Prestado − Gastos',
-                  color: rangoData.efectivoNeto >= 0 ? '#22c55e' : '#ef4444',
+                  color: rangoData.efectivoNeto >= 0 ? 'var(--color-success)' : 'var(--color-danger)',
                 }}
                 cards={[
                   { label: 'Cobrado', valor: rangoData.cobrado, color: 'var(--color-success)' },
@@ -1235,7 +1235,7 @@ export default function CajaPage() {
       {pagosDiaCard}
 
       <div
-        className="relative rounded-[20px] overflow-hidden px-5 py-5"
+        className="relative rounded-[20px] overflow-hidden px-5 py-5 cf-card-shadow"
         style={{
           background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 60%)',
           border: '1px solid color-mix(in srgb, var(--color-accent) 18%, var(--color-border))',
@@ -1297,13 +1297,13 @@ export default function CajaPage() {
             {cierreOwner && !modoAjusteCierre ? (
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-3">
+                  <div className="rounded-[12px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-3">
                     <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Recaudado</p>
                     <p className="text-lg font-bold font-mono-display text-[var(--color-text-primary)] mt-0.5">
                       {formatMoney(cierreOwner.totalRecogido)}
                     </p>
                   </div>
-                  <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-3">
+                  <div className="rounded-[12px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-3">
                     <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Saldo final</p>
                     <p className="text-lg font-bold font-mono-display mt-0.5" style={{ color: 'var(--color-success)' }}>
                       {formatMoney(cierreOwner.saldoRealCaja)}
@@ -1330,7 +1330,7 @@ export default function CajaPage() {
                 <button
                   type="button"
                   onClick={reabrirCierreOwner}
-                  className="w-full py-2 rounded-[10px] text-xs font-semibold border transition-colors"
+                  className="w-full py-2 rounded-[12px] text-xs font-semibold border transition-colors"
                   style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}
                 >
                   Reabrir y ajustar
@@ -1339,7 +1339,7 @@ export default function CajaPage() {
             ) : (
               <form onSubmit={registrarCierre} className="space-y-3">
                 {!cierreOwner && (
-                  <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-3">
+                  <div className="rounded-[12px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-3">
                     <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Recaudo del día</p>
                     <p className="text-2xl font-bold font-mono-display text-[var(--color-text-primary)] mt-0.5">
                       {formatMoney(Math.round(recaudadoOwner))}
@@ -1366,7 +1366,7 @@ export default function CajaPage() {
                   <button
                     type="submit"
                     disabled={guardando}
-                    className="flex-1 py-2.5 rounded-[10px] text-sm font-semibold transition-colors disabled:opacity-50"
+                    className="flex-1 py-2.5 rounded-[12px] text-sm font-semibold transition-colors disabled:opacity-50"
                     style={{ background: 'var(--color-accent)', color: 'var(--color-bg-base)' }}
                   >
                     {guardando ? 'Cerrando...' : (cierreOwner ? 'Guardar ajuste' : 'Cerrar día')}
@@ -1375,7 +1375,7 @@ export default function CajaPage() {
                     <button
                       type="button"
                       onClick={() => { setModoAjusteCierre(false); setTotalRecogido(''); setErrorCaja('') }}
-                      className="px-4 py-2.5 rounded-[10px] text-sm font-semibold border"
+                      className="px-4 py-2.5 rounded-[12px] text-sm font-semibold border"
                       style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}
                     >
                       Cancelar
@@ -1430,7 +1430,7 @@ export default function CajaPage() {
                     key={c.id}
                     type="button"
                     onClick={() => setFechaSeleccionada(c.fecha.slice(0, 10))}
-                    className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-[10px] border text-left transition-colors"
+                    className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-[12px] border text-left transition-colors"
                     style={{
                       background: esActual ? 'color-mix(in srgb, var(--color-accent) 10%, transparent)' : 'transparent',
                       borderColor: esActual ? 'color-mix(in srgb, var(--color-accent) 40%, transparent)' : 'var(--color-border)',
@@ -1463,15 +1463,15 @@ export default function CajaPage() {
       {/* Cobradores: solo visible si hay al menos uno (cuando no hay, el owner ya
           ve "Mi cierre del dia" arriba y esta seccion no aporta nada). */}
       {cobradoresTotal > 0 && (
-      <div className="rounded-[20px] overflow-hidden" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+      <div className="rounded-[20px] overflow-hidden cf-card-shadow" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
         <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid var(--color-border)' }}>
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, #8b5cf6 15%, transparent)', color: '#8b5cf6' }}>
+            <div className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-purple) 15%, transparent)', color: 'var(--color-purple)' }}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
               </svg>
             </div>
-            <h2 className="text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Cobradores</h2>
+            <h2 className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-secondary)' }}>Cobradores</h2>
           </div>
           <span className="text-[11px] font-mono-display px-2 py-0.5 rounded-md" style={{
             background: cobradoresCerrados === cobradoresTotal
@@ -1530,7 +1530,7 @@ export default function CajaPage() {
                   <button
                     type="button"
                     onClick={() => { setCajaRutaCobradorId(c.id); setCajaTab('porruta') }}
-                    className="w-full text-[12px] font-semibold text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] flex items-center justify-center gap-1 py-2 rounded-[10px] border border-[var(--color-border)]"
+                    className="w-full text-[12px] font-semibold text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] flex items-center justify-center gap-1 py-2 rounded-[12px] border border-[var(--color-border)]"
                   >
                     Ver caja por ruta de {c.nombre}
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -1560,7 +1560,7 @@ export default function CajaPage() {
                     </p>
                   )}
                   {!cierre?.reabiertoEn && cierre?.solicitudReaperturaEn && (
-                    <div className="mb-2 p-2 rounded-[10px]" style={{ background: 'var(--color-warning-dim)', border: '1px solid color-mix(in srgb, var(--color-warning) 30%, transparent)' }}>
+                    <div className="mb-2 p-2 rounded-[12px]" style={{ background: 'var(--color-warning-dim)', border: '1px solid color-mix(in srgb, var(--color-warning) 30%, transparent)' }}>
                       <p className="text-[11px] mb-2" style={{ color: 'var(--color-warning)' }}>
                         {cierre.solicitudReaperturaPor?.nombre || c.nombre} solicita reabrir su caja para seguir cobrando
                       </p>
@@ -1591,11 +1591,11 @@ export default function CajaPage() {
                     <>
                       {/* Resumen siempre visible: 2 números grandes */}
                       <div className="grid grid-cols-2 gap-2">
-                        <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
+                        <div className="rounded-[12px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
                           <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Entregado</p>
                           <p className="text-lg font-bold font-mono-display text-[var(--color-text-primary)] mt-0.5">{formatMoney(cierre.totalRecogido)}</p>
                         </div>
-                        <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
+                        <div className="rounded-[12px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
                           <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Diferencia</p>
                           <p className="text-lg font-bold font-mono-display mt-0.5" style={{ color: diff >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
                             {diff >= 0 ? '+' : ''}{formatMoney(diff)}
@@ -1606,19 +1606,19 @@ export default function CajaPage() {
                       {expandido && (
                         <div className="space-y-3 mt-3">
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                            <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2">
+                            <div className="rounded-[12px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2">
                               <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Esperado</p>
                               <p className="text-sm font-semibold font-mono-display text-[var(--color-text-primary)]">{formatMoney(cierre.totalEsperado)}</p>
                             </div>
-                            <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2">
+                            <div className="rounded-[12px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2">
                               <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Gastos</p>
                               <p className="text-sm font-semibold font-mono-display text-[var(--color-danger)]">{formatMoney(cierre.totalGastos || 0)}</p>
                             </div>
-                            <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2">
+                            <div className="rounded-[12px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2">
                               <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Prestado hoy</p>
                               <p className="text-sm font-semibold font-mono-display text-[var(--color-warning)]">{cierreDesembolsado > 0 ? '-' : ''}{formatMoney(cierreDesembolsado)}</p>
                             </div>
-                            <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2">
+                            <div className="rounded-[12px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2">
                               <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Saldo real</p>
                               <p className="text-sm font-semibold font-mono-display" style={{ color: cierreSaldoReal >= 0 ? 'var(--color-info)' : 'var(--color-danger)' }}>
                                 {formatMoney(cierreSaldoReal)}
@@ -1662,11 +1662,11 @@ export default function CajaPage() {
                       {recaudadoDiaCobrador > 0 ? (
                         <>
                           <div className="grid grid-cols-2 gap-2">
-                            <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
+                            <div className="rounded-[12px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
                               <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Cobrado</p>
                               <p className="text-lg font-bold font-mono-display text-[var(--color-success)] mt-0.5">{formatMoney(recaudadoDiaCobrador)}</p>
                             </div>
-                            <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
+                            <div className="rounded-[12px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2.5">
                               <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Sugerido cierre</p>
                               <p className="text-lg font-bold font-mono-display text-[var(--color-accent)] mt-0.5">{formatMoney(sugeridoCierre)}</p>
                             </div>
@@ -1674,7 +1674,7 @@ export default function CajaPage() {
 
                           {expandido && (
                             <>
-                              <div className="rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2 mt-2">
+                              <div className="rounded-[12px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-2 mt-2">
                                 <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Esperado ruta</p>
                                 <p className="text-sm font-semibold font-mono-display text-[var(--color-text-primary)]">{formatMoney(esperadoDiaCobrador)}</p>
                               </div>
@@ -1755,7 +1755,7 @@ export default function CajaPage() {
                 type="button"
                 onClick={() => setAjusteDireccion('ingreso')}
                 className={[
-                  'h-10 rounded-[10px] border text-sm font-semibold transition-all',
+                  'h-10 rounded-[12px] border text-sm font-semibold transition-all',
                   ajusteDireccion === 'ingreso'
                     ? 'bg-[var(--color-success-dim)] border-[color-mix(in_srgb,var(--color-success)_35%,transparent)] text-[var(--color-success)]'
                     : 'bg-[var(--color-bg-card)] border-[var(--color-border)] text-[var(--color-text-muted)]',
@@ -1767,7 +1767,7 @@ export default function CajaPage() {
                 type="button"
                 onClick={() => setAjusteDireccion('egreso')}
                 className={[
-                  'h-10 rounded-[10px] border text-sm font-semibold transition-all',
+                  'h-10 rounded-[12px] border text-sm font-semibold transition-all',
                   ajusteDireccion === 'egreso'
                     ? 'bg-[var(--color-danger-dim)] border-[color-mix(in_srgb,var(--color-danger)_35%,transparent)] text-[var(--color-danger)]'
                     : 'bg-[var(--color-bg-card)] border-[var(--color-border)] text-[var(--color-text-muted)]',
@@ -1871,7 +1871,7 @@ export default function CajaPage() {
             Genera reportes diarios con pagos, pendientes y gastos para imprimir o compartir por WhatsApp.
           </p>
           <a href="/configuracion/plan"
-            className="inline-block px-4 py-2 rounded-[10px] text-sm font-semibold transition-colors"
+            className="inline-block px-4 py-2 rounded-[12px] text-sm font-semibold transition-colors"
             style={{ background: 'var(--color-accent)', color: '#fff' }}>
             Ver planes
           </a>

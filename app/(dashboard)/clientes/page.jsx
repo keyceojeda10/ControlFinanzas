@@ -46,7 +46,7 @@ const VISTA_KEY = 'cf-clientes-vista'
 const COLOR_OK   = 'var(--color-accent)'
 const COLOR_HOT  = '#f97316'
 const COLOR_CRIT = 'var(--color-danger)'
-const COLOR_OFF  = '#64748b'
+const COLOR_OFF  = 'var(--color-text-muted)'
 
 function moodColorCompacto(c) {
   if (c.estado === 'cancelado' || c.estado === 'inactivo') return COLOR_OFF
@@ -145,7 +145,7 @@ const IconGrid = (
 )
 
 const COLORES_GRUPO = [
-  '#3b82f6', 'var(--color-success)', 'var(--color-warning)', 'var(--color-danger)',
+  'var(--color-info)', 'var(--color-success)', 'var(--color-warning)', 'var(--color-danger)',
   'var(--color-purple)', 'var(--color-info)', '#ec4899', '#84cc16',
 ]
 
@@ -523,7 +523,7 @@ export default function ClientesPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-4">
         <div className="min-w-0">
-          <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Clientes</h1>
+          <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Clientes</h1>
           <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
             {loading ? '...' : `${total} cliente${total !== 1 ? 's' : ''}`}
             {!loading && moraCount > 0 && (
@@ -533,7 +533,7 @@ export default function ClientesPage() {
           {esOwner && (
             <Link
               href="/migrador"
-              className="h-7 px-2.5 inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[10px] font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:border-[var(--color-accent)] transition-all shrink-0"
+              className="h-7 px-3 mt-1.5 inline-flex items-center gap-1 rounded-full border border-[var(--color-border-hover)] bg-[var(--color-bg-surface)] text-[10.5px] font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] hover:border-[var(--color-accent)] transition-all shrink-0"
             >
               <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
@@ -576,7 +576,7 @@ export default function ClientesPage() {
               value={buscar}
               onChange={(e) => setBuscar(e.target.value)}
               placeholder={modoAsignar ? 'Buscar cliente para asignar…' : 'Buscar cliente…'}
-              className="w-full h-10 pl-9 pr-9 rounded-[12px] border border-[var(--color-border)] bg-[#161616] text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all"
+              className="w-full h-10 pl-9 pr-9 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-hover)] text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all"
             />
             {buscar && (
               <button
@@ -593,7 +593,7 @@ export default function ClientesPage() {
           {!authLoading && esOwner && (
             <button
               onClick={() => setModalGrupos(true)}
-              className="shrink-0 h-10 px-3 rounded-[12px] border border-[var(--color-border)] bg-[#161616] text-xs font-medium text-[var(--color-accent)] hover:bg-[var(--color-bg-hover)] transition-colors flex items-center gap-1.5"
+              className="shrink-0 h-10 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-hover)] text-xs font-medium text-[var(--color-accent)] hover:border-[var(--color-accent)] transition-colors flex items-center gap-1.5"
               aria-label="Grupos de cobro"
               title="Grupos de cobro"
             >
@@ -618,13 +618,16 @@ export default function ClientesPage() {
                 <button
                   key={value}
                   onClick={() => setEstado(value)}
-                  className={[
-                    'shrink-0 px-3 h-8 rounded-full text-[12px] font-medium border transition-all',
-                    isActive
-                      ? 'border-current'
-                      : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] hover:text-[var(--color-text-primary)]',
-                  ].join(' ')}
-                  style={isActive ? { color: accent, backgroundColor: `${accent}20` } : undefined}
+                  className="shrink-0 px-3 min-h-[32px] rounded-full text-[12.5px] font-semibold border transition-all"
+                  style={isActive ? {
+                    color: accent,
+                    borderColor: `color-mix(in srgb, ${accent} 40%, transparent)`,
+                    background: `color-mix(in srgb, ${accent} 10%, transparent)`,
+                  } : {
+                    background: 'var(--color-bg-surface)',
+                    borderColor: 'var(--color-border-hover)',
+                    color: 'var(--color-text-secondary)',
+                  }}
                 >
                   {label}
                 </button>
@@ -633,7 +636,7 @@ export default function ClientesPage() {
             {hayControlesActivos && (
               <button
                 onClick={limpiarControles}
-                className="shrink-0 px-3 h-8 rounded-full text-[11px] font-medium border border-[#303030] text-[#b4b4b4] hover:text-[var(--color-text-primary)] hover:border-[#4a4a4a] transition-colors"
+                className="shrink-0 px-3 min-h-[32px] rounded-full text-[11px] font-semibold border border-[var(--color-border-hover)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-accent)] transition-colors"
               >
                 Limpiar
               </button>
@@ -646,7 +649,7 @@ export default function ClientesPage() {
                 className="w-8 h-full flex items-center justify-center transition-colors"
                 style={{
                   background: vista === 'lista' ? 'var(--color-accent)' : 'transparent',
-                  color: vista === 'lista' ? '#000' : 'var(--color-text-muted)',
+                  color: vista === 'lista' ? 'var(--color-accent-text)' : 'var(--color-text-muted)',
                 }}
                 aria-label="Vista lista"
               >
@@ -657,7 +660,7 @@ export default function ClientesPage() {
                 className="w-8 h-full flex items-center justify-center transition-colors"
                 style={{
                   background: vista === 'compacta' ? 'var(--color-accent)' : 'transparent',
-                  color: vista === 'compacta' ? '#000' : 'var(--color-text-muted)',
+                  color: vista === 'compacta' ? 'var(--color-accent-text)' : 'var(--color-text-muted)',
                 }}
                 aria-label="Vista compacta"
               >
@@ -672,7 +675,7 @@ export default function ClientesPage() {
           <select
             value={rutaIdFiltro}
             onChange={e => setRutaIdFiltro(e.target.value)}
-            className="h-8 px-2 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[11px] text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-all"
+            className="h-8 px-2 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[11px] text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-all"
           >
             <option value="">Todas las rutas</option>
             {rutas.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
@@ -687,11 +690,11 @@ export default function ClientesPage() {
               className="inline-flex items-center gap-1.5 px-2 h-6 rounded-full text-[11px] font-medium border"
               style={
                 grupoFiltro === '_none'
-                  ? { color: 'var(--color-info)', borderColor: 'rgba(6,182,212,0.4)', background: 'rgba(6,182,212,0.12)' }
+                  ? { color: 'var(--color-info)', borderColor: 'color-mix(in srgb, var(--color-info) 40%, transparent)', background: 'var(--color-info-dim)' }
                   : (() => {
                     const g = grupos.find((gr) => gr.id === grupoFiltro)
                     const c = g?.color || 'var(--color-accent)'
-                    return { color: c, borderColor: `${c}66`, background: `${c}1f` }
+                    return { color: c, borderColor: `color-mix(in srgb, ${c} 40%, transparent)`, background: `color-mix(in srgb, ${c} 12%, transparent)` }
                   })()
               }
             >
@@ -747,33 +750,33 @@ export default function ClientesPage() {
                   className={[
                     'flex items-center gap-3 border rounded-[12px] p-4 transition-all cursor-pointer',
                     selAsignar.includes(c.id)
-                      ? 'border-[rgba(245,197,24,0.35)] bg-[rgba(245,197,24,0.08)]'
-                      : 'border-[var(--color-border)] bg-[var(--color-bg-surface)] hover:border-[#f5c518]/40',
+                      ? 'border-[color-mix(in_srgb,var(--color-accent)_35%,transparent)] bg-[var(--color-accent-soft)]'
+                      : 'border-[var(--color-border)] bg-[var(--color-bg-surface)] hover:border-[color-mix(in_srgb,var(--color-accent)_40%,transparent)]',
                   ].join(' ')}
                 >
                   <input
                     type="checkbox"
                     checked={selAsignar.includes(c.id)}
                     onChange={() => toggleSeleccion(c.id)}
-                    className="accent-[#f5c518]"
+                    className="accent-[var(--color-accent)]"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-[#f1f5f9] truncate">{c.nombre}</p>
-                    <p className="text-xs text-[#8b95a5] mt-0.5">CC {c.cedula}</p>
+                    <p className="text-sm font-semibold text-[var(--color-text-primary)] truncate">{c.nombre}</p>
+                    <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">CC {c.cedula}</p>
                     <div className="flex items-center gap-2 mt-1">
                       {c.grupoCobro ? (
                         <span className="inline-flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full border"
                           style={{
                             color: c.grupoCobro.color || 'var(--color-accent)',
-                            borderColor: `${c.grupoCobro.color || 'var(--color-accent)'}44`,
-                            background: `${c.grupoCobro.color || 'var(--color-accent)'}18`,
+                            borderColor: `color-mix(in srgb, ${c.grupoCobro.color || 'var(--color-accent)'} 27%, transparent)`,
+                            background: `color-mix(in srgb, ${c.grupoCobro.color || 'var(--color-accent)'} 10%, transparent)`,
                           }}
                         >
                           <span className="w-1.5 h-1.5 rounded-full" style={{ background: c.grupoCobro.color || 'var(--color-accent)' }} />
                           {c.grupoCobro.nombre}
                         </span>
                       ) : (
-                        <span className="text-[10px] text-[#7b8794]">Sin grupo</span>
+                        <span className="text-[10px] text-[var(--color-text-muted)]">Sin grupo</span>
                       )}
                     </div>
                   </div>
@@ -797,7 +800,7 @@ export default function ClientesPage() {
                       ...(c.prestamosActivos > 0 ? [{
                         icon: IconPagar,
                         label: 'Cobrar',
-                        color: '#22c55e',
+                        color: 'var(--color-success)',
                         onClick: () => { window.location.href = `/clientes/${c.id}` },
                       }] : []),
                       ...(puedeCrearPrestamos && c.prestamosActivos === 0 ? [{
@@ -822,8 +825,26 @@ export default function ClientesPage() {
         )
       })()}
 
-      {/* Estado vacío — mostrar tambien si hay error pero nunca hubo datos (usuario nuevo) */}
-      {!loading && clientes.length === 0 && (!error || total === 0) && (
+      {/* Error en la carga inicial (sin cache ni datos previos) — con accion de reintento */}
+      {!loading && error && total === 0 && clientes.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="mb-4">
+            <MonedaCF pose="busca" size={100} />
+          </div>
+          <p className="text-sm font-medium text-[var(--color-text-primary)]">No pudimos cargar tus clientes</p>
+          <p className="text-xs text-[var(--color-text-muted)] mt-1">Revisa tu conexión e intenta de nuevo</p>
+          <Button
+            size="sm"
+            className="mt-4"
+            onClick={() => fetchClientes(buscar, page, grupoFiltro, rutaIdFiltro)}
+          >
+            Reintentar
+          </Button>
+        </div>
+      )}
+
+      {/* Estado vacío (sin error) */}
+      {!loading && !error && clientes.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="mb-4">
             <MonedaCF pose={buscar || grupoFiltro ? 'busca' : 'vacia'} size={100} />
@@ -865,7 +886,7 @@ export default function ClientesPage() {
       >
         <div className="space-y-4">
           {/* Tabs */}
-          <div className="flex gap-1 p-1 rounded-xl bg-[var(--color-bg-card)] border border-[#222]">
+          <div className="flex gap-1 p-1 rounded-xl bg-[var(--color-bg-card)] border border-[var(--color-border)]">
             {[
               { key: 'filtrar', label: 'Filtrar' },
               { key: 'gestionar', label: 'Gestionar' },
@@ -877,7 +898,7 @@ export default function ClientesPage() {
                 className={[
                   'flex-1 h-8 rounded-lg text-xs font-medium transition-colors',
                   tabModalGrupos === t.key
-                    ? 'bg-[var(--color-accent)] text-black'
+                    ? 'bg-[var(--color-accent)] text-[var(--color-accent-text)]'
                     : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]',
                 ].join(' ')}
               >
@@ -896,7 +917,7 @@ export default function ClientesPage() {
                   className={[
                     'px-3 h-8 rounded-full text-xs border transition-colors',
                     !grupoFiltro
-                      ? 'border-[#f5c518] text-[var(--color-accent)] bg-[rgba(245,197,24,0.12)]'
+                      ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent-soft)]'
                       : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]',
                   ].join(' ')}
                 >
@@ -907,7 +928,7 @@ export default function ClientesPage() {
                   className={[
                     'px-3 h-8 rounded-full text-xs border transition-colors',
                     grupoFiltro === '_none'
-                      ? 'border-[#06b6d4] text-[var(--color-info)] bg-[rgba(6,182,212,0.12)]'
+                      ? 'border-[var(--color-info)] text-[var(--color-info)] bg-[var(--color-info-dim)]'
                       : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]',
                   ].join(' ')}
                 >
@@ -922,8 +943,8 @@ export default function ClientesPage() {
                       onClick={() => { setGrupoFiltro(g.id); setModalGrupos(false) }}
                       className="px-3 h-8 rounded-full text-xs border inline-flex items-center gap-1.5 transition-colors"
                       style={active
-                        ? { color: c, borderColor: c, background: `${c}1f` }
-                        : { color: '#888', borderColor: '#2a2a2a' }}
+                        ? { color: c, borderColor: c, background: `color-mix(in srgb, ${c} 12%, transparent)` }
+                        : { color: 'var(--color-text-muted)', borderColor: 'var(--color-border)' }}
                     >
                       <span className="w-1.5 h-1.5 rounded-full" style={{ background: c }} />
                       {g.nombre}
@@ -933,7 +954,7 @@ export default function ClientesPage() {
                 })}
               </div>
               {grupos.length === 0 && (
-                <p className="text-sm text-[#666] text-center py-4">
+                <p className="text-sm text-[var(--color-text-muted)] text-center py-4">
                   Aún no tienes grupos. Créalos en la pestaña "Gestionar".
                 </p>
               )}
@@ -954,7 +975,7 @@ export default function ClientesPage() {
                 <button
                   onClick={crearGrupo}
                   disabled={!nuevoGrupo.trim() || guardandoGrupo}
-                  className="h-9 px-4 rounded-lg bg-[var(--color-accent)] text-black text-sm font-bold shrink-0 disabled:opacity-50 active:scale-95 transition-transform"
+                  className="h-9 px-4 rounded-lg bg-[var(--color-accent)] text-[var(--color-accent-text)] text-sm font-bold shrink-0 disabled:opacity-50 active:scale-95 transition-transform"
                 >
                   {guardandoGrupo ? '...' : 'Crear'}
                 </button>
@@ -965,22 +986,22 @@ export default function ClientesPage() {
                   <button
                     key={c}
                     onClick={() => setGrupoColor(grupoColor === c ? null : c)}
-                    className={`w-7 h-7 rounded-full transition-all ${grupoColor === c ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0a0a0a] scale-110' : 'hover:scale-110'}`}
+                    className={`w-7 h-7 rounded-full transition-all ${grupoColor === c ? 'ring-2 ring-white ring-offset-2 ring-offset-[var(--color-bg-base)] scale-110' : 'hover:scale-110'}`}
                     style={{ background: c }}
                   />
                 ))}
               </div>
 
               {grupos.length > 0 ? (
-                <div className="space-y-2 pt-2 border-t border-[#222]">
+                <div className="space-y-2 pt-2 border-t border-[var(--color-border)]">
                   {grupos.map(g => (
-                    <div key={g.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[rgba(255,255,255,0.03)] border border-[#1f1f1f]">
-                      <span className="w-3 h-3 rounded-full shrink-0" style={{ background: g.color || '#666' }} />
+                    <div key={g.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[var(--color-bg-hover)] border border-[var(--color-border)]">
+                      <span className="w-3 h-3 rounded-full shrink-0" style={{ background: g.color || 'var(--color-text-muted)' }} />
                       {editandoGrupo === g.id ? (
                         <input
                           defaultValue={g.nombre}
                           autoFocus
-                          className="flex-1 h-7 px-2 rounded bg-[var(--color-bg-surface)] border border-[#444] text-sm text-[var(--color-text-primary)]"
+                          className="flex-1 h-7 px-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-hover)] text-sm text-[var(--color-text-primary)]"
                           onKeyDown={e => {
                             if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur() }
                             if (e.key === 'Escape') setEditandoGrupo(null)
@@ -992,7 +1013,7 @@ export default function ClientesPage() {
                           {g.nombre}
                         </span>
                       )}
-                      <span className="text-[10px] text-[#666] shrink-0">{g._count?.clientes ?? 0}</span>
+                      <span className="text-[10px] text-[var(--color-text-muted)] shrink-0">{g._count?.clientes ?? 0}</span>
                       <div className="flex gap-1 shrink-0">
                         {COLORES_GRUPO.slice(0, 4).map(c => (
                           <button
@@ -1003,14 +1024,14 @@ export default function ClientesPage() {
                           />
                         ))}
                       </div>
-                      <button onClick={() => eliminarGrupo(g.id)} className="text-[#666] hover:text-[var(--color-danger)] transition-colors shrink-0">
+                      <button onClick={() => eliminarGrupo(g.id)} className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors shrink-0">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                       </button>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-[#666] text-center py-4">Aún no tienes grupos. Crea uno para organizar tus clientes por día o zona.</p>
+                <p className="text-sm text-[var(--color-text-muted)] text-center py-4">Aún no tienes grupos. Crea uno para organizar tus clientes por día o zona.</p>
               )}
             </div>
           )}
@@ -1025,7 +1046,7 @@ export default function ClientesPage() {
                 Activar selección múltiple
               </Button>
               {grupos.length === 0 && (
-                <p className="text-[11px] text-[#a16207] text-center">
+                <p className="text-[11px] text-[var(--color-warning)] text-center">
                   Primero crea al menos un grupo en la pestaña "Gestionar".
                 </p>
               )}
@@ -1036,7 +1057,7 @@ export default function ClientesPage() {
 
       {/* Sticky bar: modo asignación activo (posicionada encima del BottomNav móvil) */}
       {modoAsignar && (
-        <div className="fixed left-0 right-0 z-50 border-t border-[#f5c518]/40 bg-[var(--color-bg-base)] lg:bg-[var(--color-bg-base)]/98 lg:backdrop-blur-md bottom-[84px] lg:bottom-0 shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
+        <div className="fixed left-0 right-0 z-50 border-t border-[color-mix(in_srgb,var(--color-accent)_40%,transparent)] bg-[var(--color-bg-base)] lg:bg-[var(--color-bg-base)]/98 lg:backdrop-blur-md bottom-[84px] lg:bottom-0 shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
           <div className="max-w-3xl lg:max-w-6xl mx-auto px-3 py-2.5">
             <div className="flex items-center justify-between gap-2 mb-2">
               <div className="text-xs text-[var(--color-accent)] font-semibold">
@@ -1044,7 +1065,7 @@ export default function ClientesPage() {
               </div>
               <button
                 onClick={cancelarAsignacion}
-                className="text-xs text-[#b4b4b4] hover:text-[var(--color-text-primary)] underline underline-offset-2"
+                className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] underline underline-offset-2"
               >
                 Cancelar
               </button>
@@ -1053,7 +1074,7 @@ export default function ClientesPage() {
               <select
                 value={grupoAsignar}
                 onChange={(e) => setGrupoAsignar(e.target.value)}
-                className="flex-1 min-w-0 h-10 px-2 rounded-lg bg-[#161616] border border-[var(--color-border)] text-xs text-[var(--color-text-primary)]"
+                className="flex-1 min-w-0 h-10 px-2 rounded-lg bg-[var(--color-bg-hover)] border border-[var(--color-border)] text-xs text-[var(--color-text-primary)]"
               >
                 <option value="">Elegir grupo…</option>
                 <option value="_none">Sin grupo</option>
@@ -1064,7 +1085,7 @@ export default function ClientesPage() {
               <button
                 onClick={asignarGrupoClientes}
                 disabled={!selAsignar.length || !grupoAsignar || asignandoGrupo}
-                className="shrink-0 h-10 px-4 rounded-lg bg-[var(--color-accent)] text-black text-xs font-bold disabled:opacity-40 active:scale-95 transition-transform"
+                className="shrink-0 h-10 px-4 rounded-lg bg-[var(--color-accent)] text-[var(--color-accent-text)] text-xs font-bold disabled:opacity-40 active:scale-95 transition-transform"
               >
                 {asignandoGrupo ? '...' : 'Asignar'}
               </button>
@@ -1079,7 +1100,7 @@ export default function ClientesPage() {
           <button
             onClick={() => setPage(p => Math.max(1, p - 1))}
             disabled={page <= 1}
-            className="px-3 py-1.5 text-xs rounded-lg border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[#222] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="px-3 py-1.5 text-xs rounded-lg border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             Anterior
           </button>
@@ -1089,7 +1110,7 @@ export default function ClientesPage() {
           <button
             onClick={() => setPage(p => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages}
-            className="px-3 py-1.5 text-xs rounded-lg border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[#222] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="px-3 py-1.5 text-xs rounded-lg border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             Siguiente
           </button>

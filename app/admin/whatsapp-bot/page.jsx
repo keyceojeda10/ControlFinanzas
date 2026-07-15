@@ -5,12 +5,12 @@ import Link from 'next/link'
 import { SkeletonCard } from '@/components/ui/Skeleton'
 
 const ESTADO_COLORS = {
-  pendiente: '#f5c518',
-  contactado: '#3b82f6',
-  interesado: '#10b981',
-  no_interesado: '#888888',
-  cerrado: '#8b5cf6',
-  bloqueado: '#ef4444',
+  pendiente: 'var(--color-accent)',
+  contactado: 'var(--color-info)',
+  interesado: 'var(--color-success)',
+  no_interesado: 'var(--color-text-muted)',
+  cerrado: 'var(--color-purple)',
+  bloqueado: 'var(--color-danger)',
 }
 
 export default function WhatsAppBotDashboard() {
@@ -77,7 +77,7 @@ export default function WhatsAppBotDashboard() {
     <div className="max-w-4xl mx-auto space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-[white]">WhatsApp Bot</h1>
+          <h1 className="text-[25px] font-semibold text-[white]">WhatsApp Bot</h1>
           <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Bot comercial (WhatsApp Cloud API · Meta) para leads de Facebook Ads</p>
         </div>
         <div className="flex items-center gap-2">
@@ -91,14 +91,14 @@ export default function WhatsAppBotDashboard() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Leads hoy', value: data.leadsHoy, color: '#3b82f6' },
-          { label: 'Total leads', value: data.totalLeads, color: '#10b981' },
-          { label: 'Tasa respuesta', value: `${data.tasaRespuesta}%`, color: '#f5c518' },
-          { label: 'Gasto hoy', value: `$${data.gastoHoy}`, color: '#8b5cf6' },
+          { label: 'Leads hoy', value: data.leadsHoy, color: 'var(--color-info)' },
+          { label: 'Total leads', value: data.totalLeads, color: 'var(--color-success)' },
+          { label: 'Tasa respuesta', value: `${data.tasaRespuesta}%`, color: 'var(--color-accent)' },
+          { label: 'Gasto hoy', value: `$${data.gastoHoy}`, color: 'var(--color-purple)' },
         ].map(({ label, value, color }) => (
           <div
             key={label}
-            className="border border-[var(--color-border)] rounded-[12px] px-3 py-3 text-center"
+            className="border border-[var(--color-border)] rounded-[20px] px-3 py-3 text-center"
             style={{
               background: `linear-gradient(135deg, color-mix(in srgb, ${color} 4%, transparent) 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, color-mix(in srgb, ${color} 2%, transparent) 100%)`,
               boxShadow: `0 0 30px color-mix(in srgb, ${color} 3%, transparent), 0 1px 2px rgba(0,0,0,0.3)`,
@@ -113,9 +113,9 @@ export default function WhatsAppBotDashboard() {
       {/* KPIs de conversion */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Leads calientes', value: data.leadsCalientes ?? 0, color: '#ef4444', href: '/admin/whatsapp-bot/chats?filtro=calientes' },
-          { label: 'Clientes registrados', value: data.registrados ?? 0, color: '#10b981' },
-          { label: 'Conversion', value: `${data.tasaConversion ?? 0}%`, color: '#f5c518' },
+          { label: 'Leads calientes', value: data.leadsCalientes ?? 0, color: 'var(--color-danger)', href: '/admin/whatsapp-bot/chats?filtro=calientes' },
+          { label: 'Clientes registrados', value: data.registrados ?? 0, color: 'var(--color-success)' },
+          { label: 'Conversion', value: `${data.tasaConversion ?? 0}%`, color: 'var(--color-accent)' },
         ].map(({ label, value, color, href }) => {
           const inner = (
             <>
@@ -124,11 +124,11 @@ export default function WhatsAppBotDashboard() {
             </>
           )
           return href ? (
-            <Link key={label} href={href} className="border border-[var(--color-border)] rounded-[12px] px-3 py-3 text-center hover:bg-[rgba(255,255,255,0.03)] transition-all">
+            <Link key={label} href={href} className="border border-[var(--color-border)] rounded-[20px] px-3 py-3 text-center hover:bg-[rgba(255,255,255,0.03)] transition-all">
               {inner}
             </Link>
           ) : (
-            <div key={label} className="border border-[var(--color-border)] rounded-[12px] px-3 py-3 text-center">
+            <div key={label} className="border border-[var(--color-border)] rounded-[20px] px-3 py-3 text-center">
               {inner}
             </div>
           )
@@ -163,14 +163,14 @@ export default function WhatsAppBotDashboard() {
         </button>
         <Link
           href="/admin/whatsapp-bot/config"
-          className="px-4 py-2 rounded-[10px] text-sm font-medium bg-[rgba(136,136,136,0.12)] text-[#888888] hover:bg-[rgba(136,136,136,0.2)] transition-all"
+          className="px-4 py-2 rounded-[10px] text-sm font-medium bg-[rgba(136,136,136,0.12)] text-[var(--color-text-muted)] hover:bg-[rgba(136,136,136,0.2)] transition-all"
         >
           Configuración
         </Link>
       </div>
 
       {/* Leads por estado */}
-      <div className="border border-[var(--color-border)] rounded-[12px] p-4 bg-[var(--color-bg-card)]">
+      <div className="border border-[var(--color-border)] rounded-[20px] p-4 bg-[var(--color-bg-card)]">
         <h2 className="text-sm font-semibold text-[white] mb-3">Leads por estado</h2>
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
           {Object.entries(ESTADO_COLORS).map(([estado, color]) => (
@@ -183,7 +183,7 @@ export default function WhatsAppBotDashboard() {
       </div>
 
       {/* Ultimos leads */}
-      <div className="border border-[var(--color-border)] rounded-[12px] bg-[var(--color-bg-card)]">
+      <div className="border border-[var(--color-border)] rounded-[20px] bg-[var(--color-bg-card)]">
         <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
           <h2 className="text-sm font-semibold text-[white]">Últimos leads</h2>
           <Link href="/admin/whatsapp-bot/leads" className="text-xs text-[var(--color-info)] hover:underline">
@@ -205,8 +205,8 @@ export default function WhatsAppBotDashboard() {
                 <span
                   className="text-[10px] px-2 py-0.5 rounded-full font-medium capitalize"
                   style={{
-                    color: ESTADO_COLORS[lead.estado] || '#888',
-                    background: `${ESTADO_COLORS[lead.estado] || '#888'}1a`,
+                    color: ESTADO_COLORS[lead.estado] || 'var(--color-text-muted)',
+                    background: `color-mix(in srgb, ${ESTADO_COLORS[lead.estado] || 'var(--color-text-muted)'} 10%, transparent)`,
                   }}
                 >
                   {lead.estado?.replace('_', ' ')}
@@ -224,7 +224,7 @@ export default function WhatsAppBotDashboard() {
       </div>
 
       {/* Gasto API total */}
-      <div className="border border-[var(--color-border)] rounded-[12px] p-4 bg-[var(--color-bg-card)]">
+      <div className="border border-[var(--color-border)] rounded-[20px] p-4 bg-[var(--color-bg-card)]">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-[10px] text-[var(--color-text-muted)]">Gasto API total</p>

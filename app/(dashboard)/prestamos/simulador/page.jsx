@@ -127,7 +127,7 @@ export default function CalculadoraPage() {
           </svg>
           Préstamos
         </Link>
-        <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Simulador de préstamos</h1>
+        <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Simulador de préstamos</h1>
         <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
           Calcula la cuota para mostrarle a tu cliente, sin registrar nada.
         </p>
@@ -136,7 +136,7 @@ export default function CalculadoraPage() {
       <div className="space-y-4">
         {/* ── Datos del crédito ── */}
         <section
-          className="rounded-[16px] p-4 sm:p-5"
+          className="rounded-[20px] p-4 sm:p-5"
           style={{
             background:
               'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 5%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)',
@@ -159,7 +159,7 @@ export default function CalculadoraPage() {
                   value={tasa}
                   onChange={(e) => setTasa(e.target.value)}
                   placeholder="20"
-                  className="w-full h-10 rounded-[12px] border text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.08)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[rgba(245,197,24,0.2)] transition-all pl-3 pr-8"
+                  className="w-full h-10 rounded-[12px] border text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] bg-[var(--color-bg-surface)] border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_20%,transparent)] transition-all pl-3 pr-8"
                 />
                 <span className="absolute right-3 text-[var(--color-text-muted)] text-sm pointer-events-none select-none">%</span>
               </div>
@@ -179,7 +179,7 @@ export default function CalculadoraPage() {
                     key={f.value}
                     type="button"
                     onClick={() => cambiarFrecuencia(f.value)}
-                    className="h-10 rounded-[10px] border text-xs font-semibold transition-all"
+                    className="h-10 rounded-[12px] border text-xs font-semibold transition-all"
                     style={
                       activo
                         ? { background: 'color-mix(in srgb, var(--color-accent) 14%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }
@@ -205,7 +205,7 @@ export default function CalculadoraPage() {
                 value={plazoUnidades}
                 onChange={(e) => setPlazoUnidades(e.target.value)}
                 placeholder="Ej: 30"
-                className="w-full h-10 rounded-[12px] border text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.08)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[rgba(245,197,24,0.2)] transition-all px-3"
+                className="w-full h-10 rounded-[12px] border text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] bg-[var(--color-bg-surface)] border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_20%,transparent)] transition-all px-3"
               />
               <span className="shrink-0 text-xs text-[var(--color-text-muted)] whitespace-nowrap">
                 = {diasPlazo} días
@@ -262,7 +262,7 @@ export default function CalculadoraPage() {
         {/* ── Resultado tipo recibo ── */}
         {calculo ? (
           <section
-            className="rounded-[16px] overflow-hidden"
+            className="rounded-[20px] overflow-hidden"
             style={{ border: '1px solid color-mix(in srgb, var(--color-accent) 30%, var(--color-border))' }}
           >
             {/* Encabezado del recibo */}
@@ -271,7 +271,7 @@ export default function CalculadoraPage() {
               style={{ background: 'color-mix(in srgb, var(--color-accent) 12%, var(--color-bg-card))' }}
             >
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+                <p className="text-[11px] font-extrabold uppercase tracking-[.07em] text-[var(--color-text-muted)]">
                   Simulación de crédito
                 </p>
                 <p className="text-2xl font-bold font-mono-display text-[var(--color-accent)] leading-tight mt-0.5">
@@ -344,7 +344,7 @@ export default function CalculadoraPage() {
                 type="button"
                 onClick={compartir}
                 className="h-11 rounded-[12px] text-sm font-semibold transition-all flex items-center justify-center gap-2"
-                style={{ background: 'var(--color-accent)', color: '#1a1a1a' }}
+                style={{ background: 'var(--color-accent)', color: 'var(--color-accent-text)' }}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
                 Compartir
@@ -352,7 +352,7 @@ export default function CalculadoraPage() {
             </div>
           </section>
         ) : (
-          <section className="rounded-[16px] border border-dashed border-[var(--color-border)] px-5 py-12 text-center bg-[var(--color-bg-card)]">
+          <section className="rounded-[20px] border border-dashed border-[var(--color-border)] px-5 py-12 text-center bg-[var(--color-bg-card)]">
             <div className="w-12 h-12 rounded-[12px] mx-auto flex items-center justify-center mb-3" style={{ background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', color: 'var(--color-accent)' }}>
               <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m-6 4h6m-2 5h2M5 3h14a1 1 0 011 1v16a1 1 0 01-1 1H5a1 1 0 01-1-1V4a1 1 0 011-1z" /></svg>
             </div>

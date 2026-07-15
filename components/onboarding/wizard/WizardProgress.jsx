@@ -16,7 +16,7 @@ export default function WizardProgress({ step, totalSteps = 3 }) {
       {/* Progress bar */}
       <div className="h-1 bg-[var(--color-bg-hover)] rounded-full overflow-hidden mb-5">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-[#f5c518] to-[#f0b800] transition-all duration-700 ease-out"
+          className="h-full rounded-full bg-gradient-to-r from-[var(--color-accent)] to-[#f0b800] transition-all duration-700 ease-out"
           style={{ width: `${pct}%` }}
         />
       </div>

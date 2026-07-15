@@ -35,7 +35,12 @@ export default function Header() {
       <div className="lg:hidden h-[60px] shrink-0" aria-hidden />
       <header
         className="lg:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 h-[60px]"
-        style={{ background: 'var(--color-bg-base)' }}
+        style={{
+          background: 'color-mix(in srgb, var(--color-bg-base) 85%, transparent)',
+          backdropFilter: 'blur(20px) saturate(1.2)',
+          WebkitBackdropFilter: 'blur(20px) saturate(1.2)',
+          borderBottom: '1px solid var(--color-border)',
+        }}
       >
         {/* Left: logo + avatar pill */}
         <div className="flex items-center gap-3" ref={userRef}>
@@ -52,7 +57,7 @@ export default function Header() {
               <Avatar nombre={nombre} avatarId={session?.user?.avatarId} size={34} fontSize={12} />
               <span
                 className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full"
-                style={{ background: '#22c55e', border: '2px solid var(--color-bg-base)' }}
+                style={{ background: 'var(--color-success)', border: '2px solid var(--color-bg-base)' }}
               />
             </div>
             <span className="text-[15px] font-bold" style={{ color: 'var(--color-text-primary)' }}>
@@ -93,7 +98,7 @@ export default function Header() {
                   signOut({ callbackUrl: '/login' })
                 }}
                 className="w-full flex items-center gap-3 px-4 py-3 text-[13px] transition-colors"
-                style={{ color: '#ef4444' }}
+                style={{ color: 'var(--color-danger)' }}
               >
                 <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />

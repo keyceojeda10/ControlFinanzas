@@ -8,9 +8,9 @@ export default function AuthButton({ loading, children, loadingLabel = 'Procesan
       disabled={loading}
       className="group relative w-full h-11 mt-1 rounded-[12px] overflow-hidden font-bold text-sm transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
       style={{
-        background: 'linear-gradient(135deg, #f5c518, #f2b211)',
-        color: '#0a0a0a',
-        boxShadow: '0 2px 6px rgba(245,197,24,0.15), inset 0 1px 0 rgba(255,255,255,0.25)',
+        background: 'linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 85%, #000))',
+        color: '#3a2900',
+        boxShadow: '0 2px 8px color-mix(in srgb, var(--color-accent) 25%, transparent), inset 0 1px 0 rgba(255,255,255,0.2)',
       }}
       {...props}
     >

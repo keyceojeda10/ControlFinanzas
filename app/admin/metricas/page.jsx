@@ -11,7 +11,7 @@ import {
 
 import { PLANES_CONFIG } from '@/lib/planes'
 const PRECIOS = Object.fromEntries(Object.entries(PLANES_CONFIG).map(([k, v]) => [k, v.precio]))
-const COLORES = { starter: '#888888', basic: '#3b82f6', growth: 'var(--color-accent)', standard: 'var(--color-purple)', professional: 'var(--color-success)' }
+const COLORES = { starter: 'var(--color-text-muted)', basic: 'var(--color-info)', growth: 'var(--color-accent)', standard: 'var(--color-purple)', professional: 'var(--color-success)' }
 
 const CopTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
@@ -134,14 +134,14 @@ export default function MetricasPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-[white]">Métricas de negocio</h1>
+        <h1 className="text-[25px] font-semibold text-[white]">Métricas de negocio</h1>
         <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Análisis detallado de la plataforma</p>
       </div>
 
       {/* MRR por mes — barras apiladas */}
       <Card style={{
-        background: 'linear-gradient(135deg, #22c55e0A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #22c55e05 100%)',
-        boxShadow: '0 0 30px #22c55e08, 0 1px 2px rgba(0,0,0,0.3)',
+        background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 4%, transparent) 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, color-mix(in srgb, var(--color-success) 2%, transparent) 100%)',
+        boxShadow: '0 0 30px color-mix(in srgb, var(--color-success) 3%, transparent), 0 1px 2px rgba(0,0,0,0.3)',
       }}>
         <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-4">MRR por mes — Últimos 12 meses</p>
         <ResponsiveContainer width="100%" height={260}>
@@ -162,8 +162,8 @@ export default function MetricasPage() {
 
       {/* Crecimiento de organizaciones */}
       <Card style={{
-        background: 'linear-gradient(135deg, #06b6d40A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #06b6d405 100%)',
-        boxShadow: '0 0 30px #06b6d408, 0 1px 2px rgba(0,0,0,0.3)',
+        background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-teal) 4%, transparent) 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, color-mix(in srgb, var(--color-teal) 2%, transparent) 100%)',
+        boxShadow: '0 0 30px color-mix(in srgb, var(--color-teal) 3%, transparent), 0 1px 2px rgba(0,0,0,0.3)',
       }}>
         <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-4">Crecimiento de organizaciones</p>
         <ResponsiveContainer width="100%" height={220}>
@@ -173,8 +173,8 @@ export default function MetricasPage() {
             <YAxis tick={{ fill: '#555555', fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
             <Tooltip content={<NumTooltip />} />
             <Legend wrapperStyle={{ fontSize: 10, color: '#555555' }} />
-            <Line type="monotone" dataKey="total" name="Total" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
-            <Line type="monotone" dataKey="nuevas" name="Nuevas" stroke="#22c55e" strokeWidth={2} dot={{ r: 3 }} />
+            <Line type="monotone" dataKey="total" name="Total" stroke="var(--color-info)" strokeWidth={2} dot={{ r: 3 }} />
+            <Line type="monotone" dataKey="nuevas" name="Nuevas" stroke="var(--color-success)" strokeWidth={2} dot={{ r: 3 }} />
           </LineChart>
         </ResponsiveContainer>
       </Card>
@@ -223,7 +223,7 @@ export default function MetricasPage() {
               <XAxis dataKey="mes" tick={{ fill: '#555555', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
               <YAxis tick={{ fill: '#555555', fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
               <Tooltip content={<NumTooltip />} />
-              <Bar dataKey="canceladas" name="Canceladas" fill="#ef4444" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="canceladas" name="Canceladas" fill="var(--color-danger)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </Card>
@@ -241,7 +241,7 @@ export default function MetricasPage() {
           <div className="grid grid-cols-3 gap-4">
             {[
               { label: 'DAU', value: uso.dau, color: 'var(--color-success)' },
-              { label: 'WAU', value: uso.wau, color: '#3b82f6' },
+              { label: 'WAU', value: uso.wau, color: 'var(--color-info)' },
               { label: 'MAU', value: uso.mau, color: 'var(--color-purple)' },
             ].map(({ label, value, color }) => (
               <Card key={label} style={{
@@ -256,8 +256,8 @@ export default function MetricasPage() {
 
           {/* DAU trend */}
           <Card style={{
-            background: 'linear-gradient(135deg, #f5c5180A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #f5c51805 100%)',
-            boxShadow: '0 0 30px #f5c51808, 0 1px 2px rgba(0,0,0,0.3)',
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 4%, transparent) 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, color-mix(in srgb, var(--color-accent) 2%, transparent) 100%)',
+            boxShadow: '0 0 30px color-mix(in srgb, var(--color-accent) 3%, transparent), 0 1px 2px rgba(0,0,0,0.3)',
           }}>
             <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-4">Usuarios activos diarios — Últimos 14 días</p>
             <ResponsiveContainer width="100%" height={200}>
@@ -266,7 +266,7 @@ export default function MetricasPage() {
                 <XAxis dataKey="fecha" tick={{ fill: '#555555', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => v.slice(5)} />
                 <YAxis tick={{ fill: '#555555', fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip content={<NumTooltip />} />
-                <Line type="monotone" dataKey="usuarios" name="Usuarios" stroke="#f5c518" strokeWidth={2} dot={{ r: 3, fill: 'var(--color-accent)' }} />
+                <Line type="monotone" dataKey="usuarios" name="Usuarios" stroke="var(--color-accent)" strokeWidth={2} dot={{ r: 3, fill: 'var(--color-accent)' }} />
               </LineChart>
             </ResponsiveContainer>
           </Card>

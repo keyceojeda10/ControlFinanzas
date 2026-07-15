@@ -15,7 +15,7 @@ const LIMITES = { starter: 1, basic: 1, growth: 2, standard: 5, professional: 10
 // Card de seccion premium (definida fuera para evitar perdida de focus)
 const SectionCard = ({ icon, title, color = 'var(--color-accent)', children, accent }) => (
   <div
-    className="rounded-[16px] p-4"
+    className="rounded-[20px] p-4"
     style={{
       background: `linear-gradient(135deg, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
       border: '1px solid var(--color-border)',
@@ -28,7 +28,7 @@ const SectionCard = ({ icon, title, color = 'var(--color-accent)', children, acc
         >
           <span className="w-3.5 h-3.5">{icon}</span>
         </div>
-        <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color }}>
+        <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color }}>
           {title}
         </p>
       </div>
@@ -141,13 +141,13 @@ function NuevoCobradorInner() {
     return (
       <div className="max-w-md mx-auto">
         <div
-          className="border border-[rgba(16,185,129,0.3)] rounded-[16px] p-6 text-center"
+          className="border border-[color-mix(in_srgb,var(--color-success)_30%,transparent)] rounded-[20px] p-6 text-center"
           style={{
-            background: 'linear-gradient(135deg, #22c55e0A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #22c55e05 100%)',
-            boxShadow: '0 0 30px #22c55e08, 0 1px 2px rgba(0,0,0,0.3)',
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 4%, transparent) 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, color-mix(in srgb, var(--color-success) 2%, transparent) 100%)',
+            boxShadow: '0 0 30px color-mix(in srgb, var(--color-success) 3%, transparent), 0 1px 2px rgba(0,0,0,0.3)',
           }}
         >
-          <div className="w-12 h-12 rounded-full bg-[rgba(16,185,129,0.12)] flex items-center justify-center mx-auto mb-4">
+          <div className="w-12 h-12 rounded-full bg-[color-mix(in_srgb,var(--color-success)_12%,transparent)] flex items-center justify-center mx-auto mb-4">
             <svg className="w-6 h-6 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
@@ -206,9 +206,9 @@ function NuevoCobradorInner() {
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
             style={{
-              background: 'linear-gradient(135deg, color-mix(in srgb, #a855f7 22%, transparent), color-mix(in srgb, #a855f7 12%, transparent))',
-              border: '1px solid color-mix(in srgb, #a855f7 30%, transparent)',
-              color: '#a855f7',
+              background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-purple) 22%, transparent), color-mix(in srgb, var(--color-purple) 12%, transparent))',
+              border: '1px solid color-mix(in srgb, var(--color-purple) 30%, transparent)',
+              color: 'var(--color-purple)',
             }}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -216,7 +216,7 @@ function NuevoCobradorInner() {
             </svg>
           </div>
           <div>
-            <h1 className="text-xl font-bold leading-tight" style={{ color: 'var(--color-text-primary)' }}>Nuevo cobrador</h1>
+            <h1 className="text-[25px] font-semibold leading-tight" style={{ color: 'var(--color-text-primary)' }}>Nuevo cobrador</h1>
             {restantes !== null && (
               <p className="text-[12px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
                 Puedes agregar{' '}
@@ -238,9 +238,9 @@ function NuevoCobradorInner() {
         )}
 
         {limitReached && puedeComprarExtra && (
-          <div className="bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.25)] rounded-[12px] p-4 space-y-3">
+          <div className="bg-[color-mix(in_srgb,var(--color-warning)_8%,transparent)] border border-[color-mix(in_srgb,var(--color-warning)_25%,transparent)] rounded-[12px] p-4 space-y-3">
             <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-full bg-[rgba(245,197,24,0.15)] flex items-center justify-center shrink-0">
+              <div className="w-9 h-9 rounded-full bg-[color-mix(in_srgb,var(--color-warning)_15%,transparent)] flex items-center justify-center shrink-0">
                 <svg className="w-5 h-5 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                     d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
@@ -272,7 +272,7 @@ function NuevoCobradorInner() {
         )}
 
         {limitReached && !puedeComprarExtra && (
-          <div className="bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.2)] rounded-[12px] p-4 text-center">
+          <div className="bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] border border-[color-mix(in_srgb,var(--color-danger)_20%,transparent)] rounded-[12px] p-4 text-center">
             <p className="text-sm text-[var(--color-danger)] font-medium">Límite alcanzado</p>
             <p className="text-xs text-[var(--color-text-muted)] mt-1">
               Tu plan no permite cobradores extra. Actualiza al plan Crecimiento, Profesional o Empresarial.
@@ -289,7 +289,7 @@ function NuevoCobradorInner() {
         {/* Datos personales */}
         <SectionCard
           title="Datos personales"
-          color="#a855f7"
+          color="var(--color-purple)"
           icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>}
         >
           <div className="space-y-3">
@@ -320,7 +320,7 @@ function NuevoCobradorInner() {
         {/* Acceso al sistema */}
         <SectionCard
           title="Acceso al sistema"
-          color="#22c55e"
+          color="var(--color-success)"
           icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>}
         >
           <div className="space-y-3">

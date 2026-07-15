@@ -47,9 +47,9 @@ const PAGE_TABS = [
 ]
 
 const TAB_COLORS = {
-  pendiente:  { color: '#f59e0b', icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
-  aprobado:   { color: '#22c55e', icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> },
-  rechazado:  { color: '#ef4444', icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg> },
+  pendiente:  { color: 'var(--color-warning)', icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
+  aprobado:   { color: 'var(--color-success)', icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> },
+  rechazado:  { color: 'var(--color-danger)', icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg> },
 }
 
 const getColombiaDateStr = () => {
@@ -187,7 +187,7 @@ export default function GastosPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Gastos</h1>
+          <h1 className="text-[25px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>Gastos</h1>
           <p className="text-[12px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
             Gastos de cobradores y control de capital
           </p>
@@ -196,10 +196,10 @@ export default function GastosPage() {
           <button
             type="button"
             onClick={() => setShowReportarGasto(true)}
-            className="flex items-center gap-1.5 h-9 px-3 rounded-[10px] text-xs font-semibold shrink-0 transition-all"
+            className="flex items-center gap-1.5 h-9 px-3 rounded-[12px] text-xs font-semibold shrink-0 transition-all"
             style={{
               background: 'var(--color-accent)',
-              color: '#0a0a0a',
+              color: 'var(--color-accent-text)',
             }}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -235,8 +235,8 @@ export default function GastosPage() {
         </div>
       )}
       {bannerGastosVisible && pageTab === 'capital' && (
-        <div className="rounded-[12px] px-3.5 py-2.5 flex items-start gap-2.5" style={{ background: 'color-mix(in srgb, #06b6d4 8%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, #06b6d4 20%, var(--color-border))' }}>
-          <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: '#06b6d4' }}>
+        <div className="rounded-[12px] px-3.5 py-2.5 flex items-start gap-2.5" style={{ background: 'color-mix(in srgb, var(--color-teal) 8%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-teal) 20%, var(--color-border))' }}>
+          <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--color-teal)' }}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75" />
           </svg>
           <p className="text-xs leading-relaxed flex-1" style={{ color: 'var(--color-text-secondary)' }}>
@@ -305,7 +305,7 @@ export default function GastosPage() {
 
           {/* Hero del total + filtros */}
           <div
-            className="rounded-[16px] px-4 py-4"
+            className="rounded-[20px] px-4 py-4 cf-card-shadow"
             style={{
               background: `linear-gradient(135deg, color-mix(in srgb, ${TAB_COLORS[estadoTab].color} 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
               border: `1px solid color-mix(in srgb, ${TAB_COLORS[estadoTab].color} 22%, var(--color-border))`,
@@ -314,7 +314,7 @@ export default function GastosPage() {
           >
             <div className="flex items-end justify-between gap-3 mb-3">
               <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: TAB_COLORS[estadoTab].color }}>
+                <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: TAB_COLORS[estadoTab].color }}>
                   Total {ESTADO_TABS.find(t => t.key === estadoTab)?.label.toLowerCase()}
                 </p>
                 <p
@@ -374,7 +374,7 @@ export default function GastosPage() {
           {loading ? (
             <div className="space-y-3">{[1, 2, 3].map(i => <SkeletonCard key={i} />)}</div>
           ) : gastos.length === 0 ? (
-            <div className="rounded-[16px] py-10 text-center"
+            <div className="rounded-[20px] py-10 text-center cf-card-shadow"
               style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
               <div className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center"
                 style={{ background: `color-mix(in srgb, ${TAB_COLORS[estadoTab].color} 15%, transparent)`, color: TAB_COLORS[estadoTab].color }}>
@@ -434,7 +434,7 @@ export default function GastosPage() {
                             </button>
                             <button type="button" disabled={procesando === g.id} onClick={() => handleAccion(g, 'aprobado')}
                               className="px-3 h-8 rounded-[8px] text-[11px] font-bold transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
-                              style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)', color: '#fff', boxShadow: '0 2px 8px rgba(34, 197, 94, 0.35)' }}>
+                              style={{ background: 'linear-gradient(135deg, var(--color-success), color-mix(in srgb, var(--color-success) 70%, black))', color: '#fff', boxShadow: '0 2px 8px color-mix(in srgb, var(--color-success) 35%, transparent)' }}>
                               Aprobar
                             </button>
                           </>

@@ -66,7 +66,7 @@ export default function WizardPerfil({ onSelect, plan = 'basic' }) {
 
         {error && (
           <div className="flex items-center gap-2 text-sm rounded-[12px] px-4 py-3 mb-4"
-            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#ef4444' }}>
+            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: 'var(--color-danger)' }}>
             <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
             </svg>
@@ -76,7 +76,7 @@ export default function WizardPerfil({ onSelect, plan = 'basic' }) {
 
         <div className="flex items-center gap-2 px-3 py-2.5 rounded-[10px] mb-4"
           style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.15)' }}>
-          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="#22c55e" viewBox="0 0 24 24">
+          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="var(--color-success)" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
@@ -106,7 +106,7 @@ export default function WizardPerfil({ onSelect, plan = 'basic' }) {
                       </p>
                       {key === 'growth' && (
                         <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
-                          style={{ background: 'rgba(139,92,246,0.15)', color: '#8b5cf6' }}>
+                          style={{ background: 'rgba(139,92,246,0.15)', color: 'var(--color-purple)' }}>
                           Recomendado
                         </span>
                       )}
@@ -116,11 +116,11 @@ export default function WizardPerfil({ onSelect, plan = 'basic' }) {
                       <span>{p.maxRutas} rutas</span>
                       <span>{p.maxClientes.toLocaleString()} clientes</span>
                     </div>
-                    <p className="text-[13px] font-bold mt-1" style={{ color: key === 'growth' ? '#8b5cf6' : 'var(--color-text-secondary)' }}>
+                    <p className="text-[13px] font-bold mt-1 font-mono-display" style={{ color: key === 'growth' ? 'var(--color-purple)' : 'var(--color-text-secondary)' }}>
                       {formatMoney(p.precio)}<span className="text-[10px] font-normal" style={{ color: 'var(--color-text-muted)' }}>/mes</span>
                     </p>
                   </div>
-                  <svg className="w-5 h-5 shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke={key === 'growth' ? '#8b5cf6' : 'var(--color-text-muted)'} viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke={key === 'growth' ? 'var(--color-purple)' : 'var(--color-text-muted)'} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
@@ -144,7 +144,7 @@ export default function WizardPerfil({ onSelect, plan = 'basic' }) {
     <div className="max-w-md mx-auto">
       <div className="text-center mb-7">
         <div className="w-14 h-14 rounded-[14px] flex items-center justify-center mx-auto mb-4"
-          style={{ background: 'rgba(245,197,24,0.12)', color: '#f5c518' }}>
+          style={{ background: 'rgba(245,197,24,0.12)', color: 'var(--color-accent)' }}>
           <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6}
               d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
@@ -167,7 +167,7 @@ export default function WizardPerfil({ onSelect, plan = 'basic' }) {
         >
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-[12px] flex items-center justify-center shrink-0"
-              style={{ background: 'rgba(245,197,24,0.15)', color: '#f5c518' }}>
+              style={{ background: 'rgba(245,197,24,0.15)', color: 'var(--color-accent)' }}>
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7}
                   d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
@@ -181,7 +181,7 @@ export default function WizardPerfil({ onSelect, plan = 'basic' }) {
                 Yo manejo mi cartera directamente. No tengo cobradores.
               </p>
             </div>
-            <svg className="w-5 h-5 shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke="#f5c518" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke="var(--color-accent)" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </div>
@@ -195,7 +195,7 @@ export default function WizardPerfil({ onSelect, plan = 'basic' }) {
         >
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-[12px] flex items-center justify-center shrink-0"
-              style={{ background: 'rgba(139,92,246,0.15)', color: '#8b5cf6' }}>
+              style={{ background: 'rgba(139,92,246,0.15)', color: 'var(--color-purple)' }}>
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7}
                   d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
@@ -209,7 +209,7 @@ export default function WizardPerfil({ onSelect, plan = 'basic' }) {
                 Tengo personas que cobran por mi. Necesito crear sus cuentas y asignarles rutas.
               </p>
             </div>
-            <svg className="w-5 h-5 shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke="#8b5cf6" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke="var(--color-purple)" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </div>

@@ -15,7 +15,7 @@ export default function PagoExitoso() {
 
   // Confetti simple
   useEffect(() => {
-    const colors = ['var(--color-success)', '#3b82f6', 'var(--color-warning)', 'var(--color-purple)', 'var(--color-danger)']
+    const colors = ['var(--color-success)', 'var(--color-info)', 'var(--color-warning)', 'var(--color-purple)', 'var(--color-danger)']
     const items = Array.from({ length: 40 }, (_, i) => ({
       id: i,
       left: Math.random() * 100,

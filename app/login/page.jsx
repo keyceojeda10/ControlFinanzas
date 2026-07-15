@@ -13,21 +13,21 @@ function ShowcasePanel() {
   return (
     <div
       className="cf-showcase hidden lg:flex flex-col justify-between relative overflow-hidden p-10 xl:p-14"
-      style={{ background: '#0d0d0d' }}
+      style={{ background: '#0c0d11' }}
     >
       {/* Status bar */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-[12px] font-mono" style={{ color: '#999' }}>
+          <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: '#666973' }}>
             EN VIVO · {today}
           </p>
-          <p className="text-[12px] mt-1" style={{ color: '#888' }}>
+          <p className="text-[12.5px] mt-1" style={{ color: '#9ea1ab' }}>
             Plataforma operando con normalidad
           </p>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#22c55e' }} />
-          <span className="text-[12px]" style={{ color: '#22c55e' }}>Sistemas activos</span>
+          <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#2fbe6a' }} />
+          <span className="text-[12px] font-semibold" style={{ color: '#2fbe6a' }}>Sistemas activos</span>
         </div>
       </div>
 
@@ -35,78 +35,78 @@ function ShowcasePanel() {
       <div className="relative flex-1 my-10 min-h-[420px]">
         {/* Card 1: Recaudo */}
         <div
-          className="absolute rounded-[12px] p-5"
+          className="absolute rounded-[20px] p-5"
           style={{
             top: '4%', left: '4%', width: '280px',
-            background: '#141414', border: '1px solid rgba(255,255,255,0.08)',
-            boxShadow: '0 12px 30px rgba(0,0,0,0.35)',
+            background: '#16171c', border: '1px solid rgba(255,255,255,0.08)',
+            boxShadow: '0 1px 2px rgba(20,20,30,.04), 0 10px 30px rgba(20,20,30,.12)',
             transform: 'rotate(-2deg)',
           }}
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] tracking-wider" style={{ color: '#888' }}>RECAUDO DE HOY</span>
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgba(34,197,94,0.12)', color: '#22c55e' }}>+12%</span>
+            <span className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: '#666973' }}>RECAUDO DE HOY</span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(47,190,106,0.12)', color: '#2fbe6a' }}>+12%</span>
           </div>
-          <p className="font-mono text-[28px] font-bold" style={{ color: '#f0f0f5' }}>
-            <span className="text-[12px]" style={{ color: '#888' }}>$</span>38<span style={{ color: '#888' }}>.420.000</span>
+          <p className="font-mono-display text-[28px] font-bold" style={{ color: '#f3f3f6' }}>
+            <span className="text-[12px]" style={{ color: '#666973' }}>$</span>38<span style={{ color: '#666973' }}>.420.000</span>
           </p>
           <div className="flex items-end gap-[3px] mt-3 h-[28px]">
             {[8,12,10,14,11,16,13,18,15,20,17,22,19,24,28,26].map((h,i) => (
-              <div key={i} className="flex-1 rounded-[1px]" style={{ height: `${h * 1.1}px`, background: i === 14 ? '#f5c518' : '#2a2a2a' }} />
+              <div key={i} className="flex-1 rounded-[1px]" style={{ height: `${h * 1.1}px`, background: i === 14 ? '#f5b824' : '#1e2027' }} />
             ))}
           </div>
         </div>
 
         {/* Card 2: Pago */}
         <div
-          className="absolute rounded-[12px] p-5"
+          className="absolute rounded-[20px] p-5"
           style={{
             top: '46%', right: '2%', width: '300px',
-            background: '#141414', border: '1px solid rgba(255,255,255,0.08)',
-            boxShadow: '0 12px 30px rgba(0,0,0,0.35)',
+            background: '#16171c', border: '1px solid rgba(255,255,255,0.08)',
+            boxShadow: '0 1px 2px rgba(20,20,30,.04), 0 10px 30px rgba(20,20,30,.12)',
             transform: 'rotate(1.5deg)',
           }}
         >
           <div className="flex items-center gap-2.5 mb-3">
-            <div className="w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0" style={{ background: 'linear-gradient(135deg,#60a5fa,#a78bfa)', color: '#fff' }}>MR</div>
+            <div className="w-9 h-9 rounded-[12px] flex items-center justify-center text-[12px] font-bold shrink-0" style={{ background: 'linear-gradient(135deg,#5b8df5,#9385f5)', color: '#fff' }}>MR</div>
             <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-medium" style={{ color: '#f0f0f5' }}>Marisol Ramírez</p>
-              <p className="text-[11px]" style={{ color: '#888' }}>Cuota 7/24 · PR-1209</p>
+              <p className="text-[15px] font-extrabold" style={{ color: '#f3f3f6' }}>Marisol Ramirez</p>
+              <p className="text-[11px] font-medium" style={{ color: '#666973' }}>Cuota 7/24 · PR-1209</p>
             </div>
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0" style={{ background: 'rgba(245,197,24,0.12)', color: '#f5c518' }}>Pagado</span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0" style={{ background: 'rgba(245,184,36,0.12)', color: '#f5b824' }}>Pagado</span>
           </div>
           <div className="grid grid-cols-3 gap-4 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
             <div>
-              <p className="text-[10px] font-mono" style={{ color: '#888' }}>MONTO</p>
-              <p className="text-[14px] font-mono mt-0.5" style={{ color: '#f0f0f5' }}>$ 850.000</p>
+              <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: '#666973' }}>MONTO</p>
+              <p className="font-mono-display text-[14px] mt-0.5" style={{ color: '#f3f3f6' }}>$ 850.000</p>
             </div>
             <div>
-              <p className="text-[10px] font-mono" style={{ color: '#888' }}>VIA</p>
-              <p className="text-[13px] mt-0.5" style={{ color: '#f0f0f5' }}>Nequi</p>
+              <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: '#666973' }}>VIA</p>
+              <p className="text-[13px] font-medium mt-0.5" style={{ color: '#f3f3f6' }}>Nequi</p>
             </div>
             <div>
-              <p className="text-[10px] font-mono" style={{ color: '#888' }}>HORA</p>
-              <p className="text-[13px] font-mono mt-0.5" style={{ color: '#f0f0f5' }}>14:32</p>
+              <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: '#666973' }}>HORA</p>
+              <p className="font-mono-display text-[13px] mt-0.5" style={{ color: '#f3f3f6' }}>14:32</p>
             </div>
           </div>
         </div>
 
         {/* Card 3: Ruta */}
         <div
-          className="absolute rounded-[12px] p-5"
+          className="absolute rounded-[20px] p-5"
           style={{
             bottom: '2%', left: '10%', width: '260px',
-            background: '#141414', border: '1px solid rgba(255,255,255,0.08)',
-            boxShadow: '0 12px 30px rgba(0,0,0,0.35)',
+            background: '#16171c', border: '1px solid rgba(255,255,255,0.08)',
+            boxShadow: '0 1px 2px rgba(20,20,30,.04), 0 10px 30px rgba(20,20,30,.12)',
             transform: 'rotate(-1deg)',
           }}
         >
-          <p className="text-[11px] tracking-wider mb-2.5" style={{ color: '#888' }}>RUTA HOY · DIEGO ORTIZ</p>
+          <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-2.5" style={{ color: '#666973' }}>RUTA HOY · DIEGO ORTIZ</p>
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center font-mono text-[13px] font-bold shrink-0" style={{ background: 'rgba(245,197,24,0.1)', color: '#f5c518' }}>8</div>
+            <div className="w-8 h-8 rounded-[10px] flex items-center justify-center font-mono-display text-[13px] font-bold shrink-0" style={{ background: 'rgba(245,184,36,0.1)', color: '#f5b824' }}>8</div>
             <div>
-              <p className="text-[13px]" style={{ color: '#f0f0f5' }}>8 visitas programadas</p>
-              <p className="text-[11px]" style={{ color: '#888' }}>Cra 43 → Belén → Estadio</p>
+              <p className="text-[13px] font-semibold" style={{ color: '#f3f3f6' }}>8 visitas programadas</p>
+              <p className="text-[11px]" style={{ color: '#666973' }}>Cra 43 → Belen → Estadio</p>
             </div>
           </div>
         </div>
@@ -115,13 +115,13 @@ function ShowcasePanel() {
       {/* Testimonial */}
       <div>
         <blockquote
-          className="text-[22px] xl:text-[26px] leading-snug italic"
-          style={{ color: '#ccc', fontFamily: "var(--font-serif-display), Georgia, serif" }}
+          className="text-[22px] xl:text-[26px] leading-snug"
+          style={{ color: '#9ea1ab', fontFamily: 'var(--font-space-grotesk)' }}
         >
           &ldquo;Pasamos de Excel a Control Finanzas y nuestra mora bajo del 14% al 5.2% en cuatro meses.&rdquo;
         </blockquote>
-        <p className="text-[12px] mt-4" style={{ color: '#888' }}>
-          — Ricardo Tovar · Préstamos del Valle · 800+ clientes activos
+        <p className="text-[12.5px] mt-4 font-medium" style={{ color: '#666973' }}>
+          Ricardo Tovar · Prestamos del Valle · 800+ clientes activos
         </p>
       </div>
     </div>
@@ -192,13 +192,13 @@ export default function LoginPage() {
 
           {/* Heading */}
           <h1
-            className="text-[32px] lg:text-[38px] leading-[1.1] font-normal mb-2"
-            style={{ color: 'var(--color-text-primary)', fontFamily: "var(--font-serif-display), Georgia, serif" }}
+            className="text-[28px] lg:text-[32px] leading-[1.1] font-semibold mb-2"
+            style={{ color: 'var(--color-text-primary)', fontFamily: 'var(--font-space-grotesk)' }}
           >
-            Bienvenido<br />de <em style={{ color: 'var(--color-accent)', fontStyle: 'italic' }}>vuelta</em>.
+            Bienvenido<br />de <span style={{ color: 'var(--color-accent)' }}>vuelta</span>.
           </h1>
-          <p className="text-[14px] mb-8" style={{ color: 'var(--color-text-muted)' }}>
-            La plataforma de cartera más usada por prestamistas en Colombia.
+          <p className="text-[13px] mb-8" style={{ color: 'var(--color-text-muted)' }}>
+            La plataforma de cartera para prestamistas en LATAM.
           </p>
 
           {/* Form */}
@@ -206,9 +206,9 @@ export default function LoginPage() {
             {error && (
               <div className="flex items-center gap-2.5 text-sm rounded-[10px] px-4 py-3"
                 style={{
-                  background: 'rgba(248,113,113,0.10)',
-                  border: '1px solid rgba(248,113,113,0.30)',
-                  color: '#f87171',
+                  background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)',
+                  color: 'var(--color-danger)',
                 }}
               >
                 <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">

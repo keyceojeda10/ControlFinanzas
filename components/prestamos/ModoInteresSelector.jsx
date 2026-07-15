@@ -97,7 +97,7 @@ export default function ModoInteresSelector({ modoInteres, onChange, calculo, mo
                       <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md"
                         style={{
                           background: m.key === 'fijo' ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.06)',
-                          color: m.key === 'fijo' ? '#22c55e' : 'var(--color-text-muted)',
+                          color: m.key === 'fijo' ? 'var(--color-success)' : 'var(--color-text-muted)',
                         }}
                       >{m.tag}</span>
                     )}

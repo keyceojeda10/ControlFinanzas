@@ -296,12 +296,12 @@ export default function BottomNav({ onOpenLucas, lucasOpen = false }) {
                   href={tab.href}
                   aria-current={active ? 'page' : undefined}
                   className="relative flex items-center justify-center w-12 h-12 rounded-[16px] transition-all active:scale-90"
-                  style={active ? { background: 'var(--color-text-primary)' } : {}}
+                  style={active ? { background: 'var(--color-accent-soft)' } : {}}
                 >
                   <svg
                     className="w-[22px] h-[22px]"
-                    fill={active && tab.iconFill ? 'var(--color-bg-base)' : 'none'}
-                    stroke={active && tab.iconFill ? 'none' : active ? 'var(--color-bg-base)' : 'var(--color-text-muted)'}
+                    fill={active && tab.iconFill ? 'var(--color-accent)' : 'none'}
+                    stroke={active && tab.iconFill ? 'none' : active ? 'var(--color-accent)' : 'var(--color-text-muted)'}
                     strokeWidth={1.5}
                     viewBox="0 0 24 24"
                   >
@@ -318,12 +318,12 @@ export default function BottomNav({ onOpenLucas, lucasOpen = false }) {
               aria-expanded={moreOpen}
               aria-label="Mas opciones"
               className="relative flex items-center justify-center w-12 h-12 rounded-[16px] transition-all active:scale-90"
-              style={(moreActive || moreOpen) ? { background: 'var(--color-text-primary)' } : {}}
+              style={(moreActive || moreOpen) ? { background: 'var(--color-accent-soft)' } : {}}
             >
               <svg
                 className="w-[22px] h-[22px]"
                 fill="none"
-                stroke={(moreActive || moreOpen) ? 'var(--color-bg-base)' : 'var(--color-text-muted)'}
+                stroke={(moreActive || moreOpen) ? 'var(--color-accent)' : 'var(--color-text-muted)'}
                 strokeWidth={1.5}
                 viewBox="0 0 24 24"
               >
@@ -334,7 +334,7 @@ export default function BottomNav({ onOpenLucas, lucasOpen = false }) {
 
           {/* Espaciador: reserva el lugar del FAB en la fila (el FAB real es un
               elemento fixed aparte, en z superior, para no saltar al abrir). */}
-          <div className="w-[56px] h-[56px] shrink-0" aria-hidden />
+          <div className="w-[60px] h-[60px] shrink-0" aria-hidden />
         </div>
       </div>
 
@@ -346,7 +346,7 @@ export default function BottomNav({ onOpenLucas, lucasOpen = false }) {
         onClick={() => { setFabOpen(v => !v); setMoreOpen(false) }}
         aria-label={fabOpen ? 'Cerrar menú' : 'Acciones rápidas'}
         aria-expanded={fabOpen}
-        className={`lg:hidden fixed right-4 w-[56px] h-[56px] rounded-full flex items-center justify-center active:scale-90 transition-[transform,background,opacity] cf-fab-button${fabOpen ? ' cf-fab-open' : ''}`}
+        className={`lg:hidden fixed right-4 w-[60px] h-[60px] rounded-full flex items-center justify-center active:scale-90 transition-[transform,background,opacity] cf-fab-button${fabOpen ? ' cf-fab-open' : ''}`}
         // z dinamico: cerrado en z-[45] (encima de la pill z-40 pero DEBAJO de
         // chat de Lucas, sheet "Mas" y demas overlays que viven en z-50, asi no
         // los tapa). Abierto sube a z-[55], por encima de su propio overlay

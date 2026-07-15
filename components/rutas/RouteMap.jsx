@@ -14,11 +14,11 @@ function createNumberedIcon(number) {
     className: '',
     html: `<div style="
       width:26px;height:26px;
-      background:#f5c518;
+      background:var(--color-accent);
       border:2px solid #0a0a0a;
       border-radius:50%;
       display:flex;align-items:center;justify-content:center;
-      font-size:11px;font-weight:800;color:#0a0a0a;
+      font-size:11px;font-weight:800;color:#3a2900;
       box-shadow:0 2px 6px rgba(0,0,0,0.4);
     ">${number}</div>`,
     iconSize: [26, 26],
@@ -28,8 +28,8 @@ function createNumberedIcon(number) {
 
 function createCobradorIcon(nombre, estaActivo, esReciente) {
   if (!L) return null
-  const bgColor = estaActivo || esReciente ? '#f5c518' : '#777777'
-  const borderColor = estaActivo || esReciente ? '#0a0a0a' : '#555555'
+  const bgColor = estaActivo || esReciente ? 'var(--color-accent)' : '#777777'
+  const borderColor = estaActivo || esReciente ? '#0a0a0a' : 'var(--color-text-secondary)'
   const pulseRing = estaActivo
     ? `<div style="
         position:absolute;inset:-6px;
@@ -54,10 +54,10 @@ function createCobradorIcon(nombre, estaActivo, esReciente) {
         border:3px solid ${borderColor};
         border-radius:50%;
         display:flex;align-items:center;justify-content:center;
-        font-size:15px;font-weight:900;color:#0a0a0a;
+        font-size:15px;font-weight:900;color:#3a2900;
         box-shadow:0 3px 10px rgba(0,0,0,0.5);
       ">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3a2900" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="3"/>
           <path d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 0 1 15 0z"/>
         </svg>
@@ -112,7 +112,7 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador, trail 
 
     conCoords.forEach((c, i) => {
       const marker = L.marker([c.latitud, c.longitud], { icon: createNumberedIcon(i + 1) })
-      marker.bindPopup(`<b style="color:#0a0a0a">${i + 1}. ${c.nombre}</b>${c.direccion ? `<br><span style="color:#666;font-size:11px">${c.direccion}</span>` : ''}`)
+      marker.bindPopup(`<b style="color:#0a0a0a">${i + 1}. ${c.nombre}</b>${c.direccion ? `<br><span style="color:var(--color-text-secondary);font-size:11px">${c.direccion}</span>` : ''}`)
       marker.addTo(map)
       bounds.push([c.latitud, c.longitud])
     })
@@ -120,7 +120,7 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador, trail 
     ;(cobrosGeoHoy ?? []).forEach((p) => {
       if (p.latitud == null || p.longitud == null) return
       const d = p.distanciaMetros
-      const color = d == null || d <= 50 ? '#22c55e' : d <= 200 ? '#f97316' : '#ef4444'
+      const color = d == null || d <= 50 ? 'var(--color-success)' : d <= 200 ? '#f97316' : 'var(--color-danger)'
       L.circleMarker([p.latitud, p.longitud], {
         radius: 7,
         fillColor: color,
@@ -150,12 +150,12 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador, trail 
       })
 
       const estadoLabel = activo ? 'En linea' : reciente ? 'Reciente' : 'Desconectado'
-      const estadoColor = activo ? '#22c55e' : reciente ? '#f5c518' : '#999'
+      const estadoColor = activo ? 'var(--color-success)' : reciente ? 'var(--color-accent)' : 'var(--color-text-muted)'
       marker.bindPopup(`
         <div style="min-width:120px">
           <b style="color:#0a0a0a;font-size:13px">${cobrador.nombre}</b>
           <br><span style="color:${estadoColor};font-size:11px;font-weight:600">${estadoLabel}</span>
-          ${cobrador.ubicacionUpdatedAt ? `<br><span style="color:#888;font-size:10px">${tiempoDesde(cobrador.ubicacionUpdatedAt)}</span>` : ''}
+          ${cobrador.ubicacionUpdatedAt ? `<br><span style="color:var(--color-text-muted);font-size:10px">${tiempoDesde(cobrador.ubicacionUpdatedAt)}</span>` : ''}
         </div>
       `)
       marker.addTo(map)
@@ -166,7 +166,7 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador, trail 
     if (trail.length >= 2) {
       const trailLine = L.polyline(
         trail.map((p) => [p.latitud, p.longitud]),
-        { color: '#f5c518', weight: 3, opacity: 0.6, lineJoin: 'round', lineCap: 'round' }
+        { color: 'var(--color-accent)', weight: 3, opacity: 0.6, lineJoin: 'round', lineCap: 'round' }
       )
       trailLine.addTo(map)
       trailLayerRef.current = trailLine
@@ -174,7 +174,7 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador, trail 
       if (trail.length >= 1) {
         const start = trail[0]
         L.circleMarker([start.latitud, start.longitud], {
-          radius: 5, fillColor: '#22c55e', color: '#0a0a0a', weight: 2, fillOpacity: 0.9,
+          radius: 5, fillColor: 'var(--color-success)', color: '#0a0a0a', weight: 2, fillOpacity: 0.9,
         }).bindPopup(`<span style="color:#0a0a0a;font-size:11px">Inicio del recorrido</span>`).addTo(map)
       }
     }
@@ -182,7 +182,7 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador, trail 
     if (conCoords.length >= 2) {
       L.polyline(
         conCoords.map((c) => [c.latitud, c.longitud]),
-        { color: '#555', weight: 2, opacity: 0.4, dashArray: '6, 8' }
+        { color: 'var(--color-text-secondary)', weight: 2, opacity: 0.4, dashArray: '6, 8' }
       ).addTo(map)
     }
 
@@ -210,7 +210,7 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador, trail 
     if (trail.length >= 2) {
       const trailLine = L.polyline(
         trail.map((p) => [p.latitud, p.longitud]),
-        { color: '#f5c518', weight: 3, opacity: 0.6, lineJoin: 'round', lineCap: 'round' }
+        { color: 'var(--color-accent)', weight: 3, opacity: 0.6, lineJoin: 'round', lineCap: 'round' }
       )
       trailLine.addTo(mapInstanceRef.current)
       trailLayerRef.current = trailLine
@@ -229,12 +229,12 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador, trail 
     cobradorMarkerRef.current.setIcon(createCobradorIcon(cobrador.nombre, activo, reciente))
 
     const estadoLabel = activo ? 'En linea' : reciente ? 'Reciente' : 'Desconectado'
-    const estadoColor = activo ? '#22c55e' : reciente ? '#f5c518' : '#999'
+    const estadoColor = activo ? 'var(--color-success)' : reciente ? 'var(--color-accent)' : 'var(--color-text-muted)'
     cobradorMarkerRef.current.setPopupContent(`
       <div style="min-width:120px">
         <b style="color:#0a0a0a;font-size:13px">${cobrador.nombre}</b>
         <br><span style="color:${estadoColor};font-size:11px;font-weight:600">${estadoLabel}</span>
-        ${cobrador.ubicacionUpdatedAt ? `<br><span style="color:#888;font-size:10px">${tiempoDesde(cobrador.ubicacionUpdatedAt)}</span>` : ''}
+        ${cobrador.ubicacionUpdatedAt ? `<br><span style="color:var(--color-text-muted);font-size:10px">${tiempoDesde(cobrador.ubicacionUpdatedAt)}</span>` : ''}
       </div>
     `)
   }, [cobrador?.latitud, cobrador?.longitud, cobrador?.ubicacionUpdatedAt])
@@ -257,13 +257,13 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador, trail 
       <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
         {conCoords.length} clientes con ubicacion
         {cobrosGeoHoy?.length > 0 && (
-          <> · <span style={{ color: '#22c55e' }}>●</span> {cobrosGeoHoy.length} cobro{cobrosGeoHoy.length === 1 ? '' : 's'} de hoy</>
+          <> · <span style={{ color: 'var(--color-success)' }}>●</span> {cobrosGeoHoy.length} cobro{cobrosGeoHoy.length === 1 ? '' : 's'} de hoy</>
         )}
         {cobradorConCoords && (
-          <> · <span style={{ color: '#f5c518' }}>●</span> Cobrador en vivo</>
+          <> · <span style={{ color: 'var(--color-accent)' }}>●</span> Cobrador en vivo</>
         )}
         {trail.length >= 2 && (
-          <> · <span style={{ color: '#f5c518' }}>―</span> Recorrido del dia</>
+          <> · <span style={{ color: 'var(--color-accent)' }}>―</span> Recorrido del dia</>
         )}
       </p>
 

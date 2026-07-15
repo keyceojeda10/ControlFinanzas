@@ -150,7 +150,7 @@ export default function AdminLayout({ children }) {
           <Image src="/logo-full.svg" alt="Control Finanzas" width={150} height={38} priority />
           <div className="flex items-center gap-2 mt-2">
             <Badge variant="purple">SUPERADMIN</Badge>
-            <span className="text-[10px] text-[#555555]">Admin</span>
+            <span className="text-[10px] text-[var(--color-text-secondary)]">Admin</span>
           </div>
         </div>
 
@@ -164,8 +164,8 @@ export default function AdminLayout({ children }) {
                 className={[
                   'flex items-center gap-3 px-3 py-2.5 rounded-[12px] text-sm font-medium transition-all',
                   active
-                    ? 'bg-[rgba(245,197,24,0.12)] text-[#f5c518]'
-                    : 'text-[#888888] hover:text-[white] hover:bg-[#1a1a1a]',
+                    ? 'bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-[var(--color-accent)]'
+                    : 'text-[var(--color-text-muted)] hover:text-[white] hover:bg-[#1a1a1a]',
                 ].join(' ')}
               >
                 {icon}
@@ -178,7 +178,7 @@ export default function AdminLayout({ children }) {
         <div className="px-3 py-4 border-t border-[#2a2a2a]">
           <button
             onClick={() => signOut({ callbackUrl: '/login' })}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-[12px] text-sm font-medium text-[#888888] hover:text-[var(--color-danger)] hover:bg-[rgba(239,68,68,0.08)] transition-all w-full"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-[12px] text-sm font-medium text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[rgba(239,68,68,0.08)] transition-all w-full"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -198,7 +198,7 @@ export default function AdminLayout({ children }) {
             <Badge variant="purple">SUPERADMIN</Badge>
             <button
               onClick={() => signOut({ callbackUrl: '/login' })}
-              className="p-1.5 rounded-[8px] text-[#888888] hover:text-[var(--color-danger)] hover:bg-[rgba(239,68,68,0.08)] transition-all"
+              className="p-1.5 rounded-[8px] text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[rgba(239,68,68,0.08)] transition-all"
               title="Cerrar sesión"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -232,8 +232,8 @@ export default function AdminLayout({ children }) {
                       className={[
                         'flex flex-col items-center gap-1 py-3 px-1 rounded-[12px] text-[11px] font-medium transition-all',
                         active
-                          ? 'bg-[rgba(245,197,24,0.12)] text-[#f5c518]'
-                          : 'text-[#888888] hover:text-white hover:bg-[#1a1a1a]',
+                          ? 'bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-[var(--color-accent)]'
+                          : 'text-[var(--color-text-muted)] hover:text-white hover:bg-[#1a1a1a]',
                       ].join(' ')}
                     >
                       {icon}
@@ -256,7 +256,7 @@ export default function AdminLayout({ children }) {
                 href={href}
                 className={[
                   'flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-all',
-                  active ? 'text-[#f5c518]' : 'text-[#555555]',
+                  active ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-secondary)]',
                 ].join(' ')}
               >
                 {icon}
@@ -269,7 +269,7 @@ export default function AdminLayout({ children }) {
             onClick={() => setMoreOpen(v => !v)}
             className={[
               'flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-all',
-              moreActive || moreOpen ? 'text-[#f5c518]' : 'text-[#555555]',
+              moreActive || moreOpen ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-secondary)]',
             ].join(' ')}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -203,7 +203,7 @@ export default function DetalleLineaPage({ params }) {
 
           {(linea.interesesPendientes || 0) > 0 && (
             <div
-              className="flex items-center justify-between text-[11px] px-2.5 py-1.5 rounded-[10px] mb-2"
+              className="flex items-center justify-between text-[11px] px-2.5 py-1.5 rounded-[12px] mb-2"
               style={{ background: `color-mix(in srgb, var(--color-warning) 12%, transparent)`, border: `1px solid color-mix(in srgb, var(--color-warning) 20%, transparent)` }}
             >
               <span style={{ color: METAL.sub }}>Intereses pendientes</span>
@@ -262,7 +262,7 @@ export default function DetalleLineaPage({ params }) {
               <button
                 onClick={() => setModalEstado('congelada')}
                 className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl text-[11px] font-medium transition-colors"
-                style={{ background: 'var(--color-warning)15', color: 'var(--color-warning)', border: '1px solid var(--color-warning)30' }}
+                style={{ background: 'color-mix(in srgb, var(--color-warning) 15%, transparent)', color: 'var(--color-warning)', border: '1px solid color-mix(in srgb, var(--color-warning) 30%, transparent)' }}
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 Congelar
@@ -282,7 +282,7 @@ export default function DetalleLineaPage({ params }) {
               <button
                 onClick={() => setModalEstado('activa')}
                 className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl text-[11px] font-medium transition-colors"
-                style={{ background: 'var(--color-accent)15', color: 'var(--color-accent)', border: '1px solid var(--color-accent)30' }}
+                style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)', color: 'var(--color-accent)', border: '1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)' }}
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 Reactivar
@@ -301,7 +301,7 @@ export default function DetalleLineaPage({ params }) {
             <button
               onClick={() => setModalEliminarLinea(true)}
               className="flex items-center justify-center gap-1.5 h-8 px-3 rounded-xl text-[11px] font-medium transition-colors"
-              style={{ background: 'var(--color-danger)15', color: 'var(--color-danger)', border: '1px solid var(--color-danger)30' }}
+              style={{ background: 'color-mix(in srgb, var(--color-danger) 15%, transparent)', color: 'var(--color-danger)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)' }}
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
               Eliminar
@@ -312,7 +312,7 @@ export default function DetalleLineaPage({ params }) {
 
       {/* Mensaje de estado congelada/cerrada */}
       {linea.estado === 'congelada' && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl mb-4 text-[11px]" style={{ background: 'var(--color-warning)10', border: '1px solid var(--color-warning)25', color: 'var(--color-warning)' }}>
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl mb-4 text-[11px]" style={{ background: 'color-mix(in srgb, var(--color-warning) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--color-warning) 25%, transparent)', color: 'var(--color-warning)' }}>
           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
           Línea congelada: no se permiten nuevos desembolsos, pero sí pagos.
         </div>
@@ -327,7 +327,7 @@ export default function DetalleLineaPage({ params }) {
       {/* Cortes (estados de cuenta) */}
       {linea.cortesLinea?.length > 0 && (
         <div className="mb-5">
-          <h2 className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-1">Estados de cuenta</h2>
+          <h2 className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-1" style={{ color: 'var(--color-text-secondary)' }}>Estados de cuenta</h2>
           <p className="text-[10px] text-[var(--color-text-muted)] mb-2 leading-relaxed">Resumen de cada mes: lo que debia + lo que pidio + intereses - lo que pago = saldo nuevo.</p>
           <div className="space-y-2">
             {linea.cortesLinea.map((corte, idx) => (
@@ -343,7 +343,7 @@ export default function DetalleLineaPage({ params }) {
                     {esOwner && idx === 0 && (
                       <button
                         onClick={() => setEliminarCorte(corte)}
-                        className="w-5 h-5 rounded-md flex items-center justify-center transition-colors hover:bg-[var(--color-danger)]20"
+                        className="w-5 h-5 rounded-md flex items-center justify-center transition-colors hover:bg-[color-mix(in_srgb,var(--color-danger)_20%,transparent)]"
                         title="Eliminar este corte"
                       >
                         <svg className="w-3 h-3" style={{ color: 'var(--color-danger)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -371,7 +371,7 @@ export default function DetalleLineaPage({ params }) {
 
       {/* Movimientos */}
       <div>
-        <h2 className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-2">
+        <h2 className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-2" style={{ color: 'var(--color-text-secondary)' }}>
           Movimientos ({movimientos.length})
         </h2>
         {movimientos.length === 0 ? (
@@ -423,7 +423,7 @@ export default function DetalleLineaPage({ params }) {
                 {esOwner && esHoy(mov.createdAt) && (
                   <button
                     onClick={() => setEliminarMov(mov)}
-                    className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors hover:bg-[var(--color-danger)]15"
+                    className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors hover:bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)]"
                     title="Eliminar"
                   >
                     <svg className="w-3.5 h-3.5" style={{ color: 'var(--color-danger)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -532,7 +532,7 @@ function ModalDesembolso({ lineaId, cupoDisponible, onClose, onSuccess }) {
   return (
     <div className="fixed inset-0 z-[10001] flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full sm:max-w-md bg-[var(--color-bg-surface)] rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl">
+      <div className="relative w-full sm:max-w-md bg-[var(--color-bg-surface)] rounded-t-[20px] sm:rounded-[20px] p-5 shadow-2xl">
         <h3 className="text-sm font-bold text-[var(--color-text-primary)] mb-1">Registrar desembolso</h3>
         <p className="text-[11px] text-[var(--color-text-muted)] mb-3">Registra el dinero que el cliente esta pidiendo de su cupo. Disponible: {formatMoney(cupoDisponible)}</p>
 
@@ -592,7 +592,7 @@ function ModalPago({ lineaId, saldoTotal, onClose, onSuccess }) {
   return (
     <div className="fixed inset-0 z-[10001] flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full sm:max-w-md bg-[var(--color-bg-surface)] rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl">
+      <div className="relative w-full sm:max-w-md bg-[var(--color-bg-surface)] rounded-t-[20px] sm:rounded-[20px] p-5 shadow-2xl">
         <h3 className="text-sm font-bold text-[var(--color-text-primary)] mb-1">Registrar pago</h3>
         <p className="text-[11px] text-[var(--color-text-muted)] mb-3">El pago primero cubre intereses pendientes y el resto va a capital, liberando cupo. Saldo actual: {formatMoney(saldoTotal)}</p>
 
@@ -664,7 +664,7 @@ function ModalCorte({ lineaId, onClose, onSuccess }) {
   return (
     <div className="fixed inset-0 z-[10001] flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full sm:max-w-md bg-[var(--color-bg-surface)] rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl">
+      <div className="relative w-full sm:max-w-md bg-[var(--color-bg-surface)] rounded-t-[20px] sm:rounded-[20px] p-5 shadow-2xl">
         <h3 className="text-sm font-bold text-[var(--color-text-primary)] mb-2">Generar corte mensual</h3>
         <p className="text-xs text-[var(--color-text-muted)] mb-4">
           Genera el estado de cuenta de este mes. Calcula cuanto debe el cliente sumando lo que ya debia, mas lo que pidio este mes, mas los intereses, menos lo que ha pagado. El resultado es el saldo que rota al siguiente mes.
@@ -731,7 +731,7 @@ function ModalCambiarEstado({ lineaId, nuevoEstado, estadoActual, onClose, onSuc
   return (
     <div className="fixed inset-0 z-[10001] flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full sm:max-w-md bg-[var(--color-bg-surface)] rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl">
+      <div className="relative w-full sm:max-w-md bg-[var(--color-bg-surface)] rounded-t-[20px] sm:rounded-[20px] p-5 shadow-2xl">
         <h3 className="text-sm font-bold text-[var(--color-text-primary)] mb-2">{msg.titulo}</h3>
         <p className="text-xs text-[var(--color-text-muted)] mb-4">{msg.texto}</p>
 
@@ -780,7 +780,7 @@ function ModalEliminarLinea({ lineaId, nombre, onClose, onSuccess }) {
   return (
     <div className="fixed inset-0 z-[10001] flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full sm:max-w-md bg-[var(--color-bg-surface)] rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl">
+      <div className="relative w-full sm:max-w-md bg-[var(--color-bg-surface)] rounded-t-[20px] sm:rounded-[20px] p-5 shadow-2xl">
         <h3 className="text-sm font-bold text-[var(--color-text-primary)] mb-2">Eliminar línea de crédito</h3>
         <p className="text-xs text-[var(--color-text-muted)] mb-4">
           Se eliminará la línea de crédito de <strong className="text-[var(--color-text-primary)]">{nombre}</strong>. Esta acción no se puede deshacer.
@@ -828,7 +828,7 @@ function ModalEliminarMovimiento({ lineaId, mov, onClose, onSuccess }) {
   return (
     <div className="fixed inset-0 z-[10001] flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full sm:max-w-md bg-[var(--color-bg-surface)] rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl">
+      <div className="relative w-full sm:max-w-md bg-[var(--color-bg-surface)] rounded-t-[20px] sm:rounded-[20px] p-5 shadow-2xl">
         <h3 className="text-sm font-bold text-[var(--color-text-primary)] mb-2">
           Eliminar {esTipo ? 'desembolso' : 'pago'}
         </h3>
@@ -876,7 +876,7 @@ function ModalEliminarCorte({ lineaId, corte, onClose, onSuccess }) {
   return (
     <div className="fixed inset-0 z-[10001] flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full sm:max-w-md bg-[var(--color-bg-surface)] rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl">
+      <div className="relative w-full sm:max-w-md bg-[var(--color-bg-surface)] rounded-t-[20px] sm:rounded-[20px] p-5 shadow-2xl">
         <h3 className="text-sm font-bold text-[var(--color-text-primary)] mb-2">Eliminar corte</h3>
         <p className="text-xs text-[var(--color-text-muted)] mb-1">
           Se eliminara el corte del periodo <strong className="text-[var(--color-text-primary)]">{corte.periodo}</strong>.

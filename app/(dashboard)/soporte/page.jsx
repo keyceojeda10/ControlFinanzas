@@ -29,10 +29,10 @@ const ESTADO_BADGE = {
 }
 
 const ESTADO_COLOR = {
-  abierto: '#f59e0b',
-  en_progreso: '#3b82f6',
-  resuelto: '#22c55e',
-  cerrado: '#64748b',
+  abierto: 'var(--color-warning)',
+  en_progreso: 'var(--color-info)',
+  resuelto: 'var(--color-success)',
+  cerrado: 'var(--color-text-secondary)',
 }
 
 export default function SoportePage() {
@@ -70,7 +70,7 @@ function SoportePageInner() {
             </svg>
           </div>
           <div>
-            <h1 className="text-xl font-bold leading-tight" style={{ color: 'var(--color-text-primary)' }}>Soporte</h1>
+            <h1 className="text-[25px] font-semibold leading-tight" style={{ color: 'var(--color-text-primary)' }}>Soporte</h1>
             <p className="text-[12px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Crea un ticket o revisa el estado de tus solicitudes</p>
           </div>
         </div>
@@ -86,7 +86,7 @@ function SoportePageInner() {
 
       {/* Card WhatsApp soporte premium */}
       <div
-        className="rounded-[16px] p-4 mb-5 flex flex-col sm:flex-row items-center gap-3 justify-between"
+        className="rounded-[20px] p-4 mb-5 flex flex-col sm:flex-row items-center gap-3 justify-between"
         style={{
           background: 'linear-gradient(135deg, rgba(37, 211, 102, 0.10) 0%, var(--color-bg-card) 60%, var(--color-bg-card) 100%)',
           border: '1px solid color-mix(in srgb, #25D366 22%, var(--color-border))',
@@ -131,7 +131,7 @@ function SoportePageInner() {
         </div>
       ) : tickets.length === 0 ? (
         <div
-          className="rounded-[16px] py-12 text-center"
+          className="rounded-[20px] cf-card-shadow py-12 text-center"
           style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
         >
           <div

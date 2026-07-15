@@ -32,7 +32,7 @@ const hace = (date) => {
 const colorActividad = (date) => {
   if (!date) return 'var(--color-text-muted)'
   const horas = (Date.now() - new Date(date).getTime()) / (1000 * 60 * 60)
-  if (horas <= 24) return '#22c55e'
+  if (horas <= 24) return 'var(--color-success)'
   if (horas <= 168) return '#f59e0b'
   return 'var(--color-danger)'
 }
@@ -90,32 +90,32 @@ export default function SuscripcionesPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-[white]">Suscripciones</h1>
+        <h1 className="text-[25px] font-semibold text-[white]">Suscripciones</h1>
         <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Gestión de suscripciones de la plataforma</p>
       </div>
 
       {/* Resumen */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="border border-[var(--color-border)] rounded-[12px] px-3 py-3 text-center"
-          style={{ background: 'linear-gradient(135deg, #22c55e0A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #22c55e05 100%)' }}
+        <div className="border border-[var(--color-border)] rounded-[20px] px-3 py-3 text-center"
+          style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 4%, transparent) 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, color-mix(in srgb, var(--color-success) 2%, transparent) 100%)' }}
         >
           <p className="text-[10px] text-[var(--color-text-muted)]">Activas</p>
           <p className="text-lg font-bold text-[var(--color-success)]">{activas}</p>
         </div>
-        <div className="border border-[var(--color-border)] rounded-[12px] px-3 py-3 text-center"
+        <div className="border border-[var(--color-border)] rounded-[20px] px-3 py-3 text-center"
           style={{ background: 'linear-gradient(135deg, #f59e0b0A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #f59e0b05 100%)' }}
         >
           <p className="text-[10px] text-[var(--color-text-muted)]">Por vencer</p>
           <p className="text-lg font-bold text-[var(--color-warning)]">{porVencer}</p>
         </div>
-        <div className="border border-[var(--color-border)] rounded-[12px] px-3 py-3 text-center"
-          style={{ background: 'linear-gradient(135deg, #3b82f60A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #3b82f605 100%)' }}
+        <div className="border border-[var(--color-border)] rounded-[20px] px-3 py-3 text-center"
+          style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-info) 4%, transparent) 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, color-mix(in srgb, var(--color-info) 2%, transparent) 100%)' }}
         >
           <p className="text-[10px] text-[var(--color-text-muted)]">Trials por vencer</p>
           <p className="text-lg font-bold text-[var(--color-info)]">{trialsPorVencer}</p>
         </div>
-        <div className="border border-[var(--color-border)] rounded-[12px] px-3 py-3 text-center"
-          style={{ background: 'linear-gradient(135deg, #ef44440A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #ef444405 100%)' }}
+        <div className="border border-[var(--color-border)] rounded-[20px] px-3 py-3 text-center"
+          style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-danger) 4%, transparent) 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, color-mix(in srgb, var(--color-danger) 2%, transparent) 100%)' }}
         >
           <p className="text-[10px] text-[var(--color-text-muted)]">Vencidas</p>
           <p className="text-lg font-bold text-[var(--color-danger)]">{vencidas}</p>
@@ -143,12 +143,12 @@ export default function SuscripcionesPage() {
       {tab === 'trialPorVencer' && subs.length > 0 && (
         <div className="rounded-[12px] p-3 flex items-start gap-3"
           style={{
-            background: 'linear-gradient(135deg, color-mix(in srgb, #3b82f6 10%, transparent), color-mix(in srgb, #3b82f6 4%, transparent))',
-            border: '1px solid color-mix(in srgb, #3b82f6 25%, transparent)',
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-info) 10%, transparent), color-mix(in srgb, var(--color-info) 4%, transparent))',
+            border: '1px solid color-mix(in srgb, var(--color-info) 25%, transparent)',
           }}
         >
           <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"
-            style={{ color: '#3b82f6' }}
+            style={{ color: 'var(--color-info)' }}
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
           </svg>
@@ -188,15 +188,15 @@ export default function SuscripcionesPage() {
                 <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
                   {s.esTrial ? (
                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-[4px]"
-                      style={{ background: 'rgba(59,130,246,0.15)', color: '#3b82f6' }}
+                      style={{ background: 'rgba(59,130,246,0.15)', color: 'var(--color-info)' }}
                     >
                       TRIAL
                     </span>
                   ) : (
                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-[4px]"
-                      style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}
+                      style={{ background: 'rgba(34,197,94,0.15)', color: 'var(--color-success)' }}
                     >
-                      PAGADO · {formatMoney(s.montoCOP)}
+                      PAGADO · <span className="font-mono-display">{formatMoney(s.montoCOP)}</span>
                     </span>
                   )}
                   {s.ownerEmail && (
@@ -231,7 +231,7 @@ export default function SuscripcionesPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 px-2 py-1 rounded-[6px] text-[10px] font-medium transition-all"
-                    style={{ background: 'rgba(34,197,94,0.12)', color: '#22c55e' }}
+                    style={{ background: 'rgba(34,197,94,0.12)', color: 'var(--color-success)' }}
                     title="Contactar por WhatsApp"
                   >
                     <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">

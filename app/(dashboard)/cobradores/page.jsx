@@ -185,15 +185,15 @@ function CobradoresPageInner() {
   if (!authLoading && ['starter', 'basic'].includes(plan)) {
     return (
       <div className="max-w-xl mx-auto">
-        <h1 className="text-xl font-bold text-[var(--color-text-primary)] mb-6">Cobradores</h1>
+        <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)] mb-6">Cobradores</h1>
         <div
-          className="border border-[var(--color-border)] rounded-[16px] p-8 text-center"
+          className="border border-[var(--color-border)] rounded-[20px] p-8 text-center cf-card-shadow"
           style={{
-            background: 'linear-gradient(135deg, #f59e0b0A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #f59e0b05 100%)',
-            boxShadow: '0 0 30px #f59e0b08, 0 1px 2px rgba(0,0,0,0.3)',
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-warning) 4%, transparent) 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, color-mix(in srgb, var(--color-warning) 2%, transparent) 100%)',
+            boxShadow: '0 0 30px color-mix(in srgb, var(--color-warning) 3%, transparent), 0 1px 2px rgba(0,0,0,0.3)',
           }}
         >
-          <div className="w-14 h-14 rounded-full bg-[rgba(245,158,11,0.12)] flex items-center justify-center mx-auto mb-4">
+          <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'color-mix(in srgb, var(--color-warning) 12%, transparent)' }}>
             <svg className="w-7 h-7 text-[var(--color-warning)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                 d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -217,7 +217,7 @@ function CobradoresPageInner() {
     <div className="max-w-3xl lg:max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Cobradores</h1>
+          <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Cobradores</h1>
           <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
             {loading ? '…' : `${cobradores.length} cobrador${cobradores.length !== 1 ? 'es' : ''}`}
           </p>
@@ -290,7 +290,7 @@ function CobradoresPageInner() {
                 onClick={() => setModoOrdenar(t.key)}
                 className="px-3 py-1.5 rounded-[8px] text-xs font-medium transition-all"
                 style={modoOrdenar === t.key
-                  ? { background: 'var(--color-accent)', color: '#000' }
+                  ? { background: 'var(--color-accent)', color: 'var(--color-accent-text)' }
                   : { color: 'var(--color-text-muted)' }}
               >
                 {t.label}

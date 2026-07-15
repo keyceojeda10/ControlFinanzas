@@ -206,7 +206,7 @@ export default function ModificarPlazo({
               className={[
                 'h-auto py-2.5 px-3 rounded-[10px] border text-left transition-all cursor-pointer',
                 modo === 'extender'
-                  ? 'bg-[rgba(245,197,24,0.1)] border-[#f5c518]'
+                  ? 'bg-[rgba(245,197,24,0.1)] border-[var(--color-accent)]'
                   : 'bg-transparent border-[var(--color-border)] hover:bg-[var(--color-bg-surface)]',
               ].join(' ')}
             >

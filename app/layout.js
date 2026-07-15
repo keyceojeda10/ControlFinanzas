@@ -1,4 +1,4 @@
-import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
+import { Manrope, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import SessionProvider from "@/components/providers/SessionProvider";
 import OfflineProvider from "@/components/providers/OfflineProvider";
@@ -12,24 +12,18 @@ import Script from "next/script";
 // cuando la hoja de estilos aun no cargo (offline / cache miss).
 // Default de marca: claro. Solo quien guardo una preferencia explicita
 // (dark/system) la conserva.
-const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('cf-theme')||'light';var r=t==='system'?(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'):t;var h=document.documentElement;h.setAttribute('data-theme',r);h.style.colorScheme=r;var bg=r==='light'?'#f5f7fb':'#060609';var fg=r==='light'?'#1a1a2e':'#f0f0f5';h.style.backgroundColor=bg;h.style.color=fg;if(document.body){document.body.style.backgroundColor=bg;document.body.style.color=fg;}var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',bg);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();`;
+const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('cf-theme')||'light';var r=t==='system'?(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'):t;var h=document.documentElement;h.setAttribute('data-theme',r);h.style.colorScheme=r;var bg=r==='light'?'#f4f4f1':'#0c0d11';var fg=r==='light'?'#15161a':'#f3f3f6';h.style.backgroundColor=bg;h.style.color=fg;if(document.body){document.body.style.backgroundColor=bg;document.body.style.color=fg;}var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',bg);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();`;
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-mono-display",
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
-});
-
-const instrumentSerif = Instrument_Serif({
-  variable: "--font-serif-display",
-  subsets: ["latin"],
-  weight: ["400"],
-  style: ["normal", "italic"],
+  weight: ["400", "500", "600", "700"],
 });
 
 const SITE_URL = process.env.NEXTAUTH_URL || 'https://app.control-finanzas.com'
@@ -82,8 +76,8 @@ export const metadata = {
 
 export const viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f5f7fb' },
-    { media: '(prefers-color-scheme: dark)', color: '#060609' },
+    { media: '(prefers-color-scheme: light)', color: '#f4f4f1' },
+    { media: '(prefers-color-scheme: dark)', color: '#0c0d11' },
   ],
   // Fija el zoom para evitar el auto-zoom del navegador movil:
   // - iOS Safari hace zoom al enfocar inputs con font-size < 16px.
@@ -103,7 +97,7 @@ export default function RootLayout({ children }) {
         <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18050279366" />
         <script dangerouslySetInnerHTML={{ __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','AW-18050279366');` }} />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} antialiased`} suppressHydrationWarning>
+      <body className={`${manrope.variable} ${spaceGrotesk.variable} antialiased`} suppressHydrationWarning>
         <ThemeProvider>
           <SessionProvider>
             <OfflineProvider>

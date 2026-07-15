@@ -9,7 +9,7 @@ import { PLANES_CONFIG } from '@/lib/planes'
 const PRECIO_PLAN = Object.fromEntries(Object.entries(PLANES_CONFIG).map(([k, v]) => [k, v.precio]))
 
 // Mini sparkline SVG (sin dependencias)
-function Sparkline({ datos, color = '#f5c518', height = 32 }) {
+function Sparkline({ datos, color = 'var(--color-accent)', height = 32 }) {
   if (!datos?.length) return null
   const vals = datos.map(d => d.total)
   const max = Math.max(...vals, 1)
@@ -33,14 +33,14 @@ function Sparkline({ datos, color = '#f5c518', height = 32 }) {
 }
 
 const TABS = [
-  { key: 'pagantes',     label: 'Pagando',        color: '#22c55e' },
-  { key: 'vencimientos', label: 'Vencimientos',   color: '#f5c518' },
+  { key: 'pagantes',     label: 'Pagando',        color: 'var(--color-success)' },
+  { key: 'vencimientos', label: 'Vencimientos',   color: 'var(--color-accent)' },
   { key: 'trials',       label: 'Trials',         color: '#a78bfa' },
   { key: 'muertos',      label: 'Sin actividad',  color: '#6b7280' },
-  { key: 'churneados',   label: 'Churn',          color: '#ef4444' },
+  { key: 'churneados',   label: 'Churn',          color: 'var(--color-danger)' },
 ]
 
-const SCORE_COLOR = (s) => s >= 70 ? '#22c55e' : s >= 40 ? '#f5c518' : '#6b7280'
+const SCORE_COLOR = (s) => s >= 70 ? 'var(--color-success)' : s >= 40 ? 'var(--color-accent)' : '#6b7280'
 const SCORE_LABEL = (s) => s >= 70 ? 'Alto' : s >= 40 ? 'Medio' : 'Bajo'
 
 function hace(date) {
@@ -85,7 +85,7 @@ export default function NegocioPage() {
   if (loading) return (
     <div className="max-w-6xl mx-auto space-y-4">
       {[1,2,3].map(i => (
-        <div key={i} className="h-20 rounded-[12px] bg-[var(--color-bg-surface)] animate-pulse" />
+        <div key={i} className="h-20 rounded-[20px] bg-[var(--color-bg-surface)] animate-pulse" />
       ))}
     </div>
   )
@@ -120,7 +120,7 @@ export default function NegocioPage() {
     <div className="max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-lg font-bold text-[var(--color-text-primary)]">Estado del negocio</h1>
+        <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Estado del negocio</h1>
         <p className="text-xs text-[var(--color-text-muted)]">Usuarios pagando, trials con potencial, churn y muertos</p>
       </div>
 
@@ -143,7 +143,7 @@ export default function NegocioPage() {
         </Card>
         <Card>
           <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide mb-1">MRR actual</p>
-          <p className="text-xl font-bold text-[var(--color-success)]">{formatMoney(resumen.mrrActual, 'co')}</p>
+          <p className="text-xl font-bold text-[var(--color-success)] font-mono-display">{formatMoney(resumen.mrrActual, 'co')}</p>
           <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
             {resumen.pagantes} pagando · ticket {resumen.pagantes > 0 ? formatMoney(Math.round(resumen.mrrActual / resumen.pagantes), 'co') : '—'}
           </p>
@@ -161,7 +161,7 @@ export default function NegocioPage() {
         </Card>
         <Card>
           <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide mb-1">Potencial adicional</p>
-          <p className="text-xl font-bold text-[var(--color-accent)]">
+          <p className="text-xl font-bold text-[var(--color-accent)] font-mono-display">
             +{formatMoney(resumen.mrrProyectado - resumen.mrrActual, 'co')}
           </p>
           <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
@@ -357,7 +357,7 @@ export default function NegocioPage() {
                           {u.planNombre}
                         </Badge>
                       </td>
-                      <td className="px-3 py-3 text-right font-bold text-[var(--color-success)]">
+                      <td className="px-3 py-3 text-right font-bold text-[var(--color-success)] font-mono-display">
                         {formatMoney(u.precio, u.country ?? 'co')}
                       </td>
                       <td className="px-3 py-3 text-center">
@@ -436,7 +436,7 @@ export default function NegocioPage() {
                           hace {u.diasSinPagar}d
                         </span>
                       </td>
-                      <td className="px-3 py-3 text-right text-[var(--color-danger)] font-bold hidden sm:table-cell">
+                      <td className="px-3 py-3 text-right text-[var(--color-danger)] font-bold font-mono-display hidden sm:table-cell">
                         {formatMoney(PRECIO_PLAN[u.plan] ?? 0, u.country ?? 'co')}
                       </td>
                     </>}
@@ -496,14 +496,14 @@ function CalendarioVencimientos({ calendario }) {
     <div>
       {/* Resumen de potencial */}
       <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="px-4 py-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)]">
+        <div className="px-4 py-3 rounded-[20px] border border-[var(--color-border)] bg-[var(--color-bg-surface)]">
           <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide mb-1">Potencial caliente (score ≥ 60)</p>
-          <p className="text-xl font-bold text-[var(--color-success)]">{formatMoney(mrrCaliente, 'co')}</p>
+          <p className="text-xl font-bold text-[var(--color-success)] font-mono-display">{formatMoney(mrrCaliente, 'co')}</p>
           <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">activos, con prestamos y entrando seguido</p>
         </div>
-        <div className="px-4 py-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)]">
+        <div className="px-4 py-3 rounded-[20px] border border-[var(--color-border)] bg-[var(--color-bg-surface)]">
           <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide mb-1">Potencial total (todos)</p>
-          <p className="text-xl font-bold text-[var(--color-text-muted)]">{formatMoney(mrrTotal, 'co')}</p>
+          <p className="text-xl font-bold text-[var(--color-text-muted)] font-mono-display">{formatMoney(mrrTotal, 'co')}</p>
           <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">incluyendo inactivos y sin clientes</p>
         </div>
       </div>
@@ -573,7 +573,7 @@ function CalendarioVencimientos({ calendario }) {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0 ml-3">
-                        <span className={`text-xs font-bold ${esCaliente ? 'text-[var(--color-success)]' : 'text-[var(--color-text-muted)]'}`}>
+                        <span className={`text-xs font-bold font-mono-display ${esCaliente ? 'text-[var(--color-success)]' : 'text-[var(--color-text-muted)]'}`}>
                           {formatMoney(PRECIO_PLAN[u.plan] ?? 0, 'co')}
                         </span>
                         {wa && (

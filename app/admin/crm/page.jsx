@@ -109,7 +109,7 @@ function EmailModal({ org, onClose }) {
               <button
                 onClick={send}
                 disabled={sending}
-                className="h-9 px-5 rounded-[10px] bg-[var(--color-info)] text-[var(--color-text-primary)] text-xs font-medium hover:bg-[#2563eb] transition-colors disabled:opacity-50"
+                className="h-9 px-5 rounded-[10px] bg-[var(--color-info)] text-[var(--color-text-primary)] text-xs font-medium hover:bg-[var(--color-info)] transition-colors disabled:opacity-50"
               >
                 {sending ? 'Enviando...' : 'Enviar'}
               </button>
@@ -231,7 +231,7 @@ export default function CRMPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-[var(--color-text-primary)]">CRM</h1>
+          <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">CRM</h1>
           <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Gestión de leads y seguimiento comercial</p>
         </div>
         {/* Period selector */}
@@ -257,7 +257,7 @@ export default function CRMPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {loadingMet ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-3 py-3 animate-pulse">
+            <div key={i} className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[20px] px-3 py-3 animate-pulse">
               <div className="h-3 w-16 bg-[var(--color-bg-hover)] rounded mb-2" />
               <div className="h-6 w-10 bg-[var(--color-bg-hover)] rounded" />
             </div>
@@ -269,7 +269,7 @@ export default function CRMPage() {
             { label: 'Convertidos',      value: metricas.conSuscripcionActiva ?? 0,                                                           color: 'var(--color-success)' },
             { label: 'Tasa conversión',  value: `${metricas.tasaConversion ?? 0}%`,                                                           color: tasaColor(metricas.tasaConversion) },
           ].map(({ label, value, color }) => (
-            <div key={label} className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] px-3 py-3 text-center">
+            <div key={label} className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[20px] px-3 py-3 text-center">
               <p className="text-[10px] text-[var(--color-text-muted)]">{label}</p>
               <p className="text-base font-bold mt-0.5" style={{ color }}>{value}</p>
             </div>
@@ -297,7 +297,7 @@ export default function CRMPage() {
             />
             <button
               type="submit"
-              className="h-9 px-4 rounded-[12px] bg-[var(--color-info)] text-[var(--color-text-primary)] text-xs font-medium hover:bg-[#2563eb] transition-colors"
+              className="h-9 px-4 rounded-[12px] bg-[var(--color-info)] text-[var(--color-text-primary)] text-xs font-medium hover:bg-[var(--color-info)] transition-colors"
             >
               Buscar
             </button>
