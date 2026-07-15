@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
-import { aplicarMapeo } from '@/lib/carga-masiva'
+import { aplicarMapeo, parsearNumero } from '@/lib/carga-masiva'
 import PasoSubir from '@/components/carga-masiva/PasoSubir'
 import PasoMapear from '@/components/carga-masiva/PasoMapear'
 import PasoRevisar from '@/components/carga-masiva/PasoRevisar'
@@ -52,11 +52,19 @@ function CargaMasivaPageInner() {
     setPaso(2)
   }
 
-  const handleMapeoConfirmado = async (mapeo) => {
+  const handleMapeoConfirmado = async (mapeo, multiplicador = 1) => {
     setValidando(true)
     setError('')
     try {
       const filasNormalizadas = aplicarMapeo(filasCrudas, mapeo)
+
+      if (multiplicador > 1) {
+        for (const fila of filasNormalizadas) {
+          if (fila.montoPrestado) fila.montoPrestado = parsearNumero(fila.montoPrestado) * multiplicador
+          if (fila.saldoActual) fila.saldoActual = parsearNumero(fila.saldoActual) * multiplicador
+          if (fila.abonadoHasta) fila.abonadoHasta = parsearNumero(fila.abonadoHasta) * multiplicador
+        }
+      }
 
       if (filasNormalizadas.length === 0) {
         setError('No se encontraron filas con datos de nombre o cédula después de aplicar el mapeo')
