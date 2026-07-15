@@ -47,8 +47,9 @@ export default function PasoSubir({ onDatos }) {
       }
 
       onDatos({ headers, filas: rows })
-    } catch {
-      setError('Error al leer el archivo. Asegurate de que sea un .xlsx, .xls o .csv válido.')
+    } catch (err) {
+      console.error('[CargaMasiva] Error al leer archivo:', err)
+      setError('Error al leer el archivo: ' + (err?.message || 'formato no válido'))
     } finally {
       setCargando(false)
     }
