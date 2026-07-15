@@ -7,8 +7,7 @@ import { useAuth }                  from '@/hooks/useAuth'
 import { Input }                    from '@/components/ui/Input'
 import { Button }                   from '@/components/ui/Button'
 import CompartirCredenciales        from '@/components/cobradores/CompartirCredenciales'
-import { useOnline }                from '@/hooks/useOnline'
-import OfflineFallback              from '@/components/offline/OfflineFallback'
+import { obtenerCobradoresOffline } from '@/lib/offline'
 
 const SectionCard = ({ icon, title, color = 'var(--color-accent)', children, accent }) => (
   <div
@@ -36,12 +35,6 @@ const SectionCard = ({ icon, title, color = 'var(--color-accent)', children, acc
 )
 
 export default function EditarCobrador({ params }) {
-  const online = useOnline()
-  if (!online) return <OfflineFallback titulo="No puedes editar cobradores sin conexión" volverHref="/cobradores" volverLabel="Volver a Cobradores" />
-  return <EditarCobradorInner params={params} />
-}
-
-function EditarCobradorInner({ params }) {
   const { id } = use(params)
   const router = useRouter()
   const { session, esOwner, loading: authLoading } = useAuth()
@@ -99,7 +92,33 @@ function EditarCobradorInner({ params }) {
           })
         }
       })
-      .catch(() => setError('No se pudo cargar el cobrador'))
+      .catch(async () => {
+        const cobradores = await obtenerCobradoresOffline()
+        const cached = cobradores?.find(c => c.id === id)
+        if (cached) {
+          setNombre(cached.nombre || '')
+          setEmail(cached.email || '')
+          setTelefono(cached.telefono || '')
+          if (cached.permisos) {
+            setPermisos({
+              crearPrestamos: cached.permisos.crearPrestamos ?? false,
+              gestionarPrestamos: cached.permisos.gestionarPrestamos ?? cached.permisos.crearPrestamos ?? false,
+              reportarGastos: cached.permisos.reportarGastos ?? true,
+              crearClientes:  cached.permisos.crearClientes  ?? false,
+              editarClientes: cached.permisos.editarClientes ?? false,
+              verCapital:     cached.permisos.verCapital     ?? false,
+              verCapitalRuta: cached.permisos.verCapitalRuta ?? false,
+              verSaldoCaja:   cached.permisos.verSaldoCaja   ?? false,
+              gestionarRutas: cached.permisos.gestionarRutas ?? false,
+              aplicarDescuentos: cached.permisos.aplicarDescuentos ?? false,
+              desembolsarLinea: cached.permisos.desembolsarLinea ?? false,
+              reabrirCajaSinAprobacion: cached.permisos.reabrirCajaSinAprobacion ?? false,
+            })
+          }
+        } else {
+          setError('No se pudo cargar el cobrador')
+        }
+      })
       .finally(() => setLoading(false))
   }, [id])
 

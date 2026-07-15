@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { ACCIONES } from '@/lib/activity-log-types'
-import { useOnline } from '@/hooks/useOnline'
-import OfflineFallback from '@/components/offline/OfflineFallback'
+import { leerDeCache, guardarEnCache } from '@/lib/offline'
 
 const ICONOS = {
   banknotes: (color) => (
@@ -118,12 +117,6 @@ const FILTROS_COMPLETOS = [
 ]
 
 export default function ActividadPage() {
-  const online = useOnline()
-  if (!online) return <OfflineFallback titulo="El registro de actividad no esta disponible sin conexión" />
-  return <ActividadPageInner />
-}
-
-function ActividadPageInner() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [cursor, setCursor] = useState(null)
@@ -155,14 +148,34 @@ function ActividadPageInner() {
     if (hasta) params.set('hasta', hasta)
     params.set('limit', '30')
 
-    const res = await fetch(`/api/actividad?${params}`)
-    if (!res.ok) return
-    const data = await res.json()
+    try {
+      const res = await fetch(`/api/actividad?${params}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
 
-    setItems(prev => reset ? data.items : [...prev, ...data.items])
-    setCursor(data.nextCursor)
-    setHasMore(!!data.nextCursor)
-    setLoading(false)
+      setItems(prev => reset ? data.items : [...prev, ...data.items])
+      setCursor(data.nextCursor)
+      setHasMore(!!data.nextCursor)
+      setLoading(false)
+
+      // Cache the initial load for offline fallback
+      if (reset && !filtroTipo && !filtroUsuario && !desde && !hasta) {
+        guardarEnCache('actividad', data).catch(() => {})
+      }
+    } catch {
+      // Network error — try reading from IndexedDB cache
+      if (reset) {
+        try {
+          const cached = await leerDeCache('actividad')
+          if (cached?.items) {
+            setItems(cached.items)
+            setCursor(cached.nextCursor || null)
+            setHasMore(!!cached.nextCursor)
+          }
+        } catch {}
+      }
+      setLoading(false)
+    }
   }, [filtroTipo, filtroUsuario, desde, hasta])
 
   useEffect(() => {

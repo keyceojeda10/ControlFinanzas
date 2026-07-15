@@ -7,8 +7,7 @@ import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { SkeletonCard } from '@/components/ui/Skeleton'
-import { useOnline } from '@/hooks/useOnline'
-import OfflineFallback from '@/components/offline/OfflineFallback'
+import { leerDeCache, guardarEnCache } from '@/lib/offline'
 
 const ESTADO_BADGE = {
   abierto: { label: 'Abierto', variant: 'yellow' },
@@ -26,12 +25,6 @@ const TIPO_LABEL = {
 }
 
 export default function TicketDetallePage() {
-  const online = useOnline()
-  if (!online) return <OfflineFallback titulo="El ticket no esta disponible sin conexión" volverHref="/soporte" volverLabel="Volver a Soporte" />
-  return <TicketDetallePageInner />
-}
-
-function TicketDetallePageInner() {
   const { id } = useParams()
   const router = useRouter()
   const [ticket, setTicket] = useState(null)
@@ -47,6 +40,7 @@ function TicketDetallePageInner() {
 
   // Cargar ticket inicial
   useEffect(() => {
+    const cacheKey = 'soporte:ticket:' + id
     fetch(`/api/soporte/${id}`)
       .then(r => r.json())
       .then(data => {
@@ -56,8 +50,20 @@ function TicketDetallePageInner() {
         if (data.mensajes?.length) {
           lastTimestampRef.current = data.mensajes[data.mensajes.length - 1].createdAt
         }
+        guardarEnCache(cacheKey, data).catch(() => {})
       })
-      .catch(() => {})
+      .catch(async () => {
+        try {
+          const cached = await leerDeCache(cacheKey)
+          if (cached) {
+            setTicket(cached)
+            setMensajes(cached.mensajes || [])
+            if (cached.mensajes?.length) {
+              lastTimestampRef.current = cached.mensajes[cached.mensajes.length - 1].createdAt
+            }
+          }
+        } catch {}
+      })
       .finally(() => setLoading(false))
   }, [id])
 

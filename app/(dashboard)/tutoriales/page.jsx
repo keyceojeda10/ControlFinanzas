@@ -2,12 +2,8 @@
 // app/(dashboard)/tutoriales/page.jsx — Tutoriales para clientes
 
 import TutorialesList from '@/components/TutorialesList'
-import { useOnline } from '@/hooks/useOnline'
-import OfflineFallback from '@/components/offline/OfflineFallback'
 
 export default function TutorialesPage() {
-  const online = useOnline()
-  if (!online) return <OfflineFallback titulo="Los tutoriales no estan disponibles sin conexión" descripcion="Vuelve a conectarte para ver los videos." />
   return (
     <div className="max-w-3xl lg:max-w-6xl mx-auto">
       <div className="mb-6">

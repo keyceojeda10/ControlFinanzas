@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input, Select, Textarea } from '@/components/ui/Input'
-import { useOnline } from '@/hooks/useOnline'
-import OfflineFallback from '@/components/offline/OfflineFallback'
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 
@@ -19,12 +17,6 @@ const TIPOS = [
 ]
 
 export default function NuevoTicketPage() {
-  const online = useOnline()
-  if (!online) return <OfflineFallback titulo="No puedes crear tickets sin conexión" volverHref="/soporte" volverLabel="Volver a Soporte" />
-  return <NuevoTicketPageInner />
-}
-
-function NuevoTicketPageInner() {
   const router = useRouter()
   const [form, setForm] = useState({
     tipo: 'pregunta',
@@ -96,7 +88,11 @@ function NuevoTicketPageInner() {
 
       router.push(`/soporte/${ticket.id}`)
     } catch (err) {
-      setError(err.message)
+      if (!navigator.onLine) {
+        setError('Necesitas conexión a internet para crear un ticket de soporte. Intenta de nuevo cuando tengas conexión.')
+      } else {
+        setError(err.message)
+      }
     } finally {
       setLoading(false)
     }

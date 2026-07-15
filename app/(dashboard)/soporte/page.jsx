@@ -6,8 +6,7 @@ import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { SkeletonCard } from '@/components/ui/Skeleton'
-import { useOnline } from '@/hooks/useOnline'
-import OfflineFallback from '@/components/offline/OfflineFallback'
+import { leerDeCache, guardarEnCache } from '@/lib/offline'
 
 const WHATSAPP_SOPORTE = '573011993001'
 const whatsappLink = (mensaje) =>
@@ -36,20 +35,23 @@ const ESTADO_COLOR = {
 }
 
 export default function SoportePage() {
-  const online = useOnline()
-  if (!online) return <OfflineFallback titulo="Soporte no esta disponible sin conexión" />
-  return <SoportePageInner />
-}
-
-function SoportePageInner() {
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetch('/api/soporte')
       .then(r => r.json())
-      .then(data => setTickets(Array.isArray(data) ? data : []))
-      .catch(() => {})
+      .then(data => {
+        const lista = Array.isArray(data) ? data : []
+        setTickets(lista)
+        guardarEnCache('soporte:tickets', lista).catch(() => {})
+      })
+      .catch(async () => {
+        try {
+          const cached = await leerDeCache('soporte:tickets')
+          if (cached) setTickets(cached)
+        } catch {}
+      })
       .finally(() => setLoading(false))
   }, [])
 

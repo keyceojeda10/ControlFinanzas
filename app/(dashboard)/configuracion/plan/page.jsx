@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react'
 import { useRouter }           from 'next/navigation'
 import { useAuth }             from '@/hooks/useAuth'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
-import { useOnline }           from '@/hooks/useOnline'
-import OfflineFallback         from '@/components/offline/OfflineFallback'
 import { PLANES_CONFIG, getPrecioPlan } from '@/lib/planes'
 import { formatMoney } from '@/lib/i18n'
 
@@ -62,12 +60,6 @@ function UsageBar({ label, usado, limite }) {
 
 // ── Main ───────────────────────────────────────────────────
 export default function PlanPage() {
-  const online = useOnline()
-  if (!online) return <OfflineFallback titulo="La gestión de plan requiere conexión" descripcion="Los pagos y cambios de plan necesitan red." volverHref="/configuracion" volverLabel="Volver a Configuración" />
-  return <PlanPageInner />
-}
-
-function PlanPageInner() {
   const router = useRouter()
   const { session, loading: authLoading } = useAuth()
 
