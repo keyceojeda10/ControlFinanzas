@@ -10,13 +10,10 @@ import { Card }                from '@/components/ui/Card'
 import CobradorCard            from '@/components/cobradores/CobradorCard'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
 import MonedaCF                from '@/components/ui/MonedaCF'
-import { useOnline }           from '@/hooks/useOnline'
-import OfflineFallback         from '@/components/offline/OfflineFallback'
 import { useCountry } from '@/hooks/useCountry'
+import { obtenerCobradoresOffline } from '@/lib/offline'
 
 export default function CobradoresPage() {
-  const online = useOnline()
-  if (!online) return <OfflineFallback titulo="La gestión de cobradores requiere conexión" />
   return <CobradoresPageInner />
 }
 
@@ -176,8 +173,14 @@ function CobradoresPageInner() {
     if (authLoading || !esOwner) { setLoading(false); return }
     fetch('/api/cobradores')
       .then((r) => r.json())
-      .then((d) => setCobradores(Array.isArray(d) ? d : []))
-      .catch(() => setError('No se pudieron cargar los cobradores.'))
+      .then((d) => {
+        if (Array.isArray(d) && d.length > 0) setCobradores(d)
+        else return obtenerCobradoresOffline().then(cached => { if (cached.length) setCobradores(cached) })
+      })
+      .catch(() => obtenerCobradoresOffline().then(cached => {
+        if (cached.length) setCobradores(cached)
+        else setError('No se pudieron cargar los cobradores.')
+      }))
       .finally(() => setLoading(false))
   }, [authLoading, esOwner])
 

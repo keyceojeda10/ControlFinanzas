@@ -7,6 +7,7 @@ import { useAuth }                  from '@/hooks/useAuth'
 import ClienteForm                  from '@/components/clientes/ClienteForm'
 import { planTieneFotos }           from '@/lib/planes'
 import { SkeletonCard }             from '@/components/ui/Skeleton'
+import { obtenerClienteOffline }    from '@/lib/offline'
 
 export default function EditarClientePage({ params }) {
   const { id }              = use(params)
@@ -31,7 +32,10 @@ export default function EditarClientePage({ params }) {
         return r.json()
       })
       .then(setCliente)
-      .catch(() => setError('No se pudo cargar el cliente.'))
+      .catch(() => obtenerClienteOffline(id).then(cached => {
+        if (cached) setCliente(cached)
+        else setError('No se pudo cargar el cliente.')
+      }))
       .finally(() => setLoading(false))
   }, [id, authLoading, puedeEditarClientes])
 

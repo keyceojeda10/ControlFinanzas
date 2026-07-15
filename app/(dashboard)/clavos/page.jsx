@@ -25,7 +25,7 @@ export default function ClavosPage() {
     fetch('/api/clavos')
       .then(r => r.json())
       .then(setData)
-      .catch(() => {})
+      .catch(() => setData({ error: true, items: [] }))
       .finally(() => setLoading(false))
   }, [])
 

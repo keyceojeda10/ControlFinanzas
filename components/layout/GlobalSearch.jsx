@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { obtenerComandos, filtrarComandos } from '@/lib/searchCommands'
+import { obtenerClientesOffline, obtenerRutasOffline } from '@/lib/offline'
 
 export default function GlobalSearch() {
   const [open, setOpen] = useState(false)
@@ -54,7 +55,30 @@ export default function GlobalSearch() {
     }
   }, [open])
 
-  // Debounced search (solo clientes/prestamos/rutas via API)
+  const buscarOffline = useCallback(async (q) => {
+    const ql = q.toLowerCase()
+    const clientes = await obtenerClientesOffline()
+    const rutas = await obtenerRutasOffline()
+    const clientesMatch = (clientes || [])
+      .filter(c => c.nombre?.toLowerCase().includes(ql) || c.cedula?.toLowerCase().includes(ql) || c.telefono?.includes(q))
+      .slice(0, 8)
+      .map(c => ({ id: c.id, nombre: c.nombre, cedula: c.cedula, tipo: 'cliente' }))
+    const prestamosMatch = []
+    for (const c of (clientes || [])) {
+      for (const p of (c.prestamos || [])) {
+        if (prestamosMatch.length >= 5) break
+        if (c.nombre?.toLowerCase().includes(ql)) {
+          prestamosMatch.push({ id: p.id, clienteNombre: c.nombre, monto: p.montoPrestado, tipo: 'prestamo' })
+        }
+      }
+    }
+    const rutasMatch = (rutas || [])
+      .filter(r => r.nombre?.toLowerCase().includes(ql))
+      .slice(0, 5)
+      .map(r => ({ id: r.id, nombre: r.nombre, tipo: 'ruta' }))
+    return { clientes: clientesMatch, prestamos: prestamosMatch, rutas: rutasMatch }
+  }, [])
+
   const search = useCallback(async (q) => {
     if (!q || q.length < 2) { setResults(null); return }
     setLoading(true)
@@ -68,10 +92,14 @@ export default function GlobalSearch() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ evento: 'busqueda_global' }),
         }).catch(() => {})
+      } else {
+        setResults(await buscarOffline(q))
       }
-    } catch {}
+    } catch {
+      try { setResults(await buscarOffline(q)) } catch { setResults(null) }
+    }
     setLoading(false)
-  }, [])
+  }, [buscarOffline])
 
   const handleChange = (e) => {
     const val = e.target.value

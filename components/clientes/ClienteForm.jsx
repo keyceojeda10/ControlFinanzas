@@ -11,7 +11,7 @@ import { Button }              from '@/components/ui/Button'
 import MoneyInput              from '@/components/ui/MoneyInput'
 import DiasSinCobroSelector    from '@/components/ui/DiasSinCobroSelector'
 import Stepper                 from '@/components/ui/Stepper'
-import { guardarClientePendiente, encolarMutacion, invalidarCachePorPrefijo } from '@/lib/offline'
+import { guardarClientePendiente, encolarMutacion, invalidarCachePorPrefijo, obtenerRutasOffline, obtenerRutaOffline, leerDeCache } from '@/lib/offline'
 import { useCountry } from '@/hooks/useCountry'
 
 const LocationPicker = dynamic(() => import('@/components/clientes/LocationPicker'), { ssr: false })
@@ -98,8 +98,11 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
     if (['starter', 'basic'].includes(plan)) return
     fetch('/api/rutas')
       .then((r) => r.json())
-      .then((data) => setRutas(Array.isArray(data) ? data : []))
-      .catch(() => {})
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) setRutas(data)
+        else return obtenerRutasOffline().then(cached => { if (cached.length) setRutas(cached) })
+      })
+      .catch(() => obtenerRutasOffline().then(cached => setRutas(cached)))
   }, [plan])
 
   useEffect(() => {
@@ -107,8 +110,15 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
     setLoadingClientesRuta(true)
     fetch(`/api/rutas/${form.rutaId}/orden`)
       .then(r => r.json())
-      .then(data => setClientesRuta(Array.isArray(data) ? data : []))
-      .catch(() => setClientesRuta([]))
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) setClientesRuta(data)
+        else return obtenerRutaOffline(form.rutaId).then(cached => {
+          if (cached?.clientes) setClientesRuta(cached.clientes)
+        })
+      })
+      .catch(() => obtenerRutaOffline(form.rutaId).then(cached => {
+        setClientesRuta(cached?.clientes || [])
+      }).catch(() => setClientesRuta([])))
       .finally(() => setLoadingClientesRuta(false))
     setPosicionEnRuta('final')
   }, [form.rutaId])
@@ -116,8 +126,11 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
   useEffect(() => {
     fetch('/api/grupos')
       .then((r) => r.json())
-      .then((data) => setGrupos(Array.isArray(data) ? data : []))
-      .catch(() => {})
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) setGrupos(data)
+        else return leerDeCache('sync:grupos').then(cached => { if (cached?.length) setGrupos(cached) })
+      })
+      .catch(() => leerDeCache('sync:grupos').then(cached => setGrupos(cached || [])))
   }, [])
 
   const handleFotoSelect = (e) => {

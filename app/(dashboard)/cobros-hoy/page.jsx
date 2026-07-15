@@ -9,6 +9,7 @@ import { obtenerCoordsRapido } from '@/lib/geo'
 import { StaggeredList } from '@/components/ui/StaggeredList'
 import MonedaCF from '@/components/ui/MonedaCF'
 import MetodoPagoSelector from '@/components/pagos/MetodoPagoSelector'
+import { obtenerRutasOffline } from '@/lib/offline'
 
 export default function CobrosHoyPage() {
   const { esCobrador, loading: authLoading } = useAuth()
@@ -31,18 +32,54 @@ export default function CobrosHoyPage() {
   const fotoInputRef = useRef(null)
   const [metodosPago, setMetodosPago] = useState([])
 
+  const construirCobrosOffline = useCallback(async () => {
+    const rutas = await obtenerRutasOffline()
+    if (!rutas?.length) return null
+    const clientes = []
+    let esperado = 0, recaudado = 0
+    for (const r of rutas) {
+      for (const c of (r.clientes || [])) {
+        if (!c.prestamos?.length && !c.cuota) continue
+        const pagado = c.pagadoHoy || false
+        const cuota = c.cuota || c.cuotaDiaria || 0
+        clientes.push({
+          id: c.id, nombre: c.nombre, cedula: c.cedula, telefono: c.telefono,
+          direccion: c.direccion, estado: c.estado, pagadoHoy: pagado,
+          cuota, diasMora: c.diasMora || 0, rutaNombre: r.nombre, rutaId: r.id,
+          cobroPendienteHoy: c.cobroPendienteHoy ?? !pagado,
+          prestamos: c.prestamos || [],
+          offline: true,
+        })
+        esperado += cuota
+        if (pagado) recaudado += cuota
+      }
+    }
+    const pendientes = clientes.filter(c => c.cobroPendienteHoy).length
+    const pagados = clientes.filter(c => c.pagadoHoy).length
+    return {
+      clientes,
+      resumen: { total: clientes.length, pendientes, pagados, esperadoHoy: esperado, recaudadoHoy: recaudado },
+      offline: true,
+    }
+  }, [])
+
   const fetchCobros = useCallback(async () => {
     try {
       const r = await fetch(`/api/cobros-hoy?t=${Date.now()}`, { cache: 'no-store' })
       const d = await r.json()
-      if (d.error) setError(d.error)
-      else { setData(d); setError('') }
+      if (d.error) {
+        const offline = await construirCobrosOffline()
+        if (offline) { setData(offline); setError('') }
+        else setError(d.error)
+      } else { setData(d); setError('') }
     } catch {
-      setError('No se pudo cargar los cobros de hoy.')
+      const offline = await construirCobrosOffline()
+      if (offline) { setData(offline); setError('') }
+      else setError('No se pudo cargar los cobros de hoy.')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [construirCobrosOffline])
 
   useEffect(() => { fetchCobros() }, [fetchCobros])
 
