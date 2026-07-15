@@ -45,7 +45,7 @@ export default function Header() {
         {/* Left: logo + avatar pill */}
         <div className="flex items-center gap-3" ref={userRef}>
           <Link href="/dashboard" className="shrink-0">
-            <Image src="/logo-icon.svg" alt="Control Finanzas" width={30} height={30} className="rounded-lg" />
+            <Image src="/logo-icon.svg" alt="Control Finanzas" width={30} height={30} />
           </Link>
 
           <button
