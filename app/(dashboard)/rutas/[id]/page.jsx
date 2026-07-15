@@ -7,7 +7,7 @@ import { useRouter }                 from 'next/navigation'
 import dynamic                       from 'next/dynamic'
 import { useAuth }                   from '@/hooks/useAuth'
 import { useOffline }                from '@/components/providers/OfflineProvider'
-import { obtenerRutaOffline, guardarOrdenPendiente } from '@/lib/offline'
+import { obtenerRutaOffline, guardarOrdenPendiente, guardarPagoPendiente } from '@/lib/offline'
 import { obtenerCoordsRapido } from '@/lib/geo'
 import { Button }                    from '@/components/ui/Button'
 import { Card }                      from '@/components/ui/Card'
@@ -733,8 +733,26 @@ export default function RutaDetallePage({ params }) {
         await fetchRuta()
       }
     } catch {
-      alert('Error de conexión. Verifica tu red.')
-      await fetchRuta()
+      try {
+        await guardarPagoPendiente({
+          prestamoId: prestamoActivo,
+          montoPagado: cuota,
+          tipo: esCuotaExacta ? 'completo' : 'parcial',
+          diasAbonados: esCuotaExacta ? 1 : undefined,
+          metodoPago,
+          ...(metodoPagoId ? { metodoPagoId } : {}),
+          clienteNombre: nombre,
+          ...(coords ?? {}),
+        })
+        setPagoRapidoOk(clienteId)
+        setTimeout(() => setPagoRapidoOk(null), 1200)
+      } catch {
+        alert('No se pudo guardar el pago. Intenta de nuevo.')
+        setRuta(prev => prev ? {
+          ...prev,
+          clientes: prev.clientes.map(c => c.id === clienteId ? { ...c, pagoHoy: false, cobroPendienteHoy: true } : c)
+        } : prev)
+      }
     } finally { setPagandoRapido(null) }
   }
 
