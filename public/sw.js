@@ -1,5 +1,5 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME   = 'cf-v475'
+const CACHE_NAME   = 'cf-v476'
 const API_CACHE    = 'cf-api-v90'
 // Cache inmutable para _next/static — NO se borra entre versiones.
 // Los chunks llevan hash en el nombre, así que nunca hay stale content.
@@ -146,6 +146,13 @@ self.addEventListener('fetch', (e) => {
 
   // Skip auth flows (signin/signout/callback) — never cache these
   if (AUTH_SKIP.some((p) => url.pathname.startsWith(p))) return
+
+  // /api/auth/session — cachear para que useSession() resuelva offline
+  // Sin esto, NextAuth queda en status:'loading' y toda la app muestra skeleton
+  if (url.pathname === '/api/auth/session') {
+    e.respondWith(networkFirstAPI(request))
+    return
+  }
 
   // Skip offline sync requests (never cache)
   if (url.pathname.startsWith('/api/offline')) return
