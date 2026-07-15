@@ -1,12 +1,15 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { detectarColumnas, CAMPOS_LABELS } from '@/lib/carga-masiva'
+import { detectarColumnas, corregirMapeoConDatos, CAMPOS_LABELS } from '@/lib/carga-masiva'
 
 const CAMPOS_INTERNOS = Object.keys(CAMPOS_LABELS)
 
 export default function PasoMapear({ headers, filas, onConfirmar, onVolver }) {
-  const autoDeteccion = useMemo(() => detectarColumnas(headers), [headers])
+  const autoDeteccion = useMemo(() => {
+    const det = detectarColumnas(headers)
+    return { ...det, mapeo: corregirMapeoConDatos(det.mapeo, filas) }
+  }, [headers, filas])
 
   const [mapeo, setMapeo] = useState(() => ({ ...autoDeteccion.mapeo }))
 

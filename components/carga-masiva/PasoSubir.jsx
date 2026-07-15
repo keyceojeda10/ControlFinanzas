@@ -21,7 +21,16 @@ export default function PasoSubir({ onDatos }) {
       const data = await file.arrayBuffer()
       const wb = XLSX.read(data, { type: 'array' })
       const ws = wb.Sheets[wb.SheetNames[0]]
-      const rows = XLSX.utils.sheet_to_json(ws, { defval: '' })
+
+      let rows = XLSX.utils.sheet_to_json(ws, { defval: '' })
+      let headers = Object.keys(rows[0] || {})
+
+      for (let skip = 1; skip <= 3; skip++) {
+        const basura = headers.filter(h => h.startsWith('__EMPTY')).length
+        if (basura <= headers.length * 0.4) break
+        rows = XLSX.utils.sheet_to_json(ws, { defval: '', range: skip })
+        headers = Object.keys(rows[0] || {})
+      }
 
       if (rows.length === 0) {
         setError('El archivo esta vacio o no tiene datos')
@@ -32,7 +41,6 @@ export default function PasoSubir({ onDatos }) {
         return
       }
 
-      const headers = Object.keys(rows[0])
       if (headers.length === 0) {
         setError('No se encontraron columnas en el archivo')
         return
