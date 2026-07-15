@@ -17,7 +17,8 @@ export default function PasoSubir({ onDatos }) {
     setCargando(true)
 
     try {
-      const XLSX = (await import('xlsx')).default
+      const xlsxMod = await import('xlsx')
+      const XLSX = xlsxMod.default ?? xlsxMod
       const data = await file.arrayBuffer()
       const wb = XLSX.read(data, { type: 'array' })
       const ws = wb.Sheets[wb.SheetNames[0]]
