@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useCountry } from '@/hooks/useCountry'
 import { Badge } from '@/components/ui/Badge'
 
@@ -18,20 +18,62 @@ const ESTADO_LABELS = {
 export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolver }) {
   const { formatMoney } = useCountry()
   const [rutaId, setRutaId] = useState('')
-
   const [nuevaRuta, setNuevaRuta] = useState('')
   const [crearNueva, setCrearNueva] = useState(false)
-  const [expandida, setExpandida] = useState(null)
+  const [expandido, setExpandido] = useState(null)
   const [soloErrores, setSoloErrores] = useState(false)
 
-  const filasVisibles = soloErrores
-    ? filas.filter(f => f.estado === 'error')
-    : filas
+  const clientesAgrupados = useMemo(() => {
+    const mapa = new Map()
+    for (const fila of filas) {
+      const key = fila.datos.cedula || fila.datos.nombre || `fila-${fila.indice}`
+      if (!mapa.has(key)) {
+        mapa.set(key, {
+          nombre: fila.datos.nombre,
+          cedula: fila.datos.cedula,
+          telefono: fila.datos.telefono,
+          direccion: fila.datos.direccion,
+          prestamos: [],
+          errores: [],
+          advertencias: [],
+          peorEstado: 'valido',
+        })
+      }
+      const grupo = mapa.get(key)
+      if (fila.datos.nombre && !grupo.nombre) grupo.nombre = fila.datos.nombre
+      if (fila.datos.telefono && !grupo.telefono) grupo.telefono = fila.datos.telefono
+      if (fila.datos.direccion && !grupo.direccion) grupo.direccion = fila.datos.direccion
+
+      if (fila.datos.tienePrestamo) {
+        grupo.prestamos.push({
+          monto: fila.datos.montoPrestado,
+          tasa: fila.datos.tasaInteres,
+          cuotas: fila.datos.diasPlazo,
+          frecuencia: fila.datos.frecuencia,
+          fecha: fila.datos.fechaInicio,
+          abonado: fila.datos.abonadoHasta,
+          calculado: fila.calculado,
+          tipo: fila.datos.tipo,
+        })
+      }
+      grupo.errores.push(...fila.errores)
+      grupo.advertencias.push(...fila.advertencias)
+      if (fila.estado === 'error') grupo.peorEstado = 'error'
+      else if (fila.estado === 'advertencia' && grupo.peorEstado !== 'error') grupo.peorEstado = 'advertencia'
+    }
+    return [...mapa.entries()].map(([key, g]) => ({ key, ...g }))
+  }, [filas])
+
+  const clientesVisibles = soloErrores
+    ? clientesAgrupados.filter(c => c.peorEstado === 'error')
+    : clientesAgrupados
+
+  const conPrestamos = clientesAgrupados.filter(c => c.prestamos.length > 0).length
+  const sinPrestamos = clientesAgrupados.filter(c => c.prestamos.length === 0).length
 
   const handleConfirmar = () => {
     const validas = filas.filter(f => f.estado !== 'error')
     if (validas.length === 0) return
-
     onConfirmar({
       filas: validas,
       rutaId: crearNueva ? null : (rutaId || null),
@@ -41,59 +83,51 @@ export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolv
 
   return (
     <div className="space-y-4">
-      {/* Resumen */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[12px] px-3 py-2.5 text-center">
-          <p className="text-[10px] text-[var(--color-text-muted)]">Filas</p>
-          <p className="text-lg font-bold text-[var(--color-text-primary)]">{resumen.totalFilas}</p>
-        </div>
-        <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[12px] px-3 py-2.5 text-center">
-          <p className="text-[10px] text-[var(--color-text-muted)]">Validas</p>
-          <p className="text-lg font-bold text-[var(--color-success)]">{resumen.filasValidas}</p>
-        </div>
-        <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[12px] px-3 py-2.5 text-center">
-          <p className="text-[10px] text-[var(--color-text-muted)]">Errores</p>
-          <p className="text-lg font-bold text-[var(--color-danger)]">{resumen.filasConError}</p>
-        </div>
-      </div>
-
-      {/* Detalle */}
-      <div className="bg-[#161b27] border border-[var(--color-border)] rounded-[12px] p-4 space-y-2">
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-          <div className="flex justify-between">
-            <span className="text-[var(--color-text-muted)]">Clientes únicos</span>
-            <span className="text-[var(--color-text-primary)] font-medium">{resumen.clientesUnicos}</span>
+      {/* Resumen principal — grande y notorio */}
+      <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[16px] p-5">
+        <div className="flex items-center justify-center gap-6 mb-4">
+          <div className="text-center">
+            <p className="text-[32px] font-bold text-[var(--color-text-primary)] leading-none">{resumen.clientesUnicos}</p>
+            <p className="text-xs text-[var(--color-text-muted)] mt-1">clientes</p>
           </div>
-          <div className="flex justify-between">
-            <span className="text-[var(--color-text-muted)]">Clientes nuevos</span>
-            <span className="text-[var(--color-text-primary)] font-medium">{resumen.clientesNuevos}</span>
+          <div className="w-px h-10 bg-[var(--color-border)]" />
+          <div className="text-center">
+            <p className="text-[32px] font-bold text-[var(--color-accent)] leading-none">{resumen.totalPrestamos}</p>
+            <p className="text-xs text-[var(--color-text-muted)] mt-1">prestamos</p>
           </div>
-          <div className="flex justify-between">
-            <span className="text-[var(--color-text-muted)]">Préstamos</span>
-            <span className="text-[var(--color-text-primary)] font-medium">{resumen.prestamosDinero}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-[var(--color-text-muted)]">Mercancías</span>
-            <span className="text-[var(--color-text-primary)] font-medium">{resumen.prestamosMercancia}</span>
-          </div>
-          <div className="flex justify-between col-span-2">
-            <span className="text-[var(--color-text-muted)]">Monto total</span>
-            <span className="text-[var(--color-accent)] font-bold font-mono-display">{formatMoney(resumen.montoTotalDesembolso)}</span>
+          <div className="w-px h-10 bg-[var(--color-border)]" />
+          <div className="text-center">
+            <p className="text-[32px] font-bold text-[var(--color-text-primary)] leading-none font-mono-display">{formatMoney(resumen.montoTotalDesembolso)}</p>
+            <p className="text-xs text-[var(--color-text-muted)] mt-1">capital total</p>
           </div>
         </div>
 
-        {resumen.excedePlan && (
-          <div className="bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-xs rounded-[10px] px-3 py-2 mt-2">
-            Excedes el límite de tu plan ({resumen.limiteClientes} clientes).
-            Tienes {resumen.clientesActuales}, necesitas {resumen.clientesNuevos} nuevos.
-            Espacio disponible: {resumen.espacioDisponible}.
-          </div>
-        )}
+        <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-[var(--color-text-muted)]">
+          <span>{conPrestamos} con prestamos</span>
+          {sinPrestamos > 0 && <span>{sinPrestamos} solo datos</span>}
+          {resumen.clientesNuevos > 0 && (
+            <span className="text-[var(--color-success)]">{resumen.clientesNuevos} nuevos</span>
+          )}
+          {resumen.clientesExistentes > 0 && (
+            <span>{resumen.clientesExistentes} ya existen</span>
+          )}
+          {resumen.filasConError > 0 && (
+            <span className="text-[var(--color-danger)]">{resumen.filasConError} con errores</span>
+          )}
+        </div>
       </div>
+
+      {resumen.excedePlan && (
+        <div className="bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-xs rounded-[12px] px-4 py-3">
+          Excedes el limite de tu plan ({resumen.limiteClientes} clientes).
+          Tienes {resumen.clientesActuales}, necesitas {resumen.clientesNuevos} nuevos.
+          Espacio disponible: {resumen.espacioDisponible}.
+        </div>
+      )}
 
       {/* Asignar ruta */}
       <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[12px] p-4 space-y-3">
-        <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Asignar a ruta (opcional)</p>
+        <p className="text-[10px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Asignar a ruta (opcional)</p>
         <div className="flex flex-col gap-2">
           <select
             value={crearNueva ? '__nueva__' : rutaId}
@@ -131,79 +165,145 @@ export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolv
           onClick={() => setSoloErrores(v => !v)}
           className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors"
         >
-          {soloErrores ? 'Mostrar todas las filas' : `Mostrar solo ${resumen.filasConError} con errores`}
+          {soloErrores ? 'Mostrar todos los clientes' : `Mostrar solo ${resumen.filasConError} con errores`}
         </button>
       )}
 
-      {/* Lista de filas (cards mobile-first) */}
-      <div className="space-y-2 max-h-[50vh] overflow-y-auto">
-        {filasVisibles.map((fila) => (
-          <div
-            key={fila.indice}
-            className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[12px] px-3 py-2.5 cursor-pointer hover:border-[var(--color-border-hover)] transition-colors"
-            onClick={() => setExpandida(expandida === fila.indice ? null : fila.indice)}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="text-[10px] text-[var(--color-text-muted)] w-5 shrink-0">#{fila.indice + 1}</span>
-                <p className="text-sm text-[var(--color-text-primary)] truncate">{fila.datos.nombre || '—'}</p>
-                <span className="text-[10px] text-[var(--color-text-muted)] shrink-0">{fila.datos.cedula}</span>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                {fila.datos.tienePrestamo && (
-                  <span className="text-[10px] text-[var(--color-text-muted)]">
-                    {fila.datos.tipo === 'mercancia' ? 'Merc.' : 'Prest.'}
+      {/* Lista de clientes agrupados */}
+      <div className="space-y-2 max-h-[55vh] overflow-y-auto">
+        {clientesVisibles.map((cliente) => {
+          const isExpanded = expandido === cliente.key
+          return (
+            <div
+              key={cliente.key}
+              className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[12px] overflow-hidden"
+            >
+              {/* Cabecera del cliente */}
+              <div
+                className="flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-[var(--color-bg-hover)] transition-colors"
+                onClick={() => setExpandido(isExpanded ? null : cliente.key)}
+              >
+                <div className="w-8 h-8 rounded-full bg-[rgba(245,197,24,0.12)] flex items-center justify-center shrink-0">
+                  <span className="text-xs font-bold text-[var(--color-accent)]">
+                    {(cliente.nombre || '?').charAt(0).toUpperCase()}
                   </span>
-                )}
-                <Badge variant={ESTADO_COLORS[fila.estado]}>{ESTADO_LABELS[fila.estado]}</Badge>
-              </div>
-            </div>
-
-            {expandida === fila.indice && (
-              <div className="mt-2 pt-2 border-t border-[var(--color-border)] space-y-1.5">
-                {fila.errores.map((e, i) => (
-                  <p key={i} className="text-[10px] text-[var(--color-danger)] flex items-start gap-1">
-                    <span className="shrink-0">x</span> {e}
-                  </p>
-                ))}
-                {fila.advertencias.map((a, i) => (
-                  <p key={i} className="text-[10px] text-[var(--color-warning)] flex items-start gap-1">
-                    <span className="shrink-0">!</span> {a}
-                  </p>
-                ))}
-                {fila.datos.tienePrestamo && fila.calculado && (
-                  <div className="grid grid-cols-3 gap-2 mt-1">
-                    <div>
-                      <p className="text-[8px] text-[var(--color-text-muted)]">Monto</p>
-                      <p className="text-[10px] text-[var(--color-text-primary)] font-mono-display">{formatMoney(fila.datos.montoPrestado)}</p>
-                    </div>
-                    <div>
-                      <p className="text-[8px] text-[var(--color-text-muted)]">Cuota</p>
-                      <p className="text-[10px] text-[var(--color-text-primary)] font-mono-display">{formatMoney(fila.calculado.cuotaDiaria)}</p>
-                    </div>
-                    <div>
-                      <p className="text-[8px] text-[var(--color-text-muted)]">Total</p>
-                      <p className="text-[10px] text-[var(--color-accent)] font-mono-display">{formatMoney(fila.calculado.totalAPagar)}</p>
-                    </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">
+                      {cliente.nombre || '—'}
+                    </p>
+                    {cliente.cedula && (
+                      <span className="text-[10px] text-[var(--color-text-muted)] shrink-0">{cliente.cedula}</span>
+                    )}
                   </div>
-                )}
-                {fila.datos.telefono && (
-                  <p className="text-[10px] text-[var(--color-text-muted)]">Tel: {fila.datos.telefono}</p>
-                )}
-                {fila.datos.direccion && (
-                  <p className="text-[10px] text-[var(--color-text-muted)]">Dir: {fila.datos.direccion}</p>
-                )}
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {cliente.prestamos.length > 0 ? (
+                      <span className="text-[10px] text-[var(--color-text-muted)]">
+                        {cliente.prestamos.length} prestamo{cliente.prestamos.length !== 1 ? 's' : ''}
+                        {' • '}
+                        {formatMoney(cliente.prestamos.reduce((s, p) => s + p.monto, 0))}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-[var(--color-text-muted)]">Solo datos del cliente</span>
+                    )}
+                  </div>
+                </div>
+                <Badge variant={ESTADO_COLORS[cliente.peorEstado]}>{ESTADO_LABELS[cliente.peorEstado]}</Badge>
+                <svg
+                  className={['w-4 h-4 text-[var(--color-text-muted)] transition-transform shrink-0', isExpanded ? 'rotate-180' : ''].join(' ')}
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
               </div>
-            )}
-          </div>
-        ))}
+
+              {/* Detalle expandido */}
+              {isExpanded && (
+                <div className="border-t border-[var(--color-border)] px-3 py-3 space-y-3">
+                  {/* Info del cliente */}
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[var(--color-text-muted)]">
+                    {cliente.telefono && <span>Tel: {cliente.telefono}</span>}
+                    {cliente.direccion && <span>Dir: {cliente.direccion}</span>}
+                  </div>
+
+                  {/* Errores y advertencias */}
+                  {cliente.errores.length > 0 && (
+                    <div className="space-y-1">
+                      {cliente.errores.map((e, i) => (
+                        <p key={i} className="text-[10px] text-[var(--color-danger)] flex items-start gap-1">
+                          <svg className="w-3 h-3 shrink-0 mt-px" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                          {e}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                  {cliente.advertencias.length > 0 && (
+                    <div className="space-y-1">
+                      {cliente.advertencias.map((a, i) => (
+                        <p key={i} className="text-[10px] text-[var(--color-warning)] flex items-start gap-1">
+                          <svg className="w-3 h-3 shrink-0 mt-px" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01" />
+                          </svg>
+                          {a}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Tabla de prestamos del cliente */}
+                  {cliente.prestamos.length > 0 && (
+                    <div className="overflow-x-auto rounded-[8px] border border-[var(--color-border)]">
+                      <table className="w-full text-[11px]">
+                        <thead>
+                          <tr className="bg-[var(--color-bg-surface)]">
+                            <th className="px-2 py-1.5 text-left text-[var(--color-text-muted)] font-semibold">Capital</th>
+                            <th className="px-2 py-1.5 text-left text-[var(--color-text-muted)] font-semibold">Interes</th>
+                            <th className="px-2 py-1.5 text-left text-[var(--color-text-muted)] font-semibold">Cuotas</th>
+                            <th className="px-2 py-1.5 text-left text-[var(--color-text-muted)] font-semibold">Freq</th>
+                            <th className="px-2 py-1.5 text-left text-[var(--color-text-muted)] font-semibold">Total</th>
+                            {cliente.prestamos.some(p => p.abonado > 0) && (
+                              <th className="px-2 py-1.5 text-left text-[var(--color-text-muted)] font-semibold">Abonado</th>
+                            )}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {cliente.prestamos.map((p, i) => (
+                            <tr key={i} className="border-t border-[var(--color-border)]">
+                              <td className="px-2 py-1.5 text-[var(--color-text-primary)] font-mono-display whitespace-nowrap">
+                                {formatMoney(p.monto)}
+                              </td>
+                              <td className="px-2 py-1.5 text-[var(--color-text-muted)] whitespace-nowrap">{p.tasa}%</td>
+                              <td className="px-2 py-1.5 text-[var(--color-text-primary)] whitespace-nowrap">{p.cuotas}</td>
+                              <td className="px-2 py-1.5 text-[var(--color-text-muted)] whitespace-nowrap capitalize">{p.frecuencia}</td>
+                              <td className="px-2 py-1.5 text-[var(--color-accent)] font-mono-display font-semibold whitespace-nowrap">
+                                {p.calculado ? formatMoney(p.calculado.totalAPagar) : '—'}
+                              </td>
+                              {cliente.prestamos.some(pp => pp.abonado > 0) && (
+                                <td className="px-2 py-1.5 text-[var(--color-success)] font-mono-display whitespace-nowrap">
+                                  {p.abonado > 0 ? formatMoney(p.abonado) : '—'}
+                                </td>
+                              )}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
 
       {/* Acciones */}
       <div className="flex gap-3 pt-2">
         <button
           onClick={onVolver}
-          className="flex-1 h-11 rounded-[12px] bg-[#1f1f1f] border border-[var(--color-border)] text-[var(--color-text-primary)] text-sm font-medium transition-colors hover:bg-[var(--color-bg-hover)]"
+          className="flex-1 h-11 rounded-[12px] bg-[var(--color-bg-card)] border border-[var(--color-border)] text-[var(--color-text-primary)] text-sm font-medium transition-colors hover:bg-[var(--color-bg-hover)]"
         >
           Volver
         </button>
@@ -212,7 +312,7 @@ export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolv
           disabled={resumen.filasValidas === 0 || resumen.excedePlan}
           className="flex-1 h-11 rounded-[12px] bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-text-primary)] text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          Importar {resumen.filasValidas} filas
+          Importar {resumen.clientesUnicos} clientes
         </button>
       </div>
     </div>
