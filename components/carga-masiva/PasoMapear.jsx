@@ -176,9 +176,10 @@ export default function PasoMapear({ headers, filas, onConfirmar, onVolver }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {[
               { val: 1, label: 'Tal cual', desc: formatMoney(analisisMontos.mediana) },
+              { val: 100, label: 'x 100', desc: formatMoney(analisisMontos.mediana * 100) },
               { val: 1000, label: 'x 1.000', desc: formatMoney(analisisMontos.mediana * 1000) },
               { val: 1000000, label: 'x 1.000.000', desc: formatMoney(analisisMontos.mediana * 1000000) },
             ].map(opt => (
