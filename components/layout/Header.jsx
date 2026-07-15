@@ -50,7 +50,7 @@ export default function Header() {
 
           <button
             onClick={() => setUserOpen(v => !v)}
-            className="flex items-center gap-2.5 rounded-full py-1.5 pl-1.5 pr-4 active:scale-[0.97] transition-transform cf-header-pill"
+            className="flex items-center gap-2.5 rounded-[12px] py-1.5 pl-1.5 pr-4 active:scale-[0.97] transition-transform cf-header-pill"
             aria-label="Menú de usuario"
           >
             <div className="relative">
@@ -116,7 +116,7 @@ export default function Header() {
 
           <button
             onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
-            className="w-10 h-10 flex items-center justify-center rounded-full transition-colors active:scale-95"
+            className="w-10 h-10 flex items-center justify-center rounded-[10px] transition-colors active:scale-95"
             aria-label="Buscar"
             style={{ color: 'var(--color-text-primary)' }}
           >
