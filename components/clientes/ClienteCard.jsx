@@ -1,20 +1,15 @@
-// components/clientes/ClienteCard.jsx
-// Tarjeta minimalista de cliente — estilo fintech premium (PayPal/Revolut).
-// Fondo limpio del tema, acento de color solo en status, tipografia clara,
-// mucho espacio, sin gradientes ni efectos. Profesional y legible.
-
 import { formatMoney } from '@/lib/i18n'
 import Link from 'next/link'
 import Avatar from '@/components/ui/Avatar'
 import CardActionMenu from '@/components/ui/CardActionMenu'
 import { NuevoChip } from '@/components/ui/BadgeNuevo'
 
-const STATUS_COLORS = {
-  ok:   '#22c55e',
-  nuevo:'#3b82f6',
-  hot:  '#f59e0b',
-  crit: '#ef4444',
-  off:  '#94a3b8',
+const STATUS = {
+  ok:    { color: '#22c55e', bg: 'rgba(34,197,94,0.06)',  border: 'rgba(34,197,94,0.18)' },
+  nuevo: { color: '#3b82f6', bg: 'rgba(59,130,246,0.06)', border: 'rgba(59,130,246,0.18)' },
+  hot:   { color: '#f59e0b', bg: 'rgba(245,158,11,0.06)', border: 'rgba(245,158,11,0.18)' },
+  crit:  { color: '#ef4444', bg: 'rgba(239,68,68,0.07)',  border: 'rgba(239,68,68,0.22)' },
+  off:   { color: '#94a3b8', bg: 'rgba(148,163,184,0.06)',border: 'rgba(148,163,184,0.18)' },
 }
 
 function moodKey(c, esNuevo) {
@@ -36,7 +31,7 @@ function moodLabel(c) {
 
 export default function ClienteCard({ cliente, actions, esNuevo }) {
   const mood = moodKey(cliente, esNuevo)
-  const statusColor = STATUS_COLORS[mood]
+  const S = STATUS[mood]
   const label = moodLabel(cliente)
   const saldoTotal = Number(cliente.saldoPendienteTotal ?? 0)
   const tienePrestamo = (cliente.prestamosActivos ?? 0) > 0
@@ -45,25 +40,32 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
   return (
     <Link
       href={`/clientes/${cliente.id}`}
-      className="block rounded-[16px] overflow-hidden transition-transform hover:scale-[1.01] active:scale-[0.99]"
+      className="block rounded-[16px] overflow-hidden relative transition-all duration-200 hover:scale-[1.015] active:scale-[0.985]"
       style={{
-        background: 'var(--color-bg-card)',
-        border: '1px solid var(--color-border)',
+        background: `linear-gradient(135deg, var(--color-bg-card), ${S.bg})`,
+        border: `1px solid ${S.border}`,
+        boxShadow: `0 2px 8px ${S.border}`,
       }}
     >
-      {/* Accent stripe superior */}
-      <div className="h-[3px]" style={{ background: statusColor }} />
+      {/* Accent lateral izquierdo */}
+      <div
+        className="absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full"
+        style={{ background: S.color }}
+      />
 
-      <div className="p-4">
-        {/* Header: avatar + identidad + status */}
-        <div className="flex items-start gap-3 mb-4">
+      <div className="pl-4 pr-3.5 py-3.5">
+        {/* Header: avatar + nombre + status + menu */}
+        <div className="flex items-start gap-2.5 mb-3">
           <div className="relative shrink-0">
             <Avatar
               nombre={cliente.nombre}
               fotoUrl={cliente.fotoUrl}
-              size={46}
-              fontSize={16}
-              style={{ border: `2px solid color-mix(in srgb, ${statusColor} 30%, var(--color-border))` }}
+              size={42}
+              fontSize={15}
+              style={{
+                border: `2px solid ${S.color}`,
+                boxShadow: `0 0 0 2px var(--color-bg-card)`,
+              }}
             />
             {cliente.pagoHoy && (
               <span
@@ -78,7 +80,7 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
           </div>
 
           <div className="flex-1 min-w-0">
-            <p className="text-[15px] font-semibold truncate leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+            <p className="text-[15px] font-bold truncate leading-tight" style={{ color: 'var(--color-text-primary)' }}>
               {cliente.nombre}
             </p>
             <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
@@ -98,21 +100,26 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
             </div>
           </div>
 
-          <div className="flex items-start gap-1.5 shrink-0">
+          <div className="flex items-start gap-1 shrink-0">
             <div className="flex flex-col items-end gap-1">
               <span
-                className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
                 style={{
-                  background: `color-mix(in srgb, ${statusColor} 12%, transparent)`,
-                  color: statusColor,
+                  background: `color-mix(in srgb, ${S.color} 15%, transparent)`,
+                  color: S.color,
+                  border: `1px solid color-mix(in srgb, ${S.color} 25%, transparent)`,
                 }}
               >
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: statusColor }} />
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: S.color }} />
                 {label}
               </span>
               {cliente.tieneClavo && (
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                  style={{ background: 'color-mix(in srgb, var(--color-danger) 12%, transparent)', color: 'var(--color-danger)' }}>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                  style={{
+                    background: 'color-mix(in srgb, var(--color-danger) 15%, transparent)',
+                    color: 'var(--color-danger)',
+                    border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)',
+                  }}>
                   Perdido
                 </span>
               )}
@@ -124,35 +131,33 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
               )}
               {esNuevo && <NuevoChip />}
             </div>
-            {actions?.length > 0 && (
-              <CardActionMenu actions={actions} />
-            )}
+            {actions?.length > 0 && <CardActionMenu actions={actions} />}
           </div>
         </div>
 
         {tienePrestamo ? (
           <>
-            {/* Monto principal */}
-            <div className="mb-3">
-              <p className="text-[11px] font-medium mb-0.5" style={{ color: 'var(--color-text-muted)' }}>
+            {/* Monto */}
+            <div className="mb-2.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'var(--color-text-muted)' }}>
                 Deuda total
               </p>
-              <p className="text-[24px] font-mono-display font-bold leading-none tracking-tight" style={{ color: 'var(--color-text-primary)' }}>
+              <p className="text-[22px] font-mono-display font-bold leading-none tracking-tight" style={{ color: 'var(--color-text-primary)' }}>
                 {formatMoney(saldoTotal)}
               </p>
             </div>
 
-            {/* Barra de progreso */}
-            <div className="mb-3">
-              <div className="h-[4px] rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
+            {/* Progreso */}
+            <div className="mb-2.5">
+              <div className="h-[5px] rounded-full overflow-hidden" style={{ background: `color-mix(in srgb, ${S.color} 12%, var(--color-bg-hover))` }}>
                 <div
                   className="h-full rounded-full transition-[width] duration-500"
-                  style={{ width: `${Math.max(porcentaje, 2)}%`, background: statusColor }}
+                  style={{ width: `${Math.max(porcentaje, 2)}%`, background: S.color }}
                 />
               </div>
-              <div className="flex items-center justify-between mt-1.5">
+              <div className="flex items-center justify-between mt-1">
                 <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
-                  <span className="font-semibold" style={{ color: statusColor }}>{porcentaje}%</span> pagado
+                  <span className="font-mono-display font-bold" style={{ color: S.color }}>{porcentaje}%</span> pagado
                 </span>
                 <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
                   {cliente.prestamosActivos} {cliente.prestamosActivos === 1 ? 'prestamo' : 'prestamos'}
@@ -160,16 +165,19 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
               </div>
             </div>
 
-            {/* Footer info */}
+            {/* Footer */}
             {(cliente.proximoCobroLabel || cliente.diasMoraMax > 0) && (
-              <div className="flex items-center justify-between pt-3" style={{ borderTop: '1px solid var(--color-border)' }}>
+              <div
+                className="flex items-center justify-between pt-2.5"
+                style={{ borderTop: `1px solid ${S.border}` }}
+              >
                 {cliente.proximoCobroLabel && (
-                  <span className="text-[12px] font-medium capitalize" style={{ color: cliente.diasMoraMax > 0 ? statusColor : 'var(--color-text-secondary)' }}>
+                  <span className="text-[12px] font-semibold capitalize" style={{ color: cliente.diasMoraMax > 0 ? S.color : 'var(--color-text-secondary)' }}>
                     {cliente.proximoCobroLabel}
                   </span>
                 )}
                 {cliente.diasMoraMax > 0 && (
-                  <span className="text-[12px] font-mono-display font-semibold" style={{ color: statusColor }}>
+                  <span className="text-[12px] font-mono-display font-bold" style={{ color: S.color }}>
                     {cliente.diasMoraMax}d mora
                   </span>
                 )}
@@ -181,7 +189,7 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
         )}
 
         {(cliente.lineasCreditoActivas ?? 0) > 0 && (
-          <div className="flex items-center gap-1.5 mt-3 pt-3" style={{ borderTop: '1px solid var(--color-border)' }}>
+          <div className="flex items-center gap-1.5 mt-2.5 pt-2.5" style={{ borderTop: `1px solid ${S.border}` }}>
             <svg className="w-3.5 h-3.5" fill="none" stroke="var(--color-text-muted)" strokeWidth={1.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
             </svg>
@@ -191,7 +199,6 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
           </div>
         )}
       </div>
-
     </Link>
   )
 }
