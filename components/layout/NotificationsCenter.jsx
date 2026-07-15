@@ -449,7 +449,7 @@ export default function NotificationsCenter({ size = 'md' }) {
 
           {total === 0 && notifInApp.length === 0 && (
             <div className="px-4 py-6 text-center">
-              <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Todo al dia. No hay avisos pendientes.</p>
+              <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Todo al día. No hay avisos pendientes.</p>
             </div>
           )}
 

@@ -25,8 +25,8 @@ function moodLabel(c) {
   if (c.estado === 'inactivo')  return 'Inactivo'
   if (c.diasMoraMax > 7)        return `${c.diasMoraMax}d mora`
   if (c.estado === 'mora' || c.diasMoraMax > 0) return `${c.diasMoraMax || ''}d vencido`.trim()
-  if (c.pagoHoy)                return 'Pago hoy'
-  return 'Al dia'
+  if (c.pagoHoy)                return 'Pagó hoy'
+  return 'Al día'
 }
 
 export default function ClienteCard({ cliente, actions, esNuevo }) {

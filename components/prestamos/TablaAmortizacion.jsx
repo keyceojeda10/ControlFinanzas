@@ -144,7 +144,7 @@ function CuotaFila({
                 background: completado ? 'var(--color-success)' : interesAlDia ? 'var(--color-warning)' : vencida ? 'var(--color-danger)' : 'transparent',
                 border: (completado || interesAlDia || vencida) ? 'none' : '1.5px solid var(--color-border)',
               }}
-              title={completado ? 'Cuota pagada' : interesAlDia ? 'Intereses al dia' : vencida ? 'Vencida' : 'Pendiente'}
+              title={completado ? 'Cuota pagada' : interesAlDia ? 'Intereses al día' : vencida ? 'Vencida' : 'Pendiente'}
             >
               {completado && (
                 <svg className="w-2.5 h-2.5" fill="none" stroke="white" strokeWidth={3} viewBox="0 0 24 24">

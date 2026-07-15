@@ -761,7 +761,7 @@ function ClienteCard({ cliente, pagando, pagoOk, onCobrar, showRuta = true }) {
               </span>
               {cliente.montoParaPonerseAlDia > cliente.cuota && (
                 <span className="text-[10px]" style={{ color: 'var(--color-warning)' }}>
-                  Al dia: {formatMoney(cliente.montoParaPonerseAlDia)}
+                  Al día: {formatMoney(cliente.montoParaPonerseAlDia)}
                 </span>
               )}
             </>

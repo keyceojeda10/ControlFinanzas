@@ -1665,7 +1665,7 @@ export default function DashboardPage() {
                   <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Clientes en mora</p>
                 </div>
                 <p className="text-3xl font-bold font-mono-display leading-none" style={{ color: data.clientes.enMora > 0 ? 'var(--color-danger)' : 'var(--color-success)' }}>{data.clientes.enMora}</p>
-                <p className="text-[11px] mt-1.5" style={{ color: 'var(--color-text-muted)' }}>{data.clientes.enMora === 0 ? 'Todo al dia' : `de ${data.clientes.total} activos`}</p>
+                <p className="text-[11px] mt-1.5" style={{ color: 'var(--color-text-muted)' }}>{data.clientes.enMora === 0 ? 'Todo al día' : `de ${data.clientes.total} activos`}</p>
               </Link>
               {capitalData ? (
                 <Link href="/caja" className="rounded-[16px] px-4 py-4 transition-all hover:scale-[1.01] relative overflow-hidden lg:flex-1 lg:flex lg:flex-col lg:justify-center" style={{ background: 'color-mix(in srgb, var(--color-teal) 8%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-teal) 20%, var(--color-border))', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}>
