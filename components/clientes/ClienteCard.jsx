@@ -47,13 +47,7 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
         boxShadow: `0 2px 8px ${S.border}`,
       }}
     >
-      {/* Accent lateral izquierdo */}
-      <div
-        className="absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full"
-        style={{ background: S.color }}
-      />
-
-      <div className="pl-4 pr-3.5 py-3.5">
+      <div className="px-3.5 py-3.5">
         {/* Header: avatar + nombre + status + menu */}
         <div className="flex items-start gap-2.5 mb-3">
           <div className="relative shrink-0">
