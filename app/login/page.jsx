@@ -185,8 +185,11 @@ export default function LoginPage() {
           {/* Logo */}
           <div className="mb-8">
             <div className="flex items-center gap-3">
-              <img src="/logo-icon.svg" alt="Control Finanzas" width={38} height={38} />
-              <span className="text-[15px] font-bold" style={{ color: 'var(--color-text-primary)' }}>Control Finanzas</span>
+              <img src="/logo-icon.svg" alt="Control Finanzas" width={36} height={36} />
+              <span className="flex flex-col leading-[1.1]" style={{ fontFamily: 'var(--font-space-grotesk)', color: 'var(--color-text-primary)' }}>
+                <span className="text-[15px] font-bold tracking-[-0.01em]">Control</span>
+                <span className="text-[13px] font-medium tracking-[0.02em]" style={{ color: 'var(--color-text-secondary)' }}>Finanzas</span>
+              </span>
             </div>
           </div>
 

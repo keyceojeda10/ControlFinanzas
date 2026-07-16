@@ -313,8 +313,11 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
           {/* Logo */}
           <div className="mb-6">
             <Link href="/login" className="inline-flex items-center gap-2.5">
-              <img src="/logo-icon.svg" alt="" width={28} height={28} />
-              <span className="text-[15px] font-bold" style={{ color: t.text }}>Control Finanzas</span>
+              <img src="/logo-icon.svg" alt="" width={36} height={36} />
+              <span className="flex flex-col leading-[1.1]" style={{ fontFamily: 'var(--font-space-grotesk)', color: t.text }}>
+                <span className="text-[15px] font-bold tracking-[-0.01em]">Control</span>
+                <span className="text-[13px] font-medium tracking-[0.02em]" style={{ color: t.textSecondary }}>Finanzas</span>
+              </span>
             </Link>
           </div>
 
@@ -718,7 +721,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
             </p>
           )}
 
-          <div className="flex items-center justify-center gap-2.5 mt-6 text-[12px] flex-wrap" style={{ color: t.textMuted }}>
+          {(step === 1 || step === 4) && <div className="flex items-center justify-center gap-2.5 mt-6 text-[12px] flex-wrap" style={{ color: t.textMuted }}>
             <span className="inline-flex items-center gap-1">
               <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
@@ -729,7 +732,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
             <span>Tus datos están seguros</span>
             <span>·</span>
             <span>Soporte en español</span>
-          </div>
+          </div>}
         </div>
       </div>
     </div>
