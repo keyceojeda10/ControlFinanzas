@@ -78,7 +78,7 @@ function BackButton({ onClick, theme }) {
       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
       </svg>
-      Atras
+      Atrás
     </button>
   )
 }
@@ -165,18 +165,18 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
 
   const handleStep3 = () => {
     const limpio = form.telefono.replace(/\D/g, '')
-    if (!limpio) { setError('Ingresa tu numero de WhatsApp'); return }
+    if (!limpio) { setError('Ingresa tu número de WhatsApp'); return }
     if (!validatePhone(limpio, country)) {
-      setError(`Numero invalido. Ej: ${countryCfg.phonePlaceholder}`); return
+      setError(`Número inválido. Ej: ${countryCfg.phonePlaceholder}`); return
     }
     goNext()
   }
 
   const handleSubmit = async () => {
     setError('')
-    if (!form.email.trim()) { setError('Ingresa tu correo electronico'); return }
-    if (form.password.length < 8) { setError('La contrasena debe tener al menos 8 caracteres'); return }
-    if (!form.terminosAceptados) { setError('Debes aceptar los terminos y condiciones'); return }
+    if (!form.email.trim()) { setError('Ingresa tu correo electrónico'); return }
+    if (form.password.length < 8) { setError('La contraseña debe tener al menos 8 caracteres'); return }
+    if (!form.terminosAceptados) { setError('Debes aceptar los términos y condiciones'); return }
 
     const telefonoLimpio = form.telefono.replace(/\D/g, '')
 
@@ -210,7 +210,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
       }
       setStep(5)
     } catch {
-      setError('Error de conexion. Intenta de nuevo.')
+      setError('Error de conexión. Intenta de nuevo.')
     } finally {
       setLoading(false)
     }
@@ -218,7 +218,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
 
   const handleVerificarOtp = async (codigoFinal) => {
     const codigo = codigoFinal || otpDigits.join('')
-    if (codigo.length !== 6) { setOtpError('Ingresa el codigo de 6 digitos'); return }
+    if (codigo.length !== 6) { setOtpError('Ingresa el código de 6 dígitos'); return }
     setOtpLoading(true)
     setOtpError('')
     try {
@@ -228,7 +228,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
         body: JSON.stringify({ email: normalizarEmail(form.email), codigo }),
       })
       const data = await res.json()
-      if (!res.ok) { setOtpError(data.error || 'Codigo invalido'); setOtpLoading(false); return }
+      if (!res.ok) { setOtpError(data.error || 'Código inválido'); setOtpLoading(false); return }
 
       const login = await signIn('credentials', {
         email: normalizarEmail(form.email),
@@ -238,7 +238,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
       if (login?.ok) { router.push('/dashboard'); return }
       router.push('/login')
     } catch {
-      setOtpError('Error de conexion')
+      setOtpError('Error de conexión')
     } finally {
       setOtpLoading(false)
     }
@@ -312,11 +312,8 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
 
           {/* Logo */}
           <div className="mb-6">
-            <Link href="/login" className="inline-flex items-center gap-3">
-              <div className="w-9 h-9 rounded-[10px] flex items-center justify-center"
-                style={{ background: 'linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 85%, #000))' }}>
-                <img src="/logo-icon.svg" alt="" width={22} height={22} />
-              </div>
+            <Link href="/login" className="inline-flex items-center gap-2.5">
+              <img src="/logo-icon.svg" alt="" width={28} height={28} />
               <span className="text-[15px] font-bold" style={{ color: t.text }}>Control Finanzas</span>
             </Link>
           </div>
@@ -326,7 +323,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
             <ProgressBar step={step} total={TOTAL_STEPS} theme={t} />
             <div className="flex justify-between mt-2">
               <span className="text-[11px]" style={{ color: t.textMuted }}>Paso {step} de {TOTAL_STEPS}</span>
-              <span className="text-[11px]" style={{ color: t.textMuted }}>14 dias gratis</span>
+              <span className="text-[11px]" style={{ color: t.textMuted }}>14 días gratis</span>
             </div>
           </div>
 
@@ -359,16 +356,16 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
             <div>
               <h1 className="text-[26px] lg:text-[30px] leading-[1.15] font-semibold mb-2"
                 style={{ color: t.text, fontFamily: 'var(--font-space-grotesk)' }}>
-                Como te llamas?
+                ¿Cómo te llamas?
               </h1>
               <p className="text-[15px] mb-8" style={{ color: t.textSecondary }}>
-                Asi te saludamos dentro de la app.
+                Así te saludamos dentro de la app.
               </p>
 
               <AuthInput
                 value={form.nombre}
                 onChange={set('nombre')}
-                placeholder="Ej: Carlos Garcia"
+                placeholder="Ej: Carlos García"
                 autoComplete="given-name"
                 icon={
                   <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -390,7 +387,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
 
               <h1 className="text-[26px] lg:text-[30px] leading-[1.15] font-semibold mb-2"
                 style={{ color: t.text, fontFamily: 'var(--font-space-grotesk)' }}>
-                Como se llama tu negocio?
+                ¿Cómo se llama tu negocio?
               </h1>
               <p className="text-[15px] mb-8" style={{ color: t.textSecondary }}>
                 El nombre que ven tus clientes y cobradores.
@@ -399,7 +396,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
               <AuthInput
                 value={form.nombreOrganizacion}
                 onChange={set('nombreOrganizacion')}
-                placeholder="Ej: Prestamos Garcia"
+                placeholder="Ej: Préstamos García"
                 icon={
                   <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
@@ -420,7 +417,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
 
               <h1 className="text-[26px] lg:text-[30px] leading-[1.15] font-semibold mb-2"
                 style={{ color: t.text, fontFamily: 'var(--font-space-grotesk)' }}>
-                Tu numero de WhatsApp
+                Tu número de WhatsApp
               </h1>
               <p className="text-[15px] mb-8" style={{ color: t.textSecondary }}>
                 Para verificar tu cuenta y enviar recordatorios de cobro a tus clientes.
@@ -466,7 +463,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                 }
               />
               <p className="text-[11px] mt-1.5 px-0.5" style={{ color: t.textMuted }}>
-                Sin el codigo de pais. Solo el numero.
+                Sin el código de país. Solo el número.
               </p>
 
               <div className="mt-6">
@@ -485,12 +482,12 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                 Crea tu cuenta
               </h1>
               <p className="text-[15px] mb-8" style={{ color: t.textSecondary }}>
-                Tu correo sera tu usuario para iniciar sesion.
+                Tu correo será tu usuario para iniciar sesión.
               </p>
 
               <div className="space-y-3">
                 <AuthInput
-                  label="Correo electronico"
+                  label="Correo electrónico"
                   type="email"
                   value={form.email}
                   onChange={set('email')}
@@ -504,11 +501,11 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                 />
 
                 <AuthInput
-                  label="Contrasena"
+                  label="Contraseña"
                   type="password"
                   value={form.password}
                   onChange={set('password')}
-                  placeholder="Minimo 8 caracteres"
+                  placeholder="Mínimo 8 caracteres"
                   autoComplete="new-password"
                   showPasswordToggle
                   icon={
@@ -530,11 +527,11 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                   Acepto los{' '}
                   <a href="https://control-finanzas.com/terminos-uso" target="_blank" rel="noopener noreferrer"
                     className="hover:underline" style={{ color: 'var(--color-accent)' }}>
-                    Terminos de uso
+                    Términos de uso
                   </a>{' '}y la{' '}
                   <a href="https://control-finanzas.com/privacidad" target="_blank" rel="noopener noreferrer"
                     className="hover:underline" style={{ color: 'var(--color-accent)' }}>
-                    Politica de privacidad
+                    Política de privacidad
                   </a>
                 </span>
               </label>
@@ -598,7 +595,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                 {verificarPor === 'whatsapp' ? 'Revisa tu WhatsApp' : 'Verifica tu correo'}
               </h2>
               <p className="text-[14px] mb-1" style={{ color: t.textSecondary }}>
-                Enviamos un codigo de 6 digitos a
+                Enviamos un código de 6 dígitos a
               </p>
               <p className="text-[16px] font-bold mb-5" style={{ color: accentColor }}>
                 {verificarPor === 'whatsapp'
@@ -691,7 +688,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                   className="text-[13px] font-semibold transition-colors disabled:opacity-50"
                   style={{ color: otpReenviado ? 'var(--color-success)' : accentColor }}
                 >
-                  {otpReenviado ? 'Codigo reenviado' : otpReenviando ? 'Reenviando...' : 'Reenviar codigo'}
+                  {otpReenviado ? 'Código reenviado' : otpReenviando ? 'Reenviando...' : 'Reenviar código'}
                 </button>
                 <button
                   onClick={handleSaltarVerificacion}
@@ -705,18 +702,18 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
 
               <p className="text-[12px] mt-5 leading-relaxed" style={{ color: t.textMuted }}>
                 {verificarPor === 'whatsapp'
-                  ? 'El mensaje llega en segundos. Si no llega, usa el boton de verificar por correo.'
-                  : 'Revisa tu bandeja y la carpeta de spam. El codigo expira en 30 minutos.'}
+                  ? 'El mensaje llega en segundos. Si no llega, usa el botón de verificar por correo.'
+                  : 'Revisa tu bandeja y la carpeta de spam. El código expira en 30 minutos.'}
               </p>
             </div>
           )}
 
-          {/* Footer */}
-          {step < 5 && (
+          {/* Footer — solo en paso 1 */}
+          {step === 1 && (
             <p className="text-[14px] mt-8 text-center" style={{ color: t.textMuted }}>
-              Ya tienes cuenta?{' '}
+              ¿Ya tienes cuenta?{' '}
               <Link href="/login" className="font-semibold hover:underline" style={{ color: 'var(--color-accent)' }}>
-                Inicia sesion
+                Inicia sesión
               </Link>
             </p>
           )}
@@ -726,12 +723,12 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
               <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
               </svg>
-              Conexion cifrada SSL
+              Conexión cifrada SSL
             </span>
             <span>·</span>
-            <span>Tus datos estan seguros</span>
+            <span>Tus datos están seguros</span>
             <span>·</span>
-            <span>Soporte en espanol</span>
+            <span>Soporte en español</span>
           </div>
         </div>
       </div>
