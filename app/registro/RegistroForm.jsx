@@ -353,8 +353,8 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                 Crea tu cuenta
               </h1>
               <p className="text-[15px] mb-8 leading-relaxed" style={{ color: t.textSecondary }}>
-                Tu cartera y cobros organizados desde el celular.{' '}
-                <span style={{ color: 'var(--color-accent)', fontWeight: 600 }}>14 días gratis</span>, sin tarjeta.
+                Organiza tu cartera, rutas y cobros en un solo lugar.{' '}
+                <span style={{ color: 'var(--color-accent)', fontWeight: 600 }}>14 días gratis</span>.
               </p>
 
               <div className="mt-2">
