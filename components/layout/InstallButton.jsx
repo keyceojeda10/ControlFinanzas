@@ -1,5 +1,7 @@
 'use client'
 
+import { createPortal } from 'react-dom'
+
 export function isStandalone() {
   if (typeof window === 'undefined') return false
   return window.matchMedia('(display-mode: standalone)').matches ||
@@ -269,7 +271,7 @@ function renderBoldText(text) {
 export function InstallGuideModal({ onClose }) {
   const instructions = getInstructions()
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/70 px-0 sm:px-4" onClick={onClose}>
       <div
         className="w-full sm:max-w-sm bg-[var(--color-bg-surface)] border-t border-x sm:border border-[var(--color-border)] rounded-t-[20px] sm:rounded-[20px] flex flex-col max-h-[85vh] sm:max-h-[80vh]"
@@ -328,7 +330,8 @@ export function InstallGuideModal({ onClose }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
