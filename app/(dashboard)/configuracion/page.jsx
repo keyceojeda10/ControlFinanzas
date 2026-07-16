@@ -21,6 +21,7 @@ import ThemeToggle             from '@/components/ui/ThemeToggle'
 import { Toggle }              from '@/components/ui/Toggle'
 import { useTheme }             from '@/lib/theme/ThemeProvider'
 import { getCountryList, COUNTRIES } from '@/lib/countries'
+import { InstallGuideModal } from '@/components/layout/InstallButton'
 
 const PAISES_LIST = getCountryList()
 const WHATSAPP_SOPORTE = '573011993001'
@@ -1264,6 +1265,83 @@ function ConfiguracionContent() {
   )
 }
 
+function InstallSection() {
+  const [installed, setInstalled] = useState(true)
+  const [showGuide, setShowGuide] = useState(false)
+  const [deferredPrompt, setDeferredPrompt] = useState(null)
+
+  useEffect(() => {
+    const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true
+    if (standalone) { setInstalled(true); return }
+    setInstalled(false)
+    const handler = (e) => { e.preventDefault(); setDeferredPrompt(e) }
+    window.addEventListener('beforeinstallprompt', handler)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  const handleInstall = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt()
+      const { outcome } = await deferredPrompt.userChoice
+      setDeferredPrompt(null)
+      if (outcome === 'accepted') setInstalled(true)
+      return
+    }
+    setShowGuide(true)
+  }
+
+  return (
+    <Card>
+      <div className="p-5 space-y-4">
+        <div>
+          <h3 className="text-base font-semibold" style={{ color: 'var(--color-text-primary)' }}>Instalar la app</h3>
+          <p className="text-sm mt-1" style={{ color: 'var(--color-text-secondary)' }}>
+            Instala Control Finanzas como aplicacion en tu dispositivo para acceder mas rapido y usarla sin internet.
+          </p>
+        </div>
+
+        {installed ? (
+          <div
+            className="flex items-center gap-3 p-3 rounded-[12px]"
+            style={{ background: 'color-mix(in srgb, var(--color-success) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--color-success) 20%, transparent)' }}
+          >
+            <svg className="w-5 h-5 shrink-0" fill="none" stroke="var(--color-success)" viewBox="0 0 24 24" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-[13px]" style={{ color: 'var(--color-success)' }}>La app ya esta instalada en este dispositivo</p>
+          </div>
+        ) : (
+          <button
+            onClick={handleInstall}
+            className="flex items-center gap-3 w-full p-3 rounded-[12px] text-left transition-all active:scale-[0.99]"
+            style={{
+              background: 'color-mix(in srgb, var(--color-accent) 8%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--color-accent) 20%, transparent)',
+            }}
+          >
+            <div
+              className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
+              style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)' }}
+            >
+              <svg className="w-4.5 h-4.5" fill="none" stroke="var(--color-accent)" viewBox="0 0 24 24" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-semibold" style={{ color: 'var(--color-accent)' }}>Instalar en este dispositivo</p>
+              <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Te mostramos los pasos segun tu navegador</p>
+            </div>
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="var(--color-text-muted)" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        )}
+      </div>
+      {showGuide && <InstallGuideModal onClose={() => setShowGuide(false)} />}
+    </Card>
+  )
+}
+
 function TabApariencia() {
   const { theme, resolvedTheme } = useTheme()
   return (
@@ -1283,6 +1361,7 @@ function TabApariencia() {
           </p>
         </div>
       </Card>
+      <InstallSection />
     </div>
   )
 }

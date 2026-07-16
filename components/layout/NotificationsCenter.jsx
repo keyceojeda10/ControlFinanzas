@@ -341,8 +341,6 @@ export default function NotificationsCenter({ size = 'md' }) {
     setOpen(true)
   }, [])
 
-  if (showInstallGuide) return <InstallGuideModal onClose={() => setShowInstallGuide(false)} />
-
   const togglePanel = () => {
     if (toast) {
       clearTimeout(toastTimerRef.current)
@@ -593,6 +591,7 @@ export default function NotificationsCenter({ size = 'md' }) {
           </div>
         </div>
       )}
+      {showInstallGuide && <InstallGuideModal onClose={() => setShowInstallGuide(false)} />}
     </div>
   )
 }

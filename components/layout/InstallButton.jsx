@@ -1,5 +1,11 @@
 'use client'
 
+export function isStandalone() {
+  if (typeof window === 'undefined') return false
+  return window.matchMedia('(display-mode: standalone)').matches ||
+         window.navigator.standalone === true
+}
+
 function isIOS() {
   if (typeof navigator === 'undefined') return false
   return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream
@@ -20,7 +26,7 @@ function isSamsungBrowser() {
   return /SamsungBrowser/i.test(navigator.userAgent)
 }
 
-function getBrowserName() {
+export function getBrowserName() {
   if (typeof navigator === 'undefined') return 'otro'
   const ua = navigator.userAgent
   if (/CriOS/i.test(ua)) return 'chrome-ios'
@@ -34,7 +40,7 @@ function getBrowserName() {
   return 'otro'
 }
 
-function getDeviceType() {
+export function getDeviceType() {
   if (isIOS()) return 'ios'
   if (isAndroid()) return 'android'
   return 'desktop'
@@ -289,7 +295,7 @@ export function InstallGuideModal({ onClose }) {
             {instructions.steps.map((step, i) => {
               const StepIconComponent = ICON_MAP[step.icon]
               return (
-                <div key={i} className="flex items-start gap-3 p-3 rounded-[12px] bg-[#151515] border border-[#222]">
+                <div key={i} className="flex items-start gap-3 p-3 rounded-[12px] bg-[var(--color-bg-hover)] border border-[var(--color-border)]">
                   {/* Numero + Icono en fila */}
                   <div className="shrink-0 flex items-center gap-2">
                     <div className="w-7 h-7 rounded-full bg-[var(--color-accent)] flex items-center justify-center text-[#0a0a0a] text-xs font-bold">
@@ -303,8 +309,8 @@ export function InstallGuideModal({ onClose }) {
                   </div>
                   {/* Texto */}
                   <div className="pt-1 min-w-0 flex-1">
-                    <p className="text-[13px] text-[#ccc] leading-snug">{renderBoldText(step.text)}</p>
-                    {step.sub && <p className="text-[11px] text-[#666] mt-1 leading-snug">{step.sub}</p>}
+                    <p className="text-[13px] leading-snug" style={{ color: 'var(--color-text-secondary)' }}>{renderBoldText(step.text)}</p>
+                    {step.sub && <p className="text-[11px] mt-1 leading-snug" style={{ color: 'var(--color-text-muted)' }}>{step.sub}</p>}
                   </div>
                 </div>
               )

@@ -17,6 +17,7 @@ const SpotlightOverlay    = dynamic(() => import('@/components/onboarding/Spotli
 const CobradorOnboarding  = dynamic(() => import('@/components/onboarding/CobradorOnboarding'),  { ssr: false })
 const DashboardAiTip      = dynamic(() => import('@/components/dashboard/DashboardAiTip'),       { ssr: false })
 const MonedaCF            = dynamic(() => import('@/components/ui/MonedaCF'),                    { ssr: false })
+const InstallBanner       = dynamic(() => import('@/components/layout/InstallBanner'),            { ssr: false })
 
 function Skeleton({ className = '' }) {
   return <div className={`animate-pulse rounded-[12px] ${className}`} style={{ background: 'var(--color-bg-hover)' }} />
@@ -1503,6 +1504,7 @@ export default function DashboardPage() {
       {!authLoading && !esOwner && session?.user?.id && (
         <CobradorOnboarding userId={session.user.id} />
       )}
+      <InstallBanner />
       <SpotlightOverlay
         spotlight={onboarding.spotlight}
         onClose={onboarding.hideSpotlight}
