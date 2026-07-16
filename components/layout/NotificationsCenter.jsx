@@ -248,10 +248,10 @@ export default function NotificationsCenter({ size = 'md' }) {
     }
   }
 
-  const canInstall = installable && !isStandalone()
-  const canPush = pushPermission === 'default'
-  const showInstallToast = canInstall && !installDismissed
-  const showPushToast = canPush && !pushDismissed
+  const canInstall = installable && !isStandalone() && !installDismissed
+  const canPush = pushPermission === 'default' && !pushDismissed
+  const showInstallToast = canInstall
+  const showPushToast = canPush
   const showSyncItem = !isOnline || pendingCount > 0 || failedTotal > 0
   const showSolicitudesItem = esOwner && solicitudes.length > 0
 
@@ -441,7 +441,7 @@ export default function NotificationsCenter({ size = 'md' }) {
             ...(panelPos.bottom != null ? { bottom: panelPos.bottom } : { top: panelPos.top }),
           }}
         >
-          <div className="px-4 py-3 sticky top-0 glass-strong" style={{ borderBottom: '1px solid var(--color-border)' }}>
+          <div className="px-4 py-3 sticky top-0" style={{ background: 'var(--color-bg-card)', borderBottom: '1px solid var(--color-border)' }}>
             <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Notificaciones</p>
           </div>
 
