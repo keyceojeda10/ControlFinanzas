@@ -272,8 +272,8 @@ export function InstallGuideModal({ onClose }) {
   return (
     <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/70 px-0 sm:px-4" onClick={onClose}>
       <div
-        className="w-full sm:max-w-sm bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-t-[20px] sm:rounded-[20px] flex flex-col max-h-[85vh] sm:max-h-[80vh] mb-0 sm:mb-0"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}
+        className="w-full sm:max-w-sm bg-[var(--color-bg-surface)] border-t border-x sm:border border-[var(--color-border)] rounded-t-[20px] sm:rounded-[20px] flex flex-col max-h-[85vh] sm:max-h-[80vh]"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header fijo */}
