@@ -2013,7 +2013,7 @@ export default function RutaDetallePage({ params }) {
                     <div className="flex items-start gap-3 min-w-0">
                       {/* Info */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-semibold text-[var(--color-text-primary)] truncate">{c.nombre}</p>
+                        <p className="text-[14px] font-bold text-[var(--color-text-primary)] leading-snug">{c.nombre}</p>
                         <div className="flex items-center gap-1 mt-0.5">
                           {c.tieneClavo && (
                             <span
