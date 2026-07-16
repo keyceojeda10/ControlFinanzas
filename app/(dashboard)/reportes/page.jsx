@@ -147,6 +147,7 @@ export default function ReportesPage() {
   const [periodoIngresos, setPeriodoIngresos] = useState('diario')
   const [descargando, setDescargando] = useState('')
   const [descargandoPDF, setDescargandoPDF] = useState(false)
+  const [descargandoListado, setDescargandoListado] = useState(false)
   // Seguros por ruta (carga independiente, con su propio periodo)
   const [seguros, setSeguros] = useState(null)
   const [periodoSeguros, setPeriodoSeguros] = useState('mes')
@@ -221,6 +222,24 @@ export default function ReportesPage() {
       .finally(() => setCobrosMesLoading(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, mesCobros, nivel])
+
+  const exportarListado = async () => {
+    setDescargandoListado(true)
+    try {
+      const res = await fetch('/api/reportes/listado-cobros')
+      if (!res.ok) { alert('Error al generar listado'); return }
+      const blob = await res.blob()
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = `listado-cobros-${new Date().toISOString().slice(0, 10)}.pdf`
+      a.click()
+      URL.revokeObjectURL(a.href)
+    } catch {
+      alert('Error de conexión.')
+    } finally {
+      setDescargandoListado(false)
+    }
+  }
 
   const exportarPDF = async () => {
     setDescargandoPDF(true)
@@ -843,6 +862,46 @@ export default function ReportesPage() {
           </div>
         </div>
       )}
+
+      {/* ── 4.5 Listado de cobros PDF (todos los planes) ──────── */}
+      <div className="rounded-[20px] px-4 py-4 cf-card-shadow"
+        style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+      >
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-6 h-6 rounded-[8px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--color-info) 18%, transparent)', color: 'var(--color-info)' }}>
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12M8.25 17.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+            </svg>
+          </div>
+          <p className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-secondary)' }}>Listado de cobros</p>
+        </div>
+        <button
+          onClick={exportarListado}
+          disabled={descargandoListado}
+          className="group w-full h-14 px-3 rounded-[12px] flex items-center gap-3 transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+          style={{
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-info) 8%, var(--color-bg-base)) 0%, var(--color-bg-base) 100%)',
+            border: '1px solid color-mix(in srgb, var(--color-info) 22%, var(--color-border))',
+          }}
+        >
+          <div
+            className="w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0 transition-transform group-hover:scale-110"
+            style={{ background: 'color-mix(in srgb, var(--color-info) 18%, transparent)', color: 'var(--color-info)' }}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+          </div>
+          <div className="flex flex-col items-start text-left min-w-0 flex-1">
+            <span className="text-[13px] font-semibold truncate w-full" style={{ color: 'var(--color-info)' }}>
+              {descargandoListado ? 'Generando PDF...' : 'Descargar Listado'}
+            </span>
+            <span className="text-[10px] truncate w-full" style={{ color: 'var(--color-text-muted)' }}>
+              Todos los clientes con cuota, saldo y estado de mora
+            </span>
+          </div>
+        </button>
+      </div>
 
       {/* ── 5. Descargar Resumen PDF ────────────────────────────── */}
       {nivel < 2 && <UpgradeNudge titulo="Resumen PDF" planRequerido="standard" />}
