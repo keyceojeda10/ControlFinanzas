@@ -321,14 +321,9 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
             </Link>
           </div>
 
-          {/* Progress bar */}
-          <div className="mb-8">
-            <ProgressBar step={step} total={TOTAL_STEPS} theme={t} />
-            <div className="flex justify-between mt-2">
-              <span className="text-[11px]" style={{ color: t.textMuted }}>Paso {step} de {TOTAL_STEPS}</span>
-              <span className="text-[11px]" style={{ color: t.textMuted }}>14 días gratis</span>
-            </div>
-          </div>
+          {step < 5 && (
+            <p className="text-[12px] mb-6" style={{ color: t.textMuted }}>14 días gratis</p>
+          )}
 
           {/* Referido badge */}
           {referrer && step < 5 && (
