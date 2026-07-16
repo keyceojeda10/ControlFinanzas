@@ -16,6 +16,8 @@ export async function GET(req) {
   const country = session.user.country ?? 'co'
   const { searchParams } = new URL(req.url)
   const rutaId = searchParams.get('rutaId')
+  const soloMora = searchParams.get('soloMora') === '1'
+  const orden = searchParams.get('orden') || 'nombre'
 
   const fmt = (v) => formatMoney(v, country)
 
@@ -76,7 +78,7 @@ export async function GET(req) {
   const diasSinCobroOrg = obtenerDiasSinCobro(org?.diasSinCobro)
   const festArr = festivos.map(f => new Date(f.fecha).toISOString().slice(0, 10))
 
-  const filas = []
+  let filas = []
   let totalCuotas = 0
   let totalSaldos = 0
   let clientesConMora = 0
@@ -86,6 +88,11 @@ export async function GET(req) {
       for (const p of cliente.prestamos) {
         const saldo = calcularSaldoPendiente(p)
         const mora = calcularDiasMora(p, diasSinCobroOrg, festArr)
+        const pagado = p.totalAPagar - saldo
+        const avance = p.totalAPagar > 0 ? Math.round((pagado / p.totalAPagar) * 100) : 0
+
+        if (soloMora && mora <= 0) continue
+
         totalCuotas += p.cuotaDiaria
         totalSaldos += saldo
         if (mora > 0) clientesConMora++
@@ -93,15 +100,20 @@ export async function GET(req) {
         filas.push({
           ruta: ruta.nombre,
           nombre: cliente.nombre,
+          direccion: cliente.direccion || '',
           telefono: cliente.telefono || '',
           cuota: p.cuotaDiaria,
           frecuencia: p.frecuencia,
           saldo,
           mora,
+          avance,
         })
       }
     }
   }
+
+  if (orden === 'mora') filas.sort((a, b) => b.mora - a.mora)
+  else if (orden === 'saldo') filas.sort((a, b) => b.saldo - a.saldo)
 
   // ── Generate PDF ─────────────────────────────────────────
   const doc = new PDFDocument({ size: 'letter', margin: 40, bufferPages: true })
@@ -149,8 +161,9 @@ export async function GET(req) {
   doc.fontSize(10).fillColor('#777777')
      .text(hoy, LEFT, 79)
 
+  const filterLabel = soloMora ? 'Solo en mora' : 'Todos los clientes'
   doc.fontSize(8).fillColor(COLOR_FAINT)
-     .text(`${filas.length} clientes con préstamo activo`, LEFT, 42, { width: W, align: 'right' })
+     .text(`${filas.length} clientes · ${filterLabel}`, LEFT, 42, { width: W, align: 'right' })
 
   doc.rect(LEFT, 98, W, 2).fill(COLOR_GREEN)
 
@@ -187,15 +200,16 @@ export async function GET(req) {
   }
 
   const COL = {
-    num:   { x: LEFT,       w: 22 },
-    nombre:{ x: LEFT + 22,  w: 170 },
-    tel:   { x: LEFT + 192, w: 80 },
-    cuota: { x: LEFT + 272, w: 78 },
-    saldo: { x: LEFT + 350, w: 85 },
-    mora:  { x: LEFT + 435, w: 45 },
-    estado:{ x: LEFT + 480, w: W - 440 },
+    num:    { x: LEFT,       w: 20 },
+    nombre: { x: LEFT + 20,  w: 165 },
+    tel:    { x: LEFT + 185, w: 72 },
+    cuota:  { x: LEFT + 257, w: 72 },
+    saldo:  { x: LEFT + 329, w: 78 },
+    avance: { x: LEFT + 407, w: 48 },
+    mora:   { x: LEFT + 455, w: 77 },
   }
   const ROW_H = 18
+  const ROW_H_DIR = 28
 
   for (const [rutaNombre, clientes] of Object.entries(rutasAgrupadas)) {
     y = ensureSpace(y, 50)
@@ -219,17 +233,19 @@ export async function GET(req) {
     doc.text('TELÉFONO', COL.tel.x, y + 3, { width: COL.tel.w })
     doc.text('CUOTA', COL.cuota.x, y + 3, { width: COL.cuota.w, align: 'right' })
     doc.text('SALDO', COL.saldo.x, y + 3, { width: COL.saldo.w, align: 'right' })
+    doc.text('AVANCE', COL.avance.x, y + 3, { width: COL.avance.w, align: 'center' })
     doc.text('MORA', COL.mora.x, y + 3, { width: COL.mora.w, align: 'center' })
-    doc.text('ESTADO', COL.estado.x, y + 3, { width: COL.estado.w, align: 'center' })
     y += ROW_H
 
     // Table rows
     clientes.forEach((c, i) => {
-      y = ensureSpace(y, ROW_H + 4)
+      const hasDir = c.direccion.length > 0
+      const rowH = hasDir ? ROW_H_DIR : ROW_H
+      y = ensureSpace(y, rowH + 4)
 
       if (i % 2 === 1) {
         doc.save()
-        doc.rect(LEFT, y - 2, W, ROW_H).fill(COLOR_ROW_BG)
+        doc.rect(LEFT, y - 2, W, rowH).fill(COLOR_ROW_BG)
         doc.restore()
       }
 
@@ -237,14 +253,24 @@ export async function GET(req) {
 
       doc.fontSize(7.5).font('Helvetica').fillColor(COLOR_TEXT)
       doc.text(String(i + 1), COL.num.x + 4, y + 3, { width: COL.num.w })
-      doc.font('Helvetica-Bold').text(c.nombre, COL.nombre.x, y + 3, { width: COL.nombre.w, height: ROW_H - 4, ellipsis: true, lineBreak: false })
-      doc.font('Helvetica').fillColor(COLOR_MUTED).text(c.telefono, COL.tel.x, y + 3, { width: COL.tel.w })
+      doc.font('Helvetica-Bold').text(c.nombre, COL.nombre.x, y + 3, { width: COL.nombre.w, height: 12, ellipsis: true, lineBreak: false })
+      if (hasDir) {
+        doc.fontSize(6).font('Helvetica').fillColor(COLOR_FAINT)
+           .text(c.direccion, COL.nombre.x, y + 14, { width: COL.nombre.w, height: 10, ellipsis: true, lineBreak: false })
+      }
+      doc.fontSize(7.5).font('Helvetica').fillColor(COLOR_MUTED).text(c.telefono, COL.tel.x, y + 3, { width: COL.tel.w })
       doc.fillColor(COLOR_TEXT).text(fmt(c.cuota) + freq, COL.cuota.x, y + 3, { width: COL.cuota.w, align: 'right' })
       doc.text(fmt(c.saldo), COL.saldo.x, y + 3, { width: COL.saldo.w, align: 'right' })
 
+      // Avance (% pagado)
+      const avText = `${c.avance}%`
+      const avColor = c.avance >= 80 ? COLOR_GREEN : c.avance >= 50 ? COLOR_AMBER : COLOR_TEXT
+      doc.fontSize(7).font('Helvetica-Bold').fillColor(avColor)
+         .text(avText, COL.avance.x, y + 3, { width: COL.avance.w, align: 'center' })
+
       // Mora badge
       if (c.mora > 0) {
-        const moraText = `${c.mora}d`
+        const moraText = `${c.mora}d mora`
         const badgeBg = c.mora > 10 ? '#fee2e2' : '#fef3c7'
         const badgeColor = c.mora > 10 ? COLOR_RED : COLOR_AMBER
         const tw = doc.font('Helvetica-Bold').fontSize(7).widthOfString(moraText)
@@ -256,17 +282,18 @@ export async function GET(req) {
         doc.fontSize(7).font('Helvetica-Bold').fillColor(badgeColor)
            .text(moraText, bx, y + 3, { width: bw, align: 'center' })
       } else {
-        doc.fontSize(7).font('Helvetica').fillColor(COLOR_MUTED)
-           .text('—', COL.mora.x, y + 3, { width: COL.mora.w, align: 'center' })
+        const okText = 'Al día'
+        const tw = doc.font('Helvetica-Bold').fontSize(7).widthOfString(okText)
+        const bw = tw + 10
+        const bx = COL.mora.x + (COL.mora.w - bw) / 2
+        doc.save()
+        doc.roundedRect(bx, y, bw, 13, 6).fill('#dcfce7')
+        doc.restore()
+        doc.fontSize(7).font('Helvetica-Bold').fillColor(COLOR_GREEN)
+           .text(okText, bx, y + 3, { width: bw, align: 'center' })
       }
 
-      // Status
-      const statusText = c.mora > 0 ? 'En mora' : 'Al día'
-      const statusColor = c.mora > 0 ? COLOR_RED : COLOR_GREEN
-      doc.fontSize(7).font('Helvetica-Bold').fillColor(statusColor)
-         .text(statusText, COL.estado.x, y + 3, { width: COL.estado.w, align: 'center' })
-
-      y += ROW_H
+      y += rowH
     })
 
     // Route subtotal

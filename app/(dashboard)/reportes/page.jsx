@@ -148,6 +148,10 @@ export default function ReportesPage() {
   const [descargando, setDescargando] = useState('')
   const [descargandoPDF, setDescargandoPDF] = useState(false)
   const [descargandoListado, setDescargandoListado] = useState(false)
+  const [rutasListado, setRutasListado] = useState([])
+  const [filtroRuta, setFiltroRuta] = useState('')
+  const [filtroSoloMora, setFiltroSoloMora] = useState(false)
+  const [filtroOrden, setFiltroOrden] = useState('nombre')
   // Seguros por ruta (carga independiente, con su propio periodo)
   const [seguros, setSeguros] = useState(null)
   const [periodoSeguros, setPeriodoSeguros] = useState('mes')
@@ -163,6 +167,14 @@ export default function ReportesPage() {
   const [hasta, setHasta]  = useState(hoy())
 
   const nivel = nivelReportes(plan)
+
+  useEffect(() => {
+    if (!authLoading && esOwner) {
+      fetch('/api/rutas').then(r => r.json()).then(d => {
+        if (Array.isArray(d)) setRutasListado(d)
+      }).catch(() => {})
+    }
+  }, [authLoading, esOwner])
 
   const fetchAll = async () => {
     setLoading(true)
@@ -226,7 +238,12 @@ export default function ReportesPage() {
   const exportarListado = async () => {
     setDescargandoListado(true)
     try {
-      const res = await fetch('/api/reportes/listado-cobros')
+      const params = new URLSearchParams()
+      if (filtroRuta) params.set('rutaId', filtroRuta)
+      if (filtroSoloMora) params.set('soloMora', '1')
+      if (filtroOrden !== 'nombre') params.set('orden', filtroOrden)
+      const qs = params.toString()
+      const res = await fetch(`/api/reportes/listado-cobros${qs ? `?${qs}` : ''}`)
       if (!res.ok) { alert('Error al generar listado'); return }
       const blob = await res.blob()
       const a = document.createElement('a')
@@ -875,6 +892,55 @@ export default function ReportesPage() {
           </div>
           <p className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-secondary)' }}>Listado de cobros</p>
         </div>
+
+        {/* Filtros */}
+        <div className="flex flex-wrap items-center gap-2 mb-3">
+          <select
+            value={filtroRuta}
+            onChange={e => setFiltroRuta(e.target.value)}
+            className="h-8 px-2.5 rounded-[8px] text-[11px] focus:outline-none transition-all min-w-0 flex-1"
+            style={{ background: 'var(--color-bg-base)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+          >
+            <option value="">Todas las rutas</option>
+            {rutasListado.map(r => (
+              <option key={r.id} value={r.id}>{r.nombre}</option>
+            ))}
+          </select>
+          <select
+            value={filtroOrden}
+            onChange={e => setFiltroOrden(e.target.value)}
+            className="h-8 px-2.5 rounded-[8px] text-[11px] focus:outline-none transition-all"
+            style={{ background: 'var(--color-bg-base)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+          >
+            <option value="nombre">Ordenar por nombre</option>
+            <option value="mora">Mayor mora primero</option>
+            <option value="saldo">Mayor saldo primero</option>
+          </select>
+        </div>
+        <label
+          className="flex items-center gap-2 mb-3 cursor-pointer select-none"
+          onClick={() => setFiltroSoloMora(v => !v)}
+        >
+          <div
+            className="w-8 h-[18px] rounded-full relative transition-all"
+            style={{
+              background: filtroSoloMora ? 'var(--color-danger)' : 'var(--color-bg-hover)',
+              border: `1px solid ${filtroSoloMora ? 'var(--color-danger)' : 'var(--color-border)'}`,
+            }}
+          >
+            <div
+              className="absolute top-[2px] w-3 h-3 rounded-full transition-all"
+              style={{
+                left: filtroSoloMora ? '16px' : '2px',
+                background: filtroSoloMora ? '#fff' : 'var(--color-text-muted)',
+              }}
+            />
+          </div>
+          <span className="text-[11px] font-medium" style={{ color: filtroSoloMora ? 'var(--color-danger)' : 'var(--color-text-muted)' }}>
+            Solo clientes en mora
+          </span>
+        </label>
+
         <button
           onClick={exportarListado}
           disabled={descargandoListado}
@@ -897,7 +963,7 @@ export default function ReportesPage() {
               {descargandoListado ? 'Generando PDF...' : 'Descargar Listado'}
             </span>
             <span className="text-[10px] truncate w-full" style={{ color: 'var(--color-text-muted)' }}>
-              Todos los clientes con cuota, saldo y estado de mora
+              {filtroSoloMora ? 'Clientes en mora' : 'Todos los clientes'} · cuota, saldo, avance y mora
             </span>
           </div>
         </button>
