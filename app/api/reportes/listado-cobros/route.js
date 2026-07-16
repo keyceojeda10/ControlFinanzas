@@ -52,12 +52,16 @@ export async function GET(req) {
             prestamos: {
               where: { estado: 'activo', esClavo: false },
               select: {
+                estado: true,
                 montoPrestado: true,
                 totalAPagar: true,
                 cuotaDiaria: true,
                 frecuencia: true,
                 fechaInicio: true,
                 diasPlazo: true,
+                modoInteres: true,
+                proximoCobroManual: true,
+                cuotasAmortizacion: { select: { numeroPeriodo: true, cuotaTotal: true, capital: true, pagado: true, fechaEsperada: true } },
                 pagos: { select: { montoPagado: true, tipo: true } },
               },
             },
@@ -70,7 +74,7 @@ export async function GET(req) {
   ])
 
   const diasSinCobroOrg = obtenerDiasSinCobro(org?.diasSinCobro)
-  const festSet = new Set(festivos.map(f => new Date(f.fecha).toISOString().slice(0, 10)))
+  const festArr = festivos.map(f => new Date(f.fecha).toISOString().slice(0, 10))
 
   const filas = []
   let totalCuotas = 0
@@ -81,7 +85,7 @@ export async function GET(req) {
     for (const cliente of ruta.clientes) {
       for (const p of cliente.prestamos) {
         const saldo = calcularSaldoPendiente(p)
-        const mora = calcularDiasMora(p, diasSinCobroOrg, festSet)
+        const mora = calcularDiasMora(p, diasSinCobroOrg, festArr)
         totalCuotas += p.cuotaDiaria
         totalSaldos += saldo
         if (mora > 0) clientesConMora++
