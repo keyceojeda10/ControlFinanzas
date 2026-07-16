@@ -113,7 +113,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
   const planSilencioso = planParam || 'starter'
   const countryInicial = PAISES.some(p => p.code === countryParam) ? countryParam : 'co'
 
-  const [step, setStep] = useState(1)
+  const [step, setStep] = useState(0)
   const [country, setCountry] = useState(countryInicial)
   const countryCfg = getCountryConfig(country)
 
@@ -321,10 +321,6 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
             </Link>
           </div>
 
-          {step < 5 && (
-            <p className="text-[12px] mb-6" style={{ color: t.textMuted }}>14 días gratis</p>
-          )}
-
           {/* Referido badge */}
           {referrer && step < 5 && (
             <div className="flex items-center gap-2 rounded-[10px] px-3 py-2 mb-5"
@@ -339,7 +335,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
           )}
 
           {/* Error global */}
-          {error && step < 5 && (
+          {error && step > 0 && step < 5 && (
             <div className="flex items-center gap-2.5 text-[13px] rounded-[10px] px-4 py-3 mb-5"
               style={{ background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)', color: 'var(--color-danger)' }}>
               <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -349,9 +345,29 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
             </div>
           )}
 
+          {/* ── Step 0: Bienvenida ── */}
+          {step === 0 && (
+            <div>
+              <h1 className="text-[28px] lg:text-[32px] leading-[1.15] font-bold mb-3"
+                style={{ color: t.text, fontFamily: 'var(--font-space-grotesk)' }}>
+                Crea tu cuenta
+              </h1>
+              <p className="text-[15px] mb-8 leading-relaxed" style={{ color: t.textSecondary }}>
+                Tu cartera y cobros organizados desde el celular.{' '}
+                <span style={{ color: 'var(--color-accent)', fontWeight: 600 }}>14 días gratis</span>, sin tarjeta.
+              </p>
+
+              <div className="mt-2">
+                <ContinueButton onClick={goNext}>Comenzar</ContinueButton>
+              </div>
+            </div>
+          )}
+
           {/* ── Step 1: Nombre ── */}
           {step === 1 && (
             <div>
+              <BackButton onClick={goBack} theme={t} />
+
               <h1 className="text-[26px] lg:text-[30px] leading-[1.15] font-semibold mb-2"
                 style={{ color: t.text, fontFamily: 'var(--font-space-grotesk)' }}>
                 ¿Cómo te llamas?
@@ -706,8 +722,8 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
             </div>
           )}
 
-          {/* Footer — solo en paso 1 */}
-          {step === 1 && (
+          {/* Footer — solo en bienvenida */}
+          {step === 0 && (
             <p className="text-[14px] mt-8 text-center" style={{ color: t.textMuted }}>
               ¿Ya tienes cuenta?{' '}
               <Link href="/login" className="font-semibold hover:underline" style={{ color: 'var(--color-accent)' }}>
@@ -716,7 +732,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
             </p>
           )}
 
-          {(step === 1 || step === 4) && <div className="flex items-center justify-center gap-2.5 mt-6 text-[12px] flex-wrap" style={{ color: t.textMuted }}>
+          {(step === 0 || step === 4) && <div className="flex items-center justify-center gap-2.5 mt-6 text-[12px] flex-wrap" style={{ color: t.textMuted }}>
             <span className="inline-flex items-center gap-1">
               <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
