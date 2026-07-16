@@ -221,27 +221,26 @@ export async function GET(req) {
   const COLOR_AMBER_BG = '#fef3c7'
   const COLOR_BLUE     = '#2563eb'
 
-  const W = 612 - 80 // usable width
+  const W = 612 - 80
   const LEFT = 40
   const RIGHT = 572
-  const PAGE_BOTTOM = 760 // safe content limit before footer zone
+  const PAGE_BOTTOM = 760
 
   const fechaDesdeFmt = formatFechaCorta(new Date(desdeStr + 'T12:00:00Z'), country)
   const fechaHastaFmt = formatFechaCorta(new Date(hastaStr + 'T12:00:00Z'), country)
   const generadoFmt = new Date().toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 
-  // ── Helpers ───────────────────────────────────────────────
+  // lineBreak: false on ALL text calls — prevents PDFKit from auto-creating blank pages
+  const t = (str, x, y, opts = {}) => doc.text(str, x, y, { lineBreak: false, ...opts })
 
-  // Section title: uppercase label + thin bottom rule, like ReporteDia's h2.
   function sectionTitle(y, label) {
     doc.fontSize(10).font('Helvetica-Bold').fillColor(COLOR_INK)
-       .text(label.toUpperCase(), LEFT, y, { width: W, characterSpacing: 0.3 })
+    t(label.toUpperCase(), LEFT, y, { width: W, characterSpacing: 0.3 })
     const lineY = y + 13
     doc.moveTo(LEFT, lineY).lineTo(RIGHT, lineY).strokeColor(COLOR_INK).lineWidth(1).stroke()
     return lineY + 12
   }
 
-  // Ensures there is room for `needed` px before the footer; adds a page otherwise.
   function ensureSpace(y, needed) {
     if (y + needed > PAGE_BOTTOM) {
       doc.addPage()
@@ -250,43 +249,38 @@ export async function GET(req) {
     return y
   }
 
-  // A single stat block: uppercase muted label + bold colored value.
   function drawStat(x, y, width, label, value, color = COLOR_INK, valueSize = 13) {
     doc.fontSize(8).font('Helvetica').fillColor(COLOR_MUTED)
-       .text(label.toUpperCase(), x, y, { width, characterSpacing: 0.2 })
+    t(label.toUpperCase(), x, y, { width, characterSpacing: 0.2 })
     doc.fontSize(valueSize).font('Helvetica-Bold').fillColor(color)
-       .text(value, x, y + 11, { width })
+    t(value, x, y + 11, { width })
   }
 
-  // Efficiency badge: colored pill background + bold colored text (mirrors .badge in ReporteDia).
   function drawBadge(x, y, width, text, bg, color) {
     const padX = 6
     const textWidth = doc.font('Helvetica-Bold').fontSize(8).widthOfString(text)
     const boxW = Math.min(width, textWidth + padX * 2)
-    const boxX = x + (width - boxW) // right-align within column
+    const boxX = x + (width - boxW)
     doc.save()
     doc.roundedRect(boxX, y - 2, boxW, 13, 6).fill(bg)
     doc.restore()
     doc.fontSize(8).font('Helvetica-Bold').fillColor(color)
-       .text(text, boxX, y + 1, { width: boxW, align: 'center' })
+    t(text, boxX, y + 1, { width: boxW, align: 'center' })
   }
 
   // ── A. Header ────────────────────────────────────────────
-  // Force single line (ellipsis on overflow): long org names would otherwise
-  // wrap to a 2nd line and collide with the subtitle/date below it.
   doc.fontSize(20).font('Helvetica-Bold').fillColor(COLOR_INK)
-     .text(nombreNegocio, LEFT, 40, { width: W * 0.68, height: 24, ellipsis: true, lineBreak: false })
+  t(nombreNegocio, LEFT, 40, { width: W * 0.68, height: 24, ellipsis: true })
 
   doc.fontSize(11).font('Helvetica').fillColor(COLOR_MUTED)
-     .text('Resumen del periodo', LEFT, 64)
+  t('Resumen del periodo', LEFT, 64)
 
   doc.fontSize(10).fillColor('#777777')
-     .text(`${fechaDesdeFmt}  —  ${fechaHastaFmt}`, LEFT, 79)
+  t(`${fechaDesdeFmt}  —  ${fechaHastaFmt}`, LEFT, 79)
 
   doc.fontSize(8).fillColor(COLOR_FAINT)
-     .text(`Generado: ${generadoFmt}`, LEFT, 42, { width: W, align: 'right' })
+  t(`Generado: ${generadoFmt}`, LEFT, 42, { width: W, align: 'right' })
 
-  // Colored accent line (green) instead of gray — matches design canon accent usage.
   doc.rect(LEFT, 98, W, 2).fill(COLOR_GREEN)
 
   // ── B. KPI cards (2x2 grid, bordered with left accent) ───
@@ -308,23 +302,21 @@ export async function GET(req) {
     const x = LEFT + col * (kpiW + kpiGap)
     const y = kpiY + row * (kpiH + kpiGap)
 
-    // Card: white fill, thin border, rounded corners (matches .stat in ReporteDia).
     doc.save()
     doc.roundedRect(x, y, kpiW, kpiH, 8).lineWidth(0.75).strokeColor(COLOR_BORDER).stroke()
     doc.restore()
 
-    // Left accent bar (3px, rounded to match card corners).
     doc.save()
     doc.roundedRect(x, y, 3, kpiH, 1.5).fill(kpi.accent)
     doc.restore()
 
     doc.fontSize(8).font('Helvetica').fillColor(COLOR_MUTED)
-       .text(kpi.label.toUpperCase(), x + 14, y + 10, { width: kpiW - 24, characterSpacing: 0.2 })
+    t(kpi.label.toUpperCase(), x + 14, y + 10, { width: kpiW - 24, characterSpacing: 0.2 })
     doc.fontSize(16).font('Helvetica-Bold').fillColor(COLOR_INK)
-       .text(kpi.value, x + 14, y + 23, { width: kpiW - 24 })
+    t(kpi.value, x + 14, y + 23, { width: kpiW - 24 })
     if (kpi.sub) {
       doc.fontSize(7.5).font('Helvetica').fillColor(COLOR_FAINT)
-         .text(kpi.sub, x + 14, y + 40, { width: kpiW - 24 })
+      t(kpi.sub, x + 14, y + 40, { width: kpiW - 24 })
     }
   })
 
@@ -367,7 +359,7 @@ export async function GET(req) {
 
   if (cobradoresData.length === 0) {
     doc.fontSize(9).font('Helvetica').fillColor(COLOR_FAINT)
-       .text('Sin datos de cobradores en el periodo', LEFT, yE)
+    t('Sin datos de cobradores en el periodo', LEFT, yE)
     yE += 20
   } else {
     const cols = [
@@ -379,7 +371,6 @@ export async function GET(req) {
     ]
     const rowH = 20
 
-    // Header row: light gray background, uppercase bold labels.
     function drawTableHeader(y) {
       doc.save()
       doc.rect(LEFT, y, W, 18).fill(COLOR_HEAD_BG)
@@ -387,7 +378,7 @@ export async function GET(req) {
       let xCol = LEFT + 8
       cols.forEach(col => {
         doc.fontSize(7.5).font('Helvetica-Bold').fillColor(COLOR_MUTED)
-           .text(col.label.toUpperCase(), xCol, y + 5, { width: col.w - 12, align: col.align, characterSpacing: 0.2 })
+        t(col.label.toUpperCase(), xCol, y + 5, { width: col.w - 12, align: col.align, characterSpacing: 0.2 })
         xCol += col.w
       })
       return y + 18
@@ -408,7 +399,6 @@ export async function GET(req) {
         doc.restore()
       }
 
-      // Thin bottom border on every row (matches ReporteDia's td border-bottom).
       doc.moveTo(LEFT, yE + rowH).lineTo(RIGHT, yE + rowH).strokeColor(COLOR_BORDER_L).lineWidth(0.5).stroke()
 
       let xCol = LEFT + 8
@@ -421,11 +411,10 @@ export async function GET(req) {
 
       vals.forEach(v => {
         doc.fontSize(8.5).font('Helvetica').fillColor(COLOR_TEXT)
-           .text(v.v, xCol, yE + 6, { width: v.w - 12, align: v.align })
+        t(v.v, xCol, yE + 6, { width: v.w - 12, align: v.align })
         xCol += v.w
       })
 
-      // Eficiencia: colored badge (green >=90, amber >=80, red below).
       const efBg = c.eficiencia >= 90 ? COLOR_GREEN_BG : c.eficiencia >= 80 ? COLOR_AMBER_BG : COLOR_RED_BG
       const efColor = c.eficiencia >= 90 ? COLOR_GREEN : c.eficiencia >= 80 ? COLOR_AMBER : COLOR_RED
       drawBadge(xCol, yE + 4, cols[4].w - 12, `${c.eficiencia}%`, efBg, efColor)
@@ -446,7 +435,6 @@ export async function GET(req) {
     const barW = Math.max(3, Math.min(18, (chartW - ingresosArr.length) / ingresosArr.length))
     const gap = (chartW - barW * ingresosArr.length) / (ingresosArr.length + 1)
 
-    // Only label the top day(s) to avoid clutter — matches "value labels on top for the highest ones".
     const sorted = [...ingresosArr].map((d, i) => ({ ...d, i })).sort((a, b) => b.total - a.total)
     const topCount = Math.min(3, sorted.length)
     const topIndexes = new Set(sorted.slice(0, topCount).filter(d => d.total > 0).map(d => d.i))
@@ -456,43 +444,40 @@ export async function GET(req) {
       const x = LEFT + gap + i * (barW + gap)
       const y = yE + chartH - barH
 
-      // Rounded-top bar: only the top two corners rounded (bottom stays flush with axis).
       doc.save()
       doc.roundedRect(x, y, barW, barH, Math.min(3, barW / 2)).fill(COLOR_GREEN)
       doc.restore()
 
       if (topIndexes.has(i)) {
         doc.fontSize(6).font('Helvetica-Bold').fillColor(COLOR_INK)
-           .text(fmt(d.total), x - 10, Math.max(yE - 2, y - 9), { width: barW + 20, align: 'center' })
+        t(fmt(d.total), x - 10, Math.max(yE - 2, y - 9), { width: barW + 20, align: 'center' })
       }
     })
 
-    // Baseline under the bars.
     doc.moveTo(LEFT, yE + chartH).lineTo(RIGHT, yE + chartH).strokeColor(COLOR_BORDER_L).lineWidth(0.5).stroke()
 
-    // X axis labels (show ~8 labels max)
     const labelStep = Math.max(1, Math.floor(ingresosArr.length / 8))
     ingresosArr.forEach((d, i) => {
       if (i % labelStep !== 0) return
       const x = LEFT + gap + i * (barW + gap)
       const dayLabel = d.fecha.slice(8)
       doc.fontSize(6).font('Helvetica').fillColor(COLOR_FAINT)
-         .text(dayLabel, x - 4, yE + chartH + 4, { width: barW + 8, align: 'center' })
+      t(dayLabel, x - 4, yE + chartH + 4, { width: barW + 8, align: 'center' })
     })
 
     yE += chartH + 20
   }
 
-  // ── G. Footer (every page: thin top border + centered brand + page number) ─
+  // ── G. Footer (every page) ───────────────────────────────
   const range = doc.bufferedPageRange()
   for (let i = range.start; i < range.start + range.count; i++) {
     doc.switchToPage(i)
     const pageH = doc.page.height
     doc.moveTo(LEFT, pageH - 42).lineTo(RIGHT, pageH - 42).strokeColor(COLOR_BORDER_L).lineWidth(0.5).stroke()
     doc.fontSize(7.5).font('Helvetica').fillColor(COLOR_FAINT)
-       .text('Control Finanzas', LEFT, pageH - 32, { width: W, align: 'center' })
+    t('Control Finanzas', LEFT, pageH - 32, { width: W, align: 'center' })
     doc.fontSize(7.5).font('Helvetica').fillColor(COLOR_FAINT)
-       .text(`Pagina ${i - range.start + 1} de ${range.count}`, LEFT, pageH - 32, { width: W, align: 'right' })
+    t(`Pagina ${i - range.start + 1} de ${range.count}`, LEFT, pageH - 32, { width: W, align: 'right' })
   }
 
   // ── Finalize ─────────────────────────────────────────────

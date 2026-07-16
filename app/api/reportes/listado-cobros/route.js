@@ -143,6 +143,9 @@ export async function GET(req) {
   const nombreNegocio = org?.nombre ?? 'Mi Negocio'
   const hoy = new Date().toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })
 
+  // lineBreak: false on ALL text calls — prevents PDFKit from auto-creating blank pages
+  const t = (str, x, y, opts = {}) => doc.text(str, x, y, { lineBreak: false, ...opts })
+
   function ensureSpace(y, needed) {
     if (y + needed > PAGE_BOTTOM) {
       doc.addPage()
@@ -153,17 +156,17 @@ export async function GET(req) {
 
   // ── Header ────────────────────────────────────────────────
   doc.fontSize(20).font('Helvetica-Bold').fillColor(COLOR_INK)
-     .text(nombreNegocio, LEFT, 40, { width: W * 0.68, height: 24, ellipsis: true, lineBreak: false })
+  t(nombreNegocio, LEFT, 40, { width: W * 0.68, height: 24, ellipsis: true })
 
   doc.fontSize(11).font('Helvetica').fillColor(COLOR_MUTED)
-     .text('Listado de cobros', LEFT, 64)
+  t('Listado de cobros', LEFT, 64)
 
   doc.fontSize(10).fillColor('#777777')
-     .text(hoy, LEFT, 79)
+  t(hoy, LEFT, 79)
 
   const filterLabel = soloMora ? 'Solo en mora' : 'Todos los clientes'
   doc.fontSize(8).fillColor(COLOR_FAINT)
-     .text(`${filas.length} clientes · ${filterLabel}`, LEFT, 42, { width: W, align: 'right' })
+  t(`${filas.length} clientes · ${filterLabel}`, LEFT, 42, { width: W, align: 'right' })
 
   doc.rect(LEFT, 98, W, 2).fill(COLOR_GREEN)
 
@@ -185,9 +188,9 @@ export async function GET(req) {
     doc.restore()
     doc.rect(x, cardY, 3, cardH).fill(c.color)
     doc.fontSize(7.5).font('Helvetica').fillColor(COLOR_MUTED)
-       .text(c.label.toUpperCase(), x + 12, cardY + 10, { width: cardW - 16, characterSpacing: 0.2 })
+    t(c.label.toUpperCase(), x + 12, cardY + 10, { width: cardW - 16, characterSpacing: 0.2 })
     doc.fontSize(14).font('Helvetica-Bold').fillColor(c.color)
-       .text(c.value, x + 12, cardY + 24, { width: cardW - 16 })
+    t(c.value, x + 12, cardY + 24, { width: cardW - 16 })
   })
 
   let y = cardY + cardH + 20
@@ -214,9 +217,8 @@ export async function GET(req) {
   for (const [rutaNombre, clientes] of Object.entries(rutasAgrupadas)) {
     y = ensureSpace(y, 50)
 
-    // Route title
     doc.fontSize(10).font('Helvetica-Bold').fillColor(COLOR_INK)
-       .text(rutaNombre.toUpperCase(), LEFT, y, { width: W, characterSpacing: 0.3 })
+    t(rutaNombre.toUpperCase(), LEFT, y, { width: W, characterSpacing: 0.3 })
     y += 13
     doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor(COLOR_INK).lineWidth(1).stroke()
     y += 8
@@ -228,13 +230,13 @@ export async function GET(req) {
     doc.restore()
 
     doc.fontSize(7).font('Helvetica-Bold').fillColor(COLOR_MUTED)
-    doc.text('#', COL.num.x + 4, y + 3, { width: COL.num.w })
-    doc.text('CLIENTE', COL.nombre.x, y + 3, { width: COL.nombre.w })
-    doc.text('TELÉFONO', COL.tel.x, y + 3, { width: COL.tel.w })
-    doc.text('CUOTA', COL.cuota.x, y + 3, { width: COL.cuota.w, align: 'right' })
-    doc.text('SALDO', COL.saldo.x, y + 3, { width: COL.saldo.w, align: 'right' })
-    doc.text('AVANCE', COL.avance.x, y + 3, { width: COL.avance.w, align: 'center' })
-    doc.text('MORA', COL.mora.x, y + 3, { width: COL.mora.w, align: 'center' })
+    t('#', COL.num.x + 4, y + 3, { width: COL.num.w })
+    t('CLIENTE', COL.nombre.x, y + 3, { width: COL.nombre.w })
+    t('TELÉFONO', COL.tel.x, y + 3, { width: COL.tel.w })
+    t('CUOTA', COL.cuota.x, y + 3, { width: COL.cuota.w, align: 'right' })
+    t('SALDO', COL.saldo.x, y + 3, { width: COL.saldo.w, align: 'right' })
+    t('AVANCE', COL.avance.x, y + 3, { width: COL.avance.w, align: 'center' })
+    t('MORA', COL.mora.x, y + 3, { width: COL.mora.w, align: 'center' })
     y += ROW_H
 
     // Table rows
@@ -252,21 +254,24 @@ export async function GET(req) {
       const freq = c.frecuencia === 'semanal' ? '/sem' : c.frecuencia === 'quincenal' ? '/qna' : c.frecuencia === 'mensual' ? '/mes' : '/día'
 
       doc.fontSize(7.5).font('Helvetica').fillColor(COLOR_TEXT)
-      doc.text(String(i + 1), COL.num.x + 4, y + 3, { width: COL.num.w })
-      doc.font('Helvetica-Bold').text(c.nombre, COL.nombre.x, y + 3, { width: COL.nombre.w, height: 12, ellipsis: true, lineBreak: false })
+      t(String(i + 1), COL.num.x + 4, y + 3, { width: COL.num.w })
+      doc.font('Helvetica-Bold')
+      t(c.nombre, COL.nombre.x, y + 3, { width: COL.nombre.w, height: 12, ellipsis: true })
       if (hasDir) {
         doc.fontSize(6).font('Helvetica').fillColor(COLOR_FAINT)
-           .text(c.direccion, COL.nombre.x, y + 14, { width: COL.nombre.w, height: 10, ellipsis: true, lineBreak: false })
+        t(c.direccion, COL.nombre.x, y + 14, { width: COL.nombre.w, height: 10, ellipsis: true })
       }
-      doc.fontSize(7.5).font('Helvetica').fillColor(COLOR_MUTED).text(c.telefono, COL.tel.x, y + 3, { width: COL.tel.w })
-      doc.fillColor(COLOR_TEXT).text(fmt(c.cuota) + freq, COL.cuota.x, y + 3, { width: COL.cuota.w, align: 'right' })
-      doc.text(fmt(c.saldo), COL.saldo.x, y + 3, { width: COL.saldo.w, align: 'right' })
+      doc.fontSize(7.5).font('Helvetica').fillColor(COLOR_MUTED)
+      t(c.telefono, COL.tel.x, y + 3, { width: COL.tel.w })
+      doc.fillColor(COLOR_TEXT)
+      t(fmt(c.cuota) + freq, COL.cuota.x, y + 3, { width: COL.cuota.w, align: 'right' })
+      t(fmt(c.saldo), COL.saldo.x, y + 3, { width: COL.saldo.w, align: 'right' })
 
       // Avance (% pagado)
       const avText = `${c.avance}%`
       const avColor = c.avance >= 80 ? COLOR_GREEN : c.avance >= 50 ? COLOR_AMBER : COLOR_TEXT
       doc.fontSize(7).font('Helvetica-Bold').fillColor(avColor)
-         .text(avText, COL.avance.x, y + 3, { width: COL.avance.w, align: 'center' })
+      t(avText, COL.avance.x, y + 3, { width: COL.avance.w, align: 'center' })
 
       // Mora badge
       if (c.mora > 0) {
@@ -280,7 +285,7 @@ export async function GET(req) {
         doc.roundedRect(bx, y, bw, 13, 6).fill(badgeBg)
         doc.restore()
         doc.fontSize(7).font('Helvetica-Bold').fillColor(badgeColor)
-           .text(moraText, bx, y + 3, { width: bw, align: 'center' })
+        t(moraText, bx, y + 3, { width: bw, align: 'center' })
       } else {
         const okText = 'Al día'
         const tw = doc.font('Helvetica-Bold').fontSize(7).widthOfString(okText)
@@ -290,7 +295,7 @@ export async function GET(req) {
         doc.roundedRect(bx, y, bw, 13, 6).fill('#dcfce7')
         doc.restore()
         doc.fontSize(7).font('Helvetica-Bold').fillColor(COLOR_GREEN)
-           .text(okText, bx, y + 3, { width: bw, align: 'center' })
+        t(okText, bx, y + 3, { width: bw, align: 'center' })
       }
 
       y += rowH
@@ -303,9 +308,9 @@ export async function GET(req) {
     const subtotalCuota = clientes.reduce((s, c) => s + c.cuota, 0)
     const subtotalSaldo = clientes.reduce((s, c) => s + c.saldo, 0)
     doc.fontSize(7.5).font('Helvetica-Bold').fillColor(COLOR_INK)
-       .text(`${clientes.length} clientes`, COL.nombre.x, y, { width: COL.nombre.w })
-    doc.text(fmt(subtotalCuota), COL.cuota.x, y, { width: COL.cuota.w, align: 'right' })
-    doc.text(fmt(subtotalSaldo), COL.saldo.x, y, { width: COL.saldo.w, align: 'right' })
+    t(`${clientes.length} clientes`, COL.nombre.x, y, { width: COL.nombre.w })
+    t(fmt(subtotalCuota), COL.cuota.x, y, { width: COL.cuota.w, align: 'right' })
+    t(fmt(subtotalSaldo), COL.saldo.x, y, { width: COL.saldo.w, align: 'right' })
     y += 24
   }
 
@@ -316,9 +321,9 @@ export async function GET(req) {
     const pageH = doc.page.height
     doc.moveTo(LEFT, pageH - 42).lineTo(RIGHT, pageH - 42).strokeColor('#eeeeee').lineWidth(0.5).stroke()
     doc.fontSize(7.5).font('Helvetica').fillColor(COLOR_FAINT)
-       .text('Control Finanzas', LEFT, pageH - 32, { width: W, align: 'center' })
+    t('Control Finanzas', LEFT, pageH - 32, { width: W, align: 'center' })
     doc.fontSize(7.5).font('Helvetica').fillColor(COLOR_FAINT)
-       .text(`Página ${i - range.start + 1} de ${range.count}`, LEFT, pageH - 32, { width: W, align: 'right' })
+    t(`Página ${i - range.start + 1} de ${range.count}`, LEFT, pageH - 32, { width: W, align: 'right' })
   }
 
   doc.end()
