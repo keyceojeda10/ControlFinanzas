@@ -8,6 +8,12 @@ export async function GET(request) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
+  const org = await prisma.organization.findUnique({
+    where: { id: session.organizationId },
+    select: { portalDatosCompletos: true },
+  })
+  const completo = org?.portalDatosCompletos ?? false
+
   const prestamos = await prisma.prestamo.findMany({
     where: {
       clienteId: session.clienteId,
@@ -23,10 +29,14 @@ export async function GET(request) {
       frecuencia: true,
       fechaInicio: true,
       fechaFin: true,
-      diasPlazo: true,
       estado: true,
       nombreProducto: true,
       ultimoPagoAt: true,
+      tasaInteres: true,
+      cuotasAmortizacion: {
+        select: { cuotaTotal: true, fechaEsperada: true, numeroPeriodo: true, pagado: true },
+        orderBy: { numeroPeriodo: 'asc' },
+      },
       _count: { select: { pagos: true } },
     },
     orderBy: { createdAt: 'desc' },
@@ -35,23 +45,35 @@ export async function GET(request) {
   const result = prestamos.map(p => {
     const saldo = Math.max(0, p.totalAPagar - p.totalPagado)
     const porcentaje = p.totalAPagar > 0 ? Math.round((p.totalPagado / p.totalAPagar) * 100) : 0
-    return {
+    const proxCuota = p.cuotasAmortizacion.find(c => c.pagado < c.cuotaTotal) || null
+
+    const base = {
       id: p.id,
-      montoPrestado: p.montoPrestado,
-      totalAPagar: p.totalAPagar,
-      totalPagado: p.totalPagado,
       saldo,
       porcentaje,
-      cuotaDiaria: p.cuotaDiaria,
+      cuota: p.cuotaDiaria,
       frecuencia: p.frecuencia,
-      fechaInicio: p.fechaInicio,
-      fechaFin: p.fechaFin,
-      diasPlazo: p.diasPlazo,
       estado: p.estado,
       nombreProducto: p.nombreProducto,
       ultimoPagoAt: p.ultimoPagoAt,
       totalPagos: p._count.pagos,
+      proximoPago: proxCuota ? {
+        fecha: proxCuota.fechaEsperada,
+        monto: proxCuota.cuotaTotal,
+        numero: proxCuota.numeroPeriodo,
+      } : null,
     }
+
+    if (completo) {
+      base.montoPrestado = p.montoPrestado
+      base.totalAPagar = p.totalAPagar
+      base.totalPagado = p.totalPagado
+      base.tasaInteres = p.tasaInteres
+      base.fechaInicio = p.fechaInicio
+      base.fechaFin = p.fechaFin
+    }
+
+    return base
   })
 
   return NextResponse.json(result)

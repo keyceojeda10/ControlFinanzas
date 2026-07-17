@@ -8,15 +8,15 @@ function LoginForm() {
   const searchParams = useSearchParams()
   const orgId = searchParams.get('org') || ''
 
-  const [cedula, setCedula] = useState('')
+  const [identificador, setIdentificador] = useState('')
   const [pin, setPin] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!cedula.trim() || !pin.trim()) {
-      setError('Ingresa tu documento y PIN')
+    if (!identificador.trim() || !pin.trim()) {
+      setError('Ingresa tu documento o teléfono y tu PIN')
       return
     }
     if (!orgId) {
@@ -30,7 +30,7 @@ function LoginForm() {
       const res = await fetch('/api/portal/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cedula: cedula.trim(), pin, organizationId: orgId }),
+        body: JSON.stringify({ identificador: identificador.trim(), pin, organizationId: orgId }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -61,14 +61,14 @@ function LoginForm() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-[12px] font-semibold text-[var(--color-text-secondary)] mb-1.5">
-              Documento de identidad
+              Documento o teléfono
             </label>
             <input
               type="text"
               inputMode="numeric"
-              value={cedula}
-              onChange={e => setCedula(e.target.value)}
-              placeholder="Ej: 1234567890"
+              value={identificador}
+              onChange={e => setIdentificador(e.target.value)}
+              placeholder="Cédula o número de celular"
               className="w-full h-11 px-3.5 rounded-[12px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-primary)] text-[14px] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] transition-colors"
               autoComplete="username"
             />

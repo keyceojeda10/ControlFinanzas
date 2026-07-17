@@ -10,54 +10,60 @@ export async function GET(request, { params }) {
 
   const { id } = await params
 
-  const prestamo = await prisma.prestamo.findFirst({
-    where: {
-      id,
-      clienteId: session.clienteId,
-      organizationId: session.organizationId,
-    },
-    select: {
-      id: true,
-      montoPrestado: true,
-      tasaInteres: true,
-      totalAPagar: true,
-      totalPagado: true,
-      cuotaDiaria: true,
-      frecuencia: true,
-      fechaInicio: true,
-      fechaFin: true,
-      diasPlazo: true,
-      estado: true,
-      nombreProducto: true,
-      ultimoPagoAt: true,
-      modoInteres: true,
-      cuotasAmortizacion: {
-        select: {
-          numeroPeriodo: true,
-          cuotaTotal: true,
-          pagado: true,
-          fechaEsperada: true,
-          saldoRestante: true,
-        },
-        orderBy: { numeroPeriodo: 'asc' },
+  const [prestamo, org] = await Promise.all([
+    prisma.prestamo.findFirst({
+      where: {
+        id,
+        clienteId: session.clienteId,
+        organizationId: session.organizationId,
       },
-      pagos: {
-        select: {
-          id: true,
-          montoPagado: true,
-          fechaPago: true,
-          tipo: true,
-          cuotaNumero: true,
-          nota: true,
+      select: {
+        id: true,
+        montoPrestado: true,
+        tasaInteres: true,
+        totalAPagar: true,
+        totalPagado: true,
+        cuotaDiaria: true,
+        frecuencia: true,
+        fechaInicio: true,
+        fechaFin: true,
+        diasPlazo: true,
+        estado: true,
+        nombreProducto: true,
+        ultimoPagoAt: true,
+        modoInteres: true,
+        cuotasAmortizacion: {
+          select: {
+            numeroPeriodo: true,
+            cuotaTotal: true,
+            pagado: true,
+            fechaEsperada: true,
+          },
+          orderBy: { numeroPeriodo: 'asc' },
         },
-        orderBy: { fechaPago: 'desc' },
+        pagos: {
+          select: {
+            id: true,
+            montoPagado: true,
+            fechaPago: true,
+            tipo: true,
+            cuotaNumero: true,
+          },
+          orderBy: { fechaPago: 'desc' },
+        },
       },
-    },
-  })
+    }),
+    prisma.organization.findUnique({
+      where: { id: session.organizationId },
+      select: { portalDatosCompletos: true },
+    }),
+  ])
 
   if (!prestamo) {
     return NextResponse.json({ error: 'Préstamo no encontrado' }, { status: 404 })
   }
+
+  const completo = org?.portalDatosCompletos ?? false
 
   const saldo = Math.max(0, prestamo.totalAPagar - prestamo.totalPagado)
   const porcentaje = prestamo.totalAPagar > 0
@@ -88,14 +94,31 @@ export async function GET(request, { params }) {
     proximaCuota = cuotas.find(c => c.estado !== 'pagada') || null
   }
 
-  const { cuotasAmortizacion: _, ...rest } = prestamo
-
-  return NextResponse.json({
-    ...rest,
-    cuotas,
+  const result = {
+    id: prestamo.id,
     saldo,
     porcentaje,
+    cuota: prestamo.cuotaDiaria,
+    frecuencia: prestamo.frecuencia,
+    diasPlazo: prestamo.diasPlazo,
+    estado: prestamo.estado,
+    nombreProducto: prestamo.nombreProducto,
+    totalPagado: prestamo.totalPagado,
+    ultimoPagoAt: prestamo.ultimoPagoAt,
+    fechaInicio: prestamo.fechaInicio,
+    fechaFin: prestamo.fechaFin,
+    cuotas,
+    pagos: prestamo.pagos,
     diasMora,
     proximaCuota,
-  })
+  }
+
+  if (completo) {
+    result.montoPrestado = prestamo.montoPrestado
+    result.totalAPagar = prestamo.totalAPagar
+    result.tasaInteres = prestamo.tasaInteres
+    result.modoInteres = prestamo.modoInteres
+  }
+
+  return result.id ? NextResponse.json(result) : NextResponse.json({ error: 'Error' }, { status: 500 })
 }

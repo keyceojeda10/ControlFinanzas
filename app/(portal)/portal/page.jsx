@@ -30,6 +30,25 @@ function ProgressRing({ porcentaje, size = 44 }) {
   )
 }
 
+function formatDate(d) {
+  if (!d) return '-'
+  return new Date(d).toLocaleDateString('es', { day: 'numeric', month: 'short' })
+}
+
+function formatDateFull(d) {
+  if (!d) return '-'
+  return new Date(d).toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })
+}
+
+function diasHasta(fecha) {
+  if (!fecha) return null
+  const hoy = new Date()
+  hoy.setHours(0, 0, 0, 0)
+  const target = new Date(fecha)
+  target.setHours(0, 0, 0, 0)
+  return Math.ceil((target - hoy) / (1000 * 60 * 60 * 24))
+}
+
 export default function PortalPage() {
   const router = useRouter()
   const [session, setSession] = useState(null)
@@ -70,11 +89,15 @@ export default function PortalPage() {
     )
   }
 
+  const completo = session.datosCompletos
   const activos = prestamos.filter(p => p.estado === 'activo')
   const saldoTotal = activos.reduce((sum, p) => sum + p.saldo, 0)
-  const pagadoTotal = activos.reduce((sum, p) => sum + p.totalPagado, 0)
-  const totalAPagarSum = activos.reduce((sum, p) => sum + p.totalAPagar, 0)
-  const pctGlobal = totalAPagarSum > 0 ? Math.round((pagadoTotal / totalAPagarSum) * 100) : 0
+
+  const proximoPago = activos
+    .filter(p => p.proximoPago)
+    .sort((a, b) => new Date(a.proximoPago.fecha) - new Date(b.proximoPago.fecha))[0]?.proximoPago || null
+
+  const diasProximo = proximoPago ? diasHasta(proximoPago.fecha) : null
 
   return (
     <div className="max-w-lg mx-auto pb-8">
@@ -97,30 +120,78 @@ export default function PortalPage() {
         </button>
       </div>
 
-      {/* Resumen */}
+      {/* Próximo pago — lo más relevante */}
+      {proximoPago && (
+        <div className="mx-4 mb-3 p-4 rounded-[16px] bg-[var(--color-accent-soft)] border border-[color-mix(in_oklch,var(--color-accent),transparent_80%)]">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-[12px] bg-[color-mix(in_oklch,var(--color-accent),transparent_85%)] flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-accent)]">Próximo pago</p>
+              <p className="text-[15px] font-bold text-[var(--color-text-primary)] capitalize">{formatDateFull(proximoPago.fecha)}</p>
+            </div>
+          </div>
+          <div className="flex items-baseline justify-between pl-[52px]">
+            <span className="text-[20px] font-mono font-bold text-[var(--color-text-primary)]">{fmt(proximoPago.monto)}</span>
+            <span className={`text-[12px] font-semibold ${
+              diasProximo !== null && diasProximo < 0 ? 'text-[var(--color-danger)]'
+              : diasProximo === 0 ? 'text-[var(--color-warning)]'
+              : 'text-[var(--color-text-muted)]'
+            }`}>
+              {diasProximo !== null && (
+                diasProximo < 0 ? `Vencido hace ${Math.abs(diasProximo)} día${Math.abs(diasProximo) > 1 ? 's' : ''}`
+                : diasProximo === 0 ? 'Hoy'
+                : diasProximo === 1 ? 'Mañana'
+                : `En ${diasProximo} días`
+              )}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Resumen saldo */}
       {activos.length > 0 && (
         <div className="mx-4 mb-4 p-4 rounded-[16px] bg-[var(--color-bg-card)] border border-[var(--color-border)]">
           <div className="flex items-center gap-4">
-            <ProgressRing porcentaje={pctGlobal} size={52} />
+            <ProgressRing porcentaje={activos.length === 1 ? activos[0].porcentaje : Math.round(activos.reduce((s, p) => s + p.porcentaje, 0) / activos.length)} size={52} />
             <div className="flex-1 min-w-0">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Saldo pendiente</p>
               <p className="text-[22px] font-mono font-bold text-[var(--color-text-primary)] tracking-tight">{fmt(saldoTotal)}</p>
             </div>
             <div className="text-right shrink-0">
               <p className="text-[10px] text-[var(--color-text-muted)]">Progreso</p>
-              <p className="text-[16px] font-mono font-bold text-[var(--color-accent)]">{pctGlobal}%</p>
+              <p className="text-[16px] font-mono font-bold text-[var(--color-accent)]">
+                {activos.length === 1 ? activos[0].porcentaje : Math.round(activos.reduce((s, p) => s + p.porcentaje, 0) / activos.length)}%
+              </p>
             </div>
           </div>
-          <div className="mt-3 h-2 rounded-full bg-[var(--color-bg-hover)] overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-700"
-              style={{ width: `${Math.min(pctGlobal, 100)}%`, background: pctGlobal >= 100 ? 'var(--color-success)' : 'var(--color-accent)' }}
-            />
-          </div>
-          <div className="flex justify-between mt-2">
-            <span className="text-[10px] text-[var(--color-text-muted)]">Pagado: {fmt(pagadoTotal)}</span>
-            <span className="text-[10px] text-[var(--color-text-muted)]">Total: {fmt(totalAPagarSum)}</span>
-          </div>
+
+          {completo && (
+            <>
+              {(() => {
+                const pagadoTotal = activos.reduce((sum, p) => sum + (p.totalPagado || 0), 0)
+                const totalAPagarSum = activos.reduce((sum, p) => sum + (p.totalAPagar || 0), 0)
+                const pctGlobal = totalAPagarSum > 0 ? Math.round((pagadoTotal / totalAPagarSum) * 100) : 0
+                return (
+                  <>
+                    <div className="mt-3 h-2 rounded-full bg-[var(--color-bg-hover)] overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{ width: `${Math.min(pctGlobal, 100)}%`, background: pctGlobal >= 100 ? 'var(--color-success)' : 'var(--color-accent)' }}
+                      />
+                    </div>
+                    <div className="flex justify-between mt-2">
+                      <span className="text-[10px] text-[var(--color-text-muted)]">Pagado: {fmt(pagadoTotal)}</span>
+                      <span className="text-[10px] text-[var(--color-text-muted)]">Total: {fmt(totalAPagarSum)}</span>
+                    </div>
+                  </>
+                )
+              })()}
+            </>
+          )}
         </div>
       )}
 
@@ -138,19 +209,30 @@ export default function PortalPage() {
               href={`/portal/prestamos/${p.id}`}
               className="block p-4 rounded-[16px] bg-[var(--color-bg-card)] border border-[var(--color-border)] hover:border-[var(--color-border-hover)] transition-colors"
             >
-              <div className="flex items-start justify-between gap-3 mb-3">
+              <div className="flex items-start justify-between gap-3 mb-2">
                 <div className="min-w-0 flex-1">
                   <p className="text-[14px] font-bold text-[var(--color-text-primary)]">
-                    {p.nombreProducto || fmt(p.montoPrestado)}
+                    {p.nombreProducto || (completo ? fmt(p.montoPrestado) : 'Préstamo')}
                   </p>
                   <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
-                    {FREQ_LABEL[p.frecuencia] || p.frecuencia} · Cuota {fmt(p.cuotaDiaria)}
+                    {FREQ_LABEL[p.frecuencia] || p.frecuencia} · Cuota {fmt(p.cuota)}
                   </p>
                 </div>
                 <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0 ${est.bg} ${est.text}`}>
                   {est.label}
                 </span>
               </div>
+
+              {p.estado === 'activo' && p.proximoPago && (
+                <div className="flex items-center gap-1.5 mb-2">
+                  <svg className="w-3.5 h-3.5 text-[var(--color-accent)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span className="text-[11px] text-[var(--color-text-secondary)]">
+                    Próximo pago: {formatDate(p.proximoPago.fecha)} · {fmt(p.proximoPago.monto)}
+                  </span>
+                </div>
+              )}
 
               {p.estado === 'activo' && (
                 <>
@@ -162,7 +244,7 @@ export default function PortalPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[11px] text-[var(--color-text-muted)]">
-                      Pagado {fmt(p.totalPagado)}
+                      Saldo: {fmt(p.saldo)}
                     </span>
                     <span className="text-[11px] font-mono font-bold text-[var(--color-text-primary)]">
                       {p.porcentaje}%

@@ -19,7 +19,7 @@ export async function GET(request) {
       estado: true,
       portalActivo: true,
       organization: {
-        select: { nombre: true, country: true },
+        select: { nombre: true, country: true, portalDatosCompletos: true },
       },
     },
   })
@@ -39,6 +39,7 @@ export async function GET(request) {
       estado: cliente.estado,
       orgNombre: cliente.organization.nombre,
       country: cliente.organization.country || 'co',
+      datosCompletos: cliente.organization.portalDatosCompletos ?? false,
     },
   })
 }

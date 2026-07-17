@@ -12,6 +12,25 @@ function Skeleton({ className }) {
   return <div className={`animate-pulse rounded-[10px] bg-[var(--color-bg-hover)] ${className}`} />
 }
 
+function formatDate(d) {
+  if (!d) return '-'
+  return new Date(d).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function formatDateFull(d) {
+  if (!d) return '-'
+  return new Date(d).toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })
+}
+
+function diasHasta(fecha) {
+  if (!fecha) return null
+  const hoy = new Date()
+  hoy.setHours(0, 0, 0, 0)
+  const target = new Date(fecha)
+  target.setHours(0, 0, 0, 0)
+  return Math.ceil((target - hoy) / (1000 * 60 * 60 * 24))
+}
+
 export default function PortalPrestamoDetalle() {
   const router = useRouter()
   const params = useParams()
@@ -47,8 +66,11 @@ export default function PortalPrestamoDetalle() {
     )
   }
 
+  const completo = session?.datosCompletos
   const saldo = prestamo.saldo
   const pct = prestamo.porcentaje
+  const proxCuota = prestamo.proximaCuota
+  const diasProx = proxCuota ? diasHasta(proxCuota.fechaProgramada) : null
 
   return (
     <div className="max-w-lg mx-auto pb-8">
@@ -64,13 +86,45 @@ export default function PortalPrestamoDetalle() {
         </Link>
         <div className="min-w-0 flex-1">
           <h1 className="text-[16px] font-bold tracking-tight text-[var(--color-text-primary)] truncate">
-            {prestamo.nombreProducto || `Préstamo por ${fmt(prestamo.montoPrestado)}`}
+            {prestamo.nombreProducto || (completo ? `Préstamo por ${fmt(prestamo.montoPrestado)}` : 'Préstamo')}
           </h1>
           <p className="text-[11px] text-[var(--color-text-muted)]">
             {FREQ_LABEL[prestamo.frecuencia]} · {prestamo.diasPlazo} días
           </p>
         </div>
       </div>
+
+      {/* Próximo pago — lo más relevante */}
+      {proxCuota && prestamo.estado === 'activo' && (
+        <div className="mx-4 mb-3 p-4 rounded-[16px] bg-[var(--color-accent-soft)] border border-[color-mix(in_oklch,var(--color-accent),transparent_80%)]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-[12px] bg-[color-mix(in_oklch,var(--color-accent),transparent_85%)] flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-accent)]">Próximo pago · Cuota #{proxCuota.numero}</p>
+              <p className="text-[15px] font-bold text-[var(--color-text-primary)] capitalize">{formatDateFull(proxCuota.fechaProgramada)}</p>
+            </div>
+          </div>
+          <div className="flex items-baseline justify-between mt-2 pl-[52px]">
+            <span className="text-[20px] font-mono font-bold text-[var(--color-text-primary)]">{fmt(proxCuota.monto)}</span>
+            <span className={`text-[12px] font-semibold ${
+              diasProx !== null && diasProx < 0 ? 'text-[var(--color-danger)]'
+              : diasProx === 0 ? 'text-[var(--color-warning)]'
+              : 'text-[var(--color-text-muted)]'
+            }`}>
+              {diasProx !== null && (
+                diasProx < 0 ? `Vencido hace ${Math.abs(diasProx)} día${Math.abs(diasProx) > 1 ? 's' : ''}`
+                : diasProx === 0 ? 'Hoy'
+                : diasProx === 1 ? 'Mañana'
+                : `En ${diasProx} días`
+              )}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Progress card */}
       <div className="mx-4 mb-4 p-4 rounded-[16px] bg-[var(--color-bg-card)] border border-[var(--color-border)]">
@@ -140,26 +194,21 @@ export default function PortalPrestamoDetalle() {
         {tab === 'resumen' && (
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <InfoCard label="Monto prestado" value={fmt(prestamo.montoPrestado)} />
-              <InfoCard label="Total a pagar" value={fmt(prestamo.totalAPagar)} />
-              <InfoCard label="Cuota" value={fmt(prestamo.cuotaDiaria)} sub={FREQ_LABEL[prestamo.frecuencia]} />
-              <InfoCard label="Interés" value={`${prestamo.tasaInteres}%`} sub={prestamo.modoInteres} />
+              {completo && prestamo.montoPrestado != null && (
+                <InfoCard label="Monto prestado" value={fmt(prestamo.montoPrestado)} />
+              )}
+              {completo && prestamo.totalAPagar != null && (
+                <InfoCard label="Total a pagar" value={fmt(prestamo.totalAPagar)} />
+              )}
+              <InfoCard label="Cuota" value={fmt(prestamo.cuota)} sub={FREQ_LABEL[prestamo.frecuencia]} />
+              {completo && prestamo.tasaInteres != null && (
+                <InfoCard label="Interés" value={`${prestamo.tasaInteres}%`} sub={prestamo.modoInteres} />
+              )}
               <InfoCard label="Inicio" value={formatDate(prestamo.fechaInicio)} />
               <InfoCard label="Vencimiento" value={formatDate(prestamo.fechaFin)} />
               <InfoCard label="Total pagado" value={fmt(prestamo.totalPagado)} highlight="success" />
               <InfoCard label="Saldo" value={fmt(saldo)} highlight={saldo > 0 ? 'accent' : 'success'} />
             </div>
-            {prestamo.proximaCuota && prestamo.estado === 'activo' && (
-              <div className="p-3 rounded-[12px] bg-[var(--color-accent-soft)] border border-[var(--color-accent)] border-opacity-20">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-accent)]">Próxima cuota</p>
-                <div className="flex items-baseline justify-between mt-1">
-                  <span className="text-[16px] font-mono font-bold text-[var(--color-text-primary)]">{fmt(prestamo.proximaCuota.monto)}</span>
-                  <span className="text-[12px] text-[var(--color-text-muted)]">
-                    Cuota #{prestamo.proximaCuota.numero} · {formatDate(prestamo.proximaCuota.fechaProgramada)}
-                  </span>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -251,9 +300,4 @@ function EmptyState({ text }) {
       <p className="text-[13px] text-[var(--color-text-muted)]">{text}</p>
     </div>
   )
-}
-
-function formatDate(d) {
-  if (!d) return '-'
-  return new Date(d).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })
 }

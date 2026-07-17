@@ -14,7 +14,7 @@ export async function GET() {
 
   const org = await prisma.organization.findUnique({
     where: { id: orgId },
-    select: { id: true, nombre: true, plan: true, telefono: true, ciudad: true, diasSinCobro: true, country: true, timezone: true, createdAt: true, activo: true, capitalEsEfectivo: true, modoAbreviado: true, ocultarSaldoWA: true, tasaMoratorio: true, diasGraciaMoratorio: true, requiereAprobacionPrestamos: true },
+    select: { id: true, nombre: true, plan: true, telefono: true, ciudad: true, diasSinCobro: true, country: true, timezone: true, createdAt: true, activo: true, capitalEsEfectivo: true, modoAbreviado: true, ocultarSaldoWA: true, tasaMoratorio: true, diasGraciaMoratorio: true, requiereAprobacionPrestamos: true, portalDatosCompletos: true },
   })
 
   const sub = await prisma.suscripcion.findFirst({
@@ -51,7 +51,7 @@ export async function PATCH(req) {
   // NOTA: `country` y `timezone` NO se aceptan desde este endpoint.
   // Cambios de pais solo pueden hacerse desde superadmin para evitar corrupcion
   // de calculos de mora/timezone y precios de planes en organizaciones con datos.
-  const { nombre, telefono, ciudad, diasSinCobro, capitalEsEfectivo, modoAbreviado, ocultarSaldoWA, tasaMoratorio, diasGraciaMoratorio, requiereAprobacionPrestamos } = await req.json()
+  const { nombre, telefono, ciudad, diasSinCobro, capitalEsEfectivo, modoAbreviado, ocultarSaldoWA, tasaMoratorio, diasGraciaMoratorio, requiereAprobacionPrestamos, portalDatosCompletos } = await req.json()
 
   if (nombre !== undefined && !nombre?.trim()) {
     return NextResponse.json({ error: 'El nombre es obligatorio' }, { status: 400 })
@@ -78,8 +78,9 @@ export async function PATCH(req) {
       ...(tasaMoratorio !== undefined && { tasaMoratorio: Math.max(0, Math.min(100, Number(tasaMoratorio) || 0)) }),
       ...(diasGraciaMoratorio !== undefined && { diasGraciaMoratorio: Math.max(0, Math.min(90, Math.round(Number(diasGraciaMoratorio) || 0))) }),
       ...(requiereAprobacionPrestamos !== undefined && { requiereAprobacionPrestamos: !!requiereAprobacionPrestamos }),
+      ...(portalDatosCompletos !== undefined && { portalDatosCompletos: !!portalDatosCompletos }),
     },
-    select: { id: true, nombre: true, plan: true, telefono: true, ciudad: true, diasSinCobro: true, country: true, timezone: true, capitalEsEfectivo: true, modoAbreviado: true, ocultarSaldoWA: true, tasaMoratorio: true, diasGraciaMoratorio: true, requiereAprobacionPrestamos: true },
+    select: { id: true, nombre: true, plan: true, telefono: true, ciudad: true, diasSinCobro: true, country: true, timezone: true, capitalEsEfectivo: true, modoAbreviado: true, ocultarSaldoWA: true, tasaMoratorio: true, diasGraciaMoratorio: true, requiereAprobacionPrestamos: true, portalDatosCompletos: true },
   })
 
   return NextResponse.json({ ok: true, org })

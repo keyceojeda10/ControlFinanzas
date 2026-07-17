@@ -98,6 +98,7 @@ model Organization {
   capitalEsEfectivo Boolean        @default(false)
   modoAbreviado     Boolean        @default(false)
   ocultarSaldoWA    Boolean        @default(false)
+  portalDatosCompletos Boolean      @default(false)
   requiereAprobacionPrestamos Boolean @default(false)
   ocultarCapitalCobradores    Boolean @default(false)
   tasaMoratorio     Float          @default(0)

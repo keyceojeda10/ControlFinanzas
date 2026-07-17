@@ -594,6 +594,30 @@ function TabOrganizacion() {
         </div>
       </Card>
 
+      {/* Toggle portal de clientes — datos completos */}
+      <Card>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em]">Portal: mostrar datos completos</p>
+            <p className="text-[11px] text-[var(--color-text-muted)] leading-snug mt-1">
+              Cuando el cliente ingresa al portal, ve monto prestado, total a pagar, tasa de interes y demas detalles financieros. Si desactivas esto, solo vera saldo, cuota y fecha de pago.
+            </p>
+          </div>
+          <Toggle
+            checked={!!org?.portalDatosCompletos}
+            onChange={async (nuevoValor) => {
+              try {
+                const res = await fetch('/api/configuracion/organizacion', {
+                  method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ portalDatosCompletos: nuevoValor }),
+                })
+                if (res.ok) setData(prev => ({ ...prev, org: { ...prev.org, portalDatosCompletos: nuevoValor } }))
+              } catch {}
+            }}
+          />
+        </div>
+      </Card>
+
       {/* Intereses moratorios */}
       <Card>
         <div className="flex items-center gap-2 mb-1">
