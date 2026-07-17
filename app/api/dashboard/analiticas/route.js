@@ -113,8 +113,8 @@ export async function GET() {
     `,
     // Nombres de cobradores
     prisma.user.findMany({
-      where: { organizationId, role: 'cobrador', activo: true },
-      select: { id: true, name: true },
+      where: { organizationId, rol: 'cobrador', activo: true },
+      select: { id: true, nombre: true },
     }),
     // Total pagos este mes (para eficiencia)
     prisma.pago.aggregate({
@@ -222,7 +222,7 @@ export async function GET() {
   }
 
   // Cobrador ranking
-  const cobradorMap = Object.fromEntries(cobradorInfo.map(c => [c.id, c.name]))
+  const cobradorMap = Object.fromEntries(cobradorInfo.map(c => [c.id, c.nombre]))
   const cobradores = cobradorRecaudo.map(c => ({
     id: c.cobradorId,
     nombre: cobradorMap[c.cobradorId] || 'Sin nombre',
