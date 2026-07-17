@@ -11,6 +11,7 @@ import { Input }       from '@/components/ui/Input'
 import BotonWhatsApp        from '@/components/ui/BotonWhatsApp'
 import BotonCompartir       from '@/components/ui/BotonCompartir'
 import BotonImprimirRecibo  from '@/components/ui/BotonImprimirRecibo'
+import { AgregarCampoRecibo, CamposReciboList, CAMPOS_DATO_LABELS } from '@/components/recibos/CamposReciboEditor'
 import MoneyInput           from '@/components/ui/MoneyInput'
 import MonedaCF             from '@/components/ui/MonedaCF'
 import MetodoPagoSelector   from '@/components/pagos/MetodoPagoSelector'
@@ -54,6 +55,9 @@ export default function RegistrarPago({
   const [prestamoAct,  setPrestamoAct]  = useState(null)
   const [fotoEvidencia, setFotoEvidencia] = useState(null)
   const [subiendoFoto, setSubiendoFoto] = useState(false)
+  const [vistaComprobante, setVistaComprobante] = useState(false)
+  const [camposLocal, setCamposLocal] = useState(camposRecibo)
+  const [editandoCampos, setEditandoCampos] = useState(false)
   const fotoInputRef = useRef(null)
   const prevOpenRef = useRef(false)
 
@@ -110,6 +114,9 @@ export default function RegistrarPago({
     setDiasAbonados(diasCalc)
     setSliderVisual(diasCalc ?? 1)
     setError('')
+    setVistaComprobante(false)
+    setEditandoCampos(false)
+    setCamposLocal(camposRecibo)
   }, [open, presetPago, cuotaDiaria, saldoPendiente, tabInicial])
 
   // Animacion del slider visual: cuando diasAbonados cambia (por boton de mora,
@@ -269,6 +276,18 @@ export default function RegistrarPago({
     }
   }
 
+  const guardarCamposCliente = async (campos) => {
+    if (!cliente?.id) return
+    setCamposLocal(campos)
+    try {
+      await fetch(`/api/clientes/${cliente.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ camposRecibo: campos }),
+      })
+    } catch {}
+  }
+
   const subirFotoEvidencia = async (file) => {
     if (!pagoGuardado?.id || subiendoFoto) return
     setSubiendoFoto(true)
@@ -345,6 +364,95 @@ export default function RegistrarPago({
       const url = getRutaCobroUrl(info.next)
       navigator.onLine ? router.push(url) : (window.location.href = url)
     }
+  }
+
+  // ── Vista comprobante (segundo paso desde éxito) ──────────────
+  if (exitoso && pagoGuardado && vistaComprobante) {
+    const prestamoWA = prestamoAct ?? prestamo
+
+    return (
+      <Modal
+        open={open}
+        onClose={() => setVistaComprobante(false)}
+        title="Generar comprobante"
+      >
+        <div className="space-y-4">
+          <button
+            type="button"
+            onClick={() => setEditandoCampos(v => !v)}
+            className="w-full flex items-center justify-between gap-2 py-2.5 px-3 rounded-[10px] bg-[var(--color-bg-hover)] border border-[var(--color-border)] text-xs font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-all cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span>Personalizar campos</span>
+              {camposLocal.length > 0 && (
+                <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-[rgba(245,197,24,0.12)] text-[var(--color-accent)]">
+                  {camposLocal.length}
+                </span>
+              )}
+            </div>
+            <svg
+              className="w-3.5 h-3.5 shrink-0 transition-transform duration-200"
+              style={{ transform: editandoCampos ? 'rotate(180deg)' : 'rotate(0deg)' }}
+              fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {editandoCampos && (
+            <div className="space-y-3">
+              <p className="text-[11px] text-[var(--color-text-muted)]">
+                Campos extra que aparecen en el comprobante de este cliente.
+              </p>
+              <CamposReciboList
+                campos={camposLocal}
+                onRemove={(i) => {
+                  const next = camposLocal.filter((_, j) => j !== i)
+                  guardarCamposCliente(next)
+                }}
+              />
+              {camposLocal.length < 10 && (
+                <AgregarCampoRecibo
+                  onAdd={(campo) => guardarCamposCliente([...camposLocal, campo])}
+                />
+              )}
+              {camposLocal.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => guardarCamposCliente([])}
+                  className="w-full py-2 rounded-[10px] text-[10px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-all cursor-pointer"
+                >
+                  Quitar todos los campos
+                </button>
+              )}
+            </div>
+          )}
+
+          {camposLocal.length > 0 && !editandoCampos && (
+            <div className="space-y-1.5">
+              <p className="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Campos extra</p>
+              {camposLocal.map((c, i) => (
+                <div key={i} className="flex items-center justify-between px-2.5 py-1.5 rounded-[8px] bg-[var(--color-bg-hover)] text-xs">
+                  <span className="text-[var(--color-text-muted)]">{c.nombre}</span>
+                  <span className="text-[var(--color-text-primary)] font-medium">
+                    {c.tipo === 'texto' ? c.valor : (CAMPOS_DATO_LABELS[c.campo] || c.campo)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="pt-2 border-t border-[var(--color-border)] space-y-2">
+            <BotonImprimirRecibo cliente={cliente} prestamo={prestamoWA} pago={pagoGuardado} orgNombre={orgNombre} camposRecibo={camposLocal} />
+            <BotonCompartir cliente={cliente} prestamo={prestamoWA} pago={pagoGuardado} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposLocal} />
+          </div>
+        </div>
+      </Modal>
+    )
   }
 
   // ── Vista éxito ───────────────────────────────────────────────
@@ -512,14 +620,20 @@ export default function RegistrarPago({
           )}
 
           {cliente?.telefono && prestamoWA && (
-            <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamoWA} pago={pagoGuardado} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} />
+            <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamoWA} pago={pagoGuardado} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposLocal} />
           )}
 
           {prestamoWA && (
-            <div className="flex gap-2">
-              <BotonCompartir cliente={cliente} prestamo={prestamoWA} pago={pagoGuardado} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} />
-              <BotonImprimirRecibo cliente={cliente} prestamo={prestamoWA} pago={pagoGuardado} camposRecibo={camposRecibo} />
-            </div>
+            <button
+              type="button"
+              onClick={() => setVistaComprobante(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 h-10 rounded-[12px] text-sm font-medium transition-all cursor-pointer bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-accent)]"
+            >
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Generar comprobante
+            </button>
           )}
         </div>
       </Modal>

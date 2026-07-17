@@ -638,6 +638,9 @@ export default function PrestamoDetallePage({ params }) {
             </svg>
             <p className="text-sm text-[var(--color-success)] font-medium">Pago registrado exitosamente</p>
           </div>
+          {ultimoPago && cliente?.telefono && (
+            <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} />
+          )}
           {ultimoPago && (
             <BotonAbrirRecibo onClick={() => setModalRecibo({ tipo: 'pago', pago: ultimoPago })} />
           )}
@@ -646,12 +649,22 @@ export default function PrestamoDetallePage({ params }) {
 
       {/* ── WA PAGO (persiste después de cerrar animación) ───────── */}
       {!exito && ultimoPago && !completado && (
-        <BotonAbrirRecibo onClick={() => setModalRecibo({ tipo: 'pago', pago: ultimoPago })} />
+        <>
+          {cliente?.telefono && (
+            <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} />
+          )}
+          <BotonAbrirRecibo onClick={() => setModalRecibo({ tipo: 'pago', pago: ultimoPago })} />
+        </>
       )}
 
       {/* ── WA PRÉSTAMO COMPLETADO ───────────────────────────────── */}
       {completado && ultimoPago && (
-        <BotonAbrirRecibo onClick={() => setModalRecibo({ tipo: 'pago', pago: ultimoPago })} />
+        <>
+          {cliente?.telefono && (
+            <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} />
+          )}
+          <BotonAbrirRecibo onClick={() => setModalRecibo({ tipo: 'pago', pago: ultimoPago })} />
+        </>
       )}
 
       {/* ── SIGUIENTE EN RUTA (después de pago) ──────────────────── */}
@@ -976,7 +989,7 @@ export default function PrestamoDetallePage({ params }) {
 
       {/* ── BOTONES WHATSAPP ─────────────────────────────────────── */}
       {cliente?.telefono && estaActivo && enMora && !completado && (
-        <BotonAbrirRecibo label="Alerta de mora" onClick={() => setModalRecibo({ tipo: 'mora', pago: null })} />
+        <BotonWhatsApp tipo="mora" cliente={cliente} prestamo={prestamo} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} />
       )}
       {cliente?.telefono && estaActivo && !enMora && !ultimoPago && (
         <button
@@ -1073,7 +1086,10 @@ export default function PrestamoDetallePage({ params }) {
           </div>
         </div>
 
-        <div className="mb-4">
+        <div className="space-y-2 mb-4">
+          {cliente?.telefono && (
+            <BotonWhatsApp tipo="historial" cliente={cliente} prestamo={prestamo} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} />
+          )}
           <BotonAbrirRecibo label="Generar estado de cuenta" onClick={() => setModalRecibo({ tipo: 'historial', pago: null })} />
         </div>
 
@@ -1155,7 +1171,18 @@ export default function PrestamoDetallePage({ params }) {
                   </div>
                   {/* Panel de comprobante expandible */}
                   {comprobanteAbierto && (
-                    <div className="pb-3 pl-1">
+                    <div className="pb-3 pl-1 space-y-2">
+                      {cliente?.telefono && (
+                        <BotonWhatsApp
+                          tipo="pago"
+                          cliente={cliente}
+                          prestamo={prestamo}
+                          pago={{ montoPagado: pago.montoPagado, fechaPago: pago.fechaPago }}
+                          orgNombre={orgNombre}
+                          ocultarSaldo={ocultarSaldoWA}
+                          camposRecibo={camposRecibo}
+                        />
+                      )}
                       <BotonAbrirRecibo
                         small
                         onClick={() => setModalRecibo({ tipo: 'pago', pago: { montoPagado: pago.montoPagado, fechaPago: pago.fechaPago } })}
@@ -1937,7 +1964,7 @@ function ModalCamposRecibo({ tipo, pago, cliente, prestamo, orgNombre, ocultarSa
     onSave([])
   }
 
-  const tituloModal = tipo === 'mora' ? 'Alerta de mora' : tipo === 'historial' ? 'Estado de cuenta' : 'Comprobante de pago'
+  const tituloModal = tipo === 'historial' ? 'Estado de cuenta' : 'Generar comprobante'
 
   return (
     <Modal open onClose={() => { guardarYCerrar(); onClose() }} title={tituloModal}>
@@ -2029,28 +2056,16 @@ function ModalCamposRecibo({ tipo, pago, cliente, prestamo, orgNombre, ocultarSa
         )}
 
         <div className="pt-2 border-t border-[var(--color-border)] space-y-2">
-          {tipo === 'mora' && cliente?.telefono && (
-            <BotonWhatsApp tipo="mora" cliente={cliente} prestamo={prestamo} orgNombre={orgNombre} ocultarSaldo={ocultarSaldo} camposRecibo={camposLocal} />
-          )}
-          {tipo !== 'mora' && (
-            <>
-              {cliente?.telefono && (
-                <BotonWhatsApp tipo={tipo} cliente={cliente} prestamo={prestamo} pago={pago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldo} camposRecibo={camposLocal} />
-              )}
-              <div className="flex gap-2">
-                <BotonCompartir tipo={tipo} cliente={cliente} prestamo={prestamo} pago={pago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldo} camposRecibo={camposLocal} />
-                <BotonImprimirRecibo
-                  tipo={tipo === 'historial' ? 'historial' : 'recibo'}
-                  label={tipo === 'historial' ? 'Estado de cuenta' : undefined}
-                  cliente={cliente}
-                  prestamo={prestamo}
-                  pago={pago}
-                  orgNombre={orgNombre}
-                  camposRecibo={camposLocal}
-                />
-              </div>
-            </>
-          )}
+          <BotonImprimirRecibo
+            tipo={tipo === 'historial' ? 'historial' : 'recibo'}
+            label={tipo === 'historial' ? 'Imprimir estado de cuenta' : 'Imprimir comprobante'}
+            cliente={cliente}
+            prestamo={prestamo}
+            pago={pago}
+            orgNombre={orgNombre}
+            camposRecibo={camposLocal}
+          />
+          <BotonCompartir tipo={tipo} cliente={cliente} prestamo={prestamo} pago={pago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldo} camposRecibo={camposLocal} />
         </div>
       </div>
     </Modal>
