@@ -251,9 +251,9 @@ export async function GET(req) {
 
   function drawStat(x, y, width, label, value, color = COLOR_INK, valueSize = 13) {
     doc.fontSize(8).font('Helvetica').fillColor(COLOR_MUTED)
-    t(label.toUpperCase(), x, y, { width, characterSpacing: 0.2 })
+    t(label.toUpperCase(), x, y, { width, height: 10, characterSpacing: 0.2 })
     doc.fontSize(valueSize).font('Helvetica-Bold').fillColor(color)
-    t(value, x, y + 11, { width })
+    t(value, x, y + 11, { width, height: 16, ellipsis: true })
   }
 
   function drawBadge(x, y, width, text, bg, color) {
@@ -312,8 +312,8 @@ export async function GET(req) {
 
     doc.fontSize(8).font('Helvetica').fillColor(COLOR_MUTED)
     t(kpi.label.toUpperCase(), x + 14, y + 10, { width: kpiW - 24, characterSpacing: 0.2 })
-    doc.fontSize(16).font('Helvetica-Bold').fillColor(COLOR_INK)
-    t(kpi.value, x + 14, y + 23, { width: kpiW - 24 })
+    doc.fontSize(15).font('Helvetica-Bold').fillColor(COLOR_INK)
+    t(kpi.value, x + 14, y + 23, { width: kpiW - 24, height: 18, ellipsis: true })
     if (kpi.sub) {
       doc.fontSize(7.5).font('Helvetica').fillColor(COLOR_FAINT)
       t(kpi.sub, x + 14, y + 40, { width: kpiW - 24 })
@@ -378,7 +378,7 @@ export async function GET(req) {
       let xCol = LEFT + 8
       cols.forEach(col => {
         doc.fontSize(7.5).font('Helvetica-Bold').fillColor(COLOR_MUTED)
-        t(col.label.toUpperCase(), xCol, y + 5, { width: col.w - 12, align: col.align, characterSpacing: 0.2 })
+        t(col.label.toUpperCase(), xCol, y + 5, { width: col.w - 12, height: 10, align: col.align, characterSpacing: 0.2 })
         xCol += col.w
       })
       return y + 18
@@ -411,7 +411,7 @@ export async function GET(req) {
 
       vals.forEach(v => {
         doc.fontSize(8.5).font('Helvetica').fillColor(COLOR_TEXT)
-        t(v.v, xCol, yE + 6, { width: v.w - 12, align: v.align })
+        t(v.v, xCol, yE + 6, { width: v.w - 12, height: 12, align: v.align, ellipsis: true })
         xCol += v.w
       })
 

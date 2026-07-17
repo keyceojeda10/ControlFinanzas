@@ -189,8 +189,8 @@ export async function GET(req) {
     doc.rect(x, cardY, 3, cardH).fill(c.color)
     doc.fontSize(7.5).font('Helvetica').fillColor(COLOR_MUTED)
     t(c.label.toUpperCase(), x + 12, cardY + 10, { width: cardW - 16, characterSpacing: 0.2 })
-    doc.fontSize(14).font('Helvetica-Bold').fillColor(c.color)
-    t(c.value, x + 12, cardY + 24, { width: cardW - 16 })
+    doc.fontSize(13).font('Helvetica-Bold').fillColor(c.color)
+    t(c.value, x + 12, cardY + 25, { width: cardW - 16, height: 16, ellipsis: true })
   })
 
   let y = cardY + cardH + 20
@@ -203,13 +203,13 @@ export async function GET(req) {
   }
 
   const COL = {
-    num:    { x: LEFT,       w: 20 },
-    nombre: { x: LEFT + 20,  w: 165 },
-    tel:    { x: LEFT + 185, w: 72 },
-    cuota:  { x: LEFT + 257, w: 72 },
-    saldo:  { x: LEFT + 329, w: 78 },
-    avance: { x: LEFT + 407, w: 48 },
-    mora:   { x: LEFT + 455, w: 77 },
+    num:    { x: LEFT,       w: 18 },
+    nombre: { x: LEFT + 18,  w: 152 },
+    tel:    { x: LEFT + 170, w: 68 },
+    cuota:  { x: LEFT + 238, w: 82 },
+    saldo:  { x: LEFT + 320, w: 82 },
+    avance: { x: LEFT + 402, w: 42 },
+    mora:   { x: LEFT + 444, w: 88 },
   }
   const ROW_H = 18
   const ROW_H_DIR = 28
@@ -230,7 +230,7 @@ export async function GET(req) {
     doc.restore()
 
     doc.fontSize(7).font('Helvetica-Bold').fillColor(COLOR_MUTED)
-    t('#', COL.num.x + 4, y + 3, { width: COL.num.w })
+    t('#', COL.num.x + 2, y + 3, { width: COL.num.w })
     t('CLIENTE', COL.nombre.x, y + 3, { width: COL.nombre.w })
     t('TELÉFONO', COL.tel.x, y + 3, { width: COL.tel.w })
     t('CUOTA', COL.cuota.x, y + 3, { width: COL.cuota.w, align: 'right' })
@@ -253,49 +253,46 @@ export async function GET(req) {
 
       const freq = c.frecuencia === 'semanal' ? '/sem' : c.frecuencia === 'quincenal' ? '/qna' : c.frecuencia === 'mensual' ? '/mes' : '/día'
 
+      const cellH = 12
+
       doc.fontSize(7.5).font('Helvetica').fillColor(COLOR_TEXT)
-      t(String(i + 1), COL.num.x + 4, y + 3, { width: COL.num.w })
+      t(String(i + 1), COL.num.x + 2, y + 3, { width: COL.num.w - 2, height: cellH })
       doc.font('Helvetica-Bold')
-      t(c.nombre, COL.nombre.x, y + 3, { width: COL.nombre.w, height: 12, ellipsis: true })
+      t(c.nombre, COL.nombre.x, y + 3, { width: COL.nombre.w - 4, height: cellH, ellipsis: true })
       if (hasDir) {
         doc.fontSize(6).font('Helvetica').fillColor(COLOR_FAINT)
-        t(c.direccion, COL.nombre.x, y + 14, { width: COL.nombre.w, height: 10, ellipsis: true })
+        t(c.direccion, COL.nombre.x, y + 14, { width: COL.nombre.w - 4, height: 10, ellipsis: true })
       }
-      doc.fontSize(7.5).font('Helvetica').fillColor(COLOR_MUTED)
-      t(c.telefono, COL.tel.x, y + 3, { width: COL.tel.w })
-      doc.fillColor(COLOR_TEXT)
-      t(fmt(c.cuota) + freq, COL.cuota.x, y + 3, { width: COL.cuota.w, align: 'right' })
-      t(fmt(c.saldo), COL.saldo.x, y + 3, { width: COL.saldo.w, align: 'right' })
+      doc.fontSize(7).font('Helvetica').fillColor(COLOR_MUTED)
+      t(c.telefono, COL.tel.x, y + 3, { width: COL.tel.w - 4, height: cellH, ellipsis: true })
+      doc.fontSize(7).fillColor(COLOR_TEXT)
+      t(fmt(c.cuota) + freq, COL.cuota.x, y + 3, { width: COL.cuota.w - 2, height: cellH, align: 'right' })
+      t(fmt(c.saldo), COL.saldo.x, y + 3, { width: COL.saldo.w - 2, height: cellH, align: 'right' })
 
       // Avance (% pagado)
       const avText = `${c.avance}%`
       const avColor = c.avance >= 80 ? COLOR_GREEN : c.avance >= 50 ? COLOR_AMBER : COLOR_TEXT
       doc.fontSize(7).font('Helvetica-Bold').fillColor(avColor)
-      t(avText, COL.avance.x, y + 3, { width: COL.avance.w, align: 'center' })
+      t(avText, COL.avance.x, y + 3, { width: COL.avance.w, height: cellH, align: 'center' })
 
-      // Mora badge
+      // Mora badge — clamp width to column
+      const drawMoraBadge = (text, bg, color) => {
+        const tw = doc.font('Helvetica-Bold').fontSize(7).widthOfString(text)
+        const bw = Math.min(tw + 10, COL.mora.w - 2)
+        const bx = COL.mora.x + (COL.mora.w - bw) / 2
+        doc.save()
+        doc.roundedRect(bx, y + 1, bw, 13, 6).fill(bg)
+        doc.restore()
+        doc.fontSize(7).font('Helvetica-Bold').fillColor(color)
+        t(text, bx, y + 4, { width: bw, height: cellH, align: 'center' })
+      }
+
       if (c.mora > 0) {
-        const moraText = `${c.mora}d mora`
         const badgeBg = c.mora > 10 ? '#fee2e2' : '#fef3c7'
         const badgeColor = c.mora > 10 ? COLOR_RED : COLOR_AMBER
-        const tw = doc.font('Helvetica-Bold').fontSize(7).widthOfString(moraText)
-        const bw = tw + 10
-        const bx = COL.mora.x + (COL.mora.w - bw) / 2
-        doc.save()
-        doc.roundedRect(bx, y, bw, 13, 6).fill(badgeBg)
-        doc.restore()
-        doc.fontSize(7).font('Helvetica-Bold').fillColor(badgeColor)
-        t(moraText, bx, y + 3, { width: bw, align: 'center' })
+        drawMoraBadge(`${c.mora}d mora`, badgeBg, badgeColor)
       } else {
-        const okText = 'Al día'
-        const tw = doc.font('Helvetica-Bold').fontSize(7).widthOfString(okText)
-        const bw = tw + 10
-        const bx = COL.mora.x + (COL.mora.w - bw) / 2
-        doc.save()
-        doc.roundedRect(bx, y, bw, 13, 6).fill('#dcfce7')
-        doc.restore()
-        doc.fontSize(7).font('Helvetica-Bold').fillColor(COLOR_GREEN)
-        t(okText, bx, y + 3, { width: bw, align: 'center' })
+        drawMoraBadge('Al día', '#dcfce7', COLOR_GREEN)
       }
 
       y += rowH
@@ -308,9 +305,9 @@ export async function GET(req) {
     const subtotalCuota = clientes.reduce((s, c) => s + c.cuota, 0)
     const subtotalSaldo = clientes.reduce((s, c) => s + c.saldo, 0)
     doc.fontSize(7.5).font('Helvetica-Bold').fillColor(COLOR_INK)
-    t(`${clientes.length} clientes`, COL.nombre.x, y, { width: COL.nombre.w })
-    t(fmt(subtotalCuota), COL.cuota.x, y, { width: COL.cuota.w, align: 'right' })
-    t(fmt(subtotalSaldo), COL.saldo.x, y, { width: COL.saldo.w, align: 'right' })
+    t(`${clientes.length} clientes`, COL.nombre.x, y, { width: COL.nombre.w - 4, height: 12 })
+    t(fmt(subtotalCuota), COL.cuota.x, y, { width: COL.cuota.w - 2, height: 12, align: 'right' })
+    t(fmt(subtotalSaldo), COL.saldo.x, y, { width: COL.saldo.w - 2, height: 12, align: 'right' })
     y += 24
   }
 

@@ -116,20 +116,20 @@ export async function GET(req, { params }) {
 
   // Header
   doc.fontSize(22).font('Helvetica-Bold').fillColor('#111111')
-     .text('PAGARE', LEFT, y, { width: W, align: 'center' })
+     .text('PAGARE', LEFT, y, { width: W, align: 'center', lineBreak: false })
   y += 30
 
   doc.fontSize(9).font('Helvetica').fillColor('#666666')
-     .text(`No. ${prestamo.id.slice(-8).toUpperCase()}`, LEFT, y, { width: W, align: 'center' })
+     .text(`No. ${prestamo.id.slice(-8).toUpperCase()}`, LEFT, y, { width: W, align: 'center', lineBreak: false })
   y += 20
 
   if (org?.ciudad) {
     doc.fontSize(10).font('Helvetica').fillColor('#333333')
-       .text(`${org.ciudad}, ${fmtFecha(prestamo.createdAt)}`, LEFT, y, { width: W, align: 'center' })
+       .text(`${org.ciudad}, ${fmtFecha(prestamo.createdAt)}`, LEFT, y, { width: W, align: 'center', lineBreak: false })
     y += 18
   } else {
     doc.fontSize(10).font('Helvetica').fillColor('#333333')
-       .text(fmtFecha(prestamo.createdAt), LEFT, y, { width: W, align: 'center' })
+       .text(fmtFecha(prestamo.createdAt), LEFT, y, { width: W, align: 'center', lineBreak: false })
     y += 18
   }
 
@@ -140,7 +140,7 @@ export async function GET(req, { params }) {
 
   // Monto en letras
   doc.fontSize(10).font('Helvetica-Bold').fillColor('#111111')
-     .text(`Valor: ${fmt(totalInt)} (${numeroALetras(totalInt)} PESOS)`, LEFT, y, { width: W })
+     .text(`Valor: ${fmt(totalInt)} (${numeroALetras(totalInt)} PESOS)`, LEFT, y, { width: W, lineBreak: false, ellipsis: true })
   y += 22
 
   // Cuerpo del pagare
@@ -167,7 +167,7 @@ export async function GET(req, { params }) {
   ]
 
   doc.fontSize(9).font('Helvetica-Bold').fillColor('#333333')
-     .text('CLAUSULAS:', LEFT, y)
+     .text('CLAUSULAS:', LEFT, y, { lineBreak: false })
   y = doc.y + 6
 
   clausulas.forEach((c, i) => {
@@ -183,7 +183,7 @@ export async function GET(req, { params }) {
   y += 12
 
   doc.fontSize(9).font('Helvetica-Bold').fillColor('#333333')
-     .text('RESUMEN DEL CREDITO', LEFT, y)
+     .text('RESUMEN DEL CREDITO', LEFT, y, { lineBreak: false })
   y += 16
 
   const filas = [
@@ -199,9 +199,9 @@ export async function GET(req, { params }) {
 
   filas.forEach(([label, value]) => {
     doc.fontSize(9).font('Helvetica').fillColor('#555555')
-       .text(label, LEFT, y)
+       .text(label, LEFT, y, { width: 190, lineBreak: false })
     doc.fontSize(9).font('Helvetica-Bold').fillColor('#111111')
-       .text(value, LEFT + 200, y)
+       .text(value, LEFT + 200, y, { width: W - 200, lineBreak: false, ellipsis: true })
     y += 16
   })
 
@@ -227,24 +227,24 @@ export async function GET(req, { params }) {
 
   doc.moveTo(firmaLeft, y).lineTo(firmaLeft + colW, y).strokeColor('#888888').lineWidth(0.5).stroke()
   doc.fontSize(9).font('Helvetica').fillColor('#333333')
-     .text('Firma del deudor', firmaLeft, y + 5)
+     .text('Firma del deudor', firmaLeft, y + 5, { lineBreak: false })
   doc.fontSize(8).fillColor('#666666')
-     .text(cliente.nombre || '', firmaLeft, y + 17)
+     .text(cliente.nombre || '', firmaLeft, y + 17, { width: colW, lineBreak: false, ellipsis: true })
   if (cliente.cedula && !cliente.cedula.startsWith('SIN-')) {
-    doc.text(`C.C. ${cliente.cedula}`, firmaLeft, y + 28)
+    doc.text(`C.C. ${cliente.cedula}`, firmaLeft, y + 28, { lineBreak: false })
   }
 
   // Firma acreedor
   doc.moveTo(firmaRight, y).lineTo(firmaRight + colW, y).strokeColor('#888888').lineWidth(0.5).stroke()
   doc.fontSize(9).font('Helvetica').fillColor('#333333')
-     .text('Firma del acreedor', firmaRight, y + 5)
+     .text('Firma del acreedor', firmaRight, y + 5, { lineBreak: false })
   doc.fontSize(8).fillColor('#666666')
-     .text(org?.nombre || '', firmaRight, y + 17)
+     .text(org?.nombre || '', firmaRight, y + 17, { width: colW, lineBreak: false, ellipsis: true })
 
   // Footer
   const pageH = doc.page.height
   doc.fontSize(7).font('Helvetica').fillColor('#bbbbbb')
-     .text('Documento generado por Control Finanzas', LEFT, pageH - 30, { width: W, align: 'center' })
+     .text('Documento generado por Control Finanzas', LEFT, pageH - 30, { width: W, align: 'center', lineBreak: false })
 
   doc.end()
   await done
