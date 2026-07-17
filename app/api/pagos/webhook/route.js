@@ -3,31 +3,10 @@ import { NextResponse } from 'next/server'
 import { prisma }       from '@/lib/prisma'
 import { paymentApi, preApprovalApi } from '@/lib/mercadopago'
 import crypto           from 'crypto'
-import { enviarEmail, emailPagoAprobado, emailPagoFallido, emailReferidoExitoso } from '@/lib/email'
+import { enviarEmail, emailPagoAprobado, emailPagoFallido } from '@/lib/email'
 import { webhookLimiter, getClientIp } from '@/lib/rate-limit'
 import { registrarAdminLog } from '@/lib/admin-log'
-
-import { PLANES_VALIDOS } from '@/lib/planes'
-
-function sanitizarPlan(planRaw, fallback) {
-  fallback = fallback || "basic"
-  if (!planRaw) return fallback
-  const normalizado = String(planRaw).toLowerCase().trim()
-  if (PLANES_VALIDOS.includes(normalizado)) return normalizado
-  // ALERTA: metadata de MercadoPago trae un plan que no existe en PLANES_VALIDOS.
-  // Se aplica el fallback para no romper el pago, pero esto requiere revision
-  // manual (posible bug al generar la preferencia o cambio no sincronizado en lib/planes.js).
-  console.warn(
-    "\n" +
-    "########## [webhook] ALERTA: PLAN INVALIDO EN METADATA DE MERCADOPAGO ##########\n" +
-    "  planRecibido: " + JSON.stringify(planRaw) + "\n" +
-    "  planesValidos: " + PLANES_VALIDOS.join(", ") + "\n" +
-    "  fallbackAplicado: " + fallback + "\n" +
-    "  ACCION REQUERIDA: revisar manualmente esta organizacion/pago en MercadoPago.\n" +
-    "#################################################################################\n"
-  )
-  return fallback
-}
+import { sanitizarPlan, activarPlanPagado } from '@/lib/activar-suscripcion'
 
 function verificarFirma(req, body) {
   const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET
@@ -313,174 +292,15 @@ export async function POST(req) {
 
     // ─── Pago de plan normal ────────────────────────────────
     if (status === 'approved') {
-      const plan = sanitizarPlan(planRaw)
-      console.log('[webhook] plan sanitizado: ' + planRaw + ' -> ' + plan)
-
-      const ahora     = new Date()
-      const diasExtension = periodo === 'anual' ? 365 : periodo === 'trimestral' ? 90 : 30
-      const vencimiento = new Date(ahora)
-      vencimiento.setDate(vencimiento.getDate() + diasExtension)
-
-      // ─── Sección crítica: check-then-act de idempotencia ────
-      // Dos notificaciones "approved" idénticas de MP pueden llegar casi
-      // simultáneamente. Sin aislamiento, ambas pasarían el findFirst antes
-      // de que cualquiera cree/actualice el registro, duplicando la
-      // extensión de la suscripción (+30/90/365 días aplicados dos veces).
-      // Serializable fuerza a que la segunda transacción vea los cambios
-      // de la primera (o falle con conflicto de serialización, que se
-      // trata como "ya procesado" más abajo).
-      let subExistente = null
-      let yaProcesado = false
-      try {
-        subExistente = await prisma.$transaction(async (tx) => {
-          const procesado = await tx.suscripcion.findFirst({
-            where: { mercadopagoId: String(data.id) },
-          })
-          if (procesado) {
-            yaProcesado = true
-            return procesado
-          }
-
-          // Buscar suscripción existente (ignorar pending de MP nunca completadas)
-          const sub = await tx.suscripcion.findFirst({
-            where: {
-              organizationId: orgId,
-              OR: [{ mpStatus: null }, { mpStatus: { not: 'pending' } }],
-            },
-            orderBy: { fechaVencimiento: 'desc' },
-          })
-
-          if (sub) {
-            // Si la suscripción actual aún no venció, extender desde la fecha actual de vencimiento
-            const baseDate = sub.estado === 'activa' && new Date(sub.fechaVencimiento) > ahora
-              ? new Date(sub.fechaVencimiento)
-              : ahora
-            const nuevaFecha = new Date(baseDate)
-            nuevaFecha.setDate(nuevaFecha.getDate() + diasExtension)
-
-            const actualizada = await tx.suscripcion.update({
-              where: { id: sub.id },
-              data: {
-                plan:             plan,
-                estado:           'activa',
-                fechaVencimiento: nuevaFecha,
-                mercadopagoId:    String(data.id),
-                montoCOP:         payment.transaction_amount ?? 0,
-              },
-            })
-            await tx.organization.update({
-              where: { id: orgId },
-              data: { plan: plan, activo: true },
-            })
-            return actualizada
-          }
-
-          const creada = await tx.suscripcion.create({
-            data: {
-              organizationId:   orgId,
-              plan:             plan,
-              estado:           'activa',
-              fechaInicio:      ahora,
-              fechaVencimiento: vencimiento,
-              mercadopagoId:    String(data.id),
-              montoCOP:         payment.transaction_amount ?? 0,
-            },
-          })
-          await tx.organization.update({
-            where: { id: orgId },
-            data: { plan: plan, activo: true },
-          })
-          return creada
-        }, { isolation: 'Serializable' })
-      } catch (txErr) {
-        // Conflicto de serialización (dos transacciones concurrentes
-        // pisandose) o deadlock de MySQL/MariaDB: la otra notificación
-        // concurrente ya completó el trabajo, así que tratamos esta como
-        // procesada y no reintentamos para no duplicar la extensión.
-        console.warn('[webhook] conflicto de concurrencia procesando payment ' + data.id + ', tratando como ya procesado: ' + txErr.message)
-        return NextResponse.json({ ok: true })
-      }
-
-      if (yaProcesado) {
-        console.log('[webhook] payment ' + data.id + ' ya procesado, ignorando reenvio')
-        return NextResponse.json({ ok: true })
-      }
-
-      // ─── Recompensa de referido ──────────────────────────────
-      // Si esta org fue referida, verificar si es su primer pago y recompensar al referidor
-      const orgData = await prisma.organization.findUnique({
-        where: { id: orgId },
-        select: { referidoPorId: true },
+      const r = await activarPlanPagado({
+        organizationId: orgId,
+        plan:           planRaw,
+        periodo,
+        montoCOP:       payment.transaction_amount ?? 0,
+        gateway:        'mercadopago',
+        gatewayId:      data.id,
       })
-      if (orgData?.referidoPorId) {
-        // Contar pagos aprobados previos de esta org (excluyendo el actual)
-        const pagosAnteriores = await prisma.suscripcion.count({
-          where: { organizationId: orgId },
-        })
-        // Si solo hay 1 suscripción (la que acabamos de crear/actualizar), es el primer pago
-        if (pagosAnteriores <= 1) {
-          const subReferidor = await prisma.suscripcion.findFirst({
-            where: {
-              organizationId: orgData.referidoPorId,
-              OR: [{ mpStatus: null }, { mpStatus: { not: 'pending' } }],
-            },
-            orderBy: { fechaVencimiento: 'desc' },
-          })
-          if (subReferidor) {
-            const baseRef = subReferidor.estado === 'activa' && new Date(subReferidor.fechaVencimiento) > ahora
-              ? new Date(subReferidor.fechaVencimiento)
-              : ahora
-            const nuevaFechaRef = new Date(baseRef)
-            nuevaFechaRef.setDate(nuevaFechaRef.getDate() + 30)
-            await prisma.suscripcion.update({
-              where: { id: subReferidor.id },
-              data: { fechaVencimiento: nuevaFechaRef },
-            })
-            console.log('[webhook] +30 días para referidor org=' + orgData.referidoPorId + ' por referido org=' + orgId)
-
-            // Notificar al referidor por email
-            const ownerRef = await prisma.user.findFirst({
-              where: { organizationId: orgData.referidoPorId, rol: 'owner' },
-              select: { id: true, nombre: true, email: true, emailsMarketing: true },
-            })
-            if (ownerRef && ownerRef.emailsMarketing) {
-              const orgReferida = await prisma.organization.findUnique({
-                where: { id: orgId },
-                select: { nombre: true },
-              })
-              const { subject: sRef, html: hRef } = emailReferidoExitoso({
-                nombre: ownerRef.nombre,
-                nombreReferido: orgReferida?.nombre || 'Un referido',
-                userId: ownerRef.id,
-              })
-              enviarEmail({ to: ownerRef.email, subject: sRef, html: hRef }).catch(e => console.error('[Email] Fallo envio:', e.message))
-            }
-          }
-        }
-      }
-
-      await registrarAdminLog({
-        organizacionId: orgId,
-        accion:         'pago_aprobado',
-        detalle:        `Pago aprobado por MercadoPago #${data.id}. Plan: ${plan}. Monto: $${payment.transaction_amount}`,
-      })
-      // Enviar email de confirmación al owner
-      const owner = await prisma.user.findFirst({
-        where: { organizationId: orgId, rol: 'owner' },
-        select: { nombre: true, email: true },
-      })
-      if (owner) {
-        const fechaVenc = subExistente
-          ? (await prisma.suscripcion.findFirst({ where: { organizationId: orgId, OR: [{ mpStatus: null }, { mpStatus: { not: 'pending' } }] }, orderBy: { fechaVencimiento: 'desc' } }))?.fechaVencimiento
-          : vencimiento
-        const { subject, html } = emailPagoAprobado({
-          nombre: owner.nombre,
-          plan: plan,
-          monto: payment.transaction_amount ?? 0,
-          fechaVencimiento: fechaVenc,
-        })
-        enviarEmail({ to: owner.email, subject, html }).catch(e => console.error('[Email] Fallo envio:', e.message))
-      }
+      if (r.yaProcesado) console.log('[webhook] payment ' + data.id + ' ya procesado, ignorando')
     } else if (status === 'rejected' || status === 'cancelled') {
       const plan = sanitizarPlan(planRaw)
       await registrarAdminLog({

@@ -497,6 +497,11 @@ model Suscripcion {
   canceladaAt       DateTime?
   motivoCancelacion String?
 
+  // Multi-gateway (Wompi / MercadoPago)
+  gatewayPago        String? // 'wompi' | 'mercadopago'
+  wompiTransactionId String?  @unique
+  wompiReference     String?
+
   createdAt DateTime @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id])

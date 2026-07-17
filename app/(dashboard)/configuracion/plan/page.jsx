@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter }           from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth }             from '@/hooks/useAuth'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
 import { PLANES_CONFIG, getPrecioPlan } from '@/lib/planes'
-import { formatMoney } from '@/lib/i18n'
+import { formatMoney, getPaymentGateway } from '@/lib/i18n'
 
 const planesBase = [
   { key: 'starter',      nombre: 'Inicial',      features: ['1 usuario', 'Hasta 150 clientes', '1 ruta', 'Dashboard básico'] },
@@ -61,7 +61,9 @@ function UsageBar({ label, usado, limite }) {
 // ── Main ───────────────────────────────────────────────────
 export default function PlanPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { session, loading: authLoading } = useAuth()
+  const wompiRetorno = searchParams.get('wompi') === 'retorno'
 
   const country = session?.user?.country ?? 'co'
   const esSuperadmin = session?.user?.rol === 'superadmin'
@@ -74,6 +76,10 @@ export default function PlanPage() {
   const [periodo,      setPeriodo]      = useState('mensual')
   const [descuentoOrg, setDescuentoOrg] = useState(0)
   const [showPlanes,   setShowPlanes]   = useState(false)
+  const [pagando,      setPagando]      = useState(null)
+  const [errorPago,    setErrorPago]    = useState(null)
+
+  const gateway = getPaymentGateway(country)
 
   useEffect(() => {
     if (authLoading) return
@@ -125,8 +131,64 @@ export default function PlanPage() {
 
   const cancelarPlanWA = () => {
     const orgRef = orgNombre ? ` de mi cuenta "${orgNombre}"` : ''
-    const msg = `Hola, quiero cancelar la suscripción${orgRef}.`
+    const msg = `Hola, quiero cancelar la suscripcion${orgRef}.`
     window.open(whatsappLink(msg), '_blank', 'noopener,noreferrer')
+  }
+
+  const activarPlanOnline = async (planKey) => {
+    setPagando(planKey)
+    setErrorPago(null)
+    try {
+      if (gateway === 'wompi') {
+        const res = await fetch('/api/pagos/wompi/crear', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plan: planKey, periodo }),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || 'Error creando pago')
+
+        const form = document.createElement('form')
+        form.method = 'GET'
+        form.action = data.checkoutUrl
+        const fields = {
+          'public-key': data.publicKey,
+          currency: data.moneda,
+          'amount-in-cents': String(data.montoCentavos),
+          reference: data.referencia,
+          'signature:integrity': data.firma,
+          'redirect-url': data.redirectUrl,
+        }
+        for (const [name, value] of Object.entries(fields)) {
+          const input = document.createElement('input')
+          input.type = 'hidden'
+          input.name = name
+          input.value = value
+          form.appendChild(input)
+        }
+        document.body.appendChild(form)
+        form.submit()
+        return
+      }
+
+      if (gateway === 'mercadopago') {
+        const res = await fetch('/api/pagos/crear-preferencia', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plan: planKey, periodo }),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || 'Error creando pago')
+        window.location.href = data.initPoint
+        return
+      }
+
+      activarPlanWA(planKey)
+    } catch (err) {
+      setErrorPago(err.message)
+    } finally {
+      setPagando(null)
+    }
   }
 
   // ── Loading state ──
@@ -185,6 +247,31 @@ export default function PlanPage() {
             </p>
             <p className="text-[12px] mt-0.5 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
               Tienes acceso completo al plan Empresarial. Al terminar la prueba, tu cuenta pasara al plan {PLANES_CONFIG[estado.planAlTerminar]?.nombre || 'Inicial'}.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Retorno Wompi ── */}
+      {wompiRetorno && (
+        <div
+          className="rounded-[20px] cf-card-shadow px-5 py-4 flex items-start gap-3"
+          style={{
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 12%, transparent) 0%, color-mix(in srgb, var(--color-success) 4%, transparent) 100%)',
+            border: '1px solid color-mix(in srgb, var(--color-success) 25%, transparent)',
+          }}
+        >
+          <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: 'color-mix(in srgb, var(--color-success) 15%, transparent)' }}>
+            <svg className="w-4 h-4" style={{ color: 'var(--color-success)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-[14px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+              Pago procesado
+            </p>
+            <p className="text-[12px] mt-0.5 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+              Tu pago se esta verificando. El plan se activara automaticamente en unos segundos. Si no se refleja, recarga la pagina.
             </p>
           </div>
         </div>
@@ -472,22 +559,48 @@ export default function PlanPage() {
                     }}>
                       Plan actual
                     </div>
-                  ) : (
+                  ) : gateway === 'manual' ? (
                     <button
                       onClick={() => activarPlanWA(p.key)}
                       className="w-full h-9 rounded-[12px] text-[12px] font-semibold transition-all active:scale-[0.98] flex items-center justify-center gap-1.5"
-                      style={{ background: 'var(--color-accent)', color: 'var(--color-accent-text)' }}
+                      style={{ background: '#25D366', color: '#fff' }}
                     >
                       <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                       </svg>
                       {subCancelada && esActual ? 'Renovar' : 'Activar por WhatsApp'}
                     </button>
+                  ) : (
+                    <button
+                      onClick={() => activarPlanOnline(p.key)}
+                      disabled={pagando === p.key}
+                      className="w-full h-9 rounded-[12px] text-[12px] font-semibold transition-all active:scale-[0.98] flex items-center justify-center gap-1.5 disabled:opacity-60"
+                      style={{ background: 'var(--color-accent)', color: 'var(--color-accent-text)' }}
+                    >
+                      {pagando === p.key ? (
+                        <Spinner />
+                      ) : (
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                      )}
+                      {subCancelada && esActual ? 'Renovar plan' : 'Pagar'}
+                    </button>
                   )}
                 </div>
               )
             })}
           </div>
+
+          {errorPago && (
+            <div className="rounded-[12px] px-4 py-3 text-[12px] font-medium" style={{
+              background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)',
+              color: 'var(--color-danger)',
+            }}>
+              {errorPago}
+            </div>
+          )}
         </div>
       )}
 
