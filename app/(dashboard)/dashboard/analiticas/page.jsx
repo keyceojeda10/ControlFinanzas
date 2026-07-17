@@ -132,7 +132,7 @@ export default function AnaliticasPage() {
           <Link href="/dashboard" className="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--color-bg-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-border-hover)] transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           </Link>
-          <h1 className="text-[20px] lg:text-[24px] font-semibold tracking-tight">Analiticas</h1>
+          <h1 className="text-[20px] lg:text-[24px] font-semibold tracking-tight">Analíticas</h1>
         </div>
         <button
           onClick={descargarPDF}
@@ -180,8 +180,8 @@ export default function AnaliticasPage() {
       {/* === Proyeccion del mes === */}
       <Card>
         <div className="flex items-start justify-between mb-2">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Proyeccion del mes</p>
-          <span className="text-[11px] font-mono text-[var(--color-text-muted)]">dia {proyeccion.diasHabiles} de {proyeccion.diasHabilesTotalMes}</span>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Proyección del mes</p>
+          <span className="text-[11px] font-mono text-[var(--color-text-muted)]">día {proyeccion.diasHabiles} de {proyeccion.diasHabilesTotalMes}</span>
         </div>
         <ProgressBar value={proyeccion.recaudado} max={proyeccion.esperado} color="var(--color-accent)" height={10} />
         <div className="flex justify-between mt-2">
@@ -194,7 +194,7 @@ export default function AnaliticasPage() {
             <p className="text-[15px] font-mono font-bold text-[var(--color-info)]">{fmt(proyeccion.promedioDiario)}</p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] text-[var(--color-text-muted)]">Al ritmo actual cerras con</p>
+            <p className="text-[10px] text-[var(--color-text-muted)]">Al ritmo actual cerrarás con</p>
             <p className="text-[15px] font-mono font-bold text-[var(--color-accent)]">{fmt(proyeccion.proyectado)}</p>
           </div>
         </div>
@@ -273,24 +273,24 @@ export default function AnaliticasPage() {
       {/* === Cartera + Negocio === */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
         <Card href="/prestamos">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Prestamos activos</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Préstamos activos</p>
           <p className="text-[24px] font-mono font-bold mt-1">{cartera.activos}</p>
           {cartera.pctMora > 0 && <p className="text-[10px] text-[var(--color-danger)] font-medium">{cartera.pctMora}% en mora</p>}
         </Card>
         <Card>
           <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Por cobrar</p>
           <p className="text-[24px] font-mono font-bold mt-1 text-[var(--color-accent)]">{fmt(resumen.porCobrar)}</p>
-          <p className="text-[10px] text-[var(--color-text-muted)]">{fmt(resumen.interesEnCartera)} interes</p>
+          <p className="text-[10px] text-[var(--color-text-muted)]">{fmt(resumen.interesEnCartera)} interés</p>
         </Card>
         <Card>
           <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Ticket promedio</p>
           <p className="text-[24px] font-mono font-bold mt-1">{fmt(cartera.ticketPromedio)}</p>
-          <p className="text-[10px] text-[var(--color-text-muted)]">por prestamo</p>
+          <p className="text-[10px] text-[var(--color-text-muted)]">por préstamo</p>
         </Card>
         <Card>
           <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Clientes que repiten</p>
           <p className="text-[24px] font-mono font-bold mt-1 text-[var(--color-info)]">{cartera.clientesRepiten}%</p>
-          <p className="text-[10px] text-[var(--color-text-muted)]">han tomado 2+ prestamos</p>
+          <p className="text-[10px] text-[var(--color-text-muted)]">han tomado 2+ préstamos</p>
         </Card>
       </div>
 
@@ -344,7 +344,7 @@ export default function AnaliticasPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-danger)]">Clavos</p>
-              <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">{cartera.clavos} prestamos marcados como irrecuperables</p>
+              <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">{cartera.clavos} préstamos marcados como irrecuperables</p>
             </div>
             <p className="text-[20px] font-mono font-bold text-[var(--color-danger)]">{fmt(cartera.moraIrrecuperable)}</p>
           </div>

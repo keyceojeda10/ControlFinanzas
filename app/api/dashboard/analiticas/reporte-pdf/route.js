@@ -234,7 +234,7 @@ export async function GET() {
 
   // ── PROYECCION ──
   doc.font('Helvetica-Bold').fontSize(9).fillColor(MUTED)
-  t('PROYECCION DEL MES', LEFT, y)
+  t('PROYECCIÓN DEL MES', LEFT, y)
   y += 16
 
   // Progress bar
@@ -253,7 +253,7 @@ export async function GET() {
 
   y += 20
   doc.font('Helvetica').fontSize(8).fillColor(TEXT)
-  t(`Promedio diario: ${fmt(Math.round(promedioDiario))}  |  Dia ${diasHabiles} de ${diasHabilesTotalMes} habiles`, LEFT, y)
+  t(`Promedio diario: ${fmt(Math.round(promedioDiario))}  |  Día ${diasHabiles} de ${diasHabilesTotalMes} hábiles`, LEFT, y)
 
   if (esperadoMes > 0) {
     const diff = proyeccionMes >= esperadoMes
@@ -280,9 +280,9 @@ export async function GET() {
     t(value, x, yy + 10)
   }
 
-  drawStatBox(LEFT, y, 'PRESTAMOS ACTIVOS', `${prestamosActivosDetalle.length}`)
+  drawStatBox(LEFT, y, 'PRÉSTAMOS ACTIVOS', `${prestamosActivosDetalle.length}`)
   drawStatBox(LEFT + colW, y, 'POR COBRAR', fmt(porCobrar), BLUE)
-  drawStatBox(LEFT + colW * 2, y, 'INTERES EN CARTERA', fmt(interesEnCartera), GREEN)
+  drawStatBox(LEFT + colW * 2, y, 'INTERÉS EN CARTERA', fmt(interesEnCartera), GREEN)
   drawStatBox(LEFT + colW * 3, y, 'EN MORA', `${alertas.length} (${prestamosActivosDetalle.length > 0 ? Math.round(alertas.length / prestamosActivosDetalle.length * 100) : 0}%)`, alertas.length > 0 ? RED : GREEN)
 
   y += 30
@@ -351,7 +351,7 @@ export async function GET() {
   if (cobradoresData.length > 0) {
     y = ensureSpace(y, 60)
     doc.font('Helvetica-Bold').fontSize(9).fillColor(MUTED)
-    t('DESEMPENO COBRADORES', LEFT, y)
+    t('DESEMPEÑO COBRADORES', LEFT, y)
     y += 16
 
     doc.roundedRect(LEFT, y, W, 16, 2).fillColor(HEAD_BG).fill()
@@ -391,7 +391,7 @@ export async function GET() {
   // ── TENDENCIA MENSUAL (bar chart) ──
   y = ensureSpace(y, 120)
   doc.font('Helvetica-Bold').fontSize(9).fillColor(MUTED)
-  t('RECAUDADO ULTIMOS 6 MESES', LEFT, y)
+  t('RECAUDADO ÚLTIMOS 6 MESES', LEFT, y)
   y += 18
 
   const chartH = 80, chartW = W - 40, chartLeft = LEFT + 20
@@ -415,12 +415,12 @@ export async function GET() {
     }
   }
 
-  y += chartH + 24
+  y += chartH + 20
 
   // ── TENDENCIA GASTOS ──
-  y = ensureSpace(y, 120)
+  y = ensureSpace(y, 110)
   doc.font('Helvetica-Bold').fontSize(9).fillColor(MUTED)
-  t('GASTOS ULTIMOS 6 MESES', LEFT, y)
+  t('GASTOS ÚLTIMOS 6 MESES', LEFT, y)
   y += 18
 
   const maxGasto = Math.max(...meses.map(m => Number(gastoMap[m]?.total || 0)), 1)
@@ -443,14 +443,16 @@ export async function GET() {
   }
 
   // ── FOOTER (all pages) ──
-  const totalPages = doc.bufferedPageRange().count
+  const range = doc.bufferedPageRange()
+  const totalPages = range.count
   for (let i = 0; i < totalPages; i++) {
     doc.switchToPage(i)
     doc.moveTo(LEFT, 760).lineTo(RIGHT, 760).strokeColor(BORDER_L).lineWidth(0.5).stroke()
     doc.font('Helvetica').fontSize(7).fillColor(FAINT)
     doc.text('Control Finanzas — Informe de Rendimiento', LEFT, 766, { lineBreak: false })
-    doc.text(`Pagina ${i + 1} de ${totalPages}`, RIGHT - 80, 766, { lineBreak: false, width: 80, align: 'right' })
+    doc.text(`Página ${i + 1} de ${totalPages}`, RIGHT - 80, 766, { lineBreak: false, width: 80, align: 'right' })
   }
+  doc.switchToPage(totalPages - 1)
 
   doc.end()
   await done

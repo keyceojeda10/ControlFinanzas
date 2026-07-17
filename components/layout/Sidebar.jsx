@@ -139,7 +139,7 @@ const NAV_MORE_OWNER = [
     ),
   },
   {
-    label: 'Analiticas',
+    label: 'Analíticas',
     href:  '/dashboard/analiticas',
     icon: (
       <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
