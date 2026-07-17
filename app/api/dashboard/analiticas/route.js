@@ -38,6 +38,8 @@ export async function GET() {
     clientesPorMes,
     totalClientes,
     prestamosTotal,
+    desgloseInteresMensual,
+    rentabilidadRutas,
   ] = await Promise.all([
     prisma.$queryRaw`
       SELECT DATE_FORMAT(fechaPago, '%Y-%m') as mes, SUM(montoPagado) as total, COUNT(*) as cantidad
@@ -106,6 +108,32 @@ export async function GET() {
       FROM Prestamo WHERE organizationId = ${organizationId} AND esClavo = false
       GROUP BY clienteId HAVING total > 1
     `,
+    // Desglose interes/capital por mes
+    prisma.$queryRaw`
+      SELECT DATE_FORMAT(p.fechaPago, '%Y-%m') as mes,
+        SUM(p.montoPagado * (pr.totalAPagar - pr.montoPrestado) / pr.totalAPagar) as interesGanado,
+        SUM(p.montoPagado * pr.montoPrestado / pr.totalAPagar) as capitalRecuperado
+      FROM Pago p
+      JOIN Prestamo pr ON p.prestamoId = pr.id
+      WHERE p.organizationId = ${organizationId} AND p.fechaPago >= ${fechaInicio}
+        AND p.tipo NOT IN ('recargo', 'descuento') AND pr.totalAPagar > 0
+      GROUP BY mes ORDER BY mes
+    `,
+    // Rentabilidad por ruta
+    prisma.$queryRaw`
+      SELECT c.rutaId, r.nombre as rutaNombre,
+        SUM(pr.montoPrestado) as capitalDesplegado,
+        SUM(pr.totalAPagar - pr.totalPagado) as saldoPendiente,
+        SUM(pr.totalAPagar - pr.montoPrestado) as interesTotal,
+        SUM(CASE WHEN pr.totalAPagar > 0 THEN pr.totalPagado * (pr.totalAPagar - pr.montoPrestado) / pr.totalAPagar ELSE 0 END) as interesGanado,
+        COUNT(*) as prestamos
+      FROM Prestamo pr
+      JOIN Cliente c ON pr.clienteId = c.id
+      LEFT JOIN Ruta r ON c.rutaId = r.id
+      WHERE pr.organizationId = ${organizationId} AND pr.estado = 'activo' AND pr.esClavo = false
+      GROUP BY c.rutaId, r.nombre
+      ORDER BY interesGanado DESC
+    `,
   ])
 
   // Monthly trend
@@ -118,15 +146,25 @@ export async function GET() {
   const prestamoMap = Object.fromEntries(prestamosMensuales.map(p => [p.mes, p]))
   const gastoMap = Object.fromEntries(gastosMensuales.map(g => [g.mes, g]))
   const clienteMap = Object.fromEntries(clientesPorMes.map(c => [c.mes, c]))
+  const interesMap = Object.fromEntries(desgloseInteresMensual.map(d => [d.mes, d]))
 
-  const tendenciaMensual = meses.map(mes => ({
-    mes,
-    recaudado: Number(pagoMap[mes]?.total || 0),
-    capitalPrestado: Number(prestamoMap[mes]?.capitalPrestado || 0),
-    prestamosNuevos: Number(prestamoMap[mes]?.cantidad || 0),
-    gastos: Number(gastoMap[mes]?.total || 0),
-    clientesNuevos: Number(clienteMap[mes]?.nuevos || 0),
-  }))
+  const tendenciaMensual = meses.map(mes => {
+    const recaudado = Number(pagoMap[mes]?.total || 0)
+    const gastos = Number(gastoMap[mes]?.total || 0)
+    const interesGanado = Number(interesMap[mes]?.interesGanado || 0)
+    const capitalRecuperado = Number(interesMap[mes]?.capitalRecuperado || 0)
+    return {
+      mes,
+      recaudado,
+      capitalPrestado: Number(prestamoMap[mes]?.capitalPrestado || 0),
+      prestamosNuevos: Number(prestamoMap[mes]?.cantidad || 0),
+      gastos,
+      clientesNuevos: Number(clienteMap[mes]?.nuevos || 0),
+      interesGanado: Math.round(interesGanado),
+      capitalRecuperado: Math.round(capitalRecuperado),
+      utilidad: Math.round(interesGanado - gastos),
+    }
+  })
 
   // Working days calculation
   const mesActualKey = mesActual.toISOString().slice(0, 7)
@@ -248,5 +286,25 @@ export async function GET() {
     },
     cobradores,
     tendenciaMensual,
+    rentabilidad: {
+      interesGanadoMes: tendenciaMensual.find(t => t.mes === mesActualKey)?.interesGanado || 0,
+      capitalRecuperadoMes: tendenciaMensual.find(t => t.mes === mesActualKey)?.capitalRecuperado || 0,
+      utilidadMes: tendenciaMensual.find(t => t.mes === mesActualKey)?.utilidad || 0,
+      rotacionCapital: capitalEnCalle > 0
+        ? Math.round(((tendenciaMensual.find(t => t.mes === mesActualKey)?.capitalRecuperado || 0) / capitalEnCalle) * 1000) / 10
+        : 0,
+      porRuta: rentabilidadRutas.map(r => ({
+        rutaId: r.rutaId,
+        nombre: r.rutaNombre || 'Sin ruta',
+        capitalDesplegado: Number(r.capitalDesplegado || 0),
+        saldoPendiente: Number(r.saldoPendiente || 0),
+        interesTotal: Number(r.interesTotal || 0),
+        interesGanado: Math.round(Number(r.interesGanado || 0)),
+        prestamos: Number(r.prestamos || 0),
+        roi: Number(r.capitalDesplegado) > 0
+          ? Math.round((Number(r.interesGanado || 0) / Number(r.capitalDesplegado)) * 1000) / 10
+          : 0,
+      })),
+    },
   })
 }

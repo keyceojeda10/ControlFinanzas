@@ -127,7 +127,7 @@ export default function AnaliticasPage() {
     )
   }
 
-  const { resumen, proyeccion, alertas, alertasResumen, cartera, cobradores, tendenciaMensual } = data
+  const { resumen, proyeccion, alertas, alertasResumen, cartera, cobradores, tendenciaMensual, rentabilidad } = data
   const alertasVisibles = showAllAlertas ? alertas : alertas.slice(0, 5)
 
   return (
@@ -189,6 +189,106 @@ export default function AnaliticasPage() {
           </div>
         </div>
       </Card>
+
+      {/* === Desglose de rentabilidad === */}
+      {rentabilidad && (
+        <Card>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">De cada peso recaudado</p>
+          {(() => {
+            const total = rentabilidad.interesGanadoMes + rentabilidad.capitalRecuperadoMes
+            const pctInteres = total > 0 ? Math.round((rentabilidad.interesGanadoMes / total) * 100) : 0
+            const pctCapital = 100 - pctInteres
+            return (
+              <>
+                <div className="h-3 rounded-full bg-[var(--color-bg-hover)] overflow-hidden flex">
+                  <div className="h-full transition-all duration-500" style={{ width: `${pctInteres}%`, background: 'var(--color-success)' }} />
+                  <div className="h-full transition-all duration-500" style={{ width: `${pctCapital}%`, background: 'var(--color-accent)' }} />
+                </div>
+                <div className="grid grid-cols-2 gap-3 mt-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-success)] shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-[9px] text-[var(--color-text-muted)]">Ganancia (interés)</p>
+                      <p className="text-[14px] lg:text-[16px] font-mono font-bold text-[var(--color-success)] truncate">
+                        <span className="hidden sm:inline">{fmt(rentabilidad.interesGanadoMes)}</span>
+                        <span className="sm:hidden">{fmtShort(rentabilidad.interesGanadoMes)}</span>
+                        <span className="text-[10px] font-normal text-[var(--color-text-muted)] ml-1">{pctInteres}%</span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-accent)] shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-[9px] text-[var(--color-text-muted)]">Capital recuperado</p>
+                      <p className="text-[14px] lg:text-[16px] font-mono font-bold truncate">
+                        <span className="hidden sm:inline">{fmt(rentabilidad.capitalRecuperadoMes)}</span>
+                        <span className="sm:hidden">{fmtShort(rentabilidad.capitalRecuperadoMes)}</span>
+                        <span className="text-[10px] font-normal text-[var(--color-text-muted)] ml-1">{pctCapital}%</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                {resumen.gastosMes > 0 && (
+                  <div className="mt-3 pt-3 border-t border-[var(--color-border)] flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-danger)] shrink-0" />
+                      <span className="text-[11px] text-[var(--color-text-muted)]">Gastos operativos</span>
+                    </div>
+                    <span className="text-[13px] font-mono font-bold text-[var(--color-danger)]">-{fmtShort(resumen.gastosMes)}</span>
+                  </div>
+                )}
+                <div className="mt-2 pt-2 border-t border-[var(--color-border)] flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-[var(--color-text-secondary)]">Utilidad neta</span>
+                  <span className={`text-[15px] font-mono font-bold ${rentabilidad.utilidadMes >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
+                    {fmtShort(rentabilidad.utilidadMes)}
+                  </span>
+                </div>
+              </>
+            )
+          })()}
+        </Card>
+      )}
+
+      {/* === Tendencia de utilidad === */}
+      {tendenciaMensual?.some(t => t.interesGanado > 0) && (
+        <Card>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Utilidad por mes</p>
+          <div className="space-y-1.5">
+            {tendenciaMensual.map((d, i) => {
+              const maxUtil = Math.max(...tendenciaMensual.map(t => Math.abs(t.utilidad)), 1)
+              const pct = (Math.abs(d.utilidad) / maxUtil) * 100
+              const mesLabel = new Date(d.mes + '-15').toLocaleDateString('es', { month: 'short' })
+              const positivo = d.utilidad >= 0
+              return (
+                <div key={i} className="flex items-center gap-2.5">
+                  <span className="text-[11px] w-8 text-right text-[var(--color-text-muted)] font-medium uppercase">{mesLabel}</span>
+                  <div className="flex-1 h-7 rounded-[6px] bg-[var(--color-bg-hover)] overflow-hidden relative">
+                    <div
+                      className="h-full rounded-[6px] transition-all duration-500 ease-out"
+                      style={{
+                        width: `${Math.max(pct, 2)}%`,
+                        background: positivo ? 'var(--color-success)' : 'var(--color-danger)',
+                        opacity: positivo ? 1 : 0.7,
+                      }}
+                    />
+                    {d.utilidad !== 0 && (
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono font-semibold text-[var(--color-text-secondary)]">
+                        {fmtShort(d.utilidad)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          {rentabilidad?.rotacionCapital > 0 && (
+            <div className="mt-3 pt-3 border-t border-[var(--color-border)] flex items-center justify-between">
+              <span className="text-[11px] text-[var(--color-text-muted)]">Rotación de capital</span>
+              <span className="text-[13px] font-mono font-bold text-[var(--color-info)]">{rentabilidad.rotacionCapital}% /mes</span>
+            </div>
+          )}
+        </Card>
+      )}
 
       {/* === Proyección del mes === */}
       <Card>
@@ -327,6 +427,45 @@ export default function AnaliticasPage() {
         <BarChart data={tendenciaMensual} dataKey="recaudado" formatValue={v => fmtShort(v)} color="var(--color-accent)" />
       </Card>
 
+      {/* === Rentabilidad por ruta === */}
+      {rentabilidad?.porRuta?.length > 0 && (
+        <Card>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Rentabilidad por ruta</p>
+          <div className="space-y-2.5">
+            {rentabilidad.porRuta.map((r, i) => {
+              const maxInteres = rentabilidad.porRuta[0]?.interesGanado || 1
+              const pct = (r.interesGanado / maxInteres) * 100
+              return (
+                <div key={r.rutaId || i}>
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold shrink-0 ${i < 3 ? 'bg-[var(--color-success-dim)] text-[var(--color-success)]' : 'bg-[var(--color-bg-hover)] text-[var(--color-text-muted)]'}`}>
+                        {i + 1}
+                      </span>
+                      <span className="text-[12px] sm:text-[13px] font-medium truncate">{r.nombre}</span>
+                      <span className="text-[9px] text-[var(--color-text-muted)] shrink-0">{r.prestamos}p</span>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-[10px] font-mono text-[var(--color-info)]">{r.roi}%</span>
+                      <span className="text-[12px] sm:text-[13px] font-mono font-bold text-[var(--color-success)]">{fmtShort(r.interesGanado)}</span>
+                    </div>
+                  </div>
+                  <div className="ml-7">
+                    <div className="h-1.5 rounded-full bg-[var(--color-bg-hover)] overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.max(pct, 2)}%`, background: 'var(--color-success)' }} />
+                    </div>
+                    <div className="flex justify-between mt-0.5">
+                      <span className="text-[9px] text-[var(--color-text-muted)]">Capital: {fmtShort(r.capitalDesplegado)}</span>
+                      <span className="text-[9px] text-[var(--color-text-muted)]">Pendiente: {fmtShort(r.saldoPendiente)}</span>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </Card>
+      )}
+
       {/* === Cobradores === */}
       {cobradores.length > 0 && (
         <Card href="/cobradores">
@@ -374,6 +513,11 @@ export default function AnaliticasPage() {
             </div>
             <p className="text-[16px] sm:text-[20px] font-mono font-bold text-[var(--color-danger)] shrink-0">{fmtShort(cartera.moraIrrecuperable)}</p>
           </div>
+          {resumen.capitalEnCalle > 0 && (
+            <p className="text-[10px] text-[var(--color-text-muted)] mt-2 pt-2 border-t border-[var(--color-border)]">
+              Impacto: {Math.round((cartera.moraIrrecuperable / resumen.capitalEnCalle) * 100)}% del capital activo comprometido
+            </p>
+          )}
         </Card>
       )}
     </div>
