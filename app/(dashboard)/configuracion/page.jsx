@@ -10,7 +10,7 @@ import { Button }              from '@/components/ui/Button'
 import { Badge }               from '@/components/ui/Badge'
 import { Skeleton }            from '@/components/ui/Skeleton'
 import { PLANES_CONFIG }       from '@/lib/planes'
-import { AVATARS }             from '@/lib/avatars'
+import { AVATARS, AVATAR_CATEGORIES } from '@/lib/avatars'
 import Avatar                  from '@/components/ui/Avatar'
 import { Modal }               from '@/components/ui/Modal'
 import { ConfirmModal }        from '@/components/ui/ConfirmModal'
@@ -252,33 +252,44 @@ function TabPerfil() {
       </Card>
 
       <Modal open={avatarPickerOpen} onClose={() => setAvatarPickerOpen(false)} title="Elige tu avatar" size="lg">
-        <div className="grid grid-cols-5 sm:grid-cols-6 gap-3">
-          {AVATARS.map((av) => {
-            const selected = avatarSeleccionado === av.id
+        <div className="space-y-5 max-h-[70vh] overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
+          {AVATAR_CATEGORIES.map(cat => {
+            const catAvatars = AVATARS.filter(a => a.categoria === cat.id)
+            if (!catAvatars.length) return null
             return (
-              <button
-                key={av.id}
-                onClick={() => { guardarAvatar(av.id); setAvatarPickerOpen(false) }}
-                disabled={guardandoAvatar}
-                className="group relative rounded-full overflow-hidden transition-all hover:scale-110 active:scale-95"
-                style={{
-                  aspectRatio: '1',
-                  boxShadow: selected ? '0 0 0 3px var(--color-accent), 0 0 0 5px color-mix(in srgb, var(--color-accent) 20%, transparent)' : 'none',
-                  transform: selected ? 'scale(1.08)' : undefined,
-                }}
-                title={av.nombre}
-              >
-                <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: av.svg }} />
-                {selected && (
-                  <div className="absolute inset-0 flex items-end justify-center pb-1">
-                    <div className="w-4 h-4 rounded-full flex items-center justify-center" style={{ background: 'var(--color-accent)' }}>
-                      <svg className="w-2.5 h-2.5" fill="none" stroke="var(--color-accent-text)" strokeWidth={2.5} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                  </div>
-                )}
-              </button>
+              <div key={cat.id}>
+                <p className="text-[11px] font-extrabold uppercase tracking-[.07em] text-[var(--color-text-muted)] mb-2.5">{cat.nombre}</p>
+                <div className="grid grid-cols-5 sm:grid-cols-8 gap-2.5">
+                  {catAvatars.map((av) => {
+                    const selected = avatarSeleccionado === av.id
+                    return (
+                      <button
+                        key={av.id}
+                        onClick={() => { guardarAvatar(av.id); setAvatarPickerOpen(false) }}
+                        disabled={guardandoAvatar}
+                        className="group relative rounded-full overflow-hidden transition-all hover:scale-110 active:scale-95"
+                        style={{
+                          aspectRatio: '1',
+                          boxShadow: selected ? '0 0 0 3px var(--color-accent), 0 0 0 5px color-mix(in srgb, var(--color-accent) 20%, transparent)' : 'none',
+                          transform: selected ? 'scale(1.08)' : undefined,
+                        }}
+                        title={av.nombre}
+                      >
+                        <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: av.svg }} />
+                        {selected && (
+                          <div className="absolute inset-0 flex items-end justify-center pb-1">
+                            <div className="w-4 h-4 rounded-full flex items-center justify-center" style={{ background: 'var(--color-accent)' }}>
+                              <svg className="w-2.5 h-2.5" fill="none" stroke="var(--color-accent-text)" strokeWidth={2.5} viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
             )
           })}
         </div>
