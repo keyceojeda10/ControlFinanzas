@@ -87,7 +87,7 @@ function HorizontalRanking({ items, fmtValue, color = 'var(--color-info)' }) {
     <div className="space-y-2">
       {items.map((item, i) => {
         const pct = (item.value / max) * 100
-        const medal = i === 0 ? '1' : i === 1 ? '2' : i === 2 ? '3' : `${i + 1}`
+        const medal = `${i + 1}`
         return (
           <div key={item.id} className="flex items-center gap-2.5">
             <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold ${i < 3 ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]' : 'bg-[var(--color-bg-hover)] text-[var(--color-text-muted)]'}`}>
@@ -129,7 +129,7 @@ function EficienciaRing({ pct, size = 80 }) {
 
 function Card({ children, className = '' }) {
   return (
-    <div className={`bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[16px] p-4 ${className}`}>
+    <div className={`bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[16px] p-4 lg:p-5 ${className}`}>
       {children}
     </div>
   )
@@ -139,7 +139,7 @@ function KpiMini({ label, value, sub, color }) {
   return (
     <div className="flex flex-col">
       <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">{label}</span>
-      <span className="text-[20px] font-mono font-bold mt-0.5" style={color ? { color } : {}}>{value}</span>
+      <span className="text-[20px] lg:text-[24px] font-mono font-bold mt-0.5" style={color ? { color } : {}}>{value}</span>
       {sub && <span className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{sub}</span>}
     </div>
   )
@@ -167,9 +167,9 @@ export default function AnaliticasPage() {
 
   if (loading) {
     return (
-      <div className="p-4 max-w-2xl mx-auto space-y-4">
+      <div className="p-4 lg:p-8 max-w-6xl mx-auto space-y-4">
         <Skeleton className="h-8 w-48" />
-        <div className="grid grid-cols-2 gap-3"><Skeleton className="h-24" /><Skeleton className="h-24" /><Skeleton className="h-24" /><Skeleton className="h-24" /></div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3"><Skeleton className="h-24" /><Skeleton className="h-24" /><Skeleton className="h-24" /><Skeleton className="h-24" /></div>
         <Skeleton className="h-56" />
         <div className="grid grid-cols-2 gap-3"><Skeleton className="h-44" /><Skeleton className="h-44" /></div>
       </div>
@@ -178,7 +178,7 @@ export default function AnaliticasPage() {
 
   if (error) {
     return (
-      <div className="p-4 max-w-2xl mx-auto">
+      <div className="p-4 lg:p-8 max-w-6xl mx-auto">
         <p className="text-[var(--color-danger)] text-[14px]">{error}</p>
         <Link href="/dashboard" className="text-[13px] text-[var(--color-info)] underline mt-2 block">Volver al dashboard</Link>
       </div>
@@ -200,10 +200,8 @@ export default function AnaliticasPage() {
     value: c.recaudado,
   }))
 
-  const totalCartera = cartera.activos + cartera.completados + cartera.cancelados
-
   return (
-    <div className="p-4 max-w-2xl mx-auto pb-24 space-y-5">
+    <div className="p-4 lg:p-8 max-w-6xl mx-auto pb-24 space-y-5 lg:space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Link href="/dashboard" className="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--color-bg-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-border-hover)] transition-colors">
@@ -212,15 +210,15 @@ export default function AnaliticasPage() {
           </svg>
         </Link>
         <div>
-          <h1 className="text-[20px] font-semibold tracking-tight">Analiticas</h1>
+          <h1 className="text-[20px] lg:text-[24px] font-semibold tracking-tight">Analiticas</h1>
           <p className="text-[12px] text-[var(--color-text-muted)]">Metricas de tu negocio</p>
         </div>
       </div>
 
-      {/* Rentabilidad KPIs */}
+      {/* KPIs row — 2 cols mobile, 4 cols desktop */}
       <Card>
         <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Tu dinero en la calle</p>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
           <KpiMini label="Capital prestado" value={fmt(rentabilidad.capitalEnCalle)} />
           <KpiMini label="Interes por cobrar" value={fmt(rentabilidad.interesEnCartera)} color="var(--color-success)" />
           <KpiMini label="Recaudado este mes" value={fmt(rentabilidad.recaudadoMes)} color="var(--color-info)" />
@@ -238,8 +236,8 @@ export default function AnaliticasPage() {
         )}
       </Card>
 
-      {/* Eficiencia de cobro + Cartera */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* Eficiencia + Cartera + Numeros — stacks on mobile, 3 cols on desktop */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
         <Card className="flex flex-col items-center justify-center text-center">
           <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-2">Eficiencia de cobro</p>
           <EficienciaRing pct={eficiencia.pct} />
@@ -263,49 +261,48 @@ export default function AnaliticasPage() {
             ))}
           </div>
         </Card>
+
+        <Card className="col-span-2 lg:col-span-1">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Numeros de cartera</p>
+          <div className="grid grid-cols-2 gap-4">
+            <KpiMini label="Clientes activos" value={clientes.activos} />
+            <KpiMini label="Clientes inactivos" value={clientes.inactivos} color="var(--color-text-muted)" />
+            <KpiMini label="Por cobrar" value={fmt(cartera.montoActivo)} color="var(--color-accent)" />
+            <KpiMini label="En mora" value={fmt(cartera.montoMora)} color="var(--color-danger)" />
+          </div>
+        </Card>
       </div>
 
-      {/* Recaudado mensual chart */}
-      <Card>
-        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Recaudado por mes</p>
-        <BarChart data={tendenciaMensual} dataKey="recaudado" formatValue={v => fmt(v)} color="var(--color-accent)" />
-      </Card>
+      {/* Charts — 2 cols on desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
+        <Card>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Recaudado por mes</p>
+          <BarChart data={tendenciaMensual} dataKey="recaudado" formatValue={v => fmt(v)} color="var(--color-accent)" />
+        </Card>
 
-      {/* Capital prestado mensual */}
-      <Card>
-        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Capital prestado por mes</p>
-        <BarChart data={tendenciaMensual} dataKey="capitalPrestado" formatValue={v => fmt(v)} color="var(--color-info)" />
-      </Card>
+        <Card>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Capital prestado por mes</p>
+          <BarChart data={tendenciaMensual} dataKey="capitalPrestado" formatValue={v => fmt(v)} color="var(--color-info)" />
+        </Card>
 
-      {/* Ranking cobradores */}
+        <Card>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Prestamos nuevos por mes</p>
+          <BarChart data={tendenciaMensual} dataKey="prestamosNuevos" formatValue={v => `${v}`} color="var(--color-success)" />
+        </Card>
+
+        <Card>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Clientes nuevos por mes</p>
+          <BarChart data={tendenciaMensual} dataKey="clientesNuevos" formatValue={v => `${v}`} color="var(--color-teal)" />
+        </Card>
+      </div>
+
+      {/* Ranking cobradores — full width */}
       {rankingItems.length > 0 && (
         <Card>
           <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Ranking cobradores (este mes)</p>
           <HorizontalRanking items={rankingItems} fmtValue={fmt} />
         </Card>
       )}
-
-      {/* Datos de cartera */}
-      <Card>
-        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Numeros de cartera</p>
-        <div className="grid grid-cols-2 gap-4">
-          <KpiMini label="Clientes activos" value={clientes.activos} />
-          <KpiMini label="Clientes inactivos" value={clientes.inactivos} color="var(--color-text-muted)" />
-          <KpiMini label="Por cobrar" value={fmt(cartera.montoActivo)} color="var(--color-accent)" />
-          <KpiMini label="En mora" value={fmt(cartera.montoMora)} color="var(--color-danger)" />
-        </div>
-      </Card>
-
-      {/* Prestamos y clientes nuevos */}
-      <Card>
-        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Prestamos nuevos por mes</p>
-        <BarChart data={tendenciaMensual} dataKey="prestamosNuevos" formatValue={v => `${v}`} color="var(--color-success)" />
-      </Card>
-
-      <Card>
-        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Clientes nuevos por mes</p>
-        <BarChart data={tendenciaMensual} dataKey="clientesNuevos" formatValue={v => `${v}`} color="var(--color-teal)" />
-      </Card>
     </div>
   )
 }
