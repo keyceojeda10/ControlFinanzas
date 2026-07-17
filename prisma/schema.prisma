@@ -99,6 +99,7 @@ model Organization {
   modoAbreviado     Boolean        @default(false)
   ocultarSaldoWA    Boolean        @default(false)
   portalDatosCompletos Boolean      @default(false)
+  camposRecibo      Json?
   requiereAprobacionPrestamos Boolean @default(false)
   ocultarCapitalCobradores    Boolean @default(false)
   tasaMoratorio     Float          @default(0)

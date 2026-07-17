@@ -31,7 +31,36 @@ function getTipoPagoLabel(tipo) {
   return 'Pago'
 }
 
-function generarHTMLRecibo(cliente, prestamo, pago, orgNombre) {
+function resolverCampo(campo, cliente, prestamo) {
+  const saldo = prestamo.saldoPendiente ?? Math.max(0, (prestamo.totalAPagar ?? 0) - (prestamo.totalPagado ?? 0))
+  const map = {
+    saldoPendiente:  formatMoney(saldo),
+    totalPagado:     formatMoney(prestamo.totalPagado ?? 0),
+    totalAPagar:     formatMoney(prestamo.totalAPagar ?? 0),
+    montoPrestado:   formatMoney(prestamo.montoPrestado ?? 0),
+    cuota:           formatMoney(prestamo.cuotaDiaria ?? 0),
+    progreso:        `${prestamo.porcentajePagado ?? 0}%`,
+    frecuencia:      prestamo.frecuencia ?? '-',
+    fechaVencimiento: fmtFecha(prestamo.fechaFin),
+    numeroCuota:     prestamo.numeroCuota ?? '-',
+    diasMora:        `${prestamo.diasMora ?? 0}`,
+    clienteCedula:   (cliente?.cedula && !cliente.cedula.startsWith('SIN-')) ? cliente.cedula : '-',
+    clienteTelefono: cliente?.telefono ?? '-',
+    ruta:            prestamo.rutaNombre ?? cliente?.rutaNombre ?? '-',
+    cobrador:        prestamo.cobradorNombre ?? '-',
+  }
+  return map[campo] ?? '-'
+}
+
+function renderCamposCustom(campos, cliente, prestamo) {
+  if (!Array.isArray(campos) || campos.length === 0) return ''
+  return campos.map(c => {
+    const val = c.tipo === 'texto' ? c.valor : resolverCampo(c.campo, cliente, prestamo)
+    return `<div class="row"><span>${c.nombre}:</span><span>${val}</span></div>`
+  }).join('')
+}
+
+function generarHTMLRecibo(cliente, prestamo, pago, orgNombre, camposRecibo) {
   const saldo     = prestamo.saldoPendiente ?? 0
   const totalPag  = prestamo.totalPagado ?? 0
   const progreso  = prestamo.porcentajePagado ?? 0
@@ -39,6 +68,7 @@ function generarHTMLRecibo(cliente, prestamo, pago, orgNombre) {
   const cuota     = prestamo.cuotaDiaria ?? 0
   const linea     = '━'.repeat(30)
   const lineaFina = '─'.repeat(30)
+  const camposExtra = renderCamposCustom(camposRecibo, cliente, prestamo)
 
   return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -95,6 +125,7 @@ function generarHTMLRecibo(cliente, prestamo, pago, orgNombre) {
   <div class="row"><span>Total a pagar:</span><span>${formatMoney(totalAPagar)}</span></div>
   <div class="row"><span>Cuota:</span><span>${formatMoney(cuota)}</span></div>
   <div class="row"><span>Progreso:</span><span>${progreso}%</span></div>
+${camposExtra ? `\n  <div class="linea-fina">${lineaFina}</div>\n  ${camposExtra}` : ''}
 
   <div class="linea">${linea}</div>
 
@@ -107,7 +138,7 @@ function generarHTMLRecibo(cliente, prestamo, pago, orgNombre) {
 </body></html>`
 }
 
-function generarHTMLHistorialCompleto(cliente, prestamo, orgNombre) {
+function generarHTMLHistorialCompleto(cliente, prestamo, orgNombre, camposRecibo) {
   const pagos = Array.isArray(prestamo?.pagos) ? [...prestamo.pagos] : []
   pagos.sort((a, b) => new Date(a.fechaPago) - new Date(b.fechaPago))
 
@@ -189,6 +220,10 @@ function generarHTMLHistorialCompleto(cliente, prestamo, orgNombre) {
       <div class="item"><b>Fecha de emisión:</b> ${fmtFechaHora(new Date())}</div>
       <div class="item"><b>Fecha vencimiento:</b> ${fmtFecha(prestamo?.fechaFin)}</div>
       <div class="item"><b>Último pago:</b> ${pagos.length > 0 ? fmtFechaHora(pagos[pagos.length - 1].fechaPago) : 'Sin pagos'}</div>
+${Array.isArray(camposRecibo) && camposRecibo.length > 0 ? camposRecibo.map(c => {
+  const val = c.tipo === 'texto' ? c.valor : resolverCampo(c.campo, cliente, prestamo)
+  return `      <div class="item"><b>${c.nombre}:</b> ${val}</div>`
+}).join('\n') : ''}
     </div>
 
     <div class="line"></div>
@@ -212,11 +247,11 @@ function generarHTMLHistorialCompleto(cliente, prestamo, orgNombre) {
 </body></html>`
 }
 
-export default function BotonImprimirRecibo({ tipo = 'recibo', cliente, prestamo, pago, orgNombre = '', label }) {
+export default function BotonImprimirRecibo({ tipo = 'recibo', cliente, prestamo, pago, orgNombre = '', label, camposRecibo }) {
     const handleClick = () => {
     const html = tipo === 'historial'
-      ? generarHTMLHistorialCompleto(cliente, prestamo, orgNombre)
-      : generarHTMLRecibo(cliente, prestamo, pago, orgNombre)
+      ? generarHTMLHistorialCompleto(cliente, prestamo, orgNombre, camposRecibo)
+      : generarHTMLRecibo(cliente, prestamo, pago, orgNombre, camposRecibo)
 
     // Abrir ventana nueva (funciona en móvil y desktop)
     const win = window.open('', '_blank')

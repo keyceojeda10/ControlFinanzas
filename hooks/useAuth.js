@@ -22,6 +22,7 @@ export function useAuth() {
     orgNombre: session?.user?.orgNombre ?? null,
     modoAbreviado: session?.user?.modoAbreviado ?? false,
     ocultarSaldoWA: session?.user?.ocultarSaldoWA ?? false,
+    camposRecibo: session?.user?.camposRecibo ?? null,
     rutaId: session?.user?.rutaId ?? null,
     rutaIds: session?.user?.rutaIds ?? [],
     esOwner,
