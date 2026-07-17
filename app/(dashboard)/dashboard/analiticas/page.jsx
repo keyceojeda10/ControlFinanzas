@@ -202,7 +202,6 @@ export default function AnaliticasPage() {
     rol: c.rol,
     value: c.recaudado,
     pagos: c.pagos,
-    prestamosAsignados: c.prestamosAsignados,
   }))
 
   return (
@@ -377,11 +376,6 @@ export default function AnaliticasPage() {
                     <span className="text-[10px] text-[var(--color-text-muted)] font-mono w-20 text-right">
                       {item.pagos} pagos
                     </span>
-                    {item.prestamosAsignados > 0 && (
-                      <span className="text-[10px] text-[var(--color-text-muted)] font-mono w-16 text-right">
-                        {item.prestamosAsignados} prest.
-                      </span>
-                    )}
                   </div>
                 </div>
               )

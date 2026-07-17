@@ -147,7 +147,6 @@ export async function GET() {
         ultimoPagoAt: true,
         modoInteres: true,
         tasaInteres: true,
-        cobradorId: true,
         cuotasAmortizacion: {
           select: { numeroPeriodo: true, cuotaTotal: true, pagado: true, fechaEsperada: true },
         },
@@ -247,15 +246,12 @@ export async function GET() {
   const userMap = Object.fromEntries(orgUsers.map(u => [u.id, u]))
   const cobradores = cobradorRecaudo.map(c => {
     const user = userMap[c.cobradorId]
-    // Count how many active loans this cobrador manages
-    const prestamosAsignados = prestamosActivosDetalle.filter(p => p.cobradorId === c.cobradorId).length
     return {
       id: c.cobradorId,
       nombre: user?.nombre || 'Sin nombre',
       rol: user?.rol || 'cobrador',
       recaudado: Number(c.recaudado),
       pagos: Number(c.pagos),
-      prestamosAsignados,
     }
   })
 
