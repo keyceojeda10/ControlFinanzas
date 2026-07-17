@@ -53,7 +53,7 @@ const fmtFecha = (d) => d
   : '—'
 
 const estadoBadge = {
-  pendiente_aprobacion: { variant: 'yellow', label: 'Pendiente aprobacion' },
+  pendiente_aprobacion: { variant: 'yellow', label: 'Pendiente aprobación' },
   activo:     { variant: 'blue',  label: 'Activo'     },
   completado: { variant: 'green', label: 'Completado' },
   cancelado:  { variant: 'gray',  label: 'Cancelado'  },
@@ -153,6 +153,7 @@ export default function PrestamoDetallePage({ params }) {
   const [historialOpen, setHistorialOpen] = useState(true)
   const [camposReciboCliente, setCamposReciboCliente] = useState(null)
   const [guardandoCamposRecibo, setGuardandoCamposRecibo] = useState(false)
+  const [modalRecibo, setModalRecibo] = useState(null)
   const hasLoadedOnceRef = useRef(false)
 
   // Leer contexto de ruta activa
@@ -637,42 +638,20 @@ export default function PrestamoDetallePage({ params }) {
             </svg>
             <p className="text-sm text-[var(--color-success)] font-medium">Pago registrado exitosamente</p>
           </div>
-          {ultimoPago && cliente?.telefono && (
-            <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} />
-          )}
           {ultimoPago && (
-            <div className="flex gap-2">
-              <BotonCompartir cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} />
-              <BotonImprimirRecibo cliente={cliente} prestamo={prestamo} pago={ultimoPago} camposRecibo={camposRecibo} />
-            </div>
+            <BotonAbrirRecibo onClick={() => setModalRecibo({ tipo: 'pago', pago: ultimoPago })} />
           )}
         </div>
       )}
 
       {/* ── WA PAGO (persiste después de cerrar animación) ───────── */}
       {!exito && ultimoPago && !completado && (
-        <>
-          {cliente?.telefono && (
-            <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} />
-          )}
-          <div className="flex gap-2">
-            <BotonCompartir cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} />
-            <BotonImprimirRecibo cliente={cliente} prestamo={prestamo} pago={ultimoPago} camposRecibo={camposRecibo} />
-          </div>
-        </>
+        <BotonAbrirRecibo onClick={() => setModalRecibo({ tipo: 'pago', pago: ultimoPago })} />
       )}
 
       {/* ── WA PRÉSTAMO COMPLETADO ───────────────────────────────── */}
       {completado && ultimoPago && (
-        <>
-          {cliente?.telefono && (
-            <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} />
-          )}
-          <div className="flex gap-2">
-            <BotonCompartir cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} />
-            <BotonImprimirRecibo cliente={cliente} prestamo={prestamo} pago={ultimoPago} camposRecibo={camposRecibo} />
-          </div>
-        </>
+        <BotonAbrirRecibo onClick={() => setModalRecibo({ tipo: 'pago', pago: ultimoPago })} />
       )}
 
       {/* ── SIGUIENTE EN RUTA (después de pago) ──────────────────── */}
@@ -997,7 +976,7 @@ export default function PrestamoDetallePage({ params }) {
 
       {/* ── BOTONES WHATSAPP ─────────────────────────────────────── */}
       {cliente?.telefono && estaActivo && enMora && !completado && (
-        <BotonWhatsApp tipo="mora" cliente={cliente} prestamo={prestamo} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} />
+        <BotonAbrirRecibo label="Alerta de mora" onClick={() => setModalRecibo({ tipo: 'mora', pago: null })} />
       )}
       {cliente?.telefono && estaActivo && !enMora && !ultimoPago && (
         <button
@@ -1018,14 +997,22 @@ export default function PrestamoDetallePage({ params }) {
         onSave={(url) => setPrestamo(prev => ({ ...prev, firmaUrl: url }))}
       />
 
-      {/* ── CAMPOS PERSONALIZADOS DEL RECIBO (por cliente) ──────── */}
-      {esOwner && (
-        <CamposReciboClienteCard
+      {/* ── MODAL CAMPOS RECIBO (se abre al generar comprobante) ── */}
+      {modalRecibo && (
+        <ModalCamposRecibo
+          tipo={modalRecibo.tipo}
+          pago={modalRecibo.pago}
+          cliente={cliente}
+          prestamo={prestamo}
+          orgNombre={orgNombre}
+          ocultarSaldo={ocultarSaldoWA}
           campos={camposRecibo}
           camposOrg={Array.isArray(camposReciboOrg) ? camposReciboOrg : []}
           usandoOrg={camposReciboActuales === null}
           guardando={guardandoCamposRecibo}
           onSave={guardarCamposReciboCliente}
+          onClose={() => setModalRecibo(null)}
+          esOwner={esOwner}
         />
       )}
 
@@ -1086,35 +1073,8 @@ export default function PrestamoDetallePage({ params }) {
           </div>
         </div>
 
-        <div className="space-y-2 mb-4">
-          {cliente?.telefono && (
-            <BotonWhatsApp
-              tipo="historial"
-              cliente={cliente}
-              prestamo={prestamo}
-              orgNombre={orgNombre}
-              ocultarSaldo={ocultarSaldoWA}
-              camposRecibo={camposRecibo}
-            />
-          )}
-          <div className="flex gap-2">
-            <BotonCompartir
-              tipo="historial"
-              cliente={cliente}
-              prestamo={prestamo}
-              orgNombre={orgNombre}
-              ocultarSaldo={ocultarSaldoWA}
-              camposRecibo={camposRecibo}
-            />
-            <BotonImprimirRecibo
-              tipo="historial"
-              label="Estado de cuenta"
-              cliente={cliente}
-              prestamo={prestamo}
-              orgNombre={session?.user?.nombre ?? ''}
-              camposRecibo={camposRecibo}
-            />
-          </div>
+        <div className="mb-4">
+          <BotonAbrirRecibo label="Generar estado de cuenta" onClick={() => setModalRecibo({ tipo: 'historial', pago: null })} />
         </div>
 
         {(() => {
@@ -1195,34 +1155,11 @@ export default function PrestamoDetallePage({ params }) {
                   </div>
                   {/* Panel de comprobante expandible */}
                   {comprobanteAbierto && (
-                    <div className="pb-3 pl-1 flex flex-col gap-2">
-                      {cliente?.telefono && (
-                        <BotonWhatsApp
-                          tipo="pago"
-                          cliente={cliente}
-                          prestamo={prestamo}
-                          pago={{ montoPagado: pago.montoPagado, fechaPago: pago.fechaPago }}
-                          orgNombre={orgNombre}
-                          ocultarSaldo={ocultarSaldoWA}
-                          camposRecibo={camposRecibo}
-                        />
-                      )}
-                      <div className="flex gap-2">
-                        <BotonCompartir
-                          cliente={cliente}
-                          prestamo={prestamo}
-                          pago={{ montoPagado: pago.montoPagado, fechaPago: pago.fechaPago }}
-                          orgNombre={orgNombre}
-                          ocultarSaldo={ocultarSaldoWA}
-                          camposRecibo={camposRecibo}
-                        />
-                        <BotonImprimirRecibo
-                          cliente={cliente}
-                          prestamo={prestamo}
-                          pago={{ montoPagado: pago.montoPagado, fechaPago: pago.fechaPago }}
-                          camposRecibo={camposRecibo}
-                        />
-                      </div>
+                    <div className="pb-3 pl-1">
+                      <BotonAbrirRecibo
+                        small
+                        onClick={() => setModalRecibo({ tipo: 'pago', pago: { montoPagado: pago.montoPagado, fechaPago: pago.fechaPago } })}
+                      />
                     </div>
                   )}
                   {/* Panel de editar fecha expandible */}
@@ -1946,89 +1883,176 @@ export default function PrestamoDetallePage({ params }) {
   )
 }
 
-function CamposReciboClienteCard({ campos, camposOrg, usandoOrg, guardando, onSave }) {
-  const [abierto, setAbierto] = useState(false)
+function BotonAbrirRecibo({ onClick, label = 'Generar comprobante', small }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        'flex items-center justify-center gap-2 rounded-[12px] font-medium transition-all cursor-pointer w-full',
+        'bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-accent)]',
+        small ? 'px-3 h-8 text-xs' : 'px-4 h-10 text-sm',
+      ].join(' ')}
+    >
+      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      {label}
+    </button>
+  )
+}
 
-  const tieneConfig = Array.isArray(campos) && campos.length > 0
+function ModalCamposRecibo({ tipo, pago, cliente, prestamo, orgNombre, ocultarSaldo, campos, camposOrg, usandoOrg, guardando, onSave, onClose, esOwner }) {
+  const [camposLocal, setCamposLocal] = useState(campos)
+  const [editando, setEditando] = useState(false)
+  const [dirty, setDirty] = useState(false)
+
+  const guardarYCerrar = () => {
+    if (dirty) onSave(camposLocal)
+  }
+
+  const handleRemove = (i) => {
+    const next = camposLocal.filter((_, j) => j !== i)
+    setCamposLocal(next)
+    setDirty(true)
+    onSave(next)
+  }
+
+  const handleAdd = (campo) => {
+    const next = [...camposLocal, campo]
+    setCamposLocal(next)
+    setDirty(true)
+    onSave(next)
+  }
+
+  const handleCopiarOrg = () => {
+    setCamposLocal([...camposOrg])
+    setDirty(true)
+    onSave([...camposOrg])
+  }
+
+  const handleQuitar = () => {
+    setCamposLocal([])
+    setDirty(true)
+    onSave([])
+  }
+
+  const tituloModal = tipo === 'mora' ? 'Alerta de mora' : tipo === 'historial' ? 'Estado de cuenta' : 'Comprobante de pago'
 
   return (
-    <Card>
-      <button
-        type="button"
-        onClick={() => setAbierto(v => !v)}
-        className="w-full flex items-center justify-between gap-2 focus-visible:outline-none"
-      >
-        <div className="flex items-center gap-2">
-          <svg className="w-4 h-4 text-[var(--color-accent)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          <span className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em]">
-            Campos del recibo
-          </span>
-          {tieneConfig && (
-            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-[rgba(245,197,24,0.12)] text-[var(--color-accent)]">
-              {campos.length}
-            </span>
-          )}
-        </div>
-        <svg
-          className="w-4 h-4 shrink-0 transition-transform duration-200"
-          style={{ color: 'var(--color-text-muted)', transform: abierto ? 'rotate(180deg)' : 'rotate(0deg)' }}
-          fill="none" stroke="currentColor" viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-
-      {abierto && (
-        <div className="mt-3 space-y-3">
-          <p className="text-xs text-[var(--color-text-muted)]">
-            {usandoOrg && camposOrg.length > 0
-              ? 'Usando los campos de la organización. Personaliza para este cliente:'
-              : 'Campos extra que aparecen en el comprobante de pago de este cliente.'}
-          </p>
-
-          {usandoOrg && camposOrg.length > 0 && (
+    <Modal open onClose={() => { guardarYCerrar(); onClose() }} title={tituloModal}>
+      <div className="space-y-4">
+        {esOwner && (
+          <div className="space-y-3">
             <button
               type="button"
-              onClick={() => onSave([...camposOrg])}
-              disabled={guardando}
-              className="w-full flex items-center justify-center gap-1.5 py-2 rounded-[10px] border border-[var(--color-border)] text-xs font-medium text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:border-[var(--color-accent)] transition-all cursor-pointer disabled:opacity-50"
+              onClick={() => setEditando(v => !v)}
+              className="w-full flex items-center justify-between gap-2 py-2 px-3 rounded-[10px] bg-[var(--color-bg-hover)] border border-[var(--color-border)] text-xs font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-all cursor-pointer"
             >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
-              Copiar campos de la organización ({camposOrg.length})
+              <div className="flex items-center gap-2">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>Personalizar campos</span>
+                {camposLocal.length > 0 && (
+                  <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-[rgba(245,197,24,0.12)] text-[var(--color-accent)]">
+                    {camposLocal.length}
+                  </span>
+                )}
+              </div>
+              <svg
+                className="w-3.5 h-3.5 shrink-0 transition-transform duration-200"
+                style={{ transform: editando ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
             </button>
+
+            {editando && (
+              <div className="space-y-3 pl-1">
+                <p className="text-[11px] text-[var(--color-text-muted)]">
+                  {usandoOrg && camposOrg.length > 0
+                    ? 'Usando campos de la organización. Personaliza para este cliente:'
+                    : 'Campos extra que aparecen en el comprobante de este cliente.'}
+                </p>
+
+                {usandoOrg && camposOrg.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleCopiarOrg}
+                    disabled={guardando}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 rounded-[10px] border border-[var(--color-border)] text-xs font-medium text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:border-[var(--color-accent)] transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+                    Copiar campos de la organización ({camposOrg.length})
+                  </button>
+                )}
+
+                <CamposReciboList
+                  campos={camposLocal}
+                  onRemove={handleRemove}
+                />
+
+                {camposLocal.length < 10 && (
+                  <AgregarCampoRecibo onAdd={handleAdd} />
+                )}
+
+                {camposLocal.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleQuitar}
+                    disabled={guardando}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 rounded-[10px] text-[10px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    Quitar campos personalizados{camposOrg.length > 0 ? ' (volver a los de la organización)' : ''}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {camposLocal.length > 0 && !editando && (
+          <div className="space-y-1.5">
+            <p className="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Campos extra</p>
+            {camposLocal.map((c, i) => (
+              <div key={i} className="flex items-center justify-between px-2.5 py-1.5 rounded-[8px] bg-[var(--color-bg-hover)] text-xs">
+                <span className="text-[var(--color-text-muted)]">{c.nombre}</span>
+                <span className="text-[var(--color-text-primary)] font-medium">
+                  {c.tipo === 'texto' ? c.valor : (CAMPOS_DATO_LABELS[c.campo] || c.campo)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="pt-2 border-t border-[var(--color-border)] space-y-2">
+          {tipo === 'mora' && cliente?.telefono && (
+            <BotonWhatsApp tipo="mora" cliente={cliente} prestamo={prestamo} orgNombre={orgNombre} ocultarSaldo={ocultarSaldo} camposRecibo={camposLocal} />
           )}
-
-          <CamposReciboList
-            campos={campos}
-            onRemove={(i) => {
-              const next = campos.filter((_, j) => j !== i)
-              onSave(next)
-            }}
-          />
-
-          {campos.length < 10 && (
-            <AgregarCampoRecibo
-              onAdd={(campo) => {
-                const next = [...campos, campo]
-                onSave(next)
-              }}
-            />
-          )}
-
-          {tieneConfig && (
-            <button
-              type="button"
-              onClick={() => onSave([])}
-              disabled={guardando}
-              className="w-full flex items-center justify-center gap-1.5 py-2 rounded-[10px] text-[10px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-all cursor-pointer disabled:opacity-50"
-            >
-              Quitar campos personalizados{camposOrg.length > 0 ? ' (volver a usar los de la organización)' : ''}
-            </button>
+          {tipo !== 'mora' && (
+            <>
+              {cliente?.telefono && (
+                <BotonWhatsApp tipo={tipo} cliente={cliente} prestamo={prestamo} pago={pago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldo} camposRecibo={camposLocal} />
+              )}
+              <div className="flex gap-2">
+                <BotonCompartir tipo={tipo} cliente={cliente} prestamo={prestamo} pago={pago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldo} camposRecibo={camposLocal} />
+                <BotonImprimirRecibo
+                  tipo={tipo === 'historial' ? 'historial' : 'recibo'}
+                  label={tipo === 'historial' ? 'Estado de cuenta' : undefined}
+                  cliente={cliente}
+                  prestamo={prestamo}
+                  pago={pago}
+                  orgNombre={orgNombre}
+                  camposRecibo={camposLocal}
+                />
+              </div>
+            </>
           )}
         </div>
-      )}
-    </Card>
+      </div>
+    </Modal>
   )
 }

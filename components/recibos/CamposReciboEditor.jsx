@@ -11,10 +11,10 @@ export const CAMPOS_DATO_OPTIONS = [
   { value: 'progreso',         label: 'Progreso (%)' },
   { value: 'frecuencia',       label: 'Frecuencia de pago' },
   { value: 'fechaVencimiento', label: 'Fecha de vencimiento' },
-  { value: 'numeroCuota',      label: 'Numero de cuota actual' },
-  { value: 'diasMora',         label: 'Dias en mora' },
-  { value: 'clienteCedula',    label: 'Cedula del cliente' },
-  { value: 'clienteTelefono',  label: 'Telefono del cliente' },
+  { value: 'numeroCuota',      label: 'Número de cuota actual' },
+  { value: 'diasMora',         label: 'Días en mora' },
+  { value: 'clienteCedula',    label: 'Cédula del cliente' },
+  { value: 'clienteTelefono',  label: 'Teléfono del cliente' },
   { value: 'ruta',             label: 'Ruta' },
   { value: 'cobrador',         label: 'Cobrador' },
 ]
@@ -55,7 +55,7 @@ export function AgregarCampoRecibo({ onAdd }) {
             onClick={() => setTipo(t)}
             className={`flex-1 py-1.5 rounded-[8px] text-xs font-medium transition-all cursor-pointer ${tipo === t ? 'bg-[var(--color-accent)] text-white' : 'bg-[var(--color-bg-hover)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'}`}
           >
-            {t === 'texto' ? 'Texto fijo' : 'Dato del prestamo'}
+            {t === 'texto' ? 'Texto fijo' : 'Dato del préstamo'}
           </button>
         ))}
       </div>

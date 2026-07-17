@@ -754,7 +754,7 @@ function TabOrganizacion() {
           <h3 className="font-medium text-white text-sm">Campos del recibo (plantilla)</h3>
         </div>
         <p className="text-xs text-[var(--color-text-muted)] mb-4">
-          Plantilla por defecto para todos los clientes. Puedes personalizar los campos de cada cliente desde la pagina del prestamo.
+          Plantilla por defecto para todos los clientes. Puedes personalizar los campos de cada cliente desde la página del préstamo.
         </p>
 
         {camposRecibo.length > 0 && (
