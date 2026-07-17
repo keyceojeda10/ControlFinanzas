@@ -234,7 +234,7 @@ export async function PATCH(request, { params }) {
     return Response.json(actualizado)
   }
 
-  const { nombre, cedula, telefono, direccion, referencia, notas, fotoUrl, rutaId, latitud, longitud, diasSinCobro, grupoCobroId, montoMaximoPrestamo } = body
+  const { nombre, cedula, telefono, direccion, referencia, notas, fotoUrl, rutaId, latitud, longitud, diasSinCobro, grupoCobroId, montoMaximoPrestamo, camposRecibo } = body
 
   if (montoMaximoPrestamo !== undefined) {
     if (session.user.rol !== 'owner') {
@@ -330,6 +330,9 @@ export async function PATCH(request, { params }) {
       ...(diasSinCobroVal !== undefined && { diasSinCobro: diasSinCobroVal }),
       ...(montoMaximoPrestamo !== undefined && session.user.rol === 'owner' && {
         montoMaximoPrestamo: (!montoMaximoPrestamo && montoMaximoPrestamo !== 0) ? null : Number(montoMaximoPrestamo) || null,
+      }),
+      ...(camposRecibo !== undefined && {
+        camposRecibo: Array.isArray(camposRecibo) ? camposRecibo.slice(0, 10) : null,
       }),
     },
   })

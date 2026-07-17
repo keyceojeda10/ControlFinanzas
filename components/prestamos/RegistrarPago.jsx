@@ -28,7 +28,10 @@ export default function RegistrarPago({
 }) {
   const router = useRouter()
   const { formatMoney } = useCountry()
-  const { puedeAplicarDescuentos, orgNombre, ocultarSaldoWA, camposRecibo } = useAuth()
+  const { puedeAplicarDescuentos, orgNombre, ocultarSaldoWA, camposRecibo: camposReciboOrg } = useAuth()
+  const camposRecibo = (Array.isArray(cliente?.camposRecibo) && cliente.camposRecibo.length > 0)
+    ? cliente.camposRecibo
+    : (Array.isArray(camposReciboOrg) ? camposReciboOrg : [])
 
   // Pre-llena con la cuota, pero nunca más que el saldo pendiente (último pago de saldos pequeños)
   const montoInicial = Math.min(Math.round(cuotaDiaria ?? 0), Math.round(saldoPendiente ?? 0))

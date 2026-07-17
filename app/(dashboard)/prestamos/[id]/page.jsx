@@ -45,6 +45,7 @@ import { generarTipPrestamo } from '@/lib/tips/prestamoTips'
 import DiasSinCobroSelector from '@/components/ui/DiasSinCobroSelector'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import TablaAmortizacion from '@/components/prestamos/TablaAmortizacion'
+import { AgregarCampoRecibo, CamposReciboList, CAMPOS_DATO_LABELS } from '@/components/recibos/CamposReciboEditor'
 
 // ─── Helpers de formato ──────────────────────────────────────────
 const fmtFecha = (d) => d
@@ -92,7 +93,7 @@ function GestionBtn({ label, desc, color, icon, onClick }) {
 export default function PrestamoDetallePage({ params }) {
   const { id }             = use(params)
   const router             = useRouter()
-  const { session, esOwner, esCobrador, puedeGestionarPrestamos, puedeAplicarDescuentos, orgNombre, ocultarSaldoWA, camposRecibo } = useAuth()
+  const { session, esOwner, esCobrador, puedeGestionarPrestamos, puedeAplicarDescuentos, orgNombre, ocultarSaldoWA, camposRecibo: camposReciboOrg } = useAuth()
 
   const { lastSyncedAt }   = useOffline()
 
@@ -150,6 +151,8 @@ export default function PrestamoDetallePage({ params }) {
   const [liqError, setLiqError] = useState('')
   const [statsCliente, setStatsCliente] = useState(null) // { totalPrestamos, completados, numeroEsteDe }
   const [historialOpen, setHistorialOpen] = useState(true)
+  const [camposReciboCliente, setCamposReciboCliente] = useState(null)
+  const [guardandoCamposRecibo, setGuardandoCamposRecibo] = useState(false)
   const hasLoadedOnceRef = useRef(false)
 
   // Leer contexto de ruta activa
@@ -436,6 +439,26 @@ export default function PrestamoDetallePage({ params }) {
 
   // Cuotas pagadas
   const cuotasPagadas = cuotaDiaria > 0 ? Math.floor(totalPagadoReal / cuotaDiaria) : 0
+
+  // Campos recibo: prioridad cliente > org
+  const camposReciboActuales = camposReciboCliente ?? (Array.isArray(cliente?.camposRecibo) ? cliente.camposRecibo : null)
+  const camposRecibo = camposReciboActuales ?? (Array.isArray(camposReciboOrg) ? camposReciboOrg : [])
+
+  const guardarCamposReciboCliente = async (campos) => {
+    if (!cliente?.id) return
+    setGuardandoCamposRecibo(true)
+    try {
+      const res = await fetch(`/api/clientes/${cliente.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ camposRecibo: campos }),
+      })
+      if (res.ok) {
+        setCamposReciboCliente(campos)
+      }
+    } catch {}
+    setGuardandoCamposRecibo(false)
+  }
 
   // Stats contextuales
   const statsContexto = generarStatsContextuales({
@@ -995,6 +1018,17 @@ export default function PrestamoDetallePage({ params }) {
         onSave={(url) => setPrestamo(prev => ({ ...prev, firmaUrl: url }))}
       />
 
+      {/* ── CAMPOS PERSONALIZADOS DEL RECIBO (por cliente) ──────── */}
+      {esOwner && (
+        <CamposReciboClienteCard
+          campos={camposRecibo}
+          camposOrg={Array.isArray(camposReciboOrg) ? camposReciboOrg : []}
+          usandoOrg={camposReciboActuales === null}
+          guardando={guardandoCamposRecibo}
+          onSave={guardarCamposReciboCliente}
+        />
+      )}
+
       {/* ── HISTORIAL DE PAGOS (colapsado por defecto) ──────────── */}
       <Card>
         <button
@@ -1060,6 +1094,7 @@ export default function PrestamoDetallePage({ params }) {
               prestamo={prestamo}
               orgNombre={orgNombre}
               ocultarSaldo={ocultarSaldoWA}
+              camposRecibo={camposRecibo}
             />
           )}
           <div className="flex gap-2">
@@ -1069,6 +1104,7 @@ export default function PrestamoDetallePage({ params }) {
               prestamo={prestamo}
               orgNombre={orgNombre}
               ocultarSaldo={ocultarSaldoWA}
+              camposRecibo={camposRecibo}
             />
             <BotonImprimirRecibo
               tipo="historial"
@@ -1168,6 +1204,7 @@ export default function PrestamoDetallePage({ params }) {
                           pago={{ montoPagado: pago.montoPagado, fechaPago: pago.fechaPago }}
                           orgNombre={orgNombre}
                           ocultarSaldo={ocultarSaldoWA}
+                          camposRecibo={camposRecibo}
                         />
                       )}
                       <div className="flex gap-2">
@@ -1177,6 +1214,7 @@ export default function PrestamoDetallePage({ params }) {
                           pago={{ montoPagado: pago.montoPagado, fechaPago: pago.fechaPago }}
                           orgNombre={orgNombre}
                           ocultarSaldo={ocultarSaldoWA}
+                          camposRecibo={camposRecibo}
                         />
                         <BotonImprimirRecibo
                           cliente={cliente}
@@ -1905,5 +1943,92 @@ export default function PrestamoDetallePage({ params }) {
         onCancel={() => setConfirmAnularPago(null)}
       />
     </div>
+  )
+}
+
+function CamposReciboClienteCard({ campos, camposOrg, usandoOrg, guardando, onSave }) {
+  const [abierto, setAbierto] = useState(false)
+
+  const tieneConfig = Array.isArray(campos) && campos.length > 0
+
+  return (
+    <Card>
+      <button
+        type="button"
+        onClick={() => setAbierto(v => !v)}
+        className="w-full flex items-center justify-between gap-2 focus-visible:outline-none"
+      >
+        <div className="flex items-center gap-2">
+          <svg className="w-4 h-4 text-[var(--color-accent)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <span className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em]">
+            Campos del recibo
+          </span>
+          {tieneConfig && (
+            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-[rgba(245,197,24,0.12)] text-[var(--color-accent)]">
+              {campos.length}
+            </span>
+          )}
+        </div>
+        <svg
+          className="w-4 h-4 shrink-0 transition-transform duration-200"
+          style={{ color: 'var(--color-text-muted)', transform: abierto ? 'rotate(180deg)' : 'rotate(0deg)' }}
+          fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {abierto && (
+        <div className="mt-3 space-y-3">
+          <p className="text-xs text-[var(--color-text-muted)]">
+            {usandoOrg && camposOrg.length > 0
+              ? 'Usando los campos de la organización. Personaliza para este cliente:'
+              : 'Campos extra que aparecen en el comprobante de pago de este cliente.'}
+          </p>
+
+          {usandoOrg && camposOrg.length > 0 && (
+            <button
+              type="button"
+              onClick={() => onSave([...camposOrg])}
+              disabled={guardando}
+              className="w-full flex items-center justify-center gap-1.5 py-2 rounded-[10px] border border-[var(--color-border)] text-xs font-medium text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:border-[var(--color-accent)] transition-all cursor-pointer disabled:opacity-50"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+              Copiar campos de la organización ({camposOrg.length})
+            </button>
+          )}
+
+          <CamposReciboList
+            campos={campos}
+            onRemove={(i) => {
+              const next = campos.filter((_, j) => j !== i)
+              onSave(next)
+            }}
+          />
+
+          {campos.length < 10 && (
+            <AgregarCampoRecibo
+              onAdd={(campo) => {
+                const next = [...campos, campo]
+                onSave(next)
+              }}
+            />
+          )}
+
+          {tieneConfig && (
+            <button
+              type="button"
+              onClick={() => onSave([])}
+              disabled={guardando}
+              className="w-full flex items-center justify-center gap-1.5 py-2 rounded-[10px] text-[10px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-all cursor-pointer disabled:opacity-50"
+            >
+              Quitar campos personalizados{camposOrg.length > 0 ? ' (volver a usar los de la organización)' : ''}
+            </button>
+          )}
+        </div>
+      )}
+    </Card>
   )
 }
