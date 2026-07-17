@@ -430,7 +430,7 @@ export default function RegistrarPago({
                 const cuotasPagadas = prestamoWA.pagos
                   ? prestamoWA.pagos.filter(p => !['recargo', 'descuento'].includes(p.tipo)).length
                   : null
-                const totalCuotas = prestamoWA.diasPlazo || null
+                const totalCuotas = prestamoWA.cuotasAmortizacion?.length || null
                 return cuotasPagadas != null && totalCuotas ? (
                   <div className="flex justify-between">
                     <span className="text-[var(--color-text-muted)]">Cuota</span>
@@ -632,9 +632,11 @@ export default function RegistrarPago({
                 type="button"
                 onClick={() => {
                   const montoFinal = Math.min(Math.round(prestamo.montoEnMora), Math.round(saldoPendiente ?? 0))
+                  const dias = diasParaMonto(montoFinal)
                   setMonto(String(montoFinal))
-                  setTipo(montoFinal >= cuota ? 'completo' : 'parcial')
-                  setDiasAbonados(diasParaMonto(montoFinal))
+                  setTipo('completo')
+                  setDiasAbonados(dias)
+                  setSliderVisual(dias)
                 }}
                 className="h-10 rounded-[12px] border border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.08)] text-[var(--color-danger)] text-sm font-semibold hover:bg-[rgba(239,68,68,0.15)] transition-colors"
               >
@@ -650,9 +652,11 @@ export default function RegistrarPago({
                 type="button"
                 onClick={() => {
                   const montoFinal = Math.min(Math.round(prestamo.montoParaPonerseAlDia), Math.round(saldoPendiente ?? 0))
+                  const dias = diasParaMonto(montoFinal)
                   setMonto(String(montoFinal))
-                  setTipo(montoFinal >= cuota ? 'completo' : 'parcial')
-                  setDiasAbonados(diasParaMonto(montoFinal))
+                  setTipo('completo')
+                  setDiasAbonados(dias)
+                  setSliderVisual(dias)
                 }}
                 className="h-10 rounded-[12px] border border-[rgba(245,197,24,0.3)] bg-[rgba(245,197,24,0.1)] text-[var(--color-accent)] text-sm font-semibold hover:bg-[rgba(245,197,24,0.18)] transition-colors"
               >
