@@ -74,6 +74,21 @@ export default function AnaliticasPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [showAllAlertas, setShowAllAlertas] = useState(false)
+  const [descargando, setDescargando] = useState(false)
+
+  const descargarPDF = async () => {
+    setDescargando(true)
+    try {
+      const res = await fetch('/api/dashboard/analiticas/reporte-pdf')
+      if (!res.ok) throw new Error('Error generando reporte')
+      const blob = await res.blob()
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = `rendimiento-${new Date().toISOString().slice(0, 7)}.pdf`
+      a.click()
+      URL.revokeObjectURL(a.href)
+    } catch {} finally { setDescargando(false) }
+  }
 
   const country = session?.user?.country || 'CO'
   const fmt = useCallback(v => formatMoney(v, country), [country])
@@ -112,11 +127,23 @@ export default function AnaliticasPage() {
   return (
     <div className="p-4 lg:p-8 max-w-5xl mx-auto pb-24 space-y-4 lg:space-y-5">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <Link href="/dashboard" className="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--color-bg-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-border-hover)] transition-colors">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-        </Link>
-        <h1 className="text-[20px] lg:text-[24px] font-semibold tracking-tight">Analiticas</h1>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Link href="/dashboard" className="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--color-bg-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-border-hover)] transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+          </Link>
+          <h1 className="text-[20px] lg:text-[24px] font-semibold tracking-tight">Analiticas</h1>
+        </div>
+        <button
+          onClick={descargarPDF}
+          disabled={descargando}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[var(--color-bg-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-border-hover)] transition-colors text-[12px] font-medium disabled:opacity-50"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+          </svg>
+          {descargando ? 'Generando...' : 'Descargar PDF'}
+        </button>
       </div>
 
       {/* === ROI headline === */}
