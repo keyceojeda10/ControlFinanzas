@@ -3,6 +3,7 @@
 'use client'
 
 import { formatMoney } from '@/lib/i18n'
+import { getDefaultCampos } from '@/components/recibos/CamposReciboEditor'
 
 const PRINT_ICON = (
   <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -61,14 +62,15 @@ function renderCamposCustom(campos, cliente, prestamo) {
 }
 
 function generarHTMLRecibo(cliente, prestamo, pago, orgNombre, camposRecibo) {
-  const saldo     = prestamo.saldoPendiente ?? 0
-  const totalPag  = prestamo.totalPagado ?? 0
-  const progreso  = prestamo.porcentajePagado ?? 0
-  const totalAPagar = prestamo.totalAPagar ?? 0
-  const cuota     = prestamo.cuotaDiaria ?? 0
   const linea     = '━'.repeat(30)
   const lineaFina = '─'.repeat(30)
-  const camposExtra = renderCamposCustom(camposRecibo, cliente, prestamo)
+  const camposAUsar = (Array.isArray(camposRecibo) && camposRecibo.length > 0)
+    ? camposRecibo
+    : getDefaultCampos()
+  const filasCampos = camposAUsar.map(c => {
+    const val = c.tipo === 'texto' ? c.valor : resolverCampo(c.campo, cliente, prestamo)
+    return `<div class="row"><span>${c.nombre}:</span><span>${val}</span></div>`
+  }).join('\n  ')
 
   return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -120,12 +122,7 @@ function generarHTMLRecibo(cliente, prestamo, pago, orgNombre, camposRecibo) {
 
   <div class="linea-fina">${lineaFina}</div>
 
-  <div class="row mt"><span>Total pagado:</span><span>${formatMoney(totalPag)}</span></div>
-  <div class="row"><span>Saldo pendiente:</span><span>${formatMoney(saldo)}</span></div>
-  <div class="row"><span>Total a pagar:</span><span>${formatMoney(totalAPagar)}</span></div>
-  <div class="row"><span>Cuota:</span><span>${formatMoney(cuota)}</span></div>
-  <div class="row"><span>Progreso:</span><span>${progreso}%</span></div>
-${camposExtra ? `\n  <div class="linea-fina">${lineaFina}</div>\n  ${camposExtra}` : ''}
+  ${filasCampos}
 
   <div class="linea">${linea}</div>
 

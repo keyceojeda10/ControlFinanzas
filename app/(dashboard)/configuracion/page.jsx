@@ -22,7 +22,7 @@ import { Toggle }              from '@/components/ui/Toggle'
 import { useTheme }             from '@/lib/theme/ThemeProvider'
 import { getCountryList, COUNTRIES } from '@/lib/countries'
 import { InstallGuideModal } from '@/components/layout/InstallButton'
-import { AgregarCampoRecibo, CamposReciboList, CAMPOS_DATO_LABELS } from '@/components/recibos/CamposReciboEditor'
+import { ChecklistCamposRecibo } from '@/components/recibos/CamposReciboEditor'
 
 const PAISES_LIST = getCountryList()
 const WHATSAPP_SOPORTE = '573011993001'
@@ -757,28 +757,13 @@ function TabOrganizacion() {
           Plantilla por defecto para todos los clientes. Puedes personalizar los campos de cada cliente desde la página del préstamo.
         </p>
 
-        {camposRecibo.length > 0 && (
-          <div className="mb-4">
-            <CamposReciboList
-              campos={camposRecibo}
-              onRemove={(i) => {
-                const next = camposRecibo.filter((_, j) => j !== i)
-                setCamposRecibo(next)
-                guardarCamposRecibo(next)
-              }}
-            />
-          </div>
-        )}
-
-        {camposRecibo.length < 10 && (
-          <AgregarCampoRecibo
-            onAdd={(campo) => {
-              const next = [...camposRecibo, campo]
-              setCamposRecibo(next)
-              guardarCamposRecibo(next)
-            }}
-          />
-        )}
+        <ChecklistCamposRecibo
+          campos={camposRecibo}
+          onChange={(next) => {
+            setCamposRecibo(next)
+            guardarCamposRecibo(next)
+          }}
+        />
 
         {msgCampos && <div className="mt-3"><Alerta tipo={msgCampos.tipo}>{msgCampos.texto}</Alerta></div>}
       </Card>
