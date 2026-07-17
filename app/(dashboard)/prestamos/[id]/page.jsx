@@ -486,7 +486,7 @@ export default function PrestamoDetallePage({ params }) {
     setModalPago(true)
   }
 
-  const abrirPagoConMonto = (monto, tipo = 'parcial') => {
+  const abrirPagoConMonto = (monto, tipo = 'completo') => {
     const montoSeguro = Math.max(0, Math.min(Math.round(monto || 0), Math.round(saldoPendiente || 0)))
     if (!montoSeguro) {
       abrirPagoNormal()

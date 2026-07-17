@@ -102,8 +102,10 @@ export default function RegistrarPago({
 
     setMonto(String(montoFinal))
     setTipo(presetPago?.tipo ?? (montoFinal >= montoBase ? 'completo' : 'parcial'))
-    setDiasAbonados(null)
-    setSliderVisual(1)
+    const cuota = Math.max(1, Math.round(cuotaDiaria ?? 1))
+    const diasCalc = montoPreset > 0 ? Math.min(30, Math.max(1, Math.round(montoFinal / cuota))) : null
+    setDiasAbonados(diasCalc)
+    setSliderVisual(diasCalc ?? 1)
     setError('')
   }, [open, presetPago, cuotaDiaria, saldoPendiente, tabInicial])
 
