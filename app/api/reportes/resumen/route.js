@@ -137,11 +137,16 @@ export async function GET(req) {
   const clientesMora = new Set()
   let carteraActiva = 0
   let capitalPrestado = 0
+  let saldoPorCobrar = 0
 
   for (const p of prestamosActivosDetalle) {
     clientesActivos.add(p.clienteId)
     carteraActiva += p.totalAPagar ?? 0
     capitalPrestado += p.montoPrestado ?? 0
+    const pagado = (p.pagos || [])
+      .filter(pg => !['recargo', 'descuento'].includes(pg.tipo))
+      .reduce((a, pg) => a + (pg.montoPagado || 0), 0)
+    saldoPorCobrar += Math.max(0, (p.totalAPagar ?? 0) - pagado)
 
     const diasExcluidos = obtenerDiasSinCobro(p.cliente, p.cliente?.ruta, org)
     if (calcularDiasMora(p, diasExcluidos, festivos) > 0) {
@@ -158,6 +163,7 @@ export async function GET(req) {
       activos:     prestamosActivosDetalle.length,
       completados: prestamosCompletados,
       carteraActiva,
+      saldoPorCobrar,
       capitalPrestado,
     },
     pagos: {

@@ -154,12 +154,16 @@ export async function GET(req) {
 
   const clientesActivos = new Set()
   const clientesMora = new Set()
-  let carteraActiva = 0, capitalPrestado = 0
+  let carteraActiva = 0, capitalPrestado = 0, saldoPorCobrar = 0
 
   for (const p of prestamosActivos) {
     clientesActivos.add(p.clienteId)
     carteraActiva += p.totalAPagar ?? 0
     capitalPrestado += p.montoPrestado ?? 0
+    const pagado = (p.pagos || [])
+      .filter(pg => !['recargo', 'descuento'].includes(pg.tipo))
+      .reduce((a, pg) => a + (pg.montoPagado || 0), 0)
+    saldoPorCobrar += Math.max(0, (p.totalAPagar ?? 0) - pagado)
     const diasExcluidos = obtenerDiasSinCobro(p.cliente, p.cliente?.ruta, org)
     if (calcularDiasMora(p, diasExcluidos, festivos) > 0) clientesMora.add(p.clienteId)
   }
@@ -288,7 +292,7 @@ export async function GET(req) {
     { label: 'Ingresos del periodo', value: fmt(totalPeriodo), sub: `${cantidadPagos} pagos`, accent: COLOR_GREEN },
     { label: 'Interes ganado', value: fmt(interesGanado), accent: COLOR_GREEN },
     { label: 'Capital recuperado', value: fmt(capitalRecuperado), accent: COLOR_BLUE },
-    { label: 'Cartera activa', value: fmt(carteraActiva), accent: COLOR_BLUE },
+    { label: 'Cartera activa', value: fmt(saldoPorCobrar), accent: COLOR_BLUE },
   ]
 
   const kpiGap = 10

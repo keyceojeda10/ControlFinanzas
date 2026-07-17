@@ -1804,38 +1804,35 @@ export default function DashboardPage() {
             <div className="grid grid-cols-2 gap-3">
               <KpiCard
                 label="Cartera activa"
-                value={formatMoney(data.prestamos.carteraActiva)}
-                valueRaw={data.prestamos.carteraActiva}
-                sub={`Capital: ${formatMoney(data.prestamos.capitalPrestado)}`}
+                value={formatMoney(data.prestamos.saldoPorCobrar ?? data.prestamos.carteraActiva)}
+                valueRaw={data.prestamos.saldoPorCobrar ?? data.prestamos.carteraActiva}
+                sub={`Promesa total: ${formatMoney(data.prestamos.carteraActiva)}`}
                 color="var(--color-warning)"
                 info={{
                   titulo: 'Cartera activa',
-                  que: 'Todo el dinero que tus clientes te van a pagar EN TOTAL (capital + intereses) cuando terminen sus préstamos. Es como una "promesa de cobro" futura.',
-                  comoSeCalcula: `Sumo el "Total a pagar" de todos los préstamos activos. Capital prestado: ${formatMoney(data.prestamos.capitalPrestado)} + Intereses por ganar: ${formatMoney(data.prestamos.carteraActiva - data.prestamos.capitalPrestado)} = ${formatMoney(data.prestamos.carteraActiva)}.`,
-                  ejemplo: `Vas a recibir ${formatMoney(data.prestamos.carteraActiva)} cuando todos terminen de pagar. De eso, ${formatMoney(data.prestamos.capitalPrestado)} es lo que prestaste y ${formatMoney(data.prestamos.carteraActiva - data.prestamos.capitalPrestado)} es tu ganancia por intereses.`,
-                  cuandoCambia: 'Solo cambia cuando creas un préstamo nuevo (sube) o un préstamo se completa/cancela (baja). NO baja con los pagos diarios.',
-                  tip: '¿Quieres ver cuánto te falta cobrar? Mira "Por cobrar" — ese sí baja con cada pago.',
+                  que: 'Lo que tus clientes te deben HOY. Es la suma del saldo pendiente de todos los préstamos activos.',
+                  comoSeCalcula: `Sumo el saldo pendiente (Total a pagar - Lo ya pagado) de cada préstamo activo.`,
+                  ejemplo: `Tus clientes te deben ${formatMoney(data.prestamos.saldoPorCobrar ?? data.prestamos.carteraActiva)}. La promesa total cuando todos terminen de pagar es ${formatMoney(data.prestamos.carteraActiva)}.`,
+                  cuandoCambia: 'Baja cada vez que un cliente paga. Sube cuando creas un préstamo nuevo.',
+                  tip: 'Este número cuadra con la suma de los saldos de cada préstamo.',
                 }}
                 icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" /></svg>}
               />
-              {data.prestamos.saldoPorCobrar !== undefined && (
-                <KpiCard
-                  label="Por cobrar"
-                  value={formatMoney(data.prestamos.saldoPorCobrar)}
-                  valueRaw={data.prestamos.saldoPorCobrar}
-                  sub="Saldo pendiente real"
-                  color="var(--color-info)"
-                  info={{
-                    titulo: 'Por cobrar',
-                    que: 'Lo que REALMENTE te falta cobrar HOY de todos tus préstamos activos.',
-                    comoSeCalcula: `Cartera activa (${formatMoney(data.prestamos.carteraActiva)}) MENOS lo que ya te han pagado tus clientes (${formatMoney(data.prestamos.carteraActiva - data.prestamos.saldoPorCobrar)}) = ${formatMoney(data.prestamos.saldoPorCobrar)}.`,
-                    ejemplo: `Te faltan ${formatMoney(data.prestamos.saldoPorCobrar)} por cobrar. Ya has cobrado ${formatMoney(data.prestamos.carteraActiva - data.prestamos.saldoPorCobrar)} del total prometido.`,
-                    cuandoCambia: 'Baja cada vez que un cliente te paga. Sube cuando creas un préstamo nuevo.',
-                    tip: 'Este es el indicador real de "deuda pendiente". El más útil para saber cómo va tu cobro día a día.',
-                  }}
-                  icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" /></svg>}
-                />
-              )}
+              <KpiCard
+                label="Ya cobrado"
+                value={formatMoney((data.prestamos.carteraActiva ?? 0) - (data.prestamos.saldoPorCobrar ?? 0))}
+                valueRaw={(data.prestamos.carteraActiva ?? 0) - (data.prestamos.saldoPorCobrar ?? 0)}
+                sub={`Capital: ${formatMoney(data.prestamos.capitalPrestado)}`}
+                color="var(--color-success)"
+                info={{
+                  titulo: 'Ya cobrado',
+                  que: 'Lo que ya has recibido de los préstamos que siguen activos.',
+                  comoSeCalcula: `Promesa total (${formatMoney(data.prestamos.carteraActiva)}) - Saldo pendiente (${formatMoney(data.prestamos.saldoPorCobrar ?? 0)}) = ${formatMoney((data.prestamos.carteraActiva ?? 0) - (data.prestamos.saldoPorCobrar ?? 0))}.`,
+                  ejemplo: `De los préstamos activos, ya cobraste ${formatMoney((data.prestamos.carteraActiva ?? 0) - (data.prestamos.saldoPorCobrar ?? 0))} y te faltan ${formatMoney(data.prestamos.saldoPorCobrar ?? 0)}.`,
+                  cuandoCambia: 'Sube cada vez que un cliente paga.',
+                }}
+                icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" /></svg>}
+              />
             </div>
           </KpiGroup>
 
