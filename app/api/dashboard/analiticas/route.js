@@ -15,6 +15,7 @@ export async function GET() {
   const ahora = new Date()
   const hoy = new Date(ahora.toLocaleString('en-US', { timeZone: 'America/Bogota' }))
   const mesActual = new Date(hoy.getFullYear(), hoy.getMonth(), 1)
+  const mesAnterior = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1)
 
   const mesesAtras = 6
   const fechaInicio = new Date(hoy.getFullYear(), hoy.getMonth() - mesesAtras + 1, 1)
@@ -30,14 +31,16 @@ export async function GET() {
     clientesActivos,
     clientesInactivos,
     cobradorRecaudo,
-    cobradorInfo,
+    orgUsers,
     pagosEsteMes,
+    pagosMesAnterior,
     prestamosActivosDetalle,
     festivos,
     organization,
     clientesPorMes,
+    prestamosNuevosMesAnterior,
+    clientesNuevosMesAnterior,
   ] = await Promise.all([
-    // Pagos agrupados por mes (last 6 months)
     prisma.$queryRaw`
       SELECT
         DATE_FORMAT(fechaPago, '%Y-%m') as mes,
@@ -50,7 +53,6 @@ export async function GET() {
       GROUP BY mes
       ORDER BY mes
     `,
-    // Prestamos creados por mes
     prisma.$queryRaw`
       SELECT
         DATE_FORMAT(createdAt, '%Y-%m') as mes,
@@ -64,7 +66,6 @@ export async function GET() {
       GROUP BY mes
       ORDER BY mes
     `,
-    // Gastos por mes
     prisma.$queryRaw`
       SELECT
         DATE_FORMAT(fecha, '%Y-%m') as mes,
@@ -76,7 +77,6 @@ export async function GET() {
       GROUP BY mes
       ORDER BY mes
     `,
-    // Conteos de cartera
     prisma.prestamo.count({
       where: { organizationId, estado: 'activo', esClavo: false },
     }),
@@ -97,7 +97,6 @@ export async function GET() {
     prisma.cliente.count({
       where: { organizationId, estado: { in: ['inactivo', 'cancelado'] } },
     }),
-    // Recaudo por cobrador este mes
     prisma.$queryRaw`
       SELECT
         cobradorId,
@@ -111,12 +110,10 @@ export async function GET() {
       GROUP BY cobradorId
       ORDER BY recaudado DESC
     `,
-    // Nombres de cobradores
     prisma.user.findMany({
-      where: { organizationId, rol: 'cobrador', activo: true },
-      select: { id: true, nombre: true },
+      where: { organizationId },
+      select: { id: true, nombre: true, rol: true },
     }),
-    // Total pagos este mes (para eficiencia)
     prisma.pago.aggregate({
       where: {
         organizationId,
@@ -126,7 +123,15 @@ export async function GET() {
       _sum: { montoPagado: true },
       _count: true,
     }),
-    // Prestamos activos con detalle (para calcular esperado y mora)
+    prisma.pago.aggregate({
+      where: {
+        organizationId,
+        fechaPago: { gte: mesAnterior, lt: mesActual },
+        tipo: { notIn: ['recargo', 'descuento'] },
+      },
+      _sum: { montoPagado: true },
+      _count: true,
+    }),
     prisma.prestamo.findMany({
       where: { organizationId, estado: 'activo', esClavo: false },
       select: {
@@ -142,6 +147,7 @@ export async function GET() {
         ultimoPagoAt: true,
         modoInteres: true,
         tasaInteres: true,
+        cobradorId: true,
         cuotasAmortizacion: {
           select: { numeroPeriodo: true, cuotaTotal: true, pagado: true, fechaEsperada: true },
         },
@@ -155,7 +161,6 @@ export async function GET() {
       where: { id: organizationId },
       select: { diasSinCobro: true },
     }),
-    // Clientes nuevos por mes
     prisma.$queryRaw`
       SELECT
         DATE_FORMAT(createdAt, '%Y-%m') as mes,
@@ -166,6 +171,19 @@ export async function GET() {
       GROUP BY mes
       ORDER BY mes
     `,
+    prisma.prestamo.count({
+      where: {
+        organizationId,
+        esClavo: false,
+        createdAt: { gte: mesAnterior, lt: mesActual },
+      },
+    }),
+    prisma.cliente.count({
+      where: {
+        organizationId,
+        createdAt: { gte: mesAnterior, lt: mesActual },
+      },
+    }),
   ])
 
   // Build monthly trend
@@ -190,11 +208,15 @@ export async function GET() {
     clientesNuevos: Number(clienteMap[mes]?.nuevos || 0),
   }))
 
-  // Interest earned this month (proportional from payments)
   const mesActualKey = mesActual.toISOString().slice(0, 7)
+  const mesAnteriorKey = mesAnterior.toISOString().slice(0, 7)
   const recaudadoMes = Number(pagosEsteMes._sum?.montoPagado || 0)
+  const recaudadoMesAnterior = Number(pagosMesAnterior._sum?.montoPagado || 0)
 
-  // Expected collections this month (sum of cuota diaria * days elapsed)
+  // Prestamos nuevos este mes
+  const prestamosNuevosMes = Number(prestamoMap[mesActualKey]?.cantidad || 0)
+
+  // Expected collections this month
   const diasTranscurridos = hoy.getDate()
   const diasExcluidos = organization?.diasSinCobro || []
   const cuotaDiariaTotal = prestamosActivosDetalle.reduce((sum, p) => sum + Number(p.cuotaDiaria || 0), 0)
@@ -221,14 +243,21 @@ export async function GET() {
     }
   }
 
-  // Cobrador ranking
-  const cobradorMap = Object.fromEntries(cobradorInfo.map(c => [c.id, c.nombre]))
-  const cobradores = cobradorRecaudo.map(c => ({
-    id: c.cobradorId,
-    nombre: cobradorMap[c.cobradorId] || 'Sin nombre',
-    recaudado: Number(c.recaudado),
-    pagos: Number(c.pagos),
-  }))
+  // Cobrador ranking — include all org users (owner can also record payments)
+  const userMap = Object.fromEntries(orgUsers.map(u => [u.id, u]))
+  const cobradores = cobradorRecaudo.map(c => {
+    const user = userMap[c.cobradorId]
+    // Count how many active loans this cobrador manages
+    const prestamosAsignados = prestamosActivosDetalle.filter(p => p.cobradorId === c.cobradorId).length
+    return {
+      id: c.cobradorId,
+      nombre: user?.nombre || 'Sin nombre',
+      rol: user?.rol || 'cobrador',
+      recaudado: Number(c.recaudado),
+      pagos: Number(c.pagos),
+      prestamosAsignados,
+    }
+  })
 
   // Rentabilidad
   const capitalTotal = prestamosActivosDetalle.reduce((s, p) => s + Number(p.montoPrestado), 0)
@@ -236,6 +265,10 @@ export async function GET() {
   const interesEnCartera = prestamosActivosDetalle.reduce((s, p) => s + (Number(p.totalAPagar) - Number(p.montoPrestado)), 0)
   const moraIrrecuperable = Number(prestamosEsclavo._sum?.totalAPagar || 0)
   const gastosMesActual = Number(gastoMap[mesActualKey]?.total || 0)
+  const gastosMesAnteriorVal = Number(gastoMap[mesAnteriorKey]?.total || 0)
+
+  // Percentage helpers
+  const pctChange = (curr, prev) => prev > 0 ? Math.round(((curr - prev) / prev) * 100) : (curr > 0 ? 100 : 0)
 
   return NextResponse.json({
     tendenciaMensual,
@@ -255,6 +288,7 @@ export async function GET() {
       montoMora,
       capitalEnCalle: capitalTotal,
       interesEnCartera,
+      pctMora: prestamosActivos > 0 ? Math.round((clientesMora / prestamosActivos) * 100) : 0,
     },
     cobradores,
     rentabilidad: {
@@ -264,6 +298,16 @@ export async function GET() {
       clavos: prestamosEsclavo._count || 0,
       gastosMes: gastosMesActual,
       recaudadoMes,
+      gananciaNetaMes: recaudadoMes - gastosMesActual,
+      cambios: {
+        recaudado: pctChange(recaudadoMes, recaudadoMesAnterior),
+        gastos: pctChange(gastosMesActual, gastosMesAnteriorVal),
+        prestamosNuevos: pctChange(prestamosNuevosMes, prestamosNuevosMesAnterior),
+        clientesNuevos: pctChange(
+          Number(clienteMap[mesActualKey]?.nuevos || 0),
+          clientesNuevosMesAnterior,
+        ),
+      },
     },
     clientes: {
       activos: clientesActivos,

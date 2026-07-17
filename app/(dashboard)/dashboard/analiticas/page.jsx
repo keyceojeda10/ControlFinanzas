@@ -9,7 +9,7 @@ function Skeleton({ className = '' }) {
   return <div className={`animate-pulse rounded-[10px] bg-[var(--color-bg-hover)] ${className}`} />
 }
 
-function BarChart({ data, dataKey, label, color = 'var(--color-accent)', formatValue }) {
+function BarChart({ data, dataKey, color = 'var(--color-accent)', formatValue }) {
   if (!data?.length) return null
   const max = Math.max(...data.map(d => d[dataKey]), 1)
   const fmt = formatValue || (v => v.toLocaleString())
@@ -79,37 +79,6 @@ function DonutChart({ segments, size = 120, strokeWidth = 16 }) {
   )
 }
 
-function HorizontalRanking({ items, fmtValue, color = 'var(--color-info)' }) {
-  if (!items?.length) return <p className="text-[13px] text-[var(--color-text-muted)]">Sin cobradores</p>
-  const max = Math.max(...items.map(i => i.value), 1)
-
-  return (
-    <div className="space-y-2">
-      {items.map((item, i) => {
-        const pct = (item.value / max) * 100
-        const medal = `${i + 1}`
-        return (
-          <div key={item.id} className="flex items-center gap-2.5">
-            <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold ${i < 3 ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]' : 'bg-[var(--color-bg-hover)] text-[var(--color-text-muted)]'}`}>
-              {medal}
-            </span>
-            <span className="text-[12px] font-medium w-20 truncate text-[var(--color-text-secondary)]">{item.nombre}</span>
-            <div className="flex-1 h-6 rounded-[5px] bg-[var(--color-bg-hover)] overflow-hidden relative">
-              <div
-                className="h-full rounded-[5px] transition-all duration-500"
-                style={{ width: `${Math.max(pct, 3)}%`, background: i === 0 ? 'var(--color-accent)' : color, opacity: 1 - i * 0.12 }}
-              />
-              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono font-semibold text-[var(--color-text-secondary)]">
-                {fmtValue(item.value)}
-              </span>
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
 function EficienciaRing({ pct, size = 80 }) {
   const radius = 32
   const circ = 2 * Math.PI * radius
@@ -127,21 +96,53 @@ function EficienciaRing({ pct, size = 80 }) {
   )
 }
 
-function Card({ children, className = '' }) {
+function Card({ children, className = '', href }) {
+  const cls = `bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[16px] p-4 lg:p-5 ${className}`
+  if (href) {
+    return (
+      <Link href={href} className={`${cls} hover:border-[var(--color-border-hover)] transition-colors block`}>
+        {children}
+      </Link>
+    )
+  }
+  return <div className={cls}>{children}</div>
+}
+
+function Badge({ value, suffix = '%' }) {
+  if (value === 0 || value === undefined) return null
+  const positive = value > 0
   return (
-    <div className={`bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[16px] p-4 lg:p-5 ${className}`}>
-      {children}
+    <span className={`inline-flex items-center gap-0.5 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full ${positive ? 'bg-[var(--color-success-dim)] text-[var(--color-success)]' : 'bg-[var(--color-danger-dim)] text-[var(--color-danger)]'}`}>
+      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ transform: positive ? 'none' : 'rotate(180deg)' }}>
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" />
+      </svg>
+      {Math.abs(value)}{suffix}
+    </span>
+  )
+}
+
+function KpiMini({ label, value, sub, color, badge }) {
+  return (
+    <div className="flex flex-col">
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">{label}</span>
+      <div className="flex items-center gap-2 mt-0.5">
+        <span className="text-[20px] lg:text-[24px] font-mono font-bold" style={color ? { color } : {}}>{value}</span>
+        {badge !== undefined && <Badge value={badge} />}
+      </div>
+      {sub && <span className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{sub}</span>}
     </div>
   )
 }
 
-function KpiMini({ label, value, sub, color }) {
+function SectionLabel({ children }) {
+  return <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">{children}</span>
+}
+
+function ArrowIcon() {
   return (
-    <div className="flex flex-col">
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">{label}</span>
-      <span className="text-[20px] lg:text-[24px] font-mono font-bold mt-0.5" style={color ? { color } : {}}>{value}</span>
-      {sub && <span className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{sub}</span>}
-    </div>
+    <svg className="w-3.5 h-3.5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+    </svg>
   )
 }
 
@@ -186,6 +187,7 @@ export default function AnaliticasPage() {
   }
 
   const { tendenciaMensual, eficiencia, cartera, cobradores, rentabilidad, clientes } = data
+  const cambios = rentabilidad.cambios || {}
 
   const donutSegments = [
     { value: cartera.activos - cartera.enMora, color: 'var(--color-success)', label: 'Al dia' },
@@ -197,7 +199,10 @@ export default function AnaliticasPage() {
   const rankingItems = cobradores.map(c => ({
     id: c.id,
     nombre: c.nombre,
+    rol: c.rol,
     value: c.recaudado,
+    pagos: c.pagos,
+    prestamosAsignados: c.prestamosAsignados,
   }))
 
   return (
@@ -215,14 +220,40 @@ export default function AnaliticasPage() {
         </div>
       </div>
 
-      {/* KPIs row — 2 cols mobile, 4 cols desktop */}
+      {/* Resultado del mes — ganancia neta destacada */}
       <Card>
-        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Tu dinero en la calle</p>
+        <div className="flex items-start justify-between mb-3">
+          <SectionLabel>Resultado del mes</SectionLabel>
+          <Badge value={cambios.recaudado} />
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+          <KpiMini label="Recaudado" value={fmt(rentabilidad.recaudadoMes)} color="var(--color-success)" />
+          <KpiMini label="Gastos" value={fmt(rentabilidad.gastosMes)} color="var(--color-danger)" badge={cambios.gastos} />
+          <KpiMini
+            label="Ganancia neta"
+            value={fmt(rentabilidad.gananciaNetaMes)}
+            color={rentabilidad.gananciaNetaMes >= 0 ? 'var(--color-success)' : 'var(--color-danger)'}
+          />
+          <KpiMini label="Prestamos nuevos" value={tendenciaMensual[tendenciaMensual.length - 1]?.prestamosNuevos || 0} badge={cambios.prestamosNuevos} />
+        </div>
+      </Card>
+
+      {/* Capital en calle — clickeable a prestamos */}
+      <Card href="/prestamos">
+        <div className="flex items-start justify-between mb-3">
+          <SectionLabel>Tu dinero en la calle</SectionLabel>
+          <ArrowIcon />
+        </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
           <KpiMini label="Capital prestado" value={fmt(rentabilidad.capitalEnCalle)} />
-          <KpiMini label="Interes por cobrar" value={fmt(rentabilidad.interesEnCartera)} color="var(--color-success)" />
-          <KpiMini label="Recaudado este mes" value={fmt(rentabilidad.recaudadoMes)} color="var(--color-info)" />
-          <KpiMini label="Gastos este mes" value={fmt(rentabilidad.gastosMes)} color="var(--color-danger)" />
+          <KpiMini label="Interes por cobrar" value={fmt(rentabilidad.interesEnCartera)} color="var(--color-accent)" />
+          <KpiMini label="Por cobrar total" value={fmt(cartera.montoActivo)} color="var(--color-info)" />
+          <KpiMini
+            label="En mora"
+            value={fmt(cartera.montoMora)}
+            color="var(--color-danger)"
+            sub={cartera.pctMora > 0 ? `${cartera.pctMora}% de la cartera` : undefined}
+          />
         </div>
         {rentabilidad.clavos > 0 && (
           <div className="mt-3 pt-3 border-t border-[var(--color-border)] flex items-center gap-2">
@@ -236,11 +267,13 @@ export default function AnaliticasPage() {
         )}
       </Card>
 
-      {/* Eficiencia + Cartera + Numeros — stacks on mobile, 3 cols on desktop */}
+      {/* Eficiencia + Cartera + Clientes */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
         <Card className="flex flex-col items-center justify-center text-center">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-2">Eficiencia de cobro</p>
-          <EficienciaRing pct={eficiencia.pct} />
+          <SectionLabel>Eficiencia de cobro</SectionLabel>
+          <div className="mt-2">
+            <EficienciaRing pct={eficiencia.pct} />
+          </div>
           <p className="text-[10px] text-[var(--color-text-muted)] mt-1.5">
             {fmt(eficiencia.recaudado)} de {fmt(eficiencia.esperado)}
           </p>
@@ -250,8 +283,10 @@ export default function AnaliticasPage() {
         </Card>
 
         <Card className="flex flex-col items-center justify-center text-center">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-2">Salud de cartera</p>
-          <DonutChart segments={donutSegments} size={100} strokeWidth={14} />
+          <SectionLabel>Salud de cartera</SectionLabel>
+          <div className="mt-2">
+            <DonutChart segments={donutSegments} size={100} strokeWidth={14} />
+          </div>
           <div className="flex flex-wrap justify-center gap-x-3 gap-y-0.5 mt-2">
             {donutSegments.map(s => (
               <span key={s.label} className="flex items-center gap-1">
@@ -262,45 +297,96 @@ export default function AnaliticasPage() {
           </div>
         </Card>
 
-        <Card className="col-span-2 lg:col-span-1">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Numeros de cartera</p>
+        <Card href="/clientes" className="col-span-2 lg:col-span-1">
+          <div className="flex items-start justify-between mb-3">
+            <SectionLabel>Clientes</SectionLabel>
+            <ArrowIcon />
+          </div>
           <div className="grid grid-cols-2 gap-4">
-            <KpiMini label="Clientes activos" value={clientes.activos} />
-            <KpiMini label="Clientes inactivos" value={clientes.inactivos} color="var(--color-text-muted)" />
-            <KpiMini label="Por cobrar" value={fmt(cartera.montoActivo)} color="var(--color-accent)" />
-            <KpiMini label="En mora" value={fmt(cartera.montoMora)} color="var(--color-danger)" />
+            <KpiMini label="Activos" value={clientes.activos} />
+            <KpiMini label="Inactivos" value={clientes.inactivos} color="var(--color-text-muted)" />
+            <KpiMini label="En mora" value={cartera.enMora} color="var(--color-danger)" sub={cartera.pctMora > 0 ? `${cartera.pctMora}%` : undefined} />
+            <KpiMini label="Nuevos este mes" value={tendenciaMensual[tendenciaMensual.length - 1]?.clientesNuevos || 0} badge={cambios.clientesNuevos} />
           </div>
         </Card>
       </div>
 
-      {/* Charts — 2 cols on desktop */}
+      {/* Charts — 2 cols desktop */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
         <Card>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Recaudado por mes</p>
-          <BarChart data={tendenciaMensual} dataKey="recaudado" formatValue={v => fmt(v)} color="var(--color-accent)" />
+          <SectionLabel>Recaudado por mes</SectionLabel>
+          <div className="mt-3">
+            <BarChart data={tendenciaMensual} dataKey="recaudado" formatValue={v => fmt(v)} color="var(--color-accent)" />
+          </div>
         </Card>
 
         <Card>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Capital prestado por mes</p>
-          <BarChart data={tendenciaMensual} dataKey="capitalPrestado" formatValue={v => fmt(v)} color="var(--color-info)" />
+          <SectionLabel>Capital prestado por mes</SectionLabel>
+          <div className="mt-3">
+            <BarChart data={tendenciaMensual} dataKey="capitalPrestado" formatValue={v => fmt(v)} color="var(--color-info)" />
+          </div>
         </Card>
 
         <Card>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Prestamos nuevos por mes</p>
-          <BarChart data={tendenciaMensual} dataKey="prestamosNuevos" formatValue={v => `${v}`} color="var(--color-success)" />
+          <SectionLabel>Prestamos nuevos por mes</SectionLabel>
+          <div className="mt-3">
+            <BarChart data={tendenciaMensual} dataKey="prestamosNuevos" formatValue={v => `${v}`} color="var(--color-success)" />
+          </div>
         </Card>
 
         <Card>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Clientes nuevos por mes</p>
-          <BarChart data={tendenciaMensual} dataKey="clientesNuevos" formatValue={v => `${v}`} color="var(--color-teal)" />
+          <SectionLabel>Gastos por mes</SectionLabel>
+          <div className="mt-3">
+            <BarChart data={tendenciaMensual} dataKey="gastos" formatValue={v => fmt(v)} color="var(--color-danger)" />
+          </div>
         </Card>
       </div>
 
-      {/* Ranking cobradores — full width */}
+      {/* Ranking cobradores */}
       {rankingItems.length > 0 && (
-        <Card>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Ranking cobradores (este mes)</p>
-          <HorizontalRanking items={rankingItems} fmtValue={fmt} />
+        <Card href="/cobradores">
+          <div className="flex items-start justify-between mb-3">
+            <SectionLabel>Ranking cobradores (este mes)</SectionLabel>
+            <ArrowIcon />
+          </div>
+          <div className="space-y-3">
+            {rankingItems.map((item, i) => {
+              const max = rankingItems[0]?.value || 1
+              const pct = (item.value / max) * 100
+              return (
+                <div key={item.id} className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold ${i < 3 ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]' : 'bg-[var(--color-bg-hover)] text-[var(--color-text-muted)]'}`}>
+                        {i + 1}
+                      </span>
+                      <span className="text-[13px] font-medium text-[var(--color-text-primary)]">{item.nombre}</span>
+                      {item.rol === 'owner' && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--color-bg-hover)] text-[var(--color-text-muted)] font-medium">admin</span>
+                      )}
+                    </div>
+                    <span className="text-[13px] font-mono font-bold text-[var(--color-text-primary)]">{fmt(item.value)}</span>
+                  </div>
+                  <div className="flex items-center gap-2 ml-7">
+                    <div className="flex-1 h-2 rounded-full bg-[var(--color-bg-hover)] overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${Math.max(pct, 3)}%`, background: i === 0 ? 'var(--color-accent)' : 'var(--color-info)', opacity: 1 - i * 0.15 }}
+                      />
+                    </div>
+                    <span className="text-[10px] text-[var(--color-text-muted)] font-mono w-20 text-right">
+                      {item.pagos} pagos
+                    </span>
+                    {item.prestamosAsignados > 0 && (
+                      <span className="text-[10px] text-[var(--color-text-muted)] font-mono w-16 text-right">
+                        {item.prestamosAsignados} prest.
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </Card>
       )}
     </div>
