@@ -3,13 +3,26 @@
 import { getToken } from 'next-auth/jwt'
 import { NextResponse } from 'next/server'
 
+const PORTAL_COOKIE = 'portal-token'
+
 export async function middleware(request) {
+  const { pathname } = request.nextUrl
+
+  // ─── /portal/* → cookie-presence check (full verify in API routes) ──
+  if (pathname.startsWith('/portal')) {
+    const hasToken = !!request.cookies.get(PORTAL_COOKIE)?.value
+    if (pathname === '/portal/login') {
+      if (hasToken) return NextResponse.redirect(new URL('/portal', request.url))
+      return NextResponse.next()
+    }
+    if (!hasToken) return NextResponse.redirect(new URL('/portal/login', request.url))
+    return NextResponse.next()
+  }
+
   const token = await getToken({
     req:    request,
     secret: process.env.NEXTAUTH_SECRET,
   })
-
-  const { pathname } = request.nextUrl
 
   // ─── Bloqueo por suscripcion vencida a nivel API ──────────────────
   // La validacion del layout solo cubre PAGINAS; las API routes no pasan por
@@ -21,7 +34,7 @@ export async function middleware(request) {
   if (pathname.startsWith('/api/')) {
     const EXENTAS = ['/api/auth/', '/api/pagos/', '/api/plan/', '/api/webhook/',
       '/api/cron/', '/api/admin/', '/api/health', '/api/ping', '/api/analytics/',
-      '/api/unsubscribe', '/api/logo', '/api/telegram/', '/api/uploads/']
+      '/api/unsubscribe', '/api/logo', '/api/telegram/', '/api/uploads/', '/api/portal/']
     const exenta = EXENTAS.some((p) => pathname.startsWith(p))
     if (!exenta && token && token.rol !== 'superadmin' && token.suscripcionVencimiento) {
       if (new Date(token.suscripcionVencimiento) < new Date()) {
@@ -122,6 +135,7 @@ export const config = {
     '/tutoriales/:path*',
     '/soporte/:path*',
     '/suscripcion-vencida',
+    '/portal/:path*',
     '/login',
     '/registro',
   ],

@@ -284,6 +284,9 @@ model Cliente {
   diasSinCobro        String?
   montoMaximoPrestamo Float?
   creadoPorId         String?
+  pinPortal           String?
+  portalActivo        Boolean       @default(false)
+  ultimoAccesoPortal  DateTime?
   createdAt           DateTime      @default(now())
 
   organization       Organization       @relation(fields: [organizationId], references: [id])

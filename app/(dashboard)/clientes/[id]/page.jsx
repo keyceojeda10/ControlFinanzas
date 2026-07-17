@@ -605,6 +605,11 @@ export default function ClienteDetallePage({ params }) {
       {/* Info de contacto */}
       <InfoContactoCard cliente={cliente} />
 
+      {/* Portal del cliente — solo owner */}
+      {esOwner && (
+        <PortalClienteCard clienteId={id} organizationId={cliente.organizationId} cedula={cliente.cedula} />
+      )}
+
       {/* Tope de préstamo — owner edita, cobrador solo ve */}
       {(esOwner || cliente.montoMaximoPrestamo > 0) && (
         <TopePrestamoCard
@@ -924,6 +929,179 @@ export default function ClienteDetallePage({ params }) {
         onCancel={() => setConfirmDeletePrestamo(null)}
       />
     </div>
+  )
+}
+
+// ─── Portal del cliente ──────────────────────────────────────────
+function PortalClienteCard({ clienteId, organizationId, cedula }) {
+  const [portal, setPortal] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [pinInput, setPinInput] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [msg, setMsg] = useState('')
+  const [showSetPin, setShowSetPin] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    fetch(`/api/clientes/${clienteId}/portal`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setPortal(d) })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [clienteId])
+
+  const guardarPin = async () => {
+    if (pinInput.length < 4) { setMsg('Mínimo 4 dígitos'); return }
+    setSaving(true); setMsg('')
+    try {
+      const res = await fetch(`/api/clientes/${clienteId}/portal`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: pinInput }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setMsg(data.error); return }
+      setPortal(data)
+      setPinInput('')
+      setShowSetPin(false)
+      setMsg('PIN guardado')
+      setTimeout(() => setMsg(''), 2000)
+    } catch { setMsg('Error de conexión') }
+    finally { setSaving(false) }
+  }
+
+  const togglePortal = async () => {
+    setSaving(true); setMsg('')
+    try {
+      const res = await fetch(`/api/clientes/${clienteId}/portal`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(portal?.portalActivo ? { portalActivo: false } : { portalActivo: true }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setMsg(data.error); return }
+      setPortal(data)
+    } catch { setMsg('Error') }
+    finally { setSaving(false) }
+  }
+
+  const copiarLink = () => {
+    const url = `${window.location.origin}/portal/login?org=${organizationId}`
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  if (loading) return null
+
+  return (
+    <Card className="overflow-hidden">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em]">
+          Portal del cliente
+        </h3>
+        {portal?.tienePin && (
+          <button
+            onClick={togglePortal}
+            disabled={saving}
+            className={`relative w-10 h-[22px] rounded-full transition-colors ${portal.portalActivo ? 'bg-[var(--color-success)]' : 'bg-[var(--color-bg-hover)]'}`}
+          >
+            <span className={`absolute top-[3px] w-4 h-4 rounded-full bg-white transition-transform ${portal.portalActivo ? 'left-[22px]' : 'left-[3px]'}`} />
+          </button>
+        )}
+      </div>
+
+      {!portal?.tienePin ? (
+        <>
+          <p className="text-[12px] text-[var(--color-text-muted)] mb-3">
+            Permite que {cedula} vea sus préstamos y pagos desde su celular. Crea un PIN de acceso.
+          </p>
+          {!showSetPin ? (
+            <button
+              onClick={() => setShowSetPin(true)}
+              className="w-full h-9 rounded-[10px] bg-[var(--color-accent)] text-black text-[12px] font-bold hover:opacity-90 transition-opacity"
+            >
+              Activar portal
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="PIN (4-6 dígitos)"
+                value={pinInput}
+                onChange={e => setPinInput(e.target.value.replace(/\D/g, ''))}
+                className="flex-1 h-9 px-3 rounded-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-primary)] text-[13px] font-mono tracking-widest text-center focus:outline-none focus:border-[var(--color-accent)]"
+              />
+              <button
+                onClick={guardarPin}
+                disabled={saving || pinInput.length < 4}
+                className="h-9 px-4 rounded-[10px] bg-[var(--color-accent)] text-black text-[12px] font-bold disabled:opacity-50"
+              >
+                {saving ? '...' : 'Guardar'}
+              </button>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="space-y-2.5">
+          <div className="flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${portal.portalActivo ? 'bg-[var(--color-success)]' : 'bg-[var(--color-text-muted)]'}`} />
+            <span className="text-[12px] text-[var(--color-text-secondary)]">
+              {portal.portalActivo ? 'Acceso activo' : 'Acceso desactivado'}
+            </span>
+          </div>
+          {portal.ultimoAcceso && (
+            <p className="text-[10px] text-[var(--color-text-muted)]">
+              Último acceso: {new Date(portal.ultimoAcceso).toLocaleDateString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+            </p>
+          )}
+          <div className="flex gap-2">
+            <button
+              onClick={copiarLink}
+              className="flex-1 h-8 rounded-[10px] border border-[var(--color-border)] text-[var(--color-text-secondary)] text-[11px] font-semibold hover:border-[var(--color-border-hover)] transition-colors flex items-center justify-center gap-1.5"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+              </svg>
+              {copied ? 'Copiado' : 'Copiar link'}
+            </button>
+            <button
+              onClick={() => { setShowSetPin(true); setPinInput('') }}
+              className="h-8 px-3 rounded-[10px] border border-[var(--color-border)] text-[var(--color-text-muted)] text-[11px] font-semibold hover:border-[var(--color-border-hover)] transition-colors"
+            >
+              Cambiar PIN
+            </button>
+          </div>
+          {showSetPin && (
+            <div className="flex gap-2 pt-1">
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="Nuevo PIN"
+                value={pinInput}
+                onChange={e => setPinInput(e.target.value.replace(/\D/g, ''))}
+                className="flex-1 h-9 px-3 rounded-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-primary)] text-[13px] font-mono tracking-widest text-center focus:outline-none focus:border-[var(--color-accent)]"
+              />
+              <button
+                onClick={guardarPin}
+                disabled={saving || pinInput.length < 4}
+                className="h-9 px-4 rounded-[10px] bg-[var(--color-accent)] text-black text-[12px] font-bold disabled:opacity-50"
+              >
+                {saving ? '...' : 'Guardar'}
+              </button>
+              <button onClick={() => { setShowSetPin(false); setPinInput('') }} className="h-9 px-2 text-[var(--color-text-muted)] text-[11px]">
+                Cancelar
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+      {msg && <p className={`text-[11px] mt-2 ${msg.includes('Error') || msg.includes('Mínimo') ? 'text-[var(--color-danger)]' : 'text-[var(--color-success)]'}`}>{msg}</p>}
+    </Card>
   )
 }
 
