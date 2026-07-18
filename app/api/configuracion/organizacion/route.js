@@ -30,9 +30,11 @@ export async function GET() {
     ? Math.ceil((new Date(sub.fechaVencimiento) - new Date()) / (1000 * 60 * 60 * 24))
     : null
 
-  // Historial de suscripciones
   const historial = await prisma.suscripcion.findMany({
-    where: { organizationId: orgId },
+    where: {
+      organizationId: orgId,
+      OR: [{ mpStatus: null }, { mpStatus: { not: 'pending' } }],
+    },
     orderBy: { createdAt: 'desc' },
     select: { id: true, plan: true, estado: true, fechaInicio: true, fechaVencimiento: true, montoCOP: true, createdAt: true },
   })
