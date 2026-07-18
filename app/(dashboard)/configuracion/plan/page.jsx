@@ -271,7 +271,7 @@ export default function PlanPage() {
               Pago procesado
             </p>
             <p className="text-[12px] mt-0.5 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-              Tu pago se esta verificando. El plan se activara automaticamente en unos segundos. Si no se refleja, recarga la pagina.
+              Tu pago se está verificando. El plan se activará automáticamente en unos segundos. Si no se refleja, recarga la página.
             </p>
           </div>
         </div>
