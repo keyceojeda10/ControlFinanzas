@@ -25,6 +25,7 @@ function CobradoresPageInner() {
   const [loading,    setLoading]    = useState(true)
   const [error,      setError]      = useState('')
   const [toggling,   setToggling]   = useState(null)
+  const [usuariosPermitidos, setUsuariosPermitidos] = useState(null)
 
   // Modo trabajo / ordenar (drag-and-drop de cobradores) — solo owner
   const [modoOrdenar, setModoOrdenar] = useState(false)
@@ -182,6 +183,10 @@ function CobradoresPageInner() {
         else setError('No se pudieron cargar los cobradores.')
       }))
       .finally(() => setLoading(false))
+    fetch('/api/plan/uso')
+      .then(r => r.json())
+      .then(d => { if (d.usuariosPermitidos) setUsuariosPermitidos(new Set(d.usuariosPermitidos)) })
+      .catch(() => {})
   }, [authLoading, esOwner])
 
   // Planes de entrada — bloquear
@@ -308,6 +313,25 @@ function CobradoresPageInner() {
         </div>
       )}
 
+      {!loading && usuariosPermitidos && cobradores.some(c => !usuariosPermitidos.has(c.id)) && (
+        <div
+          className="rounded-[12px] px-4 py-3 mb-4 text-sm"
+          style={{
+            background: 'color-mix(in srgb, var(--color-warning) 8%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--color-warning) 20%, transparent)',
+            color: 'var(--color-text-primary)',
+          }}
+        >
+          <p className="font-semibold mb-1" style={{ color: 'var(--color-warning)' }}>
+            Tu plan permite {usuariosPermitidos.size - 1} cobrador{usuariosPermitidos.size - 1 !== 1 ? 'es' : ''}
+          </p>
+          <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+            Los cobradores marcados como &quot;Suspendido&quot; no pueden iniciar sesion.
+            Puedes reordenar tus cobradores para elegir cuales mantener activos.
+          </p>
+        </div>
+      )}
+
       {!loading && cobradores.length > 0 && !modoOrdenar && (
         <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
           {cobradores.map((c) => (
@@ -316,6 +340,7 @@ function CobradoresPageInner() {
               cobrador={c}
               onToggleActivo={toggleCobrador}
               toggling={toggling === c.id}
+              suspendido={usuariosPermitidos && !usuariosPermitidos.has(c.id)}
             />
           ))}
         </div>

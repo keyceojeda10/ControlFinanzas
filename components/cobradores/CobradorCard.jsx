@@ -42,7 +42,7 @@ function tiempoUltimaActividad(ultimoPago) {
   return null
 }
 
-export default function CobradorCard({ cobrador, onToggleActivo, toggling }) {
+export default function CobradorCard({ cobrador, onToggleActivo, toggling, suspendido }) {
   const progreso = cobrador.esperadoHoy > 0
     ? Math.min(100, Math.round((cobrador.recaudadoHoy / cobrador.esperadoHoy) * 100))
     : 0
@@ -79,7 +79,21 @@ export default function CobradorCard({ cobrador, onToggleActivo, toggling }) {
               <p className="text-sm font-bold truncate leading-tight" style={{ color: 'var(--color-text-primary)' }}>
                 {cobrador.nombre}
               </p>
-              {/* Toggle activo/inactivo (no navega) */}
+              {suspendido ? (
+                <span
+                  className="shrink-0 inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                  style={{
+                    background: 'color-mix(in srgb, var(--color-warning) 15%, transparent)',
+                    color: 'var(--color-warning)',
+                    border: '1px solid color-mix(in srgb, var(--color-warning) 25%, transparent)',
+                  }}
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                  </svg>
+                  Suspendido
+                </span>
+              ) : (
               <button
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleActivo?.(cobrador) }}
                 disabled={toggling}
@@ -94,6 +108,7 @@ export default function CobradorCard({ cobrador, onToggleActivo, toggling }) {
                 <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
                 {label}
               </button>
+              )}
             </div>
             <p className="text-[10px] mt-0.5 truncate" style={{ color: 'var(--color-text-muted)' }}>
               {cobrador.email}
