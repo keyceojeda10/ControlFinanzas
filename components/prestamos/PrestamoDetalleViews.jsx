@@ -515,39 +515,78 @@ export function ChipsAccionesSecundarias({ acciones }) {
 export function GrillaDatosSecciones({ secciones }) {
   return (
     <div className="space-y-3">
-      {secciones.map((sec) => (
-        <div
-          key={sec.titulo}
-          className="rounded-[20px] p-3"
-          style={{
-            background: `linear-gradient(135deg, color-mix(in srgb, ${sec.color} 12%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
-            border: `1px solid color-mix(in srgb, ${sec.color} 24%, var(--color-border))`,
-          }}
-        >
-          <div className="flex items-center gap-1.5 mb-2">
+      {secciones.map((sec) => {
+        const heroItems = sec.items.filter(it => it.hero)
+        const regularItems = sec.items.filter(it => !it.hero)
+
+        return (
+          <div
+            key={sec.titulo}
+            className="rounded-[16px] overflow-hidden"
+            style={{ border: '1px solid var(--color-border)', background: 'var(--color-bg-card)' }}
+          >
             <div
-              className="w-5 h-5 rounded-[5px] flex items-center justify-center"
-              style={{ background: `color-mix(in srgb, ${sec.color} 22%, transparent)`, color: sec.color }}
+              className="flex items-center gap-1.5 px-4 py-2"
+              style={{
+                background: `color-mix(in srgb, ${sec.color} 6%, var(--color-bg-card))`,
+                borderBottom: '1px solid var(--color-border)',
+              }}
             >
-              {sec.icon}
-            </div>
-            <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: sec.color }}>
-              {sec.titulo}
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            {sec.items.map((it) => (
-              <div key={it.label} className="rounded-[8px] px-2.5 py-1.5" style={{ background: `color-mix(in srgb, ${sec.color} 5%, var(--color-bg-base))` }}>
-                <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{it.label}</p>
-                <p className="text-[13px] font-semibold mt-0.5 font-mono-display" style={{ color: it.color || 'var(--color-text-primary)' }}>
-                  {it.value}
-                </p>
-                {it.sub && <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{it.sub}</p>}
+              <div
+                className="w-5 h-5 rounded-[5px] flex items-center justify-center"
+                style={{ background: `color-mix(in srgb, ${sec.color} 20%, transparent)`, color: sec.color }}
+              >
+                {sec.icon}
               </div>
-            ))}
+              <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: sec.color }}>
+                {sec.titulo}
+              </p>
+            </div>
+
+            {heroItems.length > 0 && (
+              <div className={`grid ${heroItems.length > 1 ? 'grid-cols-2' : ''}`}>
+                {heroItems.map((it, i) => (
+                  <div
+                    key={it.label}
+                    className="px-4 py-3"
+                    style={{
+                      ...(i > 0 ? { borderLeft: '1px solid var(--color-border)' } : {}),
+                      ...(regularItems.length > 0 ? { borderBottom: '1px solid var(--color-border)' } : {}),
+                    }}
+                  >
+                    <p className="text-[10px] mb-0.5" style={{ color: 'var(--color-text-muted)' }}>{it.label}</p>
+                    <p className="text-lg font-bold font-mono-display leading-tight" style={{ color: it.color || 'var(--color-text-primary)' }}>
+                      {it.value}
+                    </p>
+                    {it.sub && <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{it.sub}</p>}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {regularItems.length > 0 && (
+              <div className="grid grid-cols-2">
+                {regularItems.map((it, i) => (
+                  <div
+                    key={it.label}
+                    className="px-3 py-2.5"
+                    style={{
+                      ...(i % 2 === 1 ? { borderLeft: '1px solid var(--color-border)' } : {}),
+                      ...(i >= 2 ? { borderTop: '1px solid var(--color-border)' } : {}),
+                    }}
+                  >
+                    <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{it.label}</p>
+                    <p className="text-[13px] font-semibold mt-0.5 font-mono-display" style={{ color: it.color || 'var(--color-text-primary)' }}>
+                      {it.value}
+                    </p>
+                    {it.sub && <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{it.sub}</p>}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

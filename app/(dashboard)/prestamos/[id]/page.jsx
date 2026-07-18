@@ -912,8 +912,8 @@ export default function PrestamoDetallePage({ params }) {
             ),
             items: [
               ...(nombreProducto ? [{ label: 'Producto', value: nombreProducto }] : []),
-              { label: nombreProducto ? 'Valor artículo' : 'Prestado', value: formatMoney(montoPrestado) },
-              { label: 'Total a pagar', value: formatMoney(totalAPagar) },
+              { label: nombreProducto ? 'Valor artículo' : 'Prestado', value: formatMoney(montoPrestado), hero: true },
+              { label: 'Total a pagar', value: formatMoney(totalAPagar), hero: true },
               ...(nombreProducto ? [] : [{ label: 'Tasa', value: `${tasaInteres}%` }]),
               { label: 'Plazo', value: `${diasPlazo} días` },
               { label: 'Tipo de interés', value: (({
@@ -938,11 +938,11 @@ export default function PrestamoDetallePage({ params }) {
               </svg>
             ),
             items: [
-              { label: `Cuota ${frecuenciaLabel}`, value: formatMoney(cuotaDiaria),
+              { label: `Cuota ${frecuenciaLabel}`, value: formatMoney(cuotaDiaria), hero: true,
                 ...(modoInteres === 'solo_interes' && cuotasAmortizacion.length > 0
                   ? { sub: `Última cuota: ${formatMoney(cuotasAmortizacion[cuotasAmortizacion.length - 1]?.cuotaTotal || 0)}` }
                   : {}) },
-              { label: 'Cuotas pendientes', value: `${cuotasPendientes}` },
+              { label: 'Cuotas pendientes', value: `${cuotasPendientes}`, hero: true },
               ...(cobroInfo ? [{ label: cobroInfo.label, value: cobroInfo.value, color: cobroInfo.color }] : []),
               {
                 label: diasMora > 0 ? 'Días en mora' : 'Estado',
