@@ -439,7 +439,9 @@ export default function PrestamoDetallePage({ params }) {
   })()
 
   // Cuotas pagadas
-  const cuotasPagadas = cuotaDiaria > 0 ? Math.floor(totalPagadoReal / cuotaDiaria) : 0
+  const cuotasPagadas = cuotasAmortizacion.length > 0
+    ? cuotasAmortizacion.length - cuotasPendientes
+    : (cuotaDiaria > 0 ? Math.floor(totalPagadoReal / cuotaDiaria) : 0)
 
   // Campos recibo: prioridad cliente > org
   const camposReciboActuales = camposReciboCliente ?? (Array.isArray(cliente?.camposRecibo) ? cliente.camposRecibo : null)

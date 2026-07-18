@@ -147,10 +147,13 @@ function generarHTMLHistorialCompleto(cliente, prestamo, orgNombre, camposRecibo
   const totalAPagar = Number(prestamo?.totalAPagar || 0)
   const saldoPendiente = Math.max(0, Number(prestamo?.saldoPendiente || (totalAPagar - totalPagadoReal)))
   const cuotaDiaria = Number(prestamo?.cuotaDiaria || 0)
-  const cuotasPagadas = cuotaDiaria > 0 ? Math.floor(totalPagadoReal / cuotaDiaria) : 0
   const cuotasPendientes = Number.isFinite(prestamo?.cuotasPendientes)
     ? Math.max(0, prestamo.cuotasPendientes)
     : (cuotaDiaria > 0 ? Math.ceil(saldoPendiente / cuotaDiaria) : 0)
+  const totalCuotasRecibo = prestamo?.cuotasAmortizacion?.length || 0
+  const cuotasPagadas = totalCuotasRecibo > 0
+    ? totalCuotasRecibo - cuotasPendientes
+    : (cuotaDiaria > 0 ? Math.floor(totalPagadoReal / cuotaDiaria) : 0)
   const porcentajePagado = Number(prestamo?.porcentajePagado || (totalAPagar > 0 ? Math.round((totalPagadoReal / totalAPagar) * 100) : 0))
   const diasMora = Number(prestamo?.diasMora || 0)
 

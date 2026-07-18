@@ -479,10 +479,10 @@ export default function RegistrarPago({
               }}
             >
               {(() => {
-                const cuotasPagadas = prestamoWA.pagos
-                  ? prestamoWA.pagos.filter(p => !['recargo', 'descuento'].includes(p.tipo)).length
-                  : null
                 const totalCuotas = prestamoWA.cuotasAmortizacion?.length || null
+                const cuotasPagadas = totalCuotas != null && prestamoWA.cuotasPendientes != null
+                  ? totalCuotas - prestamoWA.cuotasPendientes
+                  : null
                 return cuotasPagadas != null && totalCuotas ? (
                   <div className="flex justify-between">
                     <span className="text-[var(--color-text-muted)]">Cuota</span>
