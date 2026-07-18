@@ -522,15 +522,12 @@ export function GrillaDatosSecciones({ secciones }) {
         return (
           <div
             key={sec.titulo}
-            className="rounded-[16px] overflow-hidden"
-            style={{ border: '1px solid var(--color-border)', background: 'var(--color-bg-card)' }}
+            className="rounded-[16px] overflow-hidden flex flex-col"
+            style={{ border: '1px solid var(--color-border)', gap: '1px', background: 'var(--color-border)' }}
           >
             <div
               className="flex items-center gap-1.5 px-4 py-2"
-              style={{
-                background: `color-mix(in srgb, ${sec.color} 6%, var(--color-bg-card))`,
-                borderBottom: '1px solid var(--color-border)',
-              }}
+              style={{ background: `color-mix(in srgb, ${sec.color} 6%, var(--color-bg-card))` }}
             >
               <div
                 className="w-5 h-5 rounded-[5px] flex items-center justify-center"
@@ -544,16 +541,12 @@ export function GrillaDatosSecciones({ secciones }) {
             </div>
 
             {heroItems.length > 0 && (
-              <div className={`grid ${heroItems.length > 1 ? 'grid-cols-2' : ''}`}>
-                {heroItems.map((it, i) => (
-                  <div
-                    key={it.label}
-                    className="px-4 py-3"
-                    style={{
-                      ...(i > 0 ? { borderLeft: '1px solid var(--color-border)' } : {}),
-                      ...(regularItems.length > 0 ? { borderBottom: '1px solid var(--color-border)' } : {}),
-                    }}
-                  >
+              <div
+                className={`grid ${heroItems.length > 1 ? 'grid-cols-2' : ''}`}
+                style={{ gap: '1px', background: 'var(--color-border)' }}
+              >
+                {heroItems.map((it) => (
+                  <div key={it.label} className="px-4 py-3" style={{ background: 'var(--color-bg-card)' }}>
                     <p className="text-[10px] mb-0.5" style={{ color: 'var(--color-text-muted)' }}>{it.label}</p>
                     <p className="text-lg font-bold font-mono-display leading-tight" style={{ color: it.color || 'var(--color-text-primary)' }}>
                       {it.value}
@@ -565,16 +558,12 @@ export function GrillaDatosSecciones({ secciones }) {
             )}
 
             {regularItems.length > 0 && (
-              <div className="grid grid-cols-2">
-                {regularItems.map((it, i) => (
-                  <div
-                    key={it.label}
-                    className="px-3 py-2.5"
-                    style={{
-                      ...(i % 2 === 1 ? { borderLeft: '1px solid var(--color-border)' } : {}),
-                      ...(i >= 2 ? { borderTop: '1px solid var(--color-border)' } : {}),
-                    }}
-                  >
+              <div
+                className="grid grid-cols-2"
+                style={{ gap: '1px', background: 'var(--color-border)' }}
+              >
+                {regularItems.map((it) => (
+                  <div key={it.label} className="px-3 py-2.5" style={{ background: 'var(--color-bg-card)' }}>
                     <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{it.label}</p>
                     <p className="text-[13px] font-semibold mt-0.5 font-mono-display" style={{ color: it.color || 'var(--color-text-primary)' }}>
                       {it.value}
@@ -582,6 +571,9 @@ export function GrillaDatosSecciones({ secciones }) {
                     {it.sub && <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{it.sub}</p>}
                   </div>
                 ))}
+                {regularItems.length % 2 === 1 && (
+                  <div style={{ background: 'var(--color-bg-card)' }} />
+                )}
               </div>
             )}
           </div>
