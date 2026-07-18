@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useSession } from 'next-auth/react'
 import { useCountry } from '@/hooks/useCountry'
 import { PLANES_CONFIG } from '@/lib/planes'
 
@@ -8,6 +9,7 @@ const PLANES_EQUIPO = ['growth', 'standard', 'professional']
 
 export default function WizardPerfil({ onSelect, plan = 'basic' }) {
   const { formatMoney } = useCountry()
+  const { update: refreshSession } = useSession()
   const config = PLANES_CONFIG[plan]
   const soportaEquipo = config ? config.maxUsuarios > 1 : false
   const [showUpgrade, setShowUpgrade] = useState(false)
@@ -36,6 +38,7 @@ export default function WizardPerfil({ onSelect, plan = 'basic' }) {
         setError(data.error ?? 'Error al cambiar de plan')
         return
       }
+      await refreshSession()
       onSelect('equipo', nuevoPlan)
     } catch {
       setError('Error de conexión. Intenta de nuevo.')

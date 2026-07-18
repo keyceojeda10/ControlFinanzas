@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useSession } from 'next-auth/react'
 import { useCountry } from '@/hooks/useCountry'
 import { PLANES_CONFIG } from '@/lib/planes'
 
@@ -10,6 +11,7 @@ const PLANES_EQUIPO = ['growth', 'standard', 'professional']
 export default function WizardWelcome({ nombre, plan = 'starter', onSelect, onMinimize }) {
   const firstName = nombre ? nombre.split(' ')[0] : null
   const { formatMoney } = useCountry()
+  const { update: refreshSession } = useSession()
   const [showPlanPicker, setShowPlanPicker] = useState(null) // 'solo' | 'equipo' | null
   const [upgrading, setUpgrading] = useState(false)
   const [error, setError] = useState('')
@@ -32,6 +34,7 @@ export default function WizardWelcome({ nombre, plan = 'starter', onSelect, onMi
         setError(data.error ?? 'Error al cambiar de plan')
         return
       }
+      await refreshSession()
       onSelect(tipo, nuevoPlan)
     } catch {
       setError('Error de conexion. Intenta de nuevo.')

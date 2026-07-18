@@ -156,7 +156,15 @@ export async function POST(request) {
     return Response.json({ error: 'Solo el administrador puede crear cobradores' }, { status: 403 })
   }
 
-  const { organizationId, plan } = session.user
+  const { organizationId } = session.user
+
+  // Leer plan desde DB (el JWT puede estar desactualizado si el plan
+  // se cambio durante onboarding y la sesion aun no se refresco).
+  const org = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { plan: true, cobradoresExtra: true },
+  })
+  const plan = org?.plan ?? session.user.plan
 
   // Planes de entrada no pueden tener cobradores
   const nombrePlan = PLAN_NAMES[plan] || plan
@@ -168,10 +176,6 @@ export async function POST(request) {
   }
 
   // Verificar límite de usuarios (base del plan + cobradores extra comprados)
-  const org = await prisma.organization.findUnique({
-    where: { id: organizationId },
-    select: { cobradoresExtra: true },
-  })
   const limiteBase = LIMITES_USUARIOS[plan] ?? 1
   const limite = limiteBase + (org?.cobradoresExtra ?? 0)
   const totalUsuarios = await prisma.user.count({ where: { organizationId } })
