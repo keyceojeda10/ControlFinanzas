@@ -366,7 +366,7 @@ export default function PrestamoDetallePage({ params }) {
   // ─── Loading ────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="max-w-xl mx-auto space-y-4">
+      <div className="max-w-2xl mx-auto space-y-4">
         <SkeletonCard />
         <SkeletonCard />
         <SkeletonCard />
@@ -377,7 +377,7 @@ export default function PrestamoDetallePage({ params }) {
   // ─── Error ──────────────────────────────────────────────────────
   if (error || !prestamo) {
     return (
-      <div className="max-w-xl mx-auto">
+      <div className="max-w-2xl mx-auto">
         <div className="bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] rounded-[20px] cf-card-shadow p-6 text-center">
           <p className="font-semibold mb-2">Préstamo no encontrado</p>
           <button onClick={() => router.back()} className="text-sm underline">Volver</button>
@@ -542,7 +542,7 @@ export default function PrestamoDetallePage({ params }) {
     : null
 
   return (
-    <div className="max-w-xl lg:max-w-4xl mx-auto space-y-4 pb-4">
+    <div className="max-w-2xl lg:max-w-4xl mx-auto space-y-4 pb-4">
       {/* Back */}
       <button
         onClick={() => router.back()}
@@ -1278,7 +1278,7 @@ export default function PrestamoDetallePage({ params }) {
                 <div className="space-y-2">
                   <p className="text-[11px] text-[var(--color-text-secondary)]">El préstamo ya tiene cobros registrados ({formatMoney(totalPagadoReal)}). Elige cómo reversar en caja:</p>
 
-                  <label className="flex items-start gap-2.5 rounded-[12px] border border-[var(--color-border)] bg-[#131313] px-3 py-2 cursor-pointer">
+                  <label className="flex items-start gap-2.5 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-hover)] px-3 py-2 cursor-pointer">
                     <input
                       type="radio"
                       name="modo-reversion-capital"
@@ -1293,7 +1293,7 @@ export default function PrestamoDetallePage({ params }) {
                     </div>
                   </label>
 
-                  <label className="flex items-start gap-2.5 rounded-[12px] border border-[var(--color-border)] bg-[#131313] px-3 py-2 cursor-pointer">
+                  <label className="flex items-start gap-2.5 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-hover)] px-3 py-2 cursor-pointer">
                     <input
                       type="radio"
                       name="modo-reversion-capital"
@@ -1565,8 +1565,8 @@ export default function PrestamoDetallePage({ params }) {
           </label>
           {clavoError && <p className="text-sm text-[var(--color-danger)]">{clavoError}</p>}
           <div className="flex gap-3">
-            <button onClick={() => setModalClavo(false)} className="flex-1 h-11 rounded-[12px] text-sm font-medium text-[var(--color-text-muted)] bg-[rgba(255,255,255,0.05)]">Cancelar</button>
-            <button onClick={confirmarClavo} disabled={clavoEnviando} className="flex-1 h-11 rounded-[12px] text-sm font-bold text-white bg-[var(--color-danger)] disabled:opacity-40">
+            <button onClick={() => setModalClavo(false)} className="flex-1 h-11 rounded-[12px] text-sm font-medium text-[var(--color-text-muted)] bg-[var(--color-bg-hover)]">Cancelar</button>
+            <button onClick={confirmarClavo} disabled={clavoEnviando} className="flex-1 h-11 rounded-[12px] text-sm font-bold text-[var(--color-danger-text,#fff)] bg-[var(--color-danger)] disabled:opacity-40">
               {clavoEnviando ? 'Moviendo...' : 'Mover a perdidos'}
             </button>
           </div>
@@ -1609,7 +1609,7 @@ export default function PrestamoDetallePage({ params }) {
           {dscDias.length > 0 && (
             <button
               onClick={() => setDscDias([])}
-              className="text-xs text-[#a0a0a0] hover:text-white transition-colors"
+              className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
             >
               Limpiar (heredar de cliente/ruta/org)
             </button>
@@ -1706,7 +1706,7 @@ export default function PrestamoDetallePage({ params }) {
                       className={`rounded-[12px] px-3 py-2.5 text-left border transition-all ${activo ? 'border-[var(--color-accent)] bg-[rgba(245,197,24,0.1)]' : 'border-[var(--color-border)] bg-[var(--color-bg-card)]'}`}
                     >
                       <p className="text-[11px] text-[var(--color-text-muted)]">{m.label}</p>
-                      <p className="text-base font-bold text-white font-mono-display">${(d?.restanteHoy ?? 0).toLocaleString('es-CO')}</p>
+                      <p className="text-base font-bold text-[var(--color-text-primary)] font-mono-display">${(d?.restanteHoy ?? 0).toLocaleString('es-CO')}</p>
                       <p className="text-[10px] text-[var(--color-text-muted)]">{(d?.mesesTranscurridos ?? 0)} mes(es) · perdona ${ (d?.interesPerdonado ?? 0).toLocaleString('es-CO')}</p>
                     </button>
                   )
@@ -1714,11 +1714,11 @@ export default function PrestamoDetallePage({ params }) {
               </div>
 
               {/* Desglose */}
-              <div className="rounded-[12px] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-[13px] space-y-1">
-                <div className="flex justify-between"><span className="text-[var(--color-text-muted)]">Capital{liqData.capitalRestante != null ? ' restante' : ''}</span><span className="text-white font-mono-display">${(liqData.capitalRestante ?? liqData.capital ?? 0).toLocaleString('es-CO')}</span></div>
-                <div className="flex justify-between"><span className="text-[var(--color-text-muted)]">Interés devengado</span><span className="text-white font-mono-display">${(liqData[liqModalidad]?.interesDevengado ?? 0).toLocaleString('es-CO')}</span></div>
-                <div className="flex justify-between"><span className="text-[var(--color-text-muted)]">Ya pagó</span><span className="text-white font-mono-display">${(liqData.totalPagadoReal ?? 0).toLocaleString('es-CO')}</span></div>
-                <div className="flex justify-between border-t border-[var(--color-border)] pt-1 mt-1"><span className="text-[var(--color-text-muted)]">Saldo actual (pactado)</span><span className="text-white font-mono-display">${(liqData.saldoActual ?? 0).toLocaleString('es-CO')}</span></div>
+              <div className="rounded-[12px] bg-[var(--color-bg-hover)] px-3 py-2.5 text-[13px] space-y-1">
+                <div className="flex justify-between"><span className="text-[var(--color-text-muted)]">Capital{liqData.capitalRestante != null ? ' restante' : ''}</span><span className="text-[var(--color-text-primary)] font-mono-display">${(liqData.capitalRestante ?? liqData.capital ?? 0).toLocaleString('es-CO')}</span></div>
+                <div className="flex justify-between"><span className="text-[var(--color-text-muted)]">Interés devengado</span><span className="text-[var(--color-text-primary)] font-mono-display">${(liqData[liqModalidad]?.interesDevengado ?? 0).toLocaleString('es-CO')}</span></div>
+                <div className="flex justify-between"><span className="text-[var(--color-text-muted)]">Ya pagó</span><span className="text-[var(--color-text-primary)] font-mono-display">${(liqData.totalPagadoReal ?? 0).toLocaleString('es-CO')}</span></div>
+                <div className="flex justify-between border-t border-[var(--color-border)] pt-1 mt-1"><span className="text-[var(--color-text-muted)]">Saldo actual (pactado)</span><span className="text-[var(--color-text-primary)] font-mono-display">${(liqData.saldoActual ?? 0).toLocaleString('es-CO')}</span></div>
                 <div className="flex justify-between"><span className="text-[var(--color-success)]">Interés que se perdona</span><span className="text-[var(--color-success)] font-semibold font-mono-display">${(liqData[liqModalidad]?.interesPerdonado ?? 0).toLocaleString('es-CO')}</span></div>
               </div>
 
@@ -1734,7 +1734,7 @@ export default function PrestamoDetallePage({ params }) {
                     setLiqMonto(Number.isFinite(n) ? n : 0)
                   }}
                   placeholder="Escribe el monto a cobrar"
-                  className="w-full mt-1 px-3 py-2.5 rounded-[12px] bg-[rgba(255,255,255,0.05)] text-lg font-bold text-white font-mono-display placeholder:text-[var(--color-text-muted)] placeholder:font-normal placeholder:text-sm outline-none border border-[var(--color-border)] focus:border-[var(--color-accent)]"
+                  className="w-full mt-1 px-3 py-2.5 rounded-[12px] bg-[var(--color-bg-base)] text-lg font-bold text-[var(--color-text-primary)] font-mono-display placeholder:text-[var(--color-text-muted)] placeholder:font-normal placeholder:text-sm outline-none border border-[var(--color-border)] focus:border-[var(--color-accent)]"
                 />
               </div>
 
@@ -1746,7 +1746,7 @@ export default function PrestamoDetallePage({ params }) {
                   value={liqNota}
                   onChange={e => setLiqNota(e.target.value)}
                   placeholder="Ej: pago anticipado pactado con el cliente"
-                  className="w-full mt-1 px-3 py-2 rounded-[12px] bg-[rgba(255,255,255,0.05)] text-sm text-white outline-none border border-[var(--color-border)] focus:border-[var(--color-accent)]"
+                  className="w-full mt-1 px-3 py-2 rounded-[12px] bg-[var(--color-bg-base)] text-sm text-[var(--color-text-primary)] outline-none border border-[var(--color-border)] focus:border-[var(--color-accent)]"
                 />
               </div>
             </>
@@ -1755,11 +1755,11 @@ export default function PrestamoDetallePage({ params }) {
           {liqError && <p className="text-sm text-[var(--color-danger)]">{liqError}</p>}
 
           <div className="flex gap-2 pt-1">
-            <button onClick={() => setModalLiquidacion(false)} className="flex-1 h-11 rounded-[12px] text-sm font-medium text-[var(--color-text-muted)] bg-[rgba(255,255,255,0.05)]">Cancelar</button>
+            <button onClick={() => setModalLiquidacion(false)} className="flex-1 h-11 rounded-[12px] text-sm font-medium text-[var(--color-text-muted)] bg-[var(--color-bg-hover)]">Cancelar</button>
             <button
               onClick={confirmarLiquidacion}
               disabled={liqEnviando || liqCargando || !liqData}
-              className="flex-1 h-11 rounded-[12px] text-sm font-bold text-black bg-[var(--color-accent)] disabled:opacity-40"
+              className="flex-1 h-11 rounded-[12px] text-sm font-bold text-[var(--color-accent-text)] bg-[var(--color-accent)] disabled:opacity-40"
             >
               {liqEnviando ? 'Cerrando...' : 'Cerrar préstamo'}
             </button>
@@ -1843,7 +1843,7 @@ export default function PrestamoDetallePage({ params }) {
               min="0"
               value={moratorioMonto}
               onChange={(e) => setMoratorioMonto(Number(e.target.value) || 0)}
-              className="w-full h-11 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-lg font-semibold font-mono-display text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-all"
+              className="w-full h-11 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-base)] text-lg font-semibold font-mono-display text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-all"
             />
             <p className="text-[10px] text-[var(--color-text-muted)]">
               Puedes editar el monto. El sistema sugiere {formatMoney(moratorio?.montoMoratorio ?? 0)}.
@@ -1855,7 +1855,7 @@ export default function PrestamoDetallePage({ params }) {
               type="text"
               value={moratorioNota}
               onChange={(e) => setMoratorioNota(e.target.value)}
-              className="w-full h-10 px-3 rounded-[12px] border border-[#2a2a2a] bg-[#111111] text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-all"
+              className="w-full h-10 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-base)] text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-all"
             />
           </div>
           {moratorioError && (
@@ -1888,7 +1888,7 @@ export default function PrestamoDetallePage({ params }) {
                 setMoratorioEnviando(false)
               }
             }}
-            className="w-full h-11 rounded-[12px] font-semibold text-sm text-white bg-[var(--color-warning)] hover:bg-[#d97706] disabled:opacity-50 transition-all"
+            className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--color-accent-text)] bg-[var(--color-warning)] hover:opacity-90 disabled:opacity-50 transition-all"
           >
             {moratorioEnviando ? 'Aplicando...' : `Aplicar ${formatMoney(moratorioMonto)} como recargo`}
           </button>

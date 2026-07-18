@@ -1020,7 +1020,7 @@ function PortalClienteCard({ clienteId, organizationId, cedula }) {
           {!showSetPin ? (
             <button
               onClick={() => setShowSetPin(true)}
-              className="w-full h-9 rounded-[10px] bg-[var(--color-accent)] text-black text-[12px] font-bold hover:opacity-90 transition-opacity"
+              className="w-full h-9 rounded-[10px] bg-[var(--color-accent)] text-[var(--color-accent-text)] text-[12px] font-bold hover:opacity-90 transition-opacity"
             >
               Activar portal
             </button>
@@ -1038,7 +1038,7 @@ function PortalClienteCard({ clienteId, organizationId, cedula }) {
               <button
                 onClick={guardarPin}
                 disabled={saving || pinInput.length < 4}
-                className="h-9 px-4 rounded-[10px] bg-[var(--color-accent)] text-black text-[12px] font-bold disabled:opacity-50"
+                className="h-9 px-4 rounded-[10px] bg-[var(--color-accent)] text-[var(--color-accent-text)] text-[12px] font-bold disabled:opacity-50"
               >
                 {saving ? '...' : 'Guardar'}
               </button>
@@ -1089,7 +1089,7 @@ function PortalClienteCard({ clienteId, organizationId, cedula }) {
               <button
                 onClick={guardarPin}
                 disabled={saving || pinInput.length < 4}
-                className="h-9 px-4 rounded-[10px] bg-[var(--color-accent)] text-black text-[12px] font-bold disabled:opacity-50"
+                className="h-9 px-4 rounded-[10px] bg-[var(--color-accent)] text-[var(--color-accent-text)] text-[12px] font-bold disabled:opacity-50"
               >
                 {saving ? '...' : 'Guardar'}
               </button>
@@ -1311,7 +1311,7 @@ function TopePrestamoCard({ tope, onSave }) {
           <button
             onClick={handleGuardar}
             disabled={saving}
-            className="h-8 px-3 rounded-[8px] bg-[var(--color-accent)] text-[#111] text-xs font-semibold hover:bg-[var(--color-accent-hover)] transition-colors disabled:opacity-50"
+            className="h-8 px-3 rounded-[8px] bg-[var(--color-accent)] text-[var(--color-accent-text)] text-xs font-semibold hover:bg-[var(--color-accent-hover)] transition-colors disabled:opacity-50"
           >
             {saving ? '...' : 'Guardar'}
           </button>
