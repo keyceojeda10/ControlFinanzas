@@ -156,6 +156,7 @@ function NuevoPrestamo() {
   const firmaCanvasRef = useRef(null)
   const firmaDrawing = useRef(false)
   const firmaLastPt = useRef(null)
+  const lastValidCalculo = useRef(null)
 
   const setupFirmaCanvas = useCallback(() => {
     const canvas = firmaCanvasRef.current
@@ -377,12 +378,14 @@ function NuevoPrestamo() {
     }
   }, [numCuotas, modo])
 
-  // Cálculo en tiempo real
+  // Cálculo en tiempo real — usa el ultimo resultado valido como fallback
+  // para que el panel de resumen no desaparezca al editar campos (ej: borrar
+  // temporalmente el monto o plazo antes de escribir el nuevo valor).
   const calculo = useMemo(() => {
     const m = Number(monto)
     const t = Number(tasa)
     const p = Number(plazo)
-    if (!m || (tasa === '' || tasa == null) || !p || !fechaInicio) return null
+    if (!m || (tasa === '' || tasa == null) || !p || !fechaInicio) return lastValidCalculo.current
     // En mercancia el cobrador pone el PRECIO DE VENTA total; la cuota sale de
     // repartirlo en numCuotas y la ganancia = precioVenta - valor del articulo.
     // Internamente se trata como manual (cuota fija) para no tocar el resto del
@@ -397,7 +400,7 @@ function NuevoPrestamo() {
     } else if (modoInteres === 'saldo' && Number(cuotaManual) > 0) {
       cm = Number(cuotaManual)
     }
-    return calcularPrestamo({
+    const resultado = calcularPrestamo({
       montoPrestado: m,
       tasaInteres: t,
       diasPlazo: p,
@@ -410,6 +413,8 @@ function NuevoPrestamo() {
       ...(modoDiaCobro === 'mes' && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
       ...(frecuencia === 'quincenal' && modoDiaCobro === 'mes' && diaCobroMes2 !== '' && { diaCobroMes2: Number(diaCobroMes2) }),
     })
+    lastValidCalculo.current = resultado
+    return resultado
   }, [monto, tasa, plazo, fechaInicio, frecuencia, modo, modoInteres, cuotaManualActiva, cuotaManual, saldoCuotaPersonalizada, precioVenta, numCuotas, interesAdelantado, capitalExtra, modoDiaCobro, diaCobroMes, diaCobroMes2])
 
   const clientesFiltrados = clientes.filter((c) =>
@@ -1289,13 +1294,13 @@ function NuevoPrestamo() {
               {/* Resumen completo antes de confirmar — editable */}
               {calculo && (() => {
                 const DIAS_FULL_SINGULAR = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
-                const diasPlazoNum = Number(plazo)
                 const diasPorPeriodo = DIAS_POR_PERIODO[frecuencia] || 1
-                const periodos = Math.max(1, Math.round(diasPlazoNum / diasPorPeriodo))
+                const periodos = calculo.numPeriodos || Math.max(1, Math.round(Number(plazo) / diasPorPeriodo))
                 let cobrosTotales = periodos
                 if (frecuencia === 'diario' && diasSinCobroCliente.length > 0) {
                   const cobrosPorSemana = 7 - diasSinCobroCliente.length
-                  cobrosTotales = Math.max(1, Math.round((cobrosPorSemana * diasPlazoNum) / 7))
+                  const diasReales = periodos * diasPorPeriodo
+                  cobrosTotales = Math.max(1, Math.round((cobrosPorSemana * diasReales) / 7))
                 }
                 const totalConSeguro = calculo.totalAPagar + (seguro && Number(montoSeguro) > 0 ? Number(montoSeguro) : 0)
                 const ganancia = calculo.totalAPagar - Number(monto || 0)
@@ -1351,7 +1356,7 @@ function NuevoPrestamo() {
                             </select>
                           } />
 
-                        <EditableRow label="Plazo" value={`${plazoUnidades} ${unidadPlazoL}`} pencil={pencil}
+                        <EditableRow label="Plazo" value={calculo?.numPeriodos > Number(plazoUnidades) ? `${calculo.numPeriodos} ${unidadPlazoL}` : `${plazoUnidades} ${unidadPlazoL}`} pencil={pencil}
                           editor={
                             <div className="flex items-center gap-1.5">
                               <input type="number" inputMode="numeric" value={plazoUnidades} onChange={e => setPlazoUnidades(e.target.value)}
@@ -1360,6 +1365,11 @@ function NuevoPrestamo() {
                               <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{unidadPlazoL}</span>
                             </div>
                           } />
+                        {calculo?.numPeriodos > Number(plazoUnidades) && (
+                          <p className="text-[10px] px-1 -mt-1 pb-1" style={{ color: 'var(--color-warning)' }}>
+                            Plazo extendido de {plazoUnidades} a {calculo.numPeriodos} {unidadPlazoL} para cubrir el interés
+                          </p>
+                        )}
 
                         {modo === 'prestamo' && (
                           <EditableRow label="Modo" value={modoLabel} pencil={pencil}
@@ -1490,7 +1500,7 @@ function NuevoPrestamo() {
                 />
 
                 {/* Plazo — editable */}
-                <EditableRow label="Plazo" value={`${plazoUnidades} ${unidadPlazoLabel}`}
+                <EditableRow label="Plazo" value={calculo?.numPeriodos > Number(plazoUnidades) ? `${calculo.numPeriodos} ${unidadPlazoLabel}` : `${plazoUnidades} ${unidadPlazoLabel}`}
                   pencil={pencilIcon}
                   editor={
                     <div className="flex items-center gap-1.5">
@@ -1501,6 +1511,11 @@ function NuevoPrestamo() {
                     </div>
                   }
                 />
+                {calculo?.numPeriodos > Number(plazoUnidades) && (
+                  <p className="text-[10px] px-1 -mt-1 pb-1" style={{ color: 'var(--color-warning)' }}>
+                    Plazo extendido de {plazoUnidades} a {calculo.numPeriodos} {unidadPlazoLabel} para cubrir el interés
+                  </p>
+                )}
 
                 {/* Modo interés — editable (solo prestamo) */}
                 {modo === 'prestamo' && (

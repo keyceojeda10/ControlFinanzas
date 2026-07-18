@@ -406,7 +406,7 @@ export async function POST(request) {
         diaCobroMes2:   diaCobroMes2Db,
         ...(socioId && { socioId }),
         ...(Array.isArray(calc.capitalExtra) && calc.capitalExtra.length > 0 && { capitalExtra: calc.capitalExtra }),
-        diasPlazo:     Number(diasPlazo),
+        diasPlazo:     calc.numPeriodos * calc.diasPeriodo,
         fechaInicio:   new Date(`${fechaInicio}T05:00:00.000Z`),
         fechaFin,
         seguro:        !!seguro,
