@@ -5,7 +5,6 @@ import { prisma }       from '@/lib/prisma'
 import { enviarEmail, emailBienvenida, emailVerificacion } from '@/lib/email'
 import { sendConversionEvent } from '@/lib/facebook-capi'
 import { registroLimiter, getClientIp } from '@/lib/rate-limit'
-import { PLANES_VALIDOS } from '@/lib/planes'
 import { COUNTRY_CODES, getCountryConfig, validatePhone } from '@/lib/i18n'
 import { normalizarEmail } from '@/lib/normalizar-email'
 import { sendTemplate } from '@/lib/bot/whatsapp-cloud'
@@ -28,12 +27,8 @@ export async function POST(req) {
     }
 
     const body = await req.json()
-    const { nombreOrganizacion, nombre, email, telefono, password, ref, terminosAceptados, plan, country: countryInput, canal } = body
+    const { nombreOrganizacion, nombre, email, telefono, password, ref, terminosAceptados, country: countryInput, canal } = body
     const country = COUNTRY_CODES.includes(countryInput) ? countryInput : 'co'
-
-    // Validar plan de trial: todos menos el plan interno de test
-    const VALID_TRIAL_PLANS = PLANES_VALIDOS.filter((p) => p !== 'test')
-    const planFinal = VALID_TRIAL_PLANS.includes(plan) ? plan : 'starter'
 
     // Validaciones
     if (!nombreOrganizacion?.trim() || !nombre?.trim() || !email?.trim() || !password) {
@@ -122,8 +117,7 @@ export async function POST(req) {
       const org = await tx.organization.create({
         data: {
           nombre:        nombreOrganizacion.trim(),
-          plan:          'professional',
-          planOriginal:  planFinal,
+          plan:          'starter',
           activo:        true,
           telefono:      telefonoLimpio,
           country,
@@ -161,7 +155,7 @@ export async function POST(req) {
       await tx.suscripcion.create({
         data: {
           organizationId:   org.id,
-          plan:             'professional',
+          plan:             'starter',
           estado:           'activa',
           fechaInicio:      ahora,
           fechaVencimiento: vencimiento,

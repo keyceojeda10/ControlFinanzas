@@ -32,10 +32,16 @@ export async function POST(request) {
     return NextResponse.json({ error: 'El onboarding ya fue completado. Cambia de plan desde la página de planes.' }, { status: 400 })
   }
 
-  await prisma.organization.update({
-    where: { id: session.user.organizationId },
-    data: { plan },
-  })
+  await prisma.$transaction([
+    prisma.organization.update({
+      where: { id: session.user.organizationId },
+      data: { plan },
+    }),
+    prisma.suscripcion.updateMany({
+      where: { organizationId: session.user.organizationId, estado: 'activa' },
+      data: { plan },
+    }),
+  ])
 
   return NextResponse.json({
     ok: true,

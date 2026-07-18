@@ -4,26 +4,21 @@ import { useState } from 'react'
 import { useCountry } from '@/hooks/useCountry'
 import { PLANES_CONFIG } from '@/lib/planes'
 
+const PLANES_SOLO   = ['starter', 'basic']
 const PLANES_EQUIPO = ['growth', 'standard', 'professional']
 
-export default function WizardWelcome({ nombre, plan = 'basic', onSelect, onMinimize }) {
+export default function WizardWelcome({ nombre, plan = 'starter', onSelect, onMinimize }) {
   const firstName = nombre ? nombre.split(' ')[0] : null
   const { formatMoney } = useCountry()
-  const config = PLANES_CONFIG[plan]
-  const soportaEquipo = config ? config.maxUsuarios > 1 : false
-  const [showUpgrade, setShowUpgrade] = useState(false)
+  const [showPlanPicker, setShowPlanPicker] = useState(null) // 'solo' | 'equipo' | null
   const [upgrading, setUpgrading] = useState(false)
   const [error, setError] = useState('')
 
-  const handleEquipo = () => {
-    if (soportaEquipo) {
-      onSelect('equipo')
-    } else {
-      setShowUpgrade(true)
+  const handleUpgrade = async (nuevoPlan, tipo) => {
+    if (nuevoPlan === plan) {
+      onSelect(tipo)
+      return
     }
-  }
-
-  const handleUpgrade = async (nuevoPlan) => {
     setUpgrading(true)
     setError('')
     try {
@@ -37,32 +32,48 @@ export default function WizardWelcome({ nombre, plan = 'basic', onSelect, onMini
         setError(data.error ?? 'Error al cambiar de plan')
         return
       }
-      onSelect('equipo', nuevoPlan)
+      onSelect(tipo, nuevoPlan)
     } catch {
-      setError('Error de conexión. Intenta de nuevo.')
+      setError('Error de conexion. Intenta de nuevo.')
     } finally {
       setUpgrading(false)
     }
   }
 
-  // Sub-pantalla: upgrade de plan para equipo
-  if (showUpgrade) {
+  // Sub-pantalla: seleccion de plan
+  if (showPlanPicker) {
+    const esSolo = showPlanPicker === 'solo'
+    const planes = esSolo ? PLANES_SOLO : PLANES_EQUIPO
+    const recomendado = esSolo ? 'starter' : 'growth'
+
     return (
       <div className="max-w-md mx-auto">
         <div className="text-center mb-6">
           <div className="w-14 h-14 rounded-[14px] flex items-center justify-center mx-auto mb-4"
-            style={{ background: 'rgba(245,158,11,0.12)', color: '#f59e0b' }}>
-            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6}
-                d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" />
-            </svg>
+            style={{
+              background: esSolo ? 'rgba(245,197,24,0.12)' : 'rgba(139,92,246,0.12)',
+              color: esSolo ? 'var(--color-accent)' : 'var(--color-purple)',
+            }}>
+            {esSolo ? (
+              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6}
+                  d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+              </svg>
+            ) : (
+              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6}
+                  d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+              </svg>
+            )}
           </div>
           <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--color-text-primary)' }}>
-            Tu plan actual no incluye cobradores
+            {esSolo ? 'Elige tu plan' : 'Elige tu plan de equipo'}
           </h2>
           <p className="text-[13px] max-w-[300px] mx-auto leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-            Estás en el plan <strong style={{ color: 'var(--color-text-primary)' }}>{config?.nombre ?? plan}</strong> que
-            es para uso individual. Para trabajar con cobradores necesitas un plan de equipo.
+            {esSolo
+              ? 'Selecciona el plan que mejor se adapte a tu cartera.'
+              : 'Para trabajar con cobradores necesitas un plan de equipo.'
+            }
           </p>
         </div>
 
@@ -82,22 +93,28 @@ export default function WizardWelcome({ nombre, plan = 'basic', onSelect, onMini
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-            Estás en período de prueba. El cambio de plan es inmediato y no se cobra hasta que termine tu trial.
+            14 dias gratis. No se cobra hasta que termine tu periodo de prueba.
           </p>
         </div>
 
         <div className="space-y-2.5">
-          {PLANES_EQUIPO.map((key) => {
+          {planes.map((key) => {
             const p = PLANES_CONFIG[key]
+            const esRecomendado = key === recomendado
+            const accentColor = esSolo ? 'var(--color-accent)' : 'var(--color-purple)'
             return (
               <button
                 key={key}
-                onClick={() => handleUpgrade(key)}
+                onClick={() => handleUpgrade(key, esSolo ? 'solo' : 'equipo')}
                 disabled={upgrading}
                 className="group w-full rounded-[14px] p-4 text-left transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
-                  background: key === 'growth' ? 'rgba(139,92,246,0.06)' : 'var(--color-bg-card)',
-                  border: `1px solid ${key === 'growth' ? 'rgba(139,92,246,0.25)' : 'var(--color-border)'}`,
+                  background: esRecomendado
+                    ? (esSolo ? 'rgba(245,197,24,0.06)' : 'rgba(139,92,246,0.06)')
+                    : 'var(--color-bg-card)',
+                  border: `1px solid ${esRecomendado
+                    ? (esSolo ? 'rgba(245,197,24,0.25)' : 'rgba(139,92,246,0.25)')
+                    : 'var(--color-border)'}`,
                 }}
               >
                 <div className="flex items-center gap-3">
@@ -106,23 +123,26 @@ export default function WizardWelcome({ nombre, plan = 'basic', onSelect, onMini
                       <p className="text-[15px] font-bold" style={{ color: 'var(--color-text-primary)' }}>
                         {p.nombre}
                       </p>
-                      {key === 'growth' && (
+                      {esRecomendado && (
                         <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
-                          style={{ background: 'rgba(139,92,246,0.15)', color: 'var(--color-purple)' }}>
+                          style={{
+                            background: esSolo ? 'rgba(245,197,24,0.15)' : 'rgba(139,92,246,0.15)',
+                            color: accentColor,
+                          }}>
                           Recomendado
                         </span>
                       )}
                     </div>
                     <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
-                      <span>{p.maxUsuarios} usuarios</span>
-                      <span>{p.maxRutas} rutas</span>
+                      {!esSolo && <span>{p.maxUsuarios} usuarios</span>}
+                      {!esSolo && <span>{p.maxRutas} rutas</span>}
                       <span>{p.maxClientes.toLocaleString()} clientes</span>
                     </div>
-                    <p className="text-[13px] font-bold mt-1 font-mono-display" style={{ color: key === 'growth' ? 'var(--color-purple)' : 'var(--color-text-secondary)' }}>
+                    <p className="text-[13px] font-bold mt-1 font-mono-display" style={{ color: esRecomendado ? accentColor : 'var(--color-text-secondary)' }}>
                       {formatMoney(p.precio)}<span className="text-[10px] font-normal" style={{ color: 'var(--color-text-muted)' }}>/mes</span>
                     </p>
                   </div>
-                  <svg className="w-5 h-5 shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke={key === 'growth' ? 'var(--color-purple)' : 'var(--color-text-muted)'} viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke={esRecomendado ? accentColor : 'var(--color-text-muted)'} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
@@ -132,7 +152,7 @@ export default function WizardWelcome({ nombre, plan = 'basic', onSelect, onMini
         </div>
 
         <button
-          onClick={() => setShowUpgrade(false)}
+          onClick={() => { setShowPlanPicker(null); setError('') }}
           disabled={upgrading}
           className="w-full text-[12px] text-center transition-colors cursor-pointer py-3 mt-3"
           style={{ color: 'var(--color-text-muted)' }}>
@@ -150,7 +170,7 @@ export default function WizardWelcome({ nombre, plan = 'basic', onSelect, onMini
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-widest mb-5"
           style={{ background: 'rgba(245,197,24,0.1)', color: 'var(--color-accent)', border: '1px solid rgba(245,197,24,0.18)' }}>
           <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-pulse inline-block" />
-          Tu período de prueba está activo
+          Tu periodo de prueba esta activo
         </div>
 
         <h1 className="text-[28px] font-bold leading-[1.15] mb-3"
@@ -170,12 +190,12 @@ export default function WizardWelcome({ nombre, plan = 'basic', onSelect, onMini
       <div className="flex-1 flex flex-col justify-start gap-3 pb-2">
 
         <p className="text-[13px] font-bold text-center mb-1" style={{ color: 'var(--color-text-secondary)' }}>
-          ¿Cómo trabajas?
+          ¿Como trabajas?
         </p>
 
         {/* Solo */}
         <button
-          onClick={() => onSelect('solo')}
+          onClick={() => setShowPlanPicker('solo')}
           className="group w-full rounded-[16px] p-5 text-left transition-all active:scale-[0.98] cursor-pointer"
           style={{ background: 'rgba(245,197,24,0.06)', border: '1px solid rgba(245,197,24,0.22)' }}
         >
@@ -203,7 +223,7 @@ export default function WizardWelcome({ nombre, plan = 'basic', onSelect, onMini
 
         {/* Con equipo */}
         <button
-          onClick={handleEquipo}
+          onClick={() => setShowPlanPicker('equipo')}
           className="group w-full rounded-[16px] p-5 text-left transition-all active:scale-[0.98] cursor-pointer"
           style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.22)' }}
         >
@@ -220,7 +240,7 @@ export default function WizardWelcome({ nombre, plan = 'basic', onSelect, onMini
                 Tengo cobradores
               </p>
               <p className="text-[12px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-                Tengo personas que cobran por mí. Necesito crear sus cuentas y asignarles rutas.
+                Tengo personas que cobran por mi. Necesito crear sus cuentas y asignarles rutas.
               </p>
             </div>
             <svg className="w-5 h-5 shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke="var(--color-purple)" viewBox="0 0 24 24">
@@ -236,7 +256,7 @@ export default function WizardWelcome({ nombre, plan = 'basic', onSelect, onMini
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-            Todo lo que crees aquí puedes editarlo o borrarlo después.
+            Todo lo que crees aqui puedes editarlo o borrarlo despues.
           </p>
         </div>
 

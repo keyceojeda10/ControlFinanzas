@@ -10,6 +10,7 @@ import { geocodeAddress }   from '@/lib/geocoding'
 import { trackEvent } from '@/lib/analytics'
 import { getUtcOffset, validateDocument, getDocumentConfig } from '@/lib/i18n'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
+import { rutaPermitida } from '@/lib/limites-plan'
 
 // ─── GET /api/clientes ──────────────────────────────────────────
 export async function GET(request) {
@@ -339,6 +340,9 @@ export async function POST(request) {
     }
     if (session.user.rol === 'cobrador' && !(session.user.rutaIds ?? []).includes(rutaId)) {
       return Response.json({ error: 'Solo puedes crear clientes en tus rutas asignadas' }, { status: 403 })
+    }
+    if (!await rutaPermitida(organizationId, rutaId)) {
+      return Response.json({ error: 'Esta ruta excede el limite de tu plan. Mejora tu plan o desactiva rutas que no uses.' }, { status: 403 })
     }
   }
 

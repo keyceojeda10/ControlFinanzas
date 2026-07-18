@@ -3,6 +3,7 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { PLANES_CONFIG }    from '@/lib/planes'
 import { getAsistenteUsage } from '@/lib/rate-limit'
+import { obtenerRutasPermitidas, obtenerUsuariosPermitidos } from '@/lib/limites-plan'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -34,7 +35,7 @@ export async function GET() {
     }),
     prisma.organization.findUnique({
       where: { id: organizationId },
-      select: { plan: true },
+      select: { plan: true, cobradoresExtra: true, rutasExtra: true },
     }),
   ])
 
@@ -42,19 +43,29 @@ export async function GET() {
   const planReal = sub?.plan || org?.plan || session.user.plan || 'starter'
   const config = PLANES_CONFIG[planReal] || PLANES_CONFIG.starter
 
-  const [clientes, usuarios, rutas] = await Promise.all([
+  const limiteRutas    = config.maxRutas    + (org?.rutasExtra ?? 0)
+  const limiteUsuarios = config.maxUsuarios + (org?.cobradoresExtra ?? 0)
+
+  const [clientes, usuarios, rutas, rutasPermitidasSet, usuariosPermitidosSet] = await Promise.all([
     prisma.cliente.count({ where: { organizationId, estado: { notIn: ['eliminado'] } } }),
-    prisma.user.count({ where: { organizationId } }),
+    prisma.user.count({ where: { organizationId, activo: true } }),
     prisma.ruta.count({ where: { organizationId, activo: true } }),
+    obtenerRutasPermitidas(organizationId),
+    obtenerUsuariosPermitidos(organizationId),
   ])
 
   const aiUsage = getAsistenteUsage(organizationId)
 
+  const excedeAlgo = clientes > config.maxClientes || usuarios > limiteUsuarios || rutas > limiteRutas
+
   return Response.json({
     plan: planReal,
-    clientes:       { usado: clientes,       limite: config.maxClientes },
-    usuarios:       { usado: usuarios,       limite: config.maxUsuarios },
-    rutas:          { usado: rutas,           limite: config.maxRutas },
-    lucasMensajes:  { usado: aiUsage.used,   limite: config.aiMensajesDia },
+    clientes:       { usado: clientes, limite: config.maxClientes },
+    usuarios:       { usado: usuarios, limite: limiteUsuarios },
+    rutas:          { usado: rutas,    limite: limiteRutas },
+    lucasMensajes:  { usado: aiUsage.used, limite: config.aiMensajesDia },
+    excedeAlgo,
+    rutasPermitidas:   [...rutasPermitidasSet],
+    usuariosPermitidos: [...usuariosPermitidosSet],
   })
 }

@@ -9,7 +9,8 @@ import { registrarMovimientoCapital } from '@/lib/capital'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad }     from '@/lib/activity-log'
 import { trackEvent }       from '@/lib/analytics'
-import { LIMITES_PLAN }     from '@/lib/planes'
+import { LIMITES_PLAN, LIMITES_RUTAS } from '@/lib/planes'
+import { rutaPermitida } from '@/lib/limites-plan'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 
 export async function POST(request) {
@@ -36,6 +37,9 @@ export async function POST(request) {
     if (rutaId) {
       const rutaValida = await prisma.ruta.findFirst({ where: { id: rutaId, organizationId }, select: { id: true } })
       if (!rutaValida) return Response.json({ error: 'Ruta no válida' }, { status: 400 })
+      if (!await rutaPermitida(organizationId, rutaId)) {
+        return Response.json({ error: 'Esta ruta excede el limite de tu plan. Mejora tu plan o desactiva rutas que no uses.' }, { status: 403 })
+      }
     }
 
     // Agrupar por cédula (múltiples préstamos por cliente)
@@ -70,6 +74,12 @@ export async function POST(request) {
     // Resolver ruta
     let rutaFinal = rutaId || null
     if (crearRuta && typeof crearRuta === 'string' && crearRuta.trim()) {
+      const org = await prisma.organization.findUnique({ where: { id: organizationId }, select: { rutasExtra: true } })
+      const limiteRutas = (LIMITES_RUTAS[plan] ?? 1) + (org?.rutasExtra ?? 0)
+      const totalRutas = await prisma.ruta.count({ where: { organizationId, activo: true } })
+      if (totalRutas >= limiteRutas) {
+        return Response.json({ error: `Tu plan permite máximo ${limiteRutas} rutas. No se puede crear una nueva ruta desde la importación.` }, { status: 403 })
+      }
       const nuevaRuta = await prisma.ruta.create({
         data: { organizationId, nombre: crearRuta.trim() },
       })

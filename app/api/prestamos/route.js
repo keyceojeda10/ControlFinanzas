@@ -19,6 +19,7 @@ import { trackEvent } from '@/lib/analytics'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 import { getLocalDateStr } from '@/lib/i18n'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
+import { rutaPermitida } from '@/lib/limites-plan'
 import { enviarPushOrg } from '@/lib/push'
 
 // ─── GET /api/prestamos ─────────────────────────────────────────
@@ -265,6 +266,10 @@ export async function POST(request) {
     where: { id: clienteId, organizationId },
   })
   if (!cliente) return Response.json({ error: 'Cliente no encontrado' }, { status: 404 })
+
+  if (cliente.rutaId && !await rutaPermitida(organizationId, cliente.rutaId)) {
+    return Response.json({ error: 'La ruta de este cliente excede el limite de tu plan. Mejora tu plan o desactiva rutas que no uses.' }, { status: 403 })
+  }
 
   if (cliente.montoMaximoPrestamo && Number(montoPrestado) > cliente.montoMaximoPrestamo) {
     return Response.json({

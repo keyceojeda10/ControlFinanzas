@@ -12,6 +12,7 @@ import PageWrapper    from '@/components/layout/PageWrapper'
 import SinRutaBanner         from '@/components/layout/SinRutaBanner'
 import VerificarEmailBanner  from '@/components/layout/VerificarEmailBanner'
 import SuscripcionBanner     from '@/components/layout/SuscripcionBanner'
+import LimitesPlanBanner     from '@/components/layout/LimitesPlanBanner'
 import GlobalSearch        from '@/components/layout/GlobalSearch'
 import Analytics          from '@/components/Analytics'
 import CompletarTelefonoModal from '@/components/layout/CompletarTelefonoModal'
@@ -66,6 +67,9 @@ export default async function DashboardLayout({ children }) {
 
         {/* Aviso vencimiento de suscripcion (solo <=7 dias o vencida) */}
         <SuscripcionBanner />
+
+        {/* Aviso limites de plan excedidos */}
+        <LimitesPlanBanner />
 
         {/* Aviso cobrador sin ruta */}
         <SinRutaBanner />

@@ -18,7 +18,7 @@ function moodLabel(progreso, esperadoHoy) {
   return 'Critica'
 }
 
-export default function RutaCard({ ruta }) {
+export default function RutaCard({ ruta, congelada }) {
   const { palettes } = useCardPalettes()
   const progreso = ruta.esperadoHoy > 0
     ? Math.min(100, Math.round((ruta.recaudadoHoy / ruta.esperadoHoy) * 100))
@@ -67,17 +67,33 @@ export default function RutaCard({ ruta }) {
             </div>
           </div>
 
-          <span
-            className="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
-            style={{
-              background: `color-mix(in srgb, ${P.accent} 14%, transparent)`,
-              color: P.accent,
-              border: `1px solid color-mix(in srgb, ${P.accent} 26%, transparent)`,
-            }}
-          >
-            <span className="w-1.5 h-1.5 rounded-full" style={{ background: P.accent }} />
-            {label}
-          </span>
+          {congelada ? (
+            <span
+              className="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
+              style={{
+                background: 'color-mix(in srgb, var(--color-warning) 14%, transparent)',
+                color: 'var(--color-warning)',
+                border: '1px solid color-mix(in srgb, var(--color-warning) 26%, transparent)',
+              }}
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+              </svg>
+              Solo lectura
+            </span>
+          ) : (
+            <span
+              className="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
+              style={{
+                background: `color-mix(in srgb, ${P.accent} 14%, transparent)`,
+                color: P.accent,
+                border: `1px solid color-mix(in srgb, ${P.accent} 26%, transparent)`,
+              }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: P.accent }} />
+              {label}
+            </span>
+          )}
         </div>
 
         {/* Bloque central: porcentaje gigante + recaudado */}

@@ -40,6 +40,7 @@ export default function RutasPage() {
   }, [])
   const [backupLoading, setBackupLoading] = useState(false)
   const [restoreLoading, setRestoreLoading] = useState(false)
+  const [rutasPermitidas, setRutasPermitidas] = useState(null)
   // Recomendaciones de rutas (clientes sin ruta agrupados por similitud)
   const [recom, setRecom] = useState(null) // { totalSinRuta, ... }
   const [recomIgnoradoEn, setRecomIgnoradoEn] = useState(null) // valor de totalSinRuta cuando se cerro
@@ -225,6 +226,14 @@ export default function RutasPage() {
   }, [])
 
   useEffect(() => { fetchRutas() }, [fetchRutas])
+
+  useEffect(() => {
+    if (!esOwner) return
+    fetch('/api/plan/uso')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.rutasPermitidas) setRutasPermitidas(new Set(d.rutasPermitidas)) })
+      .catch(() => {})
+  }, [esOwner])
 
   // Cargar recomendaciones (solo owner, en paralelo, sin bloquear)
   const fetchRecomendaciones = useCallback(async () => {
@@ -441,6 +450,35 @@ export default function RutasPage() {
         </form>
       )}
 
+      {rutasPermitidas && rutas.length > 0 && rutas.some(r => !rutasPermitidas.has(r.id)) && (
+        <div
+          className="rounded-[12px] px-4 py-3 mb-4 flex items-start gap-3"
+          style={{
+            background: 'color-mix(in srgb, var(--color-warning) 6%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--color-warning) 20%, transparent)',
+          }}
+        >
+          <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--color-warning)' }}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+          </svg>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold leading-snug" style={{ color: 'var(--color-warning)' }}>
+              Tu plan permite {rutasPermitidas.size} ruta{rutasPermitidas.size !== 1 ? 's' : ''}
+            </p>
+            <p className="text-[11px] mt-0.5 leading-snug" style={{ color: 'var(--color-text-muted)' }}>
+              Las rutas marcadas como "Solo lectura" no permiten crear clientes ni prestamos nuevos. Puedes reordenar tus rutas para elegir cuales mantener activas.
+            </p>
+          </div>
+          <Link
+            href="/configuracion/plan"
+            className="shrink-0 px-3 py-1.5 rounded-[8px] text-[11px] font-semibold transition-colors"
+            style={{ background: 'var(--color-warning)', color: '#000' }}
+          >
+            Mejorar plan
+          </Link>
+        </div>
+      )}
+
       {mostrarBannerRec && (
         <div
           className="rounded-[12px] px-4 py-3 mb-4 flex items-center gap-3"
@@ -544,7 +582,7 @@ export default function RutasPage() {
 
       {!loading && rutas.length > 0 && !modoOrdenar && (
         <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
-          {rutas.map((r) => <RutaCard key={r.id} ruta={r} />)}
+          {rutas.map((r) => <RutaCard key={r.id} ruta={r} congelada={rutasPermitidas && !rutasPermitidas.has(r.id)} />)}
         </div>
       )}
 
