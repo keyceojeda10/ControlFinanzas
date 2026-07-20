@@ -746,7 +746,7 @@ export default function RegistrarPago({
                   setDiasAbonados(dias)
                   setSliderVisual(dias)
                 }}
-                className="h-10 rounded-[12px] border border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.08)] text-[var(--color-danger)] text-sm font-semibold hover:bg-[rgba(239,68,68,0.15)] transition-colors"
+                className="h-11 rounded-[12px] border border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.08)] text-[var(--color-danger)] text-sm font-semibold hover:bg-[rgba(239,68,68,0.15)] transition-colors"
               >
                 Pagar mora
                 {Number(prestamo?.cuotasEnMora) > 0 ? ` (${prestamo.cuotasEnMora} cuota${prestamo.cuotasEnMora === 1 ? '' : 's'})` : ''}
@@ -766,7 +766,7 @@ export default function RegistrarPago({
                   setDiasAbonados(dias)
                   setSliderVisual(dias)
                 }}
-                className="h-10 rounded-[12px] border border-[rgba(245,197,24,0.3)] bg-[rgba(245,197,24,0.1)] text-[var(--color-accent)] text-sm font-semibold hover:bg-[rgba(245,197,24,0.18)] transition-colors"
+                className="h-11 rounded-[12px] border border-[rgba(245,197,24,0.3)] bg-[rgba(245,197,24,0.1)] text-[var(--color-accent)] text-sm font-semibold hover:bg-[rgba(245,197,24,0.18)] transition-colors"
               >
                 Ponerse al día · {formatMoney(prestamo.montoParaPonerseAlDia)}
               </button>
@@ -900,7 +900,7 @@ export default function RegistrarPago({
                     }
                   }}
                   className={[
-                    'h-9 rounded-[10px] border text-xs font-medium transition-all cursor-pointer',
+                    'h-11 rounded-[10px] border text-xs font-medium transition-all cursor-pointer',
                     tipo === key
                       ? `border-[${color}] text-[${color}]`
                       : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-surface)]',

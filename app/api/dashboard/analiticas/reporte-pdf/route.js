@@ -15,9 +15,9 @@ export async function GET() {
   const session = await getServerSession(authOptions)
   if (!session?.user) return Response.json({ error: 'No autorizado' }, { status: 401 })
 
-  const { organizationId, role } = session.user
+  const { organizationId, rol } = session.user
   if (!organizationId) return Response.json({ error: 'Sin organización' }, { status: 400 })
-  if (role === 'cobrador') return Response.json({ error: 'Solo owner' }, { status: 403 })
+  if (rol === 'cobrador') return Response.json({ error: 'Solo owner' }, { status: 403 })
 
   const country = session.user.country ?? 'co'
   const fmt = v => formatMoney(v, country)

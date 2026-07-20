@@ -330,7 +330,7 @@ function HeroCard({ label, value, valueRaw, sub, color = 'var(--color-success)',
           {hasInfo && (
             <button
               onClick={(e) => { e.stopPropagation(); if (!showInfo) setShowInfo(true) }}
-              className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ml-auto cursor-pointer transition-transform hover:scale-110"
+              className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold ml-auto cursor-pointer transition-transform hover:scale-110"
               style={{ background: `color-mix(in srgb, ${HERO_INK} 12%, transparent)`, color: HERO_INK }}
               aria-label="Ver información"
             >

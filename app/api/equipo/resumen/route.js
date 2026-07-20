@@ -39,7 +39,6 @@ export async function GET() {
       lastActivityAt: true,
       rutas: { where: { activo: true }, select: { id: true, nombre: true } },
     },
-    orderBy: { orden: 'asc' },
   })
 
   if (cobradores.length === 0) {

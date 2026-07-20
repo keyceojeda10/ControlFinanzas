@@ -34,8 +34,6 @@ export async function POST(request) {
       return NextResponse.json({ success: false, error: 'Confirmación inválida. Escribe REINICIAR para continuar.' }, { status: 400 })
     }
 
-    // Log de auditoria ANTES del borrado masivo (por si algo falla a mitad de camino,
-    // queda registro de que se intento/inicio el reinicio).
     await prisma.adminLog.create({
       data: {
         organizacionId: orgId,
@@ -45,66 +43,65 @@ export async function POST(request) {
       },
     })
 
-    // ─── Wave 1: hojas mas profundas (dependen solo de organizationId) ──────
-    await prisma.evento.deleteMany({ where: { organizationId: orgId } })
-    await prisma.pushLog.deleteMany({ where: { organizationId: orgId } })
-    await prisma.notificacion.deleteMany({ where: { organizationId: orgId } })
-    await prisma.actividadLog.deleteMany({ where: { organizationId: orgId } })
-    await prisma.asistenteMemoria.deleteMany({ where: { organizationId: orgId } })
-    await prisma.adminLog.deleteMany({ where: { organizacionId: orgId } })
-    await prisma.notaSeguimiento.deleteMany({ where: { organizationId: orgId } })
-    await prisma.festivo.deleteMany({ where: { organizationId: orgId } })
-    await prisma.visitaReagendada.deleteMany({ where: { organizationId: orgId } })
-    await prisma.cierreCaja.deleteMany({ where: { organizationId: orgId } })
-    await prisma.gastoMenor.deleteMany({ where: { organizationId: orgId } })
+    await prisma.$transaction(async (tx) => {
+      // Wave 1: hojas mas profundas
+      await tx.evento.deleteMany({ where: { organizationId: orgId } })
+      await tx.pushLog.deleteMany({ where: { organizationId: orgId } })
+      await tx.notificacion.deleteMany({ where: { organizationId: orgId } })
+      await tx.actividadLog.deleteMany({ where: { organizationId: orgId } })
+      await tx.asistenteMemoria.deleteMany({ where: { organizationId: orgId } })
+      await tx.adminLog.deleteMany({ where: { organizacionId: orgId } })
+      await tx.notaSeguimiento.deleteMany({ where: { organizationId: orgId } })
+      await tx.festivo.deleteMany({ where: { organizationId: orgId } })
+      await tx.visitaReagendada.deleteMany({ where: { organizationId: orgId } })
+      await tx.cierreCaja.deleteMany({ where: { organizationId: orgId } })
+      await tx.gastoMenor.deleteMany({ where: { organizationId: orgId } })
 
-    // ─── Wave 1b: hojas dependientes de usuarios de la org (incluye owner) ──
-    const userIds = (
-      await prisma.user.findMany({ where: { organizationId: orgId }, select: { id: true } })
-    ).map((u) => u.id)
-    await prisma.ubicacionLog.deleteMany({ where: { userId: { in: userIds } } })
-    await prisma.pushSubscription.deleteMany({ where: { userId: { in: userIds } } })
+      // Wave 1b: hojas de usuarios
+      const userIds = (
+        await tx.user.findMany({ where: { organizationId: orgId }, select: { id: true } })
+      ).map((u) => u.id)
+      await tx.ubicacionLog.deleteMany({ where: { userId: { in: userIds } } })
+      await tx.pushSubscription.deleteMany({ where: { userId: { in: userIds } } })
 
-    // ─── Wave 1c: hojas de bot/tickets ───────────────────────────────────────
-    await prisma.botConversacion.deleteMany({ where: { botLead: { organizationId: orgId } } })
-    await prisma.mensajeTicket.deleteMany({ where: { ticket: { organizationId: orgId } } })
+      // Wave 1c: hojas de bot/tickets
+      await tx.botConversacion.deleteMany({ where: { botLead: { organizationId: orgId } } })
+      await tx.mensajeTicket.deleteMany({ where: { ticket: { organizationId: orgId } } })
 
-    // ─── Wave 1d: hojas de prestamos/lineas de credito ──────────────────────
-    await prisma.cuotaAmortizacion.deleteMany({ where: { prestamo: { organizationId: orgId } } })
-    await prisma.pago.deleteMany({ where: { organizationId: orgId } })
-    await prisma.pagoLinea.deleteMany({ where: { organizationId: orgId } })
-    await prisma.desembolsoLinea.deleteMany({ where: { organizationId: orgId } })
-    await prisma.corteLinea.deleteMany({ where: { organizationId: orgId } })
-    await prisma.movimientoCapital.deleteMany({ where: { organizationId: orgId } })
-    await prisma.aporteSocio.deleteMany({ where: { organizationId: orgId } })
+      // Wave 1d: hojas de prestamos/lineas de credito
+      await tx.cuotaAmortizacion.deleteMany({ where: { prestamo: { organizationId: orgId } } })
+      await tx.pago.deleteMany({ where: { organizationId: orgId } })
+      await tx.pagoLinea.deleteMany({ where: { organizationId: orgId } })
+      await tx.desembolsoLinea.deleteMany({ where: { organizationId: orgId } })
+      await tx.corteLinea.deleteMany({ where: { organizationId: orgId } })
+      await tx.movimientoCapital.deleteMany({ where: { organizationId: orgId } })
+      await tx.aporteSocio.deleteMany({ where: { organizationId: orgId } })
 
-    // ─── Wave 2: padres de nivel medio ──────────────────────────────────────
-    await prisma.botLead.deleteMany({ where: { organizationId: orgId } })
-    await prisma.lead.deleteMany({ where: { organizationId: orgId } })
-    await prisma.ticketSoporte.deleteMany({ where: { organizationId: orgId } })
-    await prisma.prestamo.deleteMany({ where: { organizationId: orgId } })
-    await prisma.lineaCredito.deleteMany({ where: { organizationId: orgId } })
-    await prisma.capital.deleteMany({ where: { organizationId: orgId } })
+      // Wave 2: padres de nivel medio
+      await tx.botLead.deleteMany({ where: { organizationId: orgId } })
+      await tx.lead.deleteMany({ where: { organizationId: orgId } })
+      await tx.ticketSoporte.deleteMany({ where: { organizationId: orgId } })
+      await tx.prestamo.deleteMany({ where: { organizationId: orgId } })
+      await tx.lineaCredito.deleteMany({ where: { organizationId: orgId } })
+      await tx.capital.deleteMany({ where: { organizationId: orgId } })
 
-    // ─── Wave 3: padres superiores ───────────────────────────────────────────
-    await prisma.cliente.deleteMany({ where: { organizationId: orgId } })
-    await prisma.socio.deleteMany({ where: { organizationId: orgId } })
+      // Wave 3: padres superiores
+      await tx.cliente.deleteMany({ where: { organizationId: orgId } })
+      await tx.socio.deleteMany({ where: { organizationId: orgId } })
 
-    // ─── Wave 4: estructura ──────────────────────────────────────────────────
-    await prisma.ruta.deleteMany({ where: { organizationId: orgId } })
-    await prisma.grupoCobro.deleteMany({ where: { organizationId: orgId } })
+      // Wave 4: estructura
+      await tx.ruta.deleteMany({ where: { organizationId: orgId } })
+      await tx.grupoCobro.deleteMany({ where: { organizationId: orgId } })
 
-    // ─── Wave 5: usuarios no-owner (borra en cascada lo que les quede) ─────
-    await prisma.user.deleteMany({ where: { organizationId: orgId, rol: { not: 'owner' } } })
+      // Wave 5: usuarios no-owner
+      await tx.user.deleteMany({ where: { organizationId: orgId, rol: { not: 'owner' } } })
 
-    // ─── Reiniciar estado de onboarding de la organizacion ──────────────────
-    await prisma.organization.update({
-      where: { id: orgId },
-      data: {
-        onboardingStep: 0,
-        onboardingFlujo: null,
-      },
-    })
+      // Reiniciar onboarding
+      await tx.organization.update({
+        where: { id: orgId },
+        data: { onboardingStep: 0, onboardingFlujo: null },
+      })
+    }, { timeout: 60000 })
 
     return NextResponse.json({ ok: true, mensaje: 'Cuenta reiniciada exitosamente' })
   } catch (error) {

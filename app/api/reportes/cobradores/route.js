@@ -26,10 +26,13 @@ export async function GET(req) {
 
   const cobradores = await prisma.user.findMany({
     where: { organizationId: orgId, rol: 'cobrador', activo: true },
-    include: {
+    select: {
+      id: true,
+      nombre: true,
       rutas: {
         where: { activo: true },
-        include: {
+        select: {
+          nombre: true,
           clientes: { where: { estado: 'activo' }, select: { id: true } },
         },
       },

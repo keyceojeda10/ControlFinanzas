@@ -3,8 +3,44 @@ import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 import { createPortalToken, portalCookieOptions, COOKIE_NAME } from '@/lib/portal-auth'
 
+const intentos = new Map()
+const MAX_INTENTOS = 5
+const VENTANA_MS = 15 * 60 * 1000
+
+function verificarRateLimit(ip) {
+  const ahora = Date.now()
+  const data = intentos.get(ip)
+  if (!data || ahora - data.inicio > VENTANA_MS) {
+    intentos.set(ip, { count: 1, inicio: ahora })
+    return true
+  }
+  data.count++
+  if (data.count > MAX_INTENTOS) return false
+  return true
+}
+
+if (typeof globalThis.__portalAuthCleanup === 'undefined') {
+  globalThis.__portalAuthCleanup = setInterval(() => {
+    const ahora = Date.now()
+    for (const [ip, data] of intentos) {
+      if (ahora - data.inicio > VENTANA_MS) intentos.delete(ip)
+    }
+  }, 5 * 60 * 1000)
+}
+
 export async function POST(request) {
   try {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || request.headers.get('x-real-ip')
+      || 'unknown'
+
+    if (!verificarRateLimit(ip)) {
+      return NextResponse.json(
+        { error: 'Demasiados intentos. Espera 15 minutos.' },
+        { status: 429 }
+      )
+    }
+
     const { identificador, pin, organizationId } = await request.json()
 
     if (!identificador || !pin || !organizationId) {

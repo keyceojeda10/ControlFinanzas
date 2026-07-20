@@ -156,21 +156,25 @@ export async function GET(request) {
     let proximoCobroMin = null
 
     for (const p of c.prestamos) {
-      try { saldoTotal += calcularSaldoPendiente(p) } catch {}
+      try { saldoTotal += calcularSaldoPendiente(p) } catch (e) {
+        console.error(`[clientes] calcularSaldoPendiente falló para préstamo ${p.id}:`, e.message)
+      }
       totalAPagarSum += (p.totalAPagar ?? 0)
       try {
         const dm = calcularDiasMora(p, diasExcluidos, festivos)
         if (dm > diasMoraMax) diasMoraMax = dm
-      } catch {}
-      // Pago hoy: ultimoPagoAt denormalizado evita iterar todos los pagos.
+      } catch (e) {
+        console.error(`[clientes] calcularDiasMora falló para préstamo ${p.id}:`, e.message)
+      }
       if (!pagoHoy && p.ultimoPagoAt && new Date(p.ultimoPagoAt) >= inicioHoyUTC) {
         pagoHoy = true
       }
-      // Proximo cobro: tomar el mas cercano de todos los prestamos activos
       try {
         const prox = calcularProximoCobro(p, diasExcluidos, festivos)
         if (prox && (!proximoCobroMin || prox < proximoCobroMin)) proximoCobroMin = prox
-      } catch {}
+      } catch (e) {
+        console.error(`[clientes] calcularProximoCobro falló para préstamo ${p.id}:`, e.message)
+      }
     }
 
     const porcentajePagadoPromedio = totalAPagarSum > 0

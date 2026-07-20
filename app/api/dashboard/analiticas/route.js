@@ -8,9 +8,9 @@ export async function GET() {
   const session = await getServerSession(authOptions)
   if (!session?.user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
-  const { organizationId, role } = session.user
+  const { organizationId, rol } = session.user
   if (!organizationId) return NextResponse.json({ error: 'Sin organización' }, { status: 400 })
-  if (role === 'cobrador') return NextResponse.json({ error: 'Solo owner' }, { status: 403 })
+  if (rol === 'cobrador') return NextResponse.json({ error: 'Solo owner' }, { status: 403 })
 
   const ahora = new Date()
   const hoy = new Date(ahora.toLocaleString('en-US', { timeZone: 'America/Bogota' }))

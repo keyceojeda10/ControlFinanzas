@@ -1,6 +1,8 @@
 import { readFile } from 'fs/promises'
 import { existsSync } from 'fs'
 import path from 'path'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 const MIME_TYPES = {
   '.webp': 'image/webp',
@@ -11,6 +13,9 @@ const MIME_TYPES = {
 
 export async function GET(request, { params }) {
   try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) return new Response('Unauthorized', { status: 401 })
+
     const segments = (await params).path
     if (!segments || segments.length === 0) {
       return new Response('Not found', { status: 404 })
