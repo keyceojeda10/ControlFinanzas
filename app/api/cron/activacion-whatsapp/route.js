@@ -14,6 +14,11 @@ const TEMPLATE_CON_CLIENTES = 'activacion_con_clientes'
 const TEMPLATE_LANG = process.env.WHATSAPP_TEMPLATE_LANG || 'es'
 const SOPORTE = '301 199 3001'
 
+const EMAILS_INTERNOS = [
+  'keycejob@gmail.com', 'ccaojd@gmail.com', 'owner@test.com',
+  'controlfinanzasgmail@gmail.com', 'serviteclgx1@gmail.com',
+]
+
 export async function POST(req) {
   const secret = req.headers.get('x-cron-secret')
   if (!CRON_SECRET || secret !== CRON_SECRET) {
@@ -39,6 +44,7 @@ export async function POST(req) {
         waOnboardingStep: { lt: 1 },
         createdAt: { gte: hace72h, lte: hace24h },
         prestamos: { none: {} },
+        users: { none: { email: { in: EMAILS_INTERNOS } } },
       },
       include: {
         users: {
@@ -67,17 +73,10 @@ export async function POST(req) {
         const clientes = org._count.clientes
 
         if (clientes > 0) {
-          await wa.sendTemplate(tel, TEMPLATE_CON_CLIENTES, {
-            nombre,
-            clientes: String(clientes),
-            soporte: SOPORTE,
-          }, TEMPLATE_LANG)
+          await wa.sendTemplate(tel, TEMPLATE_CON_CLIENTES, [nombre, String(clientes), SOPORTE], TEMPLATE_LANG)
           res.conClientes++
         } else {
-          await wa.sendTemplate(tel, TEMPLATE_SIN_NADA, {
-            nombre,
-            soporte: SOPORTE,
-          }, TEMPLATE_LANG)
+          await wa.sendTemplate(tel, TEMPLATE_SIN_NADA, [nombre, SOPORTE], TEMPLATE_LANG)
           res.sinNada++
         }
 

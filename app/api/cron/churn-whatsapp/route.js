@@ -13,7 +13,11 @@ const CRON_SECRET = process.env.CRON_SECRET
 const TEMPLATE_PREVENC = 'plan_por_vencer_v2'
 const TEMPLATE_VENCIDO = 'plan_vencido_v2'
 const TEMPLATE_LANG = process.env.WHATSAPP_TEMPLATE_LANG || 'es'
-const LINK_PLANES = 'https://app.control-finanzas.com/configuracion/plan'
+
+const EMAILS_INTERNOS = [
+  'keycejob@gmail.com', 'ccaojd@gmail.com', 'owner@test.com',
+  'controlfinanzasgmail@gmail.com', 'serviteclgx1@gmail.com',
+]
 
 export async function POST(req) {
   const secret = req.headers.get('x-cron-secret')
@@ -37,14 +41,18 @@ export async function POST(req) {
 
   try {
     // --- PRE-VENCIMIENTO: vence en los proximos 3 dias ---
+    // Solo subs pagadas (montoCOP > 0). Los trials los cubre onboarding-whatsapp
+    // dia 10 — sin este filtro ambos crons enviarian al mismo trial a las 9am.
     const orgsPre = await prisma.organization.findMany({
       where: {
         activo: true,
         waPreVencSent: false,
+        users: { none: { email: { in: EMAILS_INTERNOS } } },
         suscripciones: {
           some: {
             estado: 'activa',
             fechaVencimiento: { gte: ahora, lte: en3d },
+            montoCOP: { gt: 0 },
           },
         },
       },
@@ -75,10 +83,7 @@ export async function POST(req) {
       try {
         const nombre = (owner.nombre || 'amigo').split(' ')[0]
         const dias = Math.ceil((new Date(org.suscripciones[0].fechaVencimiento) - ahora) / 86400000)
-        await wa.sendTemplate(tel, TEMPLATE_PREVENC, {
-          nombre,
-          dias: String(dias),
-        }, TEMPLATE_LANG)
+        await wa.sendTemplate(tel, TEMPLATE_PREVENC, [nombre, String(dias)], TEMPLATE_LANG)
 
         await prisma.organization.update({
           where: { id: org.id },
@@ -93,13 +98,19 @@ export async function POST(req) {
     }
 
     // --- POST-VENCIMIENTO: ya vencio en los ultimos 7 dias ---
+    // Excluir orgs que YA tienen una sub activa (puede pasar tras renovacion
+    // manual admin, que crea sub nueva y deja la vieja con fecha expirada).
     const orgsVenc = await prisma.organization.findMany({
       where: {
         activo: true,
         waChurnSent: false,
+        users: { none: { email: { in: EMAILS_INTERNOS } } },
         suscripciones: {
           some: {
             fechaVencimiento: { lt: ahora, gte: hace7d },
+          },
+          none: {
+            estado: 'activa',
           },
         },
       },
@@ -124,9 +135,7 @@ export async function POST(req) {
 
       try {
         const nombre = (owner.nombre || 'amigo').split(' ')[0]
-        await wa.sendTemplate(tel, TEMPLATE_VENCIDO, {
-          nombre,
-        }, TEMPLATE_LANG)
+        await wa.sendTemplate(tel, TEMPLATE_VENCIDO, [nombre], TEMPLATE_LANG)
 
         await prisma.organization.update({
           where: { id: org.id },
