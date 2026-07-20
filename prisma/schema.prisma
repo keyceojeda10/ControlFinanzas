@@ -93,6 +93,8 @@ model Organization {
   recoveryEmailStep Int            @default(0)
   waRecoverySent    Boolean        @default(false)
   waOnboardingStep  Int            @default(0)
+  waChurnSent       Boolean        @default(false)
+  waActivacionSent  Boolean        @default(false)
   diasSinCobro      String?
   capitalEstricto   Boolean        @default(false)
   capitalEsEfectivo Boolean        @default(false)
