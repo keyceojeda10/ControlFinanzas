@@ -1,5 +1,5 @@
 // Envia plantilla de WhatsApp a usuarios que se registraron hace 24h+
-// y no han creado ningun cliente ni prestamo.
+// y no han creado ningun prestamo (pueden tener clientes pero no operaron).
 // Corre diariamente. Solo envia una vez por org (waActivacionSent).
 
 import { NextResponse } from 'next/server'
@@ -35,7 +35,6 @@ export async function POST(req) {
         activo: true,
         waActivacionSent: false,
         createdAt: { gte: hace72h, lte: hace24h },
-        clientes: { none: {} },
         prestamos: { none: {} },
       },
       include: {
@@ -44,6 +43,7 @@ export async function POST(req) {
           select: { nombre: true, telefono: true },
           take: 1,
         },
+        _count: { select: { clientes: true } },
       },
     })
 
@@ -61,9 +61,11 @@ export async function POST(req) {
 
       try {
         const nombre = (owner.nombre || 'amigo').split(' ')[0]
+        const clientes = org._count.clientes
         await wa.sendTemplate(tel, TEMPLATE, {
           nombre,
           soporte: SOPORTE,
+          clientes: String(clientes),
         }, TEMPLATE_LANG)
 
         await prisma.organization.update({

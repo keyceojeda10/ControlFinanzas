@@ -81,7 +81,6 @@ export async function GET(req) {
     }
 
     if (
-      org._count.clientes === 0 &&
       org._count.prestamos === 0 &&
       org.createdAt <= hace24h &&
       org.createdAt >= hace30d

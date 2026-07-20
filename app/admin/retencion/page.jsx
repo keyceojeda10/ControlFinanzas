@@ -158,7 +158,7 @@ export default function RetencionPage() {
               {lista.length} registro{lista.length !== 1 ? 's' : ''} sin actividad
             </p>
             <p className="text-xs leading-snug" style={{ color: 'var(--color-text-muted)' }}>
-              Se registraron hace mas de 24h y no crearon ningun cliente ni prestamo. Necesitan ayuda para arrancar.
+              Se registraron hace mas de 24h y no han creado ningun prestamo. Necesitan ayuda para arrancar.
             </p>
           </div>
         </div>
@@ -167,7 +167,7 @@ export default function RetencionPage() {
       {/* Tabla */}
       {loading ? <SkeletonTable rows={5} /> : lista.length === 0 ? (
         <p className="text-sm text-[var(--color-text-muted)] text-center py-8">
-          {tab === 'vencidos' ? 'No hay vencidos recientes' : tab === 'porVencer' ? 'Nadie vence en los proximos 7 dias' : 'Todos los registros recientes tienen actividad'}
+          {tab === 'vencidos' ? 'No hay vencidos recientes' : tab === 'porVencer' ? 'Nadie vence en los proximos 7 dias' : 'Todos los registros recientes ya crearon prestamos'}
         </p>
       ) : (
         <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] overflow-hidden">
