@@ -1448,7 +1448,7 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, orgNombre, ocultarSaldo
           </Button>
         </Link>
         {p.diasMora > 0 && cliente?.telefono && (
-          <BotonWhatsApp tipo="mora" cliente={cliente} prestamo={p} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} />
+          <BotonWhatsApp tipo="mora" cliente={cliente} prestamo={p} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} organizationId={organizationId} />
         )}
       </div>
     </Card>

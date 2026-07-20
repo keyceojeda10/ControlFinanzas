@@ -1,14 +1,8 @@
-// components/ui/BotonWhatsApp.jsx
-// Botón opcional para abrir WhatsApp con mensaje prellenado.
-// Solo se muestra si el cliente tiene teléfono registrado.
-
 import {
-  generarEnlacePrestamo,
-  generarEnlacePago,
-  generarEnlaceMora,
-  generarEnlaceHistorialCredito,
+  formatearTelefono,
   abrirWhatsApp,
 } from '@/lib/whatsapp'
+import { generarTextoPlantilla } from '@/lib/whatsapp-plantillas'
 
 const WA_ICON = (
   <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
@@ -16,9 +10,22 @@ const WA_ICON = (
   </svg>
 )
 
+const TIPO_TO_TEMPLATE = {
+  prestamo:  'credito_aprobado',
+  pago:      'pago_confirmacion',
+  historial: 'historial',
+}
+
+function moraTemplate(prestamo) {
+  const dias = prestamo?.diasMora ?? 0
+  if (dias > 15) return 'mora_critica'
+  if (dias > 3) return 'mora_firme'
+  return 'mora_suave'
+}
+
 const TEXTOS = {
   prestamo: 'Enviar resumen por WhatsApp',
-  pago:     'Enviar confirmación por WhatsApp',
+  pago:     'Enviar confirmacion por WhatsApp',
   mora:     'Enviar alerta de mora',
   historial:'Enviar historial completo',
 }
@@ -30,22 +37,20 @@ const ESTILOS = {
   historial:'bg-[#25d366] hover:bg-[#1da855] text-white',
 }
 
-export default function BotonWhatsApp({ tipo, cliente, prestamo, pago, orgNombre, ocultarSaldo, camposRecibo }) {
+export default function BotonWhatsApp({ tipo, cliente, prestamo, pago, orgNombre, ocultarSaldo, camposRecibo, organizationId }) {
   if (!cliente?.telefono) return null
 
-  const opts = { orgNombre, ocultarSaldo, camposRecibo }
-
-  const generarEnlace = () => {
-    if (tipo === 'prestamo') return generarEnlacePrestamo(cliente, prestamo, opts)
-    if (tipo === 'pago')     return generarEnlacePago(cliente, prestamo, pago, opts)
-    if (tipo === 'mora')     return generarEnlaceMora(cliente, prestamo, opts)
-    if (tipo === 'historial') return generarEnlaceHistorialCredito(cliente, prestamo, opts)
-    return null
-  }
-
   const handleClick = () => {
-    const enlace = generarEnlace()
-    if (enlace) abrirWhatsApp(enlace)
+    const tel = formatearTelefono(cliente.telefono)
+    if (!tel) return
+
+    const templateId = tipo === 'mora' ? moraTemplate(prestamo) : (TIPO_TO_TEMPLATE[tipo] || 'pago_confirmacion')
+    const ctx = { cliente, prestamo, pago, orgNombre, ocultarSaldo, camposRecibo }
+    const texto = generarTextoPlantilla(templateId, ctx, organizationId)
+
+    if (texto) {
+      abrirWhatsApp(`https://wa.me/${tel}?text=${encodeURIComponent(texto)}`)
+    }
   }
 
   return (

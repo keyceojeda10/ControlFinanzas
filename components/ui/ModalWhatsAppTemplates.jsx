@@ -1,522 +1,38 @@
 'use client'
-// components/ui/ModalWhatsAppTemplates.jsx
-// Modal selector de plantillas de WhatsApp con preview editable
-// y secciones personalizables por plantilla.
 
-import { formatMoney } from '@/lib/i18n'
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
+import { formatearTelefono, abrirWhatsApp } from '@/lib/whatsapp'
 import {
-  formatearTelefono,
-  abrirWhatsApp,
-  generarTextoPrestamo,
-  generarTextoRecordatorio,
-  generarTextoFelicitacion,
-  generarTextoRenovacion,
-  generarTextoVisita,
-  generarTextoComprobantePedido,
-  generarCronogramaCobros,
-  generarTextoComprobante,
-} from '@/lib/whatsapp'
+  PLANTILLAS,
+  cargarConfigPlantillas,
+  guardarConfigPlantillas,
+  generarTextoPlantilla,
+} from '@/lib/whatsapp-plantillas'
 
-function firma(orgNombre) {
-  return orgNombre ? `_${orgNombre}_` : '_Control Finanzas_'
-}
+function PanelSecciones({ secciones, activas, onChange, guardado, onGuardar, extras, onExtrasChange }) {
+  const [agregando, setAgregando] = useState(false)
+  const [nuevoNombre, setNuevoNombre] = useState('')
+  const [nuevoValor, setNuevoValor] = useState('')
 
-// ─── Secciones definidas por plantilla ─────────────────────────
-// Cada seccion tiene: key, label, default (on/off), y genera su bloque de texto.
-// Las secciones se evaluan en orden para componer el mensaje final.
-
-function seccionesPagoConfirmacion(ctx) {
-  const { cliente, prestamo, pago, orgNombre, ocultarSaldo, camposRecibo } = ctx
-  const saldo = prestamo?.saldoPendiente ?? 0
-  const diasMora = prestamo?.diasMora ?? 0
-  const porcentaje = prestamo?.porcentajePagado ?? 0
-
-  return [
-    {
-      key: 'saludo',
-      label: 'Saludo',
-      default: true,
-      locked: true,
-      texto: `Hola ${cliente?.nombre || ''} \u{1f44b}`,
-    },
-    {
-      key: 'encabezado',
-      label: 'Encabezado de exito',
-      default: true,
-      locked: true,
-      texto: '\n✅ *Pago registrado con exito*',
-    },
-    {
-      key: 'detalle_pago',
-      label: 'Detalle del pago',
-      default: true,
-      texto: `\n\u{1f4b3} *Detalle del pago:*\n\u{1f4b5} Pagaste: ${formatMoney(pago?.montoPagado || 0)}\n\u{1f4c5} Fecha: ${formatFechaCorta(pago?.fechaPago)}`,
-    },
-    {
-      key: 'estado_credito',
-      label: 'Estado del credito',
-      default: true,
-      texto: buildEstadoCredito(prestamo, ocultarSaldo),
-    },
-    ...(Array.isArray(camposRecibo) && camposRecibo.length > 0 ? [{
-      key: 'campos_extra',
-      label: 'Campos personalizados',
-      default: true,
-      texto: '\n' + camposRecibo.map(c => {
-        const val = c.tipo === 'texto' ? c.valor : resolverCampoWA(c.campo, cliente, prestamo)
-        return `\u{1f4cb} ${c.nombre}: ${val}`
-      }).join('\n'),
-    }] : []),
-    ...(diasMora > 0 ? [{
-      key: 'aviso_mora',
-      label: 'Aviso de mora',
-      default: true,
-      texto: `\n⚠️ Tienes ${diasMora} días en mora. Por favor ponte al día.`,
-    }] : []),
-    ...(saldo <= 0 ? [{
-      key: 'felicitacion_pago',
-      label: 'Felicitacion pago completo',
-      default: true,
-      texto: '\n\u{1f389} *¡Felicitaciones! Tu crédito está completamente pagado* \u{1f389}',
-    }] : []),
-    {
-      key: 'firma',
-      label: 'Firma',
-      default: true,
-      texto: `\n\n${firma(orgNombre)} \u{1f4bc}`,
-    },
-  ]
-}
-
-function seccionesCreditoAprobado(ctx) {
-  const { cliente, prestamo, orgNombre } = ctx
-  const etq = etiquetasFrecuencia(prestamo?.frecuencia)
-  const crono = generarCronogramaCobros(prestamo)
-
-  return [
-    { key: 'saludo', label: 'Saludo', default: true, locked: true,
-      texto: `Hola ${cliente?.nombre || ''} \u{1f44b}` },
-    { key: 'encabezado', label: 'Encabezado', default: true, locked: true,
-      texto: '\n\n✅ *Tu crédito ha sido aprobado*' },
-    { key: 'resumen', label: 'Resumen del credito', default: true,
-      texto: `\n\n\u{1f4cb} *Resumen de tu crédito:*\n\u{1f4b0} Monto prestado: ${formatMoney(prestamo?.montoPrestado)}\n\u{1f4b5} Total a pagar: ${formatMoney(prestamo?.totalAPagar)}\n\u{1f4c5} ${etq.cuota}: ${formatMoney(prestamo?.cuotaDiaria)}\n\u{1f4c6} Fecha inicio: ${formatFechaCorta(prestamo?.fechaInicio)}\n\u{1f4c6} Fecha fin: ${formatFechaCorta(prestamo?.fechaFin)}\n\u{1f4ca} Plazo: ${formatearPlazo(prestamo?.diasPlazo, prestamo?.frecuencia)}` },
-    ...(crono ? [{ key: 'cronograma', label: 'Calendario de cobros', default: false,
-      texto: crono }] : []),
-    { key: 'aviso', label: 'Aviso de pago a tiempo', default: true,
-      texto: `\n\n⚠️ Recuerda pagar tu ${etq.cuota.toLowerCase()} a tiempo para evitar intereses por mora.` },
-    { key: 'firma', label: 'Firma', default: true,
-      texto: `\n\n${firma(orgNombre)} \u{1f4bc}` },
-  ]
-}
-
-function seccionesRecordatorio(ctx) {
-  const { cliente, prestamo, orgNombre, ocultarSaldo } = ctx
-  const etq = etiquetasFrecuencia(prestamo?.frecuencia)
-  const saldo = Number(prestamo?.saldoPendiente ?? 0)
-  const resumenLines = []
-  if (!ocultarSaldo) resumenLines.push(`\u{1f4b0} Saldo pendiente: ${formatMoney(saldo)}`)
-  resumenLines.push(`\u{1f4ca} Cuotas pendientes: ${calcularCuotasPendientes(prestamo)}`)
-  const proximaFecha = calcularProximoCobroLocal(prestamo)
-  const fechaTexto = fmtFechaProximoPago(proximaFecha)
-  resumenLines.push(`\u{1f4c5} Próximo pago: ${fechaTexto || formatFechaCorta(proximaFecha) || 'Pendiente'}`)
-  const lineaPago = fechaTexto
-    ? `Te recordamos amablemente tu próximo ${etq.pago} de ${formatMoney(prestamo?.cuotaDiaria || 0)} *${fechaTexto}*.`
-    : `Te recordamos amablemente tu próximo ${etq.pago} de ${formatMoney(prestamo?.cuotaDiaria || 0)}.`
-
-  return [
-    { key: 'saludo', label: 'Saludo', default: true, locked: true,
-      texto: `Hola ${cliente?.nombre || ''} \u{1f44b}` },
-    { key: 'recordatorio', label: 'Linea de recordatorio', default: true,
-      texto: `\n\n${lineaPago}` },
-    { key: 'resumen', label: 'Resumen financiero', default: true,
-      texto: `\n\n\u{1f4cb} *Resumen:*\n${resumenLines.join('\n')}` },
-    { key: 'cierre', label: 'Cierre amable', default: true,
-      texto: '\n\nCualquier inquietud, escríbenos por aquí.\n\n¡Gracias por tu puntualidad! \u{1f64c}' },
-    { key: 'firma', label: 'Firma', default: true,
-      texto: `\n\n${firma(orgNombre)} \u{1f4bc}` },
-  ]
-}
-
-function seccionesMora(nivel, ctx) {
-  const { cliente, prestamo, orgNombre, ocultarSaldo } = ctx
-  const dias = prestamo?.diasMora ?? 0
-
-  if (nivel === 'suave') {
-    const saldoLine = ocultarSaldo ? '' : `\n\u{1f4b0} Saldo pendiente: ${formatMoney(prestamo?.saldoPendiente || 0)}\n`
-    return [
-      { key: 'saludo', label: 'Saludo', default: true, locked: true,
-        texto: `Hola ${cliente?.nombre || ''} \u{1f44b}` },
-      { key: 'aviso', label: 'Aviso de vencimiento', default: true,
-        texto: `\n\nNotamos que tu cuota de ${formatMoney(prestamo?.cuotaDiaria || 0)} lleva ${dias} día${dias === 1 ? '' : 's'} pendiente.\n\n¿Podemos pasar hoy a cobrar? También puedes ponerte al día por transferencia.` },
-      { key: 'estado', label: 'Saldo pendiente', default: true,
-        texto: saldoLine },
-      { key: 'cierre', label: 'Cierre', default: true,
-        texto: '\n¡Gracias!' },
-      { key: 'firma', label: 'Firma', default: true,
-        texto: `\n\n${firma(orgNombre)} \u{1f4bc}` },
-    ]
-  }
-
-  if (nivel === 'firme') {
-    const estadoLines = []
-    if (!ocultarSaldo) estadoLines.push(`\u{1f4b0} Saldo pendiente: ${formatMoney(prestamo?.saldoPendiente || 0)}`)
-    estadoLines.push(`\u{1f4c5} Cuota diaria: ${formatMoney(prestamo?.cuotaDiaria || 0)}`)
-    return [
-      { key: 'saludo', label: 'Saludo', default: true, locked: true,
-        texto: `Hola ${cliente?.nombre || ''} \u{1f44b}` },
-      { key: 'encabezado', label: 'Encabezado mora', default: true,
-        texto: '\n\n⚠️ *Aviso de mora*' },
-      { key: 'aviso', label: 'Texto del aviso', default: true,
-        texto: `\n\nLlevamos ${dias} días sin recibir tu pago. Por favor comunícate con nosotros lo antes posible.` },
-      { key: 'estado', label: 'Estado financiero', default: true,
-        texto: `\n\n\u{1f4ca} *Estado:*\n${estadoLines.join('\n')}` },
-      { key: 'cierre', label: 'Cierre', default: true,
-        texto: '\n\nEstamos disponibles para acordar una solución. No dejes que se acumule más.' },
-      { key: 'firma', label: 'Firma', default: true,
-        texto: `\n\n${firma(orgNombre)} \u{1f4bc}` },
-    ]
-  }
-
-  // critica
-  const saldoLine = ocultarSaldo ? '' : `\n\u{1f4ca} Saldo total pendiente: ${formatMoney(prestamo?.saldoPendiente || 0)}\n`
-  return [
-    { key: 'saludo', label: 'Saludo directo', default: true, locked: true,
-      texto: `${cliente?.nombre || ''},` },
-    { key: 'encabezado', label: 'Encabezado critico', default: true,
-      texto: '\n\n\u{1f6a8} *Última oportunidad antes de cobro jurídico*' },
-    { key: 'aviso', label: 'Texto del aviso', default: true,
-      texto: `\n\nTu crédito tiene ${dias} días sin pago. Hemos intentado contactarte sin respuesta.` },
-    { key: 'estado', label: 'Saldo pendiente', default: true,
-      texto: saldoLine },
-    { key: 'cierre', label: 'Cierre legal', default: true,
-      texto: '\nPara evitar acciones legales, comunícate HOY mismo. Aún puedes acordar un plan de pago.\n\nEs la última vez que te escribimos por este medio antes de proceder.' },
-    { key: 'firma', label: 'Firma', default: true,
-      texto: `\n\n${firma(orgNombre)}` },
-  ]
-}
-
-function seccionesHistorial(ctx) {
-  const { cliente, prestamo, orgNombre, ocultarSaldo } = ctx
-  const montoPrestado = Number(prestamo?.montoPrestado || 0)
-  const totalAPagar = Number(prestamo?.totalAPagar || 0)
-  const totalPagado = Number(calcularTotalPagadoReal(prestamo) || 0)
-  const saldoPendiente = Math.max(0, Number(prestamo?.saldoPendiente || (totalAPagar - totalPagado)))
-  const cuotaDiaria = Number(prestamo?.cuotaDiaria || 0)
-  const cuotasPag = calcularCuotasPagadasLocal(prestamo)
-  const cuotasPend = calcularCuotasPendientes(prestamo)
-  const diasMora = Number(prestamo?.diasMora || 0)
-  const porcentajePagado = Number(prestamo?.porcentajePagado || (totalAPagar > 0 ? Math.round((totalPagado / totalAPagar) * 100) : 0))
-  const etq = etiquetasFrecuencia(prestamo?.frecuencia)
-
-  const resumenLines = [
-    `\u{1f4b0} Monto prestado: ${formatMoney(montoPrestado)}`,
-    `\u{1f4b5} Total a pagar: ${formatMoney(totalAPagar)}`,
-    `✅ Total pagado: ${formatMoney(totalPagado)}`,
-  ]
-  if (!ocultarSaldo) resumenLines.push(`⏳ Saldo pendiente: ${formatMoney(saldoPendiente)}`)
-  resumenLines.push(
-    `\u{1f4c6} ${etq.cuota}: ${formatMoney(cuotaDiaria)}`,
-    `\u{1f522} Cuotas pagadas: ${cuotasPag}`,
-    `\u{1f4cc} Cuotas pendientes: ${cuotasPend}`,
-  )
-  if (!ocultarSaldo) resumenLines.push(`\u{1f4c8} Progreso: ${porcentajePagado}%`)
-  resumenLines.push(`⚠️ Mora: ${diasMora} día${diasMora === 1 ? '' : 's'}`)
-
-  const pagosOrdenados = [...(prestamo?.pagos || [])].sort((a, b) => new Date(a.fechaPago) - new Date(b.fechaPago))
-  const detallePagos = pagosOrdenados.length
-    ? pagosOrdenados.map((p, idx) => {
-      const prefijo = p.tipo === 'descuento' ? '-' : p.tipo === 'recargo' ? '+' : ''
-      return `• ${idx + 1}. ${formatFechaHoraLocal(p.fechaPago)} | ${getTipoPagoLabel(p.tipo)} | ${prefijo}${formatMoney(p.montoPagado || 0)}`
-    }).join('\n')
-    : '• Sin pagos registrados'
-
-  return [
-    { key: 'saludo', label: 'Saludo', default: true, locked: true,
-      texto: `Hola ${cliente?.nombre || 'cliente'} \u{1f44b}` },
-    { key: 'encabezado', label: 'Encabezado', default: true,
-      texto: '\n\n\u{1f4c4} *Historial completo del crédito*' },
-    { key: 'resumen', label: 'Resumen financiero', default: true,
-      texto: `\n\n\u{1f4cb} *Resumen:*\n${resumenLines.join('\n')}` },
-    { key: 'detalle_pagos', label: 'Detalle de pagos', default: true,
-      texto: `\n\n\u{1f9fe} *Detalle de pagos:*\n${detallePagos}` },
-    { key: 'firma', label: 'Firma', default: true,
-      texto: `\n\n${firma(orgNombre)} \u{1f4bc}` },
-  ]
-}
-
-// ─── Helpers locales (duplicados mínimos de lib/whatsapp.js para evitar
-//     imports circulares — solo formateo y lookup) ──────────────────────
-
-import { formatFechaCorta, formatFechaHora as fmtFechaHoraI18n } from '@/lib/i18n'
-import { calcularProximoCobro } from '@/lib/calculos'
-
-function formatFechaHoraLocal(d) {
-  if (!d) return 'N/A'
-  return fmtFechaHoraI18n(d)
-}
-
-const MESES_LARGO = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
-
-function fmtFechaProximoPago(fecha) {
-  if (!fecha) return null
-  const d = fecha instanceof Date ? fecha : new Date(fecha)
-  if (isNaN(d.getTime())) return null
-  return `el ${d.getUTCDate()} de ${MESES_LARGO[d.getUTCMonth()]}`
-}
-
-function calcularProximoCobroLocal(prestamo) {
-  try { return calcularProximoCobro(prestamo) } catch { return null }
-}
-
-function etiquetasFrecuencia(freq) {
-  const f = (freq || 'diario').toLowerCase()
-  if (f === 'semanal')   return { cuota: 'Cuota semanal',   pago: 'pago semanal',   plazo: 'semanas',   divisor: 7 }
-  if (f === 'quincenal') return { cuota: 'Cuota quincenal', pago: 'pago quincenal', plazo: 'quincenas', divisor: 15 }
-  if (f === 'mensual')   return { cuota: 'Cuota mensual',   pago: 'pago mensual',   plazo: 'meses',     divisor: 30 }
-  return { cuota: 'Cuota diaria', pago: 'pago diario', plazo: 'dias', divisor: 1 }
-}
-
-function formatearPlazo(diasPlazo, freq) {
-  const etq = etiquetasFrecuencia(freq)
-  if (etq.divisor === 1) return `${diasPlazo} dias`
-  const unidades = Math.round(diasPlazo / etq.divisor)
-  return `${unidades} ${etq.plazo} (${diasPlazo} dias)`
-}
-
-function calcularTotalPagadoReal(prestamo) {
-  if (Number.isFinite(prestamo?.totalPagado)) return prestamo.totalPagado
-  return (prestamo?.pagos ?? [])
-    .filter(p => !['recargo', 'descuento'].includes(p.tipo))
-    .reduce((acc, p) => acc + Number(p.montoPagado || 0), 0)
-}
-
-function calcularCuotasPagadasLocal(prestamo) {
-  if (!prestamo?.cuotaDiaria || prestamo.cuotaDiaria <= 0) return 0
-  return Math.floor(calcularTotalPagadoReal(prestamo) / prestamo.cuotaDiaria)
-}
-
-function calcularCuotasPendientes(prestamo) {
-  if (Number.isFinite(prestamo?.cuotasPendientes)) return Math.max(0, prestamo.cuotasPendientes)
-  if (!prestamo?.cuotaDiaria || prestamo.cuotaDiaria <= 0) return 0
-  return Math.ceil(Math.max(0, Number(prestamo?.saldoPendiente || 0)) / prestamo.cuotaDiaria)
-}
-
-function getTipoPagoLabel(tipo) {
-  if (tipo === 'completo') return 'Pago completo'
-  if (tipo === 'parcial') return 'Pago parcial'
-  if (tipo === 'capital') return 'Abono a capital'
-  if (tipo === 'recargo') return 'Recargo'
-  if (tipo === 'descuento') return 'Descuento'
-  return 'Pago'
-}
-
-function buildEstadoCredito(prestamo, ocultarSaldo) {
-  const saldo = prestamo?.saldoPendiente ?? 0
-  const porcentaje = prestamo?.porcentajePagado ?? 0
-  const lines = [`✅ Total pagado: ${formatMoney(prestamo?.totalPagado ?? 0)}`]
-  if (!ocultarSaldo) {
-    lines.push(`⏳ Saldo pendiente: ${formatMoney(saldo)}`)
-    lines.push(`\u{1f4c8} Progreso: ${porcentaje}%`)
-  }
-  return `\n\n\u{1f4ca} *Estado de tu crédito:*\n${lines.join('\n')}`
-}
-
-function resolverCampoWA(campo, cliente, prestamo) {
-  const saldo = prestamo?.saldoPendiente ?? Math.max(0, (prestamo?.totalAPagar ?? 0) - (prestamo?.totalPagado ?? 0))
-  const map = {
-    saldoPendiente:  formatMoney(saldo),
-    totalPagado:     formatMoney(prestamo?.totalPagado ?? 0),
-    totalAPagar:     formatMoney(prestamo?.totalAPagar ?? 0),
-    montoPrestado:   formatMoney(prestamo?.montoPrestado ?? 0),
-    cuota:           formatMoney(prestamo?.cuotaDiaria ?? 0),
-    progreso:        `${prestamo?.porcentajePagado ?? 0}%`,
-    frecuencia:      prestamo?.frecuencia ?? '-',
-    fechaVencimiento: formatFechaCorta(prestamo?.fechaFin),
-    numeroCuota:     prestamo?.numeroCuota ?? '-',
-    diasMora:        `${prestamo?.diasMora ?? 0}`,
-    clienteCedula:   (cliente?.cedula && !cliente.cedula.startsWith('SIN-')) ? cliente.cedula : '-',
-    clienteTelefono: cliente?.telefono ?? '-',
-    ruta:            prestamo?.rutaNombre ?? '-',
-    cobrador:        prestamo?.cobradorNombre ?? '-',
-  }
-  return map[campo] ?? '-'
-}
-
-// ─── Persistencia en localStorage ─────────────────────────────
-
-function getStorageKey(orgId) {
-  return `cf-wa-secciones-${orgId || 'default'}`
-}
-
-function loadSeccionesGuardadas(orgId) {
-  if (typeof window === 'undefined') return {}
-  try {
-    const raw = localStorage.getItem(getStorageKey(orgId))
-    return raw ? JSON.parse(raw) : {}
-  } catch { return {} }
-}
-
-function saveSeccionesGuardadas(orgId, config) {
-  if (typeof window === 'undefined') return
-  try {
-    localStorage.setItem(getStorageKey(orgId), JSON.stringify(config))
-  } catch {}
-}
-
-// ─── Definicion de plantillas ──────────────────────────────────
-
-const TEMPLATES = [
-  {
-    id: 'pago_confirmacion',
-    label: 'Confirmacion de pago',
-    desc: 'Detalle completo del pago',
-    icon: '✅',
-    color: 'var(--color-success)',
-    aplica: ({ prestamo, pago }) => !!prestamo && !!pago,
-    getSecciones: (ctx) => seccionesPagoConfirmacion(ctx),
-  },
-  {
-    id: 'gracias_corto',
-    label: 'Gracias por tu pago',
-    desc: 'Confirmacion corta sin saldo',
-    icon: '\u{1f44d}',
-    color: 'var(--color-success)',
-    aplica: ({ prestamo }) => prestamo && prestamo.estado === 'activo',
-    getSecciones: null,
-    generar: ({ cliente, prestamo, orgNombre }) => {
-      const ultimoPago = prestamo?.pagos?.length > 0
-        ? prestamo.pagos.reduce((a, b) => new Date(a.fechaPago) > new Date(b.fechaPago) ? a : b)
-        : null
-      const monto = ultimoPago?.montoPagado || prestamo?.cuotaDiaria || 0
-      return `Hola ${cliente.nombre} \u{1f44b}\n\n✅ Tu pago de ${formatMoney(monto)} fue registrado correctamente.\n\n¡Gracias por tu puntualidad!\n\n${firma(orgNombre)} \u{1f4bc}`
-    },
-  },
-  {
-    id: 'credito_aprobado',
-    label: 'Credito aprobado',
-    desc: 'Datos del nuevo credito',
-    icon: '✅',
-    color: 'var(--color-success)',
-    aplica: ({ prestamo }) => !!prestamo,
-    getSecciones: (ctx) => seccionesCreditoAprobado(ctx),
-  },
-  {
-    id: 'recordatorio',
-    label: 'Recordatorio amable',
-    desc: 'Para clientes al dia',
-    icon: '\u{1f514}',
-    color: 'var(--color-success)',
-    aplica: ({ prestamo }) => prestamo && prestamo.estado === 'activo' && (prestamo.diasMora ?? 0) === 0,
-    getSecciones: (ctx) => seccionesRecordatorio(ctx),
-  },
-  {
-    id: 'mora_suave',
-    label: 'Vencimiento cercano',
-    desc: 'Aviso suave de pago',
-    icon: '⏰',
-    color: '#f59e0b',
-    aplica: ({ prestamo }) => prestamo && (prestamo.diasMora ?? 0) > 0 && (prestamo.diasMora ?? 0) <= 3,
-    getSecciones: (ctx) => seccionesMora('suave', ctx),
-  },
-  {
-    id: 'mora_firme',
-    label: 'Aviso de mora',
-    desc: 'Cliente atrasado +3 dias',
-    icon: '⚠️',
-    color: '#f97316',
-    aplica: ({ prestamo }) => prestamo && (prestamo.diasMora ?? 0) > 3 && (prestamo.diasMora ?? 0) <= 15,
-    getSecciones: (ctx) => seccionesMora('firme', ctx),
-  },
-  {
-    id: 'mora_critica',
-    label: 'Mora critica',
-    desc: 'Mas de 15 dias',
-    icon: '\u{1f6a8}',
-    color: 'var(--color-danger)',
-    aplica: ({ prestamo }) => prestamo && (prestamo.diasMora ?? 0) > 15,
-    getSecciones: (ctx) => seccionesMora('critica', ctx),
-  },
-  {
-    id: 'felicitacion',
-    label: 'Felicitacion',
-    desc: 'Cliente cumplido',
-    icon: '\u{1f389}',
-    color: 'var(--color-purple)',
-    aplica: ({ prestamo }) => prestamo && prestamo.estado === 'activo' && (prestamo.porcentajePagado ?? 0) >= 50 && (prestamo.diasMora ?? 0) === 0,
-    getSecciones: null,
-    generar: ({ cliente, prestamo, orgNombre }) => generarTextoFelicitacion(cliente, prestamo, { orgNombre }),
-  },
-  {
-    id: 'renovacion',
-    label: 'Ofrecer renovacion',
-    desc: 'Cerca de terminar',
-    icon: '\u{1f504}',
-    color: 'var(--color-teal)',
-    aplica: ({ prestamo }) => prestamo && (prestamo.estado === 'completado' || (prestamo.porcentajePagado ?? 0) >= 80),
-    getSecciones: null,
-    generar: ({ cliente, orgNombre }) => generarTextoRenovacion(cliente, { orgNombre }),
-  },
-  {
-    id: 'historial',
-    label: 'Historial completo',
-    desc: 'Todos los pagos del credito',
-    icon: '\u{1f4c4}',
-    color: 'var(--color-info)',
-    aplica: ({ prestamo }) => prestamo && (prestamo.pagos?.length ?? 0) > 0,
-    getSecciones: (ctx) => seccionesHistorial(ctx),
-  },
-  {
-    id: 'oferta_credito',
-    label: 'Oferta de credito',
-    desc: 'Cliente sin prestamo activo',
-    icon: '\u{1f4b0}',
-    color: 'var(--color-success)',
-    aplica: ({ prestamo }) => !prestamo || prestamo.estado === 'completado',
-    getSecciones: null,
-    generar: ({ cliente, orgNombre }) => `Hola ${cliente.nombre} \u{1f44b}\n\nTenemos credito disponible para ti con aprobacion inmediata.\n\nSi necesitas financiamiento, escribenos por aqui y te explicamos las condiciones. Sin compromiso.\n\n${firma(orgNombre)} \u{1f4bc}`,
-  },
-  {
-    id: 'visita',
-    label: 'Confirmar visita',
-    desc: 'Coordinar cobro hoy',
-    icon: '\u{1f6b6}',
-    color: 'var(--color-info)',
-    aplica: () => true,
-    getSecciones: null,
-    generar: ({ cliente, orgNombre }) => generarTextoVisita(cliente, { orgNombre }),
-  },
-  {
-    id: 'comprobante',
-    label: 'Pedir comprobante',
-    desc: 'Solicitar foto de pago',
-    icon: '\u{1f4f8}',
-    color: 'var(--color-purple)',
-    aplica: () => true,
-    getSecciones: null,
-    generar: ({ cliente, orgNombre }) => generarTextoComprobantePedido(cliente, { orgNombre }),
-  },
-  {
-    id: 'libre',
-    label: 'Mensaje libre',
-    desc: 'Escribir desde cero',
-    icon: '✏️',
-    color: '#94a3b8',
-    aplica: () => true,
-    getSecciones: null,
-    generar: ({ cliente }) => `Hola ${cliente.nombre} \u{1f44b}\n\n`,
-  },
-]
-
-// ─── Componente de toggle de secciones ─────────────────────────
-
-function PanelSecciones({ secciones, activas, onChange, guardado, onGuardar }) {
   if (!secciones?.length) return null
-
   const toggleables = secciones.filter(s => !s.locked)
   if (!toggleables.length) return null
+
+  const agregarCampo = () => {
+    if (!nuevoNombre.trim() || !nuevoValor.trim()) return
+    onExtrasChange([...(extras || []), { nombre: nuevoNombre.trim(), valor: nuevoValor.trim() }])
+    setNuevoNombre('')
+    setNuevoValor('')
+    setAgregando(false)
+  }
+
+  const eliminarCampo = (idx) => {
+    const copia = [...(extras || [])]
+    copia.splice(idx, 1)
+    onExtrasChange(copia)
+  }
 
   return (
     <div className="rounded-[12px] overflow-hidden" style={{ border: '1px solid var(--color-border)', background: 'var(--color-bg-surface)' }}>
@@ -574,11 +90,94 @@ function PanelSecciones({ secciones, activas, onChange, guardado, onGuardar }) {
           )
         })}
       </div>
+
+      {/* Campos personalizados */}
+      <div style={{ borderTop: '1px solid var(--color-border)' }}>
+        {Array.isArray(extras) && extras.length > 0 && (
+          <div className="px-3 pt-2 pb-1 space-y-1.5">
+            <p className="text-[9px] font-bold uppercase tracking-[.06em]" style={{ color: 'var(--color-text-muted)' }}>
+              Campos adicionales
+            </p>
+            {extras.map((e, idx) => (
+              <div key={idx} className="flex items-center gap-2 text-[11px]">
+                <span className="flex-1 truncate" style={{ color: 'var(--color-text-secondary)' }}>
+                  {e.nombre}: {e.valor}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => eliminarCampo(idx)}
+                  className="shrink-0 w-5 h-5 flex items-center justify-center rounded-full hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)] transition-colors"
+                  style={{ color: 'var(--color-danger)' }}
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {agregando ? (
+          <div className="px-3 py-2 space-y-2">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Nombre"
+                value={nuevoNombre}
+                onChange={e => setNuevoNombre(e.target.value)}
+                className="flex-1 h-8 px-2 rounded-[8px] text-[11px] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+                style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+                autoFocus
+              />
+              <input
+                type="text"
+                placeholder="Valor"
+                value={nuevoValor}
+                onChange={e => setNuevoValor(e.target.value)}
+                className="flex-1 h-8 px-2 rounded-[8px] text-[11px] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+                style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+                onKeyDown={e => e.key === 'Enter' && agregarCampo()}
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => { setAgregando(false); setNuevoNombre(''); setNuevoValor('') }}
+                className="flex-1 h-7 rounded-[6px] text-[10px] font-medium"
+                style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={agregarCampo}
+                disabled={!nuevoNombre.trim() || !nuevoValor.trim()}
+                className="flex-1 h-7 rounded-[6px] text-[10px] font-medium disabled:opacity-40"
+                style={{ background: 'var(--color-accent)', color: '#3a2900' }}
+              >
+                Agregar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setAgregando(true)}
+            className="flex items-center gap-1.5 w-full px-3 py-2 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--color-accent)_4%,transparent)]"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="var(--color-accent)" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            <span className="text-[11px] font-medium" style={{ color: 'var(--color-accent)' }}>
+              Agregar campo personalizado
+            </span>
+          </button>
+        )}
+      </div>
     </div>
   )
 }
-
-// ─── Componente principal ──────────────────────────────────────
 
 export default function ModalWhatsAppTemplates({
   open, onClose, cliente, prestamo, orgNombre, ocultarSaldo,
@@ -591,58 +190,73 @@ export default function ModalWhatsAppTemplates({
   const [guardado, setGuardado] = useState(false)
   const [seccionesActivas, setSeccionesActivas] = useState(new Set())
   const [showSecciones, setShowSecciones] = useState(false)
+  const [extras, setExtras] = useState([])
 
   const tel = formatearTelefono(cliente?.telefono)
 
-  const allConfig = useMemo(() => loadSeccionesGuardadas(organizationId), [organizationId, open])
+  const allConfig = useMemo(() => cargarConfigPlantillas(organizationId), [organizationId, open])
 
   const ctx = useMemo(() => ({
     cliente, prestamo, pago, orgNombre, ocultarSaldo, camposRecibo,
   }), [cliente, prestamo, pago, orgNombre, ocultarSaldo, camposRecibo])
 
   const aplicables = useMemo(() => {
-    return TEMPLATES.filter(t => {
+    return PLANTILLAS.filter(t => {
       try { return t.aplica({ cliente, prestamo, pago }) } catch { return false }
     })
   }, [cliente, prestamo, pago])
 
-  const selectedTemplate = useMemo(() => TEMPLATES.find(t => t.id === selectedId), [selectedId])
+  const selectedTemplate = useMemo(() => PLANTILLAS.find(t => t.id === selectedId), [selectedId])
 
   const seccionesActuales = useMemo(() => {
     if (!selectedTemplate?.getSecciones) return null
     try { return selectedTemplate.getSecciones(ctx) } catch { return null }
   }, [selectedTemplate, ctx])
 
-  const generarTextoConSecciones = useCallback((template, secActivas) => {
+  const generarTextoConSecciones = useCallback((template, secActivas, extrasLocal) => {
     if (!template) return ''
     if (template.getSecciones) {
       try {
         const secs = template.getSecciones(ctx)
-        return secs
+        let texto = secs
           .filter(s => s.locked || secActivas.has(s.key))
           .map(s => s.texto)
           .join('')
           .trim()
+        if (Array.isArray(extrasLocal) && extrasLocal.length > 0) {
+          const extraText = extrasLocal.map(e => `\u{1f4cb} ${e.nombre}: ${e.valor}`).join('\n')
+          const orgFirma = orgNombre ? `_${orgNombre}_` : '_Control Finanzas_'
+          const firmaIdx = texto.lastIndexOf(orgFirma)
+          if (firmaIdx > 0) {
+            texto = texto.slice(0, firmaIdx) + extraText + '\n\n' + texto.slice(firmaIdx)
+          } else {
+            texto += '\n' + extraText
+          }
+        }
+        return texto
       } catch { return '' }
     }
     if (template.generar) {
       try { return template.generar(ctx) } catch { return '' }
     }
     return ''
-  }, [ctx])
+  }, [ctx, orgNombre])
 
   const initSeccionesForTemplate = useCallback((templateId) => {
-    const tmpl = TEMPLATES.find(t => t.id === templateId)
-    if (!tmpl?.getSecciones) return new Set()
+    const tmpl = PLANTILLAS.find(t => t.id === templateId)
+    if (!tmpl?.getSecciones) return { secs: new Set(), extras: [] }
     const saved = allConfig[templateId]
+    if (saved && typeof saved === 'object' && Array.isArray(saved.secciones)) {
+      return { secs: new Set(saved.secciones), extras: saved.extras || [] }
+    }
     if (saved && Array.isArray(saved)) {
-      return new Set(saved)
+      return { secs: new Set(saved), extras: [] }
     }
     try {
       const secs = tmpl.getSecciones(ctx)
-      return new Set(secs.filter(s => s.default || s.locked).map(s => s.key))
+      return { secs: new Set(secs.filter(s => s.default || s.locked).map(s => s.key)), extras: [] }
     } catch {
-      return new Set()
+      return { secs: new Set(), extras: [] }
     }
   }, [allConfig, ctx])
 
@@ -653,28 +267,30 @@ export default function ModalWhatsAppTemplates({
       setCopiado(false)
       setGuardado(false)
       setShowSecciones(false)
+      setExtras([])
       return
     }
-    const targetId = preselectedTemplateId || null
-    const sugerido = targetId
-      ? aplicables.find(t => t.id === targetId) || aplicables.find(t => t.id !== 'libre') || aplicables[0]
+    const sugerido = preselectedTemplateId
+      ? aplicables.find(t => t.id === preselectedTemplateId) || aplicables.find(t => t.id !== 'libre') || aplicables[0]
       : aplicables.find(t => t.id !== 'libre') || aplicables[0]
     if (sugerido) {
       setSelectedId(sugerido.id)
-      const secs = initSeccionesForTemplate(sugerido.id)
+      const { secs, extras: ex } = initSeccionesForTemplate(sugerido.id)
       setSeccionesActivas(secs)
-      setTextoEditable(generarTextoConSecciones(sugerido, secs))
+      setExtras(ex)
+      setTextoEditable(generarTextoConSecciones(sugerido, secs, ex))
       setShowSecciones(!!sugerido.getSecciones)
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
   const handleSelect = (template) => {
     setSelectedId(template.id)
     setGuardado(false)
-    const secs = initSeccionesForTemplate(template.id)
+    const { secs, extras: ex } = initSeccionesForTemplate(template.id)
     setSeccionesActivas(secs)
-    setTextoEditable(generarTextoConSecciones(template, secs))
+    setExtras(ex)
+    setTextoEditable(generarTextoConSecciones(template, secs, ex))
     setShowSecciones(!!template.getSecciones)
   }
 
@@ -683,19 +299,24 @@ export default function ModalWhatsAppTemplates({
       const next = new Set(prev)
       if (next.has(key)) next.delete(key)
       else next.add(key)
-      const tmpl = TEMPLATES.find(t => t.id === selectedId)
-      if (tmpl) {
-        setTextoEditable(generarTextoConSecciones(tmpl, next))
-      }
+      const tmpl = PLANTILLAS.find(t => t.id === selectedId)
+      if (tmpl) setTextoEditable(generarTextoConSecciones(tmpl, next, extras))
       return next
     })
     setGuardado(false)
   }
 
+  const handleExtrasChange = (newExtras) => {
+    setExtras(newExtras)
+    setGuardado(false)
+    const tmpl = PLANTILLAS.find(t => t.id === selectedId)
+    if (tmpl) setTextoEditable(generarTextoConSecciones(tmpl, seccionesActivas, newExtras))
+  }
+
   const handleGuardar = () => {
     if (!selectedId) return
-    const newConfig = { ...allConfig, [selectedId]: [...seccionesActivas] }
-    saveSeccionesGuardadas(organizationId, newConfig)
+    const newConfig = { ...allConfig, [selectedId]: { secciones: [...seccionesActivas], extras } }
+    guardarConfigPlantillas(organizationId, newConfig)
     setGuardado(true)
     setTimeout(() => setGuardado(false), 2500)
   }
@@ -740,7 +361,6 @@ export default function ModalWhatsAppTemplates({
           </div>
         )}
 
-        {/* Selector de plantillas */}
         <div>
           <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-2" style={{ color: 'var(--color-text-muted)' }}>
             Elige una plantilla
@@ -771,7 +391,6 @@ export default function ModalWhatsAppTemplates({
           </div>
         </div>
 
-        {/* Panel de secciones personalizables */}
         {seccionesActuales && seccionesActuales.length > 0 && (
           <div>
             <button
@@ -801,12 +420,13 @@ export default function ModalWhatsAppTemplates({
                 onChange={handleToggleSeccion}
                 guardado={guardado}
                 onGuardar={handleGuardar}
+                extras={extras}
+                onExtrasChange={handleExtrasChange}
               />
             )}
           </div>
         )}
 
-        {/* Preview editable */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-muted)' }}>
