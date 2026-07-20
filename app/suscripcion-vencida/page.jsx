@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -8,13 +9,21 @@ const WHATSAPP_SOPORTE = '573011993001'
 
 export default function SuscripcionVencida() {
   const [estado, setEstado] = useState(null)
+  const { update } = useSession()
 
   useEffect(() => {
     fetch('/api/pagos/estado')
       .then((r) => r.json())
-      .then(setEstado)
+      .then(async (data) => {
+        if (data.diasRestantes > 0) {
+          try { await update() } catch {}
+          window.location.replace('/dashboard')
+          return
+        }
+        setEstado(data)
+      })
       .catch(() => {})
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const fechaVencimiento = estado?.fechaVencimiento
     ? new Date(estado.fechaVencimiento).toLocaleDateString('es-CO', {
@@ -31,15 +40,8 @@ export default function SuscripcionVencida() {
   const waMsg = encodeURIComponent('Hola, mi suscripción de Control Finanzas vencio. Necesito ayuda para renovar.')
 
   return (
-    <div className="relative min-h-dvh flex flex-col items-center justify-center px-4 py-8 overflow-hidden"
-      style={{
-        background: '#060609',
-        '--color-text-primary': '#f0f0f5',
-        '--color-text-muted': '#8a8aa0',
-        '--color-danger': '#f87171',
-        '--color-success': '#4ade80',
-        '--color-accent': '#f5c518',
-      }}
+    <div className="cf-expired-page relative min-h-dvh flex flex-col items-center justify-center px-4 py-8 overflow-hidden"
+      style={{ background: '#060609' }}
     >
       {/* Aurora */}
       <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -79,15 +81,7 @@ export default function SuscripcionVencida() {
         </div>
 
         {/* Card principal */}
-        <div className="relative rounded-[20px] p-6 sm:p-7"
-          style={{
-            background: 'linear-gradient(135deg, rgba(20,20,26,0.85) 0%, rgba(13,13,17,0.92) 100%)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
-          }}
-        >
+        <div className="cf-expired-card relative rounded-[20px] p-6 sm:p-7">
           {/* Header */}
           <div className="text-center mb-5">
             <div className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 mb-3"
@@ -119,12 +113,7 @@ export default function SuscripcionVencida() {
 
           {/* Plan info */}
           {planNombre && (
-            <div className="rounded-[12px] p-3 mb-5 flex items-center justify-between"
-              style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.06)',
-              }}
-            >
+            <div className="cf-expired-surface rounded-[12px] p-3 mb-5 flex items-center justify-between">
               <div>
                 <p className="text-[10px] uppercase tracking-wider mb-0.5"
                   style={{ color: 'var(--color-text-muted)' }}
@@ -173,7 +162,7 @@ export default function SuscripcionVencida() {
               style={{
                 background: 'linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 75%, #f59e0b))',
                 color: '#0a0a0a',
-                boxShadow: '0 4px 14px rgba(245,197,24,0.3), inset 0 1px 0 rgba(255,255,255,0.25)',
+                boxShadow: '0 4px 14px color-mix(in srgb, var(--color-accent) 35%, transparent)',
               }}
             >
               <span aria-hidden
@@ -194,9 +183,9 @@ export default function SuscripcionVencida() {
               rel="noopener noreferrer"
               className="h-11 rounded-[12px] font-medium text-sm transition-all flex items-center justify-center gap-2"
               style={{
-                background: 'rgba(34,197,94,0.08)',
-                border: '1px solid rgba(34,197,94,0.25)',
-                color: '#22c55e',
+                background: 'color-mix(in srgb, var(--color-success) 8%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--color-success) 25%, transparent)',
+                color: 'var(--color-success)',
               }}
             >
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -222,6 +211,43 @@ export default function SuscripcionVencida() {
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(12px); }
           to   { opacity: 1; transform: translateY(0); }
+        }
+        .cf-expired-page {
+          --color-text-primary: #f0f0f5;
+          --color-text-muted: #8a8aa0;
+          --color-danger: #f87171;
+          --color-success: #4ade80;
+          --color-accent: #f5c518;
+        }
+        .cf-expired-card {
+          background: linear-gradient(135deg, rgba(20,20,26,0.85) 0%, rgba(13,13,17,0.92) 100%);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(255,255,255,0.08);
+          box-shadow: 0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+        }
+        .cf-expired-surface {
+          background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(255,255,255,0.06);
+        }
+        html[data-theme="light"] div.cf-expired-page {
+          background: var(--color-bg-base) !important;
+          --color-text-primary: #15161a;
+          --color-text-muted: #5a5d6a;
+          --color-danger: #dc2626;
+          --color-success: #16a34a;
+          --color-accent: #d4a100;
+        }
+        html[data-theme="light"] .cf-expired-card {
+          background: #ffffff;
+          border: 1px solid rgba(0,0,0,0.10);
+          box-shadow: 0 8px 30px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.08);
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
+        }
+        html[data-theme="light"] .cf-expired-surface {
+          background: rgba(0,0,0,0.03);
+          border-color: rgba(0,0,0,0.08);
         }
       `}</style>
     </div>
