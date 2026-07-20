@@ -1822,6 +1822,8 @@ export default function PrestamoDetallePage({ params }) {
         prestamo={prestamo}
         orgNombre={orgNombre}
         ocultarSaldo={ocultarSaldoWA}
+        organizationId={session?.user?.organizationId}
+        camposRecibo={camposRecibo}
       />
 
       {/* Modal: aplicar interes moratorio como recargo */}

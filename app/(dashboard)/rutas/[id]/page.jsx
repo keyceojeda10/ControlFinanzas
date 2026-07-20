@@ -231,7 +231,7 @@ function HistorialCobros({ rutaId }) {
 export default function RutaDetallePage({ params }) {
   const { id }    = use(params)
   const router    = useRouter()
-  const { esOwner, puedeGestionarRutas, puedeVerCapitalRuta, orgNombre, ocultarSaldoWA } = useAuth()
+  const { esOwner, puedeGestionarRutas, puedeVerCapitalRuta, orgNombre, ocultarSaldoWA, organizationId } = useAuth()
 
     const { lastSyncedAt } = useOffline()
 
@@ -3449,6 +3449,7 @@ export default function RutaDetallePage({ params }) {
         prestamo={modalWA?.prestamo}
         orgNombre={orgNombre}
         ocultarSaldo={ocultarSaldoWA}
+        organizationId={organizationId}
       />
     </div>
   )

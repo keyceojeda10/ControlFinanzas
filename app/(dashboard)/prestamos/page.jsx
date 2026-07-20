@@ -181,7 +181,7 @@ const IconGridP = (
 )
 
 export default function PrestamosPage() {
-  const { esOwner, puedeCrearPrestamos, orgNombre, ocultarSaldoWA, loading: authLoading } = useAuth()
+  const { esOwner, puedeCrearPrestamos, orgNombre, ocultarSaldoWA, organizationId, loading: authLoading } = useAuth()
   const { lastSyncedAt } = useOffline()
   const searchParams = useSearchParams()
   const [prestamos, setPrestamos] = useState([])
@@ -869,6 +869,7 @@ export default function PrestamosPage() {
         prestamo={waContext?.prestamo}
         orgNombre={orgNombre}
         ocultarSaldo={ocultarSaldoWA}
+        organizationId={organizationId}
       />
     </div>
   )

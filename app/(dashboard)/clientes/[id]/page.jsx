@@ -45,7 +45,7 @@ const estadoPrestamoBadge = {
 export default function ClienteDetallePage({ params }) {
   const { id }     = use(params)
   const router     = useRouter()
-  const { esOwner, puedeCrearPrestamos, puedeEditarClientes, plan, orgNombre, ocultarSaldoWA } = useAuth()
+  const { esOwner, puedeCrearPrestamos, puedeEditarClientes, plan, orgNombre, ocultarSaldoWA, organizationId } = useAuth()
 
   const { lastSyncedAt } = useOffline()
 
@@ -835,6 +835,7 @@ export default function ClienteDetallePage({ params }) {
         prestamo={prestamosActivos[0] || null}
         orgNombre={orgNombre}
         ocultarSaldo={ocultarSaldoWA}
+        organizationId={organizationId}
       />
 
       {/* Modal reagendar visita */}
