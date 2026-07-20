@@ -8,7 +8,7 @@ import {
   PLANTILLAS,
   cargarConfigPlantillas,
   guardarConfigPlantillas,
-  generarTextoPlantilla,
+  sincronizarPlantillasDesdeDB,
 } from '@/lib/whatsapp-plantillas'
 
 function PanelSecciones({ secciones, activas, onChange, guardado, onGuardar, extras, onExtrasChange }) {
@@ -194,7 +194,13 @@ export default function ModalWhatsAppTemplates({
 
   const tel = formatearTelefono(cliente?.telefono)
 
-  const allConfig = useMemo(() => cargarConfigPlantillas(organizationId), [organizationId, open])
+  const [allConfig, setAllConfig] = useState(() => cargarConfigPlantillas(organizationId))
+
+  useEffect(() => {
+    if (!open) return
+    setAllConfig(cargarConfigPlantillas(organizationId))
+    sincronizarPlantillasDesdeDB(organizationId).then(setAllConfig)
+  }, [open, organizationId])
 
   const ctx = useMemo(() => ({
     cliente, prestamo, pago, orgNombre, ocultarSaldo, camposRecibo,
