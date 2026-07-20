@@ -14,6 +14,7 @@ import { Card }                      from '@/components/ui/Card'
 import { Modal }                     from '@/components/ui/Modal'
 import MoneyInput                    from '@/components/ui/MoneyInput'
 import { SkeletonCard }              from '@/components/ui/Skeleton'
+import MonedaCF                      from '@/components/ui/MonedaCF'
 import AiTipBanner                   from '@/components/ui/AiTipBanner'
 import { generarTipRuta }            from '@/lib/tips/rutaTips'
 import DiasSinCobroSelector          from '@/components/ui/DiasSinCobroSelector'
@@ -1187,10 +1188,13 @@ export default function RutaDetallePage({ params }) {
   )
 
   if (error || !ruta) return (
-    <div className="max-w-2xl mx-auto">
-      <div className="bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] rounded-[16px] p-6 text-center">
-        <p className="font-semibold">Ruta no encontrada</p>
-        <button onClick={() => router.back()} className="text-sm underline mt-2">Volver</button>
+    <div className="flex flex-col items-center justify-center py-16 text-center max-w-2xl mx-auto">
+      <div className="mb-4"><MonedaCF pose="busca" size={100} /></div>
+      <p className="text-sm font-medium text-[var(--color-text-primary)]">No pudimos cargar la ruta</p>
+      <p className="text-xs text-[var(--color-text-muted)] mt-1">Revisa tu conexión e intenta de nuevo</p>
+      <div className="flex gap-3 mt-4">
+        <Button size="sm" onClick={() => fetchRuta()}>Reintentar</Button>
+        <Button size="sm" variant="ghost" onClick={() => router.back()}>Volver</Button>
       </div>
     </div>
   )
@@ -1744,7 +1748,7 @@ export default function RutaDetallePage({ params }) {
 
       {/* Lista de clientes */}
       <div>
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-2 sticky top-0 z-10 bg-[var(--color-bg)] py-2 -mx-1 px-1">
           <span className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
             Clientes ({clientesFiltrados.length}{grupoFiltro ? ` de ${ruta.clientes?.length ?? 0}` : ''})
           </span>

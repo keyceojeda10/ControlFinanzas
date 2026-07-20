@@ -12,6 +12,7 @@ import { Button }                     from '@/components/ui/Button'
 import { Card }                       from '@/components/ui/Card'
 import { Modal }                      from '@/components/ui/Modal'
 import { SkeletonCard }               from '@/components/ui/Skeleton'
+import MonedaCF                       from '@/components/ui/MonedaCF'
 import RegistrarPago                  from '@/components/prestamos/RegistrarPago'
 // AjusteSaldo absorbido por RegistrarPago via prop tabInicial.
 import RenovarPrestamo                from '@/components/prestamos/RenovarPrestamo'
@@ -374,13 +375,15 @@ export default function PrestamoDetallePage({ params }) {
     )
   }
 
-  // ─── Error ──────────────────────────────────────────────────────
   if (error || !prestamo) {
     return (
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] rounded-[20px] cf-card-shadow p-6 text-center">
-          <p className="font-semibold mb-2">Préstamo no encontrado</p>
-          <button onClick={() => router.back()} className="text-sm underline">Volver</button>
+      <div className="flex flex-col items-center justify-center py-16 text-center max-w-2xl mx-auto">
+        <div className="mb-4"><MonedaCF pose="busca" size={100} /></div>
+        <p className="text-sm font-medium text-[var(--color-text-primary)]">No pudimos cargar el préstamo</p>
+        <p className="text-xs text-[var(--color-text-muted)] mt-1">Revisa tu conexión e intenta de nuevo</p>
+        <div className="flex gap-3 mt-4">
+          <Button size="sm" onClick={() => fetchPrestamo()}>Reintentar</Button>
+          <Button size="sm" variant="ghost" onClick={() => router.back()}>Volver</Button>
         </div>
       </div>
     )

@@ -1410,8 +1410,24 @@ export default function DashboardPage() {
     }
   }, [loadDashboard, loadMora, loadCapital, esOwner])
 
-  useEffect(() => { loadDashboard() }, [loadDashboard, lastSyncedAt])
-  useEffect(() => { loadMora() }, [loadMora, lastSyncedAt])
+  useEffect(() => {
+    if (authLoading) return
+    const fetches = [loadDashboard(), loadMora()]
+    if (esOwner) {
+      fetches.push(loadCapital())
+      fetches.push(
+        fetch('/api/pagos/estado').then(r => r.json())
+          .then(d => { if (d.diasRestantes !== undefined) setSusInfo(d) })
+          .catch(() => {})
+      )
+      fetches.push(
+        fetch(`/api/equipo/resumen?t=${Date.now()}`, { cache: 'no-store' })
+          .then(r => r.json()).then(d => { if (d.cobradores) setEquipoData(d) })
+          .catch(() => {})
+      )
+    }
+    Promise.allSettled(fetches)
+  }, [authLoading, esOwner, loadDashboard, loadMora, loadCapital, lastSyncedAt])
 
   useEffect(() => {
     const onVisible = () => { if (document.visibilityState === 'visible') refreshAll() }
@@ -1426,23 +1442,6 @@ export default function DashboardPage() {
       window.removeEventListener('online', onOnline)
     }
   }, [refreshAll])
-
-  useEffect(() => {
-    if (authLoading || !esOwner) return
-    fetch('/api/pagos/estado')
-      .then(r => r.json())
-      .then(d => { if (d.diasRestantes !== undefined) setSusInfo(d) })
-      .catch(() => {})
-  }, [authLoading, esOwner])
-
-  useEffect(() => {
-    if (authLoading || !esOwner) return
-    loadCapital()
-    fetch(`/api/equipo/resumen?t=${Date.now()}`, { cache: 'no-store' })
-      .then(r => r.json())
-      .then(d => { if (d.cobradores) setEquipoData(d) })
-      .catch(() => {})
-  }, [authLoading, esOwner, loadCapital])
 
   const moraPct = data ? (data.clientes.total > 0 ? Math.round((data.clientes.enMora / data.clientes.total) * 100) : 0) : 0
 

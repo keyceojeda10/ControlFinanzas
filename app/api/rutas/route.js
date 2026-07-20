@@ -75,8 +75,10 @@ export async function GET(request) {
     select: { diasSinCobro: true },
   })
 
-  // TODO: festivos por organizacion. Por ahora pasamos array vacio (consistente con otros endpoints).
-  const festivos = []
+  const festivos = await prisma.festivo.findMany({
+    where: { organizationId },
+    select: { fecha: true },
+  })
 
   const resultado = rutas.map((r) => {
     let esperadoHoy    = 0
