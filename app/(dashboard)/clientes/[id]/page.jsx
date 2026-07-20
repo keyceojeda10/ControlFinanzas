@@ -628,7 +628,7 @@ export default function ClienteDetallePage({ params }) {
           </h2>
           <div className="space-y-3">
             {prestamosActivos.map((p) => (
-              <PrestamoCard key={p.id} prestamo={p} clienteId={id} cliente={cliente} orgNombre={orgNombre} ocultarSaldoWA={ocultarSaldoWA} />
+              <PrestamoCard key={p.id} prestamo={p} clienteId={id} cliente={cliente} orgNombre={orgNombre} ocultarSaldoWA={ocultarSaldoWA} organizationId={organizationId} />
             ))}
           </div>
         </div>
@@ -1351,7 +1351,7 @@ function TopePrestamoCard({ tope, onSave }) {
 }
 
 // ─── Sub-componente: tarjeta de préstamo ─────────────────────────
-function PrestamoCard({ prestamo: p, clienteId, cliente, orgNombre, ocultarSaldoWA = false, mini = false }) {
+function PrestamoCard({ prestamo: p, clienteId, cliente, orgNombre, ocultarSaldoWA = false, organizationId, mini = false }) {
   const badge  = estadoPrestamoBadge[p.estado] ?? estadoPrestamoBadge.activo
   const porcentaje = p.porcentajePagado ?? 0
   const enMora = (p.diasMora ?? 0) > 0
