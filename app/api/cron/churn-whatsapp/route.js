@@ -10,8 +10,8 @@ import * as wa from '@/lib/bot/whatsapp-cloud'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
 
 const CRON_SECRET = process.env.CRON_SECRET
-const TEMPLATE_PREVENC = 'plan_por_vencer'
-const TEMPLATE_VENCIDO = 'plan_vencido'
+const TEMPLATE_PREVENC = 'plan_por_vencer_v2'
+const TEMPLATE_VENCIDO = 'plan_vencido_v2'
 const TEMPLATE_LANG = process.env.WHATSAPP_TEMPLATE_LANG || 'es'
 const LINK_PLANES = 'https://app.control-finanzas.com/configuracion/plan'
 
@@ -78,7 +78,6 @@ export async function POST(req) {
         await wa.sendTemplate(tel, TEMPLATE_PREVENC, {
           nombre,
           dias: String(dias),
-          link: LINK_PLANES,
         }, TEMPLATE_LANG)
 
         await prisma.organization.update({
@@ -127,7 +126,6 @@ export async function POST(req) {
         const nombre = (owner.nombre || 'amigo').split(' ')[0]
         await wa.sendTemplate(tel, TEMPLATE_VENCIDO, {
           nombre,
-          link: LINK_PLANES,
         }, TEMPLATE_LANG)
 
         await prisma.organization.update({
