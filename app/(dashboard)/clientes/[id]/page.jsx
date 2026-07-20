@@ -11,7 +11,7 @@ import { obtenerCoordsRapido }                       from '@/lib/geo'
 import { Badge }                     from '@/components/ui/Badge'
 import { Button }                    from '@/components/ui/Button'
 import { Card }                      from '@/components/ui/Card'
-import { SkeletonCard }              from '@/components/ui/Skeleton'
+import { SkeletonPrestamoDetalle }    from '@/components/ui/Skeleton'
 import BotonWhatsApp                 from '@/components/ui/BotonWhatsApp'
 import ModalWhatsAppTemplates        from '@/components/ui/ModalWhatsAppTemplates'
 import { formatFechaCobroRelativa } from '@/lib/calculos'
@@ -344,13 +344,7 @@ export default function ClienteDetallePage({ params }) {
   }
 
   if (loading) {
-    return (
-      <div className="max-w-2xl mx-auto space-y-4">
-        <SkeletonCard />
-        <SkeletonCard />
-        <SkeletonCard />
-      </div>
-    )
+    return <SkeletonPrestamoDetalle />
   }
 
   if (error || !cliente) {

@@ -7,13 +7,13 @@ import { useRouter }                 from 'next/navigation'
 import dynamic                       from 'next/dynamic'
 import { useAuth }                   from '@/hooks/useAuth'
 import { useOffline }                from '@/components/providers/OfflineProvider'
-import { obtenerRutaOffline, guardarOrdenPendiente, guardarPagoPendiente } from '@/lib/offline'
+import { obtenerRutaOffline, guardarOrdenPendiente, guardarPagoPendiente, guardarEnCache, leerDeCache } from '@/lib/offline'
 import { obtenerCoordsRapido } from '@/lib/geo'
 import { Button }                    from '@/components/ui/Button'
 import { Card }                      from '@/components/ui/Card'
 import { Modal }                     from '@/components/ui/Modal'
 import MoneyInput                    from '@/components/ui/MoneyInput'
-import { SkeletonCard }              from '@/components/ui/Skeleton'
+import { SkeletonRutaDetalle }        from '@/components/ui/Skeleton'
 import MonedaCF                      from '@/components/ui/MonedaCF'
 import AiTipBanner                   from '@/components/ui/AiTipBanner'
 import { generarTipRuta }            from '@/lib/tips/rutaTips'
@@ -410,7 +410,11 @@ export default function RutaDetallePage({ params }) {
   const fetchRuta = useCallback(async ({ soft = false } = {}) => {
     if (!soft) setError('')
 
-    // Offline: always prefer IndexedDB (has locally-updated order)
+    try {
+      const cached = await leerDeCache(`ruta:${id}`)
+      if (cached) { setRuta(cached); setLoading(false) }
+    } catch {}
+
     if (!navigator.onLine) {
       try {
         const cached = await obtenerRutaOffline(id)
@@ -421,9 +425,9 @@ export default function RutaDetallePage({ params }) {
       const res  = await fetch(`/api/rutas/${id}`)
       if (!res.ok) throw new Error()
       const data = await res.json()
-      // If SW returned stale cache (offline flag), prefer IndexedDB
       if (data.offline) throw new Error('offline')
       setRuta(data)
+      guardarEnCache(`ruta:${id}`, data).catch(() => {})
       return data
     } catch {
       try {
@@ -1181,11 +1185,7 @@ export default function RutaDetallePage({ params }) {
 
   const clientesConCoords = ruta?.clientes?.filter((c) => c.latitud != null && c.longitud != null).length ?? 0
 
-  if (loading) return (
-    <div className="max-w-2xl mx-auto space-y-4">
-      <SkeletonCard /><SkeletonCard /><SkeletonCard />
-    </div>
-  )
+  if (loading) return <SkeletonRutaDetalle />
 
   if (error || !ruta) return (
     <div className="flex flex-col items-center justify-center py-16 text-center max-w-2xl mx-auto">

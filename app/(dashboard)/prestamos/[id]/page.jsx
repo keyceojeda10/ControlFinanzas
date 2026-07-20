@@ -11,7 +11,7 @@ import { Badge }                      from '@/components/ui/Badge'
 import { Button }                     from '@/components/ui/Button'
 import { Card }                       from '@/components/ui/Card'
 import { Modal }                      from '@/components/ui/Modal'
-import { SkeletonCard }               from '@/components/ui/Skeleton'
+import { SkeletonPrestamoDetalle }     from '@/components/ui/Skeleton'
 import MonedaCF                       from '@/components/ui/MonedaCF'
 import RegistrarPago                  from '@/components/prestamos/RegistrarPago'
 // AjusteSaldo absorbido por RegistrarPago via prop tabInicial.
@@ -366,13 +366,7 @@ export default function PrestamoDetallePage({ params }) {
 
   // ─── Loading ────────────────────────────────────────────────────
   if (loading) {
-    return (
-      <div className="max-w-2xl mx-auto space-y-4">
-        <SkeletonCard />
-        <SkeletonCard />
-        <SkeletonCard />
-      </div>
-    )
+    return <SkeletonPrestamoDetalle />
   }
 
   if (error || !prestamo) {

@@ -9,7 +9,7 @@ import { obtenerCoordsRapido } from '@/lib/geo'
 import { StaggeredList } from '@/components/ui/StaggeredList'
 import MonedaCF from '@/components/ui/MonedaCF'
 import MetodoPagoSelector from '@/components/pagos/MetodoPagoSelector'
-import { obtenerRutasOffline } from '@/lib/offline'
+import { obtenerRutasOffline, guardarEnCache, leerDeCache } from '@/lib/offline'
 
 export default function CobrosHoyPage() {
   const { esCobrador, loading: authLoading } = useAuth()
@@ -65,13 +65,20 @@ export default function CobrosHoyPage() {
 
   const fetchCobros = useCallback(async () => {
     try {
+      const cached = await leerDeCache('cobros-hoy')
+      if (cached) { setData(cached); setLoading(false) }
+    } catch {}
+    try {
       const r = await fetch(`/api/cobros-hoy?t=${Date.now()}`, { cache: 'no-store' })
       const d = await r.json()
       if (d.error) {
         const offline = await construirCobrosOffline()
         if (offline) { setData(offline); setError('') }
         else setError(d.error)
-      } else { setData(d); setError('') }
+      } else {
+        setData(d); setError('')
+        guardarEnCache('cobros-hoy', d).catch(() => {})
+      }
     } catch {
       const offline = await construirCobrosOffline()
       if (offline) { setData(offline); setError('') }

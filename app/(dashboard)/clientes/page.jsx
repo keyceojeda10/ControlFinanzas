@@ -9,7 +9,7 @@ import { useOffline }    from '@/components/providers/OfflineProvider'
 import { guardarEnCache, leerDeCache, obtenerClientesOffline } from '@/lib/offline'
 import { Button }        from '@/components/ui/Button'
 import { Modal }         from '@/components/ui/Modal'
-import { SkeletonCard }  from '@/components/ui/Skeleton'
+import { SkeletonClienteList } from '@/components/ui/Skeleton'
 import ClienteCard       from '@/components/clientes/ClienteCard'
 import BadgeNuevo, { NuevoChip } from '@/components/ui/BadgeNuevo'
 import { StaggeredList } from '@/components/ui/StaggeredList'
@@ -732,11 +732,7 @@ export default function ClientesPage() {
       )}
 
       {/* Skeleton */}
-      {loading && (
-        <div className="space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)}
-        </div>
-      )}
+      {loading && <SkeletonClienteList />}
 
       {/* Lista */}
       {!loading && clientes.length > 0 && (() => {
