@@ -1,6 +1,8 @@
-// Envia plantilla de WhatsApp cuando el plan vence.
-// Corre diariamente. Solo envia una vez por org (waChurnSent).
-// Cubre trials Y pagantes con uso real (>=1 prestamo).
+// Dos funciones en un cron:
+// 1) PRE-VENCIMIENTO: 3 dias antes, envia recordatorio (waPreVencSent)
+// 2) POST-VENCIMIENTO: plan ya vencio, envia link de renovacion (waChurnSent)
+// Cubre trials Y pagantes con uso real (>=1 prestamo o >=1 cliente).
+// Corre diariamente a las 9am.
 
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
@@ -8,7 +10,8 @@ import * as wa from '@/lib/bot/whatsapp-cloud'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
 
 const CRON_SECRET = process.env.CRON_SECRET
-const TEMPLATE = 'plan_vencido'
+const TEMPLATE_PREVENC = 'plan_por_vencer'
+const TEMPLATE_VENCIDO = 'plan_vencido'
 const TEMPLATE_LANG = process.env.WHATSAPP_TEMPLATE_LANG || 'es'
 const LINK_PLANES = 'https://app.control-finanzas.com/configuracion/plan'
 
@@ -25,17 +28,23 @@ export async function POST(req) {
   }
 
   const ahora = new Date()
+  const en3d = new Date(ahora.getTime() + 3 * 86400000)
   const hace7d = new Date(ahora.getTime() - 7 * 86400000)
-  const res = { candidatos: 0, enviados: 0, sinTelefono: 0, errores: 0 }
+  const res = {
+    preVenc: { candidatos: 0, enviados: 0, sinTelefono: 0, errores: 0 },
+    vencido: { candidatos: 0, enviados: 0, sinTelefono: 0, errores: 0 },
+  }
 
   try {
-    const orgs = await prisma.organization.findMany({
+    // --- PRE-VENCIMIENTO: vence en los proximos 3 dias ---
+    const orgsPre = await prisma.organization.findMany({
       where: {
         activo: true,
-        waChurnSent: false,
+        waPreVencSent: false,
         suscripciones: {
           some: {
-            fechaVencimiento: { lt: ahora, gte: hace7d },
+            estado: 'activa',
+            fechaVencimiento: { gte: ahora, lte: en3d },
           },
         },
       },
@@ -54,22 +63,69 @@ export async function POST(req) {
       },
     })
 
-    for (const org of orgs) {
+    for (const org of orgsPre) {
       const owner = org.users[0]
       if (!owner) continue
       if (org._count.prestamos < 1 && org._count.clientes < 1) continue
 
-      res.candidatos++
-
+      res.preVenc.candidatos++
       const tel = owner.telefono ?? org.telefono
-      if (!tel) {
-        res.sinTelefono++
-        continue
-      }
+      if (!tel) { res.preVenc.sinTelefono++; continue }
 
       try {
         const nombre = (owner.nombre || 'amigo').split(' ')[0]
-        await wa.sendTemplate(tel, TEMPLATE, {
+        const dias = Math.ceil((new Date(org.suscripciones[0].fechaVencimiento) - ahora) / 86400000)
+        await wa.sendTemplate(tel, TEMPLATE_PREVENC, {
+          nombre,
+          dias: String(dias),
+          link: LINK_PLANES,
+        }, TEMPLATE_LANG)
+
+        await prisma.organization.update({
+          where: { id: org.id },
+          data: { waPreVencSent: true },
+        })
+        res.preVenc.enviados++
+        console.log(`[Churn WA] Pre-venc enviado a ${owner.nombre} (${org.nombre}) — ${dias}d`)
+      } catch (e) {
+        res.preVenc.errores++
+        console.error(`[Churn WA] Pre-venc error ${org.nombre}: ${e.message}`)
+      }
+    }
+
+    // --- POST-VENCIMIENTO: ya vencio en los ultimos 7 dias ---
+    const orgsVenc = await prisma.organization.findMany({
+      where: {
+        activo: true,
+        waChurnSent: false,
+        suscripciones: {
+          some: {
+            fechaVencimiento: { lt: ahora, gte: hace7d },
+          },
+        },
+      },
+      include: {
+        users: {
+          where: { rol: 'owner' },
+          select: { nombre: true, telefono: true },
+          take: 1,
+        },
+        _count: { select: { prestamos: true, clientes: true } },
+      },
+    })
+
+    for (const org of orgsVenc) {
+      const owner = org.users[0]
+      if (!owner) continue
+      if (org._count.prestamos < 1 && org._count.clientes < 1) continue
+
+      res.vencido.candidatos++
+      const tel = owner.telefono ?? org.telefono
+      if (!tel) { res.vencido.sinTelefono++; continue }
+
+      try {
+        const nombre = (owner.nombre || 'amigo').split(' ')[0]
+        await wa.sendTemplate(tel, TEMPLATE_VENCIDO, {
           nombre,
           link: LINK_PLANES,
         }, TEMPLATE_LANG)
@@ -78,12 +134,11 @@ export async function POST(req) {
           where: { id: org.id },
           data: { waChurnSent: true },
         })
-
-        res.enviados++
-        console.log(`[Churn WA] Enviado a ${owner.nombre} (${org.nombre})`)
+        res.vencido.enviados++
+        console.log(`[Churn WA] Vencido enviado a ${owner.nombre} (${org.nombre})`)
       } catch (e) {
-        res.errores++
-        console.error(`[Churn WA] Error ${org.nombre}: ${e.message}`)
+        res.vencido.errores++
+        console.error(`[Churn WA] Vencido error ${org.nombre}: ${e.message}`)
       }
     }
 

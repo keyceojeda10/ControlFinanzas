@@ -109,7 +109,7 @@ export async function POST(req) {
         })
         await prisma.organization.update({
           where: { id: sub.organizationId },
-          data: { plan, activo: true },
+          data: { plan, activo: true, waChurnSent: false, waPreVencSent: false },
         })
         console.log('[webhook] suscripción autorizada para org=' + sub.organizationId + ' plan=' + plan)
 
@@ -182,7 +182,7 @@ export async function POST(req) {
         })
         await prisma.organization.update({
           where: { id: sub.organizationId },
-          data: { plan, activo: true },
+          data: { plan, activo: true, waChurnSent: false, waPreVencSent: false },
         })
 
         await registrarAdminLog({

@@ -62,6 +62,10 @@ export async function PATCH(req, { params }) {
           montoCOP:         sub.montoCOP,
         },
       }),
+      prisma.organization.update({
+        where: { id: sub.organization.id },
+        data: { waChurnSent: false, waPreVencSent: false },
+      }),
     ])
     const label = diaFijo ? `${dias}d (día fijo: ${diaFijo})` : `${dias} días`
     await prisma.adminLog.create({

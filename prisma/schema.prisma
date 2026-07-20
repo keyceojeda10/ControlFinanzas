@@ -95,6 +95,7 @@ model Organization {
   waOnboardingStep  Int            @default(0)
   waChurnSent       Boolean        @default(false)
   waActivacionSent  Boolean        @default(false)
+  waPreVencSent     Boolean        @default(false)
   diasSinCobro      String?
   capitalEstricto   Boolean        @default(false)
   capitalEsEfectivo Boolean        @default(false)

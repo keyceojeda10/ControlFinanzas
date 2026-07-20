@@ -36,6 +36,7 @@ export async function POST(req) {
       where: {
         activo: true,
         waActivacionSent: false,
+        waOnboardingStep: { lt: 1 },
         createdAt: { gte: hace72h, lte: hace24h },
         prestamos: { none: {} },
       },
@@ -82,7 +83,7 @@ export async function POST(req) {
 
         await prisma.organization.update({
           where: { id: org.id },
-          data: { waActivacionSent: true },
+          data: { waActivacionSent: true, waOnboardingStep: 1 },
         })
 
         res.enviados++
