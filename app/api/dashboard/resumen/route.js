@@ -3,8 +3,8 @@ import { NextResponse }     from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { calcularDiasMora, calcularSaldoPendiente, calcularPatrimonio } from '@/lib/calculos'
-import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
+import { calcularDiasMora, calcularSaldoPendiente, calcularPatrimonio, tienePeriodoEsperadoHoy } from '@/lib/calculos'
+import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
 
 export const dynamic = 'force-dynamic'
@@ -318,6 +318,13 @@ export async function GET() {
   let saldoPorCobrar = 0
   let capitalPrestado = 0
   let cuotaDiariaTotal = 0
+  // Meta REAL del dia: solo las cuotas que de verdad vencen HOY segun la
+  // frecuencia de cada prestamo, descontando dias sin cobro y festivos.
+  // `cuotaDiariaTotal` suma una cuota de CADA prestamo activo, asi que con
+  // cartera semanal o quincenal inflaba la meta varias veces: el usuario veia
+  // $3.261.868 cuando lo que tocaba cobrar ese dia eran $647.867, y el donut
+  // marcaba 1% en vez de 3%. Una meta inalcanzable enseña a ignorar la meta.
+  let esperadoHoy = 0
   const proximosACompletar = []
 
   // Cachear diasExcluidos por cliente: los prestamos del mismo cliente
@@ -340,6 +347,14 @@ export async function GET() {
     saldoPorCobrar += calcularSaldoPendiente(p)
     capitalPrestado += p.montoPrestado ?? 0
     cuotaDiariaTotal += p.cuotaDiaria ?? 0
+
+    // Misma regla que usa /api/rutas para su esperadoHoy, para que el hero y el
+    // bloque "Por ruta hoy" no se contradigan.
+    const _diasExcl = getDiasExcluidos(p.cliente)
+    const _sinCobroHoy = esHoySinCobro(_diasExcl) || esHoyFestivo(festivos)
+    if (tienePeriodoEsperadoHoy(p, _sinCobroHoy, _diasExcl, festivos)) {
+      esperadoHoy += p.cuotaDiaria ?? 0
+    }
 
     const diasExcluidos = getDiasExcluidos(p.cliente)
     if (calcularDiasMora(p, diasExcluidos, festivos) > 0) {
@@ -453,6 +468,9 @@ export async function GET() {
       saldoPorCobrar:  saldoPorCobrar,
       capitalPrestado: capitalPrestado,
       cuotaDiariaTotal: cuotaDiariaTotal,
+      // Lo que de verdad toca cobrar hoy. Es la meta del hero; cuotaDiariaTotal
+      // se queda como "suma de cuotas de la cartera" en el bloque Operacion.
+      esperadoHoy: Math.round(esperadoHoy),
     },
     finanzas: esCobrador ? null : {
       cajaDisponible,

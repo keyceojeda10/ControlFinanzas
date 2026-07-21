@@ -1735,16 +1735,24 @@ export default function DashboardPage() {
             narrativa={generarNarrativa({
               recaudadoHoy: data.cobros.hoy,
               recaudadoAyer: data.cobros.ayer,
-              cuotaDiaria: data.prestamos.cuotaDiariaTotal,
+              cuotaDiaria: data.prestamos.esperadoHoy ?? data.prestamos.cuotaDiariaTotal,
               sparkline7d: data.cobros.sparkline7d,
             })}
             sparklineData={data.cobros.sparkline7d}
-            metaDiaria={data.prestamos.cuotaDiariaTotal}
+            metaDiaria={data.prestamos.esperadoHoy ?? data.prestamos.cuotaDiariaTotal}
             info={{
               titulo: 'Recaudado hoy',
               que: 'Total de dinero que has cobrado HOY, desde la medianoche de tu país.',
               comoSeCalcula: 'Sumo todos los pagos registrados hoy, sin importar el tipo (cuota, abono a capital, liquidación...). Lo único que NO cuento son recargos ni descuentos.',
-              ejemplo: `Llevas ${formatMoney(data.cobros.hoy)} cobrados en ${data.cobros.cantidadHoy} pagos hoy. ${data.prestamos.cuotaDiariaTotal > 0 ? `Eso es el ${Math.min(100, Math.round((data.cobros.hoy / data.prestamos.cuotaDiariaTotal) * 100))}% de tu meta diaria de ${formatMoney(data.prestamos.cuotaDiariaTotal)}.` : ''}${data.cobros.ayer ? ` Ayer cobraste ${formatMoney(data.cobros.ayer)} en ${data.cobros.cantidadAyer} pagos.` : ''}`,
+              ejemplo: (() => {
+                const metaHoy = data.prestamos.esperadoHoy ?? data.prestamos.cuotaDiariaTotal
+                const base = `Llevas ${formatMoney(data.cobros.hoy)} cobrados en ${data.cobros.cantidadHoy} pagos hoy.`
+                const conMeta = metaHoy > 0
+                  ? ` Eso es el ${Math.min(100, Math.round((data.cobros.hoy / metaHoy) * 100))}% de lo que toca cobrar hoy (${formatMoney(metaHoy)}).`
+                  : ' Hoy no vence ninguna cuota.'
+                const conAyer = data.cobros.ayer ? ` Ayer cobraste ${formatMoney(data.cobros.ayer)} en ${data.cobros.cantidadAyer} pagos.` : ''
+                return base + conMeta + conAyer
+              })(),
               cuandoCambia: 'Sube cada vez que se registra un pago. Se reinicia a $0 a la medianoche de tu país.',
               tip: 'El gráfico muestra los últimos 7 días: toca un punto para ver cuánto cobraste ese día.',
             }}
