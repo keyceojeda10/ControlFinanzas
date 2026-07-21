@@ -597,14 +597,23 @@ function KpiCard({ label, value, valueRaw, format = 'cop', sub, color = 'var(--c
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex items-center gap-1.5 min-w-0">
           <p className="text-[11px] font-extrabold uppercase tracking-[.07em] leading-tight" style={{ color: color }}>{label}</p>
+          {/* La "i" era un <span aria-hidden pointer-events-none>: se veia como
+              boton pero no lo era, y quien la tocaba le acertaba de rebote al
+              click de la tarjeta. Ahora es un boton de verdad, enfocable y con
+              area tactil de 40px (el minimo del canon para uso en la calle),
+              usando un pseudo-elemento para no agrandar el circulo visible. */}
           {hasInfo && (
-            <span
-              aria-hidden
-              className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold pointer-events-none"
+            <button
+              type="button"
+              onClick={openInfo}
+              aria-label={`Qué significa ${label}`}
+              className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold relative
+                         before:absolute before:-inset-3 before:content-['']
+                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
               style={{ background: `color-mix(in srgb, ${color} 25%, transparent)`, color }}
             >
               i
-            </span>
+            </button>
           )}
         </div>
         {icon && (
@@ -627,6 +636,7 @@ function KpiCard({ label, value, valueRaw, format = 'cop', sub, color = 'var(--c
 // overflow/transform de contenedores padre.
 function KpiInfoPopover({ info, color, onClose }) {
   const [portalReady, setPortalReady] = useState(false)
+  const [verMas, setVerMas] = useState(false)
 
   useEffect(() => {
     setPortalReady(true)
@@ -644,7 +654,7 @@ function KpiInfoPopover({ info, color, onClose }) {
 
   const modal = (
     <div
-      className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+      className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center sm:p-4"
       onMouseDown={(e) => {
         // Solo cerrar si el click fue en el backdrop, no en el contenido
         if (e.target === e.currentTarget) onClose()
@@ -656,8 +666,14 @@ function KpiInfoPopover({ info, color, onClose }) {
         animation: 'fadeIn 0.15s ease-out',
       }}
     >
+      {/* Sheet pegado abajo en movil (donde alcanza el pulgar) y dialogo
+          centrado en desktop. Radio 20px, que es el que manda el canon para
+          modales y sheets; antes era 16px, fuera de escala. */}
       <div
-        className="relative w-full max-w-[640px] max-h-[85vh] overflow-y-auto rounded-[16px]"
+        role="dialog"
+        aria-modal="true"
+        aria-label={info.titulo || 'Explicación'}
+        className="relative w-full max-w-[640px] max-h-[85vh] overflow-y-auto rounded-t-[20px] sm:rounded-[20px]"
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
         style={{
@@ -686,51 +702,67 @@ function KpiInfoPopover({ info, color, onClose }) {
           </button>
         </div>
 
-        {/* Contenido en 2 columnas (desktop) o 1 (movil) */}
-        <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-[12px] leading-relaxed">
+        {/* Contenido progresivo. Antes eran CINCO bloques planos, cada uno con
+            su eyebrow en mayusculas: demasiado para aclarar una cifra (el
+            limite de memoria de trabajo son ~4 elementos) y la repeticion del
+            eyebrow en todos es andamiaje, no jerarquia. Ahora: la explicacion
+            y TU numero visibles, el resto detras de "Ver mas". No se perdio
+            ni una palabra del contenido. */}
+        <div className="p-4 sm:p-5 text-[12px] leading-relaxed space-y-3">
           {info.que && (
-            <div className="sm:col-span-2 rounded-[10px] px-3 py-2.5" style={{ background: `color-mix(in srgb, ${color} 6%, transparent)` }}>
-              <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-1" style={{ color }}>¿Qué es?</p>
-              <p style={{ color: 'var(--color-text-primary)' }}>{info.que}</p>
-            </div>
+            <p style={{ color: 'var(--color-text-primary)' }}>{info.que}</p>
           )}
 
-          {info.comoSeCalcula && (
-            <div className="rounded-[10px] px-3 py-2.5" style={{ background: 'var(--color-bg-hover)' }}>
-              <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-1" style={{ color: 'var(--color-text-muted)' }}>Cómo se calcula</p>
-              <p style={{ color: 'var(--color-text-secondary)' }}>{info.comoSeCalcula}</p>
-            </div>
-          )}
-
+          {/* Lo mejor del panel: la formula con las cifras REALES del usuario.
+              Este si lleva etiqueta, porque avisa que habla de SUS numeros. */}
           {info.ejemplo && (
-            <div className="rounded-[10px] px-3 py-2.5" style={{ background: `color-mix(in srgb, ${color} 10%, transparent)`, border: `1px solid color-mix(in srgb, ${color} 25%, transparent)` }}>
+            <div
+              className="rounded-[12px] px-3 py-2.5"
+              style={{ background: `color-mix(in srgb, ${color} 10%, transparent)`, border: `1px solid color-mix(in srgb, ${color} 25%, transparent)` }}
+            >
               <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-1" style={{ color }}>Tu número ahora</p>
               <p style={{ color: 'var(--color-text-primary)' }}>{info.ejemplo}</p>
             </div>
           )}
 
-          {info.cuandoCambia && (
-            <div className="rounded-[10px] px-3 py-2.5 flex items-start gap-2" style={{ background: 'var(--color-bg-hover)' }}>
-              <svg className="w-3.5 h-3.5 mt-0.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--color-text-muted)' }}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-              </svg>
-              <div>
-                <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-1" style={{ color: 'var(--color-text-muted)' }}>Cuándo cambia</p>
-                <p style={{ color: 'var(--color-text-secondary)' }}>{info.cuandoCambia}</p>
-              </div>
+          {info.comoSeCalcula && (
+            <div className="rounded-[12px] px-3 py-2.5" style={{ background: 'var(--color-bg-hover)' }}>
+              <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-1" style={{ color: 'var(--color-text-muted)' }}>Cómo se calcula</p>
+              <p style={{ color: 'var(--color-text-secondary)' }}>{info.comoSeCalcula}</p>
             </div>
           )}
 
-          {info.tip && (
-            <div className="sm:col-span-2 rounded-[10px] px-3 py-2.5 flex items-start gap-2" style={{ background: 'color-mix(in srgb, var(--color-warning) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--color-warning) 20%, transparent)' }}>
-              <svg className="w-3.5 h-3.5 mt-0.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--color-warning)' }}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
-              </svg>
-              <div>
-                <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-1" style={{ color: 'var(--color-warning)' }}>Tip</p>
-                <p style={{ color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>{info.tip}</p>
-              </div>
-            </div>
+          {(info.cuandoCambia || info.tip) && (
+            <>
+              {!verMas && (
+                <button
+                  onClick={() => setVerMas(true)}
+                  className="w-full rounded-[12px] py-2 text-[11px] font-medium transition-colors hover:bg-[var(--color-bg-hover)]"
+                  style={{ color: 'var(--color-text-secondary)', border: '1px dashed var(--color-border)' }}
+                >
+                  Ver más
+                </button>
+              )}
+              {verMas && (
+                <div className="space-y-3">
+                  {info.cuandoCambia && (
+                    <div className="rounded-[12px] px-3 py-2.5" style={{ background: 'var(--color-bg-hover)' }}>
+                      <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-1" style={{ color: 'var(--color-text-muted)' }}>Cuándo cambia</p>
+                      <p style={{ color: 'var(--color-text-secondary)' }}>{info.cuandoCambia}</p>
+                    </div>
+                  )}
+                  {info.tip && (
+                    <div
+                      className="rounded-[12px] px-3 py-2.5"
+                      style={{ background: 'color-mix(in srgb, var(--color-warning) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--color-warning) 20%, transparent)' }}
+                    >
+                      <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-1" style={{ color: 'var(--color-warning)' }}>Tip</p>
+                      <p style={{ color: 'var(--color-text-secondary)' }}>{info.tip}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
