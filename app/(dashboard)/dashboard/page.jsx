@@ -1313,11 +1313,19 @@ export default function DashboardPage() {
   const [equipoOpen, setEquipoOpen] = useState(false)
 
   // Vista simple = solo lo esencial (Cobros + Tu dinero). Vista pro = todo.
-  const [vistaSimple, setVistaSimple] = useState(false)
+  // El dashboard arranca respondiendo TRES preguntas: como voy hoy, quien no me
+  // pago, y cuanta plata tengo. Lo demas (mes, cartera, clientes, operacion,
+  // equipo, detalle de mora) vive detras de "Ver mas metricas". Antes arrancaba
+  // mostrandolo todo: ~20 secciones y 7 pantallas de scroll en movil antes de
+  // llegar a lo unico accionable.
+  const [vistaSimple, setVistaSimple] = useState(true)
   useEffect(() => {
     try {
       const stored = localStorage.getItem('cf-dashboard-vista')
+      // Simetrico a proposito: antes solo restauraba 'simple', asi que al
+      // cambiar el default quien hubiera elegido 'pro' quedaba atrapado.
       if (stored === 'simple') setVistaSimple(true)
+      else if (stored === 'pro') setVistaSimple(false)
     } catch {}
   }, [])
   const toggleVista = () => {
@@ -1711,6 +1719,14 @@ export default function DashboardPage() {
           </div>
           </div>
 
+          {/* ¿Quien no me pago? — Segunda pregunta del dashboard, asi que va
+              inmediatamente despues del hero. Antes vivia en el puesto 17 de 22,
+              debajo de 13 secciones de contabilidad mensual: en movil quedaba a
+              5 pantallas de scroll, y es lo unico accionable de la pagina. */}
+          {esOwner && data.alertas && (
+            <NecesitaAtencion alertas={data.alertas} moraData={moraData} />
+          )}
+
           {/* Recaudado del mes + interes — en desktop side by side */}
           {!vistaSimple && (
           <div className="lg:grid lg:grid-cols-2 lg:gap-5 space-y-5 lg:space-y-0">
@@ -1750,28 +1766,14 @@ export default function DashboardPage() {
           </div>
           )}
 
-          {/* Tu dinero — Saldo y Patrimonio (solo owner, vista completa) */}
-          {!vistaSimple && esOwner && (capitalData || data.finanzas) && (
+          {/* Patrimonio — cierra la pregunta "cuanta plata tengo", asi que se
+              queda visible tambien en la vista esencial. La tarjeta de "Saldo
+              disponible" que vivia aqui se elimino: era el MISMO numero que
+              "Saldo en caja" del strip de arriba, con otro nombre. Dos nombres
+              para una sola cifra hacen dudar de las dos. */}
+          {esOwner && data.finanzas && (
             <KpiGroup title="Tu dinero" icon={Icons.dinero}>
-              <div className="grid grid-cols-2 gap-3">
-                {capitalData && (
-                  <KpiCard
-                    label="Saldo disponible"
-                    value={formatMoney(capitalData.saldo)}
-                    valueRaw={capitalData.saldo}
-                    sub={capitalData.saldo < 0 ? 'Capital insuficiente' : 'Capital en caja'}
-                    color={capitalData.saldo < 0 ? 'var(--color-danger)' : 'var(--color-teal)'}
-                    info={{
-                      titulo: 'Saldo disponible',
-                      que: 'El EFECTIVO que tienes en caja en este momento. Plata real disponible para prestar, retirar o cubrir gastos.',
-                      comoSeCalcula: 'Capital inicial + cobros recibidos − desembolsos de préstamos − gastos − retiros + inyecciones.',
-                      ejemplo: `Tienes ${formatMoney(capitalData.saldo)} en caja ahora mismo. ${capitalData.saldo < 0 ? 'Tu saldo está en negativo: revisa si registraste todos los movimientos correctamente.' : 'Con esto puedes desembolsar nuevos préstamos o retirar utilidades.'}`,
-                      cuandoCambia: 'SUBE: cobros e inyecciones de capital. BAJA: desembolsos de préstamos nuevos, gastos, retiros.',
-                      tip: 'Si vas a hacer un préstamo grande, verifica que tengas suficiente saldo aquí antes.',
-                    }}
-                    icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" /></svg>}
-                  />
-                )}
+              <div className="grid grid-cols-1 gap-3">
                 {data.finanzas && (
                   <KpiCard
                     label="Patrimonio"
@@ -1927,8 +1929,10 @@ export default function DashboardPage() {
             <ResumenDelDia actividad={data.actividadHoy} esOwner={esOwner} />
           )}
 
-          {/* Mi equipo — dropdown colapsable, solo owner con cobradores */}
-          {esOwner && equipoData && equipoData.cobradores.length > 0 && (
+          {/* Mi equipo — dropdown colapsable, solo owner con cobradores.
+              Detras de "Ver mas metricas": en un dia sin cobros son 9 filas en
+              $0 ocupando una pantalla completa de movil. */}
+          {!vistaSimple && esOwner && equipoData && equipoData.cobradores.length > 0 && (
             <div
               className="rounded-[16px] overflow-hidden"
               style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
@@ -2038,11 +2042,6 @@ export default function DashboardPage() {
 
           </div>
           <div className="space-y-5">
-          {/* Necesita tu atencion: alertas accionables al final (solo owner) */}
-          {esOwner && data.alertas && (
-            <NecesitaAtencion alertas={data.alertas} moraData={moraData} />
-          )}
-
           {/* Prestamos listos para renovar (80%+ pagado) */}
           {esOwner && data.alertas?.proximosACompletar?.length > 0 && (
             <ProximosARenovar alertas={data.alertas} />
@@ -2051,7 +2050,10 @@ export default function DashboardPage() {
           </div>
         </>
       )}
-      {!loading && mounted && moraData !== undefined && moraData.total > 0 && (
+      {/* Detalle de mora préstamo por préstamo. Es el drill-down: el resumen
+          accionable ya esta arriba en "Necesita tu atencion" con enlaces. Aqui
+          eran 4 bloques y 32 filas, mas de dos pantallas de movil. */}
+      {!vistaSimple && !loading && mounted && moraData !== undefined && moraData.total > 0 && (
         <div
           className="rounded-[16px] px-4 py-4"
           style={{

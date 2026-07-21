@@ -188,6 +188,19 @@ export default function PrestamosPage() {
   const [buscar,    setBuscar]    = useState('')
   const [estado,    setEstado]    = useState(() => searchParams?.get('estado') || 'activo')
   const [frecuencia, setFrecuencia] = useState(() => searchParams?.get('frecuencia') || '')
+
+  // Mismo arreglo que en /clientes: useState solo lee la URL al montar, asi que
+  // llegar aqui desde una alerta del dashboard (o cambiar el query estando ya en
+  // /prestamos) dejaba el filtro sin aplicar y mostraba el listado completo.
+  const paramsPrevios = useRef(null)
+  useEffect(() => {
+    const clave = `${searchParams?.get('estado') || ''}|${searchParams?.get('frecuencia') || ''}`
+    if (clave !== paramsPrevios.current) {
+      paramsPrevios.current = clave
+      setEstado(searchParams?.get('estado') || 'activo')
+      setFrecuencia(searchParams?.get('frecuencia') || '')
+    }
+  }, [searchParams])
   const [modoInteres, setModoInteres] = useState('')
   const [rutaId,    setRutaId]    = useState('')
   const [renovacion, setRenovacion] = useState('')

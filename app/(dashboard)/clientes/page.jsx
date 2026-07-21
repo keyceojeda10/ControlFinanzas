@@ -157,6 +157,20 @@ export default function ClientesPage() {
   const [clientes, setClientes]   = useState([])
   const [buscar,   setBuscar]     = useState('')
   const [estado,   setEstado]     = useState(() => searchParams?.get('filtro') || '')
+
+  // El filtro llega por URL desde las alertas del dashboard (/clientes?filtro=mora).
+  // useState solo corre su inicializador AL MONTAR, y eso fallaba en dos casos:
+  // si useSearchParams aun no habia resuelto en el primer render, y —siempre—
+  // si ya estabas en /clientes y solo cambiaba el query (React no remonta la
+  // misma ruta). En ambos casos caias al listado completo sin filtrar.
+  const filtroUrlPrevio = useRef(null)
+  useEffect(() => {
+    const filtroUrl = searchParams?.get('filtro') || ''
+    if (filtroUrl !== filtroUrlPrevio.current) {
+      filtroUrlPrevio.current = filtroUrl
+      setEstado(filtroUrl)
+    }
+  }, [searchParams])
   const [loading,  setLoading]    = useState(true)
   const [error,    setError]      = useState('')
   const [page,     setPage]       = useState(1)
