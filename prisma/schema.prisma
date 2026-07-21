@@ -803,6 +803,8 @@ model BotLead {
   temperatura         Int           @default(0)
   botActivo           Boolean       @default(true)
   alertado            Boolean       @default(false)
+  alertadoEn          DateTime? // ultima alerta enviada: permite re-alertar al
+  // lead que insiste (antes solo se alertaba 1 vez por lead en toda su vida)
   hookId              String?
   intentosSeguimiento Int           @default(0)
   proximoSeguimiento  DateTime?

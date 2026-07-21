@@ -31,6 +31,11 @@ const BANNER_URL = (process.env.GUIAS_BASE_URL || 'https://app.control-finanzas.
 
 const TIPOS_SOPORTADOS = new Set(['text', 'audio', 'image'])
 
+// Enfriamiento entre alertas de escalamiento del MISMO lead. Evita el extremo
+// de una sola alerta de por vida (leads que insisten quedaban en silencio) y el
+// extremo de spamear a soporte con cada mensaje.
+const COOLDOWN_ALERTA_MS = 6 * 3600000
+
 // --- GET: verificacion del webhook (Meta lo llama una vez al configurar) ---
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
@@ -474,12 +479,21 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
     }
   }
 
-  // Alertar si hay que escalar (via Telegram, ver lib/bot/alertas)
-  if (decision.escalar && !lead.alertado) {
+  // Alertar si hay que escalar (WhatsApp a soporte + Telegram, ver lib/bot/alertas).
+  //
+  // Antes la condicion era `!lead.alertado`, o sea UNA sola alerta por lead en
+  // toda su vida: el lead que mas insistia (el mas caliente) era justo el que
+  // mas silencio generaba. Ahora se re-alerta pasado un enfriamiento, para no
+  // caer en el extremo opuesto de spamear a soporte.
+  const ultimaAlerta = lead.alertadoEn ? new Date(lead.alertadoEn).getTime() : 0
+  const debeAlertar = decision.escalar &&
+    (!lead.alertado || Date.now() - ultimaAlerta > COOLDOWN_ALERTA_MS)
+
+  if (debeAlertar) {
     await alertarLeadCaliente(lead, decision.motivo, historial)
     await prisma.botLead.update({
       where: { id: lead.id },
-      data: { alertado: true },
+      data: { alertado: true, alertadoEn: new Date() },
     })
   }
 }
