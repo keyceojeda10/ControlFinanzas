@@ -752,29 +752,46 @@ export async function GET(request) {
     payload.stats.cajaGeneral = cajaGeneral
   }
 
-  // Cobrador con permiso verCapital: expone el capital TOTAL de la organización
-  // (saldo en caja + cartera activa). Es el patrimonio completo, más sensible que el saldo.
-  if (rol === 'cobrador' && permisos?.verCapital) {
+  // Capital TOTAL de la organización (saldo en caja + cartera activa).
+  //
+  // La condicion era solo `rol === 'cobrador' && permisos?.verCapital`, asi que
+  // el DUEÑO nunca recibia el dato y la tarjeta simplemente no le aparecia,
+  // aunque el front si lo da por permitido (useAuth: puedeVerCapital = esOwner
+  // || permisos.verCapital). Era un olvido, no una decision de diseño.
+  if (rol === 'owner' || (rol === 'cobrador' && permisos?.verCapital)) {
     const [cap, prestamosActivos] = await Promise.all([
       prisma.capital.findUnique({
         where: { organizationId },
         select: { saldo: true },
       }),
       prisma.prestamo.findMany({
-        where: { organizationId, estado: 'activo' },
-        select: { totalAPagar: true, pagos: { select: { montoPagado: true, tipo: true } } },
+        // esClavo excluido: el schema define el clavo como prestamo incobrable
+        // que "se excluye de saldos/cartera/capital", y asi lo hacen las demas
+        // pantallas. Aqui se colaba e inflaba la cartera de esta tarjeta.
+        where: { organizationId, estado: 'activo', esClavo: false },
+        select: {
+          totalAPagar: true,
+          montoPrestado: true,
+          pagos: { select: { montoPagado: true, tipo: true } },
+        },
       }),
     ])
     const saldoCaja = Math.round(cap?.saldo ?? 0)
-    const carteraActiva = prestamosActivos.reduce((acc, p) => {
+    let carteraActiva = 0   // pendiente por cobrar, CON intereses
+    let capitalPrestado = 0 // capital puro colocado, SIN intereses
+    for (const p of prestamosActivos) {
       const pagado = p.pagos
         .filter((pg) => !['recargo', 'descuento'].includes(pg.tipo))
         .reduce((a, pg) => a + pg.montoPagado, 0)
-      return acc + Math.max(0, (p.totalAPagar || 0) - pagado)
-    }, 0)
+      carteraActiva   += Math.max(0, (p.totalAPagar || 0) - pagado)
+      capitalPrestado += p.montoPrestado || 0
+    }
     payload.stats.capitalOrganizacion = {
       saldoCaja,
       carteraActiva: Math.round(carteraActiva),
+      capitalPrestado: Math.round(capitalPrestado),
+      // Se deja el mismo significado de siempre a proposito: cambiar que cuenta
+      // como "capital total" es una decision del negocio, no un refactor.
       total: saldoCaja + Math.round(carteraActiva),
     }
   }

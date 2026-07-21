@@ -649,6 +649,15 @@ export default function CajaPage() {
                 <p className="text-sm font-bold font-mono-display text-[var(--color-warning)]">{formatMoney(capitalOrganizacion.carteraActiva || 0)}</p>
               </div>
             </div>
+            {/* Capital puro colocado, sin intereses. La cifra de arriba incluye
+                el interes que aun no ha cobrado; esta es la plata que realmente
+                salio de su bolsillo y esta en la calle. */}
+            {typeof capitalOrganizacion.capitalPrestado === 'number' && (
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-[var(--color-border)]">
+                <span className="text-[10px] text-[var(--color-text-muted)] uppercase">De eso, capital prestado (sin intereses)</span>
+                <span className="text-sm font-bold font-mono-display text-[var(--color-text-primary)]">{formatMoney(capitalOrganizacion.capitalPrestado)}</span>
+              </div>
+            )}
           </Card>
         )}
 
