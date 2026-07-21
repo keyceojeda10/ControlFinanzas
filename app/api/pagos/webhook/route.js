@@ -7,6 +7,7 @@ import { enviarEmail, emailPagoAprobado, emailPagoFallido } from '@/lib/email'
 import { webhookLimiter, getClientIp } from '@/lib/rate-limit'
 import { registrarAdminLog } from '@/lib/admin-log'
 import { sanitizarPlan, activarPlanPagado } from '@/lib/activar-suscripcion'
+import { alertarPagoSinActivar } from '@/lib/alertas-pago'
 
 function verificarFirma(req, body) {
   const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET
@@ -56,6 +57,10 @@ export async function POST(req) {
 
   // Verificar firma
   if (!verificarFirma(req, body)) {
+    // Antes salia en silencio: si el secreto se desconfigura, TODOS los pagos
+    // dejan de activarse y desde el sistema no se nota nada. Mismo hueco que
+    // tenia Wompi.
+    console.error('[webhook] FIRMA INVALIDA — evento de MercadoPago rechazado. Revisar el secreto del webhook. id:', body?.data?.id ?? '(sin id)')
     return NextResponse.json({ error: 'Firma inválida' }, { status: 401 })
   }
 
@@ -292,15 +297,33 @@ export async function POST(req) {
 
     // ─── Pago de plan normal ────────────────────────────────
     if (status === 'approved') {
-      const r = await activarPlanPagado({
-        organizationId: orgId,
-        plan:           planRaw,
-        periodo,
-        montoCOP:       payment.transaction_amount ?? 0,
-        gateway:        'mercadopago',
-        gatewayId:      data.id,
-      })
-      if (r.yaProcesado) console.log('[webhook] payment ' + data.id + ' ya procesado, ignorando')
+      const montoPagado = payment.transaction_amount ?? 0
+      try {
+        const r = await activarPlanPagado({
+          organizationId: orgId,
+          plan:           planRaw,
+          periodo,
+          montoCOP:       montoPagado,
+          gateway:        'mercadopago',
+          gatewayId:      data.id,
+        })
+        if (r.yaProcesado) {
+          console.log('[webhook] payment ' + data.id + ' ya procesado, ignorando')
+        } else {
+          console.log(`[webhook] ACTIVADO plan ${planRaw} (${periodo}) para org ${orgId} por $${montoPagado} — payment ${data.id}`)
+        }
+      } catch (errActivacion) {
+        // Plata cobrada y plan sin activar: el caso mas caro. Antes solo caia
+        // al catch general y se quedaba en un log que nadie mira.
+        console.error('[webhook] PAGO APROBADO pero fallo la activacion:', errActivacion?.message || errActivacion, '| payment:', data.id, '| org:', orgId)
+        await alertarPagoSinActivar({
+          gateway: 'mercadopago',
+          transaccionId: String(data.id),
+          montoCOP: montoPagado,
+          motivo: `Fallo al activar el plan ${planRaw} de la organizacion ${orgId}: ${errActivacion?.message || 'error desconocido'}`,
+        })
+        throw errActivacion
+      }
     } else if (status === 'rejected' || status === 'cancelled') {
       const plan = sanitizarPlan(planRaw)
       await registrarAdminLog({

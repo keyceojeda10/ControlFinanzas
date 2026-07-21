@@ -102,14 +102,29 @@ describe('GET /api/buscar', () => {
     expect(mockRutaFindMany).not.toHaveBeenCalled()
   })
 
-  it('filters by rutaId for cobrador', async () => {
+  // El cobrador puede tener VARIAS rutas: la sesion expone `rutaIds` (array) y
+  // la busqueda filtra con `{ rutaId: { in: rutaIds } }`. El test seguia con el
+  // contrato viejo de un solo `rutaId`, por eso estaba en rojo: no fallaba el
+  // codigo, fallaba la expectativa.
+  it('filtra por las rutas del cobrador', async () => {
     mockGetServerSession.mockResolvedValue({
-      user: { organizationId: 'org-1', rol: 'cobrador', rutaId: 'ruta-1', id: 'user-2' },
+      user: { organizationId: 'org-1', rol: 'cobrador', rutaIds: ['ruta-1', 'ruta-2'], id: 'user-2' },
     })
 
     await GET(makeRequest('test'))
 
     const clienteCall = mockClienteFindMany.mock.calls[0][0]
-    expect(clienteCall.where.rutaId).toBe('ruta-1')
+    expect(clienteCall.where.rutaId).toEqual({ in: ['ruta-1', 'ruta-2'] })
+  })
+
+  it('sin rutas asignadas, el cobrador no filtra por ruta', async () => {
+    mockGetServerSession.mockResolvedValue({
+      user: { organizationId: 'org-1', rol: 'cobrador', rutaIds: [], id: 'user-2' },
+    })
+
+    await GET(makeRequest('test'))
+
+    const clienteCall = mockClienteFindMany.mock.calls[0][0]
+    expect(clienteCall.where.rutaId).toBeUndefined()
   })
 })
