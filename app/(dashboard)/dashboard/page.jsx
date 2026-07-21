@@ -48,17 +48,16 @@ function KpiCardSkeleton() {
   )
 }
 
+// Debe reflejar la misma estructura que KpiGroup (seccion con titulo, sin card
+// contenedora), o al cargar se ve un layout que luego cambia.
 function KpiGroupSkeleton({ kpis = 2 }) {
   return (
-    <div
-      className="rounded-[16px]"
-      style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
-    >
-      <div className="px-4 py-2.5 flex items-center gap-2">
+    <div>
+      <div className="px-1 py-2 flex items-center gap-2">
         <div className="w-6 h-6 rounded-[6px] animate-pulse" style={{ background: 'var(--color-bg-hover)' }} />
         <div className="h-3 w-24 rounded animate-pulse" style={{ background: 'var(--color-bg-hover)' }} />
       </div>
-      <div className="px-3 pb-3">
+      <div className="pt-1.5">
         <div className="grid grid-cols-2 gap-3">
           {[...Array(kpis)].map((_, i) => <KpiCardSkeleton key={i} />)}
         </div>
@@ -911,17 +910,16 @@ function KpiGroup({ title, icon, children, defaultOpen = true, storageKey }) {
   // Hasta hidratar, usar defaultOpen para evitar flash visual
   const isOpen = hydrated ? open : defaultOpen
 
+  // Seccion con titulo, NO una card. Antes este contenedor era una card
+  // (fondo + borde + radio 16) que contenia KpiCards que tambien son cards con
+  // la misma superficie: card dentro de card y doble borde, que el canon
+  // prohibe. Ahora el grupo solo etiqueta y agrupa; las tarjetas de adentro son
+  // las unicas con superficie propia.
   return (
-    <div
-      className="rounded-[16px]"
-      style={{
-        background: 'var(--color-bg-card)',
-        border: '1px solid var(--color-border)',
-      }}
-    >
+    <div>
       <button
         onClick={toggle}
-        className={`w-full px-4 py-2.5 flex items-center justify-between gap-2 transition-colors hover:bg-[var(--color-bg-hover)] rounded-t-[16px] ${isOpen ? '' : 'rounded-b-[16px]'}`}
+        className="w-full px-1 py-2 flex items-center justify-between gap-2 rounded-[12px] transition-colors hover:bg-[var(--color-bg-hover)]"
       >
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-6 h-6 rounded-[6px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-text-muted) 12%, transparent)', color: 'var(--color-text-secondary)' }}>
@@ -934,7 +932,7 @@ function KpiGroup({ title, icon, children, defaultOpen = true, storageKey }) {
         </svg>
       </button>
       {isOpen && (
-        <div className="px-3 pb-3">
+        <div className="pt-1.5">
           {children}
         </div>
       )}

@@ -18,10 +18,10 @@ function ShowcasePanel() {
       {/* Status bar */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: '#666973' }}>
+          <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: '#8a8e98' }}>
             EN VIVO · {today}
           </p>
-          <p className="text-[12.5px] mt-1" style={{ color: '#9ea1ab' }}>
+          <p className="text-[12.5px] mt-1" style={{ color: '#a3a8b2' }}>
             Plataforma operando con normalidad
           </p>
         </div>
@@ -44,11 +44,11 @@ function ShowcasePanel() {
           }}
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: '#666973' }}>RECAUDO DE HOY</span>
+            <span className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: '#8a8e98' }}>RECAUDO DE HOY</span>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(47,190,106,0.12)', color: '#2fbe6a' }}>+12%</span>
           </div>
           <p className="font-mono-display text-[28px] font-bold" style={{ color: '#f3f3f6' }}>
-            <span className="text-[12px]" style={{ color: '#666973' }}>$</span>38<span style={{ color: '#666973' }}>.420.000</span>
+            <span className="text-[12px]" style={{ color: '#8a8e98' }}>$</span>38<span style={{ color: '#8a8e98' }}>.420.000</span>
           </p>
           <div className="flex items-end gap-[3px] mt-3 h-[28px]">
             {[8,12,10,14,11,16,13,18,15,20,17,22,19,24,28,26].map((h,i) => (
@@ -71,21 +71,21 @@ function ShowcasePanel() {
             <div className="w-9 h-9 rounded-[12px] flex items-center justify-center text-[12px] font-bold shrink-0" style={{ background: 'linear-gradient(135deg,#5b8df5,#9385f5)', color: '#fff' }}>MR</div>
             <div className="flex-1 min-w-0">
               <p className="text-[15px] font-extrabold" style={{ color: '#f3f3f6' }}>Marisol Ramirez</p>
-              <p className="text-[11px] font-medium" style={{ color: '#666973' }}>Cuota 7/24 · PR-1209</p>
+              <p className="text-[11px] font-medium" style={{ color: '#8a8e98' }}>Cuota 7/24 · PR-1209</p>
             </div>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0" style={{ background: 'rgba(245,184,36,0.12)', color: '#f5b824' }}>Pagado</span>
           </div>
           <div className="grid grid-cols-3 gap-4 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
             <div>
-              <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: '#666973' }}>MONTO</p>
+              <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: '#8a8e98' }}>MONTO</p>
               <p className="font-mono-display text-[14px] mt-0.5" style={{ color: '#f3f3f6' }}>$ 850.000</p>
             </div>
             <div>
-              <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: '#666973' }}>VIA</p>
+              <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: '#8a8e98' }}>VIA</p>
               <p className="text-[13px] font-medium mt-0.5" style={{ color: '#f3f3f6' }}>Nequi</p>
             </div>
             <div>
-              <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: '#666973' }}>HORA</p>
+              <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: '#8a8e98' }}>HORA</p>
               <p className="font-mono-display text-[13px] mt-0.5" style={{ color: '#f3f3f6' }}>14:32</p>
             </div>
           </div>
@@ -101,12 +101,12 @@ function ShowcasePanel() {
             transform: 'rotate(-1deg)',
           }}
         >
-          <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-2.5" style={{ color: '#666973' }}>RUTA HOY · DIEGO ORTIZ</p>
+          <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-2.5" style={{ color: '#8a8e98' }}>RUTA HOY · DIEGO ORTIZ</p>
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-[10px] flex items-center justify-center font-mono-display text-[13px] font-bold shrink-0" style={{ background: 'rgba(245,184,36,0.1)', color: '#f5b824' }}>8</div>
             <div>
               <p className="text-[13px] font-semibold" style={{ color: '#f3f3f6' }}>8 visitas programadas</p>
-              <p className="text-[11px]" style={{ color: '#666973' }}>Cra 43 → Belen → Estadio</p>
+              <p className="text-[11px]" style={{ color: '#8a8e98' }}>Cra 43 → Belen → Estadio</p>
             </div>
           </div>
         </div>
@@ -116,11 +116,11 @@ function ShowcasePanel() {
       <div>
         <blockquote
           className="text-[22px] xl:text-[26px] leading-snug"
-          style={{ color: '#9ea1ab', fontFamily: 'var(--font-space-grotesk)' }}
+          style={{ color: '#a3a8b2', fontFamily: 'var(--font-space-grotesk)' }}
         >
           &ldquo;Pasamos de Excel a Control Finanzas y nuestra mora bajo del 14% al 5.2% en cuatro meses.&rdquo;
         </blockquote>
-        <p className="text-[12.5px] mt-4 font-medium" style={{ color: '#666973' }}>
+        <p className="text-[12.5px] mt-4 font-medium" style={{ color: '#8a8e98' }}>
           Ricardo Tovar · Prestamos del Valle · 800+ clientes activos
         </p>
       </div>
