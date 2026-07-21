@@ -1518,7 +1518,7 @@ export default function RutaDetallePage({ params }) {
               </div>
               <div className="flex items-baseline justify-between">
                 <p className="text-lg font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(ruta.carteraTotal)}</p>
-                <p className="text-[11px] font-mono-display" style={{ color: 'var(--color-text-muted)' }}>de {formatMoney(denominadorCartera)}</p>
+                <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>pendiente por cobrar</p>
               </div>
               <div className="h-1.5 rounded-full overflow-hidden mt-2.5" style={{ background: 'var(--color-bg-hover)' }}>
                 <div className="h-full rounded-full transition-[width] duration-700"
@@ -1528,6 +1528,24 @@ export default function RutaDetallePage({ params }) {
                   }}
                 />
               </div>
+              {/* Cuanto tiene prestado en esta ruta, con y sin intereses. Son
+                  cifras distintas y en plata un rotulo ambiguo genera desconfianza,
+                  por eso van nombradas y no como un "de $X" suelto. */}
+              {typeof ruta.capitalTotal === 'number' && (
+                <div
+                  className="grid grid-cols-2 gap-2 mt-2.5 pt-2.5"
+                  style={{ borderTop: '1px solid color-mix(in srgb, var(--color-teal) 18%, var(--color-border))' }}
+                >
+                  <div>
+                    <p className="text-[9px] font-semibold uppercase tracking-[.06em]" style={{ color: 'var(--color-text-muted)' }}>Prestado (capital)</p>
+                    <p className="text-[13px] font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(ruta.capitalTotal)}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[9px] font-semibold uppercase tracking-[.06em]" style={{ color: 'var(--color-text-muted)' }}>Con intereses</p>
+                    <p className="text-[13px] font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(denominadorCartera)}</p>
+                  </div>
+                </div>
+              )}
             </div>
             )}
 
