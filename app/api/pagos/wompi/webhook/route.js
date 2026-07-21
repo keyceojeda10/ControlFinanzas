@@ -1,7 +1,15 @@
+// Webhook de eventos de Wompi.
+//
+// Este endpoint era MUDO: firma invalida, evento ignorado, transaccion no
+// aprobada y hasta la activacion exitosa salian todas sin dejar rastro. Con 16
+// suscripciones ya procesadas no habia UN SOLO log de Wompi en el servidor, asi
+// que era imposible saber si funcionaba. Ahora cada camino se registra con el
+// prefijo [wompi-webhook], y si entra plata que no se puede activar, avisa.
 import { NextResponse } from 'next/server'
 import { validarFirmaEvento, consultarTransaccion } from '@/lib/wompi'
 import { activarPlanPagado } from '@/lib/activar-suscripcion'
 import { webhookLimiter, getClientIp } from '@/lib/rate-limit'
+import { alertarPagoSinActivar } from '@/lib/alertas-pago'
 
 function parseReferencia(ref) {
   if (!ref || !ref.startsWith('cf-')) return null
@@ -27,15 +35,25 @@ export async function POST(req) {
   }
 
   if (!validarFirmaEvento(body)) {
+    // Camino critico y antes invisible: si la WOMPI_EVENTS_KEY se desconfigura,
+    // TODOS los pagos dejan de activarse y desde el sistema no se nota nada.
+    console.error('[wompi-webhook] FIRMA INVALIDA — evento rechazado. Revisar WOMPI_EVENTS_KEY. tx:', body?.data?.transaction?.id ?? '(sin id)')
     return NextResponse.json({ error: 'Firma invalida' }, { status: 401 })
   }
 
+  // Una linea por evento recibido y con firma valida. Es la que responde, de un
+  // vistazo en los logs, la pregunta que antes no se podia contestar: "¿Wompi
+  // nos esta llamando?". Son pocos eventos al dia, no genera ruido.
+  console.log(`[wompi-webhook] evento recibido: ${body?.event} | tx: ${body?.data?.transaction?.id ?? '-'}`)
+
   if (body?.event !== 'transaction.updated') {
+    console.log(`[wompi-webhook] evento ${body?.event} ignorado (solo se procesa transaction.updated)`)
     return NextResponse.json({ ok: true })
   }
 
   const txEvento = body?.data?.transaction
   if (!txEvento?.id) {
+    console.warn('[wompi-webhook] evento transaction.updated sin id de transaccion')
     return NextResponse.json({ ok: true })
   }
 
@@ -50,14 +68,28 @@ export async function POST(req) {
   const estado = (tx?.status || txEvento.status)
   const referencia = (tx?.reference || txEvento.reference)
   const montoCentavos = (tx?.amount_in_cents ?? txEvento.amount_in_cents ?? 0)
+  const montoCOP = Math.round(montoCentavos / 100)
 
   if (estado !== 'APPROVED') {
+    // No es un error: DECLINED o VOIDED simplemente no activan nada y el
+    // cliente queda como estaba. Se registra para poder distinguir "llego y se
+    // rechazo" de "nunca llego", que era imposible de saber.
+    console.log(`[wompi-webhook] tx ${txEvento.id} en estado ${estado} — no activa nada (ref: ${referencia})`)
     return NextResponse.json({ ok: true })
   }
 
   const parsed = parseReferencia(referencia)
   if (!parsed) {
-    console.warn('[wompi-webhook] referencia no reconocida:', referencia)
+    // Pago APROBADO cuya referencia no sabemos a que organizacion pertenece:
+    // entro plata y no hay a quien activarsela. Requiere humano.
+    console.error('[wompi-webhook] PAGO APROBADO con referencia no reconocida:', referencia, '| tx:', txEvento.id)
+    await alertarPagoSinActivar({
+      gateway: 'wompi',
+      transaccionId: txEvento.id,
+      referencia,
+      montoCOP,
+      motivo: 'La referencia no tiene el formato esperado, no se puede saber a que organizacion activarle el plan.',
+    })
     return NextResponse.json({ ok: true })
   }
 
@@ -66,14 +98,29 @@ export async function POST(req) {
       organizationId: parsed.orgId,
       plan:           parsed.plan,
       periodo:        parsed.periodo,
-      montoCOP:       Math.round(montoCentavos / 100),
+      montoCOP,
       gateway:        'wompi',
       gatewayId:      txEvento.id,
       referencia,
     })
-    if (r.yaProcesado) console.log('[wompi-webhook] tx ' + txEvento.id + ' ya procesada, ignorando')
+    if (r.yaProcesado) {
+      console.log(`[wompi-webhook] tx ${txEvento.id} ya procesada, ignorando (org ${parsed.orgId})`)
+    } else {
+      // El camino feliz tambien se registra: sin esto era imposible confirmar
+      // que la integracion estaba viva.
+      console.log(`[wompi-webhook] ACTIVADO plan ${parsed.plan} (${parsed.periodo}) para org ${parsed.orgId} por $${montoCOP} — tx ${txEvento.id}`)
+    }
   } catch (err) {
-    console.error('[wompi-webhook] error activando plan:', err)
+    // Plata cobrada y activacion fallida: es el caso mas caro y hay que
+    // enterarse en el momento, no cuando el cliente reclame.
+    console.error('[wompi-webhook] PAGO APROBADO pero fallo la activacion:', err?.message || err, '| tx:', txEvento.id, '| org:', parsed.orgId)
+    await alertarPagoSinActivar({
+      gateway: 'wompi',
+      transaccionId: txEvento.id,
+      referencia,
+      montoCOP,
+      motivo: `Fallo al activar el plan ${parsed.plan} de la organizacion ${parsed.orgId}: ${err?.message || 'error desconocido'}`,
+    })
     return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }
 
