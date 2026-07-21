@@ -329,6 +329,9 @@ export async function GET() {
       },
       select: {
         montoPagado: true,
+        // La fecha permite separar la ganancia de HOY del mismo conjunto de
+        // filas, sin pagar una consulta aparte.
+        fechaPago: true,
         prestamo: { select: { montoPrestado: true, totalAPagar: true } },
       },
     }),
@@ -446,18 +449,38 @@ export async function GET() {
   // De cada pago, fraccion de interes = (totalAPagar - montoPrestado) / totalAPagar.
   // Funciona para prestamos y mercancia (ahi el "interes" es la ganancia
   // = precio venta - costo). El resto del pago es recuperacion de capital.
+  //
+  // De paso se separa lo de HOY: "recaudado hoy" mezcla dos cosas muy
+  // distintas —la plata del prestamista volviendo (capital) y lo que de verdad
+  // gano (interes)—. Cobrar $500.000 de capital no es ganar $500.000.
   let interesGanadoMes = null
+  let interesGanadoHoy = null
+  let capitalRecuperadoHoy = null
   if (!esCobrador) {
-    let interes = 0
+    let interesMes = 0
+    let interesHoy = 0
+    let capitalHoy = 0
     for (const pago of (pagosMesDetalle || [])) {
       const total = pago.prestamo?.totalAPagar ?? 0
       const capital = pago.prestamo?.montoPrestado ?? 0
       const monto = pago.montoPagado ?? 0
+      const esDeHoy = pago.fechaPago && pago.fechaPago >= inicioDiaUTC
       if (total > 0 && total > capital) {
-        interes += monto * ((total - capital) / total)
+        const interesDelPago = monto * ((total - capital) / total)
+        interesMes += interesDelPago
+        if (esDeHoy) {
+          interesHoy += interesDelPago
+          capitalHoy += monto - interesDelPago
+        }
+      } else if (esDeHoy) {
+        // Prestamo sin interes (o mercancia sin ganancia): todo el pago es
+        // recuperacion de capital.
+        capitalHoy += monto
       }
     }
-    interesGanadoMes = Math.round(interes)
+    interesGanadoMes = Math.round(interesMes)
+    interesGanadoHoy = Math.round(interesHoy)
+    capitalRecuperadoHoy = Math.round(capitalHoy)
   }
 
   // Sparkline 7d (de mas viejo a mas reciente, hoy es el ultimo): sparkline7d[6] = hoy
@@ -507,6 +530,10 @@ export async function GET() {
       // sentido comparar el dia en curso.
       ayerAEstaHora: Math.round(pagosAyerMismaHora?._sum?.montoPagado ?? 0),
       interesGanadoMes,
+      // De lo cobrado hoy, cuanto fue ganancia real y cuanto capital propio
+      // volviendo. Solo owner.
+      interesGanadoHoy,
+      capitalRecuperadoHoy,
       sparkline7d,
     },
     rutas: {

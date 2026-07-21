@@ -41,6 +41,13 @@ export async function GET(request) {
   const creadoPorId = searchParams.get('creadoPorId')
   const renovacion = searchParams.get('renovacion') // 'si' | 'no' | null
   const modoInteres = searchParams.get('modoInteres')
+  // Prestamos activos sin pagos hace N dias. Existe para que la alerta
+  // "N prestamos sin pagos hace mas de 7 dias" del dashboard tenga a donde
+  // llevar: antes enlazaba a /prestamos pelado y caias al listado completo.
+  const sinPagosDiasRaw = Number(searchParams.get('sinPagosDias'))
+  const sinPagosDias = Number.isFinite(sinPagosDiasRaw) && sinPagosDiasRaw > 0
+    ? Math.min(sinPagosDiasRaw, 365)
+    : null
   const page      = searchParams.get('page') ? Number(searchParams.get('page')) : null
   const limit     = Math.min(Number(searchParams.get('limit')) || 50, 100)
 
@@ -68,6 +75,17 @@ export async function GET(request) {
     ...(renovacion === 'si' && { renovadoDeId: { not: null } }),
     ...(renovacion === 'no' && { renovadoDeId: null }),
     ...(modoInteres && { modoInteres }),
+    // MISMA definicion que usa el dashboard para contar la alerta, para que el
+    // numero que ves arriba y la lista que abres coincidan. Usa el campo
+    // denormalizado ultimoPagoAt (tiene indice con estado) en vez de subqueries
+    // sobre pagos, que son caras a escala. `null` = nunca ha pagado.
+    ...(sinPagosDias && {
+      estado: 'activo',
+      OR: [
+        { ultimoPagoAt: null },
+        { ultimoPagoAt: { lt: new Date(Date.now() - sinPagosDias * 24 * 60 * 60 * 1000) } },
+      ],
+    }),
     ...(Object.keys(clienteWhere).length > 0 && { cliente: clienteWhere }),
   }
 

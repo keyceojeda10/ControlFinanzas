@@ -290,6 +290,14 @@ export default function ClientesPage() {
       if (q) params.set('buscar', q)
       if (grupoId) params.set('grupo', grupoId)
       if (rutaId) params.set('rutaId', rutaId)
+      // Viene de la alerta "N clientes sin ruta asignada" del dashboard.
+      // Se lee de window.location y NO del hook: este loader es un useCallback
+      // con dependencias vacias, asi que un searchParams capturado aqui se
+      // quedaria congelado en el primer render (el mismo bug de closure viejo
+      // que hacia que los filtros por URL no se aplicaran).
+      if (new URLSearchParams(window.location.search).get('sinRuta') === '1') {
+        params.set('sinRuta', '1')
+      }
       params.set('page', String(p))
       params.set('limit', String(LIMIT))
       const res = await fetch(`/api/clientes?${params}`)

@@ -321,6 +321,12 @@ export default function PrestamosPage() {
       if (creador) params.set('creadoPorId', creador)
       if (renov) params.set('renovacion', renov)
       if (modo) params.set('modoInteres', modo)
+      // Viene de la alerta "N prestamos sin pagos hace mas de N dias".
+      // Se lee de window.location y NO del hook: este loader es un useCallback
+      // con dependencias vacias y un searchParams capturado aqui se quedaria
+      // congelado en el primer render.
+      const sinPagos = new URLSearchParams(window.location.search).get('sinPagosDias')
+      if (sinPagos) params.set('sinPagosDias', sinPagos)
       params.set('page', String(p))
       params.set('limit', String(LIMIT))
       const res = await fetch(`/api/prestamos?${params}`)

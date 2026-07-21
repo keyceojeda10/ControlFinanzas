@@ -1176,12 +1176,12 @@ function NecesitaAtencion({ alertas, moraData }) {
   if (alertas.clientesSinRuta > 0) items.push({
     color: 'var(--color-warning)',
     text: `${alertas.clientesSinRuta} ${alertas.clientesSinRuta === 1 ? 'cliente sin ruta asignada' : 'clientes sin ruta asignada'}`,
-    href: '/clientes',
+    href: '/clientes?sinRuta=1',
   })
   if (alertas.prestamosSinPagosLargo > 0) items.push({
     color: 'var(--color-warning)',
     text: `${alertas.prestamosSinPagosLargo} ${alertas.prestamosSinPagosLargo === 1 ? 'préstamo sin pagos hace más de 7 días' : 'préstamos sin pagos hace más de 7 días'}`,
-    href: '/prestamos',
+    href: '/prestamos?sinPagosDias=7',
   })
   const proximos = alertas.proximosACompletar?.length ?? 0
   if (proximos > 0) items.push({
@@ -1708,7 +1708,11 @@ export default function DashboardPage() {
             label="Recaudado hoy"
             valueRaw={data.cobros.hoy}
             value={formatMoney(data.cobros.hoy)}
-            sub={`${data.cobros.cantidadHoy} ${data.cobros.cantidadHoy === 1 ? 'pago registrado' : 'pagos registrados'}${data.cobros.ayer ? ` · ayer ${formatMoney(data.cobros.ayer)}` : ''}`}
+            sub={`${data.cobros.cantidadHoy} ${data.cobros.cantidadHoy === 1 ? 'pago' : 'pagos'}${
+              // "Recaudado" mezcla capital propio volviendo con ganancia real.
+              // Cobrar $500.000 de capital no es ganar $500.000.
+              data.cobros.interesGanadoHoy > 0 ? ` · ganancia ${formatMoney(data.cobros.interesGanadoHoy)}` : ''
+            }${data.cobros.ayer ? ` · ayer ${formatMoney(data.cobros.ayer)}` : ''}`}
             color="var(--color-success)"
             accent="var(--color-success)"
             narrativa={generarNarrativa({
@@ -1726,7 +1730,12 @@ export default function DashboardPage() {
               comoSeCalcula: 'Sumo todos los pagos registrados hoy, sin importar el tipo (cuota, abono a capital, liquidación...). Lo único que NO cuento son recargos ni descuentos.',
               ejemplo: (() => {
                 const metaHoy = data.prestamos.esperadoHoy ?? data.prestamos.cuotaDiariaTotal
-                const base = `Llevas ${formatMoney(data.cobros.hoy)} cobrados en ${data.cobros.cantidadHoy} pagos hoy.`
+                const gan = data.cobros.interesGanadoHoy
+                const cap = data.cobros.capitalRecuperadoHoy
+                const desglose = gan > 0
+                  ? ` De eso, ${formatMoney(gan)} es ganancia suya y ${formatMoney(cap)} es su propio capital volviendo.`
+                  : ''
+                const base = `Llevas ${formatMoney(data.cobros.hoy)} cobrados en ${data.cobros.cantidadHoy} pagos hoy.${desglose}`
                 const conMeta = metaHoy > 0
                   ? ` Eso es el ${Math.min(100, Math.round((data.cobros.hoy / metaHoy) * 100))}% de lo que toca cobrar hoy (${formatMoney(metaHoy)}).`
                   : ' Hoy no vence ninguna cuota.'

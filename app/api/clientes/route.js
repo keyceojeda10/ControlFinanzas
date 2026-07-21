@@ -56,10 +56,16 @@ export async function GET(request) {
     ? (grupo === '_none' ? { grupoCobroId: null } : { grupoCobroId: grupo })
     : {}
 
+  // Clientes sin ruta asignada. Existe para que la alerta "N clientes sin ruta"
+  // del dashboard tenga a donde llevar: antes enlazaba a /clientes pelado y
+  // caias al listado completo, sin forma de saber cuales eran.
+  const soloSinRuta = searchParams.get('sinRuta') === '1'
+
   const condiciones = [
     { organizationId },
     { estado: { notIn: ['eliminado'] } },
   ]
+  if (soloSinRuta) condiciones.push({ rutaId: null })
   if (Object.keys(filtroRuta).length) condiciones.push(filtroRuta)
   if (Object.keys(filtroBuscar).length) condiciones.push(filtroBuscar)
   if (Object.keys(filtroGrupo).length) condiciones.push(filtroGrupo)
