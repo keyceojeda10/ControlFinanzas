@@ -73,56 +73,22 @@ export default function WhatsAppBotConfig() {
         </div>
       </div>
 
-      {/* Modo prueba */}
-      <div className="border border-[var(--color-border)] rounded-[20px] p-4 bg-[var(--color-bg-card)]">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-semibold text-white">Modo prueba</h2>
-            <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
-              Solo responde a tu WhatsApp personal
-            </p>
-          </div>
-          <Toggle checked={!!config.modoPrueba} onChange={(v) => set('modoPrueba', v)} />
-        </div>
-      </div>
+      {/* Aqui vivian cuatro controles mas —Modo prueba, Modelo Claude, System
+          prompt y WhatsApp personal— que NO hacian nada: el bot v2 tiene el
+          modelo fijo en lib/bot-v2/agente.js, los prompts en prompts.js, y las
+          alertas usan WHATSAPP_ADMIN_NUMBER del .env. El panel daba la
+          impresion de controlar el bot y no controlaba nada, que es peor que no
+          tener panel. Las columnas siguen en BotConfig por si algun dia se
+          conectan de verdad; lo que se quito es la promesa falsa. */}
 
-      {/* Modelo */}
+      {/* Delays de seguimiento (estos SI se aplican, en lib/bot-v2/sender.js) */}
       <div className="border border-[var(--color-border)] rounded-[20px] p-4 bg-[var(--color-bg-card)]">
-        <h2 className="text-sm font-semibold text-white mb-2">Modelo Claude</h2>
-        <select
-          value={config.modelo || 'claude-sonnet-4-6'}
-          onChange={e => set('modelo', e.target.value)}
-          className="w-full px-3 py-2 rounded-[8px] bg-[#0a0a0a] border border-[var(--color-border)] text-sm text-white focus:outline-none"
-        >
-          <option value="claude-sonnet-4-6">Claude Sonnet 4.6 (recomendado)</option>
-          <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (mas barato)</option>
-          <option value="claude-opus-4-6">Claude Opus 4.6 (mas inteligente)</option>
-        </select>
-      </div>
-
-      {/* System prompt */}
-      <div className="border border-[var(--color-border)] rounded-[20px] p-4 bg-[var(--color-bg-card)]">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-sm font-semibold text-white">System prompt</h2>
-          <span className="text-[10px] text-[var(--color-text-muted)]">
-            {(config.systemPrompt || '').length} caracteres
-          </span>
-        </div>
-        <textarea
-          value={config.systemPrompt || ''}
-          onChange={e => set('systemPrompt', e.target.value)}
-          rows={12}
-          className="w-full px-3 py-2 rounded-[8px] bg-[#0a0a0a] border border-[var(--color-border)] text-xs text-white font-mono placeholder-[#555] focus:outline-none focus:border-[var(--color-accent)] resize-y"
-        />
-      </div>
-
-      {/* Delays y limites */}
-      <div className="border border-[var(--color-border)] rounded-[20px] p-4 bg-[var(--color-bg-card)]">
-        <h2 className="text-sm font-semibold text-white mb-3">Seguimientos y límites</h2>
+        <h2 className="text-sm font-semibold text-white mb-1">Espaciado entre seguimientos</h2>
+        <p className="text-[11px] text-[var(--color-text-muted)] mb-3">
+          Pausa aleatoria entre un seguimiento y el siguiente, para no enviarlos en rafaga.
+        </p>
         <div className="grid grid-cols-2 gap-3">
           {[
-            { key: 'limiteDiario', label: 'Límite diario mensajes', type: 'number' },
-            { key: 'limiteGastoUsd', label: 'Límite gasto USD/día', type: 'number', step: '0.5' },
             { key: 'delayMinMs', label: 'Delay mínimo (ms)', type: 'number' },
             { key: 'delayMaxMs', label: 'Delay máximo (ms)', type: 'number' },
           ].map(f => (
@@ -138,21 +104,6 @@ export default function WhatsAppBotConfig() {
             </div>
           ))}
         </div>
-      </div>
-
-      {/* WhatsApp personal */}
-      <div className="border border-[var(--color-border)] rounded-[20px] p-4 bg-[var(--color-bg-card)]">
-        <h2 className="text-sm font-semibold text-white mb-2">WhatsApp personal (alertas)</h2>
-        <input
-          type="text"
-          value={config.whatsappPersonal || ''}
-          onChange={e => set('whatsappPersonal', e.target.value)}
-          placeholder="573001234567"
-          className="w-full px-3 py-2 rounded-[8px] bg-[#0a0a0a] border border-[var(--color-border)] text-sm text-white placeholder-[#555] focus:outline-none"
-        />
-        <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
-          Número con indicativo. Recibe alertas de leads calientes y reportes.
-        </p>
       </div>
 
       {/* Guardar */}
