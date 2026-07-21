@@ -43,10 +43,19 @@ export async function GET() {
   // Rango de ayer Colombia: para comparativos vs ayer
   const inicioAyerUTC = new Date(Date.UTC(y, m, d - 1, 5, 0, 0))
   const finAyerUTC    = new Date(Date.UTC(y, m, d, 4, 59, 59))
-  // Rango ultimos 7 dias (incluye hoy) para sparkline
+  // Corte de ayer a la MISMA hora que llevamos hoy. Comparar la mañana contra
+  // el dia completo de ayer siempre da negativo antes del cierre: a las 10am
+  // el cartel decia "94% menos que ayer" todos los dias, asi que la alarma
+  // sonaba siempre y dejaba de significar algo.
+  const msTranscurridosHoy = Math.max(0, Date.now() - inicioDiaUTC.getTime())
+  const finAyerMismaHoraUTC = new Date(
+    Math.min(inicioAyerUTC.getTime() + msTranscurridosHoy, finAyerUTC.getTime())
+  )
+  // Rango ultimos 7 dias (incluye hoy) para el sparkline.
+  // Antes se traian 30 dias de pagos para alimentar un heatmap que nunca se
+  // renderizaba: 23 dias de pagos individuales leidos en CADA carga del
+  // dashboard para no pintar nada.
   const inicio7DiasUTC = new Date(Date.UTC(y, m, d - 6, 5, 0, 0))
-  // Rango ultimos 30 dias (incluye hoy) para heatmap calendario
-  const inicio30DiasUTC = new Date(Date.UTC(y, m, d - 29, 5, 0, 0))
 
   const [
     org,
@@ -60,13 +69,14 @@ export async function GET() {
     capitalRow,
     gastosMesAgg,
     pagosAyer,
+    pagosAyerMismaHora,
     pagosHoyPorCobrador,
     prestamosHoy,
     gastosHoy,
     movimientosHoy,
     clientesSinRutaCount,
     clientesSinPagosLargo,
-    pagos30Dias,
+    pagos7Dias,
     pagosMesDetalle,
   ] = await Promise.all([
     prisma.organization.findUnique({
@@ -207,6 +217,18 @@ export async function GET() {
       _count: true,
     }),
 
+    // Pagos de ayer HASTA LA MISMA HORA que llevamos hoy: es la unica
+    // comparacion honesta antes de que termine el dia.
+    prisma.pago.aggregate({
+      where: {
+        organizationId: orgId,
+        fechaPago: { gte: inicioAyerUTC, lte: finAyerMismaHoraUTC },
+        tipo: { notIn: ['recargo', 'descuento'] },
+        ...filtroRutaPagos,
+      },
+      _sum: { montoPagado: true },
+    }),
+
     // Desglose de pagos de hoy POR COBRADOR (solo owner; cobrador ya ve solo lo suyo)
     esCobrador ? Promise.resolve([]) : prisma.pago.groupBy({
       by: ['cobradorId'],
@@ -289,7 +311,7 @@ export async function GET() {
     prisma.pago.findMany({
       where: {
         organizationId: orgId,
-        fechaPago: { gte: inicio30DiasUTC, lte: finDiaUTC },
+        fechaPago: { gte: inicio7DiasUTC, lte: finDiaUTC },
         tipo: { notIn: ['recargo', 'descuento'] },
         ...filtroRutaPagos,
       },
@@ -438,20 +460,17 @@ export async function GET() {
     interesGanadoMes = Math.round(interes)
   }
 
-  // Sparkline 7d y Heatmap 30d (de mas viejo a mas reciente, hoy es el ultimo)
-  // sparkline7d[6] = hoy, heatmap30d[29] = hoy
+  // Sparkline 7d (de mas viejo a mas reciente, hoy es el ultimo): sparkline7d[6] = hoy
   const sparkline7d = Array(7).fill(0)
-  const heatmap30d = Array(30).fill(0)
-  for (const p of pagos30Dias) {
+  for (const p of pagos7Dias) {
     const fecha = new Date(p.fechaPago)
     const offsetMs = Math.abs(getUtcOffset(country)) * 60 * 60 * 1000
     const fechaCO = new Date(fecha.getTime() - offsetMs)
     const diaCO = Date.UTC(fechaCO.getUTCFullYear(), fechaCO.getUTCMonth(), fechaCO.getUTCDate())
     const hoyCO = Date.UTC(y, m, d)
     const diasAtras = Math.floor((hoyCO - diaCO) / (24 * 60 * 60 * 1000))
-    if (diasAtras >= 0 && diasAtras < 30) {
-      heatmap30d[29 - diasAtras] += p.montoPagado
-      if (diasAtras < 7) sparkline7d[6 - diasAtras] += p.montoPagado
+    if (diasAtras >= 0 && diasAtras < 7) {
+      sparkline7d[6 - diasAtras] += p.montoPagado
     }
   }
 
@@ -484,9 +503,11 @@ export async function GET() {
       cantidadMes: pagosMes._count              ?? 0,
       ayer:        cobrosAyerMonto,
       cantidadAyer: cobrosAyerCount,
+      // Lo que llevabas ayer a esta misma hora. Es contra esto que tiene
+      // sentido comparar el dia en curso.
+      ayerAEstaHora: Math.round(pagosAyerMismaHora?._sum?.montoPagado ?? 0),
       interesGanadoMes,
       sparkline7d,
-      heatmap30d,
     },
     rutas: {
       activas: rutasActivas ?? 0,

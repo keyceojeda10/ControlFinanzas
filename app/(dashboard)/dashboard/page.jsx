@@ -466,71 +466,20 @@ function DonutProgress({ value = 0, max = 100, color = 'var(--color-success)', s
   )
 }
 
-// Heatmap calendario tipo GitHub para los ultimos 30 dias.
-function Heatmap30d({ data, color = 'var(--color-success)', label = 'Cobros últimos 30 días' }) {
-  if (!data || data.length === 0) return null
-  const max = Math.max(...data, 1)
-  const cols = 10  // 10 columnas x 3 filas = 30 dias
-  const cells = []
-  for (let i = 0; i < 30; i++) {
-    const v = data[i] || 0
-    const intensity = max > 0 ? v / max : 0
-    const opacity = v === 0 ? 0.06 : 0.18 + intensity * 0.82
-    cells.push({ idx: i, valor: v, opacity, esHoy: i === 29 })
-  }
-  // Calcular max para tooltip context
-  const totalMes = data.reduce((a, b) => a + b, 0)
-  const promedio = totalMes / 30
-
-  return (
-    <div className="rounded-[16px] px-4 py-4" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
-      <div className="flex items-baseline justify-between mb-3">
-        <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
-        <p className="text-[10px] font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
-          Promedio diario · <span style={{ color: 'var(--color-text-primary)' }}>{formatMoney(Math.round(promedio))}</span>
-        </p>
-      </div>
-      <div className={`grid gap-1`} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
-        {cells.map((c) => (
-          <div
-            key={c.idx}
-            className="heatmap-cell relative rounded-[4px] aspect-square"
-            style={{
-              background: c.esHoy
-                ? `color-mix(in srgb, ${color} ${Math.max(40, c.opacity * 100)}%, transparent)`
-                : `color-mix(in srgb, ${color} ${c.opacity * 100}%, transparent)`,
-              border: c.esHoy ? `1.5px solid ${color}` : '1px solid color-mix(in srgb, var(--color-text-muted) 8%, transparent)',
-              animationDelay: `${c.idx * 12}ms`,
-            }}
-            title={`Hace ${29 - c.idx} día${29 - c.idx === 1 ? '' : 's'}: ${formatMoney(c.valor)}`}
-          />
-        ))}
-      </div>
-      <div className="flex items-center justify-between gap-2 mt-3 text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
-        <span>Hace 30 días</span>
-        <div className="flex items-center gap-1">
-          <span>menos</span>
-          {[0.1, 0.3, 0.55, 0.8, 1].map((op) => (
-            <div key={op} className="w-2.5 h-2.5 rounded-[2px]" style={{ background: `color-mix(in srgb, ${color} ${op * 100}%, transparent)` }} />
-          ))}
-          <span>más</span>
-        </div>
-        <span>Hoy</span>
-      </div>
-    </div>
-  )
-}
 
 // Genera narrativa contextual basada en datos. Da personalidad al dashboard.
-function generarNarrativa({ recaudadoHoy, recaudadoAyer, cuotaDiaria, sparkline7d }) {
+function generarNarrativa({ recaudadoHoy, recaudadoAyer, recaudadoAyerAEstaHora, cuotaDiaria, sparkline7d }) {
   if (!recaudadoHoy && !recaudadoAyer) return null
 
-  // Comparativo vs ayer
-  if (recaudadoAyer > 0) {
-    const diff = recaudadoHoy - recaudadoAyer
-    const pct = Math.round((diff / recaudadoAyer) * 100)
-    if (pct > 15) return `Vas a buen ritmo: ${pct}% más que ayer`
-    if (pct < -15) return `${Math.abs(pct)}% menos que ayer — toca empujar`
+  // Comparativo contra ayer A LA MISMA HORA, no contra el dia completo de ayer.
+  // Comparar la mañana contra 24 horas enteras daba negativo siempre antes del
+  // cierre: a las 10am salia "94% menos que ayer" todos los dias, con lo que la
+  // alarma sonaba a diario y dejaba de significar nada.
+  const referenciaAyer = recaudadoAyerAEstaHora
+  if (referenciaAyer > 0) {
+    const pct = Math.round(((recaudadoHoy - referenciaAyer) / referenciaAyer) * 100)
+    if (pct > 15) return `Vas a buen ritmo: ${pct}% más que ayer a esta hora`
+    if (pct < -15) return `${Math.abs(pct)}% menos que ayer a esta hora`
   }
 
   // Progreso vs cuota diaria
@@ -1767,6 +1716,7 @@ export default function DashboardPage() {
             narrativa={generarNarrativa({
               recaudadoHoy: data.cobros.hoy,
               recaudadoAyer: data.cobros.ayer,
+              recaudadoAyerAEstaHora: data.cobros.ayerAEstaHora,
               cuotaDiaria: data.prestamos.esperadoHoy ?? data.prestamos.cuotaDiariaTotal,
               sparkline7d: data.cobros.sparkline7d,
             })}
