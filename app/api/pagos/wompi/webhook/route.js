@@ -9,7 +9,12 @@ import { NextResponse } from 'next/server'
 import { validarFirmaEvento, consultarTransaccion } from '@/lib/wompi'
 import { activarPlanPagado } from '@/lib/activar-suscripcion'
 import { webhookLimiter, getClientIp } from '@/lib/rate-limit'
-import { alertarPagoSinActivar } from '@/lib/alertas-pago'
+import { alertarPagoSinActivar, alertarPagoRevertido } from '@/lib/alertas-pago'
+import { prisma } from '@/lib/prisma'
+
+// Estados a los que puede caer una transaccion que YA estaba aprobada: una
+// anulacion, un contracargo o una devolucion.
+const ESTADOS_REVERSION = new Set(['VOIDED', 'DECLINED', 'ERROR'])
 
 function parseReferencia(ref) {
   if (!ref || !ref.startsWith('cf-')) return null
@@ -75,6 +80,40 @@ export async function POST(req) {
     // cliente queda como estaba. Se registra para poder distinguir "llego y se
     // rechazo" de "nunca llego", que era imposible de saber.
     console.log(`[wompi-webhook] tx ${txEvento.id} en estado ${estado} — no activa nada (ref: ${referencia})`)
+
+    // Caso distinto y mas delicado: que esta MISMA transaccion ya hubiera
+    // activado un plan y ahora venga anulada. Ahi el cliente quedo con servicio
+    // y el dinero se devolvio. No se suspende automaticamente —cortarle el
+    // sistema a alguien por un evento de la pasarela es peor que esperar— pero
+    // hay que enterarse en el momento.
+    if (ESTADOS_REVERSION.has(estado)) {
+      try {
+        const sub = await prisma.suscripcion.findUnique({
+          where: { wompiTransactionId: String(txEvento.id) },
+          select: {
+            plan: true,
+            fechaVencimiento: true,
+            montoCOP: true,
+            organization: { select: { nombre: true } },
+          },
+        })
+        if (sub) {
+          console.error(`[wompi-webhook] PAGO REVERTIDO: tx ${txEvento.id} paso a ${estado} pero YA habia activado el plan ${sub.plan} de "${sub.organization?.nombre}" (vence ${sub.fechaVencimiento?.toISOString?.()})`)
+          await alertarPagoRevertido({
+            gateway: 'wompi',
+            transaccionId: txEvento.id,
+            estadoNuevo: estado,
+            organizacion: sub.organization?.nombre,
+            plan: sub.plan,
+            fechaVencimiento: sub.fechaVencimiento,
+            montoCOP: sub.montoCOP,
+          })
+        }
+      } catch (e) {
+        console.error('[wompi-webhook] error verificando si la tx revertida ya estaba aplicada:', e.message)
+      }
+    }
+
     return NextResponse.json({ ok: true })
   }
 
