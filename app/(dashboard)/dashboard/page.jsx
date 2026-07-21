@@ -1119,6 +1119,72 @@ function ResumenDelDia({ actividad, esOwner }) {
 }
 
 // Sección "Necesita tu atención" con alertas accionables
+// ¿Que ruta va mal HOY? Con varias rutas esa es la pregunta de la mañana, y
+// hasta ahora tocaba entrar a Caja > Por ruta y revisarlas de a una. El dato ya
+// venia en /api/rutas (esperadoHoy y recaudadoHoy por ruta), solo no se pintaba.
+// Orden: la PEOR primero, que es la que hay que empujar. Un ranking que empieza
+// por la mejor es decorativo; este es para actuar.
+function RutasHoy({ rutas }) {
+  const conActividad = (rutas || []).filter(r => (r.esperadoHoy || 0) > 0 || (r.recaudadoHoy || 0) > 0)
+  if (conActividad.length === 0) return null
+
+  const pctDe = (r) => {
+    const meta = r.esperadoHoy || 0
+    if (meta <= 0) return (r.recaudadoHoy || 0) > 0 ? 100 : 0
+    return Math.min(100, Math.round(((r.recaudadoHoy || 0) / meta) * 100))
+  }
+  const ordenadas = [...conActividad].sort((a, b) => pctDe(a) - pctDe(b))
+  const totalEsperado = conActividad.reduce((a, r) => a + (r.esperadoHoy || 0), 0)
+  const totalRecaudado = conActividad.reduce((a, r) => a + (r.recaudadoHoy || 0), 0)
+
+  return (
+    <div
+      className="rounded-[16px] px-4 py-4"
+      style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+    >
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-secondary)' }}>
+          Por ruta hoy
+        </p>
+        <span className="text-[11px] font-mono-display whitespace-nowrap" style={{ color: 'var(--color-text-muted)' }}>
+          {formatMoney(totalRecaudado)} de {formatMoney(totalEsperado)}
+        </span>
+      </div>
+      <div className="space-y-1">
+        {ordenadas.map((r) => {
+          const pct = pctDe(r)
+          const color = pct >= 80 ? 'var(--color-success)'
+            : pct >= 40 ? 'var(--color-warning)'
+            : 'var(--color-danger)'
+          return (
+            <Link
+              key={r.id}
+              href={`/rutas/${r.id}`}
+              className="block rounded-[12px] px-2 py-2 -mx-2 transition-colors hover:bg-[var(--color-bg-hover)]"
+            >
+              <div className="flex items-center justify-between gap-3 mb-1.5">
+                <span className="text-[13px] font-medium truncate" style={{ color: 'var(--color-text-primary)' }}>
+                  {r.nombre}
+                </span>
+                <span className="text-[12px] font-bold font-mono-display shrink-0" style={{ color }}>{pct}%</span>
+              </div>
+              <div className="h-1.5 rounded-full overflow-hidden mb-1" style={{ background: 'var(--color-bg-hover)' }}>
+                <div
+                  className="h-full rounded-full transition-[width] duration-500"
+                  style={{ width: `${Math.max(pct, 2)}%`, background: color }}
+                />
+              </div>
+              <p className="text-[10px] font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
+                {formatMoney(r.recaudadoHoy || 0)} de {formatMoney(r.esperadoHoy || 0)}
+              </p>
+            </Link>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function NecesitaAtencion({ alertas, moraData }) {
   if (!alertas) return null
   const items = []
@@ -1310,6 +1376,7 @@ export default function DashboardPage() {
   const [actualizadoEn, setActualizadoEn] = useState(null)
   const [susInfo, setSusInfo] = useState(null)
   const [equipoData, setEquipoData] = useState(null)
+  const [rutasData, setRutasData] = useState(null)
   const [equipoOpen, setEquipoOpen] = useState(false)
 
   // Vista simple = solo lo esencial (Cobros + Tu dinero). Vista pro = todo.
@@ -1431,6 +1498,10 @@ export default function DashboardPage() {
         .then(r => r.json())
         .then(d => { if (d.cobradores) setEquipoData(d) })
         .catch(() => {})
+      fetch(`/api/rutas?t=${Date.now()}`, { cache: 'no-store' })
+        .then(r => r.json())
+        .then(d => { if (Array.isArray(d)) setRutasData(d) })
+        .catch(() => {})
     }
   }, [loadDashboard, loadMora, loadCapital, esOwner])
 
@@ -1447,6 +1518,11 @@ export default function DashboardPage() {
       fetches.push(
         fetch(`/api/equipo/resumen?t=${Date.now()}`, { cache: 'no-store' })
           .then(r => r.json()).then(d => { if (d.cobradores) setEquipoData(d) })
+          .catch(() => {})
+      )
+      fetches.push(
+        fetch(`/api/rutas?t=${Date.now()}`, { cache: 'no-store' })
+          .then(r => r.json()).then(d => { if (Array.isArray(d)) setRutasData(d) })
           .catch(() => {})
       )
     }
@@ -1726,6 +1802,11 @@ export default function DashboardPage() {
           {esOwner && data.alertas && (
             <NecesitaAtencion alertas={data.alertas} moraData={moraData} />
           )}
+
+          {/* Como va cada ruta hoy. Va arriba porque con varias rutas es la
+              pregunta de la mañana, y hasta ahora habia que revisarlas una por
+              una entrando a Caja > Por ruta. */}
+          {esOwner && rutasData && <RutasHoy rutas={rutasData} />}
 
           {/* Recaudado del mes + interes — en desktop side by side */}
           {!vistaSimple && (
