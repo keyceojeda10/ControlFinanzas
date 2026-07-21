@@ -563,21 +563,32 @@ function KpiCard({ label, value, valueRaw, format = 'cop', sub, color = 'var(--c
   // info puede ser string (legacy) o objeto { que, comoSeCalcula, cuandoCambia, ejemplo }
   const infoObj = typeof info === 'string' ? { que: info } : (info || {})
 
-  // Count-up: si recibimos valueRaw numerico, animamos. Si no, mostramos value tal cual.
-  const animatedNum = useCountUp(typeof valueRaw === 'number' ? valueRaw : (typeof value === 'number' ? value : 0), 700)
+  // Sin count-up en los montos: durante ~700ms mostraba cifras FALSAS y ademas
+  // el ancho del texto cambiaba en cada frame. En una app de dinero, el numero
+  // correcto desde el primer frame vale mas que la animacion.
   const displayValue = (() => {
     if (valueRaw === undefined && typeof value !== 'number') return value
-    const n = typeof valueRaw === 'number' ? animatedNum : animatedNum
+    const n = typeof valueRaw === 'number' ? valueRaw : (typeof value === 'number' ? value : 0)
     if (format === 'cop') return formatMoney(Math.round(n))
     return Math.round(n).toLocaleString('es-CO')
   })()
+
+  // El monto NUNCA se trunca: los numeros son el producto. En movil van dos KPI
+  // por fila y un monto de 9 digitos no cabe a 24px; con `truncate` se leia
+  // "$25.706...." y el dueño no podia ver su propio patrimonio. El tamaño se
+  // ajusta al largo del texto en vez de recortarlo.
+  const textoValor = String(displayValue ?? '')
+  const tamValor = textoValor.length >= 14 ? 'text-[16px]'
+    : textoValor.length >= 12 ? 'text-[18px]'
+    : textoValor.length >= 10 ? 'text-[21px]'
+    : 'text-[24px]'
   return (
     <div
       onClick={openInfo}
       role={hasInfo ? 'button' : undefined}
       tabIndex={hasInfo ? 0 : undefined}
       onKeyDown={hasInfo ? (e) => { if (e.key === 'Enter' || e.key === ' ') openInfo(e) } : undefined}
-      className={`rounded-[18px] px-4 py-4 relative group kpi-lift cf-card-shadow ${hasInfo ? 'cursor-pointer' : ''}`}
+      className={`rounded-[16px] px-4 py-4 relative group kpi-lift cf-card-shadow ${hasInfo ? 'cursor-pointer' : ''}`}
       style={{
         background: `linear-gradient(135deg, color-mix(in srgb, ${color} 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 45%, var(--color-bg-card) 75%, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 100%)`,
         border: '1px solid var(--color-border)',
@@ -602,7 +613,7 @@ function KpiCard({ label, value, valueRaw, format = 'cop', sub, color = 'var(--c
           </div>
         )}
       </div>
-      <p className="text-[24px] font-bold leading-tight font-mono-display truncate" style={{ color }}>{displayValue}</p>
+      <p className={`${tamValor} font-bold leading-tight font-mono-display whitespace-nowrap`} style={{ color }}>{displayValue}</p>
       {sub && <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>{sub}</p>}
       {hasInfo && showInfo && (
         <KpiInfoPopover info={infoObj} color={color} onClose={() => setShowInfo(false)} />
@@ -733,7 +744,12 @@ function RecaudoCard({ label, color, colorHex, monto, cantidad, cuotaDiaria, ext
   const [showInfo, setShowInfo] = useState(false)
   const hasInfo = Boolean(info)
   const pct = cuotaDiaria > 0 ? Math.min(100, Math.round((monto / cuotaDiaria) * 100)) : null
-  const animMonto = useCountUp(monto, 700)
+  // Mismo criterio que KpiCard: sin count-up (mostraba cifras falsas mientras
+  // animaba) y sin truncate (un monto recortado no sirve para nada).
+  const textoMonto = formatMoney(Math.round(monto || 0))
+  const tamMonto = textoMonto.length >= 14 ? 'text-[15px]'
+    : textoMonto.length >= 12 ? 'text-[17px]'
+    : 'text-xl'
   const openInfo = (e) => {
     if (!hasInfo) return
     e?.preventDefault?.()
@@ -765,7 +781,7 @@ function RecaudoCard({ label, color, colorHex, monto, cantidad, cuotaDiaria, ext
           </span>
         )}
       </div>
-      <p className="text-xl font-bold font-mono-display truncate" style={{ color }}>{formatMoney(Math.round(animMonto))}</p>
+      <p className={`${tamMonto} font-bold font-mono-display whitespace-nowrap`} style={{ color }}>{textoMonto}</p>
       <div className="flex items-center gap-1.5 flex-wrap mt-1">
         <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{cantidad} pagos {label.toLowerCase().includes('mes') ? 'en el mes' : 'registrados'}</p>
         {montoAyer !== undefined && montoAyer !== null && (
@@ -1109,7 +1125,7 @@ function NecesitaAtencion({ alertas, moraData }) {
   const mora30 = moraData?.agrupado?.mora31plus?.length ?? 0
   if (mora30 > 0) items.push({
     color: 'var(--color-danger)',
-    text: `${mora30} ${mora30 === 1 ? 'cliente con más de 30 días de mora' : 'clientes con más de 30 días de mora'}`,
+    text: `${mora30} ${mora30 === 1 ? 'préstamo con más de 30 días de mora' : 'préstamos con más de 30 días de mora'}`,
     href: '/clientes?filtro=mora',
   })
   if (alertas.clientesSinRuta > 0) items.push({
@@ -2046,7 +2062,7 @@ export default function DashboardPage() {
         >
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-secondary)' }}>Alertas de mora</p>
-            <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ background: 'var(--color-danger)', color: 'var(--color-text-primary)' }}>{moraData.total} clientes</span>
+            <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ background: 'var(--color-danger)', color: 'var(--color-text-primary)' }}>{moraData.total} préstamos</span>
           </div>
           <div className="space-y-2">
             {moraData.agrupado.mora31plus.length > 0 && (
