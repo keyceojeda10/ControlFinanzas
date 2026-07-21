@@ -126,7 +126,7 @@ export default function CajaCobradorDetalle({ data }) {
                   <span className="text-sm font-semibold text-[var(--color-text-primary)]">{ruta.nombre}</span>
                   {ruta.rutaId && (
                     <span className="text-[11px] text-[var(--color-text-muted)]">
-                      Capital: <span className="font-semibold font-mono-display text-[var(--color-text-primary)]">{formatMoney(ruta.saldoCapital)}</span>
+                      Disponible: <span className="font-semibold font-mono-display text-[var(--color-text-primary)]">{formatMoney(ruta.saldoCapital)}</span>
                     </span>
                   )}
                 </div>
@@ -155,6 +155,22 @@ export default function CajaCobradorDetalle({ data }) {
                     </div>
                   )
                 })()}
+
+                {/* Acumulado colocado en la ruta. Lo de arriba (prestado/cobrado)
+                    es el DIA; esto es el stock. Sin este dato, "Disponible: $X"
+                    se leia como si fuera todo el dinero de la ruta. */}
+                {ruta.rutaId && typeof ruta.capitalEnCalle === 'number' && (
+                  <div className="mt-2 pt-2 border-t border-[var(--color-border)] grid grid-cols-2 gap-2">
+                    <div>
+                      <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">En la calle</p>
+                      <p className="text-sm font-semibold font-mono-display text-[var(--color-text-primary)]">{formatMoney(ruta.capitalEnCalle)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Con intereses</p>
+                      <p className="text-sm font-semibold font-mono-display text-[var(--color-text-primary)]">{formatMoney(ruta.conIntereses)}</p>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>

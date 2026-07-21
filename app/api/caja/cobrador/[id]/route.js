@@ -263,6 +263,8 @@ export async function GET(request, { params }) {
       prestadoDia: 0,
       cobradoDia: 0,
       segurosDia: 0,
+      capitalEnCalle: 0, // acumulado colocado (stock), no el flujo del dia
+      conIntereses: 0,
     }])
   )
   const bucket = (rutaId) => {
@@ -270,7 +272,7 @@ export async function GET(request, { params }) {
     // Movimientos de clientes fuera de las rutas del cobrador (ej. préstamo creado a
     // un cliente de otra ruta): se agrupan en "Otros" para no perderlos.
     if (!porRutaMap.has('__otros__')) {
-      porRutaMap.set('__otros__', { rutaId: null, nombre: 'Otros', saldoCapital: 0, prestadoDia: 0, cobradoDia: 0, segurosDia: 0 })
+      porRutaMap.set('__otros__', { rutaId: null, nombre: 'Otros', saldoCapital: 0, prestadoDia: 0, cobradoDia: 0, segurosDia: 0, capitalEnCalle: 0, conIntereses: 0 })
     }
     return porRutaMap.get('__otros__')
   }
@@ -297,6 +299,30 @@ export async function GET(request, { params }) {
     bucket(s.cliente?.ruta?.id).segurosDia += s.montoSeguro || 0
   }
 
+  // Capital acumulado EN LA CALLE por ruta. Ojo: esto NO es flujo del dia (como
+  // prestadoDia) sino el stock colocado. Sin esto, la tarjeta decia solo
+  // "Capital: $X" mostrando unicamente la sub-bolsa disponible, y se leia como
+  // si ese fuera todo el dinero de la ruta. Misma regla que rutas/[id] y el
+  // listado —solo activos, sin clavos— para que las tres pantallas cuadren.
+  const prestamosEnCalle = await prisma.prestamo.findMany({
+    where: {
+      organizationId,
+      estado: 'activo',
+      esClavo: false,
+      cliente: { rutaId: { in: rutas.map((r) => r.id) } },
+    },
+    select: {
+      montoPrestado: true,
+      totalAPagar: true,
+      cliente: { select: { ruta: { select: { id: true } } } },
+    },
+  })
+  for (const p of prestamosEnCalle) {
+    const b = bucket(p.cliente?.ruta?.id)
+    b.capitalEnCalle += p.montoPrestado || 0
+    b.conIntereses   += p.totalAPagar ?? p.montoPrestado ?? 0
+  }
+
   // Efectivo del día incluye seguros y recargos (son plata física cobrada)
   efectivoDia += Math.round(segurosDiaTotal) + recargosMontoTotal
 
@@ -313,6 +339,8 @@ export async function GET(request, { params }) {
     prestadoDia: Math.round(r.prestadoDia),
     cobradoDia: Math.round(r.cobradoDia),
     segurosDia: Math.round(r.segurosDia),
+    capitalEnCalle: Math.round(r.capitalEnCalle),
+    conIntereses: Math.round(r.conIntereses),
   }))
 
   // Línea de movimientos del día: cobros + préstamos + gastos, ordenados por hora.
