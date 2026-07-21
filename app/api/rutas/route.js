@@ -51,6 +51,8 @@ export async function GET(request) {
             select:  {
               estado: true,
               esClavo: true,
+              montoPrestado: true,
+              totalAPagar: true,
               cuotaDiaria: true,
               frecuencia: true,
               fechaInicio: true,
@@ -80,9 +82,14 @@ export async function GET(request) {
     select: { fecha: true },
   })
 
+  // Mismo permiso que el detalle de ruta: un cobrador no debe ver el capital.
+  const puedeVerCapital = rol === 'owner' || session.user.permisos?.verCapitalRuta
+
   const resultado = rutas.map((r) => {
     let esperadoHoy    = 0
     let recaudadoHoy   = 0
+    let capitalTotal   = 0  // prestado SIN intereses
+    let totalAPagarRuta = 0 // prestado CON intereses
 
     for (const cliente of r.clientes) {
       const diasExcluidos = obtenerDiasSinCobro(cliente, r, org)
@@ -96,6 +103,14 @@ export async function GET(request) {
         }
         // Recaudado hoy: incluye pagos de prestamos completados hoy (el pago final cierra)
         recaudadoHoy += prestamo.pagos.filter(p => !['recargo', 'descuento'].includes(p.tipo)).reduce((a, p) => a + p.montoPagado, 0)
+
+        // Capital en la calle. MISMA regla que el detalle de ruta (solo activos,
+        // sin clavos) para que las dos pantallas muestren el mismo numero: en
+        // una app de plata, dos cifras distintas para lo mismo rompen la confianza.
+        if (prestamo.estado === 'activo' && !prestamo.esClavo) {
+          capitalTotal    += prestamo.montoPrestado ?? 0
+          totalAPagarRuta += prestamo.totalAPagar ?? prestamo.montoPrestado ?? 0
+        }
       }
     }
 
@@ -106,6 +121,10 @@ export async function GET(request) {
       cantidadClientes: r.clientes.length,
       esperadoHoy:     Math.round(esperadoHoy),
       recaudadoHoy:    Math.round(recaudadoHoy),
+      ...(puedeVerCapital ? {
+        capitalTotal:    Math.round(capitalTotal),
+        totalAPagarRuta: Math.round(totalAPagarRuta),
+      } : {}),
     }
   })
 

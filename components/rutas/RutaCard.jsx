@@ -129,6 +129,30 @@ export default function RutaCard({ ruta, congelada }) {
         <p className="text-[11px] mt-1.5 text-right" style={{ color: P.sub }}>
           de {formatMoney(ruta.esperadoHoy ?? 0)} esperados
         </p>
+
+        {/* Capital en la calle de esta ruta. Va abajo y separado porque la
+            tarjeta cuenta el DIA (recaudado vs meta) y esto es otra dimension.
+            Mismos rotulos que el detalle de ruta, para que no parezcan datos
+            distintos. Solo llega si el usuario tiene permiso de ver capital. */}
+        {typeof ruta.capitalTotal === 'number' && (
+          <div
+            className="grid grid-cols-2 gap-2 mt-2 pt-2"
+            style={{ borderTop: `1px solid ${P.track}` }}
+          >
+            <div>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.1em]" style={{ color: P.sub }}>Prestado</p>
+              <p className="text-[12px] font-mono-display font-bold leading-tight" style={{ color: P.ink }}>
+                {formatMoney(ruta.capitalTotal)}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.1em]" style={{ color: P.sub }}>Con intereses</p>
+              <p className="text-[12px] font-mono-display font-bold leading-tight" style={{ color: P.ink }}>
+                {formatMoney(ruta.totalAPagarRuta ?? 0)}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </Card>
   )
