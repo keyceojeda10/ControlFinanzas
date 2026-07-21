@@ -17,8 +17,8 @@
 
   /* Text */
   --color-text-primary:   #f3f3f6;
-  --color-text-secondary: #9ea1ab;
-  --color-text-muted:     #666973;
+  --color-text-secondary: #a3a8b2;
+  --color-text-muted:     #8a8e98;
 
   /* Accent – Dorado */
   --color-accent:       #f5b824;
@@ -64,8 +64,8 @@ html[data-theme="light"] {
   --color-border-hover: rgba(20, 20, 28, 0.13);
 
   --color-text-primary:   #15161a;
-  --color-text-secondary: #676b73;
-  --color-text-muted:     #9a9da5;
+  --color-text-secondary: #4a4e57;
+  --color-text-muted:     #63676f;
 
   --color-accent:       #e7a400;
   --color-accent-hover: #d49500;
