@@ -798,7 +798,7 @@ function RecaudoCard({ label, color, colorHex, monto, cantidad, cuotaDiaria, ext
       style={{
         background: `linear-gradient(135deg, color-mix(in srgb, ${color} 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 100%)`,
         border: '1px solid var(--color-border)',
-        boxShadow: '0 4px 12px rgba(20,20,40,0.08)',
+        boxShadow: '0 4px 12px color-mix(in srgb, var(--color-border) 60%, transparent)',
       }}
     >
       <div className="flex items-center gap-1.5 mb-1">
@@ -1357,7 +1357,7 @@ function BandaSuscripcion({ dias }) {
 
   return (
     <a href="/configuracion/plan"
-      className="block rounded-[14px] px-4 py-3.5 transition-all hover:scale-[1.005] active:scale-[0.995] relative overflow-hidden"
+      className="block rounded-[16px] px-4 py-3.5 transition-all hover:scale-[1.005] active:scale-[0.995] relative overflow-hidden"
       style={{ background: gradientBg, border: '1px solid var(--color-border)' }}
     >
       <div className="flex items-center gap-3">
@@ -1606,9 +1606,9 @@ export default function DashboardPage() {
         <button
           onClick={() => onboarding.unminimize()}
           className="w-full flex items-center gap-3 rounded-[12px] px-4 py-3 text-left transition-all active:scale-[0.99] cursor-pointer"
-          style={{ background: 'rgba(245,197,24,0.08)', border: '1px solid rgba(245,197,24,0.25)' }}>
+          style={{ background: 'color-mix(in srgb, var(--color-accent) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--color-accent) 25%, transparent)' }}>
           <div className="w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0"
-            style={{ background: 'rgba(245,197,24,0.15)' }}>
+            style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)' }}>
             <svg className="w-4 h-4" fill="none" stroke="var(--color-accent)" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
@@ -1700,8 +1700,8 @@ export default function DashboardPage() {
             Ya configuraste el sistema. Ahora sube tus clientes para que el dashboard cobre vida.
           </p>
           <div className="w-full max-w-sm space-y-2.5">
-            <Link href="/migrador" className="group flex items-center gap-3 w-full rounded-[14px] p-4 text-left transition-all active:scale-[0.98]"
-              style={{ background: 'rgba(245,197,24,0.08)', border: '1px solid rgba(245,197,24,0.25)' }}>
+            <Link href="/migrador" className="group flex items-center gap-3 w-full rounded-[16px] p-4 text-left transition-all active:scale-[0.98]"
+              style={{ background: 'color-mix(in srgb, var(--color-accent) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--color-accent) 25%, transparent)' }}>
               <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
                 style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)', color: 'var(--color-accent)' }}>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1717,10 +1717,10 @@ export default function DashboardPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </Link>
-            <Link href="/clientes/nuevo" className="group flex items-center gap-3 w-full rounded-[14px] p-4 text-left transition-all active:scale-[0.98]"
+            <Link href="/clientes/nuevo" className="group flex items-center gap-3 w-full rounded-[16px] p-4 text-left transition-all active:scale-[0.98]"
               style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
               <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
-                style={{ background: 'rgba(139,92,246,0.1)', color: 'var(--color-purple)' }}>
+                style={{ background: 'color-mix(in srgb, var(--color-purple) 10%, transparent)', color: 'var(--color-purple)' }}>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7} d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
                 </svg>
@@ -1733,7 +1733,7 @@ export default function DashboardPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </Link>
-            <Link href="/prestamos/nuevo" className="group flex items-center gap-3 w-full rounded-[14px] p-4 text-left transition-all active:scale-[0.98]"
+            <Link href="/prestamos/nuevo" className="group flex items-center gap-3 w-full rounded-[16px] p-4 text-left transition-all active:scale-[0.98]"
               style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
               <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
                 style={{ background: 'color-mix(in srgb, var(--color-success) 10%, transparent)', color: 'var(--color-success)' }}>
@@ -2253,7 +2253,7 @@ export default function DashboardPage() {
           style={{
             background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, var(--color-bg-card) 100%)',
             border: '1px solid var(--color-border)',
-            boxShadow: '0 4px 12px rgba(20,20,40,0.08)',
+            boxShadow: '0 4px 12px color-mix(in srgb, var(--color-border) 60%, transparent)',
           }}
         >
           <div className="flex items-center justify-between mb-3">
