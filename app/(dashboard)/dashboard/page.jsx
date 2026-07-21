@@ -1642,11 +1642,11 @@ export default function DashboardPage() {
             metaDiaria={data.prestamos.cuotaDiariaTotal}
             info={{
               titulo: 'Recaudado hoy',
-              que: 'Total de dinero que has cobrado HOY (en hora Colombia, desde la medianoche).',
-              comoSeCalcula: 'Sumo todos los pagos registrados hoy de tipo "completo", "parcial" y "capital". No cuento recargos ni descuentos.',
+              que: 'Total de dinero que has cobrado HOY, desde la medianoche de tu país.',
+              comoSeCalcula: 'Sumo todos los pagos registrados hoy, sin importar el tipo (cuota, abono a capital, liquidación...). Lo único que NO cuento son recargos ni descuentos.',
               ejemplo: `Llevas ${formatMoney(data.cobros.hoy)} cobrados en ${data.cobros.cantidadHoy} pagos hoy. ${data.prestamos.cuotaDiariaTotal > 0 ? `Eso es el ${Math.min(100, Math.round((data.cobros.hoy / data.prestamos.cuotaDiariaTotal) * 100))}% de tu meta diaria de ${formatMoney(data.prestamos.cuotaDiariaTotal)}.` : ''}${data.cobros.ayer ? ` Ayer cobraste ${formatMoney(data.cobros.ayer)} en ${data.cobros.cantidadAyer} pagos.` : ''}`,
-              cuandoCambia: 'Sube cada vez que se registra un pago. Se reinicia a $0 a la medianoche (hora Colombia).',
-              tip: 'El sparkline muestra los últimos 7 días. La etiqueta "vs ayer" compara con el día anterior completo.',
+              cuandoCambia: 'Sube cada vez que se registra un pago. Se reinicia a $0 a la medianoche de tu país.',
+              tip: 'El gráfico muestra los últimos 7 días: toca un punto para ver cuánto cobraste ese día.',
             }}
           />
 
@@ -1749,7 +1749,7 @@ export default function DashboardPage() {
                       titulo: 'Saldo disponible',
                       que: 'El EFECTIVO que tienes en caja en este momento. Plata real disponible para prestar, retirar o cubrir gastos.',
                       comoSeCalcula: 'Capital inicial + cobros recibidos − desembolsos de préstamos − gastos − retiros + inyecciones.',
-                      ejemplo: `Tienes ${formatMoney(capitalData.saldo)} en caja ahora mismo. ${capitalData.saldo < 0 ? '⚠️ Tu saldo está en negativo: revisa si registraste todos los movimientos correctamente.' : 'Con esto puedes desembolsar nuevos préstamos o retirar utilidades.'}`,
+                      ejemplo: `Tienes ${formatMoney(capitalData.saldo)} en caja ahora mismo. ${capitalData.saldo < 0 ? 'Tu saldo está en negativo: revisa si registraste todos los movimientos correctamente.' : 'Con esto puedes desembolsar nuevos préstamos o retirar utilidades.'}`,
                       cuandoCambia: 'SUBE: cobros e inyecciones de capital. BAJA: desembolsos de préstamos nuevos, gastos, retiros.',
                       tip: 'Si vas a hacer un préstamo grande, verifica que tengas suficiente saldo aquí antes.',
                     }}
@@ -1761,13 +1761,13 @@ export default function DashboardPage() {
                     label="Patrimonio"
                     value={formatMoney(data.finanzas.patrimonio)}
                     valueRaw={data.finanzas.patrimonio}
-                    sub={`Caja + por cobrar - gastos`}
+                    sub={`Caja + por cobrar`}
                     color="var(--color-success)"
                     info={{
                       titulo: 'Patrimonio',
-                      que: 'Tu foto financiera completa hoy. Cuánto vale tu negocio sumando todo lo que tienes y te deben, menos lo gastado este mes.',
-                      comoSeCalcula: `Saldo en caja (${formatMoney(data.finanzas.cajaDisponible)}) + Por cobrar real (${formatMoney(data.prestamos.saldoPorCobrar)}) − Gastos del mes (${formatMoney(data.finanzas.gastosMes)}) = ${formatMoney(data.finanzas.patrimonio)}.`,
-                      ejemplo: `Tu negocio vale ${formatMoney(data.finanzas.patrimonio)} hoy. Esto incluye lo que tienes en caja, lo que te deben los clientes, y descontando los gastos del mes en curso.`,
+                      que: 'Tu foto financiera completa hoy: cuánto vale tu negocio sumando la plata que tienes en caja y la que te deben.',
+                      comoSeCalcula: `Saldo en caja (${formatMoney(data.finanzas.cajaDisponible)}) + Por cobrar real (${formatMoney(data.prestamos.saldoPorCobrar)}) = ${formatMoney(data.finanzas.patrimonio)}. Los gastos no se restan aquí porque ya están descontados del saldo en caja.`,
+                      ejemplo: `Tu negocio vale ${formatMoney(data.finanzas.patrimonio)} hoy: lo que tienes en caja más lo que te deben tus clientes.`,
                       cuandoCambia: 'Se mueve con CADA acción: pagos recibidos, préstamos nuevos, gastos, retiros, todo.',
                       tip: 'Es el indicador más completo de cómo está tu negocio. Compáralo mes a mes para ver si estás creciendo.',
                     }}
@@ -1887,9 +1887,9 @@ export default function DashboardPage() {
                 color="var(--color-purple)"
                 info={{
                   titulo: 'Cuota diaria total',
-                  que: 'Lo que DEBERÍAS cobrar en un día normal si todos tus clientes pagaran su cuota del día sin atrasos.',
-                  comoSeCalcula: 'Sumo la cuota diaria pactada de cada préstamo activo (la cuota que cada cliente debe pagar todos los días según su frecuencia).',
-                  ejemplo: `Tu meta diaria es ${formatMoney(data.prestamos.cuotaDiariaTotal)}. Si cobraste menos hoy, tienes mora acumulándose. Si cobraste más, hay clientes adelantando pagos.`,
+                  que: 'La suma de una cuota de cada préstamo activo. Sirve como referencia de cuánto mueve tu cartera, no como meta exacta del día.',
+                  comoSeCalcula: 'Sumo la cuota pactada de cada préstamo activo. OJO: incluye los préstamos semanales, quincenales y mensuales, que no se cobran todos los días, y no descuenta domingos ni festivos. Por eso es un techo, no lo que toca cobrar hoy.',
+                  ejemplo: `La suma de cuotas de tu cartera es ${formatMoney(data.prestamos.cuotaDiariaTotal)}. Si casi todos tus préstamos son diarios, se parece mucho a tu meta del día; si manejas semanales o quincenales, el número real de hoy es menor.`,
                   cuandoCambia: 'Cambia cuando creas un préstamo nuevo, cuando uno se completa, o cuando ajustas la cuota de un préstamo.',
                   tip: 'Compara este número con "Recaudado hoy" para saber qué % de tu meta diaria cumpliste.',
                 }}

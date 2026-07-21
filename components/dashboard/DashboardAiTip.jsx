@@ -6,11 +6,17 @@ import { useState, useEffect } from 'react'
 function generarTip(data) {
   if (!data) return null
 
-  const { cobros, prestamos, clientes, mora } = data
+  const { cobros, prestamos, clientes } = data
 
-  // Tip de mora alta
-  if (mora?.porcentajeMora > 15) {
-    return `Tu mora esta en ${mora.porcentajeMora.toFixed(1)}% — revisa los clientes con mas días de atraso para priorizar cobro.`
+  // Mora: se calcula con los campos que la API SI devuelve (clientes.total y
+  // clientes.enMora). Antes leia data.mora.porcentajeMora y data.clientes
+  // .nuevosEsteMes, que no existen en /api/dashboard/resumen: dos de las cuatro
+  // ramas nunca se ejecutaban.
+  if (clientes?.total > 0 && clientes?.enMora > 0) {
+    const pct = Math.round((clientes.enMora / clientes.total) * 100)
+    if (pct > 15) {
+      return `${clientes.enMora} de tus ${clientes.total} clientes están en mora (${pct}%). Priorízalos en la ruta de hoy.`
+    }
   }
 
   // Tip de recaudo vs meta
@@ -24,14 +30,11 @@ function generarTip(data) {
     }
   }
 
-  // Tip de comparacion con ayer
-  if (cobros?.ayer > 0 && cobros?.hoy > cobros.ayer * 1.2) {
-    return `Llevas un ${Math.round(((cobros.hoy - cobros.ayer) / cobros.ayer) * 100)}% mas recaudado que ayer a esta hora.`
-  }
-
-  // Tip de clientes nuevos
-  if (clientes?.nuevosEsteMes > 0) {
-    return `${clientes.nuevosEsteMes} clientes nuevos este mes. Manten el ritmo para crecer tu cartera.`
+  // Comparacion con ayer. `cobros.ayer` es el dia de ayer COMPLETO, no "ayer a
+  // esta hora": el texto decia lo segundo y a las 8am siempre comparaba contra
+  // 24 horas enteras.
+  if (cobros?.ayer > 0 && cobros?.hoy > cobros.ayer) {
+    return `Hoy ya llevas un ${Math.round(((cobros.hoy - cobros.ayer) / cobros.ayer) * 100)}% más de lo que cobraste en todo el día de ayer.`
   }
 
   return null
@@ -52,8 +55,8 @@ export default function DashboardAiTip({ data }) {
     <div
       className="rounded-[12px] px-4 py-3 flex items-start gap-3"
       style={{
-        background: 'rgba(245,197,24,0.04)',
-        borderLeft: '2px solid var(--color-accent)',
+        background: 'color-mix(in srgb, var(--color-accent) 5%, transparent)',
+        border: '1px solid color-mix(in srgb, var(--color-accent) 22%, var(--color-border))',
       }}
     >
       <svg className="w-4 h-4 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--color-accent)' }}>

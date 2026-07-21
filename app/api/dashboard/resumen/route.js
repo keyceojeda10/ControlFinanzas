@@ -3,7 +3,7 @@ import { NextResponse }     from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { calcularDiasMora, calcularSaldoPendiente } from '@/lib/calculos'
+import { calcularDiasMora, calcularSaldoPendiente, calcularPatrimonio } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
 
@@ -365,11 +365,16 @@ export async function GET() {
     }
   }
 
-  // Patrimonio = saldo pendiente real por cobrar + caja disponible - gastos del mes.
-  // Refleja "cuanto va a tener al final" descontando los gastos que ya hizo este mes.
+  // Patrimonio = lo que te deben (saldo real por cobrar) + lo que tienes en caja.
+  //
+  // NO se restan los gastos del mes: `capital.saldo` YA los descontó. En
+  // lib/capital.js el tipo 'gasto' esta en la lista de egresos, asi que todo
+  // gasto aprobado ya bajo el saldo. Restarlos aqui otra vez subestimaba el
+  // patrimonio exactamente en los gastos del mes, y es el numero por el que el
+  // dueño decide si retira utilidades.
   const cajaDisponible = capitalRow?.saldo ?? 0
-  const gastosMes = gastosMesAgg?._sum?.monto ?? 0
-  const patrimonio = esCobrador ? null : (saldoPorCobrar + cajaDisponible - gastosMes)
+  const gastosMes = gastosMesAgg?._sum?.monto ?? 0 // se sigue enviando: la UI lo muestra aparte
+  const patrimonio = esCobrador ? null : calcularPatrimonio({ saldoPorCobrar, cajaDisponible })
 
   // Mapear cobradorIds a nombres para el desglose de hoy
   const cobradorIds = (pagosHoyPorCobrador || []).map(g => g.cobradorId).filter(Boolean)
