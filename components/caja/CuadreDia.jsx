@@ -72,9 +72,23 @@ export default function CuadreDia({ fecha }) {
     } catch { /* noop */ } finally { setGuardando(false) }
   }
 
-  // Confirmar en lote los pendientes cuyo recibo = recaudado (cuadran exacto).
+  // Solo entran al lote los cobradores que YA DECLARARON, al cerrar su caja, el
+  // mismo monto que registro el sistema. Ahi el lote no inventa nada: confirma
+  // una coincidencia que ya existe.
+  //
+  // Antes filtraba por estado === 'pendiente', que significa "el admin todavia
+  // no confirmo" — NO "cuadra exacto" — y le escribia a todos
+  // efectivoRecibido = recaudadoSistema. O sea que por construccion todos
+  // quedaban cuadrados con diferencia 0. Si un cobrador traia $120.000 menos,
+  // ese faltante quedaba firmado como cuadre perfecto y ya no habia a que
+  // volver. Era una firma en blanco sobre plata real.
+  const exactos = (data?.filas || []).filter(
+    (f) => f.estado === 'pendiente'
+      && f.entregadoReportado != null
+      && Math.round(f.entregadoReportado) === Math.round(f.recaudadoSistema)
+  )
+
   const confirmarExactos = async () => {
-    const exactos = (data?.filas || []).filter((f) => f.estado === 'pendiente')
     if (!exactos.length) return
     setGuardando(true)
     try {
@@ -114,15 +128,23 @@ export default function CuadreDia({ fecha }) {
           {g.conDiferencia > 0 && <span className="text-[var(--color-danger)]">{g.conDiferencia} con diferencia</span>}
           {g.faltanteTotal < 0 && <span className="text-[var(--color-danger)]">Faltante total: {formatMoney(g.faltanteTotal)}</span>}
         </div>
-        {g.pendientes > 0 && (
+        {/* El boton aparece segun `exactos` (los que declararon lo mismo que el
+            sistema), no segun `g.pendientes` (los que faltan por confirmar).
+            A los que no coinciden hay que contarles la plata uno por uno. */}
+        {exactos.length > 0 && (
           <button
             type="button"
             onClick={confirmarExactos}
             disabled={guardando}
             className="mt-3 w-full h-9 rounded-[10px] text-xs font-semibold text-[#1a1a2e] bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-50 transition-colors"
           >
-            Confirmar {g.pendientes} cobrador{g.pendientes === 1 ? '' : 'es'} que cuadran exacto
+            Confirmar {exactos.length} que entregó{exactos.length === 1 ? '' : 'aron'} lo mismo que dice el sistema
           </button>
+        )}
+        {g.pendientes > exactos.length && (
+          <p className="mt-2 text-[11px] text-[var(--color-text-muted)]">
+            {g.pendientes - exactos.length} cobrador{g.pendientes - exactos.length === 1 ? '' : 'es'} no coincide{g.pendientes - exactos.length === 1 ? '' : 'n'} con el sistema: cuéntale{g.pendientes - exactos.length === 1 ? '' : 's'} el efectivo y confirma abajo.
+          </p>
         )}
       </Card>
 

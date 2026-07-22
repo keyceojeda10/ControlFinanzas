@@ -758,6 +758,13 @@ export default function ClientesPage() {
 
       {/* Lista */}
       {!loading && clientes.length > 0 && (() => {
+        // OJO: el estado del cliente (al dia / mora / cancelado) se calcula en
+        // el servidor con calcularEstadoCliente(), no es una columna, asi que
+        // no se puede filtrar en el `where` de Prisma. Este filtro corre sobre
+        // la PAGINA ACTUAL (50 registros), no sobre la cartera entera: por eso
+        // el dashboard puede decir "18 en mora" y aca aparecer 4.
+        // Mientras no exista el filtro server-side, al menos se avisa en vez de
+        // dar un numero falso por bueno.
         const filtrados = estado ? clientes.filter((c) => c.estado === estado) : clientes
         return filtrados.length > 0 ? (
           <StaggeredList className={vista === 'compacta' ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2' : 'space-y-2.5 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0'}>
@@ -1113,7 +1120,15 @@ export default function ClientesPage() {
       )}
 
       {/* Paginación */}
-      {!loading && totalPages > 1 && (
+      {/* Con un chip de estado activo el paginador es mentira: filtra sobre la
+          pagina actual, asi que "Pagina 1 de 6" sugiere que hay mas morosos
+          adelante cuando en realidad cada pagina se filtra por separado. */}
+      {!loading && estado && totalPages > 1 && (
+        <p className="text-center text-[12px] mt-4 px-4" style={{ color: 'var(--color-text-muted)' }}>
+          Mostrando los de esta página. Para ver toda la cartera en mora, usa la alerta del inicio.
+        </p>
+      )}
+      {!loading && !estado && totalPages > 1 && (
         <div className="flex items-center justify-center gap-2 mt-6">
           <button
             onClick={() => setPage(p => Math.max(1, p - 1))}

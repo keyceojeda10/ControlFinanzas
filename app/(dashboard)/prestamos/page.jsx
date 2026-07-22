@@ -375,8 +375,13 @@ export default function PrestamosPage() {
     }
   }, [])
 
-  const rutaSeleccionada = rutas.find(r => r.id === rutaId)
-  const filtrosExtra = { frec: frecuencia, ruta: rutaId, creador: rutaSeleccionada?.cobradorId || '', renov: renovacion, modo: modoInteres }
+  // Al filtrar por ruta se mandaba ADEMAS creadoPorId con el cobrador de esa
+  // ruta. Pero creadoPorId es "quien creo el prestamo (auditoria)", no "de
+  // quien es la ruta": el API los cruza con AND, asi que filtrar por ruta
+  // escondia todos los prestamos que habia cargado el dueño. En una cartera
+  // chica, donde carga el dueño, el filtro devolvia la lista VACIA — por eso
+  // parecia que filtrar por ruta "no se podia".
+  const filtrosExtra = { frec: frecuencia, ruta: rutaId, renov: renovacion, modo: modoInteres }
 
   useEffect(() => { setPage(1); fetchPrestamos('', estado, 1, filtrosExtra) }, [fetchPrestamos, estado, frecuencia, rutaId, renovacion, modoInteres]) // eslint-disable-line react-hooks/exhaustive-deps
 

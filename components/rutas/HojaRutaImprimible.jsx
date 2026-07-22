@@ -64,7 +64,7 @@ export default function HojaRutaImprimible({ ruta, clientes }) {
             <th className="hr-c-dir">Dirección / Teléfono</th>
             <th className="hr-c-est">Estado</th>
             <th className="hr-c-cuota">Cuota hoy</th>
-            <th className="hr-c-saldo">Saldo</th>
+            <th className="hr-c-saldo">Debe (total)</th>
             <th className="hr-c-rec">Recogido</th>
           </tr>
         </thead>
@@ -88,7 +88,16 @@ export default function HojaRutaImprimible({ ruta, clientes }) {
                 )}
               </td>
               <td className="hr-c-cuota">{c.cobroPendienteHoy ? formatMoney(c.cuota) : '—'}</td>
-              <td className="hr-c-saldo">{formatMoney(c.montoEnMora || c.cuota || 0)}</td>
+              {/* Esta columna decia "Saldo" y mostraba la MORA (o, si no habia
+                  mora, la cuota del dia). En la calle eso es peligroso: un
+                  cliente pide cancelar todo, el cobrador lee "Saldo $18.000" y
+                  cobra $18.000 por un prestamo que debe $340.000. Ahora es el
+                  saldo real, sumando todos los prestamos activos del cliente. */}
+              <td className="hr-c-saldo">
+                {formatMoney(
+                  (c.prestamosActivos || []).reduce((s, p) => s + (p.saldoPendiente || 0), 0)
+                )}
+              </td>
               <td className="hr-c-rec">
                 <span className="hr-rec-box" />
               </td>
