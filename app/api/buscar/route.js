@@ -33,10 +33,17 @@ export async function GET(request) {
         organizationId,
         estado: { notIn: ['eliminado'] },
         ...filtroRuta,
+        // referencia y direccion se agregaron porque el buscador global
+        // encontraba MENOS que el buscador de la lista de clientes (que ya
+        // miraba referencia). Y nadie buscaba por direccion, que es como un
+        // prestamista identifica a la gente en la calle: "el de la esquina de
+        // la 45". El apodo tambien suele ir en referencia.
         OR: [
           { nombre: { contains: q } },
           { cedula: { contains: q } },
           { telefono: { contains: q } },
+          { referencia: { contains: q } },
+          { direccion: { contains: q } },
         ],
       },
       select: {
@@ -44,6 +51,7 @@ export async function GET(request) {
         nombre: true,
         cedula: true,
         telefono: true,
+        direccion: true,
         estado: true,
       },
       take: 5,
@@ -59,6 +67,7 @@ export async function GET(request) {
           OR: [
             { nombre: { contains: q } },
             { cedula: { contains: q } },
+            { telefono: { contains: q } },
           ],
         },
       },

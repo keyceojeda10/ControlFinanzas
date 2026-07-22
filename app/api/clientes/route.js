@@ -48,6 +48,8 @@ export async function GET(request) {
           { cedula:    { contains: buscar } },
           { telefono:  { contains: buscar } },
           { referencia: { contains: buscar } },
+          // Un prestamista ubica a la gente por donde vive, no solo por nombre.
+          { direccion: { contains: buscar } },
         ],
       }
     : {}

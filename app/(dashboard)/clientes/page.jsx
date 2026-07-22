@@ -166,9 +166,14 @@ export default function ClientesPage() {
   const filtroUrlPrevio = useRef(null)
   useEffect(() => {
     const filtroUrl = searchParams?.get('filtro') || ''
-    if (filtroUrl !== filtroUrlPrevio.current) {
-      filtroUrlPrevio.current = filtroUrl
+    const rutaUrl = searchParams?.get('rutaId') || ''
+    const clave = `${filtroUrl}|${rutaUrl}`
+    if (clave !== filtroUrlPrevio.current) {
+      filtroUrlPrevio.current = clave
       setEstado(filtroUrl)
+      // rutaId tambien llega por URL: sin esto, "Clientes de esta ruta" desde
+      // el detalle de la ruta caia al listado completo.
+      setRutaIdFiltro(rutaUrl)
     }
   }, [searchParams])
   const [loading,  setLoading]    = useState(true)
@@ -693,7 +698,11 @@ export default function ClientesPage() {
         </div>
 
         {/* Fila 3: filtro de ruta (solo owner con rutas) */}
-        {esOwner && rutas.length > 1 && (
+        {/* Era `rutas.length > 1`, asi que con una sola ruta el selector NO
+            aparecia nunca — y el plan basico permite exactamente una. Por eso
+            parecia que "no se puede filtrar por ruta": el control existia y
+            estaba condicionado a un estado inalcanzable. */}
+        {esOwner && rutas.length >= 1 && (
           <select
             value={rutaIdFiltro}
             onChange={e => setRutaIdFiltro(e.target.value)}

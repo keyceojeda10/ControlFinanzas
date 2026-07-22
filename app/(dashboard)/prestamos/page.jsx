@@ -2,7 +2,7 @@
 // app/(dashboard)/prestamos/page.jsx - Lista de préstamos
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import Link                                   from 'next/link'
 import { useAuth }                            from '@/hooks/useAuth'
 import { useOffline }                         from '@/components/providers/OfflineProvider'
@@ -184,26 +184,43 @@ export default function PrestamosPage() {
   const { esOwner, puedeCrearPrestamos, orgNombre, ocultarSaldoWA, organizationId, loading: authLoading } = useAuth()
   const { lastSyncedAt } = useOffline()
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [prestamos, setPrestamos] = useState([])
   const [buscar,    setBuscar]    = useState('')
   const [estado,    setEstado]    = useState(() => searchParams?.get('estado') || 'activo')
   const [frecuencia, setFrecuencia] = useState(() => searchParams?.get('frecuencia') || '')
 
-  // Mismo arreglo que en /clientes: useState solo lee la URL al montar, asi que
-  // llegar aqui desde una alerta del dashboard (o cambiar el query estando ya en
-  // /prestamos) dejaba el filtro sin aplicar y mostraba el listado completo.
+  const [modoInteres, setModoInteres] = useState(() => searchParams?.get('modoInteres') || '')
+  const [rutaId,    setRutaId]    = useState(() => searchParams?.get('rutaId') || '')
+  const [renovacion, setRenovacion] = useState(() => searchParams?.get('renovacion') || '')
+  const [sinPagosDias, setSinPagosDias] = useState(() => searchParams?.get('sinPagosDias') || '')
+
+  // TODOS los filtros viven en la URL, no solo estado y frecuencia.
+  //
+  // Antes rutaId, renovacion y modoInteres eran estado local puro: no se podia
+  // enlazar a una vista filtrada, el boton "atras" perdia el filtro, y ninguna
+  // otra pantalla podia mandar aqui con algo ya aplicado. Un grep de "?rutaId="
+  // en todo el repo daba cero resultados: la funcion existia y nadie podia
+  // llegar a ella.
+  //
+  // useState solo lee la URL al montar, asi que hace falta el efecto para
+  // cuando el query cambia estando ya en esta pantalla (ej. una alerta del
+  // dashboard).
   const paramsPrevios = useRef(null)
   useEffect(() => {
-    const clave = `${searchParams?.get('estado') || ''}|${searchParams?.get('frecuencia') || ''}`
+    const g = (k) => searchParams?.get(k) || ''
+    const clave = ['estado', 'frecuencia', 'rutaId', 'renovacion', 'modoInteres', 'sinPagosDias']
+      .map(g).join('|')
     if (clave !== paramsPrevios.current) {
       paramsPrevios.current = clave
-      setEstado(searchParams?.get('estado') || 'activo')
-      setFrecuencia(searchParams?.get('frecuencia') || '')
+      setEstado(g('estado') || 'activo')
+      setFrecuencia(g('frecuencia'))
+      setRutaId(g('rutaId'))
+      setRenovacion(g('renovacion'))
+      setModoInteres(g('modoInteres'))
+      setSinPagosDias(g('sinPagosDias'))
     }
   }, [searchParams])
-  const [modoInteres, setModoInteres] = useState('')
-  const [rutaId,    setRutaId]    = useState('')
-  const [renovacion, setRenovacion] = useState('')
   const [loading,   setLoading]   = useState(true)
   const [error,     setError]     = useState('')
   const [page,      setPage]      = useState(1)
@@ -260,11 +277,11 @@ export default function PrestamosPage() {
     })
   }, [])
 
-  const fetchPrestamos = useCallback(async (q, est, p, { soft = false, frec = '', ruta = '', creador = '', renov = '', modo = '' } = {}) => {
+  const fetchPrestamos = useCallback(async (q, est, p, { soft = false, frec = '', ruta = '', creador = '', renov = '', modo = '', sinPagos = '' } = {}) => {
     const shouldUseSoftRefresh = soft && hasLoadedOnceRef.current
     setError('')
     setIsOffline(false)
-    const cacheKey = `prestamos:${q || ''}:${est || ''}:${frec || ''}:${ruta || ''}:${creador || ''}:${renov || ''}:${modo || ''}:${p}`
+    const cacheKey = `prestamos:${q || ''}:${est || ''}:${frec || ''}:${ruta || ''}:${creador || ''}:${renov || ''}:${modo || ''}:${sinPagos || ''}:${p}`
 
     // Cache-first: pintar al instante desde IndexedDB si hay datos de este
     // filtro, y revalidar en segundo plano. Sin cache → skeleton.
@@ -321,11 +338,8 @@ export default function PrestamosPage() {
       if (creador) params.set('creadoPorId', creador)
       if (renov) params.set('renovacion', renov)
       if (modo) params.set('modoInteres', modo)
-      // Viene de la alerta "N prestamos sin pagos hace mas de N dias".
-      // Se lee de window.location y NO del hook: este loader es un useCallback
-      // con dependencias vacias y un searchParams capturado aqui se quedaria
-      // congelado en el primer render.
-      const sinPagos = new URLSearchParams(window.location.search).get('sinPagosDias')
+      // Antes se leia de window.location porque el filtro no era estado. Ahora
+      // llega por filtrosExtra como los demas.
       if (sinPagos) params.set('sinPagosDias', sinPagos)
       params.set('page', String(p))
       params.set('limit', String(LIMIT))
@@ -381,9 +395,26 @@ export default function PrestamosPage() {
   // escondia todos los prestamos que habia cargado el dueño. En una cartera
   // chica, donde carga el dueño, el filtro devolvia la lista VACIA — por eso
   // parecia que filtrar por ruta "no se podia".
-  const filtrosExtra = { frec: frecuencia, ruta: rutaId, renov: renovacion, modo: modoInteres }
+  const filtrosExtra = { frec: frecuencia, ruta: rutaId, renov: renovacion, modo: modoInteres, sinPagos: sinPagosDias }
 
-  useEffect(() => { setPage(1); fetchPrestamos('', estado, 1, filtrosExtra) }, [fetchPrestamos, estado, frecuencia, rutaId, renovacion, modoInteres]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setPage(1); fetchPrestamos('', estado, 1, filtrosExtra) }, [fetchPrestamos, estado, frecuencia, rutaId, renovacion, modoInteres, sinPagosDias]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Estado -> URL. Sin esto el filtro no se puede compartir ni conservar al
+  // volver atras. La comparacion contra la URL actual evita el bucle
+  // URL -> estado -> URL (el efecto de arriba ya no ve un valor nuevo).
+  useEffect(() => {
+    const q = new URLSearchParams()
+    if (estado && estado !== 'activo') q.set('estado', estado)
+    if (frecuencia)   q.set('frecuencia', frecuencia)
+    if (rutaId)       q.set('rutaId', rutaId)
+    if (renovacion)   q.set('renovacion', renovacion)
+    if (modoInteres)  q.set('modoInteres', modoInteres)
+    if (sinPagosDias) q.set('sinPagosDias', sinPagosDias)
+    const nueva = q.toString()
+    if (nueva !== (searchParams?.toString() || '')) {
+      router.replace(nueva ? `/prestamos?${nueva}` : '/prestamos', { scroll: false })
+    }
+  }, [estado, frecuencia, rutaId, renovacion, modoInteres, sinPagosDias]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     setPage(1)
@@ -516,6 +547,52 @@ export default function PrestamosPage() {
         })}
       </div>
 
+      {/* Ruta y "atrasados": salen del acordeon.
+          El filtro por ruta estaba enterrado bajo "Filtros avanzados", cerrado
+          por defecto — a dos toques de distancia — y el de dias sin pagar no
+          tenia control ninguno: solo se llegaba por accidente si el dashboard
+          te enlazaba. Son las dos preguntas mas frecuentes de una cartera
+          ("como va la ruta de Pedro", "quien no me paga hace rato"). */}
+      {esOwner && (rutas.length > 0 || sinPagosDias) && (
+        <div className="flex flex-wrap items-center gap-2 mb-3">
+          {rutas.length > 0 && (
+            <select
+              value={rutaId}
+              onChange={e => setRutaId(e.target.value)}
+              className="h-8 px-2 rounded-full border text-[11px] focus:outline-none transition-all max-w-[190px] truncate"
+              style={rutaId
+                ? { color: 'var(--color-accent)', background: 'var(--color-accent-soft)', borderColor: 'color-mix(in srgb, var(--color-accent) 30%, transparent)' }
+                : { color: 'var(--color-text-muted)', background: 'var(--color-bg-card)', borderColor: 'var(--color-border)' }}
+            >
+              <option value="">Todas las rutas</option>
+              {rutas.map(r => <option key={r.id} value={r.id}>{r.nombre}{r.cobrador ? ` — ${r.cobrador}` : ''}</option>)}
+            </select>
+          )}
+          <button
+            type="button"
+            onClick={() => setSinPagosDias(sinPagosDias ? '' : '7')}
+            className="h-8 px-3 rounded-full border text-[11px] font-medium transition-all"
+            style={sinPagosDias
+              ? { color: 'var(--color-danger)', background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)', borderColor: 'color-mix(in srgb, var(--color-danger) 30%, transparent)' }
+              : { color: 'var(--color-text-muted)', background: 'var(--color-bg-card)', borderColor: 'var(--color-border)' }}
+          >
+            {sinPagosDias ? `Sin pagar hace +${sinPagosDias}d` : 'No me han pagado'}
+          </button>
+          {sinPagosDias && (
+            <select
+              value={sinPagosDias}
+              onChange={e => setSinPagosDias(e.target.value)}
+              className="h-8 px-2 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] text-[11px] text-[var(--color-text-muted)] focus:outline-none"
+            >
+              <option value="3">hace 3 días</option>
+              <option value="7">hace 7 días</option>
+              <option value="15">hace 15 días</option>
+              <option value="30">hace 30 días</option>
+            </select>
+          )}
+        </div>
+      )}
+
       {/* Filtros avanzados (solo owner) */}
       {esOwner && (
         <>
@@ -523,15 +600,15 @@ export default function PrestamosPage() {
             type="button"
             onClick={() => setShowFiltros(!showFiltros)}
             className="flex items-center gap-1.5 mb-3 text-[11px] font-semibold transition-colors"
-            style={{ color: (rutaId || renovacion) ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
+            style={{ color: renovacion ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
             </svg>
             Filtros avanzados
-            {(rutaId || renovacion) && (
+            {renovacion && (
               <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold" style={{ background: 'var(--color-accent)', color: '#fff' }}>
-                {[rutaId, renovacion].filter(Boolean).length}
+                1
               </span>
             )}
             <svg className={`w-3 h-3 transition-transform ${showFiltros ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -540,27 +617,21 @@ export default function PrestamosPage() {
           </button>
           {showFiltros && (
             <div className="grid grid-cols-2 gap-2 mb-4">
-              <select
-                value={rutaId}
-                onChange={e => setRutaId(e.target.value)}
-                className="h-9 px-2 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[11px] text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-all truncate"
-              >
-                <option value="">Todas las rutas</option>
-                {rutas.map(r => <option key={r.id} value={r.id}>{r.nombre}{r.cobrador ? ` — ${r.cobrador}` : ''}</option>)}
-              </select>
+              {/* El select de ruta salio de aca: ahora esta siempre visible
+                  arriba. Aca solo queda lo que de verdad se consulta poco. */}
               <select
                 value={renovacion}
                 onChange={e => setRenovacion(e.target.value)}
                 className="h-9 px-2 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[11px] text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-all truncate"
               >
                 <option value="">Nuevos y renovados</option>
-                <option value="si">Renovados</option>
-                <option value="no">Nuevos</option>
+                <option value="si">Le presté de nuevo</option>
+                <option value="no">Primera vez</option>
               </select>
-              {(rutaId || renovacion) && (
+              {(rutaId || renovacion || modoInteres || sinPagosDias) && (
                 <button
-                  onClick={() => { setRutaId(''); setRenovacion('') }}
-                  className="col-span-2 text-[10px] font-medium py-1 rounded-lg transition-colors"
+                  onClick={() => { setRutaId(''); setRenovacion(''); setModoInteres(''); setSinPagosDias('') }}
+                  className="text-[10px] font-medium py-1 rounded-lg transition-colors"
                   style={{ color: 'var(--color-danger)' }}
                 >
                   Limpiar filtros
