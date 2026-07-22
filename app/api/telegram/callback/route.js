@@ -207,7 +207,7 @@ export async function POST(request) {
           await answerCallback(callbackId, 'Leccion aprobada y aplicada', botType)
           if (messageId) {
             await editMessageReplyMarkup(messageId, {
-              inline_keyboard: [[{ text: '\u2705 APROBADA', callback_data: 'noop:0' }]],
+              inline_keyboard: [[{ text: '\u2705 APROBADA \u2014 pendiente de aplicar', callback_data: 'noop:0' }]],
             }, botType)
           }
         } catch (e) {
