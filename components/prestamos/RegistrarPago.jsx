@@ -269,11 +269,18 @@ export default function RegistrarPago({
       setExitoso(true)
       onSuccess?.(data, pagoParaWA)
     } catch {
-      if (!navigator.onLine) {
+      // Si el fetch se cayo, el pago se encola SIEMPRE. Antes esto dependia de
+      // navigator.onLine, que solo dice si hay interfaz de red, no si hay
+      // internet: con una barra de senal, EDGE o portal cautivo devuelve true,
+      // el fetch falla igual, y el cobrador perdia una cuota que ya tenia en el
+      // bolsillo. Encolar de mas es inofensivo (el servidor deduplica); encolar
+      // de menos es plata perdida.
+      try {
         await encolarOffline()
         return
+      } catch {
+        setError('No se pudo guardar el pago. Intenta de nuevo.')
       }
-      setError('Error de conexión. Intenta de nuevo.')
     } finally {
       setLoading(false)
     }

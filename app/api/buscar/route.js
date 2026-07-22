@@ -22,7 +22,9 @@ export async function GET(request) {
   const { organizationId, rol, rutaIds = [] } = session.user
 
   // Cobrador: solo ve clientes de sus rutas
-  const filtroRuta = rol === 'cobrador' && rutaIds.length > 0 ? { rutaId: { in: rutaIds } } : {}
+  // Sin el gate de longitud: un cobrador sin ruta asignada buscaba sobre toda
+  // la organizacion. `in: []` no devuelve nada, que es lo correcto.
+  const filtroRuta = rol === 'cobrador' ? { rutaId: { in: rutaIds } } : {}
 
   const [clientes, prestamos, rutas] = await Promise.all([
     // Buscar clientes

@@ -59,10 +59,13 @@ export async function GET() {
   ])
 
   // ── Filtro base: cobrador solo ve su ruta ──
+  // OJO: sin el `in: rutaIds` cuando el array viene vacio, el spread quedaba en
+  // {} y el cobrador sin ruta asignada recibia la organizacion COMPLETA. Se
+  // filtra siempre; `in: []` no matchea nada, que es el fallo seguro.
   const clienteWhere = {
     organizationId: orgId,
     estado: { not: 'eliminado' },
-    ...(rol === 'cobrador' && rutaIds.length > 0 ? { rutaId: { in: rutaIds } } : {}),
+    ...(rol === 'cobrador' ? { rutaId: { in: rutaIds } } : {}),
   }
 
   // Límite de pagos históricos: solo 90 días atrás.
@@ -115,7 +118,7 @@ export async function GET() {
   const rutasRaw = await prisma.ruta.findMany({
     where: {
       organizationId: orgId,
-      ...(rol === 'cobrador' && rutaIds.length > 0 ? { id: { in: rutaIds } } : {}),
+      ...(rol === 'cobrador' ? { id: { in: rutaIds } } : {}),
     },
     include: {
       cobrador: { select: { id: true, nombre: true } },

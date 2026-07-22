@@ -40,10 +40,13 @@ export async function PATCH(request) {
   }
 
   if (body.id) {
-    await prisma.notificacion.update({
-      where: { id: body.id },
+    // updateMany con userId en el where: sin eso, cualquier usuario podia
+    // marcar como leida la notificacion de otro con solo mandar su id.
+    const { count } = await prisma.notificacion.updateMany({
+      where: { id: body.id, userId: session.user.id },
       data: { leida: true },
     })
+    if (count === 0) return Response.json({ error: 'No encontrada' }, { status: 404 })
     return Response.json({ ok: true })
   }
 

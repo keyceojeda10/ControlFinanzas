@@ -32,9 +32,12 @@ function verifyFacebookSignature(rawBody, signature) {
     console.warn('[Leads] FB_APP_SECRET no configurado - aceptando sin validar firma')
     return true
   }
+  // Con el secreto configurado la firma es obligatoria y se respeta el
+  // resultado. Antes se calculaba el HMAC, se comparaba, y se retornaba true
+  // igual en TODAS las ramas: el webhook aceptaba cualquier POST anonimo.
   if (!signature) {
-    console.warn('[Leads] Sin header X-Hub-Signature-256 - aceptando igual')
-    return true
+    console.warn('[Leads] Sin header X-Hub-Signature-256 - rechazado')
+    return false
   }
 
   const expectedSig = 'sha256=' + crypto
@@ -43,16 +46,13 @@ function verifyFacebookSignature(rawBody, signature) {
     .digest('hex')
 
   try {
-    const valid = crypto.timingSafeEqual(
-      Buffer.from(signature),
-      Buffer.from(expectedSig)
-    )
-    if (!valid) {
-      console.warn('[Leads] Firma no coincide - aceptando de todas formas')
-    }
-    return true
+    const a = Buffer.from(signature)
+    const b = Buffer.from(expectedSig)
+    // timingSafeEqual explota si los largos difieren; eso ya es firma invalida.
+    if (a.length !== b.length) return false
+    return crypto.timingSafeEqual(a, b)
   } catch {
-    return true
+    return false
   }
 }
 

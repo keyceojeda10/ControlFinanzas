@@ -20,15 +20,19 @@ export async function GET() {
     return NextResponse.json({ completado: true, misiones: [] })
   }
 
-  // Cuentas antiguas (>14 dias) con datos: auto-completar
+  // Cuentas antiguas (>14 dias) que YA ARRANCARON: auto-completar.
+  // Antes bastaba con tener 1 cliente cargado, asi que a los 14 dias se apagaba
+  // la guia de quien nunca habia hecho un prestamo — justo el que mas la
+  // necesitaba, y justo cuando se le vencia la prueba. Ahora se exige un
+  // prestamo real: cargar clientes no es haber activado nada.
   const diasDesdeCreacion = org?.createdAt
     ? (Date.now() - new Date(org.createdAt).getTime()) / (1000 * 60 * 60 * 24)
     : 0
   if (diasDesdeCreacion > 14) {
-    const tieneClientes = await prisma.cliente.count({
-      where: { organizationId: orgId, estado: { notIn: ['eliminado'] } },
+    const tienePrestamos = await prisma.prestamo.count({
+      where: { organizationId: orgId },
     })
-    if (tieneClientes > 0) {
+    if (tienePrestamos > 0) {
       await prisma.organization.update({
         where: { id: orgId },
         data: { onboardingStep: 99 },
@@ -136,9 +140,12 @@ export async function GET() {
     return NextResponse.json({ completado: true, misiones: [] })
   }
 
-  // Wizard: se muestra para cualquier step entre 0 y 98
+  // Wizard: solo hasta el paso 50. De 50 a 98 el wizard ya se vio y toma el
+  // relevo la lista de misiones (que con el umbral viejo en 99 no se renderizo
+  // NUNCA: con step<99 ganaba el wizard, y con step>=99 la respuesta salia
+  // antes por completado).
   const currentStep = org?.onboardingStep ?? 0
-  const showWizard = currentStep >= 0 && currentStep < 99
+  const showWizard = currentStep >= 0 && currentStep < 50
 
   let wizardInitialStep = Math.min(currentStep, 3)
 

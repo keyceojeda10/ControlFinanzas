@@ -79,8 +79,12 @@ export default function OnboardingWizard({
   }, [flujo])
 
   // Step 3: Finish
+  // Paso 50 = "ya vio el wizard" — apaga el wizard pero ENCIENDE la lista de
+  // misiones. Antes esto marcaba 99 (onboarding terminado para siempre), asi
+  // que quien salia del wizard sin haber creado nada quedaba sin ninguna guia.
+  // El 99 real lo pone la API sola cuando ya hay cliente + prestamo + pago.
   const handleFinish = useCallback(() => {
-    persistStep(99, flujo)
+    persistStep(50, flujo)
     onComplete?.()
   }, [flujo, onComplete])
 

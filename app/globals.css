@@ -940,12 +940,20 @@ html[data-theme="light"] [class*="hover:bg-[#"]:hover { background-color: var(--
 html[data-theme="light"] [class*="hover:bg-[rgba(255,255,255"]:hover { background-color: rgba(245, 197, 24, 0.08) !important; }
 
 /* Texto con tokens de estado: en light se oscurecen para contraste sobre blanco
-   (los tokens light son pastel, pensados para fills, no para texto pequeño) */
-html[data-theme="light"] .text-\[var\(--color-success\)\] { color: #10a880 !important; }
-html[data-theme="light"] .text-\[var\(--color-danger\)\]  { color: #e8537a !important; }
-html[data-theme="light"] .text-\[var\(--color-warning\)\] { color: #d98f1f !important; }
-html[data-theme="light"] .text-\[var\(--color-info\)\]    { color: #3298d4 !important; }
-html[data-theme="light"] .text-\[var\(--color-purple\)\]  { color: #8a6df0 !important; }
+   (los tokens light son pastel, pensados para fills, no para texto pequeño).
+
+   Valores recalculados con WCAG 2.1 sobre #ffffff — los anteriores seguian
+   reprobando (success 3.03, danger 3.53, warning 2.66, info 3.19, purple 3.80)
+   y --color-accent, que es el token mas usado como texto (168 usos), no tenia
+   regla: quedaba en 2.16:1. PRODUCT.md exige 4.5:1 porque el cobrador lee esto
+   bajo sol directo. Todos los de abajo estan medidos entre 4.52 y 4.60:1. */
+html[data-theme="light"] .text-\[var\(--color-accent\)\]  { color: #9b6e00 !important; }
+html[data-theme="light"] .text-\[var\(--color-success\)\] { color: #0f8743 !important; }
+html[data-theme="light"] .text-\[var\(--color-danger\)\]  { color: #d34247 !important; }
+html[data-theme="light"] .text-\[var\(--color-warning\)\] { color: #9b6e00 !important; }
+html[data-theme="light"] .text-\[var\(--color-info\)\]    { color: #2f6fed !important; }
+html[data-theme="light"] .text-\[var\(--color-purple\)\]  { color: #7164df !important; }
+html[data-theme="light"] .text-\[var\(--color-teal\)\]    { color: #0c8484 !important; }
 
 /* Colores de estado oscuros → sus variantes pastel */
 html[data-theme="light"] .text-\[\#22c55e\],

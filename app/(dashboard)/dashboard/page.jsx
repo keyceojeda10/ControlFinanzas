@@ -1535,7 +1535,10 @@ export default function DashboardPage() {
           initialFlujo={onboarding.wizardFlujo}
           plan={onboarding.plan}
           onComplete={() => {
-            onboarding.dismiss()
+            // Sin dismiss(): eso marcaba el paso 99 (onboarding cerrado para
+            // siempre) y dejaba sin guia a quien salio del wizard con la cuenta
+            // vacia. El wizard ya persistio el paso 50; al recargar aparece la
+            // lista de misiones.
             window.location.reload()
           }}
           onMinimize={() => {

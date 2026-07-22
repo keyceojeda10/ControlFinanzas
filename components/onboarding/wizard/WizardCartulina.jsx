@@ -33,7 +33,13 @@ export default function WizardCartulina({ onComplete, onSkip }) {
         return
       }
 
-      setResultados(json.datos ?? [])
+      // La API devuelve UN objeto (resultados[0] o la fusion de varias fotos),
+      // no un array. Si esto no se normaliza, resultados.length queda undefined
+      // y no se pinta ni el exito ni el vacio: pantalla en blanco sin salida.
+      const datos = Array.isArray(json.datos)
+        ? json.datos
+        : (json.datos ? [json.datos] : [])
+      setResultados(datos)
       setEstado('listo')
     } catch {
       setEstado('error')
@@ -50,45 +56,76 @@ export default function WizardCartulina({ onComplete, onSkip }) {
 
     let clientesCreados = 0
     let prestamosCreados = 0
+    const fallos = []
 
     for (const dato of resultados) {
+      const quien = dato.nombre || 'Cliente sin nombre'
       try {
+        // La cedula es obligatoria en /api/clientes. La cartulina casi nunca la
+        // trae, asi que se genera un marcador SIN- (el mismo patron del
+        // migrador) que la API acepta sin validar formato de documento.
+        const cedula = dato.cedula?.trim()
+          || `SIN-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
+
         const resC = await fetch('/api/clientes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             nombre: dato.nombre || 'Cliente importado',
+            cedula,
             telefono: dato.telefono || '',
             direccion: dato.direccion || '',
           }),
         })
-        if (!resC.ok) continue
+        if (!resC.ok) {
+          const err = await resC.json().catch(() => ({}))
+          fallos.push(`${quien}: ${err.error || 'no se pudo crear'}`)
+          continue
+        }
         const cliente = await resC.json()
         clientesCreados++
 
         if (dato.montoPrestado && dato.montoPrestado > 0) {
-          const bodyPrestamo = {
-            clienteId: cliente.id,
-            montoPrestado: dato.montoPrestado,
-            tasaInteres: dato.tasaInteres ?? 20,
-            numeroCuotas: dato.numeroCuotas ?? 20,
-            frecuencia: dato.frecuencia ?? 'diario',
-            metodoInteres: dato.metodoInteres ?? 'cuota_fija',
-            fechaInicio: new Date().toISOString().split('T')[0],
-          }
+          // /api/prestamos espera diasPlazo y modoInteres. Mandar numeroCuotas
+          // y metodoInteres devolvia 400 "El plazo es requerido" siempre.
+          const frecuencia = dato.frecuencia ?? 'diario'
+          const diasPorPeriodo = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }[frecuencia] ?? 1
+          const cuotas = Number(dato.numeroCuotas) > 0 ? Number(dato.numeroCuotas) : 20
+
           const resP = await fetch('/api/prestamos', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(bodyPrestamo),
+            body: JSON.stringify({
+              clienteId: cliente.id,
+              montoPrestado: dato.montoPrestado,
+              tasaInteres: dato.tasaInteres ?? 20,
+              diasPlazo: cuotas * diasPorPeriodo,
+              frecuencia,
+              modoInteres: 'fijo',
+              fechaInicio: new Date().toISOString().split('T')[0],
+            }),
           })
           if (resP.ok) prestamosCreados++
+          else {
+            const err = await resP.json().catch(() => ({}))
+            fallos.push(`${quien}: cliente creado, pero el prestamo fallo (${err.error || 'error'})`)
+          }
         }
       } catch {
-        // continuar con el siguiente
+        fallos.push(`${quien}: se cayo la conexion`)
       }
     }
 
-    onComplete({ clientesCreados, prestamosCreados })
+    // No declarar exito cuando no se creo nada: antes se pasaba igual a la
+    // pantalla de "Ya conoces el sistema" con cero clientes en la cuenta.
+    if (clientesCreados === 0) {
+      setEnviando(false)
+      setEstado('error')
+      setMensajeError(fallos[0] || 'No pudimos crear los clientes. Intenta de nuevo o registralos manualmente.')
+      return
+    }
+
+    onComplete({ clientesCreados, prestamosCreados, fallos })
   }, [resultados, enviando, onComplete])
 
   const reintentar = () => {

@@ -11,12 +11,19 @@ import sharp from 'sharp'
 // Limites de cartulinas por plan (por dia, por organizacion)
 const LIMITES_PLAN = {
   test:         3,
-  basic:        10,
-  standard:     20,
-  professional: 40,
-  enterprise:   80,
+  starter:      15,
+  basic:        20,
+  growth:       30,
+  standard:     40,
+  professional: 80,
 }
-const LIMITE_DEFAULT = 5
+const LIMITE_DEFAULT = 15
+
+// Cupo ampliado los primeros dias: es cuando el prestamista esta pasando su
+// cuaderno entero al sistema, y es el momento que decide si se queda o se va.
+// Toparlo en 5 fotos ahi era cerrarle la puerta el dia 1.
+const DIAS_ACTIVACION  = 14
+const LIMITE_ACTIVACION = 60
 
 // Pool de claves Gemini con rotacion automatica en 429
 const GEMINI_KEYS = (process.env.GEMINI_API_KEYS ?? '').split(',').map(k => k.trim()).filter(Boolean)
@@ -145,13 +152,19 @@ export async function POST(req) {
 
   const orgId = session.user.organizationId
   const plan = session.user.plan ?? 'basic'
-  const limite = LIMITES_PLAN[plan] ?? LIMITE_DEFAULT
 
   // Verificar y actualizar contador diario
   const org = await prisma.organization.findUnique({
     where: { id: orgId },
-    select: { cartulinasHoy: true, cartulinasFecha: true },
+    select: { cartulinasHoy: true, cartulinasFecha: true, createdAt: true },
   })
+
+  const diasDeVida = org?.createdAt
+    ? (Date.now() - new Date(org.createdAt).getTime()) / 86400000
+    : 999
+  const limite = diasDeVida <= DIAS_ACTIVACION
+    ? Math.max(LIMITE_ACTIVACION, LIMITES_PLAN[plan] ?? LIMITE_DEFAULT)
+    : (LIMITES_PLAN[plan] ?? LIMITE_DEFAULT)
 
   const hoy = new Date()
   hoy.setHours(0, 0, 0, 0)
@@ -177,7 +190,9 @@ export async function POST(req) {
   if (usadasHoy + fotos.length > limite) {
     const restantes = Math.max(0, limite - usadasHoy)
     return NextResponse.json({
-      error: `Alcanzaste el límite de ${limite} lecturas por día en tu plan. ${restantes > 0 ? `Puedes leer ${restantes} más hoy.` : 'Se renueva a medianoche.'}`,
+      error: restantes > 0
+        ? `Solo te quedan ${restantes} lecturas de foto por hoy. Sube ${restantes} foto${restantes === 1 ? '' : 's'} ahora, o carga el resto de tu cartera de una vez con un Excel.`
+        : `Ya usaste tus ${limite} lecturas de foto de hoy (se renuevan a medianoche). Si quieres seguir ahora, puedes subir tu cartera con un Excel o registrar el cliente a mano.`,
       codigo: 'LIMITE_ALCANZADO',
       limite,
       usadas: usadasHoy,

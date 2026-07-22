@@ -117,7 +117,10 @@ describe('GET /api/buscar', () => {
     expect(clienteCall.where.rutaId).toEqual({ in: ['ruta-1', 'ruta-2'] })
   })
 
-  it('sin rutas asignadas, el cobrador no filtra por ruta', async () => {
+  // Este test antes afirmaba lo contrario ("no filtra por ruta") y por eso el
+  // agujero paso desapercibido: un cobrador sin ruta asignada buscaba sobre
+  // TODA la organizacion. Sin ruta asignada no se ve nada, no se ve todo.
+  it('sin rutas asignadas, el cobrador no ve ningun cliente', async () => {
     mockGetServerSession.mockResolvedValue({
       user: { organizationId: 'org-1', rol: 'cobrador', rutaIds: [], id: 'user-2' },
     })
@@ -125,6 +128,6 @@ describe('GET /api/buscar', () => {
     await GET(makeRequest('test'))
 
     const clienteCall = mockClienteFindMany.mock.calls[0][0]
-    expect(clienteCall.where.rutaId).toBeUndefined()
+    expect(clienteCall.where.rutaId).toEqual({ in: [] })
   })
 })

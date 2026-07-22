@@ -9,7 +9,7 @@ import { obtenerCoordsRapido } from '@/lib/geo'
 import { StaggeredList } from '@/components/ui/StaggeredList'
 import MonedaCF from '@/components/ui/MonedaCF'
 import MetodoPagoSelector from '@/components/pagos/MetodoPagoSelector'
-import { obtenerRutasOffline, guardarEnCache, leerDeCache } from '@/lib/offline'
+import { obtenerRutasOffline, guardarEnCache, leerDeCache, guardarPagoPendiente } from '@/lib/offline'
 
 export default function CobrosHoyPage() {
   const { esCobrador, loading: authLoading } = useAuth()
@@ -201,8 +201,27 @@ export default function CobrosHoyPage() {
         fetchCobros()
       }
     } catch {
-      alert('Error de conexión. Verifica tu red.')
-      fetchCobros()
+      // Esta pantalla es la pestana principal del cobrador y era la unica de
+      // las tres rutas de cobro que NO encolaba offline: mostraba un alert y
+      // fetchCobros() revertia el pago que ya se habia cobrado en la puerta.
+      try {
+        await guardarPagoPendiente({
+          prestamoId: prestamoActivo,
+          montoPagado: montoFinal,
+          tipo: tipoPago,
+          diasAbonados: tipoPago === 'completo' ? 1 : 0,
+          metodoPago,
+          ...(metodoPagoId ? { metodoPagoId } : {}),
+          clienteNombre: nombre,
+          ...(coords ?? {}),
+        })
+        window.dispatchEvent(new Event('paymentQueued'))
+        setPagoOk(clienteId)
+        setTimeout(() => setPagoOk(null), 1200)
+      } catch {
+        alert('No se pudo guardar el pago. Intenta de nuevo.')
+        fetchCobros()
+      }
     } finally {
       setPagando(null)
     }

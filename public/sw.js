@@ -1,5 +1,5 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME   = 'cf-v552'
+const CACHE_NAME   = 'cf-v553'
 const API_CACHE    = 'cf-api-v90'
 // Cache inmutable para _next/static — NO se borra entre versiones.
 // Los chunks llevan hash en el nombre, así que nunca hay stale content.
@@ -75,6 +75,7 @@ const PRECACHE_URLS = [
 // API routes to cache for offline reads (GET only)
 const CACHEABLE_API = [
   '/api/dashboard/resumen',
+  '/api/cobros-hoy',   // pestana principal del cobrador: debe abrir sin senal
   '/api/prestamos',
   '/api/clientes',
   '/api/rutas',
