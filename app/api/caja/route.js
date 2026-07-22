@@ -40,30 +40,39 @@ const diasAtrasDesdeHoy = (fechaObjetivo, country = 'co') => {
 // Respeta la jerarquía de días sin cobro cliente→ruta→org: si HOY es día sin cobro
 // para ese cliente, su cuota no se espera (el cobrador no tiene por qué cobrarla).
 async function calcularEsperadoReal(organizationId, cobradorId = null) {
-  const whereRuta = { organizationId, activo: true }
-  if (cobradorId) whereRuta.cobradorId = cobradorId
-
-  const [rutas, org] = await Promise.all([
-    prisma.ruta.findMany({
-      where: whereRuta,
+  // Se parte de los CLIENTES, no de las rutas.
+  //
+  // Antes esto arrancaba en prisma.ruta.findMany e iteraba ruta.clientes, asi
+  // que un cliente sin ruta asignada era invisible para la meta. Con cero rutas
+  // —el estado normal del 95% de las organizaciones, porque el onboarding no
+  // crea ninguna— el resultado era literalmente 0: la caja decia "Esperado $0"
+  // y "Diferencia +todo lo cobrado", mientras el dashboard mostraba la meta
+  // real. Dos pantallas de la misma app contradiciendose el mismo dia.
+  //
+  // Ahora usa el mismo criterio que /api/dashboard/resumen: recorre prestamos
+  // activos y pregunta por cada uno si su ciclo de cobro toca hoy. La ruta pasa
+  // a ser solo un filtro opcional, cuando se pide la caja de un cobrador.
+  const [clientes, org, festivos] = await Promise.all([
+    prisma.cliente.findMany({
+      where: {
+        organizationId,
+        estado: { notIn: ['eliminado'] },
+        ...(cobradorId ? { ruta: { cobradorId, activo: true } } : {}),
+      },
       select: {
         diasSinCobro: true,
-        clientes: {
+        ruta: { select: { diasSinCobro: true } },
+        prestamos: {
+          // El clavo no genera cuota esperada (es el lado negativo): se excluye de la meta.
+          where: { estado: 'activo', esClavo: false },
           select: {
-            diasSinCobro: true,
-            prestamos: {
-              // El clavo no genera cuota esperada (es el lado negativo): se excluye de la meta.
-              where: { estado: 'activo', esClavo: false },
-              select: {
-                cuotaDiaria: true,
-                frecuencia: true,
-                fechaInicio: true,
-                diasPlazo: true,
-                diaCobroSemana: true,
-                diaCobroMes: true,
-                diaCobroMes2: true,
-              },
-            },
+            cuotaDiaria: true,
+            frecuencia: true,
+            fechaInicio: true,
+            diasPlazo: true,
+            diaCobroSemana: true,
+            diaCobroMes: true,
+            diaCobroMes2: true,
           },
         },
       },
@@ -72,21 +81,27 @@ async function calcularEsperadoReal(organizationId, cobradorId = null) {
       where: { id: organizationId },
       select: { diasSinCobro: true },
     }),
+    // La caja pasaba [] como festivos, o sea que los ignoraba, mientras el
+    // dashboard si los descuenta. Otra razon por la que las dos pantallas no
+    // cuadraban.
+    prisma.festivo.findMany({
+      where: { organizationId },
+      select: { fecha: true },
+    }),
   ])
 
   // Meta del dia: solo cuenta cuotas de prestamos cuyo ciclo de cobro toca
   // hoy (segun frecuencia + dia ancla). Antes sumaba TODAS las cuotas activas,
   // lo que inflaba la meta con cuotas semanales/mensuales que no se cobraban hoy.
-  return rutas.reduce((total, ruta) =>
-    total + ruta.clientes.reduce((a, c) => {
-      const diasExcluidos = obtenerDiasSinCobro(c, ruta, org)
-      const hoySinCobro = esHoySinCobro(diasExcluidos) || esHoyFestivo([])
-      return a + c.prestamos.reduce((b, p) => {
-        return tienePeriodoEsperadoHoy(p, hoySinCobro, diasExcluidos, [])
-          ? b + p.cuotaDiaria
-          : b
-      }, 0)
-    }, 0), 0)
+  return clientes.reduce((total, c) => {
+    if (!c.prestamos.length) return total
+    const diasExcluidos = obtenerDiasSinCobro(c, c.ruta, org)
+    const hoySinCobro = esHoySinCobro(diasExcluidos) || esHoyFestivo(festivos)
+    return total + c.prestamos.reduce(
+      (b, p) => (tienePeriodoEsperadoHoy(p, hoySinCobro, diasExcluidos, festivos) ? b + p.cuotaDiaria : b),
+      0,
+    )
+  }, 0)
 }
 
 // Calcula desembolsos realizados en el día para reflejar el saldo real de caja.
@@ -658,10 +673,19 @@ export async function GET(request) {
         },
       }),
     ])
-    const orgCfg = await prisma.organization.findUnique({
-      where: { id: organizationId },
-      select: { diasSinCobro: true },
-    })
+    // Los festivos se cargan junto con la config: sin ellos, el esperado por
+    // cobrador contaba como cobrable un dia festivo y le marcaba faltante a un
+    // cobrador que no tenia nada que cobrar.
+    const [orgCfg, festivosOrg] = await Promise.all([
+      prisma.organization.findUnique({
+        where: { id: organizationId },
+        select: { diasSinCobro: true },
+      }),
+      prisma.festivo.findMany({
+        where: { organizationId },
+        select: { fecha: true },
+      }),
+    ])
 
     const recaudoPorCobrador = recaudosDiaRaw.reduce((acc, row) => {
       if (!row.cobradorId) return acc
@@ -673,9 +697,9 @@ export async function GET(request) {
       if (!ruta.cobradorId) return acc
       const esperadoRuta = ruta.clientes.reduce((totalCliente, cliente) => {
         const diasExcluidos = obtenerDiasSinCobro(cliente, ruta, orgCfg)
-        const hoySinCobro = esHoySinCobro(diasExcluidos) || esHoyFestivo([])
+        const hoySinCobro = esHoySinCobro(diasExcluidos) || esHoyFestivo(festivosOrg)
         return totalCliente + cliente.prestamos.reduce((totalPrestamo, p) => {
-          return tienePeriodoEsperadoHoy(p, hoySinCobro, diasExcluidos, [])
+          return tienePeriodoEsperadoHoy(p, hoySinCobro, diasExcluidos, festivosOrg)
             ? totalPrestamo + p.cuotaDiaria
             : totalPrestamo
         }, 0)

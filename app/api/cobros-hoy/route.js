@@ -46,17 +46,18 @@ export async function GET() {
   }
 
   const { id: userId, organizationId, rol, rutaIds: rutaIdsRaw } = session.user
-
-  // Solo cobradores (owners usan el dashboard normal)
-  if (rol !== 'cobrador') {
-    return Response.json({ error: 'Solo para cobradores' }, { status: 403 })
-  }
-
+  const esCobrador = rol === 'cobrador'
   const rutaIds = rutaIdsRaw ?? []
-  if (rutaIds.length === 0) {
-    return Response.json({ clientes: [], resumen: { total: 0, pendientes: 0, pagados: 0, esperadoHoy: 0, recaudadoHoy: 0 } })
-  }
 
+  // Antes esto devolvia 403 "Solo para cobradores" y el comentario decia que
+  // los owners usan el dashboard normal. Pero el dashboard NO tiene lista de
+  // cobro: esta es la unica pantalla del producto que responde "a quien le
+  // cobro hoy", que es la pregunta que abre el dia. Y el 95% de las
+  // organizaciones no tiene cobradores: el dueño sale a la calle el mismo.
+  //
+  // Ademas se consultaba rutas -> clientes, asi que un cliente sin ruta era
+  // invisible aunque tuviera cuota hoy. Ahora se parte de los clientes y la
+  // ruta es una relacion opcional.
   const _hoy = hoy(), _manana = manana()
 
   const [org, festivos] = await Promise.all([
@@ -70,52 +71,56 @@ export async function GET() {
     }),
   ])
 
-  // Cargar todas las rutas del cobrador con sus clientes y préstamos.
-  // pagos: solo los de HOY (filtramos en DB, no en JS) — evita traer meses de historial.
-  // Los cálculos de mora/saldo usan totalPagado (denormalizado), no necesitan el historial completo.
-  const rutas = await prisma.ruta.findMany({
-    where: { id: { in: rutaIds }, organizationId, cobradorId: userId },
+  // Cobrador: los clientes de sus rutas, mas los que el mismo creo sin ruta
+  // (mismo criterio que /api/clientes y /api/prestamos, para que las tres
+  // pantallas muestren el mismo universo).
+  // Dueño: todos los clientes de la organizacion, con o sin ruta.
+  //
+  // pagos: solo los de HOY (filtramos en DB, no en JS) — evita traer meses de
+  // historial. Los calculos de mora/saldo usan totalPagado (denormalizado).
+  const clientes = await prisma.cliente.findMany({
+    where: {
+      organizationId,
+      estado: { notIn: ['eliminado'] },
+      ...(esCobrador
+        ? { OR: [{ rutaId: { in: rutaIds } }, { rutaId: null, creadoPorId: userId }] }
+        : {}),
+    },
+    orderBy: [{ ordenRuta: 'asc' }, { nombre: 'asc' }],
     select: {
       id: true,
       nombre: true,
+      cedula: true,
+      direccion: true,
       diasSinCobro: true,
-      clientes: {
-        orderBy: [{ ordenRuta: 'asc' }, { nombre: 'asc' }],
+      ruta: { select: { id: true, nombre: true, diasSinCobro: true } },
+      prestamos: {
+        orderBy: { createdAt: 'asc' },
         select: {
           id: true,
-          nombre: true,
-          cedula: true,
-          direccion: true,
+          estado: true,
+          esClavo: true,
+          cuotaDiaria: true,
+          montoPrestado: true,
+          totalAPagar: true,
+          totalPagado: true,
+          frecuencia: true,
+          fechaInicio: true,
+          diasPlazo: true,
+          diaCobroSemana: true,
+          diaCobroMes: true,
+          diaCobroMes2: true,
           diasSinCobro: true,
-          prestamos: {
-            orderBy: { createdAt: 'asc' },
-            select: {
-              id: true,
-              estado: true,
-              esClavo: true,
-              cuotaDiaria: true,
-              montoPrestado: true,
-              totalAPagar: true,
-              totalPagado: true,
-              frecuencia: true,
-              fechaInicio: true,
-              diasPlazo: true,
-              diaCobroSemana: true,
-              diaCobroMes: true,
-              diaCobroMes2: true,
-              diasSinCobro: true,
-              modoInteres: true,
-              capitalExtra: true,
-              proximoCobroManual: true,
-              cuotasAmortizacion: {
-                select: { numeroPeriodo: true, cuotaTotal: true, interes: true, capital: true, pagado: true, interesPagado: true, fechaEsperada: true },
-                orderBy: { numeroPeriodo: 'asc' },
-              },
-              pagos: {
-                where: { fechaPago: { gte: _hoy, lt: _manana } },
-                select: { id: true, montoPagado: true, fechaPago: true, tipo: true },
-              },
-            },
+          modoInteres: true,
+          capitalExtra: true,
+          proximoCobroManual: true,
+          cuotasAmortizacion: {
+            select: { numeroPeriodo: true, cuotaTotal: true, interes: true, capital: true, pagado: true, interesPagado: true, fechaEsperada: true },
+            orderBy: { numeroPeriodo: 'asc' },
+          },
+          pagos: {
+            where: { fechaPago: { gte: _hoy, lt: _manana } },
+            select: { id: true, montoPagado: true, fechaPago: true, tipo: true },
           },
         },
       },
@@ -130,8 +135,9 @@ export async function GET() {
 
   const clientesAgregados = []
 
-  for (const ruta of rutas) {
-    for (const c of ruta.clientes) {
+  {
+    for (const c of clientes) {
+      const ruta = c.ruta   // puede ser null: cliente sin ruta asignada
       totalClientes++
 
       const diasExcluidos = obtenerDiasSinCobro(c, ruta, org)
@@ -217,8 +223,8 @@ export async function GET() {
         nombre: c.nombre,
         cedula: c.cedula,
         direccion: c.direccion,
-        rutaId: ruta.id,
-        rutaNombre: ruta.nombre,
+        rutaId: ruta?.id ?? null,
+        rutaNombre: ruta?.nombre ?? 'Sin ruta',
         cuota: cuotaCliente,
         pagoHoy: yaPageHoy,
         cobroPendienteHoy: pendienteHoyCliente,

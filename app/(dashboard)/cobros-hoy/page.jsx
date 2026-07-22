@@ -12,7 +12,7 @@ import MetodoPagoSelector from '@/components/pagos/MetodoPagoSelector'
 import { obtenerRutasOffline, guardarEnCache, leerDeCache, guardarPagoPendiente } from '@/lib/offline'
 
 export default function CobrosHoyPage() {
-  const { esCobrador, loading: authLoading } = useAuth()
+  const { loading: authLoading } = useAuth()
   const [data, setData]           = useState(null)
   const [loading, setLoading]     = useState(true)
   const [error, setError]         = useState('')
@@ -260,11 +260,9 @@ export default function CobrosHoyPage() {
     </div>
   )
 
-  if (!esCobrador) return (
-    <div className="max-w-2xl mx-auto px-1 py-8 text-center">
-      <p style={{ color: 'var(--color-text-muted)' }}>Esta vista es solo para cobradores.</p>
-    </div>
-  )
+  // El muro "solo para cobradores" se quito: el dueño que cobra solo (95% de
+  // las organizaciones) tambien necesita saber a quien le toca hoy, y el
+  // dashboard no responde eso. La API ya distingue por rol que clientes trae.
 
   const clientes = data?.clientes ?? []
   const resumen = data?.resumen ?? {}

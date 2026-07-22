@@ -36,6 +36,19 @@ const NAV_PRIMARY_OWNER = [
     ),
   },
   {
+    // El dueño que cobra solo (95% de las organizaciones) sale a la calle el
+    // mismo. Esta es la pantalla que responde "a quien le cobro hoy" y hasta
+    // ahora le devolvia 403.
+    label: 'Cobrar hoy',
+    href:  '/cobros-hoy',
+    icon: (
+      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+  },
+  {
     label: 'Rutas',
     href:  '/rutas',
     icon: (
