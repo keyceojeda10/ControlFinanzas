@@ -1718,23 +1718,24 @@ export default function RutaDetallePage({ params }) {
       )}
 
       {/* Acciones rápidas.
-          "Hoja para salir a cobrar" va PRIMERA y en color: es el unico papel
-          que se usa todos los dias y estaba de quinta en una fila con scroll
-          horizontal — en un movil de 390px nacia fuera de pantalla, asi que se
-          imprimia una vez y nunca mas. */}
+          "Hoja para salir a cobrar" estaba de quinta en esta fila con scroll
+          horizontal y nacia fuera de pantalla en un movil de 390px. Se subio
+          para que se vea sin arrastrar — pero NO va primera ni en dorado: eso
+          le robaba el primer lugar a "+ Agregar", que es lo que de verdad usa
+          a diario quien administra rutas con cobradores. Un cliente lo
+          reporto. Visible != protagonista. */}
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-        {(ruta.clientes?.length ?? 0) > 0 && (
-          <button onClick={() => window.print()} className="shrink-0 h-10 px-3.5 rounded-[12px] text-[11px] font-bold active:scale-95 transition-transform inline-flex items-center gap-1.5"
-            style={{ background: 'var(--color-accent)', color: 'var(--color-accent-text)' }}>
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 9V2h12v7m-12 0h12m-12 0a2 2 0 00-2 2v5a2 2 0 002 2h1m11-9a2 2 0 012 2v5a2 2 0 01-2 2h-1m-10 0v4h8v-4m-8 0h8" />
-            </svg>
-            Hoja para salir a cobrar
-          </button>
-        )}
         {puedeGestionarRutas && (
           <button onClick={abrirModalClientes} className="shrink-0 h-10 px-3.5 rounded-[12px] border border-[#222] bg-[var(--color-bg-card)] text-[11px] text-[var(--color-text-secondary)] font-medium active:scale-95 transition-transform">
             + Agregar
+          </button>
+        )}
+        {(ruta.clientes?.length ?? 0) > 0 && (
+          <button onClick={() => window.print()} className="shrink-0 h-10 px-3.5 rounded-[12px] border border-[#222] bg-[var(--color-bg-card)] text-[11px] text-[var(--color-text-secondary)] font-medium active:scale-95 transition-transform inline-flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 9V2h12v7m-12 0h12m-12 0a2 2 0 00-2 2v5a2 2 0 002 2h1m11-9a2 2 0 012 2v5a2 2 0 01-2 2h-1m-10 0v4h8v-4m-8 0h8" />
+            </svg>
+            Imprimir hoja
           </button>
         )}
         {(ruta.clientes?.length ?? 0) >= 2 && clientesConCoords >= 2 && (

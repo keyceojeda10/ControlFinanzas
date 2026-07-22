@@ -11,6 +11,9 @@ import QrCobroModal from '@/components/qr/QrCobroModal'
 const formatCOPCompact = (monto = 0) => formatMoneyFn(monto)
 
 const FAB_ITEMS_OWNER = [
+  // Va en el FAB, no en la pill: la pantalla es util para el dueño que cobra
+  // solo, pero no vale sacar Rutas de la barra para meterla.
+  { label: 'Cobrar', bold: 'hoy', href: '/cobros-hoy', icon: 'M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.746 3.746 0 0121 12z' },
   { label: 'Nuevo', bold: 'préstamo', href: '/prestamos/nuevo', icon: 'M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
   { label: 'Nuevo', bold: 'cliente', href: '/clientes/nuevo', icon: 'M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z' },
   { label: 'Escanear', bold: 'QR', href: '__qr_scan__', icon: 'M4.5 3h3a1.5 1.5 0 011.5 1.5v3A1.5 1.5 0 017.5 9h-3A1.5 1.5 0 013 7.5v-3A1.5 1.5 0 014.5 3zm0 12h3a1.5 1.5 0 011.5 1.5v3A1.5 1.5 0 017.5 21h-3A1.5 1.5 0 013 19.5v-3A1.5 1.5 0 014.5 15zm12-12h3a1.5 1.5 0 011.5 1.5v3A1.5 1.5 0 0119.5 9h-3A1.5 1.5 0 0115 7.5v-3A1.5 1.5 0 0116.5 3zm-1.5 13.5h6m-3-3v6' },
@@ -68,17 +71,23 @@ const TAB_COBRAR   = { id: 'cobros-hoy', href: '/cobros-hoy', icon: 'M9 12.75L11
 const TAB_CLIENTES = { id: 'clientes', href: '/clientes', icon: 'M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z' }
 const TAB_PRESTAMOS= { id: 'prestamos', href: '/prestamos', icon: 'M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z' }
 const TAB_CAJA     = { id: 'caja', href: '/caja', icon: 'M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z' }
+const TAB_RUTAS    = { id: 'rutas', href: '/rutas', icon: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7' }
 
-// La pill antes era identica para dueño y cobrador (Inicio, Clientes,
-// Prestamos, Rutas), y "Cobrar hoy" no estaba para ninguno de los dos: el
-// cobrador vive en esa pantalla y la tenia enterrada en el menu "Mas", y al
-// dueño directamente le respondia 403.
+// RUTAS NO SE TOCA.
 //
-// Cobrador: su jornada entera es cobrar; no presta ni cierra el mes.
-// Dueño: cobrar de dia, cuadrar la caja al final. Rutas baja a "Mas" porque el
-// 95% tiene una sola (o ninguna).
-const PILL_COBRADOR = [TAB_COBRAR, TAB_CLIENTES, TAB_INICIO, TAB_CAJA]
-const PILL_OWNER    = [TAB_INICIO, TAB_COBRAR, TAB_CLIENTES, TAB_PRESTAMOS]
+// En un cambio anterior se saco Rutas de la pill y se puso "Cobrar hoy" en su
+// lugar, razonando que el 95% de las organizaciones tiene una sola ruta o
+// ninguna. Ese promedio es cierto y la conclusion fue igual equivocada: las 14
+// organizaciones CON cobradores son el 63% del ingreso, y para ellas Rutas es
+// la pantalla que mas usan — el dueño entra ahi para ver la ruta de cada
+// cobrador. El cliente con mas cobradores lo reporto el mismo dia.
+//
+// Leccion: optimizar por la mayoria contada rompe a la minoria que paga. Si
+// una pantalla nueva vale la pena, va en el FAB o en "Mas"; no le quita el
+// puesto a algo que la gente ya usa todos los dias.
+const PILL_BASE = [TAB_INICIO, TAB_CLIENTES, TAB_PRESTAMOS, TAB_RUTAS]
+const PILL_COBRADOR = PILL_BASE
+const PILL_OWNER    = PILL_BASE
 
 const ICON_GRID = 'M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z'
 
