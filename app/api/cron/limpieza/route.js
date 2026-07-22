@@ -10,6 +10,7 @@ import path from 'path'
 const CRON_SECRET = process.env.CRON_SECRET
 const DIAS_RETENCION = 90
 const DIAS_RETENCION_FOTOS = 30
+const DIAS_RETENCION_UBICACION = 30
 
 export async function POST(req) {
   const secret = req.headers.get('x-cron-secret')
@@ -59,6 +60,28 @@ export async function POST(req) {
     if (ids.length < CHUNK) break
   }
 
+  // Rastro de GPS de los cobradores. No se purgaba en ningun lado: era la tabla
+  // que mas rapido crecia del sistema (un ping cada 30s por cobrador) y la
+  // unica sin fecha de caducidad. 30 dias alcanzan de sobra para auditar una
+  // ruta; mas atras que eso nadie lo consulta.
+  const limiteUbicacion = new Date()
+  limiteUbicacion.setDate(limiteUbicacion.getDate() - DIAS_RETENCION_UBICACION)
+  let ubicacionTotal = 0
+
+  while (true) {
+    const ids = await prisma.ubicacionLog.findMany({
+      where: { createdAt: { lt: limiteUbicacion } },
+      select: { id: true },
+      take: CHUNK,
+    })
+    if (ids.length === 0) break
+    const { count } = await prisma.ubicacionLog.deleteMany({
+      where: { id: { in: ids.map(r => r.id) } },
+    })
+    ubicacionTotal += count
+    if (ids.length < CHUNK) break
+  }
+
   // Fotos de pagos >30 días: borrar archivo del disco + limpiar campo en DB
   const limiteFotos = new Date()
   limiteFotos.setDate(limiteFotos.getDate() - DIAS_RETENCION_FOTOS)
@@ -89,7 +112,8 @@ export async function POST(req) {
     ok: true,
     eventosEliminados: eventosTotal,
     actividadEliminada: actividadTotal,
+    ubicacionesEliminadas: ubicacionTotal,
     fotosEliminadas,
-    mensaje: `Limpieza: ${eventosTotal} eventos + ${actividadTotal} logs (>${DIAS_RETENCION}d) + ${fotosEliminadas} fotos (>${DIAS_RETENCION_FOTOS}d)`,
+    mensaje: `Limpieza: ${eventosTotal} eventos + ${actividadTotal} logs (>${DIAS_RETENCION}d) + ${ubicacionTotal} ubicaciones (>${DIAS_RETENCION_UBICACION}d) + ${fotosEliminadas} fotos (>${DIAS_RETENCION_FOTOS}d)`,
   })
 }

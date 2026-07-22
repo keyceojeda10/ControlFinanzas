@@ -220,6 +220,8 @@ model UbicacionLog {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+  // Para la purga por antiguedad del cron de limpieza
+  @@index([createdAt])
 }
 
 model Ruta {
@@ -418,10 +420,12 @@ model Pago {
   cobrador       User?         @relation(fields: [cobradorId], references: [id])
   metodoPagoRef  MetodoPago?   @relation(fields: [metodoPagoId], references: [id])
 
-  @@index([organizationId])
-  @@index([prestamoId])
+  // [organizationId] y [prestamoId] sueltos se quitaron: son prefijo por la
+  // izquierda de los compuestos de abajo, asi que MySQL ya los cubre. Eran
+  // trabajo extra en cada insert de la tabla con mas escrituras del sistema.
   @@index([organizationId, fechaPago])
   @@index([prestamoId, fechaPago])
+  @@index([createdAt])
   @@index([organizationId, cobradorId, fechaPago])
 }
 
@@ -624,6 +628,9 @@ model ActividadLog {
 
   @@index([organizationId, createdAt])
   @@index([userId])
+  // El cron de limpieza filtra por createdAt suelto; sin esto es full scan
+  // en bucle, y MariaDB no tiene index skip scan que lo rescate.
+  @@index([createdAt])
 }
 
 // ─── MEMORIA DEL ASISTENTE ─────────────────────────────
