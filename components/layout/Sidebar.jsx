@@ -89,7 +89,7 @@ const NAV_PRIMARY_OWNER = [
 
 const NAV_MORE_OWNER = [
   {
-    label: 'Migrador',
+    label: 'Pasar mi cuaderno',
     href:  '/migrador',
     icon: (
       <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

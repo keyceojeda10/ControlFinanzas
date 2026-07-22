@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams }              from 'next/navigation'
+import Link                                        from 'next/link'
 import { useAuth }                                 from '@/hooks/useAuth'
 import { Button }                                  from '@/components/ui/Button'
 import { Input }                                   from '@/components/ui/Input'
@@ -829,10 +830,28 @@ function NuevoPrestamo() {
               </div>
             )}
 
+            {/* Antes esto era un parrafo suelto sin ningun boton. Se llega aca
+                desde tres lugares distintos (el vacio de /prestamos, el nav de
+                abajo y el CTA del dashboard) y el usuario tenia que adivinar
+                solo que debia irse a /clientes/nuevo. */}
             {!buscando && !clienteSeleccionado && recientes.length === 0 && (
-              <p className="text-sm text-center py-8 mt-3" style={{ color: 'var(--color-text-muted)' }}>
-                No tienes clientes aún. Crea uno antes de continuar.
-              </p>
+              <div className="text-center py-8 mt-3">
+                <p className="text-sm mb-4" style={{ color: 'var(--color-text-muted)' }}>
+                  Todavía no tienes clientes. Un préstamo siempre va a nombre de alguien.
+                </p>
+                <div className="flex flex-col gap-2 max-w-[260px] mx-auto">
+                  <Link href="/clientes/nuevo"
+                    className="w-full h-11 rounded-[12px] flex items-center justify-center text-sm font-bold transition-all active:scale-[0.98]"
+                    style={{ background: 'var(--color-accent)', color: '#111' }}>
+                    Crear mi primer cliente
+                  </Link>
+                  <Link href="/migrador"
+                    className="w-full h-11 rounded-[12px] flex items-center justify-center text-sm font-medium border transition-all active:scale-[0.98]"
+                    style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}>
+                    Pasar mi cuaderno completo
+                  </Link>
+                </div>
+              </div>
             )}
           </section>
         )

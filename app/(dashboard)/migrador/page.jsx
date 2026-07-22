@@ -212,7 +212,11 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
         <h3 className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-1"
           style={{ color: 'var(--color-accent)' }}>Datos del cliente</h3>
         <p className="text-[11px] mb-2.5" style={{ color: 'var(--color-text-muted)' }}>
-          Nombre y teléfono son obligatorios. Cédula y dirección son opcionales.
+          {/* Decia que la cedula era opcional y despues el guardado la rechazaba
+              con "La cédula es obligatoria". El usuario llenaba lo que le
+              pedian, tocaba Guardar, y recibia un error que contradecia el
+              texto que tenia tres centimetros arriba. */}
+          Nombre, cédula y teléfono son obligatorios. Si no tienes la cédula, marca la casilla de abajo.
         </p>
         <div className="space-y-2.5">
           <input ref={nombreRef} type="text" placeholder="Nombre completo *" autoFocus
@@ -221,7 +225,7 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
             style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
           <div className={`grid gap-2.5 ${sinCedula ? '' : 'grid-cols-2'}`}>
             {!sinCedula && (
-              <input type="text" placeholder="Cédula" inputMode="numeric"
+              <input type="text" placeholder="Cédula *" inputMode="numeric"
                 value={ficha.cedula} onChange={e => set('cedula', e.target.value)}
                 className="w-full h-11 rounded-[12px] border px-3 text-sm"
                 style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
