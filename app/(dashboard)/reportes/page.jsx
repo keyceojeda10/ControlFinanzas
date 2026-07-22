@@ -890,7 +890,12 @@ export default function ReportesPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12M8.25 17.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
             </svg>
           </div>
-          <p className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-secondary)' }}>Listado de cobros</p>
+          <div>
+            <p className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-secondary)' }}>Quién me debe</p>
+            <p className="text-[11px] font-normal normal-case tracking-normal mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+              Todos tus clientes con cuánto deben y cuántos días llevan atrasados.
+            </p>
+          </div>
         </div>
 
         {/* Filtros */}
@@ -960,7 +965,7 @@ export default function ReportesPage() {
           </div>
           <div className="flex flex-col items-start text-left min-w-0 flex-1">
             <span className="text-[13px] font-semibold truncate w-full" style={{ color: 'var(--color-info)' }}>
-              {descargandoListado ? 'Generando PDF...' : 'Descargar Listado'}
+              {descargandoListado ? 'Generando PDF...' : 'Descargar quién me debe'}
             </span>
             <span className="text-[10px] truncate w-full" style={{ color: 'var(--color-text-muted)' }}>
               {filtroSoloMora ? 'Clientes en mora' : 'Todos los clientes'} · cuota, saldo, avance y mora
@@ -970,7 +975,7 @@ export default function ReportesPage() {
       </div>
 
       {/* ── 5. Descargar Resumen PDF ────────────────────────────── */}
-      {nivel < 2 && <UpgradeNudge titulo="Resumen PDF" planRequerido="standard" />}
+      {nivel < 2 && <UpgradeNudge titulo="Cómo me fue — el resumen del mes" planRequerido="standard" />}
       {nivel >= 2 && <div className="rounded-[20px] px-4 py-4 cf-card-shadow"
         style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
       >
@@ -980,7 +985,12 @@ export default function ReportesPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
             </svg>
           </div>
-          <p className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-secondary)' }}>Resumen PDF</p>
+          <div>
+            <p className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-secondary)' }}>Cómo me fue</p>
+            <p className="text-[11px] font-normal normal-case tracking-normal mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+              Cuánto entró, cuánto ganaste de interés y cómo le fue a cada cobrador.
+            </p>
+          </div>
         </div>
         <button
           onClick={exportarPDF}
@@ -1001,7 +1011,7 @@ export default function ReportesPage() {
           </div>
           <div className="flex flex-col items-start text-left min-w-0 flex-1">
             <span className="text-[13px] font-semibold truncate w-full" style={{ color: 'var(--color-danger)' }}>
-              {descargandoPDF ? 'Generando PDF...' : 'Descargar Resumen'}
+              {descargandoPDF ? 'Generando PDF...' : 'Descargar cómo me fue'}
             </span>
             <span className="text-[10px] truncate w-full" style={{ color: 'var(--color-text-muted)' }}>
               KPIs, capital, cobradores del periodo
@@ -1011,7 +1021,7 @@ export default function ReportesPage() {
       </div>}
 
       {/* ── 6. Exportar a Excel como chips ──────────────────────── */}
-      {nivel < 3 && <UpgradeNudge titulo="Exportar a Excel" planRequerido="professional" />}
+      {nivel < 3 && <UpgradeNudge titulo="Bajar todo a Excel" planRequerido="professional" />}
       {nivel >= 3 && <div className="rounded-[20px] px-4 py-4 cf-card-shadow"
         style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
       >
@@ -1021,7 +1031,12 @@ export default function ReportesPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
             </svg>
           </div>
-          <p className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-secondary)' }}>Exportar a Excel</p>
+          <div>
+            <p className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-secondary)' }}>Bajar todo a Excel</p>
+            <p className="text-[11px] font-normal normal-case tracking-normal mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+              Tus datos crudos, para el contador o para hacer tus propias cuentas.
+            </p>
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-2">
           {[

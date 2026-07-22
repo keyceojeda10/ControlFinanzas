@@ -1717,8 +1717,21 @@ export default function RutaDetallePage({ params }) {
         </div>
       )}
 
-      {/* Acciones rápidas */}
+      {/* Acciones rápidas.
+          "Hoja para salir a cobrar" va PRIMERA y en color: es el unico papel
+          que se usa todos los dias y estaba de quinta en una fila con scroll
+          horizontal — en un movil de 390px nacia fuera de pantalla, asi que se
+          imprimia una vez y nunca mas. */}
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+        {(ruta.clientes?.length ?? 0) > 0 && (
+          <button onClick={() => window.print()} className="shrink-0 h-10 px-3.5 rounded-[12px] text-[11px] font-bold active:scale-95 transition-transform inline-flex items-center gap-1.5"
+            style={{ background: 'var(--color-accent)', color: 'var(--color-accent-text)' }}>
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 9V2h12v7m-12 0h12m-12 0a2 2 0 00-2 2v5a2 2 0 002 2h1m11-9a2 2 0 012 2v5a2 2 0 01-2 2h-1m-10 0v4h8v-4m-8 0h8" />
+            </svg>
+            Hoja para salir a cobrar
+          </button>
+        )}
         {puedeGestionarRutas && (
           <button onClick={abrirModalClientes} className="shrink-0 h-10 px-3.5 rounded-[12px] border border-[#222] bg-[var(--color-bg-card)] text-[11px] text-[var(--color-text-secondary)] font-medium active:scale-95 transition-transform">
             + Agregar
@@ -1738,14 +1751,6 @@ export default function RutaDetallePage({ params }) {
               {showMap ? 'Ocultar mapa' : 'Ver mapa'}
             </button>
           </>
-        )}
-        {puedeGestionarRutas && (ruta.clientes?.length ?? 0) > 0 && (
-          <button onClick={() => window.print()} className="shrink-0 h-10 px-3.5 rounded-[12px] border border-[#222] bg-[var(--color-bg-card)] text-[11px] text-[var(--color-text-secondary)] font-medium active:scale-95 transition-transform inline-flex items-center gap-1.5">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 9V2h12v7m-12 0h12m-12 0a2 2 0 00-2 2v5a2 2 0 002 2h1m11-9a2 2 0 012 2v5a2 2 0 01-2 2h-1m-10 0v4h8v-4m-8 0h8" />
-            </svg>
-            Imprimir lista
-          </button>
         )}
         {/* La ruta era un callejon: se entraba y no habia forma de saltar a su
             cartera. Ahora que los filtros viven en la URL, estos dos links

@@ -878,7 +878,7 @@ export default function MigradorPage() {
   // ── Header dinámico ──
   const headerTitulo = {
     lista: 'Tu cartera',
-    selector: creados.length > 0 ? 'Agregar cliente' : 'Migrador de cartera',
+    selector: creados.length > 0 ? 'Agregar cliente' : 'Pasar mi cuaderno',
     formulario: editandoIdx !== null ? `Editar: ${creados[editandoIdx]?.nombre || 'cliente'}` : `Cliente #${proximoNumero}`,
   }[vista]
 
@@ -889,7 +889,7 @@ export default function MigradorPage() {
   }[vista]
 
   const volverLabel = {
-    lista: 'Salir del migrador',
+    lista: 'Salir',
     selector: creados.length > 0 ? 'Ver mis clientes' : 'Salir',
     formulario: 'Volver',
   }[vista]
