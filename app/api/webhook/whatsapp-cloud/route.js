@@ -177,8 +177,38 @@ async function procesarStatus(status) {
 }
 
 let ultimaAlertaFallos = 0
+let ultimaAlertaCorte = 0
+
+// Codigos que significan "Meta te corto", no "ese numero no existe".
+// Estos NO pueden esperar a que falle el 30% del trafico: cuando aparecen, el
+// bot ya esta mudo. El corte de facturacion del 4 al 10 de julio bloqueo 229
+// mensajes durante seis dias sin que saltara una sola alerta, justamente
+// porque la regla de abajo pide 30% de fallos en 24h.
+const CODIGOS_CORTE = {
+  131042: 'Meta bloqueo los envios por FACTURACION (payment issue)',
+  131031: 'La cuenta esta RESTRINGIDA por Meta',
+  368: 'La cuenta esta BLOQUEADA temporalmente por Meta',
+}
+
+async function verificarCorte(errorEntrega) {
+  const codigo = (String(errorEntrega || '').match(/^(\d+)/) || [])[1]
+  const motivo = CODIGOS_CORTE[codigo]
+  if (!motivo) return
+
+  // Una alerta por hora: suficiente para enterarse el mismo dia, sin inundar.
+  if (Date.now() - ultimaAlertaCorte < 3600000) return
+  ultimaAlertaCorte = Date.now()
+
+  const { alertarCorteMeta } = await import('@/lib/bot/alertas')
+  await alertarCorteMeta(codigo, motivo).catch(() => {})
+}
 
 async function verificarTasaFallos(errorEntrega) {
+  // Primero lo urgente: un corte se avisa al primer mensaje bloqueado.
+  await verificarCorte(errorEntrega).catch(e =>
+    console.error('[WA Cloud] Error alertando corte:', e.message)
+  )
+
   if (Date.now() - ultimaAlertaFallos < 6 * 3600000) return
 
   const hace24h = new Date(Date.now() - 24 * 3600000)
