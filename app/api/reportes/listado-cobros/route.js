@@ -39,6 +39,7 @@ export async function GET(req) {
       select: {
         id: true,
         nombre: true,
+        diasSinCobro: true,
         clientes: {
           where: {
             estado: { notIn: ['eliminado', 'inactivo'] },
@@ -75,7 +76,6 @@ export async function GET(req) {
     }),
   ])
 
-  const diasSinCobroOrg = obtenerDiasSinCobro(org?.diasSinCobro)
   const festArr = festivos.map(f => new Date(f.fecha).toISOString().slice(0, 10))
 
   let filas = []
@@ -85,9 +85,17 @@ export async function GET(req) {
 
   for (const ruta of rutas) {
     for (const cliente of ruta.clientes) {
+      // La firma es obtenerDiasSinCobro(cliente, ruta, org, prestamo). Antes se
+      // llamaba con el STRING JSON de la organizacion como primer argumento, o
+      // sea en el lugar de `cliente`: adentro hacia '[0]'.diasSinCobro ->
+      // undefined, y ruta/org llegaban undefined, asi que SIEMPRE devolvia [].
+      // Resultado: si el negocio no cobra domingos, el papel contaba los
+      // domingos como mora y los dias de atraso no coincidian con la app.
+      const diasExcluidos = obtenerDiasSinCobro(cliente, ruta, org)
+
       for (const p of cliente.prestamos) {
         const saldo = calcularSaldoPendiente(p)
-        const mora = calcularDiasMora(p, diasSinCobroOrg, festArr)
+        const mora = calcularDiasMora(p, diasExcluidos, festArr)
         const pagado = p.totalAPagar - saldo
         const avance = p.totalAPagar > 0 ? Math.round((pagado / p.totalAPagar) * 100) : 0
 
@@ -223,27 +231,36 @@ export async function GET(req) {
     doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor(COLOR_INK).lineWidth(1).stroke()
     y += 8
 
-    // Table header
-    y = ensureSpace(y, ROW_H + 10)
-    doc.save()
-    doc.rect(LEFT, y - 2, W, ROW_H).fill(COLOR_HEAD_BG)
-    doc.restore()
+    // Table header — extraido a funcion para poder REDIBUJARLO al cambiar de
+    // pagina. Antes se dibujaba una sola vez: una ruta de mas de ~30 clientes
+    // pasaba a la hoja 2 y ahi salian columnas anonimas de numeros, sin forma
+    // de saber cual era cuota y cual saldo. El cobrador lo lee en la calle.
+    const drawTableHeader = (yy) => {
+      doc.save()
+      doc.rect(LEFT, yy - 2, W, ROW_H).fill(COLOR_HEAD_BG)
+      doc.restore()
 
-    doc.fontSize(7).font('Helvetica-Bold').fillColor(COLOR_MUTED)
-    t('#', COL.num.x + 2, y + 3, { width: COL.num.w })
-    t('CLIENTE', COL.nombre.x, y + 3, { width: COL.nombre.w })
-    t('TELÉFONO', COL.tel.x, y + 3, { width: COL.tel.w })
-    t('CUOTA', COL.cuota.x, y + 3, { width: COL.cuota.w, align: 'right' })
-    t('SALDO', COL.saldo.x, y + 3, { width: COL.saldo.w, align: 'right' })
-    t('AVANCE', COL.avance.x, y + 3, { width: COL.avance.w, align: 'center' })
-    t('MORA', COL.mora.x, y + 3, { width: COL.mora.w, align: 'center' })
-    y += ROW_H
+      doc.fontSize(7).font('Helvetica-Bold').fillColor(COLOR_MUTED)
+      t('#', COL.num.x + 2, yy + 3, { width: COL.num.w })
+      t('CLIENTE', COL.nombre.x, yy + 3, { width: COL.nombre.w })
+      t('TELÉFONO', COL.tel.x, yy + 3, { width: COL.tel.w })
+      t('CUOTA', COL.cuota.x, yy + 3, { width: COL.cuota.w, align: 'right' })
+      t('SALDO', COL.saldo.x, yy + 3, { width: COL.saldo.w, align: 'right' })
+      t('AVANCE', COL.avance.x, yy + 3, { width: COL.avance.w, align: 'center' })
+      t('MORA', COL.mora.x, yy + 3, { width: COL.mora.w, align: 'center' })
+      return yy + ROW_H
+    }
+
+    y = ensureSpace(y, ROW_H + 10)
+    y = drawTableHeader(y)
 
     // Table rows
     clientes.forEach((c, i) => {
       const hasDir = c.direccion.length > 0
       const rowH = hasDir ? ROW_H_DIR : ROW_H
+      const yAntes = y
       y = ensureSpace(y, rowH + 4)
+      if (y !== yAntes) y = drawTableHeader(y)   // hubo salto de pagina
 
       if (i % 2 === 1) {
         doc.save()

@@ -81,11 +81,14 @@ function generarHTMLRecibo(cliente, prestamo, pago, orgNombre, camposRecibo) {
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: 'Courier New', Courier, monospace;
-    font-size: 12px;
-    line-height: 1.5;
-    max-width: 300px;
+    font-size: 11px;
+    line-height: 1.45;
+    /* El rollo es de 58mm y @page deja 4mm de margen por lado: quedan 50mm
+       imprimibles (~189px). El body pedia hasta 300px, asi que el valor de
+       cada linea se cortaba por la derecha o se montaba sobre la etiqueta. */
+    max-width: 50mm;
     margin: 0 auto;
-    padding: 8px;
+    padding: 2mm;
     color: #000;
     background: #fff;
   }
@@ -93,8 +96,9 @@ function generarHTMLRecibo(cliente, prestamo, pago, orgNombre, camposRecibo) {
   .bold { font-weight: bold; }
   .linea { color: #333; margin: 4px 0; font-size: 10px; }
   .linea-fina { color: #999; margin: 3px 0; font-size: 10px; }
-  .row { display: flex; justify-content: space-between; padding: 1px 0; }
-  .row span:last-child { font-weight: bold; }
+  .row { display: flex; justify-content: space-between; gap: 4px; padding: 1px 0; }
+  .row span:first-child { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .row span:last-child { font-weight: bold; text-align: right; white-space: nowrap; }
   .mt { margin-top: 6px; }
   .monto-grande { font-size: 18px; font-weight: bold; text-align: center; margin: 8px 0; }
   .footer { font-size: 9px; color: #666; margin-top: 10px; text-align: center; }
@@ -261,16 +265,19 @@ export default function BotonImprimirRecibo({ tipo = 'recibo', cliente, prestamo
     win.document.write(html)
     win.document.close()
 
-    // Imprimir después de que cargue
-    win.onload = () => {
+    // Imprimir una sola vez. El setTimeout corre en la ventana PADRE, asi que
+    // el print() modal del hijo no lo bloquea: cuando onload disparaba (el caso
+    // normal en escritorio) el cobrador cerraba el dialogo y le aparecia un
+    // SEGUNDO dialogo. El guard deja el fallback para cuando onload no llega.
+    let yaImprimio = false
+    const imprimirUnaVez = () => {
+      if (yaImprimio) return
+      yaImprimio = true
       win.focus()
       win.print()
     }
-    // Fallback si onload no se dispara
-    setTimeout(() => {
-      win.focus()
-      win.print()
-    }, 500)
+    win.onload = imprimirUnaVez
+    setTimeout(imprimirUnaVez, 500)
   }
 
   return (

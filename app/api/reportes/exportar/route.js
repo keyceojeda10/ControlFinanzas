@@ -6,13 +6,26 @@ import { prisma }           from '@/lib/prisma'
 import * as XLSX            from 'xlsx'
 import { nivelReportes }   from '@/lib/planes'
 
+// `desde`/`hasta` en null => la hoja NO esta filtrada por fecha y lo dice.
+// Antes las hojas de Clientes y Prestamos escribian "Periodo: 2026-07-01 al
+// 2026-07-22" cuando sus queries no filtran por fecha en absoluto: el dueño
+// leia "julio" y estaba viendo toda su historia. Un dato que miente en la
+// cabecera vale menos que ninguna cabecera.
 function headerRow(titulo, desde, hasta) {
   return [
     [`Control Finanzas — ${titulo}`],
-    [`Período: ${desde} al ${hasta}`],
+    [desde && hasta ? `Período: ${desde} al ${hasta}` : 'Todos los registros (sin filtro de fecha)'],
     [`Generado: ${new Date().toLocaleString('es-CO')}`],
     [],
   ]
+}
+
+// Sin !cols, Excel abre con ~8 caracteres de ancho y "$123.456.789" no cabe:
+// se ve #########. Es la version Excel de "se sale del cuadro" que reporto el
+// usuario. La plantilla de carga masiva ya lo hacia bien.
+function anchos(ws, widths) {
+  ws['!cols'] = widths.map((wch) => ({ wch }))
+  return ws
 }
 
 function setCurrency(ws, col, fromRow, toRow) {
@@ -54,11 +67,11 @@ export async function GET(req) {
 
     const header = ['Nombre', 'Cédula', 'Teléfono', 'Dirección', 'Ruta', 'Estado']
     const data = [
-      ...headerRow('Clientes', desde, hasta),
+      ...headerRow('Clientes', null, null),
       header,
       ...rows.map((c) => [c.nombre, c.cedula, c.telefono, c.direccion, c.ruta?.nombre ?? '', c.estado]),
     ]
-    const ws = XLSX.utils.aoa_to_sheet(data)
+    const ws = anchos(XLSX.utils.aoa_to_sheet(data), [26, 14, 14, 30, 18, 12])
     XLSX.utils.book_append_sheet(wb, ws, 'Clientes')
   }
 
@@ -92,13 +105,14 @@ export async function GET(req) {
       ]
     })
 
-    const data = [...headerRow('Préstamos', desde, hasta), header, ...dataRows]
+    const data = [...headerRow('Préstamos', null, null), header, ...dataRows]
     const ws = XLSX.utils.aoa_to_sheet(data)
 
     // Currency columns: B, C, D, J, K (montoPrestado, totalAPagar, cuotaDiaria, pagado, saldo)
     const startRow = 6
     ;['B', 'C', 'D', 'J', 'K'].forEach((col) => setCurrency(ws, col, startRow, startRow + dataRows.length - 1))
 
+    anchos(ws, [26, 14, 14, 10, 12, 14, 14, 14, 12, 12, 14, 14])
     XLSX.utils.book_append_sheet(wb, ws, 'Préstamos')
   }
 
@@ -128,6 +142,7 @@ export async function GET(req) {
     const ws = XLSX.utils.aoa_to_sheet(data)
     const startRow = 6
     setCurrency(ws, 'D', startRow, startRow + dataRows.length - 1)
+    anchos(ws, [14, 26, 16, 14, 14, 18, 18])
     XLSX.utils.book_append_sheet(wb, ws, 'Pagos')
   }
 
@@ -179,6 +194,7 @@ export async function GET(req) {
     const ws = XLSX.utils.aoa_to_sheet(data)
     const startRow = 6
     ;['D', 'E', 'F', 'G', 'H', 'I', 'J'].forEach((col) => setCurrency(ws, col, startRow, startRow + dataRows.length - 1))
+    anchos(ws, [26, 14, 14, 16, 16, 16, 14])
     XLSX.utils.book_append_sheet(wb, ws, 'Cobradores')
   }
 
