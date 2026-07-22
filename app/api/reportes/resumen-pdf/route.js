@@ -479,9 +479,9 @@ export async function GET(req) {
     const pageH = doc.page.height
     doc.moveTo(LEFT, pageH - 42).lineTo(RIGHT, pageH - 42).strokeColor(COLOR_BORDER_L).lineWidth(0.5).stroke()
     doc.fontSize(7.5).font('Helvetica').fillColor(COLOR_FAINT)
-    t('Control Finanzas', LEFT, pageH - 32, { width: W, align: 'center' })
+    t('Control Finanzas', LEFT, pageH - 32, { width: W, align: 'center', height: 12 })
     doc.fontSize(7.5).font('Helvetica').fillColor(COLOR_FAINT)
-    t(`Pagina ${i - range.start + 1} de ${range.count}`, LEFT, pageH - 32, { width: W, align: 'right' })
+    t(`Pagina ${i - range.start + 1} de ${range.count}`, LEFT, pageH - 32, { width: W, align: 'right', height: 12 })
   }
 
   // ── Finalize ─────────────────────────────────────────────

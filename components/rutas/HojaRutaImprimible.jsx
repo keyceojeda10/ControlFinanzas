@@ -9,12 +9,24 @@
 // Estilo alineado al Reporte del dia (stat grid con cajas bordeadas, headers
 // uppercase con borde fino, filas alternadas para lectura rápida).
 
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { formatMoney } from '@/lib/i18n'
 
 const fmtFechaLarga = () =>
   new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
 export default function HojaRutaImprimible({ ruta, clientes }) {
+  // La hoja se monta como hijo DIRECTO de <body> mediante un portal.
+  //
+  // Antes vivia dentro del arbol de la pagina de ruta y se ocultaba todo lo
+  // demas con `visibility: hidden`. Pero visibility oculta SIN sacar del flujo:
+  // el dashboard entero seguia ocupando su alto y seguia generando saltos de
+  // pagina. Por eso salian la hoja util y despues 5-7 hojas en blanco (el alto
+  // del dashboard). Con el portal se puede usar `display: none`, que si saca
+  // del flujo y elimina esas paginas.
+  const [montado, setMontado] = useState(false)
+  useEffect(() => { setMontado(true) }, [])
   // Solo clientes con cobro hoy o con saldo (los que el cobrador debe visitar).
   const lista = (clientes || []).filter(
     (c) => c.estado !== 'completado' && (c.cobroPendienteHoy || c.cuota > 0 || (c.diasMora || 0) > 0)
@@ -23,7 +35,9 @@ export default function HojaRutaImprimible({ ruta, clientes }) {
   const totalEsperado = lista.reduce((a, c) => a + (c.cobroPendienteHoy ? Math.round(c.cuota || 0) : 0), 0)
   const enMora = lista.filter((c) => (c.diasMora || 0) > 0).length
 
-  return (
+  if (!montado) return null
+
+  return createPortal(
     <div className="hoja-ruta-print" aria-hidden="true">
       {/* Encabezado */}
       <div className="hr-head">
@@ -127,13 +141,23 @@ export default function HojaRutaImprimible({ ruta, clientes }) {
       <style jsx global>{`
         .hoja-ruta-print { display: none; }
         @media print {
-          /* Ocultar TODO menos la hoja */
-          body * { visibility: hidden !important; }
-          .hoja-ruta-print, .hoja-ruta-print * { visibility: visible !important; }
+          /* display:none, NO visibility:hidden. visibility oculta pero conserva
+             la caja y su alto, asi que el dashboard seguia generando saltos de
+             pagina: salian la hoja util y despues 5-7 hojas en blanco. Como la
+             hoja ahora es hija directa de <body> (portal), se puede apagar a
+             todos sus hermanos sin apagarla a ella. */
+          body > *:not(.hoja-ruta-print) { display: none !important; }
+          html, body {
+            height: auto !important;
+            overflow: visible !important;
+            background: #fff !important;
+          }
+          /* La tabla repite encabezados si la ruta ocupa mas de una hoja. */
+          .hr-table thead { display: table-header-group; }
+          .hr-table tr { page-break-inside: avoid; }
           .hoja-ruta-print {
             display: block !important;
-            position: absolute;
-            left: 0; top: 0;
+            position: static;
             width: 100%;
             padding: 0;
             margin: 0;
@@ -217,6 +241,7 @@ export default function HojaRutaImprimible({ ruta, clientes }) {
           .hr-pie-marca { margin-top: 18px; font-size: 9px; color: #999; text-align: center; }
         }
       `}</style>
-    </div>
+    </div>,
+    document.body
   )
 }

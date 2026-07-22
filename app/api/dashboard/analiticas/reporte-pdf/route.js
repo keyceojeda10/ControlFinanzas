@@ -450,7 +450,7 @@ export async function GET() {
     doc.moveTo(LEFT, 760).lineTo(RIGHT, 760).strokeColor(BORDER_L).lineWidth(0.5).stroke()
     doc.font('Helvetica').fontSize(7).fillColor(FAINT)
     doc.text('Control Finanzas — Informe de Rendimiento', LEFT, 766, { lineBreak: false })
-    doc.text(`Página ${i + 1} de ${totalPages}`, RIGHT - 80, 766, { lineBreak: false, width: 80, align: 'right' })
+    doc.text(`Página ${i + 1} de ${totalPages}`, RIGHT - 80, 766, { lineBreak: false, width: 80, align: 'right', height: 10 })
   }
   doc.switchToPage(totalPages - 1)
 

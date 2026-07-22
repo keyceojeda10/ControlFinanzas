@@ -53,7 +53,19 @@ function numeroALetras(n) {
   }
 
   if (millones > 0) {
-    resultado += (millones === 1 ? 'un millon' : tresDigitos(millones) + ' millones') + ' '
+    // tresDigitos() solo maneja hasta 999. Desde mil millones, `millones` pasa
+    // de 999 y devolvia undefined: el pagare imprimia "UNDEFINED MILLONES" en
+    // el renglon del valor y en el cuerpo. En un documento que presta merito
+    // ejecutivo, el monto en letras corrupto lo invalida.
+    if (millones > 999) {
+      const milesDeMillon = Math.floor(millones / 1000)
+      const restoMillones = millones % 1000
+      resultado += (milesDeMillon === 1 ? 'mil' : tresDigitos(milesDeMillon) + ' mil')
+      if (restoMillones > 0) resultado += ' ' + tresDigitos(restoMillones)
+      resultado += ' millones '
+    } else {
+      resultado += (millones === 1 ? 'un millon' : tresDigitos(millones) + ' millones') + ' '
+    }
   }
   if (miles > 0) {
     resultado += (miles === 1 ? 'mil' : tresDigitos(miles) + ' mil') + ' '
@@ -244,7 +256,7 @@ export async function GET(req, { params }) {
   // Footer
   const pageH = doc.page.height
   doc.fontSize(7).font('Helvetica').fillColor('#bbbbbb')
-     .text('Documento generado por Control Finanzas', LEFT, pageH - 30, { width: W, align: 'center', lineBreak: false })
+     .text('Documento generado por Control Finanzas', LEFT, pageH - 30, { width: W, align: 'center', lineBreak: false, height: 10 })
 
   doc.end()
   await done
