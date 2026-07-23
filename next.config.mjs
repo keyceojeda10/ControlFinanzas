@@ -6,8 +6,23 @@ const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   serverExternalPackages: ['pdfkit'],
-  experimental: {
-    optimizePackageImports: ['@/components/ui', '@/lib'],
+  // optimizePackageImports (experimental) reescribia los imports de barril de
+  // @/lib y @/components/ui y reordenaba modulos. Combinado con el scope
+  // hoisting de webpack, eso producia "Cannot access 'aj' before
+  // initialization" en produccion (un TDZ por import circular latente que el
+  // reordenamiento destrababa). El build decia "compilado con exito" igual.
+  // Se quito: era solo una optimizacion de tamaño/velocidad de build.
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // Apagar la concatenacion de modulos (scope hoisting) en el cliente.
+      // Es el mecanismo exacto del TDZ: al fusionar modulos en un mismo scope,
+      // un import circular queda accediendo a una variable antes de
+      // inicializarse. Sin fusion, cada modulo mantiene su closure y el ciclo
+      // se resuelve de forma perezosa. Cuesta un poco de tamaño, nada mas.
+      config.optimization = config.optimization || {}
+      config.optimization.concatenateModules = false
+    }
+    return config
   },
   async rewrites() {
     return [
