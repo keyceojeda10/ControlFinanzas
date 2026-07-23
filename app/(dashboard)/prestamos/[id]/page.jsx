@@ -129,6 +129,12 @@ export default function PrestamoDetallePage({ params }) {
   const [modalEditar,   setModalEditar]   = useState(false)
   const [sociosLista,   setSociosLista]   = useState([])
   const [modalWA, setModalWA] = useState(false)
+  // Cuando se llega recien creado el prestamo (?nuevo=1), el modal debe sugerir
+  // "Credito aprobado", no la primera aplicable. Sin esto, el modal agarraba
+  // gracias_corto ("Gracias por tu pago") por ser la primera de la lista que
+  // aplica a un prestamo activo — aunque no exista ningun pago. El prestamista
+  // creaba el credito, tocaba WhatsApp, y le salia un mensaje de pago inventado.
+  const [waSugerida, setWaSugerida] = useState(null)
   const [modalDscPrestamo, setModalDscPrestamo] = useState(false)
   const [dscDias, setDscDias] = useState([])
   // Tarjeta clavo
@@ -331,6 +337,25 @@ export default function PrestamoDetallePage({ params }) {
     const search = params.toString()
     window.history.replaceState({}, '', `${window.location.pathname}${search ? `?${search}` : ''}`)
   }, [prestamo, modalPago])
+
+  // Recien creado (?nuevo=1): abrir el modal de WhatsApp con "Credito aprobado".
+  useEffect(() => {
+    if (!prestamo) return
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('nuevo') !== '1') return
+    if (!cliente?.telefono) { // sin telefono no hay a quien mandarle
+      params.delete('nuevo')
+      const s = params.toString()
+      window.history.replaceState({}, '', `${window.location.pathname}${s ? `?${s}` : ''}`)
+      return
+    }
+    setWaSugerida('credito_aprobado')
+    setModalWA(true)
+    params.delete('nuevo')
+    const search = params.toString()
+    window.history.replaceState({}, '', `${window.location.pathname}${search ? `?${search}` : ''}`)
+  }, [prestamo, cliente])
 
   // Cargar stats del cliente para mostrar comparativo "vs prestamos anteriores"
   useEffect(() => {
@@ -1815,13 +1840,14 @@ export default function PrestamoDetallePage({ params }) {
       {/* Modal selector de plantillas WhatsApp (boton circular del header) */}
       <ModalWhatsAppTemplates
         open={modalWA}
-        onClose={() => setModalWA(false)}
+        onClose={() => { setModalWA(false); setWaSugerida(null) }}
         cliente={cliente}
         prestamo={prestamo}
         orgNombre={orgNombre}
         ocultarSaldo={ocultarSaldoWA}
         organizationId={session?.user?.organizationId}
         camposRecibo={camposRecibo}
+        preselectedTemplateId={waSugerida}
       />
 
       {/* Modal: aplicar interes moratorio como recargo */}

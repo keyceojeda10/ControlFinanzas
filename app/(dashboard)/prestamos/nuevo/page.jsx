@@ -589,7 +589,10 @@ function NuevoPrestamo() {
       if (data.pendienteAprobacion) {
         try { sessionStorage.setItem('cf-toast', 'Solicitud enviada. El administrador debe aprobar el prestamo.') } catch {}
       }
-      router.push(`/prestamos/${data.id}`)
+      // ?nuevo=1 hace que el detalle abra el WhatsApp de "Credito aprobado".
+      // Solo si el prestamo quedo activo: si esta pendiente de aprobacion, todavia
+      // no hay credito que anunciar.
+      router.push(`/prestamos/${data.id}${data.pendienteAprobacion ? '' : '?nuevo=1'}`)
     } catch {
       if (!navigator.onLine) {
         try {
@@ -624,7 +627,7 @@ function NuevoPrestamo() {
         return
       }
       setModalInyeccion(null)
-      router.push(`/prestamos/${data.id}`)
+      router.push(`/prestamos/${data.id}${data.pendienteAprobacion ? '' : '?nuevo=1'}`)
     } catch {
       setError('Error de conexión. Intenta de nuevo.')
     } finally {
