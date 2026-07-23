@@ -339,12 +339,16 @@ export default function PrestamoDetallePage({ params }) {
   }, [prestamo, modalPago])
 
   // Recien creado (?nuevo=1): abrir el modal de WhatsApp con "Credito aprobado".
+  // OJO: usar prestamo?.cliente, NO el `cliente` desestructurado — ese se
+  // declara ~65 lineas mas abajo (const { cliente, ... } = ...), asi que
+  // referenciarlo aca lo accede en su zona muerta temporal y tira
+  // "Cannot access 'cliente' before initialization", tumbando toda la pagina.
   useEffect(() => {
     if (!prestamo) return
     if (typeof window === 'undefined') return
     const params = new URLSearchParams(window.location.search)
     if (params.get('nuevo') !== '1') return
-    if (!cliente?.telefono) { // sin telefono no hay a quien mandarle
+    if (!prestamo?.cliente?.telefono) { // sin telefono no hay a quien mandarle
       params.delete('nuevo')
       const s = params.toString()
       window.history.replaceState({}, '', `${window.location.pathname}${s ? `?${s}` : ''}`)
@@ -355,7 +359,7 @@ export default function PrestamoDetallePage({ params }) {
     params.delete('nuevo')
     const search = params.toString()
     window.history.replaceState({}, '', `${window.location.pathname}${search ? `?${search}` : ''}`)
-  }, [prestamo, cliente])
+  }, [prestamo])
 
   // Cargar stats del cliente para mostrar comparativo "vs prestamos anteriores"
   useEffect(() => {
