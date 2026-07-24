@@ -480,6 +480,13 @@ export default function CajaPage() {
   const saldoRealCaja = stats.saldoRealCajaConAjustes ?? stats.saldoRealCaja ?? (disponibleOperativo - desembolsadoDia)
   const cobradoHoy = Math.round(stats.cobradoHoy ?? stats.recogida ?? 0)
   const prestadoHoy = Math.round(stats.prestadoHoy ?? desembolsadoDia)
+  // Dos cifras que NO son lo mismo y en renovaciones se separan:
+  //   valorPrestadoDia    = el valor de las cartulinas que hizo hoy
+  //   efectivoEntregadoDia = la plata que de verdad salio de la caja
+  // Si renueva una de $100 a quien debia $50, presto $100 pero solo entrego $50.
+  const valorPrestadoDia = Math.round(stats.valorPrestadoDia ?? 0)
+  const efectivoEntregadoDia = Math.round(stats.efectivoEntregadoDia ?? 0)
+  const cantidadPrestamosDia = stats.cantidadPrestamosDia ?? 0
   const gastosHoy = Math.round(stats.gastos || 0)
   const baseInicialDia = Math.round(stats.baseInicialDia || 0)
   const disponibleHoy = Math.round(stats.disponibleHoy ?? saldoRealCaja)
@@ -751,6 +758,38 @@ export default function CajaPage() {
               <p className="text-base font-bold font-mono-display" style={{ color: '#b91c1c' }}>{gastosHoy > 0 ? '-' : ''}{formatMoney(gastosHoy)}</p>
             </div>
           </div>
+
+          {/* Cuanto presto hoy vs cuanto salio de la caja.
+              La fila de arriba es flujo de caja (alimenta el saldo). Esto es
+              produccion de cartera, que es otra pregunta: en una renovacion de
+              $100 a quien debia $50, presta $100 pero de la caja salen $50.
+              Pedido por el cliente con mas cobradores: "para yo saber cuanto
+              presta el cobrador en el dia". */}
+          {cantidadPrestamosDia > 0 && (
+            <div className="mt-3 rounded-[12px] px-3 py-2.5"
+              style={{ background: 'color-mix(in srgb, #231a04 8%, transparent)', border: '1px solid color-mix(in srgb, #231a04 16%, transparent)' }}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[10px] uppercase" style={{ color: 'rgba(35,26,4,0.55)' }}>Valor prestado hoy</p>
+                  <p className="text-base font-bold font-mono-display" style={{ color: '#231a04' }}>{formatMoney(valorPrestadoDia)}</p>
+                  <p className="text-[10px] mt-0.5" style={{ color: 'rgba(35,26,4,0.5)' }}>
+                    {cantidadPrestamosDia} {cantidadPrestamosDia === 1 ? 'préstamo' : 'préstamos'}
+                  </p>
+                </div>
+                <div className="min-w-0 text-right">
+                  <p className="text-[10px] uppercase" style={{ color: 'rgba(35,26,4,0.55)' }}>Salió de la caja</p>
+                  <p className="text-base font-bold font-mono-display" style={{ color: '#92400e' }}>{formatMoney(efectivoEntregadoDia)}</p>
+                </div>
+              </div>
+              {valorPrestadoDia !== efectivoEntregadoDia && (
+                <p className="text-[10px] mt-2 pt-2" style={{ color: 'rgba(35,26,4,0.6)', borderTop: '1px solid color-mix(in srgb, #231a04 12%, transparent)' }}>
+                  La diferencia de {formatMoney(Math.abs(valorPrestadoDia - efectivoEntregadoDia))} son renovaciones:
+                  el cliente ya debía parte, así que no salió en efectivo.
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Seguros cobrados hoy */}
           {segurosDia.monto > 0 && (

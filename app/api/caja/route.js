@@ -220,6 +220,154 @@ async function calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId =
   return total
 }
 
+// Devuelve DOS cifras del dia que no son lo mismo y hoy se confundian:
+//
+//   valorPrestado     = suma de montoPrestado (el valor de las cartulinas)
+//   efectivoEntregado = plata que de verdad salio de la caja
+//
+// Se separan en las renovaciones: si renueva una de $100 a un cliente que debia
+// $50, el valor prestado es $100 pero de la caja solo salen $50. El cliente que
+// mas cobradores tiene lo pidio asi: "aca me muestra lo que le entrego en
+// efectivo y aca que me muestre la totalidad de los prestamos que hago en el
+// dia... para yo saber cuanto presta el cobrador en el dia".
+//
+// NO reemplaza a calcularDesembolsadoDia: esa sigue alimentando el saldo de caja
+// y no se toca. Esto es aditivo, solo para mostrar.
+//
+// El universo (que prestamos cuentan) es el MISMO que usa el desembolsado, para
+// que las cifras sean comparables entre si:
+//   sin cobradorId -> todos los prestamos de la organizacion
+//   con cobradorId -> los de sus rutas + los que el creo + sus movimientos
+async function calcularPrestadoDetalleDia(organizationId, inicio, fin, cobradorId = null) {
+  const baseWherePrestamos = {
+    organizationId,
+    createdAt: { gte: inicio, lt: fin },
+    estado: { not: 'cancelado' },
+  }
+
+  // Mapa prestamo -> monto realmente entregado (el movimiento de capital manda:
+  // en renovaciones guarda la diferencia en mano, no el montoPrestado completo).
+  const construirMapaEntregado = async (whereMov) => {
+    const movs = await prisma.movimientoCapital.findMany({
+      where: {
+        organizationId,
+        tipo: 'desembolso',
+        createdAt: { gte: inicio, lt: fin },
+        referenciaTipo: 'prestamo',
+        ...whereMov,
+      },
+      select: { referenciaId: true, monto: true, createdAt: true },
+    })
+    const mapa = new Map()
+    for (const m of movs) {
+      if (!m.referenciaId) continue
+      const prev = mapa.get(m.referenciaId)
+      // el mas reciente gana, por si el movimiento se edito
+      if (!prev || m.createdAt > prev.createdAt) mapa.set(m.referenciaId, m)
+    }
+    return mapa
+  }
+
+  if (!cobradorId) {
+    const [prestamos, mapaEntregado] = await Promise.all([
+      prisma.prestamo.findMany({
+        where: baseWherePrestamos,
+        select: { id: true, montoPrestado: true },
+      }),
+      construirMapaEntregado({}),
+    ])
+    let valorPrestado = 0
+    let efectivoEntregado = 0
+    for (const p of prestamos) {
+      valorPrestado += p.montoPrestado || 0
+      const mov = mapaEntregado.get(p.id)
+      efectivoEntregado += mov ? mov.monto : (p.montoPrestado || 0)
+    }
+    return {
+      valorPrestado: Math.round(valorPrestado),
+      efectivoEntregado: Math.round(efectivoEntregado),
+      cantidadPrestamos: prestamos.length,
+    }
+  }
+
+  // ── Vista por cobrador ──
+  const rutasCobrador = await prisma.ruta.findMany({
+    where: { cobradorId, organizationId, activo: true },
+    select: { id: true },
+  })
+  const rutaIds = rutasCobrador.map(r => r.id)
+
+  const [prestamosRuta, actividadesCreador, mapaEntregado] = await Promise.all([
+    prisma.prestamo.findMany({
+      where: { ...baseWherePrestamos, cliente: { ruta: { cobradorId } } },
+      select: { id: true, montoPrestado: true },
+    }),
+    prisma.actividadLog.findMany({
+      where: {
+        organizationId,
+        userId: cobradorId,
+        accion: 'crear_prestamo',
+        createdAt: { gte: inicio, lt: fin },
+      },
+      select: { entidadId: true },
+    }),
+    construirMapaEntregado({
+      OR: [
+        { creadoPorId: cobradorId },
+        ...(rutaIds.length > 0 ? [{ rutaId: { in: rutaIds } }] : []),
+      ],
+    }),
+  ])
+
+  const idsActividad = actividadesCreador.map(a => a.entidadId).filter(Boolean)
+  const prestamosActividad = idsActividad.length
+    ? await prisma.prestamo.findMany({
+      where: {
+        organizationId,
+        id: { in: idsActividad },
+        createdAt: { gte: inicio, lt: fin },
+        estado: { not: 'cancelado' },
+      },
+      select: { id: true, montoPrestado: true },
+    })
+    : []
+
+  const vistos = new Set()
+  let valorPrestado = 0
+  let efectivoEntregado = 0
+
+  for (const p of [...prestamosRuta, ...prestamosActividad]) {
+    if (vistos.has(p.id)) continue
+    vistos.add(p.id)
+    valorPrestado += p.montoPrestado || 0
+    const mov = mapaEntregado.get(p.id)
+    efectivoEntregado += mov ? mov.monto : (p.montoPrestado || 0)
+  }
+
+  // Movimientos sin prestamo en ruta ni actividad (ej: el owner desembolso en su
+  // ruta). Sin el montoPrestado a mano, el movimiento es la mejor cifra de ambas.
+  const idsFaltantes = [...mapaEntregado.keys()].filter(id => !vistos.has(id))
+  if (idsFaltantes.length) {
+    const sueltos = await prisma.prestamo.findMany({
+      where: { organizationId, id: { in: idsFaltantes } },
+      select: { id: true, montoPrestado: true },
+    })
+    const montoPorId = new Map(sueltos.map(p => [p.id, p.montoPrestado || 0]))
+    for (const id of idsFaltantes) {
+      vistos.add(id)
+      const mov = mapaEntregado.get(id)
+      efectivoEntregado += mov ? mov.monto : 0
+      valorPrestado += montoPorId.get(id) ?? (mov ? mov.monto : 0)
+    }
+  }
+
+  return {
+    valorPrestado: Math.round(valorPrestado),
+    efectivoEntregado: Math.round(efectivoEntregado),
+    cantidadPrestamos: vistos.size,
+  }
+}
+
 // Suma el monto de seguros cobrados en el día (prestamos creados con seguro=true).
 // El seguro YA viene sumado al total del prestamo; aqui solo se totaliza como
 // referencia de "cuanto se gano en seguros" en el cierre del dia.
@@ -449,6 +597,9 @@ async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaj
 
   const gastos = gastosDia._sum?.monto || 0
   const desembolsadoDia = await calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId)
+  // Aditivo: valor de las cartulinas vs efectivo que salio de la caja. No entra
+  // en ningun calculo de saldo, es solo para mostrar los dos numeros separados.
+  const prestadoDetalle = await calcularPrestadoDetalleDia(organizationId, inicio, fin, cobradorId)
   const segurosCobradosDia = await calcularSegurosDia(organizationId, inicio, fin, cobradorId)
   const ajustesManualDia = movimientosManualDia.reduce((acc, mov) => {
     if (mov.tipo === 'capital_inicial' || mov.tipo === 'inyeccion') return acc + mov.monto
@@ -483,6 +634,10 @@ async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaj
     recogida,
     gastos,
     desembolsadoDia,
+    // Dos cifras distintas del dia (se separan en renovaciones):
+    valorPrestadoDia: prestadoDetalle.valorPrestado,
+    efectivoEntregadoDia: prestadoDetalle.efectivoEntregado,
+    cantidadPrestamosDia: prestadoDetalle.cantidadPrestamos,
     diferencia,
     disponibleOperativo,
     saldoRealCaja,
