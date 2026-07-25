@@ -599,6 +599,8 @@ export async function PATCH(request, { params }) {
         }
         dataUpdate.diaCobroMes = v
       }
+      dataUpdate.diaCobroSemana = null
+      dataUpdate.diaCobroMes2 = null
     } else {
       return Response.json({ error: 'La frecuencia diaria no admite día ancla' }, { status: 400 })
     }
