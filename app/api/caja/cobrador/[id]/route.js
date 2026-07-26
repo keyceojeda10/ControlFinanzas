@@ -505,6 +505,9 @@ export async function GET(request, { params }) {
       clientesActivos,
       clientesCobrados: new Set(cobrosDia.map(p => p.prestamo?.clienteId)).size,
     },
+    // Detalle de las renovaciones del dia (valor renovado / absorbido / entregado).
+    // Lo consume el bloque "Renovaciones de hoy" de CajaCobradorDetalle.
+    renovaciones: renovacionesInfo,
     desgloseMetodoPago,
     porRuta,
     movimientos,
