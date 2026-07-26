@@ -344,7 +344,13 @@ export async function POST(request, { params }) {
       const filasFuturas = filas.filter(f => (f.pagado || 0) < f.cuotaTotal)
 
       if (filasFuturas.length > 0) {
-        const saldoCapitalRestante = calcularCapitalRestante(prestamoActualizado)
+        // El abono a capital baja el capital DIRECTO por el monto abonado.
+        // calcularCapitalRestante da el capital vivo ANTES de este abono (ya
+        // refleja abonos anteriores y excluye los abonos de la cascada); le
+        // restamos este abono. Antes se usaba tal cual y repartia el abono
+        // primero en intereses, asi que casi no bajaba el capital.
+        const capitalAntesDelAbono = calcularCapitalRestante(prestamoActualizado)
+        const saldoCapitalRestante = Math.max(0, capitalAntesDelAbono - montoFinal)
         const ultimaPagada = filasPagadas[filasPagadas.length - 1]
         const fechaBase = ultimaPagada ? new Date(ultimaPagada.fechaEsperada) : new Date(prestamo.fechaInicio)
         const diasPeriodo = obtenerDiasPorPeriodo(prestamoActualizado.frecuencia)
@@ -376,8 +382,16 @@ export async function POST(request, { params }) {
           })
         }
 
+        // totalAPagar = cuotas ya pagadas completas + abonos a capital (que ya no
+        // estan en la tabla futura porque bajaron el capital) + lo que falta.
+        // Sin sumar los abonos, el totalAPagar quedaba por debajo de lo ya pagado.
         const totalPagadoEnPagadas = filasPagadas.reduce((a, f) => a + f.cuotaTotal, 0)
-        const nuevoTotalAPagar = Math.round(totalPagadoEnPagadas + tablaRecalculada.reduce((a, f) => a + f.cuotaTotal, 0))
+        const abonosCapitalTotal = (prestamoActualizado.pagos ?? [])
+          .filter(p => p.tipo === 'capital')
+          .reduce((a, p) => a + (p.montoPagado ?? 0), 0)
+        const nuevoTotalAPagar = Math.round(
+          totalPagadoEnPagadas + abonosCapitalTotal + tablaRecalculada.reduce((a, f) => a + f.cuotaTotal, 0)
+        )
         await tx.prestamo.update({ where: { id: prestamoId }, data: { totalAPagar: nuevoTotalAPagar } })
       }
 
