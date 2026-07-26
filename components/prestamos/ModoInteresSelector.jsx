@@ -3,10 +3,10 @@ import { useState } from 'react'
 import { formatMoney } from '@/lib/i18n'
 import { calcularPrestamo } from '@/lib/calculos'
 
-// `base` dice QUE SIGNIFICA el porcentaje que escribio el prestamista. No es
-// cosmetico: el mismo "20%" vale tres cosas distintas segun el modo.
-//   'mes'     -> se prorratea por los dias que dure el prestamo
-//   'total'   -> es del prestamo completo; el plazo no cambia el interes
+// `base` dice QUÉ SIGNIFICA el porcentaje que escribió el prestamista. No es
+// cosmético: el mismo "20%" vale tres cosas distintas según el modo.
+//   'mes'     -> se prorratea por los días que dure el préstamo
+//   'total'   -> es del préstamo completo; el plazo no cambia el interés
 //   'periodo' -> se cobra ENTERO en cada cobro (semanal = 20% por semana)
 const BASES = {
   mes:     { texto: 'El % es por mes',             color: 'var(--color-info)' },
@@ -33,7 +33,7 @@ const MODOS = [
   {
     key: 'saldo', label: 'Interés sobre lo que falta', tag: 'Como los bancos', base: 'mes', avanzado: false,
     desc: 'El interés se calcula sobre lo que aún debe: a medida que abona capital, el interés baja.',
-    formula: 'Cuota fija (sistema francés). Interés de cada cuota = saldo pendiente × %; el resto abona capital.',
+    formula: 'Cuota fija (sistema francés). El interés de cada cuota = saldo pendiente × %; el resto abona capital.',
   },
   {
     key: 'manual', label: 'Yo decido la cuota', tag: 'Manual', base: null, avanzado: false,
@@ -52,21 +52,23 @@ const MODOS = [
   },
 ]
 
-// ─── Asistente: 2 preguntas -> modo sugerido ──────────────────────
+// ─── Asistente: preguntas con EJEMPLOS reales (más claras que la lista) ────
 const PREGUNTA_1 = {
-  titulo: '¿Cómo le cobras al cliente?',
+  titulo: '¿Cuál se parece más a tu forma de prestar?',
+  ayuda: 'Piensa en cómo le cobras a un cliente típico.',
   opciones: [
-    { label: 'Una cuota igual cada vez', sub: 'La misma cantidad hasta terminar', next: 'q2' },
-    { label: 'Solo el interés, y el capital al final', sub: 'Cada cobro es el interés; el capital de una al final', modo: 'solo_interes' },
-    { label: 'Un solo interés fijo', sub: 'No importa cuánto se demore en pagar', modo: 'unico' },
-    { label: 'Yo pongo el valor exacto de la cuota', sub: 'Tú decides cuánto paga cada vez', modo: 'manual' },
+    { label: 'Le cobro una cuota igual cada vez', ej: 'El cliente paga lo mismo cada cobro hasta terminar de pagar.', next: 'q2' },
+    { label: 'Le cobro solo el interés; el capital al final', ej: 'Cada cobro es solo la ganancia. Al final me devuelve todo lo prestado de una.', modo: 'solo_interes' },
+    { label: 'Le cobro un interés fijo, una sola vez', ej: 'Presto $100.000 y me devuelve $120.000, se demore lo que se demore.', modo: 'unico' },
+    { label: 'Yo decido cuánto paga cada cuota', ej: 'Sin fórmulas: yo pongo el valor exacto de cada cobro.', modo: 'manual' },
   ],
 }
 const PREGUNTA_2 = {
-  titulo: '¿El interés cómo lo sacas?',
+  titulo: '¿El interés se mantiene, o baja si el cliente abona?',
+  ayuda: 'Cuando el cliente adelanta capital, ¿qué pasa con el interés?',
   opciones: [
-    { label: 'Parejo, sobre todo lo que presté', sub: 'Lo más común en el día a día', modo: 'fijo' },
-    { label: 'Sobre lo que aún debe', sub: 'Si abona capital, el interés baja', modo: 'saldo' },
+    { label: 'Se mantiene parejo', ej: 'Cobro el mismo interés sobre lo que presté, de principio a fin. Es lo más común.', modo: 'fijo' },
+    { label: 'Baja cuando abona capital', ej: 'Si el cliente adelanta, le cobro interés solo sobre lo que aún debe. Como los bancos.', modo: 'saldo' },
   ],
 }
 
@@ -88,7 +90,6 @@ export default function ModoInteresSelector({ modoInteres, onChange, calculo, mo
   const [paso, setPaso] = useState('lista')
   const [sugerido, setSugerido] = useState(null)
   const [verAvanzados, setVerAvanzados] = useState(false)
-  const [formulaAbierta, setFormulaAbierta] = useState(null)
 
   const ctx = { monto, tasa, frecuencia, diasPlazo }
   const modoData = (k) => MODOS.find(m => m.key === k)
@@ -102,29 +103,34 @@ export default function ModoInteresSelector({ modoInteres, onChange, calculo, mo
     onChange(sugerido)
     if (comoPredeterminado && onGuardarPreferido) onGuardarPreferido(sugerido)
     setPaso('lista')
-    // Si el sugerido es avanzado, abrir esa sección para que se vea seleccionado.
     if (modoData(sugerido)?.avanzado) setVerAvanzados(true)
   }
 
-  // ── Vista asistente (preguntas) ──
+  // ── Asistente: preguntas ──
   if (paso === 'q1' || paso === 'q2') {
     const preg = paso === 'q1' ? PREGUNTA_1 : PREGUNTA_2
     return (
       <div className="rounded-[16px] p-4" style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)' }}>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>{preg.titulo}</p>
+        <div className="flex items-start justify-between gap-3 mb-1">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-accent)' }}>
+              {paso === 'q1' ? 'Paso 1 de 2' : 'Paso 2 de 2'}
+            </p>
+            <p className="text-[15px] font-bold leading-tight mt-0.5" style={{ color: 'var(--color-text-primary)' }}>{preg.titulo}</p>
+          </div>
           <button type="button" onClick={() => setPaso(paso === 'q2' ? 'q1' : 'lista')}
-            className="text-[11px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>
+            className="text-[11px] font-semibold shrink-0 mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
             {paso === 'q2' ? '← Atrás' : 'Cerrar'}
           </button>
         </div>
+        <p className="text-[11px] mb-3" style={{ color: 'var(--color-text-muted)' }}>{preg.ayuda}</p>
         <div className="space-y-2">
           {preg.opciones.map((op, i) => (
             <button key={i} type="button" onClick={() => elegirOpcion(op)}
               className="w-full text-left rounded-[12px] p-3 transition-all active:scale-[0.99]"
               style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
               <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{op.label}</p>
-              <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{op.sub}</p>
+              <p className="text-[12px] mt-1 leading-snug" style={{ color: 'var(--color-text-muted)' }}>{op.ej}</p>
             </button>
           ))}
         </div>
@@ -132,13 +138,13 @@ export default function ModoInteresSelector({ modoInteres, onChange, calculo, mo
     )
   }
 
-  // ── Vista resultado del asistente ──
+  // ── Asistente: resultado ──
   if (paso === 'resultado') {
     const md = modoData(sugerido)
     const ej = calcularEjemplo(sugerido, ctx)
     return (
       <div className="rounded-[16px] p-4" style={{ background: 'color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-surface))', border: '1.5px solid var(--color-accent)' }}>
-        <p className="text-[11px] font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--color-text-muted)' }}>Te recomendamos</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--color-text-muted)' }}>Tu modo ideal es</p>
         <p className="text-lg font-bold" style={{ color: 'var(--color-text-primary)' }}>{md?.label}</p>
         {md?.base && <p className="text-[11px] font-semibold mt-0.5" style={{ color: BASES[md.base].color }}>{BASES[md.base].texto}</p>}
         <p className="text-[12px] mt-1.5 leading-snug" style={{ color: 'var(--color-text-secondary)' }}>{md?.desc}</p>
@@ -147,6 +153,9 @@ export default function ModoInteresSelector({ modoInteres, onChange, calculo, mo
             {ej.numPeriodos} cuotas de {formatMoney(ej.cuotaDiaria)} · Total {formatMoney(ej.totalAPagar)}
           </p>
         )}
+        <p className="text-[11px] mt-2.5 leading-snug rounded-[8px] p-2" style={{ background: 'var(--color-bg-card)', color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)' }}>
+          <span className="font-semibold" style={{ color: 'var(--color-text-muted)' }}>Cómo se calcula: </span>{md?.formula}
+        </p>
         <div className="flex flex-col gap-2 mt-4">
           {onGuardarPreferido ? (
             <>
@@ -177,52 +186,48 @@ export default function ModoInteresSelector({ modoInteres, onChange, calculo, mo
     )
   }
 
-  // ── Vista lista (default) ──
+  // ── Lista (vista por defecto) ──
   const visibles = MODOS.filter(m => !m.avanzado || verAvanzados || modoInteres === m.key)
   const renderModo = (m) => {
     const activo = modoInteres === m.key
     const esPreferido = preferido === m.key
     const ej = calcularEjemplo(m.key, ctx)
     return (
-      <div key={m.key} className="rounded-xl transition-all"
+      <button key={m.key} type="button" onClick={() => onChange(m.key)}
+        className="w-full text-left rounded-xl p-3 transition-all"
         style={{ background: activo ? 'color-mix(in srgb, var(--color-accent) 8%, transparent)' : 'var(--color-bg-surface)', border: activo ? '1.5px solid var(--color-accent)' : '1px solid var(--color-border)' }}>
-        <button type="button" onClick={() => onChange(m.key)} className="w-full text-left p-3">
-          <div className="flex items-start gap-2.5">
-            <div className="mt-0.5 w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center" style={{ borderColor: activo ? 'var(--color-accent)' : 'var(--color-border)' }}>
-              {activo && <div className="w-2 h-2 rounded-full" style={{ background: 'var(--color-accent)' }} />}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                <span className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{m.label}</span>
-                {esPreferido && (
-                  <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--color-accent) 18%, transparent)', color: 'var(--color-accent)' }}>Tu modo habitual</span>
-                )}
-                {m.tag && !esPreferido && (
-                  <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md" style={{ background: m.key === 'fijo' ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.06)', color: m.key === 'fijo' ? 'var(--color-success)' : 'var(--color-text-muted)' }}>{m.tag}</span>
-                )}
-              </div>
-              {m.base && <p className="text-[11px] font-semibold mb-0.5" style={{ color: BASES[m.base].color }}>{BASES[m.base].texto}</p>}
-              <p className="text-[11px] leading-snug" style={{ color: 'var(--color-text-muted)' }}>{m.desc}</p>
-              {ej && m.key !== 'manual' && (
-                <p className="text-[11px] mt-1 font-medium tabular-nums" style={{ color: activo ? 'var(--color-accent)' : 'var(--color-text-secondary)' }}>
-                  {ej.numPeriodos} cuotas de {formatMoney(ej.cuotaDiaria)} · Total {formatMoney(ej.totalAPagar)}
-                  <span style={{ color: 'var(--color-text-muted)' }}> · Interés {formatMoney(ej.totalInteres)}</span>
-                </p>
+        <div className="flex items-start gap-2.5">
+          <div className="mt-0.5 w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center" style={{ borderColor: activo ? 'var(--color-accent)' : 'var(--color-border)' }}>
+            {activo && <div className="w-2 h-2 rounded-full" style={{ background: 'var(--color-accent)' }} />}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+              <span className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{m.label}</span>
+              {esPreferido && (
+                <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--color-accent) 18%, transparent)', color: 'var(--color-accent)' }}>Tu modo habitual</span>
+              )}
+              {m.tag && !esPreferido && (
+                <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md" style={{ background: m.key === 'fijo' ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.06)', color: m.key === 'fijo' ? 'var(--color-success)' : 'var(--color-text-muted)' }}>{m.tag}</span>
               )}
             </div>
+            {m.base && <p className="text-[11px] font-semibold mb-0.5" style={{ color: BASES[m.base].color }}>{BASES[m.base].texto}</p>}
+            <p className="text-[11px] leading-snug" style={{ color: 'var(--color-text-muted)' }}>{m.desc}</p>
+            {ej && m.key !== 'manual' && (
+              <p className="text-[11px] mt-1 font-medium tabular-nums" style={{ color: activo ? 'var(--color-accent)' : 'var(--color-text-secondary)' }}>
+                {ej.numPeriodos} cuotas de {formatMoney(ej.cuotaDiaria)} · Total {formatMoney(ej.totalAPagar)}
+                <span style={{ color: 'var(--color-text-muted)' }}> · Interés {formatMoney(ej.totalInteres)}</span>
+              </p>
+            )}
+            {/* La formula aparece SOLO en el modo elegido (para los que quieren el
+                detalle), sin llenar todas las tarjetas de botones. */}
+            {activo && (
+              <p className="text-[11px] mt-1.5 leading-snug" style={{ color: 'var(--color-text-muted)' }}>
+                <span className="font-semibold">Cómo se calcula: </span>{m.formula}
+              </p>
+            )}
           </div>
-        </button>
-        {/* Ver formula (avanzado, oculto por defecto) */}
-        <button type="button" onClick={() => setFormulaAbierta(formulaAbierta === m.key ? null : m.key)}
-          className="w-full text-left px-3 pb-2 -mt-1 text-[10px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>
-          {formulaAbierta === m.key ? 'Ocultar fórmula' : 'Ver fórmula'}
-        </button>
-        {formulaAbierta === m.key && (
-          <div className="px-3 pb-3 -mt-1">
-            <p className="text-[11px] leading-snug rounded-[8px] p-2" style={{ background: 'var(--color-bg-card)', color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)' }}>{m.formula}</p>
-          </div>
-        )}
-      </div>
+        </div>
+      </button>
     )
   }
 
@@ -230,11 +235,11 @@ export default function ModoInteresSelector({ modoInteres, onChange, calculo, mo
 
   return (
     <div>
-      <label className="block text-[11px] font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--color-text-muted)' }}>
-        Como cobras el interes?
+      <label className="block text-[11px] font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--color-text-muted)' }}>
+        Modo de interés
       </label>
 
-      {/* Asistente: quita la friccion de leer 7 modos */}
+      {/* Asistente: quita la fricción de leer 7 modos y decidir */}
       <button type="button" onClick={() => { setSugerido(null); setPaso('q1') }}
         className="w-full flex items-center gap-2.5 rounded-[12px] p-3 mb-3 transition-all active:scale-[0.99]"
         style={{ background: 'color-mix(in srgb, var(--color-accent) 10%, transparent)', border: '1px dashed color-mix(in srgb, var(--color-accent) 45%, transparent)' }}>
@@ -243,7 +248,7 @@ export default function ModoInteresSelector({ modoInteres, onChange, calculo, mo
         </div>
         <div className="text-left">
           <p className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>¿No sabes cuál usar?</p>
-          <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Respóndeme 2 preguntas y te digo cuál</p>
+          <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Responde 2 preguntas y te decimos cuál es tu modo ideal.</p>
         </div>
       </button>
 
