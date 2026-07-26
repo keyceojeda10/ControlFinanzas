@@ -31,8 +31,12 @@ export async function POST(req) {
 
   let totalEnviadas = 0
   const detalles = []
+  const errores = []
 
   for (const org of orgs) {
+   // Aislar cada org: si una falla, el cron sigue con las demas (antes una sola
+   // excepcion mataba la corrida completa).
+   try {
     const country = org.country || 'co'
     const hoyStr = getLocalDateStr(country)
     const { inicio, fin } = getLocalDayRange(hoyStr, country)
@@ -141,11 +145,16 @@ export async function POST(req) {
     }
 
     // --- Hito 4: Capital milestone ---
+    // `saldoPendiente` NO es una columna: siempre se calcula (totalAPagar - totalPagado).
+    // Pedirlo en _sum tiraba PrismaClientValidationError y mataba el cron completo.
     const capitalResult = await prisma.prestamo.aggregate({
       where: { organizationId: org.id, estado: 'activo' },
-      _sum: { saldoPendiente: true },
+      _sum: { totalAPagar: true, totalPagado: true },
     })
-    const capitalActivo = capitalResult._sum.saldoPendiente || 0
+    const capitalActivo = Math.max(
+      0,
+      (capitalResult._sum.totalAPagar || 0) - (capitalResult._sum.totalPagado || 0)
+    )
     const milestones = [50000000, 30000000, 20000000, 10000000, 5000000]
     for (const ms of milestones) {
       if (capitalActivo >= ms) {
@@ -194,7 +203,11 @@ export async function POST(req) {
     if (aEnviar.length > 0) {
       detalles.push({ orgId: org.id, enviadas: aEnviar.length, tipos: aEnviar.map(n => n.key) })
     }
+   } catch (e) {
+     console.error(`[Celebraciones] Error en org ${org.id}:`, e?.message || e)
+     errores.push({ orgId: org.id, error: e?.message || String(e) })
+   }
   }
 
-  return NextResponse.json({ ok: true, totalEnviadas, detalles })
+  return NextResponse.json({ ok: true, totalEnviadas, detalles, errores: errores.length, detalleErrores: errores.slice(0, 5) })
 }

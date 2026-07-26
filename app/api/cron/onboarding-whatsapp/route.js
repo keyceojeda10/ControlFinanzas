@@ -14,6 +14,16 @@ const TEMPLATE_ONBOARDING = 'onboarding_seguimiento'
 const TEMPLATE_LANG = process.env.WHATSAPP_TEMPLATE_LANG || 'es'
 const SOPORTE = '301 199 3001'
 
+// Errores de Meta que NO se arreglan reintentando: telefono invalido, numero no
+// existe, permiso. Mismo criterio que lib/bot-v2/sender.js.
+const ERRORES_PERMANENTES_WA = ['#131009', '#131008', '#131026', '#100', 'TELEFONO_INVALIDO']
+
+function enmascararTel(tel) {
+  const d = String(tel || '').replace(/\D/g, '')
+  if (d.length < 6) return d || 'sin-telefono'
+  return `${d.slice(0, 5)}***${d.slice(-4)}`
+}
+
 function primerNombre(nombre) {
   if (!nombre || nombre === 'Sin nombre') return ''
   const limpio = nombre.trim()
@@ -60,7 +70,7 @@ export async function POST(req) {
   }
 
   const ahora = new Date()
-  const res = { dia1: 0, dia3: 0, dia10: 0, vencido: 0, errores: 0, omitidos: 0 }
+  const res = { dia1: 0, dia3: 0, dia10: 0, vencido: 0, errores: 0, omitidos: 0, telefonosInvalidos: 0 }
 
   try {
     const orgs = await prisma.organization.findMany({
@@ -82,6 +92,18 @@ export async function POST(req) {
     for (const org of orgs) {
       const owner = org.users[0]
       if (!owner?.telefono) continue
+
+      // Telefono que Meta nunca va a aceptar (basura tipo '0000000000', longitud
+      // imposible): sacar la org de la cola en vez de reintentar todos los dias.
+      if (!wa.telefonoEnviable(owner.telefono)) {
+        res.telefonosInvalidos++
+        console.warn(`[Onboarding WA] Telefono no enviable ${enmascararTel(owner.telefono)} (org ${org.id}) — se marca y no se reintenta`)
+        await prisma.organization.update({
+          where: { id: org.id },
+          data: { waOnboardingStep: 4, waRecoverySent: true },
+        }).catch(() => {})
+        continue
+      }
 
       const algunVezPago = org.suscripciones.some(s => s.montoCOP > 0)
       if (algunVezPago) continue
@@ -154,7 +176,26 @@ export async function POST(req) {
 
       } catch (e) {
         res.errores++
-        console.error(`[Onboarding WA] Error ${owner.nombre}:`, e.message)
+        // Telefono mal guardado o rechazado de forma permanente por Meta: NO tiene
+        // sentido reintentar mañana ni pasado. Se avanza el estado para que esta org
+        // salga de la cola. Sin esto, un telefono '0000000000' genero el mismo
+        // #131009 dos veces al dia durante 17 dias seguidos.
+        const msgErr = String(e?.message || '')
+        const esPermanente = e?.permanente === true ||
+          ERRORES_PERMANENTES_WA.some((c) => msgErr.includes(c))
+        if (esPermanente) {
+          res.telefonosInvalidos++
+          await prisma.organization.update({
+            where: { id: org.id },
+            data: { waOnboardingStep: 4, waRecoverySent: true },
+          }).catch(() => {})
+        }
+        // Loguear el telefono enmascarado: con solo el nombre este bug fue
+        // imposible de atribuir durante 17 dias.
+        console.error(
+          `[Onboarding WA] Error ${owner.nombre} (${enmascararTel(owner.telefono)})${esPermanente ? ' [PERMANENTE - org marcada, no se reintenta]' : ''}:`,
+          msgErr
+        )
       }
     }
 
