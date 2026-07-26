@@ -17,6 +17,7 @@ import CuotasExtraEditor                           from '@/components/prestamos/
 import Stepper                                     from '@/components/ui/Stepper'
 import DiasSinCobroSelector                        from '@/components/ui/DiasSinCobroSelector'
 import { Toggle }                                  from '@/components/ui/Toggle'
+import MetodoPagoSelector                          from '@/components/pagos/MetodoPagoSelector'
 import { guardarPrestamoPendiente, obtenerClientesOffline } from '@/lib/offline'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
@@ -138,6 +139,10 @@ function NuevoPrestamo() {
   const [montoSeguro, setMontoSeguro] = useState('')
   const [socioId, setSocioId] = useState('')
   const [listaSocios, setListaSocios] = useState([])
+  // Cuenta de la que sale el desembolso (efectivo por defecto). Alimenta el
+  // desglose "dinero por cuenta". No afecta el calculo del prestamo.
+  const [metodosPago, setMetodosPago] = useState([])
+  const [cuentaDesembolso, setCuentaDesembolso] = useState({ metodoPago: 'efectivo', metodoPagoId: null, plataforma: null })
   // Modo de interes: 'fijo' (clasico, default) | 'unico' | 'saldo' | 'manual'.
   const [modoInteres, setModoInteres] = useState('fijo')
   const [interesAdelantado, setInteresAdelantado] = useState(false)
@@ -257,6 +262,11 @@ function NuevoPrestamo() {
     if (!esOwner) return
     fetch('/api/socios').then(r => r.ok ? r.json() : []).then(d => setListaSocios(d || [])).catch(() => {})
   }, [esOwner])
+
+  // Metodos de pago (cuentas de transferencia) para elegir de donde sale el desembolso.
+  useEffect(() => {
+    fetch('/api/metodos-pago').then(r => r.ok ? r.json() : []).then(d => setMetodosPago(Array.isArray(d) ? d : [])).catch(() => {})
+  }, [])
 
   // Ultimo prestamo del cliente para "Repetir condiciones".
   const [ultimoPrestamo, setUltimoPrestamo] = useState(null)
@@ -453,6 +463,8 @@ function NuevoPrestamo() {
         ...(modoInteres === 'solo_interes' && interesAdelantado && { interesAdelantado: true }),
         ...(capitalExtra.length > 0 && { capitalExtra }),
         ...(socioId && { socioId }),
+        metodoPago: cuentaDesembolso.metodoPago,
+        ...(cuentaDesembolso.metodoPago === 'transferencia' && cuentaDesembolso.metodoPagoId && { metodoPagoId: cuentaDesembolso.metodoPagoId }),
       }),
     })
     const data = await res.json()
@@ -537,6 +549,8 @@ function NuevoPrestamo() {
       ...(modo === 'mercancia' && nombreProducto.trim() && { nombreProducto: nombreProducto.trim() }),
       ...(seguro && Number(montoSeguro) > 0 && { seguro: true, montoSeguro: Number(montoSeguro) }),
       ...(socioId && { socioId }),
+      metodoPago: cuentaDesembolso.metodoPago,
+      ...(cuentaDesembolso.metodoPago === 'transferencia' && cuentaDesembolso.metodoPagoId && { metodoPagoId: cuentaDesembolso.metodoPagoId }),
     }
 
     // Offline: encolar sin intentar fetch (evita esperar timeout)
@@ -1578,6 +1592,24 @@ function NuevoPrestamo() {
                   )}
                 </div>
               </div>
+            </SectionCard>
+
+            {/* De que cuenta sale el dinero (alimenta el desglose por cuenta) */}
+            <SectionCard
+              icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>}
+              title="¿De qué cuenta sale?"
+              color="var(--color-info)"
+              accent={<span className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>Para el desglose por cuenta</span>}
+            >
+              <p className="text-[11px] mb-2.5" style={{ color: 'var(--color-text-muted)' }}>
+                De dónde entregas este dinero. Por defecto efectivo.
+              </p>
+              <MetodoPagoSelector
+                metodosPago={metodosPago}
+                compact
+                value={{ metodoPago: cuentaDesembolso.metodoPago, metodoPagoId: cuentaDesembolso.metodoPagoId }}
+                onSelect={(sel) => setCuentaDesembolso(sel)}
+              />
             </SectionCard>
 
             <SectionCard

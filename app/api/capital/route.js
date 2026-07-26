@@ -79,8 +79,15 @@ export async function POST(request) {
 
   const { organizationId, id: userId } = session.user
   const body = await request.json()
-  const { tipo, monto, descripcion, rutaId, absorberActivos } = body
+  const { tipo, monto, descripcion, rutaId, absorberActivos, metodoPago, metodoPagoId } = body
   const direccion = body?.direccion === 'ingreso' ? 'ingreso' : 'egreso'
+  // Cuenta por la que entra/sale el dinero (desglose por cuenta). Solo tiene
+  // sentido para inyeccion/retiro (movimiento real de caja). El capital_inicial
+  // es un saldo base de arranque, no un flujo por cuenta -> se deja sin cuenta.
+  const cuentaMov = (tipo === 'inyeccion' || tipo === 'retiro')
+    ? (metodoPago === 'transferencia' ? 'transferencia' : 'efectivo')
+    : null
+  const cuentaMovId = cuentaMov === 'transferencia' ? (metodoPagoId || null) : null
 
   const tiposPermitidos = ['capital_inicial', 'inyeccion', 'retiro', 'ajuste']
   if (!tiposPermitidos.includes(tipo)) {
@@ -142,6 +149,8 @@ export async function POST(request) {
       // Si el movimiento es para una ruta específica (inyeccion/retiro de sub-bolsa),
       // permitir saldo global negativo: el dinero viene/va de la ruta, no del pool global.
       permitirNegativo: !!rutaIdValida,
+      metodoPago: cuentaMov,
+      metodoPagoId: cuentaMovId,
     })
 
     // Ajuste de arranque: descuenta de la SUB-BOLSA de la ruta los prestamos
