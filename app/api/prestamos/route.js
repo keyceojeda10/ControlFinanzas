@@ -224,7 +224,11 @@ export async function POST(request) {
 
   const { organizationId, rol } = session.user
   const body = await request.json()
-  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado, cuotaManual, inyeccionPrevia, diaCobroSemana, diaCobroMes, diaCobroMes2, seguro, montoSeguro, modoInteres, nombreProducto, interesAdelantado, capitalExtra, socioId } = body
+  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado, cuotaManual, inyeccionPrevia, diaCobroSemana, diaCobroMes, diaCobroMes2, seguro, montoSeguro, modoInteres, nombreProducto, interesAdelantado, capitalExtra, socioId, metodoPago: metodoPagoDesembolso, metodoPagoId: metodoPagoIdDesembolso } = body
+  // Cuenta de la que sale el desembolso (para el desglose por cuenta). Si no
+  // viene, se asume efectivo (el caso mas comun en gota a gota).
+  const cuentaDesembolso = metodoPagoDesembolso || 'efectivo'
+  const cuentaDesembolsoId = metodoPagoDesembolso === 'transferencia' ? (metodoPagoIdDesembolso || null) : null
 
   const freq = frecuencia || 'diario'
   const frecuenciasValidas = ['diario', 'semanal', 'quincenal', 'mensual']
@@ -463,6 +467,8 @@ export async function POST(request) {
         referenciaTipo: 'prestamo',
         rutaId: rutaIdCapital,
         creadoPorId: session.user.id,
+        metodoPago: cuentaDesembolso,
+        metodoPagoId: cuentaDesembolsoId,
       })
 
       if (abono > 0) {

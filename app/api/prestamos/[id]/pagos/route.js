@@ -608,6 +608,8 @@ export async function POST(request, { params }) {
         referenciaTipo: 'pago',
         rutaId: prestamo.cliente?.rutaId || null,
         creadoPorId: userId,
+        metodoPago: metodoPago || null,
+        metodoPagoId: metodoPagoId || null,
       })
     }
 

@@ -575,6 +575,11 @@ model MovimientoCapital {
   referenciaTipo     String?
   rutaId             String? // ruta a la que pertenece el movimiento (null = general)
   ajusteArranqueRuta Boolean        @default(false) // ajuste que solo afecta la sub-bolsa de la ruta, NO el saldo global (absorber prestamos previos)
+  // Cuenta por la que entro/salio el dinero (para el desglose "dinero por cuenta").
+  // metodoPago: 'efectivo' | 'transferencia' (null = movimiento sin cuenta / historico).
+  // metodoPagoId: FK a MetodoPago cuando es transferencia a una cuenta especifica.
+  metodoPago         String?
+  metodoPagoId       String?
   creadoPorId        String?
   createdAt          DateTime       @default(now())
 
@@ -584,6 +589,7 @@ model MovimientoCapital {
   @@index([organizationId])
   @@index([organizationId, createdAt])
   @@index([organizationId, rutaId, createdAt])
+  @@index([organizationId, metodoPago, metodoPagoId])
   @@index([capitalId])
   @@index([referenciaId])
 }

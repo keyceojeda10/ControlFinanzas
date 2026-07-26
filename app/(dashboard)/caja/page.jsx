@@ -22,6 +22,7 @@ import CajaCobradorDetalle    from '@/components/caja/CajaCobradorDetalle'
 import FiltroPeriodo          from '@/components/caja/FiltroPeriodo'
 import CajaResumen            from '@/components/caja/CajaResumen'
 import DesgloseMetodoPago     from '@/components/caja/DesgloseMetodoPago'
+import DesglosePorCuenta      from '@/components/caja/DesglosePorCuenta'
 import CuadreDia              from '@/components/caja/CuadreDia'
 import ReporteDia             from '@/components/reportes/ReporteDia'
 import { nivelReportes }      from '@/lib/planes'
@@ -1118,6 +1119,7 @@ export default function CajaPage() {
         {[
           { key: 'cobros', label: 'Caja del dia' },
           { key: 'porruta', label: 'Por ruta' },
+          ...(esOwner ? [{ key: 'cuentas', label: 'Cuentas' }] : []),
           ...(esOwner && cobradoresParaFiltro.length > 0 ? [{ key: 'cuadre', label: 'Cuadre' }] : []),
         ].map(t => (
           <button
@@ -1151,6 +1153,10 @@ export default function CajaPage() {
         <div className="bg-[var(--color-success-dim)] border border-[color-mix(in_srgb,var(--color-success)_30%,transparent)] text-[var(--color-success)] text-sm rounded-[12px] px-4 py-3">
           Ajuste de saldo general registrado correctamente.
         </div>
+      )}
+
+      {cajaTab === 'cuentas' && esOwner && (
+        <DesglosePorCuenta />
       )}
 
       {cajaTab === 'porruta' && (

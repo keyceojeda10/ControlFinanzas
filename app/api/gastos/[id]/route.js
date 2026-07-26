@@ -67,6 +67,8 @@ export async function PATCH(req, { params }) {
         referenciaTipo: 'gasto',
         rutaId,
         creadoPorId: session.user.id,
+        // Los gastos de ruta se pagan casi siempre en efectivo (caja del cobrador).
+        metodoPago: 'efectivo',
       })
     }
 
