@@ -43,6 +43,12 @@ export default function DetalleLineaPage({ params }) {
 
   useEffect(() => { cargar() }, [cargar])
 
+  // Los hooks van SIEMPRE antes de cualquier return temprano (regla de React).
+  // Estaba abajo y la pagina crasheaba con "Rendered more hooks than during the
+  // previous render" apenas terminaba de cargar.
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
+
   if (authLoading || loading) {
     return <div className="max-w-2xl mx-auto px-4 py-6 space-y-3">{[1,2,3].map(i => <SkeletonCard key={i} />)}</div>
   }
@@ -55,9 +61,6 @@ export default function DetalleLineaPage({ params }) {
       </div>
     )
   }
-
-  const { resolvedTheme } = useTheme()
-  const isDark = resolvedTheme === 'dark'
 
   const porcentajeUsado = linea.cupoMaximo > 0
     ? Math.round((linea.capitalUsado || 0) / linea.cupoMaximo * 100)

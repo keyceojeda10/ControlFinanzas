@@ -41,6 +41,17 @@ function buildInclude() {
         createdAt: true,
       },
     },
+    // Sin los cortes, calcularInteresAcumulado recalcula el interes desde el
+    // inicio y resta todo lo pagado -> la lista mostraba un saldo distinto al
+    // del detalle (que si incluye cortes). Deben coincidir.
+    cortesLinea: {
+      select: {
+        id: true,
+        fechaCorte: true,
+        interesesGenerados: true,
+        saldoNuevo: true,
+      },
+    },
   }
 }
 
