@@ -5,6 +5,7 @@ import { Modal }    from '@/components/ui/Modal'
 import { Button }   from '@/components/ui/Button'
 import { Input }    from '@/components/ui/Input'
 import { calcularPrestamo } from '@/lib/calculos'
+import { soloDecimal } from '@/lib/i18n'
 import { useCountry } from '@/hooks/useCountry'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
@@ -247,10 +248,10 @@ export default function RenovarPrestamo({
         <div className="grid grid-cols-2 gap-3">
           <Input
             label="Tasa (%)"
-            type="number"
+            type="text"
             inputMode="decimal"
             value={tasa}
-            onChange={(e) => setTasa(e.target.value)}
+            onChange={(e) => setTasa(soloDecimal(e.target.value))}
           />
           <div>
             <Input

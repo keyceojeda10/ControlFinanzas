@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
 import { calcularPrestamo } from '@/lib/calculos'
-import { formatMoney } from '@/lib/i18n'
+import { formatMoney, soloDecimal } from '@/lib/i18n'
 import MoneyInput from '@/components/ui/MoneyInput'
 import { invalidarCachePorPrefijo } from '@/lib/offline'
 import ModoInteresSelector from '@/components/prestamos/ModoInteresSelector'
@@ -291,8 +291,8 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
             <div>
               <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
                 style={{ color: 'var(--color-text-muted)' }}>Tasa %</label>
-              <input type="number" inputMode="decimal" value={ficha.tasa}
-                onChange={e => set('tasa', e.target.value)}
+              <input type="text" inputMode="decimal" value={ficha.tasa}
+                onChange={e => set('tasa', soloDecimal(e.target.value))}
                 className="w-full h-10 rounded-[12px] border px-3 text-sm"
                 style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
             </div>
@@ -419,7 +419,7 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
             {/* Editable: Tasa */}
             <EditableResumenRow label="Interés" value={`${ficha.tasa}% mensual`}>
               <div className="flex items-center gap-1.5">
-                <input type="number" inputMode="decimal" value={ficha.tasa} onChange={e => set('tasa', e.target.value)}
+                <input type="text" inputMode="decimal" value={ficha.tasa} onChange={e => set('tasa', soloDecimal(e.target.value))}
                   className="w-20 h-8 rounded-lg border px-2 text-sm text-right"
                   style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus />
                 <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>% mensual</span>

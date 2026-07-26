@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import MoneyInput from '@/components/ui/MoneyInput'
 import Avatar from '@/components/ui/Avatar'
-import { formatMoney } from '@/lib/i18n'
+import { formatMoney, soloDecimal } from '@/lib/i18n'
 import { MODOS_INTERES } from '@/lib/linea-credito'
 
 export default function NuevaLineaPage() {
@@ -171,10 +171,10 @@ export default function NuevaLineaPage() {
             <div>
               <label className="text-xs font-medium text-[var(--color-text-secondary)] mb-1.5 block">Tasa de interés mensual (%)</label>
               <input
-                type="number"
+                type="text"
                 inputMode="decimal"
                 value={tasaInteres}
-                onChange={e => setTasaInteres(e.target.value)}
+                onChange={e => setTasaInteres(soloDecimal(e.target.value))}
                 className="w-full h-10 px-3 rounded-xl bg-[var(--color-bg-card)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)]"
                 placeholder="10"
               />
@@ -230,10 +230,10 @@ export default function NuevaLineaPage() {
             <div>
               <label className="text-xs font-medium text-[var(--color-text-secondary)] mb-1.5 block">Pago minimo (% del saldo)</label>
               <input
-                type="number"
+                type="text"
                 inputMode="decimal"
                 value={pagoMinimoPct}
-                onChange={e => setPagoMinimoPct(e.target.value)}
+                onChange={e => setPagoMinimoPct(soloDecimal(e.target.value))}
                 className="w-full h-10 px-3 rounded-xl bg-[var(--color-bg-card)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)]"
                 placeholder="0"
               />

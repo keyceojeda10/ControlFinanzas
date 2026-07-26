@@ -1,6 +1,6 @@
 'use client'
 
-import { formatMoney } from '@/lib/i18n'
+import { formatMoney, soloDecimal } from '@/lib/i18n'
 import { useState, useEffect, Suspense } from 'react'
 import Link                    from 'next/link'
 import { useSearchParams }     from 'next/navigation'
@@ -658,12 +658,10 @@ function TabOrganizacion() {
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-[var(--color-text-muted)]">Tasa moratorio mensual (%)</label>
             <input
-              type="number"
-              min="0"
-              max="100"
-              step="0.5"
+              type="text"
+              inputMode="decimal"
               value={tasaMoratorio}
-              onChange={(e) => setTasaMoratorio(e.target.value)}
+              onChange={(e) => setTasaMoratorio(soloDecimal(e.target.value))}
               placeholder="0 = desactivado"
               className={inputClass}
             />

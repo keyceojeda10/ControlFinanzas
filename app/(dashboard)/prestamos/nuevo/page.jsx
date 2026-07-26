@@ -9,7 +9,7 @@ import { Button }                                  from '@/components/ui/Button'
 import { Input }                                   from '@/components/ui/Input'
 import MoneyInput                                  from '@/components/ui/MoneyInput'
 import { calcularPrestamo } from '@/lib/calculos'
-import { formatMoney } from '@/lib/i18n'
+import { formatMoney, soloDecimal } from '@/lib/i18n'
 import ResumenCalculo                              from '@/components/prestamos/ResumenCalculo'
 import ModoInteresSelector                         from '@/components/prestamos/ModoInteresSelector'
 import TablaAmortizacion                           from '@/components/prestamos/TablaAmortizacion'
@@ -1128,7 +1128,7 @@ function NuevoPrestamo() {
 
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Interés mensual</label>
-                <Input type="number" inputMode="decimal" step="0.5" min="0" value={tasa} onChange={(e) => setTasa(e.target.value)} placeholder="20" suffix="%" />
+                <Input type="text" inputMode="decimal" value={tasa} onChange={(e) => setTasa(soloDecimal(e.target.value))} placeholder="20" suffix="%" />
                 <div className="flex gap-1.5 mt-2 flex-wrap">
                   {[5, 10, 15, 20, 25, 30].map(v => (
                     <button key={v} type="button" onClick={() => setTasa(String(v))}
@@ -1361,7 +1361,7 @@ function NuevoPrestamo() {
                           <EditableRow label="Interés" value={`${tasa || 0}% mensual`} valueColor="var(--color-accent)" pencil={pencil}
                             editor={
                               <div className="flex items-center gap-1.5">
-                                <input type="number" inputMode="decimal" value={tasa} onChange={e => setTasa(e.target.value)}
+                                <input type="text" inputMode="decimal" value={tasa} onChange={e => setTasa(soloDecimal(e.target.value))}
                                   className="w-20 h-8 rounded-lg border px-2 text-sm text-right"
                                   style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus />
                                 <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>% mensual</span>
@@ -1497,7 +1497,7 @@ function NuevoPrestamo() {
                     pencil={pencilIcon}
                     editor={
                       <div className="flex items-center gap-1.5">
-                        <input type="number" inputMode="decimal" value={tasa} onChange={e => setTasa(e.target.value)}
+                        <input type="text" inputMode="decimal" value={tasa} onChange={e => setTasa(soloDecimal(e.target.value))}
                           className="w-20 h-8 rounded-lg border px-2 text-sm text-right"
                           style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus />
                         <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>% mensual</span>

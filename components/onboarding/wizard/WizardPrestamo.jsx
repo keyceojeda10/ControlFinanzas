@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import MoneyInput from '@/components/ui/MoneyInput'
 import { Input } from '@/components/ui/Input'
 import { calcularPrestamo } from '@/lib/calculos'
+import { soloDecimal } from '@/lib/i18n'
 import ResumenCalculo from '@/components/prestamos/ResumenCalculo'
 import Avatar from '@/components/ui/Avatar'
 import { useCountry } from '@/hooks/useCountry'
@@ -203,13 +204,11 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
               <div>
                 <Input
                   label="Tasa de interés (%)"
-                  type="number"
+                  type="text"
                   inputMode="decimal"
-                  step="0.5"
-                  min="0"
                   placeholder="20"
                   value={tasa}
-                  onChange={(e) => setTasa(e.target.value)}
+                  onChange={(e) => setTasa(soloDecimal(e.target.value))}
                   suffix="%"
                 />
                 <p className="text-[10px] mt-1 px-0.5" style={{ color: 'var(--color-text-muted)' }}>20% mensual es lo más común</p>

@@ -12,7 +12,7 @@ import { Toggle } from '@/components/ui/Toggle'
 import ModoInteresSelector from '@/components/prestamos/ModoInteresSelector'
 import TablaAmortizacion from '@/components/prestamos/TablaAmortizacion'
 import { calcularPrestamo } from '@/lib/calculos'
-import { formatMoney } from '@/lib/i18n'
+import { formatMoney, soloDecimal } from '@/lib/i18n'
 
 const DIAS_POR_PERIODO = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }
 
@@ -154,10 +154,10 @@ export default function CalculadoraPage() {
               <label className="text-xs font-medium text-[var(--color-text-secondary)]">Interés (%)</label>
               <div className="relative flex items-center">
                 <input
-                  type="number"
+                  type="text"
                   inputMode="decimal"
                   value={tasa}
-                  onChange={(e) => setTasa(e.target.value)}
+                  onChange={(e) => setTasa(soloDecimal(e.target.value))}
                   placeholder="20"
                   className="w-full h-10 rounded-[12px] border text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] bg-[var(--color-bg-surface)] border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_20%,transparent)] transition-all pl-3 pr-8"
                 />

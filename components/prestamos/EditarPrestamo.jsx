@@ -12,7 +12,7 @@ import ResumenCalculo    from '@/components/prestamos/ResumenCalculo'
 import ModoInteresSelector from '@/components/prestamos/ModoInteresSelector'
 import CuotasExtraEditor   from '@/components/prestamos/CuotasExtraEditor'
 import { calcularPrestamo } from '@/lib/calculos'
-import { formatMoney }      from '@/lib/i18n'
+import { formatMoney, soloDecimal } from '@/lib/i18n'
 
 const DIAS_POR_PERIODO = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }
 
@@ -161,12 +161,11 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
           <div>
             <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Tasa de interés (%)</label>
             <Input
-              type="number"
+              type="text"
+              inputMode="decimal"
               value={tasa}
-              onChange={(e) => setTasa(e.target.value)}
+              onChange={(e) => setTasa(soloDecimal(e.target.value))}
               placeholder="Ej: 20"
-              min="0"
-              step="0.5"
             />
           </div>
           <div>
