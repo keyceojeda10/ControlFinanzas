@@ -32,7 +32,7 @@ function getTipoPagoLabel(tipo) {
   return 'Pago'
 }
 
-function resolverCampo(campo, cliente, prestamo) {
+export function resolverCampo(campo, cliente, prestamo) {
   const saldo = prestamo.saldoPendiente ?? Math.max(0, (prestamo.totalAPagar ?? 0) - (prestamo.totalPagado ?? 0))
   const map = {
     saldoPendiente:  formatMoney(saldo),

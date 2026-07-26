@@ -10,6 +10,7 @@ import { Button }      from '@/components/ui/Button'
 import { Input }       from '@/components/ui/Input'
 import BotonCompartir       from '@/components/ui/BotonCompartir'
 import BotonImprimirRecibo  from '@/components/ui/BotonImprimirRecibo'
+import BotonCompartirRecibo from '@/components/ui/BotonCompartirRecibo'
 import ModalWhatsAppTemplates from '@/components/ui/ModalWhatsAppTemplates'
 import { ChecklistCamposRecibo, getDefaultCampos } from '@/components/recibos/CamposReciboEditor'
 import { generarTextoPlantilla } from '@/lib/whatsapp-plantillas'
@@ -396,7 +397,8 @@ export default function RegistrarPago({
             onChange={(newCampos) => guardarCamposCliente(newCampos)}
           />
 
-          <div className="pt-2 border-t border-[var(--color-border)]">
+          <div className="pt-2 border-t border-[var(--color-border)] flex gap-2">
+            <BotonCompartirRecibo cliente={cliente} prestamo={prestamoWA} pago={pagoGuardado} orgNombre={orgNombre} camposRecibo={camposLocal} label="Compartir" />
             <BotonImprimirRecibo cliente={cliente} prestamo={prestamoWA} pago={pagoGuardado} orgNombre={orgNombre} camposRecibo={camposLocal} />
           </div>
         </div>
@@ -604,18 +606,21 @@ export default function RegistrarPago({
           )}
 
           {prestamoWA && (
-            <div className="flex gap-2">
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <BotonCompartirRecibo cliente={cliente} prestamo={prestamoWA} pago={pagoGuardado} orgNombre={orgNombre} camposRecibo={camposLocal} label="Compartir recibo" />
+                <button
+                  type="button"
+                  onClick={() => setVistaComprobante(true)}
+                  className="flex-1 flex items-center justify-center gap-2 px-3 h-10 rounded-[12px] text-sm font-medium transition-all cursor-pointer bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-accent)]"
+                >
+                  <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                  </svg>
+                  Imprimir
+                </button>
+              </div>
               <BotonCompartir cliente={cliente} prestamo={prestamoWA} pago={pagoGuardado} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposLocal} />
-              <button
-                type="button"
-                onClick={() => setVistaComprobante(true)}
-                className="flex-1 flex items-center justify-center gap-2 px-3 h-10 rounded-[12px] text-sm font-medium transition-all cursor-pointer bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-accent)]"
-              >
-                <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                </svg>
-                Imprimir
-              </button>
             </div>
           )}
 

@@ -23,6 +23,7 @@ import EditarPrestamo                 from '@/components/prestamos/EditarPrestam
 import BotonWhatsApp                  from '@/components/ui/BotonWhatsApp'
 import BotonCompartir                 from '@/components/ui/BotonCompartir'
 import BotonImprimirRecibo            from '@/components/ui/BotonImprimirRecibo'
+import BotonCompartirRecibo          from '@/components/ui/BotonCompartirRecibo'
 import OfflineBadge                   from '@/components/offline/OfflineBadge'
 import ModalWhatsAppTemplates         from '@/components/ui/ModalWhatsAppTemplates'
 import FirmaDigital                   from '@/components/prestamos/FirmaDigital'
@@ -1006,8 +1007,8 @@ export default function PrestamoDetallePage({ params }) {
         ]}
       />
 
-      {/* ── TABLA DE AMORTIZACION (lineal / globo) ──────────────── */}
-      {['lineal', 'lineal_dinamico', 'solo_interes'].includes(modoInteres) && cuotasAmortizacion.length > 0 && (
+      {/* ── TABLA DE AMORTIZACION (lineal / globo / sobre saldo) ──── */}
+      {['lineal', 'lineal_dinamico', 'solo_interes', 'saldo'].includes(modoInteres) && cuotasAmortizacion.length > 0 && (
         <Card>
           <TablaAmortizacion
             tabla={cuotasAmortizacion}
@@ -1993,7 +1994,17 @@ function ModalCamposRecibo({ tipo, pago, cliente, prestamo, orgNombre, ocultarSa
           <ChecklistCamposRecibo campos={camposLocal} onChange={handleChange} />
         )}
 
-        <div className="pt-2 border-t border-[var(--color-border)]">
+        <div className="pt-2 border-t border-[var(--color-border)] flex gap-2">
+          {tipo !== 'historial' && (
+            <BotonCompartirRecibo
+              cliente={cliente}
+              prestamo={prestamo}
+              pago={pago}
+              orgNombre={orgNombre}
+              camposRecibo={camposLocal}
+              label="Compartir"
+            />
+          )}
           <BotonImprimirRecibo
             tipo={tipo === 'historial' ? 'historial' : 'recibo'}
             label={tipo === 'historial' ? 'Imprimir estado de cuenta' : 'Imprimir comprobante'}

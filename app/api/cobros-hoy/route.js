@@ -13,6 +13,7 @@ import {
   obtenerCuotaPeriodoActual,
   obtenerProximaCuotaTabla,
   tieneTablaAmortizacion,
+  cuotaProximoCobro,
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
@@ -181,7 +182,9 @@ export async function GET() {
         }
 
         const diasExcluidosPrestamo = obtenerDiasSinCobro(c, ruta, org, p)
-        const cuotaReal = tieneTablaAmortizacion(p) ? obtenerCuotaPeriodoActual(p) : p.cuotaDiaria
+        // cuotaProximoCobro topa la ultima cuota al saldo real (tras abonos/excedentes)
+        // y usa la tabla en modos que la tienen. Antes mostraba la cuota fija completa.
+        const cuotaReal = cuotaProximoCobro(p)
         cuotaCliente += cuotaReal
         esperadoHoyTotal += cuotaReal
 
