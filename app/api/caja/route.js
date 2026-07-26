@@ -137,7 +137,7 @@ async function calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId =
         ...baseWherePrestamos,
         cliente: { ruta: { cobradorId } },
       },
-      select: { id: true, montoPrestado: true },
+      select: { id: true, montoPrestado: true, renovadoDeId: true },
     }),
     // Movimientos de desembolso: por el cobrador O en sus rutas (incluye los del owner)
     prisma.movimientoCapital.findMany({
@@ -186,19 +186,26 @@ async function calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId =
         createdAt: { gte: inicio, lt: fin },
         estado: { not: 'cancelado' },
       },
-      select: { id: true, montoPrestado: true },
+      select: { id: true, montoPrestado: true, renovadoDeId: true },
     })
     : []
 
   const idsContabilizados = new Set()
   let total = 0
 
+  // Fallback cuando un prestamo no tiene MovimientoCapital: en un prestamo nuevo
+  // el efectivo entregado ES montoPrestado, pero en una RENOVACION el monto nuevo
+  // incluye el saldo viejo absorbido (que nunca salio de la caja). Asumir
+  // montoPrestado ahi inflaba la salida de caja por todo el saldo absorbido
+  // (renovar 160k por 160k mostraba -160.000 sin que saliera un peso).
+  const montoFallback = (p) => (p.renovadoDeId ? 0 : p.montoPrestado)
+
   // Préstamos de la ruta: usar monto del movimiento si existe (correcto en renovaciones)
   for (const p of prestamosRuta) {
     if (idsContabilizados.has(p.id)) continue
     idsContabilizados.add(p.id)
     const mov = montoRealPorPrestamo.get(p.id)
-    total += mov ? mov.monto : p.montoPrestado
+    total += mov ? mov.monto : montoFallback(p)
   }
 
   // Préstamos creados por el cobrador fuera de su ruta
@@ -206,7 +213,7 @@ async function calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId =
     if (idsContabilizados.has(p.id)) continue
     idsContabilizados.add(p.id)
     const mov = montoRealPorPrestamo.get(p.id)
-    total += mov ? mov.monto : p.montoPrestado
+    total += mov ? mov.monto : montoFallback(p)
   }
 
   // Movimientos del cobrador sin préstamo en ruta/actividad
@@ -272,7 +279,7 @@ async function calcularPrestadoDetalleDia(organizationId, inicio, fin, cobradorI
     const [prestamos, mapaEntregado] = await Promise.all([
       prisma.prestamo.findMany({
         where: baseWherePrestamos,
-        select: { id: true, montoPrestado: true },
+        select: { id: true, montoPrestado: true, renovadoDeId: true },
       }),
       construirMapaEntregado({}),
     ])
@@ -281,7 +288,9 @@ async function calcularPrestadoDetalleDia(organizationId, inicio, fin, cobradorI
     for (const p of prestamos) {
       valorPrestado += p.montoPrestado || 0
       const mov = mapaEntregado.get(p.id)
-      efectivoEntregado += mov ? mov.monto : (p.montoPrestado || 0)
+      // Sin movimiento: en renovacion el efectivo entregado no es el monto nuevo
+      // (incluye el saldo viejo absorbido, que nunca salio de la caja).
+      efectivoEntregado += mov ? mov.monto : (p.renovadoDeId ? 0 : (p.montoPrestado || 0))
     }
     return {
       valorPrestado: Math.round(valorPrestado),
@@ -300,7 +309,7 @@ async function calcularPrestadoDetalleDia(organizationId, inicio, fin, cobradorI
   const [prestamosRuta, actividadesCreador, mapaEntregado] = await Promise.all([
     prisma.prestamo.findMany({
       where: { ...baseWherePrestamos, cliente: { ruta: { cobradorId } } },
-      select: { id: true, montoPrestado: true },
+      select: { id: true, montoPrestado: true, renovadoDeId: true },
     }),
     prisma.actividadLog.findMany({
       where: {
@@ -328,7 +337,7 @@ async function calcularPrestadoDetalleDia(organizationId, inicio, fin, cobradorI
         createdAt: { gte: inicio, lt: fin },
         estado: { not: 'cancelado' },
       },
-      select: { id: true, montoPrestado: true },
+      select: { id: true, montoPrestado: true, renovadoDeId: true },
     })
     : []
 
@@ -341,7 +350,8 @@ async function calcularPrestadoDetalleDia(organizationId, inicio, fin, cobradorI
     vistos.add(p.id)
     valorPrestado += p.montoPrestado || 0
     const mov = mapaEntregado.get(p.id)
-    efectivoEntregado += mov ? mov.monto : (p.montoPrestado || 0)
+    // Sin movimiento: una renovacion no entrego el monto nuevo en efectivo.
+    efectivoEntregado += mov ? mov.monto : (p.renovadoDeId ? 0 : (p.montoPrestado || 0))
   }
 
   // Movimientos sin prestamo en ruta ni actividad (ej: el owner desembolso en su
@@ -785,10 +795,44 @@ export async function GET(request) {
   // Para owner: obtener lista de cobradores con estado de cierre
   let cobradores = []
   if (rol === 'owner') {
+    // Cobradores a listar: los activos MAS los inactivos que tuvieron movimiento
+    // ese dia (pagos o cierre). Sin esto, al desactivar/reemplazar un cobrador su
+    // historial quedaba inalcanzable en la UI: la caja de ese dia desaparecia
+    // aunque los pagos siguieran en la base (reportado: "cerre caja ayer y no
+    // aparece lo cobrado" tras crear un cobrador nuevo).
+    const [idsPagoDia, idsCierreDia] = await Promise.all([
+      prisma.pago.findMany({
+        where: {
+          organizationId,
+          fechaPago: { gte: inicio, lt: fin },
+          tipo: { notIn: ['recargo', 'descuento'] },
+          cobradorId: { not: null },
+        },
+        select: { cobradorId: true },
+        distinct: ['cobradorId'],
+      }),
+      prisma.cierreCaja.findMany({
+        where: { organizationId, fecha: { gte: inicio, lt: fin } },
+        select: { cobradorId: true },
+        distinct: ['cobradorId'],
+      }),
+    ])
+    const idsConMovimientoDia = [...new Set([
+      ...idsPagoDia.map(p => p.cobradorId),
+      ...idsCierreDia.map(c => c.cobradorId),
+    ].filter(Boolean))]
+
     const [todosCobradores, recaudosDiaRaw, rutasActivas] = await Promise.all([
       prisma.user.findMany({
-        where: { organizationId, rol: 'cobrador', activo: true },
-        select: { id: true, nombre: true },
+        where: {
+          organizationId,
+          rol: 'cobrador',
+          OR: [
+            { activo: true },
+            ...(idsConMovimientoDia.length > 0 ? [{ id: { in: idsConMovimientoDia } }] : []),
+          ],
+        },
+        select: { id: true, nombre: true, activo: true },
         orderBy: [{ orden: 'asc' }, { nombre: 'asc' }],
       }),
       prisma.pago.groupBy({
@@ -893,6 +937,9 @@ export async function GET(request) {
       return {
         id: c.id,
         nombre: c.nombre,
+        // Se listan tambien inactivos que tuvieron movimiento ese dia, para que su
+        // historial siga siendo alcanzable. La UI los marca.
+        inactivo: c.activo === false,
         cerrado: cierreIds.has(c.id),
         cierre,
         recaudadoDia,

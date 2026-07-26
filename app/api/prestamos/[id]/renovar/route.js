@@ -220,19 +220,26 @@ export async function POST(request, { params }) {
     // entregada en mano (monto nuevo - saldo viejo absorbido). El saldo viejo
     // no volvio a la caja ni salio, asi que NO se registra recaudo ni se
     // desembolsa el total. Esto mantiene el control de caja exacto (sin abono
-    // falso). Si diferencia=0 (no entrego mas), no hay movimiento de caja.
-    if (diferencia > 0) {
-      await registrarMovimientoCapital(tx, {
-        organizationId,
-        tipo: 'desembolso',
-        monto: diferencia,
-        descripcion: `Desembolso por renovación - ${original.cliente.nombre}`,
-        referenciaId: nuevo.id,
-        referenciaTipo: 'prestamo',
-        rutaId: original.cliente?.rutaId || null,
-        creadoPorId: userId,
-      })
-    }
+    // falso).
+    //
+    // El movimiento se registra SIEMPRE, incluso con diferencia = 0 (renovacion
+    // por el mismo monto que debia: no entrego efectivo). Antes se saltaba con
+    // `if (diferencia > 0)` y entonces la caja no encontraba movimiento y caia al
+    // fallback `p.montoPrestado`, mostrando como salida de caja TODO el monto
+    // renovado (ej: renovar 160k por 160k mostraba -160.000 sin que saliera un
+    // peso). Con el movimiento en 0 el ledger queda completo y la caja no adivina.
+    await registrarMovimientoCapital(tx, {
+      organizationId,
+      tipo: 'desembolso',
+      monto: diferencia,
+      descripcion: diferencia > 0
+        ? `Desembolso por renovación - ${original.cliente.nombre}`
+        : `Renovación sin efectivo entregado - ${original.cliente.nombre}`,
+      referenciaId: nuevo.id,
+      referenciaTipo: 'prestamo',
+      rutaId: original.cliente?.rutaId || null,
+      creadoPorId: userId,
+    })
 
     // 6. Asegurar que el cliente queda activo
     await tx.cliente.update({

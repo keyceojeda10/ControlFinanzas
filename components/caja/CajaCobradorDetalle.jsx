@@ -34,6 +34,7 @@ export default function CajaCobradorDetalle({ data }) {
   const gastos = data?.gastos || []
   const g = data?.gestion || null
   const desgloseMetodo = data?.desgloseMetodoPago || []
+  const renov = data?.renovaciones || null
 
   const esCapitalEfectivo = r.capitalEsEfectivo
 
@@ -57,6 +58,37 @@ export default function CajaCobradorDetalle({ data }) {
           ...(!esCapitalEfectivo && (r.capitalRutasTotal || 0) > 0 ? [{ label: 'Capital en ruta', valor: r.capitalRutasTotal, color: 'var(--color-info)' }] : []),
         ]}
       />
+
+      {/* Renovaciones del dia: explica por que "Prestado" no es igual a lo renovado.
+          El saldo absorbido (la cartulina) no salio en efectivo, asi que no entra al
+          efectivo del dia — pero el prestamista necesita verlo para cuadrar. */}
+      {renov && renov.cantidad > 0 && renov.absorbido > 0 && (
+        <div
+          className="rounded-[12px] p-3"
+          style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+        >
+          <p className="text-[11px] font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--color-text-muted)' }}>
+            Renovaciones de hoy ({renov.cantidad})
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Valor renovado</p>
+              <p className="text-[13px] font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(renov.valorTotal)}</p>
+            </div>
+            <div>
+              <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Saldo absorbido</p>
+              <p className="text-[13px] font-bold font-mono-display" style={{ color: 'var(--color-info)' }}>{formatMoney(renov.absorbido)}</p>
+            </div>
+            <div>
+              <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Entregado en mano</p>
+              <p className="text-[13px] font-bold font-mono-display" style={{ color: 'var(--color-warning)' }}>{formatMoney(renov.entregadoEnMano)}</p>
+            </div>
+          </div>
+          <p className="text-[10px] mt-2 leading-snug" style={{ color: 'var(--color-text-muted)' }}>
+            El saldo absorbido es lo que el cliente ya debía y quedó dentro del nuevo préstamo: no entró ni salió efectivo, por eso no suma en "Cobrado" ni en "Prestado".
+          </p>
+        </div>
+      )}
 
       {/* Desglose por método de pago */}
       <DesgloseMetodoPago items={desgloseMetodo} />

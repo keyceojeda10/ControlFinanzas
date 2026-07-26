@@ -2,7 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
-import { getUtcOffset } from '@/lib/i18n'
+import { getUtcOffset, getLocalDayRange } from '@/lib/i18n'
 
 const CRON_SECRET = process.env.CRON_SECRET
 
@@ -180,13 +180,15 @@ export async function POST(request) {
     const now = new Date()
     const colombiaNow = new Date(now.getTime() - Math.abs(getUtcOffset('co')) * 60 * 60 * 1000)
     
-    // El cierre es del día anterior
-    const fechaCierre = new Date(colombiaNow)
-    fechaCierre.setDate(fechaCierre.getDate() - 1)
-    fechaCierre.setHours(0, 0, 0, 0)
-
-    const fechaCierreFin = new Date(fechaCierre)
-    fechaCierreFin.setHours(23, 59, 59, 999)
+    // El cierre es del día anterior. La fecha se guarda con el MISMO criterio que
+    // usa el resto de la app para leer un dia (getLocalDayRange = 05:00Z para
+    // Colombia). Antes se usaba setHours(0,0,0,0), que en un servidor en UTC daba
+    // 00:00Z: el cierre quedaba guardado en la ventana del DIA ANTERIOR y ninguna
+    // pantalla lo encontraba en su fecha.
+    const ayer = new Date(colombiaNow)
+    ayer.setDate(ayer.getDate() - 1)
+    const fechaAyerStr = ayer.toISOString().slice(0, 10)
+    const { inicio: fechaCierre, fin: fechaCierreFin } = getLocalDayRange(fechaAyerStr, 'co')
 
     // Obtener todas las organizaciones activas
     const organizaciones = await prisma.organization.findMany({

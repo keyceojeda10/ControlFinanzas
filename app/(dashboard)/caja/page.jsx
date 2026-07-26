@@ -561,7 +561,7 @@ export default function CajaPage() {
           >
             <option value="">Todos los cobradores</option>
             {cobradoresParaFiltro.map((c) => (
-              <option key={c.id} value={c.id}>{c.nombre}</option>
+              <option key={c.id} value={c.id}>{c.nombre}{c.inactivo ? ' (inactivo)' : ''}</option>
             ))}
           </select>
         </div>
@@ -1173,7 +1173,7 @@ export default function CajaPage() {
             >
               <option value="">— Elige un cobrador —</option>
               {cobradoresParaFiltro.map((c) => (
-                <option key={c.id} value={c.id}>{c.nombre}</option>
+                <option key={c.id} value={c.id}>{c.nombre}{c.inactivo ? ' (inactivo)' : ''}</option>
               ))}
             </select>
           </Card>

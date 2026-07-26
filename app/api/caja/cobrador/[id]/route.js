@@ -47,6 +47,7 @@ async function getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId
       select: {
         id: true,
         montoPrestado: true,
+        renovadoDeId: true,
         createdAt: true,
         cliente: { select: { nombre: true, cedula: true, ruta: { select: { id: true, nombre: true } } } },
       },
@@ -74,6 +75,7 @@ async function getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId
       select: {
         id: true,
         montoPrestado: true,
+        renovadoDeId: true,
         createdAt: true,
         cliente: { select: { nombre: true, cedula: true, ruta: { select: { id: true, nombre: true } } } },
       },
@@ -90,9 +92,11 @@ async function getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId
     items.push({
       tipo: 'prestamo',
       id: p.id,
-      // Usa el monto del MovimientoCapital si existe (correcto en renovaciones),
-      // o el montoPrestado como fallback (orgs sin capital configurado).
-      monto: mov?.monto ?? montoOverride ?? p.montoPrestado,
+      // Usa el monto del MovimientoCapital si existe (correcto en renovaciones).
+      // Sin movimiento: en una RENOVACION el efectivo entregado no es el monto
+      // nuevo (incluye el saldo viejo absorbido, que nunca salio de la caja);
+      // asumir montoPrestado inflaba la salida. En prestamo nuevo si es el monto.
+      monto: mov?.monto ?? montoOverride ?? (p.renovadoDeId ? 0 : p.montoPrestado),
       cliente: p.cliente?.nombre || null,
       clienteCedula: p.cliente?.cedula || null,
       rutaId: p.cliente?.ruta?.id || mov?.rutaId || null,
@@ -153,14 +157,29 @@ export async function GET(request, { params }) {
   })
   const rutaIds = rutas.map((r) => r.id)
 
+  // Esta pantalla es la caja POR RUTA: todo lo que se movio en las rutas del
+  // cobrador. Los desembolsos ya se buscaban por `creadoPorId OR rutaId`, pero los
+  // cobros solo por `cobradorId` — asimetria que dejaba la caja contradiciendose:
+  // al reasignar una ruta a un cobrador nuevo, su caja mostraba el PRESTADO de la
+  // ruta (y hasta el "inicio del dia" calculado con lo cobrado) pero Cobrado $0,
+  // porque los pagos los habia registrado el cobrador anterior o el dueño.
+  // Ahora los cobros usan el mismo criterio: registrados por el cobrador O de
+  // clientes de sus rutas.
+  const wherePagoCaja = {
+    fechaPago: { gte: inicio, lt: fin },
+    prestamo: { organizationId, estado: { not: 'cancelado' } },
+    OR: [
+      { cobradorId },
+      ...(rutaIds.length > 0 ? [{ prestamo: { cliente: { rutaId: { in: rutaIds } } } }] : []),
+    ],
+  }
+
   const [cobros, gastos, desembolsos, cierre, recargos, primerMovPorRuta] = await Promise.all([
-    // Cobros del día: pagos reales (excluye ajustes) hechos por el cobrador.
+    // Cobros del día: pagos reales (excluye ajustes) del cobrador o de sus rutas.
     prisma.pago.findMany({
       where: {
-        cobradorId,
-        fechaPago: { gte: inicio, lt: fin },
+        ...wherePagoCaja,
         tipo: { notIn: TIPOS_AJUSTE_PAGO },
-        prestamo: { organizationId, estado: { not: 'cancelado' } },
       },
       select: {
         montoPagado: true,
@@ -186,13 +205,11 @@ export async function GET(request, { params }) {
       where: { organizationId, cobradorId, fecha: { gte: inicio, lt: fin } },
       select: { id: true },
     }),
-    // Recargos aplicados por el cobrador en el día
+    // Recargos del día: aplicados por el cobrador o en clientes de sus rutas
     prisma.pago.aggregate({
       where: {
-        cobradorId,
-        fechaPago: { gte: inicio, lt: fin },
+        ...wherePagoCaja,
         tipo: 'recargo',
-        prestamo: { organizationId, estado: { not: 'cancelado' } },
       },
       _sum: { montoPagado: true },
       _count: { id: true },
@@ -401,12 +418,11 @@ export async function GET(request, { params }) {
         prestamos: { some: { estado: 'activo', esClavo: false } },
       },
     }),
+    // Clientes cobrados: mismo criterio que los cobros (cobrador O sus rutas)
     prisma.pago.findMany({
       where: {
-        cobradorId,
-        fechaPago: { gte: inicio, lt: fin },
+        ...wherePagoCaja,
         tipo: { notIn: TIPOS_AJUSTE_PAGO },
-        prestamo: { organizationId, estado: { not: 'cancelado' } },
       },
       select: { prestamo: { select: { clienteId: true } } },
       distinct: ['prestamoId'],
@@ -429,6 +445,36 @@ export async function GET(request, { params }) {
   const desgloseMetodoPago = Object.entries(desgloseMetodo)
     .map(([label, v]) => ({ label, monto: Math.round(v.monto), tipo: v.tipo }))
     .sort((a, b) => b.monto - a.monto)
+
+  // Renovaciones del dia: cuanto se renovo en total, cuanto de eso fue saldo viejo
+  // "absorbido" (la cartulina: el cliente ya lo debia, no entrego efectivo) y cuanto
+  // salio en mano. El absorbido NO va al efectivo del dia — no es plata que se movio —
+  // pero el prestamista necesita verlo para cuadrar contra su cuaderno.
+  const renovacionesDia = rutaIds.length > 0
+    ? await prisma.prestamo.findMany({
+      where: {
+        organizationId,
+        createdAt: { gte: inicio, lt: fin },
+        estado: { not: 'cancelado' },
+        renovadoDeId: { not: null },
+        cliente: { rutaId: { in: rutaIds } },
+      },
+      select: { id: true, montoPrestado: true },
+    })
+    : []
+  const entregadoPorPrestamo = new Map(desembolsos.map(d => [d.id, d.monto || 0]))
+  let renovadoValorTotal = 0
+  let renovadoEntregado = 0
+  for (const r of renovacionesDia) {
+    renovadoValorTotal += r.montoPrestado || 0
+    renovadoEntregado += entregadoPorPrestamo.get(r.id) ?? 0
+  }
+  const renovacionesInfo = {
+    cantidad: renovacionesDia.length,
+    valorTotal: Math.round(renovadoValorTotal),
+    entregadoEnMano: Math.round(renovadoEntregado),
+    absorbido: Math.round(Math.max(0, renovadoValorTotal - renovadoEntregado)),
+  }
 
   return Response.json({
     cobrador: { id: cobrador.id, nombre: cobrador.nombre },
