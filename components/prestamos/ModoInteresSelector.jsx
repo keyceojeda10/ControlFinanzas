@@ -134,6 +134,15 @@ export default function ModoInteresSelector({ modoInteres, onChange, calculo, mo
             </button>
           ))}
         </div>
+        {/* Salida para quien no encaja en las opciones comunes (ej: cuota que va
+            bajando). Abre la lista completa con los modos avanzados desplegados,
+            en vez de mandarlo a un modo equivocado. */}
+        {paso === 'q1' && (
+          <button type="button" onClick={() => { setVerAvanzados(true); setPaso('lista') }}
+            className="w-full text-center text-[11px] font-semibold mt-3 py-1.5" style={{ color: 'var(--color-text-muted)' }}>
+            Ninguna se parece — ver todos los modos
+          </button>
+        )}
       </div>
     )
   }
