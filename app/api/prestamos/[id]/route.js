@@ -729,6 +729,33 @@ export async function PATCH(request, { params }) {
       return Response.json({ error: 'El monto debe ser mayor a 0' }, { status: 400 })
     }
 
+    // ⚠️ Prestamo CON pagos: solo se corrigen datos que NO cambian el calculo.
+    // Recalcular monto/tasa/plazo/frecuencia/modo con pagos hechos re-cobraba
+    // interes sobre el interes (usaba saldoPendiente como capital nuevo) e inflaba
+    // la deuda —un no-op edit en un globo pasaba de $1.9M a $3.43M— y ademas dejaba
+    // la tabla de amortizacion desincronizada. Para cambiar los terminos con pagos
+    // existen: abono a capital, renovacion, o cancelar y crear de nuevo.
+    if (hayPagos) {
+      const dataCosmetico = {
+        seguro:         seguro !== undefined ? Boolean(seguro) : p.seguro,
+        montoSeguro:    montoSeguro != null ? Number(montoSeguro) : p.montoSeguro,
+        nombreProducto: nombreProducto !== undefined ? nombreProducto : p.nombreProducto,
+        diasSinCobro:   nuevosDiasSinCobro !== undefined ? nuevosDiasSinCobro : p.diasSinCobro,
+        ...(nuevoSocioId !== undefined && { socioId: nuevoSocioId || null }),
+      }
+      const actualizado = await prisma.prestamo.update({ where: { id }, data: dataCosmetico })
+      logActividad({
+        session,
+        accion: 'editar_prestamo',
+        entidadTipo: 'prestamo',
+        entidadId: id,
+        detalle: 'Préstamo editado (solo datos, ya tiene pagos)',
+        ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+      })
+      if (idempKey) setCachedMutation(idempKey, actualizado)
+      return Response.json(actualizado)
+    }
+
     // Recalcular cuota y total con los nuevos parámetros.
     const fechaInicioUsar = fechaInicioRaw ? new Date(fechaInicioRaw) : new Date(p.fechaInicio)
     const diasPlazoUsar   = diasPlazo ?? p.diasPlazo
@@ -819,9 +846,12 @@ export async function PATCH(request, { params }) {
       }
       const updated = await tx.prestamo.update({ where: { id }, data: dataUpdate })
 
-      // Regenerar tabla de amortizacion si el modo la usa y no hay pagos
-      if (!hayPagos && Array.isArray(calc.tablaAmortizacion) && calc.tablaAmortizacion.length > 0) {
-        await tx.cuotaAmortizacion.deleteMany({ where: { prestamoId: id } })
+      // Regenerar tabla de amortizacion. Aca ya no hay pagos (el caso con pagos
+      // retorna antes). Limpiamos SIEMPRE la tabla vieja y creamos la nueva solo
+      // si el modo la usa — asi, cambiar de un modo con tabla a uno sin tabla
+      // (ej. solo_interes -> fijo) no deja filas huerfanas.
+      await tx.cuotaAmortizacion.deleteMany({ where: { prestamoId: id } })
+      if (Array.isArray(calc.tablaAmortizacion) && calc.tablaAmortizacion.length > 0) {
         await tx.cuotaAmortizacion.createMany({
           data: calc.tablaAmortizacion.map((row) => ({
             prestamoId: id,

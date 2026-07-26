@@ -331,7 +331,7 @@ model Prestamo {
   totalAPagar    Float
   cuotaDiaria    Float
   frecuencia     String         @default("diario")
-  modoInteres    String         @default("proporcional") // fijo | unico | saldo | manual | lineal | lineal_dinamico | proporcional (legacy)
+  modoInteres    String         @default("fijo") // fijo | unico | saldo | manual | lineal | lineal_dinamico | solo_interes | proporcional (legacy). Default fijo: antes era 'proporcional' (legacy) y cualquier insert que omitiera el campo nacia legacy por accidente.
   nombreProducto String? // mercancia: nombre del articulo (gorra, reloj...). null en prestamos de dinero
   diaCobroSemana Int? // 0=dom..6=sab — ancla para frecuencia semanal/quincenal (opcional)
   diaCobroMes    Int? // 1..31 — ancla para frecuencia mensual/quincenal (opcional, clamp a ultimo dia)

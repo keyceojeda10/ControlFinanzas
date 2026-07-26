@@ -139,12 +139,15 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
     >
       <div className="space-y-4 pb-2">
         {hayPagos && (
-          <div className="rounded-[10px] px-3 py-2.5 text-[12px]"
+          <div className="rounded-[10px] px-3 py-2.5 text-[12px] leading-snug"
             style={{ background: 'color-mix(in srgb, var(--color-warning) 10%, transparent)', color: 'var(--color-warning)', border: '1px solid color-mix(in srgb, var(--color-warning) 25%, transparent)' }}>
-            Este préstamo ya tiene pagos. El monto no se puede cambiar. Puedes corregir tasa, plazo y frecuencia.
+            Este préstamo ya tiene pagos, así que solo puedes corregir datos que no cambian el cálculo (seguro, producto, socio). Para cambiar monto, tasa o plazo: usa <strong>abono a capital</strong>, <strong>renovar</strong>, o cancela y crea uno nuevo.
           </div>
         )}
 
+        {/* Campos de cálculo: solo si NO hay pagos. Con pagos, cambiarlos
+            recalculaba mal (re-cobraba interés) e inflaba la deuda. */}
+        {!hayPagos && (<>
         {/* Monto */}
         <div>
           <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Monto prestado</label>
@@ -276,6 +279,7 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
             />
           </div>
         )}
+        </>)}
 
         {/* Seguro */}
         <div className="flex items-center gap-3">
@@ -317,8 +321,8 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
           </div>
         )}
 
-        {/* Resumen en vivo */}
-        {resumen && (
+        {/* Resumen en vivo — solo cuando se editan campos de cálculo (sin pagos) */}
+        {!hayPagos && resumen && (
           <div className="rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] p-3 space-y-1.5">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Resumen nuevo</p>
             <div className="grid grid-cols-2 gap-2 text-sm">
