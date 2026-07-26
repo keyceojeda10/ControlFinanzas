@@ -20,6 +20,7 @@ import {
   regenerarTablaAmortizacionDinamica,
   recalcularTablaDesdeSaldo,
   recalcularTablaSoloInteresDesdeSaldo,
+  recalcularTablaSaldoDesdeSaldo,
   obtenerDiasPorPeriodo,
   calcularInteresesPendientes,
   obtenerProximaCuotaTabla,
@@ -355,8 +356,14 @@ export async function POST(request, { params }) {
         const fechaBase = ultimaPagada ? new Date(ultimaPagada.fechaEsperada) : new Date(prestamo.fechaInicio)
         const diasPeriodo = obtenerDiasPorPeriodo(prestamoActualizado.frecuencia)
 
-        const recalcFn = prestamoActualizado.modoInteres === 'solo_interes'
-          ? recalcularTablaSoloInteresDesdeSaldo
+        // Cada modo con tabla tiene su propia forma de recalcular tras el abono:
+        //  - solo_interes: interes por periodo + balloon
+        //  - saldo (frances): cuota fija, interes por MES (÷ PERIODOS_POR_MES)
+        //  - lineal/lineal_dinamico: capital parejo, interes por cobro
+        // Antes 'saldo' caia en la de lineal y sobrecobraba en semanal/quincenal.
+        const modoRecalc = prestamoActualizado.modoInteres
+        const recalcFn = modoRecalc === 'solo_interes' ? recalcularTablaSoloInteresDesdeSaldo
+          : modoRecalc === 'saldo' ? recalcularTablaSaldoDesdeSaldo
           : recalcularTablaDesdeSaldo
         const tablaRecalculada = recalcFn({
           saldoInicial: saldoCapitalRestante,
@@ -365,6 +372,7 @@ export async function POST(request, { params }) {
           primerNumeroPeriodo: filasFuturas[0].numeroPeriodo,
           fechaBase,
           diasPeriodo,
+          frecuencia: prestamoActualizado.frecuencia,
           interesAdelantado: !!prestamoActualizado.interesAdelantado,
         })
 

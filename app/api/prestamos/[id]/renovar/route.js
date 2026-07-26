@@ -187,7 +187,10 @@ export async function POST(request, { params }) {
         modoInteres:   modoInteresFinal,
         interesAdelantado: modoInteresFinal === 'solo_interes' && !!body.interesAdelantado,
         diasPlazo:     Number(diasPlazo),
-        fechaInicio:   new Date(fechaInicio),
+        // Fijar mediodia Colombia (T05:00Z) igual que la creacion normal. Con
+        // new Date('YYYY-MM-DD') (medianoche UTC) inicioDiaColombia lo corria al
+        // dia anterior -> el calendario/mora quedaba 1 dia adelantado.
+        fechaInicio:   new Date(`${String(fechaInicio).slice(0, 10)}T05:00:00.000Z`),
         fechaFin,
         seguro:        conSeguro,
         renovadoDeId:  prestamoId,
@@ -195,7 +198,10 @@ export async function POST(request, { params }) {
       },
     })
 
-    if (['lineal', 'solo_interes', 'lineal_dinamico'].includes(modoInteresFinal) && Array.isArray(calc.tablaAmortizacion) && calc.tablaAmortizacion.length > 0) {
+    // Persistir la tabla si el calculo la genero — vale para lineal, solo_interes,
+    // lineal_dinamico Y saldo (frances). La lista hardcodeada omitia 'saldo', asi
+    // que un saldo renovado quedaba sin tabla y degradaba a comportamiento plano.
+    if (Array.isArray(calc.tablaAmortizacion) && calc.tablaAmortizacion.length > 0) {
       await tx.cuotaAmortizacion.createMany({
         data: calc.tablaAmortizacion.map((p) => ({
           prestamoId: nuevo.id,
