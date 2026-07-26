@@ -605,7 +605,60 @@ export async function PATCH(request, { params }) {
       return Response.json({ error: 'La frecuencia diaria no admite día ancla' }, { status: 400 })
     }
 
-    const actualizado = await prisma.prestamo.update({ where: { id }, data: dataUpdate })
+    // El dia ancla pasa a ser la fuente de verdad. Limpiar cualquier
+    // proximoCobroManual viejo que estuviera pisando el calculo: sin esto,
+    // cambiar el dia de cobro NO movia la fecha mostrada porque
+    // calcularProximoCobro devuelve proximoCobroManual antes que el ancla
+    // (bug reportado: dia del mes 27 pero seguia saliendo "12 de ago").
+    dataUpdate.proximoCobroManual = null
+
+    // Prestamos con tabla de amortizacion (solo_interes/lineal/saldo): la tabla
+    // es la fuente de fechas, no el ancla en vivo. Hay que correr la fechaEsperada
+    // de las cuotas NO pagadas al nuevo dia. Solo aplica al ancla por dia del mes
+    // (mensual/quincenal), que es lo que calcularPrestamo sabe reprogramar.
+    const usaTabla = ['lineal', 'solo_interes', 'lineal_dinamico', 'saldo'].includes(p.modoInteres)
+      && Array.isArray(p.cuotasAmortizacion) && p.cuotasAmortizacion.length > 0
+    const anclaPorDiaMes = Number.isInteger(dataUpdate.diaCobroMes)
+      && (freq === 'mensual' || freq === 'quincenal')
+
+    let fechaPorPeriodo = null
+    if (usaTabla && anclaPorDiaMes) {
+      const recalc = calcularPrestamo({
+        montoPrestado: p.montoPrestado,
+        tasaInteres:   p.tasaInteres,
+        diasPlazo:     p.diasPlazo,
+        fechaInicio:   new Date(p.fechaInicio),
+        frecuencia:    freq,
+        modoInteres:   p.modoInteres,
+        ...(p.modoInteres === 'saldo' && p.cuotaDiaria > 0 && { cuotaManual: p.cuotaDiaria }),
+        interesAdelantado: p.interesAdelantado,
+        diaCobroMes:   dataUpdate.diaCobroMes,
+        ...(Number.isInteger(dataUpdate.diaCobroMes2) && { diaCobroMes2: dataUpdate.diaCobroMes2 }),
+        ...(Array.isArray(p.capitalExtra) && p.capitalExtra.length > 0 && { capitalExtra: p.capitalExtra }),
+      })
+      fechaPorPeriodo = new Map(
+        (recalc.tablaAmortizacion || []).map((r) => [r.numeroPeriodo, r.fechaEsperada])
+      )
+    }
+
+    const actualizado = await prisma.$transaction(async (tx) => {
+      const updated = await tx.prestamo.update({ where: { id }, data: dataUpdate })
+      if (fechaPorPeriodo) {
+        for (const fila of p.cuotasAmortizacion) {
+          // No tocar cuotas ya pagadas: su fecha historica se conserva.
+          const yaPagada = (fila.pagado || 0) >= fila.cuotaTotal
+          const nuevaFecha = fechaPorPeriodo.get(fila.numeroPeriodo)
+          if (!yaPagada && nuevaFecha) {
+            await tx.cuotaAmortizacion.update({
+              where: { id: fila.id },
+              data: { fechaEsperada: nuevaFecha },
+            })
+          }
+        }
+      }
+      return updated
+    })
+
     logActividad({
       session,
       accion: 'editar_prestamo',
@@ -724,6 +777,10 @@ export async function PATCH(request, { params }) {
       montoSeguro:    montoSeguro != null ? Number(montoSeguro) : p.montoSeguro,
       nombreProducto: nombreProducto !== undefined ? nombreProducto : p.nombreProducto,
       diasSinCobro:   nuevosDiasSinCobro !== undefined ? nuevosDiasSinCobro : p.diasSinCobro,
+      // La edicion recalcula el calendario completo (frecuencia, plazo, fecha,
+      // dia ancla). Un proximoCobroManual viejo pisaria ese nuevo calendario y
+      // dejaria "la fecha de proximo pago completamente equivocada" — se limpia.
+      proximoCobroManual: null,
       ...(nuevoSocioId !== undefined && { socioId: nuevoSocioId || null }),
       ...(Array.isArray(calc.capitalExtra) && calc.capitalExtra.length > 0
         ? { capitalExtra: calc.capitalExtra }
