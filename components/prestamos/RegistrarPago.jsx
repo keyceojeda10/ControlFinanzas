@@ -655,6 +655,21 @@ export default function RegistrarPago({
     tipo === 'intereses' ? 'Confirmar pago' :
     'Confirmar pago'
 
+  // Aviso de excedente: en modos simples (cuota fija/clasico) pagar mas que la
+  // cuota adelanta cuotas SIN perdonar interes (el interes ya viene en el total).
+  // Si el prestamista queria reducir capital, debe usar "A capital". El cliente
+  // reporto que no podia distinguir el destino del excedente: este aviso lo hace
+  // explicito y ofrece la eleccion. En modos con tabla la semantica es otra (no aplica).
+  const esModoSimpleExcedente = !['lineal', 'lineal_dinamico', 'solo_interes', 'saldo'].includes(prestamo?.modoInteres)
+  const cuotaRefExcedente = Math.round(cuotaDiaria ?? 0)
+  const excedentePago = Math.round(Number(monto) || 0) - cuotaRefExcedente
+  const mostrarAvisoExcedente =
+    esModoSimpleExcedente &&
+    (tipo === 'completo' || tipo === 'parcial') &&
+    cuotaRefExcedente > 0 &&
+    excedentePago > 100 &&
+    Math.round(Number(monto) || 0) < Math.round(saldoPendiente ?? 0)
+
   return (
     <Modal
       open={open}
@@ -924,6 +939,29 @@ export default function RegistrarPago({
               ))}
             </div>
           </div>
+
+          {/* Aviso de excedente sobre la cuota (modos simples): explicar destino */}
+          {mostrarAvisoExcedente && (
+            <div
+              className="px-3 py-2.5 rounded-[10px] border text-xs"
+              style={{ background: 'color-mix(in srgb, var(--color-info) 8%, transparent)', borderColor: 'color-mix(in srgb, var(--color-info) 25%, transparent)' }}
+            >
+              <p className="font-medium mb-1" style={{ color: 'var(--color-info)' }}>
+                Estás cobrando {formatMoney(excedentePago)} más que la cuota
+              </p>
+              <p className="text-[var(--color-text-muted)] mb-2">
+                Así como está, ese excedente <strong>adelanta las próximas cuotas</strong> (el interés ya viene incluido en el total, no se descuenta nada). Si querías que <strong>reduzca el capital y perdone parte del interés</strong>, cámbialo a abono a capital.
+              </p>
+              <button
+                type="button"
+                onClick={() => { setTipo('capital'); setDiasAbonados(null) }}
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-[8px] text-[11px] font-semibold transition-all cursor-pointer"
+                style={{ background: 'color-mix(in srgb, var(--color-purple) 12%, transparent)', color: 'var(--color-purple)', border: '1px solid color-mix(in srgb, var(--color-purple) 30%, transparent)' }}
+              >
+                Cambiar a abono a capital
+              </button>
+            </div>
+          )}
 
           {/* Preview para recargo/descuento */}
           {(tipo === 'recargo' || tipo === 'descuento') && Number(monto) > 0 && (
