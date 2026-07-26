@@ -75,7 +75,7 @@ export default function ResumenCalculo({ calculo, visible = true }) {
           </div>
         ))}
       </div>
-      {['lineal', 'lineal_dinamico', 'solo_interes'].includes(modoInteres) && (
+      {['lineal', 'lineal_dinamico', 'solo_interes', 'saldo'].includes(modoInteres) && (
         <TablaAmortizacion tabla={calculo?.tablaAmortizacion} frecuencia={frecuencia} />
       )}
     </div>

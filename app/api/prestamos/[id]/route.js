@@ -620,6 +620,8 @@ export async function PATCH(request, { params }) {
       && Array.isArray(p.cuotasAmortizacion) && p.cuotasAmortizacion.length > 0
     const anclaPorDiaMes = Number.isInteger(dataUpdate.diaCobroMes)
       && (freq === 'mensual' || freq === 'quincenal')
+    const anclaPorDiaSemana = Number.isInteger(dataUpdate.diaCobroSemana)
+      && (freq === 'semanal' || freq === 'quincenal')
 
     let fechaPorPeriodo = null
     if (usaTabla && anclaPorDiaMes) {
@@ -639,6 +641,19 @@ export async function PATCH(request, { params }) {
       fechaPorPeriodo = new Map(
         (recalc.tablaAmortizacion || []).map((r) => [r.numeroPeriodo, r.fechaEsperada])
       )
+    } else if (usaTabla && anclaPorDiaSemana) {
+      // Dia de la semana en modo con tabla: calcularPrestamo no reprograma por
+      // dia de la semana, asi que corremos cada fila FUTURA al dia objetivo
+      // (0=dom..6=sab), moviendola hacia adelante. Las fechas se guardan a las
+      // 05:00 UTC (medianoche Colombia), por eso getUTCDay da el dia calendario.
+      const DIA_MS = 24 * 60 * 60 * 1000
+      const target = ((dataUpdate.diaCobroSemana % 7) + 7) % 7
+      fechaPorPeriodo = new Map()
+      for (const fila of p.cuotasAmortizacion) {
+        const f = new Date(fila.fechaEsperada)
+        const delta = (target - f.getUTCDay() + 7) % 7
+        if (delta !== 0) fechaPorPeriodo.set(fila.numeroPeriodo, new Date(f.getTime() + delta * DIA_MS))
+      }
     }
 
     const actualizado = await prisma.$transaction(async (tx) => {

@@ -313,7 +313,7 @@ export default function CalculadoraPage() {
                 <Row k="Termina el" v={fmtFecha(calculo.fechaFin)} />
               </dl>
 
-              {['lineal', 'lineal_dinamico', 'solo_interes'].includes(modoInteres) && calculo.tablaAmortizacion?.length > 0 && (
+              {['lineal', 'lineal_dinamico', 'solo_interes', 'saldo'].includes(modoInteres) && calculo.tablaAmortizacion?.length > 0 && (
                 <div className="mt-4">
                   <TablaAmortizacion tabla={calculo.tablaAmortizacion} frecuencia={frecuencia} />
                 </div>

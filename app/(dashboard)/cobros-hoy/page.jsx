@@ -608,7 +608,7 @@ export default function CobrosHoyPage() {
                 <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Esta cuota incluye un abono extra a capital. Ya está incluido en el monto total.</p>
               </div>
             )}
-            {modalPago.cuotaNumero && ['lineal', 'lineal_dinamico', 'solo_interes'].includes(modalPago.modoInteres) && (
+            {modalPago.cuotaNumero && ['lineal', 'lineal_dinamico', 'solo_interes', 'saldo'].includes(modalPago.modoInteres) && (
               <p className="text-[10px] text-center" style={{ color: 'var(--color-text-muted)' }}>Cuota #{modalPago.cuotaNumero}</p>
             )}
             {modalPago.abonoConPendiente && (
