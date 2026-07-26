@@ -25,6 +25,17 @@ const hoyISO = () => getColombiaDate().toISOString().slice(0, 10)
 
 const DIAS_POR_PERIODO = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }
 
+// Modo de interes preferido del prestamista (lo elige una vez con el asistente y
+// queda por defecto). Guardado en el dispositivo para no repetir el test en cada
+// prestamo; se puede rehacer cuando quiera.
+const KEY_MODO_PREFERIDO = 'cf-modo-interes-preferido'
+const MODOS_VALIDOS = ['fijo', 'unico', 'solo_interes', 'saldo', 'manual', 'lineal', 'lineal_dinamico']
+const leerModoPreferido = () => {
+  if (typeof window === 'undefined') return null
+  try { const v = localStorage.getItem(KEY_MODO_PREFERIDO); return MODOS_VALIDOS.includes(v) ? v : null } catch { return null }
+}
+const guardarModoPreferido = (m) => { try { localStorage.setItem(KEY_MODO_PREFERIDO, m) } catch {} }
+
 // Card de seccion premium (definida fuera para evitar perdida de focus)
 const SectionCard = ({ icon, title, color = 'var(--color-accent)', children, accent }) => (
   <div
@@ -145,6 +156,7 @@ function NuevoPrestamo() {
   const [cuentaDesembolso, setCuentaDesembolso] = useState({ metodoPago: 'efectivo', metodoPagoId: null, plataforma: null })
   // Modo de interes: 'fijo' (clasico, default) | 'unico' | 'saldo' | 'manual'.
   const [modoInteres, setModoInteres] = useState('fijo')
+  const [modoPreferido, setModoPreferido] = useState(null)
   const [interesAdelantado, setInteresAdelantado] = useState(false)
   const [capitalExtra, setCapitalExtra] = useState([])
   const [cuotaManual, setCuotaManual] = useState('')
@@ -266,6 +278,13 @@ function NuevoPrestamo() {
   // Metodos de pago (cuentas de transferencia) para elegir de donde sale el desembolso.
   useEffect(() => {
     fetch('/api/metodos-pago').then(r => r.ok ? r.json() : []).then(d => setMetodosPago(Array.isArray(d) ? d : [])).catch(() => {})
+  }, [])
+
+  // Modo de interes preferido (elegido con el asistente): pre-seleccionarlo al
+  // montar para no repetir el test en cada prestamo. Se lee del dispositivo.
+  useEffect(() => {
+    const pref = leerModoPreferido()
+    if (pref) { setModoPreferido(pref); setModoInteres(pref) }
   }, [])
 
   // Ultimo prestamo del cliente para "Repetir condiciones".
@@ -1207,6 +1226,8 @@ function NuevoPrestamo() {
                 tasa={tasa}
                 frecuencia={frecuencia}
                 diasPlazo={plazo}
+                preferido={modoPreferido}
+                onGuardarPreferido={(m) => { guardarModoPreferido(m); setModoPreferido(m) }}
               />
 
               {cuotaManualActiva && (
