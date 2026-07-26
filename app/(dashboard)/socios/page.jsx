@@ -9,6 +9,7 @@ import EmptyState from '@/components/ui/EmptyState'
 import CardWaves from '@/components/ui/CardWaves'
 import { useCardPalettes } from '@/components/ui/tarjetaCredito'
 import SocioCard from '@/components/socios/SocioCard'
+import ParticipacionSocios from '@/components/socios/ParticipacionSocios'
 import { formatMoney } from '@/lib/i18n'
 import { useCountry } from '@/hooks/useCountry'
 
@@ -152,6 +153,10 @@ export default function SociosPage() {
                 </div>
               </div>
             </div>
+          )}
+
+          {hayDatos && (
+            <ParticipacionSocios socios={socios} totalIntereses={totalIntereses} />
           )}
 
           {socios.length === 0 ? (

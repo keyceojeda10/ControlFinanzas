@@ -99,6 +99,11 @@ model Organization {
   diasSinCobro      String?
   capitalEstricto   Boolean        @default(false)
   capitalEsEfectivo Boolean        @default(false)
+  // Meta de capital de la sociedad (estilo SAS). Si se fija, el % de cada socio
+  // = su aporte neto / metaSociedad. Si es null/0, el % se calcula sobre el
+  // total aportado por los socios. Es solo para el desglose de participacion;
+  // NO cambia como se reparte hoy la ganancia (por prestamo asignado).
+  metaSociedad      Float?
   modoAbreviado     Boolean        @default(false)
   ocultarSaldoWA    Boolean        @default(false)
   portalDatosCompletos Boolean      @default(false)
