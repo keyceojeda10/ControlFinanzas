@@ -170,14 +170,62 @@ async function procesarStatus(status) {
     console.log(`[WA Cloud] Status '${estado}' para wamid desconocido: ${wamid}`)
   } else if (estado === 'fallido') {
     console.error(`[WA Cloud] Mensaje fallido (wamid ${wamid}): ${errorEntrega}`)
+    await devolverIntentoSiThrottle(wamid, errorEntrega).catch(e =>
+      console.error('[WA Cloud] Error devolviendo intento:', e.message)
+    )
     await verificarTasaFallos(errorEntrega).catch(e =>
       console.error('[WA Cloud] Error verificando tasa fallos:', e.message)
     )
   }
 }
 
+// Meta acepta el envio con HTTP 200 y avisa del rechazo MINUTOS DESPUES por este
+// webhook — cuando el sender ya incremento intentosSeguimiento. Resultado medido:
+// un mensaje que Meta nunca entrego quemaba un intento como si hubiera llegado, y
+// 35 personas se quedaron sin recibir NADA (5 de ellas ya nos habian escrito).
+// Si el fallo es por throttle/politica, se devuelve el intento y se reprograma.
+async function devolverIntentoSiThrottle(wamid, errorEntrega) {
+  const codigo = Number((String(errorEntrega || '').match(/^(\d+)/) || [])[1])
+  if (!CODIGOS_THROTTLE.has(codigo)) return
+
+  const conv = await prisma.botConversacion.findFirst({
+    where: { wamid },
+    select: { botLeadId: true },
+  })
+  if (!conv?.botLeadId) return
+
+  const lead = await prisma.botLead.findUnique({
+    where: { id: conv.botLeadId },
+    select: { id: true, nombre: true, intentosSeguimiento: true, estado: true },
+  })
+  if (!lead) return
+  // Solo tiene sentido en leads todavia en juego.
+  if (!['contactado', 'interesado'].includes(lead.estado)) return
+
+  const intentos = Math.max(0, (lead.intentosSeguimiento || 0) - 1)
+  await prisma.botLead.update({
+    where: { id: lead.id },
+    data: {
+      intentosSeguimiento: intentos,
+      // Reintentar mañana, no de una: el throttle de Meta es por usuario y
+      // reintentar en minutos lo vuelve a gatillar (y castiga la reputacion).
+      proximoSeguimiento: new Date(Date.now() + 24 * 3600000),
+    },
+  })
+  console.warn(`[WA Cloud] Throttle ${codigo} en ${lead.nombre}: intento devuelto (${lead.intentosSeguimiento} -> ${intentos}), reintento en 24h`)
+}
+
 let ultimaAlertaFallos = 0
 let ultimaAlertaCorte = 0
+
+// Umbrales de la alerta de fallos de entrega. Se dispara por cualquiera de los dos.
+const UMBRAL_TASA_FALLOS = 0.15    // 15% en 24h (antes 30%: inalcanzable)
+const UMBRAL_FALLOS_ABSOLUTO = 15  // o 15 mensajes perdidos en 24h, sin importar %
+
+// Codigos de Meta que significan "no lo entregue por politica/throttle", NO "el
+// numero no existe". El mensaje se puede volver a intentar mas adelante, asi que
+// NO debe consumir un intento de seguimiento.
+const CODIGOS_THROTTLE = new Set([131049, 130472, 131050])
 
 // Codigos que significan "Meta te corto", no "ese numero no existe".
 // Estos NO pueden esperar a que falle el 30% del trafico: cuando aparecen, el
@@ -223,7 +271,11 @@ async function verificarTasaFallos(errorEntrega) {
 
   if (total < 5) return
   const tasaFallo = fallidos / total
-  if (tasaFallo < 0.3) return
+  // La regla era "solo si falla el 30% en 24h". Medido, la tasa real ronda el
+  // 8-10%, asi que la alerta NUNCA se disparo (cero invocaciones en todo el
+  // historial) ni siquiera con 61 mensajes perdidos en una semana. Ahora salta
+  // por tasa O por volumen absoluto: 15 fallos en un dia ya es algo que mirar.
+  if (tasaFallo < UMBRAL_TASA_FALLOS && fallidos < UMBRAL_FALLOS_ABSOLUTO) return
 
   ultimaAlertaFallos = Date.now()
   const pct = Math.round(tasaFallo * 100)
