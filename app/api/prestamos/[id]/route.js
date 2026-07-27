@@ -622,8 +622,19 @@ export async function PATCH(request, { params }) {
     // (mensual/quincenal), que es lo que calcularPrestamo sabe reprogramar.
     const usaTabla = ['lineal', 'solo_interes', 'lineal_dinamico', 'saldo'].includes(p.modoInteres)
       && Array.isArray(p.cuotasAmortizacion) && p.cuotasAmortizacion.length > 0
-    const anclaPorDiaMes = Number.isInteger(dataUpdate.diaCobroMes)
-      && (freq === 'mensual' || freq === 'quincenal')
+    // MENSUAL se reprograma SIEMPRE, tenga dia fijo o quede en "Auto".
+    //
+    // Antes se exigia un dia del mes explicito, asi que un prestamista con el
+    // campo en Auto podia entrar a esta pantalla, guardar, y las fechas se
+    // quedaban igual de mal. Y en Auto era justamente donde vivia el bug de las
+    // fechas corridas, porque la rama con dia fijo ya calculaba meses de
+    // calendario. O sea: los unicos que necesitaban el arreglo eran los unicos
+    // que no lo recibian.
+    //
+    // En Auto, calcularPrestamo usa el dia de la fechaInicio — que es lo que el
+    // prestamista da por hecho ("presto el 5, cobro los 5").
+    const anclaPorDiaMes = freq === 'mensual'
+      || (freq === 'quincenal' && Number.isInteger(dataUpdate.diaCobroMes))
     const anclaPorDiaSemana = Number.isInteger(dataUpdate.diaCobroSemana)
       && (freq === 'semanal' || freq === 'quincenal')
 
