@@ -442,7 +442,11 @@ export async function PATCH(request, { params }) {
     if (!nuevaFechaInicioRaw) {
       return Response.json({ error: 'La nueva fecha de inicio es requerida' }, { status: 400 })
     }
-    const nuevaFechaInicio = new Date(nuevaFechaInicioRaw)
+    // Mismo convenio que al crear y al renovar: medianoche de Bogota (T05:00Z).
+    // `new Date('2026-07-05')` a secas es medianoche UTC, o sea las 7pm del dia
+    // ANTERIOR en Bogota, y ahi todo el sistema (mora, proximo cobro, caja) lee
+    // el prestamo como si hubiera arrancado un dia antes del que eligio el usuario.
+    const nuevaFechaInicio = new Date(`${String(nuevaFechaInicioRaw).slice(0, 10)}T05:00:00.000Z`)
     if (isNaN(nuevaFechaInicio.getTime())) {
       return Response.json({ error: 'Fecha inválida' }, { status: 400 })
     }
@@ -772,7 +776,13 @@ export async function PATCH(request, { params }) {
     }
 
     // Recalcular cuota y total con los nuevos parámetros.
-    const fechaInicioUsar = fechaInicioRaw ? new Date(fechaInicioRaw) : new Date(p.fechaInicio)
+    // Mismo convenio que al crear y al renovar: medianoche de Bogota (T05:00Z).
+    // Esta variable ademas se GUARDA en la base, asi que si aca se usara
+    // `new Date(string)` (medianoche UTC) el prestamo quedaria almacenado con un
+    // convenio distinto al de creacion y el sistema lo leeria un dia antes.
+    const fechaInicioUsar = fechaInicioRaw
+      ? new Date(`${String(fechaInicioRaw).slice(0, 10)}T05:00:00.000Z`)
+      : new Date(p.fechaInicio)
     const diasPlazoUsar   = diasPlazo ?? p.diasPlazo
     const frecuenciaUsar  = frecuencia ?? p.frecuencia
     const modoInteresUsar = modoInteres ?? p.modoInteres

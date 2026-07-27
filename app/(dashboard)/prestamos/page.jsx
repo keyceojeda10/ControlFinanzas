@@ -330,9 +330,12 @@ export default function PrestamosPage() {
     try {
       const params = new URLSearchParams()
       if (q) params.set('buscar', q)
-      // "mora" no es un estado en BD — pedimos activos y filtramos client-side
+      // "mora" no es un estado en BD: pedimos activos y que el server filtre por
+      // mora con soloMora=1. Antes se filtraba aca, sobre la pagina ya recortada,
+      // asi que los morosos de la pagina 2 en adelante no se veian nunca.
       const apiEstado = est === 'mora' ? 'activo' : est
       if (apiEstado) params.set('estado', apiEstado)
+      if (est === 'mora') params.set('soloMora', '1')
       if (frec) params.set('frecuencia', frec)
       if (ruta) params.set('rutaId', ruta)
       if (creador) params.set('creadoPorId', creador)
@@ -347,8 +350,9 @@ export default function PrestamosPage() {
       if (!res.ok) throw new Error()
       const data = await res.json()
       if (data.offline) throw new Error('offline')
-      let items = data.prestamos
-      if (est === 'mora') items = items.filter((pr) => pr.diasMora > 0)
+      // El server ya filtro por mora (soloMora=1) y paginó sobre el resultado:
+      // filtrar de nuevo aca recortaria la pagina que acaba de llegar.
+      const items = data.prestamos
       setPrestamos(items)
       setTotal(data.total)
       setTotalPages(data.totalPages)
@@ -433,7 +437,14 @@ export default function PrestamosPage() {
     fetchPrestamos(buscar, estado, page, { soft: true, ...filtrosExtra })
   }, [lastSyncedAt, fetchPrestamos, buscar, estado, frecuencia, rutaId, renovacion, modoInteres, page]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const enMoraCount = prestamos.filter((p) => p.diasMora > 0).length
+  // Contar la mora sobre `prestamos` solo es exacto si tenemos toda la cartera
+  // en memoria: con paginacion eso es UNA pagina y el numero sale corto (con 97
+  // prestamos en 2 paginas decia "3 en mora" habiendo mas en la pagina 2). En el
+  // filtro "En mora" el total que manda el server ya es el conteo real.
+  const enMoraCount = estado === 'mora'
+    ? total
+    : prestamos.filter((p) => p.diasMora > 0).length
+  const conteoMoraExacto = estado === 'mora' || totalPages <= 1
 
   // El servidor ya filtra por frecuencia (ver fetchPrestamos). En offline el
   // cache tambien la aplica. Se mantiene un filtro client-side defensivo por si
@@ -450,8 +461,21 @@ export default function PrestamosPage() {
           <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Préstamos</h1>
           <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
             <span className="font-mono-display">{loading ? '...' : `${total} préstamo${total !== 1 ? 's' : ''}${frecuencia ? ' ' + (FRECUENCIAS.find((f) => f.value === frecuencia)?.label.toLowerCase()) : ''}`}</span>
-            {!frecuencia && enMoraCount > 0 && (
+            {/* En el filtro "En mora" el total de arriba ya es el conteo: no se repite.
+                Fuera de el, solo se muestra el numero cuando es exacto; si la lista
+                esta paginada seria una cuenta corta, asi que se ofrece el atajo al
+                filtro en vez de una cifra que subestima la mora real. */}
+            {!frecuencia && estado !== 'mora' && enMoraCount > 0 && conteoMoraExacto && (
               <span className="ml-2 text-[var(--color-danger)]">· <span className="font-mono-display">{enMoraCount}</span> en mora</span>
+            )}
+            {!frecuencia && estado !== 'mora' && !conteoMoraExacto && (
+              <button
+                type="button"
+                onClick={() => setEstado('mora')}
+                className="ml-2 text-[var(--color-danger)] underline underline-offset-2"
+              >
+                · ver préstamos en mora
+              </button>
             )}
           </p>
           <Link

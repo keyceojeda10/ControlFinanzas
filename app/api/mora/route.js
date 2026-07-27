@@ -55,6 +55,18 @@ export async function GET(request) {
         pagos: {
           select: { id: true, montoPagado: true, fechaPago: true, tipo: true },
         },
+        // SIN esto, tieneTablaAmortizacion() daba false para los modos que SI
+        // tienen tabla (Decreciente, Globo, Dinamico, Sobre saldo) y la mora se
+        // calculaba por el camino de los prestamos simples: repartiendo lo pagado
+        // entre `cuotaDiaria`, que en esos modos es solo la PRIMERA cuota. En
+        // Decreciente esa cuota es la mas alta de todas, asi que la mora salia mal.
+        cuotasAmortizacion: {
+          orderBy: { numeroPeriodo: 'asc' },
+          select: {
+            numeroPeriodo: true, cuotaTotal: true, interes: true, capital: true,
+            pagado: true, interesPagado: true, fechaEsperada: true,
+          },
+        },
       },
     }),
     prisma.organization.findUnique({

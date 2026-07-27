@@ -50,6 +50,14 @@ export async function GET(request) {
     : null
   const page      = searchParams.get('page') ? Number(searchParams.get('page')) : null
   const limit     = Math.min(Number(searchParams.get('limit')) || 50, 100)
+  // "En mora" no es un estado en BD: sale de calcularDiasMora, que corre en JS
+  // (depende de dias sin cobro, festivos y la tabla de amortizacion). Antes la
+  // lista pedia una PAGINA de activos y filtraba por mora en el navegador, asi
+  // que solo veias los morosos que cayeran en esa pagina: con 97 prestamos en 2
+  // paginas, los de la pagina 2 eran invisibles — y el contador, calculado sobre
+  // el mismo arreglo ya filtrado, mentia igual. Con soloMora el filtro se evalua
+  // en el server sobre TODOS los activos y despues se pagina el resultado.
+  const soloMora  = searchParams.get('soloMora') === '1'
 
   // Cobrador sin ruta asignada no ve nada (previene fuga de datos multi-tenant)
   if (rol === 'cobrador' && rutaIds.length === 0) {
@@ -70,6 +78,9 @@ export async function GET(request) {
     organizationId,
     ...(clienteId && { clienteId }),
     ...(estado    ? { estado } : rol === 'cobrador' ? { estado: { not: 'pendiente_aprobacion' } } : {}),
+    // Solo un prestamo activo puede estar en mora. Se fuerza aqui para que el
+    // filtro sea correcto aunque el llamador no mande estado.
+    ...(soloMora && { estado: 'activo' }),
     ...(frecuencia && { frecuencia }),
     ...(creadoPorId && { creadoPorId }),
     ...(renovacion === 'si' && { renovadoDeId: { not: null } }),
@@ -108,7 +119,10 @@ export async function GET(request) {
     orderBy: [
       { createdAt: 'desc' },
     ],
-    ...(page != null && { take: limit, skip: (page - 1) * limit }),
+    // Con soloMora no se pagina en SQL: hay que calcular la mora de todos los
+    // activos antes de saber cuales entran. Se pagina abajo, ya filtrado. Es el
+    // mismo costo que /api/mora, que tambien recorre todos los activos.
+    ...(page != null && !soloMora && { take: limit, skip: (page - 1) * limit }),
   })
 
   // Config org para días sin cobro + festivos
@@ -183,6 +197,22 @@ export async function GET(request) {
   // Orden cronologico puro: prestamo mas nuevo arriba (ya viene del Prisma orderBy).
   // El cliente que quiera ver los prestamos agrupados por persona usa el filtro
   // "Agrupar por cliente" en el frontend, que reordena ahi.
+
+  // Filtro de mora: ya calculado por prestamo, se aplica aqui y recien despues
+  // se pagina, para que el total y la lista cubran TODA la cartera y no una pagina.
+  if (soloMora) {
+    const enMora = resultado.filter((p) => p.diasMora > 0)
+    if (page != null) {
+      const desde = (page - 1) * limit
+      return Response.json({
+        prestamos: enMora.slice(desde, desde + limit),
+        total: enMora.length,
+        page,
+        totalPages: Math.max(1, Math.ceil(enMora.length / limit)),
+      })
+    }
+    return Response.json(enMora)
+  }
 
   // If paginated, return object with total; otherwise array for backward compat
   if (page != null) {

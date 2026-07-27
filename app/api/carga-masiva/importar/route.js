@@ -162,7 +162,13 @@ export async function POST(request) {
                 frecuencia: p.frecuencia || 'diario',
                 modoInteres: 'fijo',
                 diasPlazo: p.diasPlazo,
-                fechaInicio: new Date(p.fechaInicio),
+                // Mismo convenio que al crear un prestamo desde la app: medianoche
+                // de Bogota (T05:00Z). `new Date('2026-07-05')` a secas es medianoche
+                // UTC, o sea las 7pm del dia ANTERIOR en Bogota, y todo el sistema
+                // (mora, proximo cobro, meta de caja) lee el prestamo como si hubiera
+                // arrancado un dia antes del que trae el Excel. normalizarFecha() ya
+                // garantiza el formato YYYY-MM-DD, asi que el slice es defensivo.
+                fechaInicio: new Date(`${String(p.fechaInicio).slice(0, 10)}T05:00:00.000Z`),
                 fechaFin,
               },
             })
