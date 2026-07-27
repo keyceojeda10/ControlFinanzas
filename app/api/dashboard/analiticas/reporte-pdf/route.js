@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { formatMoney } from '@/lib/i18n'
-import { calcularDiasMora } from '@/lib/calculos'
+import { calcularDiasMora, calcularGananciaNeta } from '@/lib/calculos'
 import PDFDocument from 'pdfkit'
 import { PassThrough } from 'stream'
 
@@ -46,10 +46,22 @@ export async function GET() {
     prestamosTotal,
   ] = await Promise.all([
     prisma.organization.findUnique({ where: { id: organizationId }, select: { nombre: true } }),
+    // Se separa cada pago en su parte de INTERES y su parte de CAPITAL, con el
+    // mismo criterio que /api/dashboard/analiticas, para que el PDF y la pantalla
+    // muestren la misma ganancia. `total` solo, sin ese desglose, llevaba a
+    // reportar como ganancia la devolucion del capital propio.
     prisma.$queryRaw`
-      SELECT DATE_FORMAT(fechaPago, '%Y-%m') as mes, SUM(montoPagado) as total, COUNT(*) as cantidad
-      FROM Pago WHERE organizationId = ${organizationId} AND fechaPago >= ${fechaInicio}
-        AND tipo NOT IN ('recargo', 'descuento')
+      SELECT DATE_FORMAT(p.fechaPago, '%Y-%m') as mes,
+        SUM(p.montoPagado) as total,
+        COUNT(*) as cantidad,
+        SUM(CASE WHEN pr.totalAPagar > 0
+          THEN p.montoPagado * (pr.totalAPagar - pr.montoPrestado) / pr.totalAPagar ELSE 0 END) as interesGanado,
+        SUM(CASE WHEN pr.totalAPagar > 0
+          THEN p.montoPagado * pr.montoPrestado / pr.totalAPagar ELSE 0 END) as capitalRecuperado
+      FROM Pago p
+      JOIN Prestamo pr ON pr.id = p.prestamoId
+      WHERE p.organizationId = ${organizationId} AND p.fechaPago >= ${fechaInicio}
+        AND p.tipo NOT IN ('recargo', 'descuento')
       GROUP BY mes ORDER BY mes
     `,
     prisma.$queryRaw`
@@ -131,8 +143,13 @@ export async function GET() {
   const prestamoMap = Object.fromEntries(prestamosMensuales.map(p => [p.mes, p]))
   const mesActualKey = mesActual.toISOString().slice(0, 7)
   const gastosMesActual = Number(gastoMap[mesActualKey]?.total || 0)
-  const gananciaNetaMes = recaudadoMes - gastosMesActual
-  const roiMensual = capitalEnCalle > 0 ? ((gananciaNetaMes) / capitalEnCalle * 100) : 0
+  // GANANCIA = INTERES cobrado - gastos. `recaudado` incluye la devolucion del
+  // capital que el prestamista habia puesto, y recuperar plata propia no es
+  // ganancia: la formula vieja inflaba este numero varias veces y de el salia
+  // tambien el ROI del reporte. Mismo criterio que /api/dashboard/analiticas.
+  const interesGanadoMesActual = Number(pagoMap[mesActualKey]?.interesGanado || 0)
+  const gananciaNetaMes = calcularGananciaNeta({ interesCobrado: interesGanadoMesActual, gastos: gastosMesActual })
+  const roiMensual = capitalEnCalle > 0 ? (gananciaNetaMes / capitalEnCalle * 100) : 0
 
   // Mora
   const festivosFechas = festivos.map(f => f.fecha)

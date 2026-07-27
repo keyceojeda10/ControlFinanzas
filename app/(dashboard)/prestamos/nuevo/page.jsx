@@ -492,7 +492,13 @@ function NuevoPrestamo() {
 
   const clienteSeleccionado = clientes.find(c => c.id === clienteId) ?? null
 
+  // Sobre saldo con una cuota que no cubre ni el interes del primer periodo: el
+  // prestamo no amortiza nunca (el capital se queda quieto y todo se apila en la
+  // ultima cuota). No se deja avanzar hasta corregirla.
+  const cuotaInsuficiente = !!calculo?.cuotaInsuficiente
+
   const puedeAvanzarSubPaso = () => {
+    if (cuotaInsuficiente) return false
     if (subPaso === 0) {
       if (modo === 'mercancia') return Number(monto) > 0 && Number(precioVenta) > Number(monto) && Number(numCuotas) > 0
       return Number(monto) > 0
@@ -506,6 +512,7 @@ function NuevoPrestamo() {
   }
 
   const puedeAvanzarPaso = () => {
+    if (cuotaInsuficiente) return false
     if (paso === 0) return !!clienteId
     if (paso === 1) {
       if (clienteSeleccionado?.montoMaximoPrestamo > 0 && Number(monto) > clienteSeleccionado.montoMaximoPrestamo) return false
@@ -1251,6 +1258,50 @@ function NuevoPrestamo() {
                       ? 'Cuota fija definida por ti. La última cuota ajusta para cerrar el saldo.'
                       : 'Si defines una cuota, se usa en vez de la calculada. El interés se descuenta del saldo cada período.'}
                   </p>
+
+                  {/* La cuota no cubre ni el interes: el prestamo nunca se termina
+                      de pagar. Se explica con los numeros exactos en vez de dejar
+                      que el sistema arme una tabla imposible en silencio. */}
+                  {cuotaInsuficiente && (
+                    <div
+                      className="mt-3 rounded-xl border p-3"
+                      style={{
+                        background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)',
+                        borderColor: 'color-mix(in srgb, var(--color-danger) 30%, transparent)',
+                      }}
+                    >
+                      <p className="text-[12px] font-semibold" style={{ color: 'var(--color-danger)' }}>
+                        Con esa cuota la deuda nunca baja
+                      </p>
+                      <p className="text-[11px] mt-1" style={{ color: 'var(--color-text-secondary)' }}>
+                        El primer período genera{' '}
+                        <span className="font-mono-display font-semibold">{formatMoney(calculo.interesPrimerPeriodo)}</span>{' '}
+                        de interés. Si la cuota es menor, solo alcanza para intereses y el capital se queda igual.
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setCuotaManual(String(calculo.cuotaSugerida))}
+                          className="h-8 px-3 rounded-[10px] text-[11px] font-semibold"
+                          style={{ background: 'var(--color-accent)', color: '#1a1a2e' }}
+                        >
+                          Usar {formatMoney(calculo.cuotaSugerida)}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCuotaManual('')}
+                          className="h-8 px-3 rounded-[10px] text-[11px] font-semibold border"
+                          style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
+                        >
+                          Calcular automático
+                        </button>
+                      </div>
+                      <p className="text-[10px] mt-2" style={{ color: 'var(--color-text-muted)' }}>
+                        Mínimo para cubrir el interés: {formatMoney(calculo.cuotaMinima)}. Con{' '}
+                        {formatMoney(calculo.cuotaSugerida)} termina de pagar en el plazo elegido.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

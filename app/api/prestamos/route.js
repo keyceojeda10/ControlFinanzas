@@ -375,6 +375,19 @@ export async function POST(request) {
     diaCobroMes: diaCobroMesDb,
     diaCobroMes2: diaCobroMes2Db,
   })
+  // Sobre saldo con una cuota que no cubre ni el interes del primer periodo: el
+  // prestamo no amortiza nunca y la tabla degenera en un globo gigante. Se corta
+  // aca con los numeros que el prestamista necesita para corregir.
+  if (calc.cuotaInsuficiente) {
+    return Response.json({
+      error: `Esa cuota no alcanza a cubrir el interés. El primer período genera $${calc.interesPrimerPeriodo.toLocaleString('es-CO')} de interés, así que con una cuota menor la deuda nunca baja. Cuota mínima: $${calc.cuotaMinima.toLocaleString('es-CO')}. Para terminar de pagar en el plazo elegido: $${calc.cuotaSugerida.toLocaleString('es-CO')}.`,
+      cuotaInsuficiente: true,
+      interesPrimerPeriodo: calc.interesPrimerPeriodo,
+      cuotaMinima: calc.cuotaMinima,
+      cuotaSugerida: calc.cuotaSugerida,
+    }, { status: 400 })
+  }
+
   const { totalAPagar, cuotaDiaria, fechaFin } = calc
   const modoInteresFinal = calc.modoInteres  // 'manual' si hubo cuotaManual
 

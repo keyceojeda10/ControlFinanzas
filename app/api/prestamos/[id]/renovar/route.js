@@ -117,6 +117,15 @@ export async function POST(request, { params }) {
     ...(cuotaManualNum > 0 && { cuotaManual: cuotaManualNum }),
     ...(modoRenovacion === 'solo_interes' && { interesAdelantado: !!body.interesAdelantado }),
   })
+  // Ver la guardia equivalente en POST /api/prestamos: una cuota que no cubre el
+  // interes del primer periodo hace que el prestamo nunca amortice.
+  if (calc.cuotaInsuficiente) {
+    return Response.json({
+      error: `Esa cuota no alcanza a cubrir el interés. El primer período genera $${calc.interesPrimerPeriodo.toLocaleString('es-CO')} de interés, así que con una cuota menor la deuda nunca baja. Cuota mínima: $${calc.cuotaMinima.toLocaleString('es-CO')}. Para terminar de pagar en el plazo elegido: $${calc.cuotaSugerida.toLocaleString('es-CO')}.`,
+      cuotaInsuficiente: true,
+    }, { status: 400 })
+  }
+
   const { totalAPagar, cuotaDiaria, fechaFin } = calc
   const modoInteresFinal = calc.modoInteres
 

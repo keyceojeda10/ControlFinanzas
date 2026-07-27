@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
-import { calcularDiasMora } from '@/lib/calculos'
+import { calcularDiasMora, calcularGananciaNeta } from '@/lib/calculos'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -199,7 +199,21 @@ export async function GET() {
   const capitalEnCalle = prestamosActivosDetalle.reduce((s, p) => s + Number(p.montoPrestado), 0)
   const porCobrarTotal = prestamosActivosDetalle.reduce((s, p) => s + (Number(p.totalAPagar) - Number(p.totalPagado || 0)), 0)
   const interesEnCartera = prestamosActivosDetalle.reduce((s, p) => s + (Number(p.totalAPagar) - Number(p.montoPrestado)), 0)
-  const roiMensual = capitalEnCalle > 0 ? ((recaudadoMes - gastosMesActual) / capitalEnCalle * 100) : 0
+
+  // GANANCIA = INTERES cobrado - gastos. NUNCA recaudado - gastos.
+  //
+  // `recaudado` es todo lo que entro por caja, y la mayor parte es el CAPITAL
+  // que el prestamista habia puesto: recuperar plata propia no es ganancia.
+  // Con $10M cobrados de los cuales $8M son capital y $2M interes, y $150k de
+  // gastos, la ganancia real es $1.850.000 — la formula vieja mostraba
+  // $9.850.000, mas de 5 veces inflada. Y es el numero por el que el dueño
+  // decide si retira utilidades.
+  //
+  // El dato correcto ya se calculaba en tendenciaMensual (interesGanado, el
+  // pedazo de interes de cada pago); solo que esta tarjeta y el ROI no lo usaban.
+  const interesGanadoMesActual = Number(interesMap[mesActualKey]?.interesGanado || 0)
+  const gananciaNetaMes = calcularGananciaNeta({ interesCobrado: interesGanadoMesActual, gastos: gastosMesActual })
+  const roiMensual = capitalEnCalle > 0 ? (gananciaNetaMes / capitalEnCalle * 100) : 0
 
   // Mora analysis with client details
   const festivosFechas = festivos.map(f => f.fecha)
@@ -248,7 +262,7 @@ export async function GET() {
   return NextResponse.json({
     resumen: {
       roiMensual: Math.round(roiMensual * 10) / 10,
-      gananciaNetaMes: recaudadoMes - gastosMesActual,
+      gananciaNetaMes,
       recaudadoMes,
       gastosMes: gastosMesActual,
       capitalEnCalle,
