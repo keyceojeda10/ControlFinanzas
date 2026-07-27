@@ -143,7 +143,7 @@ export async function POST(request) {
               errores.push(`${grupo.cliente.nombre}: monto o plazo inválido`)
               continue
             }
-            const { totalAPagar, cuotaDiaria, fechaFin } = calcularPrestamo({
+            const { totalAPagar, cuotaDiaria, fechaFin, numPeriodos, diasPeriodo } = calcularPrestamo({
               montoPrestado: p.montoPrestado,
               tasaInteres: p.tasaInteres ?? 0,
               diasPlazo: p.diasPlazo,
@@ -161,7 +161,10 @@ export async function POST(request) {
                 cuotaDiaria,
                 frecuencia: p.frecuencia || 'diario',
                 modoInteres: 'fijo',
-                diasPlazo: p.diasPlazo,
+                // Plazo REAL del calculo (ver renovar/route.js): numPeriodos
+                // redondea hacia arriba, asi que 180 dias semanales son 26 cobros
+                // = 182 dias. Guardar 180 dejaba el plazo mas corto que el dinero.
+                diasPlazo: numPeriodos * diasPeriodo,
                 // Mismo convenio que al crear un prestamo desde la app: medianoche
                 // de Bogota (T05:00Z). `new Date('2026-07-05')` a secas es medianoche
                 // UTC, o sea las 7pm del dia ANTERIOR en Bogota, y todo el sistema

@@ -195,7 +195,14 @@ export async function POST(request, { params }) {
         frecuencia:    freq,
         modoInteres:   modoInteresFinal,
         interesAdelantado: modoInteresFinal === 'solo_interes' && !!body.interesAdelantado,
-        diasPlazo:     Number(diasPlazo),
+        // El plazo REAL sale del calculo, no del formulario. Con cuota manual el
+        // plazo se auto-extiende (ver calcularPrestamo) y guardar el valor pedido
+        // dejaba el prestamo contradiciendose: un caso real quedo con "180 dias"
+        // (12 cobros) y un total que exige 22. calcularProximoCobro usa el plazo
+        // como tope, asi que al pagar la cuota 12 el prestamo desaparecia de los
+        // cobros debiendo todavia $3.000.000. Crear siempre lo guardo asi; renovar,
+        // editar y carga masiva se habian quedado atras.
+        diasPlazo:     calc.numPeriodos * calc.diasPeriodo,
         // Fijar mediodia Colombia (T05:00Z) igual que la creacion normal. Con
         // new Date('YYYY-MM-DD') (medianoche UTC) inicioDiaColombia lo corria al
         // dia anterior -> el calendario/mora quedaba 1 dia adelantado.

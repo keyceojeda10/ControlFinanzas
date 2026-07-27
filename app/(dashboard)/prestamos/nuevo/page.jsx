@@ -1489,6 +1489,33 @@ function NuevoPrestamo() {
                         )}
                       </div>
 
+                      {/* La cuota fijada no cubre el interes de la tasa en el plazo
+                          pedido, asi que el plazo se alarga solo. Antes pasaba en
+                          silencio y el prestamista se enteraba con el prestamo hecho. */}
+                      {calculo?.plazoExtendido && (
+                        <div
+                          className="mt-2 rounded-[12px] p-3"
+                          style={{
+                            background: 'color-mix(in srgb, var(--color-warning) 12%, transparent)',
+                            border: '1px solid color-mix(in srgb, var(--color-warning) 30%, transparent)',
+                          }}
+                        >
+                          <p className="text-[12px] font-semibold" style={{ color: 'var(--color-warning)' }}>
+                            El plazo se alarga para cubrir el interés
+                          </p>
+                          <p className="text-[11px] mt-1" style={{ color: 'var(--color-text-secondary)' }}>
+                            Con una cuota de {formatMoney(calculo.cuotaDiaria)} y una tasa del {tasa}%, se necesitan{' '}
+                            <span className="font-semibold">{calculo.periodosReales} cobros</span> ({calculo.diasReales} días)
+                            en vez de los {calculo.periodosPedidos} que pediste. Por eso el total es{' '}
+                            {formatMoney(calculo.totalAPagar)} y no {formatMoney(calculo.totalSinExtender)}.
+                          </p>
+                          <p className="text-[10px] mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
+                            Si querías {formatMoney(calculo.totalSinExtender)} en {calculo.periodosPedidos} cobros, baja la tasa.
+                            Si querías terminar en ese plazo, sube la cuota.
+                          </p>
+                        </div>
+                      )}
+
                       {/* Info calculada — read only */}
                       <div className="space-y-0 mt-1 pt-1" style={{ borderTop: '1px dashed color-mix(in srgb, var(--color-border) 70%, transparent)' }}>
                         <div className="flex items-center justify-between py-1.5">

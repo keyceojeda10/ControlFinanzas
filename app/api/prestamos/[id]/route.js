@@ -798,7 +798,9 @@ export async function PATCH(request, { params }) {
     const calc = calcularPrestamo({
       montoPrestado: montoParaCalculo,
       tasaInteres:   tasaInteres ?? p.tasaInteres,
-      diasPlazo:     diasPlazoUsar,
+      // Plazo REAL del calculo, no el pedido: con cuota manual se auto-extiende.
+      // Ver el comentario extenso en renovar/route.js.
+      diasPlazo:     calc.numPeriodos * calc.diasPeriodo,
       fechaInicio:   fechaInicioUsar,
       frecuencia:    frecuenciaUsar,
       modoInteres:   modoInteresUsar,
@@ -821,7 +823,9 @@ export async function PATCH(request, { params }) {
     const dataUpdate = {
       montoPrestado: montoNuevo,
       tasaInteres:   tasaInteres ?? p.tasaInteres,
-      diasPlazo:     diasPlazoUsar,
+      // Plazo REAL del calculo, no el pedido: con cuota manual se auto-extiende.
+      // Ver el comentario extenso en renovar/route.js.
+      diasPlazo:     calc.numPeriodos * calc.diasPeriodo,
       fechaInicio:   fechaInicioUsar,
       fechaFin:      calc.fechaFin,
       frecuencia:    frecuenciaUsar,
