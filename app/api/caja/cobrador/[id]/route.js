@@ -141,7 +141,7 @@ export async function GET(request, { params }) {
     }),
     prisma.organization.findUnique({
       where: { id: organizationId },
-      select: { capitalEsEfectivo: true },
+      select: { capitalEsEfectivo: true, renovacionesEnCobrado: true },
     }),
   ])
   if (!cobrador) {
@@ -256,9 +256,41 @@ export async function GET(request, { params }) {
     return acc + Math.round((r.saldoCapital || 0) - delta)
   }, 0)
 
+  // Renovaciones del dia: cuanto se renovo en total, cuanto de eso fue saldo viejo
+  // "absorbido" (la cartulina: el cliente ya lo debia, no entrego efectivo) y cuanto
+  // salio en mano.
+  const renovacionesDia = rutaIds.length > 0
+    ? await prisma.prestamo.findMany({
+      where: {
+        organizationId,
+        createdAt: { gte: inicio, lt: fin },
+        estado: { not: 'cancelado' },
+        renovadoDeId: { not: null },
+        cliente: { rutaId: { in: rutaIds } },
+      },
+      select: { id: true, montoPrestado: true },
+    })
+    : []
+  const entregadoPorPrestamo = new Map(desembolsos.map(d => [d.id, d.monto || 0]))
+  let renovadoValorTotal = 0
+  let renovadoEntregado = 0
+  for (const r of renovacionesDia) {
+    renovadoValorTotal += r.montoPrestado || 0
+    renovadoEntregado += entregadoPorPrestamo.get(r.id) ?? 0
+  }
+  const absorbidoRenovaciones = Math.round(Math.max(0, renovadoValorTotal - renovadoEntregado))
+
+  // Vista BRUTA (opcional por negocio): el saldo absorbido se cuenta como cobrado
+  // Y como prestado. Es como piensa el prestamista de gota a gota ("recogi la
+  // cartulina y presté una nueva") y es lo que hace la competencia. El efectivo del
+  // dia sale IGUAL en las dos vistas porque se suma a ambos lados; sumarlo solo al
+  // cobrado inflaria la caja.
+  const brutoRenovaciones = !!org?.renovacionesEnCobrado
+  const ajusteBruto = brutoRenovaciones ? absorbidoRenovaciones : 0
+
   // Totales del día.
-  const cobradoDia = Math.round(cobros.reduce((a, p) => a + (p.montoPagado || 0), 0))
-  const prestadoDia = Math.round(desembolsos.reduce((a, d) => a + (d.monto || 0), 0))
+  const cobradoDia = Math.round(cobros.reduce((a, p) => a + (p.montoPagado || 0), 0)) + ajusteBruto
+  const prestadoDia = Math.round(desembolsos.reduce((a, d) => a + (d.monto || 0), 0)) + ajusteBruto
   const gastosDia = Math.round(gastos.reduce((a, g) => a + (g.monto || 0), 0))
   // Gastos aún PENDIENTES: no han bajado el saldoCapital de la ruta todavía.
   // Los APROBADOS ya descontaron del saldoCapital (ver fix en gastos/[id]).
@@ -296,6 +328,20 @@ export async function GET(request, { params }) {
 
   for (const d of desembolsos) bucket(d.rutaId).prestadoDia += d.monto || 0
   for (const p of cobros) bucket(p.prestamo?.cliente?.ruta?.id).cobradoDia += p.montoPagado || 0
+
+  // Vista bruta: el saldo absorbido de cada renovacion suma a AMBOS lados en la
+  // ruta del cliente, igual que en los totales (si no, la suma por ruta no cuadra
+  // con el total de arriba).
+  if (brutoRenovaciones && renovacionesDia.length > 0) {
+    const rutaPorPrestamo = new Map(desembolsos.map(d => [d.id, d.rutaId]))
+    for (const r of renovacionesDia) {
+      const absorbido = Math.max(0, (r.montoPrestado || 0) - (entregadoPorPrestamo.get(r.id) ?? 0))
+      if (absorbido <= 0) continue
+      const b = bucket(rutaPorPrestamo.get(r.id) ?? null)
+      b.cobradoDia += absorbido
+      b.prestadoDia += absorbido
+    }
+  }
 
   // Seguros del día por ruta (préstamos con seguro creados hoy). Se consulta aparte
   // para tener el montoSeguro real por préstamo.
@@ -446,34 +492,13 @@ export async function GET(request, { params }) {
     .map(([label, v]) => ({ label, monto: Math.round(v.monto), tipo: v.tipo }))
     .sort((a, b) => b.monto - a.monto)
 
-  // Renovaciones del dia: cuanto se renovo en total, cuanto de eso fue saldo viejo
-  // "absorbido" (la cartulina: el cliente ya lo debia, no entrego efectivo) y cuanto
-  // salio en mano. El absorbido NO va al efectivo del dia — no es plata que se movio —
-  // pero el prestamista necesita verlo para cuadrar contra su cuaderno.
-  const renovacionesDia = rutaIds.length > 0
-    ? await prisma.prestamo.findMany({
-      where: {
-        organizationId,
-        createdAt: { gte: inicio, lt: fin },
-        estado: { not: 'cancelado' },
-        renovadoDeId: { not: null },
-        cliente: { rutaId: { in: rutaIds } },
-      },
-      select: { id: true, montoPrestado: true },
-    })
-    : []
-  const entregadoPorPrestamo = new Map(desembolsos.map(d => [d.id, d.monto || 0]))
-  let renovadoValorTotal = 0
-  let renovadoEntregado = 0
-  for (const r of renovacionesDia) {
-    renovadoValorTotal += r.montoPrestado || 0
-    renovadoEntregado += entregadoPorPrestamo.get(r.id) ?? 0
-  }
   const renovacionesInfo = {
     cantidad: renovacionesDia.length,
     valorTotal: Math.round(renovadoValorTotal),
     entregadoEnMano: Math.round(renovadoEntregado),
-    absorbido: Math.round(Math.max(0, renovadoValorTotal - renovadoEntregado)),
+    absorbido: absorbidoRenovaciones,
+    // true = el absorbido YA esta sumado en cobradoDia y prestadoDia (vista bruta)
+    enCobrado: brutoRenovaciones,
   }
 
   return Response.json({

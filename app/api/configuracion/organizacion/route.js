@@ -14,7 +14,7 @@ export async function GET() {
 
   const org = await prisma.organization.findUnique({
     where: { id: orgId },
-    select: { id: true, nombre: true, plan: true, telefono: true, ciudad: true, diasSinCobro: true, country: true, timezone: true, createdAt: true, activo: true, capitalEsEfectivo: true, modoAbreviado: true, ocultarSaldoWA: true, tasaMoratorio: true, diasGraciaMoratorio: true, requiereAprobacionPrestamos: true, portalDatosCompletos: true, camposRecibo: true, plantillasWA: true },
+    select: { id: true, nombre: true, plan: true, telefono: true, ciudad: true, diasSinCobro: true, country: true, timezone: true, createdAt: true, activo: true, capitalEsEfectivo: true, renovacionesEnCobrado: true, modoAbreviado: true, ocultarSaldoWA: true, tasaMoratorio: true, diasGraciaMoratorio: true, requiereAprobacionPrestamos: true, portalDatosCompletos: true, camposRecibo: true, plantillasWA: true },
   })
 
   const sub = await prisma.suscripcion.findFirst({
@@ -53,7 +53,7 @@ export async function PATCH(req) {
   // NOTA: `country` y `timezone` NO se aceptan desde este endpoint.
   // Cambios de pais solo pueden hacerse desde superadmin para evitar corrupcion
   // de calculos de mora/timezone y precios de planes en organizaciones con datos.
-  const { nombre, telefono, ciudad, diasSinCobro, capitalEsEfectivo, modoAbreviado, ocultarSaldoWA, tasaMoratorio, diasGraciaMoratorio, requiereAprobacionPrestamos, portalDatosCompletos, camposRecibo, plantillasWA } = await req.json()
+  const { nombre, telefono, ciudad, diasSinCobro, capitalEsEfectivo, renovacionesEnCobrado, modoAbreviado, ocultarSaldoWA, tasaMoratorio, diasGraciaMoratorio, requiereAprobacionPrestamos, portalDatosCompletos, camposRecibo, plantillasWA } = await req.json()
 
   if (nombre !== undefined && !nombre?.trim()) {
     return NextResponse.json({ error: 'El nombre es obligatorio' }, { status: 400 })
@@ -75,6 +75,7 @@ export async function PATCH(req) {
       ...(ciudad !== undefined && { ciudad: ciudad?.trim() || null }),
       ...(diasSinCobroVal !== undefined && { diasSinCobro: diasSinCobroVal }),
       ...(capitalEsEfectivo !== undefined && { capitalEsEfectivo: !!capitalEsEfectivo }),
+      ...(renovacionesEnCobrado !== undefined && { renovacionesEnCobrado: !!renovacionesEnCobrado }),
       ...(modoAbreviado !== undefined && { modoAbreviado: !!modoAbreviado }),
       ...(ocultarSaldoWA !== undefined && { ocultarSaldoWA: !!ocultarSaldoWA }),
       ...(tasaMoratorio !== undefined && { tasaMoratorio: Math.max(0, Math.min(100, Number(tasaMoratorio) || 0)) }),
@@ -84,7 +85,7 @@ export async function PATCH(req) {
       ...(camposRecibo !== undefined && { camposRecibo: Array.isArray(camposRecibo) ? camposRecibo.slice(0, 10) : null }),
       ...(plantillasWA !== undefined && { plantillasWA: (plantillasWA && typeof plantillasWA === 'object') ? plantillasWA : null }),
     },
-    select: { id: true, nombre: true, plan: true, telefono: true, ciudad: true, diasSinCobro: true, country: true, timezone: true, capitalEsEfectivo: true, modoAbreviado: true, ocultarSaldoWA: true, tasaMoratorio: true, diasGraciaMoratorio: true, requiereAprobacionPrestamos: true, portalDatosCompletos: true, camposRecibo: true, plantillasWA: true },
+    select: { id: true, nombre: true, plan: true, telefono: true, ciudad: true, diasSinCobro: true, country: true, timezone: true, capitalEsEfectivo: true, renovacionesEnCobrado: true, modoAbreviado: true, ocultarSaldoWA: true, tasaMoratorio: true, diasGraciaMoratorio: true, requiereAprobacionPrestamos: true, portalDatosCompletos: true, camposRecibo: true, plantillasWA: true },
   })
 
   return NextResponse.json({ ok: true, org })

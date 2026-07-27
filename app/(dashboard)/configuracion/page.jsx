@@ -568,6 +568,30 @@ function TabOrganizacion() {
         </div>
       </Card>
 
+      {/* Toggle vista bruta de renovaciones en la caja */}
+      <Card>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em]">Contar renovaciones en el cobrado</p>
+            <p className="text-[11px] text-[var(--color-text-muted)] leading-snug mt-1">
+              Al renovar, el saldo que el cliente ya debía se absorbe en el préstamo nuevo. Activa esto si quieres verlo sumado en <strong>Cobrado</strong> y en <strong>Prestado</strong> a la vez, como si el cliente hubiera pagado la cartulina vieja. El efectivo del día es el mismo en ambos casos; solo cambia si ese movimiento se ve o no.
+            </p>
+          </div>
+          <Toggle
+            checked={!!org?.renovacionesEnCobrado}
+            onChange={async (nuevoValor) => {
+              try {
+                const res = await fetch('/api/configuracion/organizacion', {
+                  method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ renovacionesEnCobrado: nuevoValor }),
+                })
+                if (res.ok) setData(prev => ({ ...prev, org: { ...prev.org, renovacionesEnCobrado: nuevoValor } }))
+              } catch {}
+            }}
+          />
+        </div>
+      </Card>
+
       {/* Toggle modo abreviado de montos */}
       <Card>
         <div className="flex items-center justify-between gap-3">

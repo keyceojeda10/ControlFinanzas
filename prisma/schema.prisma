@@ -99,6 +99,13 @@ model Organization {
   diasSinCobro      String?
   capitalEstricto   Boolean        @default(false)
   capitalEsEfectivo Boolean        @default(false)
+  // Vista BRUTA de renovaciones en la caja. Al renovar, el saldo viejo que se
+  // "absorbe" no mueve efectivo, asi que por defecto no suma ni en Cobrado ni en
+  // Prestado (vista NETA). Con esto en true se suma en AMBOS lados — como lo
+  // esperan los prestamistas que piensan "recogi la cartulina vieja y presté una
+  // nueva". El efectivo del dia es IDENTICO en las dos vistas; solo cambia si el
+  // movimiento de la cartulina se ve o no. Ojo: sumarlo de un solo lado infla la caja.
+  renovacionesEnCobrado Boolean    @default(false)
   // Meta de capital de la sociedad (estilo SAS). Si se fija, el % de cada socio
   // = su aporte neto / metaSociedad. Si es null/0, el % se calcula sobre el
   // total aportado por los socios. Es solo para el desglose de participacion;

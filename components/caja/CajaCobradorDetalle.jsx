@@ -85,7 +85,9 @@ export default function CajaCobradorDetalle({ data }) {
             </div>
           </div>
           <p className="text-[10px] mt-2 leading-snug" style={{ color: 'var(--color-text-muted)' }}>
-            El saldo absorbido es lo que el cliente ya debía y quedó dentro del nuevo préstamo: no entró ni salió efectivo, por eso no suma en "Cobrado" ni en "Prestado".
+            {renov.enCobrado
+              ? 'El saldo absorbido es lo que el cliente ya debía y quedó dentro del nuevo préstamo. Está sumado en "Cobrado" y en "Prestado" a la vez, así que el efectivo del día no cambia.'
+              : 'El saldo absorbido es lo que el cliente ya debía y quedó dentro del nuevo préstamo: no entró ni salió efectivo, por eso no suma en "Cobrado" ni en "Prestado".'}
           </p>
         </div>
       )}
