@@ -156,7 +156,7 @@ export default function SociosPage() {
           )}
 
           {hayDatos && (
-            <ParticipacionSocios socios={socios} totalIntereses={totalIntereses} />
+            <ParticipacionSocios socios={socios} totalIntereses={totalIntereses} onCambio={cargar} />
           )}
 
           {socios.length === 0 ? (

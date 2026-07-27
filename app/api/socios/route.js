@@ -40,10 +40,17 @@ export async function GET(request) {
     })
 
     const result = socios.map((s) => {
+      // `aportes` = todo lo que suma al balance del socio: el capital que metio
+      // (tipo 'aporte') MAS las utilidades que se le repartieron (tipo 'utilidad').
+      // Se desglosan aparte porque no son lo mismo para el socio: una es plata que
+      // puso, la otra es lo que gano y reinvirtio. El balance manda el % de
+      // participacion, asi que las utilidades repartidas suben su porcentaje.
       const aportes = s.aportes.filter((a) => a.tipo !== 'retiro')
       const retiros = s.aportes.filter((a) => a.tipo === 'retiro')
       const totalAportes = aportes.reduce((acc, a) => acc + a.monto, 0)
       const totalRetiros = retiros.reduce((acc, a) => acc + a.monto, 0)
+      const capitalAportado = s.aportes.filter((a) => a.tipo === 'aporte').reduce((acc, a) => acc + a.monto, 0)
+      const utilidadesAsignadas = s.aportes.filter((a) => a.tipo === 'utilidad').reduce((acc, a) => acc + a.monto, 0)
       const prestamosActivos = s.prestamos.filter((p) => p.estado === 'activo')
       const capitalEnCalle = prestamosActivos.reduce((acc, p) => acc + p.montoPrestado, 0)
 
@@ -62,6 +69,8 @@ export async function GET(request) {
         activo: s.activo,
         createdAt: s.createdAt,
         totalAportes: Math.round(totalAportes),
+        capitalAportado: Math.round(capitalAportado),
+        utilidadesAsignadas: Math.round(utilidadesAsignadas),
         totalRetiros: Math.round(totalRetiros),
         balanceNeto: Math.round(totalAportes - totalRetiros),
         prestamosActivos: prestamosActivos.length,

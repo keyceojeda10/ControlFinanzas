@@ -453,17 +453,23 @@ export default function SocioDetallePage() {
           <div className="space-y-2">
             {socio.aportes.map((a) => {
               const esRetiro = a.tipo === 'retiro'
+              // 'utilidad' = ganancia repartida por % de participacion. Suma al
+              // balance igual que un aporte, pero no es plata que el socio puso:
+              // se etiqueta aparte para que no se confunda con capital nuevo.
+              const esUtilidad = a.tipo === 'utilidad'
+              const colorMov = esRetiro ? 'var(--color-danger)' : esUtilidad ? 'var(--color-purple)' : 'var(--color-success)'
+              const labelMov = esRetiro ? 'Retiro' : esUtilidad ? 'Utilidad' : 'Aporte'
               return (
                 <div key={a.id} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid var(--color-border)' }}>
                   <div className="flex items-center gap-2 min-w-0">
                     <span
                       className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md shrink-0"
                       style={{
-                        background: esRetiro ? 'color-mix(in srgb, var(--color-danger) 12%, transparent)' : 'color-mix(in srgb, var(--color-success) 12%, transparent)',
-                        color: esRetiro ? 'var(--color-danger)' : 'var(--color-success)',
+                        background: `color-mix(in srgb, ${colorMov} 12%, transparent)`,
+                        color: colorMov,
                       }}
                     >
-                      {esRetiro ? 'Retiro' : 'Aporte'}
+                      {labelMov}
                     </span>
                     <div className="min-w-0">
                       <p className="text-[13px] font-medium" style={{ color: esRetiro ? 'var(--color-danger)' : 'var(--color-text-primary)' }}>

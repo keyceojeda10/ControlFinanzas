@@ -1,22 +1,31 @@
 'use client'
 // components/socios/ParticipacionSocios.jsx
 // Desglose de PARTICIPACION estilo SAS: % de cada socio segun su aporte vs la
-// meta de la sociedad. Es una VISTA — no cambia como se reparte hoy la ganancia
-// (que va por prestamo asignado). Muestra, si se fija una meta, cuanto le tocaria
-// a cada socio si la ganancia se repartiera por su %.
+// meta de la sociedad.
+//
+// La META decide si el dueño participa, sin preguntarlo aparte: con meta fijada
+// los socios pueden sumar menos de 100% y la diferencia es del negocio; sin meta,
+// los socios se reparten el 100%.
+//
+// Desde aca se REPARTE de verdad (boton "Repartir utilidades"), lo que registra
+// la utilidad de cada socio y recalcula su participacion. El modelo viejo (ganancia
+// por prestamo asignado a un socio) sigue existiendo para quien lo use: son dos
+// formas de operar y conviven.
 
 import { useState, useEffect } from 'react'
 import { useCountry } from '@/hooks/useCountry'
 import MoneyInput from '@/components/ui/MoneyInput'
 import { Button } from '@/components/ui/Button'
+import RepartirUtilidades from './RepartirUtilidades'
 
-export default function ParticipacionSocios({ socios = [], totalIntereses = 0 }) {
+export default function ParticipacionSocios({ socios = [], totalIntereses = 0, onCambio }) {
   const { formatMoney } = useCountry()
   const [meta, setMeta] = useState(null)
   const [editando, setEditando] = useState(false)
   const [metaInput, setMetaInput] = useState('')
   const [guardando, setGuardando] = useState(false)
   const [abierto, setAbierto] = useState(false)
+  const [repartiendo, setRepartiendo] = useState(false)
 
   useEffect(() => {
     fetch('/api/socios/meta')
@@ -163,10 +172,20 @@ export default function ParticipacionSocios({ socios = [], totalIntereses = 0 })
             ))}
           </div>
 
+          <Button variant="primary" onClick={() => setRepartiendo(true)} className="w-full">
+            Repartir utilidades
+          </Button>
+
           <p className="text-[10px] leading-snug px-1" style={{ color: 'var(--color-text-muted)' }}>
-            Esto es una vista de participación. Hoy la ganancia se atribuye por préstamo asignado a cada socio.
-            El "por % le tocaría" es referencial (reparto de {formatMoney(totalIntereses)} de intereses según el %).
+            El "por % le tocaría" es una referencia sobre {formatMoney(totalIntereses)} de intereses. Para dejarlo
+            registrado y que suba el balance de cada socio, usa "Repartir utilidades".
           </p>
+
+          <RepartirUtilidades
+            open={repartiendo}
+            onClose={() => setRepartiendo(false)}
+            onListo={() => onCambio?.()}
+          />
         </div>
       )}
     </div>
